@@ -137,7 +137,7 @@ int foo() {
   //CHECK: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *)dpct::dpct_malloc(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>>));
   cudaMalloc((void**)&RandomStates, size * sizeof(curandStateMRG32k3a_t));
 
-  //CHECK: dpct::get_default_queue().submit(
+  //CHECK: dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:   [&](sycl::handler &cgh) {
   //CHECK-NEXT:     auto RandomStates_acc_ct1 = dpct::get_access(RandomStates, cgh);
   //CHECK-EMPTY:

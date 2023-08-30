@@ -126,8 +126,8 @@ bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
-                "from " + std::to_string((size_t)Warnings::BEGIN) + " to " +
-                std::to_string((size_t)Warnings::END - 1) +
+                "from " + std::to_string(DiagnosticsMessage::MinID) + " to " +
+                std::to_string(DiagnosticsMessage::MaxID) +
                 ". Hyphen separated ranges are also allowed. For example:\n"
                 "--suppress-warnings=1000-1010,1011.";
 
@@ -785,10 +785,15 @@ int runDPCT(int argc, const char **argv) {
           else if (Option.ends_with("occupancy-calculation"))
             Experimentals.addValue(
                 ExperimentalFeatures::Exp_OccupancyCalculation);
+<<<<<<< HEAD
           else if (Option.ends_with("free-function-queries"))
             Experimentals.addValue(ExperimentalFeatures::Exp_FreeQueries);
           else if (Option.ends_with("logical-group"))
             Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
+=======
+        } else if (Option == "--no-dry-pattern") {
+          NoDRYPatternFlag = true;
+>>>>>>> origin/SYCLomatic
         }
         // Need add more option.
       }

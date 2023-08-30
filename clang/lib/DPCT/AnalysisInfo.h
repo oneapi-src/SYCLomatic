@@ -735,12 +735,15 @@ public:
     TempVariableDeclCounter(int DefaultQueueCounter = 0,
                             int CurrentDeviceCounter = 0)
         : DefaultQueueCounter(DefaultQueueCounter),
-          CurrentDeviceCounter(CurrentDeviceCounter) {}
+          CurrentDeviceCounter(CurrentDeviceCounter),
+          PlaceholderStr{
+              "",
+              buildString(MapNames::getDpctNamespace(), "get_",
+                          DpctGlobalInfo::getDeviceQueueName(), "()"),
+              MapNames::getDpctNamespace() + "get_current_device()"} {}
     int DefaultQueueCounter = 0;
     int CurrentDeviceCounter = 0;
-    std::string PlaceholderStr[3] = {
-        "", MapNames::getDpctNamespace() + "get_default_queue()",
-        MapNames::getDpctNamespace() + "get_current_device()"};
+    std::string PlaceholderStr[3];
   };
 
   static std::string removeSymlinks(clang::FileManager &FM,
@@ -871,6 +874,8 @@ public:
                             const FunctionDecl *FD = nullptr);
   static std::string getSubGroup(const Stmt *,
                                  const FunctionDecl *FD = nullptr);
+  static std::string getDefaultQueue(const Stmt *);
+  static const std::string &getDeviceQueueName();
   static const std::string &getStreamName() {
     const static std::string StreamName = "stream" + getCTFixedSuffix();
     return StreamName;
@@ -4253,16 +4258,17 @@ private:
           MapNames::getClNamespace() + "stream ",
           DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
     if (getVarMap().hasSync()) {
+      auto DefaultQueue =
+          buildString(MapNames::getDpctNamespace(), "get_",
+                      DpctGlobalInfo::getDeviceQueueName(), "()");
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-
         OuterStmts.emplace_back(
             buildString(MapNames::getDpctNamespace(), "global_memory<",
                         MapNames::getDpctNamespace(), "byte_t, 1> d_",
                         DpctGlobalInfo::getSyncName(), "(4);"));
 
-        OuterStmts.emplace_back(
-            buildString("d_", DpctGlobalInfo::getSyncName(), ".init(",
-                        MapNames::getDpctNamespace(), "get_default_queue());"));
+        OuterStmts.emplace_back(buildString("d_", DpctGlobalInfo::getSyncName(),
+                                            ".init(", DefaultQueue, ");"));
 
         SubmitStmtsList.SyncList.emplace_back(
             buildString("auto ", DpctGlobalInfo::getSyncName(), " = ",
@@ -4278,14 +4284,13 @@ private:
         OuterStmts.emplace_back(buildString(
             MapNames::getDpctNamespace(), "global_memory<unsigned int, 0> d_",
             DpctGlobalInfo::getSyncName(), "(0);"));
-        OuterStmts.emplace_back(
-            buildString("unsigned *", DpctGlobalInfo::getSyncName(), " = d_",
-                        DpctGlobalInfo::getSyncName(), ".get_ptr(",
-                        MapNames::getDpctNamespace(), "get_default_queue());"));
-
         OuterStmts.emplace_back(buildString(
-            MapNames::getDpctNamespace(), "get_default_queue().memset(",
-            DpctGlobalInfo::getSyncName(), ", 0, sizeof(int)).wait();"));
+            "unsigned *", DpctGlobalInfo::getSyncName(), " = d_",
+            DpctGlobalInfo::getSyncName(), ".get_ptr(", DefaultQueue, ");"));
+
+        OuterStmts.emplace_back(buildString(DefaultQueue, ".memset(",
+                                            DpctGlobalInfo::getSyncName(),
+                                            ", 0, sizeof(int)).wait();"));
 
         requestFeature(HelperFeatureEnum::device_ext);
       }

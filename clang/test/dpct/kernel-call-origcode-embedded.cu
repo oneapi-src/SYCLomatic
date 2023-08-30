@@ -52,7 +52,7 @@ void my_error_checker(T ReturnValue, char const *const FuncName) {}
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // CHECK:  /* DPCT_ORIG   dim3 griddim = 2;*/
   // CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
   dim3 griddim = 2;

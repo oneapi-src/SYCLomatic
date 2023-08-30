@@ -69,7 +69,7 @@ __global__ void constAdd(float *C) {
 
 // CHECK: void call_constAdd(float *h_C, int size) {
 // CHECK-NEXT:  float *d_C = NULL;
-// CHECK-NEXT:  dpct::get_default_queue().submit(
+// CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      A_ct.init();
 // CHECK-EMPTY:

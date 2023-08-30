@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 // CHECK: #define DEF_BAR dpct::queue_ptr bar() { \
-// CHECK-NEXT:   return &dpct::get_default_queue(); \
+// CHECK-NEXT:   return &dpct::get_out_of_order_queue(); \
 // CHECK-NEXT: }
 #define DEF_BAR cudaStream_t bar() { \
   return 0; \
@@ -27,7 +27,7 @@ DEF_BAR2
 // this migration to pass
 // CHECK: template <typename T>
 // CHECK-NEXT: dpct::queue_ptr bar() {
-// CHECK-NEXT:   return &dpct::get_default_queue();
+// CHECK-NEXT:   return &dpct::get_out_of_order_queue();
 // CHECK-NEXT: }
 template <typename T>
 cudaStream_t bar() {
@@ -45,7 +45,7 @@ cudaEvent_t bar2() {
 
 // CHECK: dpct::queue_ptr foo() {
 cudaStream_t foo() {
-  // CHECK: return &dpct::get_default_queue();
+  // CHECK: return &dpct::get_out_of_order_queue();
   return 0;
 }
 
@@ -57,7 +57,7 @@ cudaEvent_t foo2() {
 class S {
   // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
-    // CHECK: return &dpct::get_default_queue();
+    // CHECK: return &dpct::get_out_of_order_queue();
     return 0;
   }
 
@@ -70,7 +70,7 @@ class S {
 class C {
   // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
-    // CHECK: return &dpct::get_default_queue();
+    // CHECK: return &dpct::get_out_of_order_queue();
     return 0;
   }
 

@@ -67,13 +67,13 @@
 // cublasSasum-NEXT: Is migrated to:
 // cublasSasum-NEXT:   float* res_temp_ptr_ct{{[0-9]+}} = res;
 // cublasSasum-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasSasum-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
+// cublasSasum-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_in_order_queue());
 // cublasSasum-NEXT:   }
 // cublasSasum-NEXT:   oneapi::mkl::blas::column_major::asum(*handle, n, x, incx, res_temp_ptr_ct{{[0-9]+}});
 // cublasSasum-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
 // cublasSasum-NEXT:     handle->wait();
 // cublasSasum-NEXT:     *res = *res_temp_ptr_ct{{[0-9]+}};
-// cublasSasum-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasSasum-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasSasum-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCsyr2k | FileCheck %s -check-prefix=cublasCsyr2k
@@ -105,8 +105,8 @@
 // cublasCrotg-NEXT:   float* c_ct{{[0-9]+}} = c;
 // cublasCrotg-NEXT:   sycl::float2* s_ct{{[0-9]+}} = s;
 // cublasCrotg-NEXT:   if(sycl::get_pointer_type(a, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasCrotg-NEXT:     a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(3, dpct::get_default_queue());
-// cublasCrotg-NEXT:     c_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
+// cublasCrotg-NEXT:     a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(3, dpct::get_in_order_queue());
+// cublasCrotg-NEXT:     c_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_in_order_queue());
 // cublasCrotg-NEXT:     b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
 // cublasCrotg-NEXT:     s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
 // cublasCrotg-NEXT:     *a_ct{{[0-9]+}} = *a;
@@ -121,8 +121,8 @@
 // cublasCrotg-NEXT:     *b = *b_ct{{[0-9]+}};
 // cublasCrotg-NEXT:     *c = *c_ct{{[0-9]+}};
 // cublasCrotg-NEXT:     *s = *s_ct{{[0-9]+}};
-// cublasCrotg-NEXT:     sycl::free(a_ct{{[0-9]+}}, dpct::get_default_queue());
-// cublasCrotg-NEXT:     sycl::free(c_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasCrotg-NEXT:     sycl::free(a_ct{{[0-9]+}}, dpct::get_in_order_queue());
+// cublasCrotg-NEXT:     sycl::free(c_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasCrotg-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZtbsv | FileCheck %s -check-prefix=cublasZtbsv
@@ -215,12 +215,12 @@
 // cublasIzamax: CUDA API:
 // cublasIzamax-NEXT:   cublasIzamax(handle /*cublasHandle_t*/, n /*int*/,
 // cublasIzamax-NEXT:                x /*const cuDoubleComplex **/, incx /*int*/, res /*int **/);
-// cublasIzamax-NEXT: Is migrated to:
-// cublasIzamax-NEXT:   int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
+// cublasIzamax-NEXT: Is migrated to (with the option --no-dry-pattern):
+// cublasIzamax-NEXT:   int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_in_order_queue());
 // cublasIzamax-NEXT:   oneapi::mkl::blas::column_major::iamax(*handle, n, (std::complex<double>*)x, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
 // cublasIzamax-NEXT:   int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
 // cublasIzamax-NEXT:   dpct::dpct_memcpy(res, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-// cublasIzamax-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasIzamax-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasScnrm2 | FileCheck %s -check-prefix=cublasScnrm2
 // cublasScnrm2: CUDA API:
@@ -229,13 +229,13 @@
 // cublasScnrm2-NEXT: Is migrated to:
 // cublasScnrm2-NEXT:   float* res_temp_ptr_ct{{[0-9]+}} = res;
 // cublasScnrm2-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasScnrm2-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
+// cublasScnrm2-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_in_order_queue());
 // cublasScnrm2-NEXT:   }
 // cublasScnrm2-NEXT:   oneapi::mkl::blas::column_major::nrm2(*handle, n, (std::complex<float>*)x, incx, res_temp_ptr_ct{{[0-9]+}});
 // cublasScnrm2-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
 // cublasScnrm2-NEXT:     handle->wait();
 // cublasScnrm2-NEXT:     *res = *res_temp_ptr_ct{{[0-9]+}};
-// cublasScnrm2-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasScnrm2-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasScnrm2-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSrot | FileCheck %s -check-prefix=cublasSrot

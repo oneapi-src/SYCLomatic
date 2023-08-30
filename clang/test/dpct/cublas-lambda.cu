@@ -22,7 +22,7 @@ float beta_S = 0.0f;
 int main() {
   cublasStatus_t status;
   cublasHandle_t handle;
-  // CHECK: handle = &dpct::get_default_queue();
+  // CHECK: handle = &dpct::get_out_of_order_queue();
   cublasCreate(&handle);
 
   // CHECK: {

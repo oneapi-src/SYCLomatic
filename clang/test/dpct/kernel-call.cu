@@ -80,7 +80,7 @@ __global__ void helloFromGPU2() {
 void testReference(const int &i) {
   dim3 griddim = 2;
   dim3 threaddim = 32;
-  // CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
+  // CHECK:   dpct::get_out_of_order_queue().parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(i, item_ct1);
@@ -101,7 +101,7 @@ struct TestThis {
     // CHECK:  /*
     // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
     // CHECK-NEXT:  */
-    // CHECK-NEXT:  dpct::get_default_queue().submit(
+    // CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       int args_arg1_ct0 = args.arg1;
     // CHECK-NEXT:       int args_arg2_ct1 = args.arg2;
@@ -121,7 +121,7 @@ int arr[16];
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: cl::sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   dim3 griddim = 2;
   dim3 threaddim = 32;
   void *karg1 = 0;
@@ -264,7 +264,7 @@ public:
   foo_class(int n) : a(n) {}
 
   // CHECK:  int run_foo() {
-  // CHECK-NEXT:    dpct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:         int a_ct0 = a;
   // CHECK-NEXT:         int aa_b_ct1 = aa.b;
@@ -293,7 +293,7 @@ __global__ void foo_kernel3(int *d) {
 }
 //CHECK:void run_foo(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT:  if (1)
-//CHECK-NEXT:    dpct::get_default_queue().submit(
+//CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(&g_a[0], cgh);
 //CHECK-EMPTY:
@@ -310,7 +310,7 @@ void run_foo(dim3 c, dim3 d) {
 }
 //CHECK:void run_foo2(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
 //CHECK-NEXT:  if (1)
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
@@ -348,7 +348,7 @@ void run_foo2(dim3 c, dim3 d) {
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 //CHECK-NEXT:    */
-//CHECK-NEXT:    dpct::get_default_queue().submit(
+//CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
@@ -365,7 +365,7 @@ void run_foo3(dim3 c, dim3 d) {
 }
 //CHECK:void run_foo4(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT: while (1)
-//CHECK-NEXT:   dpct::get_default_queue().submit(
+//CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:       dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
@@ -389,7 +389,7 @@ void run_foo4(dim3 c, dim3 d) {
 //CHECK-NEXT:  memcpy(&result[item_ct1.get_group(2)*8], resultInGroup, sizeof(float)*8);
 //CHECK-NEXT:}
 //CHECK-NEXT:int run_foo5 () {
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:      cl::sycl::local_accessor<float, 1> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
 //CHECK-NEXT:      dpct::access_wrapper<float *> result_acc_ct0(result.get_ptr(), cgh);
@@ -415,7 +415,7 @@ int run_foo5 () {
 
 //CHECK:dpct::shared_memory<float, 1> result2(32);
 //CHECK-NEXT:int run_foo6 () {
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:      cl::sycl::local_accessor<float, 1> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
 //CHECK-NEXT:      dpct::access_wrapper<float *> result2_acc_ct0(result2.get_ptr(), cgh);
@@ -436,7 +436,7 @@ int run_foo6 () {
 
 //CHECK:dpct::shared_memory<float, 0> result3;
 //CHECK-NEXT:int run_foo7 () {
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:      cl::sycl::local_accessor<float, 1> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
 //CHECK-NEXT:      dpct::access_wrapper<float *> result3_acc_ct0(result3.get_ptr(), cgh);
@@ -464,7 +464,7 @@ int run_foo7 () {
 //CHECK-NEXT:}
 //CHECK-NEXT:int run_foo8() {
 //CHECK-NEXT:  in[0] = 42;
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:      dpct::access_wrapper<float *> out_acc_ct1(out.get_ptr(), cgh);
 //CHECK-EMPTY:
@@ -537,7 +537,7 @@ __global__ void k(int *p){
 
 //CHECK:int run_foo9() {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
 //CHECK-NEXT:  std::vector<A> vec(10);
 //CHECK-NEXT:  A aa;
 //CHECK-NEXT:  q_ct1.submit(
@@ -572,7 +572,7 @@ int run_foo9() {
 //CHECK-NEXT:  // __shared__ variable
 //CHECK-NEXT:}
 //CHECK-NEXT:int run_foo10() {
-//CHECK-NEXT: dpct::get_default_queue().submit(
+//CHECK-NEXT: dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:     cl::sycl::local_accessor<float *, 1> afn_s_acc_ct1(cl::sycl::range<1>(3), cgh);
 //CHECK-EMPTY:
@@ -637,7 +637,7 @@ __global__ void kernel_ctor() {
 }
 
 void test_ctor() {
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:     cl::sycl::local_accessor<int, 1> s1_acc_ct1(cl::sycl::range<1>(10), cgh);
   // CHECK-NEXT:     cl::sycl::local_accessor<float, 0> s2_acc_ct1(cgh);
@@ -666,7 +666,7 @@ void test_ctor() {
 //CHECK-NEXT:template<typename TT>
 //CHECK-NEXT:void foo11() {
 //CHECK-NEXT:  TT a;
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp is declared in device function with the name type_ct1. Adjust the code to make the type_ct1 declaration visible at the accessor declaration point.
@@ -715,7 +715,7 @@ void foo11() {
 //CHECK-NEXT:template<typename TT>
 //CHECK-NEXT:void foo2() {
 //CHECK-NEXT:  TT a;
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp is declared in device function with the name UnionType. Adjust the code to make the UnionType declaration visible at the accessor declaration point.
@@ -766,7 +766,7 @@ int run_foo12() {
   static const int ee = ci;
   static constexpr int ff = ci;
   static const int gg = i;
-  //CHECK:  dpct::get_default_queue().submit(
+  //CHECK:  dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
   //CHECK-NEXT:    dpct::access_wrapper<int *> bb_acc_ct1(bb, cgh);
   //CHECK-EMPTY:
@@ -792,7 +792,7 @@ void run_foo13(float* a_host[]) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'a_host' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:dpct::get_default_queue().submit(
+  //CHECK-NEXT:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
   //CHECK-NEXT:    cl::sycl::local_accessor<float *, 0> aa_acc_ct1(cgh);
   //CHECK-NEXT:    dpct::access_wrapper<float **> a_host_acc_ct0(a_host, cgh);
@@ -809,7 +809,7 @@ void run_foo13(float* a_host[]) {
 __global__ void my_kernel6(float* a) {}
 
 void run_foo14(float* aa) {
-//CHECK:dpct::get_default_queue().parallel_for<dpct_kernel_name<class my_kernel6_{{[0-9a-z]+}}>>(
+//CHECK:dpct::get_out_of_order_queue().parallel_for<dpct_kernel_name<class my_kernel6_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:  cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:  [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:    my_kernel6((float *)nullptr);
@@ -889,7 +889,7 @@ void run_foo16() {
 
 void run_foo17() {
   foo_class count(3);
-  //CHECK:dpct::get_default_queue().submit(
+  //CHECK:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
   //CHECK-NEXT:    int count_run_foo_ct2 = count.run_foo();
   //CHECK-EMPTY:
@@ -913,7 +913,7 @@ void run_foo18(uchar4 *param0, const int param1, const int param2,
                const int param3, const double param4, const double param5,
                const double param6, const double param7, const double param8,
                const uchar4 param9, const int param10, const int param11) {
-//CHECK:  dpct::get_default_queue().parallel_for<dpct_kernel_name<class my_kernel9_{{[0-9a-z]+}}, float>>(
+//CHECK:  dpct::get_out_of_order_queue().parallel_for<dpct_kernel_name<class my_kernel9_{{[0-9a-z]+}}, float>>(
 //CHECK-NEXT:    cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:    [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:      my_kernel9<float>(nullptr, param1, param2, param3, (float)param4, (float)param5, (float)param6, (float)param7, (float)param8, param9, param10, param11);

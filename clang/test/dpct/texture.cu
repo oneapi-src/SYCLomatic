@@ -148,7 +148,7 @@ int main() {
   // CHECK: desc21 = a42->get_channel();
   cudaGetChannelDesc(&desc21, a42);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto tex42_acc = tex42.get_access(cgh);
   // CHECK-NEXT:         auto tex21_acc = tex21.get_access(cgh);

@@ -26,7 +26,7 @@ __global__ void kernel(float *input) {
 
 void foo() {
   float *input = NULL;
-  //CHECK:dpct::get_default_queue().submit(
+  //CHECK:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    sycl::local_accessor<float, 1> smem_acc_ct1(sycl::range<1>(128), cgh);
   //CHECK-NEXT:    dpct::access_wrapper<float *> input_acc_ct0(input, cgh);
@@ -66,7 +66,7 @@ __global__ void compute_mode(float *input) {
 }
 
 void foo_2(float *ptr) {
-  //CHECK:dpct::get_default_queue().submit(
+  //CHECK:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    dpct::access_wrapper<float *> ptr_acc_ct0(ptr, cgh);
   //CHECK-EMPTY:
