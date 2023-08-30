@@ -22,7 +22,7 @@ int main() {
     //CHECK: auto loop_body = [=] (int ind)-> void { }; 
     auto loop_body = [=] __device__ __host__ (int ind)-> void { }; 
 
-    //CHECK: oneapi::dpl::experimental::for_each_async(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dVec.begin(), dVec.end(), loop_body);
+    //CHECK: oneapi::dpl::experimental::for_each_async(oneapi::dpl::execution::make_device_policy(dpct::get_in_order_queue()), dVec.begin(), dVec.end(), loop_body);
 	  thrust::for_each(thrust::cuda::par_nosync, dVec.begin(), dVec.end(), loop_body );
     return 0;
 }

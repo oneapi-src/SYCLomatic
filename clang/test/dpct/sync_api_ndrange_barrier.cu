@@ -27,7 +27,7 @@ __global__ void kernel() {
 }
 
 int main() {
-// CHECK:  dpct::get_default_queue().submit(
+// CHECK:  dpct::get_in_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      sycl::stream stream_ct1(64 * 1024, 80, cgh);
 // CHECK-EMPTY:

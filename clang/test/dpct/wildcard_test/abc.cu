@@ -15,7 +15,7 @@ int main() {
   void *karg1 = 0;
   const int *karg2 = 0;
   int karg3 = 80;
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     dpct::access_wrapper<const int *> karg2_acc_ct0((const int *)karg2, cgh);
   // CHECK-NEXT:     dpct::access_wrapper<const int *> karg2_acc_ct1(karg2, cgh);

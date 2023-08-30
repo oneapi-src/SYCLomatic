@@ -8,9 +8,9 @@
 // CHECK: #define MACRO(PTR, SIZE) 
 // CHECK-NEXT:  do {
 // CHECK-NEXT:     PTR = (int *)sycl::malloc_device(SIZE, q_ct1);
-// CHECK-NEXT:     sycl::free(PTR, dpct::get_default_queue());
-// CHECK-NEXT:     sycl::free(PTR, dpct::get_default_queue());
-// CHECK-NEXT:     sycl::free(PTR, dpct::get_default_queue());
+// CHECK-NEXT:     sycl::free(PTR, dpct::get_in_order_queue());
+// CHECK-NEXT:     sycl::free(PTR, dpct::get_in_order_queue());
+// CHECK-NEXT:     sycl::free(PTR, dpct::get_in_order_queue());
 // CHECK-NEXT:   } while (0);
 #define MACRO(PTR, SIZE)    \
   do {                      \

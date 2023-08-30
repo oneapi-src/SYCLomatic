@@ -9,12 +9,12 @@ struct a{
   // CHECK: dpct::queue_ptr s9;
   cudaStream_t s9;
   
-  // CHECK: dpct::queue_ptr s10 = &dpct::get_default_queue(), s11, s12{&dpct::get_default_queue()};
+  // CHECK: dpct::queue_ptr s10 = &dpct::get_in_order_queue(), s11, s12{&dpct::get_in_order_queue()};
   cudaStream_t s10 = 0, s11, s12{0};
-  // CHECK: dpct::queue_ptr sarr[2] = {&dpct::get_default_queue(), &dpct::get_default_queue()};
+  // CHECK: dpct::queue_ptr sarr[2] = {&dpct::get_in_order_queue(), &dpct::get_in_order_queue()};
   cudaStream_t sarr[2] = {0, NULL};
 
-  // CHECK: a() : s9(&dpct::get_default_queue()) {}
+  // CHECK: a() : s9(&dpct::get_in_order_queue()) {}
   a() : s9(0) {}
 };
 
@@ -22,32 +22,32 @@ struct a2{
   // CHECK: dpct::queue_ptr s9;
   CUstream s9;
   
-  // CHECK: dpct::queue_ptr s10 = &dpct::get_default_queue(), s11, s12{&dpct::get_default_queue()};
+  // CHECK: dpct::queue_ptr s10 = &dpct::get_in_order_queue(), s11, s12{&dpct::get_in_order_queue()};
   CUstream s10 = 0, s11, s12{0};
-  // CHECK: dpct::queue_ptr sarr[2] = {&dpct::get_default_queue(), &dpct::get_default_queue()};
+  // CHECK: dpct::queue_ptr sarr[2] = {&dpct::get_in_order_queue(), &dpct::get_in_order_queue()};
   CUstream sarr[2] = {0, NULL};
 
-  // CHECK: a2() : s9(&dpct::get_default_queue()) {}
+  // CHECK: a2() : s9(&dpct::get_in_order_queue()) {}
   a2() : s9(0) {}
 };
 
 struct b {
-  // CHECK: b(dpct::queue_ptr s = &dpct::get_default_queue()) {}
+  // CHECK: b(dpct::queue_ptr s = &dpct::get_in_order_queue()) {}
   b(cudaStream_t s = 0) {}
 };
 
 struct b2 {
-  // CHECK: b2(dpct::queue_ptr s = &dpct::get_default_queue()) {}
+  // CHECK: b2(dpct::queue_ptr s = &dpct::get_in_order_queue()) {}
   b2(CUstream s = 0) {}
 };
 
 void foo(){
-  // CHECK: dpct::queue_ptr s13 = &dpct::get_default_queue();
+  // CHECK: dpct::queue_ptr s13 = &dpct::get_in_order_queue();
   cudaStream_t s13 = 0;
 }
 
 void foo2(){
-  // CHECK: dpct::queue_ptr s13 = &dpct::get_default_queue();
+  // CHECK: dpct::queue_ptr s13 = &dpct::get_in_order_queue();
   CUstream s13 = 0;
 }
 
@@ -61,7 +61,7 @@ void my_synchronize1(CUstream s) {
 
 int main(){
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   // CHECK: dpct::queue_ptr s0, s1{&q_ct1};
   cudaStream_t  s0, s1{0};
 
@@ -120,7 +120,7 @@ int main(){
 
 int main2(){
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   // CHECK: dpct::queue_ptr s0, s1{&q_ct1};
   CUstream  s0, s1{0};
 

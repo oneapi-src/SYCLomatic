@@ -785,6 +785,8 @@ int runDPCT(int argc, const char **argv) {
           else if (Option.ends_with("occupancy-calculation"))
             Experimentals.addValue(
                 ExperimentalFeatures::Exp_OccupancyCalculation);
+        } else if (Option == "--no-dry-pattern") {
+          NoDRYPatternFlag = true;
         }
         // Need add more option.
       }
