@@ -61,7 +61,7 @@ __global__ void kernel2(float *out) {
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   float h_in[NUM_ELEMENTS] = {0};
   float h_out[NUM_ELEMENTS] = {0};
 

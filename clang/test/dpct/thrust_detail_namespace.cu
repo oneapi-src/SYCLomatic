@@ -102,7 +102,7 @@ void foo() {
 
   // CHECK:  dpct::device_vector<int> Array1(7);
   // CHECK-NEXT:  dpct::device_vector<int> Array2(7);
-  // CHECK-NEXT:  bool t = oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), Array1.begin(), Array1.end(), Array2.begin());
+  // CHECK-NEXT:  bool t = oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(dpct::get_out_of_order_queue()), Array1.begin(), Array1.end(), Array2.begin());
   thrust::device_vector<int> Array1(7);
   thrust::device_vector<int> Array2(7);
   bool t = thrust::detail::vector_equal(Array1.begin(), Array1.end(), Array2.begin());

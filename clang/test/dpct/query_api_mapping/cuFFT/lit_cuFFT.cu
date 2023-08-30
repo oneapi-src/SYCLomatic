@@ -41,7 +41,7 @@
 // cufftPlan2d-NEXT:               type /*cufftType*/);
 // cufftPlan2d-NEXT: Is migrated to:
 // cufftPlan2d-NEXT:   dpct::fft::fft_engine_ptr plan;
-// cufftPlan2d-NEXT:   plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), nx, ny, type);
+// cufftPlan2d-NEXT:   plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), nx, ny, type);
 // cufftPlan2d-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftPlan1d | FileCheck %s -check-prefix=cufftPlan1d
@@ -51,7 +51,7 @@
 // cufftPlan1d-NEXT:               num_of_trans /*int*/);
 // cufftPlan1d-NEXT: Is migrated to:
 // cufftPlan1d-NEXT:   dpct::fft::fft_engine_ptr plan;
-// cufftPlan1d-NEXT:   plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), nx, type, num_of_trans);
+// cufftPlan1d-NEXT:   plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), nx, type, num_of_trans);
 // cufftPlan1d-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftPlan3d | FileCheck %s -check-prefix=cufftPlan3d
@@ -61,7 +61,7 @@
 // cufftPlan3d-NEXT:               type /*cufftType*/);
 // cufftPlan3d-NEXT: Is migrated to:
 // cufftPlan3d-NEXT:   dpct::fft::fft_engine_ptr plan;
-// cufftPlan3d-NEXT:   plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), nx, ny, nz, type);
+// cufftPlan3d-NEXT:   plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), nx, ny, nz, type);
 // cufftPlan3d-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftExecC2C | FileCheck %s -check-prefix=cufftExecC2C

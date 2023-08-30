@@ -234,7 +234,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
             MEMBER_CALL_FACTORY_ENTRY(
                 "cuMemPrefetchAsync", MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
-                false, "get_device", ARG(2)), false, "default_queue"), false, "prefetch", ARG(0), ARG(1)))))
+                false, "get_device", ARG(2)), false, DpctGlobalInfo::getDeviceQueueName()), false, "prefetch", ARG(0), ARG(1)))))
 
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
@@ -245,7 +245,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         MEMBER_CALL_FACTORY_ENTRY(
                         "cuMemAdvise",
-                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"), false, "default_queue"),
+                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"), false, DpctGlobalInfo::getDeviceQueueName()),
                     false, "mem_advise", ARG(0), ARG(1), ARG("0"))),
                 Diagnostics::DEFAULT_MEM_ADVICE,
                 ARG(" and was set to 0")),
@@ -253,7 +253,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
             FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                     MEMBER_CALL_FACTORY_ENTRY(
                         "cuMemAdvise",
-                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"), false, "default_queue"),
+                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"), false, DpctGlobalInfo::getDeviceQueueName()),
                         false, "mem_advise", ARG(0), ARG(1), ARG(2)))),
 
     CONDITIONAL_FACTORY_ENTRY(
@@ -263,7 +263,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                         MEMBER_CALL_FACTORY_ENTRY(
                             "cuMemAdvise",
                             MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
-                            false, "get_device", ARG(3)), false, "default_queue"),
+                            false, "get_device", ARG(3)), false, DpctGlobalInfo::getDeviceQueueName()),
                             false, "mem_advise", ARG(0), ARG(1), ARG("0"))),
                 Diagnostics::DEFAULT_MEM_ADVICE,
                 ARG(" and was set to 0")),
@@ -272,7 +272,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                     MEMBER_CALL_FACTORY_ENTRY(
                         "cuMemAdvise",
                         MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
-                        false, "get_device", ARG(3)), false, "default_queue"),
+                        false, "get_device", ARG(3)), false, DpctGlobalInfo::getDeviceQueueName()),
                         false, "mem_advise", ARG(0), ARG(1), ARG(2))))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(

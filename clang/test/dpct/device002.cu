@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 {
 int devID = atoi(argv[1]);
 cudaDeviceProp cdp;
-// CHECK: dpct::err0 error_code = DPCT_CHECK_ERROR(dpct::get_device_info(cdp, dpct::dev_mgr::instance().get_device(devID));
+// CHECK: dpct::err0 error_code = DPCT_CHECK_ERROR(dpct::get_device_info(cdp, dpct::dev_mgr::instance().get_device(devID)));
 cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {

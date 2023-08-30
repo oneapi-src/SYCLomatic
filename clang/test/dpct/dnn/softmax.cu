@@ -105,7 +105,7 @@ void test1() {
 
     float alpha = 1.5f, beta = 0.f;
     // CHECK: handle.async_softmax_forward(dpct::dnnl::softmax_algorithm::normal, dpct::dnnl::softmax_mode::channel, alpha, dataTensor, data, beta, outTensor, out);
-    // CHECK: dpct::get_default_queue().memcpy(host_out.data(), out, ele_num * sizeof(HT)).wait();
+    // CHECK: dpct::get_in_order_queue().memcpy(host_out.data(), out, ele_num * sizeof(HT)).wait();
     // CHECK: alpha = 2.f, beta = 0.f;
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
     // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_softmax_backward(dpct::dnnl::softmax_algorithm::normal, dpct::dnnl::softmax_mode::channel, alpha, outTensor, out, diffoutTensor, diffout, beta, diffdataTensor, diffdata));

@@ -25,7 +25,7 @@ void copy(T* dst, T* src, int N) {
 
 int main(void) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // input data on the host
   const char data[] = "aaabbbbbcddeeeeeeeeeff";
   const size_t N = (sizeof(data) / sizeof(char)) - 1;

@@ -103,10 +103,10 @@ __global__ void kernel() {
 int main() {
 // CHECK:  {
 // CHECK-NEXT:    dpct::global_memory<dpct::byte_t, 1> d_sync_ct1(4);
-// CHECK-NEXT:    d_sync_ct1.init(dpct::get_default_queue());
+// CHECK-NEXT:    d_sync_ct1.init(dpct::get_out_of_order_queue());
 // CHECK-NEXT:    dpct::dpct_memset(d_sync_ct1.get_ptr(), 0, sizeof(int));
 // CHECK-EMPTY:
-// CHECK-NEXT:    dpct::get_default_queue().submit(
+// CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
 // CHECK-NEXT:        auto sync_ct1 = dpct::get_access(d_sync_ct1.get_ptr(), cgh);
 // CHECK-EMPTY:

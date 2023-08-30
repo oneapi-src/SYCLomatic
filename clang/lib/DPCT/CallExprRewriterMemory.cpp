@@ -11,6 +11,7 @@
 
 namespace clang {
 namespace dpct {
+
 // clang-format off
 void CallExprRewriterFactoryBase::initRewriterMapMemory() {
   RewriterMap->merge(
