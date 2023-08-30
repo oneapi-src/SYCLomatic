@@ -1,4 +1,4 @@
-void test(void *pv) {
+void test(void *v) {
   // Start
   cudaFree(pv /*void **/);
   // End

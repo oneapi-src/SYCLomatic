@@ -21,7 +21,7 @@ extern cublasHandle_t handle2;
 // CHECK: int foo2(dpct::library_data_t DT)  try {
 int foo2(cudaDataType DT) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // CHECK: int status;
   // CHECK-NEXT: dpct::queue_ptr handle;
   // CHECK-NEXT: handle = &q_ct1;

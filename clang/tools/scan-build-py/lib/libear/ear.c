@@ -501,6 +501,28 @@ int eaccess(const char *pathname, int mode) {
   return call_eaccess(pathname, mode);
 }
 
+static int call_stat(const char *pathname, struct stat *statbuf) {
+  typedef int (*func)(const char *, struct statbuf *);
+  DLSYM(func, fp, "stat");
+  int const result = (*fp)(pathname, statbuf);
+  return result;
+}
+
+int stat(const char *pathname, struct stat *statbuf) {
+  int len = strlen(pathname);
+  if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
+      pathname[1] == 'v' && pathname[0] == 'n') {
+    // To handle case like "nvcc foo.cu ..."
+    return 0;
+  } else if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
+             pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
+             pathname[len - 5] == '/') {
+    // To handle case like "/path/to/nvcc foo.cu ..."
+    return 0;
+  }
+  return call_stat(pathname, statbuf);
+}
+
 /*
 * The content of g_data[] comes from hex dump of file foo.a,
 * where foo.c is a empty file. It comes from the following steps

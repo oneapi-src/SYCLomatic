@@ -19,7 +19,7 @@ int test1() {
   // CHECK: dpct:null_type pair;
   cub::NullType null;
 
-  // CHECK: dpct::get_default_queue().parallel_for(
+  // CHECK: dpct::get_in_order_queue().parallel_for(
   // CHECK:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK:   [=](sycl::nd_item<3> item_ct1) {
   // CHECK:     foo(dpct:null_type());

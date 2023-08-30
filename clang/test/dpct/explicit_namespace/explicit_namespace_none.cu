@@ -30,7 +30,7 @@ __global__ void kernel() {
 }
 
 void foo() {
-// CHECK:   get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+// CHECK:   get_in_order_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:         nd_range<3>(range<3>(1, 1, ceil(2.3)), range<3>(1, 1, 1)),
 // CHECK-NEXT:         [=](nd_item<3> item_{{[0-9a-z]+}}) {
 // CHECK-NEXT:           kernel();
@@ -58,7 +58,7 @@ __global__ void kernel2(float *out) {
 
 // CHECK:void test_assignment() try {
 // CHECK-NEXT:  err0 err;
-// CHECK-NEXT:  if (err = DPCT_CHECK_ERROR(*0 = (void *)malloc_device(0, get_default_queue()))) {
+// CHECK-NEXT:  if (err = DPCT_CHECK_ERROR(*0 = (void *)malloc_device(0, get_in_order_queue()))) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -75,7 +75,7 @@ void test_assignment() {
 
 int main() {
   // CHECK: device_ext &dev_ct1 = get_current_device();
-  // CHECK-NEXT: queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: queue &q_ct1 = dev_ct1.in_order_queue();
   int *mapsp1D, *mapspkeyD,*mapspvalD;
   int numsH=10;
 
