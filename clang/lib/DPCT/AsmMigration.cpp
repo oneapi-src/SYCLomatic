@@ -59,9 +59,11 @@ class SYCLGenBase {
   SmallString<4> NewLine;
   SmallVector<SmallString<10>, 4> VecExprTypeRecord;
   raw_ostream *Stream;
-  const GCCAsmStmt *GAS;
 
 protected:
+
+  const GCCAsmStmt *GAS;
+
   class BlockDelimiterGuard {
     SYCLGenBase &CodeGen;
 
@@ -1064,7 +1066,7 @@ protected:
   }
 
   bool HandleMul24Mad24(const InlineAsmInstruction *Inst, bool isMad) {
-    if (Inst->getNumInputOperands() != 2 + isMad || Inst->getNumTypes() != 1)
+    if (Inst->getNumInputOperands() != 2U + isMad || Inst->getNumTypes() != 1)
       return SYCLGenError();
 
     const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
@@ -1338,6 +1340,77 @@ protected:
 
   bool handle_cnot(const InlineAsmInstruction *Inst) override {
     return HandleNot(Inst);
+  }
+
+  // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
+  bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst, StringRef Fn) {
+    if (Inst->getNumInputOperands() < 2 || Inst->getNumTypes() != 3)
+      return SYCLGenError();
+    
+    // Arguments mismatch for instruction, which has a secondary arithmetic operation.
+    if (Inst->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) && Inst->getNumInputOperands() < 3)
+      return SYCLGenError();
+
+    // The type of operands must be one of s32/u32.
+    for (const auto *T : Inst->types()) {
+      if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(T)) {
+        if (BI->getKind() == InlineAsmBuiltinType::TK_s32 ||
+            BI->getKind() == InlineAsmBuiltinType::TK_u32)
+          continue;
+      }
+      return SYCLGenError();
+    }
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    OS() << " = " << Fn;
+    if (Inst->hasAttr(InstAttr::sat)) OS() << "_sat";
+    OS() << "<";
+    if (emitType(Inst->getType(0)))
+      return SYCLGenError();
+    OS() << ">(";
+
+    std::string Op[3];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+
+    OS() << llvm::join(ArrayRef(Op, Inst->getNumInputOperands()), ", ");
+    // The secondary arithmetic operation.
+    if (Inst->hasAttr(InstAttr::add)) {
+      OS() << ", sycl::plus<>()";
+    } else if (Inst->hasAttr(InstAttr::min)) {
+      OS() << ", sycl::minimum<>()";
+    } else if (Inst->hasAttr(InstAttr::max)) {
+      OS() << ", sycl::maximum<>()";
+    }
+
+    OS() << ")";
+    endstmt();
+    DpctGlobalInfo::getInstance().insertHeader(GAS->getBeginLoc(),
+                                               HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
+  bool handle_vadd(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_add");
+  }
+
+  bool handle_vsub(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_sub");
+  }
+
+  bool handle_vabsdiff(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_absdiff");
+  }
+
+  bool handle_vmax(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_max");
+  }
+
+  bool handle_vmin(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_min");
   }
 };
 } // namespace

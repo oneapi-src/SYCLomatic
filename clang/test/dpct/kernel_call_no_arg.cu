@@ -23,7 +23,7 @@ __global__ void kernel2() {
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   const size_t threads_per_block = NUM_ELEMENTS;
 
   float buf[NUM_ELEMENTS] = { 0 };

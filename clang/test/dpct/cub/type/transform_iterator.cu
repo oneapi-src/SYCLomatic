@@ -41,7 +41,7 @@ void print_array(double *d) {
 
 // CHECK:void test() {
 // CHECK:dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK:sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:double *d_in = nullptr;
 // CHECK:double *d_out = nullptr;
 // CHECK:double h_in[N], h_out[N];

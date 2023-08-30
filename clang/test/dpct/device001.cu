@@ -163,7 +163,7 @@ void test()
 {
   // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
-  // CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
+  // CHECK:   dpct::get_out_of_order_queue().parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, deviceProp.get_max_compute_units()) * sycl::range<3>(1, 1, deviceProp.get_max_work_group_size()), sycl::range<3>(1, 1, deviceProp.get_max_work_group_size())),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           foo_kernel();

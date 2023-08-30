@@ -1,3 +1,4 @@
+// Option: --no-dry-pattern
 #include "cublas_v2.h"
 
 void test(cublasHandle_t handle, int n, const cuDoubleComplex *x, int incx,

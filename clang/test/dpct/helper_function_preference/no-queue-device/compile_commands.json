@@ -1,0 +1,17 @@
+[
+    {
+        "command": "nvcc -c kernel1.cu",
+        "directory": ".",
+        "file": "kernel1.cu"
+    },
+    {
+        "command": "nvcc -c kernel2.cu",
+        "directory": ".",
+        "file": "kernel2.cu"
+    },
+    {
+        "command": "nvcc -c main.cu",
+        "directory": ".",
+        "file": "main.cu"
+    }
+]

@@ -132,7 +132,7 @@ __shared__ T2 v2;
 template<typename T3, typename T4>
 void foo() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::local_accessor<int, 0> v1_acc_ct1(cgh);
@@ -467,7 +467,7 @@ __global__ void foo9(MakeMyClass3<scalar_t> input){
 
 //CHECK: int foo10(){
 //CHECK-NEXT:   MakeMyClass3<int> m1;
-//CHECK-NEXT:   dpct::get_default_queue().parallel_for(
+//CHECK-NEXT:   dpct::get_in_order_queue().parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:         foo9(m1);

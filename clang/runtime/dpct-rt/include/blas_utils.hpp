@@ -455,7 +455,7 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
 #else
   using Ty = typename DataType<T>::T2;
   // Set the info array value to 0
-  detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
+  detail::dpct_memset<unsigned char>(exec_queue, info, 0, sizeof(int) * batch_size);
   std::int64_t stride_a = n * lda;
   std::int64_t scratchpad_size =
       oneapi::mkl::lapack::getrfnp_batch_scratchpad_size<Ty>(
@@ -536,7 +536,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
   }
   using Ty = typename DataType<T>::T2;
   // Set the info array value to 0
-  detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
+  detail::dpct_memset<unsigned char>(exec_queue, info, 0, sizeof(int) * batch_size);
 #ifdef DPCT_USM_LEVEL_NONE
   std::int64_t stride_a = n * lda;
   std::int64_t stride_ipiv = n;
@@ -760,7 +760,7 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
                                 int ldb, int *info, int batch_size) {
   using Ty = typename DataType<T>::T2;
   // Set the info array value to 0
-  detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
+  detail::dpct_memset<unsigned char>(exec_queue, info, 0, sizeof(int) * batch_size);
 #ifdef DPCT_USM_LEVEL_NONE
   std::int64_t stride_b = n * ldb;
   std::int64_t stride_ipiv = n;

@@ -27,13 +27,13 @@ int main() {
   double *p;
 // CHECK:  dpct::device_pointer<double> dp(p);
   thrust::device_ptr<double> dp(p);
-// CHECK:  sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
+// CHECK:  sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_in_order_queue()), dp, dp + 10);
   sum = thrust::reduce(dp, dp + 10);
 }
 
 void check_transform_reduce() {
 // CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   float x[4] = {1.0, 2.0, 3.0, 4.0};
 // CHECK:  dpct::device_vector<float> d_x(x, x + 4);
   thrust::device_vector<float> d_x(x, x + 4);
