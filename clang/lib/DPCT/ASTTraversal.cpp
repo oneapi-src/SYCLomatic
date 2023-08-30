@@ -14563,9 +14563,11 @@ void TypeRemoveRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void TypeRemoveRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeWarning"))
-    report(TL->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           TL->getType().getAsString());
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeWarning")) {
+    report(getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin(),
+           Diagnostics::API_NOT_MIGRATED, false,
+           getStmtSpelling(TL->getSourceRange()));
+  }
   if (auto BO = getNodeAsType<BinaryOperator>(Result, "AssignStmtRemove"))
     emplaceTransformation(new ReplaceStmt(BO, ""));
   return;
