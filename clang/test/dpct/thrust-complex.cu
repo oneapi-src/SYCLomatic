@@ -133,7 +133,7 @@ int main() {
 //CHECK: int foo(){
 //CHECK-NEXT:   double *p;
 //CHECK-NEXT:   dpct::device_pointer<double> dp(p);
-//CHECK-NEXT:   double sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
+//CHECK-NEXT:   double sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_in_order_queue()), dp, dp + 10);
 //CHECK-NEXT:   printf("sum = %f\n", sum);
 //CHECK-NEXT:   std::complex<float> c1(1.0);
 //CHECK-NEXT:   std::complex<float> c2(2.0);

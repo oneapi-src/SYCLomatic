@@ -72,7 +72,7 @@ extern "C" __global__ void foo2(float* k, float* y, int2 x=make_int2(1, 2)) {
 
 //CHECK: void goo(){
 //CHECK-NEXT:     float *a, *b;
-//CHECK-NEXT:     dpct::get_default_queue().submit(
+//CHECK-NEXT:     dpct::get_in_order_queue().submit(
 //CHECK-NEXT:       [&](sycl::handler &cgh) {
 //CHECK-NEXT:         const_data.init();
 //CHECK:         auto const_data_ptr_ct1 = const_data.get_ptr();

@@ -754,13 +754,10 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
       if (IL1->getValue().getZExtValue() == 2)
         IsExponentTwo = true;
     } else if (FL1) {
-      auto &SM = DpctGlobalInfo::getSourceManager();
       if (!FL1->getBeginLoc().isMacroID() && !FL1->getEndLoc().isMacroID()) {
-        auto B = SM.getCharacterData(FL1->getBeginLoc());
-        auto E = SM.getCharacterData(
-            Lexer::getLocForEndOfToken(FL1->getEndLoc(), 0, SM, LangOptions()));
-        std::string Exponent(B, E);
-        if (Exponent == "2.0" || Exponent == "2.0f")
+        llvm::APFloat FL1Value = FL1->getValue();
+        if (FL1Value.compare(llvm::APFloat(FL1Value.getSemantics(), "2.0")) ==
+            llvm::APFloat::cmpEqual)
           IsExponentTwo = true;
       }
     }
