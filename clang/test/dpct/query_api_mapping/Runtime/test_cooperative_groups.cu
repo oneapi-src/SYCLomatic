@@ -37,22 +37,10 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" -stop-on-parse-err --query-api-mapping=cooperative_groups::reduce | FileCheck %s -check-prefix=CG_REDUCE
 // CG_REDUCE: CUDA API:
-// CG_REDUCE-NEXT:    double *sdata;
-// CG_REDUCE-NEXT:    cooperative_groups::thread_block cta =
-// CG_REDUCE-NEXT:        cooperative_groups::this_thread_block();
-// CG_REDUCE-NEXT:    const unsigned int tid = cta.thread_rank();
-// CG_REDUCE-NEXT:    cooperative_groups::thread_block_tile<32> tile32 =
-// CG_REDUCE-NEXT:        cooperative_groups::tiled_partition<32>(cta);
 // CG_REDUCE-NEXT:    cooperative_groups::reduce(
 // CG_REDUCE-NEXT:        tile32 /* type group */, sdata[tid] /* type argument */,
 // CG_REDUCE-NEXT:        cooperative_groups::plus<double>() /* type operator */);
 // CG_REDUCE-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
-// CG_REDUCE-NEXT:    double *sdata;
-// CG_REDUCE-NEXT:    auto cta =
-// CG_REDUCE-NEXT:        sycl::ext::oneapi::experimental::this_group<3>();
-// CG_REDUCE-NEXT:    const unsigned int tid = sycl::ext::oneapi::experimental::this_nd_item<3>().get_local_linear_id();
-// CG_REDUCE-NEXT:    sycl::sub_group tile32 =
-// CG_REDUCE-NEXT:        sycl::ext::oneapi::experimental::this_sub_group();
 // CG_REDUCE-NEXT:    sycl::reduce_over_group(sycl::ext::oneapi::experimental::this_sub_group(), sdata[tid], sycl::plus<double>());
 // CG_REDUCE-EMPTY:
 
