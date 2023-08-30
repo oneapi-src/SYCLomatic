@@ -14,9 +14,9 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFree | FileCheck %s -check-prefix=CUDAFREE
 // CUDAFREE: CUDA API:
-// CUDAFREE-NEXT:   cudaFree(pv /*void **/);
+// CUDAFREE-NEXT:   cudaFree(pDev /*void **/);
 // CUDAFREE-NEXT: Is migrated to:
-// CUDAFREE-NEXT:   sycl::free(pv, dpct::get_in_order_queue());
+// CUDAFREE-NEXT:   sycl::free(pDev, dpct::get_in_order_queue());
 // CUDAFREE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFreeArray | FileCheck %s -check-prefix=CUDAFREEARRAY
@@ -28,9 +28,9 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFreeHost | FileCheck %s -check-prefix=CUDAFREEHOST
 // CUDAFREEHOST: CUDA API:
-// CUDAFREEHOST-NEXT:   cudaFreeHost(pv /*void **/);
+// CUDAFREEHOST-NEXT:   cudaFreeHost(pHost /*void **/);
 // CUDAFREEHOST-NEXT: Is migrated to:
-// CUDAFREEHOST-NEXT:   sycl::free(pv, dpct::get_in_order_queue());
+// CUDAFREEHOST-NEXT:   sycl::free(pHost, dpct::get_in_order_queue());
 // CUDAFREEHOST-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetSymbolAddress | FileCheck %s -check-prefix=CUDAGETSYMBOLADDRESS
@@ -71,13 +71,13 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaHostRegister | FileCheck %s -check-prefix=CUDAHOSTREGISTER
 // CUDAHOSTREGISTER: CUDA API:
-// CUDAHOSTREGISTER-NEXT:   cudaHostRegister(pv /*void **/, s /*size_t*/, u /*unsigned int*/);
+// CUDAHOSTREGISTER-NEXT:   cudaHostRegister(pHost /*void **/, s /*size_t*/, u /*unsigned int*/);
 // CUDAHOSTREGISTER-NEXT: The API is Removed.
 // CUDAHOSTREGISTER-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaHostUnregister | FileCheck %s -check-prefix=CUDAHOSTUNREGISTER
 // CUDAHOSTUNREGISTER: CUDA API:
-// CUDAHOSTUNREGISTER-NEXT:   cudaHostUnregister(pv /*void **/);
+// CUDAHOSTUNREGISTER-NEXT:   cudaHostUnregister(pHost /*void **/);
 // CUDAHOSTUNREGISTER-NEXT: The API is Removed.
 // CUDAHOSTUNREGISTER-EMPTY:
 
@@ -91,10 +91,10 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMalloc3D | FileCheck %s -check-prefix=CUDAMALLOC3D
 // CUDAMALLOC3D: CUDA API:
 // CUDAMALLOC3D-NEXT:   cudaExtent e;
-// CUDAMALLOC3D-NEXT:   cudaMalloc3D(pp /*cudaPitchedPtr **/, e);
+// CUDAMALLOC3D-NEXT:   cudaMalloc3D(pitch /*cudaPitchedPtr **/, e);
 // CUDAMALLOC3D-NEXT: Is migrated to:
 // CUDAMALLOC3D-NEXT:   sycl::range<3> e{0, 0, 0};
-// CUDAMALLOC3D-NEXT:   *pp = dpct::dpct_malloc(e);
+// CUDAMALLOC3D-NEXT:   *pitch = dpct::dpct_malloc(e);
 // CUDAMALLOC3D-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMalloc3DArray | FileCheck %s -check-prefix=CUDAMALLOC3DARRAY
@@ -117,9 +117,9 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMallocHost | FileCheck %s -check-prefix=CUDAMALLOCHOST
 // CUDAMALLOCHOST: CUDA API:
-// CUDAMALLOCHOST-NEXT:   cudaMallocHost(ppv /*void ***/, s /*size_t*/);
+// CUDAMALLOCHOST-NEXT:   cudaMallocHost(pHost /*void ***/, s /*size_t*/);
 // CUDAMALLOCHOST-NEXT: Is migrated to:
-// CUDAMALLOCHOST-NEXT:   *ppv = (void *)sycl::malloc_host(s, dpct::get_in_order_queue());
+// CUDAMALLOCHOST-NEXT:   *pHost = (void *)sycl::malloc_host(s, dpct::get_in_order_queue());
 // CUDAMALLOCHOST-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMallocManaged | FileCheck %s -check-prefix=CUDAMALLOCMANAGED
@@ -407,10 +407,10 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_cudaPitchedPtr | FileCheck %s -check-prefix=MAKE_CUDAPITCHEDPTR
 // MAKE_CUDAPITCHEDPTR: CUDA API:
-// MAKE_CUDAPITCHEDPTR-NEXT:   make_cudaPitchedPtr(pv /*void **/, s1 /*size_t*/, s2 /*size_t*/,
+// MAKE_CUDAPITCHEDPTR-NEXT:   make_cudaPitchedPtr(ptr /*void **/, s1 /*size_t*/, s2 /*size_t*/,
 // MAKE_CUDAPITCHEDPTR-NEXT:                       s3 /*size_t*/);
 // MAKE_CUDAPITCHEDPTR-NEXT: Is migrated to:
-// MAKE_CUDAPITCHEDPTR-NEXT:     dpct::pitched_data(pv /*void **/, s1 /*size_t*/, s2 /*size_t*/,
+// MAKE_CUDAPITCHEDPTR-NEXT:     dpct::pitched_data(ptr /*void **/, s1 /*size_t*/, s2 /*size_t*/,
 // MAKE_CUDAPITCHEDPTR-NEXT:                       s3 /*size_t*/);
 // MAKE_CUDAPITCHEDPTR-EMPTY:
 

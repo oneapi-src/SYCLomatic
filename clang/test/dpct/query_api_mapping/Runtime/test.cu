@@ -123,15 +123,15 @@
 // CUDASTREAMADDCALLBACK: CUDA API:
 // CUDASTREAMADDCALLBACK-NEXT:   cudaStream_t s;
 // CUDASTREAMADDCALLBACK-NEXT:   cudaStreamAddCallback(s /*cudaStream_t*/, sc /*cudaStreamCallback_t*/,
-// CUDASTREAMADDCALLBACK-NEXT:                         pv /*void **/, u /*unsigned int*/);
+// CUDASTREAMADDCALLBACK-NEXT:                         pData /*void **/, u /*unsigned int*/);
 // CUDASTREAMADDCALLBACK-NEXT: Is migrated to:
 // CUDASTREAMADDCALLBACK-NEXT:   dpct::queue_ptr s;
-// CUDASTREAMADDCALLBACK-NEXT:   std::async([&]() { s->wait(); sc(s, 0, pv); });
+// CUDASTREAMADDCALLBACK-NEXT:   std::async([&]() { s->wait(); sc(s, 0, pData); });
 // CUDASTREAMADDCALLBACK-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamAttachMemAsync | FileCheck %s -check-prefix=CUDASTREAMATTACHMEMASYNC
 // CUDASTREAMATTACHMEMASYNC: CUDA API:
-// CUDASTREAMATTACHMEMASYNC-NEXT:   cudaStreamAttachMemAsync(s /*cudaStream_t*/, pv /*void **/, st /*size_t*/,
+// CUDASTREAMATTACHMEMASYNC-NEXT:   cudaStreamAttachMemAsync(s /*cudaStream_t*/, pDev /*void **/, st /*size_t*/,
 // CUDASTREAMATTACHMEMASYNC-NEXT:                            u /*unsigned int*/);
 // CUDASTREAMATTACHMEMASYNC-NEXT: The API is Removed.
 // CUDASTREAMATTACHMEMASYNC-EMPTY:
@@ -284,13 +284,13 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFuncSetCacheConfig | FileCheck %s -check-prefix=CUDAFUNCSETCACHECONFIG
 // CUDAFUNCSETCACHECONFIG: CUDA API:
-// CUDAFUNCSETCACHECONFIG-NEXT:   cudaFuncSetCacheConfig(pv /*const void **/, f /*cudaFuncCache*/);
+// CUDAFUNCSETCACHECONFIG-NEXT:   cudaFuncSetCacheConfig(pFunc /*const void **/, f /*cudaFuncCache*/);
 // CUDAFUNCSETCACHECONFIG-NEXT: The API is Removed.
 // CUDAFUNCSETCACHECONFIG-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFuncSetSharedMemConfig | FileCheck %s -check-prefix=CUDAFUNCSETSHAREDMEMCONFIG
 // CUDAFUNCSETSHAREDMEMCONFIG: CUDA API:
-// CUDAFUNCSETSHAREDMEMCONFIG-NEXT:   cudaFuncSetSharedMemConfig(pv /*const void **/, s /*cudaSharedMemConfig*/);
+// CUDAFUNCSETSHAREDMEMCONFIG-NEXT:   cudaFuncSetSharedMemConfig(pFunc /*const void **/, s /*cudaSharedMemConfig*/);
 // CUDAFUNCSETSHAREDMEMCONFIG-NEXT: The API is Removed.
 // CUDAFUNCSETSHAREDMEMCONFIG-EMPTY:
 
@@ -299,7 +299,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaOccupancyMaxActiveBlocksPerMultiprocessor | FileCheck %s -check-prefix=CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR
 // CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR: CUDA API:
 // CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   cudaOccupancyMaxActiveBlocksPerMultiprocessor(
-// CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:       pi /*int **/, pv /*const void **/, i /*int*/, s /*size_t*/);
+// CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:       pi /*int **/, pFunc /*const void **/, i /*int*/, s /*size_t*/);
 // CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT: Is migrated to (with the option --use-experimental-features=occupancy-calculation):
 // CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   dpct::experimental::calculate_max_active_wg_per_xecore(pi, i, s + dpct_placeholder /* total share local memory size */);
 // CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-EMPTY:
@@ -377,11 +377,12 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaPointerGetAttributes | FileCheck %s -check-prefix=CUDAPOINTERGETATTRIBUTES
 // CUDAPOINTERGETATTRIBUTES: CUDA API:
-// CUDAPOINTERGETATTRIBUTES-NEXT:   const void *pv;
-// CUDAPOINTERGETATTRIBUTES-NEXT:   cudaPointerGetAttributes(pp /*cudaPointerAttributes **/, pv /*const void **/);
+// CUDAPOINTERGETATTRIBUTES-NEXT:   const void *ptr;
+// CUDAPOINTERGETATTRIBUTES-NEXT:   cudaPointerGetAttributes(attr /*cudaPointerAttributes **/,
+// CUDAPOINTERGETATTRIBUTES-NEXT:                            ptr /*const void **/);
 // CUDAPOINTERGETATTRIBUTES-NEXT: Is migrated to:
-// CUDAPOINTERGETATTRIBUTES-NEXT:   const void *pv;
-// CUDAPOINTERGETATTRIBUTES-NEXT:   pp->init(pv);
+// CUDAPOINTERGETATTRIBUTES-NEXT:   const void *ptr;
+// CUDAPOINTERGETATTRIBUTES-NEXT:   attr->init(ptr);
 // CUDAPOINTERGETATTRIBUTES-EMPTY:
 
 /// Peer Device Memory Access

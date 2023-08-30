@@ -1,5 +1,5 @@
-void test(void *pv) {
+void test(void *pHost) {
   // Start
-  cuMemFreeHost(pv /*void **/);
+  cuMemFreeHost(pHost /*void **/);
   // End
 }
