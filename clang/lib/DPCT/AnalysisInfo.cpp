@@ -1767,7 +1767,7 @@ void KernelCallExpr::printWarningMessage(KernelPrinter &Printer, IDTy MsgID,
 
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   std::string TemplateArgsStr;
-  if (DpctGlobalInfo::isSyclNamedLambda()) {
+  if (DpctGlobalInfo::isSyclNamedLambda() && hasTemplateArgs()) {
     bool IsNeedWarning = false;
     TemplateArgsStr = getTemplateArguments(IsNeedWarning, false, true);
     if (!TemplateArgsStr.empty() && IsNeedWarning) {
