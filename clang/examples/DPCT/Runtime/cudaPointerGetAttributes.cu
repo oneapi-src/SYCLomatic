@@ -1,6 +1,7 @@
-void test(cudaPointerAttributes *pp) {
+void test(cudaPointerAttributes *attr) {
   // Start
-  const void *pv;
-  cudaPointerGetAttributes(pp /*cudaPointerAttributes **/, pv /*const void **/);
+  const void *ptr;
+  cudaPointerGetAttributes(attr /*cudaPointerAttributes **/,
+                           ptr /*const void **/);
   // End
 }

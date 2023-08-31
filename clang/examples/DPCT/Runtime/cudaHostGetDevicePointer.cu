@@ -1,5 +1,6 @@
-void test(void **ppv, void *pv, unsigned int u) {
+void test(void **pDev, void *pHost, unsigned int u) {
   // Start
-  cudaHostGetDevicePointer(ppv /*void ***/, pv /*void **/, u /*unsigned int*/);
+  cudaHostGetDevicePointer(pDev /*void ***/, pHost /*void **/,
+                           u /*unsigned int*/);
   // End
 }

@@ -364,6 +364,15 @@ inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
   return sycl::max(static_cast<std::uint64_t>(a), b);
 }
 
+// pow functions overload.
+inline float pow(const float a, const int b) { return sycl::pown(a, b); }
+inline double pow(const double a, const int b) { return sycl::pown(a, b); }
+inline float pow(const float a, const float b) { return sycl::pow(a, b); }
+inline double pow(const double a, const double b) { return sycl::pow(a, b); }
+template <typename T, typename U> inline double pow(const T a, const U b) {
+  return sycl::pow(static_cast<double>(a), static_cast<double>(b));
+}
+
 /// Performs relu saturation.
 /// \param [in] a The input value
 /// \returns the relu saturation result

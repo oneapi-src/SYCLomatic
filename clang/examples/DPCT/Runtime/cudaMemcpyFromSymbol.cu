@@ -1,6 +1,7 @@
-void test(void *pv, const void *cpv, size_t s1, size_t s2, cudaMemcpyKind m) {
+void test(void *dst, const void *symbol, size_t s1, size_t s2) {
   // Start
-  cudaMemcpyFromSymbol(pv /*void **/, cpv /*const void **/, s1 /*size_t*/,
-                       s2 /*size_t*/, m /*cudaMemcpyKind*/);
+  cudaMemcpyKind m;
+  cudaMemcpyFromSymbol(dst /*void **/, symbol /*const void **/, s1 /*size_t*/,
+                       s2 /*size_t*/, m);
   // End
 }

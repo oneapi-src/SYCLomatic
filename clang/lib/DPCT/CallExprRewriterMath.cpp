@@ -771,20 +771,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
       else
         return "(" + Arg0Str + ") * (" + Arg0Str + ")";
     }
-    if (IL1 || T1 == "int" || T1 == "unsigned int" || T1 == "char" ||
-        T1 == "unsigned char" || T1 == "short" || T1 == "unsigned short") {
-      if (T0 == "int") {
-        if (DRE0) {
-          RewriteArgList[0] = "(float)" + RewriteArgList[0];
-        } else {
-          RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
-        }
-      }
-      if (T1 != "int") {
-        RewriteArgList[1] = "(int)" + RewriteArgList[1];
-      }
-      TargetCalleeName = MapNames::getClNamespace(false, true) + "pown";
-    }
     return buildRewriteString();
   } else if (FuncName == "erfcx" || FuncName == "erfcxf") {
     OS << MapNames::getClNamespace(false, true) << "exp(" << MigratedArg0 << "*"
