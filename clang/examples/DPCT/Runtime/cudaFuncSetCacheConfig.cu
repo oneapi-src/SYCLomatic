@@ -1,6 +1,6 @@
 // Migration desc: The API is Removed.
-void test(const void *pv, cudaFuncCache f) {
+void test(const void *pFunc, cudaFuncCache f) {
   // Start
-  cudaFuncSetCacheConfig(pv /*const void **/, f /*cudaFuncCache*/);
+  cudaFuncSetCacheConfig(pFunc /*const void **/, f /*cudaFuncCache*/);
   // End
 }

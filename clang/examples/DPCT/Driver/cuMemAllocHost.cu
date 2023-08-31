@@ -1,5 +1,5 @@
-void test(void **ppv, size_t s) {
+void test(void **pHost, size_t s) {
   // Start
-  cuMemAllocHost(ppv /*void ***/, s /*size_t*/);
+  cuMemAllocHost(pHost /*void ***/, s /*size_t*/);
   // End
 }

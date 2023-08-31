@@ -3478,6 +3478,9 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), std::move(Repl)));
     return;
+  } else if (MemberName == "l2CacheSize") {
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+           MemberName, "global_mem_cache_size");
   } else if (MemberName == "ECCEnabled") {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string Repl = MapNames::getDpctNamespace() +
@@ -6610,7 +6613,9 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
         "cudaRuntimeGetVersion", "clock64",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
-        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit");
+        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
+        "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
+        "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaFuncSetAttribute");
   };
 
   MF.addMatcher(
@@ -6747,9 +6752,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::device_ext);
     }
     std::string ResultVarName = getDrefName(CE->getArg(0));
-    emplaceTransformation(
-        new ReplaceStmt(CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
-                                             "get_device_info"));
+    emplaceTransformation(new ReplaceCalleeName(
+        CE, Prefix + MapNames::getDpctNamespace() + "get_device_info"));
     emplaceTransformation(new ReplaceStmt(CE->getArg(0), ResultVarName));
     if (DpctGlobalInfo::useNoQueueDevice()) {
       emplaceTransformation(new ReplaceStmt(
@@ -6925,7 +6929,9 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaThreadSetLimit" ||
              FuncName == "cudaDeviceSetCacheConfig" ||
              FuncName == "cudaDeviceGetCacheConfig" ||
-             FuncName == "cuCtxSetCacheConfig" || FuncName == "cuCtxSetLimit") {
+             FuncName == "cuCtxSetCacheConfig" || FuncName == "cuCtxSetLimit" ||
+             FuncName == "cudaCtxResetPersistingL2Cache" ||
+             FuncName == "cuCtxResetPersistingL2Cache") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -6936,7 +6942,61 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
-  } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
+  } else if(FuncName == "cudaStreamSetAttribute" ||
+             FuncName == "cudaStreamGetAttribute" ){
+    std::string ArgStr = getStmtSpelling(CE->getArg(1));
+    if (ArgStr == "cudaStreamAttributeAccessPolicyWindow") {
+      if (IsAssigned) {
+        report(
+            CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+            MapNames::ITFName.at(FuncName),
+            "SYCL currently does not support setting cache config on devices.");
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(
+            CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+            MapNames::ITFName.at(FuncName),
+            "SYCL currently does not support setting cache config on devices.");
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
+    } else if (ArgStr == "cudaLaunchAttributeIgnore") {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName),
+               "this call is redundant in SYCL.");
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName),
+               "this call is redundant in SYCL.");
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
+    } else {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName),
+               "SYCL currently does not support corresponding setting.");
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName),
+               "SYCL currently does not support corresponding setting.");
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
+    }
+  } else if(FuncName == "cudaFuncSetAttribute"){
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+             MapNames::ITFName.at(FuncName),
+             "SYCL currently does not support corresponding setting.");
+      emplaceTransformation(new ReplaceStmt(CE, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             MapNames::ITFName.at(FuncName),
+             "SYCL currently does not support corresponding setting.");
+      emplaceTransformation(new ReplaceStmt(CE, ""));
+    }
+  }else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            MapNames::ITFName.at(FuncName));
   } else if (FuncName == "cudaDeviceGetLimit") {
@@ -13859,12 +13919,16 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     } else if (MapNames::MathFuncImpledWithNewRewriter.count(
                    UD->getNameAsString()) &&
                UD->getBeginLoc().isFileID() && UD->getEndLoc().isFileID()) {
-      const NestedNameSpecifier *Qualifier = UD->getQualifier();
+      const NestedNameSpecifier *Specifier = UD->getQualifier();
       if (UD->getCanonicalDecl()) {
-        Qualifier = UD->getCanonicalDecl()->getQualifier();
+        Specifier = UD->getCanonicalDecl()->getQualifier();
       }
-      if (Qualifier && Qualifier->getKind() ==
-                           clang::NestedNameSpecifier::SpecifierKind::Global) {
+      if (Specifier &&
+          ((Specifier->getKind() ==
+            clang::NestedNameSpecifier::SpecifierKind::Global) ||
+           (Specifier->getKind() ==
+                clang::NestedNameSpecifier::SpecifierKind::Namespace &&
+            Specifier->getAsNamespace()->getNameAsString() == "std"))) {
         auto NextTok = Lexer::findNextToken(
             End, SM, DpctGlobalInfo::getContext().getLangOpts());
         if (NextTok.has_value() && NextTok.value().is(tok::semi)) {
@@ -14863,3 +14927,30 @@ void CudaUuidRule::runRule(
 }
 
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
+
+void TypeRemoveRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(typedefDecl(
+                            hasAnyName("cudaLaunchAttributeValue"))))))
+                    .bind("TypeWarning"),
+                this);
+  MF.addMatcher(
+      binaryOperator(allOf(isAssignmentOperator(),
+                           hasLHS(hasDescendant(memberExpr(hasType(namedDecl(
+                               hasAnyName("cudaAccessPolicyWindow"))))))))
+          .bind("AssignStmtRemove"),
+      this);
+}
+
+void TypeRemoveRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeWarning")) {
+    report(getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin(),
+           Diagnostics::API_NOT_MIGRATED, false,
+           getStmtSpelling(TL->getSourceRange()));
+  }
+  if (auto BO = getNodeAsType<BinaryOperator>(Result, "AssignStmtRemove"))
+    emplaceTransformation(new ReplaceStmt(BO, ""));
+  return;
+}
+
+REGISTER_RULE(TypeRemoveRule, PassKind::PK_Analysis)
