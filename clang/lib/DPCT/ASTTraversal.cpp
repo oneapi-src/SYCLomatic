@@ -6388,9 +6388,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::device_ext);
     }
     std::string ResultVarName = getDrefName(CE->getArg(0));
-    emplaceTransformation(
-        new ReplaceStmt(CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
-                                             "get_device_info"));
+    emplaceTransformation(new ReplaceCalleeName(
+        CE, Prefix + MapNames::getDpctNamespace() + "get_device_info"));
     emplaceTransformation(new ReplaceStmt(CE->getArg(0), ResultVarName));
     if (DpctGlobalInfo::useNoQueueDevice()) {
       emplaceTransformation(new ReplaceStmt(
