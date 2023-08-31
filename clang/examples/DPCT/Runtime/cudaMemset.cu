@@ -1,5 +1,5 @@
-void test(void *pv, int i, size_t s) {
+void test(void *pDev, int i, size_t s) {
   // Start
-  cudaMemset(pv /*void **/, i /*int*/, s /*size_t*/);
+  cudaMemset(pDev /*void **/, i /*int*/, s /*size_t*/);
   // End
 }
