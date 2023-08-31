@@ -1,5 +1,7 @@
-void test(cudaPitchedPtr p, int i, cudaExtent e) {
+void test(int i) {
   // Start
-  cudaMemset3D(p /*cudaPitchedPtr*/, i /*int*/, e /*cudaExtent*/);
+  cudaPitchedPtr p;
+  cudaExtent e;
+  cudaMemset3D(p, i /*int*/, e);
   // End
 }

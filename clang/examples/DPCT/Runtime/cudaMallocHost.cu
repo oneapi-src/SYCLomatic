@@ -1,5 +1,5 @@
-void test(void **ppv, size_t s) {
+void test(void **pHost, size_t s) {
   // Start
-  cudaMallocHost(ppv /*void ***/, s /*size_t*/);
+  cudaMallocHost(pHost /*void ***/, s /*size_t*/);
   // End
 }

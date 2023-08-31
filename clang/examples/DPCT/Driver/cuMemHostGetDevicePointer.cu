@@ -1,6 +1,6 @@
-void test(CUdeviceptr *pd, void *pv, unsigned int u) {
+void test(CUdeviceptr *pDev, void *pHost, unsigned int u) {
   // Start
-  cuMemHostGetDevicePointer(pd /*CUdeviceptr **/, pv /*void **/,
+  cuMemHostGetDevicePointer(pDev /*CUdeviceptr **/, pHost /*void **/,
                             u /*unsigned int*/);
   // End
 }

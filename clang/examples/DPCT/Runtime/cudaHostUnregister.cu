@@ -1,6 +1,6 @@
 // Migration desc: The API is Removed.
-void test(void *pv) {
+void test(void *pHost) {
   // Start
-  cudaHostUnregister(pv /*void **/);
+  cudaHostUnregister(pHost /*void **/);
   // End
 }

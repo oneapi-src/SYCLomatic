@@ -1,7 +1,8 @@
-void test(CUmodule *pm, const void *pv, unsigned int u, CUjit_option *pj,
-          void **ppv) {
+void test(CUmodule *pm, const void *pData, unsigned int u, CUjit_option *pOpt,
+          void **pOptVal) {
   // Start
-  cuModuleLoadDataEx(pm /*CUmodule **/, pv /*const void **/, u /*unsigned int*/,
-                     pj /*CUjit_option **/, ppv /*void ***/);
+  cuModuleLoadDataEx(pm /*CUmodule **/, pData /*const void **/,
+                     u /*unsigned int*/, pOpt /*CUjit_option **/,
+                     pOptVal /*void ***/);
   // End
 }

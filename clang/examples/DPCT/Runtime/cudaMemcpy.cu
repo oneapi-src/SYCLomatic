@@ -1,6 +1,6 @@
-void test(void *pv, const void *cpv, size_t s, cudaMemcpyKind m) {
+void test(void *dst, const void *src, size_t s) {
   // Start
-  cudaMemcpy(pv /*void **/, cpv /*const void **/, s /*size_t*/,
-             m /*cudaMemcpyKind*/);
+  cudaMemcpyKind m;
+  cudaMemcpy(dst /*void **/, src /*const void **/, s /*size_t*/, m);
   // End
 }
