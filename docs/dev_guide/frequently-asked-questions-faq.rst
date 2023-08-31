@@ -11,6 +11,7 @@ Frequently Asked Questions
 * `How do I use the migrated module file in the new project?`_
 * `Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?`_
 * `How do I migrate CUDA\* source code that contains CUB library implementation source code?`_
+* `How do I fix the migrated code in case barrier is used conditional statement?`_
 
 **Troubleshooting Migration**
 
@@ -161,6 +162,152 @@ If you migrate the CUB library implementation code directly, you may not get the
 expected results. Instead, exclude CUB library implementation source code from
 your migration by adding ``--in-root-exclude=<path to CUB library source code>``
 to your migration command.
+
+How do I fix the migrated code in case barrier is used conditional statement?
+*****************************************************************************
+
+If the migration code you are running uses synchronization within conditional/loop
+statements, you may encounter issues like hang or runtime_error. It is essential
+to ensure that all work_items within a sub_group must be encountered synchronization 
+points in converged control flow.
+
+Here are some examples.
+Barrier is used in conditional statements. The following original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code
+
+   void kernel(float *sdata, int *ind, const sycl::nd_item<3> &item_ct1) {
+      unsigned int tid = item_ct1.get_local_id(2);
+      if (tid < 32) {
+         if (sdata[tid] < sdata[tid + 32]) {
+            ind[tid] = ind[tid + 32];
+            sdata[tid] = sdata[tid + 32];
+         }
+         item_ct1.barrier(sycl::access::fence_space::local_space);
+         if (sdata[tid] < sdata[tid + 16]) {
+            ind[tid] = ind[tid + 16];
+            sdata[tid] = sdata[tid + 16];
+         }
+         item_ct1.barrier(sycl::access::fence_space::local_space);
+         if (sdata[tid] < sdata[tid + 8]) {
+            ind[tid] = ind[tid + 8];
+            sdata[tid] = sdata[tid + 8];
+         }
+         item_ct1.barrier(sycl::access::fence_space::local_space);
+         if (sdata[tid] < sdata[tid + 4]) {
+            ind[tid] = ind[tid + 4];
+            sdata[tid] = sdata[tid + 4];
+         }
+         item_ct1.barrier(sycl::access::fence_space::local_space);
+         if (sdata[tid] < sdata[tid + 2]) {
+            ind[tid] = ind[tid + 2];
+            sdata[tid] = sdata[tid + 2];
+         }
+         item_ct1.barrier(sycl::access::fence_space::local_space);
+         if (sdata[tid] < sdata[tid + 1]) {
+            ind[tid] = ind[tid + 1];
+            sdata[tid] = sdata[tid + 1];
+         }
+         item_ct1.barrier(sycl::access::fence_space::local_space);
+      }
+   }
+
+is adjusted to move the synchronization statement outside of the 
+conditional statement:
+
+.. code-block:: cpp
+   :linenos:
+
+   // fixed SYCL code
+
+   void kernel(float *sdata, int *ind, const sycl::nd_item<3> &item_ct1) {
+      unsigned int tid = item_ct1.get_local_id(2);
+      if (tid < 32) {
+         if (sdata[tid] < sdata[tid + 32]) {
+            ind[tid] = ind[tid + 32];
+            sdata[tid] = sdata[tid + 32];
+         }
+      }
+      item_ct1.barrier(sycl::access::fence_space::local_space);
+      if (tid < 32) {
+         if (sdata[tid] < sdata[tid + 16]) {
+            ind[tid] = ind[tid + 16];
+            sdata[tid] = sdata[tid + 16];
+         }
+      }
+      item_ct1.barrier(sycl::access::fence_space::local_space);
+      if (tid < 32) {
+         if (sdata[tid] < sdata[tid + 8]) {
+            ind[tid] = ind[tid + 8];
+            sdata[tid] = sdata[tid + 8];
+         }
+      }
+      item_ct1.barrier(sycl::access::fence_space::local_space);
+      if (tid < 32) {
+         if (sdata[tid] < sdata[tid + 4]) {
+            ind[tid] = ind[tid + 4];
+            sdata[tid] = sdata[tid + 4];
+         }
+      }
+      item_ct1.barrier(sycl::access::fence_space::local_space);
+      if (tid < 32) {
+         if (sdata[tid] < sdata[tid + 2]) {
+            ind[tid] = ind[tid + 2];
+            sdata[tid] = sdata[tid + 2];
+         }
+      }
+      item_ct1.barrier(sycl::access::fence_space::local_space);
+      if (tid < 32) {
+         if (sdata[tid] < sdata[tid + 1]) {
+            ind[tid] = ind[tid + 1];
+            sdata[tid] = sdata[tid + 1];
+         }
+      }
+      item_ct1.barrier(sycl::access::fence_space::local_space);
+      }
+   }
+
+Barrier is used in loop statements. The following original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code
+
+   void compute(int np, int nd, const sycl::nd_item<3> &item_ct1) {
+      unsigned int curr_particle =
+         item_ct1.get_group(2) * item_ct1.get_local_range(2) +
+         item_ct1.get_local_id(2);
+      for (; curr_particle < np; curr_particle +=
+         item_ct1.get_group_range(2) * item_ct1.get_local_range(2)) {
+         ...
+         item_ct1.barrier();
+         ...
+      }
+   }
+
+is adjusted to fix the conditional in loop statement, let all thread
+enter loop statement
+
+.. code-block:: cpp
+   :linenos:
+
+   // fixed SYCL code
+
+   void compute(int np, int nd, const sycl::nd_item<3> &item_ct1) {
+      unsigned int curr_particle =
+         item_ct1.get_group(2) * item_ct1.get_local_range(2) +
+         item_ct1.get_local_id(2);
+      for (; curr_particle < ((np+num_thread-1)/num_thread)*num_thread; 
+      curr_particle += item_ct1.get_group_range(2) * item_ct1.get_local_range(2)) {
+         ...
+         item_ct1.barrier();
+         ...
+      }
+   }
 
 Troubleshooting Migration
 -------------------------
