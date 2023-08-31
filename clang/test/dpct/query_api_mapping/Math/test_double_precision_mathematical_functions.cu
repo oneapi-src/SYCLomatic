@@ -383,7 +383,7 @@
 // POW: CUDA API:
 // POW-NEXT:   pow(d1 /*double*/, d2 /*double*/);
 // POW-NEXT: Is migrated to:
-// POW-NEXT:   sycl::pow<double>(d1, d2);
+// POW-NEXT:   dpct::pow(d1, d2);
 // POW-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=rcbrt | FileCheck %s -check-prefix=RCBRT
