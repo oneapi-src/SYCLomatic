@@ -101,7 +101,8 @@ if(INTEL_DEPLOY_UNIFIED_LAYOUT)
     FILES ${dpct_modulefiles_script}
     COMPONENT dpct-modulefiles
     PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
-    DESTINATION etc/modulefiles)
+    DESTINATION etc/modulefiles/dpct
+    RENAME "2024.0.0")
 else()
   if(UNIX)
     install(

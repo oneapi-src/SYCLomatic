@@ -38,8 +38,10 @@ module-whatis "Description: Migrate existing CUDA* code to SYCL code."
 module-whatis "URL: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compatibility-tool.html"
 module-whatis "Dependencies: none"
 
+set moduleinfoname [file dirname [module-info name]]
+
 proc ModulesHelp { } {
-    global modulefilename
+    global moduleinfoname
     global modulefilever
     module whatis "${modulefilename}/${modulefilever}"
 }
