@@ -392,7 +392,7 @@
 // RCBRT: CUDA API:
 // RCBRT-NEXT:   rcbrt(d /*double*/);
 // RCBRT-NEXT: Is migrated to:
-// RCBRT-NEXT:   1 / sycl::cbrt<double>(d);
+// RCBRT-NEXT:   1 / sycl::cbrt(d);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=remainder | FileCheck %s -check-prefix=REMAINDER
 // REMAINDER: CUDA API:

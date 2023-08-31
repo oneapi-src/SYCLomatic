@@ -21,37 +21,37 @@
 // LLMAX: CUDA API:
 // LLMAX-NEXT:   llmax(ll1 /*long long*/, ll2 /*long long*/);
 // LLMAX-NEXT: Is migrated to:
-// LLMAX-NEXT:   sycl::max<long long>(ll1, ll2);
+// LLMAX-NEXT:   sycl::max(ll1, ll2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=llmin | FileCheck %s -check-prefix=LLMIN
 // LLMIN: CUDA API:
 // LLMIN-NEXT:   llmin(ll1 /*long long*/, ll2 /*long long*/);
 // LLMIN-NEXT: Is migrated to:
-// LLMIN-NEXT:   sycl::min<long long>(ll1, ll2);
+// LLMIN-NEXT:   sycl::min(ll1, ll2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ullmax | FileCheck %s -check-prefix=ULLMAX
 // ULLMAX: CUDA API:
 // ULLMAX-NEXT:   ullmax(ull1 /*unsigned long long*/, ull2 /*unsigned long long*/);
 // ULLMAX-NEXT: Is migrated to:
-// ULLMAX-NEXT:   sycl::max<unsigned long long>(ull1, ull2);
+// ULLMAX-NEXT:   sycl::max(ull1, ull2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ullmin | FileCheck %s -check-prefix=ULLMIN
 // ULLMIN: CUDA API:
 // ULLMIN-NEXT:   ullmin(ull1 /*unsigned long long*/, ull2 /*unsigned long long*/);
 // ULLMIN-NEXT: Is migrated to:
-// ULLMIN-NEXT:   sycl::min<unsigned long long>(ull1, ull2);
+// ULLMIN-NEXT:   sycl::min(ull1, ull2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=umax | FileCheck %s -check-prefix=UMAX
 // UMAX: CUDA API:
 // UMAX-NEXT:   umax(u1 /*unsigned int*/, u2 /*unsigned int*/);
 // UMAX-NEXT: Is migrated to:
-// UMAX-NEXT:   sycl::max<unsigned int>(u1, u2);
+// UMAX-NEXT:   sycl::max(u1, u2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=umin | FileCheck %s -check-prefix=UMIN
 // UMIN: CUDA API:
 // UMIN-NEXT:   umin(u1 /*unsigned int*/, u2 /*unsigned int*/);
 // UMIN-NEXT: Is migrated to:
-// UMIN-NEXT:   sycl::min<unsigned int>(u1, u2);
+// UMIN-NEXT:   sycl::min(u1, u2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=max | FileCheck %s -check-prefix=MAX
 // MAX: CUDA API:

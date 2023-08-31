@@ -426,7 +426,7 @@
 // RCBRTF: CUDA API:
 // RCBRTF-NEXT:   rcbrtf(f /*float*/);
 // RCBRTF-NEXT: Is migrated to:
-// RCBRTF-NEXT:   sycl::native::recip(sycl::cbrt<float>(f));
+// RCBRTF-NEXT:   sycl::native::recip(sycl::cbrt(f));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=remainderf | FileCheck %s -check-prefix=REMAINDERF
 // REMAINDERF: CUDA API:

@@ -315,12 +315,12 @@ __global__ void kernelFuncInt() {
   long l;
   long long ll;
   unsigned long long ull;
-  // CHECK: ll = sycl::max<long long>(ll, ll);
-  // CHECK-NEXT: ll = sycl::min<long long>(ll, ll);
-  // CHECK-NEXT: ull = sycl::max<unsigned long long>(ull, ull);
-  // CHECK-NEXT: ull = sycl::min<unsigned long long>(ull, ull);
-  // CHECK-NEXT: u = sycl::max<unsigned int>(u, u);
-  // CHECK-NEXT: u = sycl::min<unsigned int>(u, u);
+  // CHECK: ll = sycl::max(ll, ll);
+  // CHECK-NEXT: ll = sycl::min(ll, ll);
+  // CHECK-NEXT: ull = sycl::max(ull, ull);
+  // CHECK-NEXT: ull = sycl::min(ull, ull);
+  // CHECK-NEXT: u = sycl::max(u, u);
+  // CHECK-NEXT: u = sycl::min(u, u);
   ll = llmax(ll, ll);
   ll = llmin(ll, ll);
   ull = ullmax(ull, ull);

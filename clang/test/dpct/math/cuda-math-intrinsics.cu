@@ -65,42 +65,42 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // Half Arithmetic Functions
 
-  // CHECK: h_2 = sycl::clamp<sycl::half>(h + h_1, 0.f, 1.0f);
+  // CHECK: h_2 = sycl::clamp(h + h_1, sycl::half(0.f), sycl::half(1.0f));
   h_2 = __hadd_sat(h, h_1);
   // CHECK: h_2 = sycl::fma(h, h_1, h_2);
   h_2 = __hfma(h, h_1, h_2);
-  // CHECK: h_2 = sycl::clamp<sycl::half>(sycl::fma(h, h_1, h_2), 0.f, 1.0f);
+  // CHECK: h_2 = sycl::clamp(sycl::fma(h, h_1, h_2), sycl::half(0.f), sycl::half(1.0f));
   h_2 = __hfma_sat(h, h_1, h_2);
   // CHECK: h_2 = h * h_1;
   h_2 = __hmul(h, h_1);
-  // CHECK: h_2 = sycl::clamp<sycl::half>(h * h_1, 0.f, 1.0f);
+  // CHECK: h_2 = sycl::clamp(h * h_1, sycl::half(0.f), sycl::half(1.0f));
   h_2 = __hmul_sat(h, h_1);
   // CHECK: h_2 = -h;
   h_2 = __hneg(h);
   // CHECK: h_2 = h - h_1;
   h_2 = __hsub(h, h_1);
-  // CHECK: h_2 = sycl::clamp<sycl::half>(h - h_1, 0.f, 1.0f);
+  // CHECK: h_2 = sycl::clamp(h - h_1, sycl::half(0.f), sycl::half(1.0f));
   h_2 = __hsub_sat(h, h_1);
 
   // Half2 Arithmetic Functions
 
   // CHECK: h2_2 = h2 + h2_1;
   h2_2 = __hadd2(h2, h2_1);
-  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 + h2_1, {0.f, 0.f}, {1.f, 1.f});
+  // CHECK: h2_2 = sycl::clamp(h2 + h2_1, sycl::half2(0.f, 0.f), sycl::half2(1.f, 1.f));
   h2_2 = __hadd2_sat(h2, h2_1);
   // CHECK: h2_2 = sycl::fma(h2, h2_1, h2_2);
   h2_2 = __hfma2(h2, h2_1, h2_2);
-  // CHECK: h2_2 = sycl::clamp<sycl::half2>(sycl::fma(h2, h2_1, h2_2), {0.f, 0.f}, {1.f, 1.f});
+  // CHECK: h2_2 = sycl::clamp(sycl::fma(h2, h2_1, h2_2), sycl::half2(0.f, 0.f), sycl::half2(1.f, 1.f));
   h2_2 = __hfma2_sat(h2, h2_1, h2_2);
   // CHECK: h2_2 = h2 * h2_1;
   h2_2 = __hmul2(h2, h2_1);
-  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 * h2_1, {0.f, 0.f}, {1.f, 1.f});
+  // CHECK: h2_2 = sycl::clamp(h2 * h2_1, sycl::half2(0.f, 0.f), sycl::half2(1.f, 1.f));
   h2_2 = __hmul2_sat(h2, h2_1);
   // CHECK: h2_2 = -h2;
   h2_2 = __hneg2(h2);
   // CHECK: h2_2 = h2 - h2_1;
   h2_2 = __hsub2(h2, h2_1);
-  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 - h2_1, {0.f, 0.f}, {1.f, 1.f});
+  // CHECK: h2_2 = sycl::clamp(h2 - h2_1, sycl::half2(0.f, 0.f), sycl::half2(1.f, 1.f));
   h2_2 = __hsub2_sat(h2, h2_1);
 
   // Half Comparison Functions
@@ -2143,7 +2143,7 @@ __global__ void testUnsupported() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrtf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = sycl::native::recip(sycl::cbrt<float>(f));
+  // CHECK-NEXT: f = sycl::native::recip(sycl::cbrt(f));
   f = rcbrtf(f);
   // CHECK: f = sycl::native::recip(sycl::length(sycl::float3(f, f, f)));
   f = rnorm3df(f, f, f);
@@ -2219,7 +2219,7 @@ __global__ void testUnsupported() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = 1 / sycl::cbrt<double>(d);
+  // CHECK-NEXT: d = 1 / sycl::cbrt(d);
   d = rcbrt(d);
   // CHECK: d = 1 / sycl::length(sycl::double3(d, d, d));
   d = rnorm3d(d, d, d);
@@ -2389,12 +2389,12 @@ __global__ void testIntegerFunctions() {
   l = labs(l);
   ll = llabs(ll);
 
-  // CHECK: ll = sycl::max<long long>(ll, ll);
-  // CHECK-NEXT: ll = sycl::min<long long>(ll, l);
-  // CHECK-NEXT: ull = sycl::max<unsigned long long>(ll, ull);
-  // CHECK-NEXT: ull = sycl::min<unsigned long long>(ll, ll);
-  // CHECK-NEXT: u = sycl::max<unsigned int>(u, u);
-  // CHECK-NEXT: u = sycl::min<unsigned int>(u, u);
+  // CHECK: ll = sycl::max(ll, ll);
+  // CHECK-NEXT: ll = sycl::min(ll, (long long)l);
+  // CHECK-NEXT: ull = sycl::max((unsigned long long)ll, ull);
+  // CHECK-NEXT: ull = sycl::min((unsigned long long)ll, (unsigned long long)ll);
+  // CHECK-NEXT: u = sycl::max(u, u);
+  // CHECK-NEXT: u = sycl::min(u, u);
   ll = llmax(ll, ll);
   ll = llmin(ll, l);
   ull = ullmax(ll, ull);
@@ -3224,12 +3224,12 @@ __global__ void k2() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: 1 / sycl::cbrt<double>(d0);
+  // CHECK-NEXT: 1 / sycl::cbrt(d0);
   rcbrt(d0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrtf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::native::recip(sycl::cbrt<float>(f0));
+  // CHECK-NEXT: sycl::native::recip(sycl::cbrt(f0));
   rcbrtf(f0);
   // CHECK: 1 / sycl::length(sycl::double3(d0, d1, d2));
   rnorm3d(d0, d1, d2);
