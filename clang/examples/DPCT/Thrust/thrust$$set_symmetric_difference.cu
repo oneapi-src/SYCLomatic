@@ -23,61 +23,61 @@ void test() {
   thrust::host_vector<int> h_result(8);
 
   // Start
-  thrust::set_symmetric_difference(
+  /*1*/ thrust::set_symmetric_difference(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       A1 /*InputIterator1*/, A1 + 4 /*InputIterator1*/, A2 /*InputIterator2*/,
       A2 + 2 /*InputIterator2*/, result /*OutputIterator*/);
-  thrust::set_symmetric_difference(
+  /*2*/ thrust::set_symmetric_difference(
       A1 /*InputIterator1*/, A1 + 4 /*InputIterator1*/, A2 /*InputIterator2*/,
       A2 + 2 /*InputIterator2*/, result /*OutputIterator*/);
-  thrust::set_symmetric_difference(
+  /*3*/ thrust::set_symmetric_difference(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       A1 /*InputIterator1*/, A1 + 5 /*InputIterator1*/, A2 /*InputIterator2*/,
       A2 + 5 /*InputIterator2*/, result /*OutputIterator*/,
       Compare() /*StrictWeakCompare*/);
-  thrust::set_symmetric_difference(
+  /*4*/ thrust::set_symmetric_difference(
       A1 /*InputIterator1*/, A1 + 5 /*InputIterator1*/, A2 /*InputIterator2*/,
       A2 + 5 /*InputIterator2*/, result /*OutputIterator*/,
       Compare() /*StrictWeakCompare*/);
-  thrust::set_symmetric_difference(
+  /*5*/ thrust::set_symmetric_difference(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2*/, d_A2.end() /*InputIterator2*/,
       d_result.begin());
-  thrust::set_symmetric_difference(
+  /*6*/ thrust::set_symmetric_difference(
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2*/, d_A2.end() /*InputIterator2*/,
       d_result.begin());
-  thrust::set_symmetric_difference(
+  /*7*/ thrust::set_symmetric_difference(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2*/, d_A2.end() /*InputIterator2*/,
       d_result.begin() /*OutputIterator*/, thrust::less<int>());
-  thrust::set_symmetric_difference(
+  /*8*/ thrust::set_symmetric_difference(
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2*/, d_A2.end() /*InputIterator2*/,
       d_result.begin() /*OutputIterator*/, thrust::less<int>());
-  thrust::set_symmetric_difference(
+  /*9*/ thrust::set_symmetric_difference(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2*/, h_A2.end() /*InputIterator2*/,
       h_result.begin());
-  thrust::set_symmetric_difference(
+  /*10*/ thrust::set_symmetric_difference(
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2*/, h_A2.end() /*InputIterator2*/,
       h_result.begin() /*OutputIterator*/);
-  thrust::set_symmetric_difference(
+  /*11*/ thrust::set_symmetric_difference(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2*/, h_A2.end() /*InputIterator2*/,
       h_result.begin(), thrust::less<int>());
-  thrust::set_symmetric_difference(
+  /*12*/ thrust::set_symmetric_difference(
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2*/, h_A2.end() /*InputIterator2*/,
       h_result.begin() /*OutputIterator*/, thrust::less<int>());

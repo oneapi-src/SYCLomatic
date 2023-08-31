@@ -41,31 +41,31 @@ void test() {
   thrust::device_vector<int> d_vec_data(data, data + N);
 
   // Start
-  thrust::transform_inclusive_scan(
+  /*1*/ thrust::transform_inclusive_scan(
       data /*InputIterator*/, data + N /*InputIterator*/,
       data /*OutputIterator*/, unary_op /*UnaryFunction*/,
       binary_op /*AssociativeOperator*/);
-  thrust::transform_inclusive_scan(
+  /*2*/ thrust::transform_inclusive_scan(
       h_vec_data.begin() /*InputIterator*/, h_vec_data.end() /*InputIterator*/,
       h_vec_data.begin() /*OutputIterator*/, unary_op /*UnaryFunction*/,
       binary_op /*AssociativeOperator*/);
-  thrust::transform_inclusive_scan(
+  /*3*/ thrust::transform_inclusive_scan(
       d_vec_data.begin() /*InputIterator*/, d_vec_data.end() /*InputIterator*/,
       d_vec_data.begin() /*OutputIterator*/, unary_op /*UnaryFunction*/,
       binary_op /*AssociativeOperator*/);
-  thrust::transform_inclusive_scan(
+  /*4*/ thrust::transform_inclusive_scan(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*InputIterator*/, data + N /*InputIterator*/,
       data /*OutputIterator*/, unary_op /*UnaryFunction*/,
       binary_op /*AssociativeOperator*/);
-  thrust::transform_inclusive_scan(
+  /*5*/ thrust::transform_inclusive_scan(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       h_vec_data.begin() /*InputIterator*/, h_vec_data.end() /*InputIterator*/,
       h_vec_data.begin() /*OutputIterator*/, unary_op /*UnaryFunction*/,
       binary_op /*AssociativeOperator*/);
-  thrust::transform_inclusive_scan(
+  /*6*/ thrust::transform_inclusive_scan(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_vec_data.begin() /*InputIterator*/, d_vec_data.end() /*InputIterator*/,

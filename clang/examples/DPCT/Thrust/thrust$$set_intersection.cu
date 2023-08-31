@@ -24,64 +24,64 @@ void test() {
   thrust::host_vector<int>::iterator h_end;
 
   // Start
-  thrust::set_intersection(
+  /*1*/ thrust::set_intersection(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       A1 /*InputIterator1 */, A1 + 6 /*InputIterator1 */,
       A2 /*InputIterator2 */, A2 + 7 /*InputIterator2 */, result);
-  thrust::set_intersection(A1 /*InputIterator1 */, A1 + 6 /*InputIterator1 */,
+  /*2*/ thrust::set_intersection(A1 /*InputIterator1 */, A1 + 6 /*InputIterator1 */,
                            A2 /*InputIterator2 */, A2 + 7 /*InputIterator2 */,
                            result /*OutputIterator */);
-  thrust::set_intersection(
+  /*3*/ thrust::set_intersection(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       A1 /*InputIterator1 */, A1 + 6 /*InputIterator1 */,
       A2 /*InputIterator2 */, A2 + 7 /*InputIterator2 */,
       result /*OutputIterator */,
       thrust::greater<int>() /*StrictWeakCompare */);
-  thrust::set_intersection(A1 /*InputIterator1 */, A1 + 6 /*InputIterator1 */,
+  /*4*/ thrust::set_intersection(A1 /*InputIterator1 */, A1 + 6 /*InputIterator1 */,
                            A2 /*InputIterator2 */, A2 + 7 /*InputIterator2 */,
                            result /*OutputIterator */,
                            thrust::greater<int>() /*StrictWeakCompare */);
-  thrust::set_intersection(
+  /*5*/ thrust::set_intersection(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1 */, d_A1.end() /*InputIterator1 */,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */);
-  thrust::set_intersection(
+  /*6*/ thrust::set_intersection(
       d_A1.begin() /*InputIterator1 */, d_A1.end() /*InputIterator1 */,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */);
-  thrust::set_intersection(
+  /*7*/ thrust::set_intersection(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1 */, d_A1.end() /*InputIterator1 */,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */, thrust::greater<int>());
-  thrust::set_intersection(
+  /*8*/ thrust::set_intersection(
       d_A1.begin() /*InputIterator1 */, d_A1.end() /*InputIterator1 */,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */,
       thrust::greater<int>() /*StrictWeakCompare */);
-  thrust::set_intersection(
+  /*9*/ thrust::set_intersection(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       h_A1.begin() /*InputIterator1 */, h_A1.end() /*InputIterator1 */,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */);
-  thrust::set_intersection(
+  /*10*/ thrust::set_intersection(
       h_A1.begin() /*InputIterator1 */, h_A1.end() /*InputIterator1 */,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */);
-  thrust::set_intersection(
+  /*11*/ thrust::set_intersection(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       h_A1.begin() /*InputIterator1 */, h_A1.end() /*InputIterator1 */,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */,
       thrust::greater<int>() /*StrictWeakCompare */);
-  thrust::set_intersection(
+  /*12*/ thrust::set_intersection(
       h_A1.begin() /*InputIterator1 */, h_A1.end() /*InputIterator1 */,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */,

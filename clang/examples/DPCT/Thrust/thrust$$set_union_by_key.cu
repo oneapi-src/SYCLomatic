@@ -45,19 +45,19 @@ void test() {
   thrust::pair<h_Iterator, h_Iterator> h_result;
 
   // Start
-  thrust::set_union_by_key(
+  /*1*/ thrust::set_union_by_key(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy>
                       &*/,
       A_keys /*InputIterator1 */, A_keys + 3 /*InputIterator1 */,
       B_keys /*InputIterator2 */, B_keys + 4 /*InputIterator2 */,
       A_vals /*InputIterator3 */, B_vals /*InputIterator4 */,
       keys_result /*OutputIterator1*/, vals_result /*OutputIterator2*/);
-  thrust::set_union_by_key(
+  /*2*/ thrust::set_union_by_key(
       A_keys /*InputIterator1 */, A_keys + 3 /*InputIterator1*/,
       B_keys /*InputIterator2 */, B_keys + 4 /*InputIterator2 */,
       A_vals /*InputIterator3 */, B_vals /*InputIterator4 */,
       keys_result /*OutputIterator1*/, vals_result /*OutputIterator2*/);
-  thrust::set_union_by_key(
+  /*3*/ thrust::set_union_by_key(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy>
                       &*/,
       A_keys /*InputIterator1 */, A_keys + 7 /*InputIterator1 */,
@@ -65,13 +65,13 @@ void test() {
       A_vals /*InputIterator3 */, B_vals /*InputIterator4 */,
       keys_result /*OutputIterator1*/, vals_result /*OutputIterator1*/,
       Compare() /*StrictWeakCompare*/);
-  thrust::set_union_by_key(
+  /*4*/ thrust::set_union_by_key(
       A_keys /*InputIterator1 */, A_keys + 7 /*InputIterator1 */,
       B_keys /*InputIterator2 */, B_keys + 5 /*InputIterator2 */,
       A_vals /*InputIterator3*/, B_vals /*InputIterator4*/,
       keys_result /*OutputIterator1*/, vals_result /*OutputIterator2*/,
       Compare() /*StrictWeakCompare*/);
-  thrust::set_union_by_key(
+  /*5*/ thrust::set_union_by_key(
       thrust::device /*const thrust::detail::execution_policy_base<DerivedPolicy
                         > &*/,
       d_A_keys.begin() /*InputIterator1 */, d_A_keys.end() /*InputIterator1 */,
@@ -79,13 +79,13 @@ void test() {
       d_A_vals.begin() /*InputIterator3*/, d_B_vals.begin() /*InputIterator4*/,
       d_keys_result.begin() /*OutputIterator1*/,
       d_vals_result.begin() /*OutputIterator2*/);
-  thrust::set_union_by_key(
+  /*6*/ thrust::set_union_by_key(
       d_A_keys.begin() /*InputIterator1 */, d_A_keys.end() /*InputIterator1 */,
       d_B_keys.begin() /*InputIterator2*/, d_B_keys.end() /*InputIterator2*/,
       d_A_vals.begin() /*InputIterator3*/, d_B_vals.begin() /*InputIterator4*/,
       d_keys_result.begin() /*OutputIterator1*/,
       d_vals_result.begin() /*OutputIterator2*/);
-  thrust::set_union_by_key(
+  /*7*/ thrust::set_union_by_key(
       thrust::device /*const thrust::detail::execution_policy_base<DerivedPolicy
                         > &*/,
       d_A_keys.begin() /*InputIterator1 */, d_A_keys.end() /*InputIterator1 */,
@@ -94,14 +94,14 @@ void test() {
       d_keys_result.begin() /*OutputIterator1*/,
       d_vals_result.begin() /*OutputIterator2*/,
       Compare() /*StrictWeakCompare*/);
-  thrust::set_union_by_key(
+  /*8*/ thrust::set_union_by_key(
       d_A_keys.begin() /*InputIterator1 */, d_A_keys.end() /*InputIterator1 */,
       d_B_keys.begin() /*InputIterator2*/, d_B_keys.end() /*InputIterator2*/,
       d_A_vals.begin() /*InputIterator3*/, d_B_vals.begin() /*InputIterator4*/,
       d_keys_result.begin() /*OutputIterator1*/,
       d_vals_result.begin() /*OutputIterator2*/,
       Compare() /*StrictWeakCompare*/);
-  thrust::set_union_by_key(
+  /*9*/ thrust::set_union_by_key(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy>
                       &*/,
       h_A_keys.begin() /*InputIterator1 */, h_A_keys.end() /*InputIterator1 */,
@@ -109,13 +109,13 @@ void test() {
       h_A_vals.begin() /*InputIterator3*/, h_B_vals.begin() /*InputIterator4*/,
       h_keys_result.begin() /*OutputIterator1*/,
       h_vals_result.begin() /*OutputIterator2*/);
-  thrust::set_union_by_key(
+  /*10*/ thrust::set_union_by_key(
       h_A_keys.begin() /*InputIterator1 */, h_A_keys.end() /*InputIterator1 */,
       h_B_keys.begin() /*InputIterator2*/, h_B_keys.end() /*InputIterator2*/,
       h_A_vals.begin() /*InputIterator3*/, h_B_vals.begin() /*InputIterator4*/,
       h_keys_result.begin() /*OutputIterator1*/,
       h_vals_result.begin() /*OutputIterator2*/);
-  thrust::set_union_by_key(
+  /*11*/ thrust::set_union_by_key(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy>
                       &*/,
       h_A_keys.begin() /*InputIterator1 */, h_A_keys.end() /*InputIterator1 */,
@@ -124,7 +124,7 @@ void test() {
       h_keys_result.begin() /*OutputIterator1*/,
       h_vals_result.begin() /*OutputIterator2*/,
       Compare() /*StrictWeakCompare*/);
-  thrust::set_union_by_key(
+  /*12*/ thrust::set_union_by_key(
       h_A_keys.begin() /*InputIterator1 */, h_A_keys.end() /*InputIterator1 */,
       h_B_keys.begin() /*InputIterator2*/, h_B_keys.end() /*InputIterator2*/,
       h_A_vals.begin() /*InputIterator3*/, h_B_vals.begin() /*InputIterator4*/,

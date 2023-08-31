@@ -55,51 +55,51 @@ void test() {
   thrust::device_vector<int> device_S(S, S + N);
 
   // Start
-  thrust::stable_partition_copy(
+  /*1*/ thrust::stable_partition_copy(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*InputIterator*/, data + N /*InputIterator*/,
       evens /*OutputIterator1*/, odds /*OutputIterator2*/,
       is_even() /*Predicate*/);
-  thrust::stable_partition_copy(
+  /*2*/ thrust::stable_partition_copy(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       host_a.begin() /*InputIterator*/, host_a.begin() + N /*InputIterator*/,
       host_evens.begin() /*OutputIterator1*/,
       host_odds.begin() /*OutputIterator2*/, is_even() /*Predicate*/);
-  thrust::stable_partition_copy(
+  /*3*/ thrust::stable_partition_copy(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       device_a.begin() /*InputIterator*/,
       device_a.begin() + N /*InputIterator*/,
       device_evens.begin() /*OutputIterator2*/,
       device_odds.begin() /*OutputIterator2*/, is_even() /*Predicate*/);
-  thrust::stable_partition_copy(
+  /*4*/ thrust::stable_partition_copy(
       data /*InputIterator*/, data + N /*InputIterator*/,
       evens /*OutputIterator1*/, odds /*OutputIterator2*/,
       is_even() /*Predicate*/);
-  thrust::stable_partition_copy(
+  /*5*/ thrust::stable_partition_copy(
       host_a.begin() /*InputIterator*/, host_a.begin() + N /*InputIterator*/,
       host_evens.begin() /*OutputIterator1*/,
       host_odds.begin() /*OutputIterator2*/, is_even());
-  thrust::stable_partition_copy(device_a.begin() /*InputIterator*/,
+  /*6*/ thrust::stable_partition_copy(device_a.begin() /*InputIterator*/,
                                 device_a.begin() + N /*InputIterator*/,
                                 device_evens.begin() /*OutputIterator1*/,
                                 device_odds.begin() /*OutputIterator2*/,
                                 is_even() /*Predicate*/);
-  thrust::stable_partition_copy(
+  /*7*/ thrust::stable_partition_copy(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*InputIterator1*/, data + N /*InputIterator1*/,
       S /*InputIterator2*/, evens /*OutputIterator1*/, odds /*OutputIterator2*/,
       is_even() /*Predicate*/);
-  thrust::stable_partition_copy(
+  /*8*/ thrust::stable_partition_copy(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       host_a.begin() /*InputIterator1*/, host_a.begin() + N /*InputIterator1*/,
       host_S.begin() /*InputIterator2*/, host_evens.begin() /*OutputIterator1*/,
       host_odds.begin() /*OutputIterator2*/, is_even() /*Predicate*/);
-  thrust::stable_partition_copy(
+  /*9*/ thrust::stable_partition_copy(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       device_a.begin() /*InputIterator1*/,
@@ -107,15 +107,15 @@ void test() {
       device_S.begin() /*InputIterator2*/,
       device_evens.begin() /*OutputIterator1*/,
       device_odds.begin() /*OutputIterator2*/, is_even() /*Predicate*/);
-  thrust::stable_partition_copy(
+  /*10*/ thrust::stable_partition_copy(
       data /*InputIterator1*/, data + N /*InputIterator1*/,
       S /*InputIterator2*/, evens /*OutputIterator1*/, odds /*OutputIterator2*/,
       is_even() /*Predicate*/);
-  thrust::stable_partition_copy(
+  /*11*/ thrust::stable_partition_copy(
       host_a.begin() /*InputIterator1*/, host_a.begin() + N /*InputIterator1*/,
       host_S.begin() /*InputIterator2*/, host_evens.begin() /*OutputIterator1*/,
       host_odds.begin() /*OutputIterator2*/, is_even() /*Predicate*/);
-  thrust::stable_partition_copy(device_a.begin() /*InputIterator1*/,
+  /*12*/ thrust::stable_partition_copy(device_a.begin() /*InputIterator1*/,
                                 device_a.begin() + N /*InputIterator1*/,
                                 device_S.begin() /*InputIterator2*/,
                                 device_evens.begin() /*OutputIterator1*/,

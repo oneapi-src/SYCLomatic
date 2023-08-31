@@ -46,52 +46,52 @@ void test() {
   thrust::device_vector<int> device_s(S, S + N);
 
   // Start
-  thrust::stable_partition(
+  /*1*/ thrust::stable_partition(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*ForwardIterator*/, data + N /*ForwardIterator*/, is_even());
-  thrust::stable_partition(
+  /*2*/ thrust::stable_partition(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       host_data.begin() /*ForwardIterator*/,
       host_data.begin() + N /*ForwardIterator*/, is_even());
-  thrust::stable_partition(
+  /*3*/ thrust::stable_partition(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       device_data.begin() /*ForwardIterator*/,
       device_data.begin() + N /*ForwardIterator*/, is_even() /*Predicate*/);
-  thrust::stable_partition(data /*ForwardIterator*/,
+  /*4*/ thrust::stable_partition(data /*ForwardIterator*/,
                            data + N /*ForwardIterator*/,
                            is_even() /*Predicate*/);
-  thrust::stable_partition(host_data.begin() /*ForwardIterator*/,
+  /*5*/ thrust::stable_partition(host_data.begin() /*ForwardIterator*/,
                            host_data.begin() + N /*ForwardIterator*/,
                            is_even() /*Predicate*/);
-  thrust::stable_partition(device_data.begin() /*ForwardIterator*/,
+  /*6*/ thrust::stable_partition(device_data.begin() /*ForwardIterator*/,
                            device_data.begin() + N /*ForwardIterator*/,
                            is_even() /*Predicate*/);
-  thrust::stable_partition(
+  /*7*/ thrust::stable_partition(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*ForwardIterator*/, data + N /*ForwardIterator*/, S, is_even());
-  thrust::stable_partition(
+  /*8*/ thrust::stable_partition(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       host_data.begin() /*ForwardIterator*/,
       host_data.begin() + N /*ForwardIterator*/, host_S.begin(), is_even());
-  thrust::stable_partition(
+  /*9*/ thrust::stable_partition(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       device_data.begin() /*ForwardIterator*/,
       device_data.begin() + N /*ForwardIterator*/,
       device_s.begin() /*InputIterator*/, is_even() /*Predicate*/);
-  thrust::stable_partition(data /*ForwardIterator*/,
+  /*10*/ thrust::stable_partition(data /*ForwardIterator*/,
                            data + N /*ForwardIterator*/, S /*InputIterator*/,
                            is_even() /*Predicate*/);
-  thrust::stable_partition(host_data.begin() /*ForwardIterator*/,
+  /*11*/ thrust::stable_partition(host_data.begin() /*ForwardIterator*/,
                            host_data.begin() + N /*ForwardIterator*/,
                            host_S.begin() /*InputIterator*/,
                            is_even() /*Predicate*/);
-  thrust::stable_partition(device_data.begin() /*ForwardIterator*/,
+  /*12*/ thrust::stable_partition(device_data.begin() /*ForwardIterator*/,
                            device_data.begin() + N /*ForwardIterator*/,
                            device_s.begin() /*InputIterator*/,
                            is_even() /*Predicate*/);

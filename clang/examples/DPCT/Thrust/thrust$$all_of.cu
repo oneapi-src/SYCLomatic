@@ -16,25 +16,25 @@ void test() {
   thrust::device_vector<bool> d_A(A, A + 3);
 
   // Start
-  thrust::all_of(thrust::host /*const thrust::detail::execution_policy_base<
+  /*1*/ thrust::all_of(thrust::host /*const thrust::detail::execution_policy_base<
                                  DerivedPolicy > &*/,
-                 A /*InputIterator */, A + 2 /*InputIterator */,
+                 A /*InputIterator */, A + 2 /*InputIterator*/,
                  thrust::identity<bool>());
-  thrust::all_of(A /*InputIterator */, A + 2 /*InputIterator */,
+  /*2*/ thrust::all_of(A /*InputIterator */, A + 2 /*InputIterator*/,
                  thrust::identity<bool>() /*Predicate */);
-  thrust::all_of(thrust::host /*const thrust::detail::execution_policy_base<
+  /*3*/ thrust::all_of(thrust::host /*const thrust::detail::execution_policy_base<
                                  DerivedPolicy > &*/,
-                 h_A.begin() /*InputIterator */,
-                 h_A.begin() + 2 /*InputIterator */, thrust::identity<bool>());
-  thrust::all_of(h_A.begin() /*InputIterator */,
+                 h_A.begin() /*InputIterator*/,
+                 h_A.begin() + 2 /*InputIterator*/, thrust::identity<bool>());
+  /*4*/ thrust::all_of(h_A.begin() /*InputIterator*/,
                  h_A.begin() + 2 /*InputIterator */,
-                 thrust::identity<bool>() /*Predicate */);
-  thrust::all_of(thrust::device /*const thrust::detail::execution_policy_base<
+                 thrust::identity<bool>() /*Predicate*/);
+  /*5*/ thrust::all_of(thrust::device /*const thrust::detail::execution_policy_base<
                                    DerivedPolicy > &*/,
-                 d_A.begin() /*InputIterator */,
-                 d_A.begin() + 2 /*InputIterator */, thrust::identity<bool>());
-  thrust::all_of(d_A.begin() /*InputIterator */,
-                 d_A.begin() + 2 /*InputIterator */,
-                 thrust::identity<bool>() /*Predicate */);
+                 d_A.begin() /*InputIterator*/,
+                 d_A.begin() + 2 /*InputIterator*/, thrust::identity<bool>());
+  /*6*/ thrust::all_of(d_A.begin() /*InputIterator*/,
+                 d_A.begin() + 2 /*InputIterator*/,
+                 thrust::identity<bool>() /*Predicate*/);
   // End
 }

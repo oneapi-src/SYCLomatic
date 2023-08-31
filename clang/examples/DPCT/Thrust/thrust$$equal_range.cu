@@ -39,52 +39,52 @@ void test() {
   thrust::device_vector<int> device_vec(data, data + N);
 
   // Start
-  thrust::equal_range(
+  /*1*/ thrust::equal_range(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       device_vec.begin() /*ForwardIterator*/,
       device_vec.end() /*ForwardIterator*/, 0 /*const LessThanComparable &*/);
-  thrust::equal_range(device_vec.begin() /*ForwardIterator*/,
+  /*2*/ thrust::equal_range(device_vec.begin() /*ForwardIterator*/,
                       device_vec.end() /*ForwardIterator*/,
                       0 /*const LessThanComparable &*/);
-  thrust::equal_range(
+  /*3*/ thrust::equal_range(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       device_vec.begin() /*ForwardIterator*/,
       device_vec.end() /*ForwardIterator*/, 0 /*const T &*/,
       thrust::less<int>() /*StrictWeakOrdering */);
-  thrust::equal_range(device_vec.begin() /*ForwardIterator*/,
+  /*4*/ thrust::equal_range(device_vec.begin() /*ForwardIterator*/,
                       device_vec.end() /*ForwardIterator*/,
                       0 /*const LessThanComparable &*/, thrust::less<int>());
-  thrust::equal_range(
+  /*5*/ thrust::equal_range(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       host_vec.begin() /*ForwardIterator*/, host_vec.end() /*ForwardIterator*/,
       0 /*const LessThanComparable &*/);
-  thrust::equal_range(host_vec.begin() /*ForwardIterator*/,
+  /*6*/ thrust::equal_range(host_vec.begin() /*ForwardIterator*/,
                       host_vec.end() /*ForwardIterator*/,
                       0 /*const LessThanComparable &*/);
-  thrust::equal_range(
+  /*7*/ thrust::equal_range(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       host_vec.begin() /*ForwardIterator*/, host_vec.end() /*ForwardIterator*/,
       0 /*const T &*/, thrust::less<int>() /*StrictWeakOrdering */);
-  thrust::equal_range(host_vec.begin(), host_vec.end(), 0 /*const T &*/,
+  /*8*/ thrust::equal_range(host_vec.begin(), host_vec.end(), 0 /*const T &*/,
                       thrust::less<int>() /*StrictWeakOrdering */);
-  thrust::equal_range(
+  /*9*/ thrust::equal_range(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*ForwardIterator*/, data + N /*ForwardIterator*/,
       0 /*const LessThanComparable &*/);
-  thrust::equal_range(data /*ForwardIterator*/, data + N /*ForwardIterator*/,
+  /*10*/ thrust::equal_range(data /*ForwardIterator*/, data + N /*ForwardIterator*/,
                       0 /*const LessThanComparable &*/);
-  thrust::equal_range(
+  /*11*/ thrust::equal_range(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*ForwardIterator*/, data + N /*ForwardIterator*/,
       0 /*const LessThanComparable &*/,
       thrust::less<int>() /*StrictWeakOrdering */);
-  thrust::equal_range(data /*ForwardIterator*/, data + N /*ForwardIterator*/,
+  /*12*/ thrust::equal_range(data /*ForwardIterator*/, data + N /*ForwardIterator*/,
                       0 /*const T &*/,
                       thrust::less<int>() /*StrictWeakOrdering */);
   // End

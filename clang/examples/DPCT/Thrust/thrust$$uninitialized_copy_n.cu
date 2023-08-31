@@ -42,16 +42,16 @@ void test() {
   int h_array[N];
 
   // Start
-  thrust::uninitialized_copy_n(d_input.begin() /*InputIterator*/, N /*Size*/,
+  /*1*/ thrust::uninitialized_copy_n(d_input.begin() /*InputIterator*/, N /*Size*/,
                                d_array /*ForwardIterator*/);
-  thrust::uninitialized_copy_n(h_data /*InputIterator*/, N /*Size*/,
+  /*2*/ thrust::uninitialized_copy_n(h_data /*InputIterator*/, N /*Size*/,
                                h_array /*ForwardIterator*/);
-  thrust::uninitialized_copy_n(
+  /*3*/ thrust::uninitialized_copy_n(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_input.begin() /*InputIterator*/, N /*Size*/,
       d_array /*ForwardIterator*/);
-  thrust::uninitialized_copy_n(
+  /*4*/ thrust::uninitialized_copy_n(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       h_data /*InputIterator*/, N /*Size*/, h_array /*ForwardIterator*/);

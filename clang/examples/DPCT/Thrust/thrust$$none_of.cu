@@ -16,27 +16,27 @@ void test() {
   bool result;
 
   // Start
-  thrust::none_of(thrust::host /*const thrust::detail::execution_policy_base<
+  /*1*/ thrust::none_of(thrust::host /*const thrust::detail::execution_policy_base<
                                   DerivedPolicy > &*/,
-                  A /*InputIterator */, A + 2 /*InputIterator */,
-                  thrust::identity<bool>() /*Predicate */);
-  thrust::none_of(A /*InputIterator */, A + 2 /*InputIterator */,
-                  thrust::identity<bool>() /*Predicate */);
-  thrust::none_of(thrust::host /*const thrust::detail::execution_policy_base<
+                  A /*InputIterator */, A + 2 /*InputIterator*/,
+                  thrust::identity<bool>() /*Predicate*/);
+  /*2*/ thrust::none_of(A /*InputIterator */, A + 2 /*InputIterator*/,
+                  thrust::identity<bool>() /*Predicate*/);
+  /*3*/ thrust::none_of(thrust::host /*const thrust::detail::execution_policy_base<
                                   DerivedPolicy > &*/,
-                  h_A.begin() /*InputIterator */,
-                  h_A.begin() + 2 /*InputIterator */,
-                  thrust::identity<bool>() /*Predicate */);
-  thrust::none_of(h_A.begin() /*InputIterator */,
-                  h_A.begin() + 2 /*InputIterator */,
-                  thrust::identity<bool>() /*Predicate */);
-  thrust::none_of(thrust::device /*const thrust::detail::execution_policy_base<
+                  h_A.begin() /*InputIterator*/,
+                  h_A.begin() + 2 /*InputIterator*/,
+                  thrust::identity<bool>() /*Predicate*/);
+  /*4*/ thrust::none_of(h_A.begin() /*InputIterator*/,
+                  h_A.begin() + 2 /*InputIterator*/,
+                  thrust::identity<bool>() /*Predicate*/);
+  /*5*/ thrust::none_of(thrust::device /*const thrust::detail::execution_policy_base<
                                     DerivedPolicy > &*/,
-                  d_A.begin() /*InputIterator */,
+                  d_A.begin() /*InputIterator*/,
                   d_A.begin() + 2 /*InputIterator */,
-                  thrust::identity<bool>() /*Predicate */);
-  thrust::none_of(d_A.begin() /*InputIterator */,
-                  d_A.begin() + 2 /*InputIterator */,
-                  thrust::identity<bool>() /*Predicate */);
+                  thrust::identity<bool>() /*Predicate*/);
+  /*6*/ thrust::none_of(d_A.begin() /*InputIterator*/,
+                  d_A.begin() + 2 /*InputIterator*/,
+                  thrust::identity<bool>() /*Predicate*/);
   // End
 }

@@ -18,42 +18,42 @@ void test() {
   thrust::host_vector<int>::iterator h_end;
   thrust::device_vector<int>::iterator d_end;
   // Start
-  thrust::is_sorted_until(
+  /*1*/ thrust::is_sorted_until(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       A /*ForwardIterator */, A + 8 /*ForwardIterator */);
-  thrust::is_sorted_until(A /*ForwardIterator */, A + 8 /*ForwardIterator */);
-  thrust::is_sorted_until(
+  /*2*/ thrust::is_sorted_until(A /*ForwardIterator */, A + 8 /*ForwardIterator */);
+  /*3*/ thrust::is_sorted_until(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       A /*ForwardIterator */, A + 8 /*ForwardIterator */, comp /*Compare */);
-  thrust::is_sorted_until(A /*ForwardIterator */, A + 8 /*ForwardIterator */,
+  /*4*/ thrust::is_sorted_until(A /*ForwardIterator */, A + 8 /*ForwardIterator */,
                           comp /*Compare */);
-  thrust::is_sorted_until(
+  /*5*/ thrust::is_sorted_until(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       h_A.begin() /*ForwardIterator */, h_A.end() /*ForwardIterator */);
-  thrust::is_sorted_until(h_A.begin() /*ForwardIterator */,
+  /*6*/ thrust::is_sorted_until(h_A.begin() /*ForwardIterator */,
                           h_A.end() /*ForwardIterator */);
-  thrust::is_sorted_until(
+  /*7*/ thrust::is_sorted_until(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       h_A.begin() /*ForwardIterator */, h_A.end() /*ForwardIterator */,
       comp /*Compare */);
-  thrust::is_sorted_until(h_A.begin() /*ForwardIterator */,
+  /*8*/ thrust::is_sorted_until(h_A.begin() /*ForwardIterator */,
                           h_A.end() /*ForwardIterator */, comp /*Compare */);
-  thrust::is_sorted_until(
+  /*9*/ thrust::is_sorted_until(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_A.begin() /*ForwardIterator */, d_A.end() /*ForwardIterator */);
-  thrust::is_sorted_until(d_A.begin() /*ForwardIterator */,
+  /*10*/ thrust::is_sorted_until(d_A.begin() /*ForwardIterator */,
                           d_A.end() /*ForwardIterator */);
-  thrust::is_sorted_until(
+  /*11*/ thrust::is_sorted_until(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_A.begin() /*ForwardIterator */, d_A.end() /*ForwardIterator */,
       comp /*Compare */);
-  thrust::is_sorted_until(d_A.begin() /*ForwardIterator */,
+  /*12*/ thrust::is_sorted_until(d_A.begin() /*ForwardIterator */,
                           d_A.end() /*ForwardIterator */, comp /*Compare */);
   // End
 }

@@ -38,50 +38,50 @@ void test() {
   thrust::device_vector<int> d_VB(B, B + N);
 
   // Start
-  thrust::mismatch(thrust::host /*const thrust::detail::execution_policy_base<
+  /*1*/ thrust::mismatch(thrust::host /*const thrust::detail::execution_policy_base<
                                    DerivedPolicy > &*/,
                    VA.begin() /*InputIterator1*/, VA.end() /*InputIterator1*/,
                    VB.begin() /*InputIterator2*/);
-  thrust::mismatch(VA.begin() /*InputIterator1*/, VA.end() /*InputIterator1*/,
+  /*2*/ thrust::mismatch(VA.begin() /*InputIterator1*/, VA.end() /*InputIterator1*/,
                    VB.begin() /*InputIterator2*/);
-  thrust::mismatch(thrust::host /*const thrust::detail::execution_policy_base<
+  /*3*/ thrust::mismatch(thrust::host /*const thrust::detail::execution_policy_base<
                                    DerivedPolicy > &*/,
                    VA.begin() /*InputIterator1*/, VA.end() /*InputIterator1*/,
                    VB.begin() /*InputIterator2*/,
                    thrust::equal_to<int>() /*BinaryPredicate*/);
-  thrust::mismatch(VA.begin() /*InputIterator1*/, VA.end() /*InputIterator1*/,
+  /*4*/ thrust::mismatch(VA.begin() /*InputIterator1*/, VA.end() /*InputIterator1*/,
                    VB.begin() /*InputIterator2*/,
                    thrust::equal_to<int>() /*BinaryPredicate*/);
-  thrust::mismatch(thrust::device /*const thrust::detail::execution_policy_base<
+  /*5*/ thrust::mismatch(thrust::device /*const thrust::detail::execution_policy_base<
                                      DerivedPolicy > &*/,
                    d_VA.begin() /*InputIterator1*/,
                    d_VA.end() /*InputIterator1*/,
                    d_VB.begin() /*InputIterator2*/);
-  thrust::mismatch(d_VA.begin() /*InputIterator1*/,
+  /*6*/ thrust::mismatch(d_VA.begin() /*InputIterator1*/,
                    d_VA.end() /*InputIterator1*/,
                    d_VB.begin() /*InputIterator2*/);
-  thrust::mismatch(thrust::device /*const thrust::detail::execution_policy_base<
+  /*7*/ thrust::mismatch(thrust::device /*const thrust::detail::execution_policy_base<
                                      DerivedPolicy > &*/,
                    d_VA.begin() /*InputIterator1*/,
                    d_VA.end() /*InputIterator1*/,
                    d_VB.begin() /*InputIterator2*/,
                    thrust::equal_to<int>() /*BinaryPredicate*/);
-  thrust::mismatch(d_VA.begin() /*InputIterator1*/,
+  /*8*/ thrust::mismatch(d_VA.begin() /*InputIterator1*/,
                    d_VA.end() /*InputIterator1*/,
                    d_VB.begin() /*InputIterator2*/,
                    thrust::equal_to<int>() /*BinaryPredicate*/);
-  thrust::mismatch(thrust::host /*const thrust::detail::execution_policy_base<
+  /*9*/ thrust::mismatch(thrust::host /*const thrust::detail::execution_policy_base<
                                    DerivedPolicy > &*/,
                    A /*InputIterator1*/, A + N /*InputIterator1*/,
                    B /*InputIterator2*/);
-  thrust::mismatch(A /*InputIterator1*/, A + N /*InputIterator1*/,
+  /*10*/ thrust::mismatch(A /*InputIterator1*/, A + N /*InputIterator1*/,
                    B /*InputIterator2*/);
-  thrust::mismatch(thrust::host /*const thrust::detail::execution_policy_base<
+  /*11*/ thrust::mismatch(thrust::host /*const thrust::detail::execution_policy_base<
                                    DerivedPolicy > &*/,
                    A /*InputIterator1*/, A + N /*InputIterator1*/,
                    B /*InputIterator2*/,
                    thrust::equal_to<int>() /*BinaryPredicate*/);
-  thrust::mismatch(A /*InputIterator1*/, A + N /*InputIterator1*/,
+  /*12*/ thrust::mismatch(A /*InputIterator1*/, A + N /*InputIterator1*/,
                    B /*InputIterator2*/,
                    thrust::equal_to<int>() /*BinaryPredicate*/);
   // End

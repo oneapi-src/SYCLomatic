@@ -38,25 +38,25 @@ void test() {
   thrust::host_vector<int> host_data(data, data + N);
 
   // Start
-  thrust::find_if_not(data /*InputIterator*/, data + 3 /*InputIterator*/,
+  /*1*/ thrust::find_if_not(data /*InputIterator*/, data + 3 /*InputIterator*/,
                       greater_than_four() /*Predicate*/);
-  thrust::find_if_not(device_data.begin() /*InputIterator*/,
+  /*2*/ thrust::find_if_not(device_data.begin() /*InputIterator*/,
                       device_data.end() /*InputIterator*/,
                       greater_than_four() /*Predicate*/);
-  thrust::find_if_not(host_data.begin() /*InputIterator*/,
+  /*3*/ thrust::find_if_not(host_data.begin() /*InputIterator*/,
                       host_data.end() /*InputIterator*/,
                       greater_than_four() /*Predicate*/);
-  thrust::find_if_not(
+  /*4*/ thrust::find_if_not(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*InputIterator*/, data + 3 /*InputIterator*/,
       greater_than_four() /*Predicate*/);
-  thrust::find_if_not(
+  /*5*/ thrust::find_if_not(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       device_data.begin() /*InputIterator*/,
       device_data.end() /*InputIterator*/, greater_than_four() /*Predicate*/);
-  thrust::find_if_not(
+  /*6*/ thrust::find_if_not(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       host_data.begin() /*InputIterator*/, host_data.end() /*InputIterator*/,

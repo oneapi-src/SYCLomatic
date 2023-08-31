@@ -37,28 +37,28 @@ void test() {
   int result[N];
 
   // Start
-  thrust::replace_copy(
+  /*1*/ thrust::replace_copy(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_data.begin() /*InputIterator*/, d_data.end() /*InputIterator*/,
       d_result.begin() /*OutputIterator*/, 1 /*const T &*/, 99 /*const T &*/);
-  thrust::replace_copy(
+  /*2*/ thrust::replace_copy(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       h_data.begin() /*InputIterator*/, h_data.end() /*InputIterator*/,
       h_result.begin() /*OutputIterator*/, 1 /*const T &*/, 99 /*const T &*/);
-  thrust::replace_copy(
+  /*3*/ thrust::replace_copy(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*InputIterator*/, data + N /*InputIterator*/,
       result /*OutputIterator*/, 1 /*const T &*/, 99 /*const T &*/);
-  thrust::replace_copy(
+  /*4*/ thrust::replace_copy(
       d_data.begin() /*InputIterator*/, d_data.end() /*InputIterator*/,
       d_result.begin() /*OutputIterator*/, 1 /*const T &*/, 99 /*const T &*/);
-  thrust::replace_copy(
+  /*5*/ thrust::replace_copy(
       h_data.begin() /*InputIterator*/, h_data.end() /*InputIterator*/,
       h_result.begin() /*OutputIterator*/, 1 /*const T &*/, 99 /*const T &*/);
-  thrust::replace_copy(data /*InputIterator*/, data + N /*InputIterator*/,
+  /*6*/ thrust::replace_copy(data /*InputIterator*/, data + N /*InputIterator*/,
                        result /*OutputIterator*/, 1 /*const T &*/,
                        99 /*const T &*/);
   // End

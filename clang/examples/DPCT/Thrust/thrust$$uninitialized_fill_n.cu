@@ -18,15 +18,15 @@ void test() {
   int data[N];
 
   // Start
-  thrust::uninitialized_fill_n(d_array /*ForwardIterator */, N /*Size */,
+  /*1*/ thrust::uninitialized_fill_n(d_array /*ForwardIterator */, N /*Size */,
                                int_val /*	const T & */);
-  thrust::uninitialized_fill_n(
+  /*2*/ thrust::uninitialized_fill_n(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_array /*ForwardIterator */, N /*Size */, int_val /*	const T & */);
-  thrust::uninitialized_fill_n(data /*ForwardIterator */, N /*Size */,
+  /*3*/ thrust::uninitialized_fill_n(data /*ForwardIterator */, N /*Size */,
                                val /*	const T & */);
-  thrust::uninitialized_fill_n(
+  /*4*/ thrust::uninitialized_fill_n(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
                       > &*/,
       data /*ForwardIterator */, N /*Size */, val /*	const T & */);

@@ -34,22 +34,22 @@ void test() {
   thrust::host_vector<int> host_data(data, data + N);
 
   // Start
-  thrust::remove(thrust::host /*const thrust::detail::execution_policy_base<
+  /*1*/ thrust::remove(thrust::host /*const thrust::detail::execution_policy_base<
                                  DerivedPolicy > &*/,
                  data /*ForwardIterator*/, data + N /*ForwardIterator*/,
                  1 /*const T &*/);
-  thrust::remove(thrust::host /*const thrust::detail::execution_policy_base<
+  /*2*/ thrust::remove(thrust::host /*const thrust::detail::execution_policy_base<
                                  DerivedPolicy > &*/,
                  host_data.begin() /*ForwardIterator*/,
                  host_data.begin() + N /*ForwardIterator*/, 1 /*const T &*/);
-  thrust::remove(thrust::device /*const thrust::detail::execution_policy_base<
+  /*3*/ thrust::remove(thrust::device /*const thrust::detail::execution_policy_base<
                                    DerivedPolicy > &*/,
                  device_data.begin() /*ForwardIterator*/,
                  device_data.begin() + N /*ForwardIterator*/, 1 /*const T &*/);
-  thrust::remove(data /*ForwardIterator*/, data + N /*ForwardIterator*/, 1);
-  thrust::remove(host_data.begin() /*ForwardIterator*/,
+  /*4*/ thrust::remove(data /*ForwardIterator*/, data + N /*ForwardIterator*/, 1);
+  /*5*/ thrust::remove(host_data.begin() /*ForwardIterator*/,
                  host_data.begin() + N /*ForwardIterator*/, 1 /*const T &*/);
-  thrust::remove(device_data.begin() /*ForwardIterator*/,
+  /*6*/ thrust::remove(device_data.begin() /*ForwardIterator*/,
                  device_data.begin() + N /*ForwardIterator*/, 1 /*const T &*/);
   // End
 }

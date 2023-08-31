@@ -24,62 +24,62 @@ void test() {
   thrust::host_vector<int>::iterator h_result_iter_end;
 
   // Start
-  thrust::set_union(thrust::host /*const thrust::detail::execution_policy_base<
+  /*1*/ thrust::set_union(thrust::host /*const thrust::detail::execution_policy_base<
                                     DerivedPolicy > &*/,
                     A1 /*InputIterator1*/, A1 + 7 /*InputIterator1*/,
                     A2 /*InputIterator2 */, A2 + 5 /*InputIterator2 */,
                     result /*OutputIterator */);
-  thrust::set_union(A1 /*InputIterator1*/, A1 + 7 /*InputIterator1*/,
+  /*2*/ thrust::set_union(A1 /*InputIterator1*/, A1 + 7 /*InputIterator1*/,
                     A2 /*InputIterator2 */, A2 + 5 /*InputIterator2 */,
                     result /*OutputIterator */);
-  thrust::set_union(thrust::host /*const thrust::detail::execution_policy_base<
+  /*3*/ thrust::set_union(thrust::host /*const thrust::detail::execution_policy_base<
                                     DerivedPolicy > &*/,
                     A1 /*InputIterator1*/, A1 + 7 /*InputIterator1*/,
                     A2 /*InputIterator2 */, A2 + 5 /*InputIterator2 */,
                     result /*OutputIterator */, thrust::greater<int>());
-  thrust::set_union(A1 /*InputIterator1*/, A1 + 7 /*InputIterator1*/,
+  /*4*/ thrust::set_union(A1 /*InputIterator1*/, A1 + 7 /*InputIterator1*/,
                     A2 /*InputIterator2 */, A2 + 5 /*InputIterator2 */,
                     result /*OutputIterator */,
                     thrust::greater<int>() /*StrictWeakCompare */);
-  thrust::set_union(
+  /*5*/ thrust::set_union(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */);
-  thrust::set_union(
+  /*6*/ thrust::set_union(
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */);
-  thrust::set_union(
+  /*7*/ thrust::set_union(
       thrust::device /*const thrust::detail::execution_policy_base<
                         DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */, thrust::greater<int>());
-  thrust::set_union(
+  /*8*/ thrust::set_union(
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */,
       thrust::greater<int>() /*StrictWeakCompare */);
-  thrust::set_union(
+  /*9*/ thrust::set_union(
       thrust::host /*const thrust::detail::execution_policy_base<
                       DerivedPolicy > &*/,
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */);
-  thrust::set_union(
+  /*10*/ thrust::set_union(
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */);
-  thrust::set_union(
+  /*11*/ thrust::set_union(
       thrust::host /*const thrust::detail::execution_policy_base<
                       DerivedPolicy > &*/,
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */,
       thrust::greater<int>() /*StrictWeakCompare */);
-  thrust::set_union(
+  /*12*/ thrust::set_union(
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */,

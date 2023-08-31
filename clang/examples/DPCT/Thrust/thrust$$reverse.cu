@@ -39,23 +39,23 @@ void test() {
   thrust::host_vector<int> host_data(data, data + N);
 
   // Start
-  thrust::reverse(thrust::device /*const thrust::detail::execution_policy_base<
+  /*1*/ thrust::reverse(thrust::device /*const thrust::detail::execution_policy_base<
                                     DerivedPolicy > &*/,
                   device_data.begin() /*BidirectionalIterator*/,
                   device_data.end() /*BidirectionalIterator*/);
-  thrust::reverse(thrust::host /*const thrust::detail::execution_policy_base<
+  /*2*/ thrust::reverse(thrust::host /*const thrust::detail::execution_policy_base<
                                   DerivedPolicy > &*/,
                   host_data.begin() /*BidirectionalIterator*/,
                   host_data.end() /*BidirectionalIterator*/);
-  thrust::reverse(thrust::host /*const thrust::detail::execution_policy_base<
+  /*3*/ thrust::reverse(thrust::host /*const thrust::detail::execution_policy_base<
                                   DerivedPolicy > &*/,
                   data /*BidirectionalIterator*/,
                   data + N /*BidirectionalIterator*/);
-  thrust::reverse(device_data.begin() /*BidirectionalIterator*/,
+  /*4*/ thrust::reverse(device_data.begin() /*BidirectionalIterator*/,
                   device_data.end() /*BidirectionalIterator*/);
-  thrust::reverse(host_data.begin() /*BidirectionalIterator*/,
+  /*5*/ thrust::reverse(host_data.begin() /*BidirectionalIterator*/,
                   host_data.end() /*BidirectionalIterator*/);
-  thrust::reverse(data /*BidirectionalIterator*/,
+  /*6*/ thrust::reverse(data /*BidirectionalIterator*/,
                   data + N /*BidirectionalIterator*/);
   // End
 }
