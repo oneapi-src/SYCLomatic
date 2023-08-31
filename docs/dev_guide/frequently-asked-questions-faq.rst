@@ -11,7 +11,7 @@ Frequently Asked Questions
 * `How do I use the migrated module file in the new project?`_
 * `Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?`_
 * `How do I migrate CUDA\* source code that contains CUB library implementation source code?`_
-* `How do I fix the migrated code in case barrier is used conditional statement?`_
+* `How do I fix the sycl code in case synchronized block is used conditional statement?`_
 
 **Troubleshooting Migration**
 
@@ -163,16 +163,16 @@ expected results. Instead, exclude CUB library implementation source code from
 your migration by adding ``--in-root-exclude=<path to CUB library source code>``
 to your migration command.
 
-How do I fix the migrated code in case barrier is used conditional statement?
-*****************************************************************************
+How do I fix the sycl code in case synchronized block is used conditional statement?
+************************************************************************************
 
-If the migration code you are running uses synchronization within conditional/loop
+If the sycl code you are running uses synchronization within conditional/loop
 statements, you may encounter issues like hang or runtime_error. It is essential
 to ensure that all work_items within a sub_group must be encountered synchronization 
 points in converged control flow.
 
 Here are some examples.
-Barrier is used in conditional statements. The following original code:
+Synchronized statement is used in conditional block. The following original code:
 
 .. code-block:: cpp
    :linenos:
@@ -216,7 +216,7 @@ Barrier is used in conditional statements. The following original code:
    }
 
 is adjusted to move the synchronization statement outside of the 
-conditional statement:
+conditional block:
 
 .. code-block:: cpp
    :linenos:
@@ -270,7 +270,8 @@ conditional statement:
       }
    }
 
-Barrier is used in loop statements. The following original code:
+Synchronized statement is used in loop statements. The following
+original code:
 
 .. code-block:: cpp
    :linenos:
@@ -289,8 +290,8 @@ Barrier is used in loop statements. The following original code:
       }
    }
 
-is adjusted to fix the conditional in loop statement, let all thread
-enter loop statement
+is adjusted to fix the condition in loop statement, let all thread
+enter synchronized statement
 
 .. code-block:: cpp
    :linenos:
