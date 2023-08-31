@@ -967,9 +967,9 @@ thrustFactory("thrust::merge",
                { 6,PolicyState::NoPolicy, 5,"std::merge", HelperFeatureEnum::none}}),
 
 // thrust::uninitialized_fill
-// thrustFactory("thrust::uninitialized_fill",
-//               {{4,PolicyState::HasPolicy,2,"std::uninitialized_fill", HelperFeatureEnum::none},
-//                {3,PolicyState::NoPolicy, 2,"std::uninitialized_fill", HelperFeatureEnum::none}}),
+thrustFactory("thrust::uninitialized_fill",
+              {{4,PolicyState::HasPolicy,2,"std::uninitialized_fill", HelperFeatureEnum::none},
+               {3,PolicyState::NoPolicy, 2,"std::uninitialized_fill", HelperFeatureEnum::none}}),
 
 // thrust::unique
 thrustFactory("thrust::unique",
