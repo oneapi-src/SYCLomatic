@@ -44,6 +44,10 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
+   __global__ void kernel() {
+     return;
+   }
+
    void foo() {
      int err = 0;
      cudaLimit limit;
@@ -61,12 +65,28 @@ For example, this original CUDA\* code:
      err = cudaSetDeviceFlags(flags);
      err = cudaDeviceEnablePeerAccess(peer_device, flags);
      err = cuInit(0);
+     float *aptr;
+     cudaStreamAttrValue stream_attribute = {};
+     stream_attribute.accessPolicyWindow.base_ptr = aptr;
+     stream_attribute.accessPolicyWindow.num_bytes = 8 * 8 * 8;
+     stream_attribute.accessPolicyWindow.hitRatio = 1.0f;
+     stream_attribute.accessPolicyWindow.hitProp = cudaAccessPropertyPersisting;
+     stream_attribute.accessPolicyWindow.missProp = cudaAccessPropertyStreaming;
+     err = cudaStreamSetAttribute(stream, cudaStreamAttributeAccessPolicyWindow, &stream_attribute);
+     err = cudaStreamGetAttribute(stream, cudaStreamAttributeAccessPolicyWindow, &stream_attribute);
+     err = cudaCtxResetPersistingL2Cache();
+     err = cuCtxResetPersistingL2Cache();
+     err = cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, 8 * 8 * 8);
    }
 
 results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
+
+   void kernel() {
+     return;
+   }
 
    void foo() try {
      int err = 0;
@@ -110,6 +130,41 @@ results in the following migrated SYCL code:
      redundant in SYCL.
      */
      err = 0;
+     float *aptr;
+     /*
+     DPCT1007:7: Migration of cudaLaunchAttributeValue is not supported.
+     */
+     cudaStreamAttrValue stream_attribute = {};
+     /*
+     DPCT1027:8: The call to cudaStreamSetAttribute was removed because SYCL currently
+     does not support setting cache config on devices.
+     */
+     err = 0;
+     /*
+     DPCT1027:9: The call to cudaStreamGetAttribute was removed because SYCL currently
+     does not support setting cache config on devices.
+     */
+     err = 0;
+     /*
+     DPCT1027:10: The call to cudaCtxResetPersistingL2Cache was removed because SYCL
+     currently does not support setting cache config on devices.
+     */
+     err = 0;
+     /*
+     DPCT1027:11: The call to cuCtxResetPersistingL2Cache was removed because SYCL
+     currently does not support setting cache config on devices.
+     */
+     err = 0;
+     /*
+     DPCT1027:12: The call to cudaFuncSetAttribute was removed because SYCL currently
+     does not support corresponding setting.
+     */
+     err = 0;
+     /*
+     DPCT1027:13: The call to cudaFuncSetAttribute was removed because SYCL currently
+     does not support corresponding setting.
+     */
+     err = 0;
    }
    catch (sycl::exception const &exc) {
      std::cerr << exc.what() << "Exception caught at file:" << __FILE__
@@ -128,5 +183,6 @@ which is rewritten to:
      dpct::queue_ptr stream;
      unsigned int flags;
      int config;
+     float *aptr;
    }
 
