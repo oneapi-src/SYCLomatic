@@ -1,7 +1,8 @@
-void test(cudaArray_t a, size_t s1, size_t s2, const void *pv, size_t s3,
-          cudaMemcpyKind m) {
+void test(size_t s1, size_t s2, const void *src, size_t s3) {
   // Start
-  cudaMemcpyToArray(a /*cudaArray_t*/, s1 /*size_t*/, s2 /*size_t*/,
-                    pv /*const void **/, s3 /*size_t*/, m /*cudaMemcpyKind*/);
+  cudaArray_t dst;
+  cudaMemcpyKind m;
+  cudaMemcpyToArray(dst, s1 /*size_t*/, s2 /*size_t*/, src /*const void **/,
+                    s3 /*size_t*/, m);
   // End
 }

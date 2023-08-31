@@ -214,9 +214,12 @@ size_t calculateExpansionLevel(const SourceLocation Loc, bool IsBegin) {
 
 // Get textual representation of the Stmt.
 std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
-  std::string Str;
   if (!S)
-    return Str;
+    return "";
+  return getStmtSpelling(S->getSourceRange(), ParentRange);
+}
+
+std::string getStmtSpelling(clang::SourceRange SR, SourceRange ParentRange) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
 
@@ -234,7 +237,7 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
                          SM.getFileOffset(ParentRange.getBegin());
   if (ParentRangeSize <= 0) {
     // if ParentRange is invalid, getDefinitionRange is the best we can have
-    auto DRange = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
+    auto DRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
     BeginLoc = DRange.getBegin();
     EndLoc = DRange.getEnd();
     Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
@@ -243,7 +246,7 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
   } else {
     // if ParentRange is valid, find the expansion location in the ParentRange
     auto Range =
-        getRangeInRange(S, ParentRange.getBegin(), ParentRange.getEnd());
+        getRangeInRange(SR, ParentRange.getBegin(), ParentRange.getEnd());
     BeginLoc = Range.first;
     EndLoc = Range.second;
     Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc);
@@ -251,8 +254,8 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
 
   if (Length <= 0)
     return "";
-  Str = std::string(SM.getCharacterData(BeginLoc), Length);
-  return Str;
+  return std::string(SM.getCharacterData(BeginLoc), Length);
+   
 }
 
 SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
