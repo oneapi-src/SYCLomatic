@@ -1744,7 +1744,6 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   {
     auto Body = Printer.block();
     SubmitStmtsList.print(Printer);
-    Printer.indent() << "cgh.";
     printParallelFor(Printer, true);
   }
   if (getVarMap().hasSync())
@@ -1754,6 +1753,13 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
 }
 
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
+  std::string TemplateArgsStr;
+  if (DpctGlobalInfo::isSyclNamedLambda()) {
+   TemplateArgsStr = getTemplateArguments(Printer, false, true);
+  }
+  if (IsInSubmit) {
+    Printer.indent() << "cgh.";
+  }
   if (!SubmitStmtsList.NdRangeList.empty() &&
       DpctGlobalInfo::isCommentsEnabled())
     Printer.line("// run the kernel within defined ND range");
@@ -1762,7 +1768,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << "<dpct_kernel_name<class " << getName() << "_"
             << LocInfo.LocHash;
     if (hasTemplateArgs())
-      Printer << ", " << getTemplateArguments(false, true);
+      Printer << ", " << TemplateArgsStr;
     Printer << ">>";
     requestFeature(HelperFeatureEnum::device_ext);
   }
@@ -1855,9 +1861,10 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   for (auto &S : KernelStmts) {
     Printer.line(S.StmtStr);
   }
+  std::string TemplateArgsStr = getTemplateArguments(Printer);
   Printer.indent() << getName()
                    << (hasWrittenTemplateArgs()
-                           ? buildString("<", getTemplateArguments(), ">")
+                           ? buildString("<", TemplateArgsStr, ">")
                            : "")
                    << "(" << KernelArgs << ");";
   Printer.newLine();
@@ -2785,15 +2792,21 @@ void CallFunctionExpr::emplaceReplacement() {
                                          getExtraArguments(), nullptr));
 }
 
-std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
+std::string CallFunctionExpr::getTemplateArguments(KernelPrinter &Printer,
+                                                   bool WrittenArgsOnly,
                                                    bool WithScalarWrapped) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
+  bool IsNeedWarning = false;
   for (auto &TA : TemplateArgs) {
     if ((TA.isNull() || !TA.isWritten()) && WrittenArgsOnly)
       continue;
+    std::string Str = TA.getString();
+    if(TA.isNull() && !Str.empty()) {
+      IsNeedWarning = true;
+    }
     if (WithScalarWrapped && (!TA.isType() && !TA.isNull())) {
-      appendString(OS, "dpct_kernel_scalar<", TA.getString(), ">, ");
+      appendString(OS, "dpct_kernel_scalar<", Str, ">, ");
       requestFeature(HelperFeatureEnum::device_ext);
     } else {
       // This code path is used to process code like:
@@ -2801,13 +2814,23 @@ std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
       // When generating kernel name for "my_kernel", the type of this lambda
       // expr is "lambda at FilePath:Row:Col", which will cause compiling
       // failure. Current solution: use the location's hash value as its type.
-      std::string Str = TA.getString();
       StringRef StrRef(Str);
       if (StrRef.startswith("(lambda at")) {
         Str = "class lambda_" + getHashAsString(Str).substr(0, 6);
       }
       appendString(OS, Str, ", ");
     }
+  }
+  if(IsNeedWarning) {
+    std::string WarningMessage =
+        DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+            Diagnostics::UNDEDUCED_TYPE, "dpct_kernel_name");
+    Printer.indent();
+    Printer << "/*" << getNL();
+    Printer.indent();
+    Printer << WarningMessage << getNL();
+    Printer.indent();
+    Printer << "*/" << getNL();
   }
   OS.flush();
   return (Result.empty()) ? Result : Result.erase(Result.size() - 2);

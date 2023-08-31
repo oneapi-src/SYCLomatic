@@ -3474,7 +3474,8 @@ public:
   }
   inline const std::string &getName() { return Name; }
 
-  std::string getTemplateArguments(bool WrittenArgsOnly = true,
+  std::string getTemplateArguments(KernelPrinter &Printer,
+                                   bool WrittenArgsOnly = true,
                                    bool WithScalarWrapped = false);
 
   virtual std::string getExtraArguments();
