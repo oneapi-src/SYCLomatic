@@ -1,6 +1,8 @@
-void test(cudaPitchedPtr p, int i, cudaExtent e, cudaStream_t s) {
+void test(int i) {
   // Start
-  cudaMemset3DAsync(p /*cudaPitchedPtr*/, i /*int*/, e /*cudaExtent*/,
-                    s /*cudaStream_t*/);
+  cudaPitchedPtr p;
+  cudaExtent e;
+  cudaStream_t s;
+  cudaMemset3DAsync(p, i /*int*/, e, s);
   // End
 }

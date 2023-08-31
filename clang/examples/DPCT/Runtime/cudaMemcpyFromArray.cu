@@ -1,7 +1,9 @@
-void test(void *pv, cudaArray_const_t a, size_t s1, size_t s2, size_t s3,
-          cudaMemcpyKind m) {
+void test(void *dst, size_t s1, size_t s2, size_t s3) {
+  // TODO: src's type need to be changed to cudaArray_const_t
   // Start
-  cudaMemcpyFromArray(pv /*void **/, a /*cudaArray_const_t*/, s1 /*size_t*/,
-                      s2 /*size_t*/, s3 /*size_t*/, m /*cudaMemcpyKind*/);
+  cudaArray_t src;
+  cudaMemcpyKind m;
+  cudaMemcpyFromArray(dst /*void **/, src, s1 /*size_t*/, s2 /*size_t*/,
+                      s3 /*size_t*/, m);
   // End
 }

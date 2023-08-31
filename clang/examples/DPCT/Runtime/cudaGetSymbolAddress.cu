@@ -1,6 +1,5 @@
-void test(void **ppv) {
+void test(void **pDev, const void *symbol) {
   // Start
-  const void *pv;
-  cudaGetSymbolAddress(ppv /*void ***/, pv /*const void **/);
+  cudaGetSymbolAddress(pDev /*void ***/, symbol /*const void **/);
   // End
 }

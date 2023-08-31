@@ -1,7 +1,7 @@
-void test(void *pv, CUdeviceptr pd, size_t s) {
+void test(void *pHost, size_t s) {
   // Start
-  CUstream cs;
-  cuMemcpyDtoHAsync(pv /*void **/, pd /*CUdeviceptr*/, s /*size_t*/,
-                    cs /*CUstream*/);
+  CUdeviceptr pDev;
+  CUstream stream;
+  cuMemcpyDtoHAsync(pHost /*void **/, pDev, s /*size_t*/, stream);
   // End
 }
