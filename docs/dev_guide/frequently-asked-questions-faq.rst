@@ -11,7 +11,7 @@ Frequently Asked Questions
 * `How do I use the migrated module file in the new project?`_
 * `Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?`_
 * `How do I migrate CUDA\* source code that contains CUB library implementation source code?`_
-* `How do I fix the sycl code in case synchronized block is used conditional statement?`_
+* `How do I fix the sycl code in case synchronized block is used in conditional statement?`_
 
 **Troubleshooting Migration**
 
@@ -163,16 +163,22 @@ expected results. Instead, exclude CUB library implementation source code from
 your migration by adding ``--in-root-exclude=<path to CUB library source code>``
 to your migration command.
 
-How do I fix the sycl code in case synchronized block is used conditional statement?
-************************************************************************************
+How do I fix the sycl code in case synchronized block is used in conditional statement?
+***************************************************************************************
 
-If the sycl code you are running uses synchronization within conditional/loop
-statements, you may encounter issues like hang or runtime_error. It is essential
-to ensure that all work_items within a sub_group must be encountered synchronization 
-points in converged control flow.
+If the original code calls sychronization APIs within control flow statements like
+conditional/loop, you may encounter runtime issues like a process hang or crash with 
+runtime error. It is essential to ensure that each sychronization point is either
+skipped by all the work_items or visited by all the work_items in the same sub_group.
+If a sychronization point is visited by some work_items and skiped(due to different
+evaluation result of the predicate statement) by other work_items, the queue will stuck
+at current task and cause the process hang or crash.
 
 Here are some examples.
-Synchronized statement is used in conditional block. The following original code:
+
+In the first example, nd_item.barrier() is used inside a if block and the evaluation
+results of the conditional statement differs in each thread. 
+The following is the original code:
 
 .. code-block:: cpp
    :linenos:
@@ -215,8 +221,8 @@ Synchronized statement is used in conditional block. The following original code
       }
    }
 
-is adjusted to move the synchronization statement outside of the 
-conditional block:
+The following manually-adjusted code shows how to fix the hang issue
+or crash by moving the synchronization statement out of the if block.
 
 .. code-block:: cpp
    :linenos:
@@ -270,8 +276,8 @@ conditional block:
       }
    }
 
-Synchronized statement is used in loop statements. The following
-original code:
+The second example demonstrates how to fix the hang issue or crash when
+a synchronization statement is used in a for loop in the original code:
 
 .. code-block:: cpp
    :linenos:
@@ -290,8 +296,8 @@ original code:
       }
    }
 
-is adjusted to fix the condition in loop statement, let all thread
-enter synchronized statement
+The following is the manually-adjusted code which ensures all threads
+iterate with the same number of times in the for loop.
 
 .. code-block:: cpp
    :linenos:
@@ -302,7 +308,8 @@ enter synchronized statement
       unsigned int curr_particle =
          item_ct1.get_group(2) * item_ct1.get_local_range(2) +
          item_ct1.get_local_id(2);
-      for (; curr_particle < ((np+num_thread-1)/num_thread)*num_thread; 
+      unsigned int num_workitem = item_ct1.get_group_range(2) * item_ct1.get_local_range(2);
+      for (; curr_particle < ((np+num_workitem-1)/num_workitem)*num_workitem; 
       curr_particle += item_ct1.get_group_range(2) * item_ct1.get_local_range(2)) {
          ...
          item_ct1.barrier();
