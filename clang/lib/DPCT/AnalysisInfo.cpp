@@ -1752,10 +1752,28 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
     Printer.line("});");
 }
 
+template <typename IDTy, typename... Ts>
+void KernelCallExpr::printWarningMessage(KernelPrinter &Printer, IDTy MsgID,
+                                         Ts &&...Vals) {
+  Printer.indent();
+  Printer << "/*" << getNL();
+  Printer.indent();
+  Printer << DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                 MsgID, std::forward<Ts>(Vals)...)
+          << getNL();
+  Printer.indent();
+  Printer << "*/" << getNL();
+}
+
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   std::string TemplateArgsStr;
   if (DpctGlobalInfo::isSyclNamedLambda()) {
-   TemplateArgsStr = getTemplateArguments(Printer, false, true);
+    bool IsNeedWarning = false;
+    TemplateArgsStr = getTemplateArguments(IsNeedWarning, false, true);
+    if (!TemplateArgsStr.empty() && IsNeedWarning) {
+      printWarningMessage(Printer, Diagnostics::UNDEDUCED_TYPE,
+                          "dpct_kernel_name");
+    }
   }
   if (IsInSubmit) {
     Printer.indent() << "cgh.";
@@ -1861,12 +1879,17 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   for (auto &S : KernelStmts) {
     Printer.line(S.StmtStr);
   }
-  std::string TemplateArgsStr = getTemplateArguments(Printer);
-  Printer.indent() << getName()
-                   << (hasWrittenTemplateArgs()
-                           ? buildString("<", TemplateArgsStr, ">")
-                           : "")
-                   << "(" << KernelArgs << ");";
+  std::string TemplateArgsStr;
+  if (hasWrittenTemplateArgs()) {
+    bool IsNeedWarning = false;
+    TemplateArgsStr =
+        buildString("<", getTemplateArguments(IsNeedWarning), ">");
+    if (!TemplateArgsStr.empty() && IsNeedWarning) {
+      printWarningMessage(Printer, Diagnostics::UNDEDUCED_TYPE,
+                          "dpct_kernel_name");
+    }
+  }
+  Printer.indent() << getName() << TemplateArgsStr << "(" << KernelArgs << ");";
   Printer.newLine();
 }
 
@@ -2792,12 +2815,12 @@ void CallFunctionExpr::emplaceReplacement() {
                                          getExtraArguments(), nullptr));
 }
 
-std::string CallFunctionExpr::getTemplateArguments(KernelPrinter &Printer,
+std::string CallFunctionExpr::getTemplateArguments(bool &IsNeedWarning,
                                                    bool WrittenArgsOnly,
                                                    bool WithScalarWrapped) {
+  IsNeedWarning = false;
   std::string Result;
   llvm::raw_string_ostream OS(Result);
-  bool IsNeedWarning = false;
   for (auto &TA : TemplateArgs) {
     if ((TA.isNull() || !TA.isWritten()) && WrittenArgsOnly)
       continue;
@@ -2820,17 +2843,6 @@ std::string CallFunctionExpr::getTemplateArguments(KernelPrinter &Printer,
       }
       appendString(OS, Str, ", ");
     }
-  }
-  if(IsNeedWarning) {
-    std::string WarningMessage =
-        DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-            Diagnostics::UNDEDUCED_TYPE, "dpct_kernel_name");
-    Printer.indent();
-    Printer << "/*" << getNL();
-    Printer.indent();
-    Printer << WarningMessage << getNL();
-    Printer.indent();
-    Printer << "*/" << getNL();
   }
   OS.flush();
   return (Result.empty()) ? Result : Result.erase(Result.size() - 2);
