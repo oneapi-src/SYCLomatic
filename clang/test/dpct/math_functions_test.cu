@@ -70,10 +70,10 @@ float test_sqrt(float in) { return sqrt(in); }
 // CHECK: float test_pow(float a, float b) { return pow(a, b); }
 float test_pow(float a, float b) { return pow(a, b); }
 
-// CHECK: float test_pow(float a, int b) { return sycl::pown(a, b); }
+// CHECK: float test_pow(float a, int b) { return dpct::pow(a, b); }
 float test_pow(float a, int b) { return pow(a, b); }
 
-// CHECK: double test_pow(double a, int b) { return sycl::pown(a, b); }
+// CHECK: double test_pow(double a, int b) { return dpct::pow(a, b); }
 double test_pow(double a, int b) { return pow(a, b); }
 
 // CHECK: float test_log(float in) { return log(in); }
