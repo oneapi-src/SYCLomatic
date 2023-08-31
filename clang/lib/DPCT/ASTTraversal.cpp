@@ -3114,6 +3114,9 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), std::move(Repl)));
     return;
+  } else if (MemberName == "l2CacheSize") {
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+           MemberName, "global_mem_cache_size");
   } else if (MemberName == "ECCEnabled") {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string Repl = MapNames::getDpctNamespace() +
