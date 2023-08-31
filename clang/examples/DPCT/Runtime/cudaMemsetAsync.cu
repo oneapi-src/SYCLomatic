@@ -1,6 +1,6 @@
-void test(void *pv, int i, size_t s) {
+void test(void *pDev, int i, size_t s) {
   // Start
   cudaStream_t cs;
-  cudaMemsetAsync(pv /*void **/, i /*int*/, s /*size_t*/, cs /*cudaStream_t*/);
+  cudaMemsetAsync(pDev /*void **/, i /*int*/, s /*size_t*/, cs);
   // End
 }

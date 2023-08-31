@@ -29,3 +29,5 @@ __global__ void test(__half h1, __half h2, __half h3, __nv_bfloat16 b1,
 - Please format the code.
 
 - Add each API mapping test case in corresponding folder of `test/dpct/query_api_mapping`.
+
+- If the API has more than 5 overload functions, add the index number (like: `/* 1 */`) before each function.

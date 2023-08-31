@@ -264,6 +264,8 @@ size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E,
                             clang::SourceRange Parent = clang::SourceRange());
+std::string getStmtSpelling(clang::SourceRange SR,
+                            clang::SourceRange Parent = clang::SourceRange());
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;

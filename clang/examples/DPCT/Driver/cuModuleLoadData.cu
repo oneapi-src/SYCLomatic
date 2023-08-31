@@ -1,5 +1,5 @@
-void test(CUmodule *pm, const void *pv) {
+void test(CUmodule *pm, const void *pData) {
   // Start
-  cuModuleLoadData(pm /*CUmodule **/, pv /*const void **/);
+  cuModuleLoadData(pm /*CUmodule **/, pData /*const void **/);
   // End
 }

@@ -306,8 +306,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // CHECK: d2 = sycl::ceil(d0);
   d2 = ceil(d0);
-  // CHECK: d2 = sycl::ceil((double)i);
-  d2 = ceil(i);
 
   // CHECK: d2 = sycl::copysign(d0, d1);
   d2 = copysign(d0, d1);
@@ -855,11 +853,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d1 = sycl::floor((double)i);
   d1 = floor(i);
 
-  // CHECK: d2 = sycl::ceil(d2);
-  d2 = ceil(d2);
-  // CHECK: d2 = sycl::ceil((double)i);
-  d2 = ceil(i);
-
   // CHECK: d2 = sycl::fma(d0, d1, d2);
   d2 = fma(d0, d1, d2);
   // CHECK: d2 = sycl::fma((double)i, (double)i, (double)i);
@@ -947,8 +940,6 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
 
   // CHECK: f2 = sycl::ceil(f0);
   f2 = ceilf(f0);
-  // CHECK: f2 = sycl::ceil((float)i);
-  f2 = ceilf(i);
 
   // CHECK: f2 = sycl::copysign(f0, f1);
   f2 = copysignf(f0, f1);
@@ -1555,11 +1546,6 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f1 = floorf(f1);
   // CHECK: f1 = sycl::floor((float)i);
   f1 = floorf(i);
-
-  // CHECK: f2 = sycl::ceil(f2);
-  f2 = ceilf(f2);
-  // CHECK: f2 = sycl::ceil((float)i);
-  f2 = ceilf(i);
 
   // CHECK: f2 = sycl::fma(f0, f1, f2);
   f2 = fmaf(f0, f1, f2);
@@ -3740,4 +3726,20 @@ __global__ void foo4(unsigned char *uc, int i) {
   int tid = blockDim.x * blockIdx.x + threadIdx.x + i + 1;
   // CHECK: uc[tid] = sycl::sqrt(f0 * f0 + f1 * f1);
   uc[tid] = sqrtf(powf(f0, 2.f) + powf(f1, 2.f));
+}
+
+void foo5() {
+  double d0;
+  float f0;
+  int i;
+
+  // CHECK: d0 = ceil(d0);
+  d0 = ceil(d0);
+  // CHECK: d0 = ceil(i);
+  d0 = ceil(i);
+
+  // CHECK: f0 = ceilf(f0);
+  f0 = ceilf(f0);
+  // CHECK: f0 = ceilf(i);
+  f0 = ceilf(i);
 }

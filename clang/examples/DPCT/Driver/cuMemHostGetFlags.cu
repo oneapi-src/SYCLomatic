@@ -1,5 +1,5 @@
-void test(unsigned int *pu, void *pv) {
+void test(unsigned int *pu, void *pHost) {
   // Start
-  cuMemHostGetFlags(pu /*unsigned int **/, pv /*void **/);
+  cuMemHostGetFlags(pu /*unsigned int **/, pHost /*void **/);
   // End
 }
