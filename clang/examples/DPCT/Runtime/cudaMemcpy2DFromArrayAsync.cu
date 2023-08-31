@@ -1,9 +1,11 @@
-void test(void *pv, size_t s1, cudaArray_const_t a, size_t s2, size_t s3,
-          size_t s4, size_t s5, cudaMemcpyKind m, cudaStream_t s) {
+void test(void *dst, size_t s1, size_t s2, size_t s3, size_t s4, size_t s5,
+          cudaMemcpyKind m) {
+  // TODO: src's type need to be changed to cudaArray_const_t
   // Start
-  cudaMemcpy2DFromArrayAsync(pv /*void **/, s1 /*size_t*/,
-                             a /*cudaArray_const_t*/, s2 /*size_t*/,
+  cudaArray_t src;
+  cudaStream_t s;
+  cudaMemcpy2DFromArrayAsync(dst /*void **/, s1 /*size_t*/, src, s2 /*size_t*/,
                              s3 /*size_t*/, s4 /*size_t*/, s5 /*size_t*/,
-                             m /*cudaMemcpyKind*/, s /*cudaStream_t*/);
+                             m /*cudaMemcpyKind*/, s);
   // End
 }
