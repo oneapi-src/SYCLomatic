@@ -1,5 +1,6 @@
-void test(void *pv, CUdeviceptr pd, size_t s) {
+void test(void *pHost, size_t s) {
   // Start
-  cuMemcpyDtoH(pv /*void **/, pd /*CUdeviceptr*/, s /*size_t*/);
+  CUdeviceptr pDev;
+  cuMemcpyDtoH(pHost /*void **/, pDev, s /*size_t*/);
   // End
 }

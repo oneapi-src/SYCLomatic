@@ -1,6 +1,5 @@
-void test(size_t *s) {
+void test(size_t *s, const void *symbol) {
   // Start
-  const void *pv;
-  cudaGetSymbolSize(s /*size_t **/, pv /*const void **/);
+  cudaGetSymbolSize(s /*size_t **/, symbol /*const void **/);
   // End
 }

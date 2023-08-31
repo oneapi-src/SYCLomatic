@@ -1,5 +1,5 @@
-void test(void **ppv, size_t s) {
+void test(void **pDev, size_t s) {
   // Start
-  cudaMalloc(ppv /*void ***/, s /*size_t*/);
+  cudaMalloc(pDev /*void ***/, s /*size_t*/);
   // End
 }

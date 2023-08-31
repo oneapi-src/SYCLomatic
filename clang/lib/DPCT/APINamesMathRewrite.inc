@@ -4886,3 +4886,35 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
 SINCOS_REWRITER("sincos", "double")
 SINCOS_REWRITER("sincosf", "float")
 SINCOS_REWRITER("__sincosf", "float")
+
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "ceil",
+        HEADER_INSERT_FACTORY(HeaderType::HT_Math,
+                              CALL_FACTORY_ENTRY("ceil",
+                                                 CALL("std::ceil", ARG(0))))),
+    MATH_API_REWRITER_DEVICE(
+        "ceil",
+        MATH_API_DEVICE_NODES(
+            CALL_FACTORY_ENTRY(
+                "ceil",
+                CALL(MapNames::getClNamespace(false, true) + "ceil", ARG(0))),
+            EMPTY_FACTORY_ENTRY("ceil"), EMPTY_FACTORY_ENTRY("ceil"),
+            EMPTY_FACTORY_ENTRY("ceil"))))
+
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "ceilf",
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_Math,
+            CALL_FACTORY_ENTRY("ceilf", CALL("std::ceil",
+                                             CAST_IF_NOT_SAME(LITERAL("float"),
+                                                              ARG(0)))))),
+    MATH_API_REWRITER_DEVICE(
+        "ceilf",
+        MATH_API_DEVICE_NODES(
+            CALL_FACTORY_ENTRY(
+                "ceilf", CALL(MapNames::getClNamespace(false, true) + "ceil",
+                              CAST_IF_NOT_SAME(LITERAL("float"), ARG(0)))),
+            EMPTY_FACTORY_ENTRY("ceilf"), EMPTY_FACTORY_ENTRY("ceilf"),
+            EMPTY_FACTORY_ENTRY("ceilf"))))

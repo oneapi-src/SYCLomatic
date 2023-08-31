@@ -148,3 +148,15 @@ ENTRY_TYPE(cooperative_groups::__v1::coalesced_group, false, NO_FLAG, P4, "comme
 ENTRY_TYPE(CUmemGenericAllocationHandle, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUmemAllocationProp, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUmemAccessDesc, false, NO_FLAG, P4, "comment")
+
+// cuRand
+ENTRY_TYPE(curandStateScrambledSobol64_t, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(curandStateSobol64_t, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(curandStateScrambledSobol32_t, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(curandStateSobol32_t, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(curandStateMtgp32_t, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(curandStateScrambledSobol64, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(curandStateSobol64, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(curandStateScrambledSobol32, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(curandStateSobol32, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(curandStateMtgp32, false, NO_FLAG, P4, "comment")

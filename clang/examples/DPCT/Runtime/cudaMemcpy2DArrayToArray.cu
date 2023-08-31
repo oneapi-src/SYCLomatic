@@ -1,9 +1,11 @@
-void test(cudaArray_t a, size_t s1, size_t s2, cudaArray_const_t ac, size_t s3,
-          size_t s4, size_t s5, size_t s6, cudaMemcpyKind m) {
+void test(size_t s1, size_t s2, size_t s3, size_t s4, size_t s5, size_t s6) {
+  // TODO: src's type need to be changed to cudaArray_const_t
   // Start
-  cudaMemcpy2DArrayToArray(a /*cudaArray_t*/, s1 /*size_t*/, s2 /*size_t*/,
-                           ac /*cudaArray_const_t*/, s3 /*size_t*/,
-                           s4 /*size_t*/, s5 /*size_t*/, s6 /*size_t*/,
-                           m /*cudaMemcpyKind*/);
+  cudaArray_t dst;
+  cudaArray_t src;
+  cudaMemcpyKind m;
+  cudaMemcpy2DArrayToArray(dst, s1 /*size_t*/, s2 /*size_t*/, src,
+                           s3 /*size_t*/, s4 /*size_t*/, s5 /*size_t*/,
+                           s6 /*size_t*/, m);
   // End
 }

@@ -785,6 +785,10 @@ int runDPCT(int argc, const char **argv) {
           else if (Option.ends_with("occupancy-calculation"))
             Experimentals.addValue(
                 ExperimentalFeatures::Exp_OccupancyCalculation);
+          else if (Option.ends_with("free-function-queries"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_FreeQueries);
+          else if (Option.ends_with("logical-group"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
         } else if (Option == "--no-dry-pattern") {
           NoDRYPatternFlag = true;
         }
