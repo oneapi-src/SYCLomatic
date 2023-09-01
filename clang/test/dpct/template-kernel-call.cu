@@ -320,6 +320,9 @@ static void multiply(int block_size, Image<T> &ptr, T value) {
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      auto ptr_dPtr_ct0 = ptr.dPtr;
 // CHECK-EMPTY:
+// CHECK-NEXT:      /*
+// CHECK-NEXT:      DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:      */
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, size), sycl::range<3>(1, 1, size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
@@ -341,6 +344,9 @@ void foo1(Image<T> &ptr, T value) {
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      auto ptr_dPtr_ct0 = ptr.dPtr;
 // CHECK-EMPTY:
+// CHECK-NEXT:      /*
+// CHECK-NEXT:      DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:      */
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(2, size, 1), sycl::range<3>(2, size, 1)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
@@ -383,6 +389,9 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:    */
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
@@ -395,6 +404,9 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:    */
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, base_t::crsmat->rows) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
@@ -407,6 +419,9 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:    */
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, base_t::crsmat->rows), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
@@ -419,6 +434,9 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:    */
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, base_t::crsmat->rows), sycl::range<3>(1, 1, base_t::crsmat->rows)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
