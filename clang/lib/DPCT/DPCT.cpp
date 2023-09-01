@@ -755,6 +755,7 @@ int runDPCT(int argc, const char **argv) {
     SourcePathList = OptParser->getSourcePathList();
   }
   RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
+  std::string QueryAPIMappingStr;
   if (DpctGlobalInfo::isQueryAPIMapping()) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
@@ -797,7 +798,7 @@ int runDPCT(int argc, const char **argv) {
       OptionMsg += ")";
     }
 
-    llvm::outs() << "CUDA API:";
+    QueryAPIMappingStr += "CUDA API:";
     static const std::string StartStr{"// Start"};
     static const std::string EndStr{"// End"};
     auto StartPos = SourceCode.find(StartStr);
@@ -807,20 +808,23 @@ int runDPCT(int argc, const char **argv) {
     }
     StartPos = StartPos + StartStr.length();
     EndPos = SourceCode.find_last_of('\n', EndPos);
-    llvm::outs() << SourceCode.substr(StartPos, EndPos - StartPos + 1);
+    QueryAPIMappingStr += SourceCode.substr(StartPos, EndPos - StartPos + 1);
     static const std::string MigrateDesc{"// Migration desc: "};
     auto MigrateDescPos = SourceCode.find(MigrateDesc);
     if (MigrateDescPos != StringRef::npos) {
       auto MigrateDescBegin = MigrateDescPos + MigrateDesc.length();
       auto MigrateDescEnd = SourceCode.find_first_of('\n', MigrateDescPos);
-      llvm::outs() << SourceCode.substr(MigrateDescBegin,
+      llvm::outs() << QueryAPIMappingStr
+                   << SourceCode.substr(MigrateDescBegin,
                                         MigrateDescEnd - MigrateDescBegin + 1);
       dpctExit(MigrationSucceeded);
     }
-    llvm::outs() << "Is migrated to" << OptionMsg << ":";
+    QueryAPIMappingStr += "Is migrated to" + OptionMsg + ":";
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
     NoIncrementalMigration = true;
+    StopOnParseErr = true;
+    Tool.setPrintErrorMessage(false);
     // Need set a virtual path and it will used by AnalysisScope.
     InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
   } else {
@@ -1112,6 +1116,7 @@ int runDPCT(int argc, const char **argv) {
   } while (DpctGlobalInfo::isNeedRunAgain());
 
   if (DpctGlobalInfo::isQueryAPIMapping()) {
+    llvm::outs() << QueryAPIMappingStr;
     DiagnosticsEngine Diagnostics(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
         IntrusiveRefCntPtr<DiagnosticOptions>(new DiagnosticOptions()));
