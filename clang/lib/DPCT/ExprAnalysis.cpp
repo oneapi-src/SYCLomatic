@@ -940,7 +940,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         auto Extra = C->getExtraArguments();
         if (Extra.empty())
           return;
-        std::cout << " REPLACEMENT " << Extra << std::endl;
         addReplacement(C->getExtraArgLoc() - SrcBegin, 0, Extra);
       }
     }
