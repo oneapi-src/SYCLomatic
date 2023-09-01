@@ -2616,7 +2616,6 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   std::cout << "---- " << CE->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts());
   buildTextureObjectArgsInfo(CE);
-
   bool HasImplicitArg = false;
   if (auto FD = CE->getDirectCallee()) {
     IsAllTemplateArgsSpecified = deduceTemplateArguments(CE, FD, TemplateArgs);
@@ -2656,6 +2655,8 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
                     ->getEndLoc().printToString(SM) << std::endl;
         std::cout << " CE begin range " << CE->getBeginLoc().printToString(SM) << std::endl;
         std::cout << " CE end range " << CE->getEndLoc().printToString(SM) << std::endl;
+        // std::cout << " ==== " << SM.getImmediateExpansionRange(CE->getBeginLoc()).getBegin().printToString(SM) << std::endl;
+        // std::cout << " ==== " << SM.getImmediateSpellingLoc(CE->getBeginLoc()).printToString(SM) << std::endl;
 
         auto CERange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
         std::cout << " CEDEFINE  " << CERange.getBegin().printToString(SM) << std::endl;
@@ -2667,7 +2668,8 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
         auto PairRange = getRangeInRange(CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg), CERange.getBegin(), TempLoc);
         std::cout << "PPPPPP " << PairRange.second.printToString(SM) << std::endl;
         
-        auto RealEnd =  PairRange.second;
+        auto RealEnd = PairRange.second;
+        std::cout << " CCCMMMM STR " << getCombinedStrFromLoc(RealEnd) << std::endl;
         // auto RealEnd = TempLoc;
         auto IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
             getCombinedStrFromLoc(RealEnd));

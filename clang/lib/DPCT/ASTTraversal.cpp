@@ -320,12 +320,11 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
           std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
               MacroNameTok.getIdentifierInfo(), MI, Range, IsInAnalysisScope,
               MI->getNumTokens());
-      auto TEMPLoc = Lexer::getLocForEndOfToken(
+      auto EndOfLastToken = Lexer::getLocForEndOfToken(
           MI->getReplacementToken(MI->getNumTokens() - 1).getLocation(), 0, SM,
           DpctGlobalInfo::getContext().getLangOpts());
-
       dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
-          [getCombinedStrFromLoc(TEMPLoc)] = R;
+          [getCombinedStrFromLoc(EndOfLastToken)] = R;
     }
 
     // If PredefinedStreamName is used with concatenated macro token,
