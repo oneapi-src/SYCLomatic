@@ -3484,7 +3484,8 @@ public:
   }
   inline const std::string &getName() { return Name; }
 
-  std::string getTemplateArguments(bool WrittenArgsOnly = true,
+  std::string getTemplateArguments(bool &IsNeedWarning,
+                                   bool WrittenArgsOnly = true,
                                    bool WithScalarWrapped = false);
 
   virtual std::string getExtraArguments();
@@ -4152,6 +4153,8 @@ private:
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
+  template <typename IDTy, typename... Ts>
+  void printWarningMessage(KernelPrinter &Printer, IDTy MsgID, Ts &&...Vals);
   template <class T> void printStreamBase(T &Printer);
 
 public:

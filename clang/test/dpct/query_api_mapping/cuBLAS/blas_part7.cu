@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZher2k | FileCheck %s -check-prefix=cublasZher2k
 // cublasZher2k: CUDA API:
 // cublasZher2k-NEXT:   cublasZher2k(handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/,

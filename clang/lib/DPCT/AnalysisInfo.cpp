@@ -1746,7 +1746,6 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   {
     auto Body = Printer.block();
     SubmitStmtsList.print(Printer);
-    Printer.indent() << "cgh.";
     printParallelFor(Printer, true);
   }
   if (getVarMap().hasSync())
@@ -1755,7 +1754,32 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
     Printer.line("});");
 }
 
+template <typename IDTy, typename... Ts>
+void KernelCallExpr::printWarningMessage(KernelPrinter &Printer, IDTy MsgID,
+                                         Ts &&...Vals) {
+  Printer.indent();
+  Printer << "/*" << getNL();
+  Printer.indent();
+  Printer << DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                 MsgID, std::forward<Ts>(Vals)...)
+          << getNL();
+  Printer.indent();
+  Printer << "*/" << getNL();
+}
+
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
+  std::string TemplateArgsStr;
+  if (DpctGlobalInfo::isSyclNamedLambda() && hasTemplateArgs()) {
+    bool IsNeedWarning = false;
+    TemplateArgsStr = getTemplateArguments(IsNeedWarning, false, true);
+    if (!TemplateArgsStr.empty() && IsNeedWarning) {
+      printWarningMessage(Printer, Diagnostics::UNDEDUCED_TYPE,
+                          "dpct_kernel_name");
+    }
+  }
+  if (IsInSubmit) {
+    Printer.indent() << "cgh.";
+  }
   if (!SubmitStmtsList.NdRangeList.empty() &&
       DpctGlobalInfo::isCommentsEnabled())
     Printer.line("// run the kernel within defined ND range");
@@ -1764,7 +1788,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << "<dpct_kernel_name<class " << getName() << "_"
             << LocInfo.LocHash;
     if (hasTemplateArgs())
-      Printer << ", " << getTemplateArguments(false, true);
+      Printer << ", " << TemplateArgsStr;
     Printer << ">>";
     requestFeature(HelperFeatureEnum::device_ext);
   }
@@ -1857,11 +1881,17 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   for (auto &S : KernelStmts) {
     Printer.line(S.StmtStr);
   }
-  Printer.indent() << getName()
-                   << (hasWrittenTemplateArgs()
-                           ? buildString("<", getTemplateArguments(), ">")
-                           : "")
-                   << "(" << KernelArgs << ");";
+  std::string TemplateArgsStr;
+  if (hasWrittenTemplateArgs()) {
+    bool IsNeedWarning = false;
+    TemplateArgsStr =
+        buildString("<", getTemplateArguments(IsNeedWarning), ">");
+    if (!TemplateArgsStr.empty() && IsNeedWarning) {
+      printWarningMessage(Printer, Diagnostics::UNDEDUCED_TYPE,
+                          "dpct_kernel_name");
+    }
+  }
+  Printer.indent() << getName() << TemplateArgsStr << "(" << KernelArgs << ");";
   Printer.newLine();
 }
 
@@ -2787,15 +2817,21 @@ void CallFunctionExpr::emplaceReplacement() {
                                          getExtraArguments(), nullptr));
 }
 
-std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
+std::string CallFunctionExpr::getTemplateArguments(bool &IsNeedWarning,
+                                                   bool WrittenArgsOnly,
                                                    bool WithScalarWrapped) {
+  IsNeedWarning = false;
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   for (auto &TA : TemplateArgs) {
     if ((TA.isNull() || !TA.isWritten()) && WrittenArgsOnly)
       continue;
+    std::string Str = TA.getString();
+    if(TA.isNull() && !Str.empty()) {
+      IsNeedWarning = true;
+    }
     if (WithScalarWrapped && (!TA.isType() && !TA.isNull())) {
-      appendString(OS, "dpct_kernel_scalar<", TA.getString(), ">, ");
+      appendString(OS, "dpct_kernel_scalar<", Str, ">, ");
       requestFeature(HelperFeatureEnum::device_ext);
     } else {
       // This code path is used to process code like:
@@ -2803,7 +2839,6 @@ std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
       // When generating kernel name for "my_kernel", the type of this lambda
       // expr is "lambda at FilePath:Row:Col", which will cause compiling
       // failure. Current solution: use the location's hash value as its type.
-      std::string Str = TA.getString();
       StringRef StrRef(Str);
       if (StrRef.startswith("(lambda at")) {
         Str = "class lambda_" + getHashAsString(Str).substr(0, 6);
