@@ -211,123 +211,123 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__ldca | FileCheck %s -check-prefix=LDCA
 // LDCA: CUDA API:
-// LDCA-NEXT:   __ldca(h /*__half **/);
-// LDCA-NEXT:   __ldca(h2 /*__half2 **/);
-// LDCA-NEXT:   __ldca(b /*__nv_bfloat16 **/);
-// LDCA-NEXT:   __ldca(b2 /*__nv_bfloat162 **/);
+// LDCA-NEXT:   /* 1 */ __ldca(h /*__half **/);
+// LDCA-NEXT:   /* 2 */ __ldca(h2 /*__half2 **/);
+// LDCA-NEXT:   /* 3 */ __ldca(b /*__nv_bfloat16 **/);
+// LDCA-NEXT:   /* 4 */ __ldca(b2 /*__nv_bfloat162 **/);
 // LDCA-NEXT: Is migrated to:
-// LDCA-NEXT:   *h;
-// LDCA-NEXT:   *h2;
-// LDCA-NEXT:   *b;
-// LDCA-NEXT:   *b2;
+// LDCA-NEXT:   /* 1 */ *h;
+// LDCA-NEXT:   /* 2 */ *h2;
+// LDCA-NEXT:   /* 3 */ *b;
+// LDCA-NEXT:   /* 4 */ *b2;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__ldcg | FileCheck %s -check-prefix=LDCG
 // LDCG: CUDA API:
-// LDCG-NEXT:   __ldcg(h /*__half **/);
-// LDCG-NEXT:   __ldcg(h2 /*__half2 **/);
-// LDCG-NEXT:   __ldcg(b /*__nv_bfloat16 **/);
-// LDCG-NEXT:   __ldcg(b2 /*__nv_bfloat162 **/);
+// LDCG-NEXT:   /* 1 */ __ldcg(h /*__half **/);
+// LDCG-NEXT:   /* 2 */ __ldcg(h2 /*__half2 **/);
+// LDCG-NEXT:   /* 3 */ __ldcg(b /*__nv_bfloat16 **/);
+// LDCG-NEXT:   /* 4 */ __ldcg(b2 /*__nv_bfloat162 **/);
 // LDCG-NEXT: Is migrated to:
-// LDCG-NEXT:   *h;
-// LDCG-NEXT:   *h2;
-// LDCG-NEXT:   *b;
-// LDCG-NEXT:   *b2;
+// LDCG-NEXT:   /* 1 */ *h;
+// LDCG-NEXT:   /* 2 */ *h2;
+// LDCG-NEXT:   /* 3 */ *b;
+// LDCG-NEXT:   /* 4 */ *b2;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__ldcs | FileCheck %s -check-prefix=LDCS
 // LDCS: CUDA API:
-// LDCS-NEXT:   __ldcs(h /*__half **/);
-// LDCS-NEXT:   __ldcs(h2 /*__half2 **/);
-// LDCS-NEXT:   __ldcs(b /*__nv_bfloat16 **/);
-// LDCS-NEXT:   __ldcs(b2 /*__nv_bfloat162 **/);
+// LDCS-NEXT:   /* 1 */ __ldcs(h /*__half **/);
+// LDCS-NEXT:   /* 2 */ __ldcs(h2 /*__half2 **/);
+// LDCS-NEXT:   /* 3 */ __ldcs(b /*__nv_bfloat16 **/);
+// LDCS-NEXT:   /* 4 */ __ldcs(b2 /*__nv_bfloat162 **/);
 // LDCS-NEXT: Is migrated to:
-// LDCS-NEXT:   *h;
-// LDCS-NEXT:   *h2;
-// LDCS-NEXT:   *b;
-// LDCS-NEXT:   *b2;
+// LDCS-NEXT:   /* 1 */ *h;
+// LDCS-NEXT:   /* 2 */ *h2;
+// LDCS-NEXT:   /* 3 */ *b;
+// LDCS-NEXT:   /* 4 */ *b2;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__ldcv | FileCheck %s -check-prefix=LDCV
 // LDCV: CUDA API:
-// LDCV-NEXT:   __ldcv(h /*__half **/);
-// LDCV-NEXT:   __ldcv(h2 /*__half2 **/);
-// LDCV-NEXT:   __ldcv(b /*__nv_bfloat16 **/);
-// LDCV-NEXT:   __ldcv(b2 /*__nv_bfloat162 **/);
+// LDCV-NEXT:   /* 1 */ __ldcv(h /*__half **/);
+// LDCV-NEXT:   /* 2 */ __ldcv(h2 /*__half2 **/);
+// LDCV-NEXT:   /* 3 */ __ldcv(b /*__nv_bfloat16 **/);
+// LDCV-NEXT:   /* 4 */ __ldcv(b2 /*__nv_bfloat162 **/);
 // LDCV-NEXT: Is migrated to:
-// LDCV-NEXT:   *h;
-// LDCV-NEXT:   *h2;
-// LDCV-NEXT:   *b;
-// LDCV-NEXT:   *b2;
+// LDCV-NEXT:   /* 1 */ *h;
+// LDCV-NEXT:   /* 2 */ *h2;
+// LDCV-NEXT:   /* 3 */ *b;
+// LDCV-NEXT:   /* 4 */ *b2;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__ldg | FileCheck %s -check-prefix=LDG
 // LDG: CUDA API:
-// LDG-NEXT:   __ldg(h /*__half **/);
-// LDG-NEXT:   __ldg(h2 /*__half2 **/);
-// LDG-NEXT:   __ldg(b /*__nv_bfloat16 **/);
-// LDG-NEXT:   __ldg(b2 /*__nv_bfloat162 **/);
+// LDG-NEXT:   /* 1 */ __ldg(h /*__half **/);
+// LDG-NEXT:   /* 2 */ __ldg(h2 /*__half2 **/);
+// LDG-NEXT:   /* 3 */ __ldg(b /*__nv_bfloat16 **/);
+// LDG-NEXT:   /* 4 */ __ldg(b2 /*__nv_bfloat162 **/);
 // LDG-NEXT: Is migrated to:
-// LDG-NEXT:   *h;
-// LDG-NEXT:   *h2;
-// LDG-NEXT:   *b;
-// LDG-NEXT:   *b2;
+// LDG-NEXT:   /* 1 */ *h;
+// LDG-NEXT:   /* 2 */ *h2;
+// LDG-NEXT:   /* 3 */ *b;
+// LDG-NEXT:   /* 4 */ *b2;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__ldlu | FileCheck %s -check-prefix=LDLU
 // LDLU: CUDA API:
-// LDLU-NEXT:   __ldlu(h /*__half **/);
-// LDLU-NEXT:   __ldlu(h2 /*__half2 **/);
-// LDLU-NEXT:   __ldlu(b /*__nv_bfloat16 **/);
-// LDLU-NEXT:   __ldlu(b2 /*__nv_bfloat162 **/);
+// LDLU-NEXT:   /* 1 */ __ldlu(h /*__half **/);
+// LDLU-NEXT:   /* 2 */ __ldlu(h2 /*__half2 **/);
+// LDLU-NEXT:   /* 3 */ __ldlu(b /*__nv_bfloat16 **/);
+// LDLU-NEXT:   /* 4 */ __ldlu(b2 /*__nv_bfloat162 **/);
 // LDLU-NEXT: Is migrated to:
-// LDLU-NEXT:   *h;
-// LDLU-NEXT:   *h2;
-// LDLU-NEXT:   *b;
-// LDLU-NEXT:   *b2;
+// LDLU-NEXT:   /* 1 */ *h;
+// LDLU-NEXT:   /* 2 */ *h2;
+// LDLU-NEXT:   /* 3 */ *b;
+// LDLU-NEXT:   /* 4 */ *b2;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__stcg | FileCheck %s -check-prefix=STCG
 // STCG: CUDA API:
-// STCG-NEXT:   __stcg(ph /*__half **/, h /*__half*/);
-// STCG-NEXT:   __stcg(ph2 /*__half2 **/, h2 /*__half2*/);
-// STCG-NEXT:   __stcg(pb /*__nv_bfloat16 **/, b /*__nv_bfloat16*/);
-// STCG-NEXT:   __stcg(pb2 /*__nv_bfloat162 **/, b2 /*__nv_bfloat162*/);
+// STCG-NEXT:   /* 1 */ __stcg(ph /*__half **/, h /*__half*/);
+// STCG-NEXT:   /* 2 */ __stcg(ph2 /*__half2 **/, h2 /*__half2*/);
+// STCG-NEXT:   /* 3 */ __stcg(pb /*__nv_bfloat16 **/, b /*__nv_bfloat16*/);
+// STCG-NEXT:   /* 4 */ __stcg(pb2 /*__nv_bfloat162 **/, b2 /*__nv_bfloat162*/);
 // STCG-NEXT: Is migrated to:
-// STCG-NEXT:   *ph = h;
-// STCG-NEXT:   *ph2 = h2;
-// STCG-NEXT:   *pb = b;
-// STCG-NEXT:   *pb2 = b2;
+// STCG-NEXT:   /* 1 */ *ph = h;
+// STCG-NEXT:   /* 2 */ *ph2 = h2;
+// STCG-NEXT:   /* 3 */ *pb = b;
+// STCG-NEXT:   /* 4 */ *pb2 = b2;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__stcs | FileCheck %s -check-prefix=STCS
 // STCS: CUDA API:
-// STCS-NEXT:   __stcs(ph /*__half **/, h /*__half*/);
-// STCS-NEXT:   __stcs(ph2 /*__half2 **/, h2 /*__half2*/);
-// STCS-NEXT:   __stcs(pb /*__nv_bfloat16 **/, b /*__nv_bfloat16*/);
-// STCS-NEXT:   __stcs(pb2 /*__nv_bfloat162 **/, b2 /*__nv_bfloat162*/);
+// STCS-NEXT:   /* 1 */ __stcs(ph /*__half **/, h /*__half*/);
+// STCS-NEXT:   /* 2 */ __stcs(ph2 /*__half2 **/, h2 /*__half2*/);
+// STCS-NEXT:   /* 3 */ __stcs(pb /*__nv_bfloat16 **/, b /*__nv_bfloat16*/);
+// STCS-NEXT:   /* 4 */ __stcs(pb2 /*__nv_bfloat162 **/, b2 /*__nv_bfloat162*/);
 // STCS-NEXT: Is migrated to:
-// STCS-NEXT:   *ph = h;
-// STCS-NEXT:   *ph2 = h2;
-// STCS-NEXT:   *pb = b;
-// STCS-NEXT:   *pb2 = b2;
+// STCS-NEXT:   /* 1 */ *ph = h;
+// STCS-NEXT:   /* 2 */ *ph2 = h2;
+// STCS-NEXT:   /* 3 */ *pb = b;
+// STCS-NEXT:   /* 4 */ *pb2 = b2;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__stwb | FileCheck %s -check-prefix=STWB
 // STWB: CUDA API:
-// STWB-NEXT:   __stwb(ph /*__half **/, h /*__half*/);
-// STWB-NEXT:   __stwb(ph2 /*__half2 **/, h2 /*__half2*/);
-// STWB-NEXT:   __stwb(pb /*__nv_bfloat16 **/, b /*__nv_bfloat16*/);
-// STWB-NEXT:   __stwb(pb2 /*__nv_bfloat162 **/, b2 /*__nv_bfloat162*/);
+// STWB-NEXT:   /* 1 */ __stwb(ph /*__half **/, h /*__half*/);
+// STWB-NEXT:   /* 2 */ __stwb(ph2 /*__half2 **/, h2 /*__half2*/);
+// STWB-NEXT:   /* 3 */ __stwb(pb /*__nv_bfloat16 **/, b /*__nv_bfloat16*/);
+// STWB-NEXT:   /* 4 */ __stwb(pb2 /*__nv_bfloat162 **/, b2 /*__nv_bfloat162*/);
 // STWB-NEXT: Is migrated to:
-// STWB-NEXT:   *ph = h;
-// STWB-NEXT:   *ph2 = h2;
-// STWB-NEXT:   *pb = b;
-// STWB-NEXT:   *pb2 = b2;
+// STWB-NEXT:   /* 1 */ *ph = h;
+// STWB-NEXT:   /* 2 */ *ph2 = h2;
+// STWB-NEXT:   /* 3 */ *pb = b;
+// STWB-NEXT:   /* 4 */ *pb2 = b2;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__stwt | FileCheck %s -check-prefix=STWT
 // STWT: CUDA API:
-// STWT-NEXT:   __stwt(ph /*__half **/, h /*__half*/);
-// STWT-NEXT:   __stwt(ph2 /*__half2 **/, h2 /*__half2*/);
-// STWT-NEXT:   __stwt(pb /*__nv_bfloat16 **/, b /*__nv_bfloat16*/);
-// STWT-NEXT:   __stwt(pb2 /*__nv_bfloat162 **/, b2 /*__nv_bfloat162*/);
+// STWT-NEXT:   /* 1 */ __stwt(ph /*__half **/, h /*__half*/);
+// STWT-NEXT:   /* 2 */ __stwt(ph2 /*__half2 **/, h2 /*__half2*/);
+// STWT-NEXT:   /* 3 */ __stwt(pb /*__nv_bfloat16 **/, b /*__nv_bfloat16*/);
+// STWT-NEXT:   /* 4 */ __stwt(pb2 /*__nv_bfloat162 **/, b2 /*__nv_bfloat162*/);
 // STWT-NEXT: Is migrated to:
-// STWT-NEXT:   *ph = h;
-// STWT-NEXT:   *ph2 = h2;
-// STWT-NEXT:   *pb = b;
-// STWT-NEXT:   *pb2 = b2;
+// STWT-NEXT:   /* 1 */ *ph = h;
+// STWT-NEXT:   /* 2 */ *ph2 = h2;
+// STWT-NEXT:   /* 3 */ *pb = b;
+// STWT-NEXT:   /* 4 */ *pb2 = b2;
 
 /// Bfloat16 Precision Conversion And Data Movement
 
