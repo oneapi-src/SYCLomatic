@@ -11,7 +11,7 @@ Frequently Asked Questions
 * `How do I use the migrated module file in the new project?`_
 * `Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?`_
 * `How do I migrate CUDA\* source code that contains CUB library implementation source code?`_
-* `How do I fix the sycl code in case synchronized block is used in conditional statement?`_
+* `How do I fix the hang issue of sycl code cased by work group level synchronization like group barrier used in conditional statement?`_
 
 **Troubleshooting Migration**
 
@@ -163,61 +163,32 @@ expected results. Instead, exclude CUB library implementation source code from
 your migration by adding ``--in-root-exclude=<path to CUB library source code>``
 to your migration command.
 
-How do I fix the sycl code in case synchronized block is used in conditional statement?
-***************************************************************************************
+How do I fix the hang issue of sycl code cased by work group level synchronization like group barrier used in conditional statement?
+************************************************************************************************************************************
 
-If the original code calls sychronization APIs within control flow statements like
-conditional/loop, you may encounter runtime issues like a process hang or crash with 
-runtime error. It is essential to ensure that each sychronization point is either
-skipped by all the work_items or visited by all the work_items in the same sub_group.
-If a sychronization point is visited by some work_items and skiped(due to different
-evaluation result of the predicate statement) by other work_items, the queue will stuck
-at current task and cause the process hang or crash.
+In SYCL code, if there is calling of synchronization API in control flow statements
+like conditional statement and loop statement, you may encounter runtime hang issue.
+The basic idea to fix the hang issue is to ensure that each synchronization API is
+either reached by all work items of a workgroup or skipped by all the work items of
+a workgroup.
 
-Here are some examples.
+Here are two fix examples for reference:
 
-In the first example, nd_item.barrier() is used inside a if block and the evaluation
-results of the conditional statement differs in each thread. 
-The following is the original code:
+In the first example, synchronization API group barrier(nd_item.barrier()) is called
+inside an if block and the evaluation results of the conditional statement differs in
+each work item, not all work items can reach the synchronization API.
 
 .. code-block:: cpp
    :linenos:
 
    // original code
 
-   void kernel(float *sdata, int *ind, const sycl::nd_item<3> &item_ct1) {
+   void kernel(const sycl::nd_item<3> &item_ct1) {
       unsigned int tid = item_ct1.get_local_id(2);
       if (tid < 32) {
-         if (sdata[tid] < sdata[tid + 32]) {
-            ind[tid] = ind[tid + 32];
-            sdata[tid] = sdata[tid + 32];
-         }
+         ...
          item_ct1.barrier(sycl::access::fence_space::local_space);
-         if (sdata[tid] < sdata[tid + 16]) {
-            ind[tid] = ind[tid + 16];
-            sdata[tid] = sdata[tid + 16];
-         }
-         item_ct1.barrier(sycl::access::fence_space::local_space);
-         if (sdata[tid] < sdata[tid + 8]) {
-            ind[tid] = ind[tid + 8];
-            sdata[tid] = sdata[tid + 8];
-         }
-         item_ct1.barrier(sycl::access::fence_space::local_space);
-         if (sdata[tid] < sdata[tid + 4]) {
-            ind[tid] = ind[tid + 4];
-            sdata[tid] = sdata[tid + 4];
-         }
-         item_ct1.barrier(sycl::access::fence_space::local_space);
-         if (sdata[tid] < sdata[tid + 2]) {
-            ind[tid] = ind[tid + 2];
-            sdata[tid] = sdata[tid + 2];
-         }
-         item_ct1.barrier(sycl::access::fence_space::local_space);
-         if (sdata[tid] < sdata[tid + 1]) {
-            ind[tid] = ind[tid + 1];
-            sdata[tid] = sdata[tid + 1];
-         }
-         item_ct1.barrier(sycl::access::fence_space::local_space);
+         ...
       }
    }
 
@@ -229,66 +200,30 @@ or crash by moving the synchronization statement out of the if block.
 
    // fixed SYCL code
 
-   void kernel(float *sdata, int *ind, const sycl::nd_item<3> &item_ct1) {
+   void kernel(const sycl::nd_item<3> &item_ct1) {
       unsigned int tid = item_ct1.get_local_id(2);
       if (tid < 32) {
-         if (sdata[tid] < sdata[tid + 32]) {
-            ind[tid] = ind[tid + 32];
-            sdata[tid] = sdata[tid + 32];
-         }
+         ...
       }
       item_ct1.barrier(sycl::access::fence_space::local_space);
       if (tid < 32) {
-         if (sdata[tid] < sdata[tid + 16]) {
-            ind[tid] = ind[tid + 16];
-            sdata[tid] = sdata[tid + 16];
-         }
-      }
-      item_ct1.barrier(sycl::access::fence_space::local_space);
-      if (tid < 32) {
-         if (sdata[tid] < sdata[tid + 8]) {
-            ind[tid] = ind[tid + 8];
-            sdata[tid] = sdata[tid + 8];
-         }
-      }
-      item_ct1.barrier(sycl::access::fence_space::local_space);
-      if (tid < 32) {
-         if (sdata[tid] < sdata[tid + 4]) {
-            ind[tid] = ind[tid + 4];
-            sdata[tid] = sdata[tid + 4];
-         }
-      }
-      item_ct1.barrier(sycl::access::fence_space::local_space);
-      if (tid < 32) {
-         if (sdata[tid] < sdata[tid + 2]) {
-            ind[tid] = ind[tid + 2];
-            sdata[tid] = sdata[tid + 2];
-         }
-      }
-      item_ct1.barrier(sycl::access::fence_space::local_space);
-      if (tid < 32) {
-         if (sdata[tid] < sdata[tid + 1]) {
-            ind[tid] = ind[tid + 1];
-            sdata[tid] = sdata[tid + 1];
-         }
-      }
-      item_ct1.barrier(sycl::access::fence_space::local_space);
+         ...
       }
    }
 
-The second example demonstrates how to fix the hang issue or crash when
-a synchronization statement is used in a for loop in the original code:
+The second example demonstrates how to fix the hang issue when
+a synchronization API is used in a for loop:
 
 .. code-block:: cpp
    :linenos:
 
    // original code
 
-   void compute(int np, int nd, const sycl::nd_item<3> &item_ct1) {
-      unsigned int curr_particle =
+   void compute(int id_space, const sycl::nd_item<3> &item_ct1) {
+      unsigned int id =
          item_ct1.get_group(2) * item_ct1.get_local_range(2) +
          item_ct1.get_local_id(2);
-      for (; curr_particle < np; curr_particle +=
+      for (; id < id_space; id +=
          item_ct1.get_group_range(2) * item_ct1.get_local_range(2)) {
          ...
          item_ct1.barrier();
@@ -296,21 +231,24 @@ a synchronization statement is used in a for loop in the original code:
       }
    }
 
-The following is the manually-adjusted code which ensures all threads
-iterate with the same number of times in the for loop.
+The following is the manually adjusted code which ensures all work
+items has same run footprint in the for loop.
 
 .. code-block:: cpp
    :linenos:
 
    // fixed SYCL code
 
-   void compute(int np, int nd, const sycl::nd_item<3> &item_ct1) {
-      unsigned int curr_particle =
+   void compute(int id_space, const sycl::nd_item<3> &item_ct1) {
+      unsigned int id =
          item_ct1.get_group(2) * item_ct1.get_local_range(2) +
          item_ct1.get_local_id(2);
-      unsigned int num_workitem = item_ct1.get_group_range(2) * item_ct1.get_local_range(2);
-      for (; curr_particle < ((np+num_workitem-1)/num_workitem)*num_workitem; 
-      curr_particle += item_ct1.get_group_range(2) * item_ct1.get_local_range(2)) {
+      unsigned int num_workitem = 
+               item_ct1.get_group_range(2) * item_ct1.get_local_range(2);
+      // The condition is rounded up to an integer multiple of the num of work items
+      // to ensure that all work items can enter the loop body in each iteration
+      for (; id < ((id_space+num_workitem-1)/num_workitem)*num_workitem;
+      id += item_ct1.get_group_range(2) * item_ct1.get_local_range(2)) {
          ...
          item_ct1.barrier();
          ...
