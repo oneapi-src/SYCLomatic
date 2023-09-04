@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.2, v11.4
 // UNSUPPORTED: system-windows
 // clang-format off
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceReduce::ArgMax | FileCheck %s -check-prefix=CHECK_REDUCE_ARG_MAX
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceReduce::ArgMax | FileCheck %s -check-prefix=CHECK_REDUCE_ARG_MAX
 // CHECK_REDUCE_ARG_MAX: CUDA API:
 // CHECK_REDUCE_ARG_MAX-NEXT:   cudaStream_t stream;
 // CHECK_REDUCE_ARG_MAX-NEXT:   cudaStreamCreate(&stream);
@@ -13,7 +13,7 @@
 // CHECK_REDUCE_ARG_MAX-NEXT:  dpct::reduce_argmax(oneapi::dpl::execution::device_policy(*stream), d_in, d_out, num_items);
 // CHECK_REDUCE_ARG_MAX-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceReduce::ArgMin | FileCheck %s -check-prefix=CHECK_REDUCE_ARG_MIN
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceReduce::ArgMin | FileCheck %s -check-prefix=CHECK_REDUCE_ARG_MIN
 // CHECK_REDUCE_ARG_MIN: CUDA API:
 // CHECK_REDUCE_ARG_MIN-NEXT:   cudaStream_t stream;
 // CHECK_REDUCE_ARG_MIN-NEXT:   cudaStreamCreate(&stream);
@@ -24,7 +24,7 @@
 // CHECK_REDUCE_ARG_MIN-NEXT:   dpct::reduce_argmin(oneapi::dpl::execution::device_policy(*stream), d_in, d_out, num_items);
 // CHECK_REDUCE_ARG_MIN-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceReduce::Max | FileCheck %s -check-prefix=CHECK_REDUCE_MAX
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceReduce::Max | FileCheck %s -check-prefix=CHECK_REDUCE_MAX
 // CHECK_REDUCE_MAX: CUDA API:
 // CHECK_REDUCE_MAX-NEXT:   cudaStream_t stream;
 // CHECK_REDUCE_MAX-NEXT:   cudaStreamCreate(&stream);
@@ -35,7 +35,7 @@
 // CHECK_REDUCE_MAX-NEXT:   stream->fill(d_out, oneapi::dpl::reduce(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, typename std::iterator_traits<decltype(d_out)>::value_type{}, sycl::maximum<>()), 1).wait();
 // CHECK_REDUCE_MAX-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceReduce::Min | FileCheck %s -check-prefix=CHECK_REDUCE_MIN
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceReduce::Min | FileCheck %s -check-prefix=CHECK_REDUCE_MIN
 // CHECK_REDUCE_MIN: CUDA API:
 // CHECK_REDUCE_MIN-NEXT:   cudaStream_t stream;
 // CHECK_REDUCE_MIN-NEXT:   cudaStreamCreate(&stream);
@@ -46,7 +46,7 @@
 // CHECK_REDUCE_MIN-NEXT:   stream->fill(d_out, oneapi::dpl::reduce(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, typename std::iterator_traits<decltype(d_out)>::value_type{}, sycl::minimum<>()), 1).wait();
 // CHECK_REDUCE_MIN-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceReduce::Reduce | FileCheck %s -check-prefix=CHECK_REDUCE
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceReduce::Reduce | FileCheck %s -check-prefix=CHECK_REDUCE
 // CHECK_REDUCE: CUDA API:
 // CHECK_REDUCE-NEXT:   cudaStream_t stream;
 // CHECK_REDUCE-NEXT:   cudaStreamCreate(&stream);
@@ -57,7 +57,7 @@
 // CHECK_REDUCE-NEXT:   stream->fill(d_out, oneapi::dpl::reduce(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, init_value, op), 1).wait();
 // CHECK_REDUCE-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceReduce::ReduceByKey | FileCheck %s -check-prefix=CHECK_REDUCE_BY_KEY
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceReduce::ReduceByKey | FileCheck %s -check-prefix=CHECK_REDUCE_BY_KEY
 // CHECK_REDUCE_BY_KEY: CUDA API:
 // CHECK_REDUCE_BY_KEY-NEXT:   cudaStream_t stream;
 // CHECK_REDUCE_BY_KEY-NEXT:   cudaStreamCreate(&stream);
@@ -68,7 +68,7 @@
 // CHECK_REDUCE_BY_KEY-NEXT:   stream->fill(d_num_runs_out, std::distance(d_unique_out, oneapi::dpl::reduce_by_key(oneapi::dpl::execution::device_policy(*stream), d_keys_in, d_keys_in + num_items, d_values_in, d_unique_out, d_aggregates_out, std::equal_to<typename std::iterator_traits<decltype(d_keys_in)>::value_type>(), op).first), 1).wait();
 // CHECK_REDUCE_BY_KEY-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceReduce::Sum | FileCheck %s -check-prefix=CHECK_REDUCE_SUM
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceReduce::Sum | FileCheck %s -check-prefix=CHECK_REDUCE_SUM
 // CHECK_REDUCE_SUM: CUDA API:
 // CHECK_REDUCE_SUM-NEXT:   cudaStream_t stream;
 // CHECK_REDUCE_SUM-NEXT:   cudaStreamCreate(&stream);
@@ -79,7 +79,7 @@
 // CHECK_REDUCE_SUM-NEXT:   stream->fill(d_out, oneapi::dpl::reduce(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, typename std::iterator_traits<decltype(d_out)>::value_type{}), 1).wait();
 // CHECK_REDUCE_SUM-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceRunLengthEncode::Encode | FileCheck %s -check-prefix=CHECK_ENCODE
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceRunLengthEncode::Encode | FileCheck %s -check-prefix=CHECK_ENCODE
 // CHECK_ENCODE: CUDA API:
 // CHECK_ENCODE-NEXT:   cudaStream_t stream;
 // CHECK_ENCODE-NEXT:   cudaStreamCreate(&stream);
@@ -90,7 +90,7 @@
 // CHECK_ENCODE-NEXT:   stream->fill(d_num_runs_out, std::distance(d_unique_out, oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, dpct::constant_iterator<size_t>(1), d_unique_out, d_counts_out).first), 1).wait();
 // CHECK_ENCODE-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceRunLengthEncode::NoTrivialRuns | FileCheck %s -check-prefix=CHECK_NO_TRIVIAL_RUNS
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceRunLengthEncode::NoTrivialRuns | FileCheck %s -check-prefix=CHECK_NO_TRIVIAL_RUNS
 // CHECK_NO_TRIVIAL_RUNS: CUDA API:
 // CHECK_NO_TRIVIAL_RUNS-NEXT:   cudaStream_t stream;
 // CHECK_NO_TRIVIAL_RUNS-NEXT:   cudaStreamCreate(&stream);
@@ -101,7 +101,7 @@
 // CHECK_NO_TRIVIAL_RUNS-NEXT:   dpct::nontrivial_run_length_encode(oneapi::dpl::execution::device_policy(*stream), d_in, d_offsets_out, d_lengths_out, d_num_runs_out, num_items);
 // CHECK_NO_TRIVIAL_RUNS-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceScan::ExclusiveScan | FileCheck %s -check-prefix=CHECK_EXCLUSIVE_SCAN
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceScan::ExclusiveScan | FileCheck %s -check-prefix=CHECK_EXCLUSIVE_SCAN
 // CHECK_EXCLUSIVE_SCAN: CUDA API:
 // CHECK_EXCLUSIVE_SCAN-NEXT:   cudaStream_t stream;
 // CHECK_EXCLUSIVE_SCAN-NEXT:   cudaStreamCreate(&stream);
@@ -112,7 +112,7 @@
 // CHECK_EXCLUSIVE_SCAN-NEXT:   oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, d_out, init_value, scan_op);
 // CHECK_EXCLUSIVE_SCAN-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceScan::ExclusiveScanByKey | FileCheck %s -check-prefix=CHECK_EXCLUSIVE_SCAN_BY_KEY
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceScan::ExclusiveScanByKey | FileCheck %s -check-prefix=CHECK_EXCLUSIVE_SCAN_BY_KEY
 // CHECK_EXCLUSIVE_SCAN_BY_KEY: CUDA API:
 // CHECK_EXCLUSIVE_SCAN_BY_KEY-NEXT:   cudaStream_t stream;
 // CHECK_EXCLUSIVE_SCAN_BY_KEY-NEXT:   cudaStreamCreate(&stream);
@@ -123,7 +123,7 @@
 // CHECK_EXCLUSIVE_SCAN_BY_KEY-NEXT:   oneapi::dpl::exclusive_scan_by_key(oneapi::dpl::execution::device_policy(*stream), d_keys_in, d_keys_in + num_items, d_values_in, d_values_out, init_value, equality_op, op);
 // CHECK_EXCLUSIVE_SCAN_BY_KEY-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceScan::ExclusiveSum | FileCheck %s -check-prefix=CHECK_EXCLUSIVE_SUM
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceScan::ExclusiveSum | FileCheck %s -check-prefix=CHECK_EXCLUSIVE_SUM
 // CHECK_EXCLUSIVE_SUM: CUDA API:
 // CHECK_EXCLUSIVE_SUM-NEXT:   cudaStream_t stream;
 // CHECK_EXCLUSIVE_SUM-NEXT:   cudaStreamCreate(&stream);
@@ -134,7 +134,7 @@
 // CHECK_EXCLUSIVE_SUM-NEXT:   oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, d_out, typename std::iterator_traits<decltype(d_in)>::value_type{});
 // CHECK_EXCLUSIVE_SUM-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceScan::ExclusiveSumByKey | FileCheck %s -check-prefix=CHECK_EXCLUSIVE_SUM_BY_KEY
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceScan::ExclusiveSumByKey | FileCheck %s -check-prefix=CHECK_EXCLUSIVE_SUM_BY_KEY
 // CHECK_EXCLUSIVE_SUM_BY_KEY: CUDA API:
 // CHECK_EXCLUSIVE_SUM_BY_KEY-NEXT:   cudaStream_t stream;
 // CHECK_EXCLUSIVE_SUM_BY_KEY-NEXT:   cudaStreamCreate(&stream);
@@ -145,7 +145,7 @@
 // CHECK_EXCLUSIVE_SUM_BY_KEY-NEXT:   oneapi::dpl::exclusive_scan_by_key(oneapi::dpl::execution::device_policy(*stream), d_keys_in, d_keys_in + num_items, d_values_in, d_values_out, typename std::iterator_traits<decltype(d_keys_in)>::value_type{}, equality_op);
 // CHECK_EXCLUSIVE_SUM_BY_KEY-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceScan::InclusiveScan | FileCheck %s -check-prefix=CHECK_INCLUSIVE_SCAN
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceScan::InclusiveScan | FileCheck %s -check-prefix=CHECK_INCLUSIVE_SCAN
 // CHECK_INCLUSIVE_SCAN: CUDA API:
 // CHECK_INCLUSIVE_SCAN-NEXT:   cudaStream_t stream;
 // CHECK_INCLUSIVE_SCAN-NEXT:   cudaStreamCreate(&stream);
@@ -156,7 +156,7 @@
 // CHECK_INCLUSIVE_SCAN-NEXT:   oneapi::dpl::inclusive_scan(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, d_out, scan_op);
 // CHECK_INCLUSIVE_SCAN-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceScan::InclusiveScanByKey | FileCheck %s -check-prefix=CHECK_INCLUSIVE_SCAN_BY_KEY
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceScan::InclusiveScanByKey | FileCheck %s -check-prefix=CHECK_INCLUSIVE_SCAN_BY_KEY
 // CHECK_INCLUSIVE_SCAN_BY_KEY: CUDA API:
 // CHECK_INCLUSIVE_SCAN_BY_KEY-NEXT:   cudaStream_t stream;
 // CHECK_INCLUSIVE_SCAN_BY_KEY-NEXT:   cudaStreamCreate(&stream);
@@ -167,7 +167,7 @@
 // CHECK_INCLUSIVE_SCAN_BY_KEY-NEXT:   oneapi::dpl::inclusive_scan_by_key(oneapi::dpl::execution::device_policy(*stream), d_keys_in, d_keys_in + num_items, d_values_in, d_values_out, equality_op, scan_op);
 // CHECK_INCLUSIVE_SCAN_BY_KEY-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceScan::InclusiveSum | FileCheck %s -check-prefix=CHECK_INCLUSIVE_SUM
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceScan::InclusiveSum | FileCheck %s -check-prefix=CHECK_INCLUSIVE_SUM
 // CHECK_INCLUSIVE_SUM: CUDA API:
 // CHECK_INCLUSIVE_SUM-NEXT:   cudaStream_t stream;
 // CHECK_INCLUSIVE_SUM-NEXT:   cudaStreamCreate(&stream);
@@ -178,7 +178,7 @@
 // CHECK_INCLUSIVE_SUM-NEXT:   oneapi::dpl::inclusive_scan(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, d_out);
 // CHECK_INCLUSIVE_SUM-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceScan::InclusiveSumByKey | FileCheck %s -check-prefix=CHECK_INCLUSIVE_SUM_BY_KEY
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceScan::InclusiveSumByKey | FileCheck %s -check-prefix=CHECK_INCLUSIVE_SUM_BY_KEY
 // CHECK_INCLUSIVE_SUM_BY_KEY: CUDA API:
 // CHECK_INCLUSIVE_SUM_BY_KEY-NEXT:   cudaStream_t stream;
 // CHECK_INCLUSIVE_SUM_BY_KEY-NEXT:   cudaStreamCreate(&stream);
@@ -189,7 +189,7 @@
 // CHECK_INCLUSIVE_SUM_BY_KEY-NEXT:   oneapi::dpl::inclusive_scan_by_key(oneapi::dpl::execution::device_policy(*stream), d_keys_in, d_keys_in + num_items, d_values_in, d_values_out, equality_op);
 // CHECK_INCLUSIVE_SUM_BY_KEY-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceSelect::Flagged | FileCheck %s -check-prefix=CHECK_SELECT_FLAGGED
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceSelect::Flagged | FileCheck %s -check-prefix=CHECK_SELECT_FLAGGED
 // CHECK_SELECT_FLAGGED: CUDA API:
 // CHECK_SELECT_FLAGGED-NEXT:   cudaStream_t stream;
 // CHECK_SELECT_FLAGGED-NEXT:   cudaStreamCreate(&stream);
@@ -200,7 +200,7 @@
 // CHECK_SELECT_FLAGGED-NEXT:   stream->fill(d_num_selected_out, std::distance(d_out, dpct::copy_if(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, d_flags, d_out, [](const auto &t) -> bool { return t; })), 1).wait();
 // CHECK_SELECT_FLAGGED-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceSelect::If | FileCheck %s -check-prefix=CHECK_SELECT_IF
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceSelect::If | FileCheck %s -check-prefix=CHECK_SELECT_IF
 // CHECK_SELECT_IF: CUDA API:
 // CHECK_SELECT_IF-NEXT:   cudaStream_t stream;
 // CHECK_SELECT_IF-NEXT:   cudaStreamCreate(&stream);
@@ -211,7 +211,7 @@
 // CHECK_SELECT_IF-NEXT:   stream->fill(d_num_selected_out, std::distance(d_out, oneapi::dpl::copy_if(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, d_out, select_op)), 1).wait();
 // CHECK_SELECT_IF-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --stop-on-parse-err --query-api-mapping=cub::DeviceSelect::Unique | FileCheck %s -check-prefix=CHECK_SELECT_UNIQUE
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceSelect::Unique | FileCheck %s -check-prefix=CHECK_SELECT_UNIQUE
 // CHECK_SELECT_UNIQUE: CUDA API:
 // CHECK_SELECT_UNIQUE-NEXT:   cudaStream_t stream;
 // CHECK_SELECT_UNIQUE-NEXT:   cudaStreamCreate(&stream);

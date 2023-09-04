@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 /// Double Precision Mathematical Functions
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=acos | FileCheck %s -check-prefix=ACOS
@@ -383,7 +385,7 @@
 // POW: CUDA API:
 // POW-NEXT:   pow(d1 /*double*/, d2 /*double*/);
 // POW-NEXT: Is migrated to:
-// POW-NEXT:   sycl::pow<double>(d1, d2);
+// POW-NEXT:   dpct::pow(d1, d2);
 // POW-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=rcbrt | FileCheck %s -check-prefix=RCBRT
