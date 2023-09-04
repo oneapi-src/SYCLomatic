@@ -2802,11 +2802,10 @@ void CallFunctionExpr::buildInfo() {
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
 
-  if (ExtraArgLoc) {
+  if (ExtraArgLoc)
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
                                          getExtraArguments(), nullptr));
-  }
 }
 
 std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,

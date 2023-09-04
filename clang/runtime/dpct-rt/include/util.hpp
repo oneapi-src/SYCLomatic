@@ -1019,6 +1019,12 @@ public:
   }
 };
 
+#ifdef _WIN32
+#define DPCT_EXPORT __declspec(dllexport)
+#else
+#define DPCT_EXPORT
+#endif
+
 } // namespace dpct
 
 #endif // __DPCT_UTIL_HPP__
