@@ -160,6 +160,14 @@ void ShowStatus(int Status, std::string Message) {
         "Error: This API mapping query is not available yet. You may get the "
         "API mapping by migrating a sample code of this API with the tool.";
     break;
+  case MigrationErrorAPIMappingWrongCUDAHeader:
+    StatusString = "Error: This API mapping query is not available in current "
+                   "CUDA header files.";
+    break;
+  case MigrationErrorAPIMappingNoCUDAHeader:
+    StatusString = "Error: This API mapping query is not available because the "
+                   "header file is not avalible.";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

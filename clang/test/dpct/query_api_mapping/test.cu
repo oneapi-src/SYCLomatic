@@ -19,12 +19,7 @@
 // CHECK-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
 
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=aaa 2>&1 | FileCheck %s -check-prefix=NO_MAPPING
-
 // NO_MAPPING: dpct exited with code: -43 (Error: This API mapping query is not available yet. You may get the API mapping by migrating a sample code of this API with the tool.)
 
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hdiv 2>&1 | FileCheck %s -check-prefix=PARSE_FAILED
-
-// PARSE_FAILED: {{(.+)}}temp.cu:7:3: error: use of undeclared identifier 'hdiv'
-// PARSE_FAILED-NEXT:     7 |   hdiv(h1 /*__half*/, h2 /*__half*/);
-// PARSE_FAILED-NEXT:       |   ^
-// PARSE_FAILED-NEXT: dpct exited with code: -17 (Error: Cannot parse input file(s))
+// PARSE_FAILED: dpct exited with code: -44 (Error: This API mapping query is not available in current CUDA header files.)

@@ -1079,7 +1079,10 @@ int runDPCT(int argc, const char **argv) {
       DeviceFunctionDecl::reset();
     }
     DpctGlobalInfo::setRunRound(RunCount++);
-    DpctToolAction Action(OutputFile.empty() ? llvm::errs() : DpctTerm(),
+    DpctToolAction Action(OutputFile.empty() &&
+                                  !DpctGlobalInfo::isQueryAPIMapping()
+                              ? llvm::errs()
+                              : DpctTerm(),
                           Tool.getReplacements(), Passes,
                           {PassKind::PK_Analysis, PassKind::PK_Migration},
                           Tool.getFiles().getVirtualFileSystemPtr());
@@ -1102,6 +1105,17 @@ int runDPCT(int argc, const char **argv) {
     if (RunResult && StopOnParseErr) {
       DumpOutputFile();
       if (RunResult == 1) {
+        if (DpctGlobalInfo::isQueryAPIMapping()) {
+          if (getDpctTermStr().find("use of undeclared identifier") !=
+              std::string::npos) {
+            ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader);
+            return MigrationErrorAPIMappingWrongCUDAHeader;
+          } else if (getDpctTermStr().find("file not found") !=
+                     std::string::npos) {
+            ShowStatus(MigrationErrorAPIMappingNoCUDAHeader);
+            return MigrationErrorAPIMappingNoCUDAHeader;
+          }
+        }
         ShowStatus(MigrationErrorFileParseError);
         return MigrationErrorFileParseError;
       } else {
