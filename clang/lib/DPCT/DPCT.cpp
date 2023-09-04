@@ -36,6 +36,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
@@ -610,6 +611,29 @@ int runDPCT(int argc, const char **argv) {
       dpctExit(MigrationErrorInvalidInstallPath);
     }
     std::cout << pathToHelperFunction.c_str() << "\n";
+    ShowStatus(MigrationSucceeded);
+    dpctExit(MigrationSucceeded);
+  }
+
+  if (!InterceptBuildCommand.empty()) {
+    SmallString<512> pathToInterceptBuildBinary(DpctInstallPath);
+    llvm::sys::path::append(pathToInterceptBuildBinary, "bin",
+                            "intercept-build");
+    if (!llvm::sys::fs::exists(pathToInterceptBuildBinary)) {
+      DpctLog() << "Error: intercept-build tool not found"
+                << "\n";
+      ShowStatus(MigrationErrorInvalidInstallPath);
+      dpctExit(MigrationErrorInvalidInstallPath);
+    }
+    std::string interceptBuildSystemCall =
+        (pathToInterceptBuildBinary + " " + InterceptBuildCommand).str();
+    int processExitCode = system(interceptBuildSystemCall.c_str());
+    if (processExitCode) {
+      DpctLog() << "Error: intercept-build process call not successful"
+                << "\n";
+      ShowStatus(MigrationError);
+      dpctExit(MigrationError);
+    }
     ShowStatus(MigrationSucceeded);
     dpctExit(MigrationSucceeded);
   }
