@@ -743,7 +743,7 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
 
     auto IL1 = dyn_cast<IntegerLiteral>(Arg1->IgnoreCasts());
     auto FL1 = dyn_cast<FloatingLiteral>(Arg1->IgnoreCasts());
-    auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
+
     // For integer literal 2 or floating literal 2.0/2.0f, expand pow to
     // multiply expression:
     // pow(x, 2) ==> x * x, if x is an expression that has no side effects.
