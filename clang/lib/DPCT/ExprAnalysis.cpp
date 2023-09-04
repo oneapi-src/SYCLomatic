@@ -440,7 +440,13 @@ bool isCGAPI(std::string Name) {
 void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   std::string CTSName;
   auto Qualifier = DRE->getQualifier();
-  if (Qualifier) {
+
+  if (MapNames::MathFuncImpledWithNewRewriter.count(
+          DRE->getNameInfo().getAsString())) {
+    if (const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl())) {
+      CTSName = FD->getQualifiedNameAsString();
+    }
+  } else if (Qualifier) {
     bool IsNamespaceOrAlias =
         Qualifier->getKind() ==
             clang::NestedNameSpecifier::SpecifierKind::Namespace ||

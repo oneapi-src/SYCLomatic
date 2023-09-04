@@ -139,5 +139,23 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initMethodRewriterMapLIBCU();
 }
 
+void NoRewriteFuncNameRewriter::construct(const CallExpr *Call,
+                                          StringRef SourceName,
+                                          StringRef NewName) {
+  NoRewrite = true;
+  auto TempArgs = getTemplateArgsList(Call);
+  if (TempArgs.empty()) {
+    NewFuncName = NewName.str();
+    return;
+  }
+  std::string TemplateArgsStr;
+  for (auto TempArg : TempArgs) {
+    if (!TemplateArgsStr.empty())
+      TemplateArgsStr = TemplateArgsStr + ", ";
+    TemplateArgsStr = TemplateArgsStr + TempArg.getString();
+  }
+  NewFuncName = NewName.str() + "<" + TemplateArgsStr + ">";
+}
+
 } // namespace dpct
 } // namespace clang

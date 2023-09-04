@@ -31,6 +31,28 @@ MATH_API_REWRITER_HOST_DEVICE(
             EMPTY_FACTORY_ENTRY("std::abs"), EMPTY_FACTORY_ENTRY("std::abs"),
             EMPTY_FACTORY_ENTRY("std::abs"))))
 
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "std::max",
+        CALL_FACTORY_ENTRY("std::max", CALL("std::max", ARG(0), ARG(1)))),
+    MATH_API_REWRITER_DEVICE(
+        "std::max",
+        MATH_API_DEVICE_NODES(
+            CALL_FACTORY_ENTRY("std::max", CALL("std::max", ARG(0), ARG(1))),
+            EMPTY_FACTORY_ENTRY("std::max"), EMPTY_FACTORY_ENTRY("std::max"),
+            EMPTY_FACTORY_ENTRY("std::max"))))
+
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "std::min",
+        CALL_FACTORY_ENTRY("std::min", CALL("std::min", ARG(0), ARG(1)))),
+    MATH_API_REWRITER_DEVICE(
+        "std::min",
+        MATH_API_DEVICE_NODES(
+            CALL_FACTORY_ENTRY("std::min", CALL("std::min", ARG(0), ARG(1))),
+            EMPTY_FACTORY_ENTRY("std::min"), EMPTY_FACTORY_ENTRY("std::min"),
+            EMPTY_FACTORY_ENTRY("std::min"))))
+
 // Half Arithmetic Functions
 MATH_API_REWRITER_DEVICE_OVERLOAD(
     CheckArgType(0, "__half"),

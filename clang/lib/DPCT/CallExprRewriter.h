@@ -525,11 +525,12 @@ public:
   NoRewriteFuncNameRewriter(const CallExpr *Call, StringRef SourceName,
                             StringRef NewName)
       : CallExprRewriter(Call, SourceCalleeName) {
-    NewFuncName = NewName.str();
-    NoRewrite = true;
+    construct(Call, SourceName, NewName);
   }
-
   std::optional<std::string> rewrite() override { return NewFuncName; }
+
+private:
+  void construct(const CallExpr *Call, StringRef SourceName, StringRef NewName);
 };
 
 struct ThrustFunctor {
