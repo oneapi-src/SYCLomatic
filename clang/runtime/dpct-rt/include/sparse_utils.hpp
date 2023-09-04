@@ -513,9 +513,11 @@ public:
   /// Get the uplo attribute
   /// \return uplo value
   std::optional<oneapi::mkl::uplo> get_uplo() const noexcept { return _uplo; }
-
+  /// Set the number of non-zero elements
+  /// \param nnz [in] The number of non-zero elements.
   void set_nnz(std::int64_t nnz) { _nnz = nnz; }
-
+  /// Get the type of the value pointer.
+  /// \return The type of the value pointer.
   library_data_t get_value_type() { return _value_type; }
 
 private:
@@ -766,37 +768,52 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
   }
 }
 
+/// Do initial estimation of work and load balancing of computing a sparse
+/// matrix-sparse matrix product.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] trans_b Specifies operation on input matrix b.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] b Specifies the sparse matrix b.
+/// \param [in] beta Specifies the scalar beta.
+/// \param [in, out] c Specifies the sparse matrix c.
+/// \param [in] matmat_descr Describes the sparse matrix-sparse matrix operation
+/// to be executed.
+/// \param [in, out] size_temp_buffer Specifies the size of workspace.
+/// \param [in] temp_buffer Specifies the memory of the workspace.
 inline void
 spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
                        oneapi::mkl::transpose trans_b, const void *alpha,
-                       sparse_matrix_desc_t matA, sparse_matrix_desc_t matB,
-                       const void *beta, sparse_matrix_desc_t matC,
-                       oneapi::mkl::sparse::matmat_descr_t spgemmDescr,
-                       size_t *bufferSize, void *externalBuffer) {
-  set_matmat_data(spgemmDescr, oneapi::mkl::sparse::matrix_view_descr::general,
+                       sparse_matrix_desc_t a, sparse_matrix_desc_t b,
+                       const void *beta, sparse_matrix_desc_t c,
+                       oneapi::mkl::sparse::matmat_descr_t matmat_descr,
+                       size_t *size_temp_buffer, void *temp_buffer) {
+  set_matmat_data(matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
-  if (externalBuffer) {
+  if (temp_buffer) {
 #ifdef DPCT_USM_LEVEL_NONE
     sycl::buffer<std::uint8_t> extBuf =
-        dpct::get_buffer<std::uint8_t>(externalBuffer);
+        dpct::get_buffer<std::uint8_t>(temp_buffer);
     sycl::buffer<std::int64_t, 1> bufSizeBuf(sycl::range<1>(1));
     auto bufSizeBuf_acc = bufSizeBuf.get_host_access(sycl::write_only);
-    bufSizeBuf_acc[0] = static_cast<std::int64_t>(*bufferSize);
+    bufSizeBuf_acc[0] = static_cast<std::int64_t>(*size_temp_buffer);
     oneapi::mkl::sparse::matmat(
-        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-        matC->get_matrix_handle(),
-        oneapi::mkl::sparse::matmat_request::work_estimation, spgemmDescr,
+        queue, a->get_matrix_handle(), b->get_matrix_handle(),
+        c->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::work_estimation, matmat_descr,
         &bufSizeBuf, &extBuf);
     queue.wait();
 #else
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
-    *bufSize = static_cast<std::int64_t>(*bufferSize);
+    *bufSize = static_cast<std::int64_t>(*size_temp_buffer);
     sycl::event e = oneapi::mkl::sparse::matmat(
-        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-        matC->get_matrix_handle(),
-        oneapi::mkl::sparse::matmat_request::work_estimation, spgemmDescr,
-        bufSize, externalBuffer, {});
+        queue, a->get_matrix_handle(), b->get_matrix_handle(),
+        c->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::work_estimation, matmat_descr,
+        bufSize, temp_buffer, {});
     async_dpct_free({bufSize}, {e}, queue);
 #endif
   } else {
@@ -806,70 +823,84 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
       sycl::buffer<std::int64_t, 1> bufSizeBuf(&bufSizeValue,
                                                sycl::range<1>(1));
       oneapi::mkl::sparse::matmat(
-          queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-          matC->get_matrix_handle(),
+          queue, a->get_matrix_handle(), b->get_matrix_handle(),
+          c->get_matrix_handle(),
           oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size,
-          spgemmDescr, &bufSizeBuf, nullptr);
+          matmat_descr, &bufSizeBuf, nullptr);
     }
-    *bufferSize = static_cast<size_t>(bufSizeValue);
+    *size_temp_buffer = static_cast<size_t>(bufSizeValue);
 #else
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
     oneapi::mkl::sparse::matmat(
-        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-        matC->get_matrix_handle(),
+        queue, a->get_matrix_handle(), b->get_matrix_handle(),
+        c->get_matrix_handle(),
         oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size,
-        spgemmDescr, bufSize, nullptr, {});
+        matmat_descr, bufSize, nullptr, {});
     queue.wait();
-    *bufferSize = static_cast<size_t>(*bufSize);
+    *size_temp_buffer = static_cast<size_t>(*bufSize);
     sycl::free(bufSize, queue);
 #endif
   }
 }
 
+/// Do internal products for computing the C matrix of computing a sparse
+/// matrix-sparse matrix product.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] trans_b Specifies operation on input matrix b.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] b Specifies the sparse matrix b.
+/// \param [in] beta Specifies the scalar beta.
+/// \param [in, out] c Specifies the sparse matrix c.
+/// \param [in] matmat_descr Describes the sparse matrix-sparse matrix operation
+/// to be executed.
+/// \param [in, out] size_temp_buffer Specifies the size of workspace.
+/// \param [in] temp_buffer Specifies the memory of the workspace.
 inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
                            oneapi::mkl::transpose trans_b, const void *alpha,
-                           sparse_matrix_desc_t matA, sparse_matrix_desc_t matB,
-                           const void *beta, sparse_matrix_desc_t matC,
-                           oneapi::mkl::sparse::matmat_descr_t spgemmDescr,
-                           size_t *bufferSize, void *externalBuffer) {
-  set_matmat_data(spgemmDescr, oneapi::mkl::sparse::matrix_view_descr::general,
+                           sparse_matrix_desc_t a, sparse_matrix_desc_t b,
+                           const void *beta, sparse_matrix_desc_t c,
+                           oneapi::mkl::sparse::matmat_descr_t matmat_descr,
+                           size_t *size_temp_buffer, void *temp_buffer) {
+  set_matmat_data(matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
-  if (externalBuffer) {
+  if (temp_buffer) {
 #ifdef DPCT_USM_LEVEL_NONE
     sycl::buffer<std::uint8_t> extBuf =
-        dpct::get_buffer<std::uint8_t>(externalBuffer);
+        dpct::get_buffer<std::uint8_t>(temp_buffer);
     sycl::buffer<std::int64_t, 1> bufSizeBuf(sycl::range<1>(1));
     auto bufSizeBuf_acc = bufSizeBuf.get_host_access(sycl::write_only);
-    bufSizeBuf_acc[0] = static_cast<std::int64_t>(*bufferSize);
-    oneapi::mkl::sparse::matmat(
-        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-        matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::compute,
-        spgemmDescr, &bufSizeBuf, &extBuf);
+    bufSizeBuf_acc[0] = static_cast<std::int64_t>(*size_temp_buffer);
+    oneapi::mkl::sparse::matmat(queue, a->get_matrix_handle(),
+                                b->get_matrix_handle(), c->get_matrix_handle(),
+                                oneapi::mkl::sparse::matmat_request::compute,
+                                matmat_descr, &bufSizeBuf, &extBuf);
     std::int64_t nnzValue = 0;
     {
       sycl::buffer<std::int64_t, 1> nnzBuf(&nnzValue, sycl::range<1>(1));
-      oneapi::mkl::sparse::matmat(queue, matA->get_matrix_handle(),
-                                  matB->get_matrix_handle(),
-                                  matC->get_matrix_handle(),
-                                  oneapi::mkl::sparse::matmat_request::get_nnz,
-                                  spgemmDescr, &nnzBuf, nullptr);
+      oneapi::mkl::sparse::matmat(
+          queue, a->get_matrix_handle(), b->get_matrix_handle(),
+          c->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::get_nnz,
+          matmat_descr, &nnzBuf, nullptr);
     }
-    matC->set_nnz(nnzValue);
+    c->set_nnz(nnzValue);
 #else
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
-    *bufSize = static_cast<std::int64_t>(*bufferSize);
-    oneapi::mkl::sparse::matmat(
-        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-        matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::compute,
-        spgemmDescr, bufSize, externalBuffer, {});
+    *bufSize = static_cast<std::int64_t>(*size_temp_buffer);
+    oneapi::mkl::sparse::matmat(queue, a->get_matrix_handle(),
+                                b->get_matrix_handle(), c->get_matrix_handle(),
+                                oneapi::mkl::sparse::matmat_request::compute,
+                                matmat_descr, bufSize, temp_buffer, {});
     std::int64_t *c_nnz = sycl::malloc_host<std::int64_t>(1, queue);
-    oneapi::mkl::sparse::matmat(
-        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-        matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::get_nnz,
-        spgemmDescr, c_nnz, nullptr, {});
+    oneapi::mkl::sparse::matmat(queue, a->get_matrix_handle(),
+                                b->get_matrix_handle(), c->get_matrix_handle(),
+                                oneapi::mkl::sparse::matmat_request::get_nnz,
+                                matmat_descr, c_nnz, nullptr, {});
     queue.wait();
-    matC->set_nnz(*c_nnz);
+    c->set_nnz(*c_nnz);
     sycl::free(bufSize, queue);
 #endif
   } else {
@@ -879,39 +910,51 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
       sycl::buffer<std::int64_t, 1> bufSizeBuf(&bufSizeValue,
                                                sycl::range<1>(1));
       oneapi::mkl::sparse::matmat(
-          queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-          matC->get_matrix_handle(),
+          queue, a->get_matrix_handle(), b->get_matrix_handle(),
+          c->get_matrix_handle(),
           oneapi::mkl::sparse::matmat_request::get_compute_buf_size,
-          spgemmDescr, &bufSizeBuf, nullptr);
+          matmat_descr, &bufSizeBuf, nullptr);
     }
-    *bufferSize = static_cast<size_t>(bufSizeValue);
+    *size_temp_buffer = static_cast<size_t>(bufSizeValue);
 #else
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
     oneapi::mkl::sparse::matmat(
-        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-        matC->get_matrix_handle(),
-        oneapi::mkl::sparse::matmat_request::get_compute_buf_size, spgemmDescr,
+        queue, a->get_matrix_handle(), b->get_matrix_handle(),
+        c->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::get_compute_buf_size, matmat_descr,
         bufSize, nullptr, {});
     queue.wait();
-    *bufferSize = static_cast<size_t>(*bufSize);
+    *size_temp_buffer = static_cast<size_t>(*bufSize);
     sycl::free(bufSize, queue);
 #endif
   }
 }
 
+/// Do any remaining internal products and accumulation and transfer into final
+/// C matrix arrays of computing a sparse matrix-sparse matrix product.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] trans_b Specifies operation on input matrix b.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] b Specifies the sparse matrix b.
+/// \param [in] beta Specifies the scalar beta.
+/// \param [in, out] c Specifies the sparse matrix c.
+/// \param [in] matmat_descr Describes the sparse matrix-sparse matrix operation
+/// to be executed.
 inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
                             oneapi::mkl::transpose trans_b, const void *alpha,
-                            sparse_matrix_desc_t matA,
-                            sparse_matrix_desc_t matB, const void *beta,
-                            sparse_matrix_desc_t matC,
-                            oneapi::mkl::sparse::matmat_descr_t spgemmDescr) {
-  set_matmat_data(spgemmDescr, oneapi::mkl::sparse::matrix_view_descr::general,
+                            sparse_matrix_desc_t a, sparse_matrix_desc_t b,
+                            const void *beta, sparse_matrix_desc_t c,
+                            oneapi::mkl::sparse::matmat_descr_t matmat_descr) {
+  set_matmat_data(matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
-  oneapi::mkl::sparse::matmat(
-      queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
-      matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::finalize,
-      spgemmDescr, nullptr, nullptr, {});
+  oneapi::mkl::sparse::matmat(queue, a->get_matrix_handle(),
+                              b->get_matrix_handle(), c->get_matrix_handle(),
+                              oneapi::mkl::sparse::matmat_request::finalize,
+                              matmat_descr, nullptr, nullptr, {});
   queue.wait();
 }
 
@@ -927,23 +970,39 @@ inline void check_alpha_value(const void *alpha, sycl::queue queue) {
 }
 } // namespace detail
 
+/// Performs internal optimizations for spsv by analyzing the provided matrix
+/// structure and operation parameters.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] a Specifies the sparse matrix a.
 inline void spsv_optimize(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                          sparse_matrix_desc_t matA) {
-  if (!matA->get_uplo() || !matA->get_diag()) {
+                          sparse_matrix_desc_t a) {
+  if (!a->get_uplo() || !a->get_diag()) {
     throw std::runtime_error("oneapi::mkl::sparse::trsv needs uplo and diag "
                              "attributes to be specified.");
   }
   oneapi::mkl::sparse::optimize_trsv(
-      queue, matA->get_uplo().value(), oneapi::mkl::transpose::nontrans,
-      matA->get_diag().value(), matA->get_matrix_handle());
+      queue, a->get_uplo().value(), oneapi::mkl::transpose::nontrans,
+      a->get_diag().value(), a->get_matrix_handle());
 }
 
+/// Solves a system of linear equations for a sparse matrix.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] x Specifies the dense vector x.
+/// \param [in, out] y Specifies the dense vector y.
+/// \param [in] data_type Specifies the data type of \param a, \param x and
+/// \param y .
 inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                 const void *alpha, sparse_matrix_desc_t matA,
-                 std::shared_ptr<dense_vector_desc> vecX,
-                 std::shared_ptr<dense_vector_desc> vecY,
-                 library_data_t value_type) {
-  switch (value_type) {
+                 const void *alpha, sparse_matrix_desc_t a,
+                 std::shared_ptr<dense_vector_desc> x,
+                 std::shared_ptr<dense_vector_desc> y,
+                 library_data_t data_type) {
+  switch (data_type) {
   case library_data_t::real_float:
     detail::check_alpha_value<float>(alpha, queue);
     break;
@@ -960,58 +1019,58 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
     throw std::runtime_error("Unsupported data type.");
   }
 
-  if (!matA->get_uplo() || !matA->get_diag()) {
+  if (!a->get_uplo() || !a->get_diag()) {
     throw std::runtime_error("oneapi::mkl::sparse::trsv needs uplo and diag "
                              "attributes to be specified.");
   }
-  oneapi::mkl::uplo uplo = matA->get_uplo().value();
-  oneapi::mkl::diag diag = matA->get_diag().value();
+  oneapi::mkl::uplo uplo = a->get_uplo().value();
+  oneapi::mkl::diag diag = a->get_diag().value();
 
   std::uint64_t key = dpct::detail::get_type_combination_id(
-      matA->get_value_type(), vecX->get_value_type(), vecY->get_value_type());
+      a->get_value_type(), x->get_value_type(), y->get_value_type());
   switch (key) {
   case dpct::detail::get_type_combination_id(library_data_t::real_float,
                                              library_data_t::real_float,
                                              library_data_t::real_float): {
     auto data_x =
-        dpct::detail::get_memory(reinterpret_cast<float *>(vecX->get_value()));
+        dpct::detail::get_memory(reinterpret_cast<float *>(x->get_value()));
     auto data_y =
-        dpct::detail::get_memory(reinterpret_cast<float *>(vecY->get_value()));
+        dpct::detail::get_memory(reinterpret_cast<float *>(y->get_value()));
     oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
-                              matA->get_matrix_handle(), data_x, data_y);
+                              a->get_matrix_handle(), data_x, data_y);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_double,
                                              library_data_t::real_double,
                                              library_data_t::real_double): {
     auto data_x =
-        dpct::detail::get_memory(reinterpret_cast<double *>(vecX->get_value()));
+        dpct::detail::get_memory(reinterpret_cast<double *>(x->get_value()));
     auto data_y =
-        dpct::detail::get_memory(reinterpret_cast<double *>(vecY->get_value()));
+        dpct::detail::get_memory(reinterpret_cast<double *>(y->get_value()));
     oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
-                              matA->get_matrix_handle(), data_x, data_y);
+                              a->get_matrix_handle(), data_x, data_y);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::complex_float,
                                              library_data_t::complex_float,
                                              library_data_t::complex_float): {
     auto data_x = dpct::detail::get_memory(
-        reinterpret_cast<std::complex<float> *>(vecX->get_value()));
+        reinterpret_cast<std::complex<float> *>(x->get_value()));
     auto data_y = dpct::detail::get_memory(
-        reinterpret_cast<std::complex<float> *>(vecY->get_value()));
+        reinterpret_cast<std::complex<float> *>(y->get_value()));
     oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
-                              matA->get_matrix_handle(), data_x, data_y);
+                              a->get_matrix_handle(), data_x, data_y);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::complex_double,
                                              library_data_t::complex_double,
                                              library_data_t::complex_double): {
     auto data_x = dpct::detail::get_memory(
-        reinterpret_cast<std::complex<double> *>(vecX->get_value()));
+        reinterpret_cast<std::complex<double> *>(x->get_value()));
     auto data_y = dpct::detail::get_memory(
-        reinterpret_cast<std::complex<double> *>(vecY->get_value()));
+        reinterpret_cast<std::complex<double> *>(y->get_value()));
     oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
-                              matA->get_matrix_handle(), data_x, data_y);
+                              a->get_matrix_handle(), data_x, data_y);
     break;
   }
   default:
