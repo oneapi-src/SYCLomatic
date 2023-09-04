@@ -244,6 +244,7 @@ COMPILER_PATTERNS = frozenset(
         re.compile(r"^([^-]*-)*[mg](cc|\+\+)(-\d+(\.\d+){0,2})?$"),
         re.compile(r"^([^-]*-)*clang(\+\+)?(-\d+(\.\d+){0,2})?$"),
         re.compile(r"^llvm-g(cc|\+\+)$"),
+        re.compile(r"^ic(c|pc|px|x)$"),
         re.compile(r"^mpi(cc|cxx|gcc|gxx|icc|icpc)$"),
     ]
 )
