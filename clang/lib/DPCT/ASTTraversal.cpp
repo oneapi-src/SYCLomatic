@@ -13547,12 +13547,8 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       if (UD->getCanonicalDecl()) {
         Specifier = UD->getCanonicalDecl()->getQualifier();
       }
-      if (Specifier &&
-          ((Specifier->getKind() ==
-            clang::NestedNameSpecifier::SpecifierKind::Global) ||
-           (Specifier->getKind() ==
-                clang::NestedNameSpecifier::SpecifierKind::Namespace &&
-            Specifier->getAsNamespace()->getNameAsString() == "std"))) {
+      if (Specifier && (Specifier->getKind() ==
+                        clang::NestedNameSpecifier::SpecifierKind::Global)) {
         auto NextTok = Lexer::findNextToken(
             End, SM, DpctGlobalInfo::getContext().getLangOpts());
         if (NextTok.has_value() && NextTok.value().is(tok::semi)) {
