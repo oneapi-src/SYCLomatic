@@ -3726,7 +3726,7 @@ void foo5() {
 
   // CHECK: d0 = ceil(d0);
   d0 = ceil(d0);
-  // CHECK: d0 = ceil(i);
+  // CHECK: d0 = std::ceil(i);
   d0 = ceil(i);
 
   // CHECK: f0 = ceilf(f0);

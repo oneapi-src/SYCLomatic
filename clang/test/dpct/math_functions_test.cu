@@ -58,10 +58,10 @@ double test_abs(double in) { return abs(in); }
 // CHECK: float test_fabs(float in) { return fabs(in); }
 float test_fabs(float in) { return fabs(in); }
 
-// CHECK: float test_ceil(float in) { return ceil(in); }
+// CHECK: float test_ceil(float in) { return std::ceil(in); }
 float test_ceil(float in) { return ceil(in); }
 
-// CHECK: float test_floor(float in) { return floor(in); }
+// CHECK: float test_floor(float in) { return std::floor(in); }
 float test_floor(float in) { return floor(in); }
 
 // CHECK: float test_sqrt(float in) { return sqrt(in); }
@@ -79,7 +79,7 @@ double test_pow(double a, int b) { return pow(a, b); }
 // CHECK: float test_log(float in) { return log(in); }
 float test_log(float in) { return log(in); }
 
-// CHECK: float test_log10(float in) { return log10(in); }
+// CHECK: float test_log10(float in) { return std::log10(in); }
 float test_log10(float in) { return log10(in); }
 
 // CHECK: float test_fmod(float a, float b) { return fmod(a, b); }
@@ -94,7 +94,7 @@ float test_exp(float in) { return exp(in); }
 // CHECK: float test_frexp(float a, int *b) { return frexp(a, b); }
 float test_frexp(float a, int *b) { return frexp(a, b); }
 
-// CHECK: float test_ldexp(float a, int b) { return ldexp(a, b); }
+// CHECK: float test_ldexp(float a, int b) { return std::ldexp(a, b); }
 float test_ldexp(float a, int b) { return ldexp(a, b); }
 
 // CHECK: float test_asin(float in) { return asin(in); }

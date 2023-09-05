@@ -31,27 +31,27 @@ MATH_API_REWRITER_HOST_DEVICE(
             EMPTY_FACTORY_ENTRY("std::abs"), EMPTY_FACTORY_ENTRY("std::abs"),
             EMPTY_FACTORY_ENTRY("std::abs"))))
 
-MATH_API_REWRITER_HOST_DEVICE(
-    MATH_API_REWRITER_HOST(
-        "std::max",
-        CALL_FACTORY_ENTRY("std::max", CALL("std::max", ARG(0), ARG(1)))),
-    MATH_API_REWRITER_DEVICE(
-        "std::max",
-        MATH_API_DEVICE_NODES(
-            CALL_FACTORY_ENTRY("std::max", CALL("std::max", ARG(0), ARG(1))),
-            EMPTY_FACTORY_ENTRY("std::max"), EMPTY_FACTORY_ENTRY("std::max"),
-            EMPTY_FACTORY_ENTRY("std::max"))))
+#define STD_FUNCTION_REWRITER(NAME, ...)                                       \
+  MATH_API_REWRITER_HOST_DEVICE(                                               \
+      MATH_API_REWRITER_HOST(                                                  \
+          NAME, CALL_FACTORY_ENTRY(NAME, CALL(NAME, __VA_ARGS__))),            \
+      MATH_API_REWRITER_DEVICE(                                                \
+          NAME, MATH_API_DEVICE_NODES(                                         \
+                    CALL_FACTORY_ENTRY(NAME, CALL(NAME, __VA_ARGS__)),         \
+                    EMPTY_FACTORY_ENTRY(NAME), EMPTY_FACTORY_ENTRY(NAME),      \
+                    EMPTY_FACTORY_ENTRY(NAME))))
 
-MATH_API_REWRITER_HOST_DEVICE(
-    MATH_API_REWRITER_HOST(
-        "std::min",
-        CALL_FACTORY_ENTRY("std::min", CALL("std::min", ARG(0), ARG(1)))),
-    MATH_API_REWRITER_DEVICE(
-        "std::min",
-        MATH_API_DEVICE_NODES(
-            CALL_FACTORY_ENTRY("std::min", CALL("std::min", ARG(0), ARG(1))),
-            EMPTY_FACTORY_ENTRY("std::min"), EMPTY_FACTORY_ENTRY("std::min"),
-            EMPTY_FACTORY_ENTRY("std::min"))))
+STD_FUNCTION_REWRITER("std::max", ARG(0), ARG(1))
+STD_FUNCTION_REWRITER("std::min", ARG(0), ARG(1))
+STD_FUNCTION_REWRITER("std::ceilf", ARG(0))
+STD_FUNCTION_REWRITER("std::expf", ARG(0))
+STD_FUNCTION_REWRITER("std::ldexpf", ARG(0), ARG(1))
+STD_FUNCTION_REWRITER("std::ceil", ARG(0))
+STD_FUNCTION_REWRITER("std::floor", ARG(0))
+STD_FUNCTION_REWRITER("std::ldexp", ARG(0), ARG(1))
+STD_FUNCTION_REWRITER("std::log10", ARG(0))
+
+#undef STD_FUNCTION_REWRITER
 
 // Half Arithmetic Functions
 MATH_API_REWRITER_DEVICE_OVERLOAD(

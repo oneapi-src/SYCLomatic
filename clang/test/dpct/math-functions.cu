@@ -251,7 +251,7 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = ceil(f_a);
+    // CHECK: f_a = std::ceil(f_a);
     f_a = ceil(f_a);
     // CHECK: d_a = ceil(d_a);
     d_a = ceil(d_a);
@@ -381,7 +381,7 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = floor(f_a);
+    // CHECK: f_a = std::floor(f_a);
     f_a = floor(f_a);
     // CHECK: d_a = floor(d_a);
     d_a = floor(d_a);
@@ -433,7 +433,7 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = log10(f_a);
+    // CHECK: f_a = std::log10(f_a);
     f_a = log10(f_a);
     // CHECK: d_a = log10(d_a);
     d_a = log10(d_a);
