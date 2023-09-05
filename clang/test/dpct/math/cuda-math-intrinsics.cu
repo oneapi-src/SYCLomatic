@@ -427,8 +427,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // CHECK: d2 = sycl::floor(d0);
   d2 = floor(d0);
-  // CHECK: d2 = sycl::floor((double)i);
-  d2 = floor(i);
 
   // CHECK: d2 = sycl::fma(d0, d1, d2);
   d2 = fma(d0, d1, d2);
@@ -515,8 +513,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // CHECK: d2 = sycl::log10(d0);
   d2 = log10(d0);
-  // CHECK: d2 = sycl::log10((double)i);
-  d2 = log10(i);
 
   // CHECK: d2 = sycl::log1p(d0);
   d2 = log1p(d0);
@@ -847,11 +843,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d0 = fmax(d0, i);
   // CHECK: d0 = sycl::fmax((double)i, d1);
   d0 = fmax(i, d1);
-
-  // CHECK: d1 = sycl::floor(d1);
-  d1 = floor(d1);
-  // CHECK: d1 = sycl::floor((double)i);
-  d1 = floor(i);
 
   // CHECK: d2 = sycl::fma(d0, d1, d2);
   d2 = fma(d0, d1, d2);

@@ -4940,3 +4940,33 @@ MATH_API_REWRITER_HOST_DEVICE(
                               CAST_IF_NOT_SAME(LITERAL("float"), ARG(0)))),
             EMPTY_FACTORY_ENTRY("ceilf"), EMPTY_FACTORY_ENTRY("ceilf"),
             EMPTY_FACTORY_ENTRY("ceilf"))))
+
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "floor",
+        HEADER_INSERT_FACTORY(HeaderType::HT_Math,
+                              CALL_FACTORY_ENTRY("floor",
+                                                 CALL("std::floor", ARG(0))))),
+    MATH_API_REWRITER_DEVICE(
+        "floor",
+        MATH_API_DEVICE_NODES(
+            CALL_FACTORY_ENTRY(
+                "floor",
+                CALL(MapNames::getClNamespace(false, true) + "floor", ARG(0))),
+            EMPTY_FACTORY_ENTRY("floor"), EMPTY_FACTORY_ENTRY("floor"),
+            EMPTY_FACTORY_ENTRY("floor"))))
+
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "log10",
+        HEADER_INSERT_FACTORY(HeaderType::HT_Math,
+                              CALL_FACTORY_ENTRY("log10",
+                                                 CALL("std::log10", ARG(0))))),
+    MATH_API_REWRITER_DEVICE(
+        "log10",
+        MATH_API_DEVICE_NODES(
+            CALL_FACTORY_ENTRY(
+                "log10",
+                CALL(MapNames::getClNamespace(false, true) + "log10", ARG(0))),
+            EMPTY_FACTORY_ENTRY("log10"), EMPTY_FACTORY_ENTRY("log10"),
+            EMPTY_FACTORY_ENTRY("log10"))))
