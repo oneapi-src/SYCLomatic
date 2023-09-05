@@ -370,9 +370,9 @@ inline double pow(const double a, const int b) { return sycl::pown(a, b); }
 inline float pow(const float a, const float b) { return sycl::pow(a, b); }
 inline double pow(const double a, const double b) { return sycl::pow(a, b); }
 template <typename T, typename U>
-inline typename std::enable_if_t<std::is_floating_point_v<T>, float>
+inline typename std::enable_if_t<std::is_floating_point_v<T>, T>
 pow(const T a, const U b) {
-  return sycl::pow(static_cast<float>(a), static_cast<float>(b));
+  return sycl::pow(a, static_cast<T>(b));
 }
 template <typename T, typename U>
 inline typename std::enable_if_t<!std::is_floating_point_v<T>, double>
