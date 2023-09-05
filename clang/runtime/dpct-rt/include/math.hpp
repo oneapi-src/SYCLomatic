@@ -11,7 +11,6 @@
 
 #include <limits>
 #include <sycl/sycl.hpp>
-#include <type_traits>
 
 namespace dpct {
 namespace detail {
