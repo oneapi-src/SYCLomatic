@@ -247,7 +247,6 @@
 // CUDAEVENTRECORD-NEXT:   cudaEventRecord(e /*cudaEvent_t*/, s /*cudaStream_t*/);
 // CUDAEVENTRECORD-NEXT: Is migrated to:
 // CUDAEVENTRECORD-NEXT:   dpct::queue_ptr s;
-// CUDAEVENTRECORD-NEXT:   ;
 // CUDAEVENTRECORD-NEXT:   *e = s->ext_oneapi_submit_barrier();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventSynchronize | FileCheck %s -check-prefix=CUDAEVENTSYNCHRONIZE
