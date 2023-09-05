@@ -3450,7 +3450,7 @@ bool analyzeMemcpyOrder(
 
   std::size_t DRESetSize = DRESet.size();
   std::set<const clang::ValueDecl *> VDSet;
-
+  std::set<const clang::ValueDecl *> GlobalVDSet;
   for (const auto &DRE : AllDREsInCS) {
     if (ExcludeDRESet.count(DRE))
       continue;
@@ -3461,6 +3461,7 @@ bool analyzeMemcpyOrder(
         }
       }
       VDSet.insert(VD);
+      GlobalVDSet.insert(VD);
     }
   }
   std::size_t VDSetSize = VDSet.size();
@@ -3500,14 +3501,16 @@ bool analyzeMemcpyOrder(
         for (auto &Result : Results) {
           if (const DeclRefExpr *MatchedDRE =
                   Result.getNodeAs<DeclRefExpr>("VarReference")) {
-            if (auto RValueExpr = dpct::DpctGlobalInfo::getContext()
-                                      .getParents(*MatchedDRE)[0]
-                                      .get<ImplicitCastExpr>()) {
-              if (RValueExpr->getCastKind() == CastKind::CK_LValueToRValue) {
-                continue;
-              }
-            }
             if (auto D = MatchedDRE->getDecl()) {
+              if (auto RValueExpr = dpct::DpctGlobalInfo::getContext()
+                                        .getParents(*MatchedDRE)[0]
+                                        .get<ImplicitCastExpr>()) {
+                if ((RValueExpr->getCastKind() ==
+                     CastKind::CK_LValueToRValue) &&
+                    !GlobalVDSet.count(D)) {
+                  continue;
+                }
+              }
               std::string TypeName =
                   dpct::DpctGlobalInfo::getTypeName(D->getType());
               if (TypeName == "cudaError_t") {
