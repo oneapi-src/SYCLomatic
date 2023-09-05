@@ -1994,7 +1994,7 @@ ObjCImplementationDecl *Sema::ActOnStartClassImplementation(
   } else if ((IDecl = dyn_cast_or_null<ObjCInterfaceDecl>(PrevDecl))) {
     // FIXME: This will produce an error if the definition of the interface has
     // been imported from a module but is not visible.
-    RequireCompleteType(ClassLoc, Context.getObjCInterfaceType(IDecl),
+    (void)RequireCompleteType(ClassLoc, Context.getObjCInterfaceType(IDecl),
                         diag::warn_undef_interface);
   } else {
     // We did not find anything with the name ClassName; try to correct for
