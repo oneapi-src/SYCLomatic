@@ -11,6 +11,7 @@
 
 #include <limits>
 #include <sycl/sycl.hpp>
+#include <type_traits>
 
 namespace dpct {
 namespace detail {
@@ -36,6 +37,7 @@ public:
 };
 
 template <typename T> inline bool isnan(const T a) { return sycl::isnan(a); }
+
 #ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
 inline bool isnan(const sycl::ext::oneapi::bfloat16 a) {
   return sycl::ext::oneapi::experimental::isnan(a);
@@ -59,7 +61,7 @@ inline constexpr RetT extend_binary(AT a, BT b, BinaryOperation binary_op) {
   const int64_t extend_b = zero_or_signed_extent(b, 33);
   const int64_t ret = binary_op(extend_a, extend_b);
   if constexpr (needSat)
-    return sycl::clamp<int64_t>(ret, std::numeric_limits<RetT>::min(),
+    return sycl::clamp(ret, std::numeric_limits<RetT>::min(),
                                 std::numeric_limits<RetT>::max());
   return ret;
 }
@@ -75,7 +77,7 @@ inline constexpr RetT extend_binary(AT a, BT b, CT c,
       zero_or_signed_extent(binary_op(extend_a, extend_b), 34);
   if constexpr (needSat)
     extend_temp =
-        sycl::clamp<int64_t>(extend_temp, std::numeric_limits<RetT>::min(),
+        sycl::clamp(extend_temp, std::numeric_limits<RetT>::min(),
                              std::numeric_limits<RetT>::max());
   const int64_t extend_c = zero_or_signed_extent(c, 33);
   return second_op(extend_temp, extend_c);
@@ -388,13 +390,25 @@ pow(const T a, const U b) {
   return sycl::pow(static_cast<double>(a), static_cast<double>(b));
 }
 
+namespace detail {
+
+template <typename T>
+constexpr bool is_floating_point = std::disjunction_v < std::is_same<T, float>,
+               std::is_same<T, double>, std::is_same<T, sycl::half>
+#ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
+    , std::is_same<T, sycl::ext::oneapi::bfloat16>
+#endif
+>;
+} // namespace detail
+
 /// Performs relu saturation.
 /// \param [in] a The input value
 /// \returns the relu saturation result
-template <typename T> inline T relu(const T a) {
-  if (!detail::isnan(a) && a < 0.f)
-    return 0.f;
-  return a;
+template <typename T> inline T relu(T a) {
+  if constexpr (detail::is_floating_point<T>)
+    return !detail::isnan(a) && a < T{} ? T{} : a;
+  else
+    return a < T{} ? T{} : a;
 }
 template <class T> inline sycl::vec<T, 2> relu(const sycl::vec<T, 2> a) {
   return {relu(a[0]), relu(a[1])};

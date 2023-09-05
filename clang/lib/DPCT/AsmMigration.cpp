@@ -11,6 +11,7 @@
 #include "Asm/AsmParser.h"
 #include "CallExprRewriter.h"
 #include "CrashRecovery.h"
+#include "MapNames.h"
 #include "MigrationRuleManager.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -61,7 +62,6 @@ class SYCLGenBase {
   raw_ostream *Stream;
 
 protected:
-
   const GCCAsmStmt *GAS;
 
   class BlockDelimiterGuard {
@@ -156,8 +156,13 @@ protected:
     endl();
   }
 
-  llvm::raw_ostream &OS() { return *Stream; }
+  void insertHeader(HeaderType HT) const {
+    DpctGlobalInfo::getInstance().insertHeader(GAS->getBeginLoc(), HT);
+  }
 
+  static std::string SYCLNS() { return MapNames::getClNamespace(); }
+  static std::string DPCTNS() { return MapNames::getDpctNamespace(); }
+  llvm::raw_ostream &OS() { return *Stream; }
   void switchOutStream(llvm::raw_ostream &NewOS) { Stream = &NewOS; }
 
   bool tryEmitStmt(std::string &Buffer, const InlineAsmStmt *S) {
@@ -396,16 +401,17 @@ bool SYCLGenBase::emitFloatingLiteral(const InlineAsmFloatingLiteral *Fp) {
   if (!Fp->isExactMachineFloatingLiteral()) {
     OS() << Fp->getLiteral();
   } else {
-    const char *Template = "sycl::bit_cast<{0}>({1}(0x{2}{3}))";
+    std::string Fmt =
+        MapNames::getClNamespace() + "bit_cast<{0}>({1}(0x{2}{3}))";
     if (const auto *T = dyn_cast<InlineAsmBuiltinType>(Fp->getType())) {
       switch (T->getKind()) {
       case InlineAsmBuiltinType::TK_f32:
-        OS() << llvm::formatv(Template, "float", "uint32_t", Fp->getLiteral(),
-                              "U");
+        OS() << llvm::formatv(Fmt.c_str(), "float", "uint32_t",
+                              Fp->getLiteral(), "U");
         break;
       case InlineAsmBuiltinType::TK_f64:
-        OS() << llvm::formatv(Template, "double", "uint64_t", Fp->getLiteral(),
-                              "ULL");
+        OS() << llvm::formatv(Fmt.c_str(), "double", "uint64_t",
+                              Fp->getLiteral(), "ULL");
         break;
       default:
         return SYCLGenError();
@@ -460,14 +466,14 @@ bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   case InlineAsmBuiltinType::TK_s16:    OS() << "int16_t"; break;
   case InlineAsmBuiltinType::TK_s32:    OS() << "int32_t"; break;
   case InlineAsmBuiltinType::TK_s64:    OS() << "int64_t"; break;
-  case InlineAsmBuiltinType::TK_f16:    OS() << "sycl::half"; break;
+  case InlineAsmBuiltinType::TK_f16:    OS() << MapNames::getClNamespace() + "half"; break;
   case InlineAsmBuiltinType::TK_f32:    OS() << "float"; break;
   case InlineAsmBuiltinType::TK_f64:    OS() << "double"; break;
   case InlineAsmBuiltinType::TK_byte:   OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::TK_4byte:  OS() << "uint32_t"; break;
   case InlineAsmBuiltinType::TK_pred:   OS() << "bool"; break;
-  case InlineAsmBuiltinType::TK_s16x2:  OS() << "sycl::short2"; break;
-  case InlineAsmBuiltinType::TK_u16x2:  OS() << "sycl::ushort2"; break;
+  case InlineAsmBuiltinType::TK_s16x2:  OS() << MapNames::getClNamespace() + "short2"; break;
+  case InlineAsmBuiltinType::TK_u16x2:  OS() << MapNames::getClNamespace() + "ushort2"; break;
   case InlineAsmBuiltinType::TK_bf16:
   case InlineAsmBuiltinType::TK_e4m3:
   case InlineAsmBuiltinType::TK_e5m2:
@@ -485,7 +491,7 @@ bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
 }
 
 bool SYCLGenBase::emitVectorType(const InlineAsmVectorType *T) {
-  OS() << "sycl::vec<";
+  OS() << MapNames::getClNamespace() << "vec<";
   if (emitType(T->getElementType()))
     return SYCLGenError();
   OS() << ", ";
@@ -562,175 +568,146 @@ protected:
     if (tryEmitStmt(Op2, I->getInputOperand(1)))
       return SYCLGenError();
 
-    const char *Template = nullptr;
+    std::string Fmt;
+
+    // !sycl::isnan(X) && !sycl::isnan(Y)
+    auto NotNan = []() {
+      return llvm::Twine('!')
+          .concat(SYCLNS())
+          .concat("isnan({0}) && !")
+          .concat(SYCLNS())
+          .concat("isnan({1})")
+          .str();
+    };
+
+    // sycl::isnan(X) || sycl::isnan(Y)
+    auto IsNan = []() {
+      return llvm::Twine(SYCLNS())
+          .concat("isnan({0}) || ")
+          .concat(SYCLNS())
+          .concat("isnan({1})")
+          .str();
+    };
 
     for (const auto A : I->attrs()) {
       switch (A) {
       case InstAttr::eq:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
-          Template = "{0} == {1}";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isequal<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isequal<double>({0}, {1})";
+          Fmt = "{0} == {1}";
+        else if (T->isFloating())
+          Fmt = NotNan() + " && " + SYCLNS() + "isequal({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::ne:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
-          Template = "{0} != {1}";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isnotequal<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isnotequal<double>({0}, {1})";
+          Fmt = "{0} != {1}";
+        else if (T->isFloating())
+          Fmt = NotNan() + " && " + SYCLNS() + "isnotequal({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::lt:
         if (T->isSignedInt())
-          Template = "{0} < {1}";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isless<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isless<double>({0}, {1})";
+          Fmt = "{0} < {1}";
+        else if (T->isFloating())
+          Fmt = NotNan() + " && " + SYCLNS() + "isless({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::le:
         if (T->isSignedInt())
-          Template = "{0} <= {1}";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::islessequal<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::islessequal<double>({0}, {1})";
+          Fmt = "{0} <= {1}";
+        else if (T->isFloating())
+          Fmt = NotNan() + " && " + SYCLNS() + "islessequal({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::gt:
         if (T->isSignedInt())
-          Template = "{0} > {1}";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isgreater<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isgreater<double>({0}, {1})";
+          Fmt = "{0} > {1}";
+        else if (T->isFloating())
+          Fmt = NotNan() + " && " + SYCLNS() + "isgreater({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::ge:
         if (T->isSignedInt())
-          Template = "{0} >= {1}";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isgreaterequal<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
-                     "sycl::isgreaterequal<double>({0}, {1})";
+          Fmt = "{0} >= {1}";
+        else if (T->isFloating())
+          Fmt = NotNan() + " && " + SYCLNS() + "isgreaterequal({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::lo:
         if (T->isUnsignedInt())
-          Template = "{0} < {1}";
+          Fmt = "{0} < {1}";
         else
           return SYCLGenError();
         break;
       case InstAttr::ls:
         if (T->isUnsignedInt())
-          Template = "{0} <= {1}";
+          Fmt = "{0} <= {1}";
         else
           return SYCLGenError();
         break;
       case InstAttr::hi:
         if (T->isUnsignedInt())
-          Template = "{0} > {1}";
+          Fmt = "{0} > {1}";
         else
           return SYCLGenError();
         break;
       case InstAttr::hs:
         if (T->isUnsignedInt())
-          Template = "{0} >= {1}";
+          Fmt = "{0} >= {1}";
         else
           return SYCLGenError();
         break;
       case InstAttr::equ:
-        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isequal<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isequal<double>({0}, {1})";
+        if (T->isFloating())
+          Fmt = IsNan() + " || " + SYCLNS() + "isequal({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::neu:
-        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isnotequal<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isnotequal<double>({0}, {1})";
+        if (T->isFloating())
+          Fmt = IsNan() + " || " + SYCLNS() + "isnotequal({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::ltu:
-        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isless<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isless<double>({0}, {1})";
+        if (T->isFloating())
+          Fmt = IsNan() + " || " + SYCLNS() + "isless({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::leu:
-        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::islessequal<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::islessequal<double>({0}, {1})";
+        if (T->isFloating())
+          Fmt = IsNan() + " || " + SYCLNS() + "islessequal({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::gtu:
-        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isgreater<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isgreater<double>({0}, {1})";
+        if (T->isFloating())
+          Fmt = IsNan() + " || " + SYCLNS() + "isgreater({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::geu:
-        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isgreaterequal<float>({0}, {1})";
-        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
-                     "sycl::isgreaterequal<double>({0}, {1})";
+        if (T->isFloating())
+          Fmt = IsNan() + " || " + SYCLNS() + "isgreaterequal({0}, {1})";
         else
           return SYCLGenError();
         break;
       case InstAttr::num:
         if (T->isFloating())
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1})";
+          Fmt = NotNan();
         else
           return SYCLGenError();
         break;
       case InstAttr::nan:
         if (T->isFloating())
-          Template = "sycl::isnan({0}) || sycl::isnan({1})";
+          Fmt = IsNan();
         else
           return SYCLGenError();
         break;
@@ -739,10 +716,10 @@ protected:
       }
     }
 
-    if (!Template)
+    if (Fmt.empty())
       return SYCLGenError();
 
-    OS() << llvm::formatv(Template, Op1, Op2);
+    OS() << llvm::formatv(Fmt.c_str(), Op1, Op2);
     endstmt();
     return SYCLGenSuccess();
   }
@@ -881,13 +858,16 @@ protected:
     for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
       if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
         return SYCLGenError();
+      if (Inst->hasAttr(InstAttr::sat))
+        Op[I] =
+            Cast(Inst->getType(0), Inst->getInputOperand(I)->getType(), Op[I]);
     }
 
     if (Inst->hasAttr(InstAttr::sat)) {
       if (Inst->is(asmtok::op_add))
-        OS() << llvm::formatv("sycl::add_sat<int32_t>({0}, {1})", Op[0], Op[1]);
+        OS() << SYCLNS() << llvm::formatv("add_sat({0}, {1})", Op[0], Op[1]);
       else
-        OS() << llvm::formatv("sycl::sub_sat<int32_t>({0}, {1})", Op[0], Op[1]);
+        OS() << SYCLNS() << llvm::formatv("sub_sat({0}, {1})", Op[0], Op[1]);
     } else {
       if (Inst->is(asmtok::op_add))
         OS() << llvm::formatv("{0} + {1}", Op[0], Op[1]);
@@ -932,8 +912,20 @@ protected:
            Type->getKind() == InlineAsmBuiltinType::TK_u64;
   }
 
-  std::string Cast(StringRef Type, StringRef Op) const {
+  std::string Cast(StringRef Type, StringRef Op) {
     return llvm::Twine("(").concat(Type).concat(")").concat(Op).str();
+  }
+
+  std::string Cast(const InlineAsmType *DestType, const InlineAsmType *OpType,
+                   const std::string &Op) {
+    const auto *DT = llvm::dyn_cast_if_present<InlineAsmBuiltinType>(DestType);
+    const auto *OT = llvm::dyn_cast_if_present<InlineAsmBuiltinType>(OpType);
+    if (!DT || !OT)
+      return Op;
+    std::string DestTypeStr;
+    if (tryEmitType(DestTypeStr, DestType))
+      return Op;
+    return Cast(DestTypeStr, Op);
   }
 
   bool handle_mul(const InlineAsmInstruction *Inst) override {
@@ -956,18 +948,17 @@ protected:
     OS() << " = ";
 
     std::string Op[2];
-    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
       if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
         return SYCLGenError();
-
-    std::string TypeStr;
-    if (tryEmitType(TypeStr, Type))
-      return SYCLGenError();
+      if (Inst->hasAttr(InstAttr::hi))
+        Op[I] =
+            Cast(Inst->getType(0), Inst->getInputOperand(I)->getType(), Op[I]);
+    }
 
     // mul.hi
     if (Inst->hasAttr(InstAttr::hi)) {
-      OS() << "sycl::mul_hi<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
-           << ")";
+      OS() << SYCLNS() << "mul_hi(" << Op[0] << ", " << Op[1] << ")";
       // mul.wide
     } else if (Inst->hasAttr(InstAttr::wide)) {
       OS() << Cast(GetWiderTypeAsString(Type), Op[0]) << " * "
@@ -1009,23 +1000,22 @@ protected:
     OS() << " = ";
 
     std::string Op[3];
-    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
       if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
         return SYCLGenError();
-
-    std::string TypeStr;
-    if (tryEmitType(TypeStr, Type))
-      return SYCLGenError();
+      if (Inst->hasAttr(InstAttr::sat, InstAttr::hi))
+        Op[I] =
+            Cast(Inst->getType(0), Inst->getInputOperand(I)->getType(), Op[I]);
+    }
 
     // mad.hi.sat
     if (Inst->hasAttr(InstAttr::sat))
-      OS() << llvm::formatv(
-          "sycl::add_sat<{0}>(sycl::mul_hi<{0}>({1}, {2}), {3})", TypeStr,
-          Op[0], Op[1], Op[2]);
+      OS() << SYCLNS() << "add_sat(" << SYCLNS() << "mul_hi(" << Op[0] << ", "
+           << Op[1] << "), " << Op[2] << ")";
     // mad.hi
     else if (Inst->hasAttr(InstAttr::hi))
-      OS() << "sycl::mad_hi<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
-           << ", " << Op[2] << ")";
+      OS() << SYCLNS() << "mad_hi(" << Op[0] << ", " << Op[1] << ", " << Op[2]
+           << ")";
     // mad.wide
     else if (Inst->hasAttr(InstAttr::wide))
       OS() << llvm::formatv("({3}){0} * ({3}){1} + ({3}){2}", Op[0], Op[1],
@@ -1049,9 +1039,10 @@ protected:
     OS() << " = ";
 
     std::string Operand[2];
-    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
       if (tryEmitStmt(Operand[I], Inst->getInputOperand(I)))
         return SYCLGenError();
+    }
     OS() << Operand[0] << ' ' << Operator << ' ' << Operand[1];
     endstmt();
     return SYCLGenSuccess();
@@ -1084,21 +1075,18 @@ protected:
     OS() << " = ";
 
     std::string Op[3];
-    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
       if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
         return SYCLGenError();
-
-    std::string TypeStr;
-    if (tryEmitType(TypeStr, Type))
-      return SYCLGenError();
-
-    if (isMad) {
-      OS() << "sycl::mad24<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
-           << ", " << Op[2] << ")";
-    } else {
-      OS() << "sycl::mul24<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
-           << ")";
+      Op[I] =
+          Cast(Inst->getType(0), Inst->getInputOperand(I)->getType(), Op[I]);
     }
+
+    if (isMad)
+      OS() << SYCLNS() << "mad24(" << Op[0] << ", " << Op[1] << ", " << Op[2]
+           << ")";
+    else
+      OS() << SYCLNS() << "mul24(" << Op[0] << ", " << Op[1] << ")";
 
     endstmt();
     return SYCLGenSuccess();
@@ -1140,7 +1128,7 @@ protected:
       return SYCLGenError();
 
     if (Inst->is(asmtok::op_abs))
-      OS() << llvm::formatv("sycl::abs<{0}>({1})", TypeStr, Op);
+      OS() << SYCLNS() << "abs(" << Op << ")";
     else
       OS() << "-" << Op;
 
@@ -1175,9 +1163,9 @@ protected:
       return SYCLGenError();
 
     if (Inst->is(asmtok::op_popc))
-      OS() << "sycl::popcount<" << TypeRepl << ">(" << OpRepl << ")";
+      OS() << SYCLNS() << "popcount<" << TypeRepl << ">(" << OpRepl << ")";
     else
-      OS() << "sycl::clz<" << TypeRepl << ">(" << OpRepl << ")";
+      OS() << SYCLNS() << "clz<" << TypeRepl << ">(" << OpRepl << ")";
 
     endstmt();
     return SYCLGenSuccess();
@@ -1203,54 +1191,37 @@ protected:
       return SYCLGenError();
     OS() << " = ";
 
-    std::string TypeRepl;
-    if (tryEmitType(TypeRepl, Inst->getType(0)))
-      return SYCLGenError();
-
     std::string Op[2];
-    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
       if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
         return SYCLGenError();
-
-    auto GenZeroVal = [&]() {
-      if (isVec)
-        return TypeRepl + "(0)";
-      return std::string{"0"};
-    };
-
-    auto GenMaxVal = [&]() {
-      if (isVec)
-        return llvm::Twine(TypeRepl)
-            .concat("(std::numeric_limits<")
-            .concat(TypeRepl)
-            .concat("::element_type>::max())")
-            .str();
-      return llvm::Twine("std::numeric_limits<")
-          .concat(TypeRepl)
-          .concat(">::max()")
-          .str();
-    };
-
-    if (Inst->hasAttr(InstAttr::relu)) {
-      std::string str =
-          llvm::formatv("sycl::clamp<{0}>({5}<{0}>({1}, {2}), {3}, {4})",
-                        TypeRepl, Op[0], Op[1], GenZeroVal(), GenMaxVal(), Fn)
-              .str();
-      OS() << str;
-    } else {
-      OS() << llvm::formatv("{3}<{0}>({1}, {2})", TypeRepl, Op[0], Op[1], Fn);
+      Op[I] =
+          Cast(Inst->getType(0), Inst->getInputOperand(I)->getType(), Op[I]);
     }
+
+    std::string Base = llvm::Twine(Fn)
+                           .concat("(")
+                           .concat(Op[0])
+                           .concat(", ")
+                           .concat(Op[1])
+                           .concat(")")
+                           .str();
+
+    if (Inst->hasAttr(InstAttr::relu))
+      OS() << DPCTNS() << "relu(" << Base << ")";
+    else
+      OS() << Base;
 
     endstmt();
     return SYCLGenSuccess();
   }
 
   bool handle_min(const InlineAsmInstruction *Inst) override {
-    return HandleMinMax(Inst, "sycl::min");
+    return HandleMinMax(Inst, SYCLNS() + "min");
   }
 
   bool handle_max(const InlineAsmInstruction *Inst) override {
-    return HandleMinMax(Inst, "sycl::max");
+    return HandleMinMax(Inst, SYCLNS() + "max");
   }
 
   bool HandleBitwiseBinaryOp(const InlineAsmInstruction *Inst,
@@ -1343,12 +1314,15 @@ protected:
   }
 
   // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
-  bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst, StringRef Fn) {
+  bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst,
+                                    StringRef Fn) {
     if (Inst->getNumInputOperands() < 2 || Inst->getNumTypes() != 3)
       return SYCLGenError();
-    
-    // Arguments mismatch for instruction, which has a secondary arithmetic operation.
-    if (Inst->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) && Inst->getNumInputOperands() < 3)
+
+    // Arguments mismatch for instruction, which has a secondary arithmetic
+    // operation.
+    if (Inst->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) &&
+        Inst->getNumInputOperands() < 3)
       return SYCLGenError();
 
     // The type of operands must be one of s32/u32.
@@ -1365,7 +1339,8 @@ protected:
       return SYCLGenError();
 
     OS() << " = " << Fn;
-    if (Inst->hasAttr(InstAttr::sat)) OS() << "_sat";
+    if (Inst->hasAttr(InstAttr::sat))
+      OS() << "_sat";
     OS() << "<";
     if (emitType(Inst->getType(0)))
       return SYCLGenError();
@@ -1378,18 +1353,16 @@ protected:
 
     OS() << llvm::join(ArrayRef(Op, Inst->getNumInputOperands()), ", ");
     // The secondary arithmetic operation.
-    if (Inst->hasAttr(InstAttr::add)) {
-      OS() << ", sycl::plus<>()";
-    } else if (Inst->hasAttr(InstAttr::min)) {
-      OS() << ", sycl::minimum<>()";
-    } else if (Inst->hasAttr(InstAttr::max)) {
-      OS() << ", sycl::maximum<>()";
-    }
+    if (Inst->hasAttr(InstAttr::add))
+      OS() << ", " << SYCLNS() << "plus<>()";
+    else if (Inst->hasAttr(InstAttr::min))
+      OS() << ", " << SYCLNS() << "minimum<>()";
+    else if (Inst->hasAttr(InstAttr::max))
+      OS() << ", " << SYCLNS() << "maximum<>()";
 
     OS() << ")";
     endstmt();
-    DpctGlobalInfo::getInstance().insertHeader(GAS->getBeginLoc(),
-                                               HeaderType::HT_DPCT_Math);
+    insertHeader(HeaderType::HT_DPCT_Math);
     return SYCLGenSuccess();
   }
 
