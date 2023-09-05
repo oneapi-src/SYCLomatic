@@ -144,7 +144,7 @@ protected:
   // supposed to be protected instead of public.
   CallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName)
       : Call(Call), SourceCalleeName(SourceCalleeName) {}
-  bool NoRewrite = false;
+  bool OnlyRewriteFuncName = false;
 
 public:
   ArgumentAnalysis Analyzer;
@@ -166,7 +166,7 @@ public:
           T->getReplacement(DpctGlobalInfo::getContext()));
   }
 
-  bool isNoRewrite() { return NoRewrite; }
+  bool isOnlyRewriteFuncName() { return OnlyRewriteFuncName; }
 
   bool getBlockLevelFormatFlag() const {
     return BlockLevelFormatFlag;
@@ -518,19 +518,32 @@ protected:
   void setTargetCalleeName(const std::string &Str) { TargetCalleeName = Str; }
 };
 
-class NoRewriteFuncNameRewriter : public CallExprRewriter {
+class FuncNameRewriter : public CallExprRewriter {
   std::string NewFuncName;
+  bool HasLocalQualifier = false;
 
 public:
-  NoRewriteFuncNameRewriter(const CallExpr *Call, StringRef SourceName,
-                            StringRef NewName)
-      : CallExprRewriter(Call, SourceCalleeName) {
-    construct(Call, SourceName, NewName);
+  FuncNameRewriter(const CallExpr *Call, StringRef SourceName,
+                   StringRef NewName)
+      : CallExprRewriter(Call, SourceName) {
+    if (const auto *DRE =
+            dyn_cast<DeclRefExpr>(Call->getCallee()->IgnoreImplicit())) {
+      auto Qualifier = DRE->getQualifier();
+      if (Qualifier &&
+          (Qualifier->getKind() ==
+               clang::NestedNameSpecifier::SpecifierKind::Namespace ||
+           Qualifier->getKind() ==
+               clang::NestedNameSpecifier::SpecifierKind::NamespaceAlias))
+        HasLocalQualifier = true;
+    }
+    NewFuncName = NewName.str();
+    OnlyRewriteFuncName = true;
   }
-  std::optional<std::string> rewrite() override { return NewFuncName; }
-
-private:
-  void construct(const CallExpr *Call, StringRef SourceName, StringRef NewName);
+  std::optional<std::string> rewrite() override {
+    if (HasLocalQualifier)
+      return std::nullopt;
+    return NewFuncName;
+  }
 };
 
 struct ThrustFunctor {
@@ -1403,7 +1416,7 @@ public:
   UserDefinedRewriter(const CallExpr *CE, const OutputBuilder &OB,
                       const MetaRuleObject::Attributes &RuleAttributes = {})
       : CallExprRewriter(CE, "") {
-    NoRewrite = RuleAttributes.ReplaceCalleeNameOnly;
+    OnlyRewriteFuncName = RuleAttributes.ReplaceCalleeNameOnly;
     // build result string with call
     llvm::raw_string_ostream OS(ResultStr);
     buildRewriterStr(Call, OS, OB);

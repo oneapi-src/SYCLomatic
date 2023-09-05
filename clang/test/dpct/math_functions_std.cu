@@ -46,7 +46,7 @@ void h() {
   //CHECK-NEXT: ll = std::abs(ll2);
   //CHECK-NEXT: f = std::abs(f2);
   //CHECK-NEXT: d = std::abs(d2);
-  //CHECK-NEXT: i = abs(i2);
+  //CHECK-NEXT: i = std::abs(i2);
   //CHECK-NEXT: l = std::abs(l2);
   //CHECK-NEXT: ll = std::abs(ll2);
   f = abs(f2);

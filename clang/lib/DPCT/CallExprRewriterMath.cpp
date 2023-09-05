@@ -24,8 +24,8 @@ using MathBinaryOperatorRewriterFactory =
     CallExprRewriterFactory<MathBinaryOperatorRewriter, BinaryOperatorKind>;
 using WarpFunctionRewriterFactory =
     CallExprRewriterFactory<WarpFunctionRewriter, std::string>;
-using NoRewriteFuncNameRewriterFactory =
-    CallExprRewriterFactory<NoRewriteFuncNameRewriter, std::string>;
+using FuncNameRewriterFactory =
+    CallExprRewriterFactory<FuncNameRewriter, std::string>;
 
 /// Base class for rewriting math function calls
 class MathCallExprRewriter : public FuncCallExprRewriter {
@@ -864,9 +864,8 @@ std::optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
 #define MATH_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)                    \
   REWRITER_FACTORY_ENTRY(FuncName, MathFuncNameRewriterFactory, RewriterName)
-#define NO_REWRITE_FUNCNAME_FACTORY_ENTRY(FuncName, NewName)                   \
-  REWRITER_FACTORY_ENTRY(FuncName, NoRewriteFuncNameRewriterFactory,           \
-                         NewName)
+#define FUNCNAME_REWRITE_FACTORY_ENTRY(FuncName, NewName)                      \
+  REWRITER_FACTORY_ENTRY(FuncName, FuncNameRewriterFactory, NewName)
 #define MATH_SIMULATED_FUNC_FACTORY_ENTRY(FuncName, RewriterName)              \
   REWRITER_FACTORY_ENTRY(FuncName, MathSimulatedRewriterFactory, RewriterName)
 #define MATH_TYPECAST_FACTORY_ENTRY(FuncName)                                  \
@@ -1054,22 +1053,19 @@ createMathAPIRewriterDevice(
           math::IsDefinedInCUDA(),
           std::move(createMathAPIRewriterDeviceImpl(Name, PerfPred, DevicePerf,
                                                     DeviceNodes)),
-          {Name,
-           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+          {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)}),
       createConditionalFactory(
           math::IsUnresolvedLookupExpr,
           createConditionalFactory(
               math::IsDirectCallerPureDevice,
               std::move(createMathAPIRewriterDeviceImpl(
                   Name, PerfPred, DevicePerf, DeviceNodes)),
-              {Name,
-               std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+              {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)}),
           createConditionalFactory(
               math::IsDefinedInCUDA(),
               std::move(createMathAPIRewriterDeviceImpl(
                   Name, PerfPred, DevicePerf, DeviceNodes)),
-              {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(
-                         Name, Name)})));
+              {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)})));
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1083,21 +1079,17 @@ createMathAPIRewriterDevice(
       createConditionalFactory(
           math::IsDefinedInCUDA(),
           std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
-          {Name,
-           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+          {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)}),
       createConditionalFactory(
           math::IsUnresolvedLookupExpr,
           createConditionalFactory(
               math::IsDirectCallerPureDevice,
               std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
-              {Name,
-               std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+              {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)}),
           createConditionalFactory(
               math::IsDefinedInCUDA(),
-              std::move(
-                  createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
-              {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(
-                         Name, Name)})));
+              std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
+              {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)})));
 }
 
 template <class T>
@@ -1113,13 +1105,11 @@ createMathAPIRewriterExperimentalBfloat16(
     if (math::useExtBFloat16Math() && Rewriter1.second)
       return createConditionalFactory(
           math::IsDefinedInCUDA(), std::move(Rewriter1),
-          {Name,
-           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+          {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)});
     if (Rewriter2.second)
       return createConditionalFactory(
           math::IsDefinedInCUDA(), std::move(Rewriter2),
-          {Name,
-           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+          {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)});
   }
   // report unsupport
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
@@ -1136,7 +1126,7 @@ createMathAPIRewriterHost(
     T) {
   return createConditionalFactory(
       math::IsDefinedInCUDA(), std::move(HostNormal),
-      {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+      {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)});
 }
 
 template <class T>
@@ -1153,7 +1143,7 @@ createMathAPIRewriterHost(
       math::IsDefinedInCUDA(),
       createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
                                std::move(HostPerf), std::move(HostNormal)),
-      {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+      {Name, std::make_shared<FuncNameRewriterFactory>(Name, Name)});
 }
 
 #define EMPTY_FACTORY_ENTRY(NAME)                                              \
@@ -1213,8 +1203,8 @@ void CallExprRewriterFactoryBase::initRewriterMapMath() {
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)                 \
-  NO_REWRITE_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_ONLY_RENAME_FUNCNAME(SOURCEAPINAME, TARGETAPINAME)               \
+  FUNCNAME_REWRITE_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)                     \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)                     \
@@ -1228,7 +1218,7 @@ void CallExprRewriterFactoryBase::initRewriterMapMath() {
 #include "APINamesMath.inc"
 #include "APINamesMathRewrite.inc"
 #undef ENTRY_RENAMED
-#undef ENTRY_RENAMED_NO_REWRITE
+#undef ENTRY_ONLY_RENAME_FUNCNAME
 #undef ENTRY_RENAMED_SINGLE
 #undef ENTRY_RENAMED_DOUBLE
 #undef ENTRY_EMULATED
@@ -1241,7 +1231,7 @@ void CallExprRewriterFactoryBase::initRewriterMapMath() {
 
 const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_ONLY_RENAME_FUNCNAME(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
@@ -1251,7 +1241,7 @@ const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
-#undef ENTRY_RENAMED_NO_REWRITE
+#undef ENTRY_ONLY_RENAME_FUNCNAME
 #undef ENTRY_RENAMED_SINGLE
 #undef ENTRY_RENAMED_DOUBLE
 #undef ENTRY_EMULATED
@@ -1263,7 +1253,7 @@ const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 
 const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_ONLY_RENAME_FUNCNAME(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
@@ -1272,7 +1262,7 @@ const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
 #define ENTRY_UNSUPPORTED(APINAME)
 #define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
-#undef ENTRY_RENAMED_NO_REWRITE
+#undef ENTRY_ONLY_RENAME_FUNCNAME
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_SINGLE
 #undef ENTRY_RENAMED_DOUBLE

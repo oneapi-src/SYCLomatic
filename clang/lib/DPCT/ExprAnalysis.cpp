@@ -411,7 +411,7 @@ void ExprAnalysis::dispatch(const Stmt *Expression) {
 bool isMathFunction(std::string Name) {
   static std::set<std::string> MathFunctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
-#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_ONLY_RENAME_FUNCNAME(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
@@ -421,7 +421,7 @@ bool isMathFunction(std::string Name) {
 #define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
-#undef ENTRY_RENAMED_NO_REWRITE
+#undef ENTRY_ONLY_RENAME_FUNCNAME
 #undef ENTRY_RENAMED_SINGLE
 #undef ENTRY_RENAMED_DOUBLE
 #undef ENTRY_EMULATED
@@ -874,8 +874,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     auto Result = Rewriter->rewrite();
     BlockLevelFormatFlag = Rewriter->getBlockLevelFormatFlag();
 
-    if (Rewriter->isNoRewrite()) {
-      // if the function is NoRewrite
+    if (Rewriter->isOnlyRewriteFuncName()) {
       // Only change the function name in the spelling loc and
       // applyAllSubExprRepl
       if (Result.has_value()) {

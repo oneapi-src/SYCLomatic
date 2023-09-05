@@ -246,7 +246,7 @@ ENTRY_RENAMED("__umulhi", MapNames::getClNamespace(false, true) + "mul_hi")
 ENTRY_RENAMED("__urhadd", MapNames::getClNamespace(false, true) + "rhadd")
 
 // Renamed No Rewrite
-ENTRY_RENAMED_NO_REWRITE("__umul64hi", MapNames::getClNamespace(false, true) + "mul_hi")
+ENTRY_ONLY_RENAME_FUNCNAME("__umul64hi", MapNames::getClNamespace(false, true) + "mul_hi")
 
 // Single Precision Mathematical Functions
 ENTRY_EMULATED("frexpf", MapNames::getClNamespace(false, true) + "frexp")
