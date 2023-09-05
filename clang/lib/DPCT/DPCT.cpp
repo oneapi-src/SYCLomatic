@@ -1106,12 +1106,11 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       if (RunResult == 1) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
-          if (getDpctTermStr().find("use of undeclared identifier") !=
-              std::string::npos) {
+          StringRef ErrStr = getDpctTermStr();
+          if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader);
             return MigrationErrorAPIMappingWrongCUDAHeader;
-          } else if (getDpctTermStr().find("file not found") !=
-                     std::string::npos) {
+          } else if (ErrStr.contains("file not found")) {
             ShowStatus(MigrationErrorAPIMappingNoCUDAHeader);
             return MigrationErrorAPIMappingNoCUDAHeader;
           }
