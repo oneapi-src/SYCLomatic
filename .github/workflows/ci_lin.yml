@@ -200,7 +200,7 @@ jobs:
           echo $PWD
 
       - name: Run testing option_usmnone_cpu
-        if: success() || failure()
+        if: success() || failure() && ${{ matrix.test_suite }} != "help_function"
         timeout-minutes: 600
         shell: bash
         run: |
