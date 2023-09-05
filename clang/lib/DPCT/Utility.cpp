@@ -3287,35 +3287,30 @@ bool isAncestorOf(const Stmt *Descendant, const Stmt *Ancestor) {
 /// This function first finds the nearest flow control stmt in the
 /// ancestors of \p S, then returns the body (CompoundStmt) of that
 /// flow control stmt
-const clang::CompoundStmt *getBodyofAncestorFCStmt(const clang::Stmt *S) {
+const clang::Stmt *getBodyofAncestorFCStmt(const clang::Stmt *S) {
   auto FlowControlStmt = getAncestorFlowControl(S, nullptr);
   if (!FlowControlStmt)
     return nullptr;
   auto StmtClass = FlowControlStmt->getStmtClass();
-  const clang::CompoundStmt *CS = nullptr;
+  const clang::Stmt *CS = nullptr;
   switch (StmtClass) {
   case Stmt::StmtClass::WhileStmtClass: {
-    CS = dyn_cast_or_null<CompoundStmt>(
-        dyn_cast<WhileStmt>(FlowControlStmt)->getBody());
+    CS = dyn_cast<WhileStmt>(FlowControlStmt)->getBody();
     break;
   }
   case Stmt::StmtClass::ForStmtClass: {
-    CS = dyn_cast_or_null<CompoundStmt>(
-        dyn_cast<ForStmt>(FlowControlStmt)->getBody());
+    CS = dyn_cast<ForStmt>(FlowControlStmt)->getBody();
     break;
   }
   case Stmt::StmtClass::DoStmtClass: {
-    CS = dyn_cast_or_null<CompoundStmt>(
-        dyn_cast<DoStmt>(FlowControlStmt)->getBody());
+    CS = dyn_cast<DoStmt>(FlowControlStmt)->getBody();
     break;
   }
   case Stmt::StmtClass::IfStmtClass: {
     if (isAncestorOf(S, dyn_cast<IfStmt>(FlowControlStmt)->getThen())) {
-      CS = dyn_cast_or_null<CompoundStmt>(
-          dyn_cast<IfStmt>(FlowControlStmt)->getThen());
+      CS = dyn_cast<IfStmt>(FlowControlStmt)->getThen();
     } else {
-      CS = dyn_cast_or_null<CompoundStmt>(
-          dyn_cast<IfStmt>(FlowControlStmt)->getElse());
+      CS = dyn_cast<IfStmt>(FlowControlStmt)->getElse();
     }
     break;
   }
@@ -3331,7 +3326,7 @@ const clang::CompoundStmt *getBodyofAncestorFCStmt(const clang::Stmt *S) {
 
 bool analyzeMemcpyOrder(
     const clang::CompoundStmt *CS,
-    std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
+    std::vector<std::pair<const CallExpr *, MemcpyOrderAnalysisNodeKind>>
         &MemcpyOrderVec,
     std::vector<unsigned int> &DREOffsetVec) {
   const static std::unordered_set<std::string> SpecialFuncNameSet = {
@@ -3503,15 +3498,27 @@ bool analyzeMemcpyOrder(
               clang::dpct::DpctGlobalInfo::getContext());
         }
         for (auto &Result : Results) {
-          const DeclRefExpr *MatchedDRE =
-              Result.getNodeAs<DeclRefExpr>("VarReference");
-          if (!MatchedDRE)
-            continue;
-          DRESet.insert(MatchedDRE);
+          if (const DeclRefExpr *MatchedDRE =
+                  Result.getNodeAs<DeclRefExpr>("VarReference")) {
+            if (auto RValueExpr = dpct::DpctGlobalInfo::getContext()
+                                      .getParents(*MatchedDRE)[0]
+                                      .get<ImplicitCastExpr>()) {
+              if (RValueExpr->getCastKind() == CastKind::CK_LValueToRValue) {
+                continue;
+              }
+            }
+            if (auto D = MatchedDRE->getDecl()) {
+              std::string TypeName =
+                  dpct::DpctGlobalInfo::getTypeName(D->getType());
+              if (TypeName == "cudaError_t") {
+                continue;
+              }
+            }
+            DRESet.insert(MatchedDRE);
+          }
         }
       }
     }
-
   } while (DRESetSize < DRESet.size() || VDSetSize < VDSet.size());
 
   for (const auto &DRE : DRESet) {
@@ -3572,22 +3579,8 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CE)
     return false;
 
-  if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
-    auto CpyKind = Direction->getDecl()->getName();
-    if (CpyKind == "cudaMemcpyDeviceToDevice") {
-      return true;
-    }
-    if (CpyKind == "cudaMemcpyHostToDevice" &&
-        dpct::DpctGlobalInfo::isOptimizeMigration()) {
-      auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
-      clang::dpct::DiagnosticsUtils::report(
-          LocInfo.first, LocInfo.second, clang::dpct::Diagnostics::WAIT_REMOVE,
-          true, false);
-      return true;
-    }
-  }
-
-  const clang::CompoundStmt *CS = getBodyofAncestorFCStmt(CE);
+  const clang::CompoundStmt *CS =
+      dyn_cast_or_null<clang::CompoundStmt>(getBodyofAncestorFCStmt(CE));
   if (!CS) {
     auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
     if (!FD)
@@ -3598,6 +3591,94 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CS)
     return false;
 
+  if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
+    auto CpyKind = Direction->getDecl()->getName();
+    if (CpyKind == "cudaMemcpyDeviceToDevice") {
+      return true;
+    }
+    if (CpyKind == "cudaMemcpyHostToDevice" &&
+        dpct::DpctGlobalInfo::isOptimizeMigration()) {
+      if (auto Body = getBodyofAncestorFCStmt(CE)) {
+        if (dpct::DpctGlobalInfo::isAncestor(Body, CE)) {
+          return false;
+        }
+      }
+      auto SrcExpr = CE->getArg(1);
+      auto AddrOfMatcher =
+          clang::ast_matchers::findAll(clang::ast_matchers::unaryOperator(
+              clang::ast_matchers::hasOperatorName("&")));
+      auto AddrOfMatchedResults = clang::ast_matchers::match(
+          AddrOfMatcher, *SrcExpr, clang::dpct::DpctGlobalInfo::getContext());
+      if (AddrOfMatchedResults.size() == 0) {
+        auto SyncPointMatcher = clang::ast_matchers::findAll(
+            clang::ast_matchers::callExpr(
+                clang::ast_matchers::callee(clang::ast_matchers::functionDecl(
+                    clang::ast_matchers::hasAnyName("cudaDeviceSynchronize"))))
+                .bind("SyncPoint"));
+        auto CEBegLocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
+        auto CEEndLocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getEndLoc());
+        std::set<const clang::DeclRefExpr *> DRESet;
+        bool HasCallExpr = false;
+        bool isSrcPointerFreedAfterCE = false;
+        std::vector<const clang::DeclRefExpr *> DREMatchResult;
+        std::set<const clang::DeclRefExpr *> SrcDRESet;
+        std::set<unsigned int> SyncPointOffset;
+        auto SyncPointMatchedResults = clang::ast_matchers::match(
+            SyncPointMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+        for (auto &SP : SyncPointMatchedResults) {
+          if (const CallExpr *SPCE = SP.getNodeAs<CallExpr>("SyncPoint")) {
+            if (auto Body = getBodyofAncestorFCStmt(SPCE)) {
+              if (dpct::DpctGlobalInfo::isAncestor(Body, SPCE)) {
+                continue;
+              }
+            }
+            SyncPointOffset.insert(
+                dpct::DpctGlobalInfo::getLocInfo(SPCE->getBeginLoc()).second);
+          }
+        }
+        auto checkIfSrcPointerFreedAfterCE = [&]() {
+          for (auto &D : DREMatchResult) {
+            if (auto ParentCE =
+                    clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(D)) {
+              std::string FuncName =
+                  getFunctionName(ParentCE->getDirectCallee());
+              auto DRELocInfo =
+                  dpct::DpctGlobalInfo::getLocInfo(D->getEndLoc());
+              if ((FuncName == "free" || FuncName == "cudaFreeHost") &&
+                  (DRELocInfo.second > CEEndLocInfo.second)) {
+                bool FreeAfterSyncPoint = false;
+                for (auto &Offset : SyncPointOffset) {
+                  if ((Offset > CEEndLocInfo.second) &&
+                      (Offset < DRELocInfo.second)) {
+                    FreeAfterSyncPoint = true;
+                    break;
+                  }
+                }
+                if (!FreeAfterSyncPoint) {
+                  return true;
+                }
+              }
+            }
+          }
+          return false;
+        };
+        findDREs(SrcExpr, SrcDRESet, HasCallExpr);
+        for (auto &SrcDRE : SrcDRESet) {
+          findAllVarRef(SrcDRE, DREMatchResult);
+          if (isSrcPointerFreedAfterCE = checkIfSrcPointerFreedAfterCE()) {
+            break;
+          }
+        }
+        if (!isSrcPointerFreedAfterCE) {
+          clang::dpct::DiagnosticsUtils::report(
+              CEBegLocInfo.first, CEBegLocInfo.second,
+              clang::dpct::Diagnostics::WAIT_REMOVE, true, false);
+          return true;
+        }
+      }
+    }
+  }
+
   auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
   auto CSLocInfo = clang::dpct::DpctGlobalInfo::getLocInfo(
       SM.getExpansionLoc(CS->getBeginLoc()));
@@ -3606,7 +3687,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   auto &Map = FileInfo->getMemcpyOrderAnalysisResultMap();
   auto Iter = Map.find(CS);
 
-  std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
+  std::vector<std::pair<const CallExpr *, MemcpyOrderAnalysisNodeKind>>
       MemcpyOrderVec;
   std::vector<unsigned int> DREOffsetVec;
   if (Iter == Map.end()) {
@@ -3619,8 +3700,39 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
     DREOffsetVec = Iter->second.DREOffsetVec;
   }
 
+  auto CheckIfDstImpactNextCE = [&](const CallExpr *CurCE,
+                                    const CallExpr *NextCE) {
+    auto CurDst = CurCE->getArg(0);
+    llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> Results;
+    std::set<const Decl *> DeclSet;
+    Results = findDREInScope(CurDst);
+    for (auto &Result : Results) {
+      if (const DeclRefExpr *MatchedDRE =
+              Result.getNodeAs<DeclRefExpr>("VarReference")) {
+        if (auto D = MatchedDRE->getDecl()) {
+          DeclSet.insert(D);
+        }
+      }
+    }
+    auto Arg2 = NextCE->getArg(2);
+    Results = findDREInScope(Arg2);
+    if (NextCE->getNumArgs() == 5) {
+      auto Arg3 = NextCE->getArg(3);
+      Results.append(findDREInScope(Arg3));
+    }
+    for (auto &Result : Results) {
+      if (const DeclRefExpr *MatchedDRE =
+              Result.getNodeAs<DeclRefExpr>("VarReference")) {
+        if (auto D = MatchedDRE->getDecl()) {
+          if (DeclSet.count(D)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
   bool StartSearch = false;
-
   for (const auto &S : MemcpyOrderVec) {
     if (S.first == CE) {
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl)
@@ -3636,6 +3748,9 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
         return false;
       }
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy) {
+        if(CheckIfDstImpactNextCE(CE, S.first)) {
+          return false;
+        }
         SourceLocation CurrentCallExprEndLoc =
             SM.getExpansionLoc(CE->getEndLoc());
 
