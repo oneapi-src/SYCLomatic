@@ -37,7 +37,6 @@ public:
 };
 
 template <typename T> inline bool isnan(const T a) { return sycl::isnan(a); }
-
 #ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
 inline bool isnan(const sycl::ext::oneapi::bfloat16 a) {
   return sycl::ext::oneapi::experimental::isnan(a);
@@ -57,28 +56,28 @@ inline int64_t zero_or_signed_extent(T val, unsigned bit) {
 template <typename RetT, bool needSat, typename AT, typename BT,
           typename BinaryOperation>
 inline constexpr RetT extend_binary(AT a, BT b, BinaryOperation binary_op) {
-  const int64_t extend_a = zero_or_signed_extent(a, 33);
-  const int64_t extend_b = zero_or_signed_extent(b, 33);
-  const int64_t ret = binary_op(extend_a, extend_b);
+  int64_t extend_a = zero_or_signed_extent(a, 33);
+  int64_t extend_b = zero_or_signed_extent(b, 33);
+  int64_t ret = binary_op(extend_a, extend_b);
   if constexpr (needSat)
-    return sycl::clamp(ret, std::numeric_limits<RetT>::min(),
-                                std::numeric_limits<RetT>::max());
+    return sycl::clamp(ret, static_cast<int64_t>(std::numeric_limits<RetT>::min()),
+                       static_cast<int64_t>(std::numeric_limits<RetT>::max()));
   return ret;
 }
 
-template <typename RetT, bool needSat, typename AT, typename BT, typename CT,
+template <typename RetT, bool NeedSat, typename AT, typename BT, typename CT,
           typename BinaryOperation1, typename BinaryOperation2>
 inline constexpr RetT extend_binary(AT a, BT b, CT c,
                                     BinaryOperation1 binary_op,
                                     BinaryOperation2 second_op) {
-  const int64_t extend_a = zero_or_signed_extent(a, 33);
-  const int64_t extend_b = zero_or_signed_extent(b, 33);
+  int64_t extend_a = zero_or_signed_extent(a, 33);
+  int64_t extend_b = zero_or_signed_extent(b, 33);
   int64_t extend_temp =
       zero_or_signed_extent(binary_op(extend_a, extend_b), 34);
-  if constexpr (needSat)
+  if constexpr (NeedSat)
     extend_temp =
-        sycl::clamp(extend_temp, std::numeric_limits<RetT>::min(),
-                             std::numeric_limits<RetT>::max());
+        sycl::clamp(extend_temp, static_cast<int64_t>(std::numeric_limits<RetT>::min()),
+                    static_cast<int64_t>(std::numeric_limits<RetT>::max()));
   const int64_t extend_c = zero_or_signed_extent(c, 33);
   return second_op(extend_temp, extend_c);
 }
@@ -391,7 +390,6 @@ pow(const T a, const U b) {
 }
 
 namespace detail {
-
 template <typename T>
 constexpr bool is_floating_point = std::disjunction_v < std::is_same<T, float>,
                std::is_same<T, double>, std::is_same<T, sycl::half>
