@@ -755,7 +755,8 @@ int runDPCT(int argc, const char **argv) {
     SourcePathList = OptParser->getSourcePathList();
   }
   RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
-  std::string QueryAPIMappingStr;
+  std::string QueryAPIMappingSrc;
+  std::string QueryAPIMappingOpt;
   if (DpctGlobalInfo::isQueryAPIMapping()) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
@@ -766,16 +767,15 @@ int runDPCT(int argc, const char **argv) {
 
     Tool.mapVirtualFile(SourcePathList[0], SourceCode);
 
-    std::string OptionMsg;
     static const std::string OptionStr{"// Option:"};
     if (SourceCode.starts_with(OptionStr)) {
-      OptionMsg += " (with the option";
+      QueryAPIMappingOpt += " (with the option";
       while (SourceCode.consume_front(OptionStr)) {
         auto Option = SourceCode.substr(0, SourceCode.find_first_of('\n'));
         Option = Option.trim(' ');
         SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
-        OptionMsg += " ";
-        OptionMsg += Option.str();
+        QueryAPIMappingOpt += " ";
+        QueryAPIMappingOpt += Option.str();
         if (Option.starts_with("--use-dpcpp-extensions")) {
           if (Option.ends_with("intel_device_math"))
             UseDPCPPExtensions.addValue(
@@ -795,10 +795,9 @@ int runDPCT(int argc, const char **argv) {
         }
         // Need add more option.
       }
-      OptionMsg += ")";
+      QueryAPIMappingOpt += ")";
     }
 
-    QueryAPIMappingStr += "CUDA API:";
     static const std::string StartStr{"// Start"};
     static const std::string EndStr{"// End"};
     auto StartPos = SourceCode.find(StartStr);
@@ -808,20 +807,19 @@ int runDPCT(int argc, const char **argv) {
     }
     StartPos = StartPos + StartStr.length();
     EndPos = SourceCode.find_last_of('\n', EndPos);
-    QueryAPIMappingStr +=
-        "\033[32m" + SourceCode.substr(StartPos, EndPos - StartPos + 1).str() +
-        "\033[0m"; // Make CUDA code green.
+    QueryAPIMappingSrc =
+        SourceCode.substr(StartPos, EndPos - StartPos + 1).str();
     static const std::string MigrateDesc{"// Migration desc: "};
     auto MigrateDescPos = SourceCode.find(MigrateDesc);
     if (MigrateDescPos != StringRef::npos) {
       auto MigrateDescBegin = MigrateDescPos + MigrateDesc.length();
       auto MigrateDescEnd = SourceCode.find_first_of('\n', MigrateDescPos);
-      llvm::outs() << QueryAPIMappingStr
+      llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
+                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET
                    << SourceCode.substr(MigrateDescBegin,
                                         MigrateDescEnd - MigrateDescBegin + 1);
       dpctExit(MigrationSucceeded);
     }
-    QueryAPIMappingStr += "Is migrated to" + OptionMsg + ":";
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
     NoIncrementalMigration = true;
@@ -1118,7 +1116,9 @@ int runDPCT(int argc, const char **argv) {
   } while (DpctGlobalInfo::isNeedRunAgain());
 
   if (DpctGlobalInfo::isQueryAPIMapping()) {
-    llvm::outs() << QueryAPIMappingStr;
+    llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
+                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET
+                 << "Is migrated to" << QueryAPIMappingOpt << ":";
     DiagnosticsEngine Diagnostics(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
         IntrusiveRefCntPtr<DiagnosticOptions>(new DiagnosticOptions()));
