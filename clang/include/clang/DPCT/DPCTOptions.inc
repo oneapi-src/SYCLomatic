@@ -123,7 +123,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<ReportTypeEnum>), ReportType
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<ReportFormatEnum>), ReportFormat, "report-format",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("csv", int(ReportFormatEnum::RFE_CSV),
-                  "Output is lines of comma separated values. The report file "
+                  "Output is lines of comma-separated values. The report file "
                   "name extension will\n"
                   "be .csv. (default)", false),
              DPCT_OPT_ENUM("formatted", int(ReportFormatEnum::RFE_Formatted),
@@ -317,7 +317,8 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
-           "By default, these extensions are used in migrated code."),
+           "By default, these extensions are used in migrated code.\n"
+           "The values are:"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisabled>), UseDPCPPExtensions, "use-dpcpp-extensions",
@@ -353,10 +354,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         "Experimental helper function used to logically group work-items.",
         false),
              DPCT_OPT_ENUM("nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
-        "Experimental helper function used to help cross group synchronization during migration.\n",
+        "Experimental helper function used to help cross-group synchronization during migration.\n",
         false),
              DPCT_OPT_ENUM("user-defined-reductions", int(ExperimentalFeatures::Exp_UserDefineReductions),
-        "Experimental extension that allows user define reductions.\n",
+        "Experimental extension that allows user-defined reductions.\n",
         false),
              DPCT_OPT_ENUM("masked-sub-group-operation", int(ExperimentalFeatures::Exp_MaskedSubGroupFunction),
         "Experimental helper function used to execute sub-group operation with mask.\n",
@@ -374,7 +375,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         "Experimental extension that allows use of bfloat16 math functions.\n",
         false)
            ),
-           llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
+           llvm::cl::desc("Comma-separated list of experimental features to be used in migrated "
            "code.\n"
            "By default, experimental features will not be used in migrated code.\nThe values are:\n"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
