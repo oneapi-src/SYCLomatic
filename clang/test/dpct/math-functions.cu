@@ -131,30 +131,6 @@ int main() {
     // TODO: Check more primitive type and vector types
   }
 
-  // abs
-  {
-    DECLAREF
-    DECLARED
-    DECLAREU
-    DECLAREL
-    DECLAREI
-    DECLARELD
-
-    // CHECK: f_a = std::abs(f_a);
-    f_a = abs(f_a);
-
-    // CHECK: d_a = std::abs(d_a);
-    d_a = abs(d_a);
-
-    // CHECK: i_a = abs(i_a);
-    i_a = abs(i_a);
-
-    // CHECK: ld_a = std::abs(ld_a);
-    ld_a = abs(ld_a);
-
-    // TODO: Check more primitive type and vector types
-  }
-
   // acos
   {
     DECLAREF
@@ -242,19 +218,6 @@ int main() {
     f_a = cbrt(f_a);
     // CHECK: d_a = cbrt(d_a);
     d_a = cbrt(d_a);
-
-    // TODO: Check more primitive type and vector types
-  }
-
-  // ceil
-  {
-    DECLAREF
-    DECLARED
-
-    // CHECK: f_a = std::ceil(f_a);
-    f_a = ceil(f_a);
-    // CHECK: d_a = ceil(d_a);
-    d_a = ceil(d_a);
 
     // TODO: Check more primitive type and vector types
   }
@@ -376,19 +339,6 @@ int main() {
     // TODO: Check more primitive type and vector types
   }
 
-  // floor
-  {
-    DECLAREF
-    DECLARED
-
-    // CHECK: f_a = std::floor(f_a);
-    f_a = floor(f_a);
-    // CHECK: d_a = floor(d_a);
-    d_a = floor(d_a);
-
-    // TODO: Check more primitive type and vector types
-  }
-
   // lgamma
   {
     DECLAREF
@@ -424,19 +374,6 @@ int main() {
     f_a = log2(f_a);
     // CHECK: d_a = log2(d_a);
     d_a = log2(d_a);
-
-    // TODO: Check more primitive type and vector types
-  }
-
-  // log10
-  {
-    DECLAREF
-    DECLARED
-
-    // CHECK: f_a = std::log10(f_a);
-    f_a = log10(f_a);
-    // CHECK: d_a = log10(d_a);
-    d_a = log10(d_a);
 
     // TODO: Check more primitive type and vector types
   }

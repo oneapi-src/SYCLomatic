@@ -466,3 +466,78 @@ void foo_3(){
   unsigned long long min = foo_inner((unsigned long long) std::numeric_limits<int>::min());
 }
 
+void foo_4() {
+  double d0;
+  float f0;
+  int i;
+
+  // CHECK: d0 = ceil(d0);
+  d0 = ceil(d0);
+  // CHECK: d0 = std::ceil(i);
+  d0 = ceil(i);
+
+  // CHECK: f0 = ceilf(f0);
+  f0 = ceilf(f0);
+  // CHECK: f0 = ceilf(i);
+  f0 = ceilf(i);
+}
+
+void foo_5()  {
+  float f_a;
+  double d_a;
+  int i_a;
+  long double ld_a;
+
+  // CHECK: f_a = std::abs(f_a);
+  f_a = abs(f_a);
+  // CHECK: d_a = std::abs(d_a);
+  d_a = abs(d_a);
+  // CHECK: i_a = abs(i_a);
+  i_a = abs(i_a);
+  // CHECK: ld_a = std::abs(ld_a);
+  ld_a = abs(ld_a);
+
+  // CHECK: f_a = std::ceil(f_a);
+  f_a = ceil(f_a);
+  // CHECK: d_a = ceil(d_a);
+  d_a = ceil(d_a);
+
+  // CHECK: f_a = std::floor(f_a);
+  f_a = floor(f_a);
+  // CHECK: d_a = floor(d_a);
+  d_a = floor(d_a);
+
+  // CHECK: f_a = std::log10(f_a);
+  f_a = log10(f_a);
+  // CHECK: d_a = log10(d_a);
+  d_a = log10(d_a);
+}
+
+void foo_6() {
+  float f, f2;
+  double d, d2;
+  int i, i2;
+  long l, l2;
+  long long ll, ll2;
+
+  //CHECK: f = std::abs(f2);
+  //CHECK-NEXT: d = std::abs(d2);
+  //CHECK-NEXT: i = abs(i2);
+  //CHECK-NEXT: l = std::abs(l2);
+  //CHECK-NEXT: ll = std::abs(ll2);
+  //CHECK-NEXT: f = std::abs(f2);
+  //CHECK-NEXT: d = std::abs(d2);
+  //CHECK-NEXT: i = std::abs(i2);
+  //CHECK-NEXT: l = std::abs(l2);
+  //CHECK-NEXT: ll = std::abs(ll2);
+  f = abs(f2);
+  d = abs(d2);
+  i = abs(i2);
+  l = abs(l2);
+  ll = abs(ll2);
+  f = std::abs(f2);
+  d = std::abs(d2);
+  i = std::abs(i2);
+  l = std::abs(l2);
+  ll = std::abs(ll2);
+}

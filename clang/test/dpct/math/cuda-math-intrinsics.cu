@@ -3718,19 +3718,3 @@ __global__ void foo4(unsigned char *uc, int i) {
   // CHECK: uc[tid] = sycl::sqrt(f0 * f0 + f1 * f1);
   uc[tid] = sqrtf(powf(f0, 2.f) + powf(f1, 2.f));
 }
-
-void foo5() {
-  double d0;
-  float f0;
-  int i;
-
-  // CHECK: d0 = ceil(d0);
-  d0 = ceil(d0);
-  // CHECK: d0 = std::ceil(i);
-  d0 = ceil(i);
-
-  // CHECK: f0 = ceilf(f0);
-  f0 = ceilf(f0);
-  // CHECK: f0 = ceilf(i);
-  f0 = ceilf(i);
-}
