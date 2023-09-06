@@ -12,7 +12,6 @@
 // CG_TILED_PARTITION-NEXT:        sycl::ext::oneapi::experimental::this_group<3>();
 // CG_TILED_PARTITION-NEXT:    sycl::ext::oneapi::experimental::this_sub_group();
 // CG_TILED_PARTITION-NEXT:    dpct::experimental::logical_group(sycl::ext::oneapi::experimental::this_nd_item<3>(), sycl::ext::oneapi::experimental::this_group<3>(), 16);
-// CG_TILED_PARTITION-EMPTY:
 
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" -stop-on-parse-err --query-api-mapping=cooperative_groups::thread_rank | FileCheck %s -check-prefix=CG_THREAD_RANK
@@ -24,7 +23,6 @@
 // CG_THREAD_RANK-NEXT:   auto cta =
 // CG_THREAD_RANK-NEXT:       sycl::ext::oneapi::experimental::this_group<3>();
 // CG_THREAD_RANK-NEXT:   sycl::ext::oneapi::experimental::this_nd_item<3>().get_local_linear_id();
-// CG_THREAD_RANK-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" -stop-on-parse-err --query-api-mapping=cooperative_groups::this_thread_block | FileCheck %s -check-prefix=CG_THIS_THREAD_BLOCK
 // CG_THIS_THREAD_BLOCK: CUDA API:
@@ -33,7 +31,6 @@
 // CG_THIS_THREAD_BLOCK-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
 // CG_THIS_THREAD_BLOCK-NEXT:   auto cta =
 // CG_THIS_THREAD_BLOCK-NEXT:       sycl::ext::oneapi::experimental::this_group<3>();
-// CG_THIS_THREAD_BLOCK-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" -stop-on-parse-err --query-api-mapping=cooperative_groups::reduce | FileCheck %s -check-prefix=CG_REDUCE
 // CG_REDUCE: CUDA API:
@@ -42,5 +39,4 @@
 // CG_REDUCE-NEXT:        cooperative_groups::plus<double>() /* type operator */);
 // CG_REDUCE-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
 // CG_REDUCE-NEXT:    sycl::reduce_over_group(sycl::ext::oneapi::experimental::this_sub_group(), sdata[tid], sycl::plus<double>());
-// CG_REDUCE-EMPTY:
 

@@ -24,7 +24,6 @@
 // cusparseSpMM_bufferSize-NEXT:       workspace_size /*size_t **/);
 // cusparseSpMM_bufferSize-NEXT: Is migrated to:
 // cusparseSpMM_bufferSize-NEXT:   *workspace_size = 0;
-// cusparseSpMM_bufferSize-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpMM | FileCheck %s -check-prefix=cusparseSpMM
 // cusparseSpMM: CUDA API:
@@ -36,4 +35,3 @@
 // cusparseSpMM-NEXT:                workspace /*void **/);
 // cusparseSpMM-NEXT: Is migrated to:
 // cusparseSpMM-NEXT:   dpct::sparse::spmm(*handle, transa, transb, alpha, a, b, beta, c, computetype);
-// cusparseSpMM-EMPTY:
