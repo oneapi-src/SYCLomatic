@@ -1108,10 +1108,11 @@ int runDPCT(int argc, const char **argv) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
           StringRef ErrStr = getDpctTermStr();
           if (ErrStr.contains("use of undeclared identifier")) {
-            ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader);
+            ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
+                       QueryAPIMapping);
             return MigrationErrorAPIMappingWrongCUDAHeader;
           } else if (ErrStr.contains("file not found")) {
-            ShowStatus(MigrationErrorAPIMappingNoCUDAHeader);
+            ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
             return MigrationErrorAPIMappingNoCUDAHeader;
           }
         }

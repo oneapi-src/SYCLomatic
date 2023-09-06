@@ -161,12 +161,18 @@ void ShowStatus(int Status, std::string Message) {
         "API mapping by migrating a sample code of this API with the tool.";
     break;
   case MigrationErrorAPIMappingWrongCUDAHeader:
-    StatusString = "Error: This API mapping query is not available in current "
-                   "CUDA header files.";
+    StatusString =
+        "Error: Can not find '" + Message +
+        "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
+        ". Please check the API name or switch to use different "
+        "CUDA header file with option \"--cuda-include-path\".";
     break;
   case MigrationErrorAPIMappingNoCUDAHeader:
-    StatusString = "Error: This API mapping query is not available because the "
-                   "header file is not avalible.";
+    StatusString =
+        "Error: Can not find '" + Message +
+        "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
+        ". Please specify the header file for '" + Message +
+        "' with option \"--extra-arg\".";
     break;
   default:
     DpctLog() << "Unknown error\n";

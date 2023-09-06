@@ -21,5 +21,8 @@
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=aaa 2>&1 | FileCheck %s -check-prefix=NO_MAPPING
 // NO_MAPPING: dpct exited with code: -43 (Error: This API mapping query is not available yet. You may get the API mapping by migrating a sample code of this API with the tool.)
 
-// RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hdiv 2>&1 | FileCheck %s -check-prefix=PARSE_FAILED
-// PARSE_FAILED: dpct exited with code: -44 (Error: This API mapping query is not available in current CUDA header files.)
+// RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hdiv 2>&1 | FileCheck %s -check-prefix=WRONG_CUDA_HEADER
+// WRONG_CUDA_HEADER: dpct exited with code: -44 (Error: Can not find 'hdiv' in current CUDA header file: {{(.+)}}. Please check the API name or switch to use different CUDA header file with option "--cuda-include-path".)
+
+// RUN: not dpct --cuda-include-path=%S --query-api-mapping=ncclBroadcast 2>&1 | FileCheck %s -check-prefix=NO_CUDA_HEADER
+// NO_CUDA_HEADER: dpct exited with code: -45 (Error: Can not find 'ncclBroadcast' in current CUDA header file: {{(.+)}}. Please specify the header file for 'ncclBroadcast' with option "--extra-arg".)
