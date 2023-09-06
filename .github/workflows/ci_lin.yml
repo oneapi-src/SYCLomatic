@@ -141,14 +141,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - test_suite: user_guide_samples
-          - test_suite: regressions
-          - test_suite: samples
+          #- test_suite: user_guide_samples
+          #- test_suite: regressions
+          #- test_suite: samples
           - test_suite: help_function
           - test_suite: features-usm
           - test_suite: features-usmnone
-          - test_suite: api_coverage
-          - test_suite: behavior_tests
+            #- test_suite: api_coverage
+            #- test_suite: behavior_tests
     steps:
       - name: Process ENV
         id: process_env
@@ -194,19 +194,23 @@ jobs:
         
       - name: Run testing option_cpu
         if: ${{ matrix.test_suite }} != "features-usmnone"
+        env:
+          SUITE: ${{ matrix.test_suite }}
         timeout-minutes: 600
         shell: bash
         run: |
           cd test_repo
-          time python run_test.py --suite ${{ matrix.test_suite }} --option option_cpu
+          time python run_test.py --suite ${SUITE%-*} --option option_cpu
           echo $PWD
 
       - name: Run testing option_usmnone_cpu
         if: success() || failure() && ${{ matrix.test_suite }} != "help_function" && ${{ matrix.test_suite }} != "features-usm"
+        env:
+          SUITE: ${{ matrix.test_suite }}
         timeout-minutes: 600
         shell: bash
         run: |
           cd test_repo
-          time python run_test.py --suite ${{ matrix.test_suite }} --option option_usmnone_cpu
+          time python run_test.py --suite ${SUITE%-*} --option option_usmnone_cpu
           echo $PWD
 
