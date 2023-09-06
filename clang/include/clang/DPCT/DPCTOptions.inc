@@ -440,8 +440,7 @@ DPCT_ENUM_OPTION(
         "no-queue-device", int(HelperFuncPreference::NoQueueDevice),
         "Call SYCL API to get queue and device instead of calling helper function.\n",
         false)),
-    llvm::cl::desc("The preference of helper function usage in migration.\n"
-                   "The values are:\n"),
+    llvm::cl::desc("The preference of helper function usage in migration.\n"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
     llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
