@@ -3746,38 +3746,6 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
     DREOffsetVec = Iter->second.DREOffsetVec;
   }
 
-  auto CheckIfDstImpactNextCE = [&](const CallExpr *CurCE,
-                                    const CallExpr *NextCE) {
-    auto CurDst = CurCE->getArg(0);
-    llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> Results;
-    std::set<const Decl *> DeclSet;
-    Results = findDREInScope(CurDst);
-    for (auto &Result : Results) {
-      if (const DeclRefExpr *MatchedDRE =
-              Result.getNodeAs<DeclRefExpr>("VarReference")) {
-        if (auto D = MatchedDRE->getDecl()) {
-          DeclSet.insert(D);
-        }
-      }
-    }
-    auto Arg2 = NextCE->getArg(2);
-    Results = findDREInScope(Arg2);
-    if (NextCE->getNumArgs() == 5) {
-      auto Arg3 = NextCE->getArg(3);
-      Results.append(findDREInScope(Arg3));
-    }
-    for (auto &Result : Results) {
-      if (const DeclRefExpr *MatchedDRE =
-              Result.getNodeAs<DeclRefExpr>("VarReference")) {
-        if (auto D = MatchedDRE->getDecl()) {
-          if (DeclSet.count(D)) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  };
   bool StartSearch = false;
   for (const auto &S : MemcpyOrderVec) {
     if (S.first == CE) {
@@ -3794,10 +3762,6 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
         return false;
       }
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy) {
-        //if (CheckIfDstImpactNextCE(CE, S.first)) {
-        //  return false;
-        //}
-
         unsigned int CurrentCallExprEndOffset =
             clang::dpct::DpctGlobalInfo::getLocInfo(CE->getEndLoc()).second;
         unsigned int NextCallExprEndOffset =
