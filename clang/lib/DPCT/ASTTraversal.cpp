@@ -13530,35 +13530,32 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         End, SM, DpctGlobalInfo::getContext().getLangOpts());
     Len = SM.getFileOffset(End) - SM.getFileOffset(Beg) + Toklen;
 
-    std::unordered_set<const clang::UsingShadowDecl *> IntroducedUSD;
+    bool IsAllTargetsInCUDA = true;
     for (const auto &child : UD->getDeclContext()->decls()) {
       if (child == UD) {
         continue;
       } else if (const clang::UsingShadowDecl *USD =
                      dyn_cast<UsingShadowDecl>(child)) {
         if (USD->getIntroducer() == UD) {
-          IntroducedUSD.insert(USD);
+          if (const auto *FD = dyn_cast<FunctionDecl>(USD->getTargetDecl())) {
+            if (!isFromCUDA(FD)) {
+              IsAllTargetsInCUDA = false;
+              break;
+            }
+          } else if (const auto *FTD =
+                         dyn_cast<FunctionTemplateDecl>(USD->getTargetDecl())) {
+            if (!isFromCUDA(FTD)) {
+              IsAllTargetsInCUDA = false;
+              break;
+            }
+          } else {
+            IsAllTargetsInCUDA = false;
+            break;
+          }
         }
       }
     }
-    bool IsAllTargetsInCUDA = true;
-    for (const auto &USD : IntroducedUSD) {
-      if (const auto *FD = dyn_cast<FunctionDecl>(USD->getTargetDecl())) {
-        if (!isFromCUDA(FD)) {
-          IsAllTargetsInCUDA = false;
-          break;
-        }
-      } else if (const auto *FTD =
-                     dyn_cast<FunctionTemplateDecl>(USD->getTargetDecl())) {
-        if (!isFromCUDA(FTD)) {
-          IsAllTargetsInCUDA = false;
-          break;
-        }
-      } else {
-        IsAllTargetsInCUDA = false;
-        break;
-      }
-    }
+
     if (IsAllTargetsInCUDA) {
       auto NextTok = Lexer::findNextToken(
           End, SM, DpctGlobalInfo::getContext().getLangOpts());
