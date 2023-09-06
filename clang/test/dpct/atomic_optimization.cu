@@ -113,11 +113,11 @@ __global__ void kernel6(){
 int main(){
   unsigned int *d_addr;
 // CHECK:   /*
-// CHECK:   DPCT1117:{{[0-9]+}}: There is atomicInc/Dec operation on 'b3[index]' and value of 'b3[index]' was scaled by migration for performance, refer to DPCT1116. Using value of 'b3[index]' through 'd_addr' should also be scaled by dividing or multiplying 2. You may need to adjust the code.
+// CHECK:   DPCT1117:{{[0-9]+}}: There is atomicInc/Dec operation on 'b3[index]' and value of 'b3[index]' was scaled by migration for performance, refer to DPCT1116. Using the value of 'b3[index]' through 'd_addr' should also be scaled by dividing or multiplying 2. You may need to adjust the code.
 // CHECK:   */
   cudaGetSymbolAddress((void **)&d_addr, b3);
 // CHECK:   /*
-// CHECK:   DPCT1117:{{[0-9]+}}: There is atomicInc/Dec operation on 'a3' and value of 'a3' was scaled by migration for performance, refer to DPCT1116. Using value of 'a3' through 'd_addr' should also be scaled by dividing or multiplying 2. You may need to adjust the code.
+// CHECK:   DPCT1117:{{[0-9]+}}: There is atomicInc/Dec operation on 'a3' and value of 'a3' was scaled by migration for performance, refer to DPCT1116. Using the value of 'a3' through 'd_addr' should also be scaled by dividing or multiplying 2. You may need to adjust the code.
 // CHECK:   */
   cudaGetSymbolAddress((void **)&d_addr, a3);
   cudaMemset(d_addr, 0, 10 * sizeof(int));
