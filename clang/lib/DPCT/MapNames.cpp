@@ -4399,9 +4399,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"CUDART_PI_F", MacroMigrationRule("CUDART_PI_F", RulePriority::Fallback,
                                        "CUDART_PI_F", "3.141592654F")},
     {"CUB_MAX", MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
-                                   "CUB_MAX", getClNamespace() + "max")},
+                                   "CUB_MAX", "std::max")},
     {"CUB_MIN", MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
-                                   "CUB_MIN", getClNamespace() + "min")},
+                                   "CUB_MIN", "std::min")},
     {"CUB_RUNTIME_FUNCTION",
      MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
                         "CUB_RUNTIME_FUNCTION", "")}

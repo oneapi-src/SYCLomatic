@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetVersion | FileCheck %s -check-prefix=ncclGetVersion
 // ncclGetVersion: CUDA API:
 // ncclGetVersion-NEXT:   ncclGetVersion(version /*int **/);
