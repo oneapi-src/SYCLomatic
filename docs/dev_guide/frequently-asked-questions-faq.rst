@@ -192,8 +192,8 @@ each work item, not all work items can reach the synchronization API.
       }
    }
 
-The following manually-adjusted code shows how to fix the hang issue
-or crash by moving the synchronization statement out of the if block.
+The following code shows how to fix the hang issue by moving the synchronization
+statement out of the if block.
 
 .. code-block:: cpp
    :linenos:
@@ -211,8 +211,8 @@ or crash by moving the synchronization statement out of the if block.
       }
    }
 
-The second example demonstrates how to fix the hang issue when
-a synchronization API is used in a for loop:
+The second example demonstrates how to fix the hang issue when a synchronization
+API is used in a for loop:
 
 .. code-block:: cpp
    :linenos:
@@ -231,8 +231,8 @@ a synchronization API is used in a for loop:
       }
    }
 
-The following is the manually adjusted code which ensures all work
-items has same run footprint in the for loop.
+The following code shows how to fix the hang issue by making sure all work items
+has same run footprint in the for loop.
 
 .. code-block:: cpp
    :linenos:
@@ -245,8 +245,8 @@ items has same run footprint in the for loop.
          item_ct1.get_local_id(2);
       unsigned int num_workitem = 
                item_ct1.get_group_range(2) * item_ct1.get_local_range(2);
-      // The condition is rounded up to an integer multiple of the num of work items
-      // to ensure that all work items can enter the loop body in each iteration
+      // The condition is updated to make sure all work items can enter
+      // the loop body in each iteration
       for (; id < ((id_space+num_workitem-1)/num_workitem)*num_workitem;
       id += item_ct1.get_group_range(2) * item_ct1.get_local_range(2)) {
          ...
