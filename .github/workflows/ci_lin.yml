@@ -141,14 +141,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          #- test_suite: user_guide_samples
-          #- test_suite: regressions
-          #- test_suite: samples
+          - test_suite: user_guide_samples
+          - test_suite: regressions
+          - test_suite: samples
           - test_suite: help_function
           - test_suite: features-usm
           - test_suite: features-usmnone
-            #- test_suite: api_coverage
-            #- test_suite: behavior_tests
+          - test_suite: api_coverage
+          - test_suite: behavior_tests
     steps:
       - name: Process ENV
         id: process_env
