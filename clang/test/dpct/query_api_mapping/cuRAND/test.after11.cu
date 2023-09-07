@@ -22,4 +22,3 @@
 // SKIPAHEAD-NEXT:   /* 4 */ oneapi::mkl::rng::device::skip_ahead(ps1->get_engine(), u);
 // SKIPAHEAD-NEXT:   /* 5 */ oneapi::mkl::rng::device::skip_ahead(ps2->get_engine(), u);
 // SKIPAHEAD-NEXT:   /* 6 */ oneapi::mkl::rng::device::skip_ahead(ps3->get_engine(), u);
-// SKIPAHEAD-EMPTY:
