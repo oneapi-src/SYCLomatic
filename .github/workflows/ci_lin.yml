@@ -193,7 +193,7 @@ jobs:
           c2s_obj_dir: "c2s.obj"
         
       - name: Run testing option_cpu
-        if: ${{ matrix.test_suite }} != "features-usmnone"
+        if: matrix.test_suite != 'features-usmnone'
         env:
           SUITE: ${{ matrix.test_suite }}
         timeout-minutes: 600
@@ -204,7 +204,7 @@ jobs:
           echo $PWD
 
       - name: Run testing option_usmnone_cpu
-        if: success() || failure() && ${{ matrix.test_suite }} != "help_function" && ${{ matrix.test_suite }} != "features-usm"
+        if: (matrix.test_suite != 'help_function' && matrix.test_suite != 'features-usm') && (success() || failure())
         env:
           SUITE: ${{ matrix.test_suite }}
         timeout-minutes: 600
