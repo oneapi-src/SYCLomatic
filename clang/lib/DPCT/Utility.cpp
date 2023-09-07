@@ -3450,10 +3450,16 @@ bool analyzeMemcpyOrder(
 
   std::set<const clang::ValueDecl *> VDSet;
   std::set<const clang::ValueDecl *> NewVDSet;
+  std::set<const clang::DeclRefExpr *> NewDRESet;
   std::set<const clang::ValueDecl *> ProcessedVDSet;
   std::set<const void *> ProcessedExprOrDecl;
   std::set<const clang::ValueDecl *> GlobalVDSet;
   std::map<const clang::ValueDecl *, bool> VDHasNoneRValueRefMap;
+  for (const auto &DRE : DRESet) {
+    if (auto D = dyn_cast_or_null<clang::VarDecl>(DRE->getDecl())) {
+      NewVDSet.insert(D);
+    }
+  }
   for (const auto &DRE : AllDREsInCS) {
     if (ExcludeDRESet.count(DRE))
       continue;
@@ -3535,7 +3541,7 @@ bool analyzeMemcpyOrder(
         std::string TypeName = dpct::DpctGlobalInfo::getTypeName(D->getType());
         bool IsGlobalVD = GlobalVDSet.count(D);
         if (IsGlobalVD || (TypeName != "cudaError_t")) {
-          DRESet.insert(MatchedDRE);
+          NewDRESet.insert(MatchedDRE);
           if (IsGlobalVD) {
             continue;
           }
@@ -3556,13 +3562,15 @@ bool analyzeMemcpyOrder(
         }
       }
     }
-    for (const auto &DRE : DRESet) {
+    for (const auto &DRE : NewDRESet) {
       if (auto D = DRE->getDecl()) {
         if (!ProcessedVDSet.count(D) && dyn_cast<clang::VarDecl>(D)) {
           NewVDSet.insert(D);
         }
       }
     }
+    DRESet.insert(NewDRESet.begin(), NewDRESet.end());
+    NewDRESet.clear();
   } while (!NewVDSet.empty());
 
   for (const auto &DRE : DRESet) {
@@ -3717,6 +3725,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
           if (isSrcPointerFreedAfterCE = checkIfSrcPointerFreedAfterCE()) {
             break;
           }
+          DREMatchResult.clear();
         }
         if (!isSrcPointerFreedAfterCE) {
           clang::dpct::DiagnosticsUtils::report(
