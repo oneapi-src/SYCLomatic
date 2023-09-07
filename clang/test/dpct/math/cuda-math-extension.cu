@@ -149,6 +149,10 @@ __global__ void kernelFuncHalf() {
   b = __hgt(h, h_1);
   // CHECK: b = sycl::ext::intel::math::hgtu(h, h_1);
   b = __hgtu(h, h_1);
+  // CHECK: b = sycl::ext::intel::math::hisinf(h);
+  b = __hisinf(h);
+  // CHECK: b = sycl::ext::intel::math::hisnan(h);
+  b = __hisnan(h);
   // CHECK: b = sycl::ext::intel::math::hle(h, h_1);
   b = __hle(h, h_1);
   // CHECK: b = sycl::ext::intel::math::hleu(h, h_1);
