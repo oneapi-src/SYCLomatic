@@ -7,91 +7,78 @@
 // ACOSF-NEXT:   acosf(f /*float*/);
 // ACOSF-NEXT: Is migrated to:
 // ACOSF-NEXT:   sycl::acos(f);
-// ACOSF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=acoshf | FileCheck %s -check-prefix=ACOSHF
 // ACOSHF: CUDA API:
 // ACOSHF-NEXT:   acoshf(f /*float*/);
 // ACOSHF-NEXT: Is migrated to:
 // ACOSHF-NEXT:   sycl::acosh(f);
-// ACOSHF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=asinf | FileCheck %s -check-prefix=ASINF
 // ASINF: CUDA API:
 // ASINF-NEXT:   asinf(f /*float*/);
 // ASINF-NEXT: Is migrated to:
 // ASINF-NEXT:   sycl::asin(f);
-// ASINF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=asinhf | FileCheck %s -check-prefix=ASINHF
 // ASINHF: CUDA API:
 // ASINHF-NEXT:   asinhf(f /*float*/);
 // ASINHF-NEXT: Is migrated to:
 // ASINHF-NEXT:   sycl::asinh(f);
-// ASINHF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=atan2f | FileCheck %s -check-prefix=ATAN2F
 // ATAN2F: CUDA API:
 // ATAN2F-NEXT:   atan2f(f1 /*float*/, f2 /*float*/);
 // ATAN2F-NEXT: Is migrated to:
 // ATAN2F-NEXT:   sycl::atan2(f1, f2);
-// ATAN2F-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=atanf | FileCheck %s -check-prefix=ATANF
 // ATANF: CUDA API:
 // ATANF-NEXT:   atanf(f /*float*/);
 // ATANF-NEXT: Is migrated to:
 // ATANF-NEXT:   sycl::atan(f);
-// ATANF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=atanhf | FileCheck %s -check-prefix=ATANHF
 // ATANHF: CUDA API:
 // ATANHF-NEXT:   atanhf(f /*float*/);
 // ATANHF-NEXT: Is migrated to:
 // ATANHF-NEXT:   sycl::atanh(f);
-// ATANHF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cbrtf | FileCheck %s -check-prefix=CBRTF
 // CBRTF: CUDA API:
 // CBRTF-NEXT:   cbrtf(f /*float*/);
 // CBRTF-NEXT: Is migrated to:
 // CBRTF-NEXT:   sycl::cbrt(f);
-// CBRTF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ceilf | FileCheck %s -check-prefix=CEILF
 // CEILF: CUDA API:
 // CEILF-NEXT:   ceilf(f /*float*/);
 // CEILF-NEXT: Is migrated to:
 // CEILF-NEXT:   sycl::ceil(f);
-// CEILF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=copysignf | FileCheck %s -check-prefix=COPYSIGNF
 // COPYSIGNF: CUDA API:
 // COPYSIGNF-NEXT:   copysignf(f1 /*float*/, f2 /*float*/);
 // COPYSIGNF-NEXT: Is migrated to:
 // COPYSIGNF-NEXT:   sycl::copysign(f1, f2);
-// COPYSIGNF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cosf | FileCheck %s -check-prefix=COSF
 // COSF: CUDA API:
 // COSF-NEXT:   cosf(f /*float*/);
 // COSF-NEXT: Is migrated to:
 // COSF-NEXT:   sycl::cos(f);
-// COSF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=coshf | FileCheck %s -check-prefix=COSHF
 // COSHF: CUDA API:
 // COSHF-NEXT:   coshf(f /*float*/);
 // COSHF-NEXT: Is migrated to:
 // COSHF-NEXT:   sycl::cosh(f);
-// COSHF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cospif | FileCheck %s -check-prefix=COSPIF
 // COSPIF: CUDA API:
 // COSPIF-NEXT:   cospif(f /*float*/);
 // COSPIF-NEXT: Is migrated to:
 // COSPIF-NEXT:   sycl::cospi(f);
-// COSPIF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cyl_bessel_i0f | FileCheck %s -check-prefix=CYL_BESSEL_I0F
 // CYL_BESSEL_I0F: CUDA API:
@@ -110,7 +97,6 @@
 // ERFCF-NEXT:   erfcf(f /*float*/);
 // ERFCF-NEXT: Is migrated to:
 // ERFCF-NEXT:   sycl::erfc(f);
-// ERFCF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=erfcinvf | FileCheck %s -check-prefix=ERFCINVF
 // ERFCINVF: CUDA API:
@@ -123,14 +109,12 @@
 // ERFCXF-NEXT:   erfcxf(f /*float*/);
 // ERFCXF-NEXT: Is migrated to:
 // ERFCXF-NEXT:   sycl::exp(f*f)*sycl::erfc(f);
-// ERFCXF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=erff | FileCheck %s -check-prefix=ERFF
 // ERFF: CUDA API:
 // ERFF-NEXT:   erff(f /*float*/);
 // ERFF-NEXT: Is migrated to:
 // ERFF-NEXT:   sycl::erf(f);
-// ERFF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=erfinvf | FileCheck %s -check-prefix=ERFINVF
 // ERFINVF: CUDA API:
@@ -143,14 +127,12 @@
 // EXP10F-NEXT:   exp10f(f /*float*/);
 // EXP10F-NEXT: Is migrated to:
 // EXP10F-NEXT:   sycl::exp10(f);
-// EXP10F-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=exp2f | FileCheck %s -check-prefix=EXP2F
 // EXP2F: CUDA API:
 // EXP2F-NEXT:   exp2f(f /*float*/);
 // EXP2F-NEXT: Is migrated to:
 // EXP2F-NEXT:   sycl::exp2(f);
-// EXP2F-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=expf | FileCheck %s -check-prefix=EXPF
 // EXPF: CUDA API:
@@ -163,84 +145,72 @@
 // EXPM1F-NEXT:   expm1f(f /*float*/);
 // EXPM1F-NEXT: Is migrated to:
 // EXPM1F-NEXT:   sycl::expm1(f);
-// EXPM1F-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=fabsf | FileCheck %s -check-prefix=FABSF
 // FABSF: CUDA API:
 // FABSF-NEXT:   fabsf(f /*float*/);
 // FABSF-NEXT: Is migrated to:
 // FABSF-NEXT:   sycl::fabs(f);
-// FABSF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=fdimf | FileCheck %s -check-prefix=FDIMF
 // FDIMF: CUDA API:
 // FDIMF-NEXT:   fdimf(f1 /*float*/, f2 /*float*/);
 // FDIMF-NEXT: Is migrated to:
 // FDIMF-NEXT:   sycl::fdim(f1, f2);
-// FDIMF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=fdividef | FileCheck %s -check-prefix=FDIVIDEF
 // FDIVIDEF: CUDA API:
 // FDIVIDEF-NEXT:   fdividef(f1 /*float*/, f2 /*float*/);
 // FDIVIDEF-NEXT: Is migrated to:
 // FDIVIDEF-NEXT:   f1 / f2;
-// FDIVIDEF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=floorf | FileCheck %s -check-prefix=FLOORF
 // FLOORF: CUDA API:
 // FLOORF-NEXT:   floorf(f /*float*/);
 // FLOORF-NEXT: Is migrated to:
 // FLOORF-NEXT:   sycl::floor(f);
-// FLOORF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=fmaf | FileCheck %s -check-prefix=FMAF
 // FMAF: CUDA API:
 // FMAF-NEXT:   fmaf(f1 /*float*/, f2 /*float*/, f3 /*float*/);
 // FMAF-NEXT: Is migrated to:
 // FMAF-NEXT:   sycl::fma(f1, f2, f3);
-// FMAF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=fmaxf | FileCheck %s -check-prefix=FMAXF
 // FMAXF: CUDA API:
 // FMAXF-NEXT:   fmaxf(f1 /*float*/, f2 /*float*/);
 // FMAXF-NEXT: Is migrated to:
 // FMAXF-NEXT:   sycl::fmax(f1, f2);
-// FMAXF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=fminf | FileCheck %s -check-prefix=FMINF
 // FMINF: CUDA API:
 // FMINF-NEXT:   fminf(f1 /*float*/, f2 /*float*/);
 // FMINF-NEXT: Is migrated to:
 // FMINF-NEXT:   sycl::fmin(f1, f2);
-// FMINF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=fmodf | FileCheck %s -check-prefix=FMODF
 // FMODF: CUDA API:
 // FMODF-NEXT:   fmodf(f1 /*float*/, f2 /*float*/);
 // FMODF-NEXT: Is migrated to:
 // FMODF-NEXT:   sycl::fmod(f1, f2);
-// FMODF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=frexpf | FileCheck %s -check-prefix=FREXPF
 // FREXPF: CUDA API:
 // FREXPF-NEXT:   frexpf(f /*float*/, pi /*int **/);
 // FREXPF-NEXT: Is migrated to:
 // FREXPF-NEXT:   sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, int>(pi));
-// FREXPF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hypotf | FileCheck %s -check-prefix=HYPOTF
 // HYPOTF: CUDA API:
 // HYPOTF-NEXT:   hypotf(f1 /*float*/, f2 /*float*/);
 // HYPOTF-NEXT: Is migrated to:
 // HYPOTF-NEXT:   sycl::hypot(f1, f2);
-// HYPOTF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ilogbf | FileCheck %s -check-prefix=ILOGBF
 // ILOGBF: CUDA API:
 // ILOGBF-NEXT:   ilogbf(f /*float*/);
 // ILOGBF-NEXT: Is migrated to:
 // ILOGBF-NEXT:   sycl::ilogb(f);
-// ILOGBF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=isfinite | FileCheck %s -check-prefix=ISFINITE
 // ISFINITE: CUDA API:
@@ -249,7 +219,6 @@
 // ISFINITE-NEXT: Is migrated to:
 // ISFINITE-NEXT:   sycl::isfinite(f);
 // ISFINITE-NEXT:   sycl::isfinite(d);
-// ISFINITE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=isinf | FileCheck %s -check-prefix=ISINF
 // ISINF: CUDA API:
@@ -258,7 +227,6 @@
 // ISINF-NEXT: Is migrated to:
 // ISINF-NEXT:   sycl::isinf(f);
 // ISINF-NEXT:   sycl::isinf(d);
-// ISINF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=isnan | FileCheck %s -check-prefix=ISNAN
 // ISNAN: CUDA API:
@@ -267,7 +235,6 @@
 // ISNAN-NEXT: Is migrated to:
 // ISNAN-NEXT:   sycl::isnan(f);
 // ISNAN-NEXT:   sycl::isnan(d);
-// ISNAN-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=j0f | FileCheck %s -check-prefix=J0F
 // J0F: CUDA API:
@@ -292,98 +259,84 @@
 // LGAMMAF-NEXT:   lgammaf(f /*float*/);
 // LGAMMAF-NEXT: Is migrated to:
 // LGAMMAF-NEXT:   sycl::lgamma(f);
-// LGAMMAF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=llrintf | FileCheck %s -check-prefix=LLRINTF
 // LLRINTF: CUDA API:
 // LLRINTF-NEXT:   llrintf(f /*float*/);
 // LLRINTF-NEXT: Is migrated to:
 // LLRINTF-NEXT:   sycl::rint(f);
-// LLRINTF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=llroundf | FileCheck %s -check-prefix=LLROUNDF
 // LLROUNDF: CUDA API:
 // LLROUNDF-NEXT:   llroundf(f /*float*/);
 // LLROUNDF-NEXT: Is migrated to:
 // LLROUNDF-NEXT:   sycl::round(f);
-// LLROUNDF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=log10f | FileCheck %s -check-prefix=LOG10F
 // LOG10F: CUDA API:
 // LOG10F-NEXT:   log10f(f /*float*/);
 // LOG10F-NEXT: Is migrated to:
 // LOG10F-NEXT:   sycl::log10(f);
-// LOG10F-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=log1pf | FileCheck %s -check-prefix=LOG1PF
 // LOG1PF: CUDA API:
 // LOG1PF-NEXT:   log1pf(f /*float*/);
 // LOG1PF-NEXT: Is migrated to:
 // LOG1PF-NEXT:   sycl::log1p(f);
-// LOG1PF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=log2f | FileCheck %s -check-prefix=LOG2F
 // LOG2F: CUDA API:
 // LOG2F-NEXT:   log2f(f /*float*/);
 // LOG2F-NEXT: Is migrated to:
 // LOG2F-NEXT:   sycl::log2(f);
-// LOG2F-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=logbf | FileCheck %s -check-prefix=LOGBF
 // LOGBF: CUDA API:
 // LOGBF-NEXT:   logbf(f /*float*/);
 // LOGBF-NEXT: Is migrated to:
 // LOGBF-NEXT:   sycl::logb(f);
-// LOGBF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=logf | FileCheck %s -check-prefix=LOGF
 // LOGF: CUDA API:
 // LOGF-NEXT:   logf(f /*float*/);
 // LOGF-NEXT: Is migrated to:
 // LOGF-NEXT:   sycl::log(f);
-// LOGF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=lrintf | FileCheck %s -check-prefix=LRINTF
 // LRINTF: CUDA API:
 // LRINTF-NEXT:   lrintf(f /*float*/);
 // LRINTF-NEXT: Is migrated to:
 // LRINTF-NEXT:   sycl::rint(f);
-// LRINTF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=lroundf | FileCheck %s -check-prefix=LROUNDF
 // LROUNDF: CUDA API:
 // LROUNDF-NEXT:   lroundf(f /*float*/);
 // LROUNDF-NEXT: Is migrated to:
 // LROUNDF-NEXT:   sycl::round(f);
-// LROUNDF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=modff | FileCheck %s -check-prefix=MODFF
 // MODFF: CUDA API:
 // MODFF-NEXT:   modff(f /*float*/, pf /*float **/);
 // MODFF-NEXT: Is migrated to:
 // MODFF-NEXT:   sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(pf));
-// MODFF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=nanf | FileCheck %s -check-prefix=NANF
 // NANF: CUDA API:
 // NANF-NEXT:   nanf(pc /*const char **/);
 // NANF-NEXT: Is migrated to:
 // NANF-NEXT:   sycl::nan(0u);
-// NANF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=nearbyintf | FileCheck %s -check-prefix=NEARBYINTF
 // NEARBYINTF: CUDA API:
 // NEARBYINTF-NEXT:   nearbyintf(f /*float*/);
 // NEARBYINTF-NEXT: Is migrated to:
 // NEARBYINTF-NEXT:   sycl::floor(f + 0.5);
-// NEARBYINTF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=nextafterf | FileCheck %s -check-prefix=NEXTAFTERF
 // NEXTAFTERF: CUDA API:
 // NEXTAFTERF-NEXT:   nextafterf(f1 /*float*/, f2 /*float*/);
 // NEXTAFTERF-NEXT: Is migrated to:
 // NEXTAFTERF-NEXT:   sycl::nextafter(f1, f2);
-// NEXTAFTERF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=normcdff | FileCheck %s -check-prefix=NORMCDFF
 // NORMCDFF: CUDA API:
@@ -420,41 +373,36 @@
 // POWF-NEXT:   powf(f1 /*float*/, f2 /*float*/);
 // POWF-NEXT: Is migrated to:
 // POWF-NEXT:   dpct::pow(f1, f2);
-// POWF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=rcbrtf | FileCheck %s -check-prefix=RCBRTF
 // RCBRTF: CUDA API:
 // RCBRTF-NEXT:   rcbrtf(f /*float*/);
 // RCBRTF-NEXT: Is migrated to:
-// RCBRTF-NEXT:   sycl::native::recip(sycl::cbrt<float>(f));
+// RCBRTF-NEXT:   sycl::native::recip(dpct::cbrt<float>(f));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=remainderf | FileCheck %s -check-prefix=REMAINDERF
 // REMAINDERF: CUDA API:
 // REMAINDERF-NEXT:   remainderf(f1 /*float*/, f2 /*float*/);
 // REMAINDERF-NEXT: Is migrated to:
 // REMAINDERF-NEXT:   sycl::remainder(f1, f2);
-// REMAINDERF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=remquof | FileCheck %s -check-prefix=REMQUOF
 // REMQUOF: CUDA API:
 // REMQUOF-NEXT:   remquof(f1 /*float*/, f2 /*float*/, pi /*int **/);
 // REMQUOF-NEXT: Is migrated to:
 // REMQUOF-NEXT:   sycl::remquo(f1, f2, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, int>(pi));
-// REMQUOF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=rhypotf | FileCheck %s -check-prefix=RHYPOTF
 // RHYPOTF: CUDA API:
 // RHYPOTF-NEXT:   rhypotf(f1 /*float*/, f2 /*float*/);
 // RHYPOTF-NEXT: Is migrated to:
 // RHYPOTF-NEXT:   1 / sycl::hypot(f1, f2);
-// RHYPOTF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=rintf | FileCheck %s -check-prefix=RINTF
 // RINTF: CUDA API:
 // RINTF-NEXT:   rintf(f /*float*/);
 // RINTF-NEXT: Is migrated to:
 // RINTF-NEXT:   sycl::rint(f);
-// RINTF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=rnorm3df | FileCheck %s -check-prefix=RNORM3DF
 // RNORM3DF: CUDA API:
@@ -479,28 +427,24 @@
 // ROUNDF-NEXT:   roundf(f /*float*/);
 // ROUNDF-NEXT: Is migrated to:
 // ROUNDF-NEXT:   sycl::round(f);
-// ROUNDF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=rsqrtf | FileCheck %s -check-prefix=RSQRTF
 // RSQRTF: CUDA API:
 // RSQRTF-NEXT:   rsqrtf(f /*float*/);
 // RSQRTF-NEXT: Is migrated to:
 // RSQRTF-NEXT:   sycl::rsqrt(f);
-// RSQRTF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=scalblnf | FileCheck %s -check-prefix=SCALBLNF
 // SCALBLNF: CUDA API:
 // SCALBLNF-NEXT:   scalblnf(f /*float*/, l /*long int*/);
 // SCALBLNF-NEXT: Is migrated to:
 // SCALBLNF-NEXT:   f*(2<<l);
-// SCALBLNF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=scalbnf | FileCheck %s -check-prefix=SCALBNF
 // SCALBNF: CUDA API:
 // SCALBNF-NEXT:   scalbnf(f /*float*/, i /*int*/);
 // SCALBNF-NEXT: Is migrated to:
 // SCALBNF-NEXT:   f*(2<<i);
-// SCALBNF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=signbit | FileCheck %s -check-prefix=SIGNBIT
 // SIGNBIT: CUDA API:
@@ -509,77 +453,66 @@
 // SIGNBIT-NEXT: Is migrated to:
 // SIGNBIT-NEXT:   sycl::signbit(f);
 // SIGNBIT-NEXT:   sycl::signbit(d);
-// SIGNBIT-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sincosf | FileCheck %s -check-prefix=SINCOSF
 // SINCOSF: CUDA API:
 // SINCOSF-NEXT:   sincosf(f /*float*/, pf1 /*float **/, pf2 /*float **/);
 // SINCOSF-NEXT: Is migrated to:
 // SINCOSF-NEXT:   *pf1 = sycl::sincos(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(pf2));
-// SINCOSF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sincospif | FileCheck %s -check-prefix=SINCOSPIF
 // SINCOSPIF: CUDA API:
 // SINCOSPIF-NEXT:   sincospif(f /*float*/, pf1 /*float **/, pf2 /*float **/);
 // SINCOSPIF-NEXT: Is migrated to:
 // SINCOSPIF-NEXT:   *(pf1) = sycl::sincos(f * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(pf2));
-// SINCOSPIF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sinf | FileCheck %s -check-prefix=SINF
 // SINF: CUDA API:
 // SINF-NEXT:   sinf(f /*float*/);
 // SINF-NEXT: Is migrated to:
 // SINF-NEXT:   sycl::sin(f);
-// SINF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sinhf | FileCheck %s -check-prefix=SINHF
 // SINHF: CUDA API:
 // SINHF-NEXT:   sinhf(f /*float*/);
 // SINHF-NEXT: Is migrated to:
 // SINHF-NEXT:   sycl::sinh(f);
-// SINHF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sinpif | FileCheck %s -check-prefix=SINPIF
 // SINPIF: CUDA API:
 // SINPIF-NEXT:   sinpif(f /*float*/);
 // SINPIF-NEXT: Is migrated to:
 // SINPIF-NEXT:   sycl::sinpi(f);
-// SINPIF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sqrtf | FileCheck %s -check-prefix=SQRTF
 // SQRTF: CUDA API:
 // SQRTF-NEXT:   sqrtf(f /*float*/);
 // SQRTF-NEXT: Is migrated to:
 // SQRTF-NEXT:   sycl::sqrt(f);
-// SQRTF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=tanf | FileCheck %s -check-prefix=TANF
 // TANF: CUDA API:
 // TANF-NEXT:   tanf(f /*float*/);
 // TANF-NEXT: Is migrated to:
 // TANF-NEXT:   sycl::tan(f);
-// TANF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=tanhf | FileCheck %s -check-prefix=TANHF
 // TANHF: CUDA API:
 // TANHF-NEXT:   tanhf(f /*float*/);
 // TANHF-NEXT: Is migrated to:
 // TANHF-NEXT:   sycl::tanh(f);
-// TANHF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=tgammaf | FileCheck %s -check-prefix=TGAMMAF
 // TGAMMAF: CUDA API:
 // TGAMMAF-NEXT:   tgammaf(f /*float*/);
 // TGAMMAF-NEXT: Is migrated to:
 // TGAMMAF-NEXT:   sycl::tgamma(f);
-// TGAMMAF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=truncf | FileCheck %s -check-prefix=TRUNCF
 // TRUNCF: CUDA API:
 // TRUNCF-NEXT:   truncf(f /*float*/);
 // TRUNCF-NEXT: Is migrated to:
 // TRUNCF-NEXT:   sycl::trunc(f);
-// TRUNCF-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=y0f | FileCheck %s -check-prefix=Y0F
 // Y0F: CUDA API:
