@@ -1115,6 +1115,8 @@ int runDPCT(int argc, const char **argv) {
             ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
             return MigrationErrorAPIMappingNoCUDAHeader;
           }
+          ShowStatus(MigrationErrorNoAPIMapping);
+          dpctExit(MigrationErrorNoAPIMapping);
         }
         ShowStatus(MigrationErrorFileParseError);
         return MigrationErrorFileParseError;

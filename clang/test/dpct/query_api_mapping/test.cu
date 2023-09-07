@@ -21,6 +21,7 @@
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=aaa 2>&1 | FileCheck %s -check-prefix=NO_MAPPING
 // NO_MAPPING: dpct exited with code: -43 (Error: This API mapping query is not available yet. You may get the API mapping by migrating a sample code of this API with the tool.)
 
+// CUDA 11 and after not have hdiv().
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hdiv 2>&1 | FileCheck %s -check-prefix=WRONG_CUDA_HEADER
 // WRONG_CUDA_HEADER: dpct exited with code: -44 (Error: Can not find 'hdiv' in current CUDA header file: {{(.+)}}. Please check the API name or switch to use different CUDA header file with option "--cuda-include-path".)
 
