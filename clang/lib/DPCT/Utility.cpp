@@ -3326,7 +3326,7 @@ const clang::Stmt *getBodyofAncestorFCStmt(const clang::Stmt *S) {
 
 bool analyzeMemcpyOrder(
     const clang::CompoundStmt *CS,
-    std::vector<std::pair<const CallExpr *, MemcpyOrderAnalysisNodeKind>>
+    std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
         &MemcpyOrderVec,
     std::vector<unsigned int> &DREOffsetVec) {
   const static std::unordered_set<std::string> SpecialFuncNameSet = {
@@ -3686,8 +3686,11 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
           for (auto &D : DREMatchResult) {
             if (auto ParentCE =
                     clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(D)) {
-              std::string FuncName =
-                  getFunctionName(ParentCE->getDirectCallee());
+              auto DC = ParentCE->getDirectCallee();
+              if (!DC) {
+                continue;
+              }
+              std::string FuncName = getFunctionName(DC);
               auto DRELocInfo =
                   dpct::DpctGlobalInfo::getLocInfo(D->getEndLoc());
               if ((FuncName == "free" || FuncName == "cudaFreeHost") &&
@@ -3733,7 +3736,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   auto &Map = FileInfo->getMemcpyOrderAnalysisResultMap();
   auto Iter = Map.find(CS);
 
-  std::vector<std::pair<const CallExpr *, MemcpyOrderAnalysisNodeKind>>
+  std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
       MemcpyOrderVec;
   std::vector<unsigned int> DREOffsetVec;
   if (Iter == Map.end()) {

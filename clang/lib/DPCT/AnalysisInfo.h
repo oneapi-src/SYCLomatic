@@ -172,13 +172,13 @@ struct CudaArchPPInfo {
 
 struct MemcpyOrderAnalysisInfo {
   MemcpyOrderAnalysisInfo(
-      std::vector<std::pair<const CallExpr *, MemcpyOrderAnalysisNodeKind>>
+      std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
           MemcpyOrderVec,
       std::vector<unsigned int> DREOffsetVec)
       : MemcpyOrderVec(MemcpyOrderVec), DREOffsetVec(DREOffsetVec) {}
   MemcpyOrderAnalysisInfo() : MemcpyOrderVec({}), DREOffsetVec({}) {}
 
-  std::vector<std::pair<const CallExpr *, MemcpyOrderAnalysisNodeKind>>
+  std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
       MemcpyOrderVec;
   std::vector<unsigned int> DREOffsetVec;
 };
