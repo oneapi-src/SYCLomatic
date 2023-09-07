@@ -52,7 +52,7 @@ std::string applyUserDefinedHeader(const std::string &FileName) {
       static const StringRef NL = getNL();
       OS << NL;
     };
-    for (auto Header : Rule.Includes) {
+    for (auto &Header : Rule.Includes) {
       PrintHeader(Header);
     }
     PrintHeader(Rule.Out);
@@ -79,7 +79,7 @@ SmallVector<std::string, 8> AlwaysRemovedSDKFilePrefix = {
     "cuda", "cusolver", "cublas", "cusparse", "curand"};
 
 bool isAlwaysRemoved(StringRef Path) {
-  for (auto S : AlwaysRemovedSDKFilePrefix)
+  for (auto &S : AlwaysRemovedSDKFilePrefix)
     if (Path.startswith(S))
       return true;
   return false;

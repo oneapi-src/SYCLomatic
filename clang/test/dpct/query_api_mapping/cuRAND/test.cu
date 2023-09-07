@@ -1,3 +1,6 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 /// Host API
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandCreateGenerator | FileCheck %s -check-prefix=CURANDCREATEGENERATOR
@@ -5,14 +8,12 @@
 // CURANDCREATEGENERATOR-NEXT:   curandCreateGenerator(pg /*curandGenerator_t **/, r /*curandRngType_t*/);
 // CURANDCREATEGENERATOR-NEXT: Is migrated to:
 // CURANDCREATEGENERATOR-NEXT:   *(pg) = dpct::rng::create_host_rng(r);
-// CURANDCREATEGENERATOR-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandCreateGeneratorHost | FileCheck %s -check-prefix=CURANDCREATEGENERATORHOST
 // CURANDCREATEGENERATORHOST: CUDA API:
 // CURANDCREATEGENERATORHOST-NEXT:   curandCreateGeneratorHost(pg /*curandGenerator_t **/, r /*curandRngType_t*/);
 // CURANDCREATEGENERATORHOST-NEXT: Is migrated to:
 // CURANDCREATEGENERATORHOST-NEXT:   *(pg) = dpct::rng::create_host_rng(r);
-// CURANDCREATEGENERATORHOST-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandDestroyGenerator | FileCheck %s -check-prefix=CURANDDESTROYGENERATOR
 // CURANDDESTROYGENERATOR: CUDA API:
@@ -21,7 +22,6 @@
 // CURANDDESTROYGENERATOR-NEXT: Is migrated to:
 // CURANDDESTROYGENERATOR-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDDESTROYGENERATOR-NEXT:   g.reset();
-// CURANDDESTROYGENERATOR-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandGenerate | FileCheck %s -check-prefix=CURANDGENERATE
 // CURANDGENERATE: CUDA API:
@@ -30,7 +30,6 @@
 // CURANDGENERATE-NEXT: Is migrated to:
 // CURANDGENERATE-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDGENERATE-NEXT:   g->generate_uniform_bits(pu, s);
-// CURANDGENERATE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandGenerateLogNormal | FileCheck %s -check-prefix=CURANDGENERATELOGNORMAL
 // CURANDGENERATELOGNORMAL: CUDA API:
@@ -40,7 +39,6 @@
 // CURANDGENERATELOGNORMAL-NEXT: Is migrated to:
 // CURANDGENERATELOGNORMAL-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDGENERATELOGNORMAL-NEXT:   g->generate_lognormal(pf, s, f1, f2);
-// CURANDGENERATELOGNORMAL-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandGenerateLogNormalDouble | FileCheck %s -check-prefix=CURANDGENERATELOGNORMALDOUBLE
 // CURANDGENERATELOGNORMALDOUBLE: CUDA API:
@@ -50,7 +48,6 @@
 // CURANDGENERATELOGNORMALDOUBLE-NEXT: Is migrated to:
 // CURANDGENERATELOGNORMALDOUBLE-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDGENERATELOGNORMALDOUBLE-NEXT:   g->generate_lognormal(pd, s, d1, d2);
-// CURANDGENERATELOGNORMALDOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandGenerateLongLong | FileCheck %s -check-prefix=CURANDGENERATELONGLONG
 // CURANDGENERATELONGLONG: CUDA API:
@@ -60,7 +57,6 @@
 // CURANDGENERATELONGLONG-NEXT: Is migrated to:
 // CURANDGENERATELONGLONG-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDGENERATELONGLONG-NEXT:   g->generate_uniform_bits(ull, s);
-// CURANDGENERATELONGLONG-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandGenerateNormal | FileCheck %s -check-prefix=CURANDGENERATENORMAL
 // CURANDGENERATENORMAL: CUDA API:
@@ -70,7 +66,6 @@
 // CURANDGENERATENORMAL-NEXT: Is migrated to:
 // CURANDGENERATENORMAL-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDGENERATENORMAL-NEXT:   g->generate_gaussian(pf, s, f1, f2);
-// CURANDGENERATENORMAL-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandGenerateNormalDouble | FileCheck %s -check-prefix=CURANDGENERATENORMALDOUBLE
 // CURANDGENERATENORMALDOUBLE: CUDA API:
@@ -80,7 +75,6 @@
 // CURANDGENERATENORMALDOUBLE-NEXT: Is migrated to:
 // CURANDGENERATENORMALDOUBLE-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDGENERATENORMALDOUBLE-NEXT:   g->generate_gaussian(pd, s, d1, d2);
-// CURANDGENERATENORMALDOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandGeneratePoisson | FileCheck %s -check-prefix=CURANDGENERATEPOISSON
 // CURANDGENERATEPOISSON: CUDA API:
@@ -90,7 +84,6 @@
 // CURANDGENERATEPOISSON-NEXT: Is migrated to:
 // CURANDGENERATEPOISSON-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDGENERATEPOISSON-NEXT:   g->generate_poisson(pu, s, d);
-// CURANDGENERATEPOISSON-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandGenerateUniform | FileCheck %s -check-prefix=CURANDGENERATEUNIFORM
 // CURANDGENERATEUNIFORM: CUDA API:
@@ -99,7 +92,6 @@
 // CURANDGENERATEUNIFORM-NEXT: Is migrated to:
 // CURANDGENERATEUNIFORM-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDGENERATEUNIFORM-NEXT:   g->generate_uniform(pf, s);
-// CURANDGENERATEUNIFORM-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandGenerateUniformDouble | FileCheck %s -check-prefix=CURANDGENERATEUNIFORMDOUBLE
 // CURANDGENERATEUNIFORMDOUBLE: CUDA API:
@@ -109,7 +101,6 @@
 // CURANDGENERATEUNIFORMDOUBLE-NEXT: Is migrated to:
 // CURANDGENERATEUNIFORMDOUBLE-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDGENERATEUNIFORMDOUBLE-NEXT:   g->generate_uniform(pd, s);
-// CURANDGENERATEUNIFORMDOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandSetGeneratorOffset | FileCheck %s -check-prefix=CURANDSETGENERATOROFFSET
 // CURANDSETGENERATOROFFSET: CUDA API:
@@ -118,7 +109,6 @@
 // CURANDSETGENERATOROFFSET-NEXT: Is migrated to:
 // CURANDSETGENERATOROFFSET-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDSETGENERATOROFFSET-NEXT:   g->skip_ahead(ull);
-// CURANDSETGENERATOROFFSET-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandSetPseudoRandomGeneratorSeed | FileCheck %s -check-prefix=CURANDSETPSEUDORANDOMGENERATORSEED
 // CURANDSETPSEUDORANDOMGENERATORSEED: CUDA API:
@@ -128,7 +118,6 @@
 // CURANDSETPSEUDORANDOMGENERATORSEED-NEXT: Is migrated to:
 // CURANDSETPSEUDORANDOMGENERATORSEED-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDSETPSEUDORANDOMGENERATORSEED-NEXT:   g->set_seed(ull);
-// CURANDSETPSEUDORANDOMGENERATORSEED-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandSetQuasiRandomGeneratorDimensions | FileCheck %s -check-prefix=CURANDSETQUASIRANDOMGENERATORDIMENSIONS
 // CURANDSETQUASIRANDOMGENERATORDIMENSIONS: CUDA API:
@@ -138,7 +127,6 @@
 // CURANDSETQUASIRANDOMGENERATORDIMENSIONS-NEXT: Is migrated to:
 // CURANDSETQUASIRANDOMGENERATORDIMENSIONS-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDSETQUASIRANDOMGENERATORDIMENSIONS-NEXT:   g->set_dimensions(u);
-// CURANDSETQUASIRANDOMGENERATORDIMENSIONS-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandSetStream | FileCheck %s -check-prefix=CURANDSETSTREAM
 // CURANDSETSTREAM: CUDA API:
@@ -147,7 +135,6 @@
 // CURANDSETSTREAM-NEXT: Is migrated to:
 // CURANDSETSTREAM-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDSETSTREAM-NEXT:   g->set_queue(s);
-// CURANDSETSTREAM-EMPTY:
 
 /// Device API
 
@@ -166,7 +153,6 @@
 // CURAND-NEXT:   ps1->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
 // CURAND-NEXT:   ps2->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
 // CURAND-NEXT:   ps3->generate<oneapi::mkl::rng::device::uniform_bits<std::uint32_t>, 1>();
-// CURAND-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand4 | FileCheck %s -check-prefix=CURAND4
 // CURAND4: CUDA API:
@@ -175,7 +161,6 @@
 // CURAND4-NEXT: Is migrated to:
 // CURAND4-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps;
 // CURAND4-NEXT:   ps->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 4>();
-// CURAND4-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_init | FileCheck %s -check-prefix=CURAND_INIT
 // CURAND_INIT: CUDA API:
@@ -190,7 +175,6 @@
 // CURAND_INIT-NEXT:   *ps1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>>(ull1, {static_cast<std::uint64_t>(ull3), static_cast<std::uint64_t>(ull2 * 8)});
 // CURAND_INIT-NEXT:   *ps2 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(ull1, {static_cast<std::uint64_t>(ull3), static_cast<std::uint64_t>(ull2 * 4)});
 // CURAND_INIT-NEXT:   *ps3 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(ull1, static_cast<std::uint64_t>(ull3));
-// CURAND_INIT-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_log_normal | FileCheck %s -check-prefix=CURAND_LOG_NORMAL
 // CURAND_LOG_NORMAL: CUDA API:
@@ -209,7 +193,6 @@
 // CURAND_LOG_NORMAL-NEXT:   ps1->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
 // CURAND_LOG_NORMAL-NEXT:   ps2->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
 // CURAND_LOG_NORMAL-NEXT:   ps3->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
-// CURAND_LOG_NORMAL-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_log_normal2 | FileCheck %s -check-prefix=CURAND_LOG_NORMAL2
 // CURAND_LOG_NORMAL2: CUDA API:
@@ -228,7 +211,6 @@
 // CURAND_LOG_NORMAL2-NEXT:   ps1->generate<oneapi::mkl::rng::device::lognormal<float>, 2>(f1, f2);
 // CURAND_LOG_NORMAL2-NEXT:   ps2->generate<oneapi::mkl::rng::device::lognormal<float>, 2>(f1, f2);
 // CURAND_LOG_NORMAL2-NEXT:   ps3->generate<oneapi::mkl::rng::device::lognormal<float>, 2>(f1, f2);
-// CURAND_LOG_NORMAL2-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_log_normal2_double | FileCheck %s -check-prefix=CURAND_LOG_NORMAL2_DOUBLE
 // CURAND_LOG_NORMAL2_DOUBLE: CUDA API:
@@ -248,7 +230,6 @@
 // CURAND_LOG_NORMAL2_DOUBLE-NEXT:   ps1->generate<oneapi::mkl::rng::device::lognormal<double>, 2>(d1, d2);
 // CURAND_LOG_NORMAL2_DOUBLE-NEXT:   ps2->generate<oneapi::mkl::rng::device::lognormal<double>, 2>(d1, d2);
 // CURAND_LOG_NORMAL2_DOUBLE-NEXT:   ps3->generate<oneapi::mkl::rng::device::lognormal<double>, 2>(d1, d2);
-// CURAND_LOG_NORMAL2_DOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_log_normal4 | FileCheck %s -check-prefix=CURAND_LOG_NORMAL4
 // CURAND_LOG_NORMAL4: CUDA API:
@@ -258,7 +239,6 @@
 // CURAND_LOG_NORMAL4-NEXT: Is migrated to:
 // CURAND_LOG_NORMAL4-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps;
 // CURAND_LOG_NORMAL4-NEXT:   ps->generate<oneapi::mkl::rng::device::lognormal<float>, 4>(f1, f2);
-// CURAND_LOG_NORMAL4-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_log_normal_double | FileCheck %s -check-prefix=CURAND_LOG_NORMAL_DOUBLE
 // CURAND_LOG_NORMAL_DOUBLE: CUDA API:
@@ -278,7 +258,6 @@
 // CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps1->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
 // CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps2->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
 // CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps3->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
-// CURAND_LOG_NORMAL_DOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_normal | FileCheck %s -check-prefix=CURAND_NORMAL
 // CURAND_NORMAL: CUDA API:
@@ -295,7 +274,6 @@
 // CURAND_NORMAL-NEXT:   ps1->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
 // CURAND_NORMAL-NEXT:   ps2->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
 // CURAND_NORMAL-NEXT:   ps3->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
-// CURAND_NORMAL-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_normal2 | FileCheck %s -check-prefix=CURAND_NORMAL2
 // CURAND_NORMAL2: CUDA API:
@@ -312,7 +290,6 @@
 // CURAND_NORMAL2-NEXT:   ps1->generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
 // CURAND_NORMAL2-NEXT:   ps2->generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
 // CURAND_NORMAL2-NEXT:   ps3->generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
-// CURAND_NORMAL2-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_normal2_double | FileCheck %s -check-prefix=CURAND_NORMAL2_DOUBLE
 // CURAND_NORMAL2_DOUBLE: CUDA API:
@@ -329,7 +306,6 @@
 // CURAND_NORMAL2_DOUBLE-NEXT:   ps1->generate<oneapi::mkl::rng::device::gaussian<double>, 2>();
 // CURAND_NORMAL2_DOUBLE-NEXT:   ps2->generate<oneapi::mkl::rng::device::gaussian<double>, 2>();
 // CURAND_NORMAL2_DOUBLE-NEXT:   ps3->generate<oneapi::mkl::rng::device::gaussian<double>, 2>();
-// CURAND_NORMAL2_DOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_normal4 | FileCheck %s -check-prefix=CURAND_NORMAL4
 // CURAND_NORMAL4: CUDA API:
@@ -338,7 +314,6 @@
 // CURAND_NORMAL4-NEXT: Is migrated to:
 // CURAND_NORMAL4-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps;
 // CURAND_NORMAL4-NEXT:   ps->generate<oneapi::mkl::rng::device::gaussian<float>, 4>();
-// CURAND_NORMAL4-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_normal_double | FileCheck %s -check-prefix=CURAND_NORMAL_DOUBLE
 // CURAND_NORMAL_DOUBLE: CUDA API:
@@ -355,7 +330,6 @@
 // CURAND_NORMAL_DOUBLE-NEXT:   ps1->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
 // CURAND_NORMAL_DOUBLE-NEXT:   ps2->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
 // CURAND_NORMAL_DOUBLE-NEXT:   ps3->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
-// CURAND_NORMAL_DOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_poisson | FileCheck %s -check-prefix=CURAND_POISSON
 // CURAND_POISSON: CUDA API:
@@ -372,7 +346,6 @@
 // CURAND_POISSON-NEXT:   ps1->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
 // CURAND_POISSON-NEXT:   ps2->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
 // CURAND_POISSON-NEXT:   ps3->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
-// CURAND_POISSON-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_poisson4 | FileCheck %s -check-prefix=CURAND_POISSON4
 // CURAND_POISSON4: CUDA API:
@@ -381,7 +354,6 @@
 // CURAND_POISSON4-NEXT: Is migrated to:
 // CURAND_POISSON4-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps;
 // CURAND_POISSON4-NEXT:   ps->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 4>(d);
-// CURAND_POISSON4-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform | FileCheck %s -check-prefix=CURAND_UNIFORM
 // CURAND_UNIFORM: CUDA API:
@@ -398,7 +370,6 @@
 // CURAND_UNIFORM-NEXT:   ps1->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
 // CURAND_UNIFORM-NEXT:   ps2->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
 // CURAND_UNIFORM-NEXT:   ps3->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-// CURAND_UNIFORM-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform2_double | FileCheck %s -check-prefix=CURAND_UNIFORM2_DOUBLE
 // CURAND_UNIFORM2_DOUBLE: CUDA API:
@@ -407,7 +378,6 @@
 // CURAND_UNIFORM2_DOUBLE-NEXT: Is migrated to:
 // CURAND_UNIFORM2_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps;
 // CURAND_UNIFORM2_DOUBLE-NEXT:   ps->generate<oneapi::mkl::rng::device::uniform<double>, 2>();
-// CURAND_UNIFORM2_DOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform4 | FileCheck %s -check-prefix=CURAND_UNIFORM4
 // CURAND_UNIFORM4: CUDA API:
@@ -416,7 +386,6 @@
 // CURAND_UNIFORM4-NEXT: Is migrated to:
 // CURAND_UNIFORM4-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps;
 // CURAND_UNIFORM4-NEXT:   ps->generate<oneapi::mkl::rng::device::uniform<float>, 4>();
-// CURAND_UNIFORM4-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform_double | FileCheck %s -check-prefix=CURAND_UNIFORM_DOUBLE
 // CURAND_UNIFORM_DOUBLE: CUDA API:
@@ -433,30 +402,6 @@
 // CURAND_UNIFORM_DOUBLE-NEXT:   ps1->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
 // CURAND_UNIFORM_DOUBLE-NEXT:   ps2->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
 // CURAND_UNIFORM_DOUBLE-NEXT:   ps3->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
-// CURAND_UNIFORM_DOUBLE-EMPTY:
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=skipahead | FileCheck %s -check-prefix=SKIPAHEAD
-// SKIPAHEAD: CUDA API:
-// SKIPAHEAD-NEXT:   curandStateMRG32k3a_t *ps1;
-// SKIPAHEAD-NEXT:   curandStatePhilox4_32_10_t *ps2;
-// SKIPAHEAD-NEXT:   curandStateXORWOW_t *ps3;
-// SKIPAHEAD-NEXT:   skipahead(ull, ps1 /*curandStateMRG32k3a_t **/);
-// SKIPAHEAD-NEXT:   skipahead(ull, ps2 /*curandStatePhilox4_32_10_t **/);
-// SKIPAHEAD-NEXT:   skipahead(ull, ps3 /*curandStateXORWOW_t **/);
-// SKIPAHEAD-NEXT:   skipahead(u, ps1 /*curandStateMRG32k3a_t **/);
-// SKIPAHEAD-NEXT:   skipahead(u, ps2 /*curandStatePhilox4_32_10_t **/);
-// SKIPAHEAD-NEXT:   skipahead(u, ps3 /*curandStateXORWOW_t **/);
-// SKIPAHEAD-NEXT: Is migrated to:
-// SKIPAHEAD-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps1;
-// SKIPAHEAD-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps2;
-// SKIPAHEAD-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
-// SKIPAHEAD-NEXT:   oneapi::mkl::rng::device::skip_ahead(ps1->get_engine(), ull);
-// SKIPAHEAD-NEXT:   oneapi::mkl::rng::device::skip_ahead(ps2->get_engine(), ull);
-// SKIPAHEAD-NEXT:   oneapi::mkl::rng::device::skip_ahead(ps3->get_engine(), ull);
-// SKIPAHEAD-NEXT:   oneapi::mkl::rng::device::skip_ahead(ps1->get_engine(), u);
-// SKIPAHEAD-NEXT:   oneapi::mkl::rng::device::skip_ahead(ps2->get_engine(), u);
-// SKIPAHEAD-NEXT:   oneapi::mkl::rng::device::skip_ahead(ps3->get_engine(), u);
-// SKIPAHEAD-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=skipahead_sequence | FileCheck %s -check-prefix=SKIPAHEAD_SEQUENCE
 // SKIPAHEAD_SEQUENCE: CUDA API:
@@ -472,7 +417,6 @@
 // SKIPAHEAD_SEQUENCE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
 // SKIPAHEAD_SEQUENCE-NEXT:   oneapi::mkl::rng::device::skip_ahead(ps1->get_engine(), {0, ull * (std::uint64_t(1) << 63)});
 // SKIPAHEAD_SEQUENCE-NEXT:   oneapi::mkl::rng::device::skip_ahead(ps2->get_engine(), {0, static_cast<std::uint64_t>(ull * 4)});
-// SKIPAHEAD_SEQUENCE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=skipahead_subsequence | FileCheck %s -check-prefix=SKIPAHEAD_SUBSEQUENCE
 // SKIPAHEAD_SUBSEQUENCE: CUDA API:
@@ -481,4 +425,3 @@
 // SKIPAHEAD_SUBSEQUENCE-NEXT: Is migrated to:
 // SKIPAHEAD_SUBSEQUENCE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps;
 // SKIPAHEAD_SUBSEQUENCE-NEXT:   oneapi::mkl::rng::device::skip_ahead(ps->get_engine(), {0, static_cast<std::uint64_t>(ull * 8)});
-// SKIPAHEAD_SUBSEQUENCE-EMPTY:
