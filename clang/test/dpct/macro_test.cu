@@ -654,13 +654,13 @@ __global__ void foo11(){
 VECTOR_TYPE_DEF(int)
 
 //CHECK: typedef float real;
-//CHECK-NEXT: #define POW(x, y) sycl::pow<float>(x, y)
+//CHECK-NEXT: #define POW(x, y) dpct::pow(x, y)
 //CHECK-NEXT: #define POW2(x, y) vx[id] * vx[id]
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro/template definition and may
 //CHECK-NEXT: not be valid for all macro/template uses. Adjust the code.
 //CHECK-NEXT: */
-//CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
+//CHECK-NEXT: #define POW3(x, y) vx[id] * vx[id]
 //CHECK: #define SQRT(x) sycl::sqrt(x)
 //CHECK-NEXT: void foo12(){
 //CHECK-NEXT: real *vx;

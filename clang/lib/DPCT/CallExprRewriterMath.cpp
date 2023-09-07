@@ -743,7 +743,7 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
 
     auto IL1 = dyn_cast<IntegerLiteral>(Arg1->IgnoreCasts());
     auto FL1 = dyn_cast<FloatingLiteral>(Arg1->IgnoreCasts());
-    auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
+
     // For integer literal 2 or floating literal 2.0/2.0f, expand pow to
     // multiply expression:
     // pow(x, 2) ==> x * x, if x is an expression that has no side effects.
@@ -770,20 +770,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
         return Arg0Str + " * " + Arg0Str;
       else
         return "(" + Arg0Str + ") * (" + Arg0Str + ")";
-    }
-    if (IL1 || T1 == "int" || T1 == "unsigned int" || T1 == "char" ||
-        T1 == "unsigned char" || T1 == "short" || T1 == "unsigned short") {
-      if (T0 == "int") {
-        if (DRE0) {
-          RewriteArgList[0] = "(float)" + RewriteArgList[0];
-        } else {
-          RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
-        }
-      }
-      if (T1 != "int") {
-        RewriteArgList[1] = "(int)" + RewriteArgList[1];
-      }
-      TargetCalleeName = MapNames::getClNamespace(false, true) + "pown";
     }
     return buildRewriteString();
   } else if (FuncName == "erfcx" || FuncName == "erfcxf") {

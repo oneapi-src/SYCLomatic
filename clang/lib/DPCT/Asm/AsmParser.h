@@ -325,7 +325,7 @@ public:
                        ArrayRef<InlineAsmExpr *> Ops, bool HasPred = false)
       : InlineAsmStmt(InstructionClass), Opcode(Op), Types(Types),
         Operands(Ops), HasPredOutput(HasPred) {
-    assert(Operands.size() >= 1 + HasPredOutput);
+    assert(Operands.size() >= 1U + HasPredOutput);
     Attributes.insert(Attrs.begin(), Attrs.end());
   }
 
@@ -358,12 +358,12 @@ public:
   }
 
   const InlineAsmExpr *getPredOutputOperand() const {
-    assert(HasPredOutput && Operands.size() >= 2);
+    assert(HasPredOutput && Operands.size() >= 2U);
     return Operands[1];
   }
 
   ArrayRef<InlineAsmExpr *> getInputOperands() const {
-    assert(Operands.size() > 1 + HasPredOutput);
+    assert(Operands.size() > 1U + HasPredOutput);
     return ArrayRef<InlineAsmExpr *>(Operands.begin() + 1 + HasPredOutput,
                                      Operands.end());
   }

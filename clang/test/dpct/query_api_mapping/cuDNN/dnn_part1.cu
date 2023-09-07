@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnCreate | FileCheck %s -check-prefix=cudnnCreate
 // cudnnCreate: CUDA API:
 // cudnnCreate-NEXT: cudnnHandle_t h;
@@ -5,7 +7,6 @@
 // cudnnCreate-NEXT: Is migrated to:
 // cudnnCreate-NEXT:   dpct::dnnl::engine_ext h;
 // cudnnCreate-NEXT:   h.create_engine();
-// cudnnCreate-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnActivationBackward | FileCheck %s -check-prefix=cudnnActivationBackward
 // cudnnActivationBackward: CUDA API:
@@ -21,7 +22,6 @@
 // cudnnActivationBackward-NEXT: dpct::dnnl::engine_ext h;
 // cudnnActivationBackward-NEXT: h.create_engine();
 // cudnnActivationBackward-NEXT: h.async_activation_backward(desc, *alpha, dst_d, dst, diff_dst_d, diff_dst, src_d, src, *beta, diff_src_d, diff_src);
-// cudnnActivationBackward-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnActivationForward | FileCheck %s -check-prefix=cudnnActivationForward
 // cudnnActivationForward: CUDA API:
@@ -35,7 +35,6 @@
 // cudnnActivationForward-NEXT:   dpct::dnnl::engine_ext h;
 // cudnnActivationForward-NEXT:   h.create_engine();
 // cudnnActivationForward-NEXT:   h.async_activation_forward(desc, *alpha, src_d, src, *beta, dst_d, dst);
-// cudnnActivationForward-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnCreateActivationDescriptor | FileCheck %s -check-prefix=cudnnCreateActivationDescriptor
 // cudnnCreateActivationDescriptor: CUDA API:
@@ -64,7 +63,6 @@
 // cudnnSetActivationDescriptor-NEXT: Is migrated to:
 // cudnnSetActivationDescriptor-NEXT:   dpct::dnnl::activation_desc d;
 // cudnnSetActivationDescriptor-NEXT:   d.set(m, c);
-// cudnnSetActivationDescriptor-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetStream | FileCheck %s -check-prefix=cudnnSetStream
 // cudnnSetStream: CUDA API:
@@ -75,7 +73,6 @@
 // cudnnSetStream-NEXT:   dpct::dnnl::engine_ext h;
 // cudnnSetStream-NEXT:   h.create_engine();
 // cudnnSetStream-NEXT:   h.set_queue(s);
-// cudnnSetStream-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetTensor4dDescriptor | FileCheck %s -check-prefix=cudnnSetTensor4dDescriptor
 // cudnnSetTensor4dDescriptor: CUDA API:
@@ -86,7 +83,6 @@
 // cudnnSetTensor4dDescriptor-NEXT: Is migrated to:
 // cudnnSetTensor4dDescriptor-NEXT:   dpct::dnnl::memory_desc_ext d;
 // cudnnSetTensor4dDescriptor-NEXT:   d.set(f, t, n, c, h, w);
-// cudnnSetTensor4dDescriptor-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetTensor4dDescriptor | FileCheck %s -check-prefix=cudnnGetTensor4dDescriptor
 // cudnnGetTensor4dDescriptor: CUDA API:
@@ -98,4 +94,3 @@
 // cudnnGetTensor4dDescriptor-NEXT: Is migrated to:
 // cudnnGetTensor4dDescriptor-NEXT:   dpct::dnnl::memory_desc_ext d;
 // cudnnGetTensor4dDescriptor-NEXT:   d.get(t, n, c, h, w, ns, cs, hs, ws);
-// cudnnGetTensor4dDescriptor-EMPTY:

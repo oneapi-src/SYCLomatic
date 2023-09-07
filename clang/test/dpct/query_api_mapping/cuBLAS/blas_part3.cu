@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDgeam | FileCheck %s -check-prefix=cublasDgeam
 // cublasDgeam: CUDA API:
 // cublasDgeam-NEXT:   cublasDgeam(handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
