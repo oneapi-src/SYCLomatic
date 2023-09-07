@@ -173,7 +173,7 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
       arg1_ptr[var1] = a;
     }
     // CHECK: /*
-    // CHECK-NEXT: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK-NEXT: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     // CHECK-NEXT: */
     // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function "test10" is called in a multidimensional kernel.
@@ -188,7 +188,7 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
       }
       // CHECK: var3 = var3 / 2;
       // CHECK-NEXT: /*
-      // CHECK-NEXT: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+      // CHECK-NEXT: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
       // CHECK-NEXT: */
       // CHECK-NEXT: /*
       // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function "test10" is called in a multidimensional kernel.
@@ -272,7 +272,7 @@ __global__ void test11(float *a_ptr, float *b_ptr,
       local[var0 - 123] = a_c_ptr[idx - 123];
       local[var0 + var7] = a_c_ptr[idx + var7];
     }
-    // CHECK: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     // CHECK-NEXT: */
     // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
     // CHECK-NEXT: float var8 = 0;

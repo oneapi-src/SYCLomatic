@@ -2116,3 +2116,23 @@ ENTRY(make_cuDoubleComplex, make_cuDoubleComplex, true, NO_FLAG, P4, "comment")
 ENTRY(make_cuFloatComplex, make_cuFloatComplex, true, NO_FLAG, P4, "comment")
 ENTRY(__assert_fail, __assert_fail, false, NO_FLAG, P4, "comment")
 ENTRY(__assertfail, __assertfail, false, NO_FLAG, P4, "comment")
+
+// add driver APIs for v12.2
+// Multicast Object Management
+ENTRY(cuMulticastAddDevice, cuMulticastAddDevice, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastBindAddr, cuMulticastBindAddr, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastBindMem, cuMulticastBindMem, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastCreate, cuMulticastCreate, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastGetGranularity, cuMulticastGetGranularity, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastUnbind, cuMulticastUnbind, false, NO_FLAG, P4, "comment")
+
+ENTRY(cuGraphAddNode, cuGraphAddNode, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphExecGetFlags, cuGraphExecGetFlags, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphExecNodeSetParams, cuGraphExecNodeSetParams, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphNodeSetParams, cuGraphNodeSetParams, false, NO_FLAG, P4, "comment")
+
+// Coredump Attributes Control API
+ENTRY(cuCoredumpGetAttribute, cuCoredumpGetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuCoredumpGetAttributeGlobal, cuCoredumpGetAttributeGlobal, false, NO_FLAG, P4, "comment")
+ENTRY(cuCoredumpSetAttribute, cuCoredumpSetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuCoredumpSetAttributeGlobal, cuCoredumpSetAttributeGlobal, false, NO_FLAG, P4, "comment")
