@@ -23,9 +23,7 @@ jobs:
         persist-credentials: false
         fetch-depth: ${{ env.PR_FETCH_DEPTH }}
     - name: Run clang-format
-      uses: ./devops/actions/clang-format
-      with:
-        path: clang
+      uses: ./devops/actions/clang-format-SYCLomatic
 
   linux-build-lit:
     name: linux-build-lit
