@@ -790,9 +790,6 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
                        const void *beta, sparse_matrix_desc_t c,
                        oneapi::mkl::sparse::matmat_descr_t matmat_descr,
                        size_t *size_temp_buffer, void *temp_buffer) {
-  set_matmat_data(matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general,
-                  trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
-                  trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
   if (temp_buffer) {
 #ifdef DPCT_USM_LEVEL_NONE
     sycl::buffer<std::uint8_t> extBuf =
@@ -817,6 +814,10 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
     async_dpct_free({bufSize}, {e}, queue);
 #endif
   } else {
+    oneapi::mkl::sparse::set_matmat_data(
+        matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general, trans_a,
+        oneapi::mkl::sparse::matrix_view_descr::general, trans_b,
+        oneapi::mkl::sparse::matrix_view_descr::general);
 #ifdef DPCT_USM_LEVEL_NONE
     std::int64_t bufSizeValue = 0;
     {
@@ -864,9 +865,6 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
                            const void *beta, sparse_matrix_desc_t c,
                            oneapi::mkl::sparse::matmat_descr_t matmat_descr,
                            size_t *size_temp_buffer, void *temp_buffer) {
-  set_matmat_data(matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general,
-                  trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
-                  trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
   if (temp_buffer) {
 #ifdef DPCT_USM_LEVEL_NONE
     sycl::buffer<std::uint8_t> extBuf =
@@ -948,9 +946,6 @@ inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
                             sparse_matrix_desc_t a, sparse_matrix_desc_t b,
                             const void *beta, sparse_matrix_desc_t c,
                             oneapi::mkl::sparse::matmat_descr_t matmat_descr) {
-  set_matmat_data(matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general,
-                  trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
-                  trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
   oneapi::mkl::sparse::matmat(queue, a->get_matrix_handle(),
                               b->get_matrix_handle(), c->get_matrix_handle(),
                               oneapi::mkl::sparse::matmat_request::finalize,
