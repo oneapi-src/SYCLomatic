@@ -4441,7 +4441,24 @@ bool isFromCUDA(const Decl *D) {
   path::append(AlgorithmFileInCudaWrapper, Twine("cuda_wrappers"),
                Twine("algorithm"));
 
-  if (AlgorithmFileInCudaWrapper.str().str() == DeclLocFilePath) {
+  SmallString<512> AlgorithmFileInCudaWrapperWithUnifiedLayout =
+      StringRef(DpctInstallPath);
+  path::append(AlgorithmFileInCudaWrapperWithUnifiedLayout, Twine("opt"),
+               Twine("dpct"));
+  path::append(AlgorithmFileInCudaWrapperWithUnifiedLayout, Twine("lib"),
+               Twine("clang"), Twine(CLANG_VERSION_MAJOR_STRING),
+               Twine("include"));
+  path::append(AlgorithmFileInCudaWrapperWithUnifiedLayout,
+               Twine("cuda_wrappers"), Twine("algorithm"));
+
+  bool IsIntelDeployUnifiedLayout =
+      llvm::sys::fs::exists(AlgorithmFileInCudaWrapperWithUnifiedLayout);
+  if (IsIntelDeployUnifiedLayout &&
+      (AlgorithmFileInCudaWrapperWithUnifiedLayout.str().str() ==
+       DeclLocFilePath)) {
+    return false;
+  } else if (!IsIntelDeployUnifiedLayout &&
+             (AlgorithmFileInCudaWrapper.str().str() == DeclLocFilePath)) {
     return false;
   }
 
