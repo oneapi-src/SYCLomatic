@@ -589,54 +589,65 @@ protected:
           .str();
     };
 
+    auto CastOp = [&]() {
+      Op1 = Cast(T, I->getInputOperand(0)->getType(), Op1);
+      Op2 = Cast(T, I->getInputOperand(1)->getType(), Op2);
+    };
+
     for (const auto A : I->attrs()) {
       switch (A) {
       case InstAttr::eq:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Fmt = "{0} == {1}";
-        else if (T->isFloating())
+        else if (T->isFloating()) {
           Fmt = NotNan() + " && " + SYCLNS() + "isequal({0}, {1})";
-        else
+          CastOp();
+        } else
           return SYCLGenError();
         break;
       case InstAttr::ne:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Fmt = "{0} != {1}";
-        else if (T->isFloating())
+        else if (T->isFloating()) {
           Fmt = NotNan() + " && " + SYCLNS() + "isnotequal({0}, {1})";
-        else
+          CastOp();
+        } else
           return SYCLGenError();
         break;
       case InstAttr::lt:
         if (T->isSignedInt())
           Fmt = "{0} < {1}";
-        else if (T->isFloating())
+        else if (T->isFloating()) {
           Fmt = NotNan() + " && " + SYCLNS() + "isless({0}, {1})";
-        else
+          CastOp();
+        } else
           return SYCLGenError();
         break;
       case InstAttr::le:
         if (T->isSignedInt())
           Fmt = "{0} <= {1}";
-        else if (T->isFloating())
+        else if (T->isFloating()) {
           Fmt = NotNan() + " && " + SYCLNS() + "islessequal({0}, {1})";
-        else
+          CastOp();
+        } else
           return SYCLGenError();
         break;
       case InstAttr::gt:
         if (T->isSignedInt())
           Fmt = "{0} > {1}";
-        else if (T->isFloating())
+        else if (T->isFloating()) {
           Fmt = NotNan() + " && " + SYCLNS() + "isgreater({0}, {1})";
-        else
+          CastOp();
+        } else
           return SYCLGenError();
         break;
       case InstAttr::ge:
         if (T->isSignedInt())
           Fmt = "{0} >= {1}";
-        else if (T->isFloating())
+        else if (T->isFloating()) {
           Fmt = NotNan() + " && " + SYCLNS() + "isgreaterequal({0}, {1})";
-        else
+          CastOp();
+        } else
           return SYCLGenError();
         break;
       case InstAttr::lo:
@@ -668,48 +679,56 @@ protected:
           Fmt = IsNan() + " || " + SYCLNS() + "isequal({0}, {1})";
         else
           return SYCLGenError();
+        CastOp();
         break;
       case InstAttr::neu:
         if (T->isFloating())
           Fmt = IsNan() + " || " + SYCLNS() + "isnotequal({0}, {1})";
         else
           return SYCLGenError();
+        CastOp();
         break;
       case InstAttr::ltu:
         if (T->isFloating())
           Fmt = IsNan() + " || " + SYCLNS() + "isless({0}, {1})";
         else
           return SYCLGenError();
+        CastOp();
         break;
       case InstAttr::leu:
         if (T->isFloating())
           Fmt = IsNan() + " || " + SYCLNS() + "islessequal({0}, {1})";
         else
           return SYCLGenError();
+        CastOp();
         break;
       case InstAttr::gtu:
         if (T->isFloating())
           Fmt = IsNan() + " || " + SYCLNS() + "isgreater({0}, {1})";
         else
           return SYCLGenError();
+        CastOp();
         break;
       case InstAttr::geu:
         if (T->isFloating())
           Fmt = IsNan() + " || " + SYCLNS() + "isgreaterequal({0}, {1})";
         else
           return SYCLGenError();
+        CastOp();
         break;
       case InstAttr::num:
         if (T->isFloating())
           Fmt = NotNan();
         else
           return SYCLGenError();
+        CastOp();
         break;
       case InstAttr::nan:
         if (T->isFloating())
           Fmt = IsNan();
         else
           return SYCLGenError();
+        CastOp();
         break;
       default:
         break;
