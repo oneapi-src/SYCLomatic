@@ -469,7 +469,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              ARG(MapNames::getDpctNamespace() +
                  "library_data_t::complex_float")))))
 
-CALL_FACTORY_ENTRY(
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSgemm_v2_64",
     CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0), ARG(1),
          BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -479,4 +479,4 @@ CALL_FACTORY_ENTRY(
          BUFFER_OR_USM_PTR(7, "float"), ARG(8), BUFFER_OR_USM_PTR(9, "float"),
          ARG(10),
          CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), QUEUESTR),
-         BUFFER_OR_USM_PTR(12, "float"), ARG(13)))
+         BUFFER_OR_USM_PTR(12, "float"), ARG(13))))
