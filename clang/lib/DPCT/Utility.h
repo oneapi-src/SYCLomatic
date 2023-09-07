@@ -589,6 +589,7 @@ bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
 std::string getAddressSpace(const clang::CallExpr *C, int ArgIdx);
 std::string getNameSpace(const NamespaceDecl *NSD);
+bool isFromCUDA(const Decl *D);
 namespace clang {
 namespace dpct {
 std::string getDpctVersionStr();

@@ -40,7 +40,7 @@ static texture<uint2, 1> tex21;
 // CHECK: void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: sycl::uint2 u21 = tex21.read(1.0f);
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1112:{{[0-9]+}}: If the filter mode is set to 'linear', the behavior of "read" may be different from "tex1Dfetch". You may need to adjust the code.
+// CHECK-NEXT: DPCT1112:{{[0-9]+}}: If the filter mode is set to 'linear', the behavior of image "read" may be different from "tex1Dfetch" in the original code. You may need to adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: sycl::uint2 u21_fetch = tex21.read(1);
 // CHECK-NEXT: float data[3][3];

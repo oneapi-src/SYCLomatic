@@ -1928,6 +1928,7 @@ public:
     auto FD = C->getDirectCallee();
     if (!FD)
       return false;
+<<<<<<< HEAD
     SourceLocation DeclLoc =
         dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
             FD->getLocation());
@@ -1970,6 +1971,9 @@ public:
 
     return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
             isChildPath(DpctInstallPath, DeclLocFilePath));
+=======
+    return isFromCUDA(FD);
+>>>>>>> SYCLomatic/SYCLomatic
   }
 };
 } // namespace math

@@ -6,7 +6,7 @@
 
 namespace aaa {
 // CHECK: // AAA
-// CHECK-EMPTY:
+// CHECK-NEXT: using std::max;
 // CHECK-NEXT: // BBB
 // AAA
 using std::max;
@@ -21,7 +21,7 @@ void foo(size_t len) {
 
 namespace bbb {
 // CHECK: // AAA
-// CHECK-EMPTY:
+// CHECK-NEXT: using ::std::max;
 // CHECK-NEXT: // BBB
 // AAA
 using ::std::max;
