@@ -1935,31 +1935,7 @@ public:
     auto FD = C->getDirectCallee();
     if (!FD)
       return false;
-    SourceLocation DeclLoc =
-        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
-            FD->getLocation());
-    std::string DeclLocFilePath =
-        dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
-    makeCanonical(DeclLocFilePath);
-
-    // clang hacked the declarations of std::min/std::max
-    // In original code, the declaration should be in standard lib,
-    // but clang need to add device version overload, so it hacked the
-    // resolution by adding a special attribute.
-    // So we need treat function which is declared in this file as it
-    // is from standard lib.
-    SmallString<512> AlgorithmFileInCudaWrapper = StringRef(DpctInstallPath);
-    path::append(AlgorithmFileInCudaWrapper, Twine("lib"), Twine("clang"),
-                 Twine(CLANG_VERSION_MAJOR_STRING), Twine("include"));
-    path::append(AlgorithmFileInCudaWrapper, Twine("cuda_wrappers"),
-                 Twine("algorithm"));
-
-    if (AlgorithmFileInCudaWrapper.str().str() == DeclLocFilePath) {
-      return false;
-    }
-
-    return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
-            isChildPath(DpctInstallPath, DeclLocFilePath));
+    return isFromCUDA(FD);
   }
 };
 } // namespace math

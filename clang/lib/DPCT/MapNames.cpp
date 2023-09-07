@@ -44,8 +44,6 @@ std::map<std::string /*Original API*/, HelperFeatureEnum>
 MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     MapNames::ThrustFuncNamesHelperFeaturesMap;
-MapNames::MapTy MapNames::MathFuncNameMap;
-std::unordered_set<std::string> MapNames::MathFuncImpledWithNewRewriter;
 std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap;
 MapNames::MapTy MapNames::ITFName;
 std::map<std::string, MapNames::BLASFuncReplInfo> MapNames::BLASFuncReplInfoMap;
@@ -1994,54 +1992,6 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpSV_solve",
                            "cusparseSpSV_bufferSize",
                            "cusparseSpSV_analysis"};
-
-  // Below set and map are only used to migrate using declaration
-  MathFuncNameMap = {
-#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
-  {SOURCEAPINAME, TARGETAPINAME},
-#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)                 \
-  {SOURCEAPINAME, TARGETAPINAME},
-#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)                     \
-  {SOURCEAPINAME, TARGETAPINAME},
-#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)                     \
-  {SOURCEAPINAME, TARGETAPINAME},
-#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_OPERATOR(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_TYPECAST(SOURCEAPINAME)
-#define ENTRY_UNSUPPORTED(SOURCEAPINAME)
-#define ENTRY_REWRITE(APINAME)
-#include "APINamesMath.inc"
-#undef ENTRY_RENAMED
-#undef ENTRY_RENAMED_NO_REWRITE
-#undef ENTRY_RENAMED_SINGLE
-#undef ENTRY_RENAMED_DOUBLE
-#undef ENTRY_EMULATED
-#undef ENTRY_OPERATOR
-#undef ENTRY_TYPECAST
-#undef ENTRY_UNSUPPORTED
-#undef ENTRY_REWRITE
-  };
-  MathFuncImpledWithNewRewriter = {
-#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_OPERATOR(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_TYPECAST(SOURCEAPINAME)
-#define ENTRY_UNSUPPORTED(SOURCEAPINAME)
-#define ENTRY_REWRITE(APINAME) APINAME,
-#include "APINamesMath.inc"
-#undef ENTRY_RENAMED
-#undef ENTRY_RENAMED_NO_REWRITE
-#undef ENTRY_RENAMED_SINGLE
-#undef ENTRY_RENAMED_DOUBLE
-#undef ENTRY_EMULATED
-#undef ENTRY_OPERATOR
-#undef ENTRY_TYPECAST
-#undef ENTRY_UNSUPPORTED
-#undef ENTRY_REWRITE
-  };
 }
 // clang-format on
 
@@ -4413,9 +4363,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"CUDART_PI_F", MacroMigrationRule("CUDART_PI_F", RulePriority::Fallback,
                                        "CUDART_PI_F", "3.141592654F")},
     {"CUB_MAX", MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
-                                   "CUB_MAX", getClNamespace() + "max")},
+                                   "CUB_MAX", "std::max")},
     {"CUB_MIN", MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
-                                   "CUB_MIN", getClNamespace() + "min")},
+                                   "CUB_MIN", "std::min")},
     {"CUB_RUNTIME_FUNCTION",
      MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
                         "CUB_RUNTIME_FUNCTION", "")}

@@ -6,9 +6,9 @@
 #include <cub/cub.cuh>
 
 __global__ void f() {
-  // CHECK: int a = sycl::max(1, 2);
+  // CHECK: int a = std::max(1, 2);
   [[maybe_unused]] int a = CUB_MAX(1, 2);
 
-  // CHECK: a = sycl::min(3, 4);
+  // CHECK: a = std::min(3, 4);
   a = CUB_MIN(3, 4);
 }
