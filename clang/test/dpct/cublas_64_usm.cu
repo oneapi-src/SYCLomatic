@@ -36,10 +36,10 @@ void foo() {
   float2 *C_c;
   double2 *C_z;
   int64_t ldc;
-  //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_s, q_ct1), A_s, lda, B_s, ldb, dpct::get_value(beta_s, q_ct1), C_s, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_d, q_ct1), A_d, lda, B_d, ldb, dpct::get_value(beta_d, q_ct1), C_d, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_c, q_ct1), A_c, lda, B_c, ldb, dpct::get_value(beta_c, q_ct1), C_c, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_z, q_ct1), A_z, lda, B_z, ldb, dpct::get_value(beta_z, q_ct1), C_z, ldc));
+  //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_s, *handle), A_s, lda, B_s, ldb, dpct::get_value(beta_s, *handle), C_s, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_d, *handle), A_d, lda, B_d, ldb, dpct::get_value(beta_d, *handle), C_d, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_c, *handle), (std::complex<float>*)A_c, lda, (std::complex<float>*)B_c, ldb, dpct::get_value(beta_c, *handle), (std::complex<float>*)C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_z, *handle), (std::complex<double>*)A_z, lda, (std::complex<double>*)B_z, ldb, dpct::get_value(beta_z, *handle), (std::complex<double>*)C_z, ldc));
   status = cublasSgemm_64(handle, transa, transb, m, n, k, alpha_s, A_s, lda, B_s, ldb, beta_s, C_s, ldc);
   status = cublasDgemm_64(handle, transa, transb, m, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc);
   status = cublasCgemm_64(handle, transa, transb, m, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);

@@ -18,6 +18,54 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                        CALL(MapNames::getDpctNamespace() + "mkl_get_version",
                             ARG(MapNames::getDpctNamespace() + "version_field::major"), ARG(0)))))
 
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasSgemm_v2",
+    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         ARG(3), ARG(4), ARG(5),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), DEREF(0)),
+         BUFFER_OR_USM_PTR(7, "float"), ARG(8), BUFFER_OR_USM_PTR(9, "float"),
+         ARG(10),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), DEREF(0)),
+         BUFFER_OR_USM_PTR(12, "float"), ARG(13))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasDgemm_v2",
+    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         ARG(3), ARG(4), ARG(5),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), DEREF(0)),
+         BUFFER_OR_USM_PTR(7, "double"), ARG(8), BUFFER_OR_USM_PTR(9, "double"),
+         ARG(10),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), DEREF(0)),
+         BUFFER_OR_USM_PTR(12, "double"), ARG(13))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasCgemm_v2",
+    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         ARG(3), ARG(4), ARG(5),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), DEREF(0)),
+         BUFFER_OR_USM_PTR(7, "std::complex<float>"), ARG(8),
+         BUFFER_OR_USM_PTR(9, "std::complex<float>"), ARG(10),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), DEREF(0)),
+         BUFFER_OR_USM_PTR(12, "std::complex<float>"), ARG(13))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasZgemm_v2",
+    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         ARG(3), ARG(4), ARG(5),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), DEREF(0)),
+         BUFFER_OR_USM_PTR(7, "std::complex<double>"), ARG(8),
+         BUFFER_OR_USM_PTR(9, "std::complex<double>"), ARG(10),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), DEREF(0)),
+         BUFFER_OR_USM_PTR(12, "std::complex<double>"), ARG(13))))
+
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasNrm2Ex",
@@ -471,48 +519,48 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSgemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0), ARG(1),
+    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
          BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), QUEUESTR),
+         ARG(3), ARG(4), ARG(5),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), DEREF(0)),
          BUFFER_OR_USM_PTR(7, "float"), ARG(8), BUFFER_OR_USM_PTR(9, "float"),
          ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), QUEUESTR),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), DEREF(0)),
          BUFFER_OR_USM_PTR(12, "float"), ARG(13))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasDgemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0), ARG(1),
+    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
          BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), QUEUESTR),
+         ARG(3), ARG(4), ARG(5),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), DEREF(0)),
          BUFFER_OR_USM_PTR(7, "double"), ARG(8), BUFFER_OR_USM_PTR(9, "double"),
          ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), QUEUESTR),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), DEREF(0)),
          BUFFER_OR_USM_PTR(12, "double"), ARG(13))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasCgemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0), ARG(1),
+    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
          BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), QUEUESTR),
+         ARG(3), ARG(4), ARG(5),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), DEREF(0)),
          BUFFER_OR_USM_PTR(7, "std::complex<float>"), ARG(8),
          BUFFER_OR_USM_PTR(9, "std::complex<float>"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), QUEUESTR),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), DEREF(0)),
          BUFFER_OR_USM_PTR(12, "std::complex<float>"), ARG(13))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasZgemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0), ARG(1),
+    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
          BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), QUEUESTR),
+         ARG(3), ARG(4), ARG(5),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), DEREF(0)),
          BUFFER_OR_USM_PTR(7, "std::complex<double>"), ARG(8),
          BUFFER_OR_USM_PTR(9, "std::complex<double>"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), QUEUESTR),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), DEREF(0)),
          BUFFER_OR_USM_PTR(12, "std::complex<double>"), ARG(13))))

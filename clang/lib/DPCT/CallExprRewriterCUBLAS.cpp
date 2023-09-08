@@ -27,6 +27,9 @@ public:
       clang::dpct::print(Stream, E);
       Stream << "))";
     } else {
+      if (DataType == "std::complex<float>" ||
+          DataType == "std::complex<double>")
+        Stream << "(" << DataType << "*)";
       clang::dpct::print(Stream, E);
     }
   }

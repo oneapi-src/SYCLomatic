@@ -1756,6 +1756,10 @@ void MapNames::setExplicitNamespaceMap() {
   };
 
   BLASAPIWithRewriter = {
+      {"cublasSgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasDgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasCgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasZgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasNrm2Ex", getDpctNamespace() + "nrm2_ex"},
       {"cublasDotEx", getDpctNamespace() + "dot_ex"},
       {"cublasDotcEx", getDpctNamespace() + "dotc_ex"},
