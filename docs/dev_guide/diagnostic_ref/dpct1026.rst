@@ -46,6 +46,10 @@ For example, this original CUDA\* code:
    __device__ void bar(int *a) {
      __ldg(a);
    }
+
+   __global__ void kernel() {
+     return;
+   }
    
    void foo() {
      cudaLimit limit;
@@ -60,6 +64,19 @@ For example, this original CUDA\* code:
      cudaDeviceSetCacheConfig(cudaFuncCachePreferNone);
      cudaSetDeviceFlags(flags);
      cuInit(0);
+     float *aptr;
+     cudaStreamAttrValue stream_attribute = {};
+     stream_attribute.accessPolicyWindow.base_ptr = aptr;
+     stream_attribute.accessPolicyWindow.num_bytes = 8 * 8 * 8;
+     stream_attribute.accessPolicyWindow.hitRatio = 1.0f;
+     stream_attribute.accessPolicyWindow.hitProp = cudaAccessPropertyPersisting;
+     stream_attribute.accessPolicyWindow.missProp = cudaAccessPropertyStreaming;
+     cudaStreamSetAttribute(stream, cudaStreamAttributeAccessPolicyWindow, &stream_attribute);
+     cudaStreamGetAttribute(stream, cudaStreamAttributeAccessPolicyWindow, &stream_attribute);
+     cudaCtxResetPersistingL2Cache();
+     cuCtxResetPersistingL2Cache();
+     cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, 8 * 8 * 8);
+     cudaFuncSetAttribute(kernel, cudaFuncAttributePreferredSharedMemoryCarveout, 8 * 8 * 8);
    }
 
 results in the following migrated SYCL code:
@@ -74,13 +91,17 @@ results in the following migrated SYCL code:
      */
      *a;
    }
+
+   void kernel() {
+     return;
+   }
    
    void foo() {
      cudaLimit limit;
      dpct::queue_ptr stream;
      unsigned int flags;
      int config;
-   
+    
      /*
      DPCT1026:1: The call to cudaDeviceSetLimit was removed because SYCL currently
      does not support setting resource limits on devices.
@@ -109,6 +130,35 @@ results in the following migrated SYCL code:
      DPCT1026:7: The call to cuInit was removed because this call is redundant in
      SYCL.
      */
+     float *aptr;
+     /*
+     DPCT1007:8: Migration of cudaStreamAttrValue is not supported.
+     */
+     cudaStreamAttrValue stream_attribute = {};
+     /*
+     DPCT1026:9: The call to cudaStreamSetAttribute was removed because SYCL currently
+     does not support setting cache config on devices.
+     */
+     /*
+     DPCT1026:10: The call to cudaStreamGetAttribute was removed because SYCL currently
+     does not support setting cache config on devices.
+     */
+     /*
+     DPCT1026:11: The call to cudaCtxResetPersistingL2Cache was removed because SYCL
+     currently does not support setting cache config on devices.
+     */
+     /*
+     DPCT1026:12: The call to cuCtxResetPersistingL2Cache was removed because SYCL
+     currently does not support setting cache config on devices.
+     */
+     /*
+     DPCT1026:13: The call to cudaFuncSetAttribute was removed because SYCL currently
+     does not support corresponding setting.
+     */
+     /*
+     DPCT1026:14: The call to cudaFuncSetAttribute was removed because SYCL currently
+     does not support corresponding setting.
+     */
    }
 
 which is rewritten to:
@@ -125,8 +175,8 @@ which is rewritten to:
      dpct::queue_ptr stream;
      unsigned int flags;
      size_t count;
-     float *ptr;
-     
      int config;
+     float *aptr;
+
    }
 
