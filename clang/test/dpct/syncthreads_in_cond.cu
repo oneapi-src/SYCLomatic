@@ -12,19 +12,19 @@ __device__ void test1(int *a) {
   __syncthreads();
   // check-achor-end-1
   // CHECK: check-achor-begin-1
-  // CHECK-NOT: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+  // CHECK-NOT: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
   // CHECK: check-achor-end-1
 
   // switch
   switch (tid) {
   case 0:
     a[0] = 1;
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     __syncthreads();
     break;
   case 1:
     a[1] = 1;
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     __syncthreads();
     break;
   default:
@@ -33,44 +33,44 @@ __device__ void test1(int *a) {
 
   // if
   if (tid > 32) {
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     __syncthreads();
   } else {
     a[tid] = 0;
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     __syncthreads();
   }
 
   // do
   do {
     a[tid] = a[tid - 1] + a[tid - 2];
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     __syncthreads();
   } while (a[tid]);
 
   // while
   while (a[tid])
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     __syncthreads();
 
   // early return
   if (tid < 32)
     return;
 
-  // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+  // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
   __syncthreads();
   a[tid] = a[tid - 1] + a[tid - 2];
 }
 
 __device__ void test2(int *a) {
   if (threadIdx.x > 10)
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     test1(a);
 
   if (threadIdx.x < 5)
     return;
 
-  // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+  // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
   test1(a);
 }
 
@@ -84,25 +84,25 @@ __device__ void test3(int *a) {
   test2(a);
   // check-achor-end-2
   // CHECK: check-achor-begin-2
-  // CHECK-NOT: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+  // CHECK-NOT: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
   // CHECK: check-achor-end-2
 
   if (threadIdx.x > 10)
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     test2(a);
 
   if (threadIdx.x < 5)
     return;
-  // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+  // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
   test2(a);
 
   for (int i = 0; i < 10; ++i) {
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     test2(a);
   }
 
   do {
-    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK: DPCT1118:{{.*}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     test2(a);
   } while (*a < 10);
 }

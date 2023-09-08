@@ -1655,7 +1655,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusolverAlgMode_t", "cusparseIndexType_t", "cusparseFormat_t",
               "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
-              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t"))))))
+              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t",
+              "cudaFuncAttributes"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -11948,27 +11949,23 @@ REGISTER_RULE(SyncThreadsMigrationRule, PassKind::PK_Migration)
 
 void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      varDecl(hasType(recordDecl(hasName("cudaFuncAttributes")))).bind("decl"),
-      this);
-  MF.addMatcher(
       callExpr(callee(functionDecl(hasAnyName("cudaFuncGetAttributes"))))
           .bind("call"),
       this);
   MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("cuFuncGetAttribute"))))
                     .bind("callFuncGetAttribute"),
                 this);
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(
-                               recordDecl(hasName("cudaFuncAttributes")))))
-                    .bind("member"),
-                this);
+  MF.addMatcher(
+      memberExpr(anyOf(has(implicitCastExpr(hasType(pointsTo(
+                           recordDecl(hasName("cudaFuncAttributes")))))),
+                       hasObjectExpression(
+                           hasType(recordDecl(hasName("cudaFuncAttributes"))))))
+          .bind("member"),
+      this);
 }
 
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto V = getNodeAsType<VarDecl>(Result, "decl")) {
-    emplaceTransformation(new ReplaceTypeInDecl(
-        V, MapNames::getDpctNamespace() + "kernel_function_info"));
-    requestFeature(HelperFeatureEnum::device_ext);
-  } else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
+  if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     requestFeature(HelperFeatureEnum::device_ext);
     emplaceTransformation(new ReplaceToken(
         C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
@@ -13529,38 +13526,41 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     Toklen = Lexer::MeasureTokenLength(
         End, SM, DpctGlobalInfo::getContext().getLangOpts());
     Len = SM.getFileOffset(End) - SM.getFileOffset(Beg) + Toklen;
-    auto Iter = MapNames::MathFuncNameMap.find(UD->getNameAsString());
-    if (Iter != MapNames::MathFuncNameMap.end()) {
-      DpctGlobalInfo::getInstance().insertHeader(UD->getBeginLoc(), HT_Math);
-      std::string Repl{"using "};
-      Repl += Iter->second;
+
+    bool IsAllTargetsInCUDA = true;
+    for (const auto &child : UD->getDeclContext()->decls()) {
+      if (child == UD) {
+        continue;
+      } else if (const clang::UsingShadowDecl *USD =
+                     dyn_cast<UsingShadowDecl>(child)) {
+        if (USD->getIntroducer() == UD) {
+          if (const auto *FD = dyn_cast<FunctionDecl>(USD->getTargetDecl())) {
+            if (!isFromCUDA(FD)) {
+              IsAllTargetsInCUDA = false;
+              break;
+            }
+          } else if (const auto *FTD =
+                         dyn_cast<FunctionTemplateDecl>(USD->getTargetDecl())) {
+            if (!isFromCUDA(FTD)) {
+              IsAllTargetsInCUDA = false;
+              break;
+            }
+          } else {
+            IsAllTargetsInCUDA = false;
+            break;
+          }
+        }
+      }
+    }
+
+    if (IsAllTargetsInCUDA) {
       auto NextTok = Lexer::findNextToken(
           End, SM, DpctGlobalInfo::getContext().getLangOpts());
-      if (!NextTok.has_value() || !NextTok.value().is(tok::semi)) {
-        Repl += ";";
+      if (NextTok.has_value() && NextTok.value().is(tok::semi)) {
+        Len = SM.getFileOffset(NextTok.value().getLocation()) -
+              SM.getFileOffset(Beg) + 1;
       }
-      emplaceTransformation(new ReplaceText(Beg, Len, std::move(Repl)));
-    } else if (MapNames::MathFuncImpledWithNewRewriter.count(
-                   UD->getNameAsString()) &&
-               UD->getBeginLoc().isFileID() && UD->getEndLoc().isFileID()) {
-      const NestedNameSpecifier *Specifier = UD->getQualifier();
-      if (UD->getCanonicalDecl()) {
-        Specifier = UD->getCanonicalDecl()->getQualifier();
-      }
-      if (Specifier &&
-          ((Specifier->getKind() ==
-            clang::NestedNameSpecifier::SpecifierKind::Global) ||
-           (Specifier->getKind() ==
-                clang::NestedNameSpecifier::SpecifierKind::Namespace &&
-            Specifier->getAsNamespace()->getNameAsString() == "std"))) {
-        auto NextTok = Lexer::findNextToken(
-            End, SM, DpctGlobalInfo::getContext().getLangOpts());
-        if (NextTok.has_value() && NextTok.value().is(tok::semi)) {
-          Len = SM.getFileOffset(NextTok.value().getLocation()) -
-                SM.getFileOffset(Beg) + 1;
-        }
-        emplaceTransformation(new ReplaceText(Beg, Len, ""));
-      }
+      emplaceTransformation(new ReplaceText(Beg, Len, ""));
     }
   }
 }
