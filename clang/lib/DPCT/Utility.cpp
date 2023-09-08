@@ -3287,35 +3287,30 @@ bool isAncestorOf(const Stmt *Descendant, const Stmt *Ancestor) {
 /// This function first finds the nearest flow control stmt in the
 /// ancestors of \p S, then returns the body (CompoundStmt) of that
 /// flow control stmt
-const clang::CompoundStmt *getBodyofAncestorFCStmt(const clang::Stmt *S) {
+const clang::Stmt *getBodyofAncestorFCStmt(const clang::Stmt *S) {
   auto FlowControlStmt = getAncestorFlowControl(S, nullptr);
   if (!FlowControlStmt)
     return nullptr;
   auto StmtClass = FlowControlStmt->getStmtClass();
-  const clang::CompoundStmt *CS = nullptr;
+  const clang::Stmt *CS = nullptr;
   switch (StmtClass) {
   case Stmt::StmtClass::WhileStmtClass: {
-    CS = dyn_cast_or_null<CompoundStmt>(
-        dyn_cast<WhileStmt>(FlowControlStmt)->getBody());
+    CS = dyn_cast<WhileStmt>(FlowControlStmt)->getBody();
     break;
   }
   case Stmt::StmtClass::ForStmtClass: {
-    CS = dyn_cast_or_null<CompoundStmt>(
-        dyn_cast<ForStmt>(FlowControlStmt)->getBody());
+    CS = dyn_cast<ForStmt>(FlowControlStmt)->getBody();
     break;
   }
   case Stmt::StmtClass::DoStmtClass: {
-    CS = dyn_cast_or_null<CompoundStmt>(
-        dyn_cast<DoStmt>(FlowControlStmt)->getBody());
+    CS = dyn_cast<DoStmt>(FlowControlStmt)->getBody();
     break;
   }
   case Stmt::StmtClass::IfStmtClass: {
     if (isAncestorOf(S, dyn_cast<IfStmt>(FlowControlStmt)->getThen())) {
-      CS = dyn_cast_or_null<CompoundStmt>(
-          dyn_cast<IfStmt>(FlowControlStmt)->getThen());
+      CS = dyn_cast<IfStmt>(FlowControlStmt)->getThen();
     } else {
-      CS = dyn_cast_or_null<CompoundStmt>(
-          dyn_cast<IfStmt>(FlowControlStmt)->getElse());
+      CS = dyn_cast<IfStmt>(FlowControlStmt)->getElse();
     }
     break;
   }
@@ -3572,22 +3567,8 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CE)
     return false;
 
-  if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
-    auto CpyKind = Direction->getDecl()->getName();
-    if (CpyKind == "cudaMemcpyDeviceToDevice") {
-      return true;
-    }
-    if (CpyKind == "cudaMemcpyHostToDevice" &&
-        dpct::DpctGlobalInfo::isOptimizeMigration()) {
-      auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
-      clang::dpct::DiagnosticsUtils::report(
-          LocInfo.first, LocInfo.second, clang::dpct::Diagnostics::WAIT_REMOVE,
-          true, false);
-      return true;
-    }
-  }
-
-  const clang::CompoundStmt *CS = getBodyofAncestorFCStmt(CE);
+  const clang::CompoundStmt *CS =
+      dyn_cast_or_null<clang::CompoundStmt>(getBodyofAncestorFCStmt(CE));
   if (!CS) {
     auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
     if (!FD)
@@ -3597,6 +3578,98 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
 
   if (!CS)
     return false;
+
+  if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
+    auto CpyKind = Direction->getDecl()->getName();
+    if (CpyKind == "cudaMemcpyDeviceToDevice") {
+      return true;
+    }
+    if (CpyKind == "cudaMemcpyHostToDevice" &&
+        dpct::DpctGlobalInfo::isOptimizeMigration()) {
+      if (auto Body = getBodyofAncestorFCStmt(CE)) {
+        if (dpct::DpctGlobalInfo::isAncestor(Body, CE)) {
+          return false;
+        }
+      }
+      auto SrcExpr = CE->getArg(1);
+      auto AddrOfMatcher =
+          clang::ast_matchers::findAll(clang::ast_matchers::unaryOperator(
+              clang::ast_matchers::hasOperatorName("&")));
+      auto AddrOfMatchedResults = clang::ast_matchers::match(
+          AddrOfMatcher, *SrcExpr, clang::dpct::DpctGlobalInfo::getContext());
+      if (AddrOfMatchedResults.size() == 0) {
+        auto SyncPointMatcher = clang::ast_matchers::findAll(
+            clang::ast_matchers::callExpr(
+                clang::ast_matchers::callee(clang::ast_matchers::functionDecl(
+                    clang::ast_matchers::hasAnyName("cudaDeviceSynchronize"))))
+                .bind("SyncPoint"));
+        auto CEBegLocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
+        auto CEEndLocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getEndLoc());
+        std::set<const clang::DeclRefExpr *> DRESet;
+        bool HasCallExpr = false;
+        bool isSrcPointerFreedAfterCE = false;
+        std::vector<const clang::DeclRefExpr *> DREMatchResult;
+        std::set<const clang::DeclRefExpr *> SrcDRESet;
+        std::set<unsigned int> SyncPointOffset;
+        auto SyncPointMatchedResults = clang::ast_matchers::match(
+            SyncPointMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+        for (auto &SP : SyncPointMatchedResults) {
+          if (const CallExpr *SPCE = SP.getNodeAs<CallExpr>("SyncPoint")) {
+            if (auto Body = getBodyofAncestorFCStmt(SPCE)) {
+              if (dpct::DpctGlobalInfo::isAncestor(Body, SPCE)) {
+                continue;
+              }
+            }
+            SyncPointOffset.insert(
+                dpct::DpctGlobalInfo::getLocInfo(SPCE->getBeginLoc()).second);
+          }
+        }
+        auto checkIfSrcPointerFreedAfterCE = [&]() {
+          for (auto &D : DREMatchResult) {
+            if (auto ParentCE =
+                    clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(D)) {
+              auto DC = ParentCE->getDirectCallee();
+              if (!DC) {
+                continue;
+              }
+              std::string FuncName = getFunctionName(DC);
+              auto DRELocInfo =
+                  dpct::DpctGlobalInfo::getLocInfo(D->getEndLoc());
+              if ((FuncName == "free" || FuncName == "cudaFreeHost") &&
+                  (DRELocInfo.second > CEEndLocInfo.second)) {
+                bool FreeAfterSyncPoint = false;
+                for (auto &Offset : SyncPointOffset) {
+                  if ((Offset > CEEndLocInfo.second) &&
+                      (Offset < DRELocInfo.second)) {
+                    FreeAfterSyncPoint = true;
+                    break;
+                  }
+                }
+                if (!FreeAfterSyncPoint) {
+                  return true;
+                }
+              }
+            }
+          }
+          return false;
+        };
+        findDREs(SrcExpr, SrcDRESet, HasCallExpr);
+        for (auto &SrcDRE : SrcDRESet) {
+          findAllVarRef(SrcDRE, DREMatchResult);
+          if (isSrcPointerFreedAfterCE = checkIfSrcPointerFreedAfterCE()) {
+            break;
+          }
+          DREMatchResult.clear();
+        }
+        if (!isSrcPointerFreedAfterCE) {
+          clang::dpct::DiagnosticsUtils::report(
+              CEBegLocInfo.first, CEBegLocInfo.second,
+              clang::dpct::Diagnostics::WAIT_REMOVE, true, false);
+          return true;
+        }
+      }
+    }
+  }
 
   auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
   auto CSLocInfo = clang::dpct::DpctGlobalInfo::getLocInfo(
