@@ -60,10 +60,10 @@ cub::DeviceAdjacentDifference::SubtractLeftCopy,NO,
 cub::DeviceAdjacentDifference::SubtractLeft,NO,
 cub::DeviceAdjacentDifference::SubtractRightCopy,NO,
 cub::DeviceAdjacentDifference::SubtractRight,NO,
-cub::DeviceHistogram::HistogramEven,NO,
-cub::DeviceHistogram::MultiHistogramEven,NO,
-cub::DeviceHistogram::HistogramRange,NO,
-cub::DeviceHistogram::MultiHistogramRange,NO,
+cub::DeviceHistogram::HistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceHistogram::MultiHistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceHistogram::HistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceHistogram::MultiHistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DevicePartition::Flagged,NO,
 cub::DevicePartition::If,NO,
 cub::DeviceMergeSort::SortPairs,NO,
@@ -84,7 +84,7 @@ cub::DeviceReduce::Max,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::ArgMax,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::ReduceByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRunLengthEncode::Encode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceRunLengthEncode::NonTrivialRuns,NO,
+cub::DeviceRunLengthEncode::NonTrivialRuns,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceScan::ExclusiveSum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceScan::ExclusiveScan,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceScan::InclusiveSum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
