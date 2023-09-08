@@ -1655,7 +1655,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusolverAlgMode_t", "cusparseIndexType_t", "cusparseFormat_t",
               "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
-              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t"))))))
+              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t",
+              "cudaFuncAttributes"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -11946,27 +11947,23 @@ REGISTER_RULE(SyncThreadsMigrationRule, PassKind::PK_Migration)
 
 void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      varDecl(hasType(recordDecl(hasName("cudaFuncAttributes")))).bind("decl"),
-      this);
-  MF.addMatcher(
       callExpr(callee(functionDecl(hasAnyName("cudaFuncGetAttributes"))))
           .bind("call"),
       this);
   MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("cuFuncGetAttribute"))))
                     .bind("callFuncGetAttribute"),
                 this);
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(
-                               recordDecl(hasName("cudaFuncAttributes")))))
-                    .bind("member"),
-                this);
+  MF.addMatcher(
+      memberExpr(anyOf(has(implicitCastExpr(hasType(pointsTo(
+                           recordDecl(hasName("cudaFuncAttributes")))))),
+                       hasObjectExpression(
+                           hasType(recordDecl(hasName("cudaFuncAttributes"))))))
+          .bind("member"),
+      this);
 }
 
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto V = getNodeAsType<VarDecl>(Result, "decl")) {
-    emplaceTransformation(new ReplaceTypeInDecl(
-        V, MapNames::getDpctNamespace() + "kernel_function_info"));
-    requestFeature(HelperFeatureEnum::device_ext);
-  } else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
+  if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     requestFeature(HelperFeatureEnum::device_ext);
     emplaceTransformation(new ReplaceToken(
         C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
