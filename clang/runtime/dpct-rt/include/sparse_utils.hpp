@@ -366,6 +366,9 @@ public:
     if (_data_format != matrix_format::csr) {
       throw std::runtime_error("the sparse matrix data format is unsupported");
     }
+    if (!_row_ptr) {
+      throw std::runtime_error("the row_ptr is NULL");
+    }
     oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle);
     construct();
   }
@@ -426,7 +429,10 @@ public:
   /// Set the value pointer of this descriptor
   /// \param [in] value The input value pointer
   void set_value(void *value) {
-    // Assume the new data is different from the old data
+    if (value) {
+      throw std::runtime_error("the value pointer can be reset only when the "
+                               "original pointer is NULL");
+    }
     _value = value;
     construct();
   }
@@ -500,7 +506,17 @@ public:
   /// numbering.
   /// \param [in] value An array containing the non-zero elements of the sparse matrix.
   void set_pointers(void *row_ptr, void *col_ind, void *value) {
-    // Assume the new data is different from the old data
+    if (_row_ptr != row_ptr) {
+      throw std::runtime_error("the row_ptr cannot be changed");
+    }
+    if (_col_ind) {
+      throw std::runtime_error("the col_ind pointer can be reset only when the "
+                               "original pointer is NULL");
+    }
+    if (_value) {
+      throw std::runtime_error("the value pointer can be reset only when the "
+                               "original pointer is NULL");
+    }
     _row_ptr = row_ptr;
     _col_ind = col_ind;
     _value = value;
@@ -522,24 +538,8 @@ public:
 
 private:
   template <typename index_t, typename value_t> void set_data() {
-    void *row_ptr = nullptr;
-    if (!_row_ptr && !_temp_row_ptr) {
-      row_ptr = _temp_row_ptr = dpct::dpct_malloc(
-          sizeof(index_t) * (_row_num + 1), get_default_queue());
-    } else if (!_row_ptr && _temp_row_ptr) {
-      row_ptr = _temp_row_ptr;
-    } else if (_row_ptr && !_temp_row_ptr) {
-      row_ptr = _row_ptr;
-    } else if (_row_ptr && _temp_row_ptr) {
-      dpct::dpct_memcpy(
-          _row_ptr, _temp_row_ptr, sizeof(index_t) * (_row_num + 1),
-          memcpy_direction::device_to_device, get_default_queue());
-      row_ptr = _row_ptr;
-      dpct::dpct_free(_temp_row_ptr, get_default_queue());
-      _temp_row_ptr = nullptr;
-    }
     auto data_row_ptr =
-        dpct::detail::get_memory(reinterpret_cast<index_t *>(row_ptr));
+        dpct::detail::get_memory(reinterpret_cast<index_t *>(_row_ptr));
     auto data_col_ind =
         dpct::detail::get_memory(reinterpret_cast<index_t *>(_col_ind));
     auto data_value =
@@ -621,7 +621,6 @@ private:
   matrix_format _data_format;
   std::optional<oneapi::mkl::uplo> _uplo;
   std::optional<oneapi::mkl::diag> _diag;
-  void *_temp_row_ptr = nullptr;
 };
 
 namespace detail {

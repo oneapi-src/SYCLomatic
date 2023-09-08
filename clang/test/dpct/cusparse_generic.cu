@@ -181,3 +181,23 @@ int main() {
 
   return 0;
 }
+
+void foo1() {
+  cusparseSpMatDescr_t spMatDescr;
+  int64_t rows;
+  int64_t cols;
+  int64_t nnz;
+  void *csrRowOffsets;
+  void *csrColInd;
+  void *csrValues;
+  cusparseIndexType_t csrRowOffsetsType;
+  cusparseIndexType_t csrColIndType;
+  cusparseIndexBase_t idxBase;
+  cudaDataType valueType;
+
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1119:{{[0-9]+}}: The memory of row_ptr is not allocated. You need to allocate the memory before invoking oneapi::mkl::sparse::set_csr_data().
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:spMatDescr = std::make_shared<dpct::sparse::sparse_matrix_desc>(rows, cols, nnz, nullptr, nullptr, nullptr, csrRowOffsetsType, csrColIndType, idxBase, valueType, dpct::sparse::matrix_format::csr);
+  cusparseCreateCsr(&spMatDescr, rows, cols, nnz, NULL, NULL, NULL, csrRowOffsetsType, csrColIndType, idxBase, valueType);
+}
