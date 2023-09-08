@@ -1806,7 +1806,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
       {"cublasZrot_v2", getDpctNamespace() + "rot"},
       {"cublasGetStatusString", ""},
-      {"cublasSgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"}};
+      {"cublasSgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasDgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasCgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasZgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"}};
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
                            "cusolverDnSetStream",

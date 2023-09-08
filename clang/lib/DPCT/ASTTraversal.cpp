@@ -4155,7 +4155,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasSsymm", "cublasDsymm", "cublasCsymm", "cublasZsymm",
         "cublasChemm", "cublasZhemm", "cublasStrsm", "cublasDtrsm",
         "cublasCtrsm", "cublasZtrsm", "cublasStrmm", "cublasDtrmm",
-        "cublasCtrmm", "cublasZtrmm", "cublasSgemm_v2_64");
+        "cublasCtrmm", "cublasZtrmm", "cublasSgemm_v2_64", "cublasDgemm_v2_64",
+        "cublasCgemm_v2_64", "cublasZgemm_v2_64");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),

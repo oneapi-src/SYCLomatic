@@ -721,10 +721,6 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
   }
 }
 
-template <typename T> inline T &cast_to_lvalue_ref(T &&temp) {
-  return static_cast<T &>(temp);
-}
-
 /// Get the data pointed from \p ptr as a 1D buffer reinterpreted as type T.
 template <typename T> static sycl::buffer<T> get_buffer(const void *ptr) {
   if (!ptr)
