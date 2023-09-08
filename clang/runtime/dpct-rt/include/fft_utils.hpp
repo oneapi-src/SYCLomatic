@@ -1170,9 +1170,11 @@ private:
       auto data_input =                                                        \
           dpct::detail::get_memory(reinterpret_cast<T *>(input));              \
       if (_direction == fft_direction::forward) {                              \
-        oneapi::mkl::dft::compute_forward(*DESC, data_input);                  \
+        oneapi::mkl::dft::compute_forward<                                     \
+            std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
       } else {                                                                 \
-        oneapi::mkl::dft::compute_backward(*DESC, data_input);                 \
+        oneapi::mkl::dft::compute_backward<                                    \
+            std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
       }                                                                        \
     } else {                                                                   \
       auto data_input =                                                        \
@@ -1180,9 +1182,13 @@ private:
       auto data_output =                                                       \
           dpct::detail::get_memory(reinterpret_cast<T *>(output));             \
       if (_direction == fft_direction::forward) {                              \
-        oneapi::mkl::dft::compute_forward(*DESC, data_input, data_output);     \
+        oneapi::mkl::dft::compute_forward<                                     \
+            std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, \
+                                                            data_output);      \
       } else {                                                                 \
-        oneapi::mkl::dft::compute_backward(*DESC, data_input, data_output);    \
+        oneapi::mkl::dft::compute_backward<                                    \
+            std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, \
+                                                            data_output);      \
       }                                                                        \
     }                                                                          \
   }
