@@ -482,6 +482,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
       {"__half_raw", std::make_shared<TypeNameRule>("uint16_t")},
+      {"cudaFuncAttributes",
+       std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
+                                      "kernel_function_info")},
       // ...
   };
 
