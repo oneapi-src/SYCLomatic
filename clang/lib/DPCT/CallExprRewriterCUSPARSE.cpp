@@ -19,11 +19,21 @@ public:
   const Expr *E = nullptr;
 
   template <class StreamT> void print(StreamT &Stream) const {
-    if (dyn_cast_or_null<GNUNullExpr>(E->IgnoreImpCasts())) {
-      Stream << "nullptr";
-    } else {
-      clang::dpct::print(Stream, E);
+    const Expr *Arg = E->IgnoreImpCasts();
+    Expr::EvalResult ArgResult;
+    if ((!Arg->isValueDependent()) &&
+        (Arg->EvaluateAsInt(ArgResult, dpct::DpctGlobalInfo::getContext()))) {
+      int64_t Value = ArgResult.Val.getInt().getExtValue();
+      if (!Value) {
+        Stream << "nullptr";
+        return;
+      }
     }
+    if (dyn_cast<GNUNullExpr>(E)) {
+      Stream << "nullptr";
+      return;
+    }
+    clang::dpct::print(Stream, E);
   }
 
   static NullptrOrCallArgExpr create(const Expr *E);
