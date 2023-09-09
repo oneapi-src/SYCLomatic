@@ -147,7 +147,11 @@ protected:
   /// For writeWithSizeLimit in text mode, each newline takes 1 additional byte
   /// on Windows when actually written to the file, but not written to a memory
   /// buffer. This needs to be accounted for when rewriting the profile.
+#ifdef SYCLomatic_CUSTOMIZATION
+  size_t LineCount = 0;
+#else
   size_t LineCount;
+#endif // SYCLomatic_CUSTOMIZATION
 
   /// Output stream where to emit the profile to.
   std::unique_ptr<raw_ostream> OutputStream;
@@ -370,10 +374,18 @@ private:
   // real output.
   std::unique_ptr<raw_ostream> LocalBufStream;
   // The location where the output stream starts.
+#ifdef SYCLomatic_CUSTOMIZATION
+  uint64_t FileStart = 0;
+#else
   uint64_t FileStart;
+#endif // SYCLomatic_CUSTOMIZATION
   // The location in the output stream where the SecHdrTable should be
   // written to.
+#ifdef SYCLomatic_CUSTOMIZATION
+  uint64_t SecHdrTableOffset = 0;
+#else
   uint64_t SecHdrTableOffset;
+#endif // SYCLomatic_CUSTOMIZATION
   // The table contains SecHdrTableEntry entries in order of how they are
   // populated in the writer. It may be different from the order in
   // SectionHdrLayout which specifies the sequence in which sections will

@@ -255,7 +255,11 @@ public:
 
   GCOVFile &file;
   uint32_t ident = 0;
+#ifdef SYCLomatic_CUSTOMIZATION
+  uint32_t linenoChecksum = 0;
+#else
   uint32_t linenoChecksum;
+#endif // SYCLomatic_CUSTOMIZATION
   uint32_t cfgChecksum = 0;
   uint32_t startLine = 0;
   uint32_t startColumn = 0;

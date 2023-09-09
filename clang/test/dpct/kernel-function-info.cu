@@ -28,6 +28,7 @@ void getTemplateFuncAttrs()
 
 void getFuncAttrs()
 {
+<<<<<<< HEAD
   //CHECK: dpct::kernel_function_info attrs;
   cudaFuncAttributes attrs;
 
@@ -36,10 +37,16 @@ void getFuncAttrs()
   cudaError_t err;
   //CHECK:  err = DPCT_CHECK_ERROR(dpct::get_kernel_function_info(&attrs, (const void *)testKernel));
   err = cudaFuncGetAttributes(&attrs, testKernel);
+=======
+  //CHECK: dpct::kernel_function_info *attrs;
+  cudaFuncAttributes *attrs;
+>>>>>>> SYCLomatic/SYCLomatic
 
-  //CHECK: int threadPerBlock = attrs.max_work_group_size;
-  int threadPerBlock = attrs.maxThreadsPerBlock;
+  //CHECK: DPCT_CHECK_ERROR(dpct::get_kernel_function_info(attrs, (const void *)testKernel));
+  cudaFuncGetAttributes(attrs, testKernel);
 
+  //CHECK: int threadPerBlock = attrs->max_work_group_size;
+  int threadPerBlock = attrs->maxThreadsPerBlock;
 }
 
 int main()

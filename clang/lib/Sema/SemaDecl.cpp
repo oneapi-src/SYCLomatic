@@ -5926,6 +5926,10 @@ Decl *Sema::BuildMicrosoftCAnonymousStruct(Scope *S, DeclSpec &DS,
   Chain.push_back(Anon);
 
   RecordDecl *RecordDef = Record->getDefinition();
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (!RecordDef)
+    return Anon;
+#endif //SYCLomatic_CUSTOMIZATION
   if (RequireCompleteSizedType(Anon->getLocation(), RecTy,
                                diag::err_field_incomplete_or_sizeless) ||
       InjectAnonymousStructOrUnionMembers(
