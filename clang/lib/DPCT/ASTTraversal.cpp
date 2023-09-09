@@ -12338,12 +12338,7 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
 }
 
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
-<<<<<<< HEAD
-  if (auto V = getNodeAsType<VarDecl>(Result, "decl")) {
-    emplaceTransformation(new ReplaceTypeInDecl(
-        V, MapNames::getDpctNamespace() + "kernel_function_info"));
-    requestFeature(HelperFeatureEnum::device_ext);
-  } else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
+  if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     if (isAssigned(C)) {
       requestFeature(HelperFeatureEnum::device_ext);
       emplaceTransformation(new ReplaceToken(
@@ -12355,9 +12350,6 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
           new ReplaceToken(C->getBeginLoc(), MapNames::getDpctNamespace() +
                                                  "get_kernel_function_info"));
     }
-=======
-  if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
->>>>>>> SYCLomatic/SYCLomatic
     requestFeature(HelperFeatureEnum::device_ext);
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));
