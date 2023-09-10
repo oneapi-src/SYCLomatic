@@ -11,7 +11,7 @@ Frequently Asked Questions
 * `How do I use the migrated module file in the new project?`_
 * `Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?`_
 * `How do I migrate CUDA\* source code that contains CUB library implementation source code?`_
-* `How do I fix the hang issue of sycl code caused by work group level synchronization like group barrier used in conditional statement?`_
+* `How do I fix the issue of SYCL\* code hanging due to work group level synchronization, such as a group barrier used in a conditional statement?`_
 
 **Troubleshooting Migration**
 
@@ -163,20 +163,20 @@ expected results. Instead, exclude CUB library implementation source code from
 your migration by adding ``--in-root-exclude=<path to CUB library source code>``
 to your migration command.
 
-How do I fix the hang issue of sycl code caused by work group level synchronization like group barrier used in conditional statement?
-*************************************************************************************************************************************
+How do I fix the issue of SYCL\* code hanging due to work group level synchronization, such as a group barrier used in a conditional statement?
+***********************************************************************************************************************************************
 
-In SYCL code, if there is calling of synchronization API in control flow statements
-like conditional statement and loop statement, you may encounter runtime hang issue.
+If synchronization API in control flow statements like a conditional statement and
+loop statement are called in SYCL code, you may encounter a runtime hang issue.
 The basic idea to fix the hang issue is to ensure that each synchronization API is
-either reached by all work items of a workgroup or skipped by all the work items of
+either reached by all work items of a workgroup, or skipped by all the work items of
 a workgroup.
 
-Here are two fix examples for reference:
+Here are two examples of how to fix:
 
-In the first example, synchronization API group barrier(nd_item.barrier()) is called
-inside an if block and the evaluation results of the conditional statement differs in
-each work item, not all work items can reach the synchronization API.
+In the first example, the synchronization API group barrier(nd_item.barrier()) is called
+inside an if block. The evaluation results of the conditional statement differ in
+each work item so not all work items can reach the synchronization API.
 
 .. code-block:: cpp
    :linenos:
