@@ -2728,8 +2728,14 @@ CallFunctionExpr::addStructureTextureObjectArg(unsigned ArgIdx,
                                                bool isKernelCall) {
   if (auto DRE = dyn_cast<DeclRefExpr>(TexRef->getBase())) {
     if (auto Info = std::dynamic_pointer_cast<StructureTextureObjectInfo>(
-      addTextureObjectArg(ArgIdx, DRE, isKernelCall))) {
+            addTextureObjectArg(ArgIdx, DRE, isKernelCall))) {
       return Info->addMember(TexRef);
+    }
+  } else if (auto This = dyn_cast<CXXThisExpr>(TexRef->getBase())) {
+    auto ThisObj = StructureTextureObjectInfo::create(This);
+    if (ThisObj) {
+      BaseTextureObject = std::move(ThisObj);
+      return BaseTextureObject->addMember(TexRef);
     }
   }
   return {};
@@ -2926,7 +2932,17 @@ void DeviceFunctionInfo::mergeTextureObjectList(
 }
 
 void DeviceFunctionInfo::mergeCalledTexObj(
+    std::shared_ptr<StructureTextureObjectInfo> BaseObj,
     const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
+  if (BaseObj) {
+    if (BaseObj->getParamIdx() < TextureObjectList.size()) {
+      auto &Parm = TextureObjectList[BaseObj->getParamIdx()];
+      if (Parm)
+        Parm->merge(BaseObj);
+      else
+        Parm = BaseObj;
+    }
+  }
   for (auto &Obj : TexObjList) {
     if (!Obj)
       continue;
@@ -2947,7 +2963,8 @@ void DeviceFunctionInfo::buildInfo() {
   for (auto &Call : CallExprMap) {
     Call.second->emplaceReplacement();
     VarMap.merge(Call.second->getVarMap());
-    mergeCalledTexObj(Call.second->getTextureObjectList());
+    mergeCalledTexObj(Call.second->getBaseTextureObjectInfo(),
+                      Call.second->getTextureObjectList());
   }
   VarMap.removeDuplicateVar();
 }
@@ -4492,6 +4509,22 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
   }
 
   return buildString(RegexPrefix, 'Q', Idx, RegexSuffix);
+}
+
+std::shared_ptr<StructureTextureObjectInfo>
+StructureTextureObjectInfo::create(const CXXThisExpr *This) {
+  auto RD = getRecordDecl(This->getType());
+  if (!RD)
+    return nullptr;
+
+  auto LocInfo = DpctGlobalInfo::getLocInfo(RD);
+
+  auto Ret = std::shared_ptr<StructureTextureObjectInfo>(
+      new StructureTextureObjectInfo(LocInfo.second, LocInfo.first,
+                                     RD->getName()));
+  Ret->ContainsVirtualPointer = checkPointerInStructRecursively(RD);
+  Ret->setType("", 0);
+  return Ret;
 }
 
 } // namespace dpct

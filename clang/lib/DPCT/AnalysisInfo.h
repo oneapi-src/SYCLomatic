@@ -2924,6 +2924,11 @@ class StructureTextureObjectInfo : public TextureObjectInfo {
   std::unordered_map<std::string, std::shared_ptr<MemberTextureObjectInfo>>
       Members;
   bool ContainsVirtualPointer;
+  bool IsBase = false;
+
+  StructureTextureObjectInfo(unsigned Offset, const std::string &FilePath,
+                             StringRef Name)
+      : TextureObjectInfo(Offset, FilePath, Name) {}
 
 public:
   StructureTextureObjectInfo(const ParmVarDecl *PVD) : TextureObjectInfo(PVD) {
@@ -2936,6 +2941,8 @@ public:
         checkPointerInStructRecursively(getRecordDecl(VD->getType()));
     setType("", 0);
   }
+  static std::shared_ptr<StructureTextureObjectInfo>
+  create(const CXXThisExpr *This);
   bool containsVirtualPointer() const { return ContainsVirtualPointer; }
   std::shared_ptr<MemberTextureObjectInfo> addMember(const MemberExpr *ME) {
     auto Member = MemberTextureObjectInfo::create(ME);
@@ -3461,6 +3468,9 @@ public:
   getTextureObjectList() {
     return TextureObjectList;
   }
+  std::shared_ptr<StructureTextureObjectInfo> getBaseTextureObjectInfo() const {
+    return BaseTextureObject;
+  }
 
   void emplaceReplacement();
   unsigned getExtraArgLoc() { return ExtraArgLoc; }
@@ -3573,6 +3583,7 @@ private:
   bool HasArgs = false;
   bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
+  std::shared_ptr<StructureTextureObjectInfo> BaseTextureObject;
 };
 
 // device function declaration info includes location, name, and related
@@ -3895,6 +3906,7 @@ public:
 
 private:
   void mergeCalledTexObj(
+      std::shared_ptr<StructureTextureObjectInfo> BaseObj,
       const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList);
 
   void mergeTextureObjectList(
