@@ -160,8 +160,6 @@ protected:
     DpctGlobalInfo::getInstance().insertHeader(GAS->getBeginLoc(), HT);
   }
 
-  static std::string SYCLNS() { return MapNames::getClNamespace(); }
-  static std::string DPCTNS() { return MapNames::getDpctNamespace(); }
   llvm::raw_ostream &OS() { return *Stream; }
   void switchOutStream(llvm::raw_ostream &NewOS) { Stream = &NewOS; }
 
@@ -559,186 +557,160 @@ protected:
       return SYCLGenError();
 
     OS() << " = ";
+    std::string Op[2];
+    for (int i = 0; i < 2; ++i)
+      if (tryEmitStmt(Op[i], I->getInputOperand(i)))
+        return SYCLGenError();
 
-    std::string Op1, Op2;
-
-    if (tryEmitStmt(Op1, I->getInputOperand(0)))
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, I->getType(0)))
       return SYCLGenError();
-
-    if (tryEmitStmt(Op2, I->getInputOperand(1)))
-      return SYCLGenError();
-
-    std::string Fmt;
-
-    // !sycl::isnan(X) && !sycl::isnan(Y)
-    auto NotNan = []() {
-      return llvm::Twine('!')
-          .concat(SYCLNS())
-          .concat("isnan({0}) && !")
-          .concat(SYCLNS())
-          .concat("isnan({1})")
-          .str();
+      
+    auto ExprCmp = [&](StringRef BinOp) {
+      OS() << Op[0] << ' ' << BinOp << ' ' << Op[1];
+    };
+    auto DpctCmp = [&](const char *Fmt) {
+      OS() << MapNames::getDpctNamespace()
+           << llvm::formatv(Fmt, TypeStr, Op[0], Op[1]);
     };
 
-    // sycl::isnan(X) || sycl::isnan(Y)
-    auto IsNan = []() {
-      return llvm::Twine(SYCLNS())
-          .concat("isnan({0}) || ")
-          .concat(SYCLNS())
-          .concat("isnan({1})")
-          .str();
-    };
-
-    auto CastOp = [&]() {
-      Op1 = Cast(T, I->getInputOperand(0)->getType(), Op1);
-      Op2 = Cast(T, I->getInputOperand(1)->getType(), Op2);
-    };
+    bool IsInteger = T->isSignedInt() || T->isUnsignedInt() || T->isBitSize();
 
     for (const auto A : I->attrs()) {
       switch (A) {
       case InstAttr::eq:
-        if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
-          Fmt = "{0} == {1}";
-        else if (T->isFloating()) {
-          Fmt = NotNan() + " && " + SYCLNS() + "isequal({0}, {1})";
-          CastOp();
-        } else
+        if (IsInteger)
+          ExprCmp("==");
+        else if (T->isFloating())
+          DpctCmp("compare<{0}>({1}, {2}, std::equal_to<>())");
+        else
           return SYCLGenError();
         break;
       case InstAttr::ne:
-        if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
-          Fmt = "{0} != {1}";
-        else if (T->isFloating()) {
-          Fmt = NotNan() + " && " + SYCLNS() + "isnotequal({0}, {1})";
-          CastOp();
-        } else
+        if (IsInteger)
+          ExprCmp("!=");
+        else if (T->isFloating())
+          DpctCmp("compare<{0}>({1}, {2}, std::not_equal_to<>())");
+        else
           return SYCLGenError();
         break;
       case InstAttr::lt:
         if (T->isSignedInt())
-          Fmt = "{0} < {1}";
-        else if (T->isFloating()) {
-          Fmt = NotNan() + " && " + SYCLNS() + "isless({0}, {1})";
-          CastOp();
-        } else
+          ExprCmp("<");
+        else if (T->isFloating())
+          DpctCmp("compare<{0}>({1}, {2}, std::less<>())");
+        else
           return SYCLGenError();
         break;
       case InstAttr::le:
         if (T->isSignedInt())
-          Fmt = "{0} <= {1}";
-        else if (T->isFloating()) {
-          Fmt = NotNan() + " && " + SYCLNS() + "islessequal({0}, {1})";
-          CastOp();
-        } else
+          ExprCmp("<=");
+        else if (T->isFloating())
+          DpctCmp("compare<{0}>({1}, {2}, std::less_equal<>())");
+        else
           return SYCLGenError();
         break;
       case InstAttr::gt:
         if (T->isSignedInt())
-          Fmt = "{0} > {1}";
-        else if (T->isFloating()) {
-          Fmt = NotNan() + " && " + SYCLNS() + "isgreater({0}, {1})";
-          CastOp();
-        } else
+          ExprCmp(">");
+        else if (T->isFloating())
+          DpctCmp("compare<{0}>({1}, {2}, std::greater<>())");
+        else
           return SYCLGenError();
         break;
       case InstAttr::ge:
         if (T->isSignedInt())
-          Fmt = "{0} >= {1}";
-        else if (T->isFloating()) {
-          Fmt = NotNan() + " && " + SYCLNS() + "isgreaterequal({0}, {1})";
-          CastOp();
-        } else
+          ExprCmp(">=");
+        else if (T->isFloating())
+          DpctCmp("compare<{0}>({1}, {2}, std::greater_equal<>())");
+        else
           return SYCLGenError();
         break;
       case InstAttr::lo:
         if (T->isUnsignedInt())
-          Fmt = "{0} < {1}";
+          ExprCmp("<");
         else
           return SYCLGenError();
         break;
       case InstAttr::ls:
         if (T->isUnsignedInt())
-          Fmt = "{0} <= {1}";
+          ExprCmp("<=");
         else
           return SYCLGenError();
         break;
       case InstAttr::hi:
         if (T->isUnsignedInt())
-          Fmt = "{0} > {1}";
+          ExprCmp(">");
         else
           return SYCLGenError();
         break;
       case InstAttr::hs:
         if (T->isUnsignedInt())
-          Fmt = "{0} >= {1}";
+          ExprCmp(">=");
         else
           return SYCLGenError();
         break;
       case InstAttr::equ:
         if (T->isFloating())
-          Fmt = IsNan() + " || " + SYCLNS() + "isequal({0}, {1})";
+          DpctCmp("unordered_compare<{0}>({1}, {2}, std::equal_to<>())");
         else
           return SYCLGenError();
-        CastOp();
         break;
       case InstAttr::neu:
         if (T->isFloating())
-          Fmt = IsNan() + " || " + SYCLNS() + "isnotequal({0}, {1})";
+          DpctCmp("unordered_compare<{0}>({1}, {2}, std::not_equal_to<>())");
         else
           return SYCLGenError();
-        CastOp();
         break;
       case InstAttr::ltu:
         if (T->isFloating())
-          Fmt = IsNan() + " || " + SYCLNS() + "isless({0}, {1})";
+          DpctCmp("unordered_compare<{0}>({1}, {2}, std::less<>())");
         else
           return SYCLGenError();
-        CastOp();
         break;
       case InstAttr::leu:
         if (T->isFloating())
-          Fmt = IsNan() + " || " + SYCLNS() + "islessequal({0}, {1})";
+          DpctCmp("unordered_compare<{0}>({1}, {2}, std::less_equal<>())");
         else
           return SYCLGenError();
-        CastOp();
         break;
       case InstAttr::gtu:
         if (T->isFloating())
-          Fmt = IsNan() + " || " + SYCLNS() + "isgreater({0}, {1})";
+          DpctCmp("unordered_compare<{0}>({1}, {2}, std::greater<>())");
         else
           return SYCLGenError();
-        CastOp();
         break;
       case InstAttr::geu:
         if (T->isFloating())
-          Fmt = IsNan() + " || " + SYCLNS() + "isgreaterequal({0}, {1})";
+          DpctCmp("unordered_compare<{0}>({1}, {2}, std::greater_equal<>())");
         else
           return SYCLGenError();
-        CastOp();
         break;
       case InstAttr::num:
-        if (T->isFloating())
-          Fmt = NotNan();
-        else
+        if (T->isFloating()) {
+          OS() << '!' << MapNames::getClNamespace();
+          OS() << "isnan(" << Op[0] << ")";
+          OS() << " && ";
+          OS() << '!' << MapNames::getClNamespace();
+          OS() << "isnan(" << Op[1] << ")";
+        } else
           return SYCLGenError();
-        CastOp();
         break;
       case InstAttr::nan:
-        if (T->isFloating())
-          Fmt = IsNan();
-        else
+        if (T->isFloating()) {
+          OS() << MapNames::getClNamespace();
+          OS() << "isnan(" << Op[0] << ")";
+          OS() << " || ";
+          OS() << MapNames::getClNamespace();
+          OS() << "isnan(" << Op[1] << ")";
+        } else
           return SYCLGenError();
-        CastOp();
         break;
       default:
         break;
       }
     }
 
-    if (Fmt.empty())
-      return SYCLGenError();
-
-    OS() << llvm::formatv(Fmt.c_str(), Op1, Op2);
     endstmt();
     return SYCLGenSuccess();
   }
@@ -884,9 +856,9 @@ protected:
 
     if (Inst->hasAttr(InstAttr::sat)) {
       if (Inst->is(asmtok::op_add))
-        OS() << SYCLNS() << llvm::formatv("add_sat({0}, {1})", Op[0], Op[1]);
+        OS() << MapNames::getClNamespace() << llvm::formatv("add_sat({0}, {1})", Op[0], Op[1]);
       else
-        OS() << SYCLNS() << llvm::formatv("sub_sat({0}, {1})", Op[0], Op[1]);
+        OS() << MapNames::getClNamespace() << llvm::formatv("sub_sat({0}, {1})", Op[0], Op[1]);
     } else {
       if (Inst->is(asmtok::op_add))
         OS() << llvm::formatv("{0} + {1}", Op[0], Op[1]);
@@ -977,7 +949,7 @@ protected:
 
     // mul.hi
     if (Inst->hasAttr(InstAttr::hi)) {
-      OS() << SYCLNS() << "mul_hi(" << Op[0] << ", " << Op[1] << ")";
+      OS() << MapNames::getClNamespace() << "mul_hi(" << Op[0] << ", " << Op[1] << ")";
       // mul.wide
     } else if (Inst->hasAttr(InstAttr::wide)) {
       OS() << Cast(GetWiderTypeAsString(Type), Op[0]) << " * "
@@ -1029,12 +1001,13 @@ protected:
 
     // mad.hi.sat
     if (Inst->hasAttr(InstAttr::sat))
-      OS() << SYCLNS() << "add_sat(" << SYCLNS() << "mul_hi(" << Op[0] << ", "
-           << Op[1] << "), " << Op[2] << ")";
+      OS() << MapNames::getClNamespace() << "add_sat("
+           << MapNames::getClNamespace() << "mul_hi(" << Op[0] << ", " << Op[1]
+           << "), " << Op[2] << ")";
     // mad.hi
     else if (Inst->hasAttr(InstAttr::hi))
-      OS() << SYCLNS() << "mad_hi(" << Op[0] << ", " << Op[1] << ", " << Op[2]
-           << ")";
+      OS() << MapNames::getClNamespace() << "mad_hi(" << Op[0] << ", " << Op[1]
+           << ", " << Op[2] << ")";
     // mad.wide
     else if (Inst->hasAttr(InstAttr::wide))
       OS() << llvm::formatv("({3}){0} * ({3}){1} + ({3}){2}", Op[0], Op[1],
@@ -1102,10 +1075,10 @@ protected:
     }
 
     if (isMad)
-      OS() << SYCLNS() << "mad24(" << Op[0] << ", " << Op[1] << ", " << Op[2]
+      OS() << MapNames::getClNamespace() << "mad24(" << Op[0] << ", " << Op[1] << ", " << Op[2]
            << ")";
     else
-      OS() << SYCLNS() << "mul24(" << Op[0] << ", " << Op[1] << ")";
+      OS() << MapNames::getClNamespace() << "mul24(" << Op[0] << ", " << Op[1] << ")";
 
     endstmt();
     return SYCLGenSuccess();
@@ -1147,7 +1120,7 @@ protected:
       return SYCLGenError();
 
     if (Inst->is(asmtok::op_abs))
-      OS() << SYCLNS() << "abs(" << Op << ")";
+      OS() << MapNames::getClNamespace() << "abs(" << Op << ")";
     else
       OS() << "-" << Op;
 
@@ -1182,9 +1155,9 @@ protected:
       return SYCLGenError();
 
     if (Inst->is(asmtok::op_popc))
-      OS() << SYCLNS() << "popcount<" << TypeRepl << ">(" << OpRepl << ")";
+      OS() << MapNames::getClNamespace() << "popcount<" << TypeRepl << ">(" << OpRepl << ")";
     else
-      OS() << SYCLNS() << "clz<" << TypeRepl << ">(" << OpRepl << ")";
+      OS() << MapNames::getClNamespace() << "clz<" << TypeRepl << ">(" << OpRepl << ")";
 
     endstmt();
     return SYCLGenSuccess();
@@ -1227,7 +1200,7 @@ protected:
                            .str();
 
     if (Inst->hasAttr(InstAttr::relu))
-      OS() << DPCTNS() << "relu(" << Base << ")";
+      OS() << MapNames::getDpctNamespace() << "relu(" << Base << ")";
     else
       OS() << Base;
 
@@ -1236,11 +1209,11 @@ protected:
   }
 
   bool handle_min(const InlineAsmInstruction *Inst) override {
-    return HandleMinMax(Inst, SYCLNS() + "min");
+    return HandleMinMax(Inst, MapNames::getClNamespace() + "min");
   }
 
   bool handle_max(const InlineAsmInstruction *Inst) override {
-    return HandleMinMax(Inst, SYCLNS() + "max");
+    return HandleMinMax(Inst, MapNames::getClNamespace() + "max");
   }
 
   bool HandleBitwiseBinaryOp(const InlineAsmInstruction *Inst,
@@ -1373,11 +1346,11 @@ protected:
     OS() << llvm::join(ArrayRef(Op, Inst->getNumInputOperands()), ", ");
     // The secondary arithmetic operation.
     if (Inst->hasAttr(InstAttr::add))
-      OS() << ", " << SYCLNS() << "plus<>()";
+      OS() << ", " << MapNames::getClNamespace() << "plus<>()";
     else if (Inst->hasAttr(InstAttr::min))
-      OS() << ", " << SYCLNS() << "minimum<>()";
+      OS() << ", " << MapNames::getClNamespace() << "minimum<>()";
     else if (Inst->hasAttr(InstAttr::max))
-      OS() << ", " << SYCLNS() << "maximum<>()";
+      OS() << ", " << MapNames::getClNamespace() << "maximum<>()";
 
     OS() << ")";
     endstmt();
