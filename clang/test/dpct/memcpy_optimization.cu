@@ -29,11 +29,11 @@ int main(){
         std::cout << "failed" << std::endl;
     }
 
-//CHECK:  for(int i = 0; i < sizeof(int); i++) {
+//CHECK:  for(int i = 0; i < 10; i++) {
 //CHECK:    int src = i;
 //CHECK:    q_ct1.memcpy(dev_a, &src, sizeof(int)).wait();
 //CHECK:  }
-    for(int i = 0; i < sizeof(int); i++) {
+    for(int i = 0; i < 10; i++) {
         int src = i;
         cudaMemcpy(dev_a, &src, sizeof(int), cudaMemcpyHostToDevice);
     }

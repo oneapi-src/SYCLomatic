@@ -3585,14 +3585,34 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   // migration, the migration tool assumes host memory is pageable and migrates
   // cudaMemcpy into an asynchronous memcpy from host to device, which can
   // improve performance by permitting concurrent memory transfer with other
-  // task. But the cudaMemcpy will copy host content to the staging memory for
-  // DMA transfer to device memory before return. For follow 3 cases, the host
-  // conent may changed. Therefor, the migrateion tool still migrates cudaMemcpy
-  // into a synchronous memcpy to ensure the copy behavior is correct:
-  // 1.The cudaMemcpy called in control flow statement.
-  // 2.The host pointer freed after cudaMemcpy with no cudaDeviceSynchronize()
+  // task. However, the cudaMemcpy copies content of host memory to the staging
+  // memory for DMA transfer to device memory before return.
+  // In the following 3 cases, the content of host memory may change. Therefore,
+  // the migration tool still migrates cudaMemcpy into a synchronous memcpy to
+  // ensure the copy behavior is correct:
+  // 1. The cudaMemcpy called within a control flow statement, which is usually
+  // accompanied by an overwrite of host memory.
+  // E.g.,
+  // for(int i = 0; i < 10; i++) {
+  //   *host_src = i;
+  //   cudaMemcpy(device_dst, host_src, sizeof(int), cudaMemcpyHostToDevice);
+  // }
+  //
+  // 2. The host pointer freed after cudaMemcpy with no cudaDeviceSynchronize()
   // between them.
-  // 3.Addressof operation applied on host pointer.
+  // E.g.,
+  // cudaMemcpy(device_dst, host_src, sizeof(int), cudaMemcpyHostToDevice);
+  // free(host_src);
+  //
+  // 3. The address-of operation is used in src expression, an error may occur 
+  // if temporary variables are used. The temporary variable may become unavailable
+  // before the copy is completed.
+  // E.g.,
+  // void test() {
+  //   int data;
+  //   ...
+  //   cudaMemcpy(device_dst, &data, sizeof(int), cudaMemcpyHostToDevice);
+  // }
   if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
     auto CpyKind = Direction->getDecl()->getName();
     if (CpyKind == "cudaMemcpyDeviceToDevice") {
