@@ -3579,6 +3579,20 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CS)
     return false;
 
+  // The cudaMemcpy function typically operates synchronously. However, when
+  // copying from host to device using pageable host memory, its behavior
+  // becomes asynchronous. If the --optimize-migration option is used during
+  // migration, the migration tool assumes host memory is pageable and migrates
+  // cudaMemcpy into an asynchronous memcpy from host to device, which can
+  // improve performance by permitting concurrent memory transfer with other
+  // task. But the cudaMemcpy will copy host content to the staging memory for
+  // DMA transfer to device memory before return. For follow 3 cases, the host
+  // conent may changed. Therefor, the migrateion tool still migrates cudaMemcpy
+  // into a synchronous memcpy to ensure the copy behavior is correct:
+  // 1.The cudaMemcpy called in control flow statement.
+  // 2.The host pointer freed after cudaMemcpy with no cudaDeviceSynchronize()
+  // between them.
+  // 3.Addressof operation applied on host pointer.
   if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
     auto CpyKind = Direction->getDecl()->getName();
     if (CpyKind == "cudaMemcpyDeviceToDevice") {
