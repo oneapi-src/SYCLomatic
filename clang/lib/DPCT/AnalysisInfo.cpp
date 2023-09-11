@@ -2825,7 +2825,6 @@ std::string CallFunctionExpr::getTemplateArguments(bool &IsNeedWarning,
     if ((TA.isNull() || !TA.isWritten()) && WrittenArgsOnly)
       continue;
     std::string Str = TA.getString();
-
     if(TA.isNull() && !Str.empty()) {
       IsNeedWarning = true;
     }
