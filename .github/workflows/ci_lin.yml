@@ -143,7 +143,8 @@ jobs:
           - test_suite: regressions
           - test_suite: samples
           - test_suite: help_function
-          - test_suite: features
+          - test_suite: features-usm
+          - test_suite: features-usmnone
           - test_suite: api_coverage
           - test_suite: behavior_tests
     steps:
@@ -190,19 +191,24 @@ jobs:
           c2s_obj_dir: "c2s.obj"
         
       - name: Run testing option_cpu
+        if: matrix.test_suite != 'features-usmnone'
+        env:
+          SUITE: ${{ matrix.test_suite }}
         timeout-minutes: 600
         shell: bash
         run: |
           cd test_repo
-          time python run_test.py --suite ${{ matrix.test_suite }} --option option_cpu
+          time python run_test.py --suite ${SUITE%-*} --option option_cpu
           echo $PWD
 
       - name: Run testing option_usmnone_cpu
-        if: success() || failure()
+        if: (matrix.test_suite != 'help_function' && matrix.test_suite != 'features-usm') && (success() || failure())
+        env:
+          SUITE: ${{ matrix.test_suite }}
         timeout-minutes: 600
         shell: bash
         run: |
           cd test_repo
-          time python run_test.py --suite ${{ matrix.test_suite }} --option option_usmnone_cpu
+          time python run_test.py --suite ${SUITE%-*} --option option_usmnone_cpu
           echo $PWD
 
