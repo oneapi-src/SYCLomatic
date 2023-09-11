@@ -28,18 +28,17 @@ void getTemplateFuncAttrs()
 
 void getFuncAttrs()
 {
-  //CHECK: dpct::kernel_function_info attrs;
-  cudaFuncAttributes attrs;
+  //CHECK: dpct::kernel_function_info *attrs;
+  cudaFuncAttributes *attrs;
 
-  //CHECK: dpct::get_kernel_function_info(&attrs, (const void *)testKernel);
-  cudaFuncGetAttributes(&attrs, testKernel);
+  //CHECK: dpct::get_kernel_function_info(attrs, (const void *)testKernel);
+  cudaFuncGetAttributes(attrs, testKernel);
   cudaError_t err;
-  //CHECK:  err = DPCT_CHECK_ERROR(dpct::get_kernel_function_info(&attrs, (const void *)testKernel));
-  err = cudaFuncGetAttributes(&attrs, testKernel);
+  //CHECK:  err = DPCT_CHECK_ERROR(dpct::get_kernel_function_info(attrs, (const void *)testKernel));
+  err = cudaFuncGetAttributes(attrs, testKernel);
 
-  //CHECK: int threadPerBlock = attrs.max_work_group_size;
-  int threadPerBlock = attrs.maxThreadsPerBlock;
-
+  //CHECK: int threadPerBlock = attrs->max_work_group_size;
+  int threadPerBlock = attrs->maxThreadsPerBlock;
 }
 
 int main()

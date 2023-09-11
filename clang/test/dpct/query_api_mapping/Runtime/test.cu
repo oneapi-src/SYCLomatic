@@ -247,7 +247,6 @@
 // CUDAEVENTRECORD-NEXT:   cudaEventRecord(e /*cudaEvent_t*/, s /*cudaStream_t*/);
 // CUDAEVENTRECORD-NEXT: Is migrated to:
 // CUDAEVENTRECORD-NEXT:   dpct::queue_ptr s;
-// CUDAEVENTRECORD-NEXT:   ;
 // CUDAEVENTRECORD-NEXT:   *e = s->ext_oneapi_submit_barrier();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventSynchronize | FileCheck %s -check-prefix=CUDAEVENTSYNCHRONIZE
@@ -259,6 +258,14 @@
 // CUDAEVENTSYNCHRONIZE-NEXT:   e->wait_and_throw();
 
 /// Execution Control
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFuncGetAttributes | FileCheck %s -check-prefix=CUDAFUNCGETATTRIBUTES
+// CUDAFUNCGETATTRIBUTES: CUDA API:
+// CUDAFUNCGETATTRIBUTES-NEXT:   cudaFuncAttributes *attr;
+// CUDAFUNCGETATTRIBUTES-NEXT:   cudaFuncGetAttributes(attr, f /*const void **/);
+// CUDAFUNCGETATTRIBUTES-NEXT: Is migrated to:
+// CUDAFUNCGETATTRIBUTES-NEXT:   dpct::kernel_function_info *attr;
+// CUDAFUNCGETATTRIBUTES-NEXT:   dpct::get_kernel_function_info(attr, (const void *)f /*const void **/);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFuncSetCacheConfig | FileCheck %s -check-prefix=CUDAFUNCSETCACHECONFIG
 // CUDAFUNCSETCACHECONFIG: CUDA API:
