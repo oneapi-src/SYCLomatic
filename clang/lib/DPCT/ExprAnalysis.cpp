@@ -168,6 +168,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(SourceLocation Loc) {
 std::pair<size_t, size_t>
 ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
                                  SourceLocation EndLoc) {
+  bool ApplyGreaterTokenWorkAround = false;
   if (EndLoc.isValid()) {
     if (BeginLoc.isFileID() || EndLoc.isFileID()) {
       // No Macro or only one of begin/end is macro
@@ -233,20 +234,52 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
         // Macro def ex: #define TYPE int2
         //     #define PTR *
         //     #define TYPE_PTR TYPE PTR
+
         std::tie(BeginLoc, EndLoc) =
             getTheLastCompleteImmediateRange(BeginLoc, EndLoc);
+        // WA for a weird behavior of clang lexer:
+        // When applying SM.getImmediateExpansionRange() to a scratch space
+        // location, and the result location is in another macro, the location
+        // will be shifted for 1 char.
+        // e.g. foo<MyClass<int>>()
+        // When the expression is not in a macro definition, the end location of
+        // "MyClass<int>" is at the location between "t" and ">"
+        // However, if the expr is in a macro:
+        // #define FOO foo<MyClass<int>>()
+        // The end location of "MyClass<int>" is at the location between the two
+        // ">".
+        // WA: Detecting token overlaping: The ">>" is a greatergreater
+        // token and the later ">" is also a greater token. When the token
+        // overlaping happens, marking a flag for not skipping the last token
+        // when getting the end location.
+        auto PrevLoc = EndLoc.getLocWithOffset(-1);
+        if (PrevLoc.isValid()) {
+          Token Tok, PreTok;
+          Lexer::getRawToken(EndLoc, Tok, SM,
+                             dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                             true);
+          Lexer::getRawToken(PrevLoc, PreTok, SM,
+                             dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                             true);
+          if (PreTok.is(tok::greatergreater) && Tok.is(tok::greater)) {
+            ApplyGreaterTokenWorkAround = true;
+          }
+        }
       }
     }
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
     SrcBeginLoc = BeginLoc;
-
+    auto LastTokenLength = End.second;
+    if(ApplyGreaterTokenWorkAround)
+      LastTokenLength = 0;
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
       return std::pair<size_t, size_t>(Begin, 0);
     }
-    return std::pair<size_t, size_t>(Begin, End.first - Begin + End.second);
+    return std::pair<size_t, size_t>(Begin,
+                                     End.first - Begin + LastTokenLength);
   }
   return getOffsetAndLength(BeginLoc);
 }
