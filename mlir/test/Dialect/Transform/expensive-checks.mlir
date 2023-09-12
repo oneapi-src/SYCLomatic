@@ -19,7 +19,7 @@ transform.with_pdl_patterns {
   ^bb1(%arg1: !transform.any_op):
     // expected-note @below {{handle to invalidated ops}}
     %0 = pdl_match @return in %arg1 : (!transform.any_op) -> !transform.any_op
-    %1 = get_closest_isolated_parent %0 : (!transform.any_op) -> !transform.any_op
+    %1 = get_parent_op %0 {isolated_from_above} : (!transform.any_op) -> !transform.any_op
     // expected-note @below {{invalidated by this transform op that consumes its operand #0}}
     test_consume_operand %1 : !transform.any_op
     // expected-error @below {{op uses a handle invalidated by a previously executed transform op}}
@@ -330,4 +330,83 @@ transform.sequence failures(propagate) {
   %3 = test_produce_value_handle_to_argument_of_parent_block %1, 0 : (!transform.any_op) -> !transform.any_value
   test_consume_operand %3 : !transform.any_value
   test_consume_operand %2 : !transform.any_op
+}
+
+// -----
+
+transform.sequence failures(propagate) {
+^bb0(%arg0: !transform.any_op):
+  %0 = transform.test_produce_empty_payload : !transform.any_op
+  // expected-note @below {{invalidated by this transform op that consumes its operand #0}}
+  transform.test_consume_operand %0 : !transform.any_op
+  // expected-error @below {{uses a handle associated with empty payload and invalidated by a previously executed transform op}}
+  transform.test_print_remark_at_operand %0, "remark" : !transform.any_op
+}
+
+// -----
+
+// Make sure we properly report a use-after-consume error when repeated handles
+// are allowed in the consuming op. We still want to report handles consumed by
+// _previous_ operations, just not by this one. To bypass the quick static check
+// of repeated consumption, create a handle to the transform operation and
+// invalidate the handle to the root module thus invalidating all other handles.
+
+// expected-note @below {{ancestor payload op}}
+module {
+  transform.sequence failures(propagate) {
+  ^bb0(%arg0: !transform.any_op):
+    // expected-note @below {{handle to invalidated ops}}
+    // expected-note @below {{nested payload op}}
+    %0 = transform.test_produce_self_handle_or_forward_operand : () -> !transform.any_op
+    // expected-note @below {{invalidated by this transform op that consumes its operand #0 and invalidates all handles to payload IR entities associated with this operand and entities nested in them}}
+    transform.test_consume_operand %arg0 : !transform.any_op
+    // expected-error @below {{uses a handle invalidated by a previously executed transform op}}
+    transform.test_consume_operand %0 { allow_repeated_handles } : !transform.any_op
+  }
+}
+
+// -----
+
+// Re-entering the region should not trigger the consumption error from previous
+// execution of the region.
+
+transform.sequence failures(propagate) {
+^bb0(%arg0: !transform.any_op):
+  transform.test_re_enter_region {
+    %0 = transform.test_produce_self_handle_or_forward_operand : () -> !transform.any_op
+    transform.test_consume_operand %0 : !transform.any_op
+    transform.yield
+  }
+}
+
+// -----
+
+// Re-entering the region should not trigger the consumption error from previous
+// execution of the region.
+
+transform.sequence failures(propagate) {
+^bb0(%arg0: !transform.any_op):
+  %0 = transform.test_produce_self_handle_or_forward_operand : () -> !transform.any_op
+  transform.test_re_enter_region %0 : !transform.any_op {
+  ^bb0(%arg1: !transform.any_op):
+    transform.test_consume_operand %arg1 : !transform.any_op
+    transform.yield
+  }
+}
+
+// -----
+
+// Consuming the same handle repeatedly in the region should trigger an error.
+
+transform.sequence failures(propagate) {
+^bb0(%arg0: !transform.any_op):
+  // expected-note @below {{payload op}}
+  // expected-note @below {{handle to invalidated ops}}
+  %0 = transform.test_produce_self_handle_or_forward_operand : () -> !transform.any_op
+  transform.test_re_enter_region {
+    // expected-error @below {{op uses a handle invalidated by a previously executed transform op}}
+    // expected-note @below {{invalidated by this transform op}}
+    transform.test_consume_operand %0 : !transform.any_op
+    transform.yield
+  }
 }

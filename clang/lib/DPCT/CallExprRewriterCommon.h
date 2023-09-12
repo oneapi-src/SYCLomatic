@@ -134,7 +134,7 @@ public:
   template <class StreamT> void print(StreamT &Stream) const {
     const Expr *InputArg = SubExpr->IgnoreImpCasts();
     clang::QualType ArgType = InputArg->getType().getCanonicalType();
-    ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+    ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
     if (ArgType.getAsString() != TypeInfo) {
       Stream << "(" << TypeInfo << ")";
     }
@@ -151,7 +151,7 @@ public:
   template <class StreamT> void print(StreamT &Stream) const {
     if (isContainTargetSpecialExpr(Arg)) {
       clang::QualType ArgType = Arg->getType().getCanonicalType();
-      ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+      ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
       Stream << "(" << ArgType.getAsString() << ")";
       if (!dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()) &&
           !dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts()) &&
@@ -182,7 +182,7 @@ public:
       dpct::print(Stream, DerefInputArg);
     } else {
       clang::QualType ArgType = InputArg->getType().getCanonicalType();
-      ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+      ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
       Stream << "*";
       if (ArgType.getAsString() != TypeInfo) {
         Stream << "(" << TypeInfo << ")";
@@ -221,6 +221,12 @@ public:
   }
 };
 
+inline std::function<std::string(const CallExpr *)>
+makeCharPtrCreator() {
+  return [=](const CallExpr *C) -> std::string {
+    return "char *";
+  };
+}
 
 inline std::function<DerefStreamExpr(const CallExpr *)>
 makeDerefStreamExprCreator(unsigned Idx) {
@@ -540,7 +546,7 @@ makeFuncNameFromDevAttrCreator(unsigned idx) {
       auto ArgName = DRE->getNameInfo().getAsString();
       auto Search = EnumConstantRule::EnumNamesMap.find(ArgName);
       if (Search != EnumConstantRule::EnumNamesMap.end()) {
-        requestHelperFeatureForEnumNames(ArgName, CE);
+        requestHelperFeatureForEnumNames(ArgName);
         return Search->second->NewName;
       }
     }
@@ -568,6 +574,28 @@ inline std::function<std::string(const CallExpr *)> makeLiteral(std::string Str)
   return [=](const CallExpr *) { return Str; };
 }
 
+inline std::function<bool(const CallExpr *)> SinCosPerfPred(){
+  return [=](const CallExpr *) { return true; };
+}
+
+inline std::function<std::string(const CallExpr *)>
+makeArgWithAddressSpaceCast(int ArgIdx, std::string Type) {
+  return [=](const CallExpr *C) -> std::string {
+    const Expr *E = C->getArg(ArgIdx);
+    if (!E) {
+      return "";
+    }
+    ExprAnalysis EA(E);
+    std::string Result =
+        MapNames::getClNamespace() + "address_space_cast<" +
+        MapNames::getClNamespace() +
+        "access::address_space::" + getAddressSpace(C, ArgIdx) + ", " +
+        MapNames::getClNamespace() + "access::decorated::yes" + ", " +
+        Type + ">(" + EA.getReplacedString() + ")";
+    return Result;
+  };
+}
+
 template <class BaseT, class MemberT>
 inline std::function<MemberExprPrinter<BaseT, MemberT>(const CallExpr *)>
 makeMemberExprCreator(std::function<BaseT(const CallExpr *)> Base, bool IsArrow,
@@ -590,11 +618,12 @@ makeStaticMemberExprCreator(std::function<BaseT(const CallExpr *)> Base,
 template <class TypeInfoT, class SubExprT>
 inline std::function<CastExprPrinter<TypeInfoT, SubExprT>(const CallExpr *)>
 makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
-                    std::function<SubExprT(const CallExpr *)> Sub) {
+                    std::function<SubExprT(const CallExpr *)> Sub,
+                    bool ExtraParen = false) {
   return PrinterCreator<CastExprPrinter<TypeInfoT, SubExprT>,
                         std::function<TypeInfoT(const CallExpr *)>,
-                        std::function<SubExprT(const CallExpr *)>>(TypeInfo,
-                                                                   Sub);
+                        std::function<SubExprT(const CallExpr *)>, bool>(
+      TypeInfo, Sub, ExtraParen);
 }
 
 template <class SubExprT>
@@ -666,6 +695,12 @@ makeZeroInitializerCreator(std::function<SubExprT(const CallExpr *)> SubExpr) {
 }
 
 inline bool isCallAssigned(const CallExpr *C) { return isAssigned(C); }
+
+inline bool isCallInRetStmt(const CallExpr *C) { return isInRetStmt(C); }
+
+inline bool isCallAssignedOrInRetStmt(const CallExpr *C) {
+  return isInRetStmt(C) || isAssigned(C);
+}
 
 template <unsigned int Idx>
 inline unsigned int getSizeFromCallArg(const CallExpr *C, std::string &Var) {
@@ -850,6 +885,12 @@ inline std::function<bool(const CallExpr *C)> checkIsUSM() {
   };
 }
 
+inline std::function<bool(const CallExpr *C)> checkIsUseNoQueueDevice() {
+  return [](const CallExpr *C) -> bool {
+    return DpctGlobalInfo::useNoQueueDevice();
+  };
+}
+
 inline std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
                                                         std::string str) {
   return [=](const CallExpr *C) -> bool {
@@ -915,16 +956,22 @@ createFactoryWithSubGroupSizeRequest(
 template <class... StmtPrinters>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMultiStmtsRewriterFactory(
-    const std::string &SourceName,
-    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
+    const std::string &SourceName, bool CheckAssigned, bool CheckInRetStmt,
+    bool UseDdpctCheckError, bool ExtraParen,
+    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
   return std::make_shared<ConditionalRewriterFactory>(
-      isCallAssigned,
+      (CheckAssigned && CheckInRetStmt)
+          ? isCallAssignedOrInRetStmt
+          : (CheckAssigned
+                 ? isCallAssigned
+                 : (CheckInRetStmt ? isCallInRetStmt
+                                   : [](const CallExpr *C) { return true; })),
       std::make_shared<AssignableRewriterFactory>(
           std::make_shared<CallExprRewriterFactory<
               PrinterRewriter<CommaExprPrinter<StmtPrinters...>>,
               std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
                                                                  Creators...),
-          true),
+          CheckAssigned, CheckInRetStmt, UseDdpctCheckError, ExtraParen),
       std::make_shared<CallExprRewriterFactory<
           PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
           std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
@@ -1146,8 +1193,8 @@ createAssignableFactoryWithExtraParen(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Input) {
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
-      std::move(Input.first),
-      std::make_shared<AssignableRewriterFactory>(Input.second, true));
+      std::move(Input.first), std::make_shared<AssignableRewriterFactory>(
+                                  Input.second, true, false, true, true));
 }
 
 template <class T>
@@ -1259,6 +1306,21 @@ createConditionalFactory(
     T) {
   return createConditionalFactory(std::move(Pred), std::move(First),
                                   std::move(Second));
+}
+
+/// Create MathSpecificElseEmuRewriterFactory key-value pair with one
+/// key-value candidates and predicate. If predicate result is true, \p First
+/// will be used.
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathSpecificElseEmuRewriterFactory(
+    std::function<bool(const CallExpr *)> Pred,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&First,
+    T) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(First.first),
+      std::make_shared<MathSpecificElseEmuRewriterFactory>(Pred, First.second));
 }
 
 template <typename T>
@@ -1593,41 +1655,11 @@ public:
   }
 };
 
-class GetHasSharedAttr {
-  unsigned Index;
-
-public:
-  GetHasSharedAttr(unsigned Index) : Index(Index) {}
-  bool operator()(const CallExpr *C) {
-    bool Result = false;
-    bool NeedReport = false;
-    getShareAttrRecursive(C->getArg(Index), Result, NeedReport);
-    return Result;
-  }
-};
-
-class ReportMemoryAttrDeduce {
-  unsigned Index;
-
-public:
-  ReportMemoryAttrDeduce(unsigned Index) : Index(Index) {}
-  bool operator()(const CallExpr *C) {
-    bool SharedAttr = false;
-    bool Result = false;
-    getShareAttrRecursive(C->getArg(Index), SharedAttr, Result);
-    return Result;
-  }
-};
-
 inline auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useNdRangeBarrier();
 };
 inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
-};
-
-inline auto GetUsingGenericSpace = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::getUsingGenericSpace();
 };
 
 class CheckDerefedTypeBeforeCast {
@@ -1896,30 +1928,7 @@ public:
     auto FD = C->getDirectCallee();
     if (!FD)
       return false;
-    SourceLocation DeclLoc =
-        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
-            FD->getLocation());
-    std::string DeclLocFilePath =
-        dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
-    makeCanonical(DeclLocFilePath);
-
-    // clang hacked the declarations of std::min/std::max
-    // In original code, the declaration should be in standard lib,
-    // but clang need to add device version overload, so it hacked the
-    // resolution by adding a special attribute.
-    // So we need treat function which is declared in this file as it
-    // is from standard lib.
-    SmallString<512> HackedCudaWrapperFile = StringRef(DpctInstallPath);
-    path::append(HackedCudaWrapperFile, Twine("lib"), Twine("clang"),
-                 Twine(CLANG_VERSION_MAJOR_STRING), Twine("include"));
-    path::append(HackedCudaWrapperFile, Twine("cuda_wrappers"),
-                 Twine("algorithm"));
-    if (HackedCudaWrapperFile.str().str() == DeclLocFilePath) {
-      return false;
-    }
-
-    return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
-            isChildPath(DpctInstallPath, DeclLocFilePath));
+    return isFromCUDA(FD);
   }
 };
 } // namespace math
@@ -1942,6 +1951,7 @@ public:
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define ARG_WC(x) makeDerefArgCreatorWithCall(x)
+#define TEMPLATE_ARG(x) makeCallArgCreatorFromTemplateArg(x)
 #define BOOL(x) makeBooleanCreator(x)
 #define BLAS_ENUM_ARG(x, BLAS_ENUM_TYPE)                                       \
   makeBLASEnumCallArgCreator(x, BLAS_ENUM_TYPE)

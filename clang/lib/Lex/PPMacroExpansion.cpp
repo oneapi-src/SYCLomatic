@@ -58,11 +58,9 @@
 #include <utility>
 
 using namespace clang;
-#ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
   extern std::function<unsigned int()> GetRunRound;
 }
-#endif // SYCLomatic_CUSTOMIZATION
 MacroDirective *
 Preprocessor::getLocalMacroDirectiveHistory(const IdentifierInfo *II) const {
   if (!II->hadMacroDefinition())
@@ -1875,7 +1873,8 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
     if (!Tok.isAnnotation() && Tok.getIdentifierInfo())
       Tok.setKind(tok::identifier);
     else if (Tok.is(tok::string_literal) && !Tok.hasUDSuffix()) {
-      StringLiteralParser Literal(Tok, *this);
+      StringLiteralParser Literal(Tok, *this,
+                                  StringLiteralEvalMethod::Unevaluated);
       if (Literal.hadError)
         return;
 

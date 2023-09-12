@@ -19,7 +19,7 @@ __global__ void my_kernel1(const T func) {
 }
 
 //CHECK:void run_foo1() {
-//CHECK-NEXT:  dpct::get_default_queue().parallel_for<dpct_kernel_name<class my_kernel1_{{[0-9a-z]+}}, class lambda_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:  dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class my_kernel1_{{[0-9a-z]+}}, class lambda_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:      my_kernel1([=] (int idx) { idx++; });
@@ -46,7 +46,7 @@ template <typename Foo> __global__ void my_kernel2(const Foo &foo) {
 }
 
 //     CHECK:inline void run_foo2() {
-//CHECK-NEXT:  dpct::get_default_queue().parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}, class lambda_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:  dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}, class lambda_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:      my_kernel2([] (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> * state) {

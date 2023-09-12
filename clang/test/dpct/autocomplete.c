@@ -12,12 +12,10 @@
 // DASH-NEXT: --assume-nd-range-dim=
 // DASH-NEXT: --build-script-file
 // DASH-NEXT: --change-cuda-files-extension-only
-// DASH-NEXT: --change-filename-extension
 // DASH-NEXT: --check-unicode-security
 // DASH-NEXT: --comments
 // DASH-NEXT: --compilation-database
 // DASH-NEXT: --cuda-include-path
-// DASH-NEXT: --custom-helper-name
 // DASH-NEXT: --enable-ctad
 // DASH-NEXT: --enable-profiling
 // DASH-NEXT: --extra-arg
@@ -26,6 +24,8 @@
 // DASH-NEXT: --gen-build-script
 // DASH-NEXT: --gen-helper-function
 // DASH-NEXT: --help
+// DASH-NEXT: --helper-function-dir
+// DASH-NEXT: --helper-function-preference=
 // DASH-NEXT: --in-root
 // DASH-NEXT: --in-root-exclude
 // DASH-NEXT: --keep-original-code
@@ -38,6 +38,7 @@
 // DASH-NEXT: --output-file
 // DASH-NEXT: --output-verbosity=
 // DASH-NEXT: --process-all
+// DASH-NEXT: --query-api-mapping
 // DASH-NEXT: --report-file-prefix
 // DASH-NEXT: --report-format=
 // DASH-NEXT: --report-only
@@ -47,7 +48,6 @@
 // DASH-NEXT: --suppress-warnings
 // DASH-NEXT: --suppress-warnings-all
 // DASH-NEXT: --sycl-named-lambda
-// DASH-NEXT: --use-custom-helper=
 // DASH-NEXT: --use-dpcpp-extensions=
 // DASH-NEXT: --use-experimental-features=
 // DASH-NEXT: --use-explicit-namespace=

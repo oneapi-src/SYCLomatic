@@ -38,12 +38,6 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Path for CUDA header files specified by "
                    "--cuda-include-path is invalid.";
     break;
-  case MigrationErrorInvalidChangeFilenameExtension:
-    StatusString =
-        "Error: Extension specified by --change-filename-extension is "
-        "invalid.\n"
-        "Only a '.' followed by alphabetical characters are allowed.";
-    break;
   case MigrationErrorCudaVersionUnsupported:
     StatusString = "Error: The version of CUDA header files specified by "
                    "--cuda-include-path is not supported. See Release Notes "
@@ -67,8 +61,8 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorInvalidWarningID:
     StatusString = "Error: Invalid warning ID or range; "
                    "valid warning IDs range from " +
-                   std::to_string((size_t)Warnings::BEGIN) + " to " +
-                   std::to_string((size_t)Warnings::END - 1);
+                   std::to_string(DiagnosticsMessage::MinID) + " to " +
+                   std::to_string(DiagnosticsMessage::MaxID);
     break;
   case MigrationOptionParsingError:
     StatusString = "Option parsing error,"
@@ -140,20 +134,6 @@ void ShowStatus(int Status, std::string Message) {
         "Error: The input for option --use-explicit-namespace is not valid. "
         "Run 'dpct --help' to see supported options and values.";
     break;
-  case MigrationErrorCustomHelperFileNameContainInvalidChar:
-    StatusString =
-        "Error: Custom helper header file name is invalid. The name can only "
-        "contain digits(0-9), underscore(_) or letters(a-zA-Z).";
-    break;
-  case MigrationErrorCustomHelperFileNameTooLong:
-    StatusString = "Error: Custom helper header file name is too long.";
-    break;
-  case MigrationErrorCustomHelperFileNamePathTooLong:
-    StatusString =
-        "Error: The path resulted from --out-root and --custom-helper-name "
-        "option values: \"" +
-        Message + "\" is too long.";
-    break;
   case MigrationErrorDifferentOptSet:
     StatusString =
         "Error: Incremental migration requires the same option sets used "
@@ -162,8 +142,8 @@ void ShowStatus(int Status, std::string Message) {
         "previous migration: \"" +
         Message +
         "\". See "
-        "https://software.intel.com/content/www/us/en/develop/documentation/"
-        "intel-dpcpp-compatibility-tool-user-guide/top.html for more details.";
+        "https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/"
+        "developer-guide-reference/current/overview.html for more details.";
     break;
   case MigrationErrorInvalidRuleFilePath:
     StatusString = "Error: The path for --rule-file is not valid";
@@ -175,8 +155,24 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: The path for --analysis-scope-path is not the same "
                    "as or a parent directory of --in-root";
     break;
-  case MigrationErrorConflictOptions:
-    StatusString = "Error: " + Message;
+  case MigrationErrorNoAPIMapping:
+    StatusString =
+        "Error: This API mapping query is not available yet. You may get the "
+        "API mapping by migrating a sample code of this API with the tool.";
+    break;
+  case MigrationErrorAPIMappingWrongCUDAHeader:
+    StatusString =
+        "Error: Can not find '" + Message +
+        "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
+        ". Please check the API name or switch to use different "
+        "CUDA header file with option \"--cuda-include-path\".";
+    break;
+  case MigrationErrorAPIMappingNoCUDAHeader:
+    StatusString =
+        "Error: Can not find '" + Message +
+        "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
+        ". Please specify the header file for '" + Message +
+        "' with option \"--extra-arg\".";
     break;
   default:
     DpctLog() << "Unknown error\n";
@@ -195,15 +191,17 @@ void ShowStatus(int Status, std::string Message) {
 std::string getLoadYamlFailWarning(std::string YamlPath) {
   return "Warning: Failed to load " + YamlPath +
          ". Migration continues with incremental migration disabled. See "
-         "https://software.intel.com/content/www/us/en/develop/documentation/"
-         "intel-dpcpp-compatibility-tool-user-guide/top.html for more "
+         "https://www.intel.com/content/www/us/en/docs/"
+         "dpcpp-compatibility-tool/developer-guide-reference/current/"
+         "overview.html for more "
          "details.\n";
 }
 std::string getCheckVersionFailWarning() {
   return "Warning: Incremental migration requires the same version of dpct. "
          "Migration continues with incremental migration disabled. See "
-         "https://software.intel.com/content/www/us/en/develop/documentation/"
-         "intel-dpcpp-compatibility-tool-user-guide/top.html for more "
+         "https://www.intel.com/content/www/us/en/docs/"
+         "dpcpp-compatibility-tool/developer-guide-reference/current/"
+         "overview.html for more "
          "details.\n";
 }
 

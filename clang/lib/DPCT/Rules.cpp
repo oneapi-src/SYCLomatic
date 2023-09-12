@@ -14,6 +14,7 @@
 #include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "NCCLAPIMigration.h"
+
 std::vector<std::string> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
@@ -43,14 +44,14 @@ void registerMacroRule(MetaRuleObject &R) {
       It->second.In = R.In;
       It->second.Out = R.Out;
       It->second.HelperFeature =
-          clang::dpct::HelperFeatureEnum::no_feature_helper;
+          clang::dpct::HelperFeatureEnum::none;
       It->second.Includes = R.Includes;
     }
   } else {
     MapNames::MacroRuleMap.emplace(
         R.In,
         MacroMigrationRule(R.RuleId, R.Priority, R.In, R.Out,
-                           clang::dpct::HelperFeatureEnum::no_feature_helper,
+                           clang::dpct::HelperFeatureEnum::none,
                            R.Includes));
   }
 }
@@ -102,7 +103,7 @@ void registerTypeRule(MetaRuleObject &R) {
       It->second->NewName = R.Out;
       It->second->Priority = R.Priority;
       It->second->RequestFeature =
-          clang::dpct::HelperFeatureEnum::no_feature_helper;
+          clang::dpct::HelperFeatureEnum::none;
       It->second->Includes.insert(It->second->Includes.end(),
                                   R.Includes.begin(), R.Includes.end());
     }
@@ -111,7 +112,7 @@ void registerTypeRule(MetaRuleObject &R) {
       return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
     });
     auto RulePtr = std::make_shared<TypeNameRule>(
-        R.Out, clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
+        R.Out, clang::dpct::HelperFeatureEnum::none, R.Priority);
     RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                              R.Includes.end());
     MapNames::TypeNamesMap.emplace(R.In, RulePtr);
@@ -138,7 +139,7 @@ void registerClassRule(MetaRuleObject &R) {
         }
         ItFieldRule->second->Priority = R.Priority;
         ItFieldRule->second->RequestFeature =
-            clang::dpct::HelperFeatureEnum::no_feature_helper;
+            clang::dpct::HelperFeatureEnum::none;
         ItFieldRule->second->Includes.clear();
         ItFieldRule->second->Includes.insert(
             ItFieldRule->second->Includes.end(), R.Includes.begin(),
@@ -153,10 +154,10 @@ void registerClassRule(MetaRuleObject &R) {
       if ((*ItField)->OutGetter != "") {
         RulePtr = std::make_shared<ClassFieldRule>(
             (*ItField)->OutSetter, (*ItField)->OutGetter,
-            clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
+            clang::dpct::HelperFeatureEnum::none, R.Priority);
       } else {
         RulePtr = std::make_shared<ClassFieldRule>(
-            (*ItField)->Out, clang::dpct::HelperFeatureEnum::no_feature_helper,
+            (*ItField)->Out, clang::dpct::HelperFeatureEnum::none,
             R.Priority);
       }
       RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
@@ -198,7 +199,7 @@ void registerEnumRule(MetaRuleObject &R) {
       It->second->Priority = R.Priority;
       It->second->NewName = R.Out;
       It->second->RequestFeature =
-          clang::dpct::HelperFeatureEnum::no_feature_helper;
+          clang::dpct::HelperFeatureEnum::none;
       It->second->Includes.insert(It->second->Includes.end(),
                                  R.Includes.begin(), R.Includes.end());
     }
@@ -210,7 +211,7 @@ void registerEnumRule(MetaRuleObject &R) {
       return std::make_unique<clang::dpct::UserDefinedEnumRule>(R.EnumName);
     });
     auto RulePtr = std::make_shared<EnumNameRule>(
-        R.Out, clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
+        R.Out, clang::dpct::HelperFeatureEnum::none, R.Priority);
     RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                              R.Includes.end());
     clang::dpct::EnumConstantRule::EnumNamesMap.emplace(
@@ -221,6 +222,11 @@ void registerEnumRule(MetaRuleObject &R) {
 void deregisterAPIRule(MetaRuleObject &R) {
   using namespace clang::dpct;
   CallExprRewriterFactoryBase::RewriterMap->erase(R.In);
+}
+
+void registerPatternRewriterRule(MetaRuleObject &R) {
+  MapNames::PatternRewriters.emplace_back(
+      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules));
 }
 
 void importRules(llvm::cl::list<std::string> &RuleFiles) {
@@ -275,6 +281,9 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
         break;
       case (RuleKind::DisableAPIMigration):
         deregisterAPIRule(*r);
+        break;
+      case (RuleKind::PatternRewriter):
+        registerPatternRewriterRule(*r);
         break;
       default:
         break;

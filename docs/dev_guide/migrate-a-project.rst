@@ -9,13 +9,14 @@ Migrate a Project
    migrate-a-project/before-you-begin
    migrate-a-project/migrate-a-project-on-linux
    migrate-a-project/migrate-a-project-on-windows
+   migrate-a-project/generate-compilation-db
    migrate-a-project/incremental-migration
    migrate-a-project/user-defined-migration-rules
-   migrate-a-project/generate-compilation-db
+
 
 
 |tool_name| ports CUDA\* language kernels and library API calls to
-SYCL\* for the |dpcpp_compiler|. Typically, 90%-95% of CUDA code automatically
+SYCL\* for the |dpcpp_compiler|_. Typically, 90%-95% of CUDA code automatically
 migrates to SYCL. The tool inserts inline comments during migration to
 help you complete the remaining code migration.
 
@@ -23,34 +24,29 @@ help you complete the remaining code migration.
 
 .. figure:: /_images/cuda-sycl-migration-workflow.png
 
-|tool_name| migration workflow overview:
+The |tool_name| migration workflow follows four high-level steps:
 
-#. **Prepare CUDA source for migration**
+#. **Prepare your CUDA source for migration**
 
    Start with a running CUDA project that can be built and run. |tool_name|
    looks for CUDA headers, so make sure the headers are accessible to the tool.
 
 #. **Migrate your project**
 
-   To generate annotated SYCL code, run |tool_name| with the
-   original source as input to the tool.
+   Run |tool_name| with the original source as input to the tool to generate
+   annotated SYCL code.
 
-   For simple projects, you can use file-to-file migration, with the option to
-   migrate all files at once or to migrate files one-by-one.
+   You can use file-to-file migration for simple projects or a
+   :ref:`compilation database <gen_comp_db>` for more complex projects.
 
-   For complex projects, you can utilize the Microsoft Visual Studio\* project
-   file or Make/Cmake file to build a :ref:`compilation database <gen_comp_db>`,
-   used to migrate the complete project.
+#. **Review the converted code**
 
-#. **Review converted code**
+   Output files contain annotations to mark code that could not be automatically
+   migrated. Review the annotations and manually convert any unmigrated code.
+   Also look for potential code improvements.
 
-   Output files contain annotations to help migrate any remaining code that
-   could not be automatically migrated. Inspect the converted code, review the
-   annotations to help manually convert unmigrated code, and look for potential
-   code improvements.
+#. **Build your project**
 
-#. **Build the project with the Intel® oneAPI DPC++/C++ Compiler**
-
-   Make sure your newly migrated project compiles successfully with the
-   |dpcpp_compiler|.
+   To make sure your newly migrated project compiles successfully, build the
+   project with the |dpcpp_compiler|_.
 

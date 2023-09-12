@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1
-// UNSUPPORTED: v12.0, v12.1
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2
+// UNSUPPORTED: v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/texture %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/texture/texture.dp.cpp --match-full-lines %s
 
@@ -39,6 +39,9 @@ static texture<uint2, 1> tex21;
 
 // CHECK: void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: sycl::uint2 u21 = tex21.read(1.0f);
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1112:{{[0-9]+}}: If the filter mode is set to 'linear', the behavior of image "read" may be different from "tex1Dfetch" in the original code. You may need to adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT: sycl::uint2 u21_fetch = tex21.read(1);
 // CHECK-NEXT: float data[3][3];
 // CHECK-NEXT: FETCH(data[0], tex21, 2);
@@ -145,7 +148,7 @@ int main() {
   // CHECK: desc21 = a42->get_channel();
   cudaGetChannelDesc(&desc21, a42);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto tex42_acc = tex42.get_access(cgh);
   // CHECK-NEXT:         auto tex21_acc = tex21.get_access(cgh);
@@ -463,4 +466,19 @@ __global__ void test_call(uchar4 *d_output,
   }
 }
 
+struct Image {
+  void *ptr;
+  size_t cols;
+  size_t rows;
+  size_t step;
+};
 
+// CHECK: void test(dpct::image_wrapper_base *texRef, Image image) {
+// CHECK-NEXT:   dpct::image_channel desc = dpct::image_channel::create<T>();
+// CHECK-NEXT:   texRef->attach(image.ptr, image.cols, image.rows, image.step, desc);
+// CHECK-NEXT: }
+template <class T>
+void test(textureReference *texRef, Image image) {
+  cudaChannelFormatDesc desc = cudaCreateChannelDesc<T>();
+  cudaBindTexture2D(0, texRef, image.ptr, &desc, image.cols, image.rows, image.step);
+}

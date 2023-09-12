@@ -86,7 +86,7 @@ __global__ void kernel3() {
 }
 
 // CHECK: void foo3() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.

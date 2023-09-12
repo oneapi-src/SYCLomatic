@@ -59,6 +59,7 @@ enum class ExplicitNamespace : unsigned int {
 enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_EnqueueBarrier = 0,
   ExtDE_DeviceInfo,
+  ExtDE_BFloat16,
   ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
@@ -76,8 +77,11 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_MaskedSubGroupFunction,
   Exp_DPLExperimentalAPI,
   Exp_OccupancyCalculation,
+  Exp_Matrix,
+  Exp_BFloat16Math,
   Exp_ExperimentalFeaturesEnumSize
 };
+enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
 
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);
@@ -103,7 +107,4 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 /// -1: Path is invalid
 int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath);
 
-void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
-                                     std::string &Name,
-                                     const std::string &OutRoot);
 #endif // DPCT_VALIDATE_ARGUMENTS_H

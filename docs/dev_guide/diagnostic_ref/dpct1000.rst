@@ -22,7 +22,7 @@ The CUDA\* API returns error codes that are consumed by the program logic. SYCL\
 uses exceptions to report errors and does not return the error code.
 
 When the error handling logic in the original code is simple (for example, a
-print error message and exit), the code is removed in the resulting |dpcpp_long|
+print error message and exit), the code is removed in the resulting |dpcpp_long|_
 application. The expectation is that SYCL throws an exception, which is handled
 with the printing of an exception message and exiting (the exception handler is
 generated automatically by |tool_name|).

@@ -52,7 +52,7 @@ int main() {
   // CHECK-EMPTY:
   // CHECK-NEXT:    auto tex_smpl = (*(dpct::image_wrapper_base_p *)args[1])->get_sampler();
   // CHECK-EMPTY:
-  // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
+  // CHECK-NEXT:    int * d_ct0 = *(int **)args[0];
   // CHECK-EMPTY:
   // CHECK-NEXT:    cgh.parallel_for(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
@@ -70,7 +70,7 @@ int main() {
   // CHECK-NEXT:    sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(32), cgh);
   // CHECK-NEXT:    sycl::local_accessor<int, 1> s_acc_ct1(sycl::range<1>(16), cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
+  // CHECK-NEXT:    int * d_ct0 = *(int **)args[0];
   // CHECK-EMPTY:
   // CHECK-NEXT:    cgh.parallel_for(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),

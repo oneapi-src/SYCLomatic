@@ -23,7 +23,7 @@ thrust::complex<T> foo(thrust::complex<T> cp) {
 
 void bar(thrust::complex<double> *p);
 
-// CHECK: inline void kernel(std::complex<double> *p, std::complex<double> c, std::complex<double> *d,
+// CHECK: __dpct_inline__ void kernel(std::complex<double> *p, std::complex<double> c, std::complex<double> *d,
 // CHECK-NEXT:  std::complex<sycl::double2> *s) {
 __global__ void kernel(thrust::complex<double> *p, thrust::complex<double> c, thrust::complex<double> *d) {
   p[0];
@@ -31,7 +31,7 @@ __global__ void kernel(thrust::complex<double> *p, thrust::complex<double> c, th
   __shared__ thrust::complex<struct double2> s[10];
 }
 
-// CHECK: inline void template_kernel(T *, std::complex<T> *s) {
+// CHECK: __dpct_inline__ void template_kernel(T *, std::complex<T> *s) {
 template<class T>
 __global__ void template_kernel(T *) {
   __shared__ thrust::complex<T> s[10];
@@ -101,20 +101,20 @@ int main() {
   thrust::complex<double> cd2 = static_cast<thrust::complex<double>>(*cdp);
 // CHECK:   bar(reinterpret_cast<std::complex<double> *>(cdp));
   bar(reinterpret_cast<thrust::complex<double> *>(cdp));
-// CHECK:   q_ct1.submit(
-// CHECK-NEXT:     [&](sycl::handler &cgh) {
-// CHECK-NEXT:       sycl::local_accessor<std::complex<sycl::double2>, 1> s_acc_ct1(sycl::range<1>(10), cgh);
-// CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> cdp_acc_ct0(reinterpret_cast<std::complex<double> *>(cdp), cgh);
-// CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> thrust_raw_pointer_cast_dc_ptr_acc_ct2(dpct::get_raw_pointer(dc_ptr), cgh);
-// CHECK-EMPTY:
-// CHECK-NEXT:       auto static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
-// CHECK-EMPTY:
-// CHECK-NEXT:       cgh.parallel_for(
-// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
-// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:           kernel(cdp_acc_ct0.get_raw_pointer(), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_acc_ct2.get_raw_pointer(), s_acc_ct1.get_pointer());
-// CHECK-NEXT:         });
-// CHECK-NEXT:     });
+  // CHECK:   q_ct1.submit(
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       sycl::local_accessor<std::complex<sycl::double2>, 1> s_acc_ct1(sycl::range<1>(10), cgh);
+  // CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> cdp_acc_ct0(reinterpret_cast<std::complex<double> *>(cdp), cgh);
+  // CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> thrust_raw_pointer_cast_dc_ptr_acc_ct2(dpct::get_raw_pointer(dc_ptr), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:        std::complex<double> static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:       cgh.parallel_for(
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           kernel(cdp_acc_ct0.get_raw_pointer(), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_acc_ct2.get_raw_pointer(), s_acc_ct1.get_pointer());
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
   kernel<<<1, 256>>>(reinterpret_cast<thrust::complex<double> *>(cdp), static_cast<thrust::complex<double>>(*cdp), thrust::raw_pointer_cast(dc_ptr));
 
   int *d_i;
@@ -137,7 +137,7 @@ int main() {
 //CHECK: int foo(){
 //CHECK-NEXT:   double *p;
 //CHECK-NEXT:   dpct::device_pointer<double> dp(p);
-//CHECK-NEXT:   double sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
+//CHECK-NEXT:   double sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_out_of_order_queue()), dp, dp + 10);
 //CHECK-NEXT:   printf("sum = %f\n", sum);
 //CHECK-NEXT:   std::complex<float> c1(1.0);
 //CHECK-NEXT:   std::complex<float> c2(2.0);

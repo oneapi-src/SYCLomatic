@@ -45,6 +45,7 @@ bool HasSDKIncludeOption = false;
 bool HasSDKPathOption = false;
 std::string RealSDKIncludePath = "";
 std::string RealSDKPath = "";
+std::vector<std::string> ExtraIncPaths;
 int SDKVersionMajor=0;
 int SDKVersionMinor=0;
 
@@ -112,6 +113,8 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
     CV = CudaVersion::CUDA_120;
   } else if (Major == 12 && Minor == 1) {
     CV = CudaVersion::CUDA_121;
+  } else if (Major == 12 && Minor == 2) {
+    CV = CudaVersion::CUDA_122;
   }
 
   if (CV != CudaVersion::UNKNOWN) {
@@ -163,6 +166,8 @@ CudaVersion getCudaVersion(uint32_t raw_version) {
     return CudaVersion::CUDA_118;
   if (raw_version < 12010)
     return CudaVersion::CUDA_120;
+  if (raw_version < 12020)
+    return CudaVersion::CUDA_121;
   return CudaVersion::NEW;
 }
 
@@ -210,6 +215,27 @@ void CudaInstallationDetector::WarnIfUnsupportedVersion() {
         << CudaVersionToString(Version);
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+bool CudaInstallationDetector::validateCudaHeaderDirectory(
+    const std::string &FilePath, const Driver &D) {
+  auto &FS = D.getVFS();
+  if (!D.getVFS().exists(FilePath))
+    return false;
+  if (!(FS.exists(FilePath + "/cuda_runtime.h") &&
+        FS.exists(FilePath + "/cuda.h")))
+    return false;
+  IsIncludePathValid = true;
+  bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h", Version);
+  if (!IsFound)
+    return false;
+  IsValid = true;
+
+  InstallPath = FilePath;
+  IncludePath = FilePath;
+
+  return true;
+}
+#endif // SYCLomatic_CUSTOMIZATION
 CudaInstallationDetector::CudaInstallationDetector(
     const Driver &D, const llvm::Triple &HostTriple,
     const llvm::opt::ArgList &Args)
@@ -226,8 +252,9 @@ CudaInstallationDetector::CudaInstallationDetector(
   // In decreasing order so we prefer newer versions to older versions.
 #ifdef SYCLomatic_CUSTOMIZATION
   std::initializer_list<const char *> Versions = {
-      "12.1", "12.0", "11.8", "11.7", "11.6", "11.5", "11.4", "11.3", "11.2", "11.1",
-      "10.2", "10.1", "10.0", "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
+      "12.2", "12.1", "12.0", "11.8", "11.7", "11.6", "11.5",
+      "11.4", "11.3", "11.2", "11.1", "10.2", "10.1", "10.0",
+      "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
 #else
   std::initializer_list<const char *> Versions = {
       "11.4", "11.3", "11.2", "11.1", "10.2", "10.1", "10.0",
@@ -302,62 +329,36 @@ CudaInstallationDetector::CudaInstallationDetector(
 
 #ifdef SYCLomatic_CUSTOMIZATION
   Args.hasArg(options::OPT_nogpulib);
-  if (HasSDKIncludeOption) {
-    if (RealSDKIncludePath.empty() ||
-        !D.getVFS().exists(RealSDKIncludePath))
-      return;
-    if (!(FS.exists(RealSDKIncludePath + "/cuda_runtime.h") &&
-          FS.exists(RealSDKIncludePath + "/cuda.h")))
-      return;
-    InstallPath = RealSDKIncludePath;
-    IncludePath = RealSDKIncludePath;
+  bool IsCudaHeaderFilesIncluded = false;
+  for (auto &IncPath : ExtraIncPaths) {
+    IsCudaHeaderFilesIncluded = validateCudaHeaderDirectory(IncPath, D);
+    if (IsCudaHeaderFilesIncluded) {
+      static bool PrintOnce = true;
+      if (PrintOnce && (!RealSDKIncludePath.empty() || !RealSDKPath.empty())) {
+        llvm::outs() << "warning: CUDA header files are detected in path \""
+                     << IncPath
+                     << "\" specified by option '-I'. CUDA header files in "
+                        "this path will be used during migration, and value of "
+                        "option --cuda-include-path will be ignored.\n";
+        PrintOnce = false;
+      };
+      break;
+    }
+  }
 
-    // To certain include path specified by --cuda-include-path is valid
-    IsIncludePathValid = true;
-
-    bool IsFound =
-        ParseCudaVersionFile(RealSDKIncludePath + "/cuda.h", Version);
-    if (!IsFound)
-      return;
-    IsValid = true;
-
-    // To certain CUDA version specified by --cuda-include-path is supported
-    IsVersionSupported = true;
+  if (IsCudaHeaderFilesIncluded) {
+    return;
+  } else if (HasSDKIncludeOption) {
+    validateCudaHeaderDirectory(RealSDKIncludePath, D);
   } else {
     for (const auto &Candidate : Candidates) {
       InstallPath = Candidate.Path;
-      if (InstallPath.empty() || !D.getVFS().exists(InstallPath))
-        continue;
-
-      bool IsFound = false;
-      if (FS.exists(InstallPath + "/include/cuda_runtime.h") &&
-          FS.exists(InstallPath + "/include/cuda.h")) {
-        IsFound = ParseCudaVersionFile(InstallPath + "/include/cuda.h", Version);
-        if (!IsFound)
-          continue;
-        InstallPath = InstallPath + "/include/";
-        IncludePath = InstallPath;
-
-        // To certain include path detected is valid
-        IsIncludePathValid = true;
-      } else if (FS.exists(InstallPath + "/cuda_runtime.h") &&
-                 FS.exists(InstallPath + "/cuda.h")) {
-        IsFound = ParseCudaVersionFile(InstallPath + "/cuda.h", Version);
-        if (!IsFound)
-          continue;
-        IncludePath = InstallPath;
-
-        // To certain include path detected is valid
-        IsIncludePathValid = true;
-      } else {
-        continue;
+      if (validateCudaHeaderDirectory(InstallPath + "/include/", D) ||
+          validateCudaHeaderDirectory(InstallPath, D)) {
+        // To certain CUDA version that dpct supports is available
+        IsSupportedVersionAvailable = true;
+        break;
       }
-
-      IsValid = true;
-
-      // To certain CUDA version that dpct supports is available
-      IsSupportedVersionAvailable = true;
-      break;
     }
   }
 #else
@@ -932,6 +933,8 @@ void NVPTX::getNVPTXTargetFeatures(const Driver &D, const llvm::Triple &Triple,
   case CudaVersion::CUDA_##CUDA_VER:                                           \
     PtxFeature = "+ptx" #PTX_VER;                                              \
     break;
+    CASE_CUDA_VERSION(121, 81);
+    CASE_CUDA_VERSION(120, 80);
     CASE_CUDA_VERSION(118, 78);
     CASE_CUDA_VERSION(117, 77);
     CASE_CUDA_VERSION(116, 76);
@@ -962,10 +965,8 @@ NVPTXToolChain::NVPTXToolChain(const Driver &D, const llvm::Triple &Triple,
                                const ArgList &Args, bool Freestanding = false)
     : ToolChain(D, Triple, Args), CudaInstallation(D, HostTriple, Args),
       Freestanding(Freestanding) {
-  if (CudaInstallation.isValid()) {
-    CudaInstallation.WarnIfUnsupportedVersion();
+  if (CudaInstallation.isValid())
     getProgramPaths().push_back(std::string(CudaInstallation.getBinPath()));
-  }
   // Lookup binaries into the driver directory, this is used to
   // discover the 'nvptx-arch' executable.
   getProgramPaths().push_back(getDriver().Dir);
@@ -1071,10 +1072,6 @@ void CudaToolChain::addClangTargetOptions(
   if (DeviceOffloadingKind == Action::OFK_Cuda) {
     CC1Args.append(
         {"-fcuda-is-device", "-mllvm", "-enable-memcpyopt-without-libcalls"});
-
-    if (DriverArgs.hasFlag(options::OPT_fcuda_approx_transcendentals,
-                           options::OPT_fno_cuda_approx_transcendentals, false))
-      CC1Args.push_back("-fcuda-approx-transcendentals");
 
     // Unsized function arguments used for variadics were introduced in CUDA-9.0
     // We still do not support generating code that actually uses variadic

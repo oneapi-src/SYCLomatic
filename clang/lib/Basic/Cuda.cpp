@@ -38,9 +38,10 @@ static const CudaVersionMapEntry CudaNameVersionMap[] = {
     CUDA_ENTRY(11, 7),
     CUDA_ENTRY(11, 8),
     CUDA_ENTRY(12, 0),
-  #ifdef SYCLomatic_CUSTOMIZATION
     CUDA_ENTRY(12, 1),
-  #endif
+#ifdef SYCLomatic_CUSTOMIZATION
+    CUDA_ENTRY(12, 2),
+#endif
     {"", CudaVersion::NEW, llvm::VersionTuple(std::numeric_limits<int>::max())},
     {"unknown", CudaVersion::UNKNOWN, {}} // End of list tombstone.
 };
@@ -55,15 +56,16 @@ const char *CudaVersionToString(CudaVersion V) {
 }
 
 #ifdef SYCLomatic_CUSTOMIZATION
-unsigned int CudaVersionToValue(CudaVersion V) {
+std::string CudaVersionToMacroDefStr(CudaVersion V) {
   for (auto *I = CudaNameVersionMap; I->Version != CudaVersion::UNKNOWN; ++I)
     if (I->Version == V) {
-      return I->TVersion.getMajor() * 1000 +
-             I->TVersion.getMinor().value() * 10;
+      return std::to_string(I->TVersion.getMajor() * 1000 +
+                            I->TVersion.getMinor().value() * 10);
     }
-  return 0;
+  return "";
 }
 #endif // SYCLomatic_CUSTOMIZATION
+
 CudaVersion CudaStringToVersion(const llvm::Twine &S) {
   std::string VS = S.str();
   for (auto *I = CudaNameVersionMap; I->Version != CudaVersion::UNKNOWN; ++I)
@@ -145,6 +147,8 @@ static const CudaArchToStringMap arch_names[] = {
     GFX(1101), // gfx1101
     GFX(1102), // gfx1102
     GFX(1103), // gfx1103
+    GFX(1150), // gfx1150
+    GFX(1151), // gfx1151
     {CudaArch::Generic, "generic", ""},
     // clang-format on
 };
@@ -234,7 +238,11 @@ CudaVersion MaxVersionForCudaArch(CudaArch A) {
   case CudaArch::SM_21:
     return CudaVersion::CUDA_80;
   case CudaArch::SM_30:
-    return CudaVersion::CUDA_110;
+  case CudaArch::SM_32:
+    return CudaVersion::CUDA_102;
+  case CudaArch::SM_35:
+  case CudaArch::SM_37:
+    return CudaVersion::CUDA_118;
   default:
     return CudaVersion::NEW;
   }

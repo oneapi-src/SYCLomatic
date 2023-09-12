@@ -1,0 +1,12 @@
+[
+    {
+        "command": "nvcc -c check-inline.cu",
+        "directory": ".",
+        "file": "check-inline.cu"
+    },
+    {
+        "command": "nvcc -c test.cu",
+        "directory": ".",
+        "file": "test.cu"
+    }
+]

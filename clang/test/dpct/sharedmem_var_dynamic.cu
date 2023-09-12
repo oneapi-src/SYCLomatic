@@ -39,7 +39,7 @@ void testTemplate(){
   cudaMalloc((void **)&d_d, mem_size);
   cudaMemcpy(d_d, a, mem_size, cudaMemcpyHostToDevice);
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(mem_size), cgh);
   // CHECK-NEXT:     dpct::access_wrapper<T *> d_d_acc_ct0(d_d, cgh);
@@ -55,7 +55,7 @@ void testTemplate(){
 
 int main(void) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   const int n = 64;
   int a[n], r[n], d[n];
   int *d_d;
@@ -162,7 +162,7 @@ __global__ void foo_4_g() { char *p = Env_cuda_shared_memory(); }
 // CHECK: void foo_4_h() { char *p = Env_cuda_shared_memory_host_ct{{[0-9]+}}(); }
 __host__ void foo_4_h() { char *p = Env_cuda_shared_memory(); }
 
-// CHECK: void call_foo4() { dpct::get_default_queue().submit(
+// CHECK: void call_foo4() { dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:  [&](sycl::handler &cgh) {
 // CHECK-NEXT:    sycl::local_accessor<char, 1> cuda_shared_memory_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:

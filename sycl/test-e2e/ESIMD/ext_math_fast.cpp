@@ -5,7 +5,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-// RUN: %{build} -fsycl-device-code-split=per_kernel -ffast-math -fno-slp-vectorize -o %t.out
+// DEFINE: %{slpflags} = %if cl_options %{/clang:-fno-slp-vectorize%} %else %{-fno-slp-vectorize%}
+// RUN: %{build} -fsycl-device-code-split=per_kernel -ffast-math %{slpflags} -o %t.out
 // RUN: %{run} %t.out
 
 // This test checks extended math operations. Combinations of
@@ -18,6 +19,7 @@
 // The option -fno-slp-vectorize prevents vectorization of code in kernel
 // operator() to avoid the extra difficulties in results verification.
 
+#define SKIP_NEW_GPU_DRIVER_VERSION_CHECK 1
 #define TEST_FAST_MATH 1
 
 #include "ext_math.cpp"

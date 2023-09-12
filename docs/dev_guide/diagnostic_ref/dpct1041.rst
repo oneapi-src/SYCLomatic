@@ -33,3 +33,86 @@ Suggestions to Fix
 ------------------
 
 You may need to rewrite this code.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      ...
+      int N;
+      cublasHandle_t handle;
+      float alpha, beta;
+      float *a, *b, *c;
+      if (int status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha,
+                                 a, N, b, N, &beta, c, N)) {
+        printf("cublasSgemm failed\n");
+      }
+      ...
+    }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() try {
+      ...
+      int N;
+      dpct::queue_ptr handle;
+      float alpha, beta;
+      float *a, *b, *c;
+      {
+        auto a_buf_ct1 = dpct::get_buffer<float>(a);
+        auto b_buf_ct2 = dpct::get_buffer<float>(b);
+        auto c_buf_ct3 = dpct::get_buffer<float>(c);
+        oneapi::mkl::blas::column_major::gemm(
+            *handle, oneapi::mkl::transpose::nontrans,
+            oneapi::mkl::transpose::nontrans, N, N, N, alpha, a_buf_ct1, N,
+            b_buf_ct2, N, beta, c_buf_ct3, N);
+      }
+      /*
+      DPCT1041:0: SYCL uses exceptions to report errors, it does not use error
+      codes. 0 is used instead of an error code in an if statement. You may need to
+      rewrite this code.
+      */
+      if (int status = 0) {
+        printf("cublasSgemm failed\n");
+      }
+      ...
+    }
+    catch (sycl::exception const &exc) {
+      std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+                << ", line:" << __LINE__ << std::endl;
+      std::exit(1);
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() try {
+      ...
+      int N;
+      dpct::queue_ptr handle;
+      float alpha, beta;
+      float *a, *b, *c;
+      {
+        auto a_buf_ct1 = dpct::get_buffer<float>(a);
+        auto b_buf_ct2 = dpct::get_buffer<float>(b);
+        auto c_buf_ct3 = dpct::get_buffer<float>(c);
+        oneapi::mkl::blas::column_major::gemm(
+            *handle, oneapi::mkl::transpose::nontrans,
+            oneapi::mkl::transpose::nontrans, N, N, N, alpha, a_buf_ct1, N,
+            b_buf_ct2, N, beta, c_buf_ct3, N);
+      }
+      ...
+    }
+    catch (sycl::exception const &exc) {
+      std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+                << ", line:" << __LINE__ << std::endl;
+      std::exit(1);
+    }
+

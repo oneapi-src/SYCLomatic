@@ -17,7 +17,7 @@ Detailed Help
 
 Zero-length arrays are not supported in the C++ standard or SYCL\* specification.
 It may be supported by some host compiler implementations, but it is not supported
-by the |dpcpp_compiler| for device code.
+by the |dpcpp_compiler|_ for device code.
 
 Suggestions to Fix
 ------------------

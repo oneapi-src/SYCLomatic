@@ -87,7 +87,7 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string Str =
         MapNames::findReplacedName(MapNames::CuDNNTypeNamesMap, TypeStr);
     if (!Str.empty()) {
-      requestHelperFeatureForTypeNames(TypeStr, BeginLoc);
+      requestHelperFeatureForTypeNames(TypeStr);
       SrcAPIStaticsMap[TypeStr]++;
 
       auto Len = Lexer::MeasureTokenLength(
@@ -118,7 +118,7 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     emplaceTransformation(new ReplaceStmt(E, Search->second));
-    requestHelperFeatureForEnumNames(EnumName, E);
+    requestHelperFeatureForEnumNames(EnumName);
   }
 }
 

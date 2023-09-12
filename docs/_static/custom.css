@@ -51,3 +51,8 @@
     font-size: .7em;
     text-align: left;
 }
+
+/* Footer privacy links */
+a#wap_dns {
+    display: none;
+}

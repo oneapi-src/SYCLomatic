@@ -9,7 +9,6 @@
 #ifndef DPCT_EXPR_ANALYSIS_H
 #define DPCT_EXPR_ANALYSIS_H
 
-#include "CustomHelperFiles.h"
 #include "Statics.h"
 #include "TextModification.h"
 
@@ -205,6 +204,20 @@ public:
   inline void analyze(const TypeLoc &TL) {
     initSourceRange(TL.getSourceRange());
     analyzeType(TL);
+  }
+
+  inline void analyze(const TypeLoc &TL, const NestedNameSpecifierLoc &NNSL) {
+    auto SourceRange = getDefinitionRange(NNSL.getBeginLoc(),
+                                          TL.getSourceRange().getEnd());
+    initSourceRange(SourceRange);
+    analyzeType(TL, nullptr, nullptr, &NNSL);
+  }
+
+  inline void analyze(const TypeLoc &TL, const DependentNameTypeLoc &DNTL) {
+    auto SourceRange = getDefinitionRange(DNTL.getQualifierLoc().getBeginLoc(),
+                                          TL.getSourceRange().getEnd());
+    initSourceRange(SourceRange);
+    analyzeType(TL, nullptr, &DNTL);
   }
 
   inline void analyze(const TemplateArgumentLoc &TAL) {
@@ -640,7 +653,9 @@ protected:
                           const Expr *CSCE = nullptr) {
     analyzeType(TSI->getTypeLoc(), CSCE);
   }
-  void analyzeType(TypeLoc TL, const Expr *E = nullptr);
+  void analyzeType(TypeLoc TL, const Expr *E = nullptr,
+                   const DependentNameTypeLoc *DNTL = nullptr,
+                   const NestedNameSpecifierLoc *NNSL = nullptr);
   void analyzeDecltypeType(DecltypeTypeLoc TL);
 
   // Doing nothing when it doesn't need analyze
@@ -834,15 +849,16 @@ private:
   unsigned int SizeOfHighestDimension = 0;
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
-  void analyzeExpr(const CXXDependentScopeMemberExpr *CDSME);
+  void analyzeExpr(const CXXUnresolvedConstructExpr *Ctor);
+  void analyzeExpr(const CXXTemporaryObjectExpr *Ctor);
+  void analyzeExpr(const ExplicitCastExpr *Cast);
+  void analyzeExpr(const DeclRefExpr *DRE);
 
-  std::vector<std::string> getCtorArgs(const CXXConstructExpr *Ctor);
-  inline std::string getCtorArg(ArgumentAnalysis &KCA, const Expr *Arg) {
-    KCA.analyze(Arg);
-    return KCA.getReplacedString();
-  }
-  int64_t calculateWorkgroupSize(const CXXConstructExpr *Ctor);
-  bool isOneDimensionConfigArg(const CXXConstructExpr *Ctor);
+  template <class T, class ArgIter>
+  void handleDim3Ctor(const T *, SourceRange Parens, ArgIter ArgBegin,
+                      ArgIter ArgEnd);
+  template <class T, class ArgIter>
+  void handleDim3Args(const T *Ctor, ArgIter ArgBegin, ArgIter ArgEnd);
 
 protected:
   void dispatch(const Stmt *Expression) override;
@@ -858,6 +874,7 @@ public:
   unsigned int getSizeOfHighestDimension() { return SizeOfHighestDimension; }
   unsigned int Dim = 3;
   bool IsTryToUseOneDimension = false;
+  SmallVector<std::string, 3> Dim3Args;
 };
 
 class FunctorAnalysis : public ArgumentAnalysis {

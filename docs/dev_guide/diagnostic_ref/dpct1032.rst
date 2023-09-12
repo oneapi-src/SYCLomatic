@@ -15,7 +15,7 @@ A different random number generator is used. You may need to adjust the code.
 Detailed Help
 -------------
 
-|mkl_long| (|mkl|) RNG currently does not support the following engine types:
+|mkl_long|_ (|mkl|) RNG currently does not support the following engine types:
 
 * XORWOW generator
 * Sobol generator of 64-bit sequences
@@ -31,3 +31,37 @@ Suggestions to Fix
 ------------------
 
 You may need to adjust the code.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    __global__ void kernel(curandStateXORWOW_t rng) {
+      ...
+    }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    /*
+    DPCT1032:0: A different random number generator is used. You may need to adjust
+    the code.
+    */
+    void kernel(
+        dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng) {
+      ...
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    void kernel(
+        dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng) {
+      ...
+    }
+

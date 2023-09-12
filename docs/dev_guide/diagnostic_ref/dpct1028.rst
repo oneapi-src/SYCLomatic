@@ -27,3 +27,36 @@ Rewrite this code manually by using a supported random number generator. See the
 
 If the parameter is a CUDA device attribute:
 Redesign the code logic to remove use of the device attribute.
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo(int *result, CUdevice device) {
+      cuDeviceGetAttribute(result, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
+    }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo(int *result, int device) {
+      /*
+      DPCT1028:0: The cuDeviceGetAttribute was not migrated because parameter
+      CU_DEVICE_ATTRIBUTE_GPU_OVERLAP is unsupported.
+      */
+      cuDeviceGetAttribute(result, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo(int *result, int device) {
+      // Assume the HW supports copy memory and execute a kernel concurrently
+      *result = 1;
+    }
+

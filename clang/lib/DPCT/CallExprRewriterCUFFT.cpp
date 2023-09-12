@@ -22,7 +22,7 @@ public:
   // migrated to dpct::fft::fft_direction::forward/backward
   // In other locations, they will be migrated to integer literal.
   template <class StreamT> void print(StreamT &Stream) const {
-    requestFeature(HelperFeatureEnum::FftUtils_fft_engine, E);
+    requestFeature(HelperFeatureEnum::device_ext);
     Expr::EvalResult ER;
     int64_t Value = 0;
     if (!E->isValueDependent() &&

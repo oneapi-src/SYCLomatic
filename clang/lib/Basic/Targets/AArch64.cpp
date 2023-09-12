@@ -39,6 +39,12 @@ static constexpr Builtin::Info BuiltinInfo[] = {
 
 #define BUILTIN(ID, TYPE, ATTRS)                                               \
   {#ID, TYPE, ATTRS, nullptr, HeaderDesc::NO_HEADER, ALL_LANGUAGES},
+#define TARGET_BUILTIN(ID, TYPE, ATTRS, FEATURE)                               \
+  {#ID, TYPE, ATTRS, FEATURE, HeaderDesc::NO_HEADER, ALL_LANGUAGES},
+#include "clang/Basic/BuiltinsSME.def"
+
+#define BUILTIN(ID, TYPE, ATTRS)                                               \
+  {#ID, TYPE, ATTRS, nullptr, HeaderDesc::NO_HEADER, ALL_LANGUAGES},
 #define LANGBUILTIN(ID, TYPE, ATTRS, LANG)                                     \
   {#ID, TYPE, ATTRS, nullptr, HeaderDesc::NO_HEADER, LANG},
 #define TARGET_BUILTIN(ID, TYPE, ATTRS, FEATURE)                               \
@@ -409,7 +415,9 @@ void AArch64TargetInfo::getTargetDefines(const LangOptions &Opts,
   if (HasCRC)
     Builder.defineMacro("__ARM_FEATURE_CRC32", "1");
 
-  if (HasRCPC)
+  if (HasRCPC3)
+    Builder.defineMacro("__ARM_FEATURE_RCPC", "3");
+  else if (HasRCPC)
     Builder.defineMacro("__ARM_FEATURE_RCPC", "1");
 
   if (HasFMV)
@@ -665,6 +673,7 @@ bool AArch64TargetInfo::hasFeature(StringRef Feature) const {
       .Case("bti", HasBTI)
       .Cases("ls64", "ls64_v", "ls64_accdata", HasLS64)
       .Case("wfxt", HasWFxT)
+      .Case("rcpc3", HasRCPC3)
       .Default(false);
 }
 
@@ -772,16 +781,19 @@ bool AArch64TargetInfo::handleTargetFeatures(std::vector<std::string> &Features,
     if (Feature == "+sme") {
       HasSME = true;
       HasBFloat16 = true;
+      HasFullFP16 = true;
     }
     if (Feature == "+sme-f64f64") {
       HasSME = true;
       HasSMEF64F64 = true;
       HasBFloat16 = true;
+      HasFullFP16 = true;
     }
     if (Feature == "+sme-i16i64") {
       HasSME = true;
       HasSMEI16I64 = true;
       HasBFloat16 = true;
+      HasFullFP16 = true;
     }
     if (Feature == "+sb")
       HasSB = true;
@@ -919,6 +931,8 @@ bool AArch64TargetInfo::handleTargetFeatures(std::vector<std::string> &Features,
       HasD128 = true;
     if (Feature == "+gcs")
       HasGCS = true;
+    if (Feature == "+rcpc3")
+      HasRCPC3 = true;
   }
 
   // Check features that are manually disabled by command line options.
@@ -1150,7 +1164,11 @@ const char *const AArch64TargetInfo::GCCRegNames[] = {
 
     // SVE predicate registers
     "p0",  "p1",  "p2",  "p3",  "p4",  "p5",  "p6",  "p7",  "p8",  "p9",  "p10",
-    "p11", "p12", "p13", "p14", "p15"
+    "p11", "p12", "p13", "p14", "p15",
+
+    // SVE predicate-as-counter registers
+    "pn0",  "pn1",  "pn2",  "pn3",  "pn4",  "pn5",  "pn6",  "pn7",  "pn8",
+    "pn9",  "pn10", "pn11", "pn12", "pn13", "pn14", "pn15"
 };
 
 ArrayRef<const char *> AArch64TargetInfo::getGCCRegNames() const {

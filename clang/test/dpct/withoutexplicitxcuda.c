@@ -8,7 +8,7 @@
 #include <cuda_runtime.h>
 
 // CHECK: static dpct::constant_memory<float, 1> const_angle(360);
-// CHECK-NEXT: void simple_kernel(float *d_array, float *const_angle) {
+// CHECK-NEXT: void simple_kernel(float *d_array, float const *const_angle) {
 // CHECK-NEXT:   d_array[0] = const_angle[0];
 // CHECK-NEXT:   return;
 // CHECK-NEXT: }
@@ -21,7 +21,7 @@ __global__ void simple_kernel(float *d_array) {
 // CHECK: void k(){}
 // CHECK-NEXT: int main(int argc, char** argv) {
 // CHECK-NEXT:   const int N = 4;
-// CHECK-NEXT:   dpct::get_default_queue().parallel_for(
+// CHECK-NEXT:   dpct::get_in_order_queue().parallel_for(
 // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:       k();

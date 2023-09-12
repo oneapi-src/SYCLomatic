@@ -4,27 +4,12 @@ Migrate a Project on Linux\*
 Use the Command Line
 --------------------
 
-You can invoke |tool_name| at the command line.
+.. include:: /_include_files/run_tool_cmd.rst
 
-Use the tool's ``--in-root`` option to specify the location of the
-source that should be migrated:
+.. include:: /_include_files/alt_cuda_header_files.rst
 
-* Any source within the ``--in-root`` directory (at any nesting
-  level) may be migrated.
-* Any header file within the ``--in-root`` directory (at any nesting level) that
-  is included by the source or header file, which is being migrated, is also
-  migrated.
-* Files from outside the ``--in-root`` directory will not be migrated even if
-  they are included by any of your program source files.
-* If the ``--in-root`` option is not specified, the directory of the first input
-  source file is implied.
-
-Use the tool's ``--out-root`` option to specify the directory where the
-SYCL\* code produced by |tool_name| is written:
-
-* Relative paths of the migrated files are maintained.
-* Extensions are changed to ``.dp.cpp``.
-* If the ``--out-root`` option is not specified, ``./dpct_output`` is implied.
+Migrate the Folder Options Sample
+---------------------------------
 
 The following steps show how to migrate the Folder Options sample using |tool_name|:
 
@@ -54,7 +39,8 @@ The following steps show how to migrate the Folder Options sample using |tool_na
 
    The ``--in-root`` option specifies the location of the CUDA
    files that need migration. The ``--out-root`` option specifies the location for the migrated files.
-#. As a result of the migration command, you should see the following files:
+
+   As a result of the migration command, you should see the following files:
 
    .. code-block:: none
 
@@ -71,7 +57,7 @@ The following steps show how to migrate the Folder Options sample using |tool_na
 Review :ref:`emitted-warnings` for additional information about inserted warnings
 and comments.
 
-For the most accurate and detailed instructions of addressing warnings, see the
+For details on addressing warnings generated when migrating code samples, refer to the
 **Addressing Warnings in the Migrated Code** section of the sample README files.
 
 For more information on command line capabilities, review the
@@ -82,15 +68,21 @@ For more information on command line capabilities, review the
 Use Make/CMake\* to Migrate a Complete Project
 ----------------------------------------------
 
-If your project uses Make or CMake, you can utilize compilation database support
-to provide compilation options, settings, macro definitions, and include paths to
-|tool_name|. Refer to :ref:`gen_comp_db` for detailed information about generating a compilation database.
+If your project uses Make or CMake, you can use a compilation database to provide
+compilation options, settings, macro definitions, and include paths to |tool_name|.
+Refer to :ref:`gen_comp_db` for detailed information about generating a compilation database.
 
 |tool_name| parses the compilation database and applies the necessary
 options when migrating the input sources.
 
 This example uses the Rodinia needleman-wunsch sample to demonstrate the use of a
-compilation database.
+compilation database, following three high-level steps:
+
+#. :ref:`Create the Compilation Database <step-1-compdb>`
+#. :ref:`Use the Compilation Database with the Migration Tool <step-2-compdb>`
+#. :ref:`Verify the Migrated Source <step-3-compdb>`
+
+.. _step-1-compdb:
 
 **Step 1: Create the Compilation Database**
 
@@ -135,6 +127,8 @@ compilation database.
         "file" : "/home/user/projects/DPCPP_CT/rodinia_3.1/cuda/nw/needle.cu"
       }]
 
+.. _step-2-compdb:
+
 **Step 2: Use the Compilation Database with the Migration Tool**
 
 By default, |tool_name| looks for the ``compile_commands.json`` file
@@ -167,17 +161,16 @@ After running the migration command, you should see the following files in the
        ├── needle_kernel.dp.cpp
        └── needle.dp.cpp
 
-**Step 3: Verify the Source for Correctness and Fix Anything the Tool was Unable
-to Migrate**
+.. _step-3-compdb:
 
-Verify the migration of the source code that uses variables declared
-using preprocessor directives. Inspect the migrated source code, address any
-generated DPCT warnings, and verify correctness of the new program.
+**Step 3: Verify the Migrated Source**
 
-Review :ref:`emitted-warnings` for additional information about inserted warnings
-and comments.
+* Verify the migration of the source code that uses variables declared using preprocessor directives.
+* Inspect the migrated source code and address any generated DPCT warnings.
+* Verify correctness of the new program.
+* Review :ref:`emitted-warnings` for additional information about inserted warnings and comments.
 
-For the most accurate and detailed instructions on addressing warnings, see the
+For details on addressing warnings generated when migrating code samples, refer to the
 **Addressing Warnings in the Migrated Code** section of the samples README files.
 
 .. include:: /_include_files/ide_linux_dgr.rst

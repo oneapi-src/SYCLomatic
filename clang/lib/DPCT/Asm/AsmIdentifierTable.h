@@ -19,18 +19,21 @@ namespace clang::dpct {
 class InlineAsmIdentifierInfo {
   friend class InlineAsmIdentifierTable;
 
+public:
+  enum IDFlags {
+    BuiltinID = 0x01,   // %laneid, %warpid, WARP_SZ, ...
+    Instruction = 0x02, // Instruction opcode, mov, setp, ...
+    BuiltinType = 0x04, // Builtin type name, i32, u32, ...
+    InstAttr = 0x08,    // The attributes for instructions, .eq, ...
+  };
+
+private:
   // Front-end token ID or tok::identifier.
-  unsigned TokenID : 16;
-  unsigned IsInstruction : 1;
-  unsigned IsBuiltinType : 1;
-  unsigned IsBuiltinID : 1;
-  unsigned : 13;
+  unsigned TokenID = asmtok::identifier;
+  unsigned Flags = 0;
 
   llvm::StringMapEntry<InlineAsmIdentifierInfo *> *Entry = nullptr;
-
-  InlineAsmIdentifierInfo()
-      : TokenID(asmtok::identifier), IsInstruction(0), IsBuiltinType(0),
-        IsBuiltinID(0) {}
+  InlineAsmIdentifierInfo() = default;
 
 public:
   InlineAsmIdentifierInfo(const InlineAsmIdentifierInfo &) = delete;
@@ -69,12 +72,25 @@ public:
     return static_cast<asmtok::TokenKind>(TokenID);
   }
 
-  void setInstruction() { IsInstruction = true; }
-  void setBuiltinType() { IsBuiltinType = true; }
-  void setBuiltinID() { IsBuiltinID = true; }
-  bool isInstruction() const { return IsInstruction; }
-  bool isBuiltinType() const { return IsBuiltinType; }
-  bool isBuiltinID() { return IsBuiltinID; }
+  /// Set the specified flag.
+  void setFlag(IDFlags Flag) { Flags |= Flag; }
+
+  /// Get the specified flag.
+  bool getFlag(IDFlags Flag) const { return (Flags & Flag) != 0; }
+
+  /// Unset the specified flag.
+  void clearFlag(IDFlags Flag) { Flags &= ~Flag; }
+
+  /// Return the internal represtation of the flags.
+  ///
+  /// This is only intended for low-level operations such as writing tokens to
+  /// disk.
+  unsigned getFlags() const { return Flags; }
+
+  bool isInstruction() const { return getFlag(Instruction); }
+  bool isBuiltinType() const { return getFlag(BuiltinType); }
+  bool isBuiltinID() const { return getFlag(BuiltinID); }
+  bool isInstructionAttribute() const { return getFlag(InstAttr); }
 };
 
 class InlineAsmIdentifierInfoLookup {
@@ -89,9 +105,6 @@ class InlineAsmIdentifierTable {
   HashTableTy HashTable;
 
   InlineAsmIdentifierInfoLookup *ExternalLookup;
-
-  /// Populate the identifier table with info about the asm keywords.
-  void AddKeywords();
 
 public:
   /// Create the identifier table.
@@ -153,6 +166,9 @@ public:
   iterator find(StringRef Name) const { return HashTable.find(Name); }
 
   bool contains(StringRef Name) const { return HashTable.contains(Name); }
+
+  /// Populate the identifier table with info about the asm keywords.
+  void AddKeywords();
 };
 
 } // namespace clang::dpct

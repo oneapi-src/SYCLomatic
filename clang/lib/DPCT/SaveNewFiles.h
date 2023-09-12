@@ -10,14 +10,15 @@
 #define DPCT_SAVE_NEW_FILES_H
 
 #include "ValidateArguments.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/Support/Error.h"
 #include <map>
 
 #define DiagRef                                                                \
   "See Diagnostics Reference to resolve warnings and complete the "            \
   "migration:\n"                                                               \
-  "https://software.intel.com/content/www/us/en/develop/documentation/"        \
-  "intel-dpcpp-compatibility-tool-user-guide/top/diagnostics-reference.html\n"
+  "https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/"     \
+  "developer-guide-reference/current/diagnostics-reference.html\n"
 
 namespace llvm {
 class StringRef;

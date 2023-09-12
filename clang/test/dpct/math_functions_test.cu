@@ -70,10 +70,10 @@ float test_sqrt(float in) { return sqrt(in); }
 // CHECK: float test_pow(float a, float b) { return pow(a, b); }
 float test_pow(float a, float b) { return pow(a, b); }
 
-// CHECK: float test_pow(float a, int b) { return sycl::pown(a, b); }
+// CHECK: float test_pow(float a, int b) { return dpct::pow(a, b); }
 float test_pow(float a, int b) { return pow(a, b); }
 
-// CHECK: double test_pow(double a, int b) { return sycl::pown(a, b); }
+// CHECK: double test_pow(double a, int b) { return dpct::pow(a, b); }
 double test_pow(double a, int b) { return pow(a, b); }
 
 // CHECK: float test_log(float in) { return log(in); }
@@ -232,7 +232,7 @@ float test_exp10(float a) { return exp10(a); }
 // CHECK: float test_rsqrt(float a) { return sycl::rsqrt(a); }
 float test_rsqrt(float a) { return rsqrt(a); }
 
-// CHECK: float test_rcbrt(float a) { return 1 / sycl::cbrt<double>(a); }
+// CHECK: float test_rcbrt(float a) { return 1 / dpct::cbrt<double>(a); }
 float test_rcbrt(float a) { return rcbrt(a); }
 
 // CHECK: float test_sinpi(float a) { return sinpi(a); }
@@ -249,7 +249,7 @@ void test_sincospi(float a, float *sptr, float *cptr) {
 }
 
 // CHECK: void test_sincos(float a, float *sptr, float *cptr) {
-// CHECK:   return sincos(a, sptr, cptr);
+// CHECK:   return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(cptr)); }();
 // CHECK: }
 void test_sincos(float a, float *sptr, float *cptr) {
   return sincos(a, sptr, cptr);

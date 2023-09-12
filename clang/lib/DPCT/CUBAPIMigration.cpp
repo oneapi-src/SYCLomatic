@@ -51,19 +51,21 @@ auto isDeviceFuncCallExpr = []() {
         "InclusiveScanByKey", "InclusiveSumByKey", "ExclusiveScanByKey",
         "ExclusiveSumByKey", "Flagged", "Unique", "UniqueByKey", "Encode",
         "SortKeys", "SortKeysDescending", "SortPairs", "SortPairsDescending",
-        "If", "StableSortPairs", "StableSortPairsDescending");
+        "If", "StableSortKeys", "StableSortKeysDescending", "StableSortPairs",
+        "StableSortPairsDescending", "NonTrivialRuns", "HistogramEven",
+        "MultiHistogramEven", "HistogramRange", "MultiHistogramRange");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
-                      "DeviceSegmentedSort");
+                      "DeviceSegmentedSort", "DeviceHistogram");
   };
-  return callExpr(callee(functionDecl(
-      allOf(hasDeviceFuncName(),
-            hasDeclContext(cxxRecordDecl(
-                allOf(hasDeviceRecordName(),
-                      hasDeclContext(namespaceDecl(hasName("cub"))))))))));
+  return callExpr(callee(functionDecl(allOf(
+      hasDeviceFuncName(),
+      hasDeclContext(cxxRecordDecl(allOf(
+          hasDeviceRecordName(),
+          hasAncestor(namespaceDecl(hasName("cub"))))))))));
 };
 
 } // namespace
@@ -75,12 +77,12 @@ REGISTER_RULE(CubIntrinsicRule, PassKind::PK_Analysis)
 
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
-    return hasAnyName("cub::Sum", "cub::Max", "cub::Min", "cub::Equality",
-                      "cub::KeyValuePair", "cub::CountingInputIterator",
-                      "cub::TransformInputIterator",
-                      "cub::ConstantInputIterator",
-                      "cub::ArgIndexInputIterator",
-                      "cub::DiscardOutputIterator", "cub::DoubleBuffer");
+    return hasAnyName(
+        "cub::Sum", "cub::Max", "cub::Min", "cub::Equality",
+        "cub::KeyValuePair", "cub::CountingInputIterator",
+        "cub::TransformInputIterator", "cub::ConstantInputIterator",
+        "cub::ArgIndexInputIterator", "cub::DiscardOutputIterator",
+        "cub::DoubleBuffer", "cub::NullType");
   };
 
   MF.addMatcher(
@@ -106,7 +108,7 @@ bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
 
 bool CubTypeRule::CanMappingToSyclType(StringRef OpTypeName) {
   return CanMappingToSyclNativeBinaryOp(OpTypeName) ||
-         OpTypeName == "cub::Equality" ||
+         OpTypeName == "cub::Equality" || OpTypeName == "cub::NullType" ||
 
          // Ignore template arguments, .e.g cub::KeyValuePair<int, int>
          OpTypeName.startswith("cub::KeyValuePair");
@@ -158,11 +160,15 @@ void CubMemberCallRule::runRule(
 }
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(callExpr(callee(functionDecl(allOf(
-                             hasAnyName("IADD3", "SHR_ADD", "SHL_ADD"),
-                             hasDeclContext(namespaceDecl(hasName("cub")))))))
-                    .bind("IntrinsicCall"),
-                this);
+  MF.addMatcher(
+      callExpr(
+          callee(functionDecl(allOf(
+              hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
+                         "SyncStream", "CurrentDevice", "DeviceCount",
+                         "DeviceCountUncached", "DeviceCountCachedValue"),
+              hasAncestor(namespaceDecl(hasName("cub")))))))
+          .bind("IntrinsicCall"),
+      this);
 }
 
 void CubIntrinsicRule::runRule(
@@ -604,28 +610,38 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
   if (!Operator) {
     return MapNames::getClNamespace() + "plus<>()";
   }
+
+  auto processCXXTemporaryObjectExpr =
+      [&](const CXXTemporaryObjectExpr *CXXTempObj) {
+        std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+            CXXTempObj->getType().getCanonicalType());
+        if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
+          OpRepl = MapNames::getClNamespace() + "plus<>()";
+        } else if (OpType == "cub::Max") {
+          OpRepl = MapNames::getClNamespace() + "maximum<>()";
+        } else if (OpType == "cub::Min") {
+          OpRepl = MapNames::getClNamespace() + "minimum<>()";
+        }
+      };
+
   if (auto Op = dyn_cast<CXXConstructExpr>(Operator)) {
-    auto CtorArg = Op->getArg(0)->IgnoreImplicitAsWritten();
-    if (auto DRE = dyn_cast<DeclRefExpr>(CtorArg)) {
-      auto D = DRE->getDecl();
-      if (!D)
-        return OpRepl;
-      std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
-          D->getType().getCanonicalType());
-      if (OpType == "cub::Sum" || OpType == "cub::Max" ||
-          OpType == "cub::Min") {
-        ExprAnalysis EA(Operator);
-        OpRepl = EA.getReplacedString();
-      }
-    } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
-      std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
-          CXXTempObj->getType().getCanonicalType());
-      if (OpType == "cub::Sum") {
-        OpRepl = MapNames::getClNamespace() + "plus<>()";
-      } else if (OpType == "cub::Max") {
-        OpRepl = MapNames::getClNamespace() + "maximum<>()";
-      } else if (OpType == "cub::Min") {
-        OpRepl = MapNames::getClNamespace() + "minimum<>()";
+    if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(Op)) {
+      processCXXTemporaryObjectExpr(CXXTempObj);
+    } else {
+      auto CtorArg = Op->getArg(0)->IgnoreImplicitAsWritten();
+      if (auto DRE = dyn_cast<DeclRefExpr>(CtorArg)) {
+        auto D = DRE->getDecl();
+        if (!D)
+          return OpRepl;
+        std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+            D->getType().getCanonicalType());
+        if (OpType == "cub::Sum" || OpType == "cub::Max" ||
+            OpType == "cub::Min" || OpType == "cuda::std::plus<void>") {
+          ExprAnalysis EA(Operator);
+          OpRepl = EA.getReplacedString();
+        }
+      } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
+        processCXXTemporaryObjectExpr(CXXTempObj);
       }
     }
   }
@@ -759,9 +775,9 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
     auto EndLoc =
         SM.getExpansionLoc(TD->getTypeSourceInfo()->getTypeLoc().getEndLoc());
     if (CanonicalTypeStr.find("Warp") != std::string::npos) {
-      emplaceTransformation(replaceText(
-          BeginLoc, EndLoc.getLocWithOffset(1),
-          MapNames::getClNamespace() + "ext::oneapi::sub_group", SM));
+      emplaceTransformation(
+          replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                      MapNames::getClNamespace() + "sub_group", SM));
     } else if (CanonicalTypeStr.find("Block") != std::string::npos) {
       auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TD);
       if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
@@ -846,7 +862,6 @@ void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     return;
 
   llvm::StringRef FuncName = DC->getName();
-
   if (FuncName == "ShuffleIndex") {
     processWarpLevelFuncCall(CE, FuncCallUsed);
   } else if (FuncName == "ThreadLoad" || FuncName == "ThreadStore") {
@@ -907,9 +922,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
             OpRepl = getOpRepl(FuncArgs[3]);
             NewFuncName =
                 MapNames::getDpctNamespace() + "group::exclusive_scan";
-            requestFeature(
-                HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
-                BlockMC);
+            requestFeature(HelperFeatureEnum::device_ext);
             DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                        HT_DPCT_DPL_Utils);
             IsReferenceOutput = true;
@@ -938,9 +951,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
             OpRepl = getOpRepl(FuncArgs[2]);
             NewFuncName =
                 MapNames::getDpctNamespace() + "group::exclusive_scan";
-            requestFeature(
-                HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
-                BlockMC);
+            requestFeature(HelperFeatureEnum::device_ext);
             DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                        HT_DPCT_DPL_Utils);
           }
@@ -957,9 +968,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           OpRepl = getOpRepl(FuncArgs[3]);
           AggregateOrCallback = AggregateOrCallbackEA.getReplacedString();
           NewFuncName = MapNames::getDpctNamespace() + "group::exclusive_scan";
-          requestFeature(
-              HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
-              BlockMC);
+          requestFeature(HelperFeatureEnum::device_ext);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                      HT_DPCT_DPL_Utils);
         } else {
@@ -977,9 +986,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
           OpRepl = getOpRepl(FuncArgs[2]);
           NewFuncName = MapNames::getDpctNamespace() + "group::inclusive_scan";
-          requestFeature(
-              HelperFeatureEnum::DplExtrasDpcppExtensions_inclusive_scan,
-              BlockMC);
+          requestFeature(HelperFeatureEnum::device_ext);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                      HT_DPCT_DPL_Utils);
           IsReferenceOutput = true;
@@ -1002,9 +1009,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
         ExprAnalysis AggregateOrCallbackEA(FuncArgs[3]);
         AggregateOrCallback = AggregateOrCallbackEA.getReplacedString();
         NewFuncName = MapNames::getDpctNamespace() + "group::inclusive_scan";
-        requestFeature(
-            HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
-            BlockMC);
+        requestFeature(HelperFeatureEnum::device_ext);
         DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                    HT_DPCT_DPL_Utils);
       }
@@ -1017,9 +1022,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                 ->getType()
                 ->isLValueReferenceType()) {
           NewFuncName = MapNames::getDpctNamespace() + "group::exclusive_scan";
-          requestFeature(
-              HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
-              BlockMC);
+          requestFeature(HelperFeatureEnum::device_ext);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                      HT_DPCT_DPL_Utils);
           GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
@@ -1047,9 +1050,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           ExprAnalysis AggregateOrCallbackEA(FuncArgs[2]);
           AggregateOrCallback = AggregateOrCallbackEA.getReplacedString();
           NewFuncName = MapNames::getDpctNamespace() + "group::exclusive_scan";
-          requestFeature(
-              HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
-              BlockMC);
+          requestFeature(HelperFeatureEnum::device_ext);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                      HT_DPCT_DPL_Utils);
         } else {
@@ -1067,9 +1068,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
           OpRepl = getOpRepl(nullptr);
           NewFuncName = MapNames::getDpctNamespace() + "group::inclusive_scan";
-          requestFeature(
-              HelperFeatureEnum::DplExtrasDpcppExtensions_inclusive_scan,
-              BlockMC);
+          requestFeature(HelperFeatureEnum::device_ext);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                      HT_DPCT_DPL_Utils);
           IsReferenceOutput = true;
@@ -1092,9 +1091,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
         ExprAnalysis AggregateOrCallbackEA(FuncArgs[2]);
         AggregateOrCallback = AggregateOrCallbackEA.getReplacedString();
         NewFuncName = MapNames::getDpctNamespace() + "group::inclusive_scan";
-        requestFeature(
-            HelperFeatureEnum::DplExtrasDpcppExtensions_inclusive_scan,
-            BlockMC);
+        requestFeature(HelperFeatureEnum::device_ext);
         DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                    HT_DPCT_DPL_Utils);
       }
@@ -1122,8 +1119,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
             ->isLValueReferenceType()) {
       GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
       NewFuncName = MapNames::getDpctNamespace() + "group::reduce";
-      requestFeature(HelperFeatureEnum::DplExtrasDpcppExtensions_reduce,
-                     BlockMC);
+      requestFeature(HelperFeatureEnum::device_ext);
       DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                  HT_DPCT_DPL_Utils);
     } else {
@@ -1270,14 +1266,25 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
     ExprAnalysis InEA(InData);
     if (NumArgs == 1) {
       OpRepl = getOpRepl(nullptr);
+      NewFuncName = "reduce_over_group";
+      Repl = MapNames::getClNamespace() + "reduce_over_group(" +
+             GroupOrWorkitem + ", " + InEA.getReplacedString() + ", " + OpRepl +
+             ")";
+    } else if (NumArgs == 2) {
+      OpRepl = getOpRepl(nullptr);
+      DpctGlobalInfo::getInstance().insertHeader(WarpMC->getBeginLoc(),
+                                                 HeaderType::HT_DPCT_DPL_Utils);
+      GroupOrWorkitem = DpctGlobalInfo::getItem(WarpMC, FD);
+      ExprAnalysis ValidItemEA(WarpMC->getArg(1));
+      Repl = MapNames::getDpctNamespace() +
+             "group::reduce_over_partial_group(" + GroupOrWorkitem + ", " +
+             InEA.getReplacedString() + ", " + ValidItemEA.getReplacedString() +
+             ", " + OpRepl + ")";
     } else {
       report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              "cub::" + FuncName);
       return;
     }
-    NewFuncName = "reduce_over_group";
-    Repl = MapNames::getClNamespace() + "reduce_over_group(" + GroupOrWorkitem +
-           ", " + InEA.getReplacedString() + ", " + OpRepl + ")";
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
   }
 
@@ -1317,9 +1324,9 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
   std::string TypeName = TL->getType().getCanonicalType().getAsString();
   if (TypeName.find("class cub::WarpScan") == 0 ||
       TypeName.find("class cub::WarpReduce") == 0) {
-    emplaceTransformation(
-        replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
-                    MapNames::getClNamespace() + "ext::oneapi::sub_group", SM));
+    emplaceTransformation(replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                                      MapNames::getClNamespace() + "sub_group",
+                                      SM));
   } else if (TypeName.find("class cub::BlockScan") == 0 ||
              TypeName.find("class cub::BlockReduce") == 0) {
     auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);

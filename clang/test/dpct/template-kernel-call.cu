@@ -3,6 +3,8 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call/template-kernel-call.dp.cpp --match-full-lines %s
 
+#include <vector>
+
 void printf(const char *format, unsigned char data);
 
 __global__ void kernel(int a, int b){
@@ -17,10 +19,10 @@ __global__ void kernel(int a, int b){
 // CHECK-NEXT:   int a;
 // CHECK-NEXT: public:
 // CHECK-NEXT:   void run(){
-// CHECK-NEXT:     dpct::get_default_queue().submit(
+// CHECK-NEXT:     dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:       [&](sycl::handler &cgh) {
-// CHECK-NEXT:         auto this_a_ct0 = this->a;
-// CHECK-NEXT:         auto ptest_data_ct1 = ptest->data;
+// CHECK-NEXT:         int this_a_ct0 = this->a;
+// CHECK-NEXT:         int ptest_data_ct1 = ptest->data;
 // CHECK-EMPTY:
 // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -83,7 +85,7 @@ class TestName;
 template<class T>
 void runTest() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   typedef TestTemplate<T> TT;
   const void *karg1 = 0;
   const T *karg2 = 0;
@@ -194,7 +196,7 @@ template void runTest<float>();
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   void *karg1 = 0;
   LA *karg2 = 0;
   // CHECK:/*
@@ -220,7 +222,7 @@ int main() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
+  // CHECK-NEXT:       int ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
@@ -248,8 +250,8 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:void convert(){
 // CHECK-NEXT:  T b;
 // CHECK-NEXT:  {
-// CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
-// CHECK-NEXT:  dpct::get_default_queue().submit(
+// CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_out_of_order_queue().get_device(), {sycl::aspect::fp64});
+// CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      sycl::local_accessor<int, 1> aaa_acc_ct1(sycl::range<1>(0), cgh);
 // CHECK-NEXT:      sycl::local_accessor<double, 2> bbb_acc_ct1(sycl::range<2>(8, 0), cgh);
@@ -318,6 +320,9 @@ static void multiply(int block_size, Image<T> &ptr, T value) {
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      auto ptr_dPtr_ct0 = ptr.dPtr;
 // CHECK-EMPTY:
+// CHECK-NEXT:      /*
+// CHECK-NEXT:      DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:      */
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, size), sycl::range<3>(1, 1, size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
@@ -339,6 +344,9 @@ void foo1(Image<T> &ptr, T value) {
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      auto ptr_dPtr_ct0 = ptr.dPtr;
 // CHECK-EMPTY:
+// CHECK-NEXT:      /*
+// CHECK-NEXT:      DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:      */
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(2, size, 1), sycl::range<3>(2, size, 1)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
@@ -381,6 +389,9 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:    */
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
@@ -393,6 +404,9 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:    */
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, base_t::crsmat->rows) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
@@ -405,6 +419,9 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:    */
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, base_t::crsmat->rows), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
@@ -417,6 +434,9 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1050:{{[0-9]+}}: The template argument of the dpct_kernel_name could not be deduced. You need to update this code.
+// CHECK-NEXT:    */
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, base_t::crsmat->rows), sycl::range<3>(1, 1, base_t::crsmat->rows)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
@@ -524,4 +544,17 @@ __global__ void test_fooclass1() {
   a.foo();
   foo_class1<float, 10> b;
   b.foo();
+}
+
+__global__ void test_kernel();
+
+template<class T>
+void test_host() {
+  std::vector<T> vec;
+  // CHECK:  dpct::get_out_of_order_queue().parallel_for<dpct_kernel_name<class test_kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, vec.size()), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:  [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:    test_kernel();
+  // CHECK-NEXT:  });
+  test_kernel<<<vec.size(), 1>>>();
 }

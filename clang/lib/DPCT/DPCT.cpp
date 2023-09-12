@@ -7,24 +7,24 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
+#include "APIMapping/QueryAPIMapping.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "AutoComplete.h"
 #include "CallExprRewriter.h"
-#include "MemberExprRewriter.h"
-#include "TypeLocRewriters.h"
-#include "CrashRecovery.h"
 #include "Config.h"
-#include "CustomHelperFiles.h"
+#include "CrashRecovery.h"
 #include "ExternalReplacement.h"
 #include "GenHelperFunction.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
+#include "MemberExprRewriter.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
+#include "TypeLocRewriters.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
@@ -36,6 +36,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
@@ -71,7 +72,6 @@ using namespace clang::tooling;
 using namespace llvm::cl;
 
 namespace clang {
-extern llvm::APSInt CudaRTVersionValue;
 namespace tooling {
 std::string getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
@@ -122,13 +122,12 @@ bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
 bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
-bool NoUseGenericSpaceFlag = false;
 bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
-                "from " + std::to_string((size_t)Warnings::BEGIN) + " to " +
-                std::to_string((size_t)Warnings::END - 1) +
+                "from " + std::to_string(DiagnosticsMessage::MinID) + " to " +
+                std::to_string(DiagnosticsMessage::MaxID) +
                 ". Hyphen separated ranges are also allowed. For example:\n"
                 "--suppress-warnings=1000-1010,1011.";
 
@@ -169,10 +168,6 @@ static llvm::cl::opt<std::string>
                  llvm::cl::value_desc("[pass|transformation]"), llvm::cl::cat(DPCTCat),
                  llvm::cl::Optional, llvm::cl::Hidden);
 #endif
-static llvm::cl::opt<bool, true> NoUseGenericSpace(
-  "no-use-generic-space", llvm::cl::desc("sycl::access::address_space::generic_space is not used during atomic\n"
-                                         " function's migration. Default: off.\n"),
-  llvm::cl::cat(DPCTCat), llvm::cl::location(NoUseGenericSpaceFlag), llvm::cl::ReallyHidden);
 #ifdef __linux__
 static AutoCompletePrinter AutoCompletePrinterInstance;
 static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> AutoComplete(
@@ -220,10 +215,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
   std::string Path = CudaIncludeDetector.getInstallPath().str();
-  uint64_t CudaRTVersionValueUint64 =
-      clang::CudaVersionToValue(CudaIncludeDetector.version());
-  CudaRTVersionValue =
-      llvm::APSInt(llvm::APInt(64, CudaRTVersionValueUint64, false), true);
+  dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
 
   if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
@@ -251,8 +243,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   return CudaPathAbs.str().str();
 }
 
-std::string getInstallPath(clang::tooling::ClangTool &Tool,
-                           const char *invokeCommand) {
+std::string getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPath(invokeCommand);
 
   // Do a PATH lookup, if there are no directory components.
@@ -270,8 +261,8 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
 
   SmallString<512> InstallPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(InstallPath,
-                                                InstallPathAbs, true);
+  std::error_code EC =
+      llvm::sys::fs::real_path(InstallPath, InstallPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidInstallPath);
     dpctExit(MigrationErrorInvalidInstallPath);
@@ -280,8 +271,7 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
 }
 
 // To validate the root path of the project to be migrated.
-void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
-                            std::string &InRoot) {
+void ValidateInputDirectory(std::string &InRoot) {
 
   if (isChildOrSamePath(CudaPath, InRoot)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
@@ -607,6 +597,23 @@ int runDPCT(int argc, const char **argv) {
   }
 
   initWarningIDs();
+
+  DpctInstallPath = getInstallPath(argv[0]);
+
+  if (PathToHelperFunction) {
+    SmallString<512> pathToHelperFunction(DpctInstallPath);
+    llvm::sys::path::append(pathToHelperFunction, "include");
+    if (!llvm::sys::fs::exists(pathToHelperFunction)) {
+      DpctLog() << "Error: Helper functions not found"
+                << "/n";
+      ShowStatus(MigrationErrorInvalidInstallPath);
+      dpctExit(MigrationErrorInvalidInstallPath);
+    }
+    std::cout << pathToHelperFunction.c_str() << "\n";
+    ShowStatus(MigrationSucceeded);
+    dpctExit(MigrationSucceeded);
+  }
+
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
@@ -654,25 +661,6 @@ int runDPCT(int argc, const char **argv) {
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
-
-  auto ExtensionStr = ChangeExtension.getValue();
-  ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
-                     ExtensionStr.end());
-  auto Extensions = split(ExtensionStr, ',');
-  for (auto &Extension : Extensions) {
-    const auto len = Extension.length();
-    if (len < 2 || len > 5 || Extension[0] != '.') {
-      ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
-      dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
-    }
-    for (size_t i = 1; i < len; ++i) {
-      if (!std::isalpha(Extension[i])) {
-        ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
-        dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
-      }
-    }
-    DpctGlobalInfo::addChangeExtensions(Extension);
-  }
 
   if (LimitChangeExtension) {
     DpctGlobalInfo::addChangeExtensions(".cu");
@@ -749,12 +737,104 @@ int runDPCT(int argc, const char **argv) {
     PrintMsg(OS.str());
   }
 
+  ExtraIncPaths = OptParser->getExtraIncPathList();
+
   // TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
-  RefactoringTool Tool(OptParser->getCompilations(),
-                       OptParser->getSourcePathList());
+  std::vector<std::string> SourcePathList;
+  if (QueryAPIMapping.getNumOccurrences()) {
+    // Set a virtual file for --query-api-mapping.
+    llvm::SmallString<16> VirtFile;
+    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+    llvm::sys::path::append(VirtFile, "temp.cu");
+    SourcePathList.emplace_back(VirtFile);
+    DpctGlobalInfo::setIsQueryAPIMapping(true);
+  } else {
+    SourcePathList = OptParser->getSourcePathList();
+  }
+  RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
+  std::string QueryAPIMappingSrc;
+  std::string QueryAPIMappingOpt;
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    APIMapping::initEntryMap();
+    auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
+    if (SourceCode.empty()) {
+      ShowStatus(MigrationErrorNoAPIMapping);
+      dpctExit(MigrationErrorNoAPIMapping);
+    }
+
+    Tool.mapVirtualFile(SourcePathList[0], SourceCode);
+
+    static const std::string OptionStr{"// Option:"};
+    if (SourceCode.starts_with(OptionStr)) {
+      QueryAPIMappingOpt += " (with the option";
+      while (SourceCode.consume_front(OptionStr)) {
+        auto Option = SourceCode.substr(0, SourceCode.find_first_of('\n'));
+        Option = Option.trim(' ');
+        SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
+        QueryAPIMappingOpt += " ";
+        QueryAPIMappingOpt += Option.str();
+        if (Option.starts_with("--use-dpcpp-extensions")) {
+          if (Option.ends_with("intel_device_math"))
+            UseDPCPPExtensions.addValue(
+                DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+        } else if (Option.starts_with("--use-experimental-features")) {
+          if (Option.ends_with("bfloat16_math_functions"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_BFloat16Math);
+          else if (Option.ends_with("occupancy-calculation"))
+            Experimentals.addValue(
+                ExperimentalFeatures::Exp_OccupancyCalculation);
+          else if (Option.ends_with("free-function-queries"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_FreeQueries);
+          else if (Option.ends_with("logical-group"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
+        } else if (Option == "--no-dry-pattern") {
+          NoDRYPatternFlag = true;
+        }
+        // Need add more option.
+      }
+      QueryAPIMappingOpt += ")";
+    }
+
+    static const std::string StartStr{"// Start"};
+    static const std::string EndStr{"// End"};
+    auto StartPos = SourceCode.find(StartStr);
+    auto EndPos = SourceCode.find(EndStr);
+    if (StartPos == StringRef::npos || EndPos == StringRef::npos) {
+      dpctExit(MigrationErrorNoAPIMapping);
+    }
+    StartPos = StartPos + StartStr.length();
+    EndPos = SourceCode.find_last_of('\n', EndPos);
+    QueryAPIMappingSrc =
+        SourceCode.substr(StartPos, EndPos - StartPos + 1).str();
+    static const std::string MigrateDesc{"// Migration desc: "};
+    auto MigrateDescPos = SourceCode.find(MigrateDesc);
+    if (MigrateDescPos != StringRef::npos) {
+      auto MigrateDescBegin = MigrateDescPos + MigrateDesc.length();
+      auto MigrateDescEnd = SourceCode.find_first_of('\n', MigrateDescPos);
+      llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
+                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET
+                   << SourceCode.substr(MigrateDescBegin,
+                                        MigrateDescEnd - MigrateDescBegin + 1);
+      dpctExit(MigrationSucceeded);
+    }
+
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
+    NoIncrementalMigration = true;
+    StopOnParseErr = true;
+    Tool.setPrintErrorMessage(false);
+    // Need set a virtual path and it will used by AnalysisScope.
+    InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
+  } else {
+    IsUsingDefaultOutRoot = OutRoot.empty();
+    if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+      ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+      dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
+    }
+    dpct::DpctGlobalInfo::setOutRoot(OutRoot);
+  }
 
   if (GenBuildScript) {
     clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
@@ -770,16 +850,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   Tool.setCompilationDatabaseDir(CompilationsDir);
-  DpctInstallPath = getInstallPath(Tool, argv[0]);
-
-  ValidateInputDirectory(Tool, InRoot);
-
-  IsUsingDefaultOutRoot = OutRoot.empty();
-  if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
-    ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-    dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
-  }
-  dpct::DpctGlobalInfo::setOutRoot(OutRoot);
+  ValidateInputDirectory(InRoot);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
@@ -788,23 +859,11 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
-  ValidateInputDirectory(Tool, AnalysisScope);
+  ValidateInputDirectory(AnalysisScope);
 
-  if (GenHelperFunction.getNumOccurrences() &&
-      (UseCustomHelperFileLevel.getNumOccurrences() ||
-       CustomHelperFileName.getNumOccurrences())) {
-    ShowStatus(MigrationErrorConflictOptions,
-               "Option --gen-helper-function cannot be used with "
-               "--use-custom-helper or --custom-helper-name together");
-    dpctExit(MigrationErrorConflictOptions);
-  }
   if (GenHelperFunction.getValue()) {
     dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
   }
-
-  validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
-                                  CustomHelperFileName,
-                                  dpct::DpctGlobalInfo::getOutRoot());
 
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));
@@ -835,7 +894,8 @@ int runDPCT(int argc, const char **argv) {
       (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
       (SDKVersionMajor == 12 && SDKVersionMinor == 0) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 1)) {
+      (SDKVersionMajor == 12 && SDKVersionMinor == 1) ||
+      (SDKVersionMajor == 12 && SDKVersionMinor == 2)) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));
@@ -859,27 +919,15 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
-  DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
-  if (UseCustomHelperFileLevel.getNumOccurrences()) {
-    clang::dpct::PrintMsg("Note: Option --use-custom-helper is deprecated and "
-                          "may be removed in the future.\n");
-  }
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
-  DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
-  if (CustomHelperFileName.getNumOccurrences()) {
-    clang::dpct::PrintMsg("Note: Option --custom-helper-name is deprecated and "
-                          "may be removed in the future.\n");
-  }
-  HelperFileNameMap[HelperFileEnum::Dpct] =
-      DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
+  DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
-  DpctGlobalInfo::setUsingGenericSpace(!NoUseGenericSpaceFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
   DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());
@@ -938,9 +986,6 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CommentsEnabled,
                      DpctGlobalInfo::isCommentsEnabled(),
                      EnableComments.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CustomHelperFileName,
-                     DpctGlobalInfo::getCustomHelperFileName(),
-                     CustomHelperFileName.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
@@ -955,9 +1000,6 @@ int runDPCT(int argc, const char **argv) {
                      UseDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
                      NoDRYPattern.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace,
-                     NoUseGenericSpaceFlag,
-                     NoUseGenericSpace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
 #ifdef _WIN32
@@ -980,6 +1022,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
                      DpctGlobalInfo::getExperimentalFlag(),
                      Experimentals.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_HelperFuncPreferenceFlag,
+                     DpctGlobalInfo::getHelperFuncPreferenceFlag(),
+                     Preferences.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace,
                      DpctGlobalInfo::getExplicitNamespaceSet(),
                      UseExplicitNamespace.getNumOccurrences());
@@ -1034,9 +1079,13 @@ int runDPCT(int argc, const char **argv) {
       DeviceFunctionDecl::reset();
     }
     DpctGlobalInfo::setRunRound(RunCount++);
-    DpctToolAction Action(OutputFile.empty() ? llvm::errs() : DpctTerm(),
+    DpctToolAction Action(OutputFile.empty() &&
+                                  !DpctGlobalInfo::isQueryAPIMapping()
+                              ? llvm::errs()
+                              : DpctTerm(),
                           Tool.getReplacements(), Passes,
-                          {PassKind::PK_Analysis, PassKind::PK_Migration});
+                          {PassKind::PK_Analysis, PassKind::PK_Migration},
+                          Tool.getFiles().getVirtualFileSystemPtr());
 
     if (ProcessAllFlag) {
       clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
@@ -1056,6 +1105,19 @@ int runDPCT(int argc, const char **argv) {
     if (RunResult && StopOnParseErr) {
       DumpOutputFile();
       if (RunResult == 1) {
+        if (DpctGlobalInfo::isQueryAPIMapping()) {
+          StringRef ErrStr = getDpctTermStr();
+          if (ErrStr.contains("use of undeclared identifier")) {
+            ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
+                       QueryAPIMapping);
+            return MigrationErrorAPIMappingWrongCUDAHeader;
+          } else if (ErrStr.contains("file not found")) {
+            ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
+            return MigrationErrorAPIMappingNoCUDAHeader;
+          }
+          ShowStatus(MigrationErrorNoAPIMapping);
+          dpctExit(MigrationErrorNoAPIMapping);
+        }
         ShowStatus(MigrationErrorFileParseError);
         return MigrationErrorFileParseError;
       } else {
@@ -1068,6 +1130,47 @@ int runDPCT(int argc, const char **argv) {
 
     Action.runPasses();
   } while (DpctGlobalInfo::isNeedRunAgain());
+
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
+                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET
+                 << "Is migrated to" << QueryAPIMappingOpt << ":";
+    DiagnosticsEngine Diagnostics(
+        IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
+        IntrusiveRefCntPtr<DiagnosticOptions>(new DiagnosticOptions()));
+    SourceManager Sources(Diagnostics, Tool.getFiles());
+    LangOptions DefaultLangOptions;
+    Rewriter Rewrite(Sources, DefaultLangOptions);
+    // Must be only 1 file.
+    tooling::applyAllReplacements(Tool.getReplacements().begin()->second,
+                                  Rewrite);
+    const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
+    static const std::string StartStr{"// Start"};
+    static const std::string EndStr{"// End"};
+    bool Flag = false;
+    llvm::outs() << llvm::raw_ostream::BLUE;
+    for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
+         I.MoveToNextPiece()) {
+      size_t StartPos = 0;
+      if (!Flag) {
+        if (auto It = I.piece().find(StartStr); It != StringRef::npos) {
+          StartPos = It + StartStr.length();
+          Flag = true;
+        }
+      }
+      if (Flag) {
+        size_t EndPos = I.piece().size();
+        if (auto It = I.piece().find(EndStr); It != StringRef::npos) {
+          auto TempStr = I.piece().substr(0, It);
+          EndPos = TempStr.find_last_of('\n') + 1;
+          Flag = false;
+        }
+        llvm::outs() << I.piece().substr(StartPos, EndPos - StartPos);
+      }
+    }
+    llvm::outs() << llvm::raw_ostream::RESET;
+    return MigrationSucceeded;
+  }
 
   if (GenReport) {
     // report: apis, stats, all, diags

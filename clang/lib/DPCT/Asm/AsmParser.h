@@ -40,8 +40,8 @@
 namespace clang::dpct {
 
 using llvm::BumpPtrAllocator;
-using llvm::DenseMap;
 using llvm::SmallPtrSet;
+using llvm::SmallSet;
 using llvm::SMLoc;
 using llvm::SourceMgr;
 
@@ -52,19 +52,21 @@ class InlineAsmStmt;
 class InlineAsmParser;
 class InlineAsmIntegerLiteral;
 
+enum class InstAttr {
+#define ROUND_MOD(X, Y) X,
+#define SAT_MOD(X, Y) X,
+#define MUL_MOD(X, Y) X,
+#define CMP_OP(X, Y) X,
+#define BIN_OP(X, Y) X,
+#include "Asm/AsmTokenKinds.def"
+};
+
 /// The base class of the type hierarchy.
 /// Types, once created, are immutable.
 class InlineAsmType {
 public:
   enum TypeClass { BuiltinClass, VectorClass, DiscardClass };
 
-private:
-  TypeClass tClass;
-
-protected:
-  InlineAsmType(TypeClass TC) : tClass(TC) {}
-
-public:
   virtual ~InlineAsmType();
   TypeClass getTypeClass() const { return tClass; }
 
@@ -76,8 +78,14 @@ public:
     llvm_unreachable("InlineAsmType cannot be released with regular 'delete'.");
   }
 
-  bool isSignedInteger() const;
-  bool isUnsignedInteger() const;
+  bool isSignedInt() const;
+  bool isUnsignedInt() const;
+
+protected:
+  InlineAsmType(TypeClass TC) : tClass(TC) {}
+
+private:
+  TypeClass tClass;
 };
 
 /// This class is used for builtin types like 'u32'.
@@ -97,25 +105,10 @@ public:
       : InlineAsmType(BuiltinClass), Kind(Kind) {}
 
   TypeKind getKind() const { return Kind; }
-
-  bool isSignedInt() const {
-    return getKind() == TK_s8 || getKind() == TK_s16 || getKind() == TK_s32 ||
-           getKind() == TK_s64;
-  }
-
-  bool isUnsignedInt() const {
-    return getKind() == TK_u8 || getKind() == TK_u16 || getKind() == TK_u32 ||
-           getKind() == TK_u64;
-  }
-
-  bool isFloating() const {
-    return getKind() == TK_f16 || getKind() == TK_f32 || getKind() == TK_f64;
-  }
-
-  bool isBitSize() const {
-    return getKind() == TK_b8 || getKind() == TK_b16 || getKind() == TK_b32 ||
-           getKind() == TK_b64;
-  }
+  bool isSignedInt() const;
+  bool isUnsignedInt() const;
+  bool isFloating() const;
+  bool isBitSize() const;
 
   static bool classof(const InlineAsmType *T) {
     return T->getTypeClass() == BuiltinClass;
@@ -195,10 +188,10 @@ public:
 class InlineAsmVariableDecl : public InlineAsmDecl {
 
   /// The state space of a variable, e.g. '.reg', '.global', '.local', etc.
-  InlineAsmIdentifierInfo *StorageClass;
+  InlineAsmIdentifierInfo *StorageClass = nullptr;
 
   /// The type of this variable.
-  InlineAsmType *Type;
+  InlineAsmType *Type = nullptr;
 
   /// Alignment of this variable, specificed by '.align' attribute.
   unsigned Align = 0;
@@ -256,21 +249,11 @@ public:
 class InlineAsmStmt {
 public:
   enum StmtClass {
-    DeclStmtClass,
-    CompoundStmtClass,
-    InstructionClass,
-    ConditionalInstructionClass,
-    UnaryOperatorClass,
-    BinaryOperatorClass,
-    ConditionalOperatorClass,
-    VectorExprClass,
-    DiscardExprClass,
-    AddressExprClass,
-    CastExprClass,
-    ParenExprClass,
-    DeclRefExprClass,
-    IntegerLiteralClass,
-    FloatingLiteralClass
+#define STMT(CLASS, PARENT) CLASS##Class,
+#define STMT_RANGE(BASE, FIRST, LAST)                                          \
+  first##BASE##Constant = FIRST##Class, last##BASE##Constant = LAST##Class,
+#define ABSTRACT_STMT(STMT)
+#include "Asm/AsmNodes.def"
   };
 
   InlineAsmStmt(const InlineAsmStmt &) = delete;
@@ -313,75 +296,93 @@ public:
 };
 
 /// This represents a device instruction.
+/// opcode.attr1.attr2 dest-operand{|pred-output}, src1, src2, src3, ...;
 class InlineAsmInstruction : public InlineAsmStmt {
 
   /// The opcode of instruction, must predefined in AsmTokenKinds.def
   /// e.g. asmtok::op_mov, asmtok::op_setp, etc.
-  InlineAsmIdentifierInfo *Opcode;
-
-  /// The type attributes in this instruction.
-  /// e.g. instruction mov.s32 val, 123; has a type attribute 's32'.
-  SmallVector<InlineAsmType *, 4> Types;
+  InlineAsmIdentifierInfo *Opcode = nullptr;
 
   /// This represents arrtibutes like: comparsion operator, rounding modifiers,
   /// ... e.g. instruction setp.eq.s32 has a comparsion operator 'eq'.
-  SmallVector<InlineAsmIdentifierInfo *, 4> Attributes;
-  InlineAsmExpr *OutputOperand;
-  SmallVector<InlineAsmExpr *, 4> InputOperands;
+  SmallSet<InstAttr, 4> Attributes;
+
+  /// This represents types in instruction, e.g. mov.u32.
+  SmallVector<InlineAsmType *, 4> Types;
+
+  /// The operands of instruction. Operands[0] is output operand,
+  /// If HasPredOutput is true, Operands[1] is pred output operand,
+  /// therest are input operands.
+  SmallVector<InlineAsmExpr *, 4> Operands;
 
   // Predicate output, e.g. given shfl.sync.up.b32  Ry|p, Rx, 0x1,  0x0,
   // 0xffffffff; p is a predicate output.
-  InlineAsmExpr *PredOutput = nullptr;
+  bool HasPredOutput = false;
 
 public:
-  InlineAsmInstruction(InlineAsmIdentifierInfo *Op,
+  InlineAsmInstruction(InlineAsmIdentifierInfo *Op, ArrayRef<InstAttr> Attrs,
                        ArrayRef<InlineAsmType *> Types,
-                       ArrayRef<InlineAsmIdentifierInfo *> Attrs,
-                       InlineAsmExpr *OutputOp,
-                       ArrayRef<InlineAsmExpr *> InputOps, InlineAsmExpr *Pred)
+                       ArrayRef<InlineAsmExpr *> Ops, bool HasPred = false)
       : InlineAsmStmt(InstructionClass), Opcode(Op), Types(Types),
-        Attributes(Attrs), OutputOperand(OutputOp), InputOperands(InputOps),
-        PredOutput(Pred) {}
+        Operands(Ops), HasPredOutput(HasPred) {
+    assert(Operands.size() >= 1U + HasPredOutput);
+    Attributes.insert(Attrs.begin(), Attrs.end());
+  }
 
-  InlineAsmInstruction(InlineAsmIdentifierInfo *Op,
-                       ArrayRef<InlineAsmType *> Types,
-                       ArrayRef<InlineAsmIdentifierInfo *> Attrs,
-                       InlineAsmExpr *OutputOp,
-                       ArrayRef<InlineAsmExpr *> InputOps)
-      : InlineAsmStmt(InstructionClass), Opcode(Op), Types(Types),
-        Attributes(Attrs), OutputOperand(OutputOp), InputOperands(InputOps) {}
-
+  using attr_range =
+      llvm::iterator_range<SmallSet<InstAttr, 4>::const_iterator>;
   using type_range =
       llvm::iterator_range<SmallVector<InlineAsmType *, 4>::const_iterator>;
-  using attribute_range = llvm::iterator_range<
-      SmallVector<InlineAsmIdentifierInfo *, 4>::const_iterator>;
-  using input_operand_range =
+  using op_range =
       llvm::iterator_range<SmallVector<InlineAsmExpr *, 4>::const_iterator>;
 
-  InlineAsmIdentifierInfo *getOpcode() const { return Opcode; }
-  const InlineAsmIdentifierInfo *getAttribute(unsigned I) const {
-    return Attributes[I];
+  bool is(asmtok::TokenKind OpKind) const {
+    return Opcode->getTokenID() == OpKind;
   }
-  const InlineAsmExpr *getOutputOperand() const { return OutputOperand; }
-  const InlineAsmExpr *getPredOutputOperand() const { return PredOutput; }
-  const InlineAsmExpr *getInputOperand(unsigned I) const {
-    return InputOperands[I];
-  }
-  size_t getNumInputOperands() const { return InputOperands.size(); }
 
-  size_t getNumTypes() const { return Types.size(); }
-  InlineAsmType *getType(unsigned I) { return Types[I]; }
+  template <typename K, typename... Ks> bool is(K OpKind, Ks... OpKinds) const {
+    return is(OpKind) || (is(OpKinds) || ...);
+  }
+
+  template <typename... Ts>
+  bool hasAttr(Ts... Attrs) const { return (Attributes.contains(Attrs) || ...); }
+  const InlineAsmIdentifierInfo *getOpcodeID() const { return Opcode; }
+  asmtok::TokenKind getOpcode() const { return Opcode->getTokenID(); }
+  ArrayRef<InlineAsmType *> getTypes() const { return Types; }
   const InlineAsmType *getType(unsigned I) const { return Types[I]; }
+  unsigned getNumTypes() const { return Types.size(); }
+
+  const InlineAsmExpr *getOutputOperand() const {
+    assert(!Operands.empty());
+    return Operands.front();
+  }
+
+  const InlineAsmExpr *getPredOutputOperand() const {
+    assert(HasPredOutput && Operands.size() >= 2U);
+    return Operands[1];
+  }
+
+  ArrayRef<InlineAsmExpr *> getInputOperands() const {
+    assert(Operands.size() > 1U + HasPredOutput);
+    return ArrayRef<InlineAsmExpr *>(Operands.begin() + 1 + HasPredOutput,
+                                     Operands.end());
+  }
+
+  const InlineAsmExpr *getInputOperand(unsigned I) const {
+    return getInputOperands()[I];
+  }
+
+  size_t getNumInputOperands() const {
+    return Operands.size() - 1 - HasPredOutput;
+  }
+
+  attr_range attrs() const {
+    return attr_range(Attributes.begin(), Attributes.end());
+  }
 
   type_range types() const { return type_range(Types.begin(), Types.end()); }
 
-  attribute_range attrs() const {
-    return attribute_range(Attributes.begin(), Attributes.end());
-  }
-
-  input_operand_range input_operands() const {
-    return input_operand_range(InputOperands.begin(), InputOperands.end());
-  }
+  op_range input_operands() const { return op_range(getInputOperands()); }
 
   static bool classof(const InlineAsmStmt *S) {
     return InstructionClass <= S->getStmtClass();
@@ -483,8 +484,8 @@ public:
   const InlineAsmType *getType() const { return Type; }
 
   static bool classof(const InlineAsmStmt *S) {
-    return UnaryOperatorClass <= S->getStmtClass() &&
-           S->getStmtClass() <= FloatingLiteralClass;
+    return firstExprConstant <= S->getStmtClass() &&
+           lastExprConstant >= S->getStmtClass();
   }
 };
 
@@ -619,6 +620,7 @@ public:
   }
 
   const InlineAsmExpr *getElement(unsigned I) const { return Elements[I]; }
+  unsigned getNumElements() const { return Elements.size(); }
 
   static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == VectorExprClass;

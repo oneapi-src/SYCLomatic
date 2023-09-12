@@ -565,8 +565,8 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace(false, true) + "frexp(" << MigratedArg0
        << ", " + MapNames::getClNamespace() + "address_space_cast<"
-       << MapNames::getClNamespace() + "access::address_space::" +
-              getAddressSpace(Call->getArg(1), MigratedArg1)
+       << MapNames::getClNamespace() +
+              "access::address_space::" + getAddressSpace(Call, 1)
        << ", " << MapNames::getClNamespace() + "access::decorated::yes"
        << ", "
        << "int"
@@ -594,83 +594,24 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "modf(" << MigratedArg0;
     if (FuncName == "modf")
       OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
-         << MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(1), MigratedArg1)
+         << MapNames::getClNamespace() +
+                "access::address_space::" + getAddressSpace(Call, 1)
          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
          << ", "
          << "double"
          << ">(";
     else
       OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
-         << MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(1), MigratedArg1)
+         << MapNames::getClNamespace() +
+                "access::address_space::" + getAddressSpace(Call, 1)
          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
          << ", "
          << "float"
          << ">(";
 
-
     OS << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
-  } else if (FuncName == "sincos" || FuncName == "sincosf" ||
-             FuncName == "__sincosf") {
-    std::string Buf;
-    llvm::raw_string_ostream RSO(Buf);
-
-    auto Arg = Call->getArg(0);
-    std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
-        PrintingPolicy(LangOptions()));
-    std::string ArgExpr = Arg->getStmtClassName();
-    auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-    if (ArgT == "int") {
-      if (FuncName == "sincosf" || FuncName == "__sincosf") {
-        if (DRE)
-          MigratedArg0 = "(float)" + MigratedArg0;
-        else
-          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
-      } else {
-        if (DRE)
-          MigratedArg0 = "(double)" + MigratedArg0;
-        else
-          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
-      }
-    }
-    auto MigratedArg1 = getMigratedArg(1);
-    auto MigratedArg2 = getMigratedArg(2);
-    if (MigratedArg1[0] == '&')
-      RSO << MigratedArg1.substr(1);
-    else
-      RSO << "*(" + MigratedArg1 + ")";
-    RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
-       << MigratedArg0;
-
-    if (FuncName == "sincos")
-      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
-          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-          << ", "
-          << "double"
-          << ">(";
-    else
-      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
-          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-          << ", "
-          << "float"
-          << ">(";
-
-    RSO << MigratedArg2 << "))";
-
-    if(IsInReturnStmt) {
-      OS << "[&](){ " << Buf << ";"<< " }()";
-      BlockLevelFormatFlag = true;
-    } else {
-      OS << Buf;
-    }
-
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {
     std::string Buf;
     llvm::raw_string_ostream RSO(Buf);
@@ -685,24 +626,24 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
        << MigratedArg0;
     if (FuncName == "sincospi") {
       RSO << " * DPCT_PI";
-      requestFeature(HelperFeatureEnum::Dpct_dpct_pi, Call);
+      requestFeature(HelperFeatureEnum::device_ext);
     } else {
       RSO << " * DPCT_PI_F";
-      requestFeature(HelperFeatureEnum::Dpct_dpct_pi_f, Call);
+      requestFeature(HelperFeatureEnum::device_ext);
     }
 
     if (FuncName == "sincospi")
       RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
+          << MapNames::getClNamespace() +
+                 "access::address_space::" + getAddressSpace(Call, 2)
           << ", " << MapNames::getClNamespace() + "access::decorated::yes"
           << ", "
           << "double"
           << ">(";
     else
       RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
+          << MapNames::getClNamespace() +
+                 "access::address_space::" + getAddressSpace(Call, 2)
           << ", " << MapNames::getClNamespace() + "access::decorated::yes"
           << ", "
           << "float"
@@ -761,8 +702,8 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "remquo(" << MigratedArg0
        << ", " << MigratedArg1
        << ", " + MapNames::getClNamespace() + "address_space_cast<"
-       << MapNames::getClNamespace() + "access::address_space::" +
-              getAddressSpace(Call->getArg(2), MigratedArg2)
+       << MapNames::getClNamespace() +
+              "access::address_space::" + getAddressSpace(Call, 2)
        << ", " << MapNames::getClNamespace() + "access::decorated::yes"
        << ", "
        << "int"
@@ -802,7 +743,7 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
 
     auto IL1 = dyn_cast<IntegerLiteral>(Arg1->IgnoreCasts());
     auto FL1 = dyn_cast<FloatingLiteral>(Arg1->IgnoreCasts());
-    auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
+
     // For integer literal 2 or floating literal 2.0/2.0f, expand pow to
     // multiply expression:
     // pow(x, 2) ==> x * x, if x is an expression that has no side effects.
@@ -813,13 +754,10 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
       if (IL1->getValue().getZExtValue() == 2)
         IsExponentTwo = true;
     } else if (FL1) {
-      auto &SM = DpctGlobalInfo::getSourceManager();
       if (!FL1->getBeginLoc().isMacroID() && !FL1->getEndLoc().isMacroID()) {
-        auto B = SM.getCharacterData(FL1->getBeginLoc());
-        auto E = SM.getCharacterData(
-            Lexer::getLocForEndOfToken(FL1->getEndLoc(), 0, SM, LangOptions()));
-        std::string Exponent(B, E);
-        if (Exponent == "2.0" || Exponent == "2.0f")
+        llvm::APFloat FL1Value = FL1->getValue();
+        if (FL1Value.compare(llvm::APFloat(FL1Value.getSemantics(), "2.0")) ==
+            llvm::APFloat::cmpEqual)
           IsExponentTwo = true;
       }
     }
@@ -833,20 +771,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
       else
         return "(" + Arg0Str + ") * (" + Arg0Str + ")";
     }
-    if (IL1 || T1 == "int" || T1 == "unsigned int" || T1 == "char" ||
-        T1 == "unsigned char" || T1 == "short" || T1 == "unsigned short") {
-      if (T0 == "int") {
-        if (DRE0) {
-          RewriteArgList[0] = "(float)" + RewriteArgList[0];
-        } else {
-          RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
-        }
-      }
-      if (T1 != "int") {
-        RewriteArgList[1] = "(int)" + RewriteArgList[1];
-      }
-      TargetCalleeName = MapNames::getClNamespace(false, true) + "pown";
-    }
     return buildRewriteString();
   } else if (FuncName == "erfcx" || FuncName == "erfcxf") {
     OS << MapNames::getClNamespace(false, true) << "exp(" << MigratedArg0 << "*"
@@ -856,15 +780,15 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
              FuncName == "scalbn" || FuncName == "scalbnf") {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";
   } else if (FuncName == "__double2hiint") {
-    requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
+    requestFeature(HelperFeatureEnum::device_ext);
     OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
        << ")";
   } else if (FuncName == "__double2loint") {
-    requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
+    requestFeature(HelperFeatureEnum::device_ext);
     OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
        << ", false)";
   } else if (FuncName == "__hiloint2double") {
-    requestFeature(HelperFeatureEnum::Util_cast_ints_to_double, Call);
+    requestFeature(HelperFeatureEnum::device_ext);
     OS << MapNames::getDpctNamespace() << "cast_ints_to_double(" << MigratedArg0
        << ", " << getMigratedArg(1) << ")";
   } else if (FuncName == "__sad" || FuncName == "__usad") {
@@ -966,12 +890,18 @@ bool useMathLibdevice() {
   return DpctGlobalInfo::useIntelDeviceMath();
 }
 
+bool useExtBFloat16Math() { return DpctGlobalInfo::useExtBFloat16Math(); }
+
 auto IsPerf = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::isOptimizeMigration();
 };
 
 inline auto UseIntelDeviceMath = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useIntelDeviceMath();
+};
+
+inline auto UseBFloat16 = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useBFloat16();
 };
 
 auto IsPureHost = [](const CallExpr *C) -> bool {
@@ -1022,8 +952,8 @@ auto UsingDpctMinMax = [](const CallExpr *C) -> bool {
     return true;
   QualType Arg0T = C->getArg(0)->IgnoreImpCasts()->getType();
   QualType Arg1T = C->getArg(1)->IgnoreImpCasts()->getType();
-  Arg0T.removeLocalCVRQualifiers(Qualifiers::CVRMask);
-  Arg1T.removeLocalCVRQualifiers(Qualifiers::CVRMask);
+  Arg0T.removeLocalFastQualifiers(Qualifiers::CVRMask);
+  Arg1T.removeLocalFastQualifiers(Qualifiers::CVRMask);
   return Arg0T != Arg1T;
 };
 }
@@ -1083,6 +1013,11 @@ createMathAPIRewriterDeviceImpl(
   if (DeviceNodes[1].second) {
     // MATH_LIBDEVICE: sycl::ext::intel::math API
     if (math::useMathLibdevice()) {
+      if (auto *CRF = dynamic_cast<MathSpecificElseEmuRewriterFactory *>(
+              DeviceNodes[1].second.get())) {
+        // Make the last DeviceNodes as the back up migration rule.
+        CRF->setElse(std::move(DeviceNodes[3].second));
+      }
       return std::move(DeviceNodes[1]);
     }
   }
@@ -1168,6 +1103,33 @@ createMathAPIRewriterDevice(
 
 template <class T>
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathAPIRewriterExperimentalBfloat16(
+    const std::string &Name,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Rewriter1,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Rewriter2,
+    T) {
+  if (DpctGlobalInfo::useBFloat16()) {
+    if (math::useExtBFloat16Math() && Rewriter1.second)
+      return createConditionalFactory(
+          math::IsDefinedInCUDA(), std::move(Rewriter1),
+          {Name,
+           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+    if (Rewriter2.second)
+      return createConditionalFactory(
+          math::IsDefinedInCUDA(), std::move(Rewriter2),
+          {Name,
+           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+  }
+  // report unsupport
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      {Name, std::make_shared<UnsupportFunctionRewriterFactory<std::string>>(
+                 Name, Diagnostics::API_NOT_MIGRATED, Name)});
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createMathAPIRewriterHost(
     const std::string &Name,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1205,6 +1167,10 @@ createMathAPIRewriterHost(
 #define MATH_API_REWRITER_DEVICE_OVERLOAD(CONDITION, DEVICE_REWRITER_1,        \
                                           DEVICE_REWRITER_2)                   \
   createConditionalFactory(CONDITION, DEVICE_REWRITER_1 DEVICE_REWRITER_2 0),
+#define MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(NAME, REWRITER_1, REWRITER_2)  \
+  createMathAPIRewriterExperimentalBfloat16(NAME, REWRITER_1 REWRITER_2 0),
+#define MATH_API_SPECIFIC_ELSE_EMU(CONDITION, DEVICE_REWRITER)                 \
+  createMathSpecificElseEmuRewriterFactory(CONDITION, DEVICE_REWRITER 0),
 
 #define MATH_API_REWRITER_HOST_WITH_PERF(NAME, PERF_PRED, HOST_PERF,           \
                                          HOST_NORMAL)                          \

@@ -25,7 +25,7 @@ __global__ void kernelFunc()
 
 int main(int argc, char* argv[]) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // CHECK: dpct::event_ptr start, stop;
   // CHECK: std::chrono::time_point<std::chrono::steady_clock> start_ct1;
   // CHECK: std::chrono::time_point<std::chrono::steady_clock> stop_ct1;

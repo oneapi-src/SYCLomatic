@@ -36,16 +36,16 @@ __device__ void Scan1(ScanTy &s) {
   s.InclusiveSum(d, d);
 }
 
-//CHECK: void TemplateKernel1(int* data,
-//CHECK-NEXT:  const sycl::nd_item<1> &item_ct1) {
-//CHECK-NEXT:  typedef sycl::ext::oneapi::sub_group WarpScan;
-//CHECK-NEXT:  typedef sycl::group<1> BlockScan;
-//CHECK-EMPTY:
-//CHECK-NEXT:  WarpScan ws(item_ct1.get_sub_group());
-//CHECK-NEXT:  BlockScan bs(item_ct1.get_group());
-//CHECK-NEXT:  Scan1<WarpScan, int>(ws);
-//CHECK-NEXT:  Scan1<BlockScan, int>(bs);
-//CHECK-NEXT:}
+// CHECK: void TemplateKernel1(int* data,
+// CHECK-NEXT:  const sycl::nd_item<1> &item_ct1) {
+// CHECK-NEXT:  typedef sycl::sub_group WarpScan;
+// CHECK-NEXT:  typedef sycl::group<1> BlockScan;
+// CHECK-EMPTY:
+// CHECK-NEXT:  WarpScan ws(item_ct1.get_sub_group());
+// CHECK-NEXT:  BlockScan bs(item_ct1.get_group());
+// CHECK-NEXT:  Scan1<WarpScan, int>(ws);
+// CHECK-NEXT:  Scan1<BlockScan, int>(bs);
+// CHECK-NEXT:}
 __global__ void TemplateKernel1(int* data) {
   typedef cub::WarpScan<int> WarpScan;
   typedef cub::BlockScan<int, 8> BlockScan;

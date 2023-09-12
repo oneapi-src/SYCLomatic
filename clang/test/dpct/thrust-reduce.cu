@@ -12,6 +12,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <thrust/transform_reduce.h>
+#include <thrust/execution_policy.h>
+#include <thrust/functional.h>
+#include <thrust/iterator/constant_iterator.h>
 
 template <typename T>
 struct square {
@@ -24,13 +27,13 @@ int main() {
   double *p;
 // CHECK:  dpct::device_pointer<double> dp(p);
   thrust::device_ptr<double> dp(p);
-// CHECK:  sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
+// CHECK:  sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_in_order_queue()), dp, dp + 10);
   sum = thrust::reduce(dp, dp + 10);
 }
 
 void check_transform_reduce() {
 // CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   float x[4] = {1.0, 2.0, 3.0, 4.0};
 // CHECK:  dpct::device_vector<float> d_x(x, x + 4);
   thrust::device_vector<float> d_x(x, x + 4);
@@ -67,3 +70,46 @@ public:
   }
 };
 
+void thrust_test() {
+  int data[6] = {1, 0, 2, 2, 1, 3};
+  thrust::device_vector<int> d_data(data, data + 6);
+  thrust::host_vector<int> h_data(data, data + 6);
+  int result;
+
+  // CHECK:  result = std::reduce(oneapi::dpl::execution::seq, data, data + 6);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, data, data + 6);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, data, data + 6, 1);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, data, data + 6, 1);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, data, data + 6, -1, oneapi::dpl::maximum<int>());
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, data, data + 6, -1, oneapi::dpl::maximum<int>());
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.begin() + 6);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.begin() + 6);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.begin() + 6, 1);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.begin() + 6, 1);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.begin() + 6, -1, oneapi::dpl::maximum<int>());
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.begin() + 6, -1, oneapi::dpl::maximum<int>());
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, h_data.begin(), h_data.begin() + 6);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, h_data.begin(), h_data.begin() + 6);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, h_data.begin(), h_data.begin() + 6, 1);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, h_data.begin(), h_data.begin() + 6, 1);
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, h_data.begin(), h_data.begin() + 6, -1, oneapi::dpl::maximum<int>());
+  // CHECK-NEXT:  result = std::reduce(oneapi::dpl::execution::seq, h_data.begin(), h_data.begin() + 6, -1, oneapi::dpl::maximum<int>());
+  result = thrust::reduce(thrust::host, data, data + 6);
+  result = thrust::reduce(data, data + 6);
+  result = thrust::reduce(thrust::host, data, data + 6, 1);
+  result = thrust::reduce(data, data + 6, 1);
+  result = thrust::reduce(thrust::host, data, data + 6, -1, thrust::maximum<int>());
+  result = thrust::reduce(data, data + 6, -1, thrust::maximum<int>());
+  result = thrust::reduce(thrust::device, d_data.begin(), d_data.begin() + 6);
+  result = thrust::reduce(d_data.begin(), d_data.begin() + 6);
+  result = thrust::reduce(thrust::device, d_data.begin(), d_data.begin() + 6, 1);
+  result = thrust::reduce(d_data.begin(), d_data.begin() + 6, 1);
+  result = thrust::reduce(thrust::device, d_data.begin(), d_data.begin() + 6, -1, thrust::maximum<int>());
+  result = thrust::reduce(d_data.begin(), d_data.begin() + 6, -1, thrust::maximum<int>());
+  result = thrust::reduce(thrust::host, h_data.begin(), h_data.begin() + 6);
+  result = thrust::reduce(h_data.begin(), h_data.begin() + 6);
+  result = thrust::reduce(thrust::host, h_data.begin(), h_data.begin() + 6, 1);
+  result = thrust::reduce(h_data.begin(), h_data.begin() + 6, 1);
+  result = thrust::reduce(thrust::host, h_data.begin(), h_data.begin() + 6, -1, thrust::maximum<int>());
+  result = thrust::reduce(h_data.begin(), h_data.begin() + 6, -1, thrust::maximum<int>());
+}

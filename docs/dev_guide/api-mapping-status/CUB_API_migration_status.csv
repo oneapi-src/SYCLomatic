@@ -60,10 +60,10 @@ cub::DeviceAdjacentDifference::SubtractLeftCopy,NO,
 cub::DeviceAdjacentDifference::SubtractLeft,NO,
 cub::DeviceAdjacentDifference::SubtractRightCopy,NO,
 cub::DeviceAdjacentDifference::SubtractRight,NO,
-cub::DeviceHistogram::HistogramEven,NO,
-cub::DeviceHistogram::MultiHistogramEven,NO,
-cub::DeviceHistogram::HistogramRange,NO,
-cub::DeviceHistogram::MultiHistogramRange,NO,
+cub::DeviceHistogram::HistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceHistogram::MultiHistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceHistogram::HistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceHistogram::MultiHistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DevicePartition::Flagged,NO,
 cub::DevicePartition::If,NO,
 cub::DeviceMergeSort::SortPairs,NO,
@@ -84,7 +84,7 @@ cub::DeviceReduce::Max,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::ArgMax,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::ReduceByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRunLengthEncode::Encode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceRunLengthEncode::NonTrivialRuns,NO,
+cub::DeviceRunLengthEncode::NonTrivialRuns,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceScan::ExclusiveSum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceScan::ExclusiveScan,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceScan::InclusiveSum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -105,17 +105,17 @@ cub::DeviceSegmentedRadixSort::SortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DP
 cub::DeviceSegmentedReduce::Reduce,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1091` / :ref:`DPCT1092`
 cub::DeviceSegmentedReduce::Sum,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
 cub::DeviceSegmentedReduce::Min,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
-cub::DeviceSegmentedReduce::ArgMin,NO,
+cub::DeviceSegmentedReduce::ArgMin,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedReduce::Max,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
-cub::DeviceSegmentedReduce::ArgMax,NO,
+cub::DeviceSegmentedReduce::ArgMax,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedSort::SortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceSegmentedSort::StableSortKeys,NO,
-cub::DeviceSegmentedSort::StableSortKeysDescending,NO,
+cub::DeviceSegmentedSort::StableSortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::StableSortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceSegmentedSort::StableSortPairs,NO,
-cub::DeviceSegmentedSort::StableSortPairsDescending,NO,
+cub::DeviceSegmentedSort::StableSortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::StableSortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::ThreadLoad,YES,
 cub::ThreadStore,YES,
 cub::LoadDirectBlocked,NO,
@@ -135,8 +135,8 @@ cub::PRMT,NO,
 cub::ThreadExit,NO,
 cub::ThreadTrap,NO,
 cub::RowMajorTid,NO,
-cub::LaneId,NO,
-cub::WarpId,NO,
+cub::LaneId,YES,
+cub::WarpId,YES,
 cub::LaneMaskLt,NO,
 cub::LaneMaskLe,NO,
 cub::LaneMaskGt,NO,
@@ -150,12 +150,13 @@ cub::Debug,NO,
 cub::MaxSmOccupancy,NO,
 cub::PtxVersion,NO,
 cub::SmVersion,NO,
-cub::CurrentDevice,NO,
-cub::DeviceCount,NO,
-cub::DeviceCountUncached,NO,
+cub::CurrentDevice,YES,
+cub::DeviceCount,YES,
+cub::DeviceCountUncached,YES,
+cub::DeviceCountCachedValue,YES,
 cub::PtxVersionUncached,NO,
 cub::SmVersionUncached,NO,
-cub::SyncStream,NO,
+cub::SyncStream,YES,
 cub::ArgIndexInputIterator::normalize,YES,
 cub::TexObjInputIterator::BindTexture,NO,
 cub::TexObjInputIterator::UnbindTexture,NO,

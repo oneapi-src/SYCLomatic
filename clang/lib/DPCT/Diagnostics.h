@@ -44,6 +44,20 @@ struct DiagnosticsMessage {
   int ID;
   int Category;
   const char *Msg;
+#define DEF_NOTE(NAME, ID, MSG)
+#define DEF_ERROR(NAME, ID, MSG)
+#define DEF_WARNING(NAME, ID, MSG) ID,
+#define DEF_COMMENT(NAME, ID, MSG)
+  constexpr static size_t MinID = std::min({
+#include "Diagnostics.inc"
+  });
+  constexpr static size_t MaxID = std::max({
+#include "Diagnostics.inc"
+  });
+#undef DEF_NOTE
+#undef DEF_ERROR
+#undef DEF_WARNING
+#undef DEF_COMMENT
   DiagnosticsMessage() = default;
   DiagnosticsMessage(std::unordered_map<int, DiagnosticsMessage> &Table, int ID,
                      int Category, const char *Msg)
@@ -65,7 +79,6 @@ enum class Diagnostics {
 #undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
-  END
 };
 
 #define DEF_NOTE(NAME, ID, MSG)
@@ -78,7 +91,6 @@ enum class Comments {
 #undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
-  END
 };
 
 #define DEF_NOTE(NAME, ID, MSG)
@@ -86,20 +98,17 @@ enum class Comments {
 #define DEF_WARNING(NAME, ID, MSG) NAME = ID,
 #define DEF_COMMENT(NAME, ID, MSG)
 enum class Warnings {
-  BEGIN = 1000,
 #include "Diagnostics.inc"
 #undef DEF_NOTE
 #undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
-  END
 };
 
 #define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
 enum class MakefileMsgs {
 #include "DiagnosticsBuildScript.inc"
 #undef DEF_COMMENT
-  END
 };
 
 namespace DiagnosticsUtils {
@@ -140,13 +149,13 @@ static inline SourceLocation getStartOfLine(SourceLocation Loc,
   auto Buffer = SM.getBufferData(LocInfo.first);
   auto NLPos = Buffer.find_last_of('\n', LocInfo.second);
   auto Skip = 1;
-  while (NLPos != StringRef::npos) {
+  while (NLPos && (NLPos != StringRef::npos)) {
     if (Buffer[NLPos - 1] == '\r') {
       --NLPos;
       Skip = 2;
     }
 
-    if (Buffer[NLPos - 1] == '\\')
+    if (NLPos && (Buffer[NLPos - 1] == '\\'))
       NLPos = Buffer.find_last_of('\n', NLPos - 1);
     else
       break;
@@ -290,6 +299,8 @@ bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
 template <typename IDTy, typename... Ts>
 inline bool report(SourceLocation SL, IDTy MsgID,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
+  if (DpctGlobalInfo::isQueryAPIMapping())
+    return true;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
     auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(

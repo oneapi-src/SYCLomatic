@@ -1,1 +1,1 @@
-|tool_name| is available in the `SYCLomatic GitHub repo <https://github.com/oneapi-src/SYCLomatic>`_. Review the README for detailed information on building the tool.
+|tool_name| is available in the `SYCLomatic GitHub repo <https://github.com/oneapi-src/SYCLomatic>`_. Review the README for detailed instructions to set up and build the tool.

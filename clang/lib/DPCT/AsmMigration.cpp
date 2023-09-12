@@ -47,16 +47,22 @@ namespace {
 inline bool SYCLGenError() { return true; }
 inline bool SYCLGenSuccess() { return false; }
 
-/// This is used to handle all the AST nodes (except specific instructions).
+/// This is used to handle all the AST nodes (except specific instructions, Eg.
+/// mov/setp), and generate functionally equivalent SYCL code.
 class SYCLGenBase {
   bool IsInMacroDef = false;
   bool EmitNewLine = true;
   bool EmitSemi = true;
   unsigned NumIndent = 0;
-  llvm::SmallString<4> IndentUnit{"  "};
-  llvm::SmallString<16> Indent;
-  llvm::SmallString<4> NewLine;
-  llvm::raw_ostream *Stream;
+  SmallString<4> IndentUnit{"  "};
+  SmallString<16> Indent;
+  SmallString<4> NewLine;
+  SmallVector<SmallString<10>, 4> VecExprTypeRecord;
+  raw_ostream *Stream;
+
+protected:
+
+  const GCCAsmStmt *GAS;
 
   class BlockDelimiterGuard {
     SYCLGenBase &CodeGen;
@@ -76,8 +82,25 @@ class SYCLGenBase {
     }
   };
 
+  struct EnterEmitVectorExpressionContext {
+    SYCLGenBase &CodeGen;
+    bool ShouldEnter;
+    EnterEmitVectorExpressionContext(SYCLGenBase &CodeGen, StringRef Type,
+                                     bool ShouldEnter = true)
+        : CodeGen(CodeGen), ShouldEnter(ShouldEnter) {
+      if (ShouldEnter)
+        CodeGen.VecExprTypeRecord.push_back(Type);
+    }
+
+    ~EnterEmitVectorExpressionContext() {
+      if (ShouldEnter)
+        CodeGen.VecExprTypeRecord.pop_back();
+    }
+  };
+
 public:
-  SYCLGenBase(llvm::raw_ostream &OS) : Stream(&OS) {}
+  SYCLGenBase(llvm::raw_ostream &OS, const GCCAsmStmt *G)
+      : Stream(&OS), GAS(G) {}
 
   virtual ~SYCLGenBase() = default;
 
@@ -137,18 +160,24 @@ protected:
 
   void switchOutStream(llvm::raw_ostream &NewOS) { Stream = &NewOS; }
 
-  bool tryEmitStatement(llvm::raw_ostream &TmpOS, const InlineAsmStmt *S) {
+  bool tryEmitStmt(std::string &Buffer, const InlineAsmStmt *S) {
+    llvm::raw_string_ostream TmpOS(Buffer);
     llvm::SaveAndRestore<llvm::raw_ostream *> OutStream(Stream);
     switchOutStream(TmpOS);
-    if (emitStatement(S))
+    if (emitStmt(S))
       return SYCLGenError();
     TmpOS.flush();
     return SYCLGenSuccess();
   }
 
-  bool tryEmitStatement(std::string &Buffer, const InlineAsmStmt *S) {
+  bool tryEmitType(std::string &Buffer, const InlineAsmType *T) {
     llvm::raw_string_ostream TmpOS(Buffer);
-    return tryEmitStatement(TmpOS, S);
+    llvm::SaveAndRestore<llvm::raw_ostream *> OutStream(Stream);
+    switchOutStream(TmpOS);
+    if (emitType(T))
+      return SYCLGenError();
+    TmpOS.flush();
+    return SYCLGenSuccess();
   }
 
   // Types
@@ -161,17 +190,20 @@ protected:
   bool emitVariableDeclaration(const InlineAsmVariableDecl *D);
 
   // Statements && Expressions
-  bool emitStatement(const InlineAsmStmt *S);
-  bool emitCompoundStatement(const InlineAsmCompoundStmt *S);
-  bool emitDeclarationStatement(const InlineAsmDeclStmt *S);
+  bool emitStmt(const InlineAsmStmt *S);
+  bool emitCompoundStmt(const InlineAsmCompoundStmt *S);
+  bool emitDeclStmt(const InlineAsmDeclStmt *S);
   bool emitInstruction(const InlineAsmInstruction *I);
   bool emitConditionalInstruction(const InlineAsmConditionalInstruction *I);
   bool emitUnaryOperator(const InlineAsmUnaryOperator *Op);
   bool emitBinaryOperator(const InlineAsmBinaryOperator *Op);
   bool emitConditionalOperator(const InlineAsmConditionalOperator *Op);
-  bool emitCastExpression(const InlineAsmCastExpr *E);
-  bool emitParenExpression(const InlineAsmParenExpr *E);
-  bool emitDeclRefExpression(const InlineAsmDeclRefExpr *E);
+  bool emitVectorExpr(const InlineAsmVectorExpr *E);
+  bool emitDiscardExpr(const InlineAsmDiscardExpr *E) { return SYCLGenError(); }
+  bool emitAddressExpr(const InlineAsmAddressExpr *E) { return SYCLGenError(); }
+  bool emitCastExpr(const InlineAsmCastExpr *E);
+  bool emitParenExpr(const InlineAsmParenExpr *E);
+  bool emitDeclRefExpr(const InlineAsmDeclRefExpr *E);
   bool emitIntegerLiteral(const InlineAsmIntegerLiteral *I);
   bool emitFloatingLiteral(const InlineAsmFloatingLiteral *Fp);
 
@@ -183,39 +215,18 @@ protected:
 #include "Asm/AsmTokenKinds.def"
 };
 
-bool SYCLGenBase::emitStatement(const InlineAsmStmt *S) {
+bool SYCLGenBase::emitStmt(const InlineAsmStmt *S) {
   switch (S->getStmtClass()) {
-  case InlineAsmStmt::CompoundStmtClass:
-    return emitCompoundStatement(dyn_cast<InlineAsmCompoundStmt>(S));
-  case InlineAsmStmt::DeclStmtClass:
-    return emitDeclarationStatement(dyn_cast<InlineAsmDeclStmt>(S));
-  case InlineAsmStmt::InstructionClass:
-    return emitInstruction(dyn_cast<InlineAsmInstruction>(S));
-  case InlineAsmStmt::ConditionalInstructionClass:
-    return emitConditionalInstruction(
-        dyn_cast<InlineAsmConditionalInstruction>(S));
-  case InlineAsmStmt::UnaryOperatorClass:
-    return emitUnaryOperator(dyn_cast<InlineAsmUnaryOperator>(S));
-  case InlineAsmStmt::BinaryOperatorClass:
-    return emitBinaryOperator(dyn_cast<InlineAsmBinaryOperator>(S));
-  case InlineAsmStmt::ConditionalOperatorClass:
-    return emitConditionalOperator(dyn_cast<InlineAsmConditionalOperator>(S));
-  case InlineAsmStmt::CastExprClass:
-    return emitCastExpression(dyn_cast<InlineAsmCastExpr>(S));
-  case InlineAsmStmt::ParenExprClass:
-    return emitParenExpression(dyn_cast<InlineAsmParenExpr>(S));
-  case InlineAsmStmt::DeclRefExprClass:
-    return emitDeclRefExpression(dyn_cast<InlineAsmDeclRefExpr>(S));
-  case InlineAsmStmt::IntegerLiteralClass:
-    return emitIntegerLiteral(dyn_cast<InlineAsmIntegerLiteral>(S));
-  case InlineAsmStmt::FloatingLiteralClass:
-    return emitFloatingLiteral(dyn_cast<InlineAsmFloatingLiteral>(S));
-  default:
-    return SYCLGenError();
+#define STMT(CLASS, PARENT)                                                    \
+  case InlineAsmStmt::CLASS##Class:                                            \
+    return emit##CLASS(dyn_cast<InlineAsm##CLASS>(S));
+#define ABSTRACT_STMT(STMT)
+#include "Asm/AsmNodes.def"
   }
+  return SYCLGenError();
 }
 
-bool SYCLGenBase::emitDeclarationStatement(const InlineAsmDeclStmt *S) {
+bool SYCLGenBase::emitDeclStmt(const InlineAsmDeclStmt *S) {
   if (S->getNumDecl() == 0)
     return SYCLGenError();
   if (S->getDeclSpec().Alignment) {
@@ -237,7 +248,7 @@ bool SYCLGenBase::emitDeclarationStatement(const InlineAsmDeclStmt *S) {
   return SYCLGenSuccess();
 }
 
-bool SYCLGenBase::emitCompoundStatement(const InlineAsmCompoundStmt *S) {
+bool SYCLGenBase::emitCompoundStmt(const InlineAsmCompoundStmt *S) {
   llvm::SaveAndRestore<bool> StoreEndl(EmitNewLine);
   llvm::SaveAndRestore<bool> StoreSemi(EmitSemi);
   EmitNewLine = true;
@@ -245,14 +256,14 @@ bool SYCLGenBase::emitCompoundStatement(const InlineAsmCompoundStmt *S) {
   BlockDelimiterGuard Guard(*this);
   for (const auto *SubStmt : S->stmts()) {
     indent();
-    if (emitStatement(SubStmt))
+    if (emitStmt(SubStmt))
       return SYCLGenError();
   }
   return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitInstruction(const InlineAsmInstruction *I) {
-  switch (I->getOpcode()->getTokenID()) {
+  switch (I->getOpcodeID()->getTokenID()) {
 #define INSTRUCTION(X)                                                         \
   case asmtok::op_##X:                                                         \
     return handle_##X(I);
@@ -268,7 +279,7 @@ bool SYCLGenBase::emitConditionalInstruction(
   OS() << "if (";
   if (I->hasNot())
     OS() << "!";
-  if (emitStatement(I->getPred()))
+  if (emitStmt(I->getPred()))
     return SYCLGenError();
   OS() << ") ";
   BlockDelimiterGuard Guard(*this);
@@ -285,11 +296,11 @@ bool SYCLGenBase::emitUnaryOperator(const InlineAsmUnaryOperator *Op) {
   case InlineAsmUnaryOperator::LNot:  OS() << "!"; break;
     // clang-format on
   }
-  return emitStatement(Op->getSubExpr());
+  return emitStmt(Op->getSubExpr());
 }
 
 bool SYCLGenBase::emitBinaryOperator(const InlineAsmBinaryOperator *Op) {
-  if (emitStatement(Op->getLHS()))
+  if (emitStmt(Op->getLHS()))
     return SYCLGenError();
   OS() << " ";
   // clang-format off
@@ -316,44 +327,53 @@ bool SYCLGenBase::emitBinaryOperator(const InlineAsmBinaryOperator *Op) {
   }
   // clang-format on
   OS() << " ";
-  return emitStatement(Op->getRHS());
+  return emitStmt(Op->getRHS());
 }
 
 bool SYCLGenBase::emitConditionalOperator(
     const InlineAsmConditionalOperator *Op) {
-  if (emitStatement(Op->getCond()))
+  if (emitStmt(Op->getCond()))
     return SYCLGenError();
   OS() << " ? ";
-  if (emitStatement(Op->getLHS()))
+  if (emitStmt(Op->getLHS()))
     return SYCLGenError();
   OS() << " : ";
-  return emitStatement(Op->getRHS());
+  return emitStmt(Op->getRHS());
 }
 
-bool SYCLGenBase::emitCastExpression(const InlineAsmCastExpr *E) {
+bool SYCLGenBase::emitCastExpr(const InlineAsmCastExpr *E) {
   OS() << "static_cast<";
   if (emitType(E->getType()))
     return SYCLGenError();
   OS() << ">(";
-  if (emitStatement(E->getSubExpr()))
+  if (emitStmt(E->getSubExpr()))
     return SYCLGenError();
   OS() << ")";
   return SYCLGenSuccess();
 }
 
-bool SYCLGenBase::emitParenExpression(const InlineAsmParenExpr *E) {
+bool SYCLGenBase::emitParenExpr(const InlineAsmParenExpr *E) {
   OS() << "(";
-  if (emitStatement(E->getSubExpr()))
+  if (emitStmt(E->getSubExpr()))
     return SYCLGenError();
   OS() << ")";
   return SYCLGenSuccess();
 }
 
-bool SYCLGenBase::emitDeclRefExpression(const InlineAsmDeclRefExpr *E) {
+bool SYCLGenBase::emitDeclRefExpr(const InlineAsmDeclRefExpr *E) {
   if (E->getDecl().getDeclName()->isBuiltinID()) {
     switch (E->getDecl().getDeclName()->getTokenID()) {
     case asmtok::bi_laneid:
-      OS() << getItemName() << ".get_sub_group().get_local_linear_id()";
+      OS() << DpctGlobalInfo::getItem(GAS)
+           << ".get_sub_group().get_local_linear_id()";
+      break;
+    case asmtok::bi_warpid:
+      OS() << DpctGlobalInfo::getItem(GAS)
+           << ".get_sub_group().get_group_linear_id()";
+      break;
+    case asmtok::bi_WARP_SZ:
+      OS() << DpctGlobalInfo::getItem(GAS)
+           << ".get_sub_group().get_local_range().get(0)";
       break;
     default:
       return SYCLGenError();
@@ -396,6 +416,23 @@ bool SYCLGenBase::emitFloatingLiteral(const InlineAsmFloatingLiteral *Fp) {
   return SYCLGenSuccess();
 }
 
+bool SYCLGenBase::emitVectorExpr(const InlineAsmVectorExpr *E) {
+  if (!VecExprTypeRecord.empty())
+    OS() << VecExprTypeRecord.back();
+  OS() << "{";
+  unsigned NumCommas = E->getNumElements() - 1;
+  for (const auto *Element : E->elements()) {
+    if (emitStmt(Element))
+      return SYCLGenError();
+    if (NumCommas) {
+      OS() << ", ";
+      NumCommas--;
+    }
+  }
+  OS() << "}";
+  return SYCLGenSuccess();
+}
+
 bool SYCLGenBase::emitType(const InlineAsmType *T) {
   switch (T->getTypeClass()) {
   case InlineAsmType::BuiltinClass:
@@ -429,6 +466,8 @@ bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   case InlineAsmBuiltinType::TK_byte:   OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::TK_4byte:  OS() << "uint32_t"; break;
   case InlineAsmBuiltinType::TK_pred:   OS() << "bool"; break;
+  case InlineAsmBuiltinType::TK_s16x2:  OS() << "sycl::short2"; break;
+  case InlineAsmBuiltinType::TK_u16x2:  OS() << "sycl::ushort2"; break;
   case InlineAsmBuiltinType::TK_bf16:
   case InlineAsmBuiltinType::TK_e4m3:
   case InlineAsmBuiltinType::TK_e5m2:
@@ -437,8 +476,6 @@ bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   case InlineAsmBuiltinType::TK_bf16x2:
   case InlineAsmBuiltinType::TK_e4m3x2:
   case InlineAsmBuiltinType::TK_e5m2x2:
-  case InlineAsmBuiltinType::TK_s16x2:
-  case InlineAsmBuiltinType::TK_u16x2:
     [[fallthrough]];
   default:
     return SYCLGenError();
@@ -487,49 +524,49 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVariableDecl *D) {
 /// This used to handle the specific instruction.
 class SYCLGen : public SYCLGenBase {
 public:
-  SYCLGen(llvm::raw_ostream &OS) : SYCLGenBase(OS) {}
+  SYCLGen(llvm::raw_ostream &OS, const GCCAsmStmt *G) : SYCLGenBase(OS, G) {}
 
-  bool handleStatement(const InlineAsmStmt *S) { return emitStatement(S); }
+  bool handleStatement(const InlineAsmStmt *S) { return emitStmt(S); }
 
 protected:
   bool handle_mov(const InlineAsmInstruction *I) override {
     if (I->getNumInputOperands() != 1)
       return SYCLGenError();
-    if (emitStatement(I->getOutputOperand()))
+    if (emitStmt(I->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
-    if (emitStatement(I->getInputOperand(0)))
+    if (emitStmt(I->getInputOperand(0)))
       return SYCLGenError();
     endstmt();
     return SYCLGenSuccess();
   }
 
   bool handle_setp(const InlineAsmInstruction *I) override {
-    if (I->getNumInputOperands() != 2 && I->getNumTypes() == 1)
+    if (I->getNumInputOperands() != 2 && I->getNumInputOperands() == 1)
       return SYCLGenError();
 
     auto *T = dyn_cast<InlineAsmBuiltinType>(I->getType(0));
     if (!T)
       return SYCLGenError();
 
-    if (emitStatement(I->getOutputOperand()))
+    if (emitStmt(I->getOutputOperand()))
       return SYCLGenError();
 
     OS() << " = ";
 
     std::string Op1, Op2;
 
-    if (tryEmitStatement(Op1, I->getInputOperand(0)))
+    if (tryEmitStmt(Op1, I->getInputOperand(0)))
       return SYCLGenError();
 
-    if (tryEmitStatement(Op2, I->getInputOperand(1)))
+    if (tryEmitStmt(Op2, I->getInputOperand(1)))
       return SYCLGenError();
 
     const char *Template = nullptr;
 
-    for (const auto *A : I->attrs()) {
-      switch (A->getTokenID()) {
-      case asmtok::kw_eq:
+    for (const auto A : I->attrs()) {
+      switch (A) {
+      case InstAttr::eq:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Template = "{0} == {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
@@ -541,7 +578,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_ne:
+      case InstAttr::ne:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Template = "{0} != {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
@@ -553,7 +590,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_lt:
+      case InstAttr::lt:
         if (T->isSignedInt())
           Template = "{0} < {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
@@ -565,7 +602,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_le:
+      case InstAttr::le:
         if (T->isSignedInt())
           Template = "{0} <= {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
@@ -577,7 +614,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_gt:
+      case InstAttr::gt:
         if (T->isSignedInt())
           Template = "{0} > {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
@@ -589,7 +626,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_ge:
+      case InstAttr::ge:
         if (T->isSignedInt())
           Template = "{0} >= {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
@@ -601,31 +638,31 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_lo:
+      case InstAttr::lo:
         if (T->isUnsignedInt())
           Template = "{0} < {1}";
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_ls:
+      case InstAttr::ls:
         if (T->isUnsignedInt())
           Template = "{0} <= {1}";
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_hi:
+      case InstAttr::hi:
         if (T->isUnsignedInt())
           Template = "{0} > {1}";
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_hs:
+      case InstAttr::hs:
         if (T->isUnsignedInt())
           Template = "{0} >= {1}";
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_equ:
+      case InstAttr::equ:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
                      "sycl::isequal<float>({0}, {1})";
@@ -635,7 +672,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_neu:
+      case InstAttr::neu:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
                      "sycl::isnotequal<float>({0}, {1})";
@@ -645,7 +682,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_ltu:
+      case InstAttr::ltu:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
                      "sycl::isless<float>({0}, {1})";
@@ -655,7 +692,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_leu:
+      case InstAttr::leu:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
                      "sycl::islessequal<float>({0}, {1})";
@@ -665,7 +702,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_gtu:
+      case InstAttr::gtu:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
                      "sycl::isgreater<float>({0}, {1})";
@@ -675,7 +712,7 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_geu:
+      case InstAttr::geu:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
                      "sycl::isgreaterequal<float>({0}, {1})";
@@ -685,13 +722,13 @@ protected:
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_num:
+      case InstAttr::num:
         if (T->isFloating())
           Template = "!sycl::isnan({0}) && !sycl::isnan({1})";
         else
           return SYCLGenError();
         break;
-      case asmtok::kw_nan:
+      case InstAttr::nan:
         if (T->isFloating())
           Template = "sycl::isnan({0}) || sycl::isnan({1})";
         else
@@ -716,13 +753,13 @@ protected:
         dyn_cast<InlineAsmBuiltinType>(I->getType(0))->getKind() !=
             InlineAsmBuiltinType::TK_b32)
       return SYCLGenError();
-    if (emitStatement(I->getOutputOperand()))
+    if (emitStmt(I->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
 
     std::string Op[3];
     for (auto Idx : llvm::seq(0, 3)) {
-      if (tryEmitStatement(Op[Idx], I->getInputOperand(Idx)))
+      if (tryEmitStmt(Op[Idx], I->getInputOperand(Idx)))
         return SYCLGenError();
     }
 
@@ -800,6 +837,581 @@ protected:
     endstmt();
     return SYCLGenSuccess();
   }
+
+  bool CheckAddSubMinMaxType(const InlineAsmInstruction *Inst, bool &isVec) {
+    if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0))) {
+      if (Inst->hasAttr(InstAttr::sat) &&
+          BI->getKind() != InlineAsmBuiltinType::TK_s32)
+        return false;
+      if (BI->getKind() != InlineAsmBuiltinType::TK_s16 &&
+          BI->getKind() != InlineAsmBuiltinType::TK_u16 &&
+          BI->getKind() != InlineAsmBuiltinType::TK_s32 &&
+          BI->getKind() != InlineAsmBuiltinType::TK_u32 &&
+          BI->getKind() != InlineAsmBuiltinType::TK_s64 &&
+          BI->getKind() != InlineAsmBuiltinType::TK_u64 &&
+          BI->getKind() != InlineAsmBuiltinType::TK_s16x2 &&
+          BI->getKind() != InlineAsmBuiltinType::TK_u16x2)
+        return false;
+      isVec = BI->getKind() == InlineAsmBuiltinType::TK_s16x2 ||
+              BI->getKind() == InlineAsmBuiltinType::TK_u16x2;
+    } else {
+      return false;
+    }
+    return true;
+  }
+
+  bool HandleAddSub(const InlineAsmInstruction *Inst) {
+    if (Inst->getNumInputOperands() != 2 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+
+    bool isVec = false;
+    if (!CheckAddSubMinMaxType(Inst, isVec))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string TypeRepl;
+    if (tryEmitType(TypeRepl, Inst->getType(0)))
+      return SYCLGenError();
+    EnterEmitVectorExpressionContext Ctx(*this, TypeRepl, isVec);
+
+    std::string Op[2];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
+      if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+    }
+
+    if (Inst->hasAttr(InstAttr::sat)) {
+      if (Inst->is(asmtok::op_add))
+        OS() << llvm::formatv("sycl::add_sat<int32_t>({0}, {1})", Op[0], Op[1]);
+      else
+        OS() << llvm::formatv("sycl::sub_sat<int32_t>({0}, {1})", Op[0], Op[1]);
+    } else {
+      if (Inst->is(asmtok::op_add))
+        OS() << llvm::formatv("{0} + {1}", Op[0], Op[1]);
+      else
+        OS() << llvm::formatv("{0} - {1}", Op[0], Op[1]);
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_add(const InlineAsmInstruction *Inst) override {
+    return HandleAddSub(Inst);
+  }
+
+  bool handle_sub(const InlineAsmInstruction *Inst) override {
+    return HandleAddSub(Inst);
+  }
+
+  StringRef GetWiderTypeAsString(const InlineAsmBuiltinType *Type) const {
+    switch (Type->getKind()) {
+    case InlineAsmBuiltinType::TK_s16:
+      return "int32_t";
+    case InlineAsmBuiltinType::TK_u16:
+      return "uint32_t";
+    case InlineAsmBuiltinType::TK_s32:
+      return "int64_t";
+    case InlineAsmBuiltinType::TK_u32:
+      return "uint64_t";
+    default:
+      assert(false && "Can not find wide type");
+    }
+    return "";
+  }
+
+  bool CheckMulMadType(const InlineAsmBuiltinType *Type) const {
+    return Type->getKind() == InlineAsmBuiltinType::TK_s16 ||
+           Type->getKind() == InlineAsmBuiltinType::TK_u16 ||
+           Type->getKind() == InlineAsmBuiltinType::TK_s32 ||
+           Type->getKind() == InlineAsmBuiltinType::TK_u32 ||
+           Type->getKind() == InlineAsmBuiltinType::TK_s64 ||
+           Type->getKind() == InlineAsmBuiltinType::TK_u64;
+  }
+
+  std::string Cast(StringRef Type, StringRef Op) const {
+    return llvm::Twine("(").concat(Type).concat(")").concat(Op).str();
+  }
+
+  bool handle_mul(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 2 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+
+    if (!Type || !CheckMulMadType(Type))
+      return SYCLGenError();
+
+    // Can not use .wide attr on 64-bit integer.
+    if (Inst->hasAttr(InstAttr::wide) &&
+        (Type->getKind() == InlineAsmBuiltinType::TK_s64 ||
+         Type->getKind() == InlineAsmBuiltinType::TK_u64))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    OS() << " = ";
+
+    std::string Op[2];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
+    // mul.hi
+    if (Inst->hasAttr(InstAttr::hi)) {
+      OS() << "sycl::mul_hi<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
+           << ")";
+      // mul.wide
+    } else if (Inst->hasAttr(InstAttr::wide)) {
+      OS() << Cast(GetWiderTypeAsString(Type), Op[0]) << " * "
+           << Cast(GetWiderTypeAsString(Type), Op[1]);
+      // mul.lo
+    } else {
+      // Need to add a new help function.
+      // OS() << Op[0] << " * " << Op[1];
+      return SYCLGenError();
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_mad(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+
+    if (!Type || !CheckMulMadType(Type))
+      return SYCLGenError();
+
+    // Can not use .wide attr on 64-bit integer.
+    if (Inst->hasAttr(InstAttr::wide) &&
+        (Type->getKind() == InlineAsmBuiltinType::TK_s64 ||
+         Type->getKind() == InlineAsmBuiltinType::TK_u64))
+      return SYCLGenError();
+
+    // The attribute .sat only work with .hi mode.
+    if (Inst->hasAttr(InstAttr::sat) &&
+        (!Inst->hasAttr(InstAttr::hi) ||
+         Type->getKind() != InlineAsmBuiltinType::TK_s32))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    OS() << " = ";
+
+    std::string Op[3];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
+    // mad.hi.sat
+    if (Inst->hasAttr(InstAttr::sat))
+      OS() << llvm::formatv(
+          "sycl::add_sat<{0}>(sycl::mul_hi<{0}>({1}, {2}), {3})", TypeStr,
+          Op[0], Op[1], Op[2]);
+    // mad.hi
+    else if (Inst->hasAttr(InstAttr::hi))
+      OS() << "sycl::mad_hi<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
+           << ", " << Op[2] << ")";
+    // mad.wide
+    else if (Inst->hasAttr(InstAttr::wide))
+      OS() << llvm::formatv("({3}){0} * ({3}){1} + ({3}){2}", Op[0], Op[1],
+                            Op[2], GetWiderTypeAsString(Type));
+    // mad.lo
+    else {
+      // Need to add a new help function.
+      // OS() << Op[0] << " * " << Op[1] << " + " << Op[2];
+      return SYCLGenError();
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool HandleDivRem(const InlineAsmInstruction *Inst, char Operator) {
+    if (Inst->getNumInputOperands() != 2 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string Operand[2];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Operand[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+    OS() << Operand[0] << ' ' << Operator << ' ' << Operand[1];
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_div(const InlineAsmInstruction *Inst) override {
+    return HandleDivRem(Inst, '/');
+  }
+
+  bool handle_rem(const InlineAsmInstruction *Inst) override {
+    return HandleDivRem(Inst, '%');
+  }
+
+  bool HandleMul24Mad24(const InlineAsmInstruction *Inst, bool isMad) {
+    if (Inst->getNumInputOperands() != 2U + isMad || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+
+    if (!Type || !CheckMulMadType(Type))
+      return SYCLGenError();
+
+    // hi unsupport
+    if (Inst->hasAttr(InstAttr::hi))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    OS() << " = ";
+
+    std::string Op[3];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
+    if (isMad) {
+      OS() << "sycl::mad24<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
+           << ", " << Op[2] << ")";
+    } else {
+      OS() << "sycl::mul24<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
+           << ")";
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_mul24(const InlineAsmInstruction *Inst) override {
+    return HandleMul24Mad24(Inst, /*isMad=*/false);
+  }
+
+  bool handle_mad24(const InlineAsmInstruction *Inst) override {
+    return HandleMul24Mad24(Inst, /*isMad=*/true);
+  }
+
+  bool HandleAbsNeg(const InlineAsmInstruction *Inst) {
+    if (Inst->getNumInputOperands() != 1 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type)
+      return SYCLGenError();
+
+    if (Type->getKind() != InlineAsmBuiltinType::TK_s16 &&
+        Type->getKind() != InlineAsmBuiltinType::TK_s32 &&
+        Type->getKind() != InlineAsmBuiltinType::TK_s64) {
+      return SYCLGenError();
+    }
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    OS() << " = ";
+
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
+    if (Inst->is(asmtok::op_abs))
+      OS() << llvm::formatv("sycl::abs<{0}>({1})", TypeStr, Op);
+    else
+      OS() << "-" << Op;
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_abs(const InlineAsmInstruction *Inst) override {
+    return HandleAbsNeg(Inst);
+  }
+
+  bool handle_neg(const InlineAsmInstruction *Inst) override {
+    return HandleAbsNeg(Inst);
+  }
+
+  bool HandlePopcClz(const InlineAsmInstruction *Inst) {
+    if (Inst->getNumInputOperands() != 1 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type || (Type->getKind() != InlineAsmBuiltinType::TK_b32 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_b64))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string TypeRepl, OpRepl;
+    if (tryEmitStmt(OpRepl, Inst->getInputOperand(0)) ||
+        tryEmitType(TypeRepl, Inst->getType(0)))
+      return SYCLGenError();
+
+    if (Inst->is(asmtok::op_popc))
+      OS() << "sycl::popcount<" << TypeRepl << ">(" << OpRepl << ")";
+    else
+      OS() << "sycl::clz<" << TypeRepl << ">(" << OpRepl << ")";
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_popc(const InlineAsmInstruction *Inst) override {
+    return HandlePopcClz(Inst);
+  }
+
+  bool handle_clz(const InlineAsmInstruction *Inst) override {
+    return HandlePopcClz(Inst);
+  }
+
+  bool HandleMinMax(const InlineAsmInstruction *Inst, StringRef Fn) {
+    if (Inst->getNumInputOperands() != 2 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+
+    bool isVec = false;
+    if (!CheckAddSubMinMaxType(Inst, isVec))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string TypeRepl;
+    if (tryEmitType(TypeRepl, Inst->getType(0)))
+      return SYCLGenError();
+
+    std::string Op[2];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+
+    auto GenZeroVal = [&]() {
+      if (isVec)
+        return TypeRepl + "(0)";
+      return std::string{"0"};
+    };
+
+    auto GenMaxVal = [&]() {
+      if (isVec)
+        return llvm::Twine(TypeRepl)
+            .concat("(std::numeric_limits<")
+            .concat(TypeRepl)
+            .concat("::element_type>::max())")
+            .str();
+      return llvm::Twine("std::numeric_limits<")
+          .concat(TypeRepl)
+          .concat(">::max()")
+          .str();
+    };
+
+    if (Inst->hasAttr(InstAttr::relu)) {
+      std::string str =
+          llvm::formatv("sycl::clamp<{0}>({5}<{0}>({1}, {2}), {3}, {4})",
+                        TypeRepl, Op[0], Op[1], GenZeroVal(), GenMaxVal(), Fn)
+              .str();
+      OS() << str;
+    } else {
+      OS() << llvm::formatv("{3}<{0}>({1}, {2})", TypeRepl, Op[0], Op[1], Fn);
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_min(const InlineAsmInstruction *Inst) override {
+    return HandleMinMax(Inst, "sycl::min");
+  }
+
+  bool handle_max(const InlineAsmInstruction *Inst) override {
+    return HandleMinMax(Inst, "sycl::max");
+  }
+
+  bool HandleBitwiseBinaryOp(const InlineAsmInstruction *Inst,
+                             StringRef Operator) {
+    if (Inst->getNumInputOperands() != 2 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+    bool IsShift = Inst->is(asmtok::op_shl, asmtok::op_shr);
+    const auto *BI = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!BI || (BI->getKind() != InlineAsmBuiltinType::TK_b16 &&
+                BI->getKind() != InlineAsmBuiltinType::TK_b32 &&
+                BI->getKind() != InlineAsmBuiltinType::TK_b64 &&
+                (IsShift && BI->getKind() == InlineAsmBuiltinType::TK_pred)))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string Operand[2];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Operand[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+
+    OS() << Operand[0] << ' ' << Operator << ' ' << Operand[1];
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_and(const InlineAsmInstruction *Inst) override {
+    return HandleBitwiseBinaryOp(Inst, "&");
+  }
+
+  bool handle_or(const InlineAsmInstruction *Inst) override {
+    return HandleBitwiseBinaryOp(Inst, "|");
+  }
+
+  bool handle_xor(const InlineAsmInstruction *Inst) override {
+    return HandleBitwiseBinaryOp(Inst, "^");
+  }
+
+  bool handle_shl(const InlineAsmInstruction *Inst) override {
+    return HandleBitwiseBinaryOp(Inst, "<<");
+  }
+
+  bool handle_shr(const InlineAsmInstruction *Inst) override {
+    return HandleBitwiseBinaryOp(Inst, ">>");
+  }
+
+  bool HandleNot(const InlineAsmInstruction *Inst) {
+    std::string TypeRepl;
+    if (tryEmitType(TypeRepl, Inst->getType(0)))
+      return SYCLGenError();
+
+    if (Inst->getNumInputOperands() != 1 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+
+    const auto *BI = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!BI || (BI->getKind() != InlineAsmBuiltinType::TK_b16 &&
+                BI->getKind() != InlineAsmBuiltinType::TK_b32 &&
+                BI->getKind() != InlineAsmBuiltinType::TK_b64 &&
+                (Inst->is(asmtok::op_cnot) &&
+                 BI->getKind() == InlineAsmBuiltinType::TK_pred)))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+
+    if (Inst->is(asmtok::op_not)) {
+      OS() << llvm::formatv("~{0}", Op);
+    } else {
+      OS() << llvm::formatv("{0} == 0", Op);
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_not(const InlineAsmInstruction *Inst) override {
+    return HandleNot(Inst);
+  }
+
+  bool handle_cnot(const InlineAsmInstruction *Inst) override {
+    return HandleNot(Inst);
+  }
+
+  // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
+  bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst, StringRef Fn) {
+    if (Inst->getNumInputOperands() < 2 || Inst->getNumTypes() != 3)
+      return SYCLGenError();
+    
+    // Arguments mismatch for instruction, which has a secondary arithmetic operation.
+    if (Inst->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) && Inst->getNumInputOperands() < 3)
+      return SYCLGenError();
+
+    // The type of operands must be one of s32/u32.
+    for (const auto *T : Inst->types()) {
+      if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(T)) {
+        if (BI->getKind() == InlineAsmBuiltinType::TK_s32 ||
+            BI->getKind() == InlineAsmBuiltinType::TK_u32)
+          continue;
+      }
+      return SYCLGenError();
+    }
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    OS() << " = " << Fn;
+    if (Inst->hasAttr(InstAttr::sat)) OS() << "_sat";
+    OS() << "<";
+    if (emitType(Inst->getType(0)))
+      return SYCLGenError();
+    OS() << ">(";
+
+    std::string Op[3];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+
+    OS() << llvm::join(ArrayRef(Op, Inst->getNumInputOperands()), ", ");
+    // The secondary arithmetic operation.
+    if (Inst->hasAttr(InstAttr::add)) {
+      OS() << ", sycl::plus<>()";
+    } else if (Inst->hasAttr(InstAttr::min)) {
+      OS() << ", sycl::minimum<>()";
+    } else if (Inst->hasAttr(InstAttr::max)) {
+      OS() << ", sycl::maximum<>()";
+    }
+
+    OS() << ")";
+    endstmt();
+    DpctGlobalInfo::getInstance().insertHeader(GAS->getBeginLoc(),
+                                               HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
+  bool handle_vadd(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_add");
+  }
+
+  bool handle_vsub(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_sub");
+  }
+
+  bool handle_vabsdiff(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_absdiff");
+  }
+
+  bool handle_vmax(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_max");
+  }
+
+  bool handle_vmin(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_min");
+  }
 };
 } // namespace
 
@@ -824,7 +1436,7 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   InlineAsmParser Parser(Context, Mgr);
   std::string ReplaceString;
   llvm::raw_string_ostream OS(ReplaceString);
-  SYCLGen CodeGen(OS);
+  SYCLGen CodeGen(OS, GAS);
   StringRef Indent =
       getIndent(GAS->getBeginLoc(), DpctGlobalInfo::getSourceManager());
 
@@ -865,25 +1477,30 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   } while (!Parser.getCurToken().is(asmtok::eof));
 
   StringRef Ref = ReplaceString;
-  if (CodeGen.isInMacroDefine()) {
-    if (Ref.ends_with("\\\n")) {
-      ReplaceString.erase(ReplaceString.end() - 2);
-    } else if (Ref.ends_with("\\\r\n")) {
-      ReplaceString.erase(ReplaceString.end() - 3);
+
+  // Trim the trailing whitspace and ';'.
+  Ref = Ref.trim();
+  if (Ref.back() == ';')
+    Ref = Ref.drop_back();
+
+  if (CodeGen.isInMacroDefine() && Ref.ends_with("\\"))
+    Ref = Ref.drop_back();
+
+  // If the generated SYCL code in '{...}', we should remove ';' after AsmStmt.
+  if (Ref.front() == '{' && Ref.back() == '}') {
+    auto Tok = Lexer::findNextToken(GAS->getEndLoc(), SM, C.getLangOpts());
+
+    if (Tok.has_value() && Tok->is(tok::semi) &&
+        (!CodeGen.isInMacroDefine() ||
+         isInMacroDefinition(Tok->getLocation(), Tok->getEndLoc()))) {
+      emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
     }
   }
 
-  auto *Repl = new ReplaceStmt(GAS, std::move(ReplaceString));
+  auto *Repl = new ReplaceStmt(GAS, std::move(Ref.str()));
   Repl->setBlockLevelFormatFlag();
   emplaceTransformation(Repl);
 
-  auto Tok = Lexer::findNextToken(GAS->getEndLoc(), SM, C.getLangOpts());
-
-  if (Tok.has_value() && Tok->is(tok::semi) &&
-      (!CodeGen.isInMacroDefine() ||
-       isInMacroDefinition(Tok->getLocation(), Tok->getEndLoc()))) {
-    emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
-  }
   return;
 }
 

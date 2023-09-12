@@ -6,7 +6,7 @@
 CUtexref tex;
 
 //CHECK: extern "C" void foo(float* k, float* y, const sycl::nd_item<3> &item_ct1,
-//CHECK-NEXT:     uint8_t *dpct_local, unsigned int *const_data);
+//CHECK-NEXT:     uint8_t *dpct_local, unsigned int const *const_data);
 
 //CHECK:extern "C" {
 //CHECK-NEXT: DPCT_EXPORT void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra);
@@ -17,12 +17,11 @@ extern "C" __global__ void foo(float* k, float* y);
 __constant__ unsigned int const_data[3] = {1, 2, 3};
 
 //CHECK: void foo(float* k, float* y, const sycl::nd_item<3> &item_ct1,
-//CHECK-NEXT: uint8_t *dpct_local, unsigned int *const_data){
+//CHECK-NEXT: uint8_t *dpct_local, unsigned int const *const_data){
 //CHECK-NEXT: auto s = (int *)dpct_local;
 //CHECK-NEXT: unsigned int cd = const_data[2];
 //CHECK-NEXT: int a = item_ct1.get_local_id(2);
 //CHECK-NEXT: }
-
 
 // CHECK:      extern "C" {
 // CHECK-NEXT:   DPCT_EXPORT void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
@@ -73,7 +72,7 @@ extern "C" __global__ void foo2(float* k, float* y, int2 x=make_int2(1, 2)) {
 
 //CHECK: void goo(){
 //CHECK-NEXT:     float *a, *b;
-//CHECK-NEXT:     dpct::get_default_queue().submit(
+//CHECK-NEXT:     dpct::get_in_order_queue().submit(
 //CHECK-NEXT:       [&](sycl::handler &cgh) {
 //CHECK-NEXT:         const_data.init();
 //CHECK:         auto const_data_ptr_ct1 = const_data.get_ptr();

@@ -11,7 +11,7 @@
 // A comment and diagnostics with the same ID have the same index space for format arguments:
 // warning may use %0 and comment may use {1} and in that way they are using different parts of parameter pack
 
-
+// clang-format off
 // FORMAT: {NAME, ID, MESSAGE}
 DEF_WARNING(IFSTMT_NOT_REMOVED, 1000, "Error handling if-stmt was detected but could not be rewritten.")
 DEF_COMMENT(IFSTMT_NOT_REMOVED, 1000, "Error handling if-stmt was detected but could not be rewritten.")
@@ -105,8 +105,8 @@ DEF_WARNING(DEPRECATED_BASE_CLASS, 1044, "%0 was removed because %1 has been dep
 DEF_COMMENT(DEPRECATED_BASE_CLASS, 1044, "{0} was removed because {1} has been deprecated in C++11. You may need to remove references to typedefs from {0} in the class definition.")
 DEF_WARNING(UNSUPPORT_MATRIX_TYPE, 1045, "Migration is only supported for this API for the %0 sparse matrix type. You may need to adjust the code.")
 DEF_COMMENT(UNSUPPORT_MATRIX_TYPE, 1045, "Migration is only supported for this API for the {0} sparse matrix type. You may need to adjust the code.")
-DEF_WARNING(UNSUPPORT_PARAM_COMBINATION, 1046, "The %0 was not migrated because %1. You need to adjust the code.")
-DEF_COMMENT(UNSUPPORT_PARAM_COMBINATION, 1046, "The {0} was not migrated because {1}. You need to adjust the code.")
+DEF_WARNING(UNSUPPORT_PARAM_COMBINATION, 1046, "deprecated")
+DEF_COMMENT(UNSUPPORT_PARAM_COMBINATION, 1046, "deprecated")
 DEF_WARNING(DIFFERENT_LU_FACTORIZATION, 1047, "The meaning of %0 in the %1 is different from the %2. You may need to check the migrated code.")
 DEF_COMMENT(DIFFERENT_LU_FACTORIZATION, 1047, "The meaning of {0} in the {1} is different from the {2}. You may need to check the migrated code.")
 DEF_WARNING(HOSTALLOCMACRO_NO_MEANING, 1048, "The original value %0 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.")
@@ -237,3 +237,14 @@ DEF_WARNING(REGISTER_USAGE, 1110, "The total declared local variable size in dev
 DEF_COMMENT(REGISTER_USAGE, 1110, "The total declared local variable size in device function {0} exceeds 128 bytes and may cause high register pressure. Consult with your hardware vendor to find the total register size available and adjust the code, or use smaller sub-group size to avoid high register pressure.")
 DEF_WARNING(MAX_ACTIVE_WG_ARGS, 1111, "Please verify the input arguments of \"%0\" base on the target function \"%1\".")
 DEF_COMMENT(MAX_ACTIVE_WG_ARGS, 1111, "Please verify the input arguments of \"{0}\" base on the target function \"{1}\".")
+DEF_WARNING(TEX_FETCH, 1112, "If the filter mode is set to 'linear', the behavior of image \"read\" may be different from \"tex1Dfetch\" in the original code. You may need to adjust the code.")
+DEF_COMMENT(TEX_FETCH, 1112, "If the filter mode is set to 'linear', the behavior of image \"read\" may be different from \"tex1Dfetch\" in the original code. You may need to adjust the code.")
+DEF_WARNING(ONE_DIMENSION_KERNEL_BARRIER, 1113, "Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function \"%0\" is called in a multidimensional kernel.")
+DEF_COMMENT(ONE_DIMENSION_KERNEL_BARRIER, 1113, "Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function \"{0}\" is called in a multidimensional kernel.")
+DEF_WARNING(WAIT_REMOVE, 1114, "cudaMemcpy is migrated to asynchronization memcpy, assuming in the original code the source host memory is pageable memory. If the memory is not pageable, call wait() on event return by memcpy API to ensure synchronization behavior.")
+DEF_COMMENT(WAIT_REMOVE, 1114, "cudaMemcpy is migrated to asynchronization memcpy, assuming in the original code the source host memory is pageable memory. If the memory is not pageable, call wait() on event return by memcpy API to ensure synchronization behavior.")
+DEF_WARNING(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
+DEF_COMMENT(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
+DEF_WARNING(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
+DEF_COMMENT(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
+// clang-format on

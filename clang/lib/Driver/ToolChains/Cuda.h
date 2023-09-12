@@ -67,6 +67,9 @@ public:
   bool isVersionSupported() const { return IsVersionSupported; }
   /// Check whether supported version of CUDA header files is available.
   bool isSupportedVersionAvailable() const { return IsSupportedVersionAvailable; }
+  /// validate whether FilePath is the directory of CUDA header files
+  bool validateCudaHeaderDirectory(const std::string &FilePath,
+                                   const Driver &D);
 #endif // SYCLomatic_CUSTOMIZATION
   /// Print information about the detected CUDA installation.
   void print(raw_ostream &OS) const;
@@ -246,9 +249,6 @@ public:
   llvm::DenormalMode getDefaultDenormalModeForType(
       const llvm::opt::ArgList &DriverArgs, const JobAction &JA,
       const llvm::fltSemantics *FPType = nullptr) const override;
-
-  // math-errno should be the default for SYCL but not other OFK using CUDA TC
-  bool IsMathErrnoDefault() const override { return OK == Action::OFK_SYCL; }
 
   void AddCudaIncludeArgs(const llvm::opt::ArgList &DriverArgs,
                           llvm::opt::ArgStringList &CC1Args) const override;

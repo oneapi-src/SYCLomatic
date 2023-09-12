@@ -58,10 +58,7 @@ int save2Yaml(
     TUR.CompileTargets[Entry.first] = Entry.second;
   }
 
-  clang::dpct::updateTUR(TUR);
   TUR.DpctVersion = clang::dpct::getDpctVersionStr();
-  TUR.MainHelperFileName =
-      clang::dpct::DpctGlobalInfo::getCustomHelperFileName();
   TUR.OptionMap = clang::dpct::DpctGlobalInfo::getCurrentOptMap();
 
   // For really hidden options, do not add it in yaml file if it is not
@@ -81,8 +78,7 @@ int save2Yaml(
 }
 
 int loadFromYaml(StringRef Input,
-                 clang::tooling::TranslationUnitReplacements &TU,
-                 bool OverwriteHelperFilesInfo) {
+                 clang::tooling::TranslationUnitReplacements &TU) {
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
       llvm::MemoryBuffer::getFile(Input);
   if (!Buffer) {
@@ -108,10 +104,6 @@ int loadFromYaml(StringRef Input,
     // File doesn't appear to be a header change description. Ignore it.
     TU = clang::tooling::TranslationUnitReplacements();
     return -1;
-  }
-
-  if (OverwriteHelperFilesInfo) {
-    clang::dpct::updateHelperNameContentMap(TU);
   }
 
   return 0;

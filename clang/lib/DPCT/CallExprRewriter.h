@@ -69,6 +69,7 @@ private:
   static void initRewriterMapEvent();
   static void initRewriterMapMath();
   static void initRewriterMapCooperativeGroups();
+  static void initRewriterMapWmma();
   static void initMethodRewriterMapCUB();
   static void initMethodRewriterMapCooperativeGroups();
   static void initMethodRewriterMapLIBCU();
@@ -164,25 +165,6 @@ public:
       DpctGlobalInfo::getInstance().addReplacement(
           T->getReplacement(DpctGlobalInfo::getContext()));
   }
-  std::string getAddressSpace(const clang::Expr *E, std::string MigratedStr) {
-    bool HasAttr = false;
-    bool NeedReport = false;
-    getShareAttrRecursive(E, HasAttr, NeedReport);
-    if (HasAttr && !NeedReport)
-      return "local_space";
-
-    LocalVarAddrSpaceEnum LocalVarCheckResult =
-        LocalVarAddrSpaceEnum::AS_CannotDeduce;
-    checkIsPrivateVar(E, LocalVarCheckResult);
-    if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
-      return "private_space";
-    } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
-      return "global_space";
-    } else {
-      report(Diagnostics::UNDEDUCED_ADDRESS_SPACE, false, MigratedStr);
-      return "global_space";
-    }
-  }
 
   bool isNoRewrite() { return NoRewrite; }
 
@@ -203,6 +185,11 @@ class ConditionalRewriterFactory : public CallExprRewriterFactoryBase {
   std::function<bool(const CallExpr *)> Pred;
   std::shared_ptr<CallExprRewriterFactoryBase> First, Second;
 
+protected:
+  void setElse(std::shared_ptr<CallExprRewriterFactoryBase> SecondFactory) {
+    Second = SecondFactory;
+  }
+
 public:
   template <class InputPred>
   ConditionalRewriterFactory(
@@ -216,6 +203,16 @@ public:
     else
       return Second->create(C);
   }
+};
+
+class MathSpecificElseEmuRewriterFactory final
+    : public ConditionalRewriterFactory {
+public:
+  template <class InputPred>
+  MathSpecificElseEmuRewriterFactory(
+      InputPred &&P, std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory)
+      : ConditionalRewriterFactory(P, FirstFactory, nullptr) {}
+  using ConditionalRewriterFactory::setElse;
 };
 
 class CaseRewriterFactory : public CallExprRewriterFactoryBase {
@@ -265,25 +262,47 @@ public:
 class AssignableRewriter : public CallExprRewriter {
   std::shared_ptr<CallExprRewriter> Inner;
   bool IsAssigned;
-  bool ExtraParen = false;
+  bool IsInRetStmt;
+  bool CheckAssigned;
+  bool CheckInRetStmt;
+  bool UseDpctCheckError;
+  bool ExtraParen;
 
 public:
   AssignableRewriter(const CallExpr *C,
                      std::shared_ptr<CallExprRewriter> InnerRewriter,
-                     bool EP = false)
-      : CallExprRewriter(C, ""), Inner(InnerRewriter),
-        IsAssigned(isAssigned(C)), ExtraParen(EP) {
+                     bool checkAssigned = true, bool checkInRetStmt = false,
+                     bool useDpctCheckError = true, bool EP = false)
+      : CallExprRewriter(C, ""), Inner(InnerRewriter), IsAssigned(false),
+        IsInRetStmt(false), CheckAssigned(checkAssigned),
+        CheckInRetStmt(checkInRetStmt), UseDpctCheckError(useDpctCheckError),
+        ExtraParen(EP) {
+    if (CheckAssigned) {
+      IsAssigned = isAssigned(C);
+    }
+    if (CheckInRetStmt) {
+      IsInRetStmt = isInRetStmt(C);
+    }
     if (IsAssigned)
-      requestFeature(HelperFeatureEnum::Dpct_check_error_code, C);
+      requestFeature(HelperFeatureEnum::device_ext);
   }
 
   std::optional<std::string> rewrite() override {
     std::optional<std::string> &&Result = Inner->rewrite();
-    if (Result.has_value() && IsAssigned) {
-      if (ExtraParen) {
-        return "DPCT_CHECK_ERROR((" + Result.value() + "))";
+    if (Result.has_value()) {
+      if ((CheckAssigned && IsAssigned) || (CheckInRetStmt && IsInRetStmt)) {
+        if (UseDpctCheckError) {
+          if (ExtraParen) {
+            return "DPCT_CHECK_ERROR((" + Result.value() + "))";
+          }
+          return "DPCT_CHECK_ERROR(" + Result.value() + ")";
+        } else {
+          if (ExtraParen) {
+            return "[&](){ (" + Result.value() + "); }()";
+          }
+          return "[&](){ " + Result.value() + "; }()";
+        }
       }
-      return "DPCT_CHECK_ERROR(" + Result.value() + ")";
     }
     return Result;
   }
@@ -366,16 +385,23 @@ public:
 
 class AssignableRewriterFactory : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
-  bool ExtraParen = false;
+  bool CheckAssigned;
+  bool CheckInRetStmt;
+  bool UseDpctCheckError;
+  bool ExtraParen;
 
 public:
   AssignableRewriterFactory(
       std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory,
-      bool EP = false)
-      : Inner(InnerFactory), ExtraParen(EP) {}
+      bool checkAssigned = true, bool checkInRetStmt = false,
+      bool useDpctCheckError = true, bool EP = false)
+      : Inner(InnerFactory), CheckAssigned(checkAssigned),
+        CheckInRetStmt(checkInRetStmt), UseDpctCheckError(useDpctCheckError),
+        ExtraParen(EP) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     return std::make_shared<AssignableRewriter>(C, Inner->create(C),
-                                                ExtraParen);
+                                                CheckAssigned, CheckInRetStmt,
+                                                UseDpctCheckError, ExtraParen);
   }
 };
 
@@ -405,7 +431,7 @@ public:
       std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
       : Inner(InnerFactory), Feature(Feature) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
-    requestFeature(Feature, C);
+    requestFeature(Feature);
     return Inner->create(C);
   }
 };
@@ -930,16 +956,21 @@ public:
 template <class TypeInfoT, class SubExprT> class CastExprPrinter {
   TypeInfoT TypeInfo;
   SubExprT SubExpr;
+  bool ExtraParen;
 
 public:
-  CastExprPrinter(TypeInfoT &&T, SubExprT &&S)
+  CastExprPrinter(TypeInfoT &&T, SubExprT &&S, bool EP = false)
       : TypeInfo(std::forward<TypeInfoT>(T)),
-        SubExpr(std::forward<SubExprT>(S)) {}
+        SubExpr(std::forward<SubExprT>(S)), ExtraParen(EP) {}
   template <class StreamT> void print(StreamT &Stream) const {
     Stream << "(";
     dpct::print(Stream, TypeInfo);
     Stream << ")";
+    if(ExtraParen)
+      Stream << "(";
     dpct::print(Stream, SubExpr);
+    if(ExtraParen)
+      Stream << ")";
   }
 };
 
@@ -1059,9 +1090,9 @@ class MultiStmtsPrinter : public MultiStmtsPrinter<RestPrinter...> {
   FirstPrinter First;
 
 public:
-  MultiStmtsPrinter(SourceLocation BeginLoc, SourceManager &SM,
-                    FirstPrinter &&First, RestPrinter &&...Rest)
-      : Base(BeginLoc, SM, std::move(Rest)...), First(std::move(First)) {}
+  MultiStmtsPrinter(SourceRange Range, SourceManager &SM, FirstPrinter &&First,
+                    RestPrinter &&...Rest)
+      : Base(Range, SM, std::move(Rest)...), First(std::move(First)) {}
 
   MultiStmtsPrinter(FirstPrinter &&First, RestPrinter &&...Rest)
       : Base(std::move(Rest)...), First(std::move(First)) {}
@@ -1076,28 +1107,33 @@ template <class LastPrinter> class MultiStmtsPrinter<LastPrinter> {
   LastPrinter Last;
   StringRef Indent;
   StringRef NL;
+  bool isInMacroDef;
 
 protected:
   template <class StreamT, class PrinterT>
   void printStmt(StreamT &Stream, const PrinterT &Printer) const {
     dpct::print(Stream, Printer);
-    Stream << ";" << NL << Indent;
+    if (isInMacroDef) {
+      Stream << "; \\" << NL << Indent;
+    } else {
+      Stream << "; " << NL << Indent;
+    }
   }
 
 public:
-  MultiStmtsPrinter(SourceLocation BeginLoc, SourceManager &SM,
-                    LastPrinter &&Last)
-      : Last(std::move(Last)), Indent(getIndent(BeginLoc, SM)),
-        NL(getNL(BeginLoc, SM)) {}
+  MultiStmtsPrinter(SourceRange Range, SourceManager &SM, LastPrinter &&Last)
+      : Last(std::move(Last)), Indent(getIndent(Range.getBegin(), SM)),
+        NL(getNL(Range.getBegin(), SM)),
+        isInMacroDef(isInMacroDefinition(Range.getBegin(), Range.getBegin()) &&
+                     isInMacroDefinition(Range.getEnd(), Range.getEnd())) {}
 
   MultiStmtsPrinter(LastPrinter &&Last)
-      : Last(std::move(Last)), Indent(" "), NL("") {}
+      : Last(std::move(Last)), Indent(" "), NL(""), isInMacroDef(false) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Last);
   }
 };
-
 
 template <class... StmtPrinter>
 class LambdaPrinter {
@@ -1168,7 +1204,7 @@ class PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>
 public:
   PrinterRewriter(const CallExpr *C, StringRef Source,
                   StmtPrinters &&...Printers)
-      : Base(getDefinitionRange(C->getBeginLoc(), C->getEndLoc()).getBegin(),
+      : Base(getDefinitionRange(C->getBeginLoc(), C->getEndLoc()),
              DpctGlobalInfo::getSourceManager(), std::move(Printers)...),
         CallExprRewriter(C, Source) {}
   PrinterRewriter(
@@ -1509,6 +1545,20 @@ std::shared_ptr<CallExprRewriterFactoryBase>
 createUserDefinedMethodRewriterFactory(
     const std::string &, MetaRuleObject &,
     std::shared_ptr<MetaRuleObject::ClassMethod>);
+
+class CheckParamType {
+  unsigned Idx;
+  std::string TypeName;
+
+public:
+  CheckParamType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  bool operator()(const CallExpr *C) {
+    std::string ParamType = getParamTypeStr(C, Idx);
+    if (ParamType.empty())
+      return true;
+    return ParamType.find(TypeName) != std::string::npos;
+  }
+};
 
 class CheckArgType {
   unsigned Idx;

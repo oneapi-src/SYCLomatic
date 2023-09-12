@@ -398,9 +398,9 @@ __global__ void foo() {
 
 
   // CHECK: malloc(sizeof(dpct::queue_ptr *));
-  // CHECK-NEXT: malloc(sizeof(dpct::queue_ptr **));
-  // CHECK-NEXT: malloc(sizeof(dpct::queue_ptr ***));
-  // CHECK-NEXT: malloc(sizeof(dpct::queue_ptr &));
+  // CHECK: malloc(sizeof(dpct::queue_ptr **));
+  // CHECK: malloc(sizeof(dpct::queue_ptr ***));
+  // CHECK: malloc(sizeof(dpct::queue_ptr &));
   malloc(sizeof(cudaStream_t *));
   malloc(sizeof(cudaStream_t **));
   malloc(sizeof(cudaStream_t ***));
@@ -449,7 +449,7 @@ void foobar() {
 
 void fun() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   // CHECK: dpct::queue_ptr *p, s, &r = s;
   cudaStream_t *p, s, &r = s;
   // CHECK: dpct::queue_ptr const s_2 = &q_ct1, *p_2, &r_2 = s;
@@ -490,7 +490,7 @@ void fun() {
 
 void fun2() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   // CHECK: dpct::queue_ptr s, s2;
   cudaStream_t s, s2;
   // CHECK: dpct::queue_ptr const s3 = &q_ct1, s4 = &q_ct1;

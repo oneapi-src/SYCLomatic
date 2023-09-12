@@ -168,6 +168,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(SourceLocation Loc) {
 std::pair<size_t, size_t>
 ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
                                  SourceLocation EndLoc) {
+  bool ApplyGreaterTokenWorkAround = false;
   if (EndLoc.isValid()) {
     if (BeginLoc.isFileID() || EndLoc.isFileID()) {
       // No Macro or only one of begin/end is macro
@@ -233,20 +234,52 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
         // Macro def ex: #define TYPE int2
         //     #define PTR *
         //     #define TYPE_PTR TYPE PTR
+
         std::tie(BeginLoc, EndLoc) =
             getTheLastCompleteImmediateRange(BeginLoc, EndLoc);
+        // WA for a weird behavior of clang lexer:
+        // When applying SM.getImmediateExpansionRange() to a scratch space
+        // location, and the result location is in another macro, the location
+        // will be shifted for 1 char.
+        // e.g. foo<MyClass<int>>()
+        // When the expression is not in a macro definition, the end location of
+        // "MyClass<int>" is at the location between "t" and ">"
+        // However, if the expr is in a macro:
+        // #define FOO foo<MyClass<int>>()
+        // The end location of "MyClass<int>" is at the location between the two
+        // ">".
+        // WA: Detecting token overlaping: The ">>" is a greatergreater
+        // token and the later ">" is also a greater token. When the token
+        // overlaping happens, marking a flag for not skipping the last token
+        // when getting the end location.
+        auto PrevLoc = EndLoc.getLocWithOffset(-1);
+        if (PrevLoc.isValid()) {
+          Token Tok, PreTok;
+          Lexer::getRawToken(EndLoc, Tok, SM,
+                             dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                             true);
+          Lexer::getRawToken(PrevLoc, PreTok, SM,
+                             dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                             true);
+          if (PreTok.is(tok::greatergreater) && Tok.is(tok::greater)) {
+            ApplyGreaterTokenWorkAround = true;
+          }
+        }
       }
     }
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
     SrcBeginLoc = BeginLoc;
-
+    auto LastTokenLength = End.second;
+    if(ApplyGreaterTokenWorkAround)
+      LastTokenLength = 0;
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
       return std::pair<size_t, size_t>(Begin, 0);
     }
-    return std::pair<size_t, size_t>(Begin, End.first - Begin + End.second);
+    return std::pair<size_t, size_t>(Begin,
+                                     End.first - Begin + LastTokenLength);
   }
   return getOffsetAndLength(BeginLoc);
 }
@@ -321,9 +354,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
                              SM.getCharacterData(BeginLoc);
 
   auto EndLocWithoutPostfix = SM.getExpansionLoc(EndLoc);
-  EndLoc = SM.getExpansionLoc(getEndLocOfFollowingEmptyMacro(EndLoc));
-  auto RewritePostfixLength =
-      SM.getCharacterData(EndLoc) - SM.getCharacterData(EndLocWithoutPostfix);
+  unsigned int RewritePostfixLength = getEndLocOfFollowingEmptyMacro(EndLoc);
 
   if (Loc)
     *Loc = BeginLoc;
@@ -458,6 +489,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             Qualifier->getAsNamespace()->getBeginLoc())) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
+    } else if (Qualifier->getAsNamespace() &&
+               Qualifier->getAsNamespace()->getName() == "wmma" &&
+               dpct::DpctGlobalInfo::isInCudaPath(
+                   Qualifier->getAsNamespace()->getBeginLoc())) {
+      if (const auto *NSD =
+              dyn_cast<NamespaceDecl>(Qualifier->getAsNamespace())) {
+        CTSName = getNameSpace(NSD) + "::" + DRE->getNameInfo().getAsString();
+      }
     } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
@@ -494,7 +533,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
 
     auto &ReplEnum =
         MapNames::findReplacedName(EnumConstantRule::EnumNamesMap, RefString);
-    requestHelperFeatureForEnumNames(RefString, DRE);
+    requestHelperFeatureForEnumNames(RefString);
     auto ItEnum = EnumConstantRule::EnumNamesMap.find(RefString);
     if (ItEnum != EnumConstantRule::EnumNamesMap.end()) {
       for (auto ItHeader = ItEnum->second->Includes.begin();
@@ -576,19 +615,13 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
-  std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
-      Temp->getType().getCanonicalType());
-  if ((StringRef(TypeName).startswith("cub::") &&
-       CubTypeRule::CanMappingToSyclType(TypeName)) ||
-       StringRef(TypeName).startswith("thrust::") ||
-       StringRef(TypeName).startswith("cooperative_groups::")) {
+  if (Temp->getConstructor()->getDeclName().getAsString() != "dim3") {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
   }
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);
@@ -687,27 +720,21 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__cuda_builtin_blockDim_t", "get_local_range"},
       {"__cuda_builtin_threadIdx_t", "get_local_id"},
   };
-
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-        auto TargetExpr = getTargetExpr();
-        auto FD = getImmediateOuterFuncDecl(TargetExpr);
-        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
-          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                         ItemItr->second, "({{NEEDREPLACER",
-                                         std::to_string(Index), "}})"));
-          DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
-        } else {
-          DFI->getVarMap().Dim = 3;
-          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                         ItemItr->second, "(", FieldName, ")"));
-        }
+      auto TargetExpr = getTargetExpr();
+      auto FD = getImmediateOuterFuncDecl(TargetExpr);
+      auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+      if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
+        auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+        DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
+                                       ItemItr->second, "({{NEEDREPLACER",
+                                       std::to_string(Index), "}})"));
+        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
       } else {
+        DFI->getVarMap().Dim = 3;
         addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                        ItemItr->second, "(", FieldName, ")"));
       }
@@ -731,19 +758,19 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         // Similar code in ASTTraversal.cpp
         TmplArg = "<int *>";
       }
-      addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + TmplArg + "()");
-      requestFeature(
-          PropToGetFeatureMap.at(ME->getMemberNameInfo().getAsString()), ME);
+      addReplacement(ME->getMemberLoc(),
+                     "get_" + ReplacementStr + TmplArg + "()");
+      requestFeature(MapNames::PropToGetFeatureMap.at(
+          ME->getMemberNameInfo().getAsString()));
     }
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
       addReplacement(ME->getMemberLoc(), buildString("get_", FieldName, "()"));
-      requestFeature(ImageWrapperBaseToGetFeatureMap.at(FieldName), ME);
+      requestFeature(MapNames::ImageWrapperBaseToGetFeatureMap.at(FieldName));
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
-
     // Skip user-defined type.
     if (isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
       return;
@@ -755,7 +782,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       Begin = ME->getMemberLoc();
       isImplicit = true;
     }
-    if (*BaseType.rbegin() == '1') {
+    if (*BaseType.rbegin() == '1' || BaseType == "__half_raw") {
       if (isImplicit) {
         // "x" is migrated to "*this".
         addReplacement(Begin, ME->getEndLoc(), "*this");
@@ -857,6 +884,7 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 // Precondition: CE != nullptr
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
+  RefString.clear();
   dispatch(CE->getCallee());
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
@@ -1049,7 +1077,9 @@ void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
   }
 }
 
-void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
+void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
+                               const DependentNameTypeLoc *DNTL,
+                               const NestedNameSpecifierLoc *NNSL) {
   SourceRange SR = TL.getSourceRange();
   std::string TyName;
 
@@ -1065,7 +1095,12 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         SR = TL.getSourceRange();
     }
   }
-
+  if (DNTL) {
+    SR.setBegin(DNTL->getQualifierLoc().getBeginLoc());
+  }
+  if (NNSL) {
+    SR.setBegin(NNSL->getBeginLoc());
+  }
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
@@ -1076,11 +1111,9 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   case TypeLoc::Pointer:
     return analyzeType(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc(), CSCE);
   case TypeLoc::Typedef:
-    TyName +=
-        TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
-    break;
   case TypeLoc::Builtin:
   case TypeLoc::Using:
+  case TypeLoc::Elaborated:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
@@ -1115,11 +1148,24 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       auto Result = Rewriter->rewrite();
       if (Result.has_value()) {
         auto ResultStr = Result.value();
-        // Since Parser splits ">>" or ">>>" to ">" when parse template
-        // the SR.getEnd location might be a "scratch space" location.
-        // Therfore, need to apply SM.getExpansionLoc before call addReplacement.
-        addReplacement(SM.getExpansionLoc(SR.getBegin()),
-                       SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
+        if (SM.isWrittenInScratchSpace(SR.getEnd())) {
+          // Since Parser splits ">>" or ">>>" to ">" when parse template
+          // the SR.getEnd location might be a "scratch space" location.
+          // Therfore, need to apply SM.getExpansionLoc before call
+          // addReplacement.
+          addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                         SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
+        } else {
+          // To handle case like:
+          // #define TM thrust::multiplies<int>()
+          // thrust::adjacent_difference(A.begin(), A.end(), R.begin(), TM);
+          // to:
+          // #define TM std::multiplies<int>()
+          // oneapi::dpl::adjacent_difference(..., TM);
+          auto DefRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
+          addReplacement(DefRange.getBegin(), DefRange.getEnd(), CSCE,
+                         ResultStr);
+        }
         return;
       }
     }
@@ -1148,12 +1194,12 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   auto Iter = MapNames::TypeNamesMap.find(TyName);
   if (Iter != MapNames::TypeNamesMap.end()) {
     HelperFeatureSet.insert(Iter->second->RequestFeature);
-    requestHelperFeatureForTypeNames(TyName, SR.getBegin());
+    requestHelperFeatureForTypeNames(TyName);
   } else {
     Iter = MapNames::CuDNNTypeNamesMap.find(TyName);
     if (Iter != MapNames::CuDNNTypeNamesMap.end()) {
       HelperFeatureSet.insert(Iter->second->RequestFeature);
-      requestHelperFeatureForTypeNames(TyName, SR.getBegin());
+      requestHelperFeatureForTypeNames(TyName);
     }
   }
 
@@ -1358,9 +1404,9 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
   } else {
     OS << " = ";
   }
-  requestFeature(HelperFeatureEnum::Memory_dpct_malloc, Call);
-  requestFeature(HelperFeatureEnum::Memory_dpct_malloc_2d, Call);
-  requestFeature(HelperFeatureEnum::Memory_dpct_malloc_3d, Call);
+  requestFeature(HelperFeatureEnum::device_ext);
+  requestFeature(HelperFeatureEnum::device_ext);
+  requestFeature(HelperFeatureEnum::device_ext);
   OS << MapNames::getDpctNamespace() << "dpct_malloc(";
   ExprAnalysis ArgEA(SecondArg);
   ArgEA.analyze();
@@ -1368,7 +1414,7 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
   if (Assigned) {
     OS << ")";
     auto LocInfo = DpctGlobalInfo::getLocInfo(Call);
-    requestFeature(HelperFeatureEnum::Dpct_check_error_code, Call);
+    requestFeature(HelperFeatureEnum::device_ext);
   }
   addReplacement(Call->getBeginLoc(), Call->getEndLoc(), OS.str());
 }
@@ -1507,7 +1553,7 @@ void ManagedPointerAnalysis::analyzeExpr(const UnaryOperator *UO) {
       ExprAnalysis EA(SubE);
       EA.analyze();
       std::string Rep = EA.getReplacedString();
-      requestFeature(HelperFeatureEnum::Memory_get_host_ptr, Call);
+      requestFeature(HelperFeatureEnum::device_ext);
       if (SubE->IgnoreImplicitAsWritten()->getStmtClass() ==
           Stmt::ParenExprClass) {
         Repl.push_back(
@@ -1558,7 +1604,7 @@ void ManagedPointerAnalysis::analyzeExpr(const ArraySubscriptExpr *ASE) {
     Repl.push_back({{Base->getBeginLoc(), Base->getEndLoc()},
                     std::string(MapNames::getDpctNamespace() + "get_host_ptr<" +
                                 PointerTempType + ">(" + PointerName + ")")});
-    requestFeature(HelperFeatureEnum::Memory_get_host_ptr, Call);
+    requestFeature(HelperFeatureEnum::device_ext);
   }
 }
 void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
@@ -1576,35 +1622,6 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
   default:
     return ExprAnalysis::dispatch(Expression);
   }
-}
-
-int64_t
-KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
-  int64_t Size = 1;
-  auto Num = Ctor->getNumArgs();
-  for (size_t i = 0; i < Num; ++i) {
-    if (Ctor->getArg(i)->isDefaultArgument()) {
-      if (i == 0) {
-        SizeOfHighestDimension = 1;
-      }
-      return Size;
-    }
-
-    Expr::EvalResult ER;
-    if (!Ctor->getArg(i)->isValueDependent() &&
-        Ctor->getArg(i)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (i == 0) {
-        SizeOfHighestDimension = Value;
-      }
-      Size = Size * Value;
-    } else {
-      // Not all args can be evaluated, so return a value larger than 256 to
-      // emit warning.
-      return 265 + 1;
-    }
-  }
-  return Size;
 }
 
 void KernelArgumentAnalysis::analyzeExpr(const MaterializeTemporaryExpr *MTE) {
@@ -1654,8 +1671,7 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
                            DpctGlobalInfo::getContext().getLangOpts()),
                        DRE->getEndLoc(), "[0]");
       } else {
-        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
-                       DRE->getEndLoc());
+        requestFeature(HelperFeatureEnum::device_ext);
         addReplacement(Lexer::getLocForEndOfToken(
                            DRE->getEndLoc(), 0, SM,
                            DpctGlobalInfo::getContext().getLangOpts()),
@@ -1866,122 +1882,213 @@ void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
     ANALYZE_EXPR(CXXConstructExpr)
     ANALYZE_EXPR(CXXTemporaryObjectExpr)
-    ANALYZE_EXPR(CXXDependentScopeMemberExpr)
+    ANALYZE_EXPR(CXXUnresolvedConstructExpr)
+    ANALYZE_EXPR(CStyleCastExpr)
+    ANALYZE_EXPR(CXXFunctionalCastExpr)
+    ANALYZE_EXPR(CXXStaticCastExpr)
+    ANALYZE_EXPR(DeclRefExpr)
   default:
     return ArgumentAnalysis::dispatch(Expression);
   }
 }
 
-void KernelConfigAnalysis::analyzeExpr(
-    const CXXDependentScopeMemberExpr *CDSME) {
-  if (ArgIndex == 1) {
-    NeedEmitWGSizeWarning = true;
+template <class T, class ArgIter>
+void KernelConfigAnalysis::handleDim3Args(const T *Ctor, ArgIter ArgBegin,
+                                          ArgIter ArgEnd) {
+  struct ScopeExit {
+    ScopeExit(KernelConfigAnalysis *Analysis)
+        : KCA(Analysis), Size(KCA->ArgIndex == 1 ? 1 : 0) {
+      KCA->Dim = 1;
+    }
+    ~ScopeExit() {
+      if (!KCA->IsTryToUseOneDimension || KCA->Dim != 1)
+        KCA->Dim = 3;
+      KCA->Dim3Args.resize(KCA->Dim, "1");
+      if (Size <= 256)
+        KCA->NeedEmitWGSizeWarning = false;
+    }
+    void multiplySize(int64_t In) { Size *= In; }
+
+  private:
+    KernelConfigAnalysis *KCA;
+    int64_t Size;
+  };
+  ScopeExit Scope(this);
+
+  auto FirstArg = *ArgBegin;
+  if (FirstArg->isDefaultArgument()) {
+    SizeOfHighestDimension = 1;
+    return;
   }
 
-  if (ArgIndex < 2) {
-    std::string CDSMEString;
-    llvm::raw_string_ostream OS(CDSMEString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3);
-    OS << "(1, 1, " << ExprAnalysis::ref(CDSME) << ")";
-    OS.flush();
-    addReplacement(CDSME, CDSMEString);
+  ArgumentAnalysis AA(IsInMacroDefine);
+  AA.setCallSpelling(CallSpellingBegin, CallSpellingEnd);
+  Expr::EvalResult ER;
+
+  /// Assume member of dim3 cannot be zero in kernel configuration. So return 0
+  /// as failure.
+  auto Evaluator =
+      [&, &Context = DpctGlobalInfo::getContext()](const Expr *E) -> int64_t {
+    if (!E->isValueDependent() && E->EvaluateAsInt(ER, Context)) {
+      auto Value = ER.Val.getInt().getExtValue();
+      Scope.multiplySize(Value);
+      return Value;
+    }
+    /// Can not evaluate the arg, emit warning anyway.
+    Scope.multiplySize(512);
+    return 0;
+  };
+  auto ArgAppender = [&](const Expr *Arg) {
+    AA.analyze(Arg);
+    Dim3Args.push_back(AA.getReplacedString());
+  };
+
+  ArgAppender(FirstArg);
+  SizeOfHighestDimension = Evaluator(FirstArg);
+
+  while(++ArgBegin != ArgEnd) {
+    auto Arg = *ArgBegin;
+    if (Arg->isDefaultArgument()) {
+      return;
+    }
+    ArgAppender(Arg);
+    if (Evaluator(Arg) != 1)
+      ++Dim;
   }
 }
 
-bool KernelConfigAnalysis::isOneDimensionConfigArg(
-    const CXXConstructExpr *Ctor) {
-  if (Ctor->getNumArgs() == 1) {
-    // E.g., copy constructor: dim3 a(1,2,3); k<<<dim3(a), 1>>>();
-    return false;
-  }
+StringRef getRangeName() {
+  static const std::string Range = MapNames::getClNamespace() + "range";
+  return Range;
+}
 
-  if (Ctor->getNumArgs() == 3) {
-    Expr::EvalResult ER1, ER2;
-    if (!Ctor->getArg(1)->isValueDependent() &&
-        Ctor->getArg(1)->EvaluateAsInt(ER1, DpctGlobalInfo::getContext()) &&
-        !Ctor->getArg(2)->isValueDependent() &&
-        Ctor->getArg(2)->EvaluateAsInt(ER2, DpctGlobalInfo::getContext())) {
-      if (ER1.Val.getInt().getZExtValue() == 1 &&
-          ER2.Val.getInt().getZExtValue() == 1)
-        return true;
+template <class T, class ArgIter>
+void KernelConfigAnalysis::handleDim3Ctor(const T *Ctor, SourceRange Parens,
+                                          ArgIter ArgBegin, ArgIter ArgEnd) {
+  handleDim3Args(Ctor, ArgBegin, ArgEnd);
+
+  std::string CtorString;
+  llvm::raw_string_ostream OS(CtorString);
+
+  auto PrintArgs = [&](auto Begin, auto End) {
+    auto Iter = Begin;
+    if (Iter == End)
+      return;
+    OS << *Iter;
+    while (++Iter != End)
+      OS << ", " << *Iter;
+  };
+
+  if (Parens.isInvalid()) {
+    // Special handling for implicit ctor. Need print class name explicitly.
+    DpctGlobalInfo::printCtadClass(OS, getRangeName(), Dim);
+    Parens = Ctor->getSourceRange();
+
+    if (isOuterMostMacro(Ctor)) {
+      // #define GET_BLOCKS(a) a
+      // foo_kernel<<<GET_BLOCKS(1), 2, 0>>>();
+      // Result if using SM.getExpansionRange:
+      //   sycl::range<3>(1, 1, GET_BLOCKS(1)) in kernel
+      // Result if using addReplacement(E):
+      //   #define GET_BLOCKS(a) sycl::range<3>(1, 1, a)
+      //   GET_BLOCKS(1) in kernel
+      Parens = SourceRange(SM.getExpansionRange(Parens.getBegin()).getBegin(),
+                           SM.getExpansionRange(Parens.getEnd()).getEnd());
     }
-    return false;
   }
-  return false;
+  auto Range = getRangeInRange(Parens, CallSpellingBegin, CallSpellingEnd, false);
+  OS << '(';
+  if (DoReverse && Dim3Args.size() == 3) {
+    Reversed = true;
+    PrintArgs(Dim3Args.rbegin(), Dim3Args.rend());
+  } else {
+    PrintArgs(Dim3Args.begin(), Dim3Args.end());
+  }
+  OS << ')';
+  OS.flush();
+  addReplacement(Range.first, Range.second, std::move(CtorString));
 }
 
 void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
-    if (ArgIndex == 1) {
-      if (calculateWorkgroupSize(Ctor) <= 256)
-        NeedEmitWGSizeWarning = false;
-      if (IsTryToUseOneDimension)
-        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
-    } else if (ArgIndex == 0) {
-      if (IsTryToUseOneDimension)
-        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
-    }
-
-    std::string CtorString;
-    llvm::raw_string_ostream OS(CtorString);
-    if (IsTryToUseOneDimension && Dim == 1) {
-      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
-                                     1)
-          << "(";
-      auto Args = getCtorArgs(Ctor);
-      if (Ctor->getNumArgs() > 0) {
-        OS << Args[0] << ", ";
-      } else {
-        llvm_unreachable("Ctor of the kernel config hasn't any argument!");
-      }
+    if (Ctor->getNumArgs() == 1) {
+      Dim = 3;
+      dispatch(Ctor->getArg(0));
     } else {
-      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
-                                     3)
-          << "(";
-      auto Args = getCtorArgs(Ctor);
-      if (DoReverse && Ctor->getNumArgs() == 3) {
-        Reversed = true;
-        int Index = Args.size();
-        while (Index)
-          OS << Args[--Index] << ", ";
-      } else {
-        for (auto &A : Args)
-          OS << A << ", ";
-      }
+      handleDim3Ctor(Ctor, Ctor->getParenOrBraceRange(), Ctor->arg_begin(),
+                     Ctor->arg_end());
     }
-
-    OS.flush();
-    // Special handling for implicit ctor.
-    // #define GET_BLOCKS(a) a
-    // foo_kernel<<<GET_BLOCKS(1), 2, 0>>>();
-    // Result if using SM.getExpansionRange:
-    //   sycl::range<3>(1, 1, GET_BLOCKS(1)) in kernel
-    // Result if using addReplacement(E):
-    //   #define GET_BLOCKS(a) sycl::range<3>(1, 1, a)
-    //   GET_BLOCKS(1) in kernel
-    if (Ctor->getParenOrBraceRange().isInvalid() && isOuterMostMacro(Ctor)) {
-      return addReplacement(
-          SM.getExpansionRange(Ctor->getBeginLoc()).getBegin(),
-          SM.getExpansionRange(Ctor->getEndLoc()).getEnd(),
-          CtorString.replace(CtorString.length() - 2, 2, ")"));
-    }
-
-    auto Range =
-        getRangeInRange(Ctor, CallSpellingBegin, CallSpellingEnd, false);
-    return addReplacement(Range.first, Range.second,
-                          CtorString.replace(CtorString.length() - 2, 2, ")"));
+    return;
   }
   return ArgumentAnalysis::analyzeExpr(Ctor);
 }
 
-std::vector<std::string>
-KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
-  std::vector<std::string> Args;
-  ArgumentAnalysis A(IsInMacroDefine);
-  A.setCallSpelling(CallSpellingBegin, CallSpellingEnd);
-  for (auto Arg : Ctor->arguments())
-    Args.emplace_back(getCtorArg(A, Arg));
-  return Args;
+void KernelConfigAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
+  if (DpctGlobalInfo::getTypeName(Ctor->getTypeAsWritten()) == "dim3") {
+    handleDim3Ctor(Ctor, SourceRange(Ctor->getBeginLoc(), Ctor->getEndLoc()),
+                   Ctor->arg_begin(), Ctor->arg_end());
+    return;
+  }
+  return ArgumentAnalysis::analyzeExpr(Ctor);
+}
+
+void KernelConfigAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
+  if (DpctGlobalInfo::getTypeName(Cast->getTypeAsWritten()) == "dim3") {
+    dispatch(Cast->getSubExpr());
+    if (auto TSI = Cast->getTypeInfoAsWritten())
+      addReplacement(TSI->getTypeLoc().getSourceRange(), Cast,
+                     DpctGlobalInfo::getCtadClass(getRangeName(), Dim));
+    return;
+  }
+  return ArgumentAnalysis::analyzeExpr(Cast);
+}
+
+void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
+  if (auto TSI = Ctor->getTypeSourceInfo()) {
+    if (DpctGlobalInfo::getTypeName(TSI->getType()) == "dim3") {
+      analyzeExpr(static_cast<const CXXConstructExpr *>(Ctor));
+      addReplacement(TSI->getTypeLoc().getSourceRange(), Ctor,
+                     DpctGlobalInfo::getCtadClass(getRangeName(), Dim));
+      return;
+    }
+  }
+  return ArgumentAnalysis::analyzeExpr(Ctor);
+}
+
+void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  if (!IsDim3Config)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  using namespace ast_matchers;
+  const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  // VD must be local variable and must have the same context with
+  // KernelCallExpr
+  if (VD->getKind() != Decl::Var)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+  const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
+  if (!FD)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+  const Stmt *VDContext = FD->getBody();
+
+  // VD's DRE should be only used once (as the config arg) in VDContext
+  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(VD)).bind("DRE"));
+  auto MatchedResults =
+      match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
+  if (MatchedResults.size() != 1)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  if (!VD->hasInit())
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  dispatch(VD->getInit());
+
+  if (IsTryToUseOneDimension) {
+    // Insert member access expr at the end of DRE
+    addReplacement(getExprLength(), 0, ".get(2)");
+  }
 }
 
 void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
@@ -2003,33 +2110,15 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
     addReplacement("0");
     return;
   }
-  ArgumentAnalysis::analyze(E);
-
-  if (getTargetExpr()->IgnoreImplicit()->getStmtClass() ==
-          Stmt::DeclRefExprClass ||
-      getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
-          Stmt::MemberExprClass ||
-      getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
-          Stmt::IntegerLiteralClass) {
-    if (IsDim3Config && getTargetExpr()->getType()->isIntegralType(
-                            DpctGlobalInfo::getContext())) {
-      if (IsTryToUseOneDimension) {
-        Dim = 1;
-        addReplacement(buildString(DpctGlobalInfo::getCtadClass(
-                                       MapNames::getClNamespace() + "range", 1),
-                                   "(", getReplacedString(), ")"));
-      } else {
-        addReplacement(buildString(DpctGlobalInfo::getCtadClass(
-                                       MapNames::getClNamespace() + "range", 3),
-                                   "(1, 1, ", getReplacedString(), ")"));
-      }
-
-      Reversed = true;
-      return;
-    }
-
+  if (IsDim3Config && !isa<CXXConstructExpr>(E) &&
+      (E->getType()->isIntegralType(DpctGlobalInfo::getContext()) ||
+       E->getType()->isDependentType())) {
+    initExpression(E);
+    handleDim3Ctor(E, SourceRange(), &E, &E + 1);
     DirectRef = true;
+    return;
   }
+  ArgumentAnalysis::analyze(E);
 }
 
 std::string ArgumentAnalysis::getRewriteString() {

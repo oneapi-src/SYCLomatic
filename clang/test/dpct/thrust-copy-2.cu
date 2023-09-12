@@ -18,7 +18,7 @@ int main(void) {
 // CHECK:   dpct::device_vector<int> output(4);
   thrust::device_vector<int> output(4);
 
-// CHECK:  std::copy(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), input.begin(), input.end(), output.begin());
+// CHECK:  std::copy(oneapi::dpl::execution::make_device_policy(dpct::get_out_of_order_queue()), input.begin(), input.end(), output.begin());
   thrust::copy(input.begin(), input.end(), output.begin());
 }
 

@@ -112,3 +112,48 @@ int foo4() {
   cusolverDnDestroySyevjInfo(params);
   return 0;
 }
+
+int foo5() {
+  float *a_s;
+  double *a_d;
+  float2 *a_c;
+  double2 *a_z;
+  float *w_s;
+  double *w_d;
+  float *w_c;
+  double *w_z;
+
+  cusolverDnHandle_t handle;
+  syevjInfo_t params;
+
+  int lwork_s;
+  int lwork_d;
+  int lwork_c;
+  int lwork_z;
+
+  //CHECK:dpct::lapack::syheev_scratchpad_size<float>(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, 2, &lwork_s);
+  //CHECK-NEXT:dpct::lapack::syheev_scratchpad_size<double>(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, 2, &lwork_d);
+  //CHECK-NEXT:dpct::lapack::syheev_scratchpad_size<sycl::float2>(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, 2, &lwork_c);
+  //CHECK-NEXT:dpct::lapack::syheev_scratchpad_size<sycl::double2>(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, 2, &lwork_z);
+  cusolverDnSsyevj_bufferSize(handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, a_s, 2, w_s, &lwork_s, params);
+  cusolverDnDsyevj_bufferSize(handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, a_d, 2, w_d, &lwork_d, params);
+  cusolverDnCheevj_bufferSize(handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, a_c, 2, w_c, &lwork_c, params);
+  cusolverDnZheevj_bufferSize(handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, a_z, 2, w_z, &lwork_z, params);
+
+  float *device_ws_s;
+  double *device_ws_d;
+  float2 *device_ws_c;
+  double2 *device_ws_z;
+
+  int *info;
+
+  //CHECK:dpct::lapack::syheev<float, float>(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, a_s, 2, w_s, device_ws_s, lwork_s, info);
+  //CHECK-NEXT:dpct::lapack::syheev<double, double>(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, a_d, 2, w_d, device_ws_d, lwork_d, info);
+  //CHECK-NEXT:dpct::lapack::syheev<sycl::float2, float>(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, a_c, 2, w_c, device_ws_c, lwork_c, info);
+  //CHECK-NEXT:dpct::lapack::syheev<sycl::double2, double>(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, a_z, 2, w_z, device_ws_z, lwork_z, info);
+  cusolverDnSsyevj(handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, a_s, 2, w_s, device_ws_s, lwork_s, info, params);
+  cusolverDnDsyevj(handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, a_d, 2, w_d, device_ws_d, lwork_d, info, params);
+  cusolverDnCheevj(handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, a_c, 2, w_c, device_ws_c, lwork_c, info, params);
+  cusolverDnZheevj(handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, a_z, 2, w_z, device_ws_z, lwork_z, info, params);
+  return 0;
+}

@@ -140,3 +140,27 @@ __device__ void foo() {
   // CHECK: state.state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>>(seed, {static_cast<std::uint64_t>(offset), static_cast<std::uint64_t>(sequence * 8)});
   curand_init(seed, sequence, offset, &state.state);
 }
+
+// CHECK: void kernel(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *states) {}
+__global__ void kernel(curandState *states) {}
+
+// CHECK: void foo2(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *states_input) {
+// CHECK-NEXT:   /*
+// CHECK-NEXT:   DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
+// CHECK-NEXT:   */
+// CHECK-NEXT:   static dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *states = states_input;
+// CHECK-NEXT:   dpct::get_in_order_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> * states_ct0 = states;
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           kernel(states_ct0);
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+// CHECK-NEXT: }
+void foo2(curandState *states_input) {
+  static curandState *states = states_input;
+  kernel<<<1, 1>>>(states);
+}

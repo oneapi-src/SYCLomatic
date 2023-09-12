@@ -14,7 +14,6 @@
 #include "GenMakefile.h"
 #include "Statics.h"
 
-#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -29,6 +28,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "Utility.h"
+#include "PatternRewriter.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include <cassert>
 #include <fstream>
@@ -363,6 +363,28 @@ static void saveUpdatedMigrationDataIntoYAML(
               CompileCmdsPerTarget);
   }
 }
+
+void applyPatternRewriter(const std::string &InputString,
+                          llvm::raw_os_ostream &Stream) {
+  std::string LineEndingString;
+  // pattern_rewriter require the input file to be LF
+  bool IsCRLF = fixLineEndings(InputString, LineEndingString);
+  for (const auto &PR : MapNames::PatternRewriters) {
+    LineEndingString = applyPatternRewriter(PR, LineEndingString);
+  }
+  // Restore line ending for the formator
+  if (IsCRLF) {
+    std::stringstream ResultStream;
+    std::vector<std::string> SplitedStr = split(LineEndingString, '\n');
+    for (auto &SS : SplitedStr) {
+      ResultStream << SS << "\r\n";
+    }
+    Stream << llvm::StringRef(ResultStream.str().c_str());
+  } else {
+    Stream << llvm::StringRef(LineEndingString.c_str());
+  }
+}
+
 /// Apply all generated replacements, and immediately save the results to files
 /// in output directory.
 ///
@@ -530,14 +552,24 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
 
       tooling::applyAllReplacements(Entry.second, Rewrite);
-      Rewrite
-          .getEditBuffer(Sources.getOrCreateFileID(
-              Tool.getFiles().getFile(Entry.first).get(),
-              clang::SrcMgr::C_User /*normal user code*/))
-          .write(Stream);
-    }
 
-    generateHelperFunctions();
+      if (MapNames::PatternRewriters.empty()) {
+        Rewrite
+            .getEditBuffer(Sources.getOrCreateFileID(
+                Tool.getFiles().getFile(Entry.first).get(),
+                clang::SrcMgr::C_User /*normal user code*/))
+            .write(Stream);
+      } else {
+        std::string OutputString;
+        llvm::raw_string_ostream RSW(OutputString);
+        Rewrite
+            .getEditBuffer(Sources.getOrCreateFileID(
+                Tool.getFiles().getFile(Entry.first).get(),
+                clang::SrcMgr::C_User /*normal user code*/))
+            .write(RSW);
+        applyPatternRewriter(OutputString, Stream);
+      }
+    }
 
     // Print the in-root path and the number of processed files
     size_t ProcessedFileNumber;
@@ -676,13 +708,25 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         PrintMsg(ErrMsg);
         return status;
       }
-
       llvm::raw_os_ostream Stream(File);
-      Rewrite
-          .getEditBuffer(Sources.getOrCreateFileID(
-              Tool.getFiles().getFile(Entry.first).get(),
-              clang::SrcMgr::C_User /*normal user code*/))
-          .write(Stream);
+      std::string OutputString;
+      llvm::raw_string_ostream RSW(OutputString);
+      if (MapNames::PatternRewriters.empty()) {
+        Rewrite
+            .getEditBuffer(Sources.getOrCreateFileID(
+                Tool.getFiles().getFile(Entry.first).get(),
+                clang::SrcMgr::C_User /*normal user code*/))
+            .write(Stream);
+      } else {
+        std::string OutputString;
+        llvm::raw_string_ostream RSW(OutputString);
+        Rewrite
+            .getEditBuffer(Sources.getOrCreateFileID(
+                Tool.getFiles().getFile(Entry.first).get(),
+                clang::SrcMgr::C_User /*normal user code*/))
+            .write(RSW);
+        applyPatternRewriter(OutputString, Stream);
+      }
     }
   }
 
@@ -718,7 +762,7 @@ void loadYAMLIntoFileInfo(std::string Path) {
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (fs::exists(YamlFilePath)) {
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
-      if (loadFromYaml(YamlFilePath, *PreTU, false) == 0) {
+      if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
         DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(
             OriginPath, PreTU);
       } else {

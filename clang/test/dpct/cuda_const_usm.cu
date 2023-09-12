@@ -34,9 +34,8 @@ __constant__ int const_init[5] = {1, 2, 3, 7, 8};
 // CHECK: static dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
 __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}};
 
-
 // CHECK: struct FuncObj {
-// CHECK-NEXT: void operator()(float *out, int index, float *const_angle) {
+// CHECK-NEXT: void operator()(float *out, int index, float const *const_angle) {
 // CHECK-NEXT:   out[index] = const_angle[index];
 struct FuncObj {
   __device__ void operator()(float *out, int index) {
@@ -45,7 +44,7 @@ struct FuncObj {
 };
 
 // CHECK:void simple_kernel(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT:              float *const_angle, int * const_ptr) {
+// CHECK-NEXT:              float const *const_angle, int * const const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  FuncObj f;
@@ -92,7 +91,7 @@ __global__ void simple_kernel_one(float *d_array) {
 
 int main(int argc, char **argv) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   int size = 3200;
   float *d_array;
   int *d_int;
@@ -111,20 +110,20 @@ int main(int argc, char **argv) {
 
   // CHECK:   q_ct1.memcpy(const_ptr.get_ptr(), &d_int, sizeof(int *));
   cudaMemcpyToSymbol(const_ptr, &d_int, sizeof(int *));
-  // CHECK:   DPCT_CHECK_ERROR(q_ct1.memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360));
+  // CHECK:   q_ct1.memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360);
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
 
-  // CHECK:   DPCT_CHECK_ERROR(q_ct1.memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357));
+  // CHECK:   q_ct1.memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357);
   cudaMemcpyToSymbol(&const_angle[3], &h_array[0], sizeof(float) * 357);
 
-  // CHECK:  DPCT_CHECK_ERROR(q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357));
+  // CHECK:  q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3], sizeof(float) * 357);
 
   #define NUM 3
-  // CHECK: DPCT_CHECK_ERROR(q_ct1.memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354));
+  // CHECK: q_ct1.memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354);
   cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
 
-  // CHECK:  DPCT_CHECK_ERROR(q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354).wait());
+  // CHECK:  q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354).wait();
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
 
   // CHECK:   q_ct1.submit(
@@ -166,7 +165,7 @@ int main(int argc, char **argv) {
   }
 
   h_array[0] = 10.0f; // Just to test
-  // CHECK:  DPCT_CHECK_ERROR(q_ct1.memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1).wait());
+  // CHECK:  q_ct1.memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1).wait();
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
   cudaStream_t stream;
@@ -202,3 +201,28 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+//CHECK:static dpct::constant_memory<float, 1> aaa(10);
+//CHECK-NEXT:void kernel1(float const *aaa) {
+//CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
+//CHECK-NEXT:}
+//CHECK-NEXT:void foo1() {
+//CHECK-NEXT:  dpct::get_in_order_queue().submit(
+//CHECK-NEXT:    [&](sycl::handler &cgh) {
+//CHECK-NEXT:      aaa.init();
+//CHECK-EMPTY:
+//CHECK-NEXT:      auto aaa_ptr_ct1 = aaa.get_ptr();
+//CHECK-EMPTY:
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          kernel1(aaa_ptr_ct1);
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
+//CHECK-NEXT:}
+__constant__ float aaa[10];
+__global__ void kernel1() {
+  float *a = aaa + 5;
+}
+void foo1() {
+  kernel1<<<1, 1>>>();
+}

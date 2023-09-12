@@ -270,16 +270,16 @@ __device__ void Scan1(ScanTy &s) {
   s.InclusiveSum(d, d);
 }
 
-//CHECK: void TemplateKernel1(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
-//CHECK-NEXT:  typedef sycl::ext::oneapi::sub_group WarpScan;
-//CHECK-NEXT:  typedef sycl::group<3> BlockScan;
-//CHECK-EMPTY:
-//CHECK-NEXT:  WarpScan ws(item_ct1.get_sub_group());
-//CHECK-NEXT:  BlockScan bs(item_ct1.get_group());
-//CHECK-NEXT:  Scan1<WarpScan, int>(ws);
-//CHECK-NEXT:  Scan1<BlockScan, int>(bs);
-//CHECK-NEXT:}
+// CHECK: void TemplateKernel1(int* data,
+// CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT:  typedef sycl::sub_group WarpScan;
+// CHECK-NEXT:  typedef sycl::group<3> BlockScan;
+// CHECK-EMPTY:
+// CHECK-NEXT:  WarpScan ws(item_ct1.get_sub_group());
+// CHECK-NEXT:  BlockScan bs(item_ct1.get_group());
+// CHECK-NEXT:  Scan1<WarpScan, int>(ws);
+// CHECK-NEXT:  Scan1<BlockScan, int>(bs);
+// CHECK-NEXT:}
 __global__ void TemplateKernel1(int* data) {
   typedef cub::WarpScan<int> WarpScan;
   typedef cub::BlockScan<int, 8> BlockScan;
@@ -302,7 +302,7 @@ __global__ void ScanKernel(int* data) {
   int input = data[threadid];
   int output1 = 0, output2 = 0;
 // CHECK: /*
-// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::WarpScan.Scan is not supported.
+// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::WarpScan::Scan is not supported.
 // CHECK-NEXT: */
 // CHECK-NEXT: WarpScan(temp1).Scan(input, output1, output2, sycl::plus<>());
   WarpScan(temp1).Scan(input, output1, output2, cub::Sum());

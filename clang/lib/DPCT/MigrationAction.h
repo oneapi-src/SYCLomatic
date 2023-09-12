@@ -25,6 +25,7 @@ struct TranslationUnitInfo {
   TransformSetTy Transforms;
   IncludeMapSetTy IncludeMapSet;
   std::shared_ptr<DpctFileInfo> MainFile;
+  RuleGroups Groups;
 };
 
 class DpctConsumer : public ASTConsumer {
@@ -56,7 +57,8 @@ private:
 class DpctToolAction : public tooling::ToolAction {
 public:
   DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
-                 const std::string &RuleNames, std::vector<PassKind> Passes);
+                 const std::string &RuleNames, std::vector<PassKind> Passes,
+                 llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS);
   /// Perform an action for an invocation.
   bool runInvocation(std::shared_ptr<CompilerInvocation> Invocation,
                      FileManager *Files,
@@ -96,6 +98,7 @@ private:
   std::vector<PassKind> Passes;
   std::vector<InvocationOrTranslationUnit> IOTUs;
   llvm::raw_ostream &DiagnosticStream;
+  llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS;
 
   static const std::string PostProcessFaultMsg;
 };

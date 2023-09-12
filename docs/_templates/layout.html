@@ -1,6 +1,18 @@
 {% extends "!layout.html" %}
 {% block extrahead %}
-<!-- all your analytics scripts go here -->
+
+<script type="text/javascript">
+  // Configure TMS settings
+  var wapLocalCode = 'us_en';
+  var wapSection = 'SYCL-docs';
+  // Load TMS
+  (function () {
+    var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+
 {% endblock %}
 <!-- any other content blocks -->
 <!--...-->

@@ -19,5 +19,12 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:cuOccupancyMaxActiveBlocksPerMultiprocessor(&num_blocks, func, block_size, dynamic_shared_memory_size);
   cuOccupancyMaxActiveBlocksPerMultiprocessor(&num_blocks, func, block_size, dynamic_shared_memory_size);
+
+  int min_grid_size;
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaOccupancyMaxPotentialBlockSize is not supported.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cudaOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, k);
+  cudaOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, k);
   return 0;
 }

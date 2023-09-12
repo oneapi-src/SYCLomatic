@@ -28,45 +28,45 @@ MEMBER_CALL_FACTORY_ENTRY("cuCrealf", makeDerefArgCreatorWithCall(0), false,
                           "x")
 MEMBER_CALL_FACTORY_ENTRY("cuCimagf", makeDerefArgCreatorWithCall(0), false,
                           "y")
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Util_cabs,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("cuCabs",
                                            CALL(MapNames::getDpctNamespace() +
                                                     "cabs<double>",
                                                 makeCallArgCreatorWithCall(0))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Util_conj,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("cuConj",
                                            CALL(MapNames::getDpctNamespace() +
                                                     "conj<double>",
                                                 makeCallArgCreatorWithCall(0))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Util_cabs,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("cuCabsf",
                                            CALL(MapNames::getDpctNamespace() +
                                                     "cabs<float>",
                                                 makeCallArgCreatorWithCall(0))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Util_conj,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("cuConjf",
                                            CALL(MapNames::getDpctNamespace() +
                                                     "conj<float>",
                                                 makeCallArgCreatorWithCall(0))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Util_cmul,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("cuCmul",
                                            CALL(MapNames::getDpctNamespace() +
                                                     "cmul<double>",
                                                 makeCallArgCreatorWithCall(0),
                                                 makeCallArgCreatorWithCall(1))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Util_cdiv,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("cuCdiv",
                                            CALL(MapNames::getDpctNamespace() +
                                                     "cdiv<double>",
                                                 makeCallArgCreatorWithCall(0),
                                                 makeCallArgCreatorWithCall(1))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Util_cmul,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("cuCmulf",
                                            CALL(MapNames::getDpctNamespace() +
                                                     "cmul<float>",
                                                 makeCallArgCreatorWithCall(0),
                                                 makeCallArgCreatorWithCall(1))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Util_cdiv,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("cuCdivf",
                                            CALL(MapNames::getDpctNamespace() +
                                                     "cdiv<float>",

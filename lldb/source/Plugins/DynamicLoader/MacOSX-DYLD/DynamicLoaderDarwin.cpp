@@ -43,12 +43,6 @@
 #define DEBUG_PRINTF(fmt, ...)
 #endif
 
-#ifndef __APPLE__
-#include "Utility/UuidCompatibility.h"
-#else
-#include <uuid/uuid.h>
-#endif
-
 #include <memory>
 
 using namespace lldb;
@@ -808,7 +802,7 @@ void DynamicLoaderDarwin::ImageInfo::PutToLog(Log *log) const {
     LLDB_LOG(log, "uuid={1} path='{2}' (UNLOADED)", uuid.GetAsString(),
              file_spec.GetPath());
   } else {
-    LLDB_LOG(log, "address={0:x+16} uuid={2} path='{3}'", address,
+    LLDB_LOG(log, "address={0:x+16} uuid={1} path='{2}'", address,
              uuid.GetAsString(), file_spec.GetPath());
     for (uint32_t i = 0; i < segments.size(); ++i)
       segments[i].PutToLog(log, slide);

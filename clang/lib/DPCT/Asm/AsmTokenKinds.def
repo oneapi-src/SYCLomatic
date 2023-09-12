@@ -49,9 +49,15 @@
 #ifndef SAT_MOD
 #define SAT_MOD(X, Y) KEYWORD(X, Y)
 #endif
-
+#ifndef MUL_MOD
+#define MUL_MOD(X, Y) KEYWORD(X, Y)
+#endif
 #ifndef CMP_OP
 #define CMP_OP(X, Y) KEYWORD(X, Y)
+#endif
+
+#ifndef BIN_OP
+#define BIN_OP(X, Y) KEYWORD(X, Y)
 #endif
 
 #ifndef BUILTIN_ID
@@ -245,6 +251,8 @@ INSTRUCTION(wmma)
 INSTRUCTION(xor)
 
 BUILTIN_ID(laneid, "%laneid", s64)
+BUILTIN_ID(warpid, "%warpid", s64)
+BUILTIN_ID(WARP_SZ, "WARP_SZ", s64)
 
 BUILTIN_TYPE(b8,      ".b8")
 BUILTIN_TYPE(b16,     ".b16")
@@ -306,6 +314,9 @@ ROUND_MOD(rpi, ".rpi")
 
 SAT_MOD(sat, ".sat")
 SAT_MOD(satfinite, ".satfinite")
+SAT_MOD(relu, ".relu")
+
+MUL_MOD(wide, ".wide")
 
 CMP_OP(eq, ".eq")
 CMP_OP(ne, ".ne")
@@ -326,8 +337,14 @@ CMP_OP(geu, ".geu")
 CMP_OP(num, ".num")
 CMP_OP(nan, ".nan")
 
+BIN_OP(add, ".add")
+BIN_OP(min, ".min")
+BIN_OP(max, ".max")
+
 #undef BUILTIN_ID
+#undef BIN_OP
 #undef CMP_OP
+#undef MUL_MOD
 #undef SAT_MOD
 #undef ROUND_MOD
 #undef STATE_SPACE

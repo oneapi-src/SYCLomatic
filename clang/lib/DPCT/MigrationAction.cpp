@@ -11,6 +11,7 @@
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Frontend/CompilerInstance.h"
 
+#include "AnalysisInfo.h"
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
 
@@ -80,8 +81,9 @@ bool canCacheMoreTranslateUnit() {
 
 DpctConsumer::DpctConsumer(TranslationUnitInfo *TUI, Preprocessor &PP)
     : Info(TUI) {
-  PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
-      Info->Transforms, Info->IncludeMapSet, PP.getSourceManager()));
+  PP.addPPCallbacks(
+      std::make_unique<IncludesCallbacks>(Info->Transforms, Info->IncludeMapSet,
+                                          PP.getSourceManager(), Info->Groups));
   if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
     Handler =
         std::make_unique<MisleadingBidirectionalHandler>(Info->Transforms);
@@ -123,13 +125,16 @@ DpctFrontEndAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
 
 void DpctFrontEndAction::EndSourceFileAction() {
   getCompilerInstance().getASTContext().getParentMapContext().clear();
+  if (Info->Groups.isMKLEnabled())
+    DpctGlobalInfo::setMKLHeaderUsed();
 }
 
-DpctToolAction::DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
-                               const std::string &RuleNames,
-                               std::vector<PassKind> Passes)
+DpctToolAction::DpctToolAction(
+    llvm::raw_ostream &DS, ReplTy &Replacements, const std::string &RuleNames,
+    std::vector<PassKind> Passes,
+    llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS)
     : Global(DpctGlobalInfo::getInstance()), Repls(Replacements),
-      Passes(std::move(Passes)), DiagnosticStream(DS) {
+      Passes(std::move(Passes)), DiagnosticStream(DS), FS(FS) {
   if (RuleNames.empty())
     return;
   auto Names = split(RuleNames, ',');
@@ -145,6 +150,8 @@ StringRef DpctToolAction::getStagingName(PassKind Pass) {
 }
 
 void DpctToolAction::printFileStaging(StringRef Staging, StringRef File) {
+  if (DpctGlobalInfo::isQueryAPIMapping())
+    return;
   std::string Msg;
   llvm::raw_string_ostream Out(Msg);
   Out << Staging << ": " << File << "\n";
@@ -175,6 +182,8 @@ std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfoIm
       /*ShouldOwnClient=*/false, &Invocation->getCodeGenOpts());
   DpctGlobalInfo::setColorOption(Invocation->getDiagnosticOpts().ShowColors);
   Info->AST = ASTUnit::create(Invocation, Diags, CaptureDiagsKind::None, false);
+  // Use the FileSystem passed by RefactoringTool.
+  Info->AST->getFileManager().setVirtualFileSystem(FS);
   DpctFrontEndAction FEAction(Info.get());
   auto Ret = ASTUnit::LoadFromCompilerInvocationAction(
       Invocation, std::make_shared<PCHContainerOperations>(), Diags, &FEAction,
@@ -212,7 +221,7 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
       Context.getLangOpts());
   DpctGlobalInfo::setContext(Context);
   DpctGlobalInfo::getInstance().setMainFile(Info.MainFile);
-  MigrationRuleManager MRM(Pass, Transforms);
+  MigrationRuleManager MRM(Pass, Transforms, Info.Groups);
   Global.getProcessedFile().insert(Info.MainFile->getFilePath());
   printFileStaging(getStagingName(Pass), Info.MainFile->getFilePath());
   MRM.matchAST(Context, MigrationRuleNames);

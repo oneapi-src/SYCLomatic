@@ -90,6 +90,48 @@ public:
   }
 };
 
+inline std::function<bool(const TypeLoc TL)>
+checkTemplateArgSpelling(size_t Index, std::string Str) {
+  auto getQualtifiedNameStr = [=](const NamedDecl *NL) -> std::string {
+    if (NL == nullptr)
+      return "";
+    if (const auto *NSD = dyn_cast<NamespaceDecl>(NL->getDeclContext())) {
+      std::string TypeQualifiedString =
+          getNameSpace(NSD) + "::" + NL->getNameAsString();
+      return TypeQualifiedString;
+    }
+    return NL->getNameAsString();
+  };
+
+  return [=](const TypeLoc TL) -> bool {
+    if (const auto &TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+      if (Index > TSTL.getNumArgs())
+        return false;
+      const auto TA = TSTL.getArgLoc(Index).getArgument();
+      if (TA.getKind() == TemplateArgument::ArgKind::Type) {
+        std::string ResStr =
+            getQualtifiedNameStr(TA.getAsType()->getAsTagDecl());
+        if (ResStr.empty())
+          return TA.getAsType().getAsString() == Str;
+        return ResStr == Str;
+      } else if (TA.getKind() == TemplateArgument::ArgKind::Declaration) {
+        return getQualtifiedNameStr(TA.getAsDecl()) == Str;
+      } else if (TA.getKind() == TemplateArgument::ArgKind::Integral) {
+        return std::to_string(TA.getAsIntegral().getExtValue()) == Str;
+      } else if (TA.getKind() == TemplateArgument::ArgKind::Expression) {
+        return getStmtSpelling(TA.getAsExpr()) == Str;
+      }
+    }
+    return false;
+  };
+}
+
+std::function<bool(const TypeLoc)> checkEnableJointMatrixForType() {
+  return [=](const TypeLoc) -> bool {
+    return DpctGlobalInfo::useExtJointMatrix();
+  };
+}
+
 // Print a templated type. Pass a STR("") as a template argument for types with
 // no template argument e.g. MyType<>
 template <class TypeNameT, class... TemplateArgsT>

@@ -38,3 +38,45 @@ If in a |dpcpp| application you:
   handling code and use your logic in an exception handler.
 
 Similar to :ref:`DPCT1003`.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      CUdevice device;
+      CUresult status = cuDeviceComputeCapability(&result0, &result1, device);
+    }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      /*
+      DPCT1034:0: Migrated API does not return an error code. 0 is returned in the
+      lambda. You may need to rewrite this code.
+      */
+      int status = [&]() {
+        result0 = dpct::dev_mgr::instance().get_device(device).get_major_version();
+        result1 = dpct::dev_mgr::instance().get_device(device).get_minor_version();
+        return 0;
+      }();
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      try {
+        result0 = dpct::dev_mgr::instance().get_device(device).get_major_version();
+        result1 = dpct::dev_mgr::instance().get_device(device).get_minor_version();
+      } catch (...) {
+        ...
+      }
+    }
+

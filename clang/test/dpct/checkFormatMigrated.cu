@@ -32,18 +32,13 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
      //CHECK:int main() {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 //CHECK-NEXT:  cl::sycl::range<3> griddim = cl::sycl::range<3>(1, 1, 2);
 //CHECK-NEXT:  cl::sycl::range<3> threaddim = cl::sycl::range<3>(1, 1, 32);
 //CHECK-NEXT:  int *karg1, *karg2;
 //CHECK-NEXT:  karg1 = cl::sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  karg2 = cl::sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  int karg3 = 80;
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1049:0: The work-group size passed to the SYCL kernel may exceed the
-//CHECK-NEXT:  limit. To get the device limit, query info::device::max_work_group_size.
-//CHECK-NEXT:  Adjust the work-group size if needed.
-//CHECK-NEXT:  */
 //CHECK-NEXT:  q_ct1.parallel_for(cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
 //CHECK-NEXT:                     [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3,

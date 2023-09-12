@@ -10,24 +10,6 @@
 // DEFAULT: test.h
 
 // RUN: rm %T/*
-// RUN: dpct -p=%S --out-root=%T --cuda-include-path="%cuda-path/include" --change-filename-extension=".cu"
-// RUN: ls Output > cu.log
-// RUN: FileCheck --input-file cu.log --match-full-lines %T/main.dp.cpp -check-prefix=CU
-// CU: main.dp.cpp
-// CU: test.cpp
-// CU: test.cuh
-// CU: test.h
-
-// RUN: rm %T/*
-// RUN: dpct -p=%S --out-root=%T --cuda-include-path="%cuda-path/include" --change-filename-extension=".abc"
-// RUN: ls Output > none.log
-// RUN: FileCheck --input-file none.log --match-full-lines %T/main.cu -check-prefix=NONE
-// NONE: main.cu
-// NONE: test.cpp
-// NONE: test.cuh
-// NONE: test.h
-
-// RUN: rm %T/*
 // RUN: dpct -p=%S --out-root=%T --cuda-include-path="%cuda-path/include" --change-cuda-files-extension-only
 // RUN: ls Output > set.log
 // RUN: FileCheck --input-file set.log --match-full-lines %T/main.dp.cpp -check-prefix=SET

@@ -15,7 +15,9 @@ using namespace cooperative_groups;
 __device__ void foo(int i) {}
 
 #define FOO(x) foo(x)
-
+__device__ void test(cg::thread_block cta) {
+  cg:sync(cta);
+}
 // CHECK: void k(const sycl::nd_item<3> &item_ct1) {
 __global__ void k() {
   // CHECK: auto cta = item_ct1.get_group();
@@ -25,7 +27,7 @@ __global__ void k() {
 
   // CHECK: auto block = item_ct1.get_group();
   cg::thread_block block = cg::this_thread_block();
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
   // CHECK: item_ct1.barrier();
   block.sync();
@@ -103,9 +105,9 @@ __global__ void kernel() {
 int main() {
 // CHECK:  {
 // CHECK-NEXT:    dpct::global_memory<unsigned int, 0> d_sync_ct1(0);
-// CHECK-NEXT:    unsigned *sync_ct1 = d_sync_ct1.get_ptr(dpct::get_default_queue());
-// CHECK-NEXT:    dpct::get_default_queue().memset(sync_ct1, 0, sizeof(int)).wait();
-// CHECK-NEXT:    dpct::get_default_queue().parallel_for(
+// CHECK-NEXT:    unsigned *sync_ct1 = d_sync_ct1.get_ptr(dpct::get_in_order_queue());
+// CHECK-NEXT:    dpct::get_in_order_queue().memset(sync_ct1, 0, sizeof(int)).wait();
+// CHECK-NEXT:    dpct::get_in_order_queue().parallel_for(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1)  {
 // CHECK-NEXT:        auto atm_sync_ct1 = sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space>(sync_ct1[0]);
@@ -192,7 +194,7 @@ __global__ void foo_tile32() {
 }
 
 int foo3() {
-//CHECK: dpct::get_default_queue().parallel_for(
+//CHECK: dpct::get_in_order_queue().parallel_for(
 //CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:     foo2(item_ct1);

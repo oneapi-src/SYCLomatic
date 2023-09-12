@@ -1,2 +1,2 @@
-* Visit the :ref:`dev_guide`
-  for additional information about the tool.
+For additional information about the tool, refer to the :ref:`dev_guide`.
+

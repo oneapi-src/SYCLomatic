@@ -40,7 +40,7 @@ expected to be similar to the daily releases.
 * C++ compiler
   * Linux: `GCC` version 7.5.0 or later (including libstdc++) -
     [Download](https://gcc.gnu.org/install/)
-  * Windows: `Visual Studio` 2019 or 2022 -
+  * Windows: `Visual Studio` 2019 or 2022 (In the following description, assume that the version used is 2019) -
     [Download](https://visualstudio.microsoft.com/downloads/)
 
 ### Create SYCLomatic workspace
@@ -64,10 +64,9 @@ git clone https://github.com/oneapi-src/SYCLomatic.git
 
 Open a developer command prompt using one of two methods:
 
-* Click start menu and search for "**x64** Native Tools Command Prompt for VS
-  XXXX", where XXXX is a version of installed Visual Studio.
-* Ctrl-R, write "cmd", click enter, then run
-  `"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64`
+* Click start menu and search for "**x64** Native Tools Command Prompt for VS 2019".
+* Win-R, write "cmd", click enter, then run
+  `"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64`
 
 ```bat
 set SYCLOMATIC_HOME=%USERPROFILE%\workspace

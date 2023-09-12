@@ -34,6 +34,22 @@
 using namespace llvm;
 using namespace clang::dpct;
 
+bool InlineAsmBuiltinType::isSignedInt() const {
+  return getKind() == TK_s8 || getKind() == TK_s16 || getKind() == TK_s32 ||
+         getKind() == TK_s64;
+}
+bool InlineAsmBuiltinType::isUnsignedInt() const {
+  return getKind() == TK_u8 || getKind() == TK_u16 || getKind() == TK_u32 ||
+         getKind() == TK_u64;
+}
+bool InlineAsmBuiltinType::isFloating() const {
+  return getKind() == TK_f16 || getKind() == TK_f32 || getKind() == TK_f64;
+}
+bool InlineAsmBuiltinType::isBitSize() const {
+  return getKind() == TK_b8 || getKind() == TK_b16 || getKind() == TK_b32 ||
+         getKind() == TK_b64;
+}
+
 // clang-format off
 asm_precedence::Level getBinOpPrec(asmtok::TokenKind Kind) {
   switch (Kind) {
@@ -240,6 +256,29 @@ InlineAsmStmtResult InlineAsmParser::ParseConditionalInstruction() {
       isNeg, Pred.get(), SubInst.getAs<InlineAsmInstruction>());
 }
 
+static inline InstAttr ConvertToInstAttr(asmtok::TokenKind Kind) {
+  switch (Kind) {
+#define ROUND_MOD(X, Y)                                                        \
+  case asmtok::kw_##X:                                                         \
+    return InstAttr::X;
+#define SAT_MOD(X, Y)                                                          \
+  case asmtok::kw_##X:                                                         \
+    return InstAttr::X;
+#define MUL_MOD(X, Y)                                                          \
+  case asmtok::kw_##X:                                                         \
+    return InstAttr::X;
+#define CMP_OP(X, Y)                                                           \
+  case asmtok::kw_##X:                                                         \
+    return InstAttr::X;
+#define BIN_OP(X, Y)                                                           \
+  case asmtok::kw_##X:                                                         \
+    return InstAttr::X;
+#include "Asm/AsmTokenKinds.def"
+  default:
+    llvm_unreachable("Kind is not an instruction attribute");
+  }
+}
+
 InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   if (!Tok.getIdentifier() || !Tok.getIdentifier()->isInstruction())
     return AsmStmtError();
@@ -247,46 +286,51 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   InlineAsmIdentifierInfo *Opcode = Tok.getIdentifier();
   ConsumeToken();
 
+  unsigned OpIndex = 0;
+  SmallVector<InstAttr, 4> Attrs;
   SmallVector<InlineAsmType *, 4> Types;
-  SmallVector<InlineAsmIdentifierInfo *, 4> Attrs;
+  SmallVector<InlineAsmExpr *, 4> Ops;
+
   while (Tok.startOfDot()) {
-    if (Tok.getIdentifier()->isBuiltinType())
+    switch (Tok.getIdentifier()->getFlags()) {
+    case InlineAsmIdentifierInfo::BuiltinType:
       Types.push_back(Context.getBuiltinTypeFromTokenKind(Tok.getKind()));
-    else
-      Attrs.push_back(Tok.getIdentifier());
+      break;
+    case InlineAsmIdentifierInfo::InstAttr:
+      Attrs.push_back(ConvertToInstAttr(Tok.getIdentifier()->getTokenID()));
+      break;
+    default:
+      return AsmStmtError();
+    }
     ConsumeToken(); // consume instruction attribute
   }
 
-  InlineAsmExprResult OutputOperand = ParseExpression();
-  if (OutputOperand.isInvalid())
+  auto ParseOperand = [&]() {
+    InlineAsmExprResult E = ParseExpression();
+    if (E.isInvalid() || OpIndex >= Types.size())
+      return AsmExprError();
+    Ops.push_back(E.get());
+    return InlineAsmExprResult();
+  };
+
+  if (ParseOperand().isInvalid())
     return AsmStmtError();
 
   bool HasPredOutput = TryConsumeToken(asmtok::pipe);
   InlineAsmExprResult PredOutput;
-  if (HasPredOutput) {
-    PredOutput = ParseExpression();
-    if (PredOutput.isInvalid())
-      return AsmStmtError();
-  }
-
-  SmallVector<InlineAsmExpr *, 4> InputOperands;
+  if (HasPredOutput && ParseOperand().isInvalid())
+    return AsmStmtError();
 
   while (TryConsumeToken(asmtok::comma)) {
-    InlineAsmExprResult Operand = ParseExpression();
-    if (Operand.isInvalid())
+    if (ParseOperand().isInvalid())
       return AsmStmtError();
-    InputOperands.push_back(Operand.get());
   }
 
   if (!TryConsumeToken(asmtok::semi))
     return AsmStmtError();
 
-  if (HasPredOutput)
-    return ::new (Context)
-        InlineAsmInstruction(Opcode, Types, Attrs, OutputOperand.get(),
-                             InputOperands, PredOutput.get());
-  return ::new (Context) InlineAsmInstruction(
-      Opcode, Types, Attrs, OutputOperand.get(), InputOperands);
+  return ::new (Context)
+      InlineAsmInstruction(Opcode, Attrs, Types, Ops, HasPredOutput);
 }
 
 InlineAsmExprResult InlineAsmParser::ParseExpression() {
@@ -398,7 +442,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
       if (Res.isInvalid())
         return AsmExprError();
       Tuple.push_back(Res.get());
-      if (Tok.isNot(asmtok::comma))
+      if (!TryConsumeToken(asmtok::comma))
         break;
     }
 
@@ -431,7 +475,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
     Res = ActOnUnaryOp(SavedKind, Res.get());
     break;
   default:
-    break;
+    return AsmExprError();
   }
   return Res;
 }
@@ -720,12 +764,12 @@ namespace {
 class AsmNumericLiteralParser {
   const char *const ThisTokBegin;
   const char *const ThisTokEnd;
-  const char *DigitsBegin, *SuffixBegin; // markers
-  const char *s;                         // cursor
+  const char *DigitsBegin = nullptr, *SuffixBegin = nullptr; // markers
+  const char *s = nullptr;                                   // cursor
 
-  unsigned radix;
+  unsigned radix = 0;
 
-  bool saw_exponent, saw_period;
+  bool saw_exponent = false, saw_period = false;
 
 public:
   AsmNumericLiteralParser(StringRef TokSpelling);
@@ -1092,7 +1136,9 @@ static bool alwaysFitsInto64Bits(unsigned Radix, unsigned NumDigits) {
     return NumDigits <= 64 / 4; // Digits are groups of 4 bits.
   default:
     assert(0 && "impossible Radix");
+    break;
   }
+  return true;
 }
 
 /// GetIntegerValue - Convert this numeric literal value to an APInt that

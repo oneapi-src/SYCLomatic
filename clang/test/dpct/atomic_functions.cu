@@ -100,7 +100,7 @@ void InvokeKernel() {
   cudaMalloc((void **)&dev_ptr, size);
 
   cudaMemcpy(dev_ptr, host.get(), size, cudaMemcpyHostToDevice);
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     dpct::access_wrapper<T *> dev_ptr_acc_ct0(dev_ptr, cgh);
   // CHECK-EMPTY:
@@ -471,20 +471,27 @@ __global__ void mykernel(unsigned int *dev) {
   dev[tid]=as[kc];
 }
 
+// TODO: Further refine the analysis of barrier to support this case.
 // CHECK: void mykernel_1(unsigned char *buffer, long size,
 // CHECK-NEXT:                             unsigned int *histo,
 // CHECK-NEXT:                             const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                             unsigned int *temp) {
 // CHECK-EMPTY:
 // CHECK-NEXT:  temp[item_ct1.get_local_id(2)] = 0;
-// CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+// CHECK-NEXT:  */
+// CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  int i = item_ct1.get_local_id(2) + item_ct1.get_group(2) * item_ct1.get_local_range(2);
 // CHECK-NEXT:  int offset = item_ct1.get_local_range(2) * item_ct1.get_group_range(2);
 // CHECK-NEXT:  while (i < size) {
 // CHECK-NEXT:    dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&temp[buffer[i]], 1);
 // CHECK-NEXT:    i += offset;
 // CHECK-NEXT:  }
-// CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+// CHECK-NEXT:  */
+// CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&(histo[item_ct1.get_local_id(2)]), temp[item_ct1.get_local_id(2)]);
 // CHECK-NEXT:}
 __global__ void mykernel_1(unsigned char *buffer, long size,

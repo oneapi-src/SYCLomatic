@@ -342,11 +342,24 @@ private:
   const uint8_t *BinaryIdsStart;
 
 public:
+#ifdef SYCLomatic_CUSTOMIZATION
+  RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
+                     const InstrProfCorrelator *Correlator)
+      : DataBuffer(std::move(DataBuffer)),
+        Correlator(dyn_cast_or_null<const InstrProfCorrelatorImpl<IntPtrT>>(
+            Correlator)),
+        ShouldSwapBytes(false), Version(0), CountersDelta(0), NamesDelta(0),
+        Data(nullptr), DataEnd(nullptr), CountersStart(nullptr),
+        CountersEnd(nullptr), NamesStart(nullptr), NamesEnd(nullptr),
+        ValueDataStart(nullptr), ValueKindLast(0), CurValueDataSize(0),
+        BinaryIdsStart(nullptr) {}
+#else
   RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
                      const InstrProfCorrelator *Correlator)
       : DataBuffer(std::move(DataBuffer)),
         Correlator(dyn_cast_or_null<const InstrProfCorrelatorImpl<IntPtrT>>(
             Correlator)) {}
+#endif //SYCLomatic_CUSTOMIZATION
   RawInstrProfReader(const RawInstrProfReader &) = delete;
   RawInstrProfReader &operator=(const RawInstrProfReader &) = delete;
 
@@ -716,9 +729,12 @@ public:
   /// When return a hash_mismatch error and MismatchedFuncSum is not nullptr,
   /// the sum of all counters in the mismatched function will be set to
   /// MismatchedFuncSum. If there are multiple instances of mismatched
-  /// functions, MismatchedFuncSum returns the maximum.
+  /// functions, MismatchedFuncSum returns the maximum. If \c FuncName is not
+  /// found, try to lookup \c DeprecatedFuncName to handle profiles built by
+  /// older compilers.
   Expected<InstrProfRecord>
   getInstrProfRecord(StringRef FuncName, uint64_t FuncHash,
+                     StringRef DeprecatedFuncName = "",
                      uint64_t *MismatchedFuncSum = nullptr);
 
   /// Return the memprof record for the function identified by

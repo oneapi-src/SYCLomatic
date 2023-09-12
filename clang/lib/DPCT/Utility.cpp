@@ -10,6 +10,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Config.h"
+#include "DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "SaveNewFiles.h"
@@ -213,9 +214,12 @@ size_t calculateExpansionLevel(const SourceLocation Loc, bool IsBegin) {
 
 // Get textual representation of the Stmt.
 std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
-  std::string Str;
   if (!S)
-    return Str;
+    return "";
+  return getStmtSpelling(S->getSourceRange(), ParentRange);
+}
+
+std::string getStmtSpelling(clang::SourceRange SR, SourceRange ParentRange) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
 
@@ -233,7 +237,7 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
                          SM.getFileOffset(ParentRange.getBegin());
   if (ParentRangeSize <= 0) {
     // if ParentRange is invalid, getDefinitionRange is the best we can have
-    auto DRange = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
+    auto DRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
     BeginLoc = DRange.getBegin();
     EndLoc = DRange.getEnd();
     Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
@@ -242,7 +246,7 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
   } else {
     // if ParentRange is valid, find the expansion location in the ParentRange
     auto Range =
-        getRangeInRange(S, ParentRange.getBegin(), ParentRange.getEnd());
+        getRangeInRange(SR, ParentRange.getBegin(), ParentRange.getEnd());
     BeginLoc = Range.first;
     EndLoc = Range.second;
     Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc);
@@ -250,8 +254,8 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
 
   if (Length <= 0)
     return "";
-  Str = std::string(SM.getCharacterData(BeginLoc), Length);
-  return Str;
+  return std::string(SM.getCharacterData(BeginLoc), Length);
+   
 }
 
 SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
@@ -1446,6 +1450,18 @@ bool isAssigned(const Stmt *S) {
                 !dyn_cast<IfStmt>(P));
 }
 
+/// Determine if \param S is in return statement or not
+/// \param S A Stmt node
+/// \return True if S is in return statement and false if S is not
+bool isInRetStmt(const clang::Stmt *S) {
+  if (auto ParentStmt = getParentStmt(S)) {
+    if (ParentStmt->getStmtClass() == Stmt::StmtClass::ReturnStmtClass) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// Compute a temporary variable name for \param E
 /// \param E The Expr based on which the temp name is computed
 /// \param KeepLastUnderline A boolean value indicating if the last underline
@@ -1967,14 +1983,16 @@ SourceLocation getBeginLocOfPreviousEmptyMacro(SourceLocation Loc) {
   return Loc;
 }
 
-SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
+unsigned int getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Map = dpct::DpctGlobalInfo::getBeginOfEmptyMacros();
   Token Tok;
-  Lexer::getRawToken(
+  bool Ret = Lexer::getRawToken(
       Loc.getLocWithOffset(Lexer::MeasureTokenLength(
           Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
       Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
+  if (Ret)
+    return 0;
 
   SourceLocation EndOfToken = SM.getExpansionLoc(Tok.getLocation());
   while (Tok.isNot(tok::eof) && Tok.is(tok::comment)) {
@@ -1986,11 +2004,16 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
     ;
   }
 
-  auto It = Map.find(getHashStrFromLoc(EndOfToken));
+  auto EndOfTokenLocInfo = dpct::DpctGlobalInfo::getLocInfo(EndOfToken);
+  std::string EndOfTokenKey = std::to_string(std::hash<std::string>()(
+      dpct::buildString(EndOfTokenLocInfo.first, EndOfTokenLocInfo.second)));
+  auto OriginalLocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
+
+  auto It = Map.find(EndOfTokenKey);
   if (It != Map.end()) {
-    return It->second;
+    return It->second + EndOfTokenLocInfo.second - OriginalLocInfo.second;
   }
-  return Loc;
+  return 0;
 }
 
 std::string
@@ -2244,8 +2267,12 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
         auto InnerResult = getRangeInRange(Range, MacroDefBegin, MacroDefEnd, false);
         // If the new range covers the entire macro, use the original range,
         // otherwise, use the inner range.
-        if(!isSameLocation(It->second.getBegin(), InnerResult.first) ||
-           !isSameLocation(It->second.getEnd(), InnerResult.second)){
+        if (isInRange(It->second.getBegin(), It->second.getEnd(),
+                      InnerResult.first) &&
+            isInRange(It->second.getBegin(), It->second.getEnd(),
+                      InnerResult.second) &&
+            (!isSameLocation(It->second.getBegin(), InnerResult.first) ||
+             !isSameLocation(It->second.getEnd(), InnerResult.second))) {
           ResultBegin = InnerResult.first;
           ResultEnd = InnerResult.second;
         }
@@ -3545,6 +3572,21 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CE)
     return false;
 
+  if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
+    auto CpyKind = Direction->getDecl()->getName();
+    if (CpyKind == "cudaMemcpyDeviceToDevice") {
+      return true;
+    }
+    if (CpyKind == "cudaMemcpyHostToDevice" &&
+        dpct::DpctGlobalInfo::isOptimizeMigration()) {
+      auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
+      clang::dpct::DiagnosticsUtils::report(
+          LocInfo.first, LocInfo.second, clang::dpct::Diagnostics::WAIT_REMOVE,
+          true, false);
+      return true;
+    }
+  }
+
   const clang::CompoundStmt *CS = getBodyofAncestorFCStmt(CE);
   if (!CS) {
     auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
@@ -3613,6 +3655,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
       }
     }
   }
+
   return false;
 }
 /// Check if \p E contains a sizeof(Type) sub-expression
@@ -3720,13 +3763,19 @@ bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
   //  }
 
   // Handle 1
-  auto isCubRecordType = [&](const Type *T) -> bool {
+  auto isCubRecordType = [&](const clang::Type *T) -> bool {
     if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
       auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
       auto *Ctx = TemplateDecl->getDeclContext();
-      if (auto *CubNS = dyn_cast<NamespaceDecl>(Ctx)) {
-        return CubNS->getCanonicalDecl()->getName() == "cub";
+      auto *CubNS = dyn_cast<NamespaceDecl>(Ctx);
+      while (CubNS) {
+        if (CubNS->isInlineNamespace()) {
+          CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
+          continue;
+        }
+        break;
       }
+      return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
     }
     return false;
   };
@@ -3972,10 +4021,10 @@ std::string getRemovedAPIWarningMessage(std::string FuncName) {
     return "";
 }
 
-bool isUserDefinedDecl(const clang::ValueDecl *VD) {
-  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(VD).first;
+bool isUserDefinedDecl(const clang::Decl *D) {
+  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
-  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(VD->getLocation());
+  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
   if (InInstallPath || InCudaPath)
     return false;
   return true;
@@ -4001,7 +4050,7 @@ std::string getBaseTypeStr(const CallExpr *CE) {
   return dpct::DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
 }
 
-std::string getArgTypeStr(const CallExpr *CE, unsigned int Idx) {
+std::string getParamTypeStr(const CallExpr *CE, unsigned int Idx) {
   if (CE->getNumArgs() <= Idx)
     return "";
   if (!CE->getDirectCallee())
@@ -4015,6 +4064,21 @@ std::string getArgTypeStr(const CallExpr *CE, unsigned int Idx) {
       .getUnqualifiedType()
       .getAsString();
 }
+
+std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx) {
+  if (CE->getNumArgs() <= Idx)
+    return "";
+  const Expr *E = CE->getArg(Idx);
+  if (!E) {
+    return "";
+  }
+  return E->IgnoreImplicitAsWritten()
+      ->getType()
+      .getCanonicalType()
+      .getUnqualifiedType()
+      .getAsString();
+}
+
 std::string getFunctionName(const clang::FunctionDecl *Node) {
   std::string FunctionName;
   llvm::raw_string_ostream OS(FunctionName);
@@ -4063,33 +4127,33 @@ getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl) {
 bool typeIsPostfix(clang::QualType QT) {
   using namespace clang;
   while (true) {
-    const Type* T = QT.getTypePtr();
+    const auto *const T = QT.getTypePtr();
     switch (T->getTypeClass()) {
     default:
       return false;
-    case Type::Pointer:
-      QT = cast<PointerType>(T)->getPointeeType();
+    case clang::Type::Pointer:
+      QT = cast<clang::PointerType>(T)->getPointeeType();
       break;
-    case Type::BlockPointer:
+    case clang::Type::BlockPointer:
       QT = cast<BlockPointerType>(T)->getPointeeType();
       break;
-    case Type::MemberPointer:
+    case clang::Type::MemberPointer:
       QT = cast<MemberPointerType>(T)->getPointeeType();
       break;
-    case Type::LValueReference:
-    case Type::RValueReference:
+    case clang::Type::LValueReference:
+    case clang::Type::RValueReference:
       QT = cast<ReferenceType>(T)->getPointeeType();
       break;
-    case Type::PackExpansion:
+    case clang::Type::PackExpansion:
       QT = cast<PackExpansionType>(T)->getPattern();
       break;
-    case Type::Paren:
-    case Type::ConstantArray:
-    case Type::DependentSizedArray:
-    case Type::IncompleteArray:
-    case Type::VariableArray:
-    case Type::FunctionProto:
-    case Type::FunctionNoProto:
+    case clang::Type::Paren:
+    case clang::Type::ConstantArray:
+    case clang::Type::DependentSizedArray:
+    case clang::Type::IncompleteArray:
+    case clang::Type::VariableArray:
+    case clang::Type::FunctionProto:
+    case clang::Type::FunctionNoProto:
       return true;
     }
   }
@@ -4256,9 +4320,14 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr *ME) {
     QT = QT->getPointeeType();
   const auto CT = QT.getCanonicalType();
   if (const auto RT = dyn_cast<clang::RecordType>(CT.getTypePtr())) {
+    if(const clang::CXXRecordDecl* RD = RT->getAsCXXRecordDecl()) {
+      if(RD->getIdentifier() == nullptr) {
+        return dpct::DpctGlobalInfo::getUnqualifiedTypeName(QT);
+      }
+    }
     return RT->getDecl()->getQualifiedNameAsString();
   } else {
-    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(CT);
+    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(QT);
   }
 }
 
@@ -4311,3 +4380,116 @@ bool isCapturedByLambda(const clang::TypeLoc *TL) {
   }
   return false;
 }
+
+std::string getAddressSpace(const CallExpr *C, int ArgIdx) {
+  bool HasAttr = false;
+  bool NeedReport = false;
+  const Expr *Arg = C->getArg(ArgIdx);
+  if (!Arg) {
+    return "";
+  }
+  getShareAttrRecursive(Arg, HasAttr, NeedReport);
+  if (HasAttr && !NeedReport)
+    return "local_space";
+  LocalVarAddrSpaceEnum LocalVarCheckResult =
+      LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  checkIsPrivateVar(Arg, LocalVarCheckResult);
+  if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
+    return "private_space";
+  } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
+    return "global_space";
+  } else {
+    clang::dpct::ExprAnalysis EA(Arg);
+    auto LocInfo =
+        dpct::DpctGlobalInfo::getInstance().getLocInfo(C->getBeginLoc());
+    clang::dpct::DiagnosticsUtils::report(
+        LocInfo.first, LocInfo.second,
+        clang::dpct::Diagnostics::UNDEDUCED_ADDRESS_SPACE, true, false,
+        EA.getReplacedString());
+    return "global_space";
+  }
+}
+
+std::string getNameSpace(const NamespaceDecl *NSD) {
+  if (!NSD)
+    return "";
+  std::string NameSpace =
+      getNameSpace(dyn_cast<NamespaceDecl>(NSD->getDeclContext()));
+  if (!NameSpace.empty() && !NSD->isInlineNamespace())
+    return NameSpace + "::" + NSD->getName().str();
+  else if (NameSpace.empty() && !NSD->isInlineNamespace())
+    return NSD->getName().str();
+  return NameSpace;
+}
+
+bool isFromCUDA(const Decl *D) {
+  SourceLocation DeclLoc =
+      dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+          D->getLocation());
+  std::string DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+  makeCanonical(DeclLocFilePath);
+
+  // clang hacked the declarations of std::min/std::max
+  // In original code, the declaration should be in standard lib,
+  // but clang need to add device version overload, so it hacked the
+  // resolution by adding a special attribute.
+  // So we need treat function which is declared in this file as it
+  // is from standard lib.
+  SmallString<512> AlgorithmFileInCudaWrapper = StringRef(DpctInstallPath);
+  path::append(AlgorithmFileInCudaWrapper, Twine("lib"), Twine("clang"),
+               Twine(CLANG_VERSION_MAJOR_STRING), Twine("include"));
+  path::append(AlgorithmFileInCudaWrapper, Twine("cuda_wrappers"),
+               Twine("algorithm"));
+
+  if (AlgorithmFileInCudaWrapper.str().str() == DeclLocFilePath) {
+    return false;
+  }
+
+  return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
+          isChildPath(DpctInstallPath, DeclLocFilePath));
+}
+
+namespace clang {
+namespace dpct {
+void requestFeature(HelperFeatureEnum Feature) {
+  if (Feature == HelperFeatureEnum::none) {
+    return;
+  }
+  DpctGlobalInfo::setNeedDpctDeviceExt();
+}
+
+std::string getDpctVersionStr() {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  OS << DPCT_VERSION_MAJOR << "." << DPCT_VERSION_MINOR << "."
+     << DPCT_VERSION_PATCH;
+  return OS.str();
+}
+
+void requestHelperFeatureForEnumNames(const std::string Name) {
+  auto HelperFeatureIter =
+      clang::dpct::EnumConstantRule::EnumNamesMap.find(Name);
+  if (HelperFeatureIter != clang::dpct::EnumConstantRule::EnumNamesMap.end()) {
+    requestFeature(HelperFeatureIter->second->RequestFeature);
+    return;
+  }
+  auto CuDNNHelperFeatureIter =
+      clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.find(Name);
+  if (CuDNNHelperFeatureIter !=
+      clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.end()) {
+    requestFeature(CuDNNHelperFeatureIter->second);
+  }
+}
+void requestHelperFeatureForTypeNames(const std::string Name) {
+  auto HelperFeatureIter = MapNames::TypeNamesMap.find(Name);
+  if (HelperFeatureIter != MapNames::TypeNamesMap.end()) {
+    requestFeature(HelperFeatureIter->second->RequestFeature);
+    return;
+  }
+  auto CuDNNHelperFeatureIter = MapNames::CuDNNTypeNamesMap.find(Name);
+  if (CuDNNHelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {
+    requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
+  }
+}
+} // namespace dpct
+} // namespace clang

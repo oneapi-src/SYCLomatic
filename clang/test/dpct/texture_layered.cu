@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1
-// UNSUPPORTED: v12.0, v12.1
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2
+// UNSUPPORTED: v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_layered %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture_layered/texture_layered.dp.cpp --match-full-lines %s
 
@@ -99,7 +99,7 @@ int main() {
   float4 *d;
   cudaMalloc(&d, sizeof(float4) * 4);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_acc_ct0 = dpct::get_access(d, cgh);
   // CHECK-EMPTY:

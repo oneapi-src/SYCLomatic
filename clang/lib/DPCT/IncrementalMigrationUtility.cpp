@@ -203,6 +203,9 @@ bool printOptions(
         if (!(UValue & (1 << static_cast<unsigned>(
                             DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo))))
           Str += "device_info,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16))))
+          Str += "bfloat16,";
       }
       if (!Str.empty()) {
         Str = "--no-dpcpp-extensions=" + Str;
@@ -343,6 +346,11 @@ bool printOptions(
     if (Key == clang::dpct::OPTION_AnalysisScopePath) {
       Opts.emplace_back("--analysis-scope-path=\"" + Value + "\"");
     }
+    if (Key == clang::dpct::OPTION_HelperFuncPreferenceFlag && Specified) {
+      if (std::to_string(static_cast<unsigned int>(
+              HelperFuncPreference::NoQueueDevice)) == Value)
+        Opts.emplace_back("--helper-function-preference=no-queue-device");
+    }
   }
 
   Msg = "";
@@ -362,7 +370,7 @@ bool canContinueMigration(std::string &Msg) {
 
   if (!llvm::sys::fs::exists(YamlFilePath))
     return true;
-  if (loadFromYaml(std::move(YamlFilePath), *PreTU, true) != 0) {
+  if (loadFromYaml(std::move(YamlFilePath), *PreTU) != 0) {
     llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
     return true;
   }

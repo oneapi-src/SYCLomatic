@@ -25,6 +25,7 @@
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/ParentMapContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -34,6 +35,7 @@
 #include "llvm/Support/Path.h"
 namespace path = llvm::sys::path;
 
+using namespace clang;
 namespace llvm {
 class StringRef;
 } // namespace llvm
@@ -262,6 +264,8 @@ size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E,
                             clang::SourceRange Parent = clang::SourceRange());
+std::string getStmtSpelling(clang::SourceRange SR,
+                            clang::SourceRange Parent = clang::SourceRange());
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;
@@ -415,7 +419,7 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
                        const std::vector<clang::tooling::Range> &Ranges);
 
 bool isAssigned(const clang::Stmt *S);
-
+bool isInRetStmt(const clang::Stmt *S);
 std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
                                bool KeepLastUnderline = true,
                                bool IsInMacroDefine = false,
@@ -446,7 +450,7 @@ const clang::CXXRecordDecl *getParentRecordDecl(const clang::ValueDecl *DD);
 bool IsTypeChangedToPointer(const clang::DeclRefExpr *DRE);
 clang::SourceLocation
 getBeginLocOfPreviousEmptyMacro(clang::SourceLocation Loc);
-clang::SourceLocation getEndLocOfFollowingEmptyMacro(clang::SourceLocation Loc);
+unsigned int getEndLocOfFollowingEmptyMacro(clang::SourceLocation Loc);
 
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
@@ -565,10 +569,11 @@ void findAllVarRef(const clang::DeclRefExpr *DRE,
                    bool IsGlobalScopeAllowed = false);
 bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
-bool isUserDefinedDecl(const clang::ValueDecl *VD);
+bool isUserDefinedDecl(const clang::Decl *D);
 void insertHeaderForTypeRule(std::string, clang::SourceLocation);
 std::string getRemovedAPIWarningMessage(std::string FuncName);
 std::string getBaseTypeStr(const clang::CallExpr *CE);
+std::string getParamTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 std::string getFunctionName(const clang::FunctionDecl *Node);
 std::string getFunctionName(const clang::UnresolvedLookupExpr *Node);
@@ -582,4 +587,42 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
+std::string getAddressSpace(const clang::CallExpr *C, int ArgIdx);
+std::string getNameSpace(const NamespaceDecl *NSD);
+bool isFromCUDA(const Decl *D);
+namespace clang {
+namespace dpct {
+std::string getDpctVersionStr();
+enum class HelperFeatureEnum : unsigned int {
+  device_ext,
+  none,
+};
+void requestFeature(HelperFeatureEnum Feature);
+void requestHelperFeatureForEnumNames(const std::string Name);
+void requestHelperFeatureForTypeNames(const std::string Name);
+
+class PairedPrinter {
+  StringRef Postfix;
+  llvm::raw_ostream &OS;
+
+public:
+  PairedPrinter(llvm::raw_ostream &Stream, StringRef PrefixString,
+                StringRef PosfixString, bool ShouldPrint = true)
+      : OS(Stream) {
+    if (ShouldPrint) {
+      OS << PrefixString;
+      Postfix = PosfixString;
+    }
+  }
+  ~PairedPrinter() { OS << Postfix; }
+};
+
+} // namespace dpct
+namespace ast_matchers {
+AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {
+  const DeclRefExpr *DRE = &Node;
+  return DRE->getDecl() == TargetVD;
+}
+} // namespace ast_matchers
+} // namespace clang
 #endif // DPCT_UTILITY_H

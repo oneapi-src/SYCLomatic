@@ -13,6 +13,7 @@
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "FFTAPIMigration.h"
+#include "InclusionHeaders.h"
 #include "MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -36,14 +37,17 @@ class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
   IncludeMapSetTy &IncludeMapSet;
   SourceManager &SM;
+  RuleGroups &Groups;
 
   std::unordered_set<std::string> SeenFiles;
   bool IsFileInCmd = true;
 
 public:
   IncludesCallbacks(TransformSetTy &TransformSet,
-                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM)
-      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM) {}
+                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
+                    RuleGroups &G)
+      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
+        Groups(G) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange,
@@ -61,8 +65,7 @@ public:
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
   bool ReplaceCuMacro(const Token &MacroNameTok);
-  void ReplaceCuMacro(SourceRange ConditionRange,
-                      ConditionValueKind ConditionValue, IfType IT,
+  void ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
                       SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
                SourceRange Range) override;
@@ -345,8 +348,7 @@ protected:
       if (Flags.IsAssigned) {
         insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd,
                           "DPCT_CHECK_ERROR(", ")");
-        requestFeature(HelperFeatureEnum::Dpct_check_error_code,
-                       Locations.PrefixInsertLoc);
+        requestFeature(HelperFeatureEnum::device_ext);
       }
 
       emplaceTransformation(new ReplaceStmt(CE, true, Strings.Repl));
@@ -755,6 +757,8 @@ public:
              "usm::alloc::shared) {";
     };
 
+    auto DefaultQueue = DpctGlobalInfo::getDefaultQueue(CE);
+
     if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2" ||
         FuncName == "cublasCrotg_v2" || FuncName == "cublasZrotg_v2" ||
         FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") {
@@ -783,12 +787,10 @@ public:
           Suffix = Suffix + getNL() + IndentStr + "  " +
                    getDrefName(CE->getArg(Idx)) + " = *" + Var + ";";
         else {
-          Suffix = Suffix + getNL() + IndentStr + "  " +
-                   MapNames::getDpctNamespace() +
-                   "get_default_queue().memcpy(" +
-                   ExprAnalysis::ref(CE->getArg(Idx)) + ", " + Var +
-                   ", sizeof(" + Type + ")*" + Size + ").wait();";
-          requestFeature(HelperFeatureEnum::Device_get_default_queue, CE);
+          Suffix = Suffix + getNL() + IndentStr + "  " + DefaultQueue +
+                   ".memcpy(" + ExprAnalysis::ref(CE->getArg(Idx)) + ", " +
+                   Var + ", sizeof(" + Type + ")*" + Size + ").wait();";
+          requestFeature(HelperFeatureEnum::device_ext);
         }
       };
 
@@ -801,11 +803,10 @@ public:
         declareTempArgs(X1Ptr, "x1_ct", Type, 3);
         declareTempArgs(ParamPtr, "param_ct", Type, 5);
 
-        requestFeature(HelperFeatureEnum::Device_get_default_queue, CE);
+        requestFeature(HelperFeatureEnum::device_ext);
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         Prefix = Prefix + "  " + D1Ptr + " = " + MapNames::getClNamespace() +
-                 "malloc_shared<" + Type + ">(8, " +
-                 MapNames::getDpctNamespace() + "get_default_queue());" +
+                 "malloc_shared<" + Type + ">(8, " + DefaultQueue + ");" +
                  getNL() + IndentStr;
         Prefix = Prefix + "  " + D2Ptr + " = " + D1Ptr + " + 1;" + getNL() +
                  IndentStr;
@@ -831,7 +832,7 @@ public:
 
         Suffix = Suffix + getNL() + IndentStr + "  " +
                  MapNames::getClNamespace() + "free(" + D1Ptr + ", " +
-                 MapNames::getDpctNamespace() + "get_default_queue());";
+                 DefaultQueue + ");";
         Suffix = Suffix + getNL() + IndentStr + "}";
       } else {
         // cublasSrotg_v2, cublasDrotg_v2, cublasCrotg_v2 or cublasZrotg_v2
@@ -856,12 +857,12 @@ public:
         declareTempArgs(CPtr, "c_ct", RealType, 3);
         declareTempArgs(SPtr, "s_ct", Type, 4);
 
-        requestFeature(HelperFeatureEnum::Device_get_default_queue, CE);
+        requestFeature(HelperFeatureEnum::device_ext);
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2") {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
                    "malloc_shared<" + Type + ">(4, " +
-                   MapNames::getDpctNamespace() + "get_default_queue());" +
+                   DefaultQueue + ");" +
                    getNL() + IndentStr;
           Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
                    IndentStr;
@@ -872,11 +873,11 @@ public:
         } else {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
                    "malloc_shared<" + Type + ">(3, " +
-                   MapNames::getDpctNamespace() + "get_default_queue());" +
+                   DefaultQueue + ");" +
                    getNL() + IndentStr;
           Prefix = Prefix + "  " + CPtr + " = " + MapNames::getClNamespace() +
                    "malloc_shared<" + RealType + ">(1, " +
-                   MapNames::getDpctNamespace() + "get_default_queue());" +
+                   DefaultQueue + ");" +
                    getNL() + IndentStr;
           Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
                    IndentStr;
@@ -903,11 +904,11 @@ public:
 
         Suffix = Suffix + getNL() + IndentStr + "  " +
                  MapNames::getClNamespace() + "free(" + APtr + ", " +
-                 MapNames::getDpctNamespace() + "get_default_queue());";
+                 DefaultQueue + ");";
         if (FuncName == "cublasCrotg_v2" || FuncName == "cublasZrotg_v2") {
           Suffix = Suffix + getNL() + IndentStr + "  " +
                    MapNames::getClNamespace() + "free(" + CPtr + ", " +
-                   MapNames::getDpctNamespace() + "get_default_queue());";
+                   DefaultQueue + ");";
         }
         Suffix = Suffix + getNL() + IndentStr + "}";
       }
@@ -939,21 +940,20 @@ public:
 
       std::string IfStmtStr = getIfStmtStr(EA.getReplacedString());
 
-      requestFeature(HelperFeatureEnum::Device_get_default_queue, CE);
+      requestFeature(HelperFeatureEnum::device_ext);
       PrefixInsertStr = OriginType + "* " + ResultTempPtr + " = " +
                         EA.getReplacedString() + ";" + getNL() + IndentStr +
                         IfStmtStr + getNL() + IndentStr + "  " + ResultTempPtr +
                         " = " + MapNames::getClNamespace() + "malloc_shared<" +
-                        OriginType + ">(1, " + MapNames::getDpctNamespace() +
-                        "get_default_queue());" + getNL() + IndentStr + "}" +
-                        getNL() + IndentStr + PrefixInsertStr;
-      SuffixInsertStr =
-          getNL() + IndentStr + IfStmtStr + getNL() + IndentStr + "  " +
-          CallExprArguReplVec[0] + "->wait();" + getNL() + IndentStr + "  " +
-          getDrefName(CE->getArg(ArgIndex)) + " = *" + ResultTempPtr + ";" +
-          getNL() + IndentStr + "  " + MapNames::getClNamespace() + "free(" +
-          ResultTempPtr + ", " + MapNames::getDpctNamespace() +
-          "get_default_queue());" + getNL() + IndentStr + "}" + SuffixInsertStr;
+                        OriginType + ">(1, " + DefaultQueue + ");" + getNL() +
+                        IndentStr + "}" + getNL() + IndentStr + PrefixInsertStr;
+      SuffixInsertStr = getNL() + IndentStr + IfStmtStr + getNL() + IndentStr +
+                        "  " + CallExprArguReplVec[0] + "->wait();" + getNL() +
+                        IndentStr + "  " + getDrefName(CE->getArg(ArgIndex)) +
+                        " = *" + ResultTempPtr + ";" + getNL() + IndentStr +
+                        "  " + MapNames::getClNamespace() + "free(" +
+                        ResultTempPtr + ", " + DefaultQueue + ");" + getNL() +
+                        IndentStr + "}" + SuffixInsertStr;
     }
   }
 
@@ -979,7 +979,7 @@ public:
         (FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") &&
         (ArgIndex == 5);
 
-    requestFeature(HelperFeatureEnum::Memory_get_buffer_T, CE);
+    requestFeature(HelperFeatureEnum::device_ext);
     SyncAPIBufferAssignmentInThenBlock.emplace_back(
         BufferName + " = " + MapNames::getDpctNamespace() + "get_buffer<" +
         Type + ">(" + PointerStr + ");");
@@ -1007,7 +1007,7 @@ public:
     };
 
     auto assembleIfStmt = [&]() {
-      requestFeature(HelperFeatureEnum::Memory_is_device_ptr, CE);
+      requestFeature(HelperFeatureEnum::device_ext);
       std::string IfStmtStr = "if (" + MapNames::getDpctNamespace() +
                               "is_device_ptr(" + PointerStr + ")) {" + getNL() +
                               IndentStr +
@@ -1105,7 +1105,7 @@ public:
                                             std::move(CallExprReplStr)));
       if (IsAssigned) {
         insertAroundRange(FuncNameBegin, FuncCallEnd, "DPCT_CHECK_ERROR(", ")");
-        requestFeature(HelperFeatureEnum::Dpct_check_error_code, FuncNameBegin);
+        requestFeature(HelperFeatureEnum::device_ext);
       }
     }
   }
@@ -1453,7 +1453,7 @@ private:
       if (C->getArg(ArgIndex)->IgnoreImplicit()->getStmtClass() !=
           Stmt::StmtClass::DeclRefExprClass)
         insertAroundStmt(C->getArg(ArgIndex), "(", ")");
-      requestFeature(HelperFeatureEnum::Image_image_matrix_to_pitched_data, C);
+      requestFeature(HelperFeatureEnum::device_ext);
       emplaceTransformation(
           new InsertAfterStmt(C->getArg(ArgIndex), "->to_pitched_data()"));
     }
@@ -1619,6 +1619,13 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class SyncThreadsMigrationRule
+    : public NamedMigrationRule<SyncThreadsMigrationRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migrate Function Attributes to Sycl kernel info, defined in
 /// runtime headers.
 class KernelFunctionInfoRule
@@ -1641,8 +1648,7 @@ private:
                                          std::string ObjName);
   std::vector<std::vector<std::string>>
   splitAPIName(std::vector<std::string> &AllAPINames);
-  void processMemberFuncCall(const CXXMemberCallExpr *MC);
-  void processFuncCall(const CallExpr *CE, bool HaveKeywordInAPIName);
+  void processFuncCall(const CallExpr *CE);
 };
 
 /// RecognizeTypeRule to emit warning message for known unsupported type
@@ -1779,6 +1785,12 @@ public:
 };
 
 class CudaStreamCastRule : public NamedMigrationRule<CudaStreamCastRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class TypeRemoveRule : public NamedMigrationRule<TypeRemoveRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

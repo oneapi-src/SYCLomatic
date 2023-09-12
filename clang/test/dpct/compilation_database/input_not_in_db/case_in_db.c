@@ -3,9 +3,8 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 
-
 // CHECK: static dpct::constant_memory<float, 1> const_angle(360);
-// CHECK-NEXT: void simple_kernel(float *d_array, float *const_angle) {
+// CHECK-NEXT: void simple_kernel(float *d_array, float const *const_angle) {
 // CHECK-NEXT:  d_array[0] = const_angle[0];
 // CHECK-NEXT:  return;
 // CHECK-NEXT: }

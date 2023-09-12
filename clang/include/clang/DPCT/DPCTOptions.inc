@@ -123,7 +123,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<ReportTypeEnum>), ReportType
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<ReportFormatEnum>), ReportFormat, "report-format",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("csv", int(ReportFormatEnum::RFE_CSV),
-                  "Output is lines of comma separated values. The report file "
+                  "Output is lines of comma-separated values. The report file "
                   "name extension will\n"
                   "be .csv. (default)", false),
              DPCT_OPT_ENUM("formatted", int(ReportFormatEnum::RFE_Formatted),
@@ -253,29 +253,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableComments, 
            llvm::cl::desc("Insert comments explaining the generated code. Default: off."),
            llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
-DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<HelperFilesCustomizationLevel>), UseCustomHelperFileLevel, "use-custom-helper",
-           DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("none", int(HelperFilesCustomizationLevel::HFCL_None),
-            "No customization (default).", false),
-             DPCT_OPT_ENUM("file", int(HelperFilesCustomizationLevel::HFCL_File),
-            "Limit helper header files to only the necessary files for the migrated code and\n"
-            "place them in the --out-root directory.", false),
-             DPCT_OPT_ENUM("api", int(HelperFilesCustomizationLevel::HFCL_API),
-            "Limit helper header files to only the necessary APIs for the migrated code and\n"
-            "place them in the --out-root directory.", false),
-             DPCT_OPT_ENUM("all", int(HelperFilesCustomizationLevel::HFCL_All),
-            "Generate a complete set of helper header files and place them in the --out-root\n"
-            "directory.", false)
-           ),
-           llvm::cl::desc("DEPRECATED: Customize the helper header files for migrated code. The values are:\n"),
-           llvm::cl::init(HelperFilesCustomizationLevel::HFCL_None), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
-
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), CustomHelperFileName, "custom-helper-name",
-        llvm::cl::desc("DEPRECATED: Specifies the helper headers folder name and main helper header file name.\n"
-        "Default: dpct."),
-        llvm::cl::init("dpct"), llvm::cl::value_desc("name"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
-
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), AsyncHandler, "always-use-async-handler",
         llvm::cl::desc("Use async exception handler when creating new sycl::queue "
                    "with dpct::create_queue\nin addition to default "
@@ -333,10 +310,15 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
              DPCT_OPT_ENUM("device_info",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo),
                                      "Use the Intel extensions for device information if supported by the compiler and the backend.",
+                                     false),
+             DPCT_OPT_ENUM("bfloat16",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16),
+                                     "Use the SYCL extensions for bfloat16.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
-           "By default, these extensions are used in migrated code."),
+           "By default, these extensions are used in migrated code.\n"
+           "The values are:"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisabled>), UseDPCPPExtensions, "use-dpcpp-extensions",
@@ -372,10 +354,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         "Experimental helper function used to logically group work-items.",
         false),
              DPCT_OPT_ENUM("nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
-        "Experimental helper function used to help cross group synchronization during migration.\n",
+        "Experimental helper function used to help cross-group synchronization during migration.\n",
         false),
              DPCT_OPT_ENUM("user-defined-reductions", int(ExperimentalFeatures::Exp_UserDefineReductions),
-        "Experimental extension that allows user define reductions.\n",
+        "Experimental extension that allows user-defined reductions.\n",
         false),
              DPCT_OPT_ENUM("masked-sub-group-operation", int(ExperimentalFeatures::Exp_MaskedSubGroupFunction),
         "Experimental helper function used to execute sub-group operation with mask.\n",
@@ -385,9 +367,15 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("occupancy-calculation", int(ExperimentalFeatures::Exp_OccupancyCalculation),
         "Experimental helper function used to calculate occupancy.\n",
+        false),
+             DPCT_OPT_ENUM("matrix", int(ExperimentalFeatures::Exp_Matrix),
+        "Experimental extension that allows use of matrix extension like class joint_matrix.\n",
+        false),
+             DPCT_OPT_ENUM("bfloat16_math_functions", int(ExperimentalFeatures::Exp_BFloat16Math),
+        "Experimental extension that allows use of bfloat16 math functions.\n",
         false)
            ),
-           llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
+           llvm::cl::desc("Comma-separated list of experimental features to be used in migrated "
            "code.\n"
            "By default, experimental features will not be used in migrated code.\nThe values are:\n"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
@@ -421,14 +409,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisS
         llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
 
 DPCT_NON_ENUM_OPTION(
-    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ChangeExtension,
-    "change-filename-extension",
-    llvm::cl::desc("DEPRECATED: A comma-separated list that specifies which\n"
-                   "extensions of migrated files will be changed. Default:\n"
-                   ".cu, .cuh, .cpp, .cxx, .cc, .c, .C"),
-    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
-
-DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), LimitChangeExtension,
     "change-cuda-files-extension-only",
     llvm::cl::desc(
@@ -438,5 +418,30 @@ DPCT_NON_ENUM_OPTION(
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunction, "gen-helper-function",
         llvm::cl::desc("Generate helper function files in the --out-root directory. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), PathToHelperFunction,
+    "helper-function-dir",
+    llvm::cl::desc(
+        "Print the installation directory for helper function header files."),
+    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryAPIMapping,
+    "query-api-mapping",
+    llvm::cl::desc(
+        "Query functionally compatible SYCL API to migrate CUDA API."),
+    llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+
+DPCT_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::bits<HelperFuncPreference>), Preferences,
+    "helper-function-preference",
+    DPCT_OPTION_VALUES(DPCT_OPT_ENUM(
+        "no-queue-device", int(HelperFuncPreference::NoQueueDevice),
+        "Call SYCL API to get queue and device instead of calling helper function.\n",
+        false)),
+    llvm::cl::desc("The preference of helper function usage in migration.\n"),
+    llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
+    llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

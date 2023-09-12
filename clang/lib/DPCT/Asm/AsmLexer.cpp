@@ -24,7 +24,11 @@ using namespace clang::dpct;
 
 InlineAsmLexer::InlineAsmLexer(llvm::MemoryBufferRef Input)
     : BufferStart(Input.getBufferStart()), BufferEnd(Input.getBufferEnd()),
-      BufferPtr(Input.getBufferStart()) {}
+      BufferPtr(Input.getBufferStart()) {
+  // Populate the identifier table with info about keywords for the current
+  // language.
+  Identifiers.AddKeywords();
+}
 
 InlineAsmLexer::~InlineAsmLexer() = default;
 

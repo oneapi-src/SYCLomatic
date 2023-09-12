@@ -74,7 +74,7 @@ void host_1() {
 
 
 void foo() {
-  // CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:   dpct::get_out_of_order_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, ceil(2.3)), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {
   // CHECK-NEXT:           kernel();
@@ -613,7 +613,7 @@ __device__ static void multiply(int block_size, AccPtr<T> &ptr, T value) {
 }
 
 __device__ void sincos_1(double x, double* sptr, double* cptr) {
-  // CHECK:  return [&](){ *(sptr) = sycl::sincos(x, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(cptr)); }();
+  // CHECK:  return [&](){ *sptr = sycl::sincos(x, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(cptr)); }();
   return ::sincos(x, sptr, cptr);
 }
 
