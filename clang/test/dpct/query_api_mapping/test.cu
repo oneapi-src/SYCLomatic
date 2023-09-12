@@ -26,4 +26,4 @@
 // WRONG_CUDA_HEADER: dpct exited with code: -44 (Error: Can not find 'hdiv' in current CUDA header file: {{(.+)}}. Please check the API name or use a different CUDA header file with option "--cuda-include-path".)
 
 // RUN: not dpct --cuda-include-path=%S --query-api-mapping=ncclBroadcast 2>&1 | FileCheck %s -check-prefix=NO_CUDA_HEADER
-// NO_CUDA_HEADER: dpct exited with code: -45 (Error: Can-not find 'ncclBroadcast' in current CUDA header file: {{(.+)}}. Please specify the header file for 'ncclBroadcast' with option "--extra-arg".)
+// NO_CUDA_HEADER: dpct exited with code: -45 (Error: Cannot find 'ncclBroadcast' in current CUDA header file: {{(.+)}}. Please specify the header file for 'ncclBroadcast' with option "--extra-arg".)

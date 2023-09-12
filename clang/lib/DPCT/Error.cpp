@@ -170,7 +170,7 @@ void ShowStatus(int Status, std::string Message) {
     break;
   case MigrationErrorAPIMappingNoCUDAHeader:
     StatusString =
-        "Error: Can-not find '" + Message +
+        "Error: Cannot find '" + Message +
         "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
         ". Please specify the header file for '" + Message +
         "' with option \"--extra-arg\".";
