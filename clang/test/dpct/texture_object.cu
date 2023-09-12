@@ -337,12 +337,12 @@ __global__ void texlist_kernel(TexList list, TexList list1) {
 
 // CHECK: dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
-// CHECK-NEXT:       auto tex1_acc = static_cast<dpct::image_wrapper<int, 1> *>(.tex1)->get_access(cgh);
+// CHECK-NEXT:       auto tex1_acc = static_cast<dpct::image_wrapper<int, 1> *>(list1.tex1)->get_access(cgh);
 // CHECK-NEXT:       auto list_tex1_acc = static_cast<dpct::image_wrapper<int, 1> *>(list.tex1)->get_access(cgh);
 // CHECK-NEXT:       auto list_tex2_acc = static_cast<dpct::image_wrapper<float, 2> *>(list.tex2)->get_access(cgh);
 // CHECK-NEXT:       auto list_tex3_acc = static_cast<dpct::image_wrapper<float, 2> *>(list.tex3)->get_access(cgh);
 // CHECK-EMPTY: 
-// CHECK-NEXT:       auto tex1_smpl = .tex1->get_sampler();
+// CHECK-NEXT:       auto tex1_smpl = list1.tex1->get_sampler();
 // CHECK-NEXT:       auto list_tex1_smpl = list.tex1->get_sampler();
 // CHECK-NEXT:       auto list_tex2_smpl = list.tex2->get_sampler();
 // CHECK-NEXT:       auto list_tex3_smpl = list.tex3->get_sampler();

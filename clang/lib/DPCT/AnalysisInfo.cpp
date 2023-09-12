@@ -2604,7 +2604,6 @@ SourceLocation getActualInsertLocation(SourceLocation InsertLoc,
                                        const SourceManager &SM,
                                        const LangOptions &LO);
 
-
 void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
   if (!Ctor)
     return;
@@ -2709,6 +2708,18 @@ std::shared_ptr<TargetType> makeTextureObjectInfo(const ValueDecl *D,
   return std::shared_ptr<TargetType>();
 }
 
+void CallFunctionExpr::buildTextureObjectArgsInfo(const CallExpr *CE) {
+  if (auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts())) {
+    if (auto DRE = dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImpCasts())) {
+      auto BaseObject = makeTextureObjectInfo<StructureTextureObjectInfo>(
+          DRE->getDecl(), CE->getStmtClass() == Stmt::CUDAKernelCallExprClass);
+      if (BaseObject)
+        BaseTextureObject = std::move(BaseObject);
+    }
+  }
+  buildTextureObjectArgsInfo<CallExpr>(CE);
+}
+
 std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
     unsigned ArgIdx, const DeclRefExpr *TexRef, bool isKernelCall) {
   std::shared_ptr<TextureObjectInfo> Info;
@@ -2763,6 +2774,8 @@ std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
 }
 
 void CallFunctionExpr::mergeTextureObjectInfo() {
+  if (BaseTextureObject)
+    BaseTextureObject->merge(FuncInfo->getBaseTextureObject());
   for (unsigned Idx = 0; Idx < TextureObjectList.size(); ++Idx) {
     if (auto &Obj = TextureObjectList[Idx]) {
       Obj->merge(FuncInfo->getTextureObject(Idx));
@@ -2914,6 +2927,10 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
     return;
   VarMap.merge(Other->getVarMap());
   dpct::merge(CallExprMap, Other->CallExprMap);
+  if (BaseObjectTexture)
+    BaseObjectTexture->merge(Other->BaseObjectTexture);
+  else
+    BaseObjectTexture = Other->BaseObjectTexture;
   mergeTextureObjectList(Other->TextureObjectList);
 }
 
@@ -2935,7 +2952,12 @@ void DeviceFunctionInfo::mergeCalledTexObj(
     std::shared_ptr<StructureTextureObjectInfo> BaseObj,
     const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
   if (BaseObj) {
-    if (BaseObj->getParamIdx() < TextureObjectList.size()) {
+    if (BaseObj->isBase()) {
+      if (BaseObjectTexture)
+        BaseObjectTexture->merge(BaseObj);
+      else
+        BaseObjectTexture = BaseObj;
+    } else if (BaseObj->getParamIdx() < TextureObjectList.size()) {
       auto &Parm = TextureObjectList[BaseObj->getParamIdx()];
       if (Parm)
         Parm->merge(BaseObj);
@@ -4511,6 +4533,14 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
   return buildString(RegexPrefix, 'Q', Idx, RegexSuffix);
 }
 
+void StructureTextureObjectInfo::merge(
+    std::shared_ptr<StructureTextureObjectInfo> Target) {
+  if (!Target)
+    return;
+
+  dpct::merge(Members, Target->Members);
+}
+
 std::shared_ptr<StructureTextureObjectInfo>
 StructureTextureObjectInfo::create(const CXXThisExpr *This) {
   auto RD = getRecordDecl(This->getType());
@@ -4523,6 +4553,7 @@ StructureTextureObjectInfo::create(const CXXThisExpr *This) {
       new StructureTextureObjectInfo(LocInfo.second, LocInfo.first,
                                      RD->getName()));
   Ret->ContainsVirtualPointer = checkPointerInStructRecursively(RD);
+  Ret->IsBase = true;
   Ret->setType("", 0);
   return Ret;
 }

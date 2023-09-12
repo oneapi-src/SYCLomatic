@@ -2943,6 +2943,7 @@ public:
   }
   static std::shared_ptr<StructureTextureObjectInfo>
   create(const CXXThisExpr *This);
+  bool isBase() const { return IsBase; }
   bool containsVirtualPointer() const { return ContainsVirtualPointer; }
   std::shared_ptr<MemberTextureObjectInfo> addMember(const MemberExpr *ME) {
     auto Member = MemberTextureObjectInfo::create(ME);
@@ -2955,11 +2956,9 @@ public:
     }
   }
   void addParamDeclReplacement() override { return; }
+  void merge(std::shared_ptr<StructureTextureObjectInfo> Target);
   void merge(std::shared_ptr<TextureObjectInfo> Target) override {
-    if (auto T =
-            std::dynamic_pointer_cast<StructureTextureObjectInfo>(Target)) {
-      dpct::merge(Members, T->Members);
-    }
+    merge(std::dynamic_pointer_cast<StructureTextureObjectInfo>(Target));
   }
   ParameterStream &getKernelArg(ParameterStream &OS) override {
     OS << Name;
@@ -3546,6 +3545,8 @@ private:
 
   std::string getNameWithNamespace(const FunctionDecl *FD, const Expr *Callee);
 
+  void buildTextureObjectArgsInfo(const CallExpr* CE);
+
   template <class CallT> void buildTextureObjectArgsInfo(const CallT *C) {
     auto Args = C->arguments();
     auto IsKernel = C->getStmtClass() == Stmt::CUDAKernelCallExprClass;
@@ -3811,6 +3812,9 @@ public:
       return TextureObjectList[Idx];
     return {};
   }
+  std::shared_ptr<StructureTextureObjectInfo> getBaseTextureObject() const {
+    return BaseObjectTexture;
+  }
 
   inline void setCallGroupFunctionInControlFlow(bool Val = true) {
     CallGroupFunctionInControlFlow = Val;
@@ -3924,6 +3928,7 @@ private:
   GlobalMap<CallFunctionExpr> CallExprMap;
   MemVarMap VarMap;
 
+  std::shared_ptr<StructureTextureObjectInfo> BaseObjectTexture;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
