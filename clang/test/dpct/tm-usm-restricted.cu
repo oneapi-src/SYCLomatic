@@ -540,7 +540,9 @@ template <class T, class vecT> void foo_test_2131() {
 
 // CHECK: void EventRecord( dpct::event_ptr hEvent, dpct::queue_ptr hStream) {
 // CHECK-NEXT:   int result = DPCT_CHECK_ERROR(*hEvent = hStream->ext_oneapi_submit_barrier());
+// CHECK-NEXT:   *hEvent = hStream->ext_oneapi_submit_barrier();
 // CHECK-NEXT:}
 void EventRecord( cudaEvent_t hEvent, cudaStream_t hStream) {
    CUresult result = cuEventRecord( hEvent, hStream);
+   cuEventRecord(hEvent, hStream);
 }
