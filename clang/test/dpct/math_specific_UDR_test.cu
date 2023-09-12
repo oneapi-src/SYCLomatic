@@ -35,7 +35,7 @@ __global__ void kernelFunc(float *deviceArray) {
 
 // CHECK: void testDouble() {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   const unsigned int NUM = 1;
 // CHECK:   const unsigned int bytes = NUM * sizeof(double);
 // CHECK:   double *hostArrayDouble = (double *)malloc(bytes);
@@ -66,7 +66,7 @@ void testDouble() {
 
 // CHECK: void testFloat() {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   const unsigned int NUM = 1;
 // CHECK:   const unsigned int bytes = NUM * sizeof(float);
 // CHECK:   float *hostArrayFloat = (float *)malloc(bytes);

@@ -110,6 +110,9 @@ int main(int argc, char **argv) {
 
   // CHECK: int buswidth = deviceProp.get_memory_bus_width();
   int buswidth = deviceProp.memoryBusWidth;
+  // CHECK: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with l2CacheSize. It was migrated to global_mem_cache_size. You may need to adjust the value of global_mem_cache_size for the specific device.
+  // CHECK: int L2CacheSize = deviceProp.get_global_mem_cache_size();
+  int L2CacheSize = deviceProp.l2CacheSize;
 
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
@@ -163,7 +166,7 @@ void test()
 {
   // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
-  // CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
+  // CHECK:   dpct::get_out_of_order_queue().parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, deviceProp.get_max_compute_units()) * sycl::range<3>(1, 1, deviceProp.get_max_work_group_size()), sycl::range<3>(1, 1, deviceProp.get_max_work_group_size())),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           foo_kernel();

@@ -36,14 +36,11 @@ public:
 };
 
 template <typename T> inline bool isnan(const T a) { return sycl::isnan(a); }
-inline bool isnan(const sycl::ext::oneapi::bfloat16 a) {
 #ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
+inline bool isnan(const sycl::ext::oneapi::bfloat16 a) {
   return sycl::ext::oneapi::experimental::isnan(a);
-#else
-  throw std::runtime_error("bfloat16 version isnan is only supported in "
-                           "sycl::ext::oneapi::experimental.");
-#endif
 }
+#endif
 
 /// Extend the 'val' to 'bit' size, zero extend for unsigned int and signed
 /// extend for signed int.
@@ -137,12 +134,20 @@ template <typename T> inline T length(const T *a, const int len) {
 /// \param [in] max_val The maximum value
 /// \returns the value between min_val and max_val
 template <typename T> inline T clamp(T val, T min_val, T max_val) {
+  return sycl::clamp(val, min_val, max_val);
+}
+#ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
+template <>
+inline sycl::ext::oneapi::bfloat16 clamp(sycl::ext::oneapi::bfloat16 val,
+                                         sycl::ext::oneapi::bfloat16 min_val,
+                                         sycl::ext::oneapi::bfloat16 max_val) {
   if (val < min_val)
     return min_val;
   if (val > max_val)
     return max_val;
   return val;
 }
+#endif
 template <typename T>
 inline sycl::marray<T, 2> clamp(sycl::marray<T, 2> val,
                                 sycl::marray<T, 2> min_val,
@@ -267,6 +272,9 @@ inline std::enable_if_t<T::size() == 2, T> isnan(const T a) {
   return {detail::isnan(a[0]), detail::isnan(a[1])};
 }
 
+/// cbrt function wrapper.
+template <typename T> inline T cbrt(T val) { return sycl::cbrt((T)val); }
+
 // min function overloads.
 // For floating-point types, `float` or `double` arguments are acceptable.
 // For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
@@ -362,6 +370,22 @@ inline std::uint64_t max(const std::uint64_t a, const std::uint32_t b) {
 }
 inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
   return sycl::max(static_cast<std::uint64_t>(a), b);
+}
+
+// pow functions overload.
+inline float pow(const float a, const int b) { return sycl::pown(a, b); }
+inline double pow(const double a, const int b) { return sycl::pown(a, b); }
+inline float pow(const float a, const float b) { return sycl::pow(a, b); }
+inline double pow(const double a, const double b) { return sycl::pow(a, b); }
+template <typename T, typename U>
+inline typename std::enable_if_t<std::is_floating_point_v<T>, T>
+pow(const T a, const U b) {
+  return sycl::pow(a, static_cast<T>(b));
+}
+template <typename T, typename U>
+inline typename std::enable_if_t<!std::is_floating_point_v<T>, double>
+pow(const T a, const U b) {
+  return sycl::pow(static_cast<double>(a), static_cast<double>(b));
 }
 
 /// Performs relu saturation.

@@ -9,7 +9,7 @@ class TestObject{
 public:
   // CHECK: static void run(int *in, int *out, const sycl::nd_item<3> &item_ct1) {
   // CHECK-NEXT:    /*
-  // CHECK-NEXT:    DPCT1115:{{[0-9]+}}: The sycl::ext::oneapi::group_local_memory is used to allocate local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.
+  // CHECK-NEXT:    DPCT1115:{{[0-9]+}}: The sycl::ext::oneapi::group_local_memory is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.
   // CHECK-NEXT:    */
   // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory<int>(item_ct1.get_group()); // the size of s is static
   // CHECK-NEXT:  a0 = item_ct1.get_local_id(2);
@@ -77,7 +77,7 @@ void testTemplate() {
   cudaMalloc((void **)&d_d, mem_size);
   cudaMemcpy(d_d, a, mem_size, cudaMemcpyHostToDevice);
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     dpct::access_wrapper<T *> d_d_acc_ct0(d_d, cgh);
   // CHECK-EMPTY:
@@ -92,7 +92,7 @@ void testTemplate() {
 
 int main(void) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   const int n = 64;
   int a[n], r[n], d[n];
   int *d_d;

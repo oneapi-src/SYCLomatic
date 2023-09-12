@@ -1,5 +1,5 @@
-void test(void *pv) {
+void test(void *pHost) {
   // Start
-  cudaFreeHost(pv /*void **/);
+  cudaFreeHost(pHost /*void **/);
   // End
 }

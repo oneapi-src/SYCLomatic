@@ -40,7 +40,7 @@ static texture<uint2, 1> tex21;
 // CHECK: void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: sycl::uint2 u21 = tex21.read(1.0f);
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1112:{{[0-9]+}}: If the filter mode is set to 'linear', the behavior of "read" may be different from "tex1Dfetch". You may need to adjust the code.
+// CHECK-NEXT: DPCT1112:{{[0-9]+}}: If the filter mode is set to 'linear', the behavior of image "read" may be different from "tex1Dfetch" in the original code. You may need to adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: sycl::uint2 u21_fetch = tex21.read(1);
 // CHECK-NEXT: float data[3][3];
@@ -148,7 +148,7 @@ int main() {
   // CHECK: desc21 = a42->get_channel();
   cudaGetChannelDesc(&desc21, a42);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto tex42_acc = tex42.get_access(cgh);
   // CHECK-NEXT:         auto tex21_acc = tex21.get_access(cgh);

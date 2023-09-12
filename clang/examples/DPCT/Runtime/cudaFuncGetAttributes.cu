@@ -1,5 +1,6 @@
-void test(cudaFuncAttributes *pf, const void *pv) {
+void test(const void *f) {
   // Start
-  cudaFuncGetAttributes(pf /*cudaFuncAttributes **/, pv /*const void **/);
+  cudaFuncAttributes *attr;
+  cudaFuncGetAttributes(attr, f /*const void **/);
   // End
 }

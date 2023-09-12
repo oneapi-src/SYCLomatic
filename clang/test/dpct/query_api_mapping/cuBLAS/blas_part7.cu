@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZher2k | FileCheck %s -check-prefix=cublasZher2k
 // cublasZher2k: CUDA API:
 // cublasZher2k-NEXT:   cublasZher2k(handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/,
@@ -44,7 +46,7 @@
 // cublasSrotg-NEXT:   float* c_ct{{[0-9]+}} = c;
 // cublasSrotg-NEXT:   float* s_ct{{[0-9]+}} = s;
 // cublasSrotg-NEXT:   if(sycl::get_pointer_type(a, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasSrotg-NEXT:     a_ct{{[0-9]+}} = sycl::malloc_shared<float>(4, dpct::get_default_queue());
+// cublasSrotg-NEXT:     a_ct{{[0-9]+}} = sycl::malloc_shared<float>(4, dpct::get_in_order_queue());
 // cublasSrotg-NEXT:     b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
 // cublasSrotg-NEXT:     c_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
 // cublasSrotg-NEXT:     s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 3;
@@ -60,7 +62,7 @@
 // cublasSrotg-NEXT:     *b = *b_ct{{[0-9]+}};
 // cublasSrotg-NEXT:     *c = *c_ct{{[0-9]+}};
 // cublasSrotg-NEXT:     *s = *s_ct{{[0-9]+}};
-// cublasSrotg-NEXT:     sycl::free(a_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasSrotg-NEXT:     sycl::free(a_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasSrotg-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgemmEx | FileCheck %s -check-prefix=cublasSgemmEx
@@ -84,7 +86,7 @@
 // cublasDrotmg-NEXT:   double* x1_ct{{[0-9]+}} = x1;
 // cublasDrotmg-NEXT:   double* param_ct{{[0-9]+}} = param;
 // cublasDrotmg-NEXT:   if(sycl::get_pointer_type(d1, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(d1, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasDrotmg-NEXT:     d1_ct{{[0-9]+}} = sycl::malloc_shared<double>(8, dpct::get_default_queue());
+// cublasDrotmg-NEXT:     d1_ct{{[0-9]+}} = sycl::malloc_shared<double>(8, dpct::get_in_order_queue());
 // cublasDrotmg-NEXT:     d2_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 1;
 // cublasDrotmg-NEXT:     x1_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 2;
 // cublasDrotmg-NEXT:     param_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 3;
@@ -98,8 +100,8 @@
 // cublasDrotmg-NEXT:     *d1 = *d1_ct{{[0-9]+}};
 // cublasDrotmg-NEXT:     *d2 = *d2_ct{{[0-9]+}};
 // cublasDrotmg-NEXT:     *x1 = *x1_ct{{[0-9]+}};
-// cublasDrotmg-NEXT:     dpct::get_default_queue().memcpy(param, param_ct{{[0-9]+}}, sizeof(double)*5).wait();
-// cublasDrotmg-NEXT:     sycl::free(d1_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasDrotmg-NEXT:     dpct::get_in_order_queue().memcpy(param, param_ct{{[0-9]+}}, sizeof(double)*5).wait();
+// cublasDrotmg-NEXT:     sycl::free(d1_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasDrotmg-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasStpmv | FileCheck %s -check-prefix=cublasStpmv
@@ -166,8 +168,8 @@
 // cublasZrotg-NEXT:   double* c_ct{{[0-9]+}} = c;
 // cublasZrotg-NEXT:   sycl::double2* s_ct{{[0-9]+}} = s;
 // cublasZrotg-NEXT:   if(sycl::get_pointer_type(a, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasZrotg-NEXT:     a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(3, dpct::get_default_queue());
-// cublasZrotg-NEXT:     c_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
+// cublasZrotg-NEXT:     a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(3, dpct::get_in_order_queue());
+// cublasZrotg-NEXT:     c_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_in_order_queue());
 // cublasZrotg-NEXT:     b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
 // cublasZrotg-NEXT:     s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
 // cublasZrotg-NEXT:     *a_ct{{[0-9]+}} = *a;
@@ -182,8 +184,8 @@
 // cublasZrotg-NEXT:     *b = *b_ct{{[0-9]+}};
 // cublasZrotg-NEXT:     *c = *c_ct{{[0-9]+}};
 // cublasZrotg-NEXT:     *s = *s_ct{{[0-9]+}};
-// cublasZrotg-NEXT:     sycl::free(a_ct{{[0-9]+}}, dpct::get_default_queue());
-// cublasZrotg-NEXT:     sycl::free(c_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasZrotg-NEXT:     sycl::free(a_ct{{[0-9]+}}, dpct::get_in_order_queue());
+// cublasZrotg-NEXT:     sycl::free(c_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasZrotg-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasHgemm | FileCheck %s -check-prefix=cublasHgemm
@@ -215,7 +217,7 @@
 // cublasSrotmg-NEXT:   float* x1_ct{{[0-9]+}} = x1;
 // cublasSrotmg-NEXT:   float* param_ct{{[0-9]+}} = param;
 // cublasSrotmg-NEXT:   if(sycl::get_pointer_type(d1, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(d1, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasSrotmg-NEXT:     d1_ct{{[0-9]+}} = sycl::malloc_shared<float>(8, dpct::get_default_queue());
+// cublasSrotmg-NEXT:     d1_ct{{[0-9]+}} = sycl::malloc_shared<float>(8, dpct::get_in_order_queue());
 // cublasSrotmg-NEXT:     d2_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 1;
 // cublasSrotmg-NEXT:     x1_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 2;
 // cublasSrotmg-NEXT:     param_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 3;
@@ -229,8 +231,8 @@
 // cublasSrotmg-NEXT:     *d1 = *d1_ct{{[0-9]+}};
 // cublasSrotmg-NEXT:     *d2 = *d2_ct{{[0-9]+}};
 // cublasSrotmg-NEXT:     *x1 = *x1_ct{{[0-9]+}};
-// cublasSrotmg-NEXT:     dpct::get_default_queue().memcpy(param, param_ct{{[0-9]+}}, sizeof(float)*5).wait();
-// cublasSrotmg-NEXT:     sycl::free(d1_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasSrotmg-NEXT:     dpct::get_in_order_queue().memcpy(param, param_ct{{[0-9]+}}, sizeof(float)*5).wait();
+// cublasSrotmg-NEXT:     sycl::free(d1_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasSrotmg-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZhbmv | FileCheck %s -check-prefix=cublasZhbmv

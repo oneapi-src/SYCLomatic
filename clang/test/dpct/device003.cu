@@ -1,10 +1,20 @@
 // RUN: dpct --format-range=none -out-root %T/device003 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device003/device003.dp.cpp
 
+#include<cuda_runtime.h>
+#include<cstdio>
+
 template <typename T>
 void check(T result, char const *const func) {}
 
 #define checkErrors(val) check((val), #val)
+
+#define CUDA_SAFE_CALL( call) do {                                         \
+    cudaError err = call;                                                    \
+    if( cudaSuccess != err) {                                                \
+      fprintf(stderr, "Cuda error in call at file '%s' in line %i : %s.\n",  \
+       __FILE__, __LINE__, cudaGetErrorString( err) );                       \
+    } } while (0)
 
 int main(int argc, char **argv)
 {
@@ -18,8 +28,11 @@ int dev_id;
 checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
-// CHECK:checkErrors(DPCT_CHECK_ERROR(dpct::get_device_info(deviceProp, dpct::dev_mgr::instance().get_device(0)));
+// CHECK:checkErrors(DPCT_CHECK_ERROR(dpct::get_device_info(deviceProp, dpct::dev_mgr::instance().get_device(0))));
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
+
+// CHECK:CUDA_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_device_info(deviceProp, dpct::dev_mgr::instance().get_device(dev_id))));
+CUDA_SAFE_CALL(cudaGetDeviceProperties(&deviceProp, dev_id));
 
 int atomicSupported;
 // CHECK: checkErrors(DPCT_CHECK_ERROR(atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));

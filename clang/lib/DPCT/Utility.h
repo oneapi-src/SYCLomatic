@@ -264,6 +264,8 @@ size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E,
                             clang::SourceRange Parent = clang::SourceRange());
+std::string getStmtSpelling(clang::SourceRange SR,
+                            clang::SourceRange Parent = clang::SourceRange());
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;
@@ -587,6 +589,7 @@ bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
 std::string getAddressSpace(const clang::CallExpr *C, int ArgIdx);
 std::string getNameSpace(const NamespaceDecl *NSD);
+bool isFromCUDA(const Decl *D);
 namespace clang {
 namespace dpct {
 std::string getDpctVersionStr();

@@ -743,7 +743,7 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
 
     auto IL1 = dyn_cast<IntegerLiteral>(Arg1->IgnoreCasts());
     auto FL1 = dyn_cast<FloatingLiteral>(Arg1->IgnoreCasts());
-    auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
+
     // For integer literal 2 or floating literal 2.0/2.0f, expand pow to
     // multiply expression:
     // pow(x, 2) ==> x * x, if x is an expression that has no side effects.
@@ -754,13 +754,10 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
       if (IL1->getValue().getZExtValue() == 2)
         IsExponentTwo = true;
     } else if (FL1) {
-      auto &SM = DpctGlobalInfo::getSourceManager();
       if (!FL1->getBeginLoc().isMacroID() && !FL1->getEndLoc().isMacroID()) {
-        auto B = SM.getCharacterData(FL1->getBeginLoc());
-        auto E = SM.getCharacterData(
-            Lexer::getLocForEndOfToken(FL1->getEndLoc(), 0, SM, LangOptions()));
-        std::string Exponent(B, E);
-        if (Exponent == "2.0" || Exponent == "2.0f")
+        llvm::APFloat FL1Value = FL1->getValue();
+        if (FL1Value.compare(llvm::APFloat(FL1Value.getSemantics(), "2.0")) ==
+            llvm::APFloat::cmpEqual)
           IsExponentTwo = true;
       }
     }
@@ -773,20 +770,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
         return Arg0Str + " * " + Arg0Str;
       else
         return "(" + Arg0Str + ") * (" + Arg0Str + ")";
-    }
-    if (IL1 || T1 == "int" || T1 == "unsigned int" || T1 == "char" ||
-        T1 == "unsigned char" || T1 == "short" || T1 == "unsigned short") {
-      if (T0 == "int") {
-        if (DRE0) {
-          RewriteArgList[0] = "(float)" + RewriteArgList[0];
-        } else {
-          RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
-        }
-      }
-      if (T1 != "int") {
-        RewriteArgList[1] = "(int)" + RewriteArgList[1];
-      }
-      TargetCalleeName = MapNames::getClNamespace(false, true) + "pown";
     }
     return buildRewriteString();
   } else if (FuncName == "erfcx" || FuncName == "erfcxf") {

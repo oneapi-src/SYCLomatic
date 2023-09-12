@@ -13,7 +13,7 @@ __global__ void foo_kernel(T** R)
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1069:{{[0-9]+}}: The argument 'R' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
 //CHECK-NEXT:   */
-//CHECK-NEXT:   dpct::get_default_queue().submit(
+//CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:     [&](sycl::handler &cgh) {
 //CHECK-NEXT:       dpct::access_wrapper<float **> R_acc_ct0(R, cgh);
 //CHECK-EMPTY:

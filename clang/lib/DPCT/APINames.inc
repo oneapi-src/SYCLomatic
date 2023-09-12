@@ -85,7 +85,7 @@ ENTRY(cudaGetLastError, cudaGetLastError, true, NO_FLAG, P0, "DPCT1010")
 ENTRY(cudaPeekAtLastError, cudaPeekAtLastError, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
 
 // stream management functions of API
-ENTRY(cudaCtxResetPersistingL2Cache, cudaCtxResetPersistingL2Cache, false, NO_FLAG, P7, "comment")
+ENTRY(cudaCtxResetPersistingL2Cache, cudaCtxResetPersistingL2Cache, true, NO_FLAG, P7, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamAddCallback, cudaStreamAddCallback, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaStreamAttachMemAsync, cudaStreamAttachMemAsync, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamBeginCapture, cudaStreamBeginCapture, true, API_CALL_REMOVED, P4, "DPCT1026/DPCT1027")
@@ -95,14 +95,14 @@ ENTRY(cudaStreamCreateWithFlags, cudaStreamCreateWithFlags, true, NO_FLAG, P0, "
 ENTRY(cudaStreamCreateWithPriority, cudaStreamCreateWithPriority, true, NO_FLAG, P0, "Successful: DPCT1025")
 ENTRY(cudaStreamDestroy, cudaStreamDestroy, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaStreamEndCapture, cudaStreamEndCapture, true, API_CALL_REMOVED, P4, "DPCT1026/DPCT1027")
-ENTRY(cudaStreamGetAttribute, cudaStreamGetAttribute, false, NO_FLAG, P7, "comment")
+ENTRY(cudaStreamGetAttribute, cudaStreamGetAttribute, true, NO_FLAG, P7, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamGetCaptureInfo, cudaStreamGetCaptureInfo_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cudaStreamGetFlags, cudaStreamGetFlags, true, NO_FLAG, P4, "DPCT1014")
 ENTRY(cudaStreamGetId, cudaStreamGetId, false, NO_FLAG, P4, "comment")
 ENTRY(cudaStreamGetPriority, cudaStreamGetPriority, true, NO_FLAG, P4, "DPCT1014")
 ENTRY(cudaStreamIsCapturing, cudaStreamIsCapturing, true, API_CALL_REMOVED, P4, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamQuery, cudaStreamQuery, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
-ENTRY(cudaStreamSetAttribute, cudaStreamSetAttribute, false, NO_FLAG, P7, "comment")
+ENTRY(cudaStreamSetAttribute, cudaStreamSetAttribute, true, NO_FLAG, P7, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamSynchronize, cudaStreamSynchronize, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaStreamUpdateCaptureDependencies, cudaStreamUpdateCaptureDependencies, false, NO_FLAG, P4, "comment")
 ENTRY(cudaStreamWaitEvent, cudaStreamWaitEvent, true, API_CALL_UNSUPPORTED, P0, "Successful")
@@ -130,7 +130,7 @@ ENTRY(cudaWaitExternalSemaphoresAsync, cudaWaitExternalSemaphoresAsync, false, N
 
 // execution control functions of runtime API
 ENTRY(cudaFuncGetAttributes, cudaFuncGetAttributes, true, NO_FLAG, P0, "Successful")
-ENTRY(cudaFuncSetAttribute, cudaFuncSetAttribute, false, NO_FLAG, P0, "comment")
+ENTRY(cudaFuncSetAttribute, cudaFuncSetAttribute, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
 ENTRY(cudaFuncSetCacheConfig, cudaFuncSetCacheConfig, true, API_CALL_UNSUPPORTED, P0, "DPCT1026")
 ENTRY(cudaFuncSetSharedMemConfig, cudaFuncSetSharedMemConfig, true, NO_FLAG, P0, "DPCT1026")
 ENTRY(cudaGetParameterBuffer, cudaGetParameterBuffer, false, NO_FLAG, P4, "comment")
@@ -1979,7 +1979,7 @@ ENTRY(cuArrayGetMemoryRequirements, cuArrayGetMemoryRequirements, false, NO_FLAG
 ENTRY(cuArrayGetPlane, cuArrayGetPlane, false, NO_FLAG, P7, "comment")
 ENTRY(cuArrayGetSparseProperties, cuArrayGetSparseProperties, false, NO_FLAG, P7, "comment")
 ENTRY(cuCtxGetExecAffinity, cuCtxGetExecAffinity, false, NO_FLAG, P7, "comment")
-ENTRY(cuCtxResetPersistingL2Cache, cuCtxResetPersistingL2Cache, false, NO_FLAG, P7, "comment")
+ENTRY(cuCtxResetPersistingL2Cache, cuCtxResetPersistingL2Cache, true, NO_FLAG, P7, "DPCT1026/DPCT1027")
 ENTRY(cuDeviceGetDefaultMemPool, cuDeviceGetDefaultMemPool, false, NO_FLAG, P7, "comment")
 ENTRY(cuDeviceGetExecAffinitySupport, cuDeviceGetExecAffinitySupport, false, NO_FLAG, P4, "comment")
 ENTRY(cuDeviceGetGraphMemAttribute, cuDeviceGetGraphMemAttribute, false, NO_FLAG, P4, "comment")
@@ -2116,3 +2116,23 @@ ENTRY(make_cuDoubleComplex, make_cuDoubleComplex, true, NO_FLAG, P4, "comment")
 ENTRY(make_cuFloatComplex, make_cuFloatComplex, true, NO_FLAG, P4, "comment")
 ENTRY(__assert_fail, __assert_fail, false, NO_FLAG, P4, "comment")
 ENTRY(__assertfail, __assertfail, false, NO_FLAG, P4, "comment")
+
+// add driver APIs for v12.2
+// Multicast Object Management
+ENTRY(cuMulticastAddDevice, cuMulticastAddDevice, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastBindAddr, cuMulticastBindAddr, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastBindMem, cuMulticastBindMem, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastCreate, cuMulticastCreate, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastGetGranularity, cuMulticastGetGranularity, false, NO_FLAG, P4, "comment")
+ENTRY(cuMulticastUnbind, cuMulticastUnbind, false, NO_FLAG, P4, "comment")
+
+ENTRY(cuGraphAddNode, cuGraphAddNode, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphExecGetFlags, cuGraphExecGetFlags, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphExecNodeSetParams, cuGraphExecNodeSetParams, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphNodeSetParams, cuGraphNodeSetParams, false, NO_FLAG, P4, "comment")
+
+// Coredump Attributes Control API
+ENTRY(cuCoredumpGetAttribute, cuCoredumpGetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuCoredumpGetAttributeGlobal, cuCoredumpGetAttributeGlobal, false, NO_FLAG, P4, "comment")
+ENTRY(cuCoredumpSetAttribute, cuCoredumpSetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuCoredumpSetAttributeGlobal, cuCoredumpSetAttributeGlobal, false, NO_FLAG, P4, "comment")

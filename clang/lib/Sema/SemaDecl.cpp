@@ -5926,6 +5926,10 @@ Decl *Sema::BuildMicrosoftCAnonymousStruct(Scope *S, DeclSpec &DS,
   Chain.push_back(Anon);
 
   RecordDecl *RecordDef = Record->getDefinition();
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (!RecordDef)
+    return Anon;
+#endif //SYCLomatic_CUSTOMIZATION
   if (RequireCompleteSizedType(Anon->getLocation(), RecTy,
                                diag::err_field_incomplete_or_sizeless) ||
       InjectAnonymousStructOrUnionMembers(
@@ -8106,8 +8110,14 @@ NamedDecl *Sema::ActOnVariableDeclarator(
       case SC_Register:
         // Local Named register
         if (!Context.getTargetInfo().isValidGCCRegisterName(Label) &&
-            DeclAttrsMatchCUDAMode(getLangOpts(), getCurFunctionDecl()))
-          Diag(E->getExprLoc(), diag::err_asm_unknown_register_name) << Label;
+            DeclAttrsMatchCUDAMode(getLangOpts(), getCurFunctionDecl())) {
+          if (getLangOpts().SYCLIsDevice)
+            SYCLDiagIfDeviceCode(E->getExprLoc(),
+                                 diag::err_asm_unknown_register_name)
+                << Label;
+          else
+            Diag(E->getExprLoc(), diag::err_asm_unknown_register_name) << Label;
+        }
         break;
       case SC_Static:
       case SC_Extern:

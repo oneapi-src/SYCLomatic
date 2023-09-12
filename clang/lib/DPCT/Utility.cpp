@@ -214,9 +214,12 @@ size_t calculateExpansionLevel(const SourceLocation Loc, bool IsBegin) {
 
 // Get textual representation of the Stmt.
 std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
-  std::string Str;
   if (!S)
-    return Str;
+    return "";
+  return getStmtSpelling(S->getSourceRange(), ParentRange);
+}
+
+std::string getStmtSpelling(clang::SourceRange SR, SourceRange ParentRange) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
 
@@ -234,7 +237,7 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
                          SM.getFileOffset(ParentRange.getBegin());
   if (ParentRangeSize <= 0) {
     // if ParentRange is invalid, getDefinitionRange is the best we can have
-    auto DRange = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
+    auto DRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
     BeginLoc = DRange.getBegin();
     EndLoc = DRange.getEnd();
     Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
@@ -243,7 +246,7 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
   } else {
     // if ParentRange is valid, find the expansion location in the ParentRange
     auto Range =
-        getRangeInRange(S, ParentRange.getBegin(), ParentRange.getEnd());
+        getRangeInRange(SR, ParentRange.getBegin(), ParentRange.getEnd());
     BeginLoc = Range.first;
     EndLoc = Range.second;
     Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc);
@@ -251,8 +254,8 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
 
   if (Length <= 0)
     return "";
-  Str = std::string(SM.getCharacterData(BeginLoc), Length);
-  return Str;
+  return std::string(SM.getCharacterData(BeginLoc), Length);
+   
 }
 
 SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
@@ -4425,6 +4428,33 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
   return NameSpace;
 }
 
+bool isFromCUDA(const Decl *D) {
+  SourceLocation DeclLoc =
+      dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+          D->getLocation());
+  std::string DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+  makeCanonical(DeclLocFilePath);
+
+  // clang hacked the declarations of std::min/std::max
+  // In original code, the declaration should be in standard lib,
+  // but clang need to add device version overload, so it hacked the
+  // resolution by adding a special attribute.
+  // So we need treat function which is declared in this file as it
+  // is from standard lib.
+  SmallString<512> AlgorithmFileInCudaWrapper = StringRef(DpctInstallPath);
+  path::append(AlgorithmFileInCudaWrapper, Twine("lib"), Twine("clang"),
+               Twine(CLANG_VERSION_MAJOR_STRING), Twine("include"));
+  path::append(AlgorithmFileInCudaWrapper, Twine("cuda_wrappers"),
+               Twine("algorithm"));
+
+  if (AlgorithmFileInCudaWrapper.str().str() == DeclLocFilePath) {
+    return false;
+  }
+
+  return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
+          isChildPath(DpctInstallPath, DeclLocFilePath));
+}
+
 namespace clang {
 namespace dpct {
 void requestFeature(HelperFeatureEnum Feature) {
@@ -4467,6 +4497,5 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
     requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
   }
 }
-
 } // namespace dpct
 } // namespace clang

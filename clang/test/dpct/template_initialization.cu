@@ -49,7 +49,7 @@ void run_test() {
   T* d_out;
   cudaMalloc((void **)&d_out, mem_size);
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     dpct::access_wrapper<T *> d_in_acc_ct0(d_in, cgh);
   // CHECK-NEXT:     auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);

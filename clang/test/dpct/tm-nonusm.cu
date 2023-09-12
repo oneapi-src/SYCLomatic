@@ -27,7 +27,7 @@ void add(int *a, int *b) {
 
 int main() {
     // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-    // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+    // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
     cudaStream_t stream;
 
     int ha[N], hb[N];
@@ -810,7 +810,9 @@ template <class T, class vecT> void foo_test_2131() {
 
 // CHECK:void EventRecord( dpct::event_ptr hEvent, dpct::queue_ptr hStream) {
 // CHECK-NEXT:   int result = DPCT_CHECK_ERROR(*hEvent = hStream->ext_oneapi_submit_barrier());
+// CHECK-NEXT:   *hEvent = hStream->ext_oneapi_submit_barrier();
 // CHECK-NEXT:}
 void EventRecord( cudaEvent_t hEvent, cudaStream_t hStream) {
    CUresult result = cuEventRecord( hEvent, hStream);
+   cuEventRecord(hEvent, hStream);
 }

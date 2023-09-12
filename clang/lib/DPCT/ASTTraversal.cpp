@@ -1664,7 +1664,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusolverAlgMode_t", "cusparseIndexType_t", "cusparseFormat_t",
               "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
-              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t"))))))
+              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t",
+              "cudaFuncAttributes"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3123,6 +3124,9 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), std::move(Repl)));
     return;
+  } else if (MemberName == "l2CacheSize") {
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+           MemberName, "global_mem_cache_size");
   } else if (MemberName == "ECCEnabled") {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string Repl = MapNames::getDpctNamespace() +
@@ -4470,6 +4474,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
           if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
             requestFeature(HelperFeatureEnum::device_ext);
+            auto DefaultQueue = DpctGlobalInfo::getDefaultQueue(CE->getArg(i));
             std::string ResultTempPtr =
                 "res_temp_ptr_ct" +
                 std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
@@ -4478,17 +4483,16 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                 std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
             PrefixInsertStr = PrefixInsertStr + "int64_t* " + ResultTempPtr +
                               " = " + MapNames::getClNamespace() +
-                              "malloc_shared<int64_t>(" + "1, " +
-                              MapNames::getDpctNamespace() +
-                              "get_default_queue());" + getNL() + IndentStr;
-            SuffixInsertStr =
-                SuffixInsertStr + getNL() + IndentStr + "int " +
-                ResultTempHost + " = (int)*" + ResultTempPtr + ";" + getNL() +
-                IndentStr + MapNames::getDpctNamespace() + "dpct_memcpy(" +
-                ExprAnalysis::ref(CE->getArg(i)) + ", &" + ResultTempHost +
-                ", sizeof(int));" + getNL() + IndentStr +
-                MapNames::getClNamespace() + "free(" + ResultTempPtr + ", " +
-                MapNames::getDpctNamespace() + "get_default_queue());";
+                              "malloc_shared<int64_t>(" + "1, " + DefaultQueue +
+                              ");" + getNL() + IndentStr;
+            SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "int " +
+                              ResultTempHost + " = (int)*" + ResultTempPtr +
+                              ";" + getNL() + IndentStr +
+                              MapNames::getDpctNamespace() + "dpct_memcpy(" +
+                              ExprAnalysis::ref(CE->getArg(i)) + ", &" +
+                              ResultTempHost + ", sizeof(int));" + getNL() +
+                              IndentStr + MapNames::getClNamespace() + "free(" +
+                              ResultTempPtr + ", " + DefaultQueue + ");";
             CurrentArgumentRepl = ResultTempPtr;
           } else {
             CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
@@ -4615,6 +4619,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
           if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+            auto DefaultQueue = DpctGlobalInfo::getDefaultQueue(CE->getArg(i));
             requestFeature(HelperFeatureEnum::device_ext);
             std::string ResultTempPtr =
                 "res_temp_ptr_ct" +
@@ -4624,17 +4629,16 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                 std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
             PrefixInsertStr = PrefixInsertStr + "int64_t* " + ResultTempPtr +
                               " = " + MapNames::getClNamespace() +
-                              "malloc_shared<int64_t>(" + "1, " +
-                              MapNames::getDpctNamespace() +
-                              "get_default_queue());" + getNL() + IndentStr;
-            SuffixInsertStr =
-                SuffixInsertStr + getNL() + IndentStr + "int " +
-                ResultTempHost + " = (int)*" + ResultTempPtr + ";" + getNL() +
-                IndentStr + MapNames::getDpctNamespace() + "dpct_memcpy(" +
-                ExprAnalysis::ref(CE->getArg(i)) + ", &" + ResultTempHost +
-                ", sizeof(int));" + getNL() + IndentStr +
-                MapNames::getClNamespace() + "free(" + ResultTempPtr + ", " +
-                MapNames::getDpctNamespace() + "get_default_queue());";
+                              "malloc_shared<int64_t>(" + "1, " + DefaultQueue +
+                              ");" + getNL() + IndentStr;
+            SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "int " +
+                              ResultTempHost + " = (int)*" + ResultTempPtr +
+                              ";" + getNL() + IndentStr +
+                              MapNames::getDpctNamespace() + "dpct_memcpy(" +
+                              ExprAnalysis::ref(CE->getArg(i)) + ", &" +
+                              ResultTempHost + ", sizeof(int));" + getNL() +
+                              IndentStr + MapNames::getClNamespace() + "free(" +
+                              ResultTempPtr + ", " + DefaultQueue + ");";
             CurrentArgumentRepl = ResultTempPtr;
           } else if (ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<float>" ||
@@ -4975,12 +4979,12 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string ReturnValueParamsStr;
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
         requestFeature(HelperFeatureEnum::device_ext);
-        PrefixInsertStr =
-            PrefixInsertStr + ResultType + "* " + ResultTempPtr + " = " +
-            MapNames::getClNamespace() + "malloc_shared<" + ResultType +
-            ">(1, " + MapNames::getDpctNamespace() + "get_default_queue());" +
-            getNL() + IndentStr + CallExprReplStr + ", " + ResultTempPtr +
-            ").wait();" + getNL() + IndentStr;
+        auto DefaultQueue = DpctGlobalInfo::getDefaultQueue(CE);
+        PrefixInsertStr = PrefixInsertStr + ResultType + "* " + ResultTempPtr +
+                          " = " + MapNames::getClNamespace() +
+                          "malloc_shared<" + ResultType + ">(1, " + DefaultQueue + ");" +
+                          getNL() + IndentStr + CallExprReplStr + ", " +
+                          ResultTempPtr + ").wait();" + getNL() + IndentStr;
 
         ReturnValueParamsStr =
             "(" + ResultTempPtr + "->real(), " + ResultTempPtr + "->imag())";
@@ -4989,16 +4993,14 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           PrefixInsertStr = PrefixInsertStr + ResultType + " " + ResultTempVal +
                             " = *" + ResultTempPtr + ";" + getNL() + IndentStr +
                             MapNames::getClNamespace() + "free(" +
-                            ResultTempPtr + ", " +
-                            MapNames::getDpctNamespace() +
-                            "get_default_queue());" + getNL() + IndentStr;
+                            ResultTempPtr + ", " + DefaultQueue + ");" +
+                            getNL() + IndentStr;
           ReturnValueParamsStr =
               "(" + ResultTempVal + ".real(), " + ResultTempVal + ".imag())";
         } else {
-          SuffixInsertStr =
-              SuffixInsertStr + getNL() + IndentStr +
-              MapNames::getClNamespace() + "free(" + ResultTempPtr + ", " +
-              MapNames::getDpctNamespace() + "get_default_queue());";
+          SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr +
+                            MapNames::getClNamespace() + "free(" +
+                            ResultTempPtr + ", " + DefaultQueue + ");";
         }
       } else {
         PrefixInsertStr = PrefixInsertStr + MapNames::getClNamespace() +
@@ -6257,7 +6259,9 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
         "cudaRuntimeGetVersion", "clock64",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
-        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit");
+        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
+        "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
+        "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaFuncSetAttribute");
   };
 
   MF.addMatcher(
@@ -6394,9 +6398,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::device_ext);
     }
     std::string ResultVarName = getDrefName(CE->getArg(0));
-    emplaceTransformation(
-        new ReplaceStmt(CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
-                                             "get_device_info"));
+    emplaceTransformation(new ReplaceCalleeName(
+        CE, Prefix + MapNames::getDpctNamespace() + "get_device_info"));
     emplaceTransformation(new ReplaceStmt(CE->getArg(0), ResultVarName));
     if (DpctGlobalInfo::useNoQueueDevice()) {
       emplaceTransformation(new ReplaceStmt(
@@ -6408,6 +6411,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                              getStmtSpelling(CE->getArg(1)) + ")"));
       requestFeature(HelperFeatureEnum::device_ext);
     }
+    emplaceTransformation(new InsertAfterStmt(CE, std::move(Suffix)));
   } else if (FuncName == "cudaDriverGetVersion" ||
              FuncName == "cudaRuntimeGetVersion") {
     if (IsAssigned) {
@@ -6571,7 +6575,9 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaThreadSetLimit" ||
              FuncName == "cudaDeviceSetCacheConfig" ||
              FuncName == "cudaDeviceGetCacheConfig" ||
-             FuncName == "cuCtxSetCacheConfig" || FuncName == "cuCtxSetLimit") {
+             FuncName == "cuCtxSetCacheConfig" || FuncName == "cuCtxSetLimit" ||
+             FuncName == "cudaCtxResetPersistingL2Cache" ||
+             FuncName == "cuCtxResetPersistingL2Cache") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -6582,7 +6588,61 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
-  } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
+  } else if(FuncName == "cudaStreamSetAttribute" ||
+             FuncName == "cudaStreamGetAttribute" ){
+    std::string ArgStr = getStmtSpelling(CE->getArg(1));
+    if (ArgStr == "cudaStreamAttributeAccessPolicyWindow") {
+      if (IsAssigned) {
+        report(
+            CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+            MapNames::ITFName.at(FuncName),
+            "SYCL currently does not support setting cache config on devices.");
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(
+            CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+            MapNames::ITFName.at(FuncName),
+            "SYCL currently does not support setting cache config on devices.");
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
+    } else if (ArgStr == "cudaLaunchAttributeIgnore") {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName),
+               "this call is redundant in SYCL.");
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName),
+               "this call is redundant in SYCL.");
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
+    } else {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName),
+               "SYCL currently does not support corresponding setting.");
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName),
+               "SYCL currently does not support corresponding setting.");
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
+    }
+  } else if(FuncName == "cudaFuncSetAttribute"){
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+             MapNames::ITFName.at(FuncName),
+             "SYCL currently does not support corresponding setting.");
+      emplaceTransformation(new ReplaceStmt(CE, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             MapNames::ITFName.at(FuncName),
+             "SYCL currently does not support corresponding setting.");
+      emplaceTransformation(new ReplaceStmt(CE, ""));
+    }
+  }else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            MapNames::ITFName.at(FuncName));
   } else if (FuncName == "cudaDeviceGetLimit") {
@@ -7476,7 +7536,9 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
       std::string StrWithoutSubmitBarrier = Repl.str();
       auto ReplWithoutSB =
           ReplaceStmt(CE, StrWithoutSubmitBarrier).getReplacement(Context);
-      std::string ReplStr = ";";
+      std::string ReplStr;
+      if (!IsParmVarDecl)
+        ReplStr += ";";
       if (isInMacroDefinition(MD->getBeginLoc(), MD->getEndLoc())) {
         ReplStr += "\\";
       }
@@ -7488,13 +7550,15 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
         std::string Str = "*" + ArgName + " = {{NEEDREPLACEQ" +
                           std::to_string(Index) +
                           "}}.ext_oneapi_submit_barrier()";
-        ReplStr += getNL();
+        if (!IsParmVarDecl)
+          ReplStr += getNL();
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
       } else {
         std::string Str = "*" + ArgName + " = " + StreamName +
                           "->ext_oneapi_submit_barrier()";
-        ReplStr += getNL();
+        if (!IsParmVarDecl)
+          ReplStr += getNL();
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
       }
@@ -10438,8 +10502,8 @@ void MemoryMigrationRule::prefetchMigration(
                ? +"cpu_device()"
                : "dev_mgr::instance().get_device(" + StmtStrArg2 + ")");
       requestFeature(HelperFeatureEnum::device_ext);
-      Replacement = Prefix + ".default_queue().prefetch(" + StmtStrArg0 + "," +
-                    StmtStrArg1 + ")";
+      Replacement = Prefix + "." + DpctGlobalInfo::getDeviceQueueName() +
+                    "().prefetch(" + StmtStrArg0 + "," + StmtStrArg1 + ")";
     } else {
       if (SM->getCharacterData(C->getArg(3)->getBeginLoc()) -
               SM->getCharacterData(C->getArg(3)->getEndLoc()) ==
@@ -10638,16 +10702,16 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
 
   std::ostringstream OS;
   if (getStmtSpelling(C->getArg(3)) == "cudaCpuDeviceId") {
-    OS << MapNames::getDpctNamespace() +
-              "cpu_device().default_queue().mem_advise("
+    OS << MapNames::getDpctNamespace() + "cpu_device()." +
+              DpctGlobalInfo::getDeviceQueueName() + "().mem_advise("
        << Arg0Str << ", " << Arg1Str << ", " << Arg2Str << ")";
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
     requestFeature(HelperFeatureEnum::device_ext);
     return;
   }
   OS << MapNames::getDpctNamespace() + "get_device(" << Arg3Str
-     << ").default_queue().mem_advise(" << Arg0Str << ", " << Arg1Str << ", "
-     << Arg2Str << ")";
+     << ")." + DpctGlobalInfo::getDeviceQueueName() + "().mem_advise("
+     << Arg0Str << ", " << Arg1Str << ", " << Arg2Str << ")";
   emplaceTransformation(new ReplaceStmt(C, OS.str()));
   requestFeature(HelperFeatureEnum::device_ext);
 }
@@ -11898,27 +11962,23 @@ REGISTER_RULE(SyncThreadsMigrationRule, PassKind::PK_Migration)
 
 void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      varDecl(hasType(recordDecl(hasName("cudaFuncAttributes")))).bind("decl"),
-      this);
-  MF.addMatcher(
       callExpr(callee(functionDecl(hasAnyName("cudaFuncGetAttributes"))))
           .bind("call"),
       this);
   MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("cuFuncGetAttribute"))))
                     .bind("callFuncGetAttribute"),
                 this);
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(
-                               recordDecl(hasName("cudaFuncAttributes")))))
-                    .bind("member"),
-                this);
+  MF.addMatcher(
+      memberExpr(anyOf(has(implicitCastExpr(hasType(pointsTo(
+                           recordDecl(hasName("cudaFuncAttributes")))))),
+                       hasObjectExpression(
+                           hasType(recordDecl(hasName("cudaFuncAttributes"))))))
+          .bind("member"),
+      this);
 }
 
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto V = getNodeAsType<VarDecl>(Result, "decl")) {
-    emplaceTransformation(new ReplaceTypeInDecl(
-        V, MapNames::getDpctNamespace() + "kernel_function_info"));
-    requestFeature(HelperFeatureEnum::device_ext);
-  } else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
+  if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     requestFeature(HelperFeatureEnum::device_ext);
     emplaceTransformation(new ReplaceToken(
         C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
@@ -13479,34 +13539,41 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     Toklen = Lexer::MeasureTokenLength(
         End, SM, DpctGlobalInfo::getContext().getLangOpts());
     Len = SM.getFileOffset(End) - SM.getFileOffset(Beg) + Toklen;
-    auto Iter = MapNames::MathFuncNameMap.find(UD->getNameAsString());
-    if (Iter != MapNames::MathFuncNameMap.end()) {
-      DpctGlobalInfo::getInstance().insertHeader(UD->getBeginLoc(), HT_Math);
-      std::string Repl{"using "};
-      Repl += Iter->second;
+
+    bool IsAllTargetsInCUDA = true;
+    for (const auto &child : UD->getDeclContext()->decls()) {
+      if (child == UD) {
+        continue;
+      } else if (const clang::UsingShadowDecl *USD =
+                     dyn_cast<UsingShadowDecl>(child)) {
+        if (USD->getIntroducer() == UD) {
+          if (const auto *FD = dyn_cast<FunctionDecl>(USD->getTargetDecl())) {
+            if (!isFromCUDA(FD)) {
+              IsAllTargetsInCUDA = false;
+              break;
+            }
+          } else if (const auto *FTD =
+                         dyn_cast<FunctionTemplateDecl>(USD->getTargetDecl())) {
+            if (!isFromCUDA(FTD)) {
+              IsAllTargetsInCUDA = false;
+              break;
+            }
+          } else {
+            IsAllTargetsInCUDA = false;
+            break;
+          }
+        }
+      }
+    }
+
+    if (IsAllTargetsInCUDA) {
       auto NextTok = Lexer::findNextToken(
           End, SM, DpctGlobalInfo::getContext().getLangOpts());
-      if (!NextTok.has_value() || !NextTok.value().is(tok::semi)) {
-        Repl += ";";
+      if (NextTok.has_value() && NextTok.value().is(tok::semi)) {
+        Len = SM.getFileOffset(NextTok.value().getLocation()) -
+              SM.getFileOffset(Beg) + 1;
       }
-      emplaceTransformation(new ReplaceText(Beg, Len, std::move(Repl)));
-    } else if (MapNames::MathFuncImpledWithNewRewriter.count(
-                   UD->getNameAsString()) &&
-               UD->getBeginLoc().isFileID() && UD->getEndLoc().isFileID()) {
-      const NestedNameSpecifier *Qualifier = UD->getQualifier();
-      if (UD->getCanonicalDecl()) {
-        Qualifier = UD->getCanonicalDecl()->getQualifier();
-      }
-      if (Qualifier && Qualifier->getKind() ==
-                           clang::NestedNameSpecifier::SpecifierKind::Global) {
-        auto NextTok = Lexer::findNextToken(
-            End, SM, DpctGlobalInfo::getContext().getLangOpts());
-        if (NextTok.has_value() && NextTok.value().is(tok::semi)) {
-          Len = SM.getFileOffset(NextTok.value().getLocation()) -
-                SM.getFileOffset(Beg) + 1;
-        }
-        emplaceTransformation(new ReplaceText(Beg, Len, ""));
-      }
+      emplaceTransformation(new ReplaceText(Beg, Len, ""));
     }
   }
 }
@@ -14498,3 +14565,30 @@ void CudaUuidRule::runRule(
 }
 
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
+
+void TypeRemoveRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(typedefDecl(
+                            hasAnyName("cudaLaunchAttributeValue"))))))
+                    .bind("TypeWarning"),
+                this);
+  MF.addMatcher(
+      binaryOperator(allOf(isAssignmentOperator(),
+                           hasLHS(hasDescendant(memberExpr(hasType(namedDecl(
+                               hasAnyName("cudaAccessPolicyWindow"))))))))
+          .bind("AssignStmtRemove"),
+      this);
+}
+
+void TypeRemoveRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeWarning")) {
+    report(getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin(),
+           Diagnostics::API_NOT_MIGRATED, false,
+           getStmtSpelling(TL->getSourceRange()));
+  }
+  if (auto BO = getNodeAsType<BinaryOperator>(Result, "AssignStmtRemove"))
+    emplaceTransformation(new ReplaceStmt(BO, ""));
+  return;
+}
+
+REGISTER_RULE(TypeRemoveRule, PassKind::PK_Analysis)

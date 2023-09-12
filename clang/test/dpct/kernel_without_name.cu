@@ -29,7 +29,7 @@ __global__ void helloFromGPU2() {
 void testReference(const int &i) {
   dim3 griddim = 2;
   dim3 threaddim = 32;
-  // CHECK: dpct::get_default_queue().parallel_for(
+  // CHECK: dpct::get_out_of_order_queue().parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         helloFromGPU(i, item_ct1);
@@ -45,7 +45,7 @@ struct TestThis {
   int arg3;
   dim3 griddim, threaddim;
   void test() {
-    // CHECK: dpct::get_default_queue().submit(
+    // CHECK: dpct::get_out_of_order_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
     // CHECK-NEXT:     int args_arg1_ct0 = args.arg1;
     // CHECK-NEXT:     int args_arg2_ct1 = args.arg2;
@@ -63,7 +63,7 @@ struct TestThis {
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   dim3 griddim = 2;
   dim3 threaddim = 32;
   void *karg1 = 0;
@@ -123,7 +123,7 @@ public:
   foo_class(int n) : a(n) {}
 
   int run_foo() {
-    // CHECK: dpct::get_default_queue().submit(
+    // CHECK: dpct::get_out_of_order_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
     // CHECK-NEXT:     int a_ct0 = a;
     // CHECK-NEXT:     int aa_b_ct1 = aa.b;
@@ -147,7 +147,7 @@ int *g_a;
 
 __global__ void foo_kernel3(int *d) {
 }
-//CHECK:dpct::get_default_queue().submit(
+//CHECK:dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
 //CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
@@ -159,7 +159,7 @@ void run_foo(dim3 c, dim3 d) {
 
 void run_foo2(dim3 c, dim3 d) {
 //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
 //CHECK:q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
 //CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
@@ -175,7 +175,7 @@ void run_foo2(dim3 c, dim3 d) {
   else
     foo_kernel3<<<c, 1>>>(g_a);
 }
-//CHECK:dpct::get_default_queue().submit(
+//CHECK:dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
 //CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
@@ -184,7 +184,7 @@ void run_foo3(dim3 c, dim3 d) {
   for (;;)
     foo_kernel3<<<c, d>>>(g_a);
 }
-//CHECK:dpct::get_default_queue().submit(
+//CHECK:dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:       [&](sycl::handler &cgh) {
 //CHECK-NEXT:         dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:

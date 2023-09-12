@@ -100,7 +100,7 @@ void InvokeKernel() {
   cudaMalloc((void **)&dev_ptr, size);
 
   cudaMemcpy(dev_ptr, host.get(), size, cudaMemcpyHostToDevice);
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     dpct::access_wrapper<T *> dev_ptr_acc_ct0(dev_ptr, cgh);
   // CHECK-EMPTY:

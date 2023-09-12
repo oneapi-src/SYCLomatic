@@ -65,42 +65,42 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // Half Arithmetic Functions
 
-  // CHECK: h_2 = sycl::clamp<sycl::half>(h + h_1, 0.f, 1.0f);
+  // CHECK: h_2 = dpct::clamp<sycl::half>(h + h_1, 0.f, 1.0f);
   h_2 = __hadd_sat(h, h_1);
   // CHECK: h_2 = sycl::fma(h, h_1, h_2);
   h_2 = __hfma(h, h_1, h_2);
-  // CHECK: h_2 = sycl::clamp<sycl::half>(sycl::fma(h, h_1, h_2), 0.f, 1.0f);
+  // CHECK: h_2 = dpct::clamp<sycl::half>(sycl::fma(h, h_1, h_2), 0.f, 1.0f);
   h_2 = __hfma_sat(h, h_1, h_2);
   // CHECK: h_2 = h * h_1;
   h_2 = __hmul(h, h_1);
-  // CHECK: h_2 = sycl::clamp<sycl::half>(h * h_1, 0.f, 1.0f);
+  // CHECK: h_2 = dpct::clamp<sycl::half>(h * h_1, 0.f, 1.0f);
   h_2 = __hmul_sat(h, h_1);
   // CHECK: h_2 = -h;
   h_2 = __hneg(h);
   // CHECK: h_2 = h - h_1;
   h_2 = __hsub(h, h_1);
-  // CHECK: h_2 = sycl::clamp<sycl::half>(h - h_1, 0.f, 1.0f);
+  // CHECK: h_2 = dpct::clamp<sycl::half>(h - h_1, 0.f, 1.0f);
   h_2 = __hsub_sat(h, h_1);
 
   // Half2 Arithmetic Functions
 
   // CHECK: h2_2 = h2 + h2_1;
   h2_2 = __hadd2(h2, h2_1);
-  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 + h2_1, {0.f, 0.f}, {1.f, 1.f});
+  // CHECK: h2_2 = dpct::clamp<sycl::half2>(h2 + h2_1, {0.f, 0.f}, {1.f, 1.f});
   h2_2 = __hadd2_sat(h2, h2_1);
   // CHECK: h2_2 = sycl::fma(h2, h2_1, h2_2);
   h2_2 = __hfma2(h2, h2_1, h2_2);
-  // CHECK: h2_2 = sycl::clamp<sycl::half2>(sycl::fma(h2, h2_1, h2_2), {0.f, 0.f}, {1.f, 1.f});
+  // CHECK: h2_2 = dpct::clamp<sycl::half2>(sycl::fma(h2, h2_1, h2_2), {0.f, 0.f}, {1.f, 1.f});
   h2_2 = __hfma2_sat(h2, h2_1, h2_2);
   // CHECK: h2_2 = h2 * h2_1;
   h2_2 = __hmul2(h2, h2_1);
-  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 * h2_1, {0.f, 0.f}, {1.f, 1.f});
+  // CHECK: h2_2 = dpct::clamp<sycl::half2>(h2 * h2_1, {0.f, 0.f}, {1.f, 1.f});
   h2_2 = __hmul2_sat(h2, h2_1);
   // CHECK: h2_2 = -h2;
   h2_2 = __hneg2(h2);
   // CHECK: h2_2 = h2 - h2_1;
   h2_2 = __hsub2(h2, h2_1);
-  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 - h2_1, {0.f, 0.f}, {1.f, 1.f});
+  // CHECK: h2_2 = dpct::clamp<sycl::half2>(h2 - h2_1, {0.f, 0.f}, {1.f, 1.f});
   h2_2 = __hsub2_sat(h2, h2_1);
 
   // Half Comparison Functions
@@ -306,8 +306,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // CHECK: d2 = sycl::ceil(d0);
   d2 = ceil(d0);
-  // CHECK: d2 = sycl::ceil((double)i);
-  d2 = ceil(i);
 
   // CHECK: d2 = sycl::copysign(d0, d1);
   d2 = copysign(d0, d1);
@@ -553,16 +551,16 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::nan(0u);
   d2 = nan("");
 
-  // CHECK: d2 = sycl::pow<double>(d0, d1);
+  // CHECK: d2 = dpct::pow(d0, d1);
   d2 = pow(d0, d1);
-  // CHECK: d2 = sycl::pown((float)i, i);
+  // CHECK: d2 = dpct::pow(i, i);
   d2 = pow(i, i);
-  // CHECK: d2 = sycl::pown(d0, i);
+  // CHECK: d2 = dpct::pow(d0, i);
   d2 = pow(d0, i);
-  // CHECK: d2 = sycl::pow<double>(i, d1);
+  // CHECK: d2 = dpct::pow(i, d1);
   d2 = pow(i, d1);
 
-  // CHECK: sycl::pown(f, 1);
+  // CHECK: dpct::pow(f, 1);
   float f;
   pow(f, 1);
 
@@ -855,11 +853,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d1 = sycl::floor((double)i);
   d1 = floor(i);
 
-  // CHECK: d2 = sycl::ceil(d2);
-  d2 = ceil(d2);
-  // CHECK: d2 = sycl::ceil((double)i);
-  d2 = ceil(i);
-
   // CHECK: d2 = sycl::fma(d0, d1, d2);
   d2 = fma(d0, d1, d2);
   // CHECK: d2 = sycl::fma((double)i, (double)i, (double)i);
@@ -947,8 +940,6 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
 
   // CHECK: f2 = sycl::ceil(f0);
   f2 = ceilf(f0);
-  // CHECK: f2 = sycl::ceil((float)i);
-  f2 = ceilf(i);
 
   // CHECK: f2 = sycl::copysign(f0, f1);
   f2 = copysignf(f0, f1);
@@ -1168,13 +1159,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::nan(0u);
   f2 = nan("");
 
-  // CHECK: f2 = sycl::pow<float>(f0, f1);
+  // CHECK: f2 = dpct::pow(f0, f1);
   f2 = powf(f0, f1);
-  // CHECK: f2 = sycl::pown((float)i, i);
+  // CHECK: f2 = dpct::pow(i, i);
   f2 = powf(i, i);
-  // CHECK: f2 = sycl::pown(f0, i);
+  // CHECK: f2 = dpct::pow(f0, i);
   f2 = powf(f0, i);
-  // CHECK: f2 = sycl::pow<float>(i, f1);
+  // CHECK: f2 = dpct::pow(i, f1);
   f2 = powf(i, f1);
 
   // CHECK: f2 = sycl::remainder(f0, f1);
@@ -1509,13 +1500,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f1 = sycl::log((float)i);
   f1 = __logf(i);
 
-  // CHECK: f2 = sycl::pow<float>(f0, f1);
+  // CHECK: f2 = dpct::pow(f0, f1);
   f2 = __powf(f0, f1);
-  // CHECK: f2 = sycl::pown((float)i, i);
+  // CHECK: f2 = dpct::pow(i, i);
   f2 = __powf(i, i);
-  // CHECK: f2 = sycl::pown(f0, i);
+  // CHECK: f2 = dpct::pow(f0, i);
   f2 = __powf(f0, i);
-  // CHECK: f2 = sycl::pow<float>(i, f1);
+  // CHECK: f2 = dpct::pow(i, f1);
   f2 = __powf(i, f1);
 
   // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
@@ -1555,11 +1546,6 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f1 = floorf(f1);
   // CHECK: f1 = sycl::floor((float)i);
   f1 = floorf(i);
-
-  // CHECK: f2 = sycl::ceil(f2);
-  f2 = ceilf(f2);
-  // CHECK: f2 = sycl::ceil((float)i);
-  f2 = ceilf(i);
 
   // CHECK: f2 = sycl::fma(f0, f1, f2);
   f2 = fmaf(f0, f1, f2);
@@ -2157,7 +2143,7 @@ __global__ void testUnsupported() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrtf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = sycl::native::recip(sycl::cbrt<float>(f));
+  // CHECK-NEXT: f = sycl::native::recip(dpct::cbrt<float>(f));
   f = rcbrtf(f);
   // CHECK: f = sycl::native::recip(sycl::length(sycl::float3(f, f, f)));
   f = rnorm3df(f, f, f);
@@ -2233,7 +2219,7 @@ __global__ void testUnsupported() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = 1 / sycl::cbrt<double>(d);
+  // CHECK-NEXT: d = 1 / dpct::cbrt<double>(d);
   d = rcbrt(d);
   // CHECK: d = 1 / sycl::length(sycl::double3(d, d, d));
   d = rnorm3d(d, d, d);
@@ -2403,12 +2389,12 @@ __global__ void testIntegerFunctions() {
   l = labs(l);
   ll = llabs(ll);
 
-  // CHECK: ll = sycl::max<long long>(ll, ll);
-  // CHECK-NEXT: ll = sycl::min<long long>(ll, l);
-  // CHECK-NEXT: ull = sycl::max<unsigned long long>(ll, ull);
-  // CHECK-NEXT: ull = sycl::min<unsigned long long>(ll, ll);
-  // CHECK-NEXT: u = sycl::max<unsigned int>(u, u);
-  // CHECK-NEXT: u = sycl::min<unsigned int>(u, u);
+  // CHECK: ll = dpct::max(ll, ll);
+  // CHECK-NEXT: ll = dpct::min(ll, (long long)l);
+  // CHECK-NEXT: ull = dpct::max((unsigned long long)ll, ull);
+  // CHECK-NEXT: ull = dpct::min((unsigned long long)ll, (unsigned long long)ll);
+  // CHECK-NEXT: u = dpct::max(u, u);
+  // CHECK-NEXT: u = dpct::min(u, u);
   ll = llmax(ll, ll);
   ll = llmin(ll, l);
   ull = ullmax(ll, ull);
@@ -2614,11 +2600,11 @@ void testTypecasts() {
 __global__ void testConditionalOperator(float *deviceArrayFloat) {
   float &f0 = *deviceArrayFloat, &f1 = *(deviceArrayFloat + 1),
         &f2 = *(deviceArrayFloat + 2);
-  // CHECK: f0 = sycl::fmax(f0 = (f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow<float>(f1, 2.f) / f1 : -f1, f1 + f1 < f2
-  // CHECK-NEXT:         ? ((f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow<float>(f2, 2.f) / f1 : -f1)
+  // CHECK: f0 = sycl::fmax(f0 = (f1) > (f1 == 1 ? 0 : -f2) ? f1 * f1 / f1 : -f1, f1 + f1 < f2
+  // CHECK-NEXT:         ? ((f1) > (f1 == 1 ? 0 : -f2) ? f2 * f2 / f1 : -f1)
   // CHECK-NEXT:         : -f1);
-  // CHECK-NEXT: f0 = f1 > f2 ? sycl::pow<float>(f1, 2.f) / f1 : f1;
-  // CHECK-NEXT: f0 = sycl::fmax(0 ? sycl::pow<float>(f1, 2.f) / f1 : f1, f2);
+  // CHECK-NEXT: f0 = f1 > f2 ? f1 * f1 / f1 : f1;
+  // CHECK-NEXT: f0 = sycl::fmax(0 ? f1 * f1 / f1 : f1, f2);
   f0 = fmaxf(
       f0 = (f1) > (f1 == 1 ? 0 : -f2) ? __fdividef(__powf(f1, 2.f), f1) : -f1,
       f1 + f1 < f2
@@ -2714,25 +2700,25 @@ __device__ void test_pow() {
   float f;
   double d;
 
-  // CHECK: sycl::pown((float)i, i);
+  // CHECK: dpct::pow(i, i);
   pow(i, i);
-  // CHECK: sycl::pown(f, i);
+  // CHECK: dpct::pow(f, i);
   pow(f, i);
-  // CHECK: sycl::pown(d, i);
+  // CHECK: dpct::pow(d, i);
   pow(d, i);
 
-  // CHECK: sycl::pow<double>(i, f);
+  // CHECK: dpct::pow(i, f);
   pow(i, f);
-  // CHECK: sycl::pow<double>(f, f);
+  // CHECK: dpct::pow(f, f);
   pow(f, f);
-  // CHECK: sycl::pow<double>(d, f);
+  // CHECK: dpct::pow(d, f);
   pow(d, f);
 
-  // CHECK: sycl::pow<double>(i, d);
+  // CHECK: dpct::pow(i, d);
   pow(i, d);
-  // CHECK: sycl::pow<double>(f, d);
+  // CHECK: dpct::pow(f, d);
   pow(f, d);
-  // CHECK: sycl::pow<double>(d, d);
+  // CHECK: dpct::pow(d, d);
   pow(d, d);
 }
 
@@ -3138,78 +3124,78 @@ __global__ void k() {
 
   // CHECK: f * f;
   pow(f, 2);
-  // CHECK: sycl::pown(f, 3);
+  // CHECK: dpct::pow(f, 3);
   pow(f, 3);
   // CHECK: f * f;
   powf(f, 2);
-  // CHECK: sycl::pown(f, 3);
+  // CHECK: dpct::pow(f, 3);
   powf(f, 3);
   // CHECK: f * f;
   __powf(f, 2);
-  // CHECK: sycl::pown(f, 3);
+  // CHECK: dpct::pow(f, 3);
   __powf(f, 3);
 
-  // CHECK: sycl::pown(f, (int)c);
+  // CHECK: dpct::pow(f, c);
   pow(f, c);
-  // CHECK: sycl::pown(f, (int)uc);
+  // CHECK: dpct::pow(f, uc);
   pow(f, uc);
-  // CHECK: sycl::pown(f, (int)s);
+  // CHECK: dpct::pow(f, s);
   pow(f, s);
-  // CHECK: sycl::pown(f, (int)us);
+  // CHECK: dpct::pow(f, us);
   pow(f, us);
-  // CHECK: sycl::pown(f, i);
+  // CHECK: dpct::pow(f, i);
   pow(f, i);
-  // CHECK: sycl::pown(f, (int)ui);
+  // CHECK: dpct::pow(f, ui);
   pow(f, ui);
-  // CHECK: sycl::pow<double>(f, l);
+  // CHECK: dpct::pow(f, l);
   pow(f, l);
-  // CHECK: sycl::pow<double>(f, ul);
+  // CHECK: dpct::pow(f, ul);
   pow(f, ul);
-  // CHECK: sycl::pow<double>(f, ll);
+  // CHECK: dpct::pow(f, ll);
   pow(f, ll);
-  // CHECK: sycl::pow<double>(f, ull);
+  // CHECK: dpct::pow(f, ull);
   pow(f, ull);
 
-  // CHECK: sycl::pown(f, (int)c);
+  // CHECK: dpct::pow(f, c);
   powf(f, c);
-  // CHECK: sycl::pown(f, (int)uc);
+  // CHECK: dpct::pow(f, uc);
   powf(f, uc);
-  // CHECK: sycl::pown(f, (int)s);
+  // CHECK: dpct::pow(f, s);
   powf(f, s);
-  // CHECK: sycl::pown(f, (int)us);
+  // CHECK: dpct::pow(f, us);
   powf(f, us);
-  // CHECK: sycl::pown(f, i);
+  // CHECK: dpct::pow(f, i);
   powf(f, i);
-  // CHECK: sycl::pown(f, (int)ui);
+  // CHECK: dpct::pow(f, ui);
   powf(f, ui);
-  // CHECK: sycl::pow<float>(f, l);
+  // CHECK: dpct::pow(f, l);
   powf(f, l);
-  // CHECK: sycl::pow<float>(f, ul);
+  // CHECK: dpct::pow(f, ul);
   powf(f, ul);
-  // CHECK: sycl::pow<float>(f, ll);
+  // CHECK: dpct::pow(f, ll);
   powf(f, ll);
-  // CHECK: sycl::pow<float>(f, ull);
+  // CHECK: dpct::pow(f, ull);
   powf(f, ull);
 
-  // CHECK: sycl::pown(f, (int)c);
+  // CHECK: dpct::pow(f, c);
   __powf(f, c);
-  // CHECK: sycl::pown(f, (int)uc);
+  // CHECK: dpct::pow(f, uc);
   __powf(f, uc);
-  // CHECK: sycl::pown(f, (int)s);
+  // CHECK: dpct::pow(f, s);
   __powf(f, s);
-  // CHECK: sycl::pown(f, (int)us);
+  // CHECK: dpct::pow(f, us);
   __powf(f, us);
-  // CHECK: sycl::pown(f, i);
+  // CHECK: dpct::pow(f, i);
   __powf(f, i);
-  // CHECK: sycl::pown(f, (int)ui);
+  // CHECK: dpct::pow(f, ui);
   __powf(f, ui);
-  // CHECK: sycl::pow<float>(f, l);
+  // CHECK: dpct::pow(f, l);
   __powf(f, l);
-  // CHECK: sycl::pow<float>(f, ul);
+  // CHECK: dpct::pow(f, ul);
   __powf(f, ul);
-  // CHECK: sycl::pow<float>(f, ll);
+  // CHECK: dpct::pow(f, ll);
   __powf(f, ll);
-  // CHECK: sycl::pow<float>(f, ull);
+  // CHECK: dpct::pow(f, ull);
   __powf(f, ull);
 
 }
@@ -3238,12 +3224,12 @@ __global__ void k2() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: 1 / sycl::cbrt<double>(d0);
+  // CHECK-NEXT: 1 / dpct::cbrt<double>(d0);
   rcbrt(d0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrtf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::native::recip(sycl::cbrt<float>(f0));
+  // CHECK-NEXT: sycl::native::recip(dpct::cbrt<float>(f0));
   rcbrtf(f0);
   // CHECK: 1 / sycl::length(sycl::double3(d0, d1, d2));
   rnorm3d(d0, d1, d2);
@@ -3386,10 +3372,10 @@ __device__ S fun2(int i) { return { i * 2 }; }
 
 #define TWO 2.0
 
-// CHECK: #define POW_TWO(x) sycl::pow<double>(x, 2.0)
+// CHECK: #define POW_TWO(x) dpct::pow(x, 2.0)
 #define POW_TWO(x) pow(x, 2.0)
 
-// CHECK: #define POW(x, y) sycl::pow<double>(x, y)
+// CHECK: #define POW(x, y) dpct::pow(x, y)
 #define POW(x, y) pow(x, y)
 
 __global__ void test_side_effects() {
@@ -3409,7 +3395,7 @@ __global__ void test_side_effects() {
   int g = pow(a ? b[0] : b[1] , 2);
   // CHECK: int h = (a >> 2) * (a >> 2);
   int h = pow(a >> 2, 2);
-  // CHECK: int i = sycl::pown((float)(fun(a)), 2);
+  // CHECK: int i = dpct::pow(fun(a), 2);
   int i = pow(fun(a), 2);
   // CHECK: int j = b[0] * b[0];
   int j = pow(b[0], 2);
@@ -3427,24 +3413,24 @@ __global__ void test_side_effects() {
   int p = pow(a & b[0], 2);
   // CHECK: int q = (a && b[0]) * (a && b[0]);
   int q = pow(a && b[0], 2);
-  // CHECK: int r = sycl::pown((float)(a += b[0]), 2);
+  // CHECK: int r = dpct::pow(a += b[0], 2);
   int r = pow(a += b[0], 2);
-  // CHECK: int t = sycl::pown((float)(fun2(a).m), 2);
+  // CHECK: int t = dpct::pow(fun2(a).m, 2);
   int t = pow(fun2(a).m, 2);
-  // CHECK: int u = sycl::pown((float)(a = b[0]), 2);
+  // CHECK: int u = dpct::pow(a = b[0], 2);
   int u = pow(a = b[0], 2);
 
   // CHECK: int u1 = 2.0 * 2.0;
   int u1 = pow(2.0, 2.0);
-  // CHECK: int v = sycl::pow<double>(2.0, 1.99999999999999999);
+  // CHECK: int v = 2.0 * 2.0;
   int v = pow(2.0, 1.99999999999999999);
   // CHECK: int w = 2.0 * 2.0;
   int w = pow(2.0, 2.0f);
-  // CHECK: int w1 = sycl::pow<double>(2.0, 2.0000000001f);
+  // CHECK: int w1 = 2.0 * 2.0;
   int w1 = pow(2.0, 2.0000000001f);
-  // CHECK: int w2 = sycl::pow<double>(2.0, 2.0000001f);
+  // CHECK: int w2 = 2.0 * 2.0;
   int w2 = pow(2.0, 2.0000001f);
-  // CHECK: int w3 = sycl::pow<double>(2.0, 2.0000000000000001);
+  // CHECK: int w3 = 2.0 * 2.0;
   int w3 = pow(2.0, 2.0000000000000001);
   // CHECK: int x = 2.0 * 2.0;
   int x = pow(2.0, 2l);
@@ -3453,7 +3439,7 @@ __global__ void test_side_effects() {
   // CHECK: int z = 2.0 * 2.0;
   int z = pow(2.0, 2ull);
 
-  // CHECK: sycl::pow<double>(2.0, TWO);
+  // CHECK: dpct::pow(2.0, TWO);
   pow(2.0, TWO);
   // CHECK: POW_TWO(2.0);
   POW_TWO(2.0);
@@ -3465,7 +3451,7 @@ __global__ void test_side_effects() {
 __device__ void foo() {
   fp d_initvalu_36;
   fp ret;
-  // CHECK: ret = sycl::pow<double>(d_initvalu_36, fp(1.6));
+  // CHECK: ret = dpct::pow(d_initvalu_36, fp(1.6));
   ret = pow(d_initvalu_36, fp(1.6));
 }
 
@@ -3733,4 +3719,27 @@ __device__ void qualified(double d1,
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d4);
   __drcp_rz(d4);
+}
+
+__global__ void foo4(unsigned char *uc, int i) {
+  float f0, f1;
+  int tid = blockDim.x * blockIdx.x + threadIdx.x + i + 1;
+  // CHECK: uc[tid] = sycl::sqrt(f0 * f0 + f1 * f1);
+  uc[tid] = sqrtf(powf(f0, 2.f) + powf(f1, 2.f));
+}
+
+void foo5() {
+  double d0;
+  float f0;
+  int i;
+
+  // CHECK: d0 = ceil(d0);
+  d0 = ceil(d0);
+  // CHECK: d0 = ceil(i);
+  d0 = ceil(i);
+
+  // CHECK: f0 = ceilf(f0);
+  f0 = ceilf(f0);
+  // CHECK: f0 = ceilf(i);
+  f0 = ceilf(i);
 }
