@@ -74,7 +74,10 @@ public:
                   uint64_t TemporalProfTraceReservoirSize = 0,
                   uint64_t MaxTemporalProfTraceLength = 0);
   ~InstrProfWriter();
-
+#ifdef SYCLomatic_CUSTOMIZATION
+  InstrProfWriter(const InstrProfWriter &) = delete;
+  InstrProfWriter &operator=(const InstrProfWriter &) = delete;
+#endif //SYCLomatic_CUSTOMIZATION
   StringMap<ProfilingData> &getProfileData() { return FunctionData; }
 
   /// Add function counts for the given function. If there are already counts
