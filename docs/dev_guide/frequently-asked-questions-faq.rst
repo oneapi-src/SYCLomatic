@@ -11,6 +11,7 @@ Frequently Asked Questions
 * `How do I use the migrated module file in the new project?`_
 * `Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?`_
 * `How do I migrate CUDA\* source code that contains CUB library implementation source code?`_
+* `How do I fix the issue of SYCL\* code hanging due to work group level synchronization, such as a group barrier used in a conditional statement?`_
 
 **Troubleshooting Migration**
 
@@ -161,6 +162,95 @@ If you migrate the CUB library implementation code directly, you may not get the
 expected results. Instead, exclude CUB library implementation source code from
 your migration by adding ``--in-root-exclude=<path to CUB library source code>``
 to your migration command.
+
+How do I fix the issue of SYCL code hanging due to work group level synchronization, such as a group barrier used in a conditional statement?
+*********************************************************************************************************************************************
+
+If synchronization API in control flow statements like a conditional statement and
+loop statement are called in SYCL code, you may encounter a runtime hang issue.
+The basic idea to fix the hang issue is to ensure that each synchronization API is
+either reached by all work items of a workgroup, or skipped by all the work items of
+a workgroup.
+
+Here are two examples of how to fix:
+
+In the first example, the synchronization API group barrier(nd_item.barrier()) is called
+inside an if block. The evaluation results of the conditional statement differ in
+each work item so not all work items can reach the synchronization API.
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code
+
+   void kernel(const sycl::nd_item<3> &item_ct1) {
+      unsigned int tid = item_ct1.get_local_id(2);
+      if (tid < 32) {
+         // CODE block 1
+         ...
+         item_ct1.barrier(sycl::access::fence_space::local_space);
+         // CODE block 2
+         ...
+      }
+   }
+
+The following code shows how to fix the hang issue by moving the synchronization
+statement out of the if block.
+
+.. code-block:: cpp
+   :linenos:
+
+   // fixed SYCL code
+
+   void kernel(const sycl::nd_item<3> &item_ct1) {
+      unsigned int tid = item_ct1.get_local_id(2);
+      if (tid < 32) {
+         // CODE block 1
+         ...
+      }
+      item_ct1.barrier(sycl::access::fence_space::local_space);
+      if (tid < 32) {
+         // CODE block 2
+         ...
+      }
+   }
+
+The second example demonstrates how to fix the hang issue when a synchronization
+API is used in a for loop:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code
+
+   void compute(int id_space, const sycl::nd_item<3> &item_ct1) {
+      unsigned int id = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
+      for (; id < id_space; id += item_ct1.get_group_range(2) * item_ct1.get_local_range(2)) {
+         ...
+         item_ct1.barrier();
+         ...
+      }
+   }
+
+The following code shows how to fix the hang issue by making sure all work items
+have same run footprint in the for loop.
+
+.. code-block:: cpp
+   :linenos:
+
+   // fixed SYCL code
+
+   void compute(int id_space, const sycl::nd_item<3> &item_ct1) {
+      unsigned int id = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
+      unsigned int num_workitem = item_ct1.get_group_range(2) * item_ct1.get_local_range(2);
+      // The condition is updated to make sure all work items can enter the loop body in each iteration
+      for (; id < ((id_space + num_workitem - 1) / num_workitem) * num_workitem;
+      id += item_ct1.get_group_range(2) * item_ct1.get_local_range(2)) {
+         ...
+         item_ct1.barrier();
+         ...
+      }
+   }
 
 Troubleshooting Migration
 -------------------------

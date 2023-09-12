@@ -13150,6 +13150,11 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                "::" + Field);
+    if (AssignedBO) {
+      emplaceTransformation(new ReplaceStmt(AssignedBO, ""));
+    } else {
+      emplaceTransformation(new ReplaceStmt(ME, "0"));
+    }
     return;
   }
 

@@ -154,7 +154,6 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::readMode is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: texDesc21.readMode = cudaReadModeElementType;
   // CHECK-NEXT: tex21 = dpct::create_image_wrapper(res21, texDesc21);
   uint2 *d_data21;
   cudaMalloc(&d_data21, sizeof(uint2) * 32);
