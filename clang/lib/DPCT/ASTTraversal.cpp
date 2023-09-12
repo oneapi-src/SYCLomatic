@@ -7533,7 +7533,9 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
       std::string StrWithoutSubmitBarrier = Repl.str();
       auto ReplWithoutSB =
           ReplaceStmt(CE, StrWithoutSubmitBarrier).getReplacement(Context);
-      std::string ReplStr = ";";
+      std::string ReplStr;
+      if (!IsParmVarDecl)
+        ReplStr += ";";
       if (isInMacroDefinition(MD->getBeginLoc(), MD->getEndLoc())) {
         ReplStr += "\\";
       }
@@ -7545,13 +7547,15 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
         std::string Str = "*" + ArgName + " = {{NEEDREPLACEQ" +
                           std::to_string(Index) +
                           "}}.ext_oneapi_submit_barrier()";
-        ReplStr += getNL();
+        if (!IsParmVarDecl)
+          ReplStr += getNL();
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
       } else {
         std::string Str = "*" + ArgName + " = " + StreamName +
                           "->ext_oneapi_submit_barrier()";
-        ReplStr += getNL();
+        if (!IsParmVarDecl)
+          ReplStr += getNL();
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
       }
@@ -12776,6 +12780,11 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                "::" + Field);
+    if (AssignedBO) {
+      emplaceTransformation(new ReplaceStmt(AssignedBO, ""));
+    } else {
+      emplaceTransformation(new ReplaceStmt(ME, "0"));
+    }
     return;
   }
 
