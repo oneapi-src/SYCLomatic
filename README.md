@@ -43,6 +43,8 @@ expected to be similar to the daily releases.
   * Windows: `Visual Studio` 2019 or 2022 (In the following description, assume that the version used is 2019) -
     [Download](https://visualstudio.microsoft.com/downloads/)
 
+Note: SYCLomatic can be built from source without any CUDA dependencies. However, before migration of CUDA codebases to SYCL, ensure that CUDA header files are accessible to the tool. These header files are necessary for SYCLomatic to properly understand and process CUDA code during the migration process.
+
 ### Create SYCLomatic workspace
 
 Throughout this document `SYCLOMATIC_HOME` denotes the path to the local directory
@@ -179,6 +181,11 @@ Follow instructions from the link below to build and run tests:
 * SYCL\* 2020 specification:
 [https://www.khronos.org/registry/SYCL/](https://www.khronos.org/registry/SYCL/)
 * More information on oneAPI and DPC++ is available at [https://www.oneapi.com/](https://www.oneapi.com/)
+* Check the following documentation for guidance on using the migrated SYCL code with non-Intel devices using the DPC++ Compatibility Tool:
+
+  Targeting nVIDIA GPUs - https://developer.codeplay.com/products/oneapi/nvidia/2023.2.1/guides/get-started-guide-nvidia#use-dpc-to-target-nvidia-gpus
+
+  Targeting AMD GPUs - https://developer.codeplay.com/products/oneapi/amd/2023.2.1/guides/get-started-guide-amd#use-dpc-to-target-amd-gpus
 
 ## License
 
