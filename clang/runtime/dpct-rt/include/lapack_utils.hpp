@@ -916,7 +916,7 @@ template <typename T> struct syheev_impl {
     using value_t = typename value_type_trait<T>::value_type;
     auto a_data = dpct::detail::get_memory<T>(a);
     auto device_ws_data = dpct::detail::get_memory<T>(device_ws);
-    auto w_data = dpct::detail::get_memory(w);
+    auto w_data = dpct::detail::get_memory<value_t>(w);
     DISPATCH_FLOAT_FOR_CALCULATION(ev, q, jobz, uplo, n, a_data, lda, w_data,
                                    device_ws_data, device_ws_size);
     dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
