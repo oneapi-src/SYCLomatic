@@ -616,7 +616,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
 #ifndef _WIN32
-  if (!InterceptBuildCommand.empty()) {
+  if (InterceptBuildCommand.getNumOccurrences()) {
     SmallString<512> pathToInterceptBuildBinary(DpctInstallPath);
     llvm::sys::path::append(pathToInterceptBuildBinary, "bin",
                             "intercept-build");
@@ -626,8 +626,11 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInstallPath);
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    std::string interceptBuildSystemCall =
-        (pathToInterceptBuildBinary + " " + InterceptBuildCommand).str();
+    std::string interceptBuildSystemCall(pathToInterceptBuildBinary.str());
+    for (int argumentIndex = 2; argumentIndex < argc; argumentIndex++) {
+      interceptBuildSystemCall.append(" ");
+      interceptBuildSystemCall.append(std::string(argv[argumentIndex]));
+    }
     int processExitCode = system(interceptBuildSystemCall.c_str());
     if (processExitCode) {
       DpctLog() << "Error: intercept-build process call not successful"
