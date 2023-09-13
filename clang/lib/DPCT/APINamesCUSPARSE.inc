@@ -150,20 +150,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                                  ARG(11), ARG(12), ARG(13), ARG(14), ARG(15)))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    [](const CallExpr *C) -> bool {
-      const Expr *E = C->getArg(4)->IgnoreImpCasts();
-      Expr::EvalResult ExprResult;
-      if ((!E->isValueDependent()) &&
-          (E->EvaluateAsInt(ExprResult, dpct::DpctGlobalInfo::getContext()))) {
-        int64_t Value = ExprResult.Val.getInt().getExtValue();
-        if (!Value)
-          return true;
-      }
-      if (dyn_cast<CXXNullPtrLiteralExpr>(E) || dyn_cast<GNUNullExpr>(E)) {
-        return true;
-      }
-      return false;
-    },
+    [](const CallExpr *C) -> bool { return clang::dpct::isNull(C->getArg(4)); },
     WARNING_FACTORY_ENTRY(
         "cusparseCreateCsr",
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(

@@ -205,7 +205,7 @@ inline void scal_impl(sycl::queue &q, int n, const void *alpha, void *x,
                            "Project does not support this API.");
 #else
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
-  auto data_x = get_memory(reinterpret_cast<Tx *>(x));
+  auto data_x = get_memory<Tx>(x);
   oneapi::mkl::blas::column_major::scal(q, n, alpha_val,
                                         data_x, incx);
 #endif
@@ -219,8 +219,8 @@ inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
                            "Project does not support this API.");
 #else
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
-  auto data_x = get_memory(reinterpret_cast<const Txy *>(x));
-  auto data_y = get_memory(reinterpret_cast<Txy *>(y));
+  auto data_x = get_memory<const Txy>(x);
+  auto data_y = get_memory<Txy>(y);
   oneapi::mkl::blas::column_major::axpy(q, n, alpha_val,
                                         data_x, incx,
                                         data_y, incy);
@@ -236,8 +236,8 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
 #else
   Tc c_value = dpct::get_value(reinterpret_cast<const Tc *>(c), q);
   Ts s_value = dpct::get_value(reinterpret_cast<const Ts *>(s), q);
-  auto data_x = get_memory(reinterpret_cast<Txy *>(x));
-  auto data_y = get_memory(reinterpret_cast<Txy *>(y));
+  auto data_x = get_memory<Txy>(x);
+  auto data_y = get_memory<Txy>(y);
   oneapi::mkl::blas::column_major::rot(q, n, data_x, incx,
                                        data_y, incy, c_value,
                                        s_value);
@@ -255,9 +255,9 @@ inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 #else
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
-  auto data_a = get_memory(reinterpret_cast<const Ta *>(a));
-  auto data_b = get_memory(reinterpret_cast<const Tb *>(b));
-  auto data_c = get_memory(reinterpret_cast<Tc *>(c));
+  auto data_a = get_memory<const Ta>(a);
+  auto data_b = get_memory<const Tb>(b);
+  auto data_c = get_memory<Tc>(c);
   oneapi::mkl::blas::column_major::gemm(
       q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda,
       data_b, ldb, beta_value, data_c, ldc);
@@ -320,9 +320,9 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                     int ldc, long long int stride_c, int batch_size) {
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
-  auto data_a = get_memory(reinterpret_cast<const Ta *>(a));
-  auto data_b = get_memory(reinterpret_cast<const Tb *>(b));
-  auto data_c = get_memory(reinterpret_cast<Tc *>(c));
+  auto data_a = get_memory<const Ta>(a);
+  auto data_b = get_memory<const Tb>(b);
+  auto data_c = get_memory<Tc>(c);
   oneapi::mkl::blas::column_major::gemm_batch(
       q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda,
       stride_a, data_b, ldb, stride_b, beta_value,
@@ -352,8 +352,8 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
     // but only notrans, conjtrans and trans are available.
     // So we need do a conjtrans operation first, then do a trans operation.
     trans_B = oneapi::mkl::transpose::trans;
-    auto data_a = get_memory(reinterpret_cast<const Ty *>(a));
-    auto data_c = get_memory(reinterpret_cast<Ty *>(c));
+    auto data_a = get_memory<const Ty>(a);
+    auto data_c = get_memory<Ty>(c);
 #ifdef DPCT_USM_LEVEL_NONE
     auto new_B_buffer = sycl::buffer<Ty, 1>(sycl::range<1>(origin_b_rows * origin_b_cols));
     auto from_buffer = dpct::get_buffer<Ty>(b);
@@ -387,9 +387,9 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
                   ? oneapi::mkl::transpose::trans
                   : oneapi::mkl::transpose::nontrans;
     }
-    auto data_a = get_memory(reinterpret_cast<const Ty *>(a));
-    auto data_b = get_memory(reinterpret_cast<const Ty *>(b));
-    auto data_c = get_memory(reinterpret_cast<Ty *>(c));
+    auto data_a = get_memory<const Ty>(a);
+    auto data_b = get_memory<const Ty>(b);
+    auto data_c = get_memory<Ty>(c);
     oneapi::mkl::blas::column_major::gemmt(
         q, uplo, trans_A, trans_B, n, k, alpha_value,
         data_a, lda, data_b, ldb, beta_value, data_c, ldc);
@@ -1781,8 +1781,8 @@ inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
   if (b != c) {
     dpct::matrix_mem_copy(c, b, ldc, ldb, m, n, dpct::device_to_device, q);
   }
-  auto data_a = detail::get_memory(reinterpret_cast<const Ty *>(a));
-  auto data_c = detail::get_memory(reinterpret_cast<Ty *>(c));
+  auto data_a = detail::get_memory<const Ty>(a);
+  auto data_c = detail::get_memory<Ty>(c);
   oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
                                         unit_diag, m, n, alpha_val, data_a, lda,
                                         data_c, ldc);

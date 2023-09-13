@@ -12,43 +12,41 @@
 namespace clang {
 namespace dpct {
 
-class NullptrOrCallArgExpr {
-  NullptrOrCallArgExpr() = default;
+bool isNull(const Expr *Expr) {
+  const auto *E = Expr->IgnoreImpCasts();
+  Expr::EvalResult ExprResult;
+  if ((!E->isValueDependent()) &&
+      (E->EvaluateAsInt(ExprResult, dpct::DpctGlobalInfo::getContext()))) {
+    int64_t Value = ExprResult.Val.getInt().getExtValue();
+    if (!Value)
+      return true;
+  }
+  if (isa<CXXNullPtrLiteralExpr, GNUNullExpr>(E)) {
+    return true;
+  }
+  return false;
+}
 
+class NullptrOrCallArgExpr {
 public:
+  NullptrOrCallArgExpr() = default;
   const Expr *E = nullptr;
 
   template <class StreamT> void print(StreamT &Stream) const {
-    const Expr *Arg = E->IgnoreImpCasts();
-    Expr::EvalResult ArgResult;
-    if ((!Arg->isValueDependent()) &&
-        (Arg->EvaluateAsInt(ArgResult, dpct::DpctGlobalInfo::getContext()))) {
-      int64_t Value = ArgResult.Val.getInt().getExtValue();
-      if (!Value) {
-        Stream << "nullptr";
-        return;
-      }
-    }
-    if (dyn_cast<GNUNullExpr>(E)) {
+    if (isNull(E)) {
       Stream << "nullptr";
       return;
     }
     clang::dpct::print(Stream, E);
   }
-
-  static NullptrOrCallArgExpr create(const Expr *E);
 };
 
-NullptrOrCallArgExpr NullptrOrCallArgExpr::create(const Expr *E) {
-  NullptrOrCallArgExpr NOCAE;
-  NOCAE.E = E;
-  return NOCAE;
-}
-
-inline std::function<NullptrOrCallArgExpr(const CallExpr *)>
+std::function<NullptrOrCallArgExpr(const CallExpr *)>
 makeNullptrOrCallArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> NullptrOrCallArgExpr {
-    return NullptrOrCallArgExpr::create(C->getArg(Idx));
+    NullptrOrCallArgExpr NOCAE;
+    NOCAE.E = C->getArg(Idx);
+    return NOCAE;
   };
 }
 

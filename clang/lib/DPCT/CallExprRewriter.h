@@ -652,37 +652,56 @@ void printCapture(StreamT &Stream, bool IsCaptureRef) {
 }
 
 class AddrOfExpr {
+  bool DerefRemoved = false, NeedParens = false;
   const Expr *E = nullptr;
   const CallExpr *C = nullptr;
 
-  template <class StreamT> void print(StreamT &Stream, ExprAnalysis &EA) const {
-    Stream << "&";
-    dpct::print(Stream, EA, E);
+  template <class StreamT>
+  void print(StreamT &Stream, ExprAnalysis &EA, bool IgnoreDerefOp) const {
+    if (!DerefRemoved && !IgnoreDerefOp)
+      Stream << "&";
+
+    if (NeedParens) {
+      printWithParens(Stream, EA, E);
+    } else {
+      dpct::print(Stream, EA, E);
+    }
   }
 
   template <class StreamT>
-  void print(StreamT &Stream, ArgumentAnalysis &AA,
+  void print(StreamT &Stream, ArgumentAnalysis &AA, bool IgnoreDerefOp,
              std::pair<const CallExpr *, const Expr *> P) const {
-    Stream << "&";
+    if (!DerefRemoved && !IgnoreDerefOp)
+      Stream << "&";
+
     AA.setCallSpelling(C);
-    dpct::print(Stream, AA, P);
+    if (NeedParens) {
+      printWithParens(Stream, AA, P);
+    } else {
+      dpct::print(Stream, AA, P);
+    }
   }
 
 public:
-  AddrOfExpr(const Expr *E, const CallExpr *C = nullptr) : E(E), C(C) {}
+  AddrOfExpr(const Expr *E, const CallExpr *C = nullptr);
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
     print(Stream);
+  }
+  template <class StreamT> void printMemberBase(StreamT &Stream) const {
+    ExprAnalysis EA;
+    print(Stream, EA, true);
+    printMemberOp(Stream, !DerefRemoved);
   }
 
   template <class StreamT> void print(StreamT &Stream) const {
     if (C == nullptr) {
       ExprAnalysis EA;
-      print(Stream, EA);
+      print(Stream, EA, false);
     } else {
       ArgumentAnalysis AA;
       std::pair<const CallExpr *, const Expr *> ExprPair(C, E);
-      print(Stream, AA, ExprPair);
+      print(Stream, AA, false, ExprPair);
     }
   }
 };
