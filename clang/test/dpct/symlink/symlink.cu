@@ -4,6 +4,7 @@
 // RUN: cp %S/symlink.cu ./symlink.cu
 // RUN: cp %S/lib.cuh ./lib.cuh
 // RUN: ./dpct -out-root ./symlink ./symlink.cu --cuda-include-path="%cuda-path/include"
+// RUN  ls ./symlink
 // RUN: FileCheck --input-file ./symlink/symlink.dp.cpp --match-full-lines %s
 // RUN: rm -rf /tmp/%basename_t
 
