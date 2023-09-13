@@ -138,7 +138,9 @@ public:
             oneapi::dpl::execution::make_device_policy(get_default_queue()),
             first, last, begin());
       } else {
-        sycl::buffer<T, 1> buf(first, last);
+        sycl::buffer<typename ::std::iterator_traits<InputIterator>::value_type,
+                     1>
+            buf(first, last);
         auto buf_first = oneapi::dpl::begin(buf);
         auto buf_last = oneapi::dpl::end(buf);
         ::std::copy(
