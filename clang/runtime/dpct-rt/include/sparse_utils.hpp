@@ -77,14 +77,14 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
   oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
-  auto data_row_ptr = dpct::detail::get_memory<int>(const_cast<int *>(row_ptr));
-  auto data_col_ind = dpct::detail::get_memory<int>(const_cast<int *>(col_ind));
-  auto data_val = dpct::detail::get_memory<Ty>(const_cast<T *>(val));
+  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
+  auto data_val = dpct::detail::get_memory<Ty>(val);
   oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, num_rows,
                                     num_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
 
-  auto data_x = dpct::detail::get_memory<Ty>(const_cast<T *>(x));
+  auto data_x = dpct::detail::get_memory<Ty>(x);
   auto data_y = dpct::detail::get_memory<Ty>(y);
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
@@ -159,14 +159,14 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
   oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
-  auto data_row_ptr = dpct::detail::get_memory<int>(const_cast<int *>(row_ptr));
-  auto data_col_ind = dpct::detail::get_memory<int>(const_cast<int *>(col_ind));
-  auto data_val = dpct::detail::get_memory<Ty>(const_cast<T *>(val));
+  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
+  auto data_val = dpct::detail::get_memory<Ty>(val);
   oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, sparse_rows,
                                     sparse_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
 
-  auto data_b = dpct::detail::get_memory<Ty>(const_cast<T *>(b));
+  auto data_b = dpct::detail::get_memory<Ty>(b);
   auto data_c = dpct::detail::get_memory<Ty>(c);
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
@@ -238,9 +238,9 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
   using Ty = typename dpct::DataType<T>::T2;
-  auto data_row_ptr = dpct::detail::get_memory<int>(const_cast<int *>(row_ptr));
-  auto data_col_ind = dpct::detail::get_memory<int>(const_cast<int *>(col_ind));
-  auto data_val = dpct::detail::get_memory<Ty>(const_cast<T *>(val));
+  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
+  auto data_val = dpct::detail::get_memory<Ty>(val);
   oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
                                     row_col, row_col, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
