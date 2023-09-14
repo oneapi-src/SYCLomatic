@@ -758,6 +758,7 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
   }
 }
 
+namespace detail {
 template <typename T> struct temp_memory {
   temp_memory(sycl::queue queue) : _queue(queue) {}
   void set_host_ptr(T *host_ptr) {
@@ -812,7 +813,7 @@ private:
   T *_memory_ptr;
 #endif
 };
-
+} // namespace detail
 
 /// Do initial estimation of work and load balancing of computing a sparse
 /// matrix-sparse matrix product.
@@ -839,9 +840,9 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
   std::int64_t size_temp_buffer_64;
   size_temp_buffer_64 = static_cast<std::int64_t>(*size_temp_buffer);
   if (temp_buffer) {
-    temp_memory<std::int64_t> size_memory(queue);
+    detail::temp_memory<std::int64_t> size_memory(queue);
     size_memory.set_host_ptr(&size_temp_buffer_64);
-    temp_memory<std::uint8_t> work_memory(queue);
+    detail::temp_memory<std::uint8_t> work_memory(queue);
     work_memory.set_device_ptr(temp_buffer);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
@@ -858,7 +859,7 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
         matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general, trans_a,
         oneapi::mkl::sparse::matrix_view_descr::general, trans_b,
         oneapi::mkl::sparse::matrix_view_descr::general);
-    temp_memory<std::int64_t> size_memory(queue);
+    detail::temp_memory<std::int64_t> size_memory(queue);
     size_memory.set_host_ptr(&size_temp_buffer_64);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
@@ -900,11 +901,11 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
   if (temp_buffer) {
     std::int64_t nnz_value = 0;
     {
-      temp_memory<std::int64_t> size_memory(queue);
+      detail::temp_memory<std::int64_t> size_memory(queue);
       size_memory.set_host_ptr(&size_temp_buffer_64);
-      temp_memory<std::uint8_t> work_memory(queue);
+      detail::temp_memory<std::uint8_t> work_memory(queue);
       work_memory.set_device_ptr(temp_buffer);
-      temp_memory<std::int64_t> nnz_memory(queue);
+      detail::temp_memory<std::int64_t> nnz_memory(queue);
       nnz_memory.set_host_ptr(&nnz_value);
       oneapi::mkl::sparse::matmat(
           queue, a->get_matrix_handle(), b->get_matrix_handle(),
@@ -927,7 +928,7 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
     }
     c->set_nnz(nnz_value);
   } else {
-    temp_memory<std::int64_t> size_memory(queue);
+    detail::temp_memory<std::int64_t> size_memory(queue);
     size_memory.set_host_ptr(&size_temp_buffer_64);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
