@@ -758,6 +758,62 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
   }
 }
 
+template <typename T> struct temp_memory {
+  temp_memory(sycl::queue queue) : _queue(queue) {}
+  void set_host_ptr(T *host_ptr) {
+    if (_is_host_memory.has_value()) {
+      throw std::runtime_error("memory pointer has been set");
+    }
+    _original_host_ptr = host_ptr;
+    _is_host_memory = true;
+#ifdef DPCT_USM_LEVEL_NONE
+    sycl::buffer<T, 1> *_memory_ptr =
+        new sycl::buffer<T, 1>(_original_host_ptr, sycl::range<1>(1));
+#else
+    _memory_ptr = sycl::malloc_host<T>(1, _queue);
+    *_memory_ptr = static_cast<T>(*_original_host_ptr);
+#endif
+  }
+  void set_device_ptr(void *device_ptr) {
+    if (_is_host_memory.has_value()) {
+      throw std::runtime_error("memory pointer has been set");
+    }
+    _is_host_memory = false;
+#ifdef DPCT_USM_LEVEL_NONE
+    sycl::buffer<T, 1> *_memory_ptr =
+        new sycl::buffer<T, 1>(std::move(dpct::get_buffer<T>(device_ptr)));
+#else
+    _memory_ptr = static_cast<T *>(device_ptr);
+#endif
+  }
+  ~temp_memory() {
+    if (_is_host_memory.has_value()) {
+#ifdef DPCT_USM_LEVEL_NONE
+      delete _memory_ptr;
+#else
+      if (_is_host_memory.value()) {
+        T temp;
+        _queue.memcpy(&temp, _memory_ptr, sizeof(T)).wait();
+        *_original_host_ptr = static_cast<std::size_t>(temp);
+        sycl::free(_memory_ptr, _queue);
+      }
+#endif
+    }
+  }
+  auto get_memory_ptr() { return _memory_ptr; }
+
+private:
+  sycl::queue _queue;
+  std::optional<bool> _is_host_memory = std::nullopt;
+  T *_original_host_ptr = nullptr;
+#ifdef DPCT_USM_LEVEL_NONE
+  sycl::buffer<T, 1> *_memory_ptr;
+#else
+  T *_memory_ptr;
+#endif
+};
+
+
 /// Do initial estimation of work and load balancing of computing a sparse
 /// matrix-sparse matrix product.
 /// \param [in] queue The queue where the routine should be executed. It must
@@ -780,58 +836,42 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
                        const void *beta, sparse_matrix_desc_t c,
                        oneapi::mkl::sparse::matmat_descr_t matmat_descr,
                        size_t *size_temp_buffer, void *temp_buffer) {
+  std::int64_t size_temp_buffer_64;
+  size_temp_buffer_64 = static_cast<std::int64_t>(*size_temp_buffer);
   if (temp_buffer) {
-#ifdef DPCT_USM_LEVEL_NONE
-    sycl::buffer<std::uint8_t> extBuf =
-        dpct::get_buffer<std::uint8_t>(temp_buffer);
-    sycl::buffer<std::int64_t, 1> bufSizeBuf(sycl::range<1>(1));
-    auto bufSizeBuf_acc = bufSizeBuf.get_host_access(sycl::write_only);
-    bufSizeBuf_acc[0] = static_cast<std::int64_t>(*size_temp_buffer);
+    temp_memory<std::int64_t> size_memory(queue);
+    size_memory.set_host_ptr(&size_temp_buffer_64);
+    temp_memory<std::uint8_t> work_memory(queue);
+    work_memory.set_device_ptr(temp_buffer);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
         c->get_matrix_handle(),
         oneapi::mkl::sparse::matmat_request::work_estimation, matmat_descr,
-        &bufSizeBuf, &extBuf);
-    queue.wait();
-#else
-    std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
-    *bufSize = static_cast<std::int64_t>(*size_temp_buffer);
-    sycl::event e = oneapi::mkl::sparse::matmat(
-        queue, a->get_matrix_handle(), b->get_matrix_handle(),
-        c->get_matrix_handle(),
-        oneapi::mkl::sparse::matmat_request::work_estimation, matmat_descr,
-        bufSize, temp_buffer, {});
-    async_dpct_free({bufSize}, {e}, queue);
+        size_memory.get_memory_ptr(), work_memory.get_memory_ptr()
+#ifndef DPCT_USM_LEVEL_NONE
+        , {}
 #endif
+        );
+    queue.wait();
   } else {
     oneapi::mkl::sparse::set_matmat_data(
         matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general, trans_a,
         oneapi::mkl::sparse::matrix_view_descr::general, trans_b,
         oneapi::mkl::sparse::matrix_view_descr::general);
-#ifdef DPCT_USM_LEVEL_NONE
-    std::int64_t bufSizeValue = 0;
-    {
-      sycl::buffer<std::int64_t, 1> bufSizeBuf(&bufSizeValue,
-                                               sycl::range<1>(1));
-      oneapi::mkl::sparse::matmat(
-          queue, a->get_matrix_handle(), b->get_matrix_handle(),
-          c->get_matrix_handle(),
-          oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size,
-          matmat_descr, &bufSizeBuf, nullptr);
-    }
-    *size_temp_buffer = static_cast<size_t>(bufSizeValue);
-#else
-    std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
+    temp_memory<std::int64_t> size_memory(queue);
+    size_memory.set_host_ptr(&size_temp_buffer_64);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
         c->get_matrix_handle(),
         oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size,
-        matmat_descr, bufSize, nullptr, {});
-    queue.wait();
-    *size_temp_buffer = static_cast<size_t>(*bufSize);
-    sycl::free(bufSize, queue);
+        matmat_descr, size_memory.get_memory_ptr(), nullptr
+#ifndef DPCT_USM_LEVEL_NONE
+        , {}
 #endif
+    );
+    queue.wait();
   }
+  *size_temp_buffer = static_cast<std::size_t>(size_temp_buffer_64);
 }
 
 /// Do internal products for computing the C matrix of computing a sparse
