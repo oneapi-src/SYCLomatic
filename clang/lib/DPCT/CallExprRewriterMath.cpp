@@ -827,18 +827,23 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     auto High = getMigratedArg(1);
     auto Shift = getMigratedArg(2);
     if (FuncName == "__funnelshift_l") {
-      OS << "((" << Namespace << "upsample<unsigned>(" << High
-         << ", " << Low << ") << (" << Shift << " & 31)) >> 32)";
+      OS << "((" << Namespace << "upsample("
+         << "(unsigned int)" + High << ", "
+         << "(unsigned int)" + Low << ") << (" << Shift << " & 31)) >> 32)";
     } else if (FuncName == "__funnelshift_lc") {
-      OS << "((" << Namespace << "upsample<unsigned>(" << High
-         << ", " << Low << ") << " << Namespace << "min(" << Shift
+      OS << "((" << Namespace << "upsample("
+         << "(unsigned int)" + High << ", "
+         << "(unsigned int)" + Low << ") << " << Namespace << "min(" << Shift
          << ", 32)) >> 32)";
     } else if (FuncName == "__funnelshift_r") {
-      OS << "((" << Namespace << "upsample<unsigned>(" << High
-         << ", " << Low << ") >> (" << Shift << " & 31)) & 0xFFFFFFFF)";
+      OS << "((" << Namespace << "upsample("
+         << "(unsigned int)" + High << ", "
+         << "(unsigned int)" + Low << ") >> (" << Shift
+         << " & 31)) & 0xFFFFFFFF)";
     } else if (FuncName == "__funnelshift_rc") {
-      OS << "((" << Namespace << "upsample<unsigned>(" << High
-         << ", " << Low << ") >> " << Namespace << "min(" << Shift
+      OS << "((" << Namespace << "upsample("
+         << "(unsigned int)" + High << ", "
+         << "(unsigned int)" + Low << ") >> " << Namespace << "min(" << Shift
          << ", 32)) & 0xFFFFFFFF)";
     }
   }
