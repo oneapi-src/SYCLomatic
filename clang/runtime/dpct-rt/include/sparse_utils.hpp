@@ -507,7 +507,7 @@ public:
     if (_row_ptr != row_ptr) {
       throw std::runtime_error("the row_ptr cannot be changed");
     }
-    if (col_ind) {
+    if (!col_ind) {
       throw std::runtime_error("the col_ind pointer is NULL");
     }
     if (_col_ind) {
