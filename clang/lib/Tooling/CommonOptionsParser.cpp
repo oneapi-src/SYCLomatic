@@ -176,7 +176,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 
   SourcePathList = SourcePaths;
 #ifdef SYCLomatic_CUSTOMIZATION
-  if(std::string(argv[1]) == "--intercept-build"){
+  if (std::string(argv[1]) == "--intercept-build") {
     return llvm::Error::success();
   }
   if(!SourcePathList.empty()) {

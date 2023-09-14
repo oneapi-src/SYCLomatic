@@ -431,7 +431,8 @@ DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::list<std::string>), InterceptBuildCommand,
     "intercept-build",
     llvm::cl::desc("Intercept build tool to generate a compilation database"),
-    llvm::cl::value_desc("build command"), llvm::cl::cat(DPCTCat), llvm::cl::Sink)
+    llvm::cl::value_desc("build command"), llvm::cl::cat(DPCTCat),
+    llvm::cl::Sink)
 #endif
 
 DPCT_NON_ENUM_OPTION(

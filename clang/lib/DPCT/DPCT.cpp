@@ -617,21 +617,21 @@ int runDPCT(int argc, const char **argv) {
 
 #ifndef _WIN32
   if (InterceptBuildCommand.getNumOccurrences()) {
-    SmallString<512> pathToInterceptBuildBinary(DpctInstallPath);
-    llvm::sys::path::append(pathToInterceptBuildBinary, "bin",
+    SmallString<512> PathToInterceptBuildBinary(DpctInstallPath);
+    llvm::sys::path::append(PathToInterceptBuildBinary, "bin",
                             "intercept-build");
-    if (!llvm::sys::fs::exists(pathToInterceptBuildBinary)) {
+    if (!llvm::sys::fs::exists(PathToInterceptBuildBinary)) {
       DpctLog() << "Error: intercept-build tool not found"
                 << "\n";
       ShowStatus(MigrationErrorInvalidInstallPath);
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    std::string interceptBuildSystemCall(pathToInterceptBuildBinary.str());
+    std::string InterceptBuildSystemCall(PathToInterceptBuildBinary.str());
     for (int argumentIndex = 2; argumentIndex < argc; argumentIndex++) {
-      interceptBuildSystemCall.append(" ");
-      interceptBuildSystemCall.append(std::string(argv[argumentIndex]));
+      InterceptBuildSystemCall.append(" ");
+      InterceptBuildSystemCall.append(std::string(argv[argumentIndex]));
     }
-    int processExitCode = system(interceptBuildSystemCall.c_str());
+    int processExitCode = system(InterceptBuildSystemCall.c_str());
     if (processExitCode) {
       DpctLog() << "Error: intercept-build process call not successful"
                 << "\n";
