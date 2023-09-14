@@ -826,25 +826,33 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     auto Low = getMigratedArg(0);
     auto High = getMigratedArg(1);
     auto Shift = getMigratedArg(2);
+    auto getTypeCastStrIfNeed = [&](const clang::Expr *E,
+                                    std::string TypeStr) -> std::string {
+      return E->IgnoreImplicit()->getType().getAsString(
+                 PrintingPolicy(LangOptions())) == TypeStr
+                 ? ""
+                 : "(" + TypeStr + ")";
+    };
     if (FuncName == "__funnelshift_l") {
       OS << "((" << Namespace << "upsample("
-         << "(unsigned int)" + High << ", "
-         << "(unsigned int)" + Low << ") << (" << Shift << " & 31)) >> 32)";
+         << getTypeCastStrIfNeed(Call->getArg(0), "unsigned int") + High << ", "
+         << getTypeCastStrIfNeed(Call->getArg(1), "unsigned int") + Low
+         << ") << (" << Shift << " & 31)) >> 32)";
     } else if (FuncName == "__funnelshift_lc") {
       OS << "((" << Namespace << "upsample("
-         << "(unsigned int)" + High << ", "
-         << "(unsigned int)" + Low << ") << " << Namespace << "min(" << Shift
-         << ", 32)) >> 32)";
+         << getTypeCastStrIfNeed(Call->getArg(0), "unsigned int") + High << ", "
+         << getTypeCastStrIfNeed(Call->getArg(1), "unsigned int") + Low
+         << ") << " << Namespace << "min(" << Shift << ", 32)) >> 32)";
     } else if (FuncName == "__funnelshift_r") {
       OS << "((" << Namespace << "upsample("
-         << "(unsigned int)" + High << ", "
-         << "(unsigned int)" + Low << ") >> (" << Shift
-         << " & 31)) & 0xFFFFFFFF)";
+         << getTypeCastStrIfNeed(Call->getArg(0), "unsigned int") + High << ", "
+         << getTypeCastStrIfNeed(Call->getArg(1), "unsigned int") + Low
+         << ") >> (" << Shift << " & 31)) & 0xFFFFFFFF)";
     } else if (FuncName == "__funnelshift_rc") {
       OS << "((" << Namespace << "upsample("
-         << "(unsigned int)" + High << ", "
-         << "(unsigned int)" + Low << ") >> " << Namespace << "min(" << Shift
-         << ", 32)) & 0xFFFFFFFF)";
+         << getTypeCastStrIfNeed(Call->getArg(0), "unsigned int") + High << ", "
+         << getTypeCastStrIfNeed(Call->getArg(1), "unsigned int") + Low
+         << ") >> " << Namespace << "min(" << Shift << ", 32)) & 0xFFFFFFFF)";
     }
   }
 

@@ -2275,23 +2275,43 @@ __global__ void testUnsupported() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << (shift & 31)) >> 32) expression is used instead of the __funnelshift_l call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample((unsigned int)u, (unsigned int)u) << (u & 31)) >> 32);
+  // CHECK-NEXT: u = ((sycl::upsample(u, u) << (u & 31)) >> 32);
   u = __funnelshift_l(u, u, u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << (shift & 31)) >> 32) expression is used instead of the __funnelshift_l call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: u = ((sycl::upsample((unsigned int)i, (unsigned int)i) << (u & 31)) >> 32);
+  u = __funnelshift_l(i, i, u);
   // CHECK: /*
   // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << min(shift, 32)) >> 32) expression is used instead of the __funnelshift_lc call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample((unsigned int)u, (unsigned int)u) << sycl::min(u, 32)) >> 32);
+  // CHECK-NEXT: u = ((sycl::upsample(u, u) << sycl::min(u, 32)) >> 32);
   u = __funnelshift_lc(u, u, u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << min(shift, 32)) >> 32) expression is used instead of the __funnelshift_lc call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: u = ((sycl::upsample((unsigned int)i, (unsigned int)i) << sycl::min(u, 32)) >> 32);
+  u = __funnelshift_lc(i, i, u);
   // CHECK: /*
   // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> (shift & 31)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_r call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample((unsigned int)u, (unsigned int)u) >> (u & 31)) & 0xFFFFFFFF);
+  // CHECK-NEXT: u = ((sycl::upsample(u, u) >> (u & 31)) & 0xFFFFFFFF);
   u = __funnelshift_r(u, u, u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> (shift & 31)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_r call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: u = ((sycl::upsample((unsigned int)i, (unsigned int)i) >> (u & 31)) & 0xFFFFFFFF);
+  u = __funnelshift_r(i, i, u);
   // CHECK: /*
   // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> min(shift, 32)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_rc call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample((unsigned int)u, (unsigned int)u) >> sycl::min(u, 32)) & 0xFFFFFFFF);
+  // CHECK-NEXT: u = ((sycl::upsample(u, u) >> sycl::min(u, 32)) & 0xFFFFFFFF);
   u = __funnelshift_rc(u, u, u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> min(shift, 32)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_rc call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: u = ((sycl::upsample((unsigned int)i, (unsigned int)i) >> sycl::min(u, 32)) & 0xFFFFFFFF);
+  u = __funnelshift_rc(i, i, u);
   // CHECK: ll = sycl::mul_hi(ll, ll);
   ll = __mul64hi(ll, ll);
   // CHECK: i = sycl::rhadd(i, i);
