@@ -51,4 +51,4 @@ which is manually adjusted to:
   
      tex.set(sycl::coordinate_normalization_mode::normalized);
      ...
-     result = normalization(tex.read(0.5f, 0.5f)); // Implement the function “normalization” to normalize the result data as required.
+     result = normalization(tex.read(0.5f, 0.5f)); // Implement the function "normalization" to normalize the result data as required.

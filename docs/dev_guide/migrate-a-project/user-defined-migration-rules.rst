@@ -146,7 +146,7 @@ To describe the value format for the ``Out`` key in a migration rule of
 
 .. code-block:: none
 
-   OutValue::= Token | Token OutValue       # OutValue is the value for the “out” key
+   OutValue::= Token | Token OutValue       # OutValue is the value for the "out" key
    Token::= AnyString | Keyword             # AnyString is a string provided by the user
    Keyword::= ArgIndex
       | $queue                              # Represents the queue string
@@ -171,7 +171,7 @@ Consider the following user-defined API migration rule:
      Priority: Takeover
      In: foo
      Out: $type_name_of($2) new_ptr = bar($deref($1), $3)
-     Includes: [“<header3>”]
+     Includes: ["<header3>"]
 
 If the input source code contains a function call that matches the rule, the
 tool parses the value of the ``In`` and ``Out`` keys and builds a keyword mapping

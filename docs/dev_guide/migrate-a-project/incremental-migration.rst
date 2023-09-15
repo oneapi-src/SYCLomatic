@@ -79,14 +79,14 @@ Content of source file ``sample2.cu``:
    :linenos:
 
      #define MACRO_A
-     #include “sample_inc.h”
+     #include "sample_inc.h"
      #undef MACRO_A
 
 Content of source file ``sample3.cu``:
 
 .. code-block:: none
 
-	#include “sample_inc.h”
+	#include "sample_inc.h"
 
 Use the following steps to incrementally migrate the files.
 

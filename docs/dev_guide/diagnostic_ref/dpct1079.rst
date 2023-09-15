@@ -24,4 +24,4 @@ Suggestions to Fix
 ------------------
 
 Build the dynamic library from the migrated module file and replace
-“dpct_placeholder” with the file path.
+"dpct_placeholder" with the file path.
