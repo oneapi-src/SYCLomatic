@@ -122,6 +122,44 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseScsrmv_mp",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseDcsrmv_mp",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseCcsrmv_mp",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseZcsrmv_mp",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12)))))
+
+REMOVE_API_FACTORY_ENTRY("cusparseCsrmvEx_bufferSize")
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+        "cusparseCsrmvEx",
+        CALL(MapNames::getDpctNamespace() + "sparse::csrmv", DEREF(0), ARG(2),
+             ARG(3), ARG(4), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+             ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17), ARG(18)))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseScsrmm",
                             CALL(MapNames::getDpctNamespace() + "sparse::csrmm",
                                  DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
