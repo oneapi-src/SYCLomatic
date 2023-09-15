@@ -150,10 +150,6 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            library_data_t val_type, const int *row_ptr, const int *col_ind,
            const void *x, library_data_t x_type, const void *beta,
            library_data_t beta_type, void *y, library_data_t y_type) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   std::uint64_t key = dpct::detail::get_type_combination_id(
       alpha_type, val_type, x_type, beta_type, y_type);
   switch (key) {
@@ -208,7 +204,6 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
-#endif
 }
 
 /// Computes a CSR format sparse matrix-dense matrix product.
