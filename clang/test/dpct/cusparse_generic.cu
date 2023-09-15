@@ -207,3 +207,14 @@ void foo1() {
 void foo2(cusparseSpGEMMDescr_t *descr) {
   cusparseSpGEMM_destroyDescr(*descr);
 }
+
+//CHECK:oneapi::mkl::sparse::matmat_descr_t foo3();
+//CHECK-NEXT:void foo4() {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1120:{{[0-9]+}}: Taking the address of an rvalue "foo3()" is not allowed. You need to adjust the code.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  oneapi::mkl::sparse::release_matmat_descr(&foo3());
+cusparseSpGEMMDescr_t foo3();
+void foo4() {
+  cusparseSpGEMM_destroyDescr(foo3());
+}

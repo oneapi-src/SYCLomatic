@@ -17,8 +17,7 @@ bool isNull(const Expr *Expr) {
   Expr::EvalResult ExprResult;
   if ((!E->isValueDependent()) &&
       (E->EvaluateAsInt(ExprResult, dpct::DpctGlobalInfo::getContext()))) {
-    int64_t Value = ExprResult.Val.getInt().getExtValue();
-    if (!Value)
+    if (!ExprResult.Val.getInt().getExtValue())
       return true;
   }
   if (isa<CXXNullPtrLiteralExpr, GNUNullExpr>(E)) {

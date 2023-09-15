@@ -249,4 +249,6 @@ DEF_WARNING(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms 
 DEF_COMMENT(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
 DEF_WARNING(UNALLOCATED_MEMORY, 1119, "The memory of row_ptr is not allocated. You need to allocate the memory before invoking oneapi::mkl::sparse::set_csr_data().")
 DEF_COMMENT(UNALLOCATED_MEMORY, 1119, "The memory of row_ptr is not allocated. You need to allocate the memory before invoking oneapi::mkl::sparse::set_csr_data().")
+DEF_WARNING(ADDR_OF_RVALUE, 1120, "Taking the address of an rvalue \"%0\" is not allowed. You need to adjust the code.")
+DEF_COMMENT(ADDR_OF_RVALUE, 1120, "Taking the address of an rvalue \"{0}\" is not allowed. You need to adjust the code.")
 // clang-format on
