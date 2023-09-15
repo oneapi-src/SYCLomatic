@@ -36,7 +36,7 @@ __global__ void add() {
   // CHECK: u64 = x + y;
   asm("add.u64 %0, %1, %2;" : "=r"(u64) : "r"(x), "r"(y));
 
-  // CHECK: i32 = sycl::add_sat<int32_t>(x, y);
+  // CHECK: i32 = sycl::add_sat((int32_t)x, (int32_t)y);
   asm("add.s32.sat %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
   // CHECK: s16x2 = sa + sb;
@@ -87,7 +87,7 @@ __global__ void sub() {
   // CHECK: u64 = x - y;
   asm("sub.u64 %0, %1, %2;" : "=r"(u64) : "r"(x), "r"(y));
 
-  // CHECK: i32 = sycl::sub_sat<int32_t>(x, y);
+  // CHECK: i32 = sycl::sub_sat((int32_t)x, (int32_t)y);
   asm("sub.s32.sat %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
   // CHECK: s16x2 = sa - sb;
@@ -118,22 +118,22 @@ __global__ void mul() {
   int64_t i64;
   uint64_t u64;
 
-  // CHECK: i16 = sycl::mul_hi<int16_t>(x, y);
+  // CHECK: i16 = sycl::mul_hi((int16_t)x, (int16_t)y);
   asm("mul.hi.s16 %0, %1, %2;" : "=r"(i16) : "r"(x), "r"(y));
 
-  // CHECK: u16 = sycl::mul_hi<uint16_t>(x, y);
+  // CHECK: u16 = sycl::mul_hi((uint16_t)x, (uint16_t)y);
   asm("mul.hi.u16 %0, %1, %2;" : "=r"(u16) : "r"(x), "r"(y));
 
-  // CHECK: i32 = sycl::mul_hi<int32_t>(x, y);
+  // CHECK: i32 = sycl::mul_hi((int32_t)x, (int32_t)y);
   asm("mul.hi.s32 %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: u32 = sycl::mul_hi<uint32_t>(x, y);
+  // CHECK: u32 = sycl::mul_hi((uint32_t)x, (uint32_t)y);
   asm("mul.hi.u32 %0, %1, %2;" : "=r"(u32) : "r"(x), "r"(y));
 
-  // CHECK: i64 = sycl::mul_hi<int64_t>(x, y);
+  // CHECK: i64 = sycl::mul_hi((int64_t)x, (int64_t)y);
   asm("mul.hi.s64 %0, %1, %2;" : "=r"(i64) : "r"(x), "r"(y));
 
-  // CHECK: u64 = sycl::mul_hi<uint64_t>(x, y);
+  // CHECK: u64 = sycl::mul_hi((uint64_t)x, (uint64_t)y);
   asm("mul.hi.u64 %0, %1, %2;" : "=r"(u64) : "r"(x), "r"(y));
 
   // CHECK: i16 = (int32_t)x * (int32_t)y;
@@ -164,22 +164,22 @@ __global__ void mad() {
   int64_t i64;
   uint64_t u64;
 
-  // CHECK: i16 = sycl::mad_hi<int16_t>(x, y, 3);
+  // CHECK: i16 = sycl::mad_hi((int16_t)x, (int16_t)y, (int16_t)3);
   asm("mad.hi.s16 %0, %1, %2, %3;" : "=r"(i16) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: u16 = sycl::mad_hi<uint16_t>(x, y, 3);
+  // CHECK: u16 = sycl::mad_hi((uint16_t)x, (uint16_t)y, (uint16_t)3);
   asm("mad.hi.u16 %0, %1, %2, %3;" : "=r"(u16) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: i32 = sycl::mad_hi<int32_t>(x, y, 3);
+  // CHECK: i32 = sycl::mad_hi((int32_t)x, (int32_t)y, (int32_t)3);
   asm("mad.hi.s32 %0, %1, %2, %3;" : "=r"(i32) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: u32 = sycl::mad_hi<uint32_t>(x, y, 3);
+  // CHECK: u32 = sycl::mad_hi((uint32_t)x, (uint32_t)y, (uint32_t)3);
   asm("mad.hi.u32 %0, %1, %2, %3;" : "=r"(u32) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: i64 = sycl::mad_hi<int64_t>(x, y, 3);
+  // CHECK: i64 = sycl::mad_hi((int64_t)x, (int64_t)y, (int64_t)3);
   asm("mad.hi.s64 %0, %1, %2, %3;" : "=r"(i64) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: u64 = sycl::mad_hi<uint64_t>(x, y, 3);
+  // CHECK: u64 = sycl::mad_hi((uint64_t)x, (uint64_t)y, (uint64_t)3);
   asm("mad.hi.u64 %0, %1, %2, %3;" : "=r"(u64) : "r"(x), "r"(y), "r"(3));
 
   // CHECK: i16 = (int32_t)x * (int32_t)y + (int32_t)3;
@@ -206,10 +206,10 @@ __global__ void mul24() {
   int32_t i32;
   uint32_t u32;
 
-  // CHECK: i32 = sycl::mul24<int32_t>(x, y);
+  // CHECK: i32 = sycl::mul24((int32_t)x, (int32_t)y);
   asm("mul24.lo.s32 %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: u32 = sycl::mul24<uint32_t>(x, y);
+  // CHECK: u32 = sycl::mul24((uint32_t)x, (uint32_t)y);
   asm("mul24.lo.u32 %0, %1, %2;" : "=r"(u32) : "r"(x), "r"(y));
 
   // CHECK: DPCT1053:{{.*}}: Migration of device assembly code is not supported.
@@ -224,10 +224,10 @@ __global__ void mad24() {
   int32_t i32;
   uint32_t u32;
 
-  // CHECK: i32 = sycl::mad24<int32_t>(x, y, 3);
+  // CHECK: i32 = sycl::mad24((int32_t)x, (int32_t)y, (int32_t)3);
   asm("mad24.lo.s32 %0, %1, %2, %3;" : "=r"(i32) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: u32 = sycl::mad24<uint32_t>(x, y, 3);
+  // CHECK: u32 = sycl::mad24((uint32_t)x, (uint32_t)y, (uint32_t)3);
   asm("mad24.lo.u32 %0, %1, %2, %3;" : "=r"(u32) : "r"(x), "r"(y), "r"(3));
 
   // CHECK: DPCT1053:{{.*}}: Migration of device assembly code is not supported.
@@ -298,13 +298,13 @@ __global__ void abs() {
   int32_t i32;
   int64_t i64;
 
-  // CHECK: i16 = sycl::abs<int16_t>(x);
+  // CHECK: i16 = sycl::abs(x);
   asm("abs.s16 %0, %1;" : "=r"(i16) : "r"(x));
 
-  // CHECK: i32 = sycl::abs<int32_t>(x);
+  // CHECK: i32 = sycl::abs(x);
   asm("abs.s32 %0, %1;" : "=r"(i32) : "r"(x));
 
-  // CHECK: i64 = sycl::abs<int64_t>(x);
+  // CHECK: i64 = sycl::abs(x);
   asm("abs.s64 %0, %1;" : "=r"(i64) : "r"(x));
 }
 
@@ -335,34 +335,34 @@ __global__ void min() {
   short2 s16x2, sa{1, 2}, sb{1, 2};
   ushort2 u16x2, ua{1, 2}, ub{1, 2};
 
-  // CHECK: i16 = sycl::min<int16_t>(x, y);
+  // CHECK: i16 = sycl::min((int16_t)x, (int16_t)y);
   asm("min.s16 %0, %1, %2;" : "=r"(i16) : "r"(x), "r"(y));
 
-  // CHECK: u16 = sycl::min<uint16_t>(x, y);
+  // CHECK: u16 = sycl::min((uint16_t)x, (uint16_t)y);
   asm("min.u16 %0, %1, %2;" : "=r"(u16) : "r"(x), "r"(y));
 
-  // CHECK: i32 = sycl::min<int32_t>(x, y);
+  // CHECK: i32 = sycl::min((int32_t)x, (int32_t)y);
   asm("min.s32 %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: u32 = sycl::min<uint32_t>(x, y);
+  // CHECK: u32 = sycl::min((uint32_t)x, (uint32_t)y);
   asm("min.u32 %0, %1, %2;" : "=r"(u32) : "r"(x), "r"(y));
 
-  // CHECK: i64 = sycl::min<int64_t>(x, y);
+  // CHECK: i64 = sycl::min((int64_t)x, (int64_t)y);
   asm("min.s64 %0, %1, %2;" : "=r"(i64) : "r"(x), "r"(y));
 
-  // CHECK: u64 = sycl::min<uint64_t>(x, y);
+  // CHECK: u64 = sycl::min((uint64_t)x, (uint64_t)y);
   asm("min.u64 %0, %1, %2;" : "=r"(u64) : "r"(x), "r"(y));
 
-  // CHECK: s16x2 = sycl::min<sycl::short2>(sa, sb);
+  // CHECK: s16x2 = sycl::min((sycl::short2)sa, (sycl::short2)sb);
   asm("min.s16x2 %0, %1, %2;" : "=r"(s16x2) : "r"(sa), "r"(sb));
 
-  // CHECK: u16x2 = sycl::min<sycl::ushort2>(ua, ub);
+  // CHECK: u16x2 = sycl::min((sycl::ushort2)ua, (sycl::ushort2)ub);
   asm("min.u16x2 %0, %1, %2;" : "=r"(u16x2) : "r"(ua), "r"(ub));
 
-  // CHECK: i32 = sycl::clamp<int32_t>(sycl::min<int32_t>(x, y), 0, std::numeric_limits<int32_t>::max());
+  // CHECK: i32 = dpct::relu(sycl::min((int32_t)x, (int32_t)y));
   asm("min.s32.relu %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: s16x2 = sycl::clamp<sycl::short2>(sycl::min<sycl::short2>(sa, sb), sycl::short2(0), sycl::short2(std::numeric_limits<sycl::short2::element_type>::max()));
+  // CHECK: s16x2 = dpct::relu(sycl::min((sycl::short2)sa, (sycl::short2)sb));
   asm("min.s16x2.relu %0, %1, %2;" : "=r"(s16x2) : "r"(sa), "r"(sb));
 }
 
@@ -377,34 +377,34 @@ __global__ void max() {
   short2 s16x2, sa{1, 2}, sb{1, 2};
   ushort2 u16x2, ua{1, 2}, ub{1, 2};
 
-  // CHECK: i16 = sycl::max<int16_t>(x, y);
+  // CHECK: i16 = sycl::max((int16_t)x, (int16_t)y);
   asm("max.s16 %0, %1, %2;" : "=r"(i16) : "r"(x), "r"(y));
 
-  // CHECK: u16 = sycl::max<uint16_t>(x, y);
+  // CHECK: u16 = sycl::max((uint16_t)x, (uint16_t)y);
   asm("max.u16 %0, %1, %2;" : "=r"(u16) : "r"(x), "r"(y));
 
-  // CHECK: i32 = sycl::max<int32_t>(x, y);
+  // CHECK: i32 = sycl::max((int32_t)x, (int32_t)y);
   asm("max.s32 %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: u32 = sycl::max<uint32_t>(x, y);
+  // CHECK: u32 = sycl::max((uint32_t)x, (uint32_t)y);
   asm("max.u32 %0, %1, %2;" : "=r"(u32) : "r"(x), "r"(y));
 
-  // CHECK: i64 = sycl::max<int64_t>(x, y);
+  // CHECK: i64 = sycl::max((int64_t)x, (int64_t)y);
   asm("max.s64 %0, %1, %2;" : "=r"(i64) : "r"(x), "r"(y));
 
-  // CHECK: u64 = sycl::max<uint64_t>(x, y);
+  // CHECK: u64 = sycl::max((uint64_t)x, (uint64_t)y);
   asm("max.u64 %0, %1, %2;" : "=r"(u64) : "r"(x), "r"(y));
 
-  // CHECK: s16x2 = sycl::max<sycl::short2>(sa, sb);
+  // CHECK: s16x2 = sycl::max((sycl::short2)sa, (sycl::short2)sb);
   asm("max.s16x2 %0, %1, %2;" : "=r"(s16x2) : "r"(sa), "r"(sb));
 
-  // CHECK: u16x2 = sycl::max<sycl::ushort2>(ua, ub);
+  // CHECK: u16x2 = sycl::max((sycl::ushort2)ua, (sycl::ushort2)ub);
   asm("max.u16x2 %0, %1, %2;" : "=r"(u16x2) : "r"(ua), "r"(ub));
 
-  // CHECK: i32 = sycl::clamp<int32_t>(sycl::max<int32_t>(x, y), 0, std::numeric_limits<int32_t>::max());
+  // CHECK: i32 = dpct::relu(sycl::max((int32_t)x, (int32_t)y));
   asm("max.s32.relu %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: s16x2 = sycl::clamp<sycl::short2>(sycl::max<sycl::short2>(sa, sb), sycl::short2(0), sycl::short2(std::numeric_limits<sycl::short2::element_type>::max()));
+  // CHECK: s16x2 = dpct::relu(sycl::max((sycl::short2)sa, (sycl::short2)sb));
   asm("max.s16x2.relu %0, %1, %2;" : "=r"(s16x2) : "r"(sa), "r"(sb));
 }
 

@@ -744,7 +744,7 @@ public:
     this->IsInMacroDefine = IsInMacroDefine;
   }
   // Special init is needed for argument expression.
-  ArgumentAnalysis(const Expr *Arg, bool IsInMacroDefine) : Base(nullptr) {
+  ArgumentAnalysis(const Expr *Arg, bool IsInMacroDefine = false) : Base(nullptr) {
     this->IsInMacroDefine = IsInMacroDefine;
     initArgumentExpr(Arg);
   }
@@ -894,9 +894,9 @@ public:
 
 /// Analyzes the side effects of an expression while doing basic expression
 /// analysis
-class SideEffectsAnalysis : public ExprAnalysis {
+class SideEffectsAnalysis : public ArgumentAnalysis {
 public:
-  explicit SideEffectsAnalysis(const Expr *E) : ExprAnalysis(E) {}
+  explicit SideEffectsAnalysis(const Expr *E) : ArgumentAnalysis(E) {}
   inline bool hasSideEffects() { return HasSideEffects; }
 
 protected:
