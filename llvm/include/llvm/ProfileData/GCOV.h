@@ -268,7 +268,11 @@ public:
   uint8_t artificial = 0;
   StringRef Name;
   mutable SmallString<0> demangled;
+#ifdef SYCLomatic_CUSTOMIZATION
+  unsigned srcIdx = 0;
+#else
   unsigned srcIdx;
+#endif // SYCLomatic_CUSTOMIZATION
   SmallVector<std::unique_ptr<GCOVBlock>, 0> blocks;
   SmallVector<std::unique_ptr<GCOVArc>, 0> arcs, treeArcs;
   DenseSet<const GCOVBlock *> visited;
