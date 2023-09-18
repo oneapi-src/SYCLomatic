@@ -8679,7 +8679,8 @@ void DeviceFunctionDeclRule::runRule(
     // For Xe-LP architecture, if the sub-group size is 32, then each work-item
     // can use 128 * 32 Byte / 32 = 128 Byte registers.
     if(LocalVariableSize > 128) {
-      report(SM.getExpansionLoc(FD->getBeginLoc()), Warnings::REGISTER_USAGE, false, FD->getName());
+      report(SM.getExpansionLoc(FD->getBeginLoc()), Warnings::REGISTER_USAGE,
+             false, FD->getDeclName().getAsString());
     }
   }
   if (isLambda(FD) && !FuncInfo->isLambda()) {
