@@ -280,9 +280,19 @@ ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY("cusparseSpGEMM_createDescr",
                        CALL("oneapi::mkl::sparse::init_matmat_descr", ARG(0))))
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cusparseSpGEMM_destroyDescr",
-    CALL("oneapi::mkl::sparse::release_matmat_descr", ADDROF(0))))
+CONDITIONAL_FACTORY_ENTRY(
+    [](const CallExpr *C) -> bool {
+      return C->getArg(0)->IgnoreImpCasts()->isLValue();
+    },
+    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+        "cusparseSpGEMM_destroyDescr",
+        CALL("oneapi::mkl::sparse::release_matmat_descr", ADDROF(0)))),
+    WARNING_FACTORY_ENTRY("cusparseSpGEMM_destroyDescr",
+                          ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                              "cusparseSpGEMM_destroyDescr",
+                              CALL("oneapi::mkl::sparse::release_matmat_descr",
+                                   ADDROF(0)))),
+                          Diagnostics::ADDR_OF_RVALUE, ARG(0)))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseSpGEMM_workEstimation",

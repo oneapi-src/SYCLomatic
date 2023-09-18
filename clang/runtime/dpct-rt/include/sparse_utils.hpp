@@ -514,7 +514,6 @@ public:
       throw std::runtime_error("the col_ind pointer can be reset only when the "
                                "original pointer is NULL");
     }
-    _row_ptr = row_ptr;
     _col_ind = col_ind;
 
     // The descriptor will be updated in the set_value function
@@ -759,57 +758,53 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
 }
 
 namespace detail {
-template <typename T> struct temp_memory {
-  temp_memory(sycl::queue queue) : _queue(queue) {}
-  void set_host_ptr(T *host_ptr) {
-    if (_is_host_memory.has_value()) {
-      throw std::runtime_error("memory pointer has been set");
-    }
-    _original_host_ptr = host_ptr;
-    _is_host_memory = true;
+template <typename T, bool is_host_memory> struct temp_memory {
+  temp_memory(sycl::queue queue, void *ptr)
+      : _queue(queue)
 #ifdef DPCT_USM_LEVEL_NONE
-    sycl::buffer<T, 1> *_memory_ptr =
-        new sycl::buffer<T, 1>(_original_host_ptr, sycl::range<1>(1));
-#else
-    _memory_ptr = sycl::malloc_host<T>(1, _queue);
-    *_memory_ptr = static_cast<T>(*_original_host_ptr);
+        ,
+        _buffer(
+            is_host_memory
+                ? sycl::buffer<T, 1>(static_cast<T *>(ptr), sycl::range<1>(1))
+                : sycl::buffer<T, 1>(std::move(dpct::get_buffer<T>(ptr))))
 #endif
-  }
-  void set_device_ptr(void *device_ptr) {
-    if (_is_host_memory.has_value()) {
-      throw std::runtime_error("memory pointer has been set");
+  {
+    if constexpr (is_host_memory) {
+#ifndef DPCT_USM_LEVEL_NONE
+      _original_host_ptr = static_cast<T *>(ptr);
+      _memory_ptr = sycl::malloc_host<T>(1, _queue);
+      *_memory_ptr = static_cast<T>(*_original_host_ptr);
+    } else {
+      _memory_ptr = static_cast<T *>(ptr);
+#endif
     }
-    _is_host_memory = false;
-#ifdef DPCT_USM_LEVEL_NONE
-    sycl::buffer<T, 1> *_memory_ptr =
-        new sycl::buffer<T, 1>(std::move(dpct::get_buffer<T>(device_ptr)));
-#else
-    _memory_ptr = static_cast<T *>(device_ptr);
-#endif
   }
+
   ~temp_memory() {
-    if (_is_host_memory.has_value()) {
-#ifdef DPCT_USM_LEVEL_NONE
-      delete _memory_ptr;
-#else
-      if (_is_host_memory.value()) {
-        T temp;
-        _queue.memcpy(&temp, _memory_ptr, sizeof(T)).wait();
-        *_original_host_ptr = static_cast<std::size_t>(temp);
-        sycl::free(_memory_ptr, _queue);
-      }
-#endif
+#ifndef DPCT_USM_LEVEL_NONE
+    if constexpr (is_host_memory) {
+      T temp;
+      _queue.wait();
+      _queue.memcpy(&temp, _memory_ptr, sizeof(T)).wait();
+      *_original_host_ptr = static_cast<std::size_t>(temp);
+      sycl::free(_memory_ptr, _queue);
     }
+#endif
   }
-  auto get_memory_ptr() { return _memory_ptr; }
+  auto get_memory_ptr() {
+#ifdef DPCT_USM_LEVEL_NONE
+    return &_buffer;
+#else
+    return _memory_ptr;
+#endif
+  }
 
 private:
   sycl::queue _queue;
-  std::optional<bool> _is_host_memory = std::nullopt;
-  T *_original_host_ptr = nullptr;
 #ifdef DPCT_USM_LEVEL_NONE
-  sycl::buffer<T, 1> *_memory_ptr;
+  sycl::buffer<T, 1> _buffer;
 #else
+  T *_original_host_ptr = nullptr;
   T *_memory_ptr;
 #endif
 };
@@ -840,10 +835,9 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
   std::int64_t size_temp_buffer_64;
   size_temp_buffer_64 = static_cast<std::int64_t>(*size_temp_buffer);
   if (temp_buffer) {
-    detail::temp_memory<std::int64_t> size_memory(queue);
-    size_memory.set_host_ptr(&size_temp_buffer_64);
-    detail::temp_memory<std::uint8_t> work_memory(queue);
-    work_memory.set_device_ptr(temp_buffer);
+    detail::temp_memory<std::int64_t, true> size_memory(queue,
+                                                        &size_temp_buffer_64);
+    detail::temp_memory<std::uint8_t, false> work_memory(queue, temp_buffer);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
         c->get_matrix_handle(),
@@ -853,14 +847,13 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
         , {}
 #endif
     );
-    queue.wait();
   } else {
     oneapi::mkl::sparse::set_matmat_data(
         matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general, trans_a,
         oneapi::mkl::sparse::matrix_view_descr::general, trans_b,
         oneapi::mkl::sparse::matrix_view_descr::general);
-    detail::temp_memory<std::int64_t> size_memory(queue);
-    size_memory.set_host_ptr(&size_temp_buffer_64);
+    detail::temp_memory<std::int64_t, true> size_memory(queue,
+                                                        &size_temp_buffer_64);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
         c->get_matrix_handle(),
@@ -870,7 +863,6 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
         , {}
 #endif
     );
-    queue.wait();
   }
   *size_temp_buffer = static_cast<std::size_t>(size_temp_buffer_64);
 }
@@ -901,12 +893,10 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
   if (temp_buffer) {
     std::int64_t nnz_value = 0;
     {
-      detail::temp_memory<std::int64_t> size_memory(queue);
-      size_memory.set_host_ptr(&size_temp_buffer_64);
-      detail::temp_memory<std::uint8_t> work_memory(queue);
-      work_memory.set_device_ptr(temp_buffer);
-      detail::temp_memory<std::int64_t> nnz_memory(queue);
-      nnz_memory.set_host_ptr(&nnz_value);
+      detail::temp_memory<std::int64_t, true> size_memory(queue,
+                                                          &size_temp_buffer_64);
+      detail::temp_memory<std::uint8_t, false> work_memory(queue, temp_buffer);
+      detail::temp_memory<std::int64_t, true> nnz_memory(queue, &nnz_value);
       oneapi::mkl::sparse::matmat(
           queue, a->get_matrix_handle(), b->get_matrix_handle(),
           c->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::compute,
@@ -924,12 +914,11 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
           , {}
 #endif
       );
-      queue.wait();
     }
     c->set_nnz(nnz_value);
   } else {
-    detail::temp_memory<std::int64_t> size_memory(queue);
-    size_memory.set_host_ptr(&size_temp_buffer_64);
+    detail::temp_memory<std::int64_t, true> size_memory(queue,
+                                                        &size_temp_buffer_64);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
         c->get_matrix_handle(),
@@ -939,7 +928,6 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
         , {}
 #endif
     );
-    queue.wait();
   }
   *size_temp_buffer = static_cast<std::size_t>(size_temp_buffer_64);
 }
@@ -965,8 +953,12 @@ inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
   oneapi::mkl::sparse::matmat(queue, a->get_matrix_handle(),
                               b->get_matrix_handle(), c->get_matrix_handle(),
                               oneapi::mkl::sparse::matmat_request::finalize,
-                              matmat_descr, nullptr, nullptr, {});
-  queue.wait();
+                              matmat_descr, nullptr, nullptr
+#ifdef DPCT_USM_LEVEL_NONE
+  );
+#else
+  , {}).wait();
+#endif
 }
 
 namespace detail {

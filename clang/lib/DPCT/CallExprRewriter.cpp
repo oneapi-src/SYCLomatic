@@ -54,16 +54,6 @@ AddrOfExpr::AddrOfExpr(const Expr *E, const CallExpr *C) {
     this->E = E;
   }
 
-  if (!E->IgnoreImpCasts()->isLValue()) {
-    TransformSetTy TS;
-    auto SL = E->getBeginLoc();
-    DiagnosticsUtils::report(SL, Diagnostics::ADDR_OF_RVALUE, &TS, false,
-                             ExprAnalysis::ref(E));
-    for (auto &T : TS)
-      DpctGlobalInfo::getInstance().addReplacement(
-          T->getReplacement(DpctGlobalInfo::getContext()));
-  }
-
   this->NeedParens = needExtraParens(E);
   if (const auto UO = dyn_cast_or_null<UnaryOperator>(E->IgnoreImpCasts())) {
     if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
