@@ -3362,6 +3362,7 @@ bool analyzeMemcpyOrder(
 
     if (FuncName == "cudaMemcpy" || FuncName == "cudaMemcpyFromSymbol" ||
         FuncName == "cudaMemcpyToSymbol") {
+      MemcpyCallExprs.insert(CE);
       if (getAncestorFlowControl(CE, CS)) {
         MemcpyOrderVec.emplace_back(
             CE, MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl);
@@ -3371,7 +3372,6 @@ bool analyzeMemcpyOrder(
         SrcDstExprs.insert(CE->getArg(1));
         ExcludeExprs.insert(CE->getArg(0));
         ExcludeExprs.insert(CE->getArg(1));
-        MemcpyCallExprs.insert(CE);
         MemcpyOrderVec.emplace_back(CE,
                                     MemcpyOrderAnalysisNodeKind::MOANK_Memcpy);
       }
@@ -3453,7 +3453,6 @@ bool analyzeMemcpyOrder(
   std::set<const clang::DeclRefExpr *> NewDRESet;
   std::set<const clang::ValueDecl *> ProcessedVDSet;
   std::set<const void *> ProcessedExprOrDecl;
-  std::set<const clang::ValueDecl *> GlobalVDSet;
   for (const auto &DRE : DRESet) {
     if (auto D = dyn_cast_or_null<clang::VarDecl>(DRE->getDecl())) {
       NewVDSet.insert(D);
@@ -3462,13 +3461,11 @@ bool analyzeMemcpyOrder(
   for (const auto &DRE : AllDREsInCS) {
     if (ExcludeDRESet.count(DRE))
       continue;
-    if (const clang::ValueDecl *VD = DRE->getDecl()) {
-      if (const clang::VarDecl *VarD = dyn_cast<clang::VarDecl>(VD)) {
-        if (VarD->isLocalVarDecl()) {
-          continue;
-        }
+    if (const clang::VarDecl *VD =
+            dyn_cast_or_null<clang::VarDecl>(DRE->getDecl())) {
+      if (!VD->isLocalVarDecl() &&
+          (dpct::DpctGlobalInfo::getTypeName(VD->getType()) != "cudaError_t")) {
         NewVDSet.insert(VD);
-        GlobalVDSet.insert(VD);
       }
     }
   }
@@ -3522,9 +3519,18 @@ bool analyzeMemcpyOrder(
         if (!D) {
           continue;
         }
-        bool IsGlobalVar = GlobalVDSet.count(D);
+        bool IsGlobalVar = !D->isLocalVarDecl();
         if (dpct::DpctGlobalInfo::getTypeName(D->getType()) == "cudaError_t") {
           continue;
+        }
+        if (auto ParentCE = clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(
+                MatchedDRE)) {
+          if (auto Callee = ParentCE->getDirectCallee()) {
+            if (!IsGlobalVar) {
+              dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc());
+              continue;
+            }
+          }
         }
         if (auto BO = clang::dpct::DpctGlobalInfo::findAncestor<BinaryOperator>(
                 MatchedDRE)) {
@@ -3539,19 +3545,9 @@ bool analyzeMemcpyOrder(
               }
             }
           }
-        }
-        if (auto ParentCE = clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(
-                MatchedDRE)) {
-          if (auto Callee = ParentCE->getDirectCallee()) {
-            if(!IsGlobalVar) {
-              dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc());
-              continue;
-            }
-          }
-        }
-        if (auto ImpCastExpr = dpct::DpctGlobalInfo::getContext()
-                                   .getParents(*MatchedDRE)[0]
-                                   .get<ImplicitCastExpr>()) {
+        } else if (auto ImpCastExpr = dpct::DpctGlobalInfo::getContext()
+                                          .getParents(*MatchedDRE)[0]
+                                          .get<ImplicitCastExpr>()) {
           bool IsDerefOrArraySubExpr = false;
           if (dpct::DpctGlobalInfo::getContext()
                   .getParents(*ImpCastExpr)[0]
