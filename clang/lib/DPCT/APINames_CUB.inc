@@ -122,7 +122,7 @@ ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Offset, Offset, fals
 ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Rotate, Rotate, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Up, Up, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Down, Down, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::BlockLoad, cub::BlockLoad, Load, Load, true, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::BlockLoad, cub::BlockLoad, Load, Load, true, NO_FLAG, P4, "Successful")
 
 
 // Device Level
