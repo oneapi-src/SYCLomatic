@@ -251,6 +251,7 @@ Example of a PatternRewriter Rule
      Kind: PatternRewriter
      Priority: Takeover
      In: my_max(${args});               # Match pattern "my_max(...);" and save the arbitrary string between "my_max(" and ");" as ${args}
+                                        # "args" can be a user-defined name which will be referenced by "Out" and "Subrules".
      Out: my_min(${args});              # Replace the pattern string to "my_min(${args});"
      Includes: []
      Subrules:
