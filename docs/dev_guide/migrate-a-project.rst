@@ -12,7 +12,6 @@ Migrate a Project
    migrate-a-project/generate-compilation-db
    migrate-a-project/incremental-migration
    migrate-a-project/user-defined-migration-rules
-   migrate-a-project/post-migration-pattern-rewrite
 
 
 
