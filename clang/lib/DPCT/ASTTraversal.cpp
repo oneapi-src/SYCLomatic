@@ -8673,7 +8673,8 @@ void DeviceFunctionDeclRule::runRule(
     // For Xe-LP architecture, if the sub-group size is 32, then each work-item
     // can use 128 * 32 Byte / 32 = 128 Byte registers.
     if(LocalVariableSize > 128) {
-      report(SM.getExpansionLoc(FD->getBeginLoc()), Warnings::REGISTER_USAGE, false, FD->getName());
+      report(SM.getExpansionLoc(FD->getBeginLoc()), Warnings::REGISTER_USAGE,
+             false, FD->getDeclName().getAsString());
     }
   }
   if (isLambda(FD) && !FuncInfo->isLambda()) {
@@ -12774,6 +12775,11 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                "::" + Field);
+    if (AssignedBO) {
+      emplaceTransformation(new ReplaceStmt(AssignedBO, ""));
+    } else {
+      emplaceTransformation(new ReplaceStmt(ME, "0"));
+    }
     return;
   }
 

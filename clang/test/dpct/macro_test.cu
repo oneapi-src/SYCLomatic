@@ -655,12 +655,12 @@ VECTOR_TYPE_DEF(int)
 
 //CHECK: typedef float real;
 //CHECK-NEXT: #define POW(x, y) dpct::pow(x, y)
-//CHECK-NEXT: #define POW2(x, y) vx[id] * vx[id]
+//CHECK-NEXT: #define POW2(x, y) x *x
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro/template definition and may
 //CHECK-NEXT: not be valid for all macro/template uses. Adjust the code.
 //CHECK-NEXT: */
-//CHECK-NEXT: #define POW3(x, y) vx[id] * vx[id]
+//CHECK-NEXT: #define POW3(x, y) dpct::pow(x, y)
 //CHECK: #define SQRT(x) sycl::sqrt(x)
 //CHECK-NEXT: void foo12(){
 //CHECK-NEXT: real *vx;
@@ -1275,3 +1275,28 @@ void foo35() {
 }
 
 #undef CUSOLVER_CHECK
+
+template<class T>
+class TemplateClass{};
+
+__global__
+template<class a>
+__global__ void templatefoo3(){}
+
+//CHECK: #define CALLTEMPLATEFOO                                                        \
+//CHECK-NEXT:   q_ct1.parallel_for(                                                          \
+//CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),     \
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {                                         \
+//CHECK-NEXT:         templatefoo3<TemplateClass<TemplateClass<int>>>();                     \
+//CHECK-NEXT:       });
+//CHECK-NEXT: #define CALLTEMPLATEFOO2                                                       \
+//CHECK-NEXT:   q_ct1.parallel_for(                                                          \
+//CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),     \
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { templatefoo3<TemplateClass<int>>(); });
+
+#define CALLTEMPLATEFOO templatefoo3<TemplateClass<TemplateClass<int>>><<<1,1,0>>>()
+#define CALLTEMPLATEFOO2 templatefoo3<TemplateClass<int>><<<1,1,0>>>()
+void foo35() {
+  CALLTEMPLATEFOO;
+  CALLTEMPLATEFOO2;
+}
