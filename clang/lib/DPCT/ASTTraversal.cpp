@@ -3584,7 +3584,7 @@ REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUSPARSE_STATUS.*)|(CUSPARSE_POINTER_MODE.*)|"
-                                "(CUSPARSE_ALG_.*)"))))
+                                "(CUSPARSE_ALG.*)"))))
                     .bind("SPBLASStatusConstants"),
                 this);
   MF.addMatcher(

@@ -35,5 +35,10 @@ int main() {
   cusparseOrder_t b2 = CUSPARSE_ORDER_COL;
   b2 = CUSPARSE_ORDER_ROW;
 
+  //CHECK:int alg = 0;
+  //CHECK-NEXT:alg = 1;
+  cusparseAlgMode_t alg = CUSPARSE_ALG_NAIVE;
+  alg = CUSPARSE_ALG_MERGE_PATH;
+
   return 0;
 }
