@@ -255,7 +255,7 @@ Example of a PatternRewriter Rule
      Out: my_min(${args});              # Replace the pattern string to "my_min(${args});"
      Includes: []
      Subrules:
-       args:                            # Specify the subrule to apply to ${args}
+       args:                            # Specify the subrule to apply to ${args}. Where args is the user-defined name which is defined in "In".
          In: a                          # Match pattern "a" in ${args}
          Out: b                         # Replace the pattern string to "b" in ${args}
 
