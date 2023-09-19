@@ -53,3 +53,23 @@ CONDITIONAL_FACTORY_ENTRY(
         "cudaPeekAtLastError",
         TOSTRING_FACTORY_ENTRY("cudaPeekAtLastError", LITERAL("0")),
         Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0))
+
+WARNING_FACTORY_ENTRY(
+    "ncclGetErrorString",
+    INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("ncclGetErrorString",
+                                             CALL("ncclGetErrorString",
+                                                  ARG_WC(0))),
+                          "\"ncclGetErrorString is not supported\"/*", "*/"),
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsCallExprOnly(),
+    WARNING_FACTORY_ENTRY(
+        "ncclGetLastError",
+        TOSTRING_FACTORY_ENTRY("ncclGetLastError", LITERAL("")),
+        Diagnostics::FUNC_CALL_REMOVED, std::string("ncclGetLastError"),
+        std::string("this call is redundant in SYCL.")),
+    WARNING_FACTORY_ENTRY(
+        "ncclGetLastError",
+        TOSTRING_FACTORY_ENTRY("ncclGetLastError", LITERAL("0")),
+        Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0))
