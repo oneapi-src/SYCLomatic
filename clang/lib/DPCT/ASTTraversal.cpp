@@ -11980,11 +11980,17 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
 
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
+    if (isAssigned(C)) {
+      emplaceTransformation(new ReplaceToken(
+          C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
+                                "get_kernel_function_info"));
+      emplaceTransformation(new InsertAfterStmt(C, ")"));
+    } else {
+      emplaceTransformation(
+          new ReplaceToken(C->getBeginLoc(), MapNames::getDpctNamespace() +
+                                                 "get_kernel_function_info"));
+    }
     requestFeature(HelperFeatureEnum::device_ext);
-    emplaceTransformation(new ReplaceToken(
-        C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
-                              "get_kernel_function_info"));
-    emplaceTransformation(new InsertAfterStmt(C, ")"));
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));
   } else if (auto C = getNodeAsType<CallExpr>(Result, "callFuncGetAttribute")) {

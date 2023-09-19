@@ -265,7 +265,7 @@
 // CUDAFUNCGETATTRIBUTES-NEXT:   cudaFuncGetAttributes(attr, f /*const void **/);
 // CUDAFUNCGETATTRIBUTES-NEXT: Is migrated to:
 // CUDAFUNCGETATTRIBUTES-NEXT:   dpct::kernel_function_info *attr;
-// CUDAFUNCGETATTRIBUTES-NEXT:   DPCT_CHECK_ERROR(dpct::get_kernel_function_info(attr, (const void *)f /*const void **/));
+// CUDAFUNCGETATTRIBUTES-NEXT:   dpct::get_kernel_function_info(attr, (const void *)f /*const void **/);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFuncSetCacheConfig | FileCheck %s -check-prefix=CUDAFUNCSETCACHECONFIG
 // CUDAFUNCSETCACHECONFIG: CUDA API:
