@@ -758,35 +758,43 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
 }
 
 namespace detail {
-template <typename T, bool is_host_memory> struct temp_memory {
+template <typename T, bool is_host_memory, typename host_memory_t = void>
+struct temp_memory {
   temp_memory(sycl::queue queue, void *ptr)
       : _queue(queue)
 #ifdef DPCT_USM_LEVEL_NONE
         ,
-        _buffer(is_host_memory ? sycl::buffer<T, 1>(static_cast<T *>(ptr),
-                                                    sycl::range<1>(1))
+        _buffer(is_host_memory ? sycl::buffer<T, 1>(sycl::range<1>(1))
                                : sycl::buffer<T, 1>(dpct::get_buffer<T>(ptr)))
 #endif
   {
     if constexpr (is_host_memory) {
-#ifndef DPCT_USM_LEVEL_NONE
-      _original_host_ptr = static_cast<T *>(ptr);
+      _original_host_ptr = static_cast<host_memory_t *>(ptr);
+#ifdef DPCT_USM_LEVEL_NONE
+      auto _buffer_acc = _buffer.get_host_access(sycl::write_only);
+      _buffer_acc[0] = static_cast<T>(*_original_host_ptr);
+#else
       _memory_ptr = sycl::malloc_host<T>(1, _queue);
       *_memory_ptr = static_cast<T>(*_original_host_ptr);
+#endif
     } else {
+#ifndef DPCT_USM_LEVEL_NONE
       _memory_ptr = static_cast<T *>(ptr);
 #endif
     }
   }
 
   ~temp_memory() {
-#ifndef DPCT_USM_LEVEL_NONE
     if constexpr (is_host_memory) {
+#ifdef DPCT_USM_LEVEL_NONE
+      auto _buffer_acc = _buffer.get_host_access(sycl::read_only);
+      *_original_host_ptr = static_cast<host_memory_t>(_buffer_acc[0]);
+#else
       _queue.wait();
       *_original_host_ptr = *_memory_ptr;
       sycl::free(_memory_ptr, _queue);
-    }
 #endif
+    }
   }
   auto get_memory_ptr() {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -801,7 +809,7 @@ private:
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<T, 1> _buffer;
 #else
-  T *_original_host_ptr = nullptr;
+  host_memory_t *_original_host_ptr = nullptr;
   T *_memory_ptr;
 #endif
 };
@@ -829,11 +837,9 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
                        const void *beta, sparse_matrix_desc_t c,
                        oneapi::mkl::sparse::matmat_descr_t matmat_descr,
                        size_t *size_temp_buffer, void *temp_buffer) {
-  std::int64_t size_temp_buffer_64;
-  size_temp_buffer_64 = static_cast<std::int64_t>(*size_temp_buffer);
   if (temp_buffer) {
-    detail::temp_memory<std::int64_t, true> size_memory(queue,
-                                                        &size_temp_buffer_64);
+    detail::temp_memory<std::int64_t, true, size_t> size_memory(
+        queue, size_temp_buffer);
     detail::temp_memory<std::uint8_t, false> work_memory(queue, temp_buffer);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
@@ -841,7 +847,8 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
         oneapi::mkl::sparse::matmat_request::work_estimation, matmat_descr,
         size_memory.get_memory_ptr(), work_memory.get_memory_ptr()
 #ifndef DPCT_USM_LEVEL_NONE
-        , {}
+                                          ,
+        {}
 #endif
     );
   } else {
@@ -849,19 +856,19 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
         matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general, trans_a,
         oneapi::mkl::sparse::matrix_view_descr::general, trans_b,
         oneapi::mkl::sparse::matrix_view_descr::general);
-    detail::temp_memory<std::int64_t, true> size_memory(queue,
-                                                        &size_temp_buffer_64);
+    detail::temp_memory<std::int64_t, true, size_t> size_memory(
+        queue, size_temp_buffer);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
         c->get_matrix_handle(),
         oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size,
         matmat_descr, size_memory.get_memory_ptr(), nullptr
 #ifndef DPCT_USM_LEVEL_NONE
-        , {}
+        ,
+        {}
 #endif
     );
   }
-  *size_temp_buffer = static_cast<std::size_t>(size_temp_buffer_64);
 }
 
 /// Do internal products for computing the C matrix of computing a sparse
@@ -885,22 +892,22 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
                            const void *beta, sparse_matrix_desc_t c,
                            oneapi::mkl::sparse::matmat_descr_t matmat_descr,
                            size_t *size_temp_buffer, void *temp_buffer) {
-  std::int64_t size_temp_buffer_64;
-  size_temp_buffer_64 = static_cast<std::int64_t>(*size_temp_buffer);
   if (temp_buffer) {
     std::int64_t nnz_value = 0;
     {
-      detail::temp_memory<std::int64_t, true> size_memory(queue,
-                                                          &size_temp_buffer_64);
+      detail::temp_memory<std::int64_t, true, size_t> size_memory(
+          queue, size_temp_buffer);
       detail::temp_memory<std::uint8_t, false> work_memory(queue, temp_buffer);
-      detail::temp_memory<std::int64_t, true> nnz_memory(queue, &nnz_value);
+      detail::temp_memory<std::int64_t, true, std::int64_t> nnz_memory(
+          queue, &nnz_value);
       oneapi::mkl::sparse::matmat(
           queue, a->get_matrix_handle(), b->get_matrix_handle(),
           c->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::compute,
           matmat_descr, size_memory.get_memory_ptr(),
           work_memory.get_memory_ptr()
 #ifndef DPCT_USM_LEVEL_NONE
-          , {}
+              ,
+          {}
 #endif
       );
       oneapi::mkl::sparse::matmat(
@@ -908,25 +915,26 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
           c->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::get_nnz,
           matmat_descr, nnz_memory.get_memory_ptr(), nullptr
 #ifndef DPCT_USM_LEVEL_NONE
-          , {}
+          ,
+          {}
 #endif
       );
     }
     c->set_nnz(nnz_value);
   } else {
-    detail::temp_memory<std::int64_t, true> size_memory(queue,
-                                                        &size_temp_buffer_64);
+    detail::temp_memory<std::int64_t, true, size_t> size_memory(
+        queue, size_temp_buffer);
     oneapi::mkl::sparse::matmat(
         queue, a->get_matrix_handle(), b->get_matrix_handle(),
         c->get_matrix_handle(),
         oneapi::mkl::sparse::matmat_request::get_compute_buf_size, matmat_descr,
         size_memory.get_memory_ptr(), nullptr
 #ifndef DPCT_USM_LEVEL_NONE
-        , {}
+        ,
+        {}
 #endif
     );
   }
-  *size_temp_buffer = static_cast<std::size_t>(size_temp_buffer_64);
 }
 
 /// Do any remaining internal products and accumulation and transfer into final
