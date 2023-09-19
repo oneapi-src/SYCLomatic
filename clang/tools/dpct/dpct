@@ -42,8 +42,7 @@ set moduleinfoname [file dirname [module-info name]]
 
 proc ModulesHelp { } {
     global moduleinfoname
-    global modulefilever
-    module whatis "${modulefilename}/${modulefilever}"
+    puts "module whatis ${moduleinfoname}"
 }
 
 ##############################################################################
