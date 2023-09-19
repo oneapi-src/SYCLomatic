@@ -806,10 +806,10 @@ struct temp_memory {
 
 private:
   sycl::queue _queue;
+  host_memory_t *_original_host_ptr = nullptr;
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<T, 1> _buffer;
 #else
-  host_memory_t *_original_host_ptr = nullptr;
   T *_memory_ptr;
 #endif
 };
