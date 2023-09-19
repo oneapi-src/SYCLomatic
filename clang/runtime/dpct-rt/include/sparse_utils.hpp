@@ -144,12 +144,14 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
 /// \param [in] beta_type Data type of \p beta .
 /// \param [in, out] y Data of the vector y.
 /// \param [in] y_type Data type of \p y .
-void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
-           int num_cols, const void *alpha, library_data_t alpha_type,
-           const std::shared_ptr<matrix_info> info, const void *val,
-           library_data_t val_type, const int *row_ptr, const int *col_ind,
-           const void *x, library_data_t x_type, const void *beta,
-           library_data_t beta_type, void *y, library_data_t y_type) {
+inline void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans,
+                  int num_rows, int num_cols, const void *alpha,
+                  library_data_t alpha_type,
+                  const std::shared_ptr<matrix_info> info, const void *val,
+                  library_data_t val_type, const int *row_ptr,
+                  const int *col_ind, const void *x, library_data_t x_type,
+                  const void *beta, library_data_t beta_type, void *y,
+                  library_data_t y_type) {
   std::uint64_t key = dpct::detail::get_type_combination_id(
       alpha_type, val_type, x_type, beta_type, y_type);
   switch (key) {
