@@ -1141,6 +1141,17 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
     Repl = NewFuncName + "(" + ParamList + ")";
     emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
+  } else if (FuncName == "Load") {
+  
+    GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
+    NewFuncName = Mapnames::getClNamespace() + "load";
+    const Expr *InData = FuncArgs[0];
+    ExprAnalysis InEA(InData);
+    OpRepl = getOpRepl(nullptr);
+    CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
+    Repl = NewFuncName + "(" + ParamList + ")";
+    emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
+    
   }
 }
 

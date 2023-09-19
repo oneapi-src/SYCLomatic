@@ -30,14 +30,14 @@ void print_data(int* data, int num) {
   std::cout << std::endl;
 }
 
-//CHECK: void SumKernel(int* data,
+//CHECK: void BlockLoadKernel(int* data,
 //CHECK-NEXT:  const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_group(), input, sycl::plus<>());
+//CHECK-NEXT:  output = sycl::load(item_ct1.get_group(), input, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 
