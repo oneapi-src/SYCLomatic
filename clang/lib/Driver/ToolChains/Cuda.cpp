@@ -354,11 +354,11 @@ CudaInstallationDetector::CudaInstallationDetector(
     for (const auto &Candidate : Candidates) {
       InstallPath = Candidate.Path;
       if (validateCudaHeaderDirectory(InstallPath + "/include/", D) ||
-          validateCudaHeaderDirectory(InstallPath, D)) {
-        // To certain CUDA version that dpct supports is available
-        IsSupportedVersionAvailable = true;
+          validateCudaHeaderDirectory(InstallPath, D))
         break;
-      }
+      // DPCT exits execution when the auto detect CUDA version not supported yet.
+      if (IsIncludePathValid)
+        break;
     }
   }
 #else

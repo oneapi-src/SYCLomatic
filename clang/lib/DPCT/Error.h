@@ -55,6 +55,7 @@ enum ProcessStatus {
   MigrationErrorNoAPIMapping = -43,
   MigrationErrorAPIMappingWrongCUDAHeader = -44,
   MigrationErrorAPIMappingNoCUDAHeader = -45,
+  MigrationErrorCannotDetectCudaPath = -46,
 };
 
 namespace clang {

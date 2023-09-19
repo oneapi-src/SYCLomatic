@@ -74,7 +74,9 @@ bool makeCanonical(string &PathPar) {
   SmallString<256> Path = StringRef(PathPar);
   if (!makeCanonical(Path))
     return false;
+  std::cout << PathPar << std::endl;
   PathPar.assign(begin(Path), end(Path));
+  std::cout << PathPar << std::endl;
   return true;
 }
 

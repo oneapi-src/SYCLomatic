@@ -38,12 +38,17 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Path for CUDA header files specified by "
                    "--cuda-include-path is invalid.";
     break;
+  case MigrationErrorSupportedCudaVersionNotAvailable:
+    StatusString = "Error: The auto detect CUDA header files version is not supported. "
+                  "See Release Notes for supported versions. "
+                  "Or specify another version's header by --cuda-include-path.";
+    break;
   case MigrationErrorCudaVersionUnsupported:
     StatusString = "Error: The version of CUDA header files specified by "
                    "--cuda-include-path is not supported. See Release Notes "
                    "for supported versions.";
     break;
-  case MigrationErrorSupportedCudaVersionNotAvailable:
+  case MigrationErrorCannotDetectCudaPath:
     StatusString = "Error: Could not detect path to CUDA header files. Use "
                    "--cuda-include-path "
                    "to specify the correct path to the header files.";
