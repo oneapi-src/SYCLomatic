@@ -549,7 +549,11 @@ void findAssignments(const clang::DeclaratorDecl *HandleDecl,
                      const clang::CompoundStmt *CS,
                      std::vector<const clang::DeclRefExpr *> &Refs);
 llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U>
-findDREInScope(const clang::Stmt *Scope);
+findDREInScope(const clang::Stmt *Scope,
+               const std::vector<std::string> &IgnoreTypes = {});
+void findDREs(const Expr *E, std::set<const clang::DeclRefExpr *> &DRESet,
+              bool &HasCallExpr,
+              const std::vector<std::string> &IgnoreTypes = {});
 
 enum class MemcpyOrderAnalysisNodeKind {
   MOANK_Memcpy = 0,
