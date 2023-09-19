@@ -528,10 +528,10 @@ public:
   std::optional<oneapi::mkl::uplo> get_uplo() const noexcept { return _uplo; }
   /// Set the number of non-zero elements
   /// \param nnz [in] The number of non-zero elements.
-  void set_nnz(std::int64_t nnz) { _nnz = nnz; }
+  void set_nnz(std::int64_t nnz) noexcept { _nnz = nnz; }
   /// Get the type of the value pointer.
   /// \return The type of the value pointer.
-  library_data_t get_value_type() { return _value_type; }
+  library_data_t get_value_type() const noexcept { return _value_type; }
 
 private:
   template <typename index_t, typename value_t> void set_data() {
@@ -763,10 +763,9 @@ template <typename T, bool is_host_memory> struct temp_memory {
       : _queue(queue)
 #ifdef DPCT_USM_LEVEL_NONE
         ,
-        _buffer(
-            is_host_memory
-                ? sycl::buffer<T, 1>(static_cast<T *>(ptr), sycl::range<1>(1))
-                : sycl::buffer<T, 1>(std::move(dpct::get_buffer<T>(ptr))))
+        _buffer(is_host_memory ? sycl::buffer<T, 1>(static_cast<T *>(ptr),
+                                                    sycl::range<1>(1))
+                               : sycl::buffer<T, 1>(dpct::get_buffer<T>(ptr)))
 #endif
   {
     if constexpr (is_host_memory) {
@@ -783,10 +782,8 @@ template <typename T, bool is_host_memory> struct temp_memory {
   ~temp_memory() {
 #ifndef DPCT_USM_LEVEL_NONE
     if constexpr (is_host_memory) {
-      T temp;
       _queue.wait();
-      _queue.memcpy(&temp, _memory_ptr, sizeof(T)).wait();
-      *_original_host_ptr = static_cast<std::size_t>(temp);
+      *_original_host_ptr = *_memory_ptr;
       sycl::free(_memory_ptr, _queue);
     }
 #endif
