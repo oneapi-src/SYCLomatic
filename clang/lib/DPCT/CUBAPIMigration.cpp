@@ -582,7 +582,7 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
                                       "InclusiveSum", "ExclusiveSum",
                                       "InclusiveScan", "ExclusiveScan",
-                                      "Reduce", "Sum", "Broadcast", "Scan")))))
+                                      "Reduce", "Sum", "Broadcast", "Scan", "Load")))))
                     .bind("MemberCall"),
                 this);
 
@@ -1144,7 +1144,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
   } else if (FuncName == "Load") {
   
     GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
-    NewFuncName = MapNames::getClNamespace() + "load";
+    NewFuncName = MapNames::getClNamespace() + "Load";
     const Expr *InData = FuncArgs[0];
     ExprAnalysis InEA(InData);
     OpRepl = getOpRepl(nullptr);
