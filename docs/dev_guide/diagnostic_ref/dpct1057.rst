@@ -50,14 +50,14 @@ For example, this original CUDA\* code:
    // a.cu:
    #include "h.h"
    
-   __device__ void foo_a() {
+   __device__ void foo_device() {
      printf("%f\n", aaa);
    }
 
    // b.c:
    #include "h.h"
    
-   void foo_b() {
+   void foo_host() {
      printf("%f\n", aaa);
    }
 
@@ -85,7 +85,7 @@ results in the following migrated SYCL\* code:
    #include <dpct/dpct.hpp>
    #include "h.h"
    
-   void foo_a(const sycl::stream &stream_ct1, const float aaa) {
+   void foo_device(const sycl::stream &stream_ct1, const float aaa) {
      /*
      DPCT1015:0: Output needs adjustment.
      */
@@ -95,7 +95,7 @@ results in the following migrated SYCL\* code:
    // b.c:
    #include "h.h"
    
-   void foo_b() {
+   void foo_host() {
      printf("%f\n", aaa);
    }
 
@@ -117,14 +117,14 @@ which is rewritten to:
    #include <dpct/dpct.hpp>
    #include "h.h"
    
-   void foo_a(const sycl::stream &stream_ct1, const float aaa) {
+   void foo_device(const sycl::stream &stream_ct1, const float aaa) {
      stream_ct1 << aaa << "\n";
    }
 
    // b.c:
    #include "h.h"
    
-   void foo_b() {
+   void foo_host() {
      printf("%f\n", aaa_host_ct1);
    }
 

@@ -32,7 +32,7 @@ For example, this original CUDA\* code:
    #define POW(B, E) pow(B, E)
    __device__ void foo() {
      POW(2.5, 3.1);
-     POW(2.5, 3);
+     POW(2.5, 2);
    }
 
 results in the following migrated SYCL\* code:
@@ -44,10 +44,10 @@ results in the following migrated SYCL\* code:
    DPCT1064:0: Migrated pow call is used in a macro/template definition and may not
    be valid for all macro/template uses. Adjust the code.
    */
-   #define POW(B, E) sycl::pow<double>(B, E)
+   #define POW(B, E) dpct::pow(B, E)
    void foo() {
      POW(2.5, 3.1);
-     POW(2.5, 3);
+     POW(2.5, 2);
    }
 
 which is rewritten to:
@@ -56,8 +56,8 @@ which is rewritten to:
    :linenos:
 
    void foo() {
-     sycl::pow<double>(2.5, 3.1);
-     sycl::pown<double>(2.5, 3);
+     dpct::pow(2.5, 3.1);
+     2.5 * 2.5;
    }
 
 Suggestions to Fix

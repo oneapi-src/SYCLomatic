@@ -22,10 +22,14 @@ will be removed.
 Suggestions to Fix
 ------------------
 
-If this variable is only used in host code, ignore this warning.
+Command:
 
-If the variable is also used in device code, you need to migrate this code again
-with ``--extra-arg="-xcuda"`` passed to the tool to explicitly specify the code language.
+.. code-block:: bash
+   :linenos:
+
+   dpct --out-root out test.c --extra-arg=-xc
+
+If this variable is only used in host code, ignore this warning.
 
 For example, this original CUDA\* code:
 
@@ -69,4 +73,54 @@ which is rewritten to:
    void foo(){
      printf("%f\n", aaa);
    }
+
+If the variable is also used in device code,
+(1) you need to migrate this code again with ``--extra-arg="-xcuda"`` passed to the tool to explicitly specify the code language; or
+(2) Manually adjust the code.
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // dpct --out-root out test.c --extra-arg=-xc
+   
+   // test.c 
+   #include <stdio.h>
+   #include <cuda_runtime.h>
+   
+   static __constant__ const float aaa = 10.f;
+   
+   void foo(){
+     printf("%f\n", aaa);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1056:0: The use of aaa in device code was not detected. If this variable is
+   also used in device code, you need to rewrite the code.
+   */
+   static const float aaa = 10.f;
+   
+   void foo(){
+     printf("%f\n", aaa);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   static const float aaa = 10.f;
+   // Use aaa_device for device code, see more details in the document of DPCT1057
+   static dpct::constant_memory<const float, 0> aaa_device(10.f);
+   
+   void foo(){
+     printf("%f\n", aaa);
+   }
+
 

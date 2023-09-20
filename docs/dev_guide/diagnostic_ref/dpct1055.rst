@@ -55,6 +55,7 @@ which is rewritten to:
    :linenos:
 
    class MyClass {
+   public:
      int x;
      MyClass operator+(const MyClass& y) { ... }
      MyClass operator=(const MyClass& y) { ... }

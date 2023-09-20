@@ -30,12 +30,10 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
-   #include <cstdio>
-   
    #define ATOMIC_ADD(x, v)  atomicAdd(&x, v);
    
    void foo() {
-     // User's code which is not related to ATOMIC_ADD
+     // There is no using of ATOMIC_ADD macro
    }
 
 results in the following migrated SYCL\* code:
@@ -43,17 +41,13 @@ results in the following migrated SYCL\* code:
 .. code-block:: cpp
    :linenos:
 
-   #include <sycl/sycl.hpp>
-   #include <dpct/dpct.hpp>
-   #include <cstdio>
-   
    /*
    DPCT1058:0: "atomicAdd" is not migrated because it is not called in the code.
    */
    #define ATOMIC_ADD(x, v) atomicAdd(&x, v);
    
    void foo() {
-     // User's code which is not related to ATOMIC_ADD
+     // There is no using of ATOMIC_ADD macro
    }
 
 which is rewritten to:
@@ -61,11 +55,7 @@ which is rewritten to:
 .. code-block:: cpp
    :linenos:
 
-   #include <sycl/sycl.hpp>
-   #include <dpct/dpct.hpp>
-   #include <cstdio>
-   
    void foo() {
-     // User's code which is not related to ATOMIC_ADD
+     // There is no using of ATOMIC_ADD macro
    }
 

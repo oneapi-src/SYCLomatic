@@ -23,7 +23,9 @@ device.
 Suggestions to Fix
 ------------------
 
-Try to rewrite the code to not rely on unsupported functionality.
+Try to:
+(1) re-migrate the code without option ``--no-dpcpp-extensions=device_info``; or
+(2) rewrite the code manually.
 
 For example, this original CUDA\* code:
 
@@ -56,8 +58,6 @@ which is rewritten to:
 
    void foo() {
      size_t result1, result2;
-     // If dpct::get_current_device().has(sycl::aspect::ext_intel_free_memory) is true,
-     // we can use below interface
      dpct::get_current_device().get_memory_info(result1, result2);
    }
 

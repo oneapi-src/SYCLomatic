@@ -30,10 +30,10 @@ For example, this original CUDA\* code:
    :linenos:
 
    __device__ void foo(const texture<char4, 2, cudaReadModeNormalizedFloat> tex) {
-     ...
+     float4 f = tex2D(tex, 0.5f, 0.5f);
    }
    __device__ void foo (const texture<char4, 2, cudaReadModeElementType> tex) {
-     ...
+     char4 c = tex2D(tex, 0.5f, 0.5f);
    }
 
 results in the following migrated SYCL code:
@@ -45,10 +45,10 @@ results in the following migrated SYCL code:
    DPCT1062:0: SYCL Image doesn't support normalized read mode.
    */
    void foo(dpct::image_accessor_ext<sycl::char4, 2> tex) {
-     ...
+     sycl::float4 f = tex.read(0.5f, 0.5f);
    }
    void foo(dpct::image_accessor_ext<sycl::char4, 2> tex) {
-     ...
+     sycl::char4 c = tex.read(0.5f, 0.5f);
    }
 
 which is rewritten to:
@@ -57,10 +57,15 @@ which is rewritten to:
    :linenos:
 
    void foo1(dpct::image_accessor_ext<sycl::char4, 2> tex) {
-     ...
+     sycl::char4 temp_c = tex.read(0.5f, 0.5f);
+     sycl::float4 f;
+     f.x() = temp_c.x() / 255.f;
+     f.y() = temp_c.y() / 255.f;
+     f.z() = temp_c.z() / 255.f;
+     f.w() = temp_c.w() / 255.f;
    }
    void foo2(dpct::image_accessor_ext<sycl::char4, 2> tex) {
-     ...
+     sycl::char4 c = tex.read(0.5f, 0.5f);
    }
 
 Suggestions to Fix
