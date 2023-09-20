@@ -452,6 +452,13 @@ def parse_args(args, directory='.'):
             new_opt = MAP_FLAGS[result[0]] + gpu_virtual_arch_to_arch(result[1])
             flags.append(new_opt)
             pass
+        elif re.match(r'^--options-file=', arg) or re.match(r'^-optf=', arg):
+            #split by '=' and strip whitespace
+            result = [x.strip() for x in arg.split('=')]
+            value = result[1]
+            option_file = abspath(directory, value)
+            flags.extend(parse_option_file(option_file))
+            pass
         elif re.match(r'^-isystem=', arg):
             #"-isystem=<directory>"" is not a effective option in clang command line,
             #So replace "-isystem=<directory>" with "-isystem<directory>".
