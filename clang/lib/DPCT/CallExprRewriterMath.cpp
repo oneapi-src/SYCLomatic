@@ -762,10 +762,11 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
       }
     }
     SideEffectsAnalysis SEA(Arg0);
+    SEA.setCallSpelling(Call);
     SEA.analyze();
     bool Arg0HasSideEffects = SEA.hasSideEffects();
     if (!Arg0HasSideEffects && IsExponentTwo) {
-      auto Arg0Str = SEA.getReplacedString();
+      auto Arg0Str = SEA.getRewriteString();
       if (!needExtraParens(Arg0))
         return Arg0Str + " * " + Arg0Str;
       else
