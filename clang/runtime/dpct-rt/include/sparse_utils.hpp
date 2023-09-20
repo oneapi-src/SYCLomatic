@@ -760,9 +760,9 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
 namespace detail {
 template <typename T, bool is_host_memory, typename host_memory_t = void>
 struct temp_memory {
-  static_assert(!is_host_memory ||
-                    (is_host_memory && !std::is_same_v<host_memory_t, void>),
-                "host_memory_t cannot be void");
+  static_assert(!is_host_memory || !std::is_same_v<host_memory_t, void>,
+                "host_memory_t cannot be void when the input parameter ptr "
+                "points to host memory");
   temp_memory(sycl::queue queue, void *ptr)
       : _queue(queue)
 #ifdef DPCT_USM_LEVEL_NONE
