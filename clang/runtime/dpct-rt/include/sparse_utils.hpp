@@ -281,7 +281,7 @@ public:
   }
   void *get_value() const noexcept { return _value; }
   void set_value(void *value) { _value = value; }
-  library_data_t get_value_type() { return _value_type; }
+  library_data_t get_value_type() const noexcept { return _value_type; }
 
 private:
   std::int64_t _ele_num;
@@ -760,6 +760,9 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
 namespace detail {
 template <typename T, bool is_host_memory, typename host_memory_t = void>
 struct temp_memory {
+  static_assert(!is_host_memory ||
+                    (is_host_memory && !std::is_same_v<host_memory_t, void>),
+                "host_memory_t cannot be void");
   temp_memory(sycl::queue queue, void *ptr)
       : _queue(queue)
 #ifdef DPCT_USM_LEVEL_NONE
@@ -847,8 +850,7 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
         oneapi::mkl::sparse::matmat_request::work_estimation, matmat_descr,
         size_memory.get_memory_ptr(), work_memory.get_memory_ptr()
 #ifndef DPCT_USM_LEVEL_NONE
-                                          ,
-        {}
+        , {}
 #endif
     );
   } else {
@@ -864,8 +866,7 @@ spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
         oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size,
         matmat_descr, size_memory.get_memory_ptr(), nullptr
 #ifndef DPCT_USM_LEVEL_NONE
-        ,
-        {}
+        , {}
 #endif
     );
   }
@@ -906,8 +907,7 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
           matmat_descr, size_memory.get_memory_ptr(),
           work_memory.get_memory_ptr()
 #ifndef DPCT_USM_LEVEL_NONE
-              ,
-          {}
+          , {}
 #endif
       );
       oneapi::mkl::sparse::matmat(
@@ -915,8 +915,7 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
           c->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::get_nnz,
           matmat_descr, nnz_memory.get_memory_ptr(), nullptr
 #ifndef DPCT_USM_LEVEL_NONE
-          ,
-          {}
+          , {}
 #endif
       );
     }
@@ -930,8 +929,7 @@ inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
         oneapi::mkl::sparse::matmat_request::get_compute_buf_size, matmat_descr,
         size_memory.get_memory_ptr(), nullptr
 #ifndef DPCT_USM_LEVEL_NONE
-        ,
-        {}
+        , {}
 #endif
     );
   }
