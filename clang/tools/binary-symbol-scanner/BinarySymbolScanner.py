@@ -54,7 +54,62 @@ import re
 import sys
 import subprocess
 from pathlib import Path
+import pandas as p
+import numpy as np
+# Class which creates the dictionary of API Migration Support Status
+class api_mapping_support:
+    def __init__(self):
+        # Array of URLs for the API Mapping CSV files in SYCLomatic repo
+        self.api_mapping_urls=["https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/CUB_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/NCCL_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/NVML_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/Runtime_and_Driver_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuBLAS_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuDNN_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuFFT_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuRAND_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuSOLVER_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuSPARSE_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/nvGRAPH_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/nvJPEG_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/thrust_API_migration_status.csv"]
 
+        # Reading the contents of the individual CSV files into one unified Dataframe
+        np1=p.read_csv(self.api_mapping_urls[0])
+        np2=p.read_csv(self.api_mapping_urls[1])
+        j = p.concat([np1,np2],axis=0)
+        for i in range(2,len(self.api_mapping_urls)):
+            np3=p.read_csv(self.api_mapping_urls[i])
+            j = p.concat([j,np3],axis=0)
+        # Creating a Python Dictionary with key as function name and value as Migration Support (YES/NO)
+        self.api_mapping_dict={j.values[0][0]: j.values[0][1]}
+        for i in range(1,j.values.shape[0]):
+            self.api_mapping_dict[j.values[i][0]]=j.values[i][1]
+
+# Class which takes as input the CSV file produced by Binary Symbol Scanner and looksup the migration support for the undefined symbols from customer application binaries
+class migration_status:
+    def __init__(self, input):
+        self.input = input
+        self.api_mapping_reference = api_mapping_support()
+        self.successful_migration = []
+        self.failed_migration = []
+        input_data = p.read_csv(input, sep="|")
+        for i in range(1, input_data.values.shape[0]):
+            lookup_api = input_data.values[i][1].split("(")[0].strip()
+            #print(input_data.values)
+            try:
+                migration_status = self.api_mapping_reference.api_mapping_dict[lookup_api]
+                self.successful_migration.append(lookup_api)
+            except KeyError:
+                self.failed_migration.append(lookup_api)
+        print(f"List of Migratable APIs: {self.successful_migration}\n")
+        print(f"List of Non-Migratable APIs: {self.failed_migration}\n")
+        total_entries = len(self.successful_migration) + len(self.failed_migration)
+        self.migration_percentage = (len(self.successful_migration)/total_entries)*100
+        print(f"**********************************************************************************************")
+        print(f"Percentage of CUDA Host/Library APIs Migratable by SYCLomatic: {self.migration_percentage:.2f}%")
+        print(f"**********************************************************************************************")
+        
 # Commands to use to determine the symbols in the binaries on Windows and Linux
 if os.name == "nt":
     os_name = "Windows"
@@ -396,6 +451,10 @@ def do_scrub(args):
         for func in func_stats:
             stats_csv_f.write("%s|%d\n" %(func, func_stats[func]))
         stats_csv_f.close()
+
+    # Lookup the migration status of the undefined symbols from non-Intel Runtime/Libraries
+    if args.extend_non_intel:
+        migration_status(csv_fname)
 
     return 0
 
