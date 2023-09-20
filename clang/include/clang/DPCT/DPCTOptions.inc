@@ -420,6 +420,13 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunctio
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), ForceMigration,
+    "force-migration",
+    llvm::cl::desc("Force migration when the CUDA header files version is not "
+                   "supported yet. Default: off."),
+    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
+DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), PathToHelperFunction,
     "helper-function-dir",
     llvm::cl::desc(

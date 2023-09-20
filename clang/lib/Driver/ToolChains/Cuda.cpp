@@ -121,7 +121,10 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
     IsVersionSupported = true;
     return true;
   }
-
+  if (Major >= 12) {
+    CV = CudaVersion::NEW;
+    return true;
+  }
   return false;
 }
 #else
@@ -225,14 +228,13 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
         FS.exists(FilePath + "/cuda.h")))
     return false;
   IsIncludePathValid = true;
+  IncludePath = FilePath;
   bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h", Version);
   if (!IsFound)
     return false;
   IsValid = true;
 
   InstallPath = FilePath;
-  IncludePath = FilePath;
-
   return true;
 }
 #endif // SYCLomatic_CUSTOMIZATION

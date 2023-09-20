@@ -39,14 +39,17 @@ void ShowStatus(int Status, std::string Message) {
                    "--cuda-include-path is invalid.";
     break;
   case MigrationErrorSupportedCudaVersionNotAvailable:
-    StatusString = "Error: The auto detect CUDA header files version is not supported. "
-                  "See Release Notes for supported versions. "
-                  "Or specify another version's header by --cuda-include-path.";
+    StatusString =
+        "Error: The auto detect CUDA header files version is not supported. "
+        "See Release Notes for supported versions. "
+        "Or specify another version's header by --cuda-include-path. You can "
+        "use --force-migration to do the migration.";
     break;
   case MigrationErrorCudaVersionUnsupported:
     StatusString = "Error: The version of CUDA header files specified by "
                    "--cuda-include-path is not supported. See Release Notes "
-                   "for supported versions.";
+                   "for supported versions. You can use --force-migration to "
+                   "do the migration.";
     break;
   case MigrationErrorCannotDetectCudaPath:
     StatusString = "Error: Could not detect path to CUDA header files. Use "

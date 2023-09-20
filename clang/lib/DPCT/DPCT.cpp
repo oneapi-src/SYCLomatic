@@ -214,7 +214,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   driver::CudaInstallationDetector CudaIncludeDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  std::string Path = CudaIncludeDetector.getInstallPath().str();
+  std::string IncludePath = CudaIncludeDetector.getIncludePath().str();
   dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
 
   if (!CudaIncludePath.empty()) {
@@ -222,23 +222,25 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidCudaIncludePath);
       dpctExit(MigrationErrorInvalidCudaIncludePath);
     }
-
-    if (!CudaIncludeDetector.isVersionSupported()) {
+    if (!CudaIncludeDetector.isVersionSupported() && !ForceMigration) {
       ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
   } else if (!CudaIncludeDetector.isIncludePathValid()) {
     ShowStatus(MigrationErrorCannotDetectCudaPath);
     dpctExit(MigrationErrorCannotDetectCudaPath);
-  } else if (!CudaIncludeDetector.isVersionSupported()) {
+  } else if (!CudaIncludeDetector.isVersionSupported() && !ForceMigration) {
     ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
     dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
   }
 
-  makeCanonical(Path);
+  if (ForceMigration) {
+    DpctLog() << " Warning: Specify --force-migration may cause the unexpected migration result.\n ";
+  }
 
+  makeCanonical(IncludePath);
   SmallString<512> CudaPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs, true);
+  std::error_code EC = llvm::sys::fs::real_path(IncludePath, CudaPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);

@@ -19,6 +19,7 @@
 // DASH-NEXT: --enable-ctad
 // DASH-NEXT: --enable-profiling
 // DASH-NEXT: --extra-arg
+// DASH-NEXT: --force-migration
 // DASH-NEXT: --format-range=
 // DASH-NEXT: --format-style=
 // DASH-NEXT: --gen-build-script
