@@ -568,7 +568,7 @@ def parse_args(args, directory='.'):
         elif re.match(r'^-dag-vectorize-ops=', arg):
             pass
         # Remove double quotes from including path like -I"/path/"
-        elif re.match(r'^-I=', arg) or re.match(r'^-I\"', arg):
+        elif re.match(r'^-I\"', arg):
             arg = arg.replace('"', '')
             flags.append(arg)
             pass
