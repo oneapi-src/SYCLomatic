@@ -22,3 +22,68 @@ Suggestions to Fix
 ------------------
 
 Rename the macro to avoid conflicts with standard SYCL types.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // test.h
+   inline void bar(cudaDeviceAttr attr) {
+     ...
+   }
+   
+   // test.cu
+   #define int2 int32_t
+   #include "test.h"
+   
+   void foo() {
+     int32_t a;
+     ...
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // test.h
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   
+   inline void bar(int attr) {
+     ...
+   }
+   
+   // test.dp.cpp
+   /*
+   DPCT1077:0: 'int2' redefines a standard SYCL type, which may cause conflicts.
+   */
+   #define int2 int32_t
+   #include "test.h"
+   
+   void foo() {
+     int32_t a;
+     ...
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // test.h
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   
+   inline void bar(int attr) {
+     ...
+   }
+   
+   // test.dp.cpp
+   #include "test.h"
+   
+   void foo() {
+     sycl::int2 a;
+     ...
+   }

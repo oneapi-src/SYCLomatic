@@ -25,3 +25,41 @@ Suggestions to Fix
 
 Replace ``memory_order::acq_rel`` with ``memory_order::seq_cst`` if stricter
 memory order is needed.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ void foo_dev() {
+     ...
+     __threadfence();
+     ...
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo_dev() {
+     ...
+     /*
+     DPCT1078:0: Consider replacing memory_order::acq_rel with
+     memory_order::seq_cst for correctness if strong memory order restrictions are
+     needed.
+     */
+     sycl::atomic_fence(sycl::memory_order::acq_rel, sycl::memory_scope::device);
+     ...
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo_dev() {
+     ...
+     sycl::atomic_fence(sycl::memory_order::seq_cst, sycl::memory_scope::device);
+     ...
+   }

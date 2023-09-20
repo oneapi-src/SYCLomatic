@@ -46,3 +46,53 @@ If you received a warning for ``dpct::fft::fft_engine::create()`` or
 
 If you received this warning for ``dpct::fft::fft_engine::estimate_size()``, you
 need specify the ``direction_and_placement`` parameter correctly.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(cufftHandle plan, float2 *idata, float2 *odata) {
+     size_t worksize;
+     cufftMakePlan1d(plan, 7, CUFFT_C2C, 2, &worksize);
+     cufftExecC2C(plan, idata, odata, CUFFT_INVERSE);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(dpct::fft::fft_engine_ptr plan, sycl::float2 *idata,
+            sycl::float2 *odata) {
+     size_t worksize;
+     /*
+     DPCT1100:0: Currently the DFT external workspace feature in the Intel(R)
+     oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the
+     internal workspace if your code should run on non-GPU devices.
+     */
+     /*
+     DPCT1099:1: Verify if the default value of the direction and placement used in
+     the function "commit" is correct.
+     */
+     plan->commit(&dpct::get_in_order_queue(), 7,
+                  dpct::fft::fft_type::complex_float_to_complex_float, 2,
+                  &worksize);
+     plan->compute<sycl::float2, sycl::float2>(idata, odata,
+                                               dpct::fft::fft_direction::backward);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(dpct::fft::fft_engine_ptr plan, sycl::float2 *idata,
+            sycl::float2 *odata) {
+     size_t worksize;
+     plan->commit(&dpct::get_in_order_queue(), 7,
+                  dpct::fft::fft_type::complex_float_to_complex_float, 2,
+                  &worksize, std::make_pair(dpct::fft::fft_direction::backward, false));
+     plan->compute<sycl::float2, sycl::float2>(idata, odata,
+                                               dpct::fft::fft_direction::backward);
+   }

@@ -29,3 +29,73 @@ If you are running code on a non-GPU device, you can:
 * Use ``dpct::select_device(<device_id>)`` to choose a GPU device.
 * Call ``dpct::fft::fft_engine::use_internal_workspace(true)`` before invoking
   ``dpct::fft::fft_engine::commit()``.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(cufftHandle plan, float2 *idata, float2 *odata) {
+     size_t worksize;
+     void *workspace;
+     cufftSetAutoAllocation(plan, 0);
+     cufftMakePlan1d(plan, 7, CUFFT_C2C, 2, &worksize);
+     cudaMalloc(&workspace, worksize);
+     cufftSetWorkArea(plan, workspace);
+     cufftExecC2C(plan, idata, odata, CUFFT_FORWARD);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(dpct::fft::fft_engine_ptr plan, sycl::float2 *idata,
+            sycl::float2 *odata) {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+     size_t worksize;
+     void *workspace;
+     /*
+     DPCT1100:0: Currently the DFT external workspace feature in the Intel(R)
+     oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the
+     internal workspace if your code should run on non-GPU devices.
+     */
+     plan->use_internal_workspace(0);
+     /*
+     DPCT1100:1: Currently the DFT external workspace feature in the Intel(R)
+     oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the
+     internal workspace if your code should run on non-GPU devices.
+     */
+     /*
+     DPCT1099:2: Verify if the default value of the direction and placement used in
+     the function "commit" is correct.
+     */
+     plan->commit(&q_ct1, 7, dpct::fft::fft_type::complex_float_to_complex_float,
+                  2, &worksize);
+     workspace = (void *)sycl::malloc_device(worksize, q_ct1);
+     /*
+     DPCT1100:3: Currently the DFT external workspace feature in the Intel(R)
+     oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the
+     internal workspace if your code should run on non-GPU devices.
+     */
+     plan->set_workspace(workspace);
+     plan->compute<sycl::float2, sycl::float2>(idata, odata,
+                                               dpct::fft::fft_direction::forward);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(dpct::fft::fft_engine_ptr plan, sycl::float2 *idata,
+            sycl::float2 *odata) {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+     size_t worksize;
+     plan->commit(&q_ct1, 7, dpct::fft::fft_type::complex_float_to_complex_float,
+                  2, &worksize);
+     plan->compute<sycl::float2, sycl::float2>(idata, odata,
+                                               dpct::fft::fft_direction::forward);
+   }

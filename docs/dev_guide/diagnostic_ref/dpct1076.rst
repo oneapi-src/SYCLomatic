@@ -23,4 +23,66 @@ Suggestions to Fix
 
 Review the code and adjust it.
 
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(bool condition, int *val) {
+     cudaDeviceAttr attr;
+     if (condition)
+       attr = cudaDevAttrHostNativeAtomicSupported;
+     else
+       attr = cudaDevAttrComputeCapabilityMajor;
+   
+     ...
+   
+     if (condition)
+       cudaDeviceGetAttribute(val, attr, 0);
+     else
+       cudaDeviceGetAttribute(val, attr, 0);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(bool condition, int *val) {
+     int attr;
+     if (condition)
+       attr = 86;
+     else
+       attr = 75;
+   
+     ...
+   
+     if (condition)
+       /*
+       DPCT1076:0: The device attribute was not recognized. You may need to adjust
+       the code.
+       */
+       cudaDeviceGetAttribute(val, attr, 0);
+     else
+       /*
+       DPCT1076:1: The device attribute was not recognized. You may need to adjust
+       the code.
+       */
+       cudaDeviceGetAttribute(val, attr, 0);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(bool condition, int *val) {
+     ...
+   
+     if (condition)
+       *val = dpct::dev_mgr::instance().get_device(0).is_native_atomic_supported();
+     else
+       *val = dpct::dev_mgr::instance().get_device(0).get_major_version();
+   }
+
 .. include:: /_include_files/support-msg.txt

@@ -28,3 +28,67 @@ Suggestions to Fix
 
 Check the address space of the memory that <pointer variable> points to
 and replace ``address_space::global`` with the correct address space.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ void bar1(double *d) {
+     double i = 30;
+     double d1;
+     double &d2 = *d;
+   
+     sincos(i, &d1, &d2);
+   }
+   
+   __global__ void kernel(int *p) {
+     double d;
+     bar1(&d);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void bar1(double *d) {
+     double i = 30;
+     double d1;
+     double &d2 = *d;
+   
+     /*
+     DPCT1081:1: The generated code assumes that "&d2" points to the global memory
+     address space. If it points to a local or private memory address space,
+     replace "address_space::global" with "address_space::local" or
+     "address_space::private".
+     */
+     d1 = sycl::sincos(
+         i, sycl::address_space_cast<sycl::access::address_space::global_space,
+                                     sycl::access::decorated::yes, double>(&d2));
+   }
+   
+   void kernel(int *p) {
+     double d;
+     bar1(&d);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void bar1(double *d) {
+     double i = 30;
+     double d1;
+     double &d2 = *d;
+   
+     d1 = sycl::sincos(
+         i, sycl::address_space_cast<sycl::access::address_space::private_space,
+                                     sycl::access::decorated::yes, double>(&d2));
+   }
+   
+   void kernel(int *p) {
+     double d;
+     bar1(&d);
+   }

@@ -22,3 +22,55 @@ Suggestions to Fix
 ------------------
 
 Rewrite code manually by using non-variadic functions.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ int variadic_prototype(int *p, ...) {
+     va_list args;
+     va_start(args, p);
+     int b = va_arg(args, int);
+     va_end(args);
+     return b;
+   };
+   
+   __global__ void kernel(int *p) {
+     int c = variadic_prototype(p, 123);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1080:0: Variadic functions cannot be called in a SYCL kernel or by functions
+   called by the kernel. You may need to adjust the code.
+   */
+   int variadic_prototype(int *p, ...) {
+     va_list args;
+     va_start(args, p);
+     int b = va_arg(args, int);
+     va_end(args);
+     return b;
+   };
+   
+   void kernel(int *p) {
+     int c = variadic_prototype(p, 123);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   int variadic_prototype(int *p, int a) {
+     int b = a;
+     return b;
+   };
+   
+   void kernel(int *p) {
+     int c = variadic_prototype(p, 123);
+   }

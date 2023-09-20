@@ -22,3 +22,50 @@ Suggestions to Fix
 ------------------
 
 Review and rewrite the code manually.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(int t) {
+     cudaDeviceProp properties;
+     cudaGetDeviceProperties(&properties, 0);
+     int a = properties.regsPerBlock;
+     if (a < t)
+       code path 1
+     else
+       code path 2
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     dpct::device_info properties;
+     dpct::get_device_info(properties, dpct::dev_mgr::instance().get_device(0));
+     /*
+     DPCT1090:0: SYCL does not support the device property that would be
+     functionally compatible with regsPerBlock. It was not migrated. You need to
+     rewrite the code.
+     */
+     int a = properties.regsPerBlock;
+     if (a < t)
+       code path 1
+     else
+       code path 2
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     dpct::device_info properties;
+     dpct::get_device_info(properties, dpct::dev_mgr::instance().get_device(0));
+   
+     code path 2
+   }

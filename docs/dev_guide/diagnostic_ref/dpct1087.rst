@@ -28,3 +28,76 @@ Suggestions to Fix
 Specify ``--use-experimental-features=nd_range_barrier`` in the migration command
 to use dpct helper function ``nd_range_barrier`` to migrate CUDA grid level
 synchronization.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel() {
+     namespace cg = cooperative_groups;
+     cg::grid_group grid = cg::this_grid();
+     grid.sync();
+   }
+   
+   void foo() {
+     kernel<<<1, 64>>>();
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel() {
+   
+     /*
+     DPCT1087:1: SYCL currently does not support cross group synchronization. You
+     can specify "--use-experimental-features=nd_range_barrier" to use the dpct
+     helper function nd_range_barrier to migrate this_grid().
+     */
+     cg::grid_group grid = cg::this_grid();
+     /*
+     DPCT1087:0: SYCL currently does not support cross group synchronization. You
+     can specify "--use-experimental-features=nd_range_barrier" to use the dpct
+     helper function nd_range_barrier to migrate grid.sync().
+     */
+     grid.sync();
+   }
+   
+   void foo() {
+     dpct::get_in_order_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel();
+         });
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(const sycl::nd_item<3> &item_ct1,
+               sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space> &sync_ct1) {
+   
+     dpct::experimental::nd_range_barrier(item_ct1, sync_ct1);
+   }
+   
+   void foo() {
+     dpct::global_memory<unsigned int, 0> d_sync_ct1(0);
+     unsigned *sync_ct1 = d_sync_ct1.get_ptr(dpct::get_in_order_queue());
+     dpct::get_in_order_queue().memset(sync_ct1, 0, sizeof(int)).wait();
+     dpct::get_in_order_queue()
+         .parallel_for(
+             sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
+             [=](sycl::nd_item<3> item_ct1) {
+               auto atm_sync_ct1 =
+                   sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst,
+                                    sycl::memory_scope::device,
+                                    sycl::access::address_space::global_space>(
+                       sync_ct1[0]);
+               kernel(item_ct1, atm_sync_ct1);
+             })
+         .wait();
+   }
