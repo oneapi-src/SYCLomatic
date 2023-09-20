@@ -8,7 +8,7 @@ Message
 
 .. _msg-1106-start:
 
-``<function name>`` was migrated with the Intel extensions for device information which
+*<function name>* was migrated with the Intel extensions for device information which
 may not be supported by all compilers or runtimes. You may need to adjust the code.
 
 .. _msg-1106-end:
@@ -16,7 +16,7 @@ may not be supported by all compilers or runtimes. You may need to adjust the co
 Detailed Help
 -------------
 
-The CUDA\* function ``<function name>`` (for example ``cudaMemGetInfo`` or
+The CUDA\* function *<function name>* (for example ``cudaMemGetInfo`` or
 ``cuMemGetInfo``) was migrated with the Intel extensions for device information,
 which may not be supported by all compilers or runtimes. You may need to adjust
 the code.
