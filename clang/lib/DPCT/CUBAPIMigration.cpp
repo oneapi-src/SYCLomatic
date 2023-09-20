@@ -1144,7 +1144,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
   } else if (FuncName == "Load") {
   
     GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
-    NewFuncName = Mapnames::getClNamespace() + "load";
+    NewFuncName = MapNames::getClNamespace() + "load";
     const Expr *InData = FuncArgs[0];
     ExprAnalysis InEA(InData);
     OpRepl = getOpRepl(nullptr);
@@ -1343,7 +1343,7 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
                                       SM));
   } else if (TypeName.find("class cub::BlockScan") == 0 ||
              TypeName.find("class cub::BlockReduce") == 0 ||
-             ObjTypeStr.find("class cub::BlockLoad") == 0) {
+             TypeName.find("class cub::BlockLoad") == 0) {
     auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
     if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
                            DeviceFuncDecl->hasAttr<CUDAGlobalAttr>())) {
