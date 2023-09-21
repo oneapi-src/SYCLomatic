@@ -75,17 +75,10 @@ which is rewritten to:
      sycl::uint4 tex_data = tex.read(0, 0);
    }
    void foo(sycl::uint2 *image_data) {
-     sycl::uint4 *new_image_data = sycl::malloc_device<sycl::uint4>(ROW * COL, dpct::get_default_queue());
-     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
-       cgh.parallel_for(
-           sycl::nd_range<2>(sycl::range<2>(1, COL, ROW), sycl::range<3>(1, COL, ROW)),
-           [=](sycl::uint2 *image_data, sycl::uint4 *new_image_data, sycl::nd_item<2> item_ct1) {
-              new_image_data[item_ct1.get_global_linear_id()].x() = image_data[item_ct1.get_global_linear_id()].x();
-              new_image_data[item_ct1.get_global_linear_id()].y() = image_data[item_ct1.get_global_linear_id()].y();
-              new_image_data[item_ct1.get_global_linear_id()].z() = 0;
-              new_image_data[item_ct1.get_global_linear_id()].w() = 0;
-           });
-     });
+     // (1) Please alloc memory for the new_image_data with sycl::uint4 type.
+     // (2) Copy the 1st and 2nd element from each pixel of the image_data to
+     //     the corresponding pixel of the new_image_data.
+     // (3) Free the memory of new_image_data after usage.
      ...
      dpct::get_default_queue().submit([&](sycl::handler &cgh) {
        auto tex_acc = tex.get_access(cgh);
@@ -99,8 +92,6 @@ which is rewritten to:
                  dpct::image_accessor_ext<sycl::uint4, 2>(tex_smpl, tex_acc));
            });
      });
-     dpct::get_default_queue().wait();
-     sycl::free(new_image_data, dpct::get_default_queue());
    }
 
 Suggestions to Fix

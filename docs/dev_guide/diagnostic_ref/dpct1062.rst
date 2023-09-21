@@ -58,11 +58,8 @@ which is rewritten to:
 
    void foo1(dpct::image_accessor_ext<sycl::char4, 2> tex) {
      sycl::char4 temp_c = tex.read(0.5f, 0.5f);
-     sycl::float4 f;
-     f.x() = temp_c.x() / 255.f;
-     f.y() = temp_c.y() / 255.f;
-     f.z() = temp_c.z() / 255.f;
-     f.w() = temp_c.w() / 255.f;
+     sycl::float4 f{temp_c.x(), temp_c.y(), temp_c.z(), temp_c.w()};
+     f = f / 255.f;
    }
    void foo2(dpct::image_accessor_ext<sycl::char4, 2> tex) {
      sycl::char4 c = tex.read(0.5f, 0.5f);

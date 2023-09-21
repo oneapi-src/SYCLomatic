@@ -27,24 +27,19 @@ Command:
 .. code-block:: bash
    :linenos:
 
-   dpct --out-root out test.c --extra-arg=-xc
-
-If this variable is only used in host code, ignore this warning.
+   dpct --out-root out test.h --extra-arg=-xc
 
 For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
 
-   // dpct --out-root out test.c --extra-arg=-xc
-   
-   // test.c 
    #include <stdio.h>
    #include <cuda_runtime.h>
    
    static __constant__ const float aaa = 10.f;
    
-   void foo(){
+   void foo_host() {
      printf("%f\n", aaa);
    }
 
@@ -59,68 +54,33 @@ results in the following migrated SYCL\* code:
    */
    static const float aaa = 10.f;
    
-   void foo(){
+   void foo_host() {
      printf("%f\n", aaa);
    }
 
-which is rewritten to:
+If the variable is only used in host code, ignore this warning,
+the code is rewritten to:
 
 .. code-block:: cpp
    :linenos:
 
    static const float aaa = 10.f;
    
-   void foo(){
+   void foo_host() {
      printf("%f\n", aaa);
    }
 
 If the variable is also used in device code,
 (1) you need to migrate this code again with ``--extra-arg="-xcuda"`` passed to the tool to explicitly specify the code language; or
-(2) Manually adjust the code.
-
-For example, this original CUDA code:
+(2) Manually rewrite the code to:
 
 .. code-block:: cpp
    :linenos:
 
-   // dpct --out-root out test.c --extra-arg=-xc
+   static const float aaa_host_ct1 = 10.f;
+   static dpct::constant_memory<const float, 0> aaa(10.f);
    
-   // test.c 
-   #include <stdio.h>
-   #include <cuda_runtime.h>
-   
-   static __constant__ const float aaa = 10.f;
-   
-   void foo(){
-     printf("%f\n", aaa);
+   void foo_host() {
+     printf("%f\n", aaa_host_ct1);
    }
-
-results in the following migrated SYCL code:
-
-.. code-block:: cpp
-   :linenos:
-
-   /*
-   DPCT1056:0: The use of aaa in device code was not detected. If this variable is
-   also used in device code, you need to rewrite the code.
-   */
-   static const float aaa = 10.f;
-   
-   void foo(){
-     printf("%f\n", aaa);
-   }
-
-which is rewritten to:
-
-.. code-block:: cpp
-   :linenos:
-
-   static const float aaa = 10.f;
-   // Use aaa_device for device code, see more details in the document of DPCT1057
-   static dpct::constant_memory<const float, 0> aaa_device(10.f);
-   
-   void foo(){
-     printf("%f\n", aaa);
-   }
-
 

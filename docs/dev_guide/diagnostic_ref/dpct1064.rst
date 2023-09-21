@@ -31,8 +31,8 @@ For example, this original CUDA\* code:
 
    #define POW(B, E) pow(B, E)
    __device__ void foo() {
-     POW(2.5, 3.1);
-     POW(2.5, 2);
+     double a = POW(2.5, 3.1);
+     double b = POW(2.5, 2);
    }
 
 results in the following migrated SYCL\* code:
@@ -46,8 +46,8 @@ results in the following migrated SYCL\* code:
    */
    #define POW(B, E) dpct::pow(B, E)
    void foo() {
-     POW(2.5, 3.1);
-     POW(2.5, 2);
+     double a = POW(2.5, 3.1);
+     double b = POW(2.5, 2);
    }
 
 which is rewritten to:
@@ -56,8 +56,8 @@ which is rewritten to:
    :linenos:
 
    void foo() {
-     dpct::pow(2.5, 3.1);
-     2.5 * 2.5;
+     double a = dpct::pow(2.5, 3.1);
+     double b = 2.5 * 2.5;
    }
 
 Suggestions to Fix
