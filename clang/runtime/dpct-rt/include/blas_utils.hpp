@@ -499,7 +499,7 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
 
   exec_queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(events);
-    cgh.host_task([=] { free(host_a); });
+    cgh.host_task([=] { std::free(host_a); });
   });
 #endif
 }
@@ -585,7 +585,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptrs, events);
   mem_free_thread.detach();
@@ -700,7 +700,7 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptrs, events);
   mem_free_thread.detach();
@@ -816,7 +816,7 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptrs, events);
   mem_free_thread.detach();
@@ -923,7 +923,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptr_a, events_a);
   std::thread mem_free_thread_tau(
@@ -931,7 +931,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptr_tau, events_tau);
   mem_free_thread_a.detach();
