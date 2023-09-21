@@ -782,6 +782,18 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
   return false;
 }
 
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
+    SourceLocation SL, std::vector<SourceRange> Ranges) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  for (auto &Range : Ranges) {
+    if (SM.getFileOffset(Range.getBegin()) < SM.getFileOffset(SL) &&
+        SM.getFileOffset(SL) < SM.getFileOffset(Range.getEnd())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// @brief Check if it is safe to use local barrier to migrate current
 /// __syncthreads call.
 /// The requirements to return ture:
@@ -806,6 +818,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
   for (auto &LocInfo : DefLocInfoMap) {
     bool FoundRead = false;
     bool FoundWrite = false;
+    bool DREInPredecessors = false;
+    bool DREInSuccessors = false;
     for (auto &LocModePair : LocInfo.second) {
       if (LocModePair.first.isMacroID() ||
           (LocModePair.second == AccessMode::ReadWrite)) {
@@ -819,9 +833,22 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
       } else if (LocModePair.second == AccessMode::Write) {
         FoundWrite = true;
       }
+      if (isInRanges(LocModePair.first, SCI.Predecessors)) {
+        DREInPredecessors = true;
+      }
+      if (isInRanges(LocModePair.first, SCI.Successors)) {
+        DREInSuccessors = true;
+      }
+
       if (FoundRead && FoundWrite) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 2" << std::endl;
+#endif
+        return false;
+      }
+      if (FoundWrite && DREInPredecessors && DREInSuccessors) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;
 #endif
         return false;
       }

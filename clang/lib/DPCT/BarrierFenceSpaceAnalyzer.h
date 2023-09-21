@@ -139,6 +139,7 @@ private:
     }
     return nullptr;
   }
+  bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
 
   std::set<const Expr *> DeviceFunctionCallArgs;
 
