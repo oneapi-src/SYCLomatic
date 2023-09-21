@@ -2933,7 +2933,7 @@ public:
 class StructureTextureObjectInfo : public TextureObjectInfo {
   std::unordered_map<std::string, std::shared_ptr<MemberTextureObjectInfo>>
       Members;
-  bool ContainsVirtualPointer;
+  bool ContainsVirtualPointer = false;
   bool IsBase = false;
 
   StructureTextureObjectInfo(unsigned Offset, const std::string &FilePath,
