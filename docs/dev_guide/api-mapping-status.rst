@@ -3,6 +3,14 @@ CUDA API Migration Support Status
 
 The following tables provide the current status for CUDA\* API migration support.
 
+ASM API
+-------
+
+.. csv-table::
+   :file: api-mapping-status/ASM_API_migration_status.csv
+   :widths: 40, 15, 45
+   :header-rows: 1
+
 CUB API
 -------
 
@@ -104,5 +112,13 @@ thrust API
 
 .. csv-table::
    :file: api-mapping-status/thrust_API_migration_status.csv
+   :widths: 40, 15, 45
+   :header-rows: 1
+
+WMMA API
+--------
+
+.. csv-table::
+   :file: api-mapping-status/wmma_API_migration_status.csv
    :widths: 40, 15, 45
    :header-rows: 1
