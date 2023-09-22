@@ -2055,22 +2055,19 @@ void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
   return ArgumentAnalysis::analyzeExpr(Ctor);
 }
 
-void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
-  if (!IsDim3Config)
-    return ArgumentAnalysis::analyzeExpr(DRE);
-
+const clang::Expr *trackInitExprOfDRE(const DeclRefExpr *DRE) {
   using namespace ast_matchers;
   const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
   if (!VD)
-    return ArgumentAnalysis::analyzeExpr(DRE);
+    return nullptr;
 
   // VD must be local variable and must have the same context with
   // KernelCallExpr
   if (VD->getKind() != Decl::Var)
-    return ArgumentAnalysis::analyzeExpr(DRE);
+    return nullptr;
   const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
   if (!FD)
-    return ArgumentAnalysis::analyzeExpr(DRE);
+    return nullptr;
   const Stmt *VDContext = FD->getBody();
 
   // VD's DRE should be only used once (as the config arg) in VDContext
@@ -2078,12 +2075,22 @@ void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   auto MatchedResults =
       match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
   if (MatchedResults.size() != 1)
-    return ArgumentAnalysis::analyzeExpr(DRE);
-
+    return nullptr;
   if (!VD->hasInit())
+    return nullptr;
+
+  return VD->getInit();
+}
+
+void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  if (!IsDim3Config)
     return ArgumentAnalysis::analyzeExpr(DRE);
 
-  dispatch(VD->getInit());
+  if (const Expr* Init = trackInitExprOfDRE(DRE)) {
+    dispatch(Init);
+  } else {
+    return ArgumentAnalysis::analyzeExpr(DRE);
+  }
 
   if (IsTryToUseOneDimension) {
     // Insert member access expr at the end of DRE
@@ -2173,6 +2180,71 @@ void SideEffectsAnalysis::dispatch(const Stmt *Expression) {
     HasSideEffects = true;
   }
   return ExprAnalysis::dispatch(Expression);
+}
+
+void StrictMonotonicityAnalysis::dispatch(const Stmt *Expression) {
+  switch (Expression->getStmtClass()) {
+    ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
+    ANALYZE_EXPR(ImplicitCastExpr)
+    ANALYZE_EXPR(DeclRefExpr)
+    ANALYZE_EXPR(PseudoObjectExpr)
+  default:
+    IsStrictlyMonotonic = false;
+    return ExprAnalysis::dispatch(Expression);
+  }
+}
+
+void StrictMonotonicityAnalysis::analyzeExpr(const UnaryOperator *UO) {
+  dispatch(UO->getSubExpr());
+}
+void StrictMonotonicityAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  dispatch(BO->getLHS());
+  dispatch(BO->getRHS());
+}
+void StrictMonotonicityAnalysis::analyzeExpr(const ImplicitCastExpr *ICE) {
+  dispatch(ICE->getSubExpr());
+}
+void StrictMonotonicityAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  if (const Expr* Init = trackInitExprOfDRE(DRE)) {
+    dispatch(Init);
+  } else {
+    IsStrictlyMonotonic = false;
+    return;
+  }
+}
+bool isIterationSpaceBuiltinVar(const PseudoObjectExpr *Node,
+                                const std::string &BuiltinNameRef,
+                                const std::string &FieldNameRef) {
+  using namespace ast_matchers;
+  if (!Node)
+    return false;
+  auto BuiltinMatcher = findAll(
+      memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
+                     declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
+                                                       "blockIdx"))))
+                         .bind("declRefExpr")))),
+                 hasParent(implicitCastExpr(
+                     hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
+          .bind("memberExpr"));
+  auto MatchedResults =
+      match(BuiltinMatcher, *Node, DpctGlobalInfo::getContext());
+  if (MatchedResults.size() != 1)
+    return false;
+  const auto Res = MatchedResults[0];
+  auto ME = Res.getNodeAs<MemberExpr>("memberExpr");
+  auto DRE = Res.getNodeAs<DeclRefExpr>("declRefExpr");
+  if (!ME || !DRE)
+    return false;
+  StringRef BuiltinName = DRE->getDecl()->getName();
+  StringRef FieldName = ME->getMemberDecl()->getName();
+  if (BuiltinName == BuiltinNameRef && FieldName == FieldNameRef)
+    return true;
+  return false;
+}
+void StrictMonotonicityAnalysis::analyzeExpr(const PseudoObjectExpr *POE) {
+  if (isIterationSpaceBuiltinVar(POE, "threadIdx", "__fetch_builtin_x"))
+    HasThreadIdxX = true;
 }
 
 } // namespace dpct

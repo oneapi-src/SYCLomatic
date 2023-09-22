@@ -98,7 +98,7 @@ private:
                                           const DeclRefExpr *DRE);
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<SourceRange> LoopRange;
-  int KernelDim = 3; // 3 or 1
+  int KernelCallBlockDim = 3; // 3 or 1
   const FunctionDecl *FD = nullptr;
   std::string GlobalFunctionName;
 

@@ -2009,6 +2009,7 @@ KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
 void KernelCallExpr::setKernelCallDim() {
   if (auto Ptr = getFuncInfo()) {
     Ptr->setKernelInvoked();
+    Ptr->KernelCallBlockDim = std::max(Ptr->KernelCallBlockDim, BlockDim);
     if (GridDim == 1 && BlockDim == 1) {
       if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
         Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);

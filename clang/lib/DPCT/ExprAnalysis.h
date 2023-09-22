@@ -931,6 +931,31 @@ private:
   bool HasSideEffects = false;
 };
 
+class StrictMonotonicityAnalysis : public ExprAnalysis {
+public:
+  explicit StrictMonotonicityAnalysis(const Expr *E) : ExprAnalysis(E) {}
+  inline bool isStrictlyMonotonic() {
+    std::cout << "IsStrictlyMonotonic:" << IsStrictlyMonotonic << std::endl;
+    std::cout << "HasThreadIdxX:" << HasThreadIdxX << std::endl;
+    return IsStrictlyMonotonic && HasThreadIdxX;
+  }
+
+protected:
+  void dispatch(const Stmt *Expression) override;
+
+private:
+  using Base = ExprAnalysis;
+  void analyzeExpr(const UnaryOperator *UO);
+  void analyzeExpr(const BinaryOperator *BO);
+  void analyzeExpr(const ImplicitCastExpr *ICE);
+  void analyzeExpr(const DeclRefExpr *DRE);
+  void analyzeExpr(const PseudoObjectExpr *POE);
+
+private:
+  bool IsStrictlyMonotonic = true;
+  bool HasThreadIdxX = false;
+};
+
 } // namespace dpct
 } // namespace clang
 
