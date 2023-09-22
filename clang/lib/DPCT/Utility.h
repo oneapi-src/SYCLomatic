@@ -201,6 +201,9 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
   if (Child.empty()) {
     return false;
   }
+  if (RootAbs == Child) {
+    return true;
+  }
 
   auto Key = RootAbs + ":" + Child;
   auto Iter = ChildOrSameCache.find(Key);
