@@ -80,7 +80,7 @@ which is rewritten to:
      auto tid = item_ct1.get_local_id(2) +
                 item_ct1.get_local_range(2) * item_ct1.get_group(2);
      only_read_data(data[tid].device_data);
-     // We can use local_space to replace global_local_space if the access
+     // global_local_space can be replaced with local_space if the access
      // of the global memory after the barrier does not depend on the access
      // of the same global memory before the barrier.
      item_ct1.barrier(sycl::access::fence_space::local_space);

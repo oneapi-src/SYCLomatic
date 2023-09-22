@@ -58,8 +58,8 @@ results in the following migrated SYCL\* code:
      printf("%f\n", aaa);
    }
 
-If the variable is only used in host code, ignore this warning,
-the code is rewritten to:
+which is rewritten to:
+(1)  If the variable "aaa" is only used in host code, just ignore the DPCT1056 warning:
 
 .. code-block:: cpp
    :linenos:
@@ -70,9 +70,7 @@ the code is rewritten to:
      printf("%f\n", aaa);
    }
 
-If the variable is also used in device code,
-(1) you need to migrate this code again with ``--extra-arg="-xcuda"`` passed to the tool to explicitly specify the code language; or
-(2) Manually rewrite the code to:
+(2) If the variable "aaa" is used in both host and device code: 
 
 .. code-block:: cpp
    :linenos:
