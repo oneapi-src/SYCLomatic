@@ -1672,6 +1672,9 @@ void CXXNameMangler::mangleUnqualifiedName(
     [[fallthrough]];
   case DeclarationName::CXXConversionFunctionName:
   case DeclarationName::CXXLiteralOperatorName:
+#ifdef SYCLomatic_CUSTOMIZATION
+    assert(ND);
+#endif //SYCLomatic_CUSTOMIZATION
     mangleOperatorName(Name, Arity);
     writeAbiTags(ND, AdditionalAbiTags);
     break;
