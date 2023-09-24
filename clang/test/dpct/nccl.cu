@@ -6,6 +6,10 @@
 
 int check(ncclResult_t);
 
+// CHECK: #if DPCT_CCL_VERSION >= 0
+#if NCCL_VERSION_CODE >= NCCL_VERSION(2,13,0)
+#endif
+
 int main() {
     int version, nranks, rank, device, rank_rev;
     // CHECK: oneapi::ccl::kvs::address_type id;

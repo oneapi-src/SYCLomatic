@@ -16,6 +16,9 @@
 
 #include "device.hpp"
 
+#define DPCT_CCL_VERSION                                                       \
+  CCL_MAJOR_VERSION * 10000 + CCL_MINOR_VERSION * 100 + CCL_UPDATE_VERSION
+
 namespace dpct {
 namespace ccl {
 namespace detail {

@@ -469,8 +469,17 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   auto ItRule = MapNames::MacroRuleMap.find(Name.str());
   if (ItRule != MapNames::MacroRuleMap.end()) {
     std::string OutStr = ItRule->second.Out;
-    TransformSet.emplace_back(
-        new ReplaceToken(Range.getBegin(), std::move(OutStr)));
+    if (ItRule->second.replaceWithMacroArg) {
+      auto Length = Lexer::MeasureTokenLength(
+          Range.getEnd(), SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+      Length += SM.getDecomposedLoc(Range.getEnd()).second -
+                SM.getDecomposedLoc(Range.getBegin()).second;
+      TransformSet.emplace_back(
+          new ReplaceText(Range.getBegin(), Length, std::move(OutStr)));
+    } else {
+      TransformSet.emplace_back(
+          new ReplaceToken(Range.getBegin(), std::move(OutStr)));
+    }
     requestFeature(ItRule->second.HelperFeature);
     for (auto ItHeader = ItRule->second.Includes.begin();
          ItHeader != ItRule->second.Includes.end(); ItHeader++) {
