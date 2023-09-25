@@ -37,10 +37,10 @@ For example, this original CUDA\* code:
    #include <stdio.h>
    #include <cuda_runtime.h>
    
-   static __constant__ const float aaa = 10.f;
+   static __constant__ const float const_a = 10.f;
    
    void foo_host() {
-     printf("%f\n", aaa);
+     printf("%f\n", const_a);
    }
 
 results in the following migrated SYCL\* code:
@@ -49,36 +49,36 @@ results in the following migrated SYCL\* code:
    :linenos:
 
    /*
-   DPCT1056:0: The use of aaa in device code was not detected. If this variable is
+   DPCT1056:0: The use of const_a in device code was not detected. If this variable is
    also used in device code, you need to rewrite the code.
    */
-   static const float aaa = 10.f;
+   static const float const_a = 10.f;
    
    void foo_host() {
-     printf("%f\n", aaa);
+     printf("%f\n", const_a);
    }
 
 which is rewritten to:
-(1)  If the variable "aaa" is only used in host code, just ignore the DPCT1056 warning:
+(1)  If the variable "const_a" is only used in host code, just ignore the DPCT1056 warning:
 
 .. code-block:: cpp
    :linenos:
 
-   static const float aaa = 10.f;
+   static const float const_a = 10.f;
    
    void foo_host() {
-     printf("%f\n", aaa);
+     printf("%f\n", const_a);
    }
 
-(2) If the variable "aaa" is used in both host and device code: 
+(2) If the variable "const_a" is used in both host and device code: 
 
 .. code-block:: cpp
    :linenos:
 
-   static const float aaa_host_ct1 = 10.f;
-   static dpct::constant_memory<const float, 0> aaa(10.f);
+   static const float const_a_host_ct1 = 10.f;
+   static dpct::constant_memory<const float, 0> const_a(10.f);
    
    void foo_host() {
-     printf("%f\n", aaa_host_ct1);
+     printf("%f\n", const_a_host_ct1);
    }
 

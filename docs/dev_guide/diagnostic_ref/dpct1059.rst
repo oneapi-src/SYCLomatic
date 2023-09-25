@@ -75,10 +75,8 @@ which is rewritten to:
      sycl::uint4 tex_data = tex.read(0, 0);
    }
    void foo(sycl::uint2 *image_data) {
-     // (1) Please allocate memory for the new_image_data with sycl::uint4 type.
-     // (2) Copy the 1st and 2nd element from each pixel of the image_data to
-     //     the corresponding pixel of the new_image_data.
-     // (3) Replace the image_data, the binded memory of the tex object, with the new_image_data.
+     // (1) Please allocate sycl::uint4 type new_image_data and initialize the value with image_data.
+     // (3) Bind new_image_data to the tex object instead of using the image_data.
      // (4) Free the memory of new_image_data after usage.
      ...
      dpct::get_default_queue().submit([&](sycl::handler &cgh) {
