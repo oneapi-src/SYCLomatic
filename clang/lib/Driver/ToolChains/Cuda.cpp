@@ -120,8 +120,8 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
   if (CV != CudaVersion::UNKNOWN) {
     IsVersionSupported = true;
     return true;
-  }
-
+  } else
+    CV = CudaVersion::NEW;
   return false;
 }
 #else
@@ -225,11 +225,7 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
         FS.exists(FilePath + "/cuda.h")))
     return false;
   IsIncludePathValid = true;
-  bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h", Version);
-  if (!IsFound)
-    return false;
-  IsValid = true;
-
+  IsValid = ParseCudaVersionFile(FilePath + "/cuda.h", Version);
   InstallPath = FilePath;
   IncludePath = FilePath;
 

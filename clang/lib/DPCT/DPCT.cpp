@@ -231,8 +231,9 @@ std::string getCudaInstallPath(int argc, const char **argv) {
     ShowStatus(MigrationErrorCannotDetectCudaPath);
     dpctExit(MigrationErrorCannotDetectCudaPath);
   } else if (!CudaIncludeDetector.isVersionSupported()) {
-    ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
-    dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
+    ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
+    dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
+
   }
 
   makeCanonical(Path);

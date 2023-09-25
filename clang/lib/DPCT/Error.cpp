@@ -8,6 +8,7 @@
 
 #include "Error.h"
 
+#include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "Statics.h"
 
@@ -38,10 +39,10 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Path for CUDA header files specified by "
                    "--cuda-include-path is invalid.";
     break;
-  case MigrationErrorSupportedCudaVersionNotAvailable:
+  case MigrationErrorDetectedCudaVersionUnsupported:
     StatusString = "Error: The auto detect CUDA header files version is not supported. "
-                  "See Release Notes for supported versions. "
-                  "Or specify another version's header by --cuda-include-path.";
+                  "The latest supported version is " + dpct::DpctGlobalInfo::getCudaVersion() +
+                  ". You can specify another header files by --cuda-include-path.";
     break;
   case MigrationErrorCudaVersionUnsupported:
     StatusString = "Error: The version of CUDA header files specified by "

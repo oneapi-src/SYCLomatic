@@ -60,7 +60,9 @@ public:
   /// Check whether we detected a valid Cuda install.
   bool isValid() const { return IsValid; }
 #ifdef SYCLomatic_CUSTOMIZATION
+  /// Check whether path for CUDA header files is valid.
   bool isIncludePathValid() const { return IsIncludePathValid; }
+  /// Check whether version of CUDA header files is supported.
   bool isVersionSupported() const { return IsVersionSupported; }
   /// validate whether FilePath is the directory of CUDA header files
   bool validateCudaHeaderDirectory(const std::string &FilePath,

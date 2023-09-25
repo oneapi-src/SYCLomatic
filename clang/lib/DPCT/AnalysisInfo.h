@@ -862,6 +862,9 @@ public:
     return CudaPath;
   }
 
+  static const std::string getCudaVersion() {
+    return clang::CudaVersionToString(SDKVersion);
+  }
   static void printItem(llvm::raw_ostream &, const Stmt *,
                         const FunctionDecl *FD = nullptr);
   static std::string getItem(const Stmt *, const FunctionDecl *FD = nullptr);
