@@ -77,15 +77,17 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
   oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
-  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
-  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
-  auto data_val = dpct::detail::get_memory<Ty>(val);
+  auto data_row_ptr = dpct::detail::get_memory(const_cast<int *>(row_ptr));
+  auto data_col_ind = dpct::detail::get_memory(const_cast<int *>(col_ind));
+  auto data_val =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
   oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, num_rows,
                                     num_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
 
-  auto data_x = dpct::detail::get_memory<Ty>(x);
-  auto data_y = dpct::detail::get_memory<Ty>(y);
+  auto data_x =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(x)));
+  auto data_y = dpct::detail::get_memory(reinterpret_cast<Ty *>(y));
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
     oneapi::mkl::sparse::optimize_gemv(queue, trans, *sparse_matrix_handle);
@@ -159,15 +161,17 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
   oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
-  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
-  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
-  auto data_val = dpct::detail::get_memory<Ty>(val);
+  auto data_row_ptr = dpct::detail::get_memory(const_cast<int *>(row_ptr));
+  auto data_col_ind = dpct::detail::get_memory(const_cast<int *>(col_ind));
+  auto data_val =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
   oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, sparse_rows,
                                     sparse_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
 
-  auto data_b = dpct::detail::get_memory<Ty>(b);
-  auto data_c = dpct::detail::get_memory<Ty>(c);
+  auto data_b =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(b)));
+  auto data_c = dpct::detail::get_memory(reinterpret_cast<Ty *>(c));
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
     oneapi::mkl::sparse::gemm(queue, oneapi::mkl::layout::row_major, trans,
@@ -238,9 +242,10 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
   using Ty = typename dpct::DataType<T>::T2;
-  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
-  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
-  auto data_val = dpct::detail::get_memory<Ty>(val);
+  auto data_row_ptr = dpct::detail::get_memory(const_cast<int *>(row_ptr));
+  auto data_col_ind = dpct::detail::get_memory(const_cast<int *>(col_ind));
+  auto data_val =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
   oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
                                     row_col, row_col, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
@@ -687,8 +692,10 @@ inline void spmv_impl(sycl::queue queue, oneapi::mkl::transpose trans,
       dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
       dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
-  auto data_x = dpct::detail::get_memory<Ty>(x->get_value());
-  auto data_y = dpct::detail::get_memory<Ty>(y->get_value());
+  auto data_x =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(x->get_value()));
+  auto data_y =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(y->get_value()));
   if (a->get_diag().has_value() && a->get_uplo().has_value()) {
     oneapi::mkl::sparse::optimize_trmv(queue, a->get_uplo().value(), trans,
                                        a->get_diag().value(),
@@ -714,8 +721,10 @@ inline void spmm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
       dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
       dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
-  auto data_b = dpct::detail::get_memory<Ty>(b->get_value());
-  auto data_c = dpct::detail::get_memory<Ty>(c->get_value());
+  auto data_b =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(b->get_value()));
+  auto data_c =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(c->get_value()));
   SPARSE_CALL(oneapi::mkl::sparse::gemm(
       queue, b->get_layout(), trans_a, trans_b, alpha_value,
       a->get_matrix_handle(), data_b, b->get_col_num(), b->get_leading_dim(),
@@ -1069,8 +1078,10 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
                                              library_data_t::real_float,
                                              library_data_t::real_float): {
     detail::check_alpha_value<float>(alpha, queue);
-    auto data_x = dpct::detail::get_memory<float>(x->get_value());
-    auto data_y = dpct::detail::get_memory<float>(y->get_value());
+    auto data_x =
+        dpct::detail::get_memory(reinterpret_cast<float *>(x->get_value()));
+    auto data_y =
+        dpct::detail::get_memory(reinterpret_cast<float *>(y->get_value()));
     oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
                               a->get_matrix_handle(), data_x, data_y);
     break;
@@ -1079,8 +1090,10 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
                                              library_data_t::real_double,
                                              library_data_t::real_double): {
     detail::check_alpha_value<double>(alpha, queue);
-    auto data_x = dpct::detail::get_memory<double>(x->get_value());
-    auto data_y = dpct::detail::get_memory<double>(y->get_value());
+    auto data_x =
+        dpct::detail::get_memory(reinterpret_cast<double *>(x->get_value()));
+    auto data_y =
+        dpct::detail::get_memory(reinterpret_cast<double *>(y->get_value()));
     oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
                               a->get_matrix_handle(), data_x, data_y);
     break;
@@ -1089,8 +1102,10 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
                                              library_data_t::complex_float,
                                              library_data_t::complex_float): {
     detail::check_alpha_value<std::complex<float>>(alpha, queue);
-    auto data_x = dpct::detail::get_memory<std::complex<float>>(x->get_value());
-    auto data_y = dpct::detail::get_memory<std::complex<float>>(y->get_value());
+    auto data_x = dpct::detail::get_memory(
+        reinterpret_cast<std::complex<float> *>(x->get_value()));
+    auto data_y = dpct::detail::get_memory(
+        reinterpret_cast<std::complex<float> *>(y->get_value()));
     oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
                               a->get_matrix_handle(), data_x, data_y);
     break;
@@ -1099,8 +1114,10 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
                                              library_data_t::complex_double,
                                              library_data_t::complex_double): {
     detail::check_alpha_value<std::complex<double>>(alpha, queue);
-    auto data_x = dpct::detail::get_memory<std::complex<double>>(x->get_value());
-    auto data_y = dpct::detail::get_memory<std::complex<double>>(y->get_value());
+    auto data_x = dpct::detail::get_memory(
+        reinterpret_cast<std::complex<double> *>(x->get_value()));
+    auto data_y = dpct::detail::get_memory(
+        reinterpret_cast<std::complex<double> *>(y->get_value()));
     oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
                               a->get_matrix_handle(), data_x, data_y);
     break;
