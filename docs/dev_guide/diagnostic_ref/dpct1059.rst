@@ -76,8 +76,8 @@ which is rewritten to:
    }
    void foo(sycl::uint2 *image_data) {
      // (1) Please allocate sycl::uint4 type new_image_data and initialize the value with image_data.
-     // (3) Bind new_image_data to the tex object instead of using the image_data.
-     // (4) Free the memory of new_image_data after usage.
+     // (2) Bind new_image_data to the tex object instead of the image_data.
+     // (3) Free the memory of new_image_data after usage.
      ...
      dpct::get_default_queue().submit([&](sycl::handler &cgh) {
        auto tex_acc = tex.get_access(cgh);
