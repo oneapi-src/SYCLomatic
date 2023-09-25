@@ -373,7 +373,8 @@ The directory path for root of generated files. A directory is created if
 it does not exist. Default: ``dpct_output``.
 
 The relative paths for the generated files are maintained, and the
-extension is changed as follows:
+extension is changed as follows by default, the behavior can be changed
+by using ``--change-cuda-files-extension-only``:
 
 - ``*.cu → *.dp.cpp``
 - ``*.cpp → *.cpp.dp.cpp``
