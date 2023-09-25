@@ -195,10 +195,7 @@ void foo1() {
   cusparseIndexBase_t idxBase;
   cudaDataType valueType;
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1119:{{[0-9]+}}: The memory of row_ptr is not allocated. You need to allocate the memory before invoking oneapi::mkl::sparse::set_csr_data().
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:spMatDescr = std::make_shared<dpct::sparse::sparse_matrix_desc>(rows, cols, nnz, nullptr, nullptr, nullptr, csrRowOffsetsType, csrColIndType, idxBase, valueType, dpct::sparse::matrix_format::csr);
+  //CHECK:spMatDescr = std::make_shared<dpct::sparse::sparse_matrix_desc>(rows, cols, nnz, nullptr, nullptr, nullptr, csrRowOffsetsType, csrColIndType, idxBase, valueType, dpct::sparse::matrix_format::csr);
   cusparseCreateCsr(&spMatDescr, rows, cols, nnz, NULL, NULL, NULL, csrRowOffsetsType, csrColIndType, idxBase, valueType);
 }
 
@@ -206,15 +203,4 @@ void foo1() {
 //CHECK-NEXT:  oneapi::mkl::sparse::release_matmat_descr(descr);
 void foo2(cusparseSpGEMMDescr_t *descr) {
   cusparseSpGEMM_destroyDescr(*descr);
-}
-
-//CHECK:oneapi::mkl::sparse::matmat_descr_t foo3();
-//CHECK-NEXT:void foo4() {
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1120:{{[0-9]+}}: Taking the address of an rvalue "foo3()" is not allowed. You need to adjust the code.
-//CHECK-NEXT:  */
-//CHECK-NEXT:  oneapi::mkl::sparse::release_matmat_descr(&foo3());
-cusparseSpGEMMDescr_t foo3();
-void foo4() {
-  cusparseSpGEMM_destroyDescr(foo3());
 }
