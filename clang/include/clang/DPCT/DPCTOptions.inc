@@ -428,11 +428,11 @@ DPCT_NON_ENUM_OPTION(
 
 #ifndef _WIN32
 DPCT_NON_ENUM_OPTION(
-    DPCT_OPT_TYPE(static llvm::cl::list<std::string>), InterceptBuildCommand,
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), InterceptBuildCommand,
     "intercept-build",
     llvm::cl::desc("Intercept build tool to generate a compilation database"),
     llvm::cl::value_desc("build command"), llvm::cl::cat(DPCTCat),
-    llvm::cl::Sink)
+    llvm::cl::init(false))
 #endif
 
 DPCT_NON_ENUM_OPTION(

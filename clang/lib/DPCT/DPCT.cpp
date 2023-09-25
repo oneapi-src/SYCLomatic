@@ -615,8 +615,7 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationSucceeded);
   }
 
-#ifndef _WIN32
-  if (InterceptBuildCommand.getNumOccurrences()) {
+  if (InterceptBuildCommand) {
     SmallString<512> PathToInterceptBuildBinary(DpctInstallPath);
     llvm::sys::path::append(PathToInterceptBuildBinary, "bin",
                             "intercept-build");
@@ -641,7 +640,6 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationSucceeded);
     dpctExit(MigrationSucceeded);
   }
-#endif
 
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
