@@ -197,6 +197,14 @@ inline unsigned compare_mask(const sycl::vec<T, 2> a, const sycl::vec<T, 2> b,
                              -compare(a[1], b[1], binary_op))
       .as<sycl::vec<unsigned, 1>>();
 }
+template <typename T, class BinaryOperation>
+inline unsigned compare_mask(const sycl::marray<T, 2> a,
+                             const sycl::marray<T, 2> b,
+                             const BinaryOperation binary_op) {
+  return sycl::vec<short, 2>(-compare(a[0], b[0], binary_op),
+                             -compare(a[1], b[1], binary_op))
+      .as<sycl::vec<unsigned, 1>>();
+}
 
 /// Performs 2 element unordered comparison.
 /// \param [in] a The first value
@@ -220,6 +228,14 @@ unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
 template <typename T, class BinaryOperation>
 inline unsigned unordered_compare_mask(const sycl::vec<T, 2> a,
                                        const sycl::vec<T, 2> b,
+                                       const BinaryOperation binary_op) {
+  return sycl::vec<short, 2>(-unordered_compare(a[0], b[0], binary_op),
+                             -unordered_compare(a[1], b[1], binary_op))
+      .as<sycl::vec<unsigned, 1>>();
+}
+template <typename T, class BinaryOperation>
+inline unsigned unordered_compare_mask(const sycl::marray<T, 2> a,
+                                       const sycl::marray<T, 2> b,
                                        const BinaryOperation binary_op) {
   return sycl::vec<short, 2>(-unordered_compare(a[0], b[0], binary_op),
                              -unordered_compare(a[1], b[1], binary_op))
@@ -408,9 +424,24 @@ template <typename T> inline T fmax_nan(const T a, const T b) {
     return NAN;
   return sycl::fmax(a, b);
 }
+#ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
+template <>
+inline sycl::ext::oneapi::bfloat16
+fmax_nan(const sycl::ext::oneapi::bfloat16 a,
+         const sycl::ext::oneapi::bfloat16 b) {
+  if (detail::isnan(a) || detail::isnan(b))
+    return NAN;
+  return sycl::fmax(float(a), float(b));
+}
+#endif
 template <typename T>
 inline sycl::vec<T, 2> fmax_nan(const sycl::vec<T, 2> a,
                                 const sycl::vec<T, 2> b) {
+  return {fmax_nan(a[0], b[0]), fmax_nan(a[1], b[1])};
+}
+template <typename T>
+inline sycl::marray<T, 2> fmax_nan(const sycl::marray<T, 2> a,
+                                   const sycl::marray<T, 2> b) {
   return {fmax_nan(a[0], b[0]), fmax_nan(a[1], b[1])};
 }
 
@@ -424,9 +455,24 @@ template <typename T> inline T fmin_nan(const T a, const T b) {
     return NAN;
   return sycl::fmin(a, b);
 }
+#ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
+template <>
+inline sycl::ext::oneapi::bfloat16
+fmin_nan(const sycl::ext::oneapi::bfloat16 a,
+         const sycl::ext::oneapi::bfloat16 b) {
+  if (detail::isnan(a) || detail::isnan(b))
+    return NAN;
+  return sycl::fmin(float(a), float(b));
+}
+#endif
 template <typename T>
 inline sycl::vec<T, 2> fmin_nan(const sycl::vec<T, 2> a,
                                 const sycl::vec<T, 2> b) {
+  return {fmin_nan(a[0], b[0]), fmin_nan(a[1], b[1])};
+}
+template <typename T>
+inline sycl::marray<T, 2> fmin_nan(const sycl::marray<T, 2> a,
+                                   const sycl::marray<T, 2> b) {
   return {fmin_nan(a[0], b[0]), fmin_nan(a[1], b[1])};
 }
 

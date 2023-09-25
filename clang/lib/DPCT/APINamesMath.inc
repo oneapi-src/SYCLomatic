@@ -12,8 +12,8 @@ ENTRY_REWRITE("__hfma")
 ENTRY_REWRITE("__hfma2")
 
 // Half Comparison Functions
-ENTRY_RENAMED("__hisinf", MapNames::getClNamespace(false, true) + "isinf")
-ENTRY_RENAMED("__hisnan", MapNames::getClNamespace(false, true) + "isnan")
+ENTRY_REWRITE("__hisinf")
+ENTRY_REWRITE("__hisnan")
 
 // Half Math Functions
 ENTRY_REWRITE("hceil")
