@@ -555,12 +555,12 @@ private:
 #ifdef DPCT_USM_LEVEL_NONE
 #define SET_DATA(INDEX_TYPE, INDEX_SUFFIX, VALUE_TYPE, VALUE_SUFFIX)           \
   do {                                                                         \
-    _data_row_ptr##INDEX_SUFFIX = new sycl::buffer<INDEX_TYPE>(                \
-        detail::get_memory(reinterpret_cast<INDEX_TYPE *>(_row_ptr)));         \
-    _data_col_ind##INDEX_SUFFIX = new sycl::buffer<INDEX_TYPE>(                \
-        detail::get_memory(reinterpret_cast<INDEX_TYPE *>(_col_ind)));         \
-    _data_value##VALUE_SUFFIX = new sycl::buffer<VALUE_TYPE>(                  \
-        detail::get_memory(reinterpret_cast<VALUE_TYPE *>(_value)));           \
+    _data_row_ptr##INDEX_SUFFIX =                                              \
+        new sycl::buffer<INDEX_TYPE>(dpct::get_buffer<INDEX_TYPE>(_row_ptr));  \
+    _data_col_ind##INDEX_SUFFIX =                                              \
+        new sycl::buffer<INDEX_TYPE>(dpct::get_buffer<INDEX_TYPE>(_col_ind));  \
+    _data_value##VALUE_SUFFIX =                                                \
+        new sycl::buffer<VALUE_TYPE>(dpct::get_buffer<VALUE_TYPE>(_value));    \
     oneapi::mkl::sparse::set_csr_data(                                         \
         get_default_queue(), _matrix_handle, _row_num, _col_num, _base,        \
         *_data_row_ptr##INDEX_SUFFIX, *_data_col_ind##INDEX_SUFFIX,            \
@@ -579,15 +579,6 @@ private:
   } while (0)
 #endif
 
-  //template <typename index_t, typename value_t> void set_data() {
-  //  auto data_row_ptr = dpct::detail::get_memory<index_t>(_row_ptr);
-  //  auto data_col_ind = dpct::detail::get_memory<index_t>(_col_ind);
-  //  auto data_value = dpct::detail::get_memory<value_t>(_value);
-  //  oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,
-  //                                    _row_num, _col_num, _base, data_row_ptr,
-  //                                    data_col_ind, data_value);
-  //  get_default_queue().wait();
-  //}
   void set_data() {
     std::uint64_t key = dpct::detail::get_type_combination_id(
         _row_ptr_type, _col_ind_type, _value_type);
@@ -619,7 +610,7 @@ private:
     case dpct::detail::get_type_combination_id(library_data_t::real_int64,
                                                library_data_t::real_int64,
                                                library_data_t::real_float): {
-      SET_DATA(std::int64_t, _64, float, _f);
+      SET_DATA(std::int64_t, _64, float, _s);
       break;
     }
     case dpct::detail::get_type_combination_id(library_data_t::real_int64,
