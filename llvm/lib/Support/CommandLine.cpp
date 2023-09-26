@@ -1539,6 +1539,7 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
   assert(ChosenSubCommand);
 
 #ifdef SYCLomatic_CUSTOMIZATION
+#ifndef _WIN32
   if (std::string(argv[FirstArg]) == "--intercept-build") {
     StringRef ArgName = "intercept-build";
     StringRef Value;
@@ -1550,6 +1551,7 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
     }
     return false;
   }
+#endif
 #endif // SYCLomatic_CUSTOMIZATION
 
   auto &ConsumeAfterOpt = ChosenSubCommand->ConsumeAfterOpt;
