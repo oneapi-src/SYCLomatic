@@ -24,4 +24,42 @@ Suggestions to Fix
 
 Review the code and adjust it.
 
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Complex : cuFloatComplex {
+     float real() const volatile {
+       return x;
+     }
+   };
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Complex : sycl::float2 {
+     float real() const volatile {
+       /*
+       DPCT1052:0: SYCL does not support the member access for a volatile qualified
+       vector type. The volatile qualifier was removed. You may need to rewrite the
+       code.
+       */
+       return const_cast<struct Complex *>(this)->x();
+     }
+   };
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Complex : sycl::float2 {
+     float real() const volatile {
+       return const_cast<struct Complex *>(this)->x();
+     }
+   };
+
 .. include:: /_include_files/support-msg.txt

@@ -25,3 +25,66 @@ Suggestions to Fix
 ------------------
 
 Replace ``sycl::<...>::barrier()`` with ``sycl::<...>::barrier(sycl::access::fence_space::local_space)``.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Data_t {
+     float *host_data;
+     float *device_data;
+   };
+   
+   __global__ void k(Data_t *data) {
+     auto tid = threadIdx.x + blockDim.x * blockIdx.x;
+     only_read_data(data[tid].device_data);
+     __syncthreads();
+     only_read_data(data[tid].device_data);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Data_t {
+     float *host_data;
+     float *device_data;
+   };
+   
+   void k(Data_t *data, const sycl::nd_item<3> &item_ct1) {
+     auto tid = item_ct1.get_local_id(2) +
+                item_ct1.get_local_range(2) * item_ct1.get_group(2);
+     only_read_data(data[tid].device_data);
+     /*
+     DPCT1065:0: Consider replacing sycl::nd_item::barrier() with
+     sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better
+     performance if there is no access to global memory.
+     */
+     item_ct1.barrier();
+     only_read_data(data[tid].device_data);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Data_t {
+     float *host_data;
+     float *device_data;
+   };
+   
+   void k(Data_t *data, const sycl::nd_item<3> &item_ct1) {
+     auto tid = item_ct1.get_local_id(2) +
+                item_ct1.get_local_range(2) * item_ct1.get_group(2);
+     only_read_data(data[tid].device_data);
+     // global_local_space can be replaced with local_space if the access
+     // of the global memory after the barrier does not depend on (read-after-write or
+     // write-after-read or write-after-write) the access of the same global memory
+     // before the barrier among work-items in the current work-group.
+     item_ct1.barrier(sycl::access::fence_space::local_space);
+     only_read_data(data[tid].device_data);
+   }
+

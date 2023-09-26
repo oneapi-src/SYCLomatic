@@ -24,12 +24,41 @@ of the macro, but may not be valid for all calls of this macro in the code.
 For example: The function ``pow`` can be migrated to ``sycl::pow<double>`` or
 ``sycl::pown``, depending on the types of parameters passed through macro arguments.
 
+For example, this original CUDA\* code:
+
 .. code-block:: cpp
    :linenos:
 
-     #define POW(B, E) pow(B, E)
-     POW(2.5, 3.1);  //should be migrated to sycl::pow<double>(2.5, 3.1)
-     POW(2.5, 3); //should be migrated to sycl::pown((float)2.5, 3)
+   #define POW(B, E) pow(B, E)
+   __device__ void foo() {
+     double a = POW(2.5, 3.1);
+     double b = POW(2.5, 2);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1064:0: Migrated pow call is used in a macro/template definition and may not
+   be valid for all macro/template uses. Adjust the code.
+   */
+   #define POW(B, E) dpct::pow(B, E)
+   void foo() {
+     double a = POW(2.5, 3.1);
+     double b = POW(2.5, 2);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     double a = POW(2.5, 3.1);
+     double b = 2.5 * 2.5;
+   }
 
 Suggestions to Fix
 ------------------
