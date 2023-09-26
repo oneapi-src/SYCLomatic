@@ -24,7 +24,7 @@ the host code by transforming the pointer using the ``dpct::get_host_ptr`` funct
 Suggestions to Fix
 ------------------
 
-(1) Re-migarte the code without specifing ``--usm-level=none``; or
+(1) Re-migrate the code without specifing ``--usm-level=none``; or
 (2) Review the code and adjust it manually.
 
 For example, this original CUDA\* code:

@@ -28,14 +28,6 @@ Suggestions to Fix
 
 You need to update the host code manually to use the new *<host variable name>*.
 
-Commands:
-
-.. code-block:: bash
-   :linenos:
-
-   dpct --out-root out a.cu
-   dpct --out-root out b.c --extra-arg=-xc
-
 For example, this original CUDA\* code:
 
 .. code-block:: cpp
@@ -61,7 +53,15 @@ For example, this original CUDA\* code:
      printf("%f\n", const_a);
    }
 
-results in the following migrated SYCL\* code:
+is migrated using the following migration commands:
+
+.. code-block:: bash
+   :linenos:
+
+   dpct --out-root out a.cu
+   dpct --out-root out b.c --extra-arg=-xc
+
+which results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
@@ -99,7 +99,7 @@ results in the following migrated SYCL\* code:
      printf("%f\n", const_a);
    }
 
-which is rewritten to:
+The migrated SYCL code is rewritten to address the DPCT1057 warning:
 
 .. code-block:: cpp
    :linenos:

@@ -22,13 +22,6 @@ will be removed.
 Suggestions to Fix
 ------------------
 
-Command:
-
-.. code-block:: bash
-   :linenos:
-
-   dpct --out-root out test.h --extra-arg=-xc
-
 For example, this original CUDA\* code:
 
 .. code-block:: cpp
@@ -43,7 +36,15 @@ For example, this original CUDA\* code:
      printf("%f\n", const_a);
    }
 
-results in the following migrated SYCL\* code:
+is migrated using the following migration command:
+
+.. code-block:: bash
+   :linenos:
+
+   dpct --out-root out test.h --extra-arg=-xc
+
+
+which results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
@@ -58,8 +59,7 @@ results in the following migrated SYCL\* code:
      printf("%f\n", const_a);
    }
 
-which is rewritten to:
-(1)  If the variable "const_a" is only used in host code, just ignore the DPCT1056 warning:
+If the variable "const_a" is only used in host code, just ignore the DPCT1056 warning. For example:
 
 .. code-block:: cpp
    :linenos:
@@ -70,7 +70,7 @@ which is rewritten to:
      printf("%f\n", const_a);
    }
 
-(2) If the variable "const_a" is used in both host and device code: 
+If the variable "const_a" is used in both host and device code, rewrite the migrated code. For example:
 
 .. code-block:: cpp
    :linenos:
