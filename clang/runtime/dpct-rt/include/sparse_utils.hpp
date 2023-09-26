@@ -448,11 +448,14 @@ public:
   /// \param [in] value The input value pointer
   void set_value(void *value) {
     if (!value) {
-      throw std::runtime_error("the new value pointer is NULL");
+      throw std::runtime_error(
+          "dpct::sparse::sparse_matrix_desc::set_value(): The new "
+          "value pointer is NULL.");
     }
     if (_value) {
-      throw std::runtime_error("the value pointer can be reset only when the "
-                               "original pointer is NULL");
+      throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_value(): "
+                               "The value pointer is not "
+                               "NULL. It cannot be reset.");
     }
     _value = value;
     set_data();
@@ -528,11 +531,14 @@ public:
   /// \param [in] value An array containing the non-zero elements of the sparse matrix.
   void set_pointers(void *row_ptr, void *col_ind, void *value) {
     if (!col_ind) {
-      throw std::runtime_error("the col_ind pointer is NULL");
+      throw std::runtime_error(
+          "dpct::sparse::sparse_matrix_desc::set_pointers(): The "
+          "new col_ind pointer is NULL.");
     }
     if (_col_ind) {
-      throw std::runtime_error("the col_ind pointer can be reset only when the "
-                               "original pointer is NULL");
+      throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_pointers("
+                               "): The col_ind pointer is "
+                               "not NULL. It cannot be reset.");
     }
     _row_ptr = row_ptr;
     _col_ind = col_ind;
@@ -1060,7 +1066,8 @@ inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
       break;
     }
     default:
-      throw std::runtime_error("the combination of data type is unsupported");
+      throw std::runtime_error("dpct::sparse::spgemm_finalize(): The data type "
+                               "of the col_ind in matrix c is unsupported.");
     }
   }
 }
@@ -1104,8 +1111,9 @@ inline void spsv_case(sycl::queue queue, oneapi::mkl::uplo uplo,
 inline void spsv_optimize(sycl::queue queue, oneapi::mkl::transpose trans_a,
                           sparse_matrix_desc_t a) {
   if (!a->get_uplo() || !a->get_diag()) {
-    throw std::runtime_error("oneapi::mkl::sparse::trsv needs uplo and diag "
-                             "attributes to be specified.");
+    throw std::runtime_error(
+        "dpct::sparse::spsv_optimize(): oneapi::mkl::sparse::optimize_trsv "
+        "needs uplo and diag attributes to be specified.");
   }
   oneapi::mkl::sparse::optimize_trsv(
       queue, a->get_uplo().value(), oneapi::mkl::transpose::nontrans,
@@ -1128,8 +1136,9 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
                  std::shared_ptr<dense_vector_desc> y,
                  library_data_t data_type) {
   if (!a->get_uplo() || !a->get_diag()) {
-    throw std::runtime_error("oneapi::mkl::sparse::trsv needs uplo and diag "
-                             "attributes to be specified.");
+    throw std::runtime_error(
+        "dpct::sparse::spsv(): oneapi::mkl::sparse::trsv needs uplo and diag "
+        "attributes to be specified.");
   }
   oneapi::mkl::uplo uplo = a->get_uplo().value();
   oneapi::mkl::diag diag = a->get_diag().value();
@@ -1164,7 +1173,8 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw std::runtime_error("dpct::sparse::spsv(): The combination of the "
+                             "value types of a, x and y is unsupported.");
   }
 }
 #endif
