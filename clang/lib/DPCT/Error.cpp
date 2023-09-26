@@ -178,7 +178,7 @@ void ShowStatus(int Status, std::string Message) {
         "' with option \"--extra-arg\".";
     break;
   case InterceptBuildError:
-    StatusString = "Error: Call to intercept-build was not successful";
+    StatusString = "Error: Call to intercept-build not successful";
     break;
   default:
     DpctLog() << "Unknown error\n";
