@@ -27,9 +27,6 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationSkipped:
     StatusString = "Some migration rules were skipped";
     break;
-  case InterceptBuildSuccess:
-    StatusString = "Compilation database generated";
-    break;
   case MigrationError:
     StatusString = "An error has occurred during migration";
     break;
@@ -178,7 +175,7 @@ void ShowStatus(int Status, std::string Message) {
         "' with option \"--extra-arg\".";
     break;
   case InterceptBuildError:
-    StatusString = "Error: Call to intercept-build not successful";
+    StatusString = "Error: Call to intercept-build failed";
     break;
   default:
     DpctLog() << "Unknown error\n";

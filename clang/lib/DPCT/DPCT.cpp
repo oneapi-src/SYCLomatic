@@ -634,12 +634,9 @@ int runDPCT(int argc, const char **argv) {
     }
     int processExitCode = system(InterceptBuildSystemCall.c_str());
     if (processExitCode) {
-      DpctLog() << "Error: intercept-build process call not successful"
-                << "\n";
       ShowStatus(InterceptBuildError);
       dpctExit(InterceptBuildError);
     }
-    ShowStatus(InterceptBuildSuccess);
     dpctExit(InterceptBuildSuccess);
   }
 #endif
