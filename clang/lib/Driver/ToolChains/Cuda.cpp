@@ -352,9 +352,6 @@ CudaInstallationDetector::CudaInstallationDetector(
       if (validateCudaHeaderDirectory(InstallPath + "/include/", D) ||
           validateCudaHeaderDirectory(InstallPath, D))
         break;
-      // DPCT exits execution when the auto detect CUDA version not supported yet.
-      if (IsIncludePathValid)
-        break;
     }
   }
 #else
