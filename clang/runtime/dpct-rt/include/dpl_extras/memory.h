@@ -176,6 +176,11 @@ struct is_hetero_iterator<
 } // namespace internal
 
 #ifdef DPCT_USM_LEVEL_NONE
+// Must be forward declared due to default argument
+template <typename T, typename U>
+device_pointer<T> device_new(device_pointer<U>, const T &,
+                             const std::size_t = 1);
+
 template <typename T, sycl::access_mode Mode, typename Allocator>
 class device_iterator;
 
@@ -184,6 +189,11 @@ class device_pointer_base {
 protected:
   sycl::buffer<ValueType, 1, Allocator> buffer;
   std::size_t idx;
+
+  // Declare friend to give access to protected buffer and idx members
+  template <typename T, typename U>
+  friend device_pointer<T> device_new(device_pointer<U>, const T &,
+                                      const std::size_t);
 
 public:
   using pointer = ValueType *;
@@ -918,6 +928,19 @@ device_pointer<T> malloc_device(const std::size_t num_elements) {
 static inline device_pointer<void> malloc_device(const std::size_t num_bytes) {
   return device_pointer<void>(num_bytes);
 }
+
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename T, typename U>
+device_pointer<T> device_new(device_pointer<U> p, const T &value,
+                             const std::size_t count) {
+  auto converted_buf = p.buffer.template reinterpret<T>(sycl::range<1>(count));
+  ::std::uninitialized_fill(
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      oneapi::dpl::begin(converted_buf), oneapi::dpl::end(converted_buf),
+      value);
+  return device_pointer<T>(converted_buf, p.idx);
+}
+#else
 template <typename T, typename U>
 device_pointer<T> device_new(device_pointer<U> p, const T &value,
                              const std::size_t count = 1) {
@@ -927,6 +950,7 @@ device_pointer<T> device_new(device_pointer<U> p, const T &value,
       converted_p, converted_p + count, value);
   return converted_p;
 }
+#endif
 template <typename T, typename U>
 device_pointer<T> device_new(device_pointer<U> p, const std::size_t count = 1) {
   return device_new(p, T{}, count);
