@@ -14,6 +14,7 @@
 #include "CallExprRewriter.h"
 #include "Config.h"
 #include "CrashRecovery.h"
+#include "Error.h"
 #include "ExternalReplacement.h"
 #include "GenHelperFunction.h"
 #include "GenMakefile.h"
@@ -635,11 +636,11 @@ int runDPCT(int argc, const char **argv) {
     if (processExitCode) {
       DpctLog() << "Error: intercept-build process call not successful"
                 << "\n";
-      ShowStatus(MigrationError);
-      dpctExit(MigrationError);
+      ShowStatus(InterceptBuildError);
+      dpctExit(InterceptBuildError);
     }
-    ShowStatus(MigrationSucceeded);
-    dpctExit(MigrationSucceeded);
+    ShowStatus(InterceptBuildSuccess);
+    dpctExit(InterceptBuildSuccess);
   }
 #endif
 

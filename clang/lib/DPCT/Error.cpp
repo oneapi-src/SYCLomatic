@@ -27,6 +27,9 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationSkipped:
     StatusString = "Some migration rules were skipped";
     break;
+  case InterceptBuildSuccess:
+    StatusString = "Compilation database generated";
+    break;
   case MigrationError:
     StatusString = "An error has occurred during migration";
     break;
@@ -173,6 +176,9 @@ void ShowStatus(int Status, std::string Message) {
         "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
         ". Please specify the header file for '" + Message +
         "' with option \"--extra-arg\".";
+    break;
+  case InterceptBuildError:
+    StatusString = "Error: Call to intercept-build was not successful";
     break;
   default:
     DpctLog() << "Unknown error\n";
