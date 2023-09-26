@@ -27,3 +27,104 @@ Suggestions to Fix
 ------------------
 
 You need to update the host code manually to use the new *<host variable name>*.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // h.h:
+   #include <cuda_runtime.h>
+   #include <stdio.h>
+
+   static __constant__ const float const_a = 10.f;
+   
+   // a.cu:
+   #include "h.h"
+   
+   __device__ void foo_device() {
+     printf("%f\n", const_a);
+   }
+
+   // b.c:
+   #include "h.h"
+   
+   void foo_host() {
+     printf("%f\n", const_a);
+   }
+
+is migrated using the following migration commands:
+
+.. code-block:: bash
+   :linenos:
+
+   dpct --out-root out a.cu
+   dpct --out-root out b.c --extra-arg=-xc
+
+which results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // h.h:
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   #include <stdio.h>
+   
+   /*
+   DPCT1057:0: Variable const_a was used in host code and device code. const_a type was
+   updated to be used in SYCL device code and new const_a_host_ct1 was generated to be
+   used in host code. You need to update the host code manually to use the new
+   const_a_host_ct1.
+   */
+   static const float const_a_host_ct1 = 10.f;
+   static dpct::constant_memory<const float, 0> const_a(10.f);
+
+   // a.dp.cpp:
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   #include "h.h"
+   
+   void foo_device(const sycl::stream &stream_ct1, const float const_a) {
+     /*
+     DPCT1015:0: Output needs adjustment.
+     */
+     stream_ct1 << "%f\n";
+   }
+
+   // b.c:
+   #include "h.h"
+   
+   void foo_host() {
+     printf("%f\n", const_a);
+   }
+
+The migrated SYCL code is rewritten to address the DPCT1057 warning:
+
+.. code-block:: cpp
+   :linenos:
+
+   // h.h:
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   #include <stdio.h>
+   
+   static const float const_a_host_ct1 = 10.f;
+   static dpct::constant_memory<const float, 0> const_a(10.f);
+
+   // a.dp.cpp:
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   #include "h.h"
+   
+   void foo_device(const sycl::stream &stream_ct1, const float const_a) {
+     stream_ct1 << const_a << "\n";
+   }
+
+   // b.c:
+   #include "h.h"
+   
+   void foo_host() {
+     printf("%f\n", const_a_host_ct1);
+   }
+

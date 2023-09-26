@@ -19,7 +19,7 @@
 // CHECK-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
 
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=aaa 2>&1 | FileCheck %s -check-prefix=NO_MAPPING
-// NO_MAPPING: dpct exited with code: -43 (Error: The API mapping query for this API is not available yet. You may get the API mapping by migrating a sample code of this API with the tool.)
+// NO_MAPPING: dpct exited with code: -43 (Error: The API mapping query for this API is not available yet. You may get the API mapping by migrating sample code from this CUDA API to the SYCL API with the tool.)
 
 // CUDA 11 and after not have hdiv().
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hdiv 2>&1 | FileCheck %s -check-prefix=WRONG_CUDA_HEADER

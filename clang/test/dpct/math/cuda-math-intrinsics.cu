@@ -2273,24 +2273,24 @@ __global__ void testUnsupported() {
   // CHECK: i = dpct::ffs<long long int>(ll);
   i = __ffsll(ll);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << (shift & 31)) >> 32) expression is used instead of the __funnelshift_l call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::funnelshift_l call is used instead of the __funnelshift_l call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) << (u & 31)) >> 32);
+  // CHECK-NEXT: u = dpct::funnelshift_l(u, u, u);
   u = __funnelshift_l(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << min(shift, 32)) >> 32) expression is used instead of the __funnelshift_lc call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::funnelshift_lc call is used instead of the __funnelshift_lc call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) << sycl::min(u, 32)) >> 32);
+  // CHECK-NEXT: u = dpct::funnelshift_lc(u, u, u);
   u = __funnelshift_lc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> (shift & 31)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_r call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::funnelshift_r call is used instead of the __funnelshift_r call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) >> (u & 31)) & 0xFFFFFFFF);
+  // CHECK-NEXT: u = dpct::funnelshift_r(u, u, u);
   u = __funnelshift_r(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> min(shift, 32)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_rc call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::funnelshift_rc call is used instead of the __funnelshift_rc call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) >> sycl::min(u, 32)) & 0xFFFFFFFF);
+  // CHECK-NEXT: u = dpct::funnelshift_rc(u, u, u);
   u = __funnelshift_rc(u, u, u);
   // CHECK: ll = sycl::mul_hi(ll, ll);
   ll = __mul64hi(ll, ll);
@@ -3507,24 +3507,15 @@ __device__ void bar1(double *d, bool flag) {
   double *d2_p;
   d2_p = &d2;
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
+  //CHECK:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
   //CHECK-NEXT:if (flag) {
   //CHECK-NEXT:  d2_p = d + 2;
   //CHECK-NEXT:}
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1081:{{[0-9]+}}: The generated code assumes that "d2_p" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
   //CHECK-NEXT:*/
   //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(d2_p));
   //CHECK-NEXT:d2_p = &d2;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
   sincos(i, &d1, d2_p);
   if (flag) {
