@@ -10,6 +10,7 @@
 #define __DPCT_MEMORY_H__
 
 #include <sycl/sycl.hpp>
+#include <oneapi/dpl/memory>
 #include "functional.h"
 
 // Memory management section:
@@ -917,15 +918,17 @@ device_pointer<T> malloc_device(const std::size_t num_elements) {
 static inline device_pointer<void> malloc_device(const std::size_t num_bytes) {
   return device_pointer<void>(num_bytes);
 }
-template <typename T>
-device_pointer<T> device_new(device_pointer<T> p, const T &value,
+template <typename T, typename U>
+device_pointer<T> device_new(device_pointer<U> p, const T &value,
                              const std::size_t count = 1) {
-  std::vector<T> result(count, value);
-  p.buffer = sycl::buffer<T, 1>(result.begin(), result.end());
-  return p + count;
+  dpct::device_pointer<T> converted_p(static_cast<T *>(p.get()));
+  ::std::uninitialized_fill(
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      converted_p, converted_p + count, value);
+  return converted_p;
 }
-template <typename T>
-device_pointer<T> device_new(device_pointer<T> p, const std::size_t count = 1) {
+template <typename T, typename U>
+device_pointer<T> device_new(device_pointer<U> p, const std::size_t count = 1) {
   return device_new(p, T{}, count);
 }
 template <typename T>
