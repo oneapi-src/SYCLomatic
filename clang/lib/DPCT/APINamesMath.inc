@@ -230,10 +230,10 @@ ENTRY_RENAMED("__brevll", MapNames::getDpctNamespace() + "reverse_bits<unsigned 
 ENTRY_RENAMED("__byte_perm", MapNames::getDpctNamespace() + "byte_level_permute")
 ENTRY_RENAMED("__ffs", MapNames::getDpctNamespace() + "ffs<int>")
 ENTRY_RENAMED("__ffsll", MapNames::getDpctNamespace() + "ffs<long long int>")
-ENTRY_EMULATED("__funnelshift_l", "((upsample(hi, lo) << (shift & 31)) >> 32)")
-ENTRY_EMULATED("__funnelshift_lc", "((upsample(hi, lo) << min(shift, 32)) >> 32)")
-ENTRY_EMULATED("__funnelshift_r", "((upsample(hi, lo) >> (shift & 31)) & 0xFFFFFFFF)")
-ENTRY_EMULATED("__funnelshift_rc", "((upsample(hi, lo) >> min(shift, 32)) & 0xFFFFFFFF)")
+ENTRY_REWRITE("__funnelshift_l")
+ENTRY_REWRITE("__funnelshift_lc")
+ENTRY_REWRITE("__funnelshift_r")
+ENTRY_REWRITE("__funnelshift_rc")
 // Used to add header file "<cmath>" into the file that calls "fabs".
 ENTRY_RENAMED("fabs", "::fabs")
 

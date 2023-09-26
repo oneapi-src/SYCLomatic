@@ -24,30 +24,43 @@ high-dimensional arrays.
 
 The following fix example demonstrates how to use a 3D array to simulate a 4D array.
 
-The following migrated SYCL code:
+For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
-  
-     dpct::constant_memory<int, 4> array(dimX, dimY, dimZ, dimW);
-     void kernel(sycl::id<1> idx,
-                 dpct::accessor<int, dpct::constant, 4> const_array) {
-       ...
-           ... = const_array[x][y][z][w];
-       ...
-     }
 
-is manually adjusted to:
+   __constant__ int const_array[dimX][dimY][dimZ][dimW];
+   
+   __global__ void kernel(int x, int y, int z, int w) {
+     int a = const_array[x][y][z][w];
+   }
+
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
-  
-     dpct::constant_memory<int, 3> array(dimX, dimY, dimZ * dimW);
-     void kernel(sycl::id<1> idx,
-                 dpct::accessor<int, dpct::constant, 3> const_array) {
-       ... = const_array[x][y][w * dimZ + z];
-       ...
-     }
+
+   /*
+   DPCT1060:0: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
+   */
+   static dpct::constant_memory<int, 4> const_array(dimX, dimY, dimZ, dimW);
+   
+   void kernel(int x, int y, int z, int w,
+               sycl::accessor<int, 4, sycl::access_mode::read, sycl::access::target::device> const_array) {
+     int a = const_array[x][y][z][w];
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   static dpct::constant_memory<int, 3> const_array(dimX, dimY, dimZ * dimW);
+   
+   void kernel(int x, int y, int z, int w,
+               sycl::accessor<int, 3, sycl::access_mode::read, sycl::access::target::device> const_array) {
+     int a = const_array[x][y][w * dimZ + z];
+   }
 
 Suggestions to Fix
 ------------------

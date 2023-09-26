@@ -1832,6 +1832,66 @@ CALL_FACTORY_ENTRY("__double2half",
 ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY("__high2float", ARG(0), LITERAL("1"))
 
 MATH_API_REWRITER_DEVICE(
+    "__funnelshift_l",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__funnelshift_l"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_l"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_l"),
+        WARNING_FACTORY_ENTRY(
+            "__funnelshift_l",
+            CALL_FACTORY_ENTRY("__funnelshift_l",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "funnelshift_l",
+                                    ARG(0), ARG(1), ARG(2))),
+            Diagnostics::MATH_EMULATION, std::string("__funnelshift_l"),
+            MapNames::getDpctNamespace() + "funnelshift_l")))
+
+MATH_API_REWRITER_DEVICE(
+    "__funnelshift_lc",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__funnelshift_lc"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_lc"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_lc"),
+        WARNING_FACTORY_ENTRY(
+            "__funnelshift_lc",
+            CALL_FACTORY_ENTRY("__funnelshift_lc",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "funnelshift_lc",
+                                    ARG(0), ARG(1), ARG(2))),
+            Diagnostics::MATH_EMULATION, std::string("__funnelshift_lc"),
+            MapNames::getDpctNamespace() + "funnelshift_lc")))
+
+MATH_API_REWRITER_DEVICE(
+    "__funnelshift_r",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__funnelshift_r"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_r"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_r"),
+        WARNING_FACTORY_ENTRY(
+            "__funnelshift_r",
+            CALL_FACTORY_ENTRY("__funnelshift_r",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "funnelshift_r",
+                                    ARG(0), ARG(1), ARG(2))),
+            Diagnostics::MATH_EMULATION, std::string("__funnelshift_r"),
+            MapNames::getDpctNamespace() + "funnelshift_r")))
+
+MATH_API_REWRITER_DEVICE(
+    "__funnelshift_rc",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__funnelshift_rc"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_rc"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_rc"),
+        WARNING_FACTORY_ENTRY(
+            "__funnelshift_rc",
+            CALL_FACTORY_ENTRY("__funnelshift_rc",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "funnelshift_rc",
+                                    ARG(0), ARG(1), ARG(2))),
+            Diagnostics::MATH_EMULATION, std::string("__funnelshift_rc"),
+            MapNames::getDpctNamespace() + "funnelshift_rc")))
+
+MATH_API_REWRITER_DEVICE(
     "__ldca",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__ldca"), EMPTY_FACTORY_ENTRY("__ldca"),

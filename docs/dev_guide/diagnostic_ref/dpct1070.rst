@@ -24,4 +24,61 @@ the host code by transforming the pointer using the ``dpct::get_host_ptr`` funct
 Suggestions to Fix
 ------------------
 
-Review the code and adjust it manually.
+(1) Re-migrate the code without specifing ``--usm-level=none``; or
+(2) Review the code and adjust it manually.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void bar(float *a) {
+     a[0] = 1;
+   }
+   
+   void foo() {
+     float* a;
+     cudaMallocManaged(&a, 10 * sizeof(float));
+     bar(a);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   #define DPCT_USM_LEVEL_NONE
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   void bar(float *a) {
+     a[0] = 1;
+   }
+   
+   void foo() {
+     float* a;
+     /*
+     DPCT1070:0: 'a' is allocated by dpct::dpct_malloc. Use
+     dpct::get_host_ptr<float>(a) to access the pointer from the host code.
+     */
+     a = (float *)dpct::dpct_malloc(10 * sizeof(float));
+     bar(a);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   #define DPCT_USM_LEVEL_NONE
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   void bar(float *a) {
+     dpct::get_host_ptr<float>(a)[0] = 1;
+   }
+   
+   void foo() {
+     float* a;
+     a = (float *)dpct::dpct_malloc(10 * sizeof(float));
+     bar(a);
+   }
+

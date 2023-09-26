@@ -20,51 +20,78 @@ generates code with unsupported image format, which corresponds to the original
 code. You can fix the resulting code by changing the image format. Note: suggested
 workaround may impact code performance.
 
-For example, the following migrated SYCL code:
+For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
 
-     // migrated SYCL code, which is using unsupported image format:
-  
-     dpct::image_wrapper<cl::sycl::uint2, 2> tex; // 2-channel image is not supported
-  
-     void test_image(dpct::image_accessor_ext<cl::sycl::uint2, 2> acc) {
-       cl::sycl::uint2 tex_data;
-       tex_data = acc.read(0, 0);
-     }
-     int main() {
-       ... dpct::get_default_queue().submit([&](cl::sycl::handler &cgh) {
-         ... auto acc = tex.get_access(cgh);
-         auto smpl = tex.get_sampler();
-         ... cgh.single_task<class dpct_single_kernel>([=] {
-           test_image(dpct::image_accessor_ext<cl::sycl::uint2, 2>(smpl, acc));
-         });
-       });
-       ...
-     }
+   static texture<uint2, 2> tex;
+   
+   __global__ void test_image() {
+     uint2 tex_data = tex2D(tex, 0, 0);
+   }
+   void foo(uint2 *image_data) {
+     ...
+     test_image<<<1, 1>>>();
+   }
 
-is manually adjusted to:
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
-  
-     dpct::image_wrapper<cl::sycl::uint4, 2> tex;
-  
-     void test_image(dpct::image_accessor_ext<cl::sycl::uint4, 2> acc) {
-       cl::sycl::uint4 tex_data;
-       tex_data = acc.read(0, 0);
-     }
-     int main() {
-       ... dpct::get_default_queue().submit([&](cl::sycl::handler &cgh) {
-         ... auto acc = tex.get_access(cgh);
-         auto smpl = tex.get_sampler();
-         ... cgh.single_task<class dpct_single_kernel>([=] {
-           test_image(dpct::image_accessor_ext<cl::sycl::uint4, 2>(smpl, acc));
-         });
-       });
-       ...
-     }
+
+   /*
+   DPCT1059:0: SYCL only supports 4-channel image format. Adjust the code.
+   */
+   dpct::image_wrapper<sycl::uint2, 2> tex;
+   
+   void test_image(dpct::image_accessor_ext<sycl::uint2, 2> tex) {
+     sycl::uint2 tex_data = tex.read(0, 0);
+   }
+   void foo(sycl::uint2 *image_data) {
+     ...
+     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+       auto tex_acc = tex.get_access(cgh);
+   
+       auto tex_smpl = tex.get_sampler();
+   
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+             test_image(
+                 dpct::image_accessor_ext<sycl::uint2, 2>(tex_smpl, tex_acc));
+           });
+     });
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   dpct::image_wrapper<sycl::uint4, 2> tex;
+   
+   void test_image(dpct::image_accessor_ext<sycl::uint4, 2> tex) {
+     sycl::uint4 tex_data = tex.read(0, 0);
+   }
+   void foo(sycl::uint2 *image_data) {
+     // (1) Please allocate sycl::uint4 type new_image_data and initialize the value with image_data.
+     // (2) Bind new_image_data to the tex object instead of the image_data.
+     // (3) Free the memory of new_image_data after usage.
+     ...
+     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+       auto tex_acc = tex.get_access(cgh);
+   
+       auto tex_smpl = tex.get_sampler();
+   
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+             test_image(
+                 dpct::image_accessor_ext<sycl::uint4, 2>(tex_smpl, tex_acc));
+           });
+     });
+   }
 
 Suggestions to Fix
 ------------------

@@ -35,46 +35,79 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
-     // header file
-     template <typename T> __global__ void k() {
-       __shared__ union {
-         T t;
-         ...
-       } a;
+   // header file
+   template <typename T> __global__ void k() {
+     __shared__ union {
+       T t;
        ...
-     }
-  
-      // source file
-      void foo() { k<int><<<1, 1>>>(); }
+     } a;
+     ...
+   }
+   
+   // source file
+   void foo() { k<int><<<1, 1>>>(); }
 
 results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
  
-     // header file
-     template <typename T> void k(uint8_t *a_ct1) {
-       union type_ct1 {
-         T t;
-         ...
-       };
-       type_ct1 *a = (type_ct1 *)a_ct1;
+   // header file
+   template <typename T> void k(uint8_t *a_ct1) {
+     union type_ct1 {
+       T t;
        ...
-     }
- 
-     // source file
-     void foo() {
-       dpct::get_default_queue().submit([&](sycl::handler &cgh) {
-         /*
-         DPCT1053:0: The type of variable a is declared in device function with the
-         name type_ct1. Adjust the code to make the type_ct1 declaration visible at
-         the accessor declaration point.
-         */
-         sycl::accessor<uint8_t[sizeof(type_ct1)], 0, sycl::access::mode::read_write,
-                        sycl::access::target::local> a_ct1_acc_ct1(cgh);
-         ...
-       });
-     }
+     };
+     type_ct1 &a = *(type_ct1 *)a_ct1;
+     ...
+   }
+   
+   // source file
+   void foo() {
+     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+       /*
+       DPCT1054:0: The type of variable a is declared in device function with the
+       name type_ct1. Adjust the code to make the type_ct1 declaration visible at
+       the accessor declaration point.
+       */
+       sycl::local_accessor<uint8_t[sizeof(type_ct1)], 0> a_ct1_acc_ct1(cgh);
+   
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+             k<int>(a_ct1_acc_ct1.get_pointer());
+           });
+     });
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // header file
+   template <typename T>
+   union type_ct1 {
+     T t;
+     ...
+   };
+   template <typename T> void k(uint8_t *a_ct1) {
+     type_ct1<T> &a = *(type_ct1<T> *)a_ct1;
+     ...
+   }
+   
+   // source file
+   void foo() {
+     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+       sycl::local_accessor<uint8_t[sizeof(type_ct1<T>)], 0> a_ct1_acc_ct1(cgh);
+   
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+             k<int>(a_ct1_acc_ct1.get_pointer());
+           });
+     });
+   }
 
 Suggestions to Fix
 ------------------

@@ -23,3 +23,42 @@ Suggestions to Fix
 ------------------
 
 Review the code and remove the macro definition if it is not needed.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   #define MACRO(x, y) cublasGetAtomicsMode(x, y)
+   void foo(cublasHandle_t h, cublasAtomicsMode_t *am) {
+     MACRO(h, am);
+     ...
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1026:0: The call to cublasGetAtomicsMode was removed because this call is
+   redundant in SYCL.
+   */
+   #define MACRO(x, y)
+   void foo(dpct::queue_ptr h, int *am) {
+     /*
+     DPCT1061:1: Call to MACRO macro was removed because it only contains code,
+     which is unnecessary in SYCL.
+     */
+     ...
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(dpct::queue_ptr h, int *am) {
+     ...
+   }
+
