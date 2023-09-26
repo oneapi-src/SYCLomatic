@@ -346,7 +346,9 @@ public:
   /// \param [in] row_num Number of rows of the sparse matrix.
   /// \param [in] col_num Number of colums of the sparse matrix.
   /// \param [in] nnz Non-zero elements in the sparse matrix.
-  /// \param [in] row_ptr An array of length \p row_num + 1.
+  /// \param [in] row_ptr An array of length \p row_num + 1. If the \p row_ptr is
+  /// NULL, the sparse_matrix_desc will allocate internal memory for it. This
+  /// internal memory can be gotten from get_shadow_row_ptr().
   /// \param [in] col_ind An array containing the column indices in index-based
   /// numbering.
   /// \param [in] value An array containing the non-zero elements of the sparse matrix.
@@ -393,8 +395,8 @@ public:
     if (_data_value_z)
       delete _data_value_z;
 #endif
-    if (_temp_row_ptr)
-      dpct::dpct_free(_temp_row_ptr);
+    if (_shadow_row_ptr)
+      dpct::dpct_free(_shadow_row_ptr);
   }
 
   /// Add dependency for the destroy method.
@@ -449,8 +451,8 @@ public:
   void set_value(void *value) {
     if (!value) {
       throw std::runtime_error(
-          "dpct::sparse::sparse_matrix_desc::set_value(): The new "
-          "value pointer is NULL.");
+          "dpct::sparse::sparse_matrix_desc::set_value(): The value "
+          "pointer is NULL.");
     }
     if (_value) {
       throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_value(): "
@@ -530,10 +532,20 @@ public:
   /// numbering.
   /// \param [in] value An array containing the non-zero elements of the sparse matrix.
   void set_pointers(void *row_ptr, void *col_ind, void *value) {
+    if (!row_ptr) {
+      throw std::runtime_error(
+          "dpct::sparse::sparse_matrix_desc::set_pointers(): The "
+          "row_ptr pointer is NULL.");
+    }
     if (!col_ind) {
       throw std::runtime_error(
           "dpct::sparse::sparse_matrix_desc::set_pointers(): The "
-          "new col_ind pointer is NULL.");
+          "col_ind pointer is NULL.");
+    }
+    if (_row_ptr) {
+      throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_pointers("
+                               "): The row_ptr pointer is "
+                               "not NULL. It cannot be reset.");
     }
     if (_col_ind) {
       throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_pointers("
@@ -562,9 +574,9 @@ public:
   /// Get the row_ptr.
   /// \return The row_ptr.
   void *get_row_ptr() const noexcept { return _row_ptr; }
-  /// Get the temp_row_ptr.
-  /// \return The temp_row_ptr.
-  void *get_temp_row_ptr() const noexcept { return _temp_row_ptr; }
+  /// Get the shadow_row_ptr.
+  /// \return The shadow_row_ptr.
+  void *get_shadow_row_ptr() const noexcept { return _shadow_row_ptr; }
   /// Get the type of the col_ind pointer.
   /// \return The type of the col_ind pointer.
   library_data_t get_col_ind_type() const noexcept { return _col_ind_type; }
@@ -577,12 +589,12 @@ private:
 #define SET_DATA(INDEX_TYPE, INDEX_SUFFIX, VALUE_TYPE, VALUE_SUFFIX)           \
   do {                                                                         \
     void *row_ptr = nullptr;                                                   \
-    if (_temp_row_ptr) {                                                       \
-      row_ptr = _temp_row_ptr;                                                 \
+    if (_shadow_row_ptr) {                                                     \
+      row_ptr = _shadow_row_ptr;                                               \
     } else if (_row_ptr) {                                                     \
       row_ptr = _row_ptr;                                                      \
     } else {                                                                   \
-      row_ptr = _temp_row_ptr = dpct::dpct_malloc(                             \
+      row_ptr = _shadow_row_ptr = dpct::dpct_malloc(                           \
           sizeof(INDEX_TYPE) * (_row_num + 1), get_default_queue());           \
     }                                                                          \
     _data_row_ptr##INDEX_SUFFIX =                                              \
@@ -601,12 +613,12 @@ private:
 #define SET_DATA(INDEX_TYPE, INDEX_SUFFIX, VALUE_TYPE, VALUE_SUFFIX)           \
   do {                                                                         \
     void *row_ptr = nullptr;                                                   \
-    if (_temp_row_ptr) {                                                       \
-      row_ptr = _temp_row_ptr;                                                 \
+    if (_shadow_row_ptr) {                                                     \
+      row_ptr = _shadow_row_ptr;                                               \
     } else if (_row_ptr) {                                                     \
       row_ptr = _row_ptr;                                                      \
     } else {                                                                   \
-      row_ptr = _temp_row_ptr = dpct::dpct_malloc(                             \
+      row_ptr = _shadow_row_ptr = dpct::dpct_malloc(                           \
           sizeof(INDEX_TYPE) * (_row_num + 1), get_default_queue());           \
     }                                                                          \
     oneapi::mkl::sparse::set_csr_data(                                         \
@@ -691,7 +703,7 @@ private:
   matrix_format _data_format;
   std::optional<oneapi::mkl::uplo> _uplo;
   std::optional<oneapi::mkl::diag> _diag;
-  void *_temp_row_ptr = nullptr;
+  void *_shadow_row_ptr = nullptr;
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<std::int32_t> *_data_row_ptr_32 = nullptr;
   sycl::buffer<std::int64_t> *_data_row_ptr_64 = nullptr;
@@ -1053,15 +1065,15 @@ inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
 #else
   , {}).wait();
 #endif
-  if (c->get_temp_row_ptr()) {
+  if (c->get_shadow_row_ptr()) {
     switch (c->get_col_ind_type()) {
     case library_data_t::real_int32: {
-      dpct::dpct_memcpy(c->get_row_ptr(), c->get_temp_row_ptr(),
+      dpct::dpct_memcpy(c->get_row_ptr(), c->get_shadow_row_ptr(),
                         sizeof(std::int32_t) * (c->get_row_num() + 1));
       break;
     }
     case library_data_t::real_int64: {
-      dpct::dpct_memcpy(c->get_row_ptr(), c->get_temp_row_ptr(),
+      dpct::dpct_memcpy(c->get_row_ptr(), c->get_shadow_row_ptr(),
                         sizeof(std::int64_t) * (c->get_row_num() + 1));
       break;
     }
