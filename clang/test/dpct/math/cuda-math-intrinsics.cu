@@ -2273,24 +2273,24 @@ __global__ void testUnsupported() {
   // CHECK: i = dpct::ffs<long long int>(ll);
   i = __ffsll(ll);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << (shift & 31)) >> 32) expression is used instead of the __funnelshift_l call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::funnelshift_l call is used instead of the __funnelshift_l call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) << (u & 31)) >> 32);
+  // CHECK-NEXT: u = dpct::funnelshift_l(u, u, u);
   u = __funnelshift_l(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << min(shift, 32)) >> 32) expression is used instead of the __funnelshift_lc call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::funnelshift_lc call is used instead of the __funnelshift_lc call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) << sycl::min(u, 32)) >> 32);
+  // CHECK-NEXT: u = dpct::funnelshift_lc(u, u, u);
   u = __funnelshift_lc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> (shift & 31)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_r call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::funnelshift_r call is used instead of the __funnelshift_r call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) >> (u & 31)) & 0xFFFFFFFF);
+  // CHECK-NEXT: u = dpct::funnelshift_r(u, u, u);
   u = __funnelshift_r(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> min(shift, 32)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_rc call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::funnelshift_rc call is used instead of the __funnelshift_rc call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) >> sycl::min(u, 32)) & 0xFFFFFFFF);
+  // CHECK-NEXT: u = dpct::funnelshift_rc(u, u, u);
   u = __funnelshift_rc(u, u, u);
   // CHECK: ll = sycl::mul_hi(ll, ll);
   ll = __mul64hi(ll, ll);
