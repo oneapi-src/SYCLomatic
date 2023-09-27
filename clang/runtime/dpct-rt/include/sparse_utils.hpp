@@ -455,9 +455,9 @@ public:
           "pointer is NULL.");
     }
     if (_value) {
-      throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_value(): "
-                               "The value pointer is not "
-                               "NULL. It cannot be reset.");
+      throw std::runtime_error(
+          "dpct::sparse::sparse_matrix_desc::set_value(): "
+          "The _value pointer is not NULL. It cannot be reset.");
     }
     _value = value;
     set_data();
@@ -544,12 +544,12 @@ public:
     }
     if (_row_ptr) {
       throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_pointers("
-                               "): The row_ptr pointer is "
+                               "): The _row_ptr pointer is "
                                "not NULL. It cannot be reset.");
     }
     if (_col_ind) {
       throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_pointers("
-                               "): The col_ind pointer is "
+                               "): The _col_ind pointer is "
                                "not NULL. It cannot be reset.");
     }
     _row_ptr = row_ptr;
@@ -574,8 +574,10 @@ public:
   /// Get the row_ptr.
   /// \return The row_ptr.
   void *get_row_ptr() const noexcept { return _row_ptr; }
-  /// Get the shadow_row_ptr.
-  /// \return The shadow_row_ptr.
+  /// If the internal _row_ptr is NULL, the sparse_matrix_desc will allocate
+  /// internal memory for it in the constructor. The internal memory can be gotten
+  /// from this interface.
+  /// \return The shadow row_ptr.
   void *get_shadow_row_ptr() const noexcept { return _shadow_row_ptr; }
   /// Get the type of the col_ind pointer.
   /// \return The type of the col_ind pointer.
