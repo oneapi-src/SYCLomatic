@@ -650,8 +650,8 @@ MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.num_threads",
                           MemberExprBase(), false, "get_local_linear_range")
 MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.get_type",
                           MemberExprBase(), false, "get_type")
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.group_index", NDITEM,
-                          false, "get_global_id")
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_index", NDITEM,
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.group_index", MemberExprBase(),
+                          false, "get_group_id")
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_index", MemberExprBase(),
                           false, "get_local_id")
 #endif
