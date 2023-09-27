@@ -940,6 +940,8 @@ device_pointer<T> device_new(device_pointer<U> p, const T &value,
       value);
   return device_pointer<T>(converted_buf, p.idx);
 }
+// buffer manages lifetime
+template <typename T> void free_device(device_pointer<T> ptr) {}
 #else
 template <typename T, typename U>
 device_pointer<T> device_new(device_pointer<U> p, const T &value,
@@ -950,6 +952,9 @@ device_pointer<T> device_new(device_pointer<U> p, const T &value,
       converted_p, converted_p + count, value);
   return converted_p;
 }
+template <typename T> void free_device(device_pointer<T> ptr) {
+  sycl::free(ptr.get(), dpct::get_default_queue());
+}
 #endif
 template <typename T, typename U>
 device_pointer<T> device_new(device_pointer<U> p, const std::size_t count = 1) {
@@ -957,10 +962,8 @@ device_pointer<T> device_new(device_pointer<U> p, const std::size_t count = 1) {
 }
 template <typename T>
 device_pointer<T> device_new(const std::size_t count = 1) {
-  return device_pointer<T>(count);
+  return device_new(device_pointer<T>(sizeof(T) * count), T{}, count);
 }
-
-template <typename T> void free_device(device_pointer<T> ptr) {}
 
 template <typename T>
 typename std::enable_if<!std::is_trivially_destructible<T>::value, void>::type
@@ -968,10 +971,13 @@ device_delete(device_pointer<T> p, const std::size_t count = 1) {
   for (std::size_t i = 0; i < count; ++i) {
     p[i].~T();
   }
+  free_device(p);
 }
 template <typename T>
 typename std::enable_if<std::is_trivially_destructible<T>::value, void>::type
-device_delete(device_pointer<T>, const std::size_t count = 1) {}
+device_delete(device_pointer<T> p, const std::size_t count = 1) {
+  free_device(p);
+}
 
 template <typename T> device_pointer<T> get_device_pointer(T *ptr) {
   return device_pointer<T>(ptr);
