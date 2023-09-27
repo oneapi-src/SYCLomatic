@@ -44,6 +44,24 @@ std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
   };
 }
 
+AddrOfExpr::AddrOfExpr(const Expr *E, const CallExpr *C) {
+  this->C = C;
+  this->E = getAddrOfedExpr(E);
+  if (this->E) {
+    this->E = this->E->IgnoreParens();
+    this->DerefRemoved = true;
+  } else {
+    this->E = E;
+  }
+
+  this->NeedParens = needExtraParens(E);
+  if (const auto UO = dyn_cast_or_null<UnaryOperator>(E->IgnoreImpCasts())) {
+    if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+      this->NeedParens = false;
+    }
+  }
+}
+
 DerefExpr::DerefExpr(const Expr *E, const CallExpr *C) {
   this->C = C;
   // If E is UnaryOperator or CXXOperatorCallExpr D.E will has value
