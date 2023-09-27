@@ -24,3 +24,38 @@ Suggestions to Fix
 If you want this macro to be migrated by |tool_name|, please
 use the macro that needs migration in your code and pass the code to the tool
 again. Otherwise you can update the code manually or ignore the warning.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   #define ATOMIC_ADD(x, v)  atomicAdd(&x, v);
+   
+   void foo() {
+     // There is no using of ATOMIC_ADD macro
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1058:0: "atomicAdd" is not migrated because it is not called in the code.
+   */
+   #define ATOMIC_ADD(x, v) atomicAdd(&x, v);
+   
+   void foo() {
+     // There is no using of ATOMIC_ADD macro
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     // There is no using of ATOMIC_ADD macro
+   }
+

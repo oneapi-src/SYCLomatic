@@ -1106,7 +1106,8 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       if (RunResult == 1) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
-          StringRef ErrStr = getDpctTermStr();
+          std::string Err = getDpctTermStr();
+          StringRef ErrStr = Err;
           if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
                        QueryAPIMapping);
