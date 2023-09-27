@@ -372,8 +372,8 @@ potentially may alter the semantics of your program. Default: ``off``.
 The directory path for root of generated files. A directory is created if
 it does not exist. Default: ``dpct_output``.
 
-The relative paths for the generated files are maintained, and the
-extension is changed as follows:
+The relative paths for the generated files are maintained. By default, file
+extensions are changed as follows:
 
 - ``*.cu → *.dp.cpp``
 - ``*.cpp → *.cpp.dp.cpp``
@@ -382,6 +382,9 @@ extension is changed as follows:
 - ``*.C → *.C.dp.cpp``
 - ``*.cuh → *.dp.hpp``
 - ``*.h *.hpp *.hxx`` → extensions are kept the same
+
+To limit file extension changes to ``.cu`` and ``.cuh`` files only, use the
+``--change-cuda-files-extension-only`` option.
 
 .. _end-out-root:
 
