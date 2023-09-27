@@ -1153,3 +1153,15 @@ thrustFactory("thrust::uninitialized_fill_n",
 // thrust::detail::vector_equal
 thrustFactory("thrust::detail::vector_equal",
               {{3,PolicyState::NoPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::none}}),
+
+// thrust::max
+CALL_FACTORY_ENTRY("thrust::max", CALL("std::max", ARG(0), ARG(1)))
+
+// thrust::min
+CALL_FACTORY_ENTRY("thrust::min", CALL("std::min",ARG(0), ARG(1)))
+
+// thrust::tie
+CALL_FACTORY_ENTRY("thrust::tie", CALL("std::tie",ARG(0), ARG(1)))
+
+// thrust::make_tuple
+CALL_FACTORY_ENTRY("thrust::make_tuple", CALL("std::make_tuple",ARG(0), ARG(1)))
