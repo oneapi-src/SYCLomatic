@@ -316,6 +316,15 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
             [getCombinedStrFromLoc(MI->getReplacementToken(i).getLocation())] =
                 R;
       }
+      std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
+          std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
+              MacroNameTok.getIdentifierInfo(), MI, Range, IsInAnalysisScope,
+              MI->getNumTokens());
+      auto EndOfLastToken = Lexer::getLocForEndOfToken(
+          MI->getReplacementToken(MI->getNumTokens() - 1).getLocation(), 0, SM,
+          DpctGlobalInfo::getContext().getLangOpts());
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
+          [getCombinedStrFromLoc(EndOfLastToken)] = R;
     }
 
     // If PredefinedStreamName is used with concatenated macro token,
@@ -2132,7 +2141,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     // migrate MatchedType.
     if (!DpctGlobalInfo::isInAnalysisScope(SM->getSpellingLoc(TL->getBeginLoc())) &&
         isPartOfMacroDef(SM->getSpellingLoc(TL->getBeginLoc()),
-                         SM->getSpellingLoc(TL->getBeginLoc()))) {
+                         SM->getSpellingLoc(TL->getEndLoc()))) {
       return;
     }
 
@@ -8677,7 +8686,8 @@ void DeviceFunctionDeclRule::runRule(
     // For Xe-LP architecture, if the sub-group size is 32, then each work-item
     // can use 128 * 32 Byte / 32 = 128 Byte registers.
     if(LocalVariableSize > 128) {
-      report(SM.getExpansionLoc(FD->getBeginLoc()), Warnings::REGISTER_USAGE, false, FD->getName());
+      report(SM.getExpansionLoc(FD->getBeginLoc()), Warnings::REGISTER_USAGE,
+             false, FD->getDeclName().getAsString());
     }
   }
   if (isLambda(FD) && !FuncInfo->isLambda()) {
@@ -11974,11 +11984,17 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
 
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
+    if (isAssigned(C)) {
+      emplaceTransformation(new ReplaceToken(
+          C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
+                                "get_kernel_function_info"));
+      emplaceTransformation(new InsertAfterStmt(C, ")"));
+    } else {
+      emplaceTransformation(
+          new ReplaceToken(C->getBeginLoc(), MapNames::getDpctNamespace() +
+                                                 "get_kernel_function_info"));
+    }
     requestFeature(HelperFeatureEnum::device_ext);
-    emplaceTransformation(new ReplaceToken(
-        C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
-                              "get_kernel_function_info"));
-    emplaceTransformation(new InsertAfterStmt(C, ")"));
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));
   } else if (auto C = getNodeAsType<CallExpr>(Result, "callFuncGetAttribute")) {

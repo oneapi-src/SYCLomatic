@@ -2375,6 +2375,10 @@ bool isIncludedFile(const std::string &CurrentFile,
 }
 
 std::string getCombinedStrFromLoc(const clang::SourceLocation Loc) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  if (SM.isWrittenInScratchSpace(Loc)) {
+    return Loc.printToString(SM);
+  }
   auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
   return LocInfo.first + ":" + std::to_string(LocInfo.second);
 }
@@ -2716,6 +2720,8 @@ bool isInMacroDefinition(SourceLocation BeginLoc, SourceLocation EndLoc) {
 }
 
 bool isPartOfMacroDef(SourceLocation BeginLoc, SourceLocation EndLoc) {
+  if (dpct::DpctGlobalInfo::getSourceManager().isWrittenInScratchSpace(BeginLoc))
+    return false;
   auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(BeginLoc));
   auto ItEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(

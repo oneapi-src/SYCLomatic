@@ -1,4 +1,4 @@
-//===--------------- CallExprRewriterCUB.cpp ------------------------------===//
+//===--------------- CallExprRewriterCUB.h --------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,12 +6,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#ifndef CLANG_DPCT_CALL_EXPR_REWRITER_CUB_H
+#define CLANG_DPCT_CALL_EXPR_REWRITER_CUB_H
+
+#include "CUBAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
-#include "CUBAPIMigration.h"
 
-namespace clang {
-namespace dpct {
+namespace clang::dpct {
 
 class CheckCubRedundantFunctionCall {
 public:
@@ -26,14 +28,13 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
   return Inner->create(C);
 }
 
-std::function<bool(const CallExpr *)>
-checkEnableUserDefineReductions() {
+inline std::function<bool(const CallExpr *)> checkEnableUserDefineReductions() {
   return [=](const CallExpr *) -> bool {
     return DpctGlobalInfo::useUserDefineReductions();
   };
 }
 
-std::function<bool(const CallExpr *)>
+inline std::function<bool(const CallExpr *)>
 checkArgCanMappingToSyclNativeBinaryOp(size_t ArgIdx) {
   return [=](const CallExpr *C) -> bool {
     const Expr *Arg = C->getArg(ArgIdx);
@@ -64,23 +65,21 @@ createRemoveCubTempStorageFactory(
 #define REMOVE_CUB_TEMP_STORAGE_FACTORY(INNER)                                 \
   createRemoveCubTempStorageFactory(INNER 0),
 
-void CallExprRewriterFactoryBase::initRewriterMapCUB() {
-  RewriterMap->merge(
-      std::unordered_map<std::string,
-                         std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCUB.inc"
-      }));
-}
+typedef std::unordered_map<std::string,
+                           std::shared_ptr<CallExprRewriterFactoryBase>>
+    RewriterMap;
 
-void CallExprRewriterFactoryBase::initMethodRewriterMapCUB() {
-  MethodRewriterMap->merge(
-      std::unordered_map<std::string,
-                         std::shared_ptr<CallExprRewriterFactoryBase>>({
-#define CLASS_METHOD_CALL
-#include "APINamesCUB.inc"
-#undef CLASS_METHOD_CALL
-      }));
-}
+RewriterMap createDeviceReduceRewriterMap();
+RewriterMap createDeviceScanRewriterMap();
+RewriterMap createDeviceSelectRewriterMap();
+RewriterMap createDeviceRunLengthEncodeRewriterMap();
+RewriterMap createDeviceSegmentedReduceRewriterMap();
+RewriterMap createDeviceRadixSortRewriterMap();
+RewriterMap createDeviceSegmentedRadixSortRewriterMap();
+RewriterMap createDeviceSegmentedSortRewriterMap();
+RewriterMap createDeviceHistgramRewriterMap();
+RewriterMap createClassMethodsRewriterMap();
+RewriterMap createUtilityFunctionsRewriterMap();
+} // namespace clang::dpct
 
-} // namespace dpct
-} // namespace clang
+#endif // CLANG_DPCT_CALL_EXPR_REWRITER_CUB_H
