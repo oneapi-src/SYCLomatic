@@ -481,6 +481,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpGEMMDescr_t",
+          std::make_shared<TypeNameRule>("oneapi::mkl::sparse::matmat_descr_t")},
+      {"cusparseSpSVDescr_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpGEMMAlg_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpSVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"__half_raw", std::make_shared<TypeNameRule>("uint16_t")},
       {"cudaFuncAttributes",
        std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
@@ -1977,7 +1982,17 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpMM_bufferSize",
                            "cusparseSpMV",
                            "cusparseSpMV_bufferSize",
-                           "cusparseSpMM_preprocess"};
+                           "cusparseSpMM_preprocess",
+                           "cusparseSpGEMM_compute",
+                           "cusparseSpGEMM_copy",
+                           "cusparseSpGEMM_createDescr",
+                           "cusparseSpGEMM_destroyDescr",
+                           "cusparseSpGEMM_workEstimation",
+                           "cusparseSpSV_createDescr",
+                           "cusparseSpSV_destroyDescr",
+                           "cusparseSpSV_solve",
+                           "cusparseSpSV_bufferSize",
+                           "cusparseSpSV_analysis"};
 }
 // clang-format on
 
