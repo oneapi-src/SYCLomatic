@@ -1832,6 +1832,66 @@ CALL_FACTORY_ENTRY("__double2half",
 ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY("__high2float", ARG(0), LITERAL("1"))
 
 MATH_API_REWRITER_DEVICE(
+    "__funnelshift_l",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__funnelshift_l"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_l"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_l"),
+        WARNING_FACTORY_ENTRY(
+            "__funnelshift_l",
+            CALL_FACTORY_ENTRY("__funnelshift_l",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "funnelshift_l",
+                                    ARG(0), ARG(1), ARG(2))),
+            Diagnostics::MATH_EMULATION, std::string("__funnelshift_l"),
+            MapNames::getDpctNamespace() + "funnelshift_l")))
+
+MATH_API_REWRITER_DEVICE(
+    "__funnelshift_lc",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__funnelshift_lc"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_lc"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_lc"),
+        WARNING_FACTORY_ENTRY(
+            "__funnelshift_lc",
+            CALL_FACTORY_ENTRY("__funnelshift_lc",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "funnelshift_lc",
+                                    ARG(0), ARG(1), ARG(2))),
+            Diagnostics::MATH_EMULATION, std::string("__funnelshift_lc"),
+            MapNames::getDpctNamespace() + "funnelshift_lc")))
+
+MATH_API_REWRITER_DEVICE(
+    "__funnelshift_r",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__funnelshift_r"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_r"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_r"),
+        WARNING_FACTORY_ENTRY(
+            "__funnelshift_r",
+            CALL_FACTORY_ENTRY("__funnelshift_r",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "funnelshift_r",
+                                    ARG(0), ARG(1), ARG(2))),
+            Diagnostics::MATH_EMULATION, std::string("__funnelshift_r"),
+            MapNames::getDpctNamespace() + "funnelshift_r")))
+
+MATH_API_REWRITER_DEVICE(
+    "__funnelshift_rc",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__funnelshift_rc"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_rc"),
+        EMPTY_FACTORY_ENTRY("__funnelshift_rc"),
+        WARNING_FACTORY_ENTRY(
+            "__funnelshift_rc",
+            CALL_FACTORY_ENTRY("__funnelshift_rc",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "funnelshift_rc",
+                                    ARG(0), ARG(1), ARG(2))),
+            Diagnostics::MATH_EMULATION, std::string("__funnelshift_rc"),
+            MapNames::getDpctNamespace() + "funnelshift_rc")))
+
+MATH_API_REWRITER_DEVICE(
     "__ldca",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__ldca"), EMPTY_FACTORY_ENTRY("__ldca"),
@@ -5051,24 +5111,19 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
   MATH_API_REWRITER_HOST_DEVICE(                                               \
       MATH_API_REWRITER_HOST(                                                  \
           FuncName,                                                            \
-          WARNING_FACTORY_ENTRY(                                               \
-              FuncName,                                                        \
-              CONDITIONAL_FACTORY_ENTRY(                                       \
-                  CheckArgType(0, "int"),                                      \
-                  MULTI_STMTS_FACTORY_ENTRY(                                   \
-                      FuncName, false, true, false, false,                     \
-                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
-                         CALL(MapNames::getClNamespace() + "sincos",           \
-                              CAST(makeLiteral(CastType), ARG_WC(0)),          \
-                              makeArgWithAddressSpaceCast(2, CastType)))),     \
-                  MULTI_STMTS_FACTORY_ENTRY(                                   \
-                      FuncName, false, true, false, false,                     \
-                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
-                         CALL(MapNames::getClNamespace() + "sincos",           \
-                              ARG_WC(0),                                       \
-                              makeArgWithAddressSpaceCast(2, CastType))))),    \
-              Diagnostics::MATH_EMULATION, std::string(FuncName),              \
-              MapNames::getClNamespace() + std::string("sincos"))),            \
+          CONDITIONAL_FACTORY_ENTRY(                                           \
+              CheckArgType(0, "int"),                                          \
+              MULTI_STMTS_FACTORY_ENTRY(                                       \
+                  FuncName, false, true, false, false,                         \
+                  BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),          \
+                     CALL(MapNames::getClNamespace() + "sincos",               \
+                          CAST(makeLiteral(CastType), ARG_WC(0)),              \
+                          makeArgWithAddressSpaceCast(2, CastType)))),         \
+              MULTI_STMTS_FACTORY_ENTRY(                                       \
+                  FuncName, false, true, false, false,                         \
+                  BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),          \
+                     CALL(MapNames::getClNamespace() + "sincos", ARG_WC(0),    \
+                          makeArgWithAddressSpaceCast(2, CastType)))))),       \
       MATH_API_REWRITER_DEVICE_WITH_PERF(                                      \
           FuncName, SinCosPerfPred(),                                          \
           WARNING_FACTORY_ENTRY(                                               \
@@ -5093,25 +5148,20 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
               Diagnostics::MATH_EMULATION, std::string(FuncName),              \
               MapNames::getClNamespace() + std::string("sin/cos")),            \
           MATH_API_DEVICE_NODES(                                               \
-              WARNING_FACTORY_ENTRY(                                           \
-                  FuncName,                                                    \
-                  CONDITIONAL_FACTORY_ENTRY(                                   \
-                      CheckArgType(0, "int"),                                  \
-                      MULTI_STMTS_FACTORY_ENTRY(                               \
-                          FuncName, false, true, false, false,                 \
-                          BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),  \
-                             CALL(MapNames::getClNamespace() + "sincos",       \
-                                  CAST(makeLiteral(CastType), ARG_WC(0)),      \
-                                  makeArgWithAddressSpaceCast(2, CastType)))), \
-                      MULTI_STMTS_FACTORY_ENTRY(                               \
-                          FuncName, false, true, false, false,                 \
-                          BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),  \
-                             CALL(                                             \
-                                 MapNames::getClNamespace() + "sincos",        \
-                                 ARG_WC(0),                                    \
-                                 makeArgWithAddressSpaceCast(2, CastType))))), \
-                  Diagnostics::MATH_EMULATION, std::string(FuncName),          \
-                  MapNames::getClNamespace() + std::string("sincos")),         \
+              CONDITIONAL_FACTORY_ENTRY(                                       \
+                  CheckArgType(0, "int"),                                      \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, false,                     \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sincos",           \
+                              CAST(makeLiteral(CastType), ARG_WC(0)),          \
+                              makeArgWithAddressSpaceCast(2, CastType)))),     \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, false,                     \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sincos",           \
+                              ARG_WC(0),                                       \
+                              makeArgWithAddressSpaceCast(2, CastType))))),    \
               EMPTY_FACTORY_ENTRY(FuncName), EMPTY_FACTORY_ENTRY(FuncName),    \
               EMPTY_FACTORY_ENTRY(FuncName))))
 

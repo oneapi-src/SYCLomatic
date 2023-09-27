@@ -1018,7 +1018,7 @@ void DpctFileInfo::buildReplacements() {
     if (std::get<2>(AtomicInfo.second))
       DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
                                Diagnostics::API_NOT_OCCURRED_IN_AST, true,
-                               false, std::get<1>(AtomicInfo.second));
+                               true, std::get<1>(AtomicInfo.second));
   }
 
   for (auto &DescInfo : EventSyncTypeMap) {

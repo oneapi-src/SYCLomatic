@@ -28,17 +28,42 @@ For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
-  
-     __device__ void foo(const texture<char, 2, cudaReadModeNormalizedFloat> tex);
-     __device__ void foo (const texture<char, 2, cudaReadModeElementType> tex);
+
+   __device__ void foo(const texture<char4, 2, cudaReadModeNormalizedFloat> tex) {
+     float4 f = tex2D(tex, 0.5f, 0.5f);
+   }
+   __device__ void foo (const texture<char4, 2, cudaReadModeElementType> tex) {
+     char4 c = tex2D(tex, 0.5f, 0.5f);
+   }
 
 results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
-  
-     void foo (dpct::image_accessor_ext<char, 2> tex);
-     void foo (dpct::image_accessor_ext<char, 2> tex);
+
+   /*
+   DPCT1062:0: SYCL Image doesn't support normalized read mode.
+   */
+   void foo(dpct::image_accessor_ext<sycl::char4, 2> tex) {
+     sycl::float4 f = tex.read(0.5f, 0.5f);
+   }
+   void foo(dpct::image_accessor_ext<sycl::char4, 2> tex) {
+     sycl::char4 c = tex.read(0.5f, 0.5f);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo1(dpct::image_accessor_ext<sycl::char4, 2> tex) {
+     sycl::char4 temp_c = tex.read(0.5f, 0.5f);
+     sycl::float4 f{temp_c.x(), temp_c.y(), temp_c.z(), temp_c.w()};
+     f = f / 255.f;
+   }
+   void foo2(dpct::image_accessor_ext<sycl::char4, 2> tex) {
+     sycl::char4 c = tex.read(0.5f, 0.5f);
+   }
 
 Suggestions to Fix
 ------------------

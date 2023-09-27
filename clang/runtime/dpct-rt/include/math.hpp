@@ -250,6 +250,30 @@ inline std::enable_if_t<T::size() == 2, T> isnan(const T a) {
   return {detail::isnan(a[0]), detail::isnan(a[1])};
 }
 
+/// Emulated function for __funnelshift_l
+inline unsigned int funnelshift_l(unsigned int low, unsigned int high,
+                                  unsigned int shift) {
+  return (sycl::upsample(high, low) << (shift & 31U)) >> 32;
+}
+
+/// Emulated function for __funnelshift_lc
+inline unsigned int funnelshift_lc(unsigned int low, unsigned int high,
+                                   unsigned int shift) {
+  return (sycl::upsample(high, low) << sycl::min(shift, 32U)) >> 32;
+}
+
+/// Emulated function for __funnelshift_r
+inline unsigned int funnelshift_r(unsigned int low, unsigned int high,
+                                  unsigned int shift) {
+  return (sycl::upsample(high, low) >> (shift & 31U)) & 0xFFFFFFFF;
+}
+
+/// Emulated function for __funnelshift_rc
+inline unsigned int funnelshift_rc(unsigned int low, unsigned int high,
+                                   unsigned int shift) {
+  return (sycl::upsample(high, low) >> sycl::min(shift, 32U)) & 0xFFFFFFFF;
+}
+
 /// cbrt function wrapper.
 template <typename T> inline T cbrt(T val) { return sycl::cbrt((T)val); }
 
