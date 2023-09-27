@@ -20,7 +20,7 @@ _c2s_dpct_filedir()
 
 _c2s_dpct()
 {
-  local cur prev words cword arg flags opt
+  local cur prev words cword arg flags w1 w2 opt
   # If latest bash-completion is not supported just initialize COMPREPLY and
   # initialize variables by setting manually.
   _init_completion -n 2> /dev/null
@@ -28,6 +28,11 @@ _c2s_dpct()
     COMPREPLY=()
     cword=$COMP_CWORD
     cur="${COMP_WORDS[$cword]}"
+  fi
+
+  w1="${COMP_WORDS[$cword - 1]}"
+  if [[ $cword > 1 ]]; then
+    w2="${COMP_WORDS[$cword - 2]}"
   fi
 
   # Pass all the current command-line flags to c2s/dpct, so that c2s/dpct can handle
@@ -45,16 +50,23 @@ _c2s_dpct()
   eval local path=${COMP_WORDS[0]}
 
   # Get the last option.
-  if [[ "${COMP_WORDS[$(($cword-1))]}" == '=' ]]; then
-    opt=${COMP_WORDS[$(($cword-2))]}
+  if [[ $w1 == '=' ]]; then
+    opt=$w2
   else
-    opt=${COMP_WORDS[$(($cword-1))]}
+    opt=$w1
   fi
   # Handle --query-api-mapping value autocompletion.
-  if [[ $opt == "--query-api-mapping" ]]; then
+  if [[ $opt == "--query-api-mapping" || $opt == "-query-api-mapping" ]]; then
     flags=$( "$path" --query-api-mapping=- 2>/dev/null | sed -e $'s/\t.*//' )
-    [[ "${flags: -1}" == '=' ]] && compopt -o nospace 2> /dev/null
-    COMPREPLY=( $( compgen -W "$flags" -- "$cur" ) )
+    if [[ "$flags" == "$(echo -e '\n')" ]]; then
+      [[ "$cur" == '=' || "$cur" == -*= ]] && cur=""
+      _c2s_dpct_filedir
+    elif [[ "$cur" == '=' ]]; then
+      COMPREPLY=( $( compgen -W "$flags" -- "") )
+    else
+      [[ "${flags: -1}" == '=' ]] && compopt -o nospace 2> /dev/null
+      COMPREPLY=( $( compgen -W "$flags" -- "$cur" ) )
+    fi
     return
   fi
 
