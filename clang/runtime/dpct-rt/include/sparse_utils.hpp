@@ -647,6 +647,10 @@ public:
   std::int64_t get_row_num() const noexcept { return _row_num; }
 
 private:
+  std::function<void(void *)> _shadow_row_ptr_deleter = [](void *ptr) {
+    if (ptr)
+      dpct::dpct_free(ptr);
+  };
   template <typename index_t, typename value_t> void set_data() {
     void *row_ptr = nullptr;
     if (_shadow_row_ptr) {
@@ -656,10 +660,8 @@ private:
     } else {
       row_ptr = dpct::dpct_malloc(sizeof(index_t) * (_row_num + 1),
                                   get_default_queue());
-      _shadow_row_ptr = std::unique_ptr<void>(row_ptr, [](void *ptr) {
-        if (ptr)
-          dpct::dpct_free(ptr);
-      });
+      _shadow_row_ptr = std::unique_ptr<void, std::function<void(void *)>>(
+          row_ptr, _shadow_row_ptr_deleter);
     }
 #ifdef DPCT_USM_LEVEL_NONE
     using data_index_t = sycl::buffer<index_t>;
@@ -668,12 +670,9 @@ private:
     using data_index_t = index_t *;
     using data_value_t = value_t *;
 #endif
-    std::get<data_index_t>(_data_row_ptr) =
-        dpct::detail::get_memory(reinterpret_cast<index_t *>(row_ptr));
-    std::get<data_index_t>(_data_col_ind) =
-        dpct::detail::get_memory(reinterpret_cast<index_t *>(_col_ind));
-    std::get<data_value_t>(_data_value) =
-        dpct::detail::get_memory(reinterpret_cast<value_t *>(_value));
+    _data_row_ptr = dpct::detail::get_memory<index_t>(row_ptr);
+    _data_col_ind = dpct::detail::get_memory<index_t>(_col_ind);
+    _data_value = dpct::detail::get_memory<value_t>(_value);
     oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,
                                       _row_num, _col_num, _base,
                                       std::get<data_index_t>(_data_row_ptr),
@@ -754,7 +753,9 @@ private:
   matrix_format _data_format;
   std::optional<oneapi::mkl::uplo> _uplo;
   std::optional<oneapi::mkl::diag> _diag;
-  std::unique_ptr<void> _shadow_row_ptr;
+  std::unique_ptr<void, std::function<void(void *)>> _shadow_row_ptr =
+      std::unique_ptr<void, std::function<void(void *)>>(
+          nullptr, _shadow_row_ptr_deleter);
 
   static constexpr std::array<size_t, 7> buffer_size = {
       sizeof(sycl::buffer<std::int32_t>),
