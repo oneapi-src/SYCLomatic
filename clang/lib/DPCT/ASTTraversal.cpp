@@ -316,6 +316,15 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
             [getCombinedStrFromLoc(MI->getReplacementToken(i).getLocation())] =
                 R;
       }
+      std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
+          std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
+              MacroNameTok.getIdentifierInfo(), MI, Range, IsInAnalysisScope,
+              MI->getNumTokens());
+      auto EndOfLastToken = Lexer::getLocForEndOfToken(
+          MI->getReplacementToken(MI->getNumTokens() - 1).getLocation(), 0, SM,
+          DpctGlobalInfo::getContext().getLangOpts());
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
+          [getCombinedStrFromLoc(EndOfLastToken)] = R;
     }
 
     // If PredefinedStreamName is used with concatenated macro token,
@@ -1280,7 +1289,8 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
               returns(asString("cusparseStatus_t")),
               returns(asString("cusolverStatus_t")),
               returns(asString("cufftResult_t")),
-              returns(asString("curandStatus_t"))),
+              returns(asString("curandStatus_t")),
+              returns(asString("ncclResult_t"))),
         // cudaGetLastError returns cudaError_t but won't fail in the call
         unless(hasName("cudaGetLastError")),
         anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost)));
@@ -1655,8 +1665,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusolverAlgMode_t", "cusparseIndexType_t", "cusparseFormat_t",
               "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
-              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t",
-              "cudaFuncAttributes"))))))
+              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
+              "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t",
+              "cusparseSpSVAlg_t", "cudaFuncAttributes"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -2132,7 +2143,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     // migrate MatchedType.
     if (!DpctGlobalInfo::isInAnalysisScope(SM->getSpellingLoc(TL->getBeginLoc())) &&
         isPartOfMacroDef(SM->getSpellingLoc(TL->getBeginLoc()),
-                         SM->getSpellingLoc(TL->getBeginLoc()))) {
+                         SM->getSpellingLoc(TL->getEndLoc()))) {
       return;
     }
 
@@ -3696,7 +3707,12 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseCreateConstDnVec", "cusparseConstDnVecGet",
         "cusparseConstDnVecGetValues", "cusparseSpMM",
         "cusparseSpMM_bufferSize", "cusparseSpMV", "cusparseSpMV_bufferSize",
-        "cusparseSpMM_preprocess");
+        "cusparseSpMM_preprocess", "cusparseSpGEMM_compute",
+        "cusparseSpGEMM_copy", "cusparseSpGEMM_createDescr",
+        "cusparseSpGEMM_destroyDescr", "cusparseSpGEMM_workEstimation",
+        "cusparseSpSV_createDescr", "cusparseSpSV_destroyDescr",
+        "cusparseSpSV_solve", "cusparseSpSV_bufferSize",
+        "cusparseSpSV_analysis");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -11971,11 +11987,17 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
 
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
+    if (isAssigned(C)) {
+      emplaceTransformation(new ReplaceToken(
+          C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
+                                "get_kernel_function_info"));
+      emplaceTransformation(new InsertAfterStmt(C, ")"));
+    } else {
+      emplaceTransformation(
+          new ReplaceToken(C->getBeginLoc(), MapNames::getDpctNamespace() +
+                                                 "get_kernel_function_info"));
+    }
     requestFeature(HelperFeatureEnum::device_ext);
-    emplaceTransformation(new ReplaceToken(
-        C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
-                              "get_kernel_function_info"));
-    emplaceTransformation(new InsertAfterStmt(C, ")"));
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));
   } else if (auto C = getNodeAsType<CallExpr>(Result, "callFuncGetAttribute")) {

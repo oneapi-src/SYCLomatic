@@ -699,7 +699,7 @@ these exceptions. For example:
           void test() {
             int *ptr;
             if (cudaMalloc(&ptr, sizeof(int))) {
-              std::cout << “error” << std::endl;
+              std::cout << "error" << std::endl;
             }
           }
      - .. code-block::
@@ -737,7 +737,7 @@ shows one implementation of an asynchronous exception handler, migrated to SYCL:
             int *ptr;
             kernel<<<1, 1>>>();
             if (cudaDeviceSynchronize()) {
-              std::cout << “error” << std::endl;
+              std::cout << "error" << std::endl;
             }
           }
      - .. code-block::

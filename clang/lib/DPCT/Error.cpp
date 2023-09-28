@@ -156,10 +156,9 @@ void ShowStatus(int Status, std::string Message) {
                    "as or a parent directory of --in-root";
     break;
   case MigrationErrorNoAPIMapping:
-    StatusString =
-        "Error: The API mapping query for this API is not available yet. You "
-        "may get the API mapping by migrating a sample code of this API with "
-        "the tool.";
+    StatusString = "Error: The API mapping query for this API is not available "
+                   "yet. You may get the API mapping by migrating sample code "
+                   "from this CUDA API to the SYCL API with the tool.";
     break;
   case MigrationErrorAPIMappingWrongCUDAHeader:
     StatusString =

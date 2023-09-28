@@ -15,9 +15,15 @@ namespace dpct {
 
 std::unordered_map<std::string, size_t> APIMapping::EntryMap;
 std::vector<llvm::StringRef> APIMapping::EntryArray;
+std::set<std::string> APIMapping::EntrySet;
+bool APIMapping::PrintAll;
 
 void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
   std::replace(Name.begin(), Name.end(), '$', ':');
+  if (getPrintAll()) {
+    EntrySet.insert(Name);
+    return;
+  }
   const auto TargetIndex = EntryArray.size();
   EntryMap[Name] = TargetIndex; // Set the entry whether it exist or not.
   // Try to fuzz the original API name (only when the entry not exist):
@@ -68,6 +74,11 @@ llvm::StringRef APIMapping::getAPISourceCode(std::string Key) {
   if (Iter == EntryMap.end())
     return llvm::StringRef{};
   return EntryArray[Iter->second];
+}
+
+void APIMapping::printAll() {
+  for (const auto &Name : EntrySet)
+    llvm::outs() << Name << "\n";
 }
 
 } // namespace dpct

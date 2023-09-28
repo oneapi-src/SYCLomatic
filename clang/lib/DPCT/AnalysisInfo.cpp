@@ -1018,7 +1018,7 @@ void DpctFileInfo::buildReplacements() {
     if (std::get<2>(AtomicInfo.second))
       DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
                                Diagnostics::API_NOT_OCCURRED_IN_AST, true,
-                               false, std::get<1>(AtomicInfo.second));
+                               true, std::get<1>(AtomicInfo.second));
   }
 
   for (auto &DescInfo : EventSyncTypeMap) {
@@ -2644,7 +2644,6 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     return;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts());
   buildTextureObjectArgsInfo(CE);
-
   bool HasImplicitArg = false;
   if (auto FD = CE->getDirectCallee()) {
     IsAllTemplateArgsSpecified = deduceTemplateArguments(CE, FD, TemplateArgs);
@@ -2679,14 +2678,39 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
       // before the comma
       if (CE->getNumArgs() > FuncInfo->NonDefaultParamNum - 1) {
         auto &SM = DpctGlobalInfo::getSourceManager();
-        auto TokenLoc = Lexer::getLocForEndOfToken(
-            getActualInsertLocation(
-                CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg)
-                    ->getEndLoc(),
-                SM, DpctGlobalInfo::getContext().getLangOpts()),
-            0, SM, DpctGlobalInfo::getContext().getLangOpts());
+        auto CERange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
+        auto TempLoc = Lexer::getLocForEndOfToken(CERange.getEnd(),  0, SM, DpctGlobalInfo::getContext().getLangOpts());
+        auto PairRange = getRangeInRange(CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg), CERange.getBegin(), TempLoc);
+        auto RealEnd = PairRange.second;
+        auto IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+            getCombinedStrFromLoc(RealEnd));
+        if (IT !=
+                dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+            IT->second->TokenIndex == IT->second->NumTokens) {
+          RealEnd = SM.getImmediateExpansionRange(
+                          CE->getArg(FuncInfo->NonDefaultParamNum - 1 +
+                                     HasImplicitArg)
+                              ->getEndLoc())
+                        .getEnd();
+          RealEnd = Lexer::getLocForEndOfToken(
+              RealEnd, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+          IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+              getCombinedStrFromLoc(RealEnd));
+        }
+        while (
+            IT !=
+                dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+            RealEnd.isMacroID() &&
+            IT->second->TokenIndex == IT->second->NumTokens) {
+          RealEnd = SM.getImmediateExpansionRange(RealEnd).getEnd();
+          RealEnd = Lexer::getLocForEndOfToken(
+              RealEnd, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+          IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+              getCombinedStrFromLoc(RealEnd));
+        }
+
         ExtraArgLoc =
-            DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
+            DpctGlobalInfo::getSourceManager().getFileOffset(RealEnd);
       } else {
         ExtraArgLoc = 0;
       }

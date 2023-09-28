@@ -463,7 +463,7 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
 
   Ty *a_strided_mem =
       (Ty *)dpct::dpct_malloc(stride_a * batch_size * sizeof(Ty), exec_queue);
-  T **host_a = (T **)malloc(batch_size * sizeof(T *));
+  T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
   dpct::dpct_memcpy(host_a, a, batch_size * sizeof(T *));
   for (std::int64_t i = 0; i < batch_size; ++i)
     dpct::dpct_memcpy(a_strided_mem + i * stride_a, host_a[i],
@@ -499,7 +499,7 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
 
   exec_queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(events);
-    cgh.host_task([=] { free(host_a); });
+    cgh.host_task([=] { std::free(host_a); });
   });
 #endif
 }
@@ -546,7 +546,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
   T *a_buffer_ptr;
   a_buffer_ptr = (T *)dpct_malloc(stride_a * batch_size * sizeof(T));
 
-  T **host_a = (T **)malloc(batch_size * sizeof(T *));
+  T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
   for (std::int64_t i = 0; i < batch_size; ++i)
     dpct_memcpy(a_buffer_ptr + i * stride_a, host_a[i], n * lda * sizeof(T));
@@ -585,7 +585,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptrs, events);
   mem_free_thread.detach();
@@ -657,8 +657,8 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
   a_buffer_ptr = (T *)dpct_malloc(stride_a * batch_size * sizeof(T));
   b_buffer_ptr = (T *)dpct_malloc(stride_b * batch_size * sizeof(T));
 
-  T **host_a = (T **)malloc(batch_size * sizeof(T *));
-  T **host_b = (T **)malloc(batch_size * sizeof(T *));
+  T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
+  T **host_b = (T **)std::malloc(batch_size * sizeof(T *));
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
   dpct_memcpy(host_b, b, batch_size * sizeof(T *));
   for (std::int64_t i = 0; i < batch_size; ++i) {
@@ -700,7 +700,7 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptrs, events);
   mem_free_thread.detach();
@@ -770,8 +770,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
   T *b_buffer_ptr;
   b_buffer_ptr = (T *)dpct_malloc(stride_b * batch_size * sizeof(T));
 
-  T **host_a = (T **)malloc(batch_size * sizeof(T *));
-  T **host_b = (T **)malloc(batch_size * sizeof(T *));
+  T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
+  T **host_b = (T **)std::malloc(batch_size * sizeof(T *));
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
   dpct_memcpy(host_b, b, batch_size * sizeof(T *));
 
@@ -816,7 +816,7 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptrs, events);
   mem_free_thread.detach();
@@ -889,8 +889,8 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
   a_buffer_ptr = (T *)dpct_malloc(stride_a * batch_size * sizeof(T));
   tau_buffer_ptr = (T *)dpct_malloc(stride_tau * batch_size * sizeof(T));
 
-  T **host_a = (T **)malloc(batch_size * sizeof(T *));
-  T **host_tau = (T **)malloc(batch_size * sizeof(T *));
+  T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
+  T **host_tau = (T **)std::malloc(batch_size * sizeof(T *));
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
   dpct_memcpy(host_tau, tau, batch_size * sizeof(T *));
 
@@ -923,7 +923,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptr_a, events_a);
   std::thread mem_free_thread_tau(
@@ -931,7 +931,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
           std::vector<sycl::event> events_array) {
         sycl::event::wait(events_array);
         for (auto p : pointers_array)
-          free(p);
+          std::free(p);
       },
       ptr_tau, events_tau);
   mem_free_thread_a.detach();

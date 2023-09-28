@@ -12,4 +12,12 @@ __global__ void kernelFuncBfloat162Arithmetic() {
   bf162 = __h2div(bf162_1, bf162_2);
 }
 
+__global__ void kernelFuncBfloat16Comparison() {
+  // CHECK: sycl::ext::oneapi::bfloat16 bf16_1, bf16_2;
+  __nv_bfloat16 bf16_1, bf16_2;
+  bool b;
+  // CHECK: b = bf16_1 == bf16_2;
+  b = __heq(bf16_1, bf16_2);
+}
+
 int main() { return 0; }
