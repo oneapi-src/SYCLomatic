@@ -1289,7 +1289,8 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
               returns(asString("cusparseStatus_t")),
               returns(asString("cusolverStatus_t")),
               returns(asString("cufftResult_t")),
-              returns(asString("curandStatus_t"))),
+              returns(asString("curandStatus_t")),
+              returns(asString("ncclResult_t"))),
         // cudaGetLastError returns cudaError_t but won't fail in the call
         unless(hasName("cudaGetLastError")),
         anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost)));

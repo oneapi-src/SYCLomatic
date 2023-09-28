@@ -490,6 +490,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaFuncAttributes",
        std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
                                       "kernel_function_info")},
+      {"ncclResult_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -1305,6 +1306,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUSOLVER_EIG_RANGE_ALL", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::all")},
       {"CUSOLVER_EIG_RANGE_V", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::values")},
       {"CUSOLVER_EIG_RANGE_I", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
+      {"ncclSuccess", std::make_shared<EnumNameRule>("0")},
       // ...
   };
 
