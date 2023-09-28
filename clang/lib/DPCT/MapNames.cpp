@@ -899,6 +899,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(
            "get_max_compute_units",
            HelperFeatureEnum::device_ext)},
+      {"cudaDevAttrMaxThreadsPerBlock",
+       std::make_shared<EnumNameRule>(
+           "get_max_work_group_size",
+           HelperFeatureEnum::device_ext)},
       {"cudaDevAttrClockRate",
        std::make_shared<EnumNameRule>(
            "get_max_clock_frequency",
