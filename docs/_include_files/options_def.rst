@@ -71,20 +71,6 @@ Limit extension change to ``.cu`` and ``.cuh`` files only. Default: ``off``.
 
 
 
-.. _opt-change-filename-extension:
-
-``--change-filename-extension=<file>``
-
-.. _desc-change-filename-extension:
-
-DEPRECATED: A comma-separated list that specifies which extensions of migrated
-files will be changed. Default: ``.cu``, ``.cuh``, ``.cpp``, ``.cxx``, ``.cc``,
-``.c``, ``.C``
-
-.. _end-change-filename-extension:
-
-
-
 .. _opt-check-unicode-security:
 
 ``--check-unicode-security``
@@ -243,6 +229,32 @@ Provides a list of ``dpct`` specific options.
 
 
 
+.. _opt-helper-func-dir:
+
+``--helper-function-dir``
+
+.. _desc-helper-func-dir:
+
+Print the installation directory for helper function header files.
+
+.. _end-helper-func-dir:
+
+
+
+.. _opt-helper-func-pref:
+
+``--helper-function-preference=<value>``
+
+.. _desc-helper-func-pref:
+
+The preference of helper function usage in migration. Value:
+
+- ``=no-queue-device``: Call SYCL API to get queue and device instead of calling helper function.
+
+.. _end-helper-func-pref:
+
+
+
 .. _opt-in-root:
 
 ``--in-root=<dir>``
@@ -316,9 +328,12 @@ is used.
 A comma-separated list of extensions not to be used in migrated code.
 By default, these extensions are used in migrated code.
 
+The values are:
+
 - ``=enqueued_barriers``: Enqueued barriers extension.
 - ``=device_info``: Use the Intel extensions for device information if supported
   by the compiler and the backend.
+- ``=bfloat16``: Use the SYCL extensions for bfloat16.
 
 .. _end-no-dpcpp-extensions:
 
@@ -424,7 +439,7 @@ Sets the output verbosity level:
 
 .. _opt-p:
 
--p
+``-p``
 
 .. _desc-p:
 
@@ -467,6 +482,20 @@ hidden, from the ``--in-root`` directory to the output directory.
 ``--process-all`` is ignored if input files are provided on the command line.
 
 .. _end-process-all:
+
+
+
+
+.. _opt-query-api-map:
+
+``-query-api-mapping=<api>``
+
+.. _desc-query-api-map:
+
+Query functionally-compatible SYCL API to migrate CUDA API.
+
+.. _end-query-api-map:
+
 
 
 
@@ -567,7 +596,7 @@ Stop migration and generation of reports if parsing errors happened. Default: ``
 .. _desc-suppress-warnings:
 
 A comma-separated list of migration warnings to suppress. Valid warning IDs
-range from 1000 to 1100. Hyphen-separated ranges are also allowed. For
+range from 1000 to 1118. Hyphen-separated ranges are also allowed. For
 example: ``-suppress-warnings=1000-1010,1011``.
 
 .. _end-suppress-warnings:
@@ -650,6 +679,7 @@ By default, experimental features will not be used in migrated code.
 
 The values are:
 
+- ``=bfloat16_math_functions``: Experimental extension that allows use of bfloat16 math functions.
 - ``=dpl-experimental-api``: Experimental extension that allows use of experimental
   oneDPL APIs.
 - ``=free-function-queries``: Experimental extension that allows getting
@@ -661,8 +691,8 @@ The values are:
   group work-items.
 - ``=masked-sub-group-operation``: Experimental helper function used to execute
   sub-group operation with mask.
-- ``=nd_range_barrier``: Experimental helper function used to help cross
-  group synchronization during migration.
+- ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix".
+- ``=nd_range_barrier``: Experimental helper function used to help cross-group synchronization during migration.
 - ``=occupancy-calculation``: Experimental helper function used to calculate occupancy.
 - ``=user-defined-reductions``: Experimental extension that allows user-defined
   reductions.

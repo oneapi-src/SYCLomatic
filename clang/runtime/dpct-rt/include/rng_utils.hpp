@@ -479,7 +479,7 @@ private:
   template <typename distr_t, typename buffer_t, class... distr_params_t>
   void generate(buffer_t *output, const std::int64_t n,
                 const distr_params_t... distr_params) {
-    auto output_buf = dpct::detail::get_memory(output);
+    auto output_buf = dpct::detail::get_memory<buffer_t>(output);
     oneapi::mkl::rng::generate(distr_t(distr_params...), _engine, n,
                                output_buf);
   }

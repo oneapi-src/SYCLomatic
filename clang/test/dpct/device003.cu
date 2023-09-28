@@ -38,6 +38,10 @@ int atomicSupported;
 // CHECK: checkErrors(DPCT_CHECK_ERROR(atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));
 checkErrors(cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id));
 
+int maxThreadsPerBlock;
+// CHECK: checkErrors(DPCT_CHECK_ERROR(maxThreadsPerBlock = dpct::dev_mgr::instance().get_device(0).get_max_work_group_size()));
+checkErrors(cudaDeviceGetAttribute(&maxThreadsPerBlock, cudaDevAttrMaxThreadsPerBlock, 0));
+
 int device1 = 0;
 int device2 = 1;
 int perfRank = 0;

@@ -1289,7 +1289,8 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
               returns(asString("cusparseStatus_t")),
               returns(asString("cusolverStatus_t")),
               returns(asString("cufftResult_t")),
-              returns(asString("curandStatus_t"))),
+              returns(asString("curandStatus_t")),
+              returns(asString("ncclResult_t"))),
         // cudaGetLastError returns cudaError_t but won't fail in the call
         unless(hasName("cudaGetLastError")),
         anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost)));
@@ -1638,7 +1639,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
               "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
               "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
-              "cusparseIndexBase_t", "cusparseMatrixType_t",
+              "cusparseIndexBase_t", "cusparseMatrixType_t", "cusparseAlgMode_t",
               "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
               "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
               "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
@@ -3592,12 +3593,11 @@ REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
 // Migrate spBLAS status values to corresponding int values
 // Other spBLAS named values are migrated to corresponding named values
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      declRefExpr(to(enumConstantDecl(matchesName(
-                      "(CUSPARSE_STATUS.*)|("
-                      "CUSPARSE_POINTER_MODE.*)"))))
-          .bind("SPBLASStatusConstants"),
-      this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
+                                "(CUSPARSE_STATUS.*)|(CUSPARSE_POINTER_MODE.*)|"
+                                "(CUSPARSE_ALG.*)"))))
+                    .bind("SPBLASStatusConstants"),
+                this);
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUSPARSE_OPERATION_.*)|(CUSPARSE_FILL_MODE_.*)|("
@@ -3689,6 +3689,8 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseDestroySolveAnalysisInfo",
         /*level 2*/
         "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv", "cusparseZcsrmv",
+        "cusparseScsrmv_mp", "cusparseDcsrmv_mp", "cusparseCcsrmv_mp",
+        "cusparseZcsrmv_mp", "cusparseCsrmvEx", "cusparseCsrmvEx_bufferSize",
         "cusparseScsrsv_analysis", "cusparseDcsrsv_analysis",
         "cusparseCcsrsv_analysis", "cusparseZcsrsv_analysis",
         /*level 3*/
@@ -3736,7 +3738,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   StringRef FuncNameRef(FuncName);
-  if (FuncNameRef.endswith("csrmv")) {
+  if (FuncNameRef.endswith("csrmv") || FuncNameRef.endswith("csrmv_mp")) {
     report(
         DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
         Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
