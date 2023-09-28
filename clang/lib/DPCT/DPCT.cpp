@@ -758,7 +758,12 @@ int runDPCT(int argc, const char **argv) {
   std::string QueryAPIMappingSrc;
   std::string QueryAPIMappingOpt;
   if (DpctGlobalInfo::isQueryAPIMapping()) {
+    APIMapping::setPrintAll(QueryAPIMapping == "-");
     APIMapping::initEntryMap();
+    if (APIMapping::getPrintAll()) {
+      APIMapping::printAll();
+      dpctExit(MigrationSucceeded);
+    }
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       ShowStatus(MigrationErrorNoAPIMapping);
