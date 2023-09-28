@@ -121,6 +121,91 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
 #endif
 }
 
+/// Computes a CSR format sparse matrix-dense vector product.
+/// y = alpha * op(A) * x + beta * y
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans The operation applied to the matrix A.
+/// \param [in] num_rows Number of rows of the matrix A.
+/// \param [in] num_cols Number of columns of the matrix A.
+/// \param [in] alpha Scaling factor for the matrix A.
+/// \param [in] alpha_type Data type of \p alpha .
+/// \param [in] info Matrix info of the matrix A.
+/// \param [in] val An array containing the non-zero elements of the matrix A.
+/// \param [in] val_type Data type of \p val .
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in] x Data of the vector x.
+/// \param [in] x_type Data type of \p x .
+/// \param [in] beta Scaling factor for the vector x.
+/// \param [in] beta_type Data type of \p beta .
+/// \param [in, out] y Data of the vector y.
+/// \param [in] y_type Data type of \p y .
+inline void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans,
+                  int num_rows, int num_cols, const void *alpha,
+                  library_data_t alpha_type,
+                  const std::shared_ptr<matrix_info> info, const void *val,
+                  library_data_t val_type, const int *row_ptr,
+                  const int *col_ind, const void *x, library_data_t x_type,
+                  const void *beta, library_data_t beta_type, void *y,
+                  library_data_t y_type) {
+  std::uint64_t key = dpct::detail::get_type_combination_id(
+      alpha_type, val_type, x_type, beta_type, y_type);
+  switch (key) {
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float): {
+    csrmv<float>(queue, trans, num_rows, num_cols,
+                 static_cast<const float *>(alpha), info,
+                 static_cast<const float *>(val), row_ptr, col_ind,
+                 static_cast<const float *>(x),
+                 static_cast<const float *>(beta), static_cast<float *>(y));
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double): {
+    csrmv<double>(queue, trans, num_rows, num_cols,
+                  static_cast<const double *>(alpha), info,
+                  static_cast<const double *>(val), row_ptr, col_ind,
+                  static_cast<const double *>(x),
+                  static_cast<const double *>(beta), static_cast<double *>(y));
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_float, library_data_t::complex_float,
+      library_data_t::complex_float, library_data_t::complex_float,
+      library_data_t::complex_float): {
+    csrmv<std::complex<float>>(
+        queue, trans, num_rows, num_cols,
+        static_cast<const std::complex<float> *>(alpha), info,
+        static_cast<const std::complex<float> *>(val), row_ptr, col_ind,
+        static_cast<const std::complex<float> *>(x),
+        static_cast<const std::complex<float> *>(beta),
+        static_cast<std::complex<float> *>(y));
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_double, library_data_t::complex_double,
+      library_data_t::complex_double, library_data_t::complex_double,
+      library_data_t::complex_double): {
+    csrmv<std::complex<double>>(
+        queue, trans, num_rows, num_cols,
+        static_cast<const std::complex<double> *>(alpha), info,
+        static_cast<const std::complex<double> *>(val), row_ptr, col_ind,
+        static_cast<const std::complex<double> *>(x),
+        static_cast<const std::complex<double> *>(beta),
+        static_cast<std::complex<double> *>(y));
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
+
 /// Computes a CSR format sparse matrix-dense matrix product.
 /// C = alpha * op(A) * B + beta * C
 /// \param [in] queue The queue where the routine should be executed. It must
