@@ -449,7 +449,7 @@ public:
           "dpct::sparse::sparse_matrix_desc::set_value(): The value "
           "pointer is NULL.");
     }
-    if (_value) {
+    if (_value && (_value != value)) {
       throw std::runtime_error(
           "dpct::sparse::sparse_matrix_desc::set_value(): "
           "The _value pointer is not NULL. It cannot be reset.");
@@ -537,12 +537,12 @@ public:
           "dpct::sparse::sparse_matrix_desc::set_pointers(): The "
           "col_ind pointer is NULL.");
     }
-    if (_row_ptr) {
+    if (_row_ptr && (_row_ptr != row_ptr)) {
       throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_pointers("
                                "): The _row_ptr pointer is "
                                "not NULL. It cannot be reset.");
     }
-    if (_col_ind) {
+    if (_col_ind && (_col_ind != col_ind)) {
       throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_pointers("
                                "): The _col_ind pointer is "
                                "not NULL. It cannot be reset.");
