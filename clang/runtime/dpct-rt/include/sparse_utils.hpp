@@ -377,26 +377,6 @@ public:
     oneapi::mkl::sparse::release_matrix_handle(get_default_queue(),
                                                &_matrix_handle, _deps)
         .wait();
-#ifdef DPCT_USM_LEVEL_NONE
-    if (_data_row_ptr_32)
-      delete _data_row_ptr_32;
-    if (_data_row_ptr_64)
-      delete _data_row_ptr_64;
-    if (_data_col_ind_32)
-      delete _data_col_ind_32;
-    if (_data_col_ind_64)
-      delete _data_col_ind_64;
-    if (_data_value_s)
-      delete _data_value_s;
-    if (_data_value_d)
-      delete _data_value_d;
-    if (_data_value_c)
-      delete _data_value_c;
-    if (_data_value_z)
-      delete _data_value_z;
-#endif
-    if (_shadow_row_ptr)
-      dpct::dpct_free(_shadow_row_ptr);
   }
 
   /// Add dependency for the destroy method.
@@ -578,7 +558,7 @@ public:
   /// internal memory for it in the constructor. The internal memory can be gotten
   /// from this interface.
   /// \return The shadow row_ptr.
-  void *get_shadow_row_ptr() const noexcept { return _shadow_row_ptr; }
+  void *get_shadow_row_ptr() const noexcept { return _shadow_row_ptr.get(); }
   /// Get the type of the col_ind pointer.
   /// \return The type of the col_ind pointer.
   library_data_t get_col_ind_type() const noexcept { return _col_ind_type; }
@@ -587,50 +567,40 @@ public:
   std::int64_t get_row_num() const noexcept { return _row_num; }
 
 private:
+  template <typename index_t, typename value_t> void set_data() {
+    void *row_ptr = nullptr;
+    if (_shadow_row_ptr) {
+      row_ptr = _shadow_row_ptr.get();
+    } else if (_row_ptr) {
+      row_ptr = _row_ptr;
+    } else {
+      row_ptr = dpct::dpct_malloc(sizeof(index_t) * (_row_num + 1),
+                                  get_default_queue());
+      _shadow_row_ptr = std::unique_ptr<void>(row_ptr, [](void *ptr) {
+        if (ptr)
+          dpct::dpct_free(ptr);
+      });
+    }
 #ifdef DPCT_USM_LEVEL_NONE
-#define SET_DATA(INDEX_TYPE, INDEX_SUFFIX, VALUE_TYPE, VALUE_SUFFIX)           \
-  do {                                                                         \
-    void *row_ptr = nullptr;                                                   \
-    if (_shadow_row_ptr) {                                                     \
-      row_ptr = _shadow_row_ptr;                                               \
-    } else if (_row_ptr) {                                                     \
-      row_ptr = _row_ptr;                                                      \
-    } else {                                                                   \
-      row_ptr = _shadow_row_ptr = dpct::dpct_malloc(                           \
-          sizeof(INDEX_TYPE) * (_row_num + 1), get_default_queue());           \
-    }                                                                          \
-    _data_row_ptr##INDEX_SUFFIX =                                              \
-        new sycl::buffer<INDEX_TYPE>(dpct::get_buffer<INDEX_TYPE>(row_ptr));   \
-    _data_col_ind##INDEX_SUFFIX =                                              \
-        new sycl::buffer<INDEX_TYPE>(dpct::get_buffer<INDEX_TYPE>(_col_ind));  \
-    _data_value##VALUE_SUFFIX =                                                \
-        new sycl::buffer<VALUE_TYPE>(dpct::get_buffer<VALUE_TYPE>(_value));    \
-    oneapi::mkl::sparse::set_csr_data(                                         \
-        get_default_queue(), _matrix_handle, _row_num, _col_num, _base,        \
-        *_data_row_ptr##INDEX_SUFFIX, *_data_col_ind##INDEX_SUFFIX,            \
-        *_data_value##VALUE_SUFFIX);                                           \
-    get_default_queue().wait();                                                \
-  } while (0)
+    using data_index_t = sycl::buffer<index_t>;
+    using data_value_t = sycl::buffer<value_t>;
 #else
-#define SET_DATA(INDEX_TYPE, INDEX_SUFFIX, VALUE_TYPE, VALUE_SUFFIX)           \
-  do {                                                                         \
-    void *row_ptr = nullptr;                                                   \
-    if (_shadow_row_ptr) {                                                     \
-      row_ptr = _shadow_row_ptr;                                               \
-    } else if (_row_ptr) {                                                     \
-      row_ptr = _row_ptr;                                                      \
-    } else {                                                                   \
-      row_ptr = _shadow_row_ptr = dpct::dpct_malloc(                           \
-          sizeof(INDEX_TYPE) * (_row_num + 1), get_default_queue());           \
-    }                                                                          \
-    oneapi::mkl::sparse::set_csr_data(                                         \
-        get_default_queue(), _matrix_handle, _row_num, _col_num, _base,        \
-        reinterpret_cast<INDEX_TYPE *>(row_ptr),                               \
-        reinterpret_cast<INDEX_TYPE *>(_col_ind),                              \
-        reinterpret_cast<VALUE_TYPE *>(_value));                               \
-    get_default_queue().wait();                                                \
-  } while (0)
+    using data_index_t = index_t *;
+    using data_value_t = value_t *;
 #endif
+    std::get<data_index_t>(_data_row_ptr) =
+        dpct::detail::get_memory(reinterpret_cast<index_t *>(row_ptr));
+    std::get<data_index_t>(_data_col_ind) =
+        dpct::detail::get_memory(reinterpret_cast<index_t *>(_col_ind));
+    std::get<data_value_t>(_data_value) =
+        dpct::detail::get_memory(reinterpret_cast<value_t *>(_value));
+    oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,
+                                      _row_num, _col_num, _base,
+                                      std::get<data_index_t>(_data_row_ptr),
+                                      std::get<data_index_t>(_data_col_ind),
+                                      std::get<data_value_t>(_data_value));
+    get_default_queue().wait();
+  }
 
   void set_data() {
     std::uint64_t key = dpct::detail::get_type_combination_id(
@@ -639,56 +609,55 @@ private:
     case dpct::detail::get_type_combination_id(library_data_t::real_int32,
                                                library_data_t::real_int32,
                                                library_data_t::real_float): {
-      SET_DATA(std::int32_t, _32, float, _s);
+      set_data<std::int32_t, float>();
       break;
     }
     case dpct::detail::get_type_combination_id(library_data_t::real_int32,
                                                library_data_t::real_int32,
                                                library_data_t::real_double): {
-      SET_DATA(std::int32_t, _32, double, _d);
+      set_data<std::int32_t, double>();
       break;
     }
     case dpct::detail::get_type_combination_id(library_data_t::real_int32,
                                                library_data_t::real_int32,
                                                library_data_t::complex_float): {
-      SET_DATA(std::int32_t, _32, std::complex<float>, _c);
+      set_data<std::int32_t, std::complex<float>>();
       break;
     }
     case dpct::detail::get_type_combination_id(
         library_data_t::real_int32, library_data_t::real_int32,
         library_data_t::complex_double): {
-      SET_DATA(std::int32_t, _32, std::complex<double>, _z);
+      set_data<std::int32_t, std::complex<double>>();
       break;
     }
     case dpct::detail::get_type_combination_id(library_data_t::real_int64,
                                                library_data_t::real_int64,
                                                library_data_t::real_float): {
-      SET_DATA(std::int64_t, _64, float, _s);
+      set_data<std::int64_t, float>();
       break;
     }
     case dpct::detail::get_type_combination_id(library_data_t::real_int64,
                                                library_data_t::real_int64,
                                                library_data_t::real_double): {
-      SET_DATA(std::int64_t, _64, double, _d);
+      set_data<std::int64_t, double>();
       break;
     }
     case dpct::detail::get_type_combination_id(library_data_t::real_int64,
                                                library_data_t::real_int64,
                                                library_data_t::complex_float): {
-      SET_DATA(std::int64_t, _64, std::complex<float>, _c);
+      set_data<std::int64_t, std::complex<float>>();
       break;
     }
     case dpct::detail::get_type_combination_id(
         library_data_t::real_int64, library_data_t::real_int64,
         library_data_t::complex_double): {
-      SET_DATA(std::int64_t, _64, std::complex<double>, _z);
+      set_data<std::int64_t, std::complex<double>>();
       break;
     }
     default:
       throw std::runtime_error("the combination of data type is unsupported");
     }
   }
-#undef SET_DATA
 
   std::int64_t _row_num;
   std::int64_t _col_num;
@@ -705,17 +674,29 @@ private:
   matrix_format _data_format;
   std::optional<oneapi::mkl::uplo> _uplo;
   std::optional<oneapi::mkl::diag> _diag;
-  void *_shadow_row_ptr = nullptr;
-#ifdef DPCT_USM_LEVEL_NONE
-  sycl::buffer<std::int32_t> *_data_row_ptr_32 = nullptr;
-  sycl::buffer<std::int64_t> *_data_row_ptr_64 = nullptr;
-  sycl::buffer<std::int32_t> *_data_col_ind_32 = nullptr;
-  sycl::buffer<std::int64_t> *_data_col_ind_64 = nullptr;
-  sycl::buffer<float> *_data_value_s = nullptr;
-  sycl::buffer<double> *_data_value_d = nullptr;
-  sycl::buffer<std::complex<float>> *_data_value_c = nullptr;
-  sycl::buffer<std::complex<double>> *_data_value_z = nullptr;
-#endif
+  std::unique_ptr<void> _shadow_row_ptr;
+
+  static constexpr std::array<size_t, 7> buffer_size = {
+      sizeof(sycl::buffer<std::int32_t>),
+      sizeof(sycl::buffer<std::int64_t>),
+      sizeof(sycl::buffer<float>),
+      sizeof(sycl::buffer<double>),
+      sizeof(sycl::buffer<std::complex<float>>),
+      sizeof(sycl::buffer<std::complex<double>>),
+      sizeof(void *)};
+  static constexpr size_t max_size =
+      *std::max_element(buffer_size.begin(), buffer_size.end());
+  std::variant<std::array<std::byte, max_size>, sycl::buffer<std::int32_t>,
+               sycl::buffer<std::int64_t>, std::int32_t *, std::int64_t *>
+      _data_row_ptr;
+  std::variant<std::array<std::byte, max_size>, sycl::buffer<std::int32_t>,
+               sycl::buffer<std::int64_t>, std::int32_t *, std::int64_t *>
+      _data_col_ind;
+  std::variant<std::array<std::byte, max_size>, sycl::buffer<float>,
+               sycl::buffer<double>, sycl::buffer<std::complex<float>>,
+               sycl::buffer<std::complex<double>>, float *, double *,
+               std::complex<float> *, std::complex<double> *>
+      _data_value;
 };
 
 namespace detail {
