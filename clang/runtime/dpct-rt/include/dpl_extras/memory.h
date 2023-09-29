@@ -177,8 +177,8 @@ struct is_hetero_iterator<
 
 #ifdef DPCT_USM_LEVEL_NONE
 // Must be forward declared due to default argument
-template <typename T, typename U>
-device_pointer<T> device_new(device_pointer<U>, const T &,
+template <typename T>
+device_pointer<T> device_new(device_pointer<void>, const T &,
                              const std::size_t = 1);
 
 template <typename T, sycl::access_mode Mode, typename Allocator>
@@ -191,8 +191,8 @@ protected:
   std::size_t idx;
 
   // Declare friend to give access to protected buffer and idx members
-  template <typename T, typename U>
-  friend device_pointer<T> device_new(device_pointer<U>, const T &,
+  template <typename T>
+  friend device_pointer<T> device_new(device_pointer<void>, const T &,
                                       const std::size_t);
 
 public:
@@ -928,36 +928,42 @@ device_pointer<T> malloc_device(const std::size_t num_elements) {
 static inline device_pointer<void> malloc_device(const std::size_t num_bytes) {
   return device_pointer<void>(num_bytes);
 }
-
+template <typename T>
+device_pointer<T> device_new(device_pointer<::std::decay_t<T>> p,
+                             const T &value, const std::size_t count) {
+  ::std::uninitialized_fill(
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
+      p + count, value);
+  return p;
+}
 #ifdef DPCT_USM_LEVEL_NONE
-template <typename T, typename U>
-device_pointer<T> device_new(device_pointer<U> p, const T &value,
+template <typename T>
+device_pointer<T> device_new(device_pointer<void> p, const T &value,
                              const std::size_t count) {
   auto converted_buf = p.buffer.template reinterpret<T>(sycl::range<1>(count));
-  ::std::uninitialized_fill(
-      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      oneapi::dpl::begin(converted_buf), oneapi::dpl::end(converted_buf),
-      value);
-  return device_pointer<T>(converted_buf, p.idx);
+  return device_new(device_pointer<T>(converted_buf, p.idx), value, count);
 }
 // buffer manages lifetime
 template <typename T> void free_device(device_pointer<T> ptr) {}
 #else
-template <typename T, typename U>
-device_pointer<T> device_new(device_pointer<U> p, const T &value,
+template <typename T>
+device_pointer<T> device_new(device_pointer<void> p, const T &value,
                              const std::size_t count = 1) {
   dpct::device_pointer<T> converted_p(static_cast<T *>(p.get()));
-  ::std::uninitialized_fill(
-      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      converted_p, converted_p + count, value);
-  return converted_p;
+  return device_new(converted_p, value, count);
 }
 template <typename T> void free_device(device_pointer<T> ptr) {
   sycl::free(ptr.get(), dpct::get_default_queue());
 }
 #endif
-template <typename T, typename U>
-device_pointer<T> device_new(device_pointer<U> p, const std::size_t count = 1) {
+template <typename T>
+device_pointer<T> device_new(device_pointer<::std::decay_t<T>> p,
+                             const std::size_t count = 1) {
+  return device_new(p, T{}, count);
+}
+template <typename T>
+device_pointer<T> device_new(device_pointer<void> p,
+                             const std::size_t count = 1) {
   return device_new(p, T{}, count);
 }
 template <typename T>
@@ -968,9 +974,8 @@ device_pointer<T> device_new(const std::size_t count = 1) {
 template <typename T>
 typename std::enable_if<!std::is_trivially_destructible<T>::value, void>::type
 device_delete(device_pointer<T> p, const std::size_t count = 1) {
-  for (std::size_t i = 0; i < count; ++i) {
-    p[i].~T();
-  }
+  ::std::destroy(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+                 p, p + count);
   free_device(p);
 }
 template <typename T>
