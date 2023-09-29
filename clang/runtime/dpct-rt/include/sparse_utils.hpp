@@ -757,7 +757,7 @@ private:
       std::unique_ptr<void, std::function<void(void *)>>(
           nullptr, _shadow_row_ptr_deleter);
 
-  static constexpr std::array<size_t, 7> buffer_size = {
+  static constexpr std::array<size_t, 7> _data_variable_size_array = {
       sizeof(sycl::buffer<std::int32_t>),
       sizeof(sycl::buffer<std::int64_t>),
       sizeof(sycl::buffer<float>),
@@ -765,16 +765,19 @@ private:
       sizeof(sycl::buffer<std::complex<float>>),
       sizeof(sycl::buffer<std::complex<double>>),
       sizeof(void *)};
-  static constexpr size_t max_size =
-      *std::max_element(buffer_size.begin(), buffer_size.end());
-  std::variant<std::array<std::byte, max_size>, sycl::buffer<std::int32_t>,
-               sycl::buffer<std::int64_t>, std::int32_t *, std::int64_t *>
+  static constexpr size_t _max_data_variable_size = *std::max_element(
+      _data_variable_size_array.begin(), _data_variable_size_array.end());
+  std::variant<std::array<std::byte, _max_data_variable_size>,
+               sycl::buffer<std::int32_t>, sycl::buffer<std::int64_t>,
+               std::int32_t *, std::int64_t *>
       _data_row_ptr;
-  std::variant<std::array<std::byte, max_size>, sycl::buffer<std::int32_t>,
-               sycl::buffer<std::int64_t>, std::int32_t *, std::int64_t *>
+  std::variant<std::array<std::byte, _max_data_variable_size>,
+               sycl::buffer<std::int32_t>, sycl::buffer<std::int64_t>,
+               std::int32_t *, std::int64_t *>
       _data_col_ind;
-  std::variant<std::array<std::byte, max_size>, sycl::buffer<float>,
-               sycl::buffer<double>, sycl::buffer<std::complex<float>>,
+  std::variant<std::array<std::byte, _max_data_variable_size>,
+               sycl::buffer<float>, sycl::buffer<double>,
+               sycl::buffer<std::complex<float>>,
                sycl::buffer<std::complex<double>>, float *, double *,
                std::complex<float> *, std::complex<double> *>
       _data_value;
