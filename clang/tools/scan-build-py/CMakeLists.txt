@@ -167,7 +167,7 @@ if (SYCLomatic_CUSTOMIZATION)
     )
 
     install(TARGETS intercept-stub
-            DESTINATION lib/libear
+            DESTINATION ${CMAKE_BINARY_DIR}/lib/libear
             COMPONENT dpct-intercept-build
     )
 
