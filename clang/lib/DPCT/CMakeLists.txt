@@ -100,9 +100,20 @@ add_subdirectory(ConfusableTable)
 add_clang_library(DPCT
   ASTTraversal.cpp
   AnalysisInfo.cpp
+  Rewriters/CUB/CallExprRewriterCUB.cpp
+  Rewriters/CUB/RewriterClassMethods.cpp
+  Rewriters/CUB/RewriterDeviceHistgram.cpp
+  Rewriters/CUB/RewriterDeviceRadixSort.cpp
+  Rewriters/CUB/RewriterDeviceReduce.cpp
+  Rewriters/CUB/RewriterDeviceRunLengthEncode.cpp
+  Rewriters/CUB/RewriterDeviceScan.cpp
+  Rewriters/CUB/RewriterDeviceSegmentedRadixSort.cpp
+  Rewriters/CUB/RewriterDeviceSegmentedReduce.cpp
+  Rewriters/CUB/RewriterDeviceSegmentedSort.cpp
+  Rewriters/CUB/RewriterDeviceSelect.cpp
+  Rewriters/CUB/RewriterUtilityFunctions.cpp
   CallExprRewriter.cpp
   CallExprRewriterAtomic.cpp
-  CallExprRewriterCUB.cpp
   CallExprRewriterCUFFT.cpp
   CallExprRewriterCUBLAS.cpp
   CallExprRewriterCURAND.cpp
