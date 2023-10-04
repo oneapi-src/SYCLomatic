@@ -565,7 +565,7 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       typedefDecl(
           hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasAnyName(
-              "WarpScan", "WarpReduce", "BlockScan", "BlockReduce")))))))
+              "WarpScan", "WarpReduce", "BlockScan", "BlockReduce", "BlockExchange")))))))
           .bind("TypeDefDecl"),
       this);
 
@@ -582,7 +582,7 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
                                       "InclusiveSum", "ExclusiveSum",
                                       "InclusiveScan", "ExclusiveScan",
-                                      "Reduce", "Sum", "Broadcast", "Scan")))))
+                                      "Reduce", "Sum", "Broadcast", "Scan", "ScatterToBlocked")))))
                     .bind("MemberCall"),
                 this);
 
@@ -684,7 +684,8 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
                  ObjTypeStr.find("class cub::WarpReduce") == 0) {
         Repl = DpctGlobalInfo::getSubGroup(DRE);
       } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
-                 ObjTypeStr.find("class cub::BlockReduce") == 0) {
+                 ObjTypeStr.find("class cub::BlockReduce") == 0 ||
+                 ObjTypeStr.find("class sub::BlockExchange") == 0) {
         Repl = DpctGlobalInfo::getGroup(DRE);
       } else {
         continue;
@@ -749,7 +750,8 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
               !(ObjTypeStr.find("class cub::WarpScan") == 0 ||
                 ObjTypeStr.find("class cub::WarpReduce") == 0 ||
                 ObjTypeStr.find("class cub::BlockScan") == 0 ||
-                ObjTypeStr.find("class cub::BlockReduce") == 0)) {
+                ObjTypeStr.find("class cub::BlockReduce") == 0 ||
+                ObjTypeStr.find("class sub::BlockExchange") == 0)) {
             DeleteFlag = false;
             break;
           }
@@ -1139,6 +1141,29 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
     Repl = NewFuncName + "(" + ParamList + ")";
     emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
+  }else if (FuncName == "ScatterToBlocked"){
+    if (BlockMC->getMethodDecl()
+            ->getParamDecl(0)
+            ->getType()
+            ->isLValueReferenceType()) {
+      GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
+      NewFuncName = MapNames::getDpctNamespace() + "group::exchange::scatter_to_blocked";
+      requestFeature(HelperFeatureEnum::device_ext);
+      DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
+                                                 HT_DPCT_DPL_Utils);
+      const Expr *InData = FuncArgs[0];
+      ExprAnalysis InEA(InData);
+      OpRepl = getOpRepl(nullptr);
+      //Func Signature : scatter_to_blocked(Item item, T (&keys)[VALUES_PER_THREAD], int (&ranks)[VALUES_PER_THREAD]) 
+      if (FuncName ==  "ScatterToBlocked" && NumArgs != 3){
+      report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             "cub::" + FuncName);
+      return;
+      
+      }
+      CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
+      Repl = NewFuncName + "(" + ParamList + ")";
+      emplaceTransformation(new ReplaceStmt(BlockMC, Repl));  
   }
 }
 
@@ -1304,7 +1329,8 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
              ObjTypeStr.find("class cub::WarpReduce") == 0) {
     processWarpLevelMemberCall(MC);
   } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
-             ObjTypeStr.find("class cub::BlockReduce") == 0) {
+             ObjTypeStr.find("class cub::BlockReduce") == 0||
+             ObjTypeStr.find("class cub::BlockExchange" == 0)) {
     processBlockLevelMemberCall(MC);
   } else {
     report(MC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, ObjTypeStr);
@@ -1328,7 +1354,8 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
                                       MapNames::getClNamespace() + "sub_group",
                                       SM));
   } else if (TypeName.find("class cub::BlockScan") == 0 ||
-             TypeName.find("class cub::BlockReduce") == 0) {
+             TypeName.find("class cub::BlockReduce") == 0 ||
+             TypeName.find("class cub::BlockExchange") ==  0) {
     auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
     if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
                            DeviceFuncDecl->hasAttr<CUDAGlobalAttr>())) {
