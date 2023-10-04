@@ -1141,13 +1141,20 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
     Repl = NewFuncName + "(" + ParamList + ")";
     emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
-  } else if (FuncName == "Sort"){
+  } else if (FuncName == "Sort" || FuncName == "SortDescending"){
     if (BlockMC->getMethodDecl()
             ->getParamDecl(0)
             ->getType()
             ->isLValueReferenceType()) {
       GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
-      NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort::sort";
+      if (FuncName == "Sort")
+        {
+           NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort::sort";
+        }
+      elif (FuncName == "SortDescending")
+        {
+           NewFuncName = MapNames::getDpctNAmespace() + "group::radix_sort<DESCENDING=true>::sort";
+        }
       requestFeature(HelperFeatureEnum::device_ext);
       DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                  HT_DPCT_DPL_Utils);
@@ -1155,7 +1162,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
       ExprAnalysis InEA(InData);
       OpRepl = getOpRepl(nullptr);
       //Func Signature : sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0, int end_bit = 8 * sizeof(T)) 
-      if (FuncName ==  "Sort" && NumArgs != 4){
+      if ((FuncName ==  "Sort" || FuncName == "SortDescending") && NumArgs != 4){
       report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              "cub::" + FuncName);
       return;
