@@ -762,7 +762,12 @@ int runDPCT(int argc, const char **argv) {
   std::string QueryAPIMappingSrc;
   std::string QueryAPIMappingOpt;
   if (DpctGlobalInfo::isQueryAPIMapping()) {
+    APIMapping::setPrintAll(QueryAPIMapping == "-");
     APIMapping::initEntryMap();
+    if (APIMapping::getPrintAll()) {
+      APIMapping::printAll();
+      dpctExit(MigrationSucceeded);
+    }
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       ShowStatus(MigrationErrorNoAPIMapping);
@@ -1110,7 +1115,8 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       if (RunResult == 1) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
-          StringRef ErrStr = getDpctTermStr();
+          std::string Err = getDpctTermStr();
+          StringRef ErrStr = Err;
           if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
                        QueryAPIMapping);

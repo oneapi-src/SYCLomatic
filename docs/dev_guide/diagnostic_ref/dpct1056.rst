@@ -22,7 +22,63 @@ will be removed.
 Suggestions to Fix
 ------------------
 
-If this variable is only used in host code, ignore this warning.
+For example, this original CUDA\* code:
 
-If the variable is also used in device code, you need to migrate this code again
-with ``--extra-arg="-xcuda"`` passed to the tool to explicitly specify the code language.
+.. code-block:: cpp
+   :linenos:
+
+   #include <stdio.h>
+   #include <cuda_runtime.h>
+   
+   static __constant__ const float const_a = 10.f;
+   
+   void foo_host() {
+     printf("%f\n", const_a);
+   }
+
+is migrated using the following migration command:
+
+.. code-block:: bash
+   :linenos:
+
+   dpct --out-root out test.h --extra-arg=-xc
+
+
+which results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1056:0: The use of const_a in device code was not detected. If this variable is
+   also used in device code, you need to rewrite the code.
+   */
+   static const float const_a = 10.f;
+   
+   void foo_host() {
+     printf("%f\n", const_a);
+   }
+
+If the variable "const_a" is only used in host code, just ignore the DPCT1056 warning. For example:
+
+.. code-block:: cpp
+   :linenos:
+
+   static const float const_a = 10.f;
+   
+   void foo_host() {
+     printf("%f\n", const_a);
+   }
+
+If the variable "const_a" is used in both host and device code, rewrite the migrated code. For example:
+
+.. code-block:: cpp
+   :linenos:
+
+   static const float const_a_host_ct1 = 10.f;
+   static dpct::constant_memory<const float, 0> const_a(10.f);
+   
+   void foo_host() {
+     printf("%f\n", const_a_host_ct1);
+   }
+
