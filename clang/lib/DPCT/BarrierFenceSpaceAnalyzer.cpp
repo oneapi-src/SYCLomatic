@@ -442,7 +442,15 @@ bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
     return false;
   }
   std::unordered_set<const DeviceFunctionInfo *> Visited{};
-  if (DeviceFunctionDecl::LinkRedecls(FD)->getVarMap().hasGlobalMemAcc()) {
+  auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+  if (!DFI) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case J: !DFI" << std::endl;
+#endif
+    return false;
+  }
+
+  if (DFI->getVarMap().hasGlobalMemAcc()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case I: Found device/managed variable usage"
               << std::endl;

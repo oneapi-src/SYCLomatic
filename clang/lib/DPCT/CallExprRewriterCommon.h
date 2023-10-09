@@ -1460,22 +1460,24 @@ public:
     SourceExpr = SourceExpr->IgnoreImpCasts();
     if (auto FD = DpctGlobalInfo::getParentFunction(Call)) {
       auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
-      auto CallInfo = FuncInfo->addCallee(Call);
-      if (auto ME = dyn_cast<MemberExpr>(SourceExpr)) {
-        auto MemberInfo =
-            CallInfo->addStructureTextureObjectArg(SourceIdx, ME, false);
-        if (MemberInfo) {
-          FuncInfo->addTexture(MemberInfo);
-          MemberInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
-            TexType);
-          SourceName = MemberInfo->getName();
-          return createRewriter(Call, RetAssign, SourceName);
-        }
-      } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
-        auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
-        if (TexInfo) {
-          TexInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
-            TexType);
+      if (FuncInfo) {
+        auto CallInfo = FuncInfo->addCallee(Call);
+        if (auto ME = dyn_cast<MemberExpr>(SourceExpr)) {
+          auto MemberInfo =
+              CallInfo->addStructureTextureObjectArg(SourceIdx, ME, false);
+          if (MemberInfo) {
+            FuncInfo->addTexture(MemberInfo);
+            MemberInfo->setType(
+                DpctGlobalInfo::getUnqualifiedTypeName(TargetType), TexType);
+            SourceName = MemberInfo->getName();
+            return createRewriter(Call, RetAssign, SourceName);
+          }
+        } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
+          auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
+          if (TexInfo) {
+            TexInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
+                             TexType);
+          }
         }
       }
     }
