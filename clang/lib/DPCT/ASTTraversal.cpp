@@ -2182,6 +2182,9 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
               Begin, End.getRawEncoding() - Begin.getRawEncoding(),
               MapNames::getDpctNamespace() + "experimental::logical_group"));
           requestFeature(HelperFeatureEnum::device_ext);
+        } else {
+          report(Begin, Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+                 CanonicalTypeStr, "--use-experimental-features=logical-group");
         }
         return;
       }
@@ -11713,7 +11716,7 @@ void CooperativeGroupsFunctionRule::runRule(
   ReportUnsupportedWarning RUW(CE->getBeginLoc(), FuncName, this);
 
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
-      FuncName == "shfl_down" || FuncName == "shfl_up" ||
+      FuncName == "shfl_down" || FuncName == "shfl_up" || FuncName == "shfl" ||
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
       FuncName == "reduce" || FuncName == "thread_index" ||
       FuncName == "group_index") {

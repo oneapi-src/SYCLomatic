@@ -3162,6 +3162,8 @@ const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
       ND =
           getNamedDecl(Array->getElementType().getCanonicalType().getTypePtr());
     }
+  } else if (TypePtr->getTypeClass() == clang::Type::Pointer) {
+    ND = getNamedDecl(TypePtr->castAs<clang::PointerType>()->getPointeeType().getTypePtr());
   }
   return ND;
 }
