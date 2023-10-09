@@ -50,7 +50,14 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             MEMBER_CALL_FACTORY_ENTRY(
                                 "cudaUnbindTexture", ARG(0), false, "detach"))))
 
-ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cudaDestroyTextureObject", ARG(0)))
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY(
+        "cudaDestroyTextureObject",
+        CALL(MapNames::getClNamespace() +
+                 "ext::oneapi::experimental::destroy_image_handle",
+             ARG(0), QUEUESTR)),
+    DELETER_FACTORY_ENTRY("cudaDestroyTextureObject", ARG(0))))
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuTexObjectDestroy", ARG(0)))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -78,10 +85,19 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex2D", 0x02, 1, 2))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex3D", 0x03, 1, 2, 3))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        WARNING_FACTORY_ENTRY("tex1Dfetch",
-                            ENTRY_TEXTURE("tex1Dfetch", 0x01, 1),
-                        Diagnostics::TEX_FETCH))
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY(
+        "tex1Dfetch",
+        CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
+                                  "ext::oneapi::experimental::read_image",
+                              0),
+             ARG(0), CAST_IF_NOT_SAME(LITERAL("float"), ARG(1)))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            WARNING_FACTORY_ENTRY("tex1Dfetch",
+                                                  ENTRY_TEXTURE("tex1Dfetch",
+                                                                0x01, 1),
+                                                  Diagnostics::TEX_FETCH)))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex1DLayered", 0xF1, 2, 1))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -102,10 +118,16 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
-                                            CALL(MapNames::getDpctNamespace() +
-                                                     "create_image_wrapper",
-                                                 DEREF(1), DEREF(2)))))
+    ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+        UseExtBindlessImages,
+        ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
+                             MEMBER_CALL(DEREF(1), false, "create_image",
+                                         DEREF(2), QUEUESTR)),
+        ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
+                             CALL(MapNames::getDpctNamespace() +
+                                      "create_image_wrapper",
+                                  DEREF(1), DEREF(2))))))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuTexObjectCreate", DEREF(0),

@@ -896,6 +896,78 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
 }
 } // namespace detail
 
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+/// TODO: need add comment.
+class image_mem_wrapper {
+public:
+  image_mem_wrapper() = default;
+  inline void set_num_levels(image_data_type type,
+                             const sycl::queue &q = get_default_queue()) {
+    data_type = type;
+    switch (data_type) {
+    case image_data_type::linear:
+      desc.num_levels = 1;
+      break;
+    default:
+      throw std::runtime_error(
+          "Unsupported image_data_type in set_num_levels!");
+      break;
+    }
+  }
+  inline void set_channel(image_channel channel,
+                          const sycl::queue &q = get_default_queue()) {
+    desc.channel_type = channel.get_channel_type();
+    desc.channel_order = channel.get_channel_order();
+    channel_num = channel.get_channel_num();
+  }
+  inline void set_x(size_t x, const sycl::queue &q = get_default_queue()) {
+    desc.width = x;
+  }
+  inline void set_data_ptr(void *input) { data_ptr = input; }
+  sycl::ext::oneapi::experimental::sampled_image_handle
+  create_image(sampling_info &samp_info, sycl::queue &q) {
+    if (data_type == image_data_type::linear) {
+      // TODO: need change.
+      desc.width = desc.width / get_ele_byte(desc.channel_type) / channel_num;
+    }
+    auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
+    auto image_sampler =
+        sycl::ext::oneapi::experimental::bindless_image_sampler(
+            samp_info.get_addressing_mode(),
+            samp_info.get_coordinate_normalization_mode(),
+            samp_info.get_filtering_mode());
+    auto tex = sycl::ext::oneapi::experimental::create_image(
+        *mem, image_sampler, desc, q);
+    q.ext_oneapi_copy(data_ptr, mem->get_handle(), desc);
+    q.wait_and_throw();
+    return tex;
+  }
+
+private:
+  sycl::ext::oneapi::experimental::image_descriptor desc{};
+  void *data_ptr{nullptr};
+  image_data_type data_type;
+  unsigned channel_num;
+  inline int get_ele_byte(const sycl::image_channel_type &type) {
+    switch (type) {
+    case sycl::image_channel_type::signed_int8:
+    case sycl::image_channel_type::unsigned_int8:
+      return 1;
+    case sycl::image_channel_type::signed_int16:
+    case sycl::image_channel_type::unsigned_int16:
+      return 2;
+    case sycl::image_channel_type::signed_int32:
+    case sycl::image_channel_type::unsigned_int32:
+    case sycl::image_channel_type::fp32:
+      return 4;
+    default:
+      throw std::runtime_error(
+          "Unsupported image_channel_type in get_ele_byte!");
+      return 1;
+    }
+  }
+};
+#endif
 } // namespace dpct
 
 #endif // !__DPCT_IMAGE_HPP__

@@ -12445,6 +12445,19 @@ REGISTER_RULE(RecognizeTypeRule, PassKind::PK_Migration)
 void TextureMemberSetRule::registerMatcher(MatchFinder &MF) {
   auto ObjectType =
       hasObjectExpression(hasType(namedDecl(hasAnyName("cudaResourceDesc"))));
+  if (DpctGlobalInfo::useExtBindlessImages()) {
+    // myres.resType = cudaResourceTypeLinear;
+    MF.addMatcher(binaryOperator(
+                      allOf(isAssignmentOperator(),
+                            hasLHS(memberExpr(allOf(ObjectType,
+                                                    member(hasName("resType"))))
+                                       .bind("ResTypeMemberExpr")),
+                            hasRHS(declRefExpr(hasDeclaration(enumConstantDecl(
+                                hasName("cudaResourceTypeLinear")))))))
+                      .bind("LinearSet"),
+                  this);
+    return;
+  }
   // myres.res.array.array = a;
   auto AssignResArrayArray = binaryOperator(
       allOf(isAssignmentOperator(),
@@ -12585,6 +12598,15 @@ void TextureMemberSetRule::removeRange(SourceRange R) {
 void TextureMemberSetRule::runRule(const MatchFinder::MatchResult &Result) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto &LO = DpctGlobalInfo::getContext().getLangOpts();
+  if (DpctGlobalInfo::useExtBindlessImages()) {
+    if (const auto *BO = getNodeAsType<BinaryOperator>(Result, "LinearSet")) {
+      const auto *ResTypeMemberExpr =
+          getNodeAsType<MemberExpr>(Result, "ResTypeMemberExpr");
+      emplaceTransformation(
+          ReplaceMemberAssignAsSetMethod(BO, ResTypeMemberExpr, "num_levels"));
+    }
+    return;
+  }
   if (auto BO = getNodeAsType<BinaryOperator>(Result, "Pitch2DSetCompound")) {
     auto AssignPtrExpr =
         getNodeAsType<BinaryOperator>(Result, "AssignRes2DPtr");
@@ -13282,7 +13304,8 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
             new ReplaceStmt(CE, true, std::move(Result).value()));
       return;
     }
-    if (Name == "cudaCreateChannelDesc") {
+    if (Name == "cudaCreateChannelDesc" &&
+        !DpctGlobalInfo::useExtBindlessImages()) {
       auto Callee =
           dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImplicitAsWritten());
       if (Callee) {
@@ -13331,9 +13354,12 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
     }
-    emplaceTransformation(new ReplaceToken(TL->getBeginLoc(), TL->getEndLoc(),
-                                           MapNames::getDpctNamespace() +
-                                               "image_wrapper_base_p"));
+    emplaceTransformation(new ReplaceToken(
+        TL->getBeginLoc(), TL->getEndLoc(),
+        DpctGlobalInfo::useExtBindlessImages()
+            ? MapNames::getClNamespace() +
+                  "ext::oneapi::experimental::sampled_image_handle"
+            : MapNames::getDpctNamespace() + "image_wrapper_base_p"));
     requestFeature(HelperFeatureEnum::device_ext);
   }
 }
