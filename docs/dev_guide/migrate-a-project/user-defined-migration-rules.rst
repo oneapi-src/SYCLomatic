@@ -79,7 +79,8 @@ Migration rules are specified in YAML files. A single rule file may contain mult
      - String value
      - Specifies the postfix of a Header rule type. For example: ``#endif ...``
    * - Subrules
-     - Specifies the subrules for PatternRewriter rule type. For more detail please refernce :ref:`_pattern_rewriter_rule_ref`.
+     - String value
+     - Specifies the subrules for the PatternRewriter rule type. For more detail refer to :ref:`_pattern_rewriter_rule_ref`.
 
 For example, the following user-defined migration rule file demonstrates different
 rule types. The behavior of each rule is explained in the corresponding comment:
@@ -243,7 +244,9 @@ The pattern-rewrite feature can be enabled by adding a rule with kind
 "PatternRewriter" into the rule YAML file and enable the rule file with ``–rule-file``
 command line option.
 
-Example of a PatternRewriter Rule
+The following user-defined rule shows an example of a PatternRewriter rule.
+The rule finds string "my_max(a, b);" in the migrated code and replaces it with the string "my_min(b, b);".
+The detailed behavior of the rule is explained in the corresponding comment:
 
 .. code-block:: none
 
@@ -258,7 +261,3 @@ Example of a PatternRewriter Rule
        args:                            # Specify the subrule to apply to ${args}. Where args is the user-defined name which is defined in "In".
          In: a                          # Match pattern "a" in ${args}
          Out: b                         # Replace the pattern string to "b" in ${args}
-
-After applying the rule above, a string "my_max(a, b);" in the migrated code
-will be replaced to "my_min(b, b);" by the post-migration pattern rewriter of
-|tool_name|.
