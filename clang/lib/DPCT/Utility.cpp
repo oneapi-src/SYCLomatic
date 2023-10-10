@@ -3340,12 +3340,15 @@ const clang::Stmt *getBodyofAncestorFCStmt(const clang::Stmt *S) {
   return CS;
 }
 
-/// Find all related DREs with the declarations in \p VDSet. Except the DREs in
-/// \p ExcludeDREs and DREs with inits in \p ExcludeInits or declarations in \p
-/// ExcludeVDSets.
-void findRelatedDREOffsets(std::set<const clang::ValueDecl *> &VDSet,
+/// Find all DREs related to the declarations in \p VDSet
+/// within the scope of \p DRESet. Populates \p DREOffsetVec with the sorted
+/// offsets of the identified DREs. Exclusions:
+/// - DREs listed in \p ExcludeDREs.
+/// - DREs with initializations from \p ExcludeInits.
+/// - DREs with declarations in \p ExcludeVDSets.
+void findRelatedDREOffsets(std::set<const clang::DeclRefExpr *> &DRESet,
+                           std::set<const clang::ValueDecl *> &VDSet,
                            std::vector<unsigned int> &DREOffsetVec,
-                           std::set<const clang::DeclRefExpr *> &AllDREsInCS,
                            std::set<const clang::Expr *> &ExcludeInits,
                            std::set<const clang::ValueDecl *> &ExcludeVDSets,
                            std::set<const clang::DeclRefExpr *> &ExcludeDREs) {
@@ -3358,7 +3361,7 @@ void findRelatedDREOffsets(std::set<const clang::ValueDecl *> &VDSet,
     NewVDSet = VDSet;
     VDSet.clear();
     ProcessedVDSet.insert(NewVDSet.begin(), NewVDSet.end());
-    for (const auto &DRE : AllDREsInCS) {
+    for (const auto &DRE : DRESet) {
       if (!DRE->getDecl() || !NewVDSet.count(DRE->getDecl()))
         continue;
       const clang::Expr *ExprScope = nullptr;
@@ -3573,7 +3576,9 @@ bool analyzeMemcpyOrder(
         Result.getNodeAs<DeclRefExpr>("VarReference");
     if (!MatchedDRE)
       continue;
-    AllDREsInCS.insert(MatchedDRE);
+    if (dyn_cast_or_null<clang::VarDecl>(MatchedDRE->getDecl())) {
+      AllDREsInCS.insert(MatchedDRE);
+    }
   }
 
   std::set<const clang::DeclRefExpr *> SrcDRESet;
@@ -3621,7 +3626,7 @@ bool analyzeMemcpyOrder(
   // Find all DREs related with the first and the second arguments
   // of the memcpy APIs. If there is any related DRE between two
   // memcpy calls, wait() must be added after the previous memcpy.
-  findRelatedDREOffsets(SrcDstVDSet, DREOffsetVec, AllDREsInCS, MemcpyCallExprs,
+  findRelatedDREOffsets(AllDREsInCS, SrcDstVDSet, DREOffsetVec, MemcpyCallExprs,
                         DstVDSet, ExcludeDRESet);
   return true;
 }

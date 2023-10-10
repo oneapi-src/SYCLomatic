@@ -1074,3 +1074,17 @@ void foo16() {
     cudaMallocHost(&buf.front(), sizeof(TEST_STR));
   }
 }
+
+int foo17() {
+  unsigned int mem_size;
+  unsigned int *h_data;
+  unsigned int *d_in_data_1;
+  unsigned int *d_in_data_2;
+
+  // CHECK: q_ct1.memcpy(d_in_data_1, h_data, mem_size).wait();
+  cudaMemcpy(d_in_data_1, h_data, mem_size, cudaMemcpyHostToDevice);
+  h_data[0] = 1;
+  // CHECK: q_ct1.memcpy(d_in_data_2, h_data, mem_size).wait();
+  cudaMemcpy(d_in_data_2, h_data, mem_size, cudaMemcpyHostToDevice);
+  return 0;
+}
