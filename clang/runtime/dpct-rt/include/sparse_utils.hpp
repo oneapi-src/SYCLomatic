@@ -647,9 +647,8 @@ public:
   std::int64_t get_row_num() const noexcept { return _row_num; }
 
 private:
-  std::function<void(void *)> _shadow_row_ptr_deleter = [](void *ptr) {
-    if (ptr)
-      dpct::dpct_free(ptr);
+  static std::function<void(void *)> _shadow_row_ptr_deleter = [](void *ptr) {
+    dpct::dpct_free(ptr);
   };
   template <typename index_t, typename value_t> void set_data() {
     void *row_ptr = nullptr;
@@ -660,8 +659,7 @@ private:
     } else {
       row_ptr = dpct::dpct_malloc(sizeof(index_t) * (_row_num + 1),
                                   get_default_queue());
-      _shadow_row_ptr = std::unique_ptr<void, std::function<void(void *)>>(
-          row_ptr, _shadow_row_ptr_deleter);
+      _shadow_row_ptr.reset(row_ptr);
     }
 #ifdef DPCT_USM_LEVEL_NONE
     using data_index_t = sycl::buffer<index_t>;
@@ -757,30 +755,24 @@ private:
       std::unique_ptr<void, std::function<void(void *)>>(
           nullptr, _shadow_row_ptr_deleter);
 
-  static constexpr std::array<size_t, 7> _data_variable_size_array = {
-      sizeof(sycl::buffer<std::int32_t>),
-      sizeof(sycl::buffer<std::int64_t>),
-      sizeof(sycl::buffer<float>),
-      sizeof(sycl::buffer<double>),
-      sizeof(sycl::buffer<std::complex<float>>),
-      sizeof(sycl::buffer<std::complex<double>>),
-      sizeof(void *)};
-  static constexpr size_t _max_data_variable_size = *std::max_element(
-      _data_variable_size_array.begin(), _data_variable_size_array.end());
-  std::variant<std::array<std::byte, _max_data_variable_size>,
-               sycl::buffer<std::int32_t>, sycl::buffer<std::int64_t>,
-               std::int32_t *, std::int64_t *>
-      _data_row_ptr;
-  std::variant<std::array<std::byte, _max_data_variable_size>,
-               sycl::buffer<std::int32_t>, sycl::buffer<std::int64_t>,
-               std::int32_t *, std::int64_t *>
-      _data_col_ind;
-  std::variant<std::array<std::byte, _max_data_variable_size>,
-               sycl::buffer<float>, sycl::buffer<double>,
-               sycl::buffer<std::complex<float>>,
-               sycl::buffer<std::complex<double>>, float *, double *,
-               std::complex<float> *, std::complex<double> *>
-      _data_value;
+  static constexpr size_t _max_data_variable_size = std::max(
+      {sizeof(sycl::buffer<std::int32_t>), sizeof(sycl::buffer<std::int64_t>),
+       sizeof(sycl::buffer<float>), sizeof(sycl::buffer<double>),
+       sizeof(sycl::buffer<std::complex<float>>),
+       sizeof(sycl::buffer<std::complex<double>>), sizeof(void *)});
+  using index_variant_t =
+      std::variant<std::array<std::byte, _max_data_variable_size>,
+                   sycl::buffer<std::int32_t>, sycl::buffer<std::int64_t>,
+                   std::int32_t *, std::int64_t *>;
+  using value_variant_t =
+      std::variant<std::array<std::byte, _max_data_variable_size>,
+                   sycl::buffer<float>, sycl::buffer<double>,
+                   sycl::buffer<std::complex<float>>,
+                   sycl::buffer<std::complex<double>>, float *, double *,
+                   std::complex<float> *, std::complex<double> *>;
+  index_variant_t _data_row_ptr;
+  index_variant_t _data_col_ind;
+  value_variant_t _data_value;
 };
 
 namespace detail {
