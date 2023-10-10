@@ -239,6 +239,8 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::device_ext)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
+      {"cusparseAlgMode_t",
+       std::make_shared<TypeNameRule>("int")},
       {"cusparseSolveAnalysisInfo_t",
        std::make_shared<TypeNameRule>(
            "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>",
@@ -896,6 +898,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDevAttrMultiProcessorCount",
        std::make_shared<EnumNameRule>(
            "get_max_compute_units",
+           HelperFeatureEnum::device_ext)},
+      {"cudaDevAttrMaxThreadsPerBlock",
+       std::make_shared<EnumNameRule>(
+           "get_max_work_group_size",
            HelperFeatureEnum::device_ext)},
       {"cudaDevAttrClockRate",
        std::make_shared<EnumNameRule>(
@@ -1947,6 +1953,12 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseDcsrmv",
                            "cusparseCcsrmv",
                            "cusparseZcsrmv",
+                           "cusparseScsrmv_mp",
+                           "cusparseDcsrmv_mp",
+                           "cusparseCcsrmv_mp",
+                           "cusparseZcsrmv_mp",
+                           "cusparseCsrmvEx",
+                           "cusparseCsrmvEx_bufferSize",
                            "cusparseScsrsv_analysis",
                            "cusparseDcsrsv_analysis",
                            "cusparseCcsrsv_analysis",
