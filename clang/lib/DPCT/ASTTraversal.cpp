@@ -2205,6 +2205,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         if (!FD)
           return;
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+        if (!DFI)
+          return;
         auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
         DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
         std::string group_type = "";
@@ -9371,7 +9373,8 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       } else {
         if (Var) {
-          DeviceFunctionDecl::LinkRedecls(Func)->addVar(Var);
+          if (auto DFI = DeviceFunctionDecl::LinkRedecls(Func))
+            DFI->addVar(Var);
         }
       }
     } else {
@@ -11820,6 +11823,8 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
       GroupFunctionCallInControlFlowAnalyzer A(DpctGlobalInfo::getContext());
       A.checkCallGroupFunctionInControlFlow(const_cast<FunctionDecl *>(FD));
       auto FnInfo = DeviceFunctionDecl::LinkRedecls(FD);
+      if (!FnInfo)
+        return;
       auto CallInfo = FnInfo->addCallee(CE);
       if (CallInfo->hasSideEffects())
         report(CE->getBeginLoc(), Diagnostics::CALL_GROUP_FUNC_IN_COND, false);
@@ -12955,7 +12960,8 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "texFunc")) {
 
       if (!isa<ParmVarDecl>(VD))
-        DeviceFunctionDecl::LinkRedecls(FD)->addTexture(Tex);
+        if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD))
+          DFI->addTexture(Tex);
     }
 
     if (processTexVarDeclInDevice(VD))
