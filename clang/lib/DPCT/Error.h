@@ -44,7 +44,7 @@ enum ProcessStatus {
   MigrationErrorCannotAccessDirInDatabase = -29,
   MigrationErrorInconsistentFileInDatabase = -30,
   MigrationErrorCudaVersionUnsupported = -31,
-  MigrationErrorSupportedCudaVersionNotAvailable = -32,
+  MigrationErrorDetectedCudaVersionUnsupported = -32,
   MigrationErrorInvalidExplicitNamespace = -33,
   MigrationErrorDifferentOptSet = -37,
   MigrationErrorInvalidRuleFilePath = -38,
@@ -55,6 +55,7 @@ enum ProcessStatus {
   MigrationErrorNoAPIMapping = -43,
   MigrationErrorAPIMappingWrongCUDAHeader = -44,
   MigrationErrorAPIMappingNoCUDAHeader = -45,
+  MigrationErrorCannotDetectCudaPath = -46,
 };
 
 namespace clang {
