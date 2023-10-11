@@ -3651,7 +3651,8 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
     auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
     if (!DpctGlobalInfo::useGroupLocalMemory() || !VI->isShared() ||
         VI->isExtern())
-      DeviceFunctionDecl::LinkRedecls(Func)->addVar(VI);
+      if (auto DFI = DeviceFunctionDecl::LinkRedecls(Func))
+        DFI->addVar(VI);
     return VI;
   }
   return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
@@ -4274,7 +4275,8 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
 #endif // DPCT_DEBUG_BUILD
 
   } else {
-    DeviceFunctionDecl::LinkRedecls(FD)->setItem();
+    if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD))
+      DFI->setItem();
     OS << getNames(K).NonFreeQueriesName;
   }
 }
@@ -4323,7 +4325,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS,
 void FreeQueriesInfo::emplaceExtraDecl() {
   std::string Ret;
   llvm::raw_string_ostream OS(Ret);
-  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && FuncInfo) {
     if (auto VarMapHead =
             MemVarMap::getHeadWithoutPathCompression(&FuncInfo->getVarMap())) {
       Dimension = VarMapHead->Dim;
