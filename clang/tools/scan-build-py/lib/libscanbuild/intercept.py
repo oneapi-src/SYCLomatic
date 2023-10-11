@@ -286,7 +286,7 @@ def format_entry(exec_trace):
 # SYCLomatic_CUSTOMIZATION end
 
     logging.debug("format this command: %s", exec_trace["command"])
-    compilation = split_command(exec_trace["command"])
+    compilation = split_command(exec_trace["command"], exec_trace['directory'])
     if compilation:
         compiler = {
             'c' : 'cc',

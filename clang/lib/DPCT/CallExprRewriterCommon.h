@@ -69,6 +69,20 @@ inline std::string getTypecastName(const CallExpr *Call) {
   return {};
 }
 
+inline const Expr *getAddrOfedExpr(const Expr *E) {
+  E = E->IgnoreImplicitAsWritten()->IgnoreParens();
+  if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == clang::UO_Deref) {
+      return UO->getSubExpr()->IgnoreImplicitAsWritten()->IgnoreParens();
+    }
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == clang::OO_Star && COCE->getNumArgs() == 1) {
+      return COCE->getArg(0)->IgnoreImplicitAsWritten()->IgnoreParens();
+    }
+  }
+  return nullptr;
+}
+
 // In AST, &SubExpr could be recognized as UnaryOperator or CXXOperatorCallExpr.
 // To get the SubExpr from the original Expr, both cases need to be handled.
 inline const Expr *getDereferencedExpr(const Expr *E) {
@@ -81,8 +95,6 @@ inline const Expr *getDereferencedExpr(const Expr *E) {
     if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
       return COCE->getArg(0)->IgnoreImplicitAsWritten()->IgnoreParens();
     }
-  } else if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(E)) {
-    return ArraySub->getBase()->IgnoreImplicitAsWritten()->IgnoreParens();
   }
   return nullptr;
 }
@@ -232,6 +244,13 @@ inline std::function<DerefStreamExpr(const CallExpr *)>
 makeDerefStreamExprCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> DerefStreamExpr {
     return DerefStreamExpr(C->getArg(Idx));
+  };
+}
+
+inline std::function<AddrOfExpr(const CallExpr *)>
+makeAddrOfExprCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> AddrOfExpr {
+    return AddrOfExpr(C->getArg(Idx));
   };
 }
 
@@ -1441,22 +1460,24 @@ public:
     SourceExpr = SourceExpr->IgnoreImpCasts();
     if (auto FD = DpctGlobalInfo::getParentFunction(Call)) {
       auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
-      auto CallInfo = FuncInfo->addCallee(Call);
-      if (auto ME = dyn_cast<MemberExpr>(SourceExpr)) {
-        auto MemberInfo =
-            CallInfo->addStructureTextureObjectArg(SourceIdx, ME, false);
-        if (MemberInfo) {
-          FuncInfo->addTexture(MemberInfo);
-          MemberInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
-            TexType);
-          SourceName = MemberInfo->getName();
-          return createRewriter(Call, RetAssign, SourceName);
-        }
-      } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
-        auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
-        if (TexInfo) {
-          TexInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
-            TexType);
+      if (FuncInfo) {
+        auto CallInfo = FuncInfo->addCallee(Call);
+        if (auto ME = dyn_cast<MemberExpr>(SourceExpr)) {
+          auto MemberInfo =
+              CallInfo->addStructureTextureObjectArg(SourceIdx, ME, false);
+          if (MemberInfo) {
+            FuncInfo->addTexture(MemberInfo);
+            MemberInfo->setType(
+                DpctGlobalInfo::getUnqualifiedTypeName(TargetType), TexType);
+            SourceName = MemberInfo->getName();
+            return createRewriter(Call, RetAssign, SourceName);
+          }
+        } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
+          auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
+          if (TexInfo) {
+            TexInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
+                             TexType);
+          }
         }
       }
     }
@@ -1946,6 +1967,7 @@ public:
 #define SUBGROUPSIZE_FACTORY(IDX, NEWFUNCNAME, x)                              \
   createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
 #define STREAM(x) makeDerefStreamExprCreator(x)
+#define ADDROF(x) makeAddrOfExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
 #define DEREF_CAST_IF_NEED(T, S) makeDerefCastIfNeedExprCreator(T, S)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})

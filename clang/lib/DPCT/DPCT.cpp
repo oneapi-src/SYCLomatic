@@ -229,9 +229,13 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
-  } else if (!CudaIncludeDetector.isSupportedVersionAvailable()) {
-    ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
-    dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
+  } else if (!CudaIncludeDetector.isIncludePathValid()) {
+    ShowStatus(MigrationErrorCannotDetectCudaPath);
+    dpctExit(MigrationErrorCannotDetectCudaPath);
+  } else if (!CudaIncludeDetector.isVersionSupported()) {
+    ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
+    dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
+
   }
 
   makeCanonical(Path);
@@ -775,6 +779,10 @@ int runDPCT(int argc, const char **argv) {
     // Set a virtual file for --query-api-mapping.
     llvm::SmallString<16> VirtFile;
     llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+    // Need set a virtual path and it will used by AnalysisScope.
+    InRoot = VirtFile.str().str();
+    makeInRootCanonicalOrSetDefaults(InRoot, {});
+    VirtFile = InRoot;
     llvm::sys::path::append(VirtFile, "temp.cu");
     SourcePathList.emplace_back(VirtFile);
     DpctGlobalInfo::setIsQueryAPIMapping(true);
@@ -785,7 +793,12 @@ int runDPCT(int argc, const char **argv) {
   std::string QueryAPIMappingSrc;
   std::string QueryAPIMappingOpt;
   if (DpctGlobalInfo::isQueryAPIMapping()) {
+    APIMapping::setPrintAll(QueryAPIMapping == "-");
     APIMapping::initEntryMap();
+    if (APIMapping::getPrintAll()) {
+      APIMapping::printAll();
+      dpctExit(MigrationSucceeded);
+    }
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       ShowStatus(MigrationErrorNoAPIMapping);
@@ -852,8 +865,6 @@ int runDPCT(int argc, const char **argv) {
     NoIncrementalMigration = true;
     StopOnParseErr = true;
     Tool.setPrintErrorMessage(false);
-    // Need set a virtual path and it will used by AnalysisScope.
-    InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
   } else {
     IsUsingDefaultOutRoot = OutRoot.empty();
     if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
@@ -1133,7 +1144,8 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       if (RunResult == 1) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
-          StringRef ErrStr = getDpctTermStr();
+          std::string Err = getDpctTermStr();
+          StringRef ErrStr = Err;
           if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
                        QueryAPIMapping);

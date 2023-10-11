@@ -23,4 +23,89 @@ Detailed Help
 Suggestions to Fix
 ------------------
 
-Use option ``--usm-level=restricted`` to migrate the code.
+Re-migrate the code without specifing ``--usm-level=none``.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct AAA {
+     int *a;
+   };
+   
+   __global__ void k(AAA obj) {
+     obj.a[2] = 123;
+   }
+   
+   void foo() {
+     AAA obj;
+     int *a;
+     cudaMalloc(&a, sizeof(int) * 10);
+     obj.a = a;
+     k<<<1, 1>>>(obj);
+   }
+
+results in the following migrated SYCL\* code with option ``--usm-level=none``:
+
+.. code-block:: cpp
+   :linenos:
+
+   #define DPCT_USM_LEVEL_NONE
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   struct AAA {
+     int *a;
+   };
+   
+   void k(AAA obj) {
+     obj.a[2] = 123;
+   }
+   
+   void foo() {
+     AAA obj;
+     int *a;
+     a = (int *)dpct::dpct_malloc(sizeof(int) * 10);
+     obj.a = a;
+     /*
+     DPCT1069:0: The argument 'obj' of the kernel function contains virtual
+     pointer(s), which cannot be dereferenced. Try to migrate the code with
+     "usm-level=restricted".
+     */
+     dpct::get_out_of_order_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           k(obj);
+         });
+   }
+
+Re-migrated code without option ``--usm-level=none``:
+
+.. code-block:: cpp
+   :linenos:
+
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   struct AAA {
+     int *a;
+   };
+   
+   void k(AAA obj) {
+     obj.a[2] = 123;
+   }
+   
+   void foo() {
+     sycl::device dev_ct1;
+     sycl::queue q_ct1(dev_ct1,
+                       sycl::property_list{sycl::property::queue::in_order()});
+     AAA obj;
+     int *a;
+     a = sycl::malloc_device<int>(10, q_ct1);
+     obj.a = a;
+     q_ct1.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           k(obj);
+         });
+   }
+

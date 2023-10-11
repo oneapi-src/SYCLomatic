@@ -23,4 +23,41 @@ device.
 Suggestions to Fix
 ------------------
 
-Try to rewrite the code to not rely on unsupported functionality.
+Try to:
+(1) re-migrate the code without option ``--no-dpcpp-extensions=device_info``; or
+(2) rewrite the code manually.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     size_t result1, result2;
+     cudaMemGetInfo(&result1, &result2);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     size_t result1, result2;
+     /*
+     DPCT1072:0: SYCL currently does not support getting the available memory on
+     the current device. You may need to adjust the code.
+     */
+     result2 = dpct::get_current_device().get_device_info().get_global_mem_size();
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     size_t result1, result2;
+     dpct::get_current_device().get_memory_info(result1, result2);
+   }
+

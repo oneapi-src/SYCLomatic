@@ -27,22 +27,38 @@ Suggestions to Fix
 You can declare a new field with the corresponding fundamental type, for example
 int for int1, in the class/struct and override the required operators.
 
-For example, the following migrated SYCL\* code:
+For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
 
-     class MyClass : int {
-       ...
-     }
+   class MyClass : int1 {
+     ...
+   };
 
-is manually adjusted to:
+results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
 
-     class MyClass {
-       int x;
-       MyClass operator+(const MyClass& y) { ... }
-       MyClass operator=(const MyClass& y){...}...
-     }
+   /*
+   DPCT1055:0: Vector types with size 1 are migrated to the corresponding
+   fundamental types, which cannot be inherited. You need to rewrite the code.
+   */
+   class MyClass : int {
+     ...
+   };
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   class MyClass {
+   public:
+     int x;
+     MyClass operator+(const MyClass& y) { ... }
+     MyClass operator=(const MyClass& y) { ... }
+     ...
+   };
+
