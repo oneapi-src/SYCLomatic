@@ -647,7 +647,8 @@ public:
   std::int64_t get_row_num() const noexcept { return _row_num; }
 
 private:
-  static const std::function<void(void *)> _shadow_row_ptr_deleter;
+  inline static const std::function<void(void *)> _shadow_row_ptr_deleter =
+      [](void *ptr) { dpct::dpct_free(ptr); };
   template <typename index_t, typename value_t> void set_data() {
     void *row_ptr = nullptr;
     if (_shadow_row_ptr) {
@@ -772,10 +773,6 @@ private:
   index_variant_t _data_col_ind;
   value_variant_t _data_value;
 };
-
-inline const std::function<void(void *)>
-    sparse_matrix_desc::_shadow_row_ptr_deleter =
-        [](void *ptr) { dpct::dpct_free(ptr); };
 
 namespace detail {
 #ifdef DPCT_USM_LEVEL_NONE
