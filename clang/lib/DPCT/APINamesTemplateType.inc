@@ -221,6 +221,8 @@ TYPE_REWRITE_ENTRY("thrust::identity",
 
 TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "null_type")))
 
+TYPE_REWRITE_ENTRY("thrust::device_system_tag", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "device_sys_tag")))
+
 TYPE_REWRITE_ENTRY("cooperative_groups::__v1::plus",
                    TYPE_FACTORY(STR(MapNames::getClNamespace() + "plus"),
                                 TEMPLATE_ARG(0)))
