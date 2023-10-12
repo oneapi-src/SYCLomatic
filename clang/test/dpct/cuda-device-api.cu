@@ -49,7 +49,7 @@ void foo() {
 
   // CHECK:      /*
   // CHECK-NEXT: DPCT1031:{{[0-9]+}}: Memory accessing across peer devices is a implementation-specific
-  // CHECK-NEXT: feature which may not be supported by all SYCL backends and compilers. The
+  // CHECK-NEXT: feature which may not be supported by some SYCL backends and compilers. The
   // CHECK-NEXT: output parameter(s) are set to 0.
   // CHECK-NEXT: */
 
