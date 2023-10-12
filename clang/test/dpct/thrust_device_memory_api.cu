@@ -37,9 +37,10 @@ void foo() {
     const int N = 100;
     typedef thrust::pair<thrust::pointer<int, thrust::device_system_tag>, std::ptrdiff_t> ptr_and_size_t;
     thrust::device_system_tag device_sys;
-    ptr_and_size_t ptr_and_size = thrust::get_temporary_buffer<int>(device_sys, N);
 
-    // CHECK: dpct::release_temporary_allocation(device_sys, ptr_and_size.first, ptr_and_size.second);
+    // CHECK:     ptr_and_size_t ptr_and_size = dpct::get_temporary_allocation<int>(device_sys, N);
+    // CHECK-NEXT: dpct::release_temporary_allocation(device_sys, ptr_and_size.first, ptr_and_size.second);
+    ptr_and_size_t ptr_and_size = thrust::get_temporary_buffer<int>(device_sys, N);
     thrust::return_temporary_buffer(device_sys, ptr_and_size.first, ptr_and_size.second);
   }
 

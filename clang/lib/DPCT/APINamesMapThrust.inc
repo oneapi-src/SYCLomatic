@@ -25,3 +25,4 @@ ENTRY_HOST("thrust::device_delete", MapNames::getDpctNamespace() + "device_delet
 ENTRY_HOST("thrust::malloc", MapNames::getDpctNamespace() + "malloc", "")
 ENTRY_HOST("thrust::free", MapNames::getDpctNamespace() + "free", "")
 ENTRY_BOTH("thrust::device_pointer_cast", MapNames::getDpctNamespace() + "get_device_pointer", "")
+ENTRY_BOTH("thrust::get_temporary_buffer", MapNames::getDpctNamespace() + "get_temporary_allocation", "")
