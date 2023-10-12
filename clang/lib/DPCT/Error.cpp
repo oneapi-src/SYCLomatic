@@ -180,6 +180,9 @@ void ShowStatus(int Status, std::string Message) {
         ". Please specify the header file for '" + Message +
         "' with option \"--extra-arg\".";
     break;
+  case InterceptBuildError:
+    StatusString = "Error: Call to intercept-build failed";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);
