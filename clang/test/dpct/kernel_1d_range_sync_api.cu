@@ -10,14 +10,16 @@ using namespace cooperative_groups;
 
 // CHECK: void global1(const sycl::nd_item<1> &item_ct1) {
 __global__ void global1() {
-  // CHECK: auto cta = item_ct1.get_group();
+  // CHECK: sycl::group<1> cta = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
+  const cg::thread_block &cta2 = cg::this_thread_block();
 
-  // CHECK: auto block = item_ct1.get_group();
+  // CHECK: sycl::group<1> block = item_ct1.get_group();
   cg::thread_block block = cg::this_thread_block();
 
-  // CHECK: auto b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
+  // CHECK: sycl::group<1> b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
   cg::thread_block b0 = cg::this_thread_block(), b1 = cg::this_thread_block();
+  thread_block b111 = cg::this_thread_block();
 
   // CHECK: int GroupSize = item_ct1.get_group().get_local_linear_range();
   int GroupSize = block.size();
