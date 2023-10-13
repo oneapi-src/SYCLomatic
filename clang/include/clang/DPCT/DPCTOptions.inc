@@ -433,6 +433,15 @@ DPCT_NON_ENUM_OPTION(
         "Print the installation directory for helper function header files."),
     llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
+#ifndef _WIN32
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), InterceptBuildCommand,
+    "intercept-build",
+    llvm::cl::desc("Intercept build tool to generate a compilation database"),
+    llvm::cl::value_desc("build command"), llvm::cl::cat(DPCTCat),
+    llvm::cl::init(false))
+#endif
+
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryAPIMapping,
     "query-api-mapping",

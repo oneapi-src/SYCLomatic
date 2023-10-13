@@ -8,7 +8,7 @@ Message
 
 .. _msg-1073-start:
 
-The field values of parameter ``<parameter name>`` could not be deduced, so the call was not
+The field values of parameter *<parameter name>* could not be deduced, so the call was not
 migrated. You need to update this code manually.
 
 .. _msg-1073-end:

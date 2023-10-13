@@ -77,17 +77,15 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
   oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
-  auto data_row_ptr = dpct::detail::get_memory(const_cast<int *>(row_ptr));
-  auto data_col_ind = dpct::detail::get_memory(const_cast<int *>(col_ind));
-  auto data_val =
-      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
+  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
+  auto data_val = dpct::detail::get_memory<Ty>(val);
   oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, num_rows,
                                     num_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
 
-  auto data_x =
-      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(x)));
-  auto data_y = dpct::detail::get_memory(reinterpret_cast<Ty *>(y));
+  auto data_x = dpct::detail::get_memory<Ty>(x);
+  auto data_y = dpct::detail::get_memory<Ty>(y);
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
     oneapi::mkl::sparse::optimize_gemv(queue, trans, *sparse_matrix_handle);
@@ -121,6 +119,91 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
     cgh.host_task([=] { delete sparse_matrix_handle; });
   });
 #endif
+}
+
+/// Computes a CSR format sparse matrix-dense vector product.
+/// y = alpha * op(A) * x + beta * y
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans The operation applied to the matrix A.
+/// \param [in] num_rows Number of rows of the matrix A.
+/// \param [in] num_cols Number of columns of the matrix A.
+/// \param [in] alpha Scaling factor for the matrix A.
+/// \param [in] alpha_type Data type of \p alpha .
+/// \param [in] info Matrix info of the matrix A.
+/// \param [in] val An array containing the non-zero elements of the matrix A.
+/// \param [in] val_type Data type of \p val .
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in] x Data of the vector x.
+/// \param [in] x_type Data type of \p x .
+/// \param [in] beta Scaling factor for the vector x.
+/// \param [in] beta_type Data type of \p beta .
+/// \param [in, out] y Data of the vector y.
+/// \param [in] y_type Data type of \p y .
+inline void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans,
+                  int num_rows, int num_cols, const void *alpha,
+                  library_data_t alpha_type,
+                  const std::shared_ptr<matrix_info> info, const void *val,
+                  library_data_t val_type, const int *row_ptr,
+                  const int *col_ind, const void *x, library_data_t x_type,
+                  const void *beta, library_data_t beta_type, void *y,
+                  library_data_t y_type) {
+  std::uint64_t key = dpct::detail::get_type_combination_id(
+      alpha_type, val_type, x_type, beta_type, y_type);
+  switch (key) {
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float): {
+    csrmv<float>(queue, trans, num_rows, num_cols,
+                 static_cast<const float *>(alpha), info,
+                 static_cast<const float *>(val), row_ptr, col_ind,
+                 static_cast<const float *>(x),
+                 static_cast<const float *>(beta), static_cast<float *>(y));
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double): {
+    csrmv<double>(queue, trans, num_rows, num_cols,
+                  static_cast<const double *>(alpha), info,
+                  static_cast<const double *>(val), row_ptr, col_ind,
+                  static_cast<const double *>(x),
+                  static_cast<const double *>(beta), static_cast<double *>(y));
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_float, library_data_t::complex_float,
+      library_data_t::complex_float, library_data_t::complex_float,
+      library_data_t::complex_float): {
+    csrmv<std::complex<float>>(
+        queue, trans, num_rows, num_cols,
+        static_cast<const std::complex<float> *>(alpha), info,
+        static_cast<const std::complex<float> *>(val), row_ptr, col_ind,
+        static_cast<const std::complex<float> *>(x),
+        static_cast<const std::complex<float> *>(beta),
+        static_cast<std::complex<float> *>(y));
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_double, library_data_t::complex_double,
+      library_data_t::complex_double, library_data_t::complex_double,
+      library_data_t::complex_double): {
+    csrmv<std::complex<double>>(
+        queue, trans, num_rows, num_cols,
+        static_cast<const std::complex<double> *>(alpha), info,
+        static_cast<const std::complex<double> *>(val), row_ptr, col_ind,
+        static_cast<const std::complex<double> *>(x),
+        static_cast<const std::complex<double> *>(beta),
+        static_cast<std::complex<double> *>(y));
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
 }
 
 /// Computes a CSR format sparse matrix-dense matrix product.
@@ -161,17 +244,15 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
   oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
-  auto data_row_ptr = dpct::detail::get_memory(const_cast<int *>(row_ptr));
-  auto data_col_ind = dpct::detail::get_memory(const_cast<int *>(col_ind));
-  auto data_val =
-      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
+  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
+  auto data_val = dpct::detail::get_memory<Ty>(val);
   oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, sparse_rows,
                                     sparse_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
 
-  auto data_b =
-      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(b)));
-  auto data_c = dpct::detail::get_memory(reinterpret_cast<Ty *>(c));
+  auto data_b = dpct::detail::get_memory<Ty>(b);
+  auto data_c = dpct::detail::get_memory<Ty>(c);
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
     oneapi::mkl::sparse::gemm(queue, oneapi::mkl::layout::row_major, trans,
@@ -242,10 +323,9 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
   using Ty = typename dpct::DataType<T>::T2;
-  auto data_row_ptr = dpct::detail::get_memory(const_cast<int *>(row_ptr));
-  auto data_col_ind = dpct::detail::get_memory(const_cast<int *>(col_ind));
-  auto data_val =
-      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
+  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
+  auto data_val = dpct::detail::get_memory<Ty>(val);
   oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
                                     row_col, row_col, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
@@ -286,6 +366,8 @@ public:
   }
   void *get_value() const noexcept { return _value; }
   void set_value(void *value) { _value = value; }
+  library_data_t get_value_type() const noexcept { return _value_type; }
+  std::int64_t get_ele_num() const noexcept { return _ele_num; }
 
 private:
   std::int64_t _ele_num;
@@ -344,7 +426,9 @@ public:
   /// \param [in] row_num Number of rows of the sparse matrix.
   /// \param [in] col_num Number of colums of the sparse matrix.
   /// \param [in] nnz Non-zero elements in the sparse matrix.
-  /// \param [in] row_ptr An array of length \p row_num + 1.
+  /// \param [in] row_ptr An array of length \p row_num + 1. If the \p row_ptr is
+  /// NULL, the sparse_matrix_desc will allocate internal memory for it. This
+  /// internal memory can be gotten from get_shadow_row_ptr().
   /// \param [in] col_ind An array containing the column indices in index-based
   /// numbering.
   /// \param [in] value An array containing the non-zero elements of the sparse matrix.
@@ -366,7 +450,7 @@ public:
       throw std::runtime_error("the sparse matrix data format is unsupported");
     }
     oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle);
-    construct();
+    set_data();
   }
   /// Destructor
   ~sparse_matrix_desc() {
@@ -425,9 +509,18 @@ public:
   /// Set the value pointer of this descriptor
   /// \param [in] value The input value pointer
   void set_value(void *value) {
-    // Assume the new data is different from the old data
+    if (!value) {
+      throw std::runtime_error(
+          "dpct::sparse::sparse_matrix_desc::set_value(): The value "
+          "pointer is NULL.");
+    }
+    if (_value && (_value != value)) {
+      throw std::runtime_error(
+          "dpct::sparse::sparse_matrix_desc::set_value(): "
+          "The _value pointer is not NULL. It cannot be reset.");
+    }
     _value = value;
-    construct();
+    set_data();
   }
   /// Get the size of the sparse matrix
   /// \param [out] row_num Number of rows of the sparse matrix.
@@ -499,11 +592,31 @@ public:
   /// numbering.
   /// \param [in] value An array containing the non-zero elements of the sparse matrix.
   void set_pointers(void *row_ptr, void *col_ind, void *value) {
-    // Assume the new data is different from the old data
+    if (!row_ptr) {
+      throw std::runtime_error(
+          "dpct::sparse::sparse_matrix_desc::set_pointers(): The "
+          "row_ptr pointer is NULL.");
+    }
+    if (!col_ind) {
+      throw std::runtime_error(
+          "dpct::sparse::sparse_matrix_desc::set_pointers(): The "
+          "col_ind pointer is NULL.");
+    }
+    if (_row_ptr && (_row_ptr != row_ptr)) {
+      throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_pointers("
+                               "): The _row_ptr pointer is "
+                               "not NULL. It cannot be reset.");
+    }
+    if (_col_ind && (_col_ind != col_ind)) {
+      throw std::runtime_error("dpct::sparse::sparse_matrix_desc::set_pointers("
+                               "): The _col_ind pointer is "
+                               "not NULL. It cannot be reset.");
+    }
     _row_ptr = row_ptr;
     _col_ind = col_ind;
-    _value = value;
-    construct();
+
+    // The descriptor will be updated in the set_value function
+    set_value(value);
   }
 
   /// Get the diag attribute
@@ -512,21 +625,60 @@ public:
   /// Get the uplo attribute
   /// \return uplo value
   std::optional<oneapi::mkl::uplo> get_uplo() const noexcept { return _uplo; }
+  /// Set the number of non-zero elements
+  /// \param nnz [in] The number of non-zero elements.
+  void set_nnz(std::int64_t nnz) noexcept { _nnz = nnz; }
+  /// Get the type of the value pointer.
+  /// \return The type of the value pointer.
+  library_data_t get_value_type() const noexcept { return _value_type; }
+  /// Get the row_ptr.
+  /// \return The row_ptr.
+  void *get_row_ptr() const noexcept { return _row_ptr; }
+  /// If the internal _row_ptr is NULL, the sparse_matrix_desc will allocate
+  /// internal memory for it in the constructor. The internal memory can be gotten
+  /// from this interface.
+  /// \return The shadow row_ptr.
+  void *get_shadow_row_ptr() const noexcept { return _shadow_row_ptr.get(); }
+  /// Get the type of the col_ind pointer.
+  /// \return The type of the col_ind pointer.
+  library_data_t get_col_ind_type() const noexcept { return _col_ind_type; }
+  /// Get the row_num.
+  /// \return The row_num.
+  std::int64_t get_row_num() const noexcept { return _row_num; }
 
 private:
+  inline static const std::function<void(void *)> _shadow_row_ptr_deleter =
+      [](void *ptr) { dpct::dpct_free(ptr); };
   template <typename index_t, typename value_t> void set_data() {
-    auto data_row_ptr =
-        dpct::detail::get_memory(reinterpret_cast<index_t *>(_row_ptr));
-    auto data_col_ind =
-        dpct::detail::get_memory(reinterpret_cast<index_t *>(_col_ind));
-    auto data_value =
-        dpct::detail::get_memory(reinterpret_cast<value_t *>(_value));
+    void *row_ptr = nullptr;
+    if (_shadow_row_ptr) {
+      row_ptr = _shadow_row_ptr.get();
+    } else if (_row_ptr) {
+      row_ptr = _row_ptr;
+    } else {
+      row_ptr = dpct::dpct_malloc(sizeof(index_t) * (_row_num + 1),
+                                  get_default_queue());
+      _shadow_row_ptr.reset(row_ptr);
+    }
+#ifdef DPCT_USM_LEVEL_NONE
+    using data_index_t = sycl::buffer<index_t>;
+    using data_value_t = sycl::buffer<value_t>;
+#else
+    using data_index_t = index_t *;
+    using data_value_t = value_t *;
+#endif
+    _data_row_ptr = dpct::detail::get_memory<index_t>(row_ptr);
+    _data_col_ind = dpct::detail::get_memory<index_t>(_col_ind);
+    _data_value = dpct::detail::get_memory<value_t>(_value);
     oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,
-                                      _row_num, _col_num, _base, data_row_ptr,
-                                      data_col_ind, data_value);
+                                      _row_num, _col_num, _base,
+                                      std::get<data_index_t>(_data_row_ptr),
+                                      std::get<data_index_t>(_data_col_ind),
+                                      std::get<data_value_t>(_data_value));
     get_default_queue().wait();
   }
-  void construct() {
+
+  void set_data() {
     std::uint64_t key = dpct::detail::get_type_combination_id(
         _row_ptr_type, _col_ind_type, _value_type);
     switch (key) {
@@ -598,6 +750,28 @@ private:
   matrix_format _data_format;
   std::optional<oneapi::mkl::uplo> _uplo;
   std::optional<oneapi::mkl::diag> _diag;
+  std::unique_ptr<void, std::function<void(void *)>> _shadow_row_ptr =
+      std::unique_ptr<void, std::function<void(void *)>>(
+          nullptr, _shadow_row_ptr_deleter);
+
+  static constexpr size_t _max_data_variable_size = std::max(
+      {sizeof(sycl::buffer<std::int32_t>), sizeof(sycl::buffer<std::int64_t>),
+       sizeof(sycl::buffer<float>), sizeof(sycl::buffer<double>),
+       sizeof(sycl::buffer<std::complex<float>>),
+       sizeof(sycl::buffer<std::complex<double>>), sizeof(void *)});
+  using index_variant_t =
+      std::variant<std::array<std::byte, _max_data_variable_size>,
+                   sycl::buffer<std::int32_t>, sycl::buffer<std::int64_t>,
+                   std::int32_t *, std::int64_t *>;
+  using value_variant_t =
+      std::variant<std::array<std::byte, _max_data_variable_size>,
+                   sycl::buffer<float>, sycl::buffer<double>,
+                   sycl::buffer<std::complex<float>>,
+                   sycl::buffer<std::complex<double>>, float *, double *,
+                   std::complex<float> *, std::complex<double> *>;
+  index_variant_t _data_row_ptr;
+  index_variant_t _data_col_ind;
+  value_variant_t _data_value;
 };
 
 namespace detail {
@@ -623,10 +797,8 @@ inline void spmv_impl(sycl::queue queue, oneapi::mkl::transpose trans,
       dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
       dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
-  auto data_x =
-      dpct::detail::get_memory(reinterpret_cast<Ty *>(x->get_value()));
-  auto data_y =
-      dpct::detail::get_memory(reinterpret_cast<Ty *>(y->get_value()));
+  auto data_x = dpct::detail::get_memory<Ty>(x->get_value());
+  auto data_y = dpct::detail::get_memory<Ty>(y->get_value());
   if (a->get_diag().has_value() && a->get_uplo().has_value()) {
     oneapi::mkl::sparse::optimize_trmv(queue, a->get_uplo().value(), trans,
                                        a->get_diag().value(),
@@ -652,10 +824,8 @@ inline void spmm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
       dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
       dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
-  auto data_b =
-      dpct::detail::get_memory(reinterpret_cast<Ty *>(b->get_value()));
-  auto data_c =
-      dpct::detail::get_memory(reinterpret_cast<Ty *>(c->get_value()));
+  auto data_b = dpct::detail::get_memory<Ty>(b->get_value());
+  auto data_c = dpct::detail::get_memory<Ty>(c->get_value());
   SPARSE_CALL(oneapi::mkl::sparse::gemm(
       queue, b->get_layout(), trans_a, trans_b, alpha_value,
       a->get_matrix_handle(), data_b, b->get_col_num(), b->get_leading_dim(),
@@ -741,6 +911,336 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
   }
   default:
     throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
+
+namespace detail {
+template <typename T, bool is_host_memory, typename host_memory_t = void>
+struct temp_memory {
+  static_assert(!is_host_memory || !std::is_same_v<host_memory_t, void>,
+                "host_memory_t cannot be void when the input parameter ptr "
+                "points to host memory");
+  temp_memory(sycl::queue queue, void *ptr)
+      : _queue(queue)
+#ifdef DPCT_USM_LEVEL_NONE
+        ,
+        _buffer(is_host_memory ? sycl::buffer<T, 1>(sycl::range<1>(1))
+                               : sycl::buffer<T, 1>(dpct::get_buffer<T>(ptr)))
+#endif
+  {
+    if constexpr (is_host_memory) {
+      _original_host_ptr = static_cast<host_memory_t *>(ptr);
+#ifdef DPCT_USM_LEVEL_NONE
+      auto _buffer_acc = _buffer.get_host_access(sycl::write_only);
+      _buffer_acc[0] = static_cast<T>(*_original_host_ptr);
+#else
+      _memory_ptr = sycl::malloc_host<T>(1, _queue);
+      *_memory_ptr = static_cast<T>(*_original_host_ptr);
+#endif
+    } else {
+#ifndef DPCT_USM_LEVEL_NONE
+      _memory_ptr = static_cast<T *>(ptr);
+#endif
+    }
+  }
+
+  ~temp_memory() {
+    if constexpr (is_host_memory) {
+#ifdef DPCT_USM_LEVEL_NONE
+      auto _buffer_acc = _buffer.get_host_access(sycl::read_only);
+      *_original_host_ptr = static_cast<host_memory_t>(_buffer_acc[0]);
+#else
+      _queue.wait();
+      *_original_host_ptr = *_memory_ptr;
+      sycl::free(_memory_ptr, _queue);
+#endif
+    }
+  }
+  auto get_memory_ptr() {
+#ifdef DPCT_USM_LEVEL_NONE
+    return &_buffer;
+#else
+    return _memory_ptr;
+#endif
+  }
+
+private:
+  sycl::queue _queue;
+  host_memory_t *_original_host_ptr = nullptr;
+#ifdef DPCT_USM_LEVEL_NONE
+  sycl::buffer<T, 1> _buffer;
+#else
+  T *_memory_ptr;
+#endif
+};
+} // namespace detail
+
+/// Do initial estimation of work and load balancing of computing a sparse
+/// matrix-sparse matrix product.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] trans_b Specifies operation on input matrix b.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] b Specifies the sparse matrix b.
+/// \param [in] beta Specifies the scalar beta.
+/// \param [in, out] c Specifies the sparse matrix c.
+/// \param [in] matmat_descr Describes the sparse matrix-sparse matrix operation
+/// to be executed.
+/// \param [in, out] size_temp_buffer Specifies the size of workspace.
+/// \param [in] temp_buffer Specifies the memory of the workspace.
+inline void
+spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                       oneapi::mkl::transpose trans_b, const void *alpha,
+                       sparse_matrix_desc_t a, sparse_matrix_desc_t b,
+                       const void *beta, sparse_matrix_desc_t c,
+                       oneapi::mkl::sparse::matmat_descr_t matmat_descr,
+                       size_t *size_temp_buffer, void *temp_buffer) {
+  if (temp_buffer) {
+    detail::temp_memory<std::int64_t, true, size_t> size_memory(
+        queue, size_temp_buffer);
+    detail::temp_memory<std::uint8_t, false> work_memory(queue, temp_buffer);
+    oneapi::mkl::sparse::matmat(
+        queue, a->get_matrix_handle(), b->get_matrix_handle(),
+        c->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::work_estimation, matmat_descr,
+        size_memory.get_memory_ptr(), work_memory.get_memory_ptr()
+#ifndef DPCT_USM_LEVEL_NONE
+        , {}
+#endif
+    );
+  } else {
+    oneapi::mkl::sparse::set_matmat_data(
+        matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general, trans_a,
+        oneapi::mkl::sparse::matrix_view_descr::general, trans_b,
+        oneapi::mkl::sparse::matrix_view_descr::general);
+    detail::temp_memory<std::int64_t, true, size_t> size_memory(
+        queue, size_temp_buffer);
+    oneapi::mkl::sparse::matmat(
+        queue, a->get_matrix_handle(), b->get_matrix_handle(),
+        c->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size,
+        matmat_descr, size_memory.get_memory_ptr(), nullptr
+#ifndef DPCT_USM_LEVEL_NONE
+        , {}
+#endif
+    );
+  }
+}
+
+/// Do internal products for computing the C matrix of computing a sparse
+/// matrix-sparse matrix product.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] trans_b Specifies operation on input matrix b.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] b Specifies the sparse matrix b.
+/// \param [in] beta Specifies the scalar beta.
+/// \param [in, out] c Specifies the sparse matrix c.
+/// \param [in] matmat_descr Describes the sparse matrix-sparse matrix operation
+/// to be executed.
+/// \param [in, out] size_temp_buffer Specifies the size of workspace.
+/// \param [in] temp_buffer Specifies the memory of the workspace.
+inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                           oneapi::mkl::transpose trans_b, const void *alpha,
+                           sparse_matrix_desc_t a, sparse_matrix_desc_t b,
+                           const void *beta, sparse_matrix_desc_t c,
+                           oneapi::mkl::sparse::matmat_descr_t matmat_descr,
+                           size_t *size_temp_buffer, void *temp_buffer) {
+  if (temp_buffer) {
+    std::int64_t nnz_value = 0;
+    {
+      detail::temp_memory<std::int64_t, true, size_t> size_memory(
+          queue, size_temp_buffer);
+      detail::temp_memory<std::uint8_t, false> work_memory(queue, temp_buffer);
+      detail::temp_memory<std::int64_t, true, std::int64_t> nnz_memory(
+          queue, &nnz_value);
+      oneapi::mkl::sparse::matmat(
+          queue, a->get_matrix_handle(), b->get_matrix_handle(),
+          c->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::compute,
+          matmat_descr, size_memory.get_memory_ptr(),
+          work_memory.get_memory_ptr()
+#ifndef DPCT_USM_LEVEL_NONE
+          , {}
+#endif
+      );
+      oneapi::mkl::sparse::matmat(
+          queue, a->get_matrix_handle(), b->get_matrix_handle(),
+          c->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::get_nnz,
+          matmat_descr, nnz_memory.get_memory_ptr(), nullptr
+#ifndef DPCT_USM_LEVEL_NONE
+          , {}
+#endif
+      );
+    }
+    c->set_nnz(nnz_value);
+  } else {
+    detail::temp_memory<std::int64_t, true, size_t> size_memory(
+        queue, size_temp_buffer);
+    oneapi::mkl::sparse::matmat(
+        queue, a->get_matrix_handle(), b->get_matrix_handle(),
+        c->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::get_compute_buf_size, matmat_descr,
+        size_memory.get_memory_ptr(), nullptr
+#ifndef DPCT_USM_LEVEL_NONE
+        , {}
+#endif
+    );
+  }
+}
+
+/// Do any remaining internal products and accumulation and transfer into final
+/// C matrix arrays of computing a sparse matrix-sparse matrix product.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] trans_b Specifies operation on input matrix b.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] b Specifies the sparse matrix b.
+/// \param [in] beta Specifies the scalar beta.
+/// \param [in, out] c Specifies the sparse matrix c.
+/// \param [in] matmat_descr Describes the sparse matrix-sparse matrix operation
+/// to be executed.
+inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                            oneapi::mkl::transpose trans_b, const void *alpha,
+                            sparse_matrix_desc_t a, sparse_matrix_desc_t b,
+                            const void *beta, sparse_matrix_desc_t c,
+                            oneapi::mkl::sparse::matmat_descr_t matmat_descr) {
+  oneapi::mkl::sparse::matmat(queue, a->get_matrix_handle(),
+                              b->get_matrix_handle(), c->get_matrix_handle(),
+                              oneapi::mkl::sparse::matmat_request::finalize,
+                              matmat_descr, nullptr, nullptr
+#ifdef DPCT_USM_LEVEL_NONE
+  );
+#else
+  , {}).wait();
+#endif
+  if (c->get_shadow_row_ptr()) {
+    switch (c->get_col_ind_type()) {
+    case library_data_t::real_int32: {
+      dpct::dpct_memcpy(c->get_row_ptr(), c->get_shadow_row_ptr(),
+                        sizeof(std::int32_t) * (c->get_row_num() + 1));
+      break;
+    }
+    case library_data_t::real_int64: {
+      dpct::dpct_memcpy(c->get_row_ptr(), c->get_shadow_row_ptr(),
+                        sizeof(std::int64_t) * (c->get_row_num() + 1));
+      break;
+    }
+    default:
+      throw std::runtime_error("dpct::sparse::spgemm_finalize(): The data type "
+                               "of the col_ind in matrix c is unsupported.");
+    }
+  }
+}
+
+namespace detail {
+template <typename T>
+inline void spsv_case(sycl::queue queue, oneapi::mkl::uplo uplo,
+                      oneapi::mkl::diag diag, oneapi::mkl::transpose trans_a,
+                      const void *alpha, sparse_matrix_desc_t a,
+                      std::shared_ptr<dense_vector_desc> x,
+                      std::shared_ptr<dense_vector_desc> y) {
+  auto alpha_value =
+      dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
+  T *new_x_ptr = nullptr;
+  if (alpha_value != T(1.0f)) {
+    new_x_ptr = (T *)dpct::dpct_malloc(x->get_ele_num() * sizeof(T));
+    dpct::dpct_memcpy(new_x_ptr, x->get_value(), x->get_ele_num() * sizeof(T));
+    auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
+    oneapi::mkl::blas::column_major::scal(queue, x->get_ele_num(), alpha_value,
+                                          data_new_x, 1);
+  } else {
+    new_x_ptr = static_cast<T *>(x->get_value());
+  }
+  auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
+  auto data_y = dpct::detail::get_memory<T>(y->get_value());
+  oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag, a->get_matrix_handle(),
+                            data_new_x, data_y);
+  if (alpha_value != T(1.0f)) {
+    queue.wait();
+    dpct::dpct_free(new_x_ptr);
+  }
+}
+} // namespace detail
+
+/// Performs internal optimizations for spsv by analyzing the provided matrix
+/// structure and operation parameters.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] a Specifies the sparse matrix a.
+inline void spsv_optimize(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                          sparse_matrix_desc_t a) {
+  if (!a->get_uplo() || !a->get_diag()) {
+    throw std::runtime_error(
+        "dpct::sparse::spsv_optimize(): oneapi::mkl::sparse::optimize_trsv "
+        "needs uplo and diag attributes to be specified.");
+  }
+  oneapi::mkl::sparse::optimize_trsv(
+      queue, a->get_uplo().value(), oneapi::mkl::transpose::nontrans,
+      a->get_diag().value(), a->get_matrix_handle());
+}
+
+/// Solves a system of linear equations for a sparse matrix.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] x Specifies the dense vector x.
+/// \param [in, out] y Specifies the dense vector y.
+/// \param [in] data_type Specifies the data type of \param a, \param x and
+/// \param y .
+inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                 const void *alpha, sparse_matrix_desc_t a,
+                 std::shared_ptr<dense_vector_desc> x,
+                 std::shared_ptr<dense_vector_desc> y,
+                 library_data_t data_type) {
+  if (!a->get_uplo() || !a->get_diag()) {
+    throw std::runtime_error(
+        "dpct::sparse::spsv(): oneapi::mkl::sparse::trsv needs uplo and diag "
+        "attributes to be specified.");
+  }
+  oneapi::mkl::uplo uplo = a->get_uplo().value();
+  oneapi::mkl::diag diag = a->get_diag().value();
+
+  std::uint64_t key = dpct::detail::get_type_combination_id(
+      a->get_value_type(), x->get_value_type(), y->get_value_type());
+  switch (key) {
+  case dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                             library_data_t::real_float,
+                                             library_data_t::real_float): {
+    detail::spsv_case<float>(queue, uplo, diag, trans_a, alpha, a, x, y);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                             library_data_t::real_double,
+                                             library_data_t::real_double): {
+    detail::spsv_case<double>(queue, uplo, diag, trans_a, alpha, a, x, y);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                             library_data_t::complex_float,
+                                             library_data_t::complex_float): {
+    detail::spsv_case<std::complex<float>>(queue, uplo, diag, trans_a, alpha, a,
+                                           x, y);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::complex_double,
+                                             library_data_t::complex_double,
+                                             library_data_t::complex_double): {
+    detail::spsv_case<std::complex<double>>(queue, uplo, diag, trans_a, alpha,
+                                            a, x, y);
+    break;
+  }
+  default:
+    throw std::runtime_error("dpct::sparse::spsv(): The combination of the "
+                             "value types of a, x and y is unsupported.");
   }
 }
 #endif

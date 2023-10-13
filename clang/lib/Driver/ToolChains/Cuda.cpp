@@ -73,10 +73,12 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
   int DefineVersion = std::stoi(Res);
   int Major = DefineVersion / 1000;
   int Minor = (DefineVersion % 100) / 10;
-
+  ParsedCUDAVersion = llvm::itostr(Major) + "." + llvm::itostr(Minor);
   SDKVersionMajor = Major;
   SDKVersionMinor = Minor;
-
+  if (Major < 8) {
+    CV = CudaVersion::CUDA_80;
+  }
   if (Major == 8 && Minor == 0) {
     CV = CudaVersion::CUDA_80;
   } else if (Major == 9 && Minor == 0) {
@@ -120,8 +122,7 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
   if (CV != CudaVersion::UNKNOWN) {
     IsVersionSupported = true;
     return true;
-  }
-  if (Major >= 12) {
+  } else if (Major >= 12) {
     CV = CudaVersion::NEW;
     return true;
   }
@@ -233,7 +234,6 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
   if (!IsFound)
     return false;
   IsValid = true;
-
   InstallPath = FilePath;
   return true;
 }

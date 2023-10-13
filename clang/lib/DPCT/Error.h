@@ -16,6 +16,7 @@ enum ProcessStatus {
   MigrationSucceeded = 0,
   MigrationNoCodeChangeHappen = 1,
   MigrationSkipped = 2,
+  InterceptBuildSuccess = 3,
   MigrationError = -1,
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
@@ -44,7 +45,7 @@ enum ProcessStatus {
   MigrationErrorCannotAccessDirInDatabase = -29,
   MigrationErrorInconsistentFileInDatabase = -30,
   MigrationErrorCudaVersionUnsupported = -31,
-  MigrationErrorSupportedCudaVersionNotAvailable = -32,
+  MigrationErrorDetectedCudaVersionUnsupported = -32,
   MigrationErrorInvalidExplicitNamespace = -33,
   MigrationErrorDifferentOptSet = -37,
   MigrationErrorInvalidRuleFilePath = -38,
@@ -56,6 +57,7 @@ enum ProcessStatus {
   MigrationErrorAPIMappingWrongCUDAHeader = -44,
   MigrationErrorAPIMappingNoCUDAHeader = -45,
   MigrationErrorCannotDetectCudaPath = -46,
+  InterceptBuildError = -47,
 };
 
 namespace clang {

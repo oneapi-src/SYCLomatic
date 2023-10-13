@@ -1,0 +1,131 @@
+.. _DPCT1117:
+
+DPCT1117
+========
+
+Message
+-------
+
+.. _msg-1117-start:
+
+There is ``atomicInc/Dec`` operation on *<argument 2>* and value of *<argument 2>*
+was scaled by migration for performance, refer to DPCT1116. Using the value of
+*<argument 2>* through *<argument 1>* should also be scaled by dividing or
+multiplying *<expression>*. You may need to adjust the code.
+
+.. _msg-1117-end:
+
+Detailed Help
+-------------
+
+An optimized method has been applied to migrate ``atomicInc``/``atomicDec``. To
+align with this optimized method, some scaling adjustments are required to ensure
+that values remain consistent and accurate after migration. Refer to :ref:`DPCT1116`
+for more details.
+
+When the code utilizes the address of an atomic variable, all the assignments of
+value or reference of value operation through the atomic variable address also
+need to be scaled by multiplying or dividing a step. Atomic variables also need
+to be scaled appropriately for all host-side memory operations.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ unsigned int a1;
+   __global__ void kernel(){
+     ...
+     unsigned int old_val = atomicInc(&a1, 0x7fffffff);
+     ...
+   }
+   int main(){
+     unsigned int result;
+     unsigned int *d_addr;
+     cudaGetSymbolAddress((void **)&d_addr, a1);
+     cudaMemset(d_addr, 2, sizeof(unsigned int));
+     kernel<<<1, 100>>>();
+     ...
+     cudaMemcpy(&result, d_addr, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+     ...
+   }
+
+
+results in the following migrated SYCL* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   dpct::global_memory<unsigned int, 0> a1;
+   void kernel(unsigned int &a1){
+     ...
+     /*
+     DPCT1116:0: The atomicInc was migrated to dpct::atomic_fetch_add(&a1, 2) / 2 for performance, and 2 is computed by (UINT_MAX + 1) / (‘0x7fffffff’ + 1). This migration requires the initial value of ‘a1’ to be scaled by multiplying 2, and any usage of value of ‘a1’ outside atomic function to be scaled by dividing 2.
+     */
+     unsigned int old_val = dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&a1, 2) / 2;
+     ...
+   }
+   int main(){
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+     unsigned int result;
+     unsigned int *d_addr;
+     /*
+     DPCT1117:3: There is atomicInc/Dec operation on 'a1' and value of 'a1' was scaled by migration for performance, refer to DPCT1116. Using value of 'a1' through 'd_addr' should also be scaled by dividing or multiplying 2. You may need to adjust the code.
+     */
+     *((void **)&d_addr) = a1.get_ptr();
+     q_ct1.memset(d_addr, 2, sizeof(unsigned int)).wait();
+     q_ct1.submit(
+       [&](sycl::handler &cgh) {
+         a1.init();
+         auto a1_ptr_ct1 = a1.get_ptr();
+         cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 100), sycl::range<3>(1, 1, 100)),
+           [=](sycl::nd_item<3> item_ct1) {
+             kernel1(*a1_ptr_ct1);
+           });
+       });
+     ...
+     q_ct1.memcpy(&result, d_addr, sizeof(unsigned int)).wait();
+     ...
+   }
+
+
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+
+   dpct::global_memory<unsigned int, 0> a1;
+   void kernel(unsigned int &a1){
+     ...
+     unsigned int old_val = dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&a1, 2) / 2;
+     ...
+   }
+   int main(){
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+     unsigned int result;
+     unsigned int *d_addr;
+     *((void **)&d_addr) = a1.get_ptr();
+     q_ct1.memset(d_addr, 2 * 2, sizeof(unsigned int)).wait();
+     q_ct1.submit(
+       [&](sycl::handler &cgh) {
+         a1.init();
+         auto a1_ptr_ct1 = a1.get_ptr();
+         cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 100), sycl::range<3>(1, 1, 100)),
+           [=](sycl::nd_item<3> item_ct1) {
+             kernel1(*a1_ptr_ct1);
+           });
+       });
+     ...
+     q_ct1.memcpy(&result, d_addr, sizeof(unsigned int)).wait();
+     result = result / 2;
+     ...
+   }

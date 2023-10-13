@@ -8,7 +8,7 @@ Message
 
 .. _msg-1008-start:
 
-``<function name>`` function is not defined in SYCL. This is a hardware-specific feature.
+*<function name>* function is not defined in SYCL. This is a hardware-specific feature.
 Consult with your hardware vendor to find a replacement.
 
 .. _msg-1008-end:

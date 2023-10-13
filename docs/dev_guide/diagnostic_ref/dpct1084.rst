@@ -8,7 +8,7 @@ Message
 
 .. _msg-1084-start:
 
-The function call ``<function name>`` has multiple migration results in different template
+The function call *<function name>* has multiple migration results in different template
 instantiations that could not be unified. You may need to adjust the code.
 
 .. _msg-1084-end:

@@ -239,6 +239,8 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::device_ext)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
+      {"cusparseAlgMode_t",
+       std::make_shared<TypeNameRule>("int")},
       {"cusparseSolveAnalysisInfo_t",
        std::make_shared<TypeNameRule>(
            "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>",
@@ -481,10 +483,16 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpGEMMDescr_t",
+          std::make_shared<TypeNameRule>("oneapi::mkl::sparse::matmat_descr_t")},
+      {"cusparseSpSVDescr_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpGEMMAlg_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpSVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"__half_raw", std::make_shared<TypeNameRule>("uint16_t")},
       {"cudaFuncAttributes",
        std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
                                       "kernel_function_info")},
+      {"ncclResult_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -890,6 +898,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDevAttrMultiProcessorCount",
        std::make_shared<EnumNameRule>(
            "get_max_compute_units",
+           HelperFeatureEnum::device_ext)},
+      {"cudaDevAttrMaxThreadsPerBlock",
+       std::make_shared<EnumNameRule>(
+           "get_max_work_group_size",
            HelperFeatureEnum::device_ext)},
       {"cudaDevAttrClockRate",
        std::make_shared<EnumNameRule>(
@@ -1300,6 +1312,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUSOLVER_EIG_RANGE_ALL", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::all")},
       {"CUSOLVER_EIG_RANGE_V", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::values")},
       {"CUSOLVER_EIG_RANGE_I", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
+      {"ncclSuccess", std::make_shared<EnumNameRule>("0")},
       // ...
   };
 
@@ -1940,6 +1953,12 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseDcsrmv",
                            "cusparseCcsrmv",
                            "cusparseZcsrmv",
+                           "cusparseScsrmv_mp",
+                           "cusparseDcsrmv_mp",
+                           "cusparseCcsrmv_mp",
+                           "cusparseZcsrmv_mp",
+                           "cusparseCsrmvEx",
+                           "cusparseCsrmvEx_bufferSize",
                            "cusparseScsrsv_analysis",
                            "cusparseDcsrsv_analysis",
                            "cusparseCcsrsv_analysis",
@@ -1979,7 +1998,17 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpMM_bufferSize",
                            "cusparseSpMV",
                            "cusparseSpMV_bufferSize",
-                           "cusparseSpMM_preprocess"};
+                           "cusparseSpMM_preprocess",
+                           "cusparseSpGEMM_compute",
+                           "cusparseSpGEMM_copy",
+                           "cusparseSpGEMM_createDescr",
+                           "cusparseSpGEMM_destroyDescr",
+                           "cusparseSpGEMM_workEstimation",
+                           "cusparseSpSV_createDescr",
+                           "cusparseSpSV_destroyDescr",
+                           "cusparseSpSV_solve",
+                           "cusparseSpSV_bufferSize",
+                           "cusparseSpSV_analysis"};
 }
 // clang-format on
 

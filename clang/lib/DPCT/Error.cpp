@@ -8,6 +8,7 @@
 
 #include "Error.h"
 
+#include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "Statics.h"
 
@@ -38,17 +39,23 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Path for CUDA header files specified by "
                    "--cuda-include-path is invalid.";
     break;
-  case MigrationErrorSupportedCudaVersionNotAvailable:
+  case MigrationErrorDetectedCudaVersionUnsupported:
     StatusString =
-        "Error: The auto detect CUDA header files version is not supported. "
-        "See Release Notes for supported versions. "
-        "Or specify another version's header by --cuda-include-path. You can "
+        "Error: The auto detect CUDA header files version is " + Message +
+        " and not supported yet. "
+        "The latest supported version is " +
+        dpct::DpctGlobalInfo::getCudaVersion() +
+        ". You can specify CUDA header files by option --cuda-include-path or "
         "use --force-migration to do the migration.";
     break;
   case MigrationErrorCudaVersionUnsupported:
     StatusString = "Error: The version of CUDA header files specified by "
-                   "--cuda-include-path is not supported. See Release Notes "
-                   "for supported versions. You can use --force-migration to "
+                   "--cuda-include-path is" +
+                   Message +
+                   " and not supported yet. The latest supported "
+                   "version is " +
+                   dpct::DpctGlobalInfo::getCudaVersion() +
+                   ". You can use --force-migration to "
                    "do the migration.";
     break;
   case MigrationErrorCannotDetectCudaPath:
@@ -164,10 +171,9 @@ void ShowStatus(int Status, std::string Message) {
                    "as or a parent directory of --in-root";
     break;
   case MigrationErrorNoAPIMapping:
-    StatusString =
-        "Error: The API mapping query for this API is not available yet. You "
-        "may get the API mapping by migrating a sample code of this API with "
-        "the tool.";
+    StatusString = "Error: The API mapping query for this API is not available "
+                   "yet. You may get the API mapping by migrating sample code "
+                   "from this CUDA API to the SYCL API with the tool.";
     break;
   case MigrationErrorAPIMappingWrongCUDAHeader:
     StatusString =
@@ -182,6 +188,9 @@ void ShowStatus(int Status, std::string Message) {
         "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
         ". Please specify the header file for '" + Message +
         "' with option \"--extra-arg\".";
+    break;
+  case InterceptBuildError:
+    StatusString = "Error: Call to intercept-build failed";
     break;
   default:
     DpctLog() << "Unknown error\n";
