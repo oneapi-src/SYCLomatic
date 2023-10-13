@@ -48,7 +48,7 @@ void print_array(double *d) {
 // CHECK:d_in = sycl::malloc_device<double>(N, q_ct1);
 // CHECK:d_out = sycl::malloc_device<double>(N, q_ct1);
 // CHECK:for (int i = 0; i < N; ++i) h_in[i] = i;
-// CHECK:q_ct1.memcpy((void *)d_in, (void *)h_in, sizeof(double) * N).wait();
+// CHECK:q_ct1.memcpy((void *)d_in, (void *)h_in, sizeof(double) * N);
 // CHECK:oneapi::dpl::transform_iterator<double *, UserDefMul> iter(d_in, UserDefMul());
 // CHECK:q_ct1.parallel_for(
 // CHECK:sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 

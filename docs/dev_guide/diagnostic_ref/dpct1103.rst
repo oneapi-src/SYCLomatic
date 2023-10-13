@@ -8,7 +8,7 @@ Message
 
 .. _msg-1103-start:
 
-``<expression text>`` should be a dynamic library. The dynamic library should supply
+*<expression text>* should be a dynamic library. The dynamic library should supply
 wrapped kernel functions.
 
 .. _msg-1103-end:
@@ -16,7 +16,7 @@ wrapped kernel functions.
 Detailed Help
 -------------
 
-The CUDA\* application expects ``<expression text>`` to be the name of a CUDA module.
+The CUDA\* application expects *<expression text>* to be the name of a CUDA module.
 The user should ensure that the CUDA code that generated the CUDA module is migrated
 to SYCL\* code and compiled to generate a kernel library.
 
@@ -45,8 +45,8 @@ On Windows\*:
 
    icpx -fsycl <migrated module source file(s)> -shared -o <kernel library filename>
 
-The ``<kernel library filename>`` should be chosen so that ``<expression text>`` will have
-the same filename at runtime. For the following example, ``<kernel library filename>`` should
+The *<kernel library filename>* should be chosen so that *<expression text>* will have
+the same filename at runtime. For the following example, *<kernel library filename>* should
 be set to ``library.so``.
 
 For example, this original CUDA code:

@@ -1,0 +1,89 @@
+.. _DPCT1116:
+
+DPCT1116
+========
+
+Message
+-------
+
+.. _msg-1116-start:
+
+The *<original API>* was migrated to *<migrated API>* for performance, and
+*<expression>* is computed by ``(UINT_MAX + 1) / ('<argument>' + 1)``. This
+migration requires the initial value of *<value>* to be scaled by multiplying
+*<expression>*, and any usage of value of *<value>* outside atomic function to
+be scaled by dividing *<expression>*.
+
+.. _msg-1116-end:
+
+Detailed Help
+-------------
+
+By default, the migration tool uses the Compare-and-Swap atomic operation to
+migrate the ``atomicInc`` and ``atomicDec`` functions. If the atomic API is in a
+critical path, performance is not good.
+
+To improve the performance, the migration tool checks the special value of the
+second argument of ``atomicInc``/``atomicDec``. If it is ``2n – 1 (1 < n <= 32)``,
+then the tool uses the atomic ``add`` API to migrate ``atomicInc``/``atomicDec``.
+
+Using ``atomicInc(addr, val)`` as an example, the essence of optimization involves:
+
+* Migrate the ``atomicInc(addr, val)`` function to ``dpct::atomic_fetch_add(addr, step)``,
+  where ``step`` is calculated by ``(UINT_MAX + 1) / (val + 1)``. This strategy exploits
+  the overflow behavior of unsigned integers to mimic the wrapping behavior of
+  ``atomicInc/Dec()``.
+* Update the initial value of ``*addr`` to be scaled by multiplying with ``step``,
+  ensuring the wrapping behavior is consistent.
+* Update the references to the value ``*addr`` outside atomic functions, dividing it
+  by ``step`` to retrieve the intended value.
+
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ unsigned int a1 = 5;
+   __global__ void kernel(unsigned int *result){
+     ...
+     unsigned int old_val = atomicInc(&a1, 0x7fffffff);
+     ...
+     *result = a1;
+   }
+
+
+results in the following migrated SYCL* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   dpct::global_memory<unsigned int, 0> a1(5 * 2);
+   void kernel(unsigned int*result, unsigned int &a1){
+     ...
+     /*
+     DPCT1116:0: The atomicInc was migrated to dpct::atomic_fetch_add(&a1, 2) / 2 for performance, and 2 is computed by (UINT_MAX + 1) / ('0x7fffffff' + 1). This migration requires the initial value of 'a1' to be scaled by multiplying 2, and any usage of the value of 'a1' outside atomic function to be scaled by dividing 2.
+     */
+     unsigned int old_val = dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&a1, 2) / 2;
+     ...
+     *result = a1 / 2; // Dividing a1 by step 2 to get the intended value.
+   }
+
+
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   dpct::global_memory<unsigned int, 0> a1(5 * 2);
+   void kernel(unsigned int*result, unsigned int &a1){
+     ...
+     unsigned int old_val = dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&a1, 2) / 2;
+     ...
+     *result = a1 / 2; // Dividing a1 by step 2 to get the intended value.
+   }
+
