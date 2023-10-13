@@ -80,7 +80,7 @@ Migration rules are specified in YAML files. A single rule file may contain mult
      - Specifies the postfix of a Header rule type. For example: ``#endif ...``
    * - Subrules
      - String value
-     - Specifies the subrules for the PatternRewriter rule type. For more detail refer to :ref:`_pattern_rewriter_rule_ref`.
+     - Specifies the subrules for the PatternRewriter rule type.
 
 For example, the following user-defined migration rule file demonstrates different
 rule types. The behavior of each rule is explained in the corresponding comment:
@@ -142,16 +142,17 @@ rule types. The behavior of each rule is explained in the corresponding comment:
      In: foo                                              # Disable the migration of foo
      Out: ""
      Includes: []
-   - Rule: post_migration_rewriter_rule                   # For more detail, please reference :ref:`_pattern_rewriter_rule_ref`
+   - Rule: post_migration_rewriter_rule                   # Post-migration pattern rewrite rule which uses nested string pattern search and replace to find and update strings in the migrated code
      Kind: PatternRewriter
      Priority: Takeover
-     In: my_max(${args});
-     Out: my_min(${args});
+     In: my_max(${args});                                 # Match pattern "my_max(...);" and save the arbitrary string between "my_max(" and ");" as ${args}
+                                                          # "args" can be a user-defined name which will be referenced by "Out" and "Subrules".
+     Out: my_min(${args});                                # Replace the pattern string to "my_min(${args});"
      Includes: []
      Subrules:
-       args:
-         In: a
-         Out: b
+       args:                                              # Specify the subrule to apply to ${args}. Where args is the user-defined name which is defined in "In".
+         In: a                                            # Match pattern "a" in ${args}
+         Out: b                                           # Replace the pattern string to "b" in ${args}
    ...                                                    # [YAML syntax] End the document
 
 
@@ -231,33 +232,3 @@ output source code:
 
    int *ptr, *ptr2;
    int * new_ptr = bar(*ptr, 30);
-
-.. _pattern_rewriter_rule_ref:
-
-Post-migration Pattern-Rewrite
---------------------------------------------------------
-
-|tool_name| supports post-migration pattern-rewrite which can apply nested
-string pattern search and replacement to the migrated code. The pattern-rewrite
-feature is integrated in the user-defined rule feature :ref:`_user_define_rule_ref`.
-The pattern-rewrite feature can be enabled by adding a rule with kind
-"PatternRewriter" into the rule YAML file and enable the rule file with ``–rule-file``
-command line option.
-
-The following user-defined rule shows an example of a PatternRewriter rule.
-The rule finds string "my_max(a, b);" in the migrated code and replaces it with the string "my_min(b, b);".
-The detailed behavior of the rule is explained in the corresponding comment:
-
-.. code-block:: none
-
-   - Rule: rule_post
-     Kind: PatternRewriter
-     Priority: Takeover
-     In: my_max(${args});               # Match pattern "my_max(...);" and save the arbitrary string between "my_max(" and ");" as ${args}
-                                        # "args" can be a user-defined name which will be referenced by "Out" and "Subrules".
-     Out: my_min(${args});              # Replace the pattern string to "my_min(${args});"
-     Includes: []
-     Subrules:
-       args:                            # Specify the subrule to apply to ${args}. Where args is the user-defined name which is defined in "In".
-         In: a                          # Match pattern "a" in ${args}
-         Out: b                         # Replace the pattern string to "b" in ${args}
