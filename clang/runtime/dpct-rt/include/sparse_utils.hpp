@@ -294,6 +294,73 @@ private:
 #endif
 
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
+namespace detail {
+template <typename T> struct optimize_csrsv_impl {
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
+                  const std::shared_ptr<matrix_info> info, const T *val,
+                  const int *row_ptr, const int *col_ind,
+                  std::shared_ptr<optimize_info> optimize_info) {
+    using Ty = typename dpct::DataType<T>::T2;
+    auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+    auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
+    auto data_val = dpct::detail::get_memory<Ty>(val);
+    oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
+                                      row_col, row_col, info->get_index_base(),
+                                      data_row_ptr, data_col_ind, data_val);
+    if (info->get_matrix_type() != matrix_info::matrix_type::tr)
+      return;
+#ifndef DPCT_USM_LEVEL_NONE
+    sycl::event e;
+    e =
+#endif
+        oneapi::mkl::sparse::optimize_trsv(queue, info->get_uplo(), trans,
+                                           info->get_diag(),
+                                           optimize_info->get_matrix_handle());
+#ifndef DPCT_USM_LEVEL_NONE
+    optimize_info->add_dependency(e);
+#endif
+  }
+};
+template <typename T> struct csrsv_impl {
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
+                  const T *alpha, const std::shared_ptr<matrix_info> info,
+                  const T *val, const int *row_ptr, const int *col_ind,
+                  std::shared_ptr<optimize_info> optimize_info, const T *x,
+                  T *y) {
+    if (info->get_matrix_type() != matrix_info::matrix_type::tr)
+      return;
+    auto alpha_value = dpct::detail::get_value(alpha, queue);
+    T *new_x_ptr = nullptr;
+    if (alpha_value != T(1.0f)) {
+      new_x_ptr = (T *)dpct::dpct_malloc(row_col * sizeof(T));
+      dpct::dpct_memcpy(new_x_ptr, x->get_value(), row_col * sizeof(T));
+      auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
+      oneapi::mkl::blas::column_major::scal(queue, row_col, alpha_value,
+                                            data_new_x, 1);
+    } else {
+      new_x_ptr = static_cast<T *>(x->get_value());
+    }
+    auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
+    auto data_y = dpct::detail::get_memory<T>(y->get_value());
+
+#ifndef DPCT_USM_LEVEL_NONE
+    sycl::event e;
+    e =
+#endif
+        oneapi::mkl::sparse::trsv(
+            queue, info->get_uplo(), trans, info->get_diag(),
+            optimize_info->get_matrix_handle(), data_new_x, data_y);
+#ifndef DPCT_USM_LEVEL_NONE
+    optimize_info->add_dependency(e);
+#endif
+    if (alpha_value != T(1.0f)) {
+      queue.wait();
+      dpct::dpct_free(new_x_ptr);
+    }
+  }
+};
+} // namespace detail
+
 /// Performs internal optimizations for solving a system of linear equations for
 /// a CSR format sparse matrix.
 /// \param [in] queue The queue where the routine should be executed. It must
@@ -311,25 +378,8 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const std::shared_ptr<matrix_info> info,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
-  using Ty = typename dpct::DataType<T>::T2;
-  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
-  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
-  auto data_val = dpct::detail::get_memory<Ty>(val);
-  oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
-                                    row_col, row_col, info->get_index_base(),
-                                    data_row_ptr, data_col_ind, data_val);
-  if (info->get_matrix_type() != matrix_info::matrix_type::tr)
-    return;
-#ifndef DPCT_USM_LEVEL_NONE
-  sycl::event e;
-  e =
-#endif
-      oneapi::mkl::sparse::optimize_trsv(queue, info->get_uplo(), trans,
-                                         info->get_diag(),
-                                         optimize_info->get_matrix_handle());
-#ifndef DPCT_USM_LEVEL_NONE
-  optimize_info->add_dependency(e);
-#endif
+  detail::optimize_csrsv_impl()(queue, trans, row_col, info, val, row_ptr,
+                                col_ind, optimize_info);
 }
 
 void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
@@ -337,33 +387,9 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     const void *val, library_data_t val_type,
                     const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
-  switch (val_type) {
-  case library_data_t::real_float: {
-    optimize_csrsv<float>(queue, trans, row_col, info, val, val_type, row_ptr,
-                          col_ind, optimize_info);
-    break;
-  }
-  case library_data_t::real_double: {
-    optimize_csrsv<double>(queue, trans, row_col, info, val, val_type, row_ptr,
-                           col_ind, optimize_info);
-    break;
-  }
-  case library_data_t::complex_float: {
-    optimize_csrsv<std::complex<float>>(queue, trans, row_col, info, val,
-                                        val_type, row_ptr, col_ind,
-                                        optimize_info);
-    break;
-  }
-  case library_data_t::complex_double: {
-    optimize_csrsv<std::complex<double>>(queue, trans, row_col, info, val,
-                                         val_type, row_ptr, col_ind,
-                                         optimize_info);
-    break;
-  }
-  default:
-    throw std::runtime_error(
-        "dpct::sparse::optimize_csrsv(): The data type of val is unsupported.");
-  }
+  detail::spblas_shim<detail::optimize_csrsv_impl>(
+      val_type, queue, trans, row_col, info, val, val_type, row_ptr, col_ind,
+      optimize_info);
 }
 
 template <typename T>
@@ -371,36 +397,8 @@ void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
            const T *alpha, const std::shared_ptr<matrix_info> info,
            const T *val, const int *row_ptr, const int *col_ind,
            std::shared_ptr<optimize_info> optimize_info, const T *x, T *y) {
-  if (info->get_matrix_type() != matrix_info::matrix_type::tr)
-    return;
-  auto alpha_value = dpct::detail::get_value(alpha, queue);
-  T *new_x_ptr = nullptr;
-  if (alpha_value != T(1.0f)) {
-    new_x_ptr = (T *)dpct::dpct_malloc(row_col * sizeof(T));
-    dpct::dpct_memcpy(new_x_ptr, x->get_value(), row_col * sizeof(T));
-    auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
-    oneapi::mkl::blas::column_major::scal(queue, row_col, alpha_value,
-                                          data_new_x, 1);
-  } else {
-    new_x_ptr = static_cast<T *>(x->get_value());
-  }
-  auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
-  auto data_y = dpct::detail::get_memory<T>(y->get_value());
-
-#ifndef DPCT_USM_LEVEL_NONE
-  sycl::event e;
-  e =
-#endif
-      oneapi::mkl::sparse::trsv(
-          queue, info->get_uplo(), trans, info->get_diag(),
-          optimize_info->get_matrix_handle(), data_new_x, data_y);
-#ifndef DPCT_USM_LEVEL_NONE
-  optimize_info->add_dependency(e);
-#endif
-  if (alpha_value != T(1.0f)) {
-    queue.wait();
-    dpct::dpct_free(new_x_ptr);
-  }
+  detail::csrsv_impl()(queue, trans, row_col, alpha, info, val, row_ptr,
+                       col_ind, optimize_info, x, y);
 }
 
 void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
@@ -409,41 +407,9 @@ void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
            library_data_t val_type, const int *row_ptr, const int *col_ind,
            std::shared_ptr<optimize_info> optimize_info, const T *x,
            library_data_t x_type, T *y, library_data_t y_type) {
-  std::uint64_t key =
-      detail::get_type_combination_id(alpha_type, val_type, x_type, y_type);
-  switch (key) {
-  case detail::get_type_combination_id(
-      library_data_t::real_float, library_data_t::real_float,
-      library_data_t::real_float, library_data_t::real_float): {
-    csrsv<float>(queue, trans, row_col, alpha, info, val, row_ptr, col_ind,
-                 optimize_info, x, y);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_double, library_data_t::real_double,
-      library_data_t::real_double, library_data_t::real_double): {
-    csrsv<double>(queue, trans, row_col, alpha, info, val, row_ptr, col_ind,
-                  optimize_info, x, y);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::complex_float, library_data_t::complex_float,
-      library_data_t::complex_float, library_data_t::complex_float): {
-    csrsv<std::complex<float>>(queue, trans, row_col, alpha, info, val, row_ptr,
-                               col_ind, optimize_info, x, y);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::complex_double, library_data_t::complex_double,
-      library_data_t::complex_double, library_data_t::complex_double): {
-    csrsv<std::complex<double>>(queue, trans, row_col, alpha, info, val,
-                                row_ptr, col_ind, optimize_info, x, y);
-    break;
-  }
-  default:
-    throw std::runtime_error("dpct::sparse::csrsv(): The data type combination "
-                             "of alpha, val, x and y is unsupported.");
-  }
+  detail::spblas_shim<detail::csrsv_impl>(val_type, queue, trans, row_col,
+                                          alpha, info, val, row_ptr, col_ind,
+                                          optimize_info, x, y);
 }
 #endif
 
