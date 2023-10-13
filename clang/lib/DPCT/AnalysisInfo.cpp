@@ -2671,8 +2671,13 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
           DpctGlobalInfo::getSourceManager().getFileOffset(CE->getRParenLoc());
     } else if (FuncInfo->NonDefaultParamNum == 0) {
       // if all params have default value
-      ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
-          CE->getArg(HasImplicitArg ? 1 : 0)->getBeginLoc());
+      if (CE->getNumArgs()) {
+        ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
+            CE->getArg(HasImplicitArg ? 1 : 0)->getBeginLoc());
+      } else {
+        ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
+            CE->getRParenLoc());
+      }
     } else {
       // if some params have default value, set ExtraArgLoc to the location
       // before the comma
