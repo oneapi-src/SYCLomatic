@@ -8,7 +8,7 @@ Message
 
 .. _msg-1104-start:
 
-``<expression text>`` should point to a dynamic library loaded in memory. The dynamic
+*<expression text>* should point to a dynamic library loaded in memory. The dynamic
 library should supply wrapped kernel functions.
 
 .. _msg-1104-end:
@@ -16,7 +16,7 @@ library should supply wrapped kernel functions.
 Detailed Help
 -------------
 
-The CUDA\* application expects ``<expression text>`` to point to a CUDA module
+The CUDA\* application expects *<expression text>* to point to a CUDA module
 whose file image has been copied to memory. The user should ensure that the CUDA
 code that generated the CUDA module is migrated to SYCL\* code, compiled to
 generate a kernel library, and then copied to memory by the migrated SYCL
@@ -49,7 +49,7 @@ On Windows\*:
 
 The user should ensure that the application will load the kernel library image into
 memory at runtime. For the following example this can be ensured by setting
-``<kernel library filename>`` to ``library.so``.
+*<kernel library filename>* to ``library.so``.
 
 For example, this original CUDA code:
 

@@ -1,0 +1,66 @@
+.. _DPCT1112:
+
+DPCT1112
+========
+
+Message
+-------
+
+.. _msg-1112-start:
+
+If the filter mode is set to `linear`, the behavior of image "read" may be
+different from `tex1Dfetch` in the original code. You may need to adjust the code.
+
+.. _msg-1112-end:
+
+Detailed Help
+-------------
+
+The CUDA\* `tex1Dfetch` function always applies the nearest filtering mode. In the migrated
+code, the image read function applies the filtering mode that is set for the texture
+object. There may be a different result on the image read, so you may need to align
+the filter mode on image read.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+     cudaTextureDesc desc;
+     desc.filterMode = cudaFilterModeLinear;
+     ...
+     cudaTextureObject_t obj;
+     cudaCreateTextureObject(&obj, ..., &desc, ...);
+     ...
+     tex1Dfetch(..., obj, ...);
+
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+     dpct::sampling_info desc;
+     desc.set(sycl::filtering_mode::linear);
+     ...
+     dpct::image_wrapper_base_p obj;
+     obj = dpct::create_image_wrapper(..., desc);
+     ...
+     obj.read(...);
+
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+     dpct::sampling_info desc;
+     desc.set(sycl::filtering_mode::nearest);  // Update the filtering mode from linear to nearest
+     ...
+     dpct::image_wrapper_base_p obj;
+     obj = dpct::create_image_wrapper(..., desc);
+     ...
+
