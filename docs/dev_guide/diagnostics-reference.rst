@@ -212,7 +212,9 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1045-start:
           :end-before: msg-1045-end:
    * - :ref:`DPCT1046`
-     - .. include:: diagnostic_ref/dpct1046.rst
+     - REMOVED.
+
+       .. include:: diagnostic_ref/dpct1046.rst
           :start-after: msg-1046-start:
           :end-before: msg-1046-end:
    * - :ref:`DPCT1047`
@@ -485,3 +487,31 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct1111.rst
           :start-after: msg-1111-start:
           :end-before: msg-1111-end:
+   * - :ref:`DPCT1112`
+     - .. include:: diagnostic_ref/dpct1112.rst
+          :start-after: msg-1112-start:
+          :end-before: msg-1112-end:
+   * - :ref:`DPCT1113`
+     - .. include:: diagnostic_ref/dpct1113.rst
+          :start-after: msg-1113-start:
+          :end-before: msg-1113-end:
+   * - :ref:`DPCT1114`
+     - .. include:: diagnostic_ref/dpct1114.rst
+          :start-after: msg-1114-start:
+          :end-before: msg-1114-end:
+   * - :ref:`DPCT1115`
+     - .. include:: diagnostic_ref/dpct1115.rst
+          :start-after: msg-1115-start:
+          :end-before: msg-1115-end:
+   * - :ref:`DPCT1116`
+     - .. include:: diagnostic_ref/dpct1116.rst
+          :start-after: msg-1116-start:
+          :end-before: msg-1116-end:
+   * - :ref:`DPCT1117`
+     - .. include:: diagnostic_ref/dpct1117.rst
+          :start-after: msg-1117-start:
+          :end-before: msg-1117-end:
+   * - :ref:`DPCT1118`
+     - .. include:: diagnostic_ref/dpct1118.rst
+          :start-after: msg-1118-start:
+          :end-before: msg-1118-end:

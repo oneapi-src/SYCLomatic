@@ -7,6 +7,8 @@ int main(){
   int version;
   // CHECK: int res;
   ncclResult_t res;
+
+  ncclComm_t comm;
   // CHECK: res = DPCT_CHECK_ERROR(version = dpct::ccl::get_version());
   res = ncclGetVersion(&version);
   // CHECK:     /*
@@ -18,6 +20,10 @@ int main(){
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclGetLastError was removed because this call is redundant in SYCL.
   // CHECK-NEXT: */
   ncclGetLastError(NULL);
+  // CHECK:     /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclCommGetAsyncError was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: */
+  ncclCommGetAsyncError(comm,&res);
   // CHECK: if (res == 0) {
   if (res == ncclSuccess) {
     return 0;

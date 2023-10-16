@@ -215,19 +215,224 @@ __global__ void kernelFuncBfloat162Comparison() {
 // CHECK-NEXT:   sycl::float2 f2, f2_1, f2_2;
 // CHECK-NEXT:   sycl::ext::oneapi::bfloat16 bf16, bf16_1, bf16_2;
 // CHECK-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
-// CHECK-NEXT:   f2 = sycl::float2(bf162[0], bf162[1]);
-// CHECK-NEXT:   f = static_cast<float>(bf16);
-// CHECK-NEXT:   bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f2[0], f2[1]);
-// CHECK-NEXT:   bf16 = sycl::ext::oneapi::bfloat16(f);
 __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   float f, f_1, f_2;
   float2 f2, f2_1, f2_2;
   __nv_bfloat16 bf16, bf16_1, bf16_2;
   __nv_bfloat162 bf162, bf162_1, bf162_2;
+  int i;
+  long long ll;
+  short s;
+  unsigned u;
+  unsigned long long ull;
+  unsigned short us;
+  double d;
+  // CHECK: f2 = sycl::float2(bf162[0], bf162[1]);
   f2 = __bfloat1622float2(bf162);
+  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf16, bf16);
+  bf162 = __bfloat162bfloat162(bf16);
+  // CHECK: f = static_cast<float>(bf16);
   f = __bfloat162float(bf16);
+  // CHECK: i = sycl::vec<float, 1>(bf16).convert<int, sycl::rounding_mode::rtn>()[0];
+  i = __bfloat162int_rd(bf16);
+  // CHECK: i = sycl::vec<float, 1>(bf16).convert<int, sycl::rounding_mode::rte>()[0];
+  i = __bfloat162int_rn(bf16);
+  // CHECK: i = sycl::vec<float, 1>(bf16).convert<int, sycl::rounding_mode::rtp>()[0];
+  i = __bfloat162int_ru(bf16);
+  // CHECK: i = sycl::vec<float, 1>(bf16).convert<int, sycl::rounding_mode::rtz>()[0];
+  i = __bfloat162int_rz(bf16);
+  // CHECK: ll = sycl::vec<float, 1>(bf16).convert<long long, sycl::rounding_mode::rtn>()[0];
+  ll = __bfloat162ll_rd(bf16);
+  // CHECK: ll = sycl::vec<float, 1>(bf16).convert<long long, sycl::rounding_mode::rte>()[0];
+  ll = __bfloat162ll_rn(bf16);
+  // CHECK: ll = sycl::vec<float, 1>(bf16).convert<long long, sycl::rounding_mode::rtp>()[0];
+  ll = __bfloat162ll_ru(bf16);
+  // CHECK: ll = sycl::vec<float, 1>(bf16).convert<long long, sycl::rounding_mode::rtz>()[0];
+  ll = __bfloat162ll_rz(bf16);
+  // CHECK: s = sycl::vec<float, 1>(bf16).convert<short, sycl::rounding_mode::rtn>()[0];
+  s = __bfloat162short_rd(bf16);
+  // CHECK: s = sycl::vec<float, 1>(bf16).convert<short, sycl::rounding_mode::rte>()[0];
+  s = __bfloat162short_rn(bf16);
+  // CHECK: s = sycl::vec<float, 1>(bf16).convert<short, sycl::rounding_mode::rtp>()[0];
+  s = __bfloat162short_ru(bf16);
+  // CHECK: s = sycl::vec<float, 1>(bf16).convert<short, sycl::rounding_mode::rtz>()[0];
+  s = __bfloat162short_rz(bf16);
+  // CHECK: u = sycl::vec<float, 1>(bf16).convert<unsigned, sycl::rounding_mode::rtn>()[0];
+  u = __bfloat162uint_rd(bf16);
+  // CHECK: u = sycl::vec<float, 1>(bf16).convert<unsigned, sycl::rounding_mode::rte>()[0];
+  u = __bfloat162uint_rn(bf16);
+  // CHECK: u = sycl::vec<float, 1>(bf16).convert<unsigned, sycl::rounding_mode::rtp>()[0];
+  u = __bfloat162uint_ru(bf16);
+  // CHECK: u = sycl::vec<float, 1>(bf16).convert<unsigned, sycl::rounding_mode::rtz>()[0];
+  u = __bfloat162uint_rz(bf16);
+  // CHECK: ull = sycl::vec<float, 1>(bf16).convert<unsigned long long, sycl::rounding_mode::rtn>()[0];
+  ull = __bfloat162ull_rd(bf16);
+  // CHECK: ull = sycl::vec<float, 1>(bf16).convert<unsigned long long, sycl::rounding_mode::rte>()[0];
+  ull = __bfloat162ull_rn(bf16);
+  // CHECK: ull = sycl::vec<float, 1>(bf16).convert<unsigned long long, sycl::rounding_mode::rtp>()[0];
+  ull = __bfloat162ull_ru(bf16);
+  // CHECK: ull = sycl::vec<float, 1>(bf16).convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
+  ull = __bfloat162ull_rz(bf16);
+  // CHECK: us = sycl::vec<float, 1>(bf16).convert<unsigned short, sycl::rounding_mode::rtn>()[0];
+  us = __bfloat162ushort_rd(bf16);
+  // CHECK: us = sycl::vec<float, 1>(bf16).convert<unsigned short, sycl::rounding_mode::rte>()[0];
+  us = __bfloat162ushort_rn(bf16);
+  // CHECK: us = sycl::vec<float, 1>(bf16).convert<unsigned short, sycl::rounding_mode::rtp>()[0];
+  us = __bfloat162ushort_ru(bf16);
+  // CHECK: us = sycl::vec<float, 1>(bf16).convert<unsigned short, sycl::rounding_mode::rtz>()[0];
+  us = __bfloat162ushort_rz(bf16);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __bfloat16_as_short is not supported.
+  // CHECK-NEXT: */
+  s = __bfloat16_as_short(bf16);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __bfloat16_as_ushort is not supported.
+  // CHECK-NEXT: */
+  us = __bfloat16_as_ushort(bf16);
+  // CHECK: bf16 = sycl::ext::oneapi::bfloat16(d);
+  bf16 = __double2bfloat16(d);
+  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f2[0], f2[1]);
   bf162 = __float22bfloat162_rn(f2);
+  // CHECK: bf16 = sycl::ext::oneapi::bfloat16(f);
   bf16 = __float2bfloat16(f);
+  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f, f);
+  bf162 = __float2bfloat162_rn(f);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __float2bfloat16_rd is not supported.
+  // CHECK-NEXT: */
+  bf16 = __float2bfloat16_rd(f);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __float2bfloat16_rn is not supported.
+  // CHECK-NEXT: */
+  bf16 = __float2bfloat16_rn(f);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __float2bfloat16_ru is not supported.
+  // CHECK-NEXT: */
+  bf16 = __float2bfloat16_ru(f);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __float2bfloat16_rz is not supported.
+  // CHECK-NEXT: */
+  bf16 = __float2bfloat16_rz(f);
+  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f_1, f_2);
+  bf162 = __floats2bfloat162_rn(f_1, f_2);
+  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf16_1, bf16_2);
+  bf162 = __halves2bfloat162(bf16_1, bf16_2);
+  // CHECK: bf16 = sycl::ext::oneapi::bfloat16(bf162[1]);
+  bf16 = __high2bfloat16(bf162);
+  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf162[1], bf162[1]);
+  bf162 = __high2bfloat162(bf162);
+  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf162_1[1], bf162_2[1]);
+  bf162 = __highs2bfloat162(bf162_1, bf162_2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __int2bfloat16_rd is not supported.
+  // CHECK-NEXT: */
+  bf16 = __int2bfloat16_rd(i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __int2bfloat16_rn is not supported.
+  // CHECK-NEXT: */
+  bf16 = __int2bfloat16_rn(i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __int2bfloat16_ru is not supported.
+  // CHECK-NEXT: */
+  bf16 = __int2bfloat16_ru(i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __int2bfloat16_rz is not supported.
+  // CHECK-NEXT: */
+  bf16 = __int2bfloat16_rz(i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ll2bfloat16_rd is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ll2bfloat16_rd(ll);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ll2bfloat16_rn is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ll2bfloat16_rn(ll);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ll2bfloat16_ru is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ll2bfloat16_ru(ll);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ll2bfloat16_rz is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ll2bfloat16_rz(ll);
+  // CHECK: bf16 = sycl::ext::oneapi::bfloat16(bf162[0]);
+  bf16 = __low2bfloat16(bf162);
+  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf162[0], bf162[0]);
+  bf162 = __low2bfloat162(bf162);
+  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf162_1[0], bf162_2[0]);
+  bf162 = __lows2bfloat162(bf162_1, bf162_2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __short2bfloat16_rd is not supported.
+  // CHECK-NEXT: */
+  bf16 = __short2bfloat16_rd(s);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __short2bfloat16_rn is not supported.
+  // CHECK-NEXT: */
+  bf16 = __short2bfloat16_rn(s);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __short2bfloat16_ru is not supported.
+  // CHECK-NEXT: */
+  bf16 = __short2bfloat16_ru(s);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __short2bfloat16_rz is not supported.
+  // CHECK-NEXT: */
+  bf16 = __short2bfloat16_rz(s);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __short_as_bfloat16 is not supported.
+  // CHECK-NEXT: */
+  bf16 = __short_as_bfloat16(s);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __uint2bfloat16_rd is not supported.
+  // CHECK-NEXT: */
+  bf16 = __uint2bfloat16_rd(u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __uint2bfloat16_rn is not supported.
+  // CHECK-NEXT: */
+  bf16 = __uint2bfloat16_rn(u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __uint2bfloat16_ru is not supported.
+  // CHECK-NEXT: */
+  bf16 = __uint2bfloat16_ru(u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __uint2bfloat16_rz is not supported.
+  // CHECK-NEXT: */
+  bf16 = __uint2bfloat16_rz(u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ull2bfloat16_rd is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ull2bfloat16_rd(ull);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ull2bfloat16_rn is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ull2bfloat16_rn(ull);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ull2bfloat16_ru is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ull2bfloat16_ru(ull);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ull2bfloat16_rz is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ull2bfloat16_rz(ull);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ushort2bfloat16_rd is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ushort2bfloat16_rd(us);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ushort2bfloat16_rn is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ushort2bfloat16_rn(us);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ushort2bfloat16_ru is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ushort2bfloat16_ru(us);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ushort2bfloat16_rz is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ushort2bfloat16_rz(us);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ushort_as_bfloat16 is not supported.
+  // CHECK-NEXT: */
+  bf16 = __ushort_as_bfloat16(us);
 
   // CHECK:   /*
   // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldca call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
