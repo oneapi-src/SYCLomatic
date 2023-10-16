@@ -14,6 +14,7 @@
 #include "CallExprRewriter.h"
 #include "Config.h"
 #include "CrashRecovery.h"
+#include "Error.h"
 #include "ExternalReplacement.h"
 #include "GenHelperFunction.h"
 #include "GenMakefile.h"
@@ -36,6 +37,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
@@ -617,6 +619,31 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationSucceeded);
     dpctExit(MigrationSucceeded);
   }
+
+#ifndef _WIN32
+  if (InterceptBuildCommand) {
+    SmallString<512> PathToInterceptBuildBinary(DpctInstallPath);
+    llvm::sys::path::append(PathToInterceptBuildBinary, "bin",
+                            "intercept-build");
+    if (!llvm::sys::fs::exists(PathToInterceptBuildBinary)) {
+      DpctLog() << "Error: intercept-build tool not found"
+                << "\n";
+      ShowStatus(MigrationErrorInvalidInstallPath);
+      dpctExit(MigrationErrorInvalidInstallPath);
+    }
+    std::string InterceptBuildSystemCall(PathToInterceptBuildBinary.str());
+    for (int argumentIndex = 2; argumentIndex < argc; argumentIndex++) {
+      InterceptBuildSystemCall.append(" ");
+      InterceptBuildSystemCall.append(std::string(argv[argumentIndex]));
+    }
+    int processExitCode = system(InterceptBuildSystemCall.c_str());
+    if (processExitCode) {
+      ShowStatus(InterceptBuildError);
+      dpctExit(InterceptBuildError);
+    }
+    dpctExit(InterceptBuildSuccess);
+  }
+#endif
 
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";

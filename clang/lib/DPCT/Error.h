@@ -16,6 +16,7 @@ enum ProcessStatus {
   MigrationSucceeded = 0,
   MigrationNoCodeChangeHappen = 1,
   MigrationSkipped = 2,
+  InterceptBuildSuccess = 3,
   MigrationError = -1,
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
@@ -56,6 +57,7 @@ enum ProcessStatus {
   MigrationErrorAPIMappingWrongCUDAHeader = -44,
   MigrationErrorAPIMappingNoCUDAHeader = -45,
   MigrationErrorCannotDetectCudaPath = -46,
+  InterceptBuildError = -47,
 };
 
 namespace clang {

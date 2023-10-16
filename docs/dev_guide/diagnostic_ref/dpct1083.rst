@@ -8,7 +8,7 @@ Message
 
 .. _msg-1083-start:
 
-The size of ``<placeholder>`` in the migrated code may be different
+The size of *<placeholder>* in the migrated code may be different
 from the original code. Check that the allocated memory size in the migrated code
 is correct.
 

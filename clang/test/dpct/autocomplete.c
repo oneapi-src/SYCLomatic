@@ -28,6 +28,7 @@
 // DASH-NEXT: --helper-function-preference=
 // DASH-NEXT: --in-root
 // DASH-NEXT: --in-root-exclude
+// DASH-NEXT: --intercept-build
 // DASH-NEXT: --keep-original-code
 // DASH-NEXT: --no-cl-namespace-inline
 // DASH-NEXT: --no-dpcpp-extensions=

@@ -19,8 +19,9 @@ Detailed Help
 
 |tool_name| deduces whether the first parameter of an atomic function
 points to a global memory address space or a local memory space, using the last
-assignment's rvalue of the first parameter of the atomic function. If the last
-assignment is in an ``if/while/do`` ``while/for`` statement, the deduction result
+assignment's RHS value of the first parameter of the atomic function. If the last
+assignment is in an ``if/while/do/for`` statement or the first argument of the atomic
+function depends on a function or template argument, the deduction result
 may be incorrect. You need to verify the generated code to determine if the first
 parameter of the atomic function actually points to the local memory address space.
 If it does, then replace the atomic function name with an atomic function name that
