@@ -11,6 +11,7 @@ using namespace cooperative_groups;
 // CHECK: void global1(const sycl::nd_item<1> &item_ct1) {
 __global__ void global1() {
   // CHECK: sycl::group<1> cta = item_ct1.get_group();
+  // CHECK: const sycl::group<1> &cta2 = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
   const cg::thread_block &cta2 = cg::this_thread_block();
 

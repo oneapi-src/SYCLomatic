@@ -2209,8 +2209,9 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
 
         std::string group_type = "";
         if (DpctGlobalInfo::useLogicalGroup())
-          group_type =
-              MapNames::getDpctNamespace() + "experimental::group_base";
+          group_type = MapNames::getDpctNamespace() +
+                       "experimental::group_base" + "<{{NEEDREPLACEG" +
+                       std::to_string(Index) + "}}>";
         if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
           if (ETL.getBeginLoc().isMacroID())
             group_type = "auto";
