@@ -1,8 +1,8 @@
 // Option: --use-dpcpp-extensions=intel_device_math
 #include "cuda_bf16.h"
 
-__global__ void test(__nv_bfloat16 b) {
+__global__ void test(long long ll) {
   // Start
-  __bfloat162float(b /*__nv_bfloat16*/);
+  __ll2bfloat16_rn(ll /*long long*/);
   // End
 }
