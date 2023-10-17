@@ -178,3 +178,110 @@ void foo2(cusparseMatDescr_t descrB){
   cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
 }
 
+void foo3() {
+  cusparseHandle_t handle;
+  cusparseMatDescr_t descrA;
+
+  //CHECK:std::shared_ptr<dpct::sparse::optimize_info> info;
+  //CHECK-NEXT:info = std::make_shared<dpct::sparse::optimize_info>();
+  cusparseSolveAnalysisInfo_t info;
+  cusparseCreateSolveAnalysisInfo(&info);
+
+  float *a_s_val;
+  double *a_d_val;
+  float2 *a_c_val;
+  double2 *a_z_val;
+  int *a_row_ptr;
+  int *a_col_ind;
+  float *f_s;
+  double *f_d;
+  float2 *f_c;
+  double2 *f_z;
+  float *x_s;
+  double *x_d;
+  float2 *x_c;
+  double2 *x_z;
+
+
+  float alpha_s = 1;
+  double alpha_d = 1;
+  float2 alpha_c = float2{1, 0};
+  double2 alpha_z = double2{1, 0};
+
+  //CHECK:dpct::sparse::csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, &alpha_s, descrA, a_s_val, a_row_ptr, a_col_ind, info, f_s, x_s);
+  //CHECK-NEXT:dpct::sparse::csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, &alpha_d, descrA, a_d_val, a_row_ptr, a_col_ind, info, f_d, x_d);
+  //CHECK-NEXT:dpct::sparse::csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, &alpha_c, descrA, a_c_val, a_row_ptr, a_col_ind, info, f_c, x_c);
+  //CHECK-NEXT:dpct::sparse::csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, &alpha_z, descrA, a_z_val, a_row_ptr, a_col_ind, info, f_z, x_z);
+  //CHECK-NEXT:info.reset();
+  cusparseScsrsv_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, &alpha_s, descrA, a_s_val, a_row_ptr, a_col_ind, info, f_s, x_s);
+  cusparseDcsrsv_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, &alpha_d, descrA, a_d_val, a_row_ptr, a_col_ind, info, f_d, x_d);
+  cusparseCcsrsv_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, &alpha_c, descrA, a_c_val, a_row_ptr, a_col_ind, info, f_c, x_c);
+  cusparseZcsrsv_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, &alpha_z, descrA, a_z_val, a_row_ptr, a_col_ind, info, f_z, x_z);
+  cusparseDestroySolveAnalysisInfo(info);
+
+  //CHECK:std::shared_ptr<dpct::sparse::optimize_info> info2;
+  //CHECK-NEXT:info2 = std::make_shared<dpct::sparse::optimize_info>();
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1082:{{[0-9]+}}: Migration of cusparseSolvePolicy_t type is not supported.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:int policy = 1;
+  //CHECK-NEXT:policy = 0;
+  csrsv2Info_t info2;
+  cusparseCreateCsrsv2Info(&info2);
+  cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
+  policy = CUSPARSE_SOLVE_POLICY_NO_LEVEL;
+
+  int buffer_size_s0;
+  int buffer_size_d0;
+  int buffer_size_c0;
+  int buffer_size_z0;
+  //CHECK:buffer_size_s0 = 0;
+  //CHECK-NEXT:buffer_size_d0 = 0;
+  //CHECK-NEXT:buffer_size_c0 = 0;
+  //CHECK-NEXT:buffer_size_z0 = 0;
+  cusparseScsrsv2_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_s_val, a_row_ptr, a_col_ind, info2, &buffer_size_s0);
+  cusparseDcsrsv2_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_d_val, a_row_ptr, a_col_ind, info2, &buffer_size_d0);
+  cusparseCcsrsv2_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_c_val, a_row_ptr, a_col_ind, info2, &buffer_size_c0);
+  cusparseZcsrsv2_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_z_val, a_row_ptr, a_col_ind, info2, &buffer_size_z0);
+
+  size_t buffer_size_s;
+  size_t buffer_size_d;
+  size_t buffer_size_c;
+  size_t buffer_size_z;
+  //CHECK:buffer_size_s = 0;
+  //CHECK-NEXT:buffer_size_d = 0;
+  //CHECK-NEXT:buffer_size_c = 0;
+  //CHECK-NEXT:buffer_size_z = 0;
+  cusparseScsrsv2_bufferSizeExt(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_s_val, a_row_ptr, a_col_ind, info2, &buffer_size_s);
+  cusparseDcsrsv2_bufferSizeExt(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_d_val, a_row_ptr, a_col_ind, info2, &buffer_size_d);
+  cusparseCcsrsv2_bufferSizeExt(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_c_val, a_row_ptr, a_col_ind, info2, &buffer_size_c);
+  cusparseZcsrsv2_bufferSizeExt(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_z_val, a_row_ptr, a_col_ind, info2, &buffer_size_z);
+
+  void* buffer_s;
+  void* buffer_d;
+  void* buffer_c;
+  void* buffer_z;
+  cudaMalloc(&buffer_s, buffer_size_s);
+  cudaMalloc(&buffer_d, buffer_size_d);
+  cudaMalloc(&buffer_c, buffer_size_c);
+  cudaMalloc(&buffer_z, buffer_size_z);
+
+  //CHECK:dpct::sparse::optimize_csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, descrA, a_s_val, a_row_ptr, a_col_ind, info2);
+  //CHECK-NEXT:dpct::sparse::optimize_csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, descrA, a_d_val, a_row_ptr, a_col_ind, info2);
+  //CHECK-NEXT:dpct::sparse::optimize_csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, descrA, a_c_val, a_row_ptr, a_col_ind, info2);
+  //CHECK-NEXT:dpct::sparse::optimize_csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, descrA, a_z_val, a_row_ptr, a_col_ind, info2);
+  //CHECK-NEXT:dpct::sparse::csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, &alpha_s, descrA, a_s_val, a_row_ptr, a_col_ind, info2, f_s, x_s);
+  //CHECK-NEXT:dpct::sparse::csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, &alpha_d, descrA, a_d_val, a_row_ptr, a_col_ind, info2, f_d, x_d);
+  //CHECK-NEXT:dpct::sparse::csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, &alpha_c, descrA, a_c_val, a_row_ptr, a_col_ind, info2, f_c, x_c);
+  //CHECK-NEXT:dpct::sparse::csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, &alpha_z, descrA, a_z_val, a_row_ptr, a_col_ind, info2, f_z, x_z);
+  //CHECK-NEXT:info2.reset();
+  cusparseScsrsv2_analysis(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_s_val, a_row_ptr, a_col_ind, info2, policy, buffer_s);
+  cusparseDcsrsv2_analysis(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_d_val, a_row_ptr, a_col_ind, info2, policy, buffer_d);
+  cusparseCcsrsv2_analysis(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_c_val, a_row_ptr, a_col_ind, info2, policy, buffer_c);
+  cusparseZcsrsv2_analysis(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_z_val, a_row_ptr, a_col_ind, info2, policy, buffer_z);
+  cusparseScsrsv2_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, &alpha_s, descrA, a_s_val, a_row_ptr, a_col_ind, info2, f_s, x_s, policy, buffer_s);
+  cusparseDcsrsv2_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, &alpha_d, descrA, a_d_val, a_row_ptr, a_col_ind, info2, f_d, x_d, policy, buffer_d);
+  cusparseCcsrsv2_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, &alpha_c, descrA, a_c_val, a_row_ptr, a_col_ind, info2, f_c, x_c, policy, buffer_c);
+  cusparseZcsrsv2_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, &alpha_z, descrA, a_z_val, a_row_ptr, a_col_ind, info2, f_z, x_z, policy, buffer_z);
+  cusparseDestroyCsrsv2Info(info2);
+}

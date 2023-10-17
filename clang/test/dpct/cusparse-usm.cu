@@ -109,19 +109,6 @@ int foo(int aaaaa){
   //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, m, n, k, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
   cusparseZcsrmm(handle, transA, m, n, k, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
 
-  size_t ws_size;
-  void *ws;
-  //CHECK: int alg = 0;
-  //CHECK-NEXT: alg = 1;
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseCsrmvEx_bufferSize was removed because this call is redundant in SYCL.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmv(*handle, transA, m, n, &alpha, dpct::library_data_t::real_double, descrA, csrValA, dpct::library_data_t::real_double, csrRowPtrA, csrColIndA, x, dpct::library_data_t::real_double, &beta, dpct::library_data_t::real_double, y, dpct::library_data_t::real_double);
-  cusparseAlgMode_t alg = CUSPARSE_ALG0;
-  alg = CUSPARSE_ALG1;
-  cusparseCsrmvEx_bufferSize(handle, alg, transA, m, n, nnz, &alpha, CUDA_R_64F, descrA, csrValA, CUDA_R_64F, csrRowPtrA, csrColIndA, x, CUDA_R_64F, &beta, CUDA_R_64F, y, CUDA_R_64F, CUDA_R_64F, &ws_size);
-  cusparseCsrmvEx(handle, alg, transA, m, n, nnz, &alpha, CUDA_R_64F, descrA, csrValA, CUDA_R_64F, csrRowPtrA, csrColIndA, x, CUDA_R_64F, &beta, CUDA_R_64F, y, CUDA_R_64F, CUDA_R_64F, ws);
-
   //CHECK:int status;
   cusparseStatus_t status;
 

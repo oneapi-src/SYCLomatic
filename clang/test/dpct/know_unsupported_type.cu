@@ -39,16 +39,6 @@ int main(int argc, char **argv) {
     // CHECK-NEXT: std::vector<cudaMemcpy3DParms *> vc3dp;
     std::vector<cudaMemcpy3DParms *> vc3dp;
     // CHECK: /*
-    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cusparseSolvePolicy_t type is not supported.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: std::vector<cusparseSolvePolicy_t> vsp;
-    std::vector<cusparseSolvePolicy_t> vsp;
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cusparseSolvePolicy_t type is not supported.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: volatile cusparseSolvePolicy_t SP;
-    volatile cusparseSolvePolicy_t SP;
-    // CHECK: /*
     // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of CUexternalMemory type is not supported.
     // CHECK-NEXT: */
     // CHECK-NEXT: CUexternalMemory cum;
