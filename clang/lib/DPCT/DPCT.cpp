@@ -748,6 +748,10 @@ int runDPCT(int argc, const char **argv) {
     // Set a virtual file for --query-api-mapping.
     llvm::SmallString<16> VirtFile;
     llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+    // Need set a virtual path and it will used by AnalysisScope.
+    InRoot = VirtFile.str().str();
+    makeInRootCanonicalOrSetDefaults(InRoot, {});
+    VirtFile = InRoot;
     llvm::sys::path::append(VirtFile, "temp.cu");
     SourcePathList.emplace_back(VirtFile);
     DpctGlobalInfo::setIsQueryAPIMapping(true);
@@ -825,8 +829,6 @@ int runDPCT(int argc, const char **argv) {
     NoIncrementalMigration = true;
     StopOnParseErr = true;
     Tool.setPrintErrorMessage(false);
-    // Need set a virtual path and it will used by AnalysisScope.
-    InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
   } else {
     IsUsingDefaultOutRoot = OutRoot.empty();
     if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
