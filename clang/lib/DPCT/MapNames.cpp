@@ -2008,7 +2008,29 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpSV_destroyDescr",
                            "cusparseSpSV_solve",
                            "cusparseSpSV_bufferSize",
-                           "cusparseSpSV_analysis"};
+                           "cusparseSpSV_analysis",
+                           "cusparseScsrsv_solve", 
+                           "cusparseDcsrsv_solve", 
+                           "cusparseCcsrsv_solve", 
+                           "cusparseZcsrsv_solve", 
+                           "cusparseScsrsv2_bufferSize", 
+                           "cusparseDcsrsv2_bufferSize", 
+                           "cusparseCcsrsv2_bufferSize", 
+                           "cusparseZcsrsv2_bufferSize", 
+                           "cusparseScsrsv2_analysis", 
+                           "cusparseDcsrsv2_analysis", 
+                           "cusparseCcsrsv2_analysis", 
+                           "cusparseZcsrsv2_analysis", 
+                           "cusparseScsrsv2_solve", 
+                           "cusparseDcsrsv2_solve", 
+                           "cusparseCcsrsv2_solve", 
+                           "cusparseZcsrsv2_solve", 
+                           "cusparseCcsrsv2_bufferSizeExt", 
+                           "cusparseDcsrsv2_bufferSizeExt", 
+                           "cusparseScsrsv2_bufferSizeExt", 
+                           "cusparseZcsrsv2_bufferSizeExt", 
+                           "cusparseCsrsv_analysisEx", 
+                           "cusparseCsrsv_solveEx"};
 }
 // clang-format on
 
