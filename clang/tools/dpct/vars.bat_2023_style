@@ -49,7 +49,6 @@ if defined VSCMD_VER (
         :: Skip VS configure if Visual Studio is configured for 32-bit development environment.
         echo  Visual Studio is configured for 32-bit development environment.
         echo  The compatibility tool requires a 64-bit development environment.
-        set ERRORSTATE=1
         goto End
     ) else (
         :: Skip VS configure if Visual Studio is configured for 64-bit development environment.
