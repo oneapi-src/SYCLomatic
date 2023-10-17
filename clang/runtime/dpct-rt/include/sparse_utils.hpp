@@ -69,10 +69,10 @@ inline void spblas_shim(library_data_t type, args_t &&...args) {
 
 template <typename T> struct csrmv_impl {
   void operator()(sycl::queue &queue, oneapi::mkl::transpose trans,
-                  int num_rows, int num_cols, const T *alpha,
-                  const std::shared_ptr<matrix_info> info, const T *val,
-                  const int *row_ptr, const int *col_ind, const T *x,
-                  const T *beta, T *y) {
+                  int num_rows, int num_cols, const void *alpha,
+                  const std::shared_ptr<matrix_info> info, const void *val,
+                  const int *row_ptr, const int *col_ind, const void *x,
+                  const void *beta, void *y) {
 #ifndef __INTEL_MKL__
     throw std::runtime_error(
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
@@ -157,8 +157,8 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            const std::shared_ptr<matrix_info> info, const T *val,
            const int *row_ptr, const int *col_ind, const T *x, const T *beta,
            T *y) {
-  detail::csrmv_impl()(queue, trans, num_rows, num_cols, alpha, info, val,
-                       row_ptr, col_ind, x, beta, y);
+  detail::csrmv_impl<T>()(queue, trans, num_rows, num_cols, alpha, info, val,
+                          row_ptr, col_ind, x, beta, y);
 }
 
 /// Computes a CSR format sparse matrix-dense vector product.
@@ -783,11 +783,11 @@ template <typename T> struct spmv_impl {
                   std::shared_ptr<dense_vector_desc> x, const void *beta,
                   std::shared_ptr<dense_vector_desc> y) {
     auto alpha_value =
-        dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
+        dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
     auto beta_value =
-        dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
-    auto data_x = dpct::detail::get_memory<Ty>(x->get_value());
-    auto data_y = dpct::detail::get_memory<Ty>(y->get_value());
+        dpct::detail::get_value(reinterpret_cast<const T *>(beta), queue);
+    auto data_x = dpct::detail::get_memory<T>(x->get_value());
+    auto data_y = dpct::detail::get_memory<T>(y->get_value());
     if (a->get_diag().has_value() && a->get_uplo().has_value()) {
       oneapi::mkl::sparse::optimize_trmv(queue, a->get_uplo().value(), trans,
                                          a->get_diag().value(),
@@ -810,11 +810,11 @@ template <typename T> struct spmm_impl {
                   sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
                   const void *beta, std::shared_ptr<dense_matrix_desc> c) {
     auto alpha_value =
-        dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
+        dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
     auto beta_value =
-        dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
-    auto data_b = dpct::detail::get_memory<Ty>(b->get_value());
-    auto data_c = dpct::detail::get_memory<Ty>(c->get_value());
+        dpct::detail::get_value(reinterpret_cast<const T *>(beta), queue);
+    auto data_b = dpct::detail::get_memory<T>(b->get_value());
+    auto data_c = dpct::detail::get_memory<T>(c->get_value());
     SPARSE_CALL(oneapi::mkl::sparse::gemm(
         queue, b->get_layout(), trans_a, trans_b, alpha_value,
         a->get_matrix_handle(), data_b, b->get_col_num(), b->get_leading_dim(),
