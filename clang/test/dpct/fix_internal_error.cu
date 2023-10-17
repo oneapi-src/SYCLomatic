@@ -91,6 +91,6 @@ void foo2() {
 template <typename T, int a, int b> struct AAA;
 template <typename T_> struct AAA<T_, 1, 2> {
   using T = T_;
-  __host__ __device__ T norm(T x) const { return x; }
+  __host__ __device__ T norm(T x = T()) const { return x; }
   __host__ __device__ T foo() const { return norm(); }
 };
