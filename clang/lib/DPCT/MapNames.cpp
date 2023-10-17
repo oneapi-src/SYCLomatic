@@ -493,6 +493,9 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
                                       "kernel_function_info")},
       {"ncclResult_t", std::make_shared<TypeNameRule>("int")},
+      {"csrsv2Info_t", std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>")},
+      {"cusparseSolvePolicy_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -2030,7 +2033,9 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseScsrsv2_bufferSizeExt", 
                            "cusparseZcsrsv2_bufferSizeExt", 
                            "cusparseCsrsv_analysisEx", 
-                           "cusparseCsrsv_solveEx"};
+                           "cusparseCsrsv_solveEx",
+                           "cusparseCreateCsrsv2Info",
+                           "cusparseDestroyCsrsv2Info"};
 }
 // clang-format on
 

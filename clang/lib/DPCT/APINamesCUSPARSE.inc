@@ -409,7 +409,7 @@ ASSIGNABLE_FACTORY(
                             DEREF(0), ARG(1), ARG(2), ARG(4), ARG(5), ARG(6),
                             ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))))
 
-ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCcsrsv2_bufferSizeExt",
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseScsrsv2_bufferSizeExt",
                                         DEREF(9), LITERAL("0")))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDcsrsv2_bufferSizeExt",
                                         DEREF(9), LITERAL("0")))
@@ -427,3 +427,10 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     CALL(MapNames::getDpctNamespace() + "sparse::csrsv", DEREF(0), ARG(1),
          ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
          ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreateCsrsv2Info", DEREF(0),
+                                        CALL("std::make_shared<" +
+                                             MapNames::getDpctNamespace() +
+                                             "sparse::optimize_info>")))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroyCsrsv2Info",
+                                             ARG(0), false, "reset"))

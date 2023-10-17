@@ -1667,7 +1667,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
               "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t",
-              "cusparseSpSVAlg_t", "cudaFuncAttributes"))))))
+              "cusparseSpSVAlg_t", "cudaFuncAttributes", "csrsv2Info_t",
+              "cusparseSolvePolicy_t"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3597,7 +3598,7 @@ REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUSPARSE_STATUS.*)|(CUSPARSE_POINTER_MODE.*)|"
-                                "(CUSPARSE_ALG.*)"))))
+                                "(CUSPARSE_ALG.*)|(CUSPARSE_SOLVE_POLICY.*)"))))
                     .bind("SPBLASStatusConstants"),
                 this);
   MF.addMatcher(
@@ -3688,7 +3689,8 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseGetMatIndexBase", "cusparseSetMatDiagType",
         "cusparseGetMatDiagType", "cusparseSetMatFillMode",
         "cusparseGetMatFillMode", "cusparseCreateSolveAnalysisInfo",
-        "cusparseDestroySolveAnalysisInfo",
+        "cusparseDestroySolveAnalysisInfo", "cusparseCreateCsrsv2Info",
+        "cusparseDestroyCsrsv2Info",
         /*level 2*/
         "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv", "cusparseZcsrmv",
         "cusparseScsrmv_mp", "cusparseDcsrmv_mp", "cusparseCcsrmv_mp",

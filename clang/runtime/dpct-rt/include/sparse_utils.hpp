@@ -297,7 +297,7 @@ private:
 namespace detail {
 template <typename T> struct optimize_csrsv_impl {
   void operator()(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
-                  const std::shared_ptr<matrix_info> info, const T *val,
+                  const std::shared_ptr<matrix_info> info, const void *val,
                   const int *row_ptr, const int *col_ind,
                   std::shared_ptr<optimize_info> optimize_info) {
     using Ty = typename dpct::DataType<T>::T2;
@@ -323,25 +323,27 @@ template <typename T> struct optimize_csrsv_impl {
 };
 template <typename T> struct csrsv_impl {
   void operator()(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
-                  const T *alpha, const std::shared_ptr<matrix_info> info,
-                  const T *val, const int *row_ptr, const int *col_ind,
-                  std::shared_ptr<optimize_info> optimize_info, const T *x,
-                  T *y) {
+                  const void *alpha, const std::shared_ptr<matrix_info> info,
+                  const void *val, const int *row_ptr, const int *col_ind,
+                  std::shared_ptr<optimize_info> optimize_info, const void *x,
+                  void *y) {
+    using Ty = typename dpct::DataType<T>::T2;
     if (info->get_matrix_type() != matrix_info::matrix_type::tr)
       return;
-    auto alpha_value = dpct::detail::get_value(alpha, queue);
-    T *new_x_ptr = nullptr;
-    if (alpha_value != T(1.0f)) {
-      new_x_ptr = (T *)dpct::dpct_malloc(row_col * sizeof(T));
-      dpct::dpct_memcpy(new_x_ptr, x->get_value(), row_col * sizeof(T));
-      auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
+    auto alpha_value =
+        dpct::detail::get_value(static_cast<const Ty *>(alpha), queue);
+    Ty *new_x_ptr = nullptr;
+    if (alpha_value != Ty(1.0f)) {
+      new_x_ptr = (Ty *)dpct::dpct_malloc(row_col * sizeof(Ty));
+      dpct::dpct_memcpy(new_x_ptr, x, row_col * sizeof(Ty));
+      auto data_new_x = dpct::detail::get_memory<Ty>(new_x_ptr);
       oneapi::mkl::blas::column_major::scal(queue, row_col, alpha_value,
                                             data_new_x, 1);
     } else {
-      new_x_ptr = static_cast<T *>(x->get_value());
+      new_x_ptr = const_cast<Ty *>(static_cast<const Ty *>(x));
     }
-    auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
-    auto data_y = dpct::detail::get_memory<T>(y->get_value());
+    auto data_new_x = dpct::detail::get_memory<Ty>(new_x_ptr);
+    auto data_y = dpct::detail::get_memory<Ty>(y);
 
 #ifndef DPCT_USM_LEVEL_NONE
     sycl::event e;
@@ -353,7 +355,7 @@ template <typename T> struct csrsv_impl {
 #ifndef DPCT_USM_LEVEL_NONE
     optimize_info->add_dependency(e);
 #endif
-    if (alpha_value != T(1.0f)) {
+    if (alpha_value != Ty(1.0f)) {
       queue.wait();
       dpct::dpct_free(new_x_ptr);
     }
@@ -378,8 +380,8 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const std::shared_ptr<matrix_info> info,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
-  detail::optimize_csrsv_impl()(queue, trans, row_col, info, val, row_ptr,
-                                col_ind, optimize_info);
+  detail::optimize_csrsv_impl<T>()(queue, trans, row_col, info, val, row_ptr,
+                                   col_ind, optimize_info);
 }
 
 void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
@@ -388,7 +390,7 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
   detail::spblas_shim<detail::optimize_csrsv_impl>(
-      val_type, queue, trans, row_col, info, val, val_type, row_ptr, col_ind,
+      val_type, queue, trans, row_col, info, val, row_ptr, col_ind,
       optimize_info);
 }
 
@@ -397,16 +399,16 @@ void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
            const T *alpha, const std::shared_ptr<matrix_info> info,
            const T *val, const int *row_ptr, const int *col_ind,
            std::shared_ptr<optimize_info> optimize_info, const T *x, T *y) {
-  detail::csrsv_impl()(queue, trans, row_col, alpha, info, val, row_ptr,
-                       col_ind, optimize_info, x, y);
+  detail::csrsv_impl<T>()(queue, trans, row_col, alpha, info, val, row_ptr,
+                          col_ind, optimize_info, x, y);
 }
 
 void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
            const void *alpha, library_data_t alpha_type,
-           const std::shared_ptr<matrix_info> info, const T *val,
+           const std::shared_ptr<matrix_info> info, const void *val,
            library_data_t val_type, const int *row_ptr, const int *col_ind,
-           std::shared_ptr<optimize_info> optimize_info, const T *x,
-           library_data_t x_type, T *y, library_data_t y_type) {
+           std::shared_ptr<optimize_info> optimize_info, const void *x,
+           library_data_t x_type, void *y, library_data_t y_type) {
   detail::spblas_shim<detail::csrsv_impl>(val_type, queue, trans, row_col,
                                           alpha, info, val, row_ptr, col_ind,
                                           optimize_info, x, y);
