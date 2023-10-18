@@ -12,7 +12,7 @@ namespace cg = cooperative_groups;
 __device__ void testReduce(double *sdata, const cg::thread_block &cta) {
   const unsigned int tid = cta.thread_rank();
   cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
-  // CHECK: DPCT1119:{{[0-9]+}}: cooperative_groups::__v1::thread_block_tile<16> has not supported yet, please try to migrate with the DPCT experimental option: --use-experimental-features=logical-group.
+  // CHECK: DPCT1119:{{[0-9]+}}: Migration of cooperative_groups::__v1::thread_block_tile<16> is not supported, please try to remigrate with option: --use-experimental-features=logical-group.
   cg::thread_block_tile<16> tile16 = cg::tiled_partition<16>(cta);
   int *idata;
   // CHECK: sycl::reduce_over_group(item_ct1.get_sub_group(), sdata[tid], sycl::plus<double>());
