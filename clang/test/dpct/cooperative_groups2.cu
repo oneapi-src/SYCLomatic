@@ -113,3 +113,8 @@ __device__ void foo() {
   // CHECK: atile1.get_group_linear_id();
   atile1.meta_group_rank();
 }
+
+__global__ void test_const_ref() {
+    const cooperative_groups::thread_block &cta = cooperative_groups::this_thread_block();
+    const cooperative_groups::thread_block *cta4 = &cta;
+}
