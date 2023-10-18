@@ -8,6 +8,7 @@
 
 #include "Error.h"
 
+#include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "Statics.h"
 
@@ -38,12 +39,17 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Path for CUDA header files specified by "
                    "--cuda-include-path is invalid.";
     break;
+  case MigrationErrorDetectedCudaVersionUnsupported:
+    StatusString = "Error: The auto detect CUDA header files version is not supported. "
+                  "The latest supported version is " + dpct::DpctGlobalInfo::getCudaVersion() +
+                  ". You can specify CUDA header files by option --cuda-include-path.";
+    break;
   case MigrationErrorCudaVersionUnsupported:
     StatusString = "Error: The version of CUDA header files specified by "
                    "--cuda-include-path is not supported. See Release Notes "
                    "for supported versions.";
     break;
-  case MigrationErrorSupportedCudaVersionNotAvailable:
+  case MigrationErrorCannotDetectCudaPath:
     StatusString = "Error: Could not detect path to CUDA header files. Use "
                    "--cuda-include-path "
                    "to specify the correct path to the header files.";
@@ -173,6 +179,9 @@ void ShowStatus(int Status, std::string Message) {
         "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
         ". Please specify the header file for '" + Message +
         "' with option \"--extra-arg\".";
+    break;
+  case InterceptBuildError:
+    StatusString = "Error: Call to intercept-build failed";
     break;
   default:
     DpctLog() << "Unknown error\n";

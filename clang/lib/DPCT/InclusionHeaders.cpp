@@ -125,10 +125,11 @@ void IncludesCallbacks::InclusionDirective(
 
   auto &Global = DpctGlobalInfo::getInstance();
   auto LocInfo = Global.getLocInfo(HashLoc);
+  auto FileInfo = Global.insertFile(LocInfo.first);
 
-  if (!Global.isInAnalysisScope(LocInfo.first) &&
-      !Global.getSourceManager().isWrittenInMainFile(HashLoc))
-    return;
+  // Record the locations of the first and last inclusion directives in a file
+  FileInfo->setFirstIncludeOffset(LocInfo.second);
+  LastInclusionLocationUpdater Updater(FileInfo, FilenameRange.getEnd());
 
   std::string IncludedFile;
   if (auto OptionalAbs = Global.getAbsolutePath(File->getFileEntry()))
@@ -136,12 +137,6 @@ void IncludesCallbacks::InclusionDirective(
 
   if (Global.isExcluded(IncludedFile))
     return;
-
-  auto FileInfo = Global.insertFile(LocInfo.first);
-
-  // Record the locations of the first and last inclusion directives in a file
-  FileInfo->setFirstIncludeOffset(LocInfo.second);
-  LastInclusionLocationUpdater Updater(FileInfo, FilenameRange.getEnd());
 
   auto GenReplacement =
       [&, ReplaceRange =
@@ -191,6 +186,11 @@ void IncludesCallbacks::InclusionDirective(
     return;
   }
 
+  if (!Global.isInAnalysisScope(LocInfo.first) &&
+      !Global.getSourceManager().isWrittenInMainFile(HashLoc))
+    return;
+
+
   // Apply user-defined rule if needed
   if (auto ReplacedStr = applyUserDefinedHeader(FileName.str());
       !ReplacedStr.empty()) {
@@ -226,7 +226,7 @@ void IncludesCallbacks::InclusionDirective(
   } while (false);
 
   auto &CudaPath = Global.getCudaPath();
-  //  TODO: implement one of this for each source language.
+  // TODO: implement one of this for each source language.
   // Remove all includes from the SDK.
   if (isChildOrSamePath(CudaPath, SearchPath.str()) ||
       SearchPath.startswith("/usr/local/cuda")) {

@@ -87,3 +87,10 @@ void foo2() {
 #undef MACRO_BBB
 #undef MACRO_CCC
 #undef MACRO_DDD
+
+template <typename T, int a, int b> struct AAA;
+template <typename T_> struct AAA<T_, 1, 2> {
+  using T = T_;
+  __host__ __device__ T norm(T x = T()) const { return x; }
+  __host__ __device__ T foo() const { return norm(); }
+};
