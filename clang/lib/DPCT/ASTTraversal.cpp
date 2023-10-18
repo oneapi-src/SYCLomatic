@@ -2190,18 +2190,15 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
         CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
-      if (DpctGlobalInfo::findAncestor<clang::CompoundStmt>(TL) &&
-          DpctGlobalInfo::findAncestor<clang::FunctionDecl>(TL))
-        return;
       if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
         SourceLocation Begin = ETL.getBeginLoc();
         SourceLocation End = ETL.getEndLoc();
-        if (Begin.isMacroID() || End.isMacroID())
-          return;
+        if (Begin.isMacroID())
+          Begin = SM->getSpellingLoc(Begin);
+        if (End.isMacroID())
+          End = SM->getSpellingLoc(End);
         End = End.getLocWithOffset(Lexer::MeasureTokenLength(
             End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        if (End.isMacroID())
-          return;
         const auto *FD = DpctGlobalInfo::getParentFunction(TL);
         if (!FD)
           return;
@@ -2210,15 +2207,23 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           return;
         auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
         DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+
         std::string group_type = "";
         if (DpctGlobalInfo::useLogicalGroup())
-          group_type = MapNames::getDpctNamespace() + "experimental::group_base";
-        if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block")
-          group_type = MapNames::getClNamespace() + "group";
+          group_type = MapNames::getDpctNamespace() +
+                       "experimental::group_base" + "<{{NEEDREPLACEG" +
+                       std::to_string(Index) + "}}>";
+        if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
+          if (ETL.getBeginLoc().isMacroID())
+            group_type = "auto";
+          else
+            group_type = MapNames::getClNamespace() + "group" +
+                         "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>";
+        }
         if (!group_type.empty())
           emplaceTransformation(new ReplaceText(
               Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              group_type + "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>"));
+              std::move(group_type)));
         return;
       }
     }
@@ -4259,7 +4264,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       IsInitializeVarDecl = true;
     } else if (auto *ULE = getNodeAsType<UnresolvedLookupExpr>(
                    Result, "unresolvedCallUsed")) {
-      CE = getNodeAsType<CallExpr>(Result, "callExprUsed");
+      CE = getAssistNodeAsType<CallExpr>(Result, "callExprUsed");
       FuncName = ULE->getName().getAsString();
     } else {
       return;
@@ -11751,11 +11756,6 @@ void CooperativeGroupsFunctionRule::runRule(
     EA.applyAllSubExprRepl();
     RUW.NeedReport = false;
   } else if (FuncName == "this_thread_block") {
-    if (auto P = getAncestorDeclStmt(CE)) {
-      if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
-        emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
-      }
-    }
     RUW.NeedReport = false;
     emplaceTransformation(
         new ReplaceStmt(CE, DpctGlobalInfo::getGroup(CE)));
@@ -11841,14 +11841,6 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
       if (CallInfo->hasSideEffects())
         report(CE->getBeginLoc(), Diagnostics::CALL_GROUP_FUNC_IN_COND, false);
     }
-  } else if (FuncName == "this_thread_block") {
-    if (auto P = getAncestorDeclStmt(CE)) {
-      if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
-        emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
-      }
-    }
-    emplaceTransformation(
-        new ReplaceStmt(CE, DpctGlobalInfo::getGroup(CE, FD)));
   } else if (FuncName == "__threadfence_block") {
     std::string CLNS = MapNames::getClNamespace();
     std::string ReplStr = CLNS + "atomic_fence(" + CLNS +
@@ -12131,6 +12123,8 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
     if (auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts())) {
       auto ObjType = ME->getBase()->getType().getCanonicalType();
       ND = getNamedDecl(ObjType.getTypePtr());
+      if (!ND)
+        return;
       ObjName = ND->getNameAsString();
     // Match the static call, like: A::staticCall();
     } else if (auto RT = dyn_cast<RecordDecl>(

@@ -20,12 +20,12 @@ __device__ void test(cg::thread_block cta) {
 }
 // CHECK: void k(const sycl::nd_item<3> &item_ct1) {
 __global__ void k() {
-  // CHECK: auto cta = item_ct1.get_group();
+  // CHECK: sycl::group<3> cta = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
   // CHECK: item_ct1.barrier();
   cg::sync(cta);
 
-  // CHECK: auto block = item_ct1.get_group();
+  // CHECK: sycl::group<3> block = item_ct1.get_group();
   cg::thread_block block = cg::this_thread_block();
   // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
@@ -38,7 +38,7 @@ __global__ void k() {
   // CHECK: item_ct1.barrier();
   cg::sync(cg::this_thread_block());
 
-  // CHECK: auto b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
+  // CHECK: sycl::group<3> b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
   cg::thread_block b0 = cg::this_thread_block(), b1 = cg::this_thread_block();
 
   TB(blk);
@@ -171,7 +171,7 @@ __device__ void foo1(cg::thread_block &tb,
 }
 
 __global__ void foo2() {
-// CHECK: auto tb = item_ct1.get_group();
+// CHECK: sycl::group<3> tb = item_ct1.get_group();
 // CHECK-NEXT: sycl::sub_group tbt32 = item_ct1.get_sub_group();
   cg::thread_block tb = cg::this_thread_block();
   cg::thread_block_tile<32> tbt32 = cg::tiled_partition<32>(tb);
@@ -179,7 +179,7 @@ __global__ void foo2() {
 }
 
 __global__ void foo_tile32() {
-// CHECK: auto ttb = item_ct1.get_group();
+// CHECK: sycl::group<3> ttb = item_ct1.get_group();
 // CHECK-NEXT: sycl::sub_group tile32 = item_ct1.get_sub_group();
 // CHECK-NEXT: double rowThreadSum = 0.0;
 // CHECK-NEXT: int offset= 32;
