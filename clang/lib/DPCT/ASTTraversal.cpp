@@ -4251,7 +4251,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       IsInitializeVarDecl = true;
     } else if (auto *ULE = getNodeAsType<UnresolvedLookupExpr>(
                    Result, "unresolvedCallUsed")) {
-      CE = getNodeAsType<CallExpr>(Result, "callExprUsed");
+      CE = getAssistNodeAsType<CallExpr>(Result, "callExprUsed");
       FuncName = ULE->getName().getAsString();
     } else {
       return;
@@ -12110,6 +12110,8 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
     if (auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts())) {
       auto ObjType = ME->getBase()->getType().getCanonicalType();
       ND = getNamedDecl(ObjType.getTypePtr());
+      if (!ND)
+        return;
       ObjName = ND->getNameAsString();
     // Match the static call, like: A::staticCall();
     } else if (auto RT = dyn_cast<RecordDecl>(
