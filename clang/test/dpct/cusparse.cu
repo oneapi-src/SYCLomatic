@@ -221,9 +221,6 @@ void foo3() {
 
   //CHECK:std::shared_ptr<dpct::sparse::optimize_info> info2;
   //CHECK-NEXT:info2 = std::make_shared<dpct::sparse::optimize_info>();
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1082:{{[0-9]+}}: Migration of cusparseSolvePolicy_t type is not supported.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:int policy = 1;
   //CHECK-NEXT:policy = 0;
   csrsv2Info_t info2;
