@@ -71,6 +71,13 @@ __global__ void k() {
   // CHECK: sycl::group_barrier(item_ct1.get_sub_group());
   __syncwarp(0xffffffff);
 
+  // CHECK: DPCT1119:{{.*}}: The argument of __syncwarp is assumed to be 0xffffffff. You may need to adjust the code.
+  // CHECK: sycl::group_barrier(item_ct1.get_sub_group());
+  __syncwarp(1);
+
+  // CHECK: sycl::group_barrier(item_ct1.get_sub_group());
+  __syncwarp();
+
   // CHECK: int a = (item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p));
   int a = __syncthreads_and(p);
   // CHECK: int b = (item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p));

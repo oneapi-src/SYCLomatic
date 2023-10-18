@@ -247,4 +247,6 @@ DEF_WARNING(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory
 DEF_COMMENT(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
 DEF_WARNING(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
 DEF_COMMENT(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
+DEF_WARNING(SYNCWARP, 1119, "The argument of __syncwarp is assumed to be 0xffffffff. You may need to adjust the code.")
+DEF_COMMENT(SYNCWARP, 1119, "The argument of __syncwarp is assumed to be 0xffffffff. You may need to adjust the code.")
 // clang-format on

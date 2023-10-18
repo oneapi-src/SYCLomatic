@@ -11777,11 +11777,47 @@ void CooperativeGroupsFunctionRule::runRule(
 #undef EMIT_WARNING_AND_RETURN
 REGISTER_RULE(CooperativeGroupsFunctionRule, PassKind::PK_Analysis)
 
+void SyncWarpRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(hasAnyName("__syncwarp"))),
+                     parentStmt(),
+                     hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                                    hasAttr(attr::CUDAGlobal)))
+                                     .bind("FuncDecl"))))
+          .bind("SyncFuncCall"),
+      this);
+}
+
+void SyncWarpRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (const auto *CE = getNodeAsType<CallExpr>(Result, "SyncFuncCall")) {
+    if (CE->getNumArgs() == 1) {
+      const auto *Arg = CE->getArg(0);
+      Expr::EvalResult Result;
+      auto &Ctx = DpctGlobalInfo::getContext();
+      auto EmitWarn = [&]() {
+        report(CE, Diagnostics::SYNCWARP, true);
+      };
+      if (Arg->EvaluateAsInt(Result, Ctx)) {
+        auto Int = Result.Val.getInt();
+        if (Int.getZExtValue() != 0xffffffff)
+          EmitWarn();
+      } else
+        EmitWarn();
+    }
+    std::string ReplStr;
+    ReplStr = MapNames::getClNamespace() + "group_barrier(" +
+              DpctGlobalInfo::getSubGroup(CE) + ")";
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+  }
+}
+
+REGISTER_RULE(SyncWarpRule, PassKind::PK_Analysis)
+
 void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
   auto SyncAPI = [&]() {
     return hasAnyName("__syncthreads", "__threadfence_block", "__threadfence",
                       "__threadfence_system", "__syncthreads_and",
-                      "__syncthreads_or", "__syncthreads_count", "__syncwarp");
+                      "__syncthreads_or", "__syncthreads_count");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(SyncAPI())), parentStmt(),
@@ -11891,11 +11927,6 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
       ReplStr += ")";
     report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
            "nd_item");
-    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
-  } else if (FuncName == "__syncwarp") {
-    std::string ReplStr;
-    ReplStr = MapNames::getClNamespace() + "group_barrier(" +
-              DpctGlobalInfo::getSubGroup(CE) + ")";
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   }
 }
