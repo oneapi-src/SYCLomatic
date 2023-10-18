@@ -502,7 +502,9 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
         std::string Result;
         llvm::raw_string_ostream OS(Result);
         DRE->getDecl()->printNestedNameSpecifier(OS);
-        CTSName = Result + DRE->getNameInfo().getAsString();
+        DRE->getNameInfo().printName(
+            OS, DpctGlobalInfo::getContext().getPrintingPolicy());
+        CTSName = Result;
       } else {
         CTSName = getNestedNameSpecifierString(Qualifier) +
                   DRE->getNameInfo().getAsString();
