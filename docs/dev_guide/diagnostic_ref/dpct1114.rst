@@ -1,0 +1,82 @@
+.. _DPCT1114:
+
+DPCT1114
+========
+
+Message
+-------
+
+.. _msg-1114-start:
+
+``cudaMemcpy`` is migrated to asynchronization ``memcpy``, assuming in the original
+code the source host memory is pageable memory. If the memory is not pageable,
+call ``wait()`` on event return by ``memcpy`` API to ensure synchronization behavior.
+
+.. _msg-1114-end:
+
+Detailed Help
+-------------
+
+The ``cudaMemcpy`` function typically operates synchronously. However, when
+copying from host to device using pageable host memory, its behavior becomes
+asynchronous. If the ``--optimize-migration`` option is used during migration,
+the migration tool assumes host memory is pageable and migrates ``cudaMemcpy``
+into an asynchronous ``memcpy`` from host to device, which can improve performance
+by permitting concurrent memory transfer with other tasks. Nonetheless, if the
+source memory is pinned host memory, the user needs to call ``wait()`` on the
+event returned by the ``memcpy`` API to ensure synchronization behavior.
+
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   Int N = 100;
+   float *src, *dst;
+   cudaMalloc(&dst, sizeof(float) * N);
+   cudaMallocHost(&src, sizeof(float) * N);
+   for(int i = 0; i < N; i++){
+     Src[i] = i;
+   }
+   cudaMemcpy(dst, src, sizeof(float) * N, cudaMemcpyHostToDevice);
+
+
+
+results in the following migrated SYCL* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   sycl::device dev_ct1;
+   sycl::queue q_ct1(dev_ct1, sycl::property_list{sycl::property::queue::in_order()});
+   float *src, *dst;
+   dst = sycl::malloc_device<float>(N, q_ct1);
+   src = sycl::malloc_host<float>(N, q_ct1);
+   for(int i = 0; i < N; i++){
+     src[i] = i;
+   }
+   /*
+   DPCT1114:1: cudaMemcpy is migrated to asynchronization memcpy, assuming in the original code the source host memory is pageable memory. If  the memory is not pageable, call wait() on event return by memcpy API to ensure synchronization behavior.
+   */
+   q_ct1.memcpy(dst, src, sizeof(float) * N);
+
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   sycl::device dev_ct1;
+   sycl::queue q_ct1(dev_ct1, sycl::property_list{sycl::property::queue::in_order()});
+   float *src, *dst;
+   dst = sycl::malloc_device<float>(N, q_ct1);
+   src = sycl::malloc_host<float>(N, q_ct1);
+   for(int i = 0; i < N; i++){
+     src[i] = i;
+   }
+   q_ct1.memcpy(dst, src, sizeof(float) * N).wait(); // src is allocated by cudaMallocHost with page-locked memory on host, so call wait().
+

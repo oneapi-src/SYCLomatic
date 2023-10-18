@@ -176,6 +176,13 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 
   SourcePathList = SourcePaths;
 #ifdef SYCLomatic_CUSTOMIZATION
+#ifndef _WIN32
+  if (std::string(argv[1]) == "--intercept-build" ||
+      std::string(argv[1]) == "-intercept-build" ||
+      std::string(argv[1]) == "intercept-build") {
+    return llvm::Error::success();
+  }
+#endif
   if(!SourcePathList.empty()) {
     clang::tooling::FormatSearchPath = SourcePaths[0];
   }

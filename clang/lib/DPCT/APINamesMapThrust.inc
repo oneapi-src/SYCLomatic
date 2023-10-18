@@ -20,10 +20,4 @@
 *
 ****************************************************************************/
 ENTRY_HOST("thrust::device_malloc", MapNames::getDpctNamespace() + "malloc_device", "")
-ENTRY_BOTH("thrust::complex", "std::complex", "")
 ENTRY_BOTH("thrust::device_pointer_cast", MapNames::getDpctNamespace() + "get_device_pointer", "")
-ENTRY_BOTH("thrust::max", "std::max", "")
-ENTRY_BOTH("thrust::min", "std::min", "")
-ENTRY_BOTH("thrust::make_tuple", "std::make_tuple", "")
-ENTRY_BOTH("thrust::tie", "std::tie", "")
-ENTRY_BOTH("thrust::uninitialized_fill", "std::uninitialized_fill", "")
