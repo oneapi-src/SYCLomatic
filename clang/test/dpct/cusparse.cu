@@ -282,3 +282,22 @@ void foo3() {
   cusparseZcsrsv2_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, &alpha_z, descrA, a_z_val, a_row_ptr, a_col_ind, info2, f_z, x_z, policy, buffer_z);
   cusparseDestroyCsrsv2Info(info2);
 }
+
+void foo4() {
+  cusparseHandle_t handle;
+  cusparseMatDescr_t descrA;
+  cusparseSolveAnalysisInfo_t info;
+  cusparseCreateSolveAnalysisInfo(&info);
+
+  float *a_s_val;
+  int *a_row_ptr;
+  int *a_col_ind;
+  float *f_s;
+  float *x_s;
+  float alpha_s = 1;
+
+  //CHECK:dpct::sparse::optimize_csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, descrA, a_s_val, dpct::library_data_t::real_float, a_row_ptr, a_col_ind, info);
+  //CHECK-NEXT:dpct::sparse::csrsv(*handle, oneapi::mkl::transpose::nontrans, 3, &alpha_s, dpct::library_data_t::real_float, descrA, a_s_val, dpct::library_data_t::real_float, a_row_ptr, a_col_ind, info, f_s, dpct::library_data_t::real_float, x_s, dpct::library_data_t::real_float);
+  cusparseCsrsv_analysisEx(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_s_val, CUDA_R_32F, a_row_ptr, a_col_ind, info, CUDA_R_32F);
+  cusparseCsrsv_solveEx(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, &alpha_s, CUDA_R_32F, descrA, a_s_val, CUDA_R_32F, a_row_ptr, a_col_ind, info, f_s, CUDA_R_32F, x_s, CUDA_R_32F, CUDA_R_32F);
+}
