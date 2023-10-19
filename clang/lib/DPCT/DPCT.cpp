@@ -14,6 +14,7 @@
 #include "CallExprRewriter.h"
 #include "Config.h"
 #include "CrashRecovery.h"
+#include "Error.h"
 #include "ExternalReplacement.h"
 #include "GenHelperFunction.h"
 #include "GenMakefile.h"
@@ -36,6 +37,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
@@ -227,9 +229,13 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
-  } else if (!CudaIncludeDetector.isSupportedVersionAvailable()) {
-    ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
-    dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
+  } else if (!CudaIncludeDetector.isIncludePathValid()) {
+    ShowStatus(MigrationErrorCannotDetectCudaPath);
+    dpctExit(MigrationErrorCannotDetectCudaPath);
+  } else if (!CudaIncludeDetector.isVersionSupported()) {
+    ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
+    dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
+
   }
 
   makeCanonical(Path);
@@ -614,6 +620,31 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationSucceeded);
   }
 
+#ifndef _WIN32
+  if (InterceptBuildCommand) {
+    SmallString<512> PathToInterceptBuildBinary(DpctInstallPath);
+    llvm::sys::path::append(PathToInterceptBuildBinary, "bin",
+                            "intercept-build");
+    if (!llvm::sys::fs::exists(PathToInterceptBuildBinary)) {
+      DpctLog() << "Error: intercept-build tool not found"
+                << "\n";
+      ShowStatus(MigrationErrorInvalidInstallPath);
+      dpctExit(MigrationErrorInvalidInstallPath);
+    }
+    std::string InterceptBuildSystemCall(PathToInterceptBuildBinary.str());
+    for (int argumentIndex = 2; argumentIndex < argc; argumentIndex++) {
+      InterceptBuildSystemCall.append(" ");
+      InterceptBuildSystemCall.append(std::string(argv[argumentIndex]));
+    }
+    int processExitCode = system(InterceptBuildSystemCall.c_str());
+    if (processExitCode) {
+      ShowStatus(InterceptBuildError);
+      dpctExit(InterceptBuildError);
+    }
+    dpctExit(InterceptBuildSuccess);
+  }
+#endif
+
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
@@ -748,6 +779,10 @@ int runDPCT(int argc, const char **argv) {
     // Set a virtual file for --query-api-mapping.
     llvm::SmallString<16> VirtFile;
     llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+    // Need set a virtual path and it will used by AnalysisScope.
+    InRoot = VirtFile.str().str();
+    makeInRootCanonicalOrSetDefaults(InRoot, {});
+    VirtFile = InRoot;
     llvm::sys::path::append(VirtFile, "temp.cu");
     SourcePathList.emplace_back(VirtFile);
     DpctGlobalInfo::setIsQueryAPIMapping(true);
@@ -758,7 +793,12 @@ int runDPCT(int argc, const char **argv) {
   std::string QueryAPIMappingSrc;
   std::string QueryAPIMappingOpt;
   if (DpctGlobalInfo::isQueryAPIMapping()) {
+    APIMapping::setPrintAll(QueryAPIMapping == "-");
     APIMapping::initEntryMap();
+    if (APIMapping::getPrintAll()) {
+      APIMapping::printAll();
+      dpctExit(MigrationSucceeded);
+    }
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       ShowStatus(MigrationErrorNoAPIMapping);
@@ -825,8 +865,6 @@ int runDPCT(int argc, const char **argv) {
     NoIncrementalMigration = true;
     StopOnParseErr = true;
     Tool.setPrintErrorMessage(false);
-    // Need set a virtual path and it will used by AnalysisScope.
-    InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
   } else {
     IsUsingDefaultOutRoot = OutRoot.empty();
     if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
@@ -1106,7 +1144,8 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       if (RunResult == 1) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
-          StringRef ErrStr = getDpctTermStr();
+          std::string Err = getDpctTermStr();
+          StringRef ErrStr = Err;
           if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
                        QueryAPIMapping);

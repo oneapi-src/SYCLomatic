@@ -163,8 +163,10 @@ expected results. Instead, exclude CUB library implementation source code from
 your migration by adding ``--in-root-exclude=<path to CUB library source code>``
 to your migration command.
 
-How do I fix the issue of SYCL code hanging due to work group level synchronization, such as a group barrier used in a conditional statement?
-*********************************************************************************************************************************************
+.. _faq-hang-wg-synch:
+
+How do I fix the issue of SYCL\* code hanging due to work group level synchronization, such as a group barrier used in a conditional statement?
+***********************************************************************************************************************************************
 
 If synchronization API in control flow statements like a conditional statement and
 loop statement are called in SYCL code, you may encounter a runtime hang issue.
@@ -268,7 +270,7 @@ below to migrate your content:
 
 -  Rely on |tool_name| to decide which
    files to migrate with:
-   ``compile_commands.json: “dpct -p=compile_commands.json --in-root=srcdir --out-root=dstdir”``
+   ``compile_commands.json: "dpct -p=compile_commands.json --in-root=srcdir --out-root=dstdir"``
 -  Manually pass specific files to migrate, but do not pass the
    files that are included in other files and not supposed to be
    compiled as a standalone file in the original application. The

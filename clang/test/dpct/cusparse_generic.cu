@@ -132,5 +132,75 @@ int main() {
   cusparseDnVecGet(dnVecDescr, &size, &values, &valueType);
   cusparseDnVecGetValues(dnVecDescr, &values);
   cusparseDnVecSetValues(dnVecDescr, values);
+
+  //CHECK:oneapi::mkl::sparse::matmat_descr_t descr;
+  //CHECK-NEXT:dpct::sparse::sparse_matrix_desc_t matA_sparse;
+  //CHECK-NEXT:dpct::sparse::sparse_matrix_desc_t matB_sparse;
+  //CHECK-NEXT:dpct::sparse::sparse_matrix_desc_t matC_sparse;
+  //CHECK-NEXT:int alg3;
+  //CHECK-NEXT:size_t workspace_size;
+  //CHECK-NEXT:void *workspace;
+  //CHECK-NEXT:oneapi::mkl::sparse::init_matmat_descr(&descr);
+  //CHECK-NEXT:dpct::sparse::spgemm_work_estimation(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, matB_sparse, beta, matC_sparse, descr, &workspace_size, workspace);
+  //CHECK-NEXT:dpct::sparse::spgemm_compute(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, matB_sparse, beta, matC_sparse, descr, &workspace_size, workspace);
+  //CHECK-NEXT:dpct::sparse::spgemm_finalize(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, matB_sparse, beta, matC_sparse, descr);
+  //CHECK-NEXT:oneapi::mkl::sparse::release_matmat_descr(&descr);
+  cusparseSpGEMMDescr_t descr;
+  cusparseSpMatDescr_t matA_sparse;
+  cusparseSpMatDescr_t matB_sparse;
+  cusparseSpMatDescr_t matC_sparse;
+  cusparseSpGEMMAlg_t alg3;
+  size_t workspace_size;
+  void *workspace;
+  cusparseSpGEMM_createDescr(&descr);
+  cusparseSpGEMM_workEstimation(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, alpha, matA_sparse, matB_sparse, beta, matC_sparse, computeType, alg3, descr, &workspace_size, workspace);
+  cusparseSpGEMM_compute(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, alpha, matA_sparse, matB_sparse, beta, matC_sparse, computeType, alg3, descr, &workspace_size, workspace);
+  cusparseSpGEMM_copy(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, alpha, matA_sparse, matB_sparse, beta, matC_sparse, computeType, alg3, descr);
+  cusparseSpGEMM_destroyDescr(descr);
+
+  //CHECK:int spsvDescr;
+  //CHECK-NEXT:int alg4;
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_createDescr was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_bufferSize was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:dpct::sparse::spsv_optimize(*handle, oneapi::mkl::transpose::nontrans, matA_sparse);
+  //CHECK-NEXT:dpct::sparse::spsv(*handle, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, vecX, vecY, computeType);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_destroyDescr was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:*/
+  cusparseSpSVDescr_t spsvDescr;
+  cusparseSpSVAlg_t alg4;
+  cusparseSpSV_createDescr(&spsvDescr);
+  cusparseSpSV_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, alpha, matA_sparse, vecX, vecY, computeType, alg4, spsvDescr, &workspace_size);
+  cusparseSpSV_analysis(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, alpha, matA_sparse, vecX, vecY, computeType, alg4, spsvDescr, workspace);
+  cusparseSpSV_solve(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, alpha, matA_sparse, vecX, vecY, computeType, alg4, spsvDescr);
+  cusparseSpSV_destroyDescr(spsvDescr);
+
   return 0;
+}
+
+void foo1() {
+  cusparseSpMatDescr_t spMatDescr;
+  int64_t rows;
+  int64_t cols;
+  int64_t nnz;
+  void *csrRowOffsets;
+  void *csrColInd;
+  void *csrValues;
+  cusparseIndexType_t csrRowOffsetsType;
+  cusparseIndexType_t csrColIndType;
+  cusparseIndexBase_t idxBase;
+  cudaDataType valueType;
+
+  //CHECK:spMatDescr = std::make_shared<dpct::sparse::sparse_matrix_desc>(rows, cols, nnz, nullptr, nullptr, nullptr, csrRowOffsetsType, csrColIndType, idxBase, valueType, dpct::sparse::matrix_format::csr);
+  cusparseCreateCsr(&spMatDescr, rows, cols, nnz, NULL, NULL, NULL, csrRowOffsetsType, csrColIndType, idxBase, valueType);
+}
+
+//CHECK:void foo2(oneapi::mkl::sparse::matmat_descr_t *descr) {
+//CHECK-NEXT:  oneapi::mkl::sparse::release_matmat_descr(descr);
+void foo2(cusparseSpGEMMDescr_t *descr) {
+  cusparseSpGEMM_destroyDescr(*descr);
 }

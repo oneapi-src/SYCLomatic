@@ -3,6 +3,8 @@
 DPCT1046
 ========
 
+.. include:: /_include_files/deprecated-msg-0.txt
+
 Message
 -------
 

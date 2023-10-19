@@ -105,6 +105,8 @@ void GroupFunctionCallInControlFlowAnalyzer::
   llvm::SaveAndRestore<bool> SvaedSideEffects(SideEffects);
   llvm::SaveAndRestore<FunctionDecl *> SavedFD(this->FD);
   auto FnInfo = DeviceFunctionDecl::LinkRedecls(FD);
+  if (!FnInfo)
+    return;
 
   if (FnInfo->hasSideEffectsAnalyzed())
     return;

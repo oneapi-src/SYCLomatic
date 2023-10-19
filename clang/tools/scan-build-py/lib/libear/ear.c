@@ -1770,7 +1770,8 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         }
         tmpp++;
       }
-      fprintf(fd, "%s%c", "nvcc", US);
+      if (it == 0)
+        fprintf(fd, "%s%c", "nvcc", US);
     } else if ((len == 2 && tail[0] == 'l' && tail[1] == 'd') ||
                (len > 2 && tail[len - 3] == '/' && tail[len - 2] == 'l' &&
                 tail[len - 1] == 'd')) {
