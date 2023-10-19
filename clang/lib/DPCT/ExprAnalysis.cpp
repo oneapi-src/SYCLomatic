@@ -2184,7 +2184,7 @@ void SideEffectsAnalysis::dispatch(const Stmt *Expression) {
   return ExprAnalysis::dispatch(Expression);
 }
 
-void StrictMonotonicityAnalysis::dispatch(const Stmt *Expression) {
+void IndexAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
     ANALYZE_EXPR(UnaryOperator)
     ANALYZE_EXPR(BinaryOperator)
@@ -2192,26 +2192,30 @@ void StrictMonotonicityAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(DeclRefExpr)
     ANALYZE_EXPR(PseudoObjectExpr)
   default:
-    IsStrictlyMonotonic = false;
+    ContainUnknownNode = true;
     return ExprAnalysis::dispatch(Expression);
   }
 }
 
-void StrictMonotonicityAnalysis::analyzeExpr(const UnaryOperator *UO) {
+void IndexAnalysis::analyzeExpr(const UnaryOperator *UO) {
   dispatch(UO->getSubExpr());
 }
-void StrictMonotonicityAnalysis::analyzeExpr(const BinaryOperator *BO) {
+void IndexAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  if (!BO->isAdditiveOp())
+    ContainNonAdditiveOp.push(true);
   dispatch(BO->getLHS());
   dispatch(BO->getRHS());
+  if (!BO->isAdditiveOp())
+    ContainNonAdditiveOp.pop();
 }
-void StrictMonotonicityAnalysis::analyzeExpr(const ImplicitCastExpr *ICE) {
+void IndexAnalysis::analyzeExpr(const ImplicitCastExpr *ICE) {
   dispatch(ICE->getSubExpr());
 }
-void StrictMonotonicityAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+void IndexAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (const Expr* Init = trackInitExprOfDRE(DRE)) {
     dispatch(Init);
   } else {
-    IsStrictlyMonotonic = false;
+    ContainUnknownNode = true;
     return;
   }
 }
@@ -2244,9 +2248,15 @@ bool isIterationSpaceBuiltinVar(const PseudoObjectExpr *Node,
     return true;
   return false;
 }
-void StrictMonotonicityAnalysis::analyzeExpr(const PseudoObjectExpr *POE) {
-  if (isIterationSpaceBuiltinVar(POE, "threadIdx", "__fetch_builtin_x"))
+void IndexAnalysis::analyzeExpr(const PseudoObjectExpr *POE) {
+  if (isIterationSpaceBuiltinVar(POE, "threadIdx", "__fetch_builtin_x")) {
+    if (!ContainNonAdditiveOp.empty()) {
+      // To ensure the difference between index and threadIdx.x is only a
+      // constant, non-additive Op cannot apply to threadIdx.x
+      IsThreadIdxXUnderNonAdditiveOp = true;
+    }
     HasThreadIdxX = true;
+  }
 }
 
 } // namespace dpct

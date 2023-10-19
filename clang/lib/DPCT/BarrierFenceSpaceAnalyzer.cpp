@@ -654,7 +654,6 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
     int KernelCallBlockDim, const DeclRefExpr *DRE) {
-  std::cout << "!!!!!!!KernelCallBlockDim:" << KernelCallBlockDim << std::endl;
   using namespace ast_matchers;
   if (KernelCallBlockDim != 1) {
     return true;
@@ -663,64 +662,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
   const ArraySubscriptExpr *ASE = getArraySubscriptExpr(DRE);
   if (!ASE)
     return true;
-  std::cout << "aaaaaaaaaaaa" << std::endl;
   const Expr *InitExpr = getIdxOfASEConstValueExpr(ASE);
   if (!InitExpr)
     return true;
-  std::cout << "bbbbbbbbbbbbb" << std::endl;
   // Check if Index variable has 1:1 mapping to threadIdx.x in a block
-  StrictMonotonicityAnalysis SMA(InitExpr);
+  IndexAnalysis SMA(InitExpr);
   return !SMA.isStrictlyMonotonic();
-
-
-//  // Case 1: blockIdx.x * blockDim.x + threadIdx.x
-//  // Case 2: blockDim.x * blockIdx.x + threadIdx.x
-//  // Case 3: threadIdx.x + blockIdx.x * blockDim.x
-//  // Case 4: threadIdx.x + blockDim.x * blockIdx.x
-//  const BinaryOperator *BOAdd = dyn_cast<BinaryOperator>(InitExpr);
-//  if (!BOAdd || BOAdd->getOpcode() != BinaryOperatorKind::BO_Add)
-//    return true;
-//  const BinaryOperator *BOMul = dyn_cast<BinaryOperator>(BOAdd->getLHS());
-//  if (BOMul &&
-//      isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getRHS()),
-//                                 "threadIdx", "__fetch_builtin_x")) {
-//    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
-//                                   "blockIdx", "__fetch_builtin_x") &&
-//        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
-//                                   "blockDim", "__fetch_builtin_x")) {
-//      // Case 1
-//      return false;
-//    }
-//    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
-//                                   "blockIdx", "__fetch_builtin_x") &&
-//        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
-//                                   "blockDim", "__fetch_builtin_x")) {
-//      // Case 2
-//      return false;
-//    }
-//    return true;
-//  }
-//  BOMul = dyn_cast<BinaryOperator>(BOAdd->getRHS());
-//  if (BOMul &&
-//      isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getLHS()),
-//                                 "threadIdx", "__fetch_builtin_x")) {
-//    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
-//                                   "blockIdx", "__fetch_builtin_x") &&
-//        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
-//                                   "blockDim", "__fetch_builtin_x")) {
-//      // Case 3
-//      return false;
-//    }
-//    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
-//                                   "blockIdx", "__fetch_builtin_x") &&
-//        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
-//                                   "blockDim", "__fetch_builtin_x")) {
-//      // Case 4
-//      return false;
-//    }
-//    return true;
-//  }
-//  return true;
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::containsMacro(

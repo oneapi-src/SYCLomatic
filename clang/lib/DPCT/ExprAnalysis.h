@@ -931,13 +931,14 @@ private:
   bool HasSideEffects = false;
 };
 
-class StrictMonotonicityAnalysis : public ExprAnalysis {
+class IndexAnalysis : public ExprAnalysis {
 public:
-  explicit StrictMonotonicityAnalysis(const Expr *E) : ExprAnalysis(E) {}
+  explicit IndexAnalysis(const Expr *E) : ExprAnalysis() { dispatch(E); }
+  inline bool isDifferenceBetweenThreadIdxXAndIndexConstant() {
+    return isStrictlyMonotonic() && !IsThreadIdxXUnderNonAdditiveOp;
+  }
   inline bool isStrictlyMonotonic() {
-    std::cout << "IsStrictlyMonotonic:" << IsStrictlyMonotonic << std::endl;
-    std::cout << "HasThreadIdxX:" << HasThreadIdxX << std::endl;
-    return IsStrictlyMonotonic && HasThreadIdxX;
+    return HasThreadIdxX && !ContainUnknownNode;
   }
 
 protected:
@@ -952,8 +953,10 @@ private:
   void analyzeExpr(const PseudoObjectExpr *POE);
 
 private:
-  bool IsStrictlyMonotonic = true;
+  bool ContainUnknownNode = false;
   bool HasThreadIdxX = false;
+  bool IsThreadIdxXUnderNonAdditiveOp = false;
+  std::stack<bool> ContainNonAdditiveOp;
 };
 
 } // namespace dpct
