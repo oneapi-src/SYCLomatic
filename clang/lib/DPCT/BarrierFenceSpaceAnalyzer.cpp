@@ -552,22 +552,29 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
   // Check prerequirements
   const FunctionDecl *FD = nullptr;
   if (!isMeetAnalyisPrerequirements(CE, FD))
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                           GlobalFunctionName);
 
   // Init values
   this->SkipCacheInAnalyzer = SkipCacheInAnalyzer;
   this->FD = FD;
   GlobalFunctionName = FD->getDeclName().getAsString();
-  auto queryKernelCallBlockDim = [](const FunctionDecl *FD) -> int {
+  auto queryKernelDim = [](const FunctionDecl *FD)
+      -> std::pair<int /*kernel dim*/, int /*kernel block dim*/> {
     const auto DFD = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD);
     if (!DFD)
-      return 3;
+      return {3, 3};
     const auto FuncInfo = DFD->getFuncInfo();
     if (!FuncInfo)
-      return 3;
-    return FuncInfo->KernelCallBlockDim;
+      return {3, 3};
+    int BlockDim = FuncInfo->KernelCallBlockDim;
+    const auto MVM =
+        MemVarMap::getHeadWithoutPathCompression(&(FuncInfo->getVarMap()));
+    if (!MVM)
+      return {3, BlockDim};
+    return {MVM->Dim, BlockDim};
   };
-  KernelCallBlockDim = queryKernelCallBlockDim(FD);
+  std::tie(KernelDim, KernelCallBlockDim) = queryKernelDim(FD);
 
   CELoc = getHashStrFromLoc(CE->getBeginLoc());
   FDLoc = getHashStrFromLoc(FD->getBeginLoc());
@@ -579,7 +586,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
       if (CEIter != FDIter->second.end()) {
         return CEIter->second;
       } else {
-        return BarrierFenceSpaceAnalyzerResult(false, false,
+        return BarrierFenceSpaceAnalyzerResult(false, false, false,
                                                GlobalFunctionName);
       }
     }
@@ -594,7 +601,8 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
       CachedResults[FDLoc] =
           std::unordered_map<std::string, BarrierFenceSpaceAnalyzerResult>();
     }
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                           GlobalFunctionName);
   }
 
   constructDefUseMap();
@@ -625,18 +633,21 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
   if (SkipCacheInAnalyzer) {
     for (auto &SyncCall : SyncCallsVec) {
       if (CE == SyncCall.first) {
+        auto Res = isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second);
         return BarrierFenceSpaceAnalyzerResult(
-            isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second),
-            MayDependOn1DKernel, GlobalFunctionName);
+            std::get<0>(Res), std::get<1>(Res), MayDependOn1DKernel,
+            GlobalFunctionName, std::get<2>(Res));
       }
     }
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                           GlobalFunctionName);
   }
   for (auto &SyncCall : SyncCallsVec) {
+    auto Res = isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second);
     CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
-        BarrierFenceSpaceAnalyzerResult(
-            isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second),
-            MayDependOn1DKernel, GlobalFunctionName);
+        BarrierFenceSpaceAnalyzerResult(std::get<0>(Res), std::get<1>(Res),
+                                        MayDependOn1DKernel, GlobalFunctionName,
+                                        std::get<2>(Res));
   }
 
   // find the result in the new map
@@ -646,10 +657,12 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
     if (CEIter != FDIter->second.end()) {
       return CEIter->second;
     } else {
-      return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+      return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                             GlobalFunctionName);
     }
   }
-  return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+  return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                         GlobalFunctionName);
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
@@ -732,8 +745,10 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
 /// points
 /// @param SCI Saves predecessor ranges and successor ranges of current
 /// __syncthreads call
-/// @return Is safe or not
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
+/// @return Is safe or not, and the condition string (if needed)
+std::tuple<bool /*CanUseLocalBarrier*/,
+           bool /*CanUseLocalBarrierWithCondition*/, std::string /*Condition*/>
+clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
     const std::map<const ParmVarDecl *,
                    std::set<std::pair<SourceLocation, AccessMode>>>
         &DefLocInfoMap,
@@ -752,7 +767,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 1" << std::endl;
 #endif
-        return false;
+        return {false, false, ""};
       }
       if (LocModePair.second == AccessMode::Read) {
         FoundRead = true;
@@ -770,20 +785,28 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 2" << std::endl;
 #endif
-        return false;
+        return {false, false, ""};
       }
       if (FoundWrite && DREInPredecessors && DREInSuccessors) {
+        if (false) { // !!!!!!!!!!!!!!!!!!!!!! FIXME
+          // No need to call DpctGlobalInfo::getItem() here.
+          // It has been invoked in SyncThreadsRule.
+          if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && KernelDim == 1)
+            return {false, true, "item_ct1.get_local_range(0) < nx"};
+          else
+            return {false, true, "item_ct1.get_local_range(2) < nx"};
+        }
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;
 #endif
-        return false;
+        return {false, false, ""};
       }
     }
   }
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "isSafeToUseLocalBarrier True" << std::endl;
 #endif
-  return true;
+  return {true, false, ""};
 }
 
 std::unordered_map<

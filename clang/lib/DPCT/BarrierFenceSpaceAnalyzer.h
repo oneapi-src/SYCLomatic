@@ -25,14 +25,20 @@ namespace dpct {
 struct BarrierFenceSpaceAnalyzerResult {
   BarrierFenceSpaceAnalyzerResult() {}
   BarrierFenceSpaceAnalyzerResult(bool CanUseLocalBarrier,
+                                  bool CanUseLocalBarrierWithCondition,
                                   bool MayDependOn1DKernel,
-                                  std::string GlobalFunctionName)
+                                  std::string GlobalFunctionName,
+                                  std::string Condition = "")
       : CanUseLocalBarrier(CanUseLocalBarrier),
+        CanUseLocalBarrierWithCondition(CanUseLocalBarrierWithCondition),
         MayDependOn1DKernel(MayDependOn1DKernel),
-        GlobalFunctionName(GlobalFunctionName) {}
+        GlobalFunctionName(GlobalFunctionName),
+        Condition(Condition) {}
   bool CanUseLocalBarrier = false;
+  bool CanUseLocalBarrierWithCondition = false;
   bool MayDependOn1DKernel = false;
   std::string GlobalFunctionName;
+  std::string Condition;
 };
 
 class BarrierFenceSpaceAnalyzer
@@ -88,7 +94,10 @@ private:
     Ranges Predecessors;
     Ranges Successors;
   };
-  bool isSafeToUseLocalBarrier(
+  std::tuple<bool /*CanUseLocalBarrier*/,
+             bool /*CanUseLocalBarrierWithCondition*/,
+             std::string /*Condition*/>
+  isSafeToUseLocalBarrier(
       const std::map<const ParmVarDecl *,
                      std::set<std::pair<SourceLocation, AccessMode>>>
           &DefLocInfoMap,
@@ -98,6 +107,7 @@ private:
                                           const DeclRefExpr *DRE);
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<SourceRange> LoopRange;
+  int KernelDim = 3; // 3 or 1
   int KernelCallBlockDim = 3; // 3 or 1
   const FunctionDecl *FD = nullptr;
   std::string GlobalFunctionName;
