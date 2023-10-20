@@ -503,12 +503,11 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::constructDefUseMap() {
 #endif
 }
 
-void clang::dpct::BarrierFenceSpaceAnalyzer::simplifyAndConvertToDefLocInfoMap(
-    std::map<const ParmVarDecl *,
-             std::set<std::pair<SourceLocation, AccessMode>>> &DefLocInfoMap) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::simplifyMap(
+    std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap) {
   std::map<const ParmVarDecl *,
            std::set<std::pair<const DeclRefExpr *, AccessMode>>>
-      DefDREInfoMap;
+      DefDREInfoMapTemp;
   // simplify DefUseMap
   for (const auto &Pair : DefUseMap) {
     for (const auto &Item : Pair.second) {
@@ -516,7 +515,7 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::simplifyAndConvertToDefLocInfoMap(
         if (!hasOverlappingAccessAmongWorkItems(KernelCallBlockDim, Item)) {
           MayDependOn1DKernel = true;
         } else {
-          DefDREInfoMap[Pair.first].insert(
+          DefDREInfoMapTemp[Pair.first].insert(
               std::make_pair(Item, getAccessKind(Item)));
         }
       }
@@ -524,25 +523,25 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::simplifyAndConvertToDefLocInfoMap(
   }
 
   // Convert DRE to Location for comparing
-  for (const auto &Pair : DefDREInfoMap) {
+  for (const auto &Pair : DefDREInfoMapTemp) {
     for (const auto &Item : Pair.second) {
-      DefLocInfoMap[Pair.first].insert(
-          std::make_pair(Item.first->getBeginLoc(), Item.second));
+      DefDREInfoMap[Pair.first].insert(
+          DREInfo(Item.first, Item.first->getBeginLoc(), Item.second));
     }
   }
 
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "===== DefLocInfoMap contnet: =====" << std::endl;
-  for (const auto &LocInfo : DefLocInfoMap) {
+  std::cout << "===== DefDREInfoMap contnet: =====" << std::endl;
+  for (const auto &LocInfo : DefDREInfoMap) {
     const auto &SM = DpctGlobalInfo::getSourceManager();
     std::cout << "Decl:" << LocInfo.first->getBeginLoc().printToString(SM)
               << std::endl;
-    for (const auto &Pair : LocInfo.second) {
-      std::cout << "    DRE:" << Pair.first.printToString(SM)
-                << ", AccessMode:" << (int)(Pair.second) << std::endl;
+    for (const auto &Info : LocInfo.second) {
+      std::cout << "    DRE:" << Info.SL.printToString(SM)
+                << ", AccessMode:" << (int)(Info.AM) << std::endl;
     }
   }
-  std::cout << "===== DefLocInfoMap contnet end =====" << std::endl;
+  std::cout << "===== DefDREInfoMap contnet end =====" << std::endl;
 #endif
 }
 
@@ -606,9 +605,8 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
   }
 
   constructDefUseMap();
-  std::map<const ParmVarDecl *, std::set<std::pair<SourceLocation, AccessMode>>>
-      DefLocInfoMap;
-  simplifyAndConvertToDefLocInfoMap(DefLocInfoMap);
+  std::map<const ParmVarDecl *, std::set<DREInfo>> DefLocInfoMap;
+  simplifyMap(DefLocInfoMap);
 
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "===== SyncCall info contnet: =====" << std::endl;
@@ -680,6 +678,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
     return true;
   // Check if Index variable has 1:1 mapping to threadIdx.x in a block
   IndexAnalysis SMA(InitExpr);
+  IsDifferenceBetweenThreadIdxXAndIndexConstant =
+      SMA.isDifferenceBetweenThreadIdxXAndIndexConstant();
   return !SMA.isStrictlyMonotonic();
 }
 
@@ -733,6 +733,41 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
   return false;
 }
 
+std::pair<bool, std::string>
+clang::dpct::BarrierFenceSpaceAnalyzer::isSafeWriteAfterWrite(
+    const std::set<const DeclRefExpr *> &WAWDRESet) {
+  if (WAWDRESet.size() > 1) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "isSafeWriteAfterWrite False case 1" << std::endl;
+#endif
+    return {false, ""};
+  }
+
+  if (!IsDifferenceBetweenThreadIdxXAndIndexConstant) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "isSafeWriteAfterWrite False case 2" << std::endl;
+#endif
+    return {false, ""};
+  }
+
+  // FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // If only in single loop
+
+
+
+
+
+  // FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // Find step
+  std::string StepStr;
+
+
+
+
+
+  return {true, StepStr};
+}
+
 /// @brief Check if it is safe to use local barrier to migrate current
 /// __syncthreads call.
 /// The requirements to return ture:
@@ -749,35 +784,34 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
 std::tuple<bool /*CanUseLocalBarrier*/,
            bool /*CanUseLocalBarrierWithCondition*/, std::string /*Condition*/>
 clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
-    const std::map<const ParmVarDecl *,
-                   std::set<std::pair<SourceLocation, AccessMode>>>
-        &DefLocInfoMap,
+    const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
     const SyncCallInfo &SCI) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "===== isSafeToUseLocalBarrier =====" << std::endl;
 #endif
-  for (auto &LocInfo : DefLocInfoMap) {
+  std::set<std::string> ConditionSet;
+  for (auto &DefDREInfo : DefDREInfoMap) {
     bool FoundRead = false;
     bool FoundWrite = false;
     bool DREInPredecessors = false;
     bool DREInSuccessors = false;
-    for (auto &LocModePair : LocInfo.second) {
-      if (LocModePair.first.isMacroID() ||
-          (LocModePair.second == AccessMode::ReadWrite)) {
+    std::set<const DeclRefExpr *> WriteAfterWriteDRE;
+    for (auto &DREInfo : DefDREInfo.second) {
+      if (DREInfo.SL.isMacroID() || (DREInfo.AM == AccessMode::ReadWrite)) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 1" << std::endl;
 #endif
         return {false, false, ""};
       }
-      if (LocModePair.second == AccessMode::Read) {
+      if (DREInfo.AM == AccessMode::Read) {
         FoundRead = true;
-      } else if (LocModePair.second == AccessMode::Write) {
+      } else if (DREInfo.AM == AccessMode::Write) {
         FoundWrite = true;
       }
-      if (isInRanges(LocModePair.first, SCI.Predecessors)) {
+      if (isInRanges(DREInfo.SL, SCI.Predecessors)) {
         DREInPredecessors = true;
       }
-      if (isInRanges(LocModePair.first, SCI.Successors)) {
+      if (isInRanges(DREInfo.SL, SCI.Successors)) {
         DREInSuccessors = true;
       }
 
@@ -788,20 +822,41 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
         return {false, false, ""};
       }
       if (FoundWrite && DREInPredecessors && DREInSuccessors) {
-        if (false) { // !!!!!!!!!!!!!!!!!!!!!! FIXME
-          // No need to call DpctGlobalInfo::getItem() here.
-          // It has been invoked in SyncThreadsRule.
-          if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && KernelDim == 1)
-            return {false, true, "item_ct1.get_local_range(0) < nx"};
-          else
-            return {false, true, "item_ct1.get_local_range(2) < nx"};
-        }
+        WriteAfterWriteDRE.insert(DREInfo.DRE);
+      }
+    }
+    if (!WriteAfterWriteDRE.empty()) {
+      auto Res = isSafeWriteAfterWrite(WriteAfterWriteDRE);
+      if (!Res.first) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;
 #endif
         return {false, false, ""};
       }
     }
+  }
+
+  if (!ConditionSet.empty()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "isSafeToUseLocalBarrier True with condition" << std::endl;
+#endif
+    std::string RHS;
+    if (ConditionSet.size() == 1) {
+      RHS = *ConditionSet.begin();
+    } else {
+      RHS = "std::min(";
+      for (const auto &C : ConditionSet) {
+        RHS = RHS + C + ", ";
+      }
+      RHS = RHS.substr(0, RHS.size() - 2) + ")";
+    }
+
+    // No need to call DpctGlobalInfo::getItem() here.
+    // It has been invoked in SyncThreadsRule.
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && KernelDim == 1)
+      return {false, true, "item_ct1.get_local_range(0) < " + RHS};
+    else
+      return {false, true, "item_ct1.get_local_range(2) < " + RHS};
   }
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "isSafeToUseLocalBarrier True" << std::endl;

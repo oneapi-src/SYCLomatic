@@ -94,13 +94,21 @@ private:
     Ranges Predecessors;
     Ranges Successors;
   };
+
+  struct DREInfo {
+    DREInfo(const DeclRefExpr *DRE, SourceLocation SL, AccessMode AM)
+        : DRE(DRE), SL(SL), AM(AM) {}
+    const DeclRefExpr *DRE;
+    SourceLocation SL;
+    AccessMode AM;
+    bool operator<(const DREInfo &Other) const { return DRE < Other.DRE; }
+  };
+
   std::tuple<bool /*CanUseLocalBarrier*/,
              bool /*CanUseLocalBarrierWithCondition*/,
              std::string /*Condition*/>
   isSafeToUseLocalBarrier(
-      const std::map<const ParmVarDecl *,
-                     std::set<std::pair<SourceLocation, AccessMode>>>
-          &DefLocInfoMap,
+      const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
       const SyncCallInfo &SCI);
   bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
   bool hasOverlappingAccessAmongWorkItems(int KernelDim,
@@ -117,9 +125,8 @@ private:
   std::string CELoc;
   std::string FDLoc;
   void constructDefUseMap();
-  void simplifyAndConvertToDefLocInfoMap(
-      std::map<const ParmVarDecl *,
-               std::set<std::pair<SourceLocation, AccessMode>>> &DefLocInfoMap);
+  void
+  simplifyMap(std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap);
 
   /// (FD location, (Call location, result))
   static std::unordered_map<
@@ -150,8 +157,12 @@ private:
     return nullptr;
   }
   bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
+  std::pair<bool, std::string>
+  isSafeWriteAfterWrite(const std::set<const DeclRefExpr *> &WAWDRESet);
 
   std::set<const Expr *> DeviceFunctionCallArgs;
+
+  bool IsDifferenceBetweenThreadIdxXAndIndexConstant = false;
 
   class TypeAnalyzer {
   public:
