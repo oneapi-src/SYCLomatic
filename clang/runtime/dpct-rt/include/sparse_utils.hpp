@@ -384,11 +384,11 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                                    col_ind, optimize_info);
 }
 
-void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
-                    int row_col, const std::shared_ptr<matrix_info> info,
-                    const void *val, library_data_t val_type,
-                    const int *row_ptr, const int *col_ind,
-                    std::shared_ptr<optimize_info> optimize_info) {
+inline void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
+                           int row_col, const std::shared_ptr<matrix_info> info,
+                           const void *val, library_data_t val_type,
+                           const int *row_ptr, const int *col_ind,
+                           std::shared_ptr<optimize_info> optimize_info) {
   detail::spblas_shim<detail::optimize_csrsv_impl>(
       val_type, queue, trans, row_col, info, val, row_ptr, col_ind,
       optimize_info);
@@ -403,12 +403,13 @@ void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
                           col_ind, optimize_info, x, y);
 }
 
-void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
-           const void *alpha, library_data_t alpha_type,
-           const std::shared_ptr<matrix_info> info, const void *val,
-           library_data_t val_type, const int *row_ptr, const int *col_ind,
-           std::shared_ptr<optimize_info> optimize_info, const void *x,
-           library_data_t x_type, void *y, library_data_t y_type) {
+inline void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
+                  const void *alpha, library_data_t alpha_type,
+                  const std::shared_ptr<matrix_info> info, const void *val,
+                  library_data_t val_type, const int *row_ptr,
+                  const int *col_ind,
+                  std::shared_ptr<optimize_info> optimize_info, const void *x,
+                  library_data_t x_type, void *y, library_data_t y_type) {
   detail::spblas_shim<detail::csrsv_impl>(val_type, queue, trans, row_col,
                                           alpha, info, val, row_ptr, col_ind,
                                           optimize_info, x, y);
