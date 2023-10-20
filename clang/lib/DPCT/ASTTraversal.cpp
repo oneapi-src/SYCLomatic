@@ -11919,10 +11919,8 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
                     MapNames::getClNamespace() +
                     "access::fence_space::local_space)";
     } else if (Res.CanUseLocalBarrierWithCondition) {
-      if (Res.MayDependOn1DKernel) {
-        report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER,
-               true, Res.GlobalFunctionName);
-      }
+      report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER, true,
+             Res.GlobalFunctionName);
       Replacement =
           "(" + Res.Condition + ") ? " + DpctGlobalInfo::getItem(CE) +
           ".barrier(" + MapNames::getClNamespace() +

@@ -372,22 +372,44 @@ const ArraySubscriptExpr *getArraySubscriptExpr(const DeclRefExpr *Node) {
   return ASE;
 }
 
-std::pair<const Expr *, bool> getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
+// Match pattern:
+// CompoundAssignOperator '+='
+// |-DeclRefExpr
+// `-ImplicitCastExpr <LValueToRValue>
+//   `-DeclRefExpr
+bool isIncPattern(const DeclRefExpr *DRE, std::string &RHSStr) {
+  const CompoundAssignOperator *CO =
+      DpctGlobalInfo::findParent<CompoundAssignOperator>(DRE);
+  if (!CO)
+    return false;
+  if (CO->getOpcode() != BinaryOperatorKind::BO_AddAssign)
+    return false;
+  const DeclRefExpr *RHS =
+      dyn_cast<DeclRefExpr>(CO->getRHS()->IgnoreImpCasts());
+  if (!RHS)
+    return false;
+  RHSStr = ExprAnalysis::ref(RHS);
+  return true;
+}
+
+std::tuple<const Expr *, bool, std::string>
+getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
   bool IdxChanged = false;
 
   // IdxVD must be local variable and must be defined in this function
   const DeclRefExpr *IdxDRE =
       dyn_cast_or_null<DeclRefExpr>(ASE->getIdx()->IgnoreImpCasts());
   if (!IdxDRE)
-    return {nullptr, IdxChanged};
+    return {nullptr, IdxChanged, ""};
   const VarDecl *IdxVD = dyn_cast_or_null<VarDecl>(IdxDRE->getDecl());
   if (IdxVD->getKind() != Decl::Var)
-    return {nullptr, IdxChanged};
+    return {nullptr, IdxChanged, ""};
   const auto *IdxFD = dyn_cast_or_null<FunctionDecl>(IdxVD->getDeclContext());
   if (!IdxFD)
-    return {nullptr, IdxChanged};
+    return {nullptr, IdxChanged, ""};
   const Stmt *IdxVDContext = IdxFD->getBody();
 
+  std::string IncStr;
   using namespace ast_matchers;
   // VD's DRE should:
   // (1) be used as rvalue; Or
@@ -402,16 +424,17 @@ std::pair<const Expr *, bool> getIdxOfASEConstValueExpr(const ArraySubscriptExpr
       const Stmt *NearestLoopStmtOfRefDRE = findNearestLoopStmt(RefDRE);
       const Stmt *NearestLoopStmtOfRefASE = findNearestLoopStmt(ASE);
       if (!NearestLoopStmtOfRefDRE || !NearestLoopStmtOfRefASE ||
-          NearestLoopStmtOfRefDRE != NearestLoopStmtOfRefASE) {
-        return {nullptr, IdxChanged};
+          NearestLoopStmtOfRefDRE != NearestLoopStmtOfRefASE ||
+          !isIncPattern(RefDRE, IncStr)) {
+        return {nullptr, IdxChanged, IncStr};
       } else {
         IdxChanged = true;
       }
     }
   }
   if (!IdxVD->hasInit())
-    return {nullptr, IdxChanged};
-  return {IdxVD->getInit()->IgnoreImpCasts(), IdxChanged};
+    return {nullptr, IdxChanged, IncStr};
+  return {IdxVD->getInit()->IgnoreImpCasts(), IdxChanged, IncStr};
 }
 
 bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
@@ -702,14 +725,14 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
   if (!ASE)
     return true;
   auto Res = getIdxOfASEConstValueExpr(ASE);
-  if (!Res.first)
+  if (!std::get<0>(Res))
     return true;
 
   // Check if Index variable has 1:1 mapping to threadIdx.x in a block
-  IndexAnalysis SMA(Res.first);
+  IndexAnalysis SMA(std::get<0>(Res));
   IsDifferenceBetweenThreadIdxXAndIndexConstant =
       SMA.isDifferenceBetweenThreadIdxXAndIndexConstant();
-  return Res.second || !SMA.isStrictlyMonotonic();
+  return std::get<1>(Res) || !SMA.isStrictlyMonotonic();
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::containsMacro(
@@ -778,25 +801,35 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isSafeWriteAfterWrite(
 #endif
     return {false, ""};
   }
-
   const DeclRefExpr *DRE = *WAWDRESet.begin();
-  // Fixme !!!!!!!!!!!!!!!!!!!!!!!!!!
-  DRE->dump();
 
   // If only in single loop
+  auto FirstLoop = findNearestLoopStmt(DRE);
+  if (!FirstLoop) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "isSafeWriteAfterWrite False case 3" << std::endl;
+#endif
+    return {false, ""};
+  }
+  auto SecondLoop = findNearestLoopStmt(FirstLoop);
+  if (SecondLoop) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "isSafeWriteAfterWrite False case 4" << std::endl;
+#endif
+    return {false, ""};
+  }
 
-
-
-
-  // Fixme !!!!!!!!!!!!!!!!!!!!!!!!!!
   // Find step
-  std::string StepStr;
-
-
-
-
-
-  return {true, StepStr};
+  // FIXME: This DRE is "next" in next[idx], we need find DRE of idx in "idx +=
+  // nx"
+  auto Res = getIdxOfASEConstValueExpr(getArraySubscriptExpr(DRE));
+  if (!std::get<0>(Res) || !std::get<0>(Res)) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "isSafeWriteAfterWrite False case 5" << std::endl;
+#endif
+    return {false, ""};
+  }
+  return {true, std::get<2>(Res)};
 }
 
 /// @brief Check if it is safe to use local barrier to migrate current
@@ -864,6 +897,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
 #endif
         return {false, false, ""};
       }
+      ConditionSet.insert(Res.second);
     }
   }
 
