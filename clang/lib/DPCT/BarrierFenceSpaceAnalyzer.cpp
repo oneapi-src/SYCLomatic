@@ -338,6 +338,22 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
 namespace {
 using namespace clang;
 using namespace dpct;
+
+template <class NodeTy>
+static inline const Stmt *findNearestLoopStmt(const NodeTy *N) {
+  if (!N)
+    return nullptr;
+  auto &Context = DpctGlobalInfo::getContext();
+  clang::DynTypedNodeList Parents = Context.getParents(*N);
+  while (!Parents.empty()) {
+    auto &Cur = Parents[0];
+    if (Cur.get<DoStmt>() || Cur.get<ForStmt>() || Cur.get<WhileStmt>())
+      return Cur.get<Stmt>();
+    Parents = Context.getParents(Cur);
+  }
+  return nullptr;
+}
+
 // Check if this DRE(Ptr) matches pattern: Ptr[Idx]
 // clang-format off
 //    ArraySubscriptExpr <col:7, col:16> 'float' lvalue
@@ -356,34 +372,46 @@ const ArraySubscriptExpr *getArraySubscriptExpr(const DeclRefExpr *Node) {
   return ASE;
 }
 
-const Expr *getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
+std::pair<const Expr *, bool> getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
+  bool IdxChanged = false;
+
   // IdxVD must be local variable and must be defined in this function
   const DeclRefExpr *IdxDRE =
       dyn_cast_or_null<DeclRefExpr>(ASE->getIdx()->IgnoreImpCasts());
   if (!IdxDRE)
-    return nullptr;
+    return {nullptr, IdxChanged};
   const VarDecl *IdxVD = dyn_cast_or_null<VarDecl>(IdxDRE->getDecl());
   if (IdxVD->getKind() != Decl::Var)
-    return nullptr;
+    return {nullptr, IdxChanged};
   const auto *IdxFD = dyn_cast_or_null<FunctionDecl>(IdxVD->getDeclContext());
   if (!IdxFD)
-    return nullptr;
+    return {nullptr, IdxChanged};
   const Stmt *IdxVDContext = IdxFD->getBody();
 
   using namespace ast_matchers;
-  // VD's DRE should only be used as rvalue
+  // VD's DRE should:
+  // (1) be used as rvalue; Or
+  // (2) meet pattern as "idx += step" and must be in the same loop of ASE
   auto DREMatcher = findAll(declRefExpr(isDeclSameAs(IdxVD)).bind("DRE"));
   auto MatchedResults =
       match(DREMatcher, *IdxVDContext, DpctGlobalInfo::getContext());
   for (const auto &Res : MatchedResults) {
     const DeclRefExpr *RefDRE = Res.getNodeAs<DeclRefExpr>("DRE");
     auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(RefDRE);
-    if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue))
-      return nullptr;
+    if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue)) {
+      const Stmt *NearestLoopStmtOfRefDRE = findNearestLoopStmt(RefDRE);
+      const Stmt *NearestLoopStmtOfRefASE = findNearestLoopStmt(ASE);
+      if (!NearestLoopStmtOfRefDRE || !NearestLoopStmtOfRefASE ||
+          NearestLoopStmtOfRefDRE != NearestLoopStmtOfRefASE) {
+        return {nullptr, IdxChanged};
+      } else {
+        IdxChanged = true;
+      }
+    }
   }
   if (!IdxVD->hasInit())
-    return nullptr;
-  return IdxVD->getInit()->IgnoreImpCasts();
+    return {nullptr, IdxChanged};
+  return {IdxVD->getInit()->IgnoreImpCasts(), IdxChanged};
 }
 
 bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
@@ -673,14 +701,15 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
   const ArraySubscriptExpr *ASE = getArraySubscriptExpr(DRE);
   if (!ASE)
     return true;
-  const Expr *InitExpr = getIdxOfASEConstValueExpr(ASE);
-  if (!InitExpr)
+  auto Res = getIdxOfASEConstValueExpr(ASE);
+  if (!Res.first)
     return true;
+
   // Check if Index variable has 1:1 mapping to threadIdx.x in a block
-  IndexAnalysis SMA(InitExpr);
+  IndexAnalysis SMA(Res.first);
   IsDifferenceBetweenThreadIdxXAndIndexConstant =
       SMA.isDifferenceBetweenThreadIdxXAndIndexConstant();
-  return !SMA.isStrictlyMonotonic();
+  return Res.second || !SMA.isStrictlyMonotonic();
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::containsMacro(
@@ -750,14 +779,16 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isSafeWriteAfterWrite(
     return {false, ""};
   }
 
-  // FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  const DeclRefExpr *DRE = *WAWDRESet.begin();
+  // Fixme !!!!!!!!!!!!!!!!!!!!!!!!!!
+  DRE->dump();
+
   // If only in single loop
 
 
 
 
-
-  // FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // Fixme !!!!!!!!!!!!!!!!!!!!!!!!!!
   // Find step
   std::string StepStr;
 

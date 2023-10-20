@@ -2057,39 +2057,45 @@ void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
   return ArgumentAnalysis::analyzeExpr(Ctor);
 }
 
-const clang::Expr *trackInitExprOfDRE(const DeclRefExpr *DRE) {
+std::pair<const clang::Expr *, bool /*NoInit*/>
+trackInitExprOfDRE(const DeclRefExpr *DRE) {
   using namespace ast_matchers;
   const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
   if (!VD)
-    return nullptr;
-
-  // VD must be local variable and must have the same context with
-  // KernelCallExpr
-  if (VD->getKind() != Decl::Var)
-    return nullptr;
+    return {nullptr, false};
+  // VD must be local variable
+  if (VD->getKind() != Decl::Var && VD->getKind() != Decl::ParmVar)
+    return {nullptr, false};
   const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
   if (!FD)
-    return nullptr;
+    return {nullptr, false};
   const Stmt *VDContext = FD->getBody();
-
-  // VD's DRE should be only used once (as the config arg) in VDContext
+  // VD's DRE should be used as rvalue
   auto DREMatcher = findAll(declRefExpr(isDeclSameAs(VD)).bind("DRE"));
   auto MatchedResults =
       match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
-  if (MatchedResults.size() != 1)
-    return nullptr;
-  if (!VD->hasInit())
-    return nullptr;
+  if (MatchedResults.size() > 1) {
+    for (const auto &Res : MatchedResults) {
+      const DeclRefExpr *RefDRE = Res.getNodeAs<DeclRefExpr>("DRE");
+      auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(RefDRE);
+      if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue)) {
+        return {nullptr, false};
+      }
+    }
+  }
 
-  return VD->getInit();
+  if (!VD->hasInit())
+    return {nullptr, true};
+  return {VD->getInit(), false};
 }
 
 void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (!IsDim3Config)
     return ArgumentAnalysis::analyzeExpr(DRE);
 
-  if (const Expr* Init = trackInitExprOfDRE(DRE)) {
-    dispatch(Init);
+  auto Res = trackInitExprOfDRE(DRE);
+  if (Res.first) {
+    dispatch(Res.first);
   } else {
     return ArgumentAnalysis::analyzeExpr(DRE);
   }
@@ -2191,7 +2197,10 @@ void IndexAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(ImplicitCastExpr)
     ANALYZE_EXPR(DeclRefExpr)
     ANALYZE_EXPR(PseudoObjectExpr)
+    ANALYZE_EXPR(ParenExpr)
+    ANALYZE_EXPR(IntegerLiteral)
   default:
+    std::cout << "dispatch: " << Expression->getStmtClassName() << std::endl;
     ContainUnknownNode = true;
     return ExprAnalysis::dispatch(Expression);
   }
@@ -2212,9 +2221,10 @@ void IndexAnalysis::analyzeExpr(const ImplicitCastExpr *ICE) {
   dispatch(ICE->getSubExpr());
 }
 void IndexAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
-  if (const Expr* Init = trackInitExprOfDRE(DRE)) {
-    dispatch(Init);
-  } else {
+  auto Res = trackInitExprOfDRE(DRE);
+  if (Res.first) {
+    dispatch(Res.first);
+  } else if (!Res.second) {
     ContainUnknownNode = true;
     return;
   }
@@ -2257,6 +2267,12 @@ void IndexAnalysis::analyzeExpr(const PseudoObjectExpr *POE) {
     }
     HasThreadIdxX = true;
   }
+}
+void IndexAnalysis::analyzeExpr(const ParenExpr *PE) {
+  dispatch(PE->getSubExpr());
+}
+void IndexAnalysis::analyzeExpr(const IntegerLiteral *IL) {
+  return;
 }
 
 } // namespace dpct

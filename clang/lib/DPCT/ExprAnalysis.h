@@ -951,6 +951,8 @@ private:
   void analyzeExpr(const ImplicitCastExpr *ICE);
   void analyzeExpr(const DeclRefExpr *DRE);
   void analyzeExpr(const PseudoObjectExpr *POE);
+  void analyzeExpr(const ParenExpr *PE);
+  void analyzeExpr(const IntegerLiteral *IL);
 
 private:
   bool ContainUnknownNode = false;
