@@ -3,6 +3,6 @@
 
 __global__ void test(__nv_bfloat16 b) {
   // Start
-  __bfloat162float(b /*__nv_bfloat16*/);
+  __bfloat16_as_short(b /*__nv_bfloat16*/);
   // End
 }
