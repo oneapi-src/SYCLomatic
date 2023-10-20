@@ -1729,6 +1729,25 @@ public:
   }
 };
 
+class CheckArgIsConstantIntWithUnsignedValue {
+  unsigned int value;
+  int index;
+
+public:
+  CheckArgIsConstantIntWithUnsignedValue(int idx, unsigned int val)
+      : value(val), index(idx) {}
+  bool operator()(const CallExpr *C) {
+    auto Arg = C->getArg(index);
+    Expr::EvalResult Result;
+    if (!Arg->isValueDependent() &&
+        Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
+        Result.Val.getInt().getZExtValue() == value) {
+      return true;
+    }
+    return false;
+  }
+};
+
 class CheckArgIsDefaultCudaStream {
   unsigned ArgIndex;
 
