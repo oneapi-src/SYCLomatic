@@ -274,7 +274,10 @@ __global__ void test11(float *a_ptr, float *b_ptr,
     }
     // CHECK: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function "test11" is called in a multidimensional kernel.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: (item_ct1.get_local_range(2) < j_scalar) ? item_ct1.barrier(sycl::access::fence_space::local_space) : item_ct1.barrier();
     // CHECK-NEXT: float var8 = 0;
     __syncthreads();
     float var8 = 0;
