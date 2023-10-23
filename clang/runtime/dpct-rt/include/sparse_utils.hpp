@@ -341,7 +341,8 @@ template <typename T> struct csrsv_impl {
     Ty *new_x_ptr = nullptr;
     if (alpha_value != Ty(1.0f)) {
       new_x_ptr = (Ty *)dpct::dpct_malloc(row_col * sizeof(Ty));
-      dpct::detail::dpct_memcpy(queue, new_x_ptr, x, row_col * sizeof(Ty));
+      dpct::detail::dpct_memcpy(queue, new_x_ptr, x, row_col * sizeof(Ty),
+                                dpct::memcpy_direction::automatic);
       auto data_new_x = dpct::detail::get_memory<Ty>(new_x_ptr);
       oneapi::mkl::blas::column_major::scal(queue, row_col, alpha_value,
                                             data_new_x, 1);
