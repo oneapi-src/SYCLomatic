@@ -2110,6 +2110,12 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   auto LOpts = Result.Context->getLangOpts();
 
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
+    if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
+      ExprAnalysis EA;
+      EA.analyze(*TL);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+    }
 
     // if TL is the T in
     // template<typename T> void foo(T a);
@@ -14345,6 +14351,8 @@ REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
 REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
+
+REGISTER_RULE(LibraryTypeLocRule, PassKind::PK_Migration)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

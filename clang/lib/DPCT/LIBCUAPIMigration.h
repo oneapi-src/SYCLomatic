@@ -23,6 +23,14 @@ public:
 private:
   void processLIBCUUsingDirectiveDecl(const UsingDirectiveDecl *UDD);
 };
+
+class LibraryTypeLocRule
+    : public clang::dpct::NamedMigrationRule<LibraryTypeLocRule> {
+public:
+  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
+  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 } // namespace dpct
 } // namespace clang
 
