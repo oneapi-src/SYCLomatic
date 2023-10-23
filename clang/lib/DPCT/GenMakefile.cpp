@@ -127,6 +127,15 @@ static void getCompileInfo(
         continue;
       }
 
+      SmallString<512> OutDirectory =
+          llvm::StringRef(Directory + "/" + TargetName);
+      llvm::sys::fs::make_absolute(OutDirectory);
+      llvm::sys::path::remove_dots(OutDirectory, /*remove_dot_dot=*/true);
+      makeCanonical(OutDirectory);
+      // Use relative path to out-root directoryy.
+      llvm::sys::path::replace_path_prefix(OutDirectory, InRoot, ".");
+      TargetName = OutDirectory.str().str();
+
       for (auto &Obj : ObjsInLKOrARCmd) {
         ObjsInLinkerCmdPerTarget[TargetName].push_back(Obj);
       }
@@ -207,7 +216,6 @@ static void getCompileInfo(
         }
 
         IsIncludeWithWhitespace = false;
-
         if (!llvm::sys::fs::exists(IncPath)) {
           // Skip including path that does not exist.
           continue;
@@ -217,17 +225,17 @@ static void getCompileInfo(
         llvm::sys::fs::make_absolute(OutDirectory);
         llvm::sys::path::remove_dots(OutDirectory, /*remove_dot_dot=*/true);
         makeCanonical(OutDirectory);
-
-        if (!isChildPath(InRoot.str(), std::string(OutDirectory.c_str()),
-                         false)) {
+        if (!isChildOrSamePath(InRoot.str(),
+                               std::string(OutDirectory.c_str()))) {
           // Skip include path that is not in inRoot directory
           continue;
         }
 
-        rewriteDir(OutDirectory, InRoot, OutRoot);
-
         NewOptions += "-I";
-        llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot, ".");
+
+        // Use relative path to out-root directory as the including directory.
+        llvm::sys::path::replace_path_prefix(OutDirectory, InRoot, ".");
+
         NewOptions += OutDirectory.c_str();
         NewOptions += " ";
 
