@@ -847,8 +847,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   dispatch(ME->getBase());
   RefString.clear();
   RefString +=
-      BaseType +
-      "." + ME->getMemberDecl()->getDeclName().getAsString();
+    BaseType +
+    "." + ME->getMemberDecl()->getDeclName().getAsString();
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
