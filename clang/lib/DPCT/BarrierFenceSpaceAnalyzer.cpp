@@ -394,19 +394,19 @@ bool isIncPattern(const DeclRefExpr *DRE, std::string &RHSStr) {
 
 std::tuple<const Expr *, bool, std::string>
 getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
-  bool IdxChanged = false;
+  bool IsIdxInc = false;
 
   // IdxVD must be local variable and must be defined in this function
   const DeclRefExpr *IdxDRE =
       dyn_cast_or_null<DeclRefExpr>(ASE->getIdx()->IgnoreImpCasts());
   if (!IdxDRE)
-    return {nullptr, IdxChanged, ""};
+    return {nullptr, IsIdxInc, ""};
   const VarDecl *IdxVD = dyn_cast_or_null<VarDecl>(IdxDRE->getDecl());
   if (IdxVD->getKind() != Decl::Var)
-    return {nullptr, IdxChanged, ""};
+    return {nullptr, IsIdxInc, ""};
   const auto *IdxFD = dyn_cast_or_null<FunctionDecl>(IdxVD->getDeclContext());
   if (!IdxFD)
-    return {nullptr, IdxChanged, ""};
+    return {nullptr, IsIdxInc, ""};
   const Stmt *IdxVDContext = IdxFD->getBody();
 
   std::string IncStr;
@@ -426,15 +426,19 @@ getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
       if (!NearestLoopStmtOfRefDRE || !NearestLoopStmtOfRefASE ||
           NearestLoopStmtOfRefDRE != NearestLoopStmtOfRefASE ||
           !isIncPattern(RefDRE, IncStr)) {
-        return {nullptr, IdxChanged, IncStr};
+        return {nullptr, IsIdxInc, IncStr};
+      }
+      auto SecondLoop = findNearestLoopStmt(NearestLoopStmtOfRefDRE);
+      if (SecondLoop) {
+        return {nullptr, IsIdxInc, IncStr};
       } else {
-        IdxChanged = true;
+        IsIdxInc = true;
       }
     }
   }
   if (!IdxVD->hasInit())
-    return {nullptr, IdxChanged, IncStr};
-  return {IdxVD->getInit()->IgnoreImpCasts(), IdxChanged, IncStr};
+    return {nullptr, IsIdxInc, IncStr};
+  return {IdxVD->getInit()->IgnoreImpCasts(), IsIdxInc, IncStr};
 }
 
 bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
@@ -728,10 +732,11 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
   if (!std::get<0>(Res))
     return true;
 
-  // Check if Index variable has 1:1 mapping to threadIdx.x in a block
   IndexAnalysis SMA(std::get<0>(Res));
-  IsDifferenceBetweenThreadIdxXAndIndexConstant =
-      SMA.isDifferenceBetweenThreadIdxXAndIndexConstant();
+  if (SMA.isDifferenceBetweenThreadIdxXAndIndexConstant()) {
+    DREIncStepMap.insert({DRE, std::get<2>(Res)});
+  }
+  // Check if Index variable has 1:1 mapping to threadIdx.x in a block
   return std::get<1>(Res) || !SMA.isStrictlyMonotonic();
 }
 
@@ -785,51 +790,24 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
   return false;
 }
 
-std::pair<bool, std::string>
-clang::dpct::BarrierFenceSpaceAnalyzer::isSafeWriteAfterWrite(
+std::string clang::dpct::BarrierFenceSpaceAnalyzer::isSafeWriteAfterWrite(
     const std::set<const DeclRefExpr *> &WAWDRESet) {
   if (WAWDRESet.size() > 1) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "isSafeWriteAfterWrite False case 1" << std::endl;
 #endif
-    return {false, ""};
+    return "";
   }
 
-  if (!IsDifferenceBetweenThreadIdxXAndIndexConstant) {
+  const DeclRefExpr *DRE = *WAWDRESet.begin();
+  auto Iter = DREIncStepMap.find(DRE);
+  if (Iter == DREIncStepMap.end()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "isSafeWriteAfterWrite False case 2" << std::endl;
 #endif
-    return {false, ""};
+    return "";
   }
-  const DeclRefExpr *DRE = *WAWDRESet.begin();
-
-  // If only in single loop
-  auto FirstLoop = findNearestLoopStmt(DRE);
-  if (!FirstLoop) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isSafeWriteAfterWrite False case 3" << std::endl;
-#endif
-    return {false, ""};
-  }
-  auto SecondLoop = findNearestLoopStmt(FirstLoop);
-  if (SecondLoop) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isSafeWriteAfterWrite False case 4" << std::endl;
-#endif
-    return {false, ""};
-  }
-
-  // Find step
-  // FIXME: This DRE is "next" in next[idx], we need find DRE of idx in "idx +=
-  // nx"
-  auto Res = getIdxOfASEConstValueExpr(getArraySubscriptExpr(DRE));
-  if (!std::get<0>(Res) || !std::get<0>(Res)) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isSafeWriteAfterWrite False case 5" << std::endl;
-#endif
-    return {false, ""};
-  }
-  return {true, std::get<2>(Res)};
+  return Iter->second;
 }
 
 /// @brief Check if it is safe to use local barrier to migrate current
@@ -890,14 +868,14 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
       }
     }
     if (!WriteAfterWriteDRE.empty()) {
-      auto Res = isSafeWriteAfterWrite(WriteAfterWriteDRE);
-      if (!Res.first) {
+      auto StepStr = isSafeWriteAfterWrite(WriteAfterWriteDRE);
+      if (StepStr.empty()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;
 #endif
         return {false, false, ""};
       }
-      ConditionSet.insert(Res.second);
+      ConditionSet.insert(StepStr);
     }
   }
 

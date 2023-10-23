@@ -157,12 +157,22 @@ private:
     return nullptr;
   }
   bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
-  std::pair<bool, std::string>
+  std::string
   isSafeWriteAfterWrite(const std::set<const DeclRefExpr *> &WAWDRESet);
 
   std::set<const Expr *> DeviceFunctionCallArgs;
 
   bool IsDifferenceBetweenThreadIdxXAndIndexConstant = false;
+
+  // This map contains pairs meet below pattern:
+  // loop {
+  //   ...
+  //   DRE[idx] = ...;
+  //   ...
+  //   idx += step;
+  //   ...
+  // }
+  std::map<const DeclRefExpr*, std::string> DREIncStepMap;
 
   class TypeAnalyzer {
   public:
