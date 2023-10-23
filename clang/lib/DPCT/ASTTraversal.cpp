@@ -1667,8 +1667,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
               "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t",
-              "cusparseSpSVAlg_t", "cudaFuncAttributes", "csrsv2Info_t",
-              "cusparseSolvePolicy_t"))))))
+              "cusparseSpSVAlg_t", "cudaFuncAttributes"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(

@@ -493,9 +493,6 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
                                       "kernel_function_info")},
       {"ncclResult_t", std::make_shared<TypeNameRule>("int")},
-      {"csrsv2Info_t", std::make_shared<TypeNameRule>(
-        "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>")},
-      {"cusparseSolvePolicy_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 

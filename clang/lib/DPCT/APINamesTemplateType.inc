@@ -313,3 +313,9 @@ TYPE_REWRITE_ENTRY("nvcuda::wmma::fragment",
                                  TEMPLATE_ARG(2),TEMPLATE_ARG(3),TEMPLATE_ARG(5)))),
         WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
 // clang-format on
+
+TYPE_REWRITE_ENTRY("csrsv2Info_t",
+                   TYPE_FACTORY(STR("std::shared_ptr<" +
+                                    MapNames::getDpctNamespace() +
+                                    "sparse::optimize_info>")))
+TYPE_REWRITE_ENTRY("cusparseSolvePolicy_t", TYPE_FACTORY(STR("int")))
