@@ -4398,6 +4398,415 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("__expf"), EMPTY_FACTORY_ENTRY("__expf"),
         EMPTY_FACTORY_ENTRY("__expf")))
 
+MATH_API_REWRITER_DEVICE(
+    "__fadd_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fadd_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fadd_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fadd_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fadd_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__fadd_rd",
+            BINARY_OP_FACTORY_ENTRY("__fadd_rd", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fadd_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fadd_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fadd_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fadd_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fadd_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__fadd_rn",
+            BINARY_OP_FACTORY_ENTRY("__fadd_rn", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fadd_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fadd_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fadd_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fadd_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fadd_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__fadd_ru",
+            BINARY_OP_FACTORY_ENTRY("__fadd_ru", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fadd_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fadd_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fadd_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fadd_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fadd_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__fadd_rz",
+            BINARY_OP_FACTORY_ENTRY("__fadd_rz", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fmul_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fmul_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fmul_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fmul_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fmul_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__fmul_rd",
+            BINARY_OP_FACTORY_ENTRY("__fmul_rd", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fmul_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fmul_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fmul_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fmul_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fmul_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__fmul_rn",
+            BINARY_OP_FACTORY_ENTRY("__fmul_rn", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fmul_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fmul_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fmul_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fmul_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fmul_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__fmul_ru",
+            BINARY_OP_FACTORY_ENTRY("__fmul_ru", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fmul_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fmul_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fmul_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fmul_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fmul_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__fmul_rz",
+            BINARY_OP_FACTORY_ENTRY("__fmul_rz", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fsub_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fsub_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fsub_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fsub_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fsub_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__fsub_rd",
+            BINARY_OP_FACTORY_ENTRY("__fsub_rd", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fsub_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fsub_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fsub_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fsub_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fsub_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__fsub_rn",
+            BINARY_OP_FACTORY_ENTRY("__fsub_rn", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fsub_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fsub_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fsub_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fsub_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fsub_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__fsub_ru",
+            BINARY_OP_FACTORY_ENTRY("__fsub_ru", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fsub_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fsub_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fsub_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fsub_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fsub_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__fsub_rz",
+            BINARY_OP_FACTORY_ENTRY("__fsub_rz", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+// Double Precision Intrinsics
+MATH_API_REWRITER_DEVICE(
+    "__dadd_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dadd_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dadd_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dadd_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dadd_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__dadd_rd",
+            BINARY_OP_FACTORY_ENTRY("__dadd_rd", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dadd_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dadd_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dadd_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dadd_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dadd_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__dadd_rn",
+            BINARY_OP_FACTORY_ENTRY("__dadd_rn", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dadd_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dadd_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dadd_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dadd_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dadd_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__dadd_ru",
+            BINARY_OP_FACTORY_ENTRY("__dadd_ru", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dadd_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dadd_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dadd_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dadd_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dadd_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__dadd_rz",
+            BINARY_OP_FACTORY_ENTRY("__dadd_rz", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dmul_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dmul_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dmul_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dmul_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dmul_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__dmul_rd",
+            BINARY_OP_FACTORY_ENTRY("__dmul_rd", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dmul_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dmul_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dmul_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dmul_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dmul_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__dmul_rn",
+            BINARY_OP_FACTORY_ENTRY("__dmul_rn", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dmul_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dmul_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dmul_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dmul_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dmul_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__dmul_ru",
+            BINARY_OP_FACTORY_ENTRY("__dmul_ru", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dmul_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dmul_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dmul_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dmul_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dmul_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__dmul_rz",
+            BINARY_OP_FACTORY_ENTRY("__dmul_rz", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dsub_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dsub_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dsub_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dsub_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dsub_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__dsub_rd",
+            BINARY_OP_FACTORY_ENTRY("__dsub_rd", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dsub_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dsub_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dsub_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dsub_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dsub_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__dsub_rn",
+            BINARY_OP_FACTORY_ENTRY("__dsub_rn", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dsub_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dsub_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dsub_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dsub_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dsub_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__dsub_ru",
+            BINARY_OP_FACTORY_ENTRY("__dsub_ru", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dsub_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dsub_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dsub_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dsub_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dsub_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__dsub_rz",
+            BINARY_OP_FACTORY_ENTRY("__dsub_rz", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
 // SIMD Intrinsics
 MATH_API_REWRITER_DEVICE(
     "__vabs2",
