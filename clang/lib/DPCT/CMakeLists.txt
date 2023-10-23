@@ -183,6 +183,8 @@ add_clang_library(DPCT
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
   SpBLASAPIMigration.cpp
+  TestMigration.cpp
+  Schema.cpp
 
   DEPENDS
   ClangDriverOptions
