@@ -811,10 +811,18 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
 inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
     std::string TemplateArgStr = "";
-    const FunctionDecl *FS = C->getDirectCallee();
-    if (!FS)
-      return TemplateArgStr;
-    const TemplateArgumentList *TAL = FS->getTemplateSpecializationArgs();
+    const FunctionDecl *FD = C->getDirectCallee();
+    if (!FD) {
+      if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(C->getCallee())) {
+        if (Unresolved->getQualifier())
+          TemplateArgStr =
+              getNestedNameSpecifierString(Unresolved->getQualifier());
+        TemplateArgStr += Unresolved->getName().getAsString();
+      } else {
+        return TemplateArgStr;
+      }
+    }
+    const TemplateArgumentList *TAL = FD->getTemplateSpecializationArgs();
     if (TAL->size() <= Idx)
       return TemplateArgStr;
     const TemplateArgument &TA = TAL->get(Idx);
