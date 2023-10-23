@@ -59,7 +59,7 @@ auto isDeviceFuncCallExpr = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
-                      "DeviceSegmentedSort", "DeviceHistogram");
+                      "DeviceSegmentedSort", "DeviceHistogram", "DeviceMergeSort");
   };
   return callExpr(callee(functionDecl(allOf(
       hasDeviceFuncName(),
