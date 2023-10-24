@@ -156,7 +156,7 @@ ninja check-clang-c2s
 
 ### Run end to end test suite (Recommend for contributors)
 
-The end to end test will go throgh the migration, build and run steps. Follow instructions from the link below to build and run tests:
+The end to end test executes the migration, build and run steps. Follow instructions from the link below to build and run tests:
 [README](https://github.com/oneapi-src/SYCLomatic-test)
 
 ## Known Issues and Limitations
