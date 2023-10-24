@@ -811,36 +811,29 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
 inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
     std::string TemplateArgStr = "";
-    const FunctionDecl *FD = C->getDirectCallee();
-    if (!FD) {
-      if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(C->getCallee())) {
-        if (Unresolved->getQualifier())
-          TemplateArgStr =
-              getNestedNameSpecifierString(Unresolved->getQualifier());
-        TemplateArgStr += Unresolved->getName().getAsString();
-      } else {
+    if (auto *Callee = dyn_cast<DeclRefExpr>(C->getCallee()->IgnoreParenImpCasts())) {
+      auto TAL = Callee->template_arguments();
+      if (TAL.size() <= Idx) {
         return TemplateArgStr;
       }
+      const TemplateArgument &TA = TAL[Idx].getArgument();
+      TemplateArgumentInfo TAI;
+      switch (TA.getKind()) {
+      case TemplateArgument::Integral:
+        TAI.setAsNonType(TA.getAsIntegral());
+        break;
+      case TemplateArgument::Expression:
+        TAI.setAsNonType(TA.getAsExpr());
+        break;
+      case TemplateArgument::Type:
+        TAI.setAsType(TA.getAsType());
+        break;
+      default:
+        break;
+      }
+      TemplateArgStr = TAI.getString();
     }
-    const TemplateArgumentList *TAL = FD->getTemplateSpecializationArgs();
-    if (TAL->size() <= Idx)
-      return TemplateArgStr;
-    const TemplateArgument &TA = TAL->get(Idx);
-    TemplateArgumentInfo TAI;
-    switch (TA.getKind()) {
-    case TemplateArgument::Integral:
-      TAI.setAsNonType(TA.getAsIntegral());
-      break;
-    case TemplateArgument::Expression:
-      TAI.setAsNonType(TA.getAsExpr());
-      break;
-    case TemplateArgument::Type:
-      TAI.setAsType(TA.getAsType());
-      break;
-    default:
-      break;
-    }
-    return TAI.getString();
+    return TemplateArgStr;
   };
 }
 
