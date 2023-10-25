@@ -53,7 +53,8 @@ auto isDeviceFuncCallExpr = []() {
         "SortKeys", "SortKeysDescending", "SortPairs", "SortPairsDescending",
         "If", "StableSortKeys", "StableSortKeysDescending", "StableSortPairs",
         "StableSortPairsDescending", "NonTrivialRuns", "HistogramEven",
-        "MultiHistogramEven", "HistogramRange", "MultiHistogramRange");
+        "MultiHistogramEven", "HistogramRange", "MultiHistogramRange",
+        "SortKeysCopy", "StableSortKeys");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
