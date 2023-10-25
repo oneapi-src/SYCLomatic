@@ -4507,7 +4507,7 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
     return Search->second;
   } else {
 #ifdef DPCT_DEBUG_BUILD
-    llvm::errs() << "[NOTE] Find new API\"" << APIName
+    llvm::errs() << "[NOTE] Find new API \"" << APIName
                  << "\" , please update migrated API database.\n";
     ShowStatus(MigrationError);
     dpctExit(MigrationError);
