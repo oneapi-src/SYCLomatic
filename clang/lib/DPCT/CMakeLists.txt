@@ -103,6 +103,7 @@ add_clang_library(DPCT
   Rewriters/CUB/CallExprRewriterCUB.cpp
   Rewriters/CUB/RewriterClassMethods.cpp
   Rewriters/CUB/RewriterDeviceHistgram.cpp
+  Rewriters/CUB/RewriterDeviceMergeSort.cpp
   Rewriters/CUB/RewriterDeviceRadixSort.cpp
   Rewriters/CUB/RewriterDeviceReduce.cpp
   Rewriters/CUB/RewriterDeviceRunLengthEncode.cpp
@@ -110,7 +111,6 @@ add_clang_library(DPCT
   Rewriters/CUB/RewriterDeviceSegmentedRadixSort.cpp
   Rewriters/CUB/RewriterDeviceSegmentedReduce.cpp
   Rewriters/CUB/RewriterDeviceSegmentedSort.cpp
-  Rewriters/CUB/RewriterDeviceMergeSort.cpp
   Rewriters/CUB/RewriterDeviceSelect.cpp
   Rewriters/CUB/RewriterUtilityFunctions.cpp
   CallExprRewriter.cpp
