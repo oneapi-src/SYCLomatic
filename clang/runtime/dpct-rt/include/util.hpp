@@ -1025,17 +1025,6 @@ public:
 #define DPCT_EXPORT
 #endif
 
-/// Cast a "rvalue reference to a temporary object" to an "lvalue reference to
-/// that temporary object".
-/// The returned lvalue reference is available only before the last step in
-/// evaluating the full-expression that contains this function call.
-/// \param [in] temporary_object The rvalue reference to a temporary object.
-/// \returns The lvalue reference to that temporary object.
-template <typename T>
-inline typename std::enable_if_t<std::is_rvalue_reference_v<T &&>, T &>
-rvalue_ref_to_lvalue_ref(T &&temporary_object) {
-  return temporary_object;
-}
 } // namespace dpct
 
 #endif // __DPCT_UTIL_HPP__
