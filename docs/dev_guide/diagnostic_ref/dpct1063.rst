@@ -8,7 +8,7 @@ Message
 
 .. _msg-1063-start:
 
-Advice parameter is device-defined ``<additional action>``. You may need to adjust it.
+Advice parameter is device-defined *<additional action>*. You may need to adjust it.
 
 .. _msg-1063-end:
 

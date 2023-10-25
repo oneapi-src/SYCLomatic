@@ -76,7 +76,9 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
 
   SDKVersionMajor = Major;
   SDKVersionMinor = Minor;
-
+  if (Major < 8) {
+    CV = CudaVersion::CUDA_80;
+  }
   if (Major == 8 && Minor == 0) {
     CV = CudaVersion::CUDA_80;
   } else if (Major == 9 && Minor == 0) {
@@ -120,8 +122,10 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
   if (CV != CudaVersion::UNKNOWN) {
     IsVersionSupported = true;
     return true;
+  } else if (Major >= 12) {
+    CV = CudaVersion::NEW;
+    return true;
   }
-
   return false;
 }
 #else
@@ -229,7 +233,6 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
   if (!IsFound)
     return false;
   IsValid = true;
-
   InstallPath = FilePath;
   IncludePath = FilePath;
 
@@ -354,11 +357,8 @@ CudaInstallationDetector::CudaInstallationDetector(
     for (const auto &Candidate : Candidates) {
       InstallPath = Candidate.Path;
       if (validateCudaHeaderDirectory(InstallPath + "/include/", D) ||
-          validateCudaHeaderDirectory(InstallPath, D)) {
-        // To certain CUDA version that dpct supports is available
-        IsSupportedVersionAvailable = true;
+          validateCudaHeaderDirectory(InstallPath, D))
         break;
-      }
     }
   }
 #else

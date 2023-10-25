@@ -42,6 +42,10 @@ __device__ __host__ inline bool bar1() { return foo<FOO>(); }
 
 __device__ __host__ inline bool bar2() { return foo<FOO>(false); }
 
+// Test description:
+// The return location of getEndLocOfFollowingEmptyMacro() may be a MacroID.
+// SM.getExpansionLoc() is necessary for it in ExprAnalysis::getOffsetAndLength().
+// Below case can test above scenario.
 
 #include <exception>
 #include <string>
@@ -87,3 +91,18 @@ void foo2() {
 #undef MACRO_BBB
 #undef MACRO_CCC
 #undef MACRO_DDD
+
+// Test description:
+// When template is not instantiated, the member call is not recognized (treated
+// as CallExpr without linking the correct declaration). Then the info saved in
+// DeviceFunctionInfo is not correct. So when try to get argument, we need double
+// check the argument number.
+// In below case, norm is a class method, so it has 2 parameters (this and a default
+// parameter). But when template is not instantiated, the argument number of CallExpr
+// norm is 0.
+template <typename T, int a, int b> struct AAA;
+template <typename T_> struct AAA<T_, 1, 2> {
+  using T = T_;
+  __host__ __device__ T norm(T x = T()) const { return x; }
+  __host__ __device__ T foo() const { return norm(); }
+};

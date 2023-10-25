@@ -16,11 +16,12 @@
 
 namespace dpct {
 namespace detail {
-template <typename T> inline auto get_memory(T *x) {
+template <typename T> inline auto get_memory(const void *x) {
+  T *new_x = reinterpret_cast<T *>(const_cast<void *>(x));
 #ifdef DPCT_USM_LEVEL_NONE
-  return dpct::get_buffer<std::remove_cv_t<T>>(x);
+  return dpct::get_buffer<std::remove_cv_t<T>>(new_x);
 #else
-  return x;
+  return new_x;
 #endif
 }
 

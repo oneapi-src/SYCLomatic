@@ -1289,7 +1289,8 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
               returns(asString("cusparseStatus_t")),
               returns(asString("cusolverStatus_t")),
               returns(asString("cufftResult_t")),
-              returns(asString("curandStatus_t"))),
+              returns(asString("curandStatus_t")),
+              returns(asString("ncclResult_t"))),
         // cudaGetLastError returns cudaError_t but won't fail in the call
         unless(hasName("cudaGetLastError")),
         anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost)));
@@ -1638,7 +1639,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
               "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
               "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
-              "cusparseIndexBase_t", "cusparseMatrixType_t",
+              "cusparseIndexBase_t", "cusparseMatrixType_t", "cusparseAlgMode_t",
               "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
               "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
               "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
@@ -2188,33 +2189,40 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
         CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
-      if (DpctGlobalInfo::findAncestor<clang::CompoundStmt>(TL) &&
-          DpctGlobalInfo::findAncestor<clang::FunctionDecl>(TL))
-        return;
       if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
         SourceLocation Begin = ETL.getBeginLoc();
         SourceLocation End = ETL.getEndLoc();
-        if (Begin.isMacroID() || End.isMacroID())
-          return;
+        if (Begin.isMacroID())
+          Begin = SM->getSpellingLoc(Begin);
+        if (End.isMacroID())
+          End = SM->getSpellingLoc(End);
         End = End.getLocWithOffset(Lexer::MeasureTokenLength(
             End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        if (End.isMacroID())
-          return;
         const auto *FD = DpctGlobalInfo::getParentFunction(TL);
         if (!FD)
           return;
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+        if (!DFI)
+          return;
         auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
         DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+
         std::string group_type = "";
         if (DpctGlobalInfo::useLogicalGroup())
-          group_type = MapNames::getDpctNamespace() + "experimental::group_base";
-        if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block")
-          group_type = MapNames::getClNamespace() + "group";
+          group_type = MapNames::getDpctNamespace() +
+                       "experimental::group_base" + "<{{NEEDREPLACEG" +
+                       std::to_string(Index) + "}}>";
+        if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
+          if (ETL.getBeginLoc().isMacroID())
+            group_type = "auto";
+          else
+            group_type = MapNames::getClNamespace() + "group" +
+                         "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>";
+        }
         if (!group_type.empty())
           emplaceTransformation(new ReplaceText(
               Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              group_type + "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>"));
+              std::move(group_type)));
         return;
       }
     }
@@ -3592,12 +3600,11 @@ REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
 // Migrate spBLAS status values to corresponding int values
 // Other spBLAS named values are migrated to corresponding named values
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      declRefExpr(to(enumConstantDecl(matchesName(
-                      "(CUSPARSE_STATUS.*)|("
-                      "CUSPARSE_POINTER_MODE.*)"))))
-          .bind("SPBLASStatusConstants"),
-      this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
+                                "(CUSPARSE_STATUS.*)|(CUSPARSE_POINTER_MODE.*)|"
+                                "(CUSPARSE_ALG.*)"))))
+                    .bind("SPBLASStatusConstants"),
+                this);
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUSPARSE_OPERATION_.*)|(CUSPARSE_FILL_MODE_.*)|("
@@ -3689,6 +3696,8 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseDestroySolveAnalysisInfo",
         /*level 2*/
         "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv", "cusparseZcsrmv",
+        "cusparseScsrmv_mp", "cusparseDcsrmv_mp", "cusparseCcsrmv_mp",
+        "cusparseZcsrmv_mp", "cusparseCsrmvEx", "cusparseCsrmvEx_bufferSize",
         "cusparseScsrsv_analysis", "cusparseDcsrsv_analysis",
         "cusparseCcsrsv_analysis", "cusparseZcsrsv_analysis",
         /*level 3*/
@@ -3736,7 +3745,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   StringRef FuncNameRef(FuncName);
-  if (FuncNameRef.endswith("csrmv")) {
+  if (FuncNameRef.endswith("csrmv") || FuncNameRef.endswith("csrmv_mp")) {
     report(
         DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
         Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
@@ -4240,7 +4249,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       IsInitializeVarDecl = true;
     } else if (auto *ULE = getNodeAsType<UnresolvedLookupExpr>(
                    Result, "unresolvedCallUsed")) {
-      CE = getNodeAsType<CallExpr>(Result, "callExprUsed");
+      CE = getAssistNodeAsType<CallExpr>(Result, "callExprUsed");
       FuncName = ULE->getName().getAsString();
     } else {
       return;
@@ -9367,7 +9376,8 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       } else {
         if (Var) {
-          DeviceFunctionDecl::LinkRedecls(Func)->addVar(Var);
+          if (auto DFI = DeviceFunctionDecl::LinkRedecls(Func))
+            DFI->addVar(Var);
         }
       }
     } else {
@@ -11712,7 +11722,7 @@ void CooperativeGroupsFunctionRule::runRule(
       FuncName == "shfl_down" || FuncName == "shfl_up" ||
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
       FuncName == "reduce" || FuncName == "thread_index" ||
-      FuncName == "group_index") {
+      FuncName == "group_index" || FuncName == "num_threads") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function
@@ -11721,7 +11731,8 @@ void CooperativeGroupsFunctionRule::runRule(
     // FunctionName  Case1 Case2 Case3
     // sync          1/1   1/1   0/1
     // thread_rank   1/1   1/1   0/1
-    // size          1/1   0/0   0/1
+    // size          1/1   0/0   1/1
+    // num_threads   1/1   0/0   1/1
     // shfl_down     1/1   0/0   0/0
     // shfl_up       1/1   0/0   0/0
     // shfl_xor      1/1   0/0   0/0
@@ -11731,11 +11742,6 @@ void CooperativeGroupsFunctionRule::runRule(
     EA.applyAllSubExprRepl();
     RUW.NeedReport = false;
   } else if (FuncName == "this_thread_block") {
-    if (auto P = getAncestorDeclStmt(CE)) {
-      if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
-        emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
-      }
-    }
     RUW.NeedReport = false;
     emplaceTransformation(
         new ReplaceStmt(CE, DpctGlobalInfo::getGroup(CE)));
@@ -11815,18 +11821,12 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
       GroupFunctionCallInControlFlowAnalyzer A(DpctGlobalInfo::getContext());
       A.checkCallGroupFunctionInControlFlow(const_cast<FunctionDecl *>(FD));
       auto FnInfo = DeviceFunctionDecl::LinkRedecls(FD);
+      if (!FnInfo)
+        return;
       auto CallInfo = FnInfo->addCallee(CE);
       if (CallInfo->hasSideEffects())
         report(CE->getBeginLoc(), Diagnostics::CALL_GROUP_FUNC_IN_COND, false);
     }
-  } else if (FuncName == "this_thread_block") {
-    if (auto P = getAncestorDeclStmt(CE)) {
-      if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
-        emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
-      }
-    }
-    emplaceTransformation(
-        new ReplaceStmt(CE, DpctGlobalInfo::getGroup(CE, FD)));
   } else if (FuncName == "__threadfence_block") {
     std::string CLNS = MapNames::getClNamespace();
     std::string ReplStr = CLNS + "atomic_fence(" + CLNS +
@@ -12109,6 +12109,8 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
     if (auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts())) {
       auto ObjType = ME->getBase()->getType().getCanonicalType();
       ND = getNamedDecl(ObjType.getTypePtr());
+      if (!ND)
+        return;
       ObjName = ND->getNameAsString();
     // Match the static call, like: A::staticCall();
     } else if (auto RT = dyn_cast<RecordDecl>(
@@ -12950,7 +12952,8 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "texFunc")) {
 
       if (!isa<ParmVarDecl>(VD))
-        DeviceFunctionDecl::LinkRedecls(FD)->addTexture(Tex);
+        if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD))
+          DFI->addTexture(Tex);
     }
 
     if (processTexVarDeclInDevice(VD))

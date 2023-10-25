@@ -2810,12 +2810,468 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
                       CALL("float", ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
 
 // Bfloat16 Precision Conversion and Data Movement
-CALL_FACTORY_ENTRY("__bfloat1622float2",
-                   CALL(MapNames::getClNamespace() + "float2",
-                        ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
-                        ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat1622float2",
+                           CALL(MapNames::getClNamespace() + "float2",
+                                CALL(MapNames::getClNamespace() +
+                                         "ext::intel::math::bfloat162float",
+                                     ARRAY_SUBSCRIPT(ARG(0), LITERAL("0"))),
+                                CALL(MapNames::getClNamespace() +
+                                         "ext::intel::math::bfloat162float",
+                                     ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))))),
+    CALL_FACTORY_ENTRY("__bfloat1622float2",
+                       CALL(MapNames::getClNamespace() + "float2",
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))))
 
-CALL_FACTORY_ENTRY("__bfloat162float", CALL("static_cast<float>", ARG(0)))
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__bfloat162bfloat162",
+                       CALL(MapNames::getClNamespace() + "marray<" +
+                                MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16, 2>",
+                            ARG(0), ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("__bfloat162bfloat162",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__bfloat162bfloat162")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162float",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162float",
+                                ARG(0)))),
+    CALL_FACTORY_ENTRY("__bfloat162float", CALL("static_cast<float>", ARG(0))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162int_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162int_rd",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162int_rd",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<int, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtn>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162int_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162int_rn",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162int_rn",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<int, " + MapNames::getClNamespace() +
+                        "rounding_mode::rte>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162int_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162int_ru",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162int_ru",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<int, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtp>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162int_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162int_rz",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162int_rz",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<int, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtz>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ll_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ll_rd",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ll_rd",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<long long, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtn>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ll_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ll_rn",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ll_rn",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<long long, " + MapNames::getClNamespace() +
+                        "rounding_mode::rte>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ll_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ll_ru",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ll_ru",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<long long, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtp>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ll_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ll_rz",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ll_rz",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<long long, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtz>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162short_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162short_rd",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162short_rd",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<short, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtn>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162short_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162short_rn",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162short_rn",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<short, " + MapNames::getClNamespace() +
+                        "rounding_mode::rte>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162short_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162short_ru",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162short_ru",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<short, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtp>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162short_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162short_rz",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162short_rz",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<short, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtz>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162uint_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162uint_rd",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162uint_rd",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtn>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162uint_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162uint_rn",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162uint_rn",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned, " + MapNames::getClNamespace() +
+                        "rounding_mode::rte>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162uint_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162uint_ru",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162uint_ru",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtp>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162uint_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162uint_rz",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162uint_rz",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtz>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ull_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ull_rd",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ull_rd",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned long long, " +
+                        MapNames::getClNamespace() + "rounding_mode::rtn>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ull_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ull_rn",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ull_rn",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned long long, " +
+                        MapNames::getClNamespace() + "rounding_mode::rte>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ull_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ull_ru",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ull_ru",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned long long, " +
+                        MapNames::getClNamespace() + "rounding_mode::rtp>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ull_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ull_rz",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ull_rz",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned long long, " +
+                        MapNames::getClNamespace() + "rounding_mode::rtz>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ushort_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ushort_rd",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ushort_rd",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned short, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtn>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ushort_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ushort_rn",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ushort_rn",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned short, " + MapNames::getClNamespace() +
+                        "rounding_mode::rte>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ushort_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ushort_ru",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ushort_ru",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned short, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtp>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat162ushort_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat162ushort_rz",
+                                ARG(0)))),
+    ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(
+        "__bfloat162ushort_rz",
+        MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
+                    false,
+                    "convert<unsigned short, " + MapNames::getClNamespace() +
+                        "rounding_mode::rtz>"),
+        LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat16_as_short",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat16_as_short",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__bfloat16_as_short",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__bfloat16_as_short")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__bfloat16_as_ushort",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::bfloat16_as_ushort",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__bfloat16_as_ushort",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__bfloat16_as_ushort")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__double2bfloat16",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::double2bfloat16",
+                                ARG(0)))),
+    CONDITIONAL_FACTORY_ENTRY(
+        math::UseBFloat16,
+        CALL_FACTORY_ENTRY(
+            "__double2bfloat16",
+            CALL(MapNames::getClNamespace() + "ext::oneapi::bfloat16", ARG(0))),
+        UNSUPPORT_FACTORY_ENTRY("__double2bfloat16",
+                                Diagnostics::API_NOT_MIGRATED,
+                                ARG("__double2bfloat16"))))
 
 CONDITIONAL_FACTORY_ENTRY(
     math::UseBFloat16,
@@ -2829,14 +3285,460 @@ CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::API_NOT_MIGRATED,
                             ARG("__float22bfloat162_rn")))
 
-CONDITIONAL_FACTORY_ENTRY(math::UseBFloat16,
-                          CALL_FACTORY_ENTRY("__float2bfloat16",
-                                             CALL(MapNames::getClNamespace() +
-                                                      "ext::oneapi::bfloat16",
-                                                  ARG(0))),
-                          UNSUPPORT_FACTORY_ENTRY("__float2bfloat16",
-                                                  Diagnostics::API_NOT_MIGRATED,
-                                                  ARG("__float2bfloat16")))
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__float2bfloat16",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::float2bfloat16",
+                                ARG(0)))),
+    CONDITIONAL_FACTORY_ENTRY(
+        math::UseBFloat16,
+        CALL_FACTORY_ENTRY("__float2bfloat16", CALL(MapNames::getClNamespace() +
+                                                        "ext::oneapi::bfloat16",
+                                                    ARG(0))),
+        UNSUPPORT_FACTORY_ENTRY("__float2bfloat16",
+                                Diagnostics::API_NOT_MIGRATED,
+                                ARG("__float2bfloat16"))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__float2bfloat162_rn",
+                       CALL(MapNames::getClNamespace() + "marray<" +
+                                MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16, 2>",
+                            ARG(0), ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("__float2bfloat162_rn",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__float2bfloat162_rn")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__float2bfloat16_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::float2bfloat16_rd",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__float2bfloat16_rd",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__float2bfloat16_rd")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__float2bfloat16_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::float2bfloat16_rn",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__float2bfloat16_rn",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__float2bfloat16_rn")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__float2bfloat16_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::float2bfloat16_ru",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__float2bfloat16_ru",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__float2bfloat16_ru")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__float2bfloat16_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::float2bfloat16_rz",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__float2bfloat16_rz",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__float2bfloat16_rz")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__floats2bfloat162_rn",
+                       CALL(MapNames::getClNamespace() + "marray<" +
+                                MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16, 2>",
+                            ARG(0), ARG(1))),
+    UNSUPPORT_FACTORY_ENTRY("__floats2bfloat162_rn",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__floats2bfloat162_rn")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__halves2bfloat162",
+                       CALL(MapNames::getClNamespace() + "marray<" +
+                                MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16, 2>",
+                            ARG(0), ARG(1))),
+    UNSUPPORT_FACTORY_ENTRY("__halves2bfloat162", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__halves2bfloat162")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__high2bfloat16",
+                       CALL(MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16",
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))),
+    UNSUPPORT_FACTORY_ENTRY("__high2bfloat16", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__high2bfloat16")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__high2bfloat162",
+                       CALL(MapNames::getClNamespace() + "marray<" +
+                                MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16, 2>",
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))),
+    UNSUPPORT_FACTORY_ENTRY("__high2bfloat162", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__high2bfloat162")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__highs2bfloat162",
+                       CALL(MapNames::getClNamespace() + "marray<" +
+                                MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16, 2>",
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
+                            ARRAY_SUBSCRIPT(ARG(1), LITERAL("1")))),
+    UNSUPPORT_FACTORY_ENTRY("__highs2bfloat162", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__highs2bfloat162")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__int2bfloat16_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::int2bfloat16_rd",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__int2bfloat16_rd", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__int2bfloat16_rd")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__int2bfloat16_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::int2bfloat16_rn",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__int2bfloat16_rn", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__int2bfloat16_rn")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__int2bfloat16_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::int2bfloat16_ru",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__int2bfloat16_ru", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__int2bfloat16_ru")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__int2bfloat16_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::int2bfloat16_rz",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__int2bfloat16_rz", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__int2bfloat16_rz")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ll2bfloat16_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ll2bfloat16_rd",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ll2bfloat16_rd", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ll2bfloat16_rd")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ll2bfloat16_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ll2bfloat16_rn",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ll2bfloat16_rn", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ll2bfloat16_rn")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ll2bfloat16_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ll2bfloat16_ru",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ll2bfloat16_ru", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ll2bfloat16_ru")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ll2bfloat16_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ll2bfloat16_rz",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ll2bfloat16_rz", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ll2bfloat16_rz")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__low2bfloat16",
+                       CALL(MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16",
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+    UNSUPPORT_FACTORY_ENTRY("__low2bfloat16", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__low2bfloat16")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__low2bfloat162",
+                       CALL(MapNames::getClNamespace() + "marray<" +
+                                MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16, 2>",
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+    UNSUPPORT_FACTORY_ENTRY("__low2bfloat162", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__low2bfloat162")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__lows2bfloat162",
+                       CALL(MapNames::getClNamespace() + "marray<" +
+                                MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16, 2>",
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
+                            ARRAY_SUBSCRIPT(ARG(1), LITERAL("0")))),
+    UNSUPPORT_FACTORY_ENTRY("__lows2bfloat162", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__lows2bfloat162")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__short2bfloat16_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::short2bfloat16_rd",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__short2bfloat16_rd",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__short2bfloat16_rd")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__short2bfloat16_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::short2bfloat16_rn",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__short2bfloat16_rn",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__short2bfloat16_rn")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__short2bfloat16_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::short2bfloat16_ru",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__short2bfloat16_ru",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__short2bfloat16_ru")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__short2bfloat16_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::short2bfloat16_rz",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__short2bfloat16_rz",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__short2bfloat16_rz")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__short_as_bfloat16",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::short_as_bfloat16",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__short_as_bfloat16",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__short_as_bfloat16")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__uint2bfloat16_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::uint2bfloat16_rd",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__uint2bfloat16_rd", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__uint2bfloat16_rd")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__uint2bfloat16_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::uint2bfloat16_rn",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__uint2bfloat16_rn", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__uint2bfloat16_rn")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__uint2bfloat16_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::uint2bfloat16_ru",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__uint2bfloat16_ru", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__uint2bfloat16_ru")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__uint2bfloat16_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::uint2bfloat16_rz",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__uint2bfloat16_rz", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__uint2bfloat16_rz")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ull2bfloat16_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ull2bfloat16_rd",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ull2bfloat16_rd", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ull2bfloat16_rd")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ull2bfloat16_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ull2bfloat16_rn",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ull2bfloat16_rn", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ull2bfloat16_rn")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ull2bfloat16_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ull2bfloat16_ru",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ull2bfloat16_ru", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ull2bfloat16_ru")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ull2bfloat16_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ull2bfloat16_rz",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ull2bfloat16_rz", Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ull2bfloat16_rz")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ushort2bfloat16_rd",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ushort2bfloat16_rd",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ushort2bfloat16_rd",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ushort2bfloat16_rd")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ushort2bfloat16_rn",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ushort2bfloat16_rn",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ushort2bfloat16_rn",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ushort2bfloat16_rn")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ushort2bfloat16_ru",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ushort2bfloat16_ru",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ushort2bfloat16_ru",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ushort2bfloat16_ru")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ushort2bfloat16_rz",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ushort2bfloat16_rz",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ushort2bfloat16_rz",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ushort2bfloat16_rz")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__ushort_as_bfloat16",
+                           CALL(MapNames::getClNamespace() +
+                                    "ext::intel::math::ushort_as_bfloat16",
+                                ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("__ushort_as_bfloat16",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__ushort_as_bfloat16")))
 
 // Single Precision Mathematical Functions
 MATH_API_REWRITER_DEVICE(
@@ -3495,6 +4397,415 @@ MATH_API_REWRITER_DEVICE(
                  CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)))),
         EMPTY_FACTORY_ENTRY("__expf"), EMPTY_FACTORY_ENTRY("__expf"),
         EMPTY_FACTORY_ENTRY("__expf")))
+
+MATH_API_REWRITER_DEVICE(
+    "__fadd_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fadd_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fadd_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fadd_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fadd_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__fadd_rd",
+            BINARY_OP_FACTORY_ENTRY("__fadd_rd", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fadd_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fadd_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fadd_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fadd_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fadd_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__fadd_rn",
+            BINARY_OP_FACTORY_ENTRY("__fadd_rn", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fadd_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fadd_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fadd_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fadd_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fadd_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__fadd_ru",
+            BINARY_OP_FACTORY_ENTRY("__fadd_ru", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fadd_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fadd_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fadd_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fadd_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fadd_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__fadd_rz",
+            BINARY_OP_FACTORY_ENTRY("__fadd_rz", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fmul_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fmul_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fmul_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fmul_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fmul_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__fmul_rd",
+            BINARY_OP_FACTORY_ENTRY("__fmul_rd", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fmul_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fmul_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fmul_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fmul_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fmul_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__fmul_rn",
+            BINARY_OP_FACTORY_ENTRY("__fmul_rn", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fmul_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fmul_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fmul_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fmul_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fmul_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__fmul_ru",
+            BINARY_OP_FACTORY_ENTRY("__fmul_ru", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fmul_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fmul_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fmul_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fmul_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fmul_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__fmul_rz",
+            BINARY_OP_FACTORY_ENTRY("__fmul_rz", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fsub_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fsub_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fsub_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fsub_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fsub_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__fsub_rd",
+            BINARY_OP_FACTORY_ENTRY("__fsub_rd", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fsub_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fsub_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fsub_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fsub_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fsub_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__fsub_rn",
+            BINARY_OP_FACTORY_ENTRY("__fsub_rn", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fsub_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fsub_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fsub_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fsub_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fsub_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__fsub_ru",
+            BINARY_OP_FACTORY_ENTRY("__fsub_ru", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__fsub_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__fsub_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__fsub_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::fsub_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__fsub_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__fsub_rz",
+            BINARY_OP_FACTORY_ENTRY("__fsub_rz", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+// Double Precision Intrinsics
+MATH_API_REWRITER_DEVICE(
+    "__dadd_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dadd_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dadd_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dadd_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dadd_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__dadd_rd",
+            BINARY_OP_FACTORY_ENTRY("__dadd_rd", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dadd_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dadd_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dadd_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dadd_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dadd_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__dadd_rn",
+            BINARY_OP_FACTORY_ENTRY("__dadd_rn", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dadd_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dadd_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dadd_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dadd_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dadd_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__dadd_ru",
+            BINARY_OP_FACTORY_ENTRY("__dadd_ru", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dadd_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dadd_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dadd_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dadd_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dadd_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__dadd_rz",
+            BINARY_OP_FACTORY_ENTRY("__dadd_rz", BinaryOperatorKind::BO_Add,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dmul_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dmul_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dmul_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dmul_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dmul_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__dmul_rd",
+            BINARY_OP_FACTORY_ENTRY("__dmul_rd", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dmul_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dmul_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dmul_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dmul_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dmul_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__dmul_rn",
+            BINARY_OP_FACTORY_ENTRY("__dmul_rn", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dmul_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dmul_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dmul_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dmul_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dmul_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__dmul_ru",
+            BINARY_OP_FACTORY_ENTRY("__dmul_ru", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dmul_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dmul_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dmul_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dmul_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dmul_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__dmul_rz",
+            BINARY_OP_FACTORY_ENTRY("__dmul_rz", BinaryOperatorKind::BO_Mul,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dsub_rd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dsub_rd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dsub_rd",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dsub_rd",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dsub_rd"),
+        WARNING_FACTORY_ENTRY(
+            "__dsub_rd",
+            BINARY_OP_FACTORY_ENTRY("__dsub_rd", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dsub_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dsub_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dsub_rn",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dsub_rn",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dsub_rn"),
+        WARNING_FACTORY_ENTRY(
+            "__dsub_rn",
+            BINARY_OP_FACTORY_ENTRY("__dsub_rn", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dsub_ru",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dsub_ru"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dsub_ru",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dsub_ru",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dsub_ru"),
+        WARNING_FACTORY_ENTRY(
+            "__dsub_ru",
+            BINARY_OP_FACTORY_ENTRY("__dsub_ru", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+
+MATH_API_REWRITER_DEVICE(
+    "__dsub_rz",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__dsub_rz"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__dsub_rz",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::dsub_rz",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__dsub_rz"),
+        WARNING_FACTORY_ENTRY(
+            "__dsub_rz",
+            BINARY_OP_FACTORY_ENTRY("__dsub_rz", BinaryOperatorKind::BO_Sub,
+                                    ARG(0), ARG(1)),
+            Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
 
 // SIMD Intrinsics
 MATH_API_REWRITER_DEVICE(

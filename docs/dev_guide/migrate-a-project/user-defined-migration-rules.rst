@@ -52,7 +52,7 @@ Migration rules are specified in YAML files. A single rule file may contain mult
      - Required. Specifies the priority of the rule: ``Takeover`` > ``Default`` > ``Fallback``.
        When there are rule conflicts, the rule with higher priority will take precedence.
    * - Kind
-     - ``Macro`` | ``API`` | ``Header`` | ``Type`` | ``Class`` | ``Enum``
+     - ``Macro`` | ``API`` | ``Header`` | ``Type`` | ``Class`` | ``Enum`` | ``DisableAPIMigration`` | ``PatternRewriter``
      - Required. Specifies the rule type.
    * - In
      - String value
@@ -78,7 +78,9 @@ Migration rules are specified in YAML files. A single rule file may contain mult
    * - Postfix
      - String value
      - Specifies the postfix of a Header rule type. For example: ``#endif ...``
-
+   * - Subrules
+     - String value
+     - Specifies the subrules for the PatternRewriter rule type.
 
 For example, the following user-defined migration rule file demonstrates different
 rule types. The behavior of each rule is explained in the corresponding comment:
@@ -134,7 +136,23 @@ rule types. The behavior of each rule is explained in the corresponding comment:
      In: OldType
      Out: NewType
      Includes: []
-
+   - Rule: disable_rule                                   # Disable the migration of an API
+     Kind: DisableAPIMigration
+     Priority: Takeover
+     In: foo                                              # Disable the migration of foo
+     Out: ""
+     Includes: []
+   - Rule: post_migration_rewriter_rule                   # Post-migration pattern rewrite rule which uses nested string pattern search and replace to find and update strings in the migrated code
+     Kind: PatternRewriter
+     Priority: Takeover
+     In: my_max(${args});                                 # Match pattern "my_max(...);" and save the arbitrary string between "my_max(" and ");" as ${args}
+                                                          # "args" can be a user-defined name which will be referenced by "Out" and "Subrules".
+     Out: my_min(${args});                                # Replace the pattern string to "my_min(${args});"
+     Includes: []
+     Subrules:
+       args:                                              # Specify the subrule to apply to ${args}. Where args is the user-defined name which is defined in "In".
+         In: a                                            # Match pattern "a" in ${args}
+         Out: b                                           # Replace the pattern string to "b" in ${args}
    ...                                                    # [YAML syntax] End the document
 
 
@@ -146,7 +164,7 @@ To describe the value format for the ``Out`` key in a migration rule of
 
 .. code-block:: none
 
-   OutValue::= Token | Token OutValue       # OutValue is the value for the “out” key
+   OutValue::= Token | Token OutValue       # OutValue is the value for the "out" key
    Token::= AnyString | Keyword             # AnyString is a string provided by the user
    Keyword::= ArgIndex
       | $queue                              # Represents the queue string
@@ -171,7 +189,7 @@ Consider the following user-defined API migration rule:
      Priority: Takeover
      In: foo
      Out: $type_name_of($2) new_ptr = bar($deref($1), $3)
-     Includes: [“<header3>”]
+     Includes: ["<header3>"]
 
 If the input source code contains a function call that matches the rule, the
 tool parses the value of the ``In`` and ``Out`` keys and builds a keyword mapping
@@ -214,5 +232,3 @@ output source code:
 
    int *ptr, *ptr2;
    int * new_ptr = bar(*ptr, 30);
-
-
