@@ -14613,3 +14613,26 @@ void TypeRemoveRule::runRule(
 }
 
 REGISTER_RULE(TypeRemoveRule, PassKind::PK_Analysis)
+
+void CompatNVCCRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(functionDecl().bind("FunctionDecl"), this);
+}
+
+void CompatNVCCRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto FD = getNodeAsType<FunctionDecl>(Result, "FunctionDecl")) {
+    auto SR = FD->getDuplicatedExplicitlySpecifiedTemplateArgumentsRange();
+    if (SR.isValid()) {
+      auto DefinitionSR = getDefinitionRange(SR.getBegin(), SR.getEnd());
+      auto Begin = DefinitionSR.getBegin();
+      auto End =
+          DefinitionSR.getEnd().getLocWithOffset(Lexer::MeasureTokenLength(
+              DefinitionSR.getEnd(), DpctGlobalInfo::getSourceManager(),
+              DpctGlobalInfo::getContext().getLangOpts()));
+      auto Length = End.getRawEncoding() - Begin.getRawEncoding();
+      emplaceTransformation(new ReplaceText(Begin, Length, ""));
+    }
+  }
+}
+
+REGISTER_RULE(CompatNVCCRule, PassKind::PK_Migration)

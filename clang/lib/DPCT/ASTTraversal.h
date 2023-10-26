@@ -1796,6 +1796,12 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class CompatNVCCRule : public NamedMigrationRule<CompatNVCCRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 TextModification *replaceText(SourceLocation Begin, SourceLocation End,
                               std::string &&Str, const SourceManager &SM);
 

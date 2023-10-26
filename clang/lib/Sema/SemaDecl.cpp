@@ -10540,8 +10540,20 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
         HasExplicitTemplateArgs = false;
       } else if (FunctionTemplate) {
         // Function template with explicit template arguments.
+#ifdef SYCLomatic_CUSTOMIZATION
+
+        if (getLangOpts().CUDA) {
+          // nvcc (using EDG's frontend) does not check this.
+          // So, for CUDA language, skip this error and mark it in AST.
+          NewFD->setDuplicatedExplicitlySpecifiedTemplateArgumentsRange(
+              SourceRange(TemplateId->LAngleLoc, TemplateId->RAngleLoc));
+        } else {
+#endif
         Diag(D.getIdentifierLoc(), diag::err_function_template_partial_spec)
           << SourceRange(TemplateId->LAngleLoc, TemplateId->RAngleLoc);
+#ifdef SYCLomatic_CUSTOMIZATION
+        }
+#endif
 
         HasExplicitTemplateArgs = false;
       } else {
