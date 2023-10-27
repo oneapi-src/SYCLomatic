@@ -49,7 +49,7 @@ void foo() {
     const int N = 100;
 
     // CHECK:    dpct::device_sys_tag device_sys;
-    // CHECK-NEXT: thrust::pointer<int, dpct::device_sys_tag> ptr = dpct::malloc<int>(device_sys, N);
+    // CHECK-NEXT: dpct::tagged_pointer<int, dpct::device_sys_tag> ptr = dpct::malloc<int>(device_sys, N);
     // CHECK-NEXT: dpct::free(device_sys, ptr);
     thrust::device_system_tag device_sys;
     thrust::pointer<int, thrust::device_system_tag> ptr = thrust::malloc<int>(device_sys, N);
@@ -60,7 +60,7 @@ void foo() {
     const int N = 100;
 
     // CHECK:    dpct::device_sys_tag device_sys;
-    // CHECK-NEXT: thrust::pointer<void, dpct::device_sys_tag> void_ptr = dpct::malloc(device_sys, N);
+    // CHECK-NEXT: dpct::tagged_pointer<void, dpct::device_sys_tag> void_ptr = dpct::malloc(device_sys, N);
     // CHECK-NEXT:    dpct::free(device_sys, void_ptr);
     thrust::device_system_tag device_sys;
     thrust::pointer<void, thrust::device_system_tag> void_ptr = thrust::malloc(device_sys, N);
