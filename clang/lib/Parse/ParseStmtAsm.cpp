@@ -759,10 +759,6 @@ StmtResult Parser::ParseAsmStatement(bool &msAsm) {
   ExprVector Exprs;
   ExprVector Clobbers;
 
-  if (Actions.getSourceManager().isInMainFile(Tok.getLocation())) {
-    llvm::errs() << "Here\n";
-  }
-
   if (Tok.is(tok::r_paren)) {
     // We have a simple asm expression like 'asm("foo")'.
     T.consumeClose();
