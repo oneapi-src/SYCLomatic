@@ -949,6 +949,9 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-Xclang", ArgumentInsertPosition::BEGIN));
 
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-fgpu-exclude-wrong-side-overloads", ArgumentInsertPosition::BEGIN));
+
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);
   DpctGlobalInfo::setAnalysisScope(AnalysisScope);
