@@ -909,18 +909,6 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  std::string CUDAVerMajor =
-      "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
-
-  std::string CUDAVerMinor =
-      "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
-  Tool.appendArgumentsAdjuster(
-      getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
-
   SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32
@@ -951,6 +939,8 @@ int runDPCT(int argc, const char **argv) {
 
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fgpu-exclude-wrong-side-overloads", ArgumentInsertPosition::BEGIN));
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-Wno-c++11-narrowing", ArgumentInsertPosition::BEGIN));
 
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);
