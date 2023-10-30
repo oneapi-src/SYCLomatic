@@ -67,7 +67,7 @@ bool Replacement::isApplicable() const {
 
 bool Replacement::apply(Rewriter &Rewrite) const {
   SourceManager &SM = Rewrite.getSourceMgr();
-  auto Entry = SM.getFileManager().getFile(FilePath);
+  auto Entry = SM.getFileManager().getOptionalFileRef(FilePath);
   if (!Entry)
     return false;
 
@@ -122,6 +122,7 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
                                         StringRef ReplacementText) {
   const std::pair<FileID, unsigned> DecomposedLocation =
       Sources.getDecomposedLoc(Start);
+<<<<<<< HEAD
   const FileEntry *Entry = Sources.getFileEntryForID(DecomposedLocation.first);
 #ifdef SYCLomatic_CUSTOMIZATION
   if (Entry) {
@@ -144,6 +145,10 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
     this->FilePath = std::string(InvalidLocation);
   }
 #else
+=======
+  OptionalFileEntryRef Entry =
+      Sources.getFileEntryRefForID(DecomposedLocation.first);
+>>>>>>> origin/sycl
   this->FilePath = std::string(Entry ? Entry->getName() : InvalidLocation);
 #endif // SYCLomatic_CUSTOMIZATION
   this->ReplacementRange = Range(DecomposedLocation.second, Length);
