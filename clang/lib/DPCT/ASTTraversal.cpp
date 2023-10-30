@@ -249,8 +249,14 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      II->getName().str() == "__global__" ||
                                      II->getName().str() == "__constant__" ||
                                      II->getName().str() == "__shared__")) {
-      TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(
-          SourceRange(Iter->getLocation(), Iter->getEndLoc())));
+      if (DpctGlobalInfo::isOptimizeMigration() &&
+          (II->getName().str() == "__constant__")) {
+        TransformSet.emplace_back(
+            new ReplaceToken(Iter->getLocation(), "const"));
+      } else {
+        TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(
+            SourceRange(Iter->getLocation(), Iter->getEndLoc())));
+      }
     } else if (II->hasMacroDefinition() && II->getName().str() == "CUDART_CB") {
 #ifdef _WIN32
       TransformSet.emplace_back(
@@ -459,7 +465,12 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
               SM.getExpansionLoc(Range.getBegin()))) {
         DpctGlobalInfo::getInstance().insertConstantMacroTMInfo(
             SM.getExpansionLoc(Range.getBegin()), TM);
-        TransformSet.emplace_back(TM);
+        if (DpctGlobalInfo::isOptimizeMigration() && (Name == "__constant__")) {
+          TransformSet.emplace_back(
+              new ReplaceToken(SM.getSpellingLoc(Range.getBegin()), "const"));
+        } else {
+          TransformSet.emplace_back(TM);
+        }
       }
     } else {
       TransformSet.emplace_back(TM);
@@ -9232,6 +9243,15 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     if (isCubVar(MemVar)) {
       return;
     }
+    if (DpctGlobalInfo::isOptimizeMigration() &&
+        MemVar->hasAttr<CUDAConstantAttr>()) {
+      if (MemVar->getStorageClass() != SC_Static) {
+        auto Range =
+            getDefinitionRange(MemVar->getBeginLoc(), MemVar->getEndLoc());
+        emplaceTransformation(new InsertText(Range.getBegin(), "static "));
+      }
+      return;
+    }
     CanonicalType = MemVar->getType().getCanonicalType().getAsString();
     if (CanonicalType.find("block_tile_memory") != std::string::npos) {
       emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
@@ -9274,6 +9294,15 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
   if (MemVarRef && Func && Decl) {
     if (isCubVar(Decl)) {
+      return;
+    }
+    auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
+    if (VD) {
+      if (DpctGlobalInfo::isOptimizeMigration() &&
+          VD->hasAttr<CUDAConstantAttr>()) {
+        return;
+      }
+    } else {
       return;
     }
     auto GetReplRange =
@@ -9356,11 +9385,9 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
                                         ExprAnalysis::ref(RHS), ")")));
       }
     }
-    auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
+
     if (Func->isImplicit() ||
         Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
-      return;
-    if (VD == nullptr)
       return;
 
     auto Var = Global.findMemVarInfo(VD);
@@ -10166,6 +10193,41 @@ void MemoryMigrationRule::arrayMigration(
 void MemoryMigrationRule::memcpySymbolMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  std::string Name;
+  if (ULExpr) {
+    Name = ULExpr->getName().getAsString();
+  } else {
+    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+  int SymbolArgIndex = 0;
+  if (DpctGlobalInfo::isOptimizeMigration()) {
+    if (Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyFromSymbol") {
+      SymbolArgIndex = 1;
+    }
+    auto MatchedResults = findDREInScope(C->getArg(SymbolArgIndex));
+    bool HasConstantVar = false;
+    for (auto &Result : MatchedResults) {
+      const DeclRefExpr *DRE = Result.getNodeAs<DeclRefExpr>("VarReference");
+      if (!DRE)
+        continue;
+      if (auto D = dyn_cast_or_null<VarDecl>(DRE->getDecl())) {
+        if (D->hasAttr<CUDAConstantAttr>()) {
+          HasConstantVar = true;
+          break;
+        }
+      }
+    }
+    if (HasConstantVar) {
+      ExprAnalysis EA;
+      EA.analyze(C->getArg(SymbolArgIndex));
+      auto SymbolArg = EA.getReplacedString();
+      report(C->getBeginLoc(),
+             Diagnostics::DEVICE_CONSTANT_VARIABLE_OPTIMIZATIOH, true,
+             SymbolArg);
+      return;
+    }
+  }
+
   std::string DirectionName;
   // Currently, if memory API occurs in a template, we will migrate the API call
   // under the undeclared decl AST node and the explicit specialization AST
@@ -10200,13 +10262,6 @@ void MemoryMigrationRule::memcpySymbolMigration(
                  ")"));
       return;
     }
-  }
-
-  std::string Name;
-  if (ULExpr) {
-    Name = ULExpr->getName().getAsString();
-  } else {
-    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
   std::string ReplaceStr;
@@ -10468,7 +10523,27 @@ void MemoryMigrationRule::getSymbolSizeMigration(
   auto StmtStrArg0 = EA.getReplacedString();
   EA.analyze(C->getArg(1));
   auto StmtStrArg1 = EA.getReplacedString();
-
+  if (DpctGlobalInfo::isOptimizeMigration()) {
+    auto MatchedResults = findDREInScope(C->getArg(1));
+    bool HasConstantVar = false;
+    for (auto &Result : MatchedResults) {
+      const DeclRefExpr *DRE = Result.getNodeAs<DeclRefExpr>("VarReference");
+      if (!DRE)
+        continue;
+      if (auto D = dyn_cast_or_null<VarDecl>(DRE->getDecl())) {
+        if (D->hasAttr<CUDAConstantAttr>()) {
+          HasConstantVar = true;
+          break;
+        }
+      }
+    }
+    if (HasConstantVar) {
+      report(C->getBeginLoc(),
+             Diagnostics::DEVICE_CONSTANT_VARIABLE_OPTIMIZATIOH, true,
+             StmtStrArg1);
+      return;
+    }
+  }
   requestFeature(HelperFeatureEnum::device_ext);
   Replacement = getDrefName(C->getArg(0)) + " = " + StmtStrArg1 + ".get_size()";
   emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
@@ -10905,6 +10980,27 @@ void MemoryMigrationRule::getSymbolAddressMigration(
   auto StmtStrArg0 = EA.getReplacedString();
   EA.analyze(C->getArg(1));
   auto StmtStrArg1 = EA.getReplacedString();
+  if (DpctGlobalInfo::isOptimizeMigration()) {
+    auto MatchedResults = findDREInScope(C->getArg(1));
+    bool HasConstantVar = false;
+    for (auto &Result : MatchedResults) {
+      const DeclRefExpr *DRE = Result.getNodeAs<DeclRefExpr>("VarReference");
+      if (!DRE)
+        continue;
+      if (auto D = dyn_cast_or_null<VarDecl>(DRE->getDecl())) {
+        if (D->hasAttr<CUDAConstantAttr>()) {
+          HasConstantVar = true;
+          break;
+        }
+      }
+    }
+    if (HasConstantVar) {
+      report(C->getBeginLoc(),
+             Diagnostics::DEVICE_CONSTANT_VARIABLE_OPTIMIZATIOH, true,
+             StmtStrArg1);
+      return;
+    }
+  }
   Replacement = "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1 + ".get_ptr()";
   requestFeature(HelperFeatureEnum::device_ext);
   emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
