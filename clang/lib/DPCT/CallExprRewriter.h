@@ -1446,8 +1446,9 @@ std::function<std::string(const CallExpr *)> makeQueueStr();
 std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeCallArgCreatorWithCall(unsigned Idx);
 std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx);
-std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx);
-std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx);
+std::function<std::string(const CallExpr *)> getReplacedType(size_t Idx);
+std::function<std::string(const CallExpr *)> getDerefedType(size_t Idx);
+std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx);
 std::function<std::string(const CallExpr *)> makeDeviceStr();
 
 class UserDefinedRewriter : public CallExprRewriter {
@@ -1523,6 +1524,10 @@ public:
     }
     case (OutputBuilder::Kind::DerefedTypeName): {
       OS << getDerefedType(OB.ArgIndex)(Call);
+      return;
+    }
+    case (OutputBuilder::Kind::TemplateArg): {
+      OS << getTemplateArg(OB.ArgIndex)(Call);
       return;
     }
     }

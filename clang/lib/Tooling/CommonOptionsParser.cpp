@@ -401,6 +401,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       std::vector<CompileCommand> CompileCommandsForFile =
           AdjustingCompilations->getCompileCommands(SourceFile);
       for (CompileCommand &CompileCommand : CompileCommandsForFile) {
+        bool IsIncludeSearchPathOpt = false;
         for (auto &I : CompileCommand.CommandLine) {
           if (I.size() > 2 && I.substr(0, 2) == "-I") {
             std::string IncPath = I.substr(2);
@@ -408,6 +409,11 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
             if (StartPos != std::string::npos)
               IncPath = IncPath.substr(StartPos);
             ExtraIncPathList.push_back(IncPath);
+          } else if (I == "-I") {
+            IsIncludeSearchPathOpt = true;
+          } else if (IsIncludeSearchPathOpt) {
+            ExtraIncPathList.push_back(I);
+            IsIncludeSearchPathOpt = false;
           }
         }
       }

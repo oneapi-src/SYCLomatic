@@ -4354,6 +4354,10 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
      MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__align__", "__dpct_align__",
                         HelperFeatureEnum::device_ext)},
+    {"__CUDA_ALIGN__",
+     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                        "__CUDA_ALIGN__", "__dpct_align__",
+                        HelperFeatureEnum::device_ext)},
     {"__noinline__",
      MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__noinline__", "__dpct_noinline__",
@@ -4507,7 +4511,7 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
     return Search->second;
   } else {
 #ifdef DPCT_DEBUG_BUILD
-    llvm::errs() << "[NOTE] Find new API\"" << APIName
+    llvm::errs() << "[NOTE] Find new API \"" << APIName
                  << "\" , please update migrated API database.\n";
     ShowStatus(MigrationError);
     dpctExit(MigrationError);
