@@ -1,6 +1,6 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1
-// RUN: dpct --format-range=none -out-root %T/compat_nvcc_3 %s --cuda-include-path="%cuda-path/include" --stop-on-parse-err --extra-arg="-xc++"
-// RUN: FileCheck %s --match-full-lines --input-file %T/compat_nvcc_3/compat_nvcc_3.cpp.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/compat_with_clang_3 %s --cuda-include-path="%cuda-path/include" --stop-on-parse-err --extra-arg="-xc++"
+// RUN: FileCheck %s --match-full-lines --input-file %T/compat_with_clang_3/compat_with_clang_3.cpp.dp.cpp
 
 #ifdef __CUDACC_VER_MAJOR__
 #define WMMA_ENABLED
