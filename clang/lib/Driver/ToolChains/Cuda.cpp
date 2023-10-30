@@ -46,8 +46,8 @@ bool HasSDKPathOption = false;
 std::string RealSDKIncludePath = "";
 std::string RealSDKPath = "";
 std::vector<std::string> ExtraIncPaths;
-int SDKVersionMajor = 0;
-int SDKVersionMinor = 0;
+int SDKVersionMajor=0;
+int SDKVersionMinor=0;
 
 bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath, CudaVersion& CV) {
   CV = CudaVersion::UNKNOWN;
