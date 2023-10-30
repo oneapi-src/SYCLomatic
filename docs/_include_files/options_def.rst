@@ -691,7 +691,7 @@ The values are:
   group work-items.
 - ``=masked-sub-group-operation``: Experimental helper function used to execute
   sub-group operation with mask.
-- ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix".
+- ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix``.
 - ``=nd_range_barrier``: Experimental helper function used to help cross-group synchronization during migration.
 - ``=occupancy-calculation``: Experimental helper function used to calculate occupancy.
 - ``=user-defined-reductions``: Experimental extension that allows user-defined
