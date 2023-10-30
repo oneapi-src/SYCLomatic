@@ -14615,13 +14615,15 @@ void TypeRemoveRule::runRule(
 REGISTER_RULE(TypeRemoveRule, PassKind::PK_Analysis)
 
 void CompatNVCCRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(functionDecl().bind("FunctionDecl"), this);
+  MF.addMatcher(
+      cxxMethodDecl(hasParent(functionTemplateDecl())).bind("TemplateMethod"),
+      this);
 }
 
 void CompatNVCCRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto FD = getNodeAsType<FunctionDecl>(Result, "FunctionDecl")) {
-    auto SR = FD->getDuplicatedExplicitlySpecifiedTemplateArgumentsRange();
+  if (auto CMD = getNodeAsType<CXXMethodDecl>(Result, "TemplateMethod")) {
+    auto SR = CMD->getDuplicatedExplicitlySpecifiedTemplateArgumentsRange();
     if (SR.isValid()) {
       auto DefinitionSR = getDefinitionRange(SR.getBegin(), SR.getEnd());
       auto Begin = DefinitionSR.getBegin();
