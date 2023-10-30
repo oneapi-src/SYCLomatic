@@ -24,8 +24,8 @@
 // CHECK:TARGET_1_SRC_2 = ./three.cpp
 // CHECK:TARGET_1_OBJ_2 = ./three.o
 // CHECK:TARGET_1_FLAG_2 = ${FLAGS}
-// CHECK:TARGET_0 := foo
-// CHECK:TARGET_1 := full.a
+// CHECK:TARGET_0 := ./foo
+// CHECK:TARGET_1 := ./full.a
 // CHECK:TARGET :=  ${TARGET_0} ${TARGET_1}
 // CHECK:.PHONY:all clean
 // CHECK:OBJS_0 :=  ${TARGET_0_OBJ_0} ${TARGET_0_OBJ_1}

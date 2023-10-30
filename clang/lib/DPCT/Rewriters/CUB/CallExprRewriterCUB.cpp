@@ -19,6 +19,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCUB() {
   RewriterMap->merge(createDeviceRadixSortRewriterMap());
   RewriterMap->merge(createDeviceSegmentedRadixSortRewriterMap());
   RewriterMap->merge(createDeviceSegmentedSortRewriterMap());
+  RewriterMap->merge(createDeviceMergeSortRewriterMap());
   RewriterMap->merge(createDeviceHistgramRewriterMap());
   RewriterMap->merge(createUtilityFunctionsRewriterMap());
 }
