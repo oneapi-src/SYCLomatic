@@ -643,3 +643,8 @@ template <bool is_ture> void foo() {
         }
       });
 }
+
+template <class T> auto foo2(T t) {
+  // CHECK: dpct::make_constant_iterator(std::make_tuple(t, false));
+  return thrust::make_constant_iterator(thrust::make_tuple<T, bool>(t, false));
+}
