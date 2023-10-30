@@ -12,4 +12,7 @@ __global__ void kernelFuncHalfConversion() {
   h2 = make_half2(h, h);
 }
 
-int main() { return 0; }
+int main() {
+  kernelFuncHalfConversion<<<1, 1>>>();
+  return 0;
+}
