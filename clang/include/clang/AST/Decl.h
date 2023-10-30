@@ -2014,6 +2014,10 @@ private:
   /// Provides source range info for duplicated explicitly specified
   /// template arguments range. This syntax is only allowed for CUDA
   /// language.
+  /// If this variable is empty (invalid), it means there is no related
+  /// error in Sema. If it is not empty, it means there is an error
+  /// suppressed in Sema and we need do further modification in the
+  /// CompatWithClangRule migration rule.
   SourceRange DuplicatedExplicitlySpecifiedTemplateArgumentsRange;
 
 #endif

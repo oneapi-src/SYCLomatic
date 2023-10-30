@@ -1,6 +1,6 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1
-// RUN: dpct --format-range=none -out-root %T/compat_nvcc %s --cuda-include-path="%cuda-path/include" --stop-on-parse-err
-// RUN: FileCheck %s --match-full-lines --input-file %T/compat_nvcc/compat_nvcc.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/compat_with_clang %s --cuda-include-path="%cuda-path/include" --stop-on-parse-err
+// RUN: FileCheck %s --match-full-lines --input-file %T/compat_with_clang/compat_with_clang.dp.cpp
 
 template <class T1, class T2> struct AAAAA {
   template <class T3> void foo(T3 x);

@@ -10541,10 +10541,7 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
       } else if (FunctionTemplate) {
         // Function template with explicit template arguments.
 #ifdef SYCLomatic_CUSTOMIZATION
-
         if (getLangOpts().CUDA) {
-          // nvcc (using EDG's frontend) does not check this.
-          // So, for CUDA language, skip this error and mark it in AST.
           NewFD->setDuplicatedExplicitlySpecifiedTemplateArgumentsRange(
               SourceRange(TemplateId->LAngleLoc, TemplateId->RAngleLoc));
         } else {
