@@ -951,8 +951,6 @@ int runDPCT(int argc, const char **argv) {
 
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fgpu-exclude-wrong-side-overloads", ArgumentInsertPosition::BEGIN));
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      "-Wno-c++11-narrowing", ArgumentInsertPosition::BEGIN));
 
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);
