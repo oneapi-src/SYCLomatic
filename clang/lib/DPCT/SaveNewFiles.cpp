@@ -563,14 +563,14 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       if (MapNames::PatternRewriters.empty()) {
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Result.get(), clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Result.get(), clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }
@@ -724,14 +724,14 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       if (MapNames::PatternRewriters.empty()) {
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Result.get(), clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Result.get(), clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }

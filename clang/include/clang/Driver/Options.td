@@ -2032,7 +2032,6 @@ def fencoding_EQ : Joined<["-"], "fencoding=">, Group<f_Group>;
 def ferror_limit_EQ : Joined<["-"], "ferror-limit=">, Group<f_Group>, Visibility<[ClangOption, CLOption, DXCOption]>,
   HelpText<"Set the maximum number of errors to emit before stopping (0 = no limit).">;
 // SYCLomatic_CUSTOMIZATION end
-
 defm exceptions : BoolFOption<"exceptions",
   LangOpts<"Exceptions">, DefaultFalse,
   PosFlag<SetTrue, [], [ClangOption, CC1Option], "Enable">,

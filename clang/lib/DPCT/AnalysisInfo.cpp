@@ -736,11 +736,10 @@ void DpctFileInfo::buildLinesInfo() {
   llvm::Expected<FileEntryRef> Result =
       SM.getFileManager().getFileRef(FilePath);
 
-  if (auto E = Result.takeError()) {
+  if (auto E = Result.takeError())
     return;
-  }
 
-  auto FID = SM.getOrCreateFileID(Result.get(), SrcMgr::C_User);
+  auto FID = SM.getOrCreateFileID(*Result, SrcMgr::C_User);
   auto &Content = SM.getSLocEntry(FID).getFile().getContentCache();
   if (!Content.SourceLineCache) {
     bool Invalid;

@@ -122,17 +122,18 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
                                         StringRef ReplacementText) {
   const std::pair<FileID, unsigned> DecomposedLocation =
       Sources.getDecomposedLoc(Start);
+  OptionalFileEntryRef Entry =
+      Sources.getFileEntryRefForID(DecomposedLocation.first);
 #ifdef SYCLomatic_CUSTOMIZATION
-  if (Sources.getFileEntryRefForID(DecomposedLocation.first).has_value()) {
-  const auto &Entry =
-      Sources.getFileEntryRefForID(DecomposedLocation.first)->getFileEntry();
+  if (Entry.has_value()) {
+    const auto &FileEntry = Entry->getFileEntry();
     // To avoid potential path inconsist issue,
     // using tryGetRealPathName while applicable.
-    if (!Entry.tryGetRealPathName().empty()) {
-      this->FilePath = Entry.tryGetRealPathName().str();
+    if (!FileEntry.tryGetRealPathName().empty()) {
+      this->FilePath = FileEntry.tryGetRealPathName().str();
     }
     else {
-      llvm::SmallString<512> FilePathAbs(Entry.getName());
+      llvm::SmallString<512> FilePathAbs(FileEntry.getName());
       Sources.getFileManager().makeAbsolutePath(FilePathAbs);
       llvm::sys::path::native(FilePathAbs);
       // Need to remove dot to keep the file path
@@ -145,8 +146,6 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
     this->FilePath = std::string(InvalidLocation);
   }
 #else
-  OptionalFileEntryRef Entry =
-      Sources.getFileEntryRefForID(DecomposedLocation.first);
   this->FilePath = std::string(Entry ? Entry->getName() : InvalidLocation);
 #endif // SYCLomatic_CUSTOMIZATION
   this->ReplacementRange = Range(DecomposedLocation.second, Length);
