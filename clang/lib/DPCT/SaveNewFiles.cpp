@@ -553,19 +553,24 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
       tooling::applyAllReplacements(Entry.second, Rewrite);
 
+      llvm::Expected<FileEntryRef> Result =
+          Tool.getFiles().getFileRef(Entry.first);
+
+      if (auto E = Result.takeError()) {
+        continue;
+      }
+
       if (MapNames::PatternRewriters.empty()) {
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                Result.get(), clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                Result.get(), clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }
@@ -711,19 +716,22 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       llvm::raw_os_ostream Stream(File);
       std::string OutputString;
       llvm::raw_string_ostream RSW(OutputString);
+      llvm::Expected<FileEntryRef> Result =
+          Tool.getFiles().getFileRef(Entry.first);
+      if (auto E = Result.takeError()) {
+        continue;
+      }
       if (MapNames::PatternRewriters.empty()) {
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                Result.get(), clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                Result.get(), clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }

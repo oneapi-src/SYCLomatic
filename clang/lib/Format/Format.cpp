@@ -3941,12 +3941,8 @@ llvm::Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
 
   FormatStyle FallbackStyle = getNoStyle();
   if (!getPredefinedStyle(FallbackStyleName, Style.Language, &FallbackStyle))
-<<<<<<< HEAD
-    return make_string_error("Invalid fallback style \"" + FallbackStyleName);
-#endif // SYCLomatic_CUSTOMIZATION
-=======
     return make_string_error("Invalid fallback style: " + FallbackStyleName);
->>>>>>> origin/sycl
+#endif // SYCLomatic_CUSTOMIZATION
 
   llvm::SmallVector<std::unique_ptr<llvm::MemoryBuffer>, 1>
       ChildFormatTextToApply;

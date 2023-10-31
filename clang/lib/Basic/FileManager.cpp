@@ -549,17 +549,14 @@ FileManager::getBufferForFile(FileEntryRef FE, bool isVolatile,
   if (isVolatile || Entry->isNamedPipe())
     FileSize = -1;
 
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
   StringRef Filename = Entry->tryGetRealPathName();
   if (Filename.empty())
-    Filename = Entry->getName();
+    Filename = FE.getName();
 #else
-  StringRef Filename = Entry->getName();
-#endif // SYCLomatic_CUSTOMIZATION
-=======
   StringRef Filename = FE.getName();
->>>>>>> origin/sycl
+#endif // SYCLomatic_CUSTOMIZATION
+
   // If the file is already open, use the open file descriptor.
   if (Entry->File) {
     auto Result = Entry->File->getBuffer(Filename, FileSize,

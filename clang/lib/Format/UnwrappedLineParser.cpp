@@ -3178,18 +3178,13 @@ void UnwrappedLineParser::parseLoopBody(bool KeepBraces, bool WrapRightBrace) {
   keepAncestorBraces();
 
   if (isBlockBegin(*FormatTok)) {
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() == FormatRange::migrated &&
         isAllSpaceUntilNL(FormatTok, SourceMgr)) {
       addUnwrappedLine();
     }
 #endif
-    if (!KeepBraces)
-      FormatTok->setFinalizedType(TT_ControlStatementLBrace);
-=======
     FormatTok->setFinalizedType(TT_ControlStatementLBrace);
->>>>>>> origin/sycl
     FormatToken *LeftBrace = FormatTok;
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock(/*MustBeDeclaration=*/false, /*AddLevels=*/1u,

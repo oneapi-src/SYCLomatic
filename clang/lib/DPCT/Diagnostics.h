@@ -402,8 +402,16 @@ bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
     return false;
 
   SourceManager &SM = SourceManagerForWarning::getSM();
-  FileID FID = SM.getOrCreateFileID(
-      SM.getFileManager().getFile(NativeFormPath).get(), SrcMgr::C_User);
+
+  llvm::Expected<FileEntryRef> Result =
+      SM.getFileManager().getFileRef(NativeFormPath);
+
+  auto E = Result.takeError();
+  if (E) {
+    return false;
+  }
+
+  FileID FID = SM.getOrCreateFileID(Result.get(), SrcMgr::C_User);
 
   unsigned int LineNum = Fileinfo->getLineNumber(Offset);
   unsigned int ColNum = Offset - Fileinfo->getLineInfo(LineNum).Offset + 1;

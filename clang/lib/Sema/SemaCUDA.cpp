@@ -703,7 +703,6 @@ bool HasAllowedCUDADeviceStaticInitializer(Sema &S, VarDecl *VD,
 } // namespace
 
 void Sema::checkAllowedCUDAInitializer(VarDecl *VD) {
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
   // nvcc allows (gives warning though) initializers on __shared__
   // declarations.  So in order to allow migration we're skipping
@@ -712,7 +711,6 @@ void Sema::checkAllowedCUDAInitializer(VarDecl *VD) {
     return;
   }
 #endif // SYCLomatic_CUSTOMIZATION
-=======
   // Return early if VD is inside a non-instantiated template function since
   // the implicit constructor is not defined yet.
   if (const FunctionDecl *FD =
@@ -720,7 +718,6 @@ void Sema::checkAllowedCUDAInitializer(VarDecl *VD) {
     if (FD->isDependentContext())
       return;
 
->>>>>>> origin/sycl
   // Do not check dependent variables since the ctor/dtor/initializer are not
   // determined. Do it after instantiation.
   if (VD->isInvalidDecl() || !VD->hasInit() || !VD->hasGlobalStorage() ||

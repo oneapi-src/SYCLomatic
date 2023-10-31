@@ -2028,15 +2028,11 @@ defm emulated_tls : BoolFOption<"emulated-tls",
           "Use emutls functions to access thread_local variables">,
   NegFlag<SetFalse>>;
 def fencoding_EQ : Joined<["-"], "fencoding=">, Group<f_Group>;
-<<<<<<< HEAD
 // SYCLomatic_CUSTOMIZATION begin
-def ferror_limit_EQ : Joined<["-"], "ferror-limit=">, Group<f_Group>, Flags<[CoreOption]>,
+def ferror_limit_EQ : Joined<["-"], "ferror-limit=">, Group<f_Group>, Visibility<[ClangOption, CLOption, DXCOption]>,
   HelpText<"Set the maximum number of errors to emit before stopping (0 = no limit).">;
 // SYCLomatic_CUSTOMIZATION end
-=======
-def ferror_limit_EQ : Joined<["-"], "ferror-limit=">, Group<f_Group>,
-  Visibility<[ClangOption, CLOption, DXCOption]>;
->>>>>>> origin/sycl
+
 defm exceptions : BoolFOption<"exceptions",
   LangOpts<"Exceptions">, DefaultFalse,
   PosFlag<SetTrue, [], [ClangOption, CC1Option], "Enable">,

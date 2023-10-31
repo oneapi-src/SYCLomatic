@@ -451,24 +451,17 @@ AlignTokenSequence(const FormatStyle &Style, unsigned Start, unsigned End,
 
 #ifdef SYCLomatic_CUSTOMIZATION
     // We should not remove required spaces unless we break the line before.
-<<<<<<< HEAD
     // assert(Changes[i].NewlinesBefore > 0 ||
-    //        Changes[i].Spaces >=
+    //        CurrentChange.Spaces >=
     //            static_cast<int>(Changes[i].Tok->SpacesRequiredBefore) ||
-    //        Changes[i].Tok->is(tok::eof));
-    assert(Shift >= 0);
+    //        CurrentChange.Tok->is(tok::eof));
+    assert(Shift > 0);
 #else
-    assert(Shift >= 0 || Changes[i].NewlinesBefore > 0 ||
-           Changes[i].Spaces >=
-               static_cast<int>(Changes[i].Tok->SpacesRequiredBefore) ||
-           Changes[i].Tok->is(tok::eof));
-#endif
-=======
     assert(Shift > 0 || Changes[i].NewlinesBefore > 0 ||
            CurrentChange.Spaces >=
                static_cast<int>(Changes[i].Tok->SpacesRequiredBefore) ||
            CurrentChange.Tok->is(tok::eof));
->>>>>>> origin/sycl
+#endif
 
     CurrentChange.StartOfTokenColumn += Shift;
     if (i + 1 != Changes.size())
