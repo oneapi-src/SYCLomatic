@@ -53,6 +53,33 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = y1(f0);
   // CHECK: d2 = sycl::ext::intel::math::y1(d0);
   d2 = y1(d0);
+
+  // Double Precision Intrinsics
+
+  // CHECK: d2 = sycl::ext::intel::math::dadd_rd(d0, d1);
+  d2 = __dadd_rd(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dadd_rn(d0, d1);
+  d2 = __dadd_rn(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dadd_ru(d0, d1);
+  d2 = __dadd_ru(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dadd_rz(d0, d1);
+  d2 = __dadd_rz(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dmul_rd(d0, d1);
+  d2 = __dmul_rd(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dmul_rn(d0, d1);
+  d2 = __dmul_rn(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dmul_ru(d0, d1);
+  d2 = __dmul_ru(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dmul_rz(d0, d1);
+  d2 = __dmul_rz(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dsub_rd(d0, d1);
+  d2 = __dsub_rd(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dsub_rn(d0, d1);
+  d2 = __dsub_rn(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dsub_ru(d0, d1);
+  d2 = __dsub_ru(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::dsub_rz(d0, d1);
+  d2 = __dsub_rz(d0, d1);
 }
 
 __global__ void kernelFuncFloat(float *deviceArrayFloat) {
@@ -110,6 +137,33 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = y1f(f0);
   // CHECK: f2 = sycl::ext::intel::math::y1((float)d0);
   f2 = y1f(d0);
+
+  // Single Precision Intrinsics
+
+  // CHECK: f2 = sycl::ext::intel::math::fadd_rd(f0, f1);
+  f2 = __fadd_rd(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fadd_rn(f0, f1);
+  f2 = __fadd_rn(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fadd_ru(f0, f1);
+  f2 = __fadd_ru(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fadd_rz(f0, f1);
+  f2 = __fadd_rz(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fmul_rd(f0, f1);
+  f2 = __fmul_rd(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fmul_rn(f0, f1);
+  f2 = __fmul_rn(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fmul_ru(f0, f1);
+  f2 = __fmul_ru(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fmul_rz(f0, f1);
+  f2 = __fmul_rz(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fsub_rd(f0, f1);
+  f2 = __fsub_rd(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fsub_rn(f0, f1);
+  f2 = __fsub_rn(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fsub_ru(f0, f1);
+  f2 = __fsub_ru(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fsub_rz(f0, f1);
+  f2 = __fsub_rz(f0, f1);
 }
 
 __global__ void kernelFuncHalf() {

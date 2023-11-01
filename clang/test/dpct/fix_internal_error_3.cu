@@ -10,6 +10,10 @@
 
 #include "fix_internal_error_3.h"
 
+// Test description:
+// This test is to cover UnresolvedLookupExpr node matched in BLASFunctionCallRule.
+// getAssistNodeAsType need to be used when the source range has been marked as
+// "visited"
 template <typename T> void foo(int a, int b) {
   cublasHandle_t handle;
   cudaDataType_t AType;

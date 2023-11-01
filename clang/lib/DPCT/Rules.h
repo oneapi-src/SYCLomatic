@@ -277,7 +277,8 @@ public:
     Deref,
     TypeName,
     AddrOf,
-    DerefedTypeName
+    DerefedTypeName,
+    TemplateArg
   };
   std::string RuleName;
   std::string RuleFile;

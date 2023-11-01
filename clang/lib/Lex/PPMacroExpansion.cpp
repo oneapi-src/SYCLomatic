@@ -1930,10 +1930,10 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
           return II && isTargetEnvironment(getTargetInfo(), II);
         });
 #ifdef SYCLomatic_CUSTOMIZATION
-  // Treat __CUDA_ARCH__ as 600 in code
+  // Treat __CUDA_ARCH__ as 900 in code
   } else if (LangOpts.CUDA && II->getName() == "__CUDA_ARCH__") {
     if(GetRunRound() == 0)
-      OS << 600;
+      OS << 900;
     else
       OS << 0;
     Tok.setKind(tok::numeric_constant);
