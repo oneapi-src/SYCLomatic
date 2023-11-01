@@ -629,6 +629,12 @@ public:
         T(std::move(S)) {
     this->NotFormatFlag = false;
   }
+  ReplaceText(const SourceLocation &Begin, const SourceLocation &End,
+              std::string &&S)
+      : TextModification(TMID::ReplaceText), BeginLoc(Begin),
+        Len(End.getRawEncoding() - Begin.getRawEncoding()), T(std::move(S)) {
+    this->NotFormatFlag = false;
+  }
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
               bool NotFormatFlag)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
