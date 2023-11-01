@@ -10,3 +10,15 @@
 void foo1(int a, int b) {
   dim3 block{min(512, uint32_t(a * b))};
 }
+
+
+template <class T1, class T2> struct AAAAA {
+  template <class T3> void foo(T3 x);
+};
+
+// CHECK: template <typename T4, typename T5>
+// CHECK-NEXT: template <typename T6>
+// CHECK-NEXT: void AAAAA<T4, T5>::foo(T6 x) {}
+template <typename T4, typename T5>
+template <typename T6>
+void AAAAA<T4, T5>::foo<T6>(T6 x) {}

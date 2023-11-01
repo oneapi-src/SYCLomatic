@@ -277,14 +277,14 @@ __host__ __device__ int test(T a, T b){
 
 // CHECK: int test1(const sycl::nd_item<3> &item_ct1){
 // CHECK-NEXT:   #if DPCT_COMPATIBILITY_TEMP > 800
-// CHECK-NEXT:     return threadIdx.x > 8;
+// CHECK-NEXT:     return item_ct1.get_local_id(2) > 8;
 // CHECK-NEXT:   #elif DPCT_COMPATIBILITY_TEMP > 700
 // CHECK-NEXT:     return threadIdx.x > 7;
-// CHECK-NEXT:   #elif DPCT_COMPATIBILITY_TEMP > 600
+// CHECK-NEXT:   #elif __CUDA_ARCH__ > 600
 // CHECK-NEXT:     return threadIdx.x > 6;
-// CHECK-NEXT:   #elif DPCT_COMPATIBILITY_TEMP > 500
-// CHECK-NEXT:     return item_ct1.get_local_id(2) > 5;
-// CHECK-NEXT:   #elif DPCT_COMPATIBILITY_TEMP > 400
+// CHECK-NEXT:   #elif __CUDA_ARCH__ > 500
+// CHECK-NEXT:     return threadIdx.x > 5;
+// CHECK-NEXT:   #elif __CUDA_ARCH__ > 400
 // CHECK-NEXT:     return threadIdx.x > 4;
 // CHECK-NEXT:   #elif __CUDA_ARCH__ > 300
 // CHECK-NEXT:     return threadIdx.x > 3;
