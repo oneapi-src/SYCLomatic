@@ -1598,11 +1598,12 @@ void emit_cmake_warning(const char *bin) {
           bin[len - 3] == 'a' && bin[len - 2] == 'k' && bin[len - 1] == 'e') {
     perror(
         "Warning: cmake is called during make running: please run make first "
-        "to make "
-        "sure cmake configure steps are finished, then run \"intercept-build "
-        "make -B\" to generate compilation database.\n");
+        "to make sure cmake configure steps are finished, then run "
+        "\"intercept-build make -B\" to generate compilation database. if "
+        "cmake configure steps are done, please ignore this message.\n");
   }
 }
+
 
 // Replace the command compiler with path to command "intercept-stub" with path.
 // src could be:"/path/to/clang++",
@@ -1735,17 +1736,6 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   fprintf(fd, "%s%c", cwd, RS);
   size_t const argc = bear_strings_length(argv);
 #ifdef SYCLomatic_CUSTOMIZATION
-
-  for (size_t it = 0; it < argc; ++it) {
-    FILE *fd = fopen("./lock_log.txt", "a+");
-    fprintf(fd, " %s%c ", argv[it], US);
-    fclose(fd);
-  }
-  {
-    FILE *fd = fopen("./lock_log.txt", "a+");
-    fprintf(fd, "\n");
-    fclose(fd);
-  }
 
   emit_cmake_warning(argv[0]);
 
