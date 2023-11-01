@@ -14702,3 +14702,40 @@ void TypeRemoveRule::runRule(
 }
 
 REGISTER_RULE(TypeRemoveRule, PassKind::PK_Analysis)
+
+// The EDG frontend can allow code like below:
+//
+//     template <class T1, class T2> struct AAAAA {
+//       template <class T3> void foo(T3 x);
+//     };
+//     template <typename T4, typename T5>
+//     template <typename T6>
+//     void AAAAA<T4, T5>::foo<T6>(T6 x) {}
+//
+// But clang/gcc emits error.
+// We suppress the error in Sema and record the source range and remove
+// the "invalid" code in this rule.
+void CompatWithClangRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      cxxMethodDecl(hasParent(functionTemplateDecl())).bind("TemplateMethod"),
+      this);
+}
+
+void CompatWithClangRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto CMD = getNodeAsType<CXXMethodDecl>(Result, "TemplateMethod")) {
+    auto SR = CMD->getDuplicatedExplicitlySpecifiedTemplateArgumentsRange();
+    if (SR.isValid()) {
+      auto DefinitionSR = getDefinitionRange(SR.getBegin(), SR.getEnd());
+      auto Begin = DefinitionSR.getBegin();
+      auto End =
+          DefinitionSR.getEnd().getLocWithOffset(Lexer::MeasureTokenLength(
+              DefinitionSR.getEnd(), DpctGlobalInfo::getSourceManager(),
+              DpctGlobalInfo::getContext().getLangOpts()));
+      auto Length = End.getRawEncoding() - Begin.getRawEncoding();
+      emplaceTransformation(new ReplaceText(Begin, Length, ""));
+    }
+  }
+}
+
+REGISTER_RULE(CompatWithClangRule, PassKind::PK_Migration)
