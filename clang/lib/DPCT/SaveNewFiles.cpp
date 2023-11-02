@@ -455,8 +455,15 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     auto GroupResult = groupReplacementsByFile(
         Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements());
     for (auto &Entry : GroupResult) {
+#if defined(_WIN32)
+      OutPath =
+          StringRef(DpctGlobalInfo::removeSymlinks(
+                        Rewrite.getSourceMgr().getFileManager(), Entry.first))
+              .lower();
+#else
       OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
           Rewrite.getSourceMgr().getFileManager(), Entry.first));
+#endif
       makeCanonical(OutPath);
       bool HasRealReplacements = true;
       auto Repls = Entry.second;

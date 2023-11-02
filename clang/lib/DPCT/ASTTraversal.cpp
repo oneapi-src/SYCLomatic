@@ -809,7 +809,13 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
       return;
     }
 
-    std::string InFile = SM.getFilename(Loc).str();
+    std::string InFile;
+#if defined(_WIN32)
+    InFile = SM.getFilename(Loc).lower();
+#else
+    InFile = SM.getFilename(Loc).str();
+#endif
+
     InFile = getAbsolutePath(InFile);
     makeCanonical(InFile);
     if (IsFileInCmd || ProcessAllFlag ||
