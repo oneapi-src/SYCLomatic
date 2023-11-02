@@ -521,7 +521,7 @@ static void writeFragment(raw_ostream &OS, const MCAssembler &Asm,
   // FIXME: Embed in fragments instead?
   uint64_t FragmentSize = Asm.computeFragmentSize(Layout, F);
 
-  support::endianness Endian = Asm.getBackend().Endian;
+  llvm::endianness Endian = Asm.getBackend().Endian;
 
   if (const MCEncodedFragment *EF = dyn_cast<MCEncodedFragment>(&F))
     Asm.writeFragmentPadding(OS, *EF, FragmentSize);
@@ -606,7 +606,7 @@ static void writeFragment(raw_ostream &OS, const MCAssembler &Asm,
     // Duplicate V into Data as byte vector to reduce number of
     // writes done. As such, do endian conversion here.
     for (unsigned I = 0; I != VSize; ++I) {
-      unsigned index = Endian == support::little ? I : (VSize - I - 1);
+      unsigned index = Endian == llvm::endianness::little ? I : (VSize - I - 1);
       Data[I] = uint8_t(V >> (index * 8));
     }
     for (unsigned I = VSize; I < MaxChunkSize; ++I)
@@ -1009,8 +1009,11 @@ bool MCAssembler::relaxLEB(MCAsmLayout &Layout, MCLEBFragment &LF) {
   uint64_t OldSize = LF.getContents().size();
   int64_t Value;
   bool Abs = LF.getValue().evaluateKnownAbsolute(Value, Layout);
-  if (!Abs)
-    report_fatal_error("sleb128 and uleb128 expressions must be absolute");
+  if (!Abs) {
+    getContext().reportError(LF.getValue().getLoc(),
+                             Twine(LF.isSigned() ? ".s" : ".u") +
+                                 "leb128 expression is not absolute");
+  }
   SmallString<8> &Data = LF.getContents();
   Data.clear();
   raw_svector_ostream OSE(Data);

@@ -32,7 +32,6 @@ private:
 #ifdef SYCLomatic_CUSTOMIZATION
   bool IsIncludePathValid = false;
   bool IsVersionSupported = false;
-  bool IsSupportedVersionAvailable = false;
 #endif // SYCLomatic_CUSTOMIZATION
   CudaVersion Version = CudaVersion::UNKNOWN;
   std::string InstallPath;
@@ -61,12 +60,10 @@ public:
   /// Check whether we detected a valid Cuda install.
   bool isValid() const { return IsValid; }
 #ifdef SYCLomatic_CUSTOMIZATION
-  /// Check whether path for CUDA header files specified by --cuda-include-path is valid.
+  /// Check whether path for CUDA header files is valid.
   bool isIncludePathValid() const { return IsIncludePathValid; }
-  /// Check whether version of CUDA header files specified by --cuda-include-path is supported.
+  /// Check whether version of CUDA header files is supported.
   bool isVersionSupported() const { return IsVersionSupported; }
-  /// Check whether supported version of CUDA header files is available.
-  bool isSupportedVersionAvailable() const { return IsSupportedVersionAvailable; }
   /// validate whether FilePath is the directory of CUDA header files
   bool validateCudaHeaderDirectory(const std::string &FilePath,
                                    const Driver &D);
@@ -132,7 +129,7 @@ public:
 // Runs nvlink, which links GPU object files ("cubin" files) into a single file.
 class LLVM_LIBRARY_VISIBILITY Linker : public Tool {
 public:
-  Linker(const ToolChain &TC) : Tool("NVPTX::Linker", "fatbinary", TC) {}
+  Linker(const ToolChain &TC) : Tool("NVPTX::Linker", "nvlink", TC) {}
 
   bool hasIntegratedCPP() const override { return false; }
 

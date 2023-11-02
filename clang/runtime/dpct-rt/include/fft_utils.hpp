@@ -623,13 +623,13 @@ public:
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
       if (_q->get_device().is_gpu()) {
-        auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
+        auto data = dpct::detail::get_memory<float>(ptr);
         _desc_sc->set_workspace(data);
       }
     } else if (_input_type == library_data_t::complex_double &&
                _output_type == library_data_t::complex_double) {
       if (_q->get_device().is_gpu()) {
-        auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
+        auto data = dpct::detail::get_memory<double>(ptr);
         _desc_dc->set_workspace(data);
       }
     } else if ((_input_type == library_data_t::real_float &&
@@ -637,7 +637,7 @@ public:
                (_input_type == library_data_t::complex_float &&
                 _output_type == library_data_t::real_float)) {
       if (_q->get_device().is_gpu()) {
-        auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
+        auto data = dpct::detail::get_memory<float>(ptr);
         _desc_sr->set_workspace(data);
       }
     } else if ((_input_type == library_data_t::real_double &&
@@ -645,7 +645,7 @@ public:
                (_input_type == library_data_t::complex_double &&
                 _output_type == library_data_t::real_double)) {
       if (_q->get_device().is_gpu()) {
-        auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
+        auto data = dpct::detail::get_memory<double>(ptr);
         _desc_dr->set_workspace(data);
       }
     } else {
@@ -1167,8 +1167,7 @@ private:
 #define COMPUTE(DESC)                                                          \
   {                                                                            \
     if (_is_inplace) {                                                         \
-      auto data_input =                                                        \
-          dpct::detail::get_memory(reinterpret_cast<T *>(input));              \
+      auto data_input = dpct::detail::get_memory<T>(input);                    \
       if (_direction == fft_direction::forward) {                              \
         oneapi::mkl::dft::compute_forward<                                     \
             std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
@@ -1177,10 +1176,8 @@ private:
             std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
       }                                                                        \
     } else {                                                                   \
-      auto data_input =                                                        \
-          dpct::detail::get_memory(reinterpret_cast<T *>(input));              \
-      auto data_output =                                                       \
-          dpct::detail::get_memory(reinterpret_cast<T *>(output));             \
+      auto data_input = dpct::detail::get_memory<T>(input);                    \
+      auto data_output = dpct::detail::get_memory<T>(output);                  \
       if (_direction == fft_direction::forward) {                              \
         oneapi::mkl::dft::compute_forward<                                     \
             std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, \

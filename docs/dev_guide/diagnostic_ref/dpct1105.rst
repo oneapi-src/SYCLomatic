@@ -46,7 +46,7 @@ results in the following migrated SYCL code:
      */
      dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng1;
      /*
-     DPCT1105:1: The mcg59 random number generator is used. The subsequence argument “2” is ignored. You need to verify the    migration.
+     DPCT1105:1: The mcg59 random number generator is used. The subsequence argument "2" is ignored. You need to verify the    migration.
      */
      rng1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(1, 3);
      u = rng1.generate<oneapi::mkl::rng::device::uniform_bits<std::uint32_t>, 1>();

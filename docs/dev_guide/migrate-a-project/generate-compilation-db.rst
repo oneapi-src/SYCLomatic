@@ -149,7 +149,7 @@ You can use the `folder-options-dpct <https://github.com/oneapi-src/oneAPI-sampl
 
       make VERBOSE=1 -B > ./build_log.txt
 
-	The content of “build_log.txt” should look like the following:
+	The content of ``build_log.txt`` should look like the following:
 
 	.. code-block:: none
        :linenos:

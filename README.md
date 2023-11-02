@@ -182,7 +182,7 @@ Follow instructions from the link below to build and run tests:
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+See [LICENSE](LICENSE.TXT) for details.
 
 ## Contributing
 

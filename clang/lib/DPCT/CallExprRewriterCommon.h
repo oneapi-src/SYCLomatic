@@ -69,6 +69,20 @@ inline std::string getTypecastName(const CallExpr *Call) {
   return {};
 }
 
+inline const Expr *getAddrOfedExpr(const Expr *E) {
+  E = E->IgnoreImplicitAsWritten()->IgnoreParens();
+  if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == clang::UO_Deref) {
+      return UO->getSubExpr()->IgnoreImplicitAsWritten()->IgnoreParens();
+    }
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == clang::OO_Star && COCE->getNumArgs() == 1) {
+      return COCE->getArg(0)->IgnoreImplicitAsWritten()->IgnoreParens();
+    }
+  }
+  return nullptr;
+}
+
 // In AST, &SubExpr could be recognized as UnaryOperator or CXXOperatorCallExpr.
 // To get the SubExpr from the original Expr, both cases need to be handled.
 inline const Expr *getDereferencedExpr(const Expr *E) {
@@ -81,8 +95,6 @@ inline const Expr *getDereferencedExpr(const Expr *E) {
     if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
       return COCE->getArg(0)->IgnoreImplicitAsWritten()->IgnoreParens();
     }
-  } else if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(E)) {
-    return ArraySub->getBase()->IgnoreImplicitAsWritten()->IgnoreParens();
   }
   return nullptr;
 }
@@ -232,6 +244,13 @@ inline std::function<DerefStreamExpr(const CallExpr *)>
 makeDerefStreamExprCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> DerefStreamExpr {
     return DerefStreamExpr(C->getArg(Idx));
+  };
+}
+
+inline std::function<AddrOfExpr(const CallExpr *)>
+makeAddrOfExprCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> AddrOfExpr {
+    return AddrOfExpr(C->getArg(Idx));
   };
 }
 
@@ -786,6 +805,35 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       return DpctGlobalInfo::getReplacedTypeName(DerefQT);
     }
     return TypeStr;
+  };
+}
+
+inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
+  return [=](const CallExpr *C) -> std::string {
+    std::string TemplateArgStr = "";
+    if (auto *Callee = dyn_cast<DeclRefExpr>(C->getCallee()->IgnoreParenImpCasts())) {
+      auto TAL = Callee->template_arguments();
+      if (TAL.size() <= Idx) {
+        return TemplateArgStr;
+      }
+      const TemplateArgument &TA = TAL[Idx].getArgument();
+      TemplateArgumentInfo TAI;
+      switch (TA.getKind()) {
+      case TemplateArgument::Integral:
+        TAI.setAsNonType(TA.getAsIntegral());
+        break;
+      case TemplateArgument::Expression:
+        TAI.setAsNonType(TA.getAsExpr());
+        break;
+      case TemplateArgument::Type:
+        TAI.setAsType(TA.getAsType());
+        break;
+      default:
+        break;
+      }
+      TemplateArgStr = TAI.getString();
+    }
+    return TemplateArgStr;
   };
 }
 
@@ -1710,6 +1758,25 @@ public:
   }
 };
 
+class CheckArgIsConstantIntWithUnsignedValue {
+  unsigned int value;
+  int index;
+
+public:
+  CheckArgIsConstantIntWithUnsignedValue(int idx, unsigned int val)
+      : value(val), index(idx) {}
+  bool operator()(const CallExpr *C) {
+    auto Arg = C->getArg(index);
+    Expr::EvalResult Result;
+    if (!Arg->isValueDependent() &&
+        Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
+        Result.Val.getInt().getZExtValue() == value) {
+      return true;
+    }
+    return false;
+  }
+};
+
 class CheckArgIsDefaultCudaStream {
   unsigned ArgIndex;
 
@@ -1948,6 +2015,7 @@ public:
 #define SUBGROUPSIZE_FACTORY(IDX, NEWFUNCNAME, x)                              \
   createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
 #define STREAM(x) makeDerefStreamExprCreator(x)
+#define ADDROF(x) makeAddrOfExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
 #define DEREF_CAST_IF_NEED(T, S) makeDerefCastIfNeedExprCreator(T, S)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})

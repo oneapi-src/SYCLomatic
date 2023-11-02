@@ -20,7 +20,7 @@ _c2s_dpct_filedir()
 
 _c2s_dpct()
 {
-  local cur prev words cword arg flags w1 w2
+  local cur prev words cword arg flags w1 w2 opt
   # If latest bash-completion is not supported just initialize COMPREPLY and
   # initialize variables by setting manually.
   _init_completion -n 2> /dev/null
@@ -48,6 +48,28 @@ _c2s_dpct()
 
   # expand ~ to $HOME
   eval local path=${COMP_WORDS[0]}
+
+  # Get the last option.
+  if [[ $w1 == '=' ]]; then
+    opt=$w2
+  else
+    opt=$w1
+  fi
+  # Handle --query-api-mapping value autocompletion.
+  if [[ $opt == "--query-api-mapping" || $opt == "-query-api-mapping" ]]; then
+    flags=$( "$path" --query-api-mapping=- 2>/dev/null | sed -e $'s/\t.*//' )
+    if [[ "$flags" == "$(echo -e '\n')" ]]; then
+      [[ "$cur" == '=' || "$cur" == -*= ]] && cur=""
+      _c2s_dpct_filedir
+    elif [[ "$cur" == '=' ]]; then
+      COMPREPLY=( $( compgen -W "$flags" -- "") )
+    else
+      [[ "${flags: -1}" == '=' ]] && compopt -o nospace 2> /dev/null
+      COMPREPLY=( $( compgen -W "$flags" -- "$cur" ) )
+    fi
+    return
+  fi
+
   # Use $'\t' so that bash expands the \t for older versions of sed.
   flags=$( "$path" --autocomplete="$arg" 2>/dev/null | sed -e $'s/\t.*//' )
   # If c2s/dpct is old that it does not support --autocomplete,

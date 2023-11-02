@@ -735,10 +735,13 @@ void DpctFileInfo::buildLinesInfo() {
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
 
-  auto FE = SM.getFileManager().getFile(FilePath);
-  if (std::error_code ec = FE.getError())
+  llvm::Expected<FileEntryRef> Result =
+      SM.getFileManager().getFileRef(FilePath);
+
+  if (auto E = Result.takeError())
     return;
-  auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
+
+  auto FID = SM.getOrCreateFileID(*Result, SrcMgr::C_User);
   auto &Content = SM.getSLocEntry(FID).getFile().getContentCache();
   if (!Content.SourceLineCache) {
     bool Invalid;
@@ -1020,7 +1023,7 @@ void DpctFileInfo::buildReplacements() {
     if (std::get<2>(AtomicInfo.second))
       DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
                                Diagnostics::API_NOT_OCCURRED_IN_AST, true,
-                               false, std::get<1>(AtomicInfo.second));
+                               true, std::get<1>(AtomicInfo.second));
   }
 
   for (auto &DescInfo : EventSyncTypeMap) {
@@ -2646,7 +2649,6 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     return;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts());
   buildTextureObjectArgsInfo(CE);
-
   bool HasImplicitArg = false;
   if (auto FD = CE->getDirectCallee()) {
     IsAllTemplateArgsSpecified = deduceTemplateArguments(CE, FD, TemplateArgs);
@@ -2674,21 +2676,51 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
           DpctGlobalInfo::getSourceManager().getFileOffset(CE->getRParenLoc());
     } else if (FuncInfo->NonDefaultParamNum == 0) {
       // if all params have default value
-      ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
-          CE->getArg(HasImplicitArg ? 1 : 0)->getBeginLoc());
+      if (CE->getNumArgs()) {
+        ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
+            CE->getArg(HasImplicitArg ? 1 : 0)->getBeginLoc());
+      } else {
+        ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
+            CE->getRParenLoc());
+      }
     } else {
       // if some params have default value, set ExtraArgLoc to the location
       // before the comma
       if (CE->getNumArgs() > FuncInfo->NonDefaultParamNum - 1) {
         auto &SM = DpctGlobalInfo::getSourceManager();
-        auto TokenLoc = Lexer::getLocForEndOfToken(
-            getActualInsertLocation(
-                CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg)
-                    ->getEndLoc(),
-                SM, DpctGlobalInfo::getContext().getLangOpts()),
-            0, SM, DpctGlobalInfo::getContext().getLangOpts());
+        auto CERange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
+        auto TempLoc = Lexer::getLocForEndOfToken(CERange.getEnd(),  0, SM, DpctGlobalInfo::getContext().getLangOpts());
+        auto PairRange = getRangeInRange(CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg), CERange.getBegin(), TempLoc);
+        auto RealEnd = PairRange.second;
+        auto IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+            getCombinedStrFromLoc(RealEnd));
+        if (IT !=
+                dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+            IT->second->TokenIndex == IT->second->NumTokens) {
+          RealEnd = SM.getImmediateExpansionRange(
+                          CE->getArg(FuncInfo->NonDefaultParamNum - 1 +
+                                     HasImplicitArg)
+                              ->getEndLoc())
+                        .getEnd();
+          RealEnd = Lexer::getLocForEndOfToken(
+              RealEnd, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+          IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+              getCombinedStrFromLoc(RealEnd));
+        }
+        while (
+            IT !=
+                dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+            RealEnd.isMacroID() &&
+            IT->second->TokenIndex == IT->second->NumTokens) {
+          RealEnd = SM.getImmediateExpansionRange(RealEnd).getEnd();
+          RealEnd = Lexer::getLocForEndOfToken(
+              RealEnd, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+          IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+              getCombinedStrFromLoc(RealEnd));
+        }
+
         ExtraArgLoc =
-            DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
+            DpctGlobalInfo::getSourceManager().getFileOffset(RealEnd);
       } else {
         ExtraArgLoc = 0;
       }
@@ -3731,7 +3763,7 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
       llvm::raw_string_ostream OS(Ret);
       OS << "auto &" << getName() << " = "
          << "*" << MapNames::getClNamespace()
-         << "ext::oneapi::group_local_memory<" << getType()->getBaseName();
+         << "ext::oneapi::group_local_memory_for_overwrite<" << getType()->getBaseName();
       for (auto &ArraySize : getType()->getRange()) {
         OS << "[" << ArraySize.getSize() << "]";
       }

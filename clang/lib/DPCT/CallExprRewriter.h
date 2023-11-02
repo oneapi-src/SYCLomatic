@@ -651,6 +651,61 @@ void printCapture(StreamT &Stream, bool IsCaptureRef) {
     Stream << "[=]";
 }
 
+class AddrOfExpr {
+  bool DerefRemoved = false, NeedParens = false;
+  const Expr *E = nullptr;
+  const CallExpr *C = nullptr;
+
+  template <class StreamT>
+  void print(StreamT &Stream, ExprAnalysis &EA, bool IgnoreDerefOp) const {
+    if (!DerefRemoved && !IgnoreDerefOp)
+      Stream << "&";
+
+    if (NeedParens) {
+      printWithParens(Stream, EA, E);
+    } else {
+      dpct::print(Stream, EA, E);
+    }
+  }
+
+  template <class StreamT>
+  void print(StreamT &Stream, ArgumentAnalysis &AA, bool IgnoreDerefOp,
+             std::pair<const CallExpr *, const Expr *> P) const {
+    if (!DerefRemoved && !IgnoreDerefOp)
+      Stream << "&";
+
+    AA.setCallSpelling(C);
+    if (NeedParens) {
+      printWithParens(Stream, AA, P);
+    } else {
+      dpct::print(Stream, AA, P);
+    }
+  }
+
+public:
+  AddrOfExpr(const Expr *E, const CallExpr *C = nullptr);
+  template <class StreamT>
+  void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
+    print(Stream);
+  }
+  template <class StreamT> void printMemberBase(StreamT &Stream) const {
+    ExprAnalysis EA;
+    print(Stream, EA, true);
+    printMemberOp(Stream, !DerefRemoved);
+  }
+
+  template <class StreamT> void print(StreamT &Stream) const {
+    if (C == nullptr) {
+      ExprAnalysis EA;
+      print(Stream, EA, false);
+    } else {
+      ArgumentAnalysis AA;
+      std::pair<const CallExpr *, const Expr *> ExprPair(C, E);
+      print(Stream, AA, false, ExprPair);
+    }
+  }
+};
+
 class DerefExpr {
   bool AddrOfRemoved = false, NeedParens = false;
   const Expr *E = nullptr;
@@ -1391,8 +1446,9 @@ std::function<std::string(const CallExpr *)> makeQueueStr();
 std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeCallArgCreatorWithCall(unsigned Idx);
 std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx);
-std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx);
-std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx);
+std::function<std::string(const CallExpr *)> getReplacedType(size_t Idx);
+std::function<std::string(const CallExpr *)> getDerefedType(size_t Idx);
+std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx);
 std::function<std::string(const CallExpr *)> makeDeviceStr();
 
 class UserDefinedRewriter : public CallExprRewriter {
@@ -1468,6 +1524,10 @@ public:
     }
     case (OutputBuilder::Kind::DerefedTypeName): {
       OS << getDerefedType(OB.ArgIndex)(Call);
+      return;
+    }
+    case (OutputBuilder::Kind::TemplateArg): {
+      OS << getTemplateArg(OB.ArgIndex)(Call);
       return;
     }
     }
