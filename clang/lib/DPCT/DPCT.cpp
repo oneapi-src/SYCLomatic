@@ -1148,8 +1148,7 @@ int runDPCT(int argc, const char **argv) {
 
   if (DpctGlobalInfo::isQueryAPIMapping()) {
     llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
-                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET
-                 << "Is migrated to" << QueryAPIMappingOpt << ":";
+                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET;
     DiagnosticsEngine Diagnostics(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
         IntrusiveRefCntPtr<DiagnosticOptions>(new DiagnosticOptions()));
@@ -1162,8 +1161,8 @@ int runDPCT(int argc, const char **argv) {
     const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
     static const std::string StartStr{"// Start"};
     static const std::string EndStr{"// End"};
+    std::string MigratedStr{""};
     bool Flag = false;
-    llvm::outs() << llvm::raw_ostream::BLUE;
     for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
          I.MoveToNextPiece()) {
       size_t StartPos = 0;
@@ -1180,10 +1179,16 @@ int runDPCT(int argc, const char **argv) {
           EndPos = TempStr.find_last_of('\n') + 1;
           Flag = false;
         }
-        llvm::outs() << I.piece().substr(StartPos, EndPos - StartPos);
+        MigratedStr += I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
-    llvm::outs() << llvm::raw_ostream::RESET;
+    if (MigratedStr.find_first_not_of(" \n") == std::string::npos) {
+      llvm::outs() << "The API is Removed.\n";
+    } else {
+      llvm::outs() << "Is migrated to" << QueryAPIMappingOpt << ":"
+                   << llvm::raw_ostream::BLUE << MigratedStr
+                   << llvm::raw_ostream::RESET;
+    }
     return MigrationSucceeded;
   }
 
