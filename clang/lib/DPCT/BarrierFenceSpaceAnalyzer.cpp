@@ -372,11 +372,13 @@ const ArraySubscriptExpr *getArraySubscriptExpr(const DeclRefExpr *Node) {
   return ASE;
 }
 
-// Match pattern:
+// This function matches the pattern "a += b":
 // CompoundAssignOperator '+='
 // |-DeclRefExpr
 // `-ImplicitCastExpr <LValueToRValue>
 //   `-DeclRefExpr
+// If it is matched, return true and the 2nd arg is the string of b.
+// If it isn't matched. return false.
 bool isIncPattern(const DeclRefExpr *DRE, std::string &RHSStr) {
   const CompoundAssignOperator *CO =
       DpctGlobalInfo::findParent<CompoundAssignOperator>(DRE);
@@ -392,8 +394,31 @@ bool isIncPattern(const DeclRefExpr *DRE, std::string &RHSStr) {
   return true;
 }
 
+// This function tracks the definition of Idx Expr in an ArraySubscriptExpr.
+// If the Idx Expr is constant, return {idx_init_expr, false, ""}
+// E.g.,
+//     __global__ void foo() {
+//       ...
+//       int Idx = threadIdx.x;
+//       mem[Idx] = var;
+//       ...
+//     }
+// Return {threadIdx.x, false, ""}
+// If the Idx Expr is not constant, but it is in a non-nest loop and the inc
+// step is constant, return {idx_init_expr, true, step_str}
+// E.g.,
+//     __global__ void foo() {
+//       ...
+//       int Idx = threadIdx.x;
+//       loop {
+//         mem[Idx] = var;
+//         Idx += step;
+//       }
+//       ...
+//     }
+// Return {threadIdx.x, true, "step"}
 std::tuple<const Expr *, bool, std::string>
-getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
+getIdxExprOfASE(const ArraySubscriptExpr *ASE) {
   bool IsIdxInc = false;
 
   // IdxVD must be local variable and must be defined in this function
@@ -414,6 +439,7 @@ getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
   // VD's DRE should:
   // (1) be used as rvalue; Or
   // (2) meet pattern as "idx += step" and must be in the same loop of ASE
+  //     and there is no nested loop
   auto DREMatcher = findAll(declRefExpr(isDeclSameAs(IdxVD)).bind("DRE"));
   auto MatchedResults =
       match(DREMatcher, *IdxVDContext, DpctGlobalInfo::getContext());
@@ -728,7 +754,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
   const ArraySubscriptExpr *ASE = getArraySubscriptExpr(DRE);
   if (!ASE)
     return true;
-  auto Res = getIdxOfASEConstValueExpr(ASE);
+  auto Res = getIdxExprOfASE(ASE);
   if (!std::get<0>(Res))
     return true;
 
