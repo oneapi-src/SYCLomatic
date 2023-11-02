@@ -808,6 +808,35 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
   };
 }
 
+inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
+  return [=](const CallExpr *C) -> std::string {
+    std::string TemplateArgStr = "";
+    if (auto *Callee = dyn_cast<DeclRefExpr>(C->getCallee()->IgnoreParenImpCasts())) {
+      auto TAL = Callee->template_arguments();
+      if (TAL.size() <= Idx) {
+        return TemplateArgStr;
+      }
+      const TemplateArgument &TA = TAL[Idx].getArgument();
+      TemplateArgumentInfo TAI;
+      switch (TA.getKind()) {
+      case TemplateArgument::Integral:
+        TAI.setAsNonType(TA.getAsIntegral());
+        break;
+      case TemplateArgument::Expression:
+        TAI.setAsNonType(TA.getAsExpr());
+        break;
+      case TemplateArgument::Type:
+        TAI.setAsType(TA.getAsType());
+        break;
+      default:
+        break;
+      }
+      TemplateArgStr = TAI.getString();
+    }
+    return TemplateArgStr;
+  };
+}
+
 // Can only be used if CheckCanUseTemplateMalloc is true.
 inline std::function<std::string(const CallExpr *C)> getDoubleDerefedType(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
@@ -1460,22 +1489,24 @@ public:
     SourceExpr = SourceExpr->IgnoreImpCasts();
     if (auto FD = DpctGlobalInfo::getParentFunction(Call)) {
       auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
-      auto CallInfo = FuncInfo->addCallee(Call);
-      if (auto ME = dyn_cast<MemberExpr>(SourceExpr)) {
-        auto MemberInfo =
-            CallInfo->addStructureTextureObjectArg(SourceIdx, ME, false);
-        if (MemberInfo) {
-          FuncInfo->addTexture(MemberInfo);
-          MemberInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
-            TexType);
-          SourceName = MemberInfo->getName();
-          return createRewriter(Call, RetAssign, SourceName);
-        }
-      } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
-        auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
-        if (TexInfo) {
-          TexInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
-            TexType);
+      if (FuncInfo) {
+        auto CallInfo = FuncInfo->addCallee(Call);
+        if (auto ME = dyn_cast<MemberExpr>(SourceExpr)) {
+          auto MemberInfo =
+              CallInfo->addStructureTextureObjectArg(SourceIdx, ME, false);
+          if (MemberInfo) {
+            FuncInfo->addTexture(MemberInfo);
+            MemberInfo->setType(
+                DpctGlobalInfo::getUnqualifiedTypeName(TargetType), TexType);
+            SourceName = MemberInfo->getName();
+            return createRewriter(Call, RetAssign, SourceName);
+          }
+        } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
+          auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
+          if (TexInfo) {
+            TexInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
+                             TexType);
+          }
         }
       }
     }
@@ -1721,6 +1752,25 @@ public:
     if (!Arg->isValueDependent() &&
         Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
         Result.Val.getInt().getSExtValue() == value) {
+      return true;
+    }
+    return false;
+  }
+};
+
+class CheckArgIsConstantIntWithUnsignedValue {
+  unsigned int value;
+  int index;
+
+public:
+  CheckArgIsConstantIntWithUnsignedValue(int idx, unsigned int val)
+      : value(val), index(idx) {}
+  bool operator()(const CallExpr *C) {
+    auto Arg = C->getArg(index);
+    Expr::EvalResult Result;
+    if (!Arg->isValueDependent() &&
+        Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
+        Result.Val.getInt().getZExtValue() == value) {
       return true;
     }
     return false;

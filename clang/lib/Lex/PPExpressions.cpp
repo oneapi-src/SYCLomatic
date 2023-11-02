@@ -294,10 +294,10 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
         Result.Val = 0;
 #ifdef SYCLomatic_CUSTOMIZATION
         // If macro name is '__CUDA_ARCH__' and is inside analysis-scope-path folder, handle
-        // it as defined '600'
+        // it as defined '900'
         if (II->getName() == "__CUDA_ARCH__" &&
             IsInAnalysisScopeFunc(PeekTok.getLocation())) {
-          Result.Val = 600;
+          Result.Val = 900;
         }
 #endif // SYCLomatic_CUSTOMIZATION
         Result.Val.setIsUnsigned(false); // "0" is signed intmax_t 0.

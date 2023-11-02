@@ -8,7 +8,7 @@ Message
 
 .. _msg-1101-start:
 
-``<expression text>`` expression was replaced with a value. Modify the code to
+*<expression text>* expression was replaced with a value. Modify the code to
 use the original expression, provided in comments, if it is correct.
 
 .. _msg-1101-end:

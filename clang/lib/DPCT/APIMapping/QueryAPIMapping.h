@@ -11,6 +11,7 @@
 
 #include "llvm/ADT/StringRef.h"
 
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -20,6 +21,8 @@ namespace dpct {
 class APIMapping {
   static std::unordered_map<std::string, size_t> EntryMap;
   static std::vector<llvm::StringRef> EntryArray;
+  static std::set<std::string> EntrySet;
+  static bool PrintAll;
 
   static void registerEntry(std::string Name, llvm::StringRef Description);
 
@@ -27,6 +30,10 @@ public:
   static void initEntryMap();
 
   static llvm::StringRef getAPISourceCode(std::string Key);
+
+  inline static void setPrintAll(bool Flag) { PrintAll = Flag; }
+  inline static bool getPrintAll() { return PrintAll; }
+  static void printAll();
 };
 
 } // namespace dpct

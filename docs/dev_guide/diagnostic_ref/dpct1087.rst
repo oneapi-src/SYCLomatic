@@ -10,7 +10,7 @@ Message
 
 SYCL currently does not support cross group synchronization. You can specify
 ``--use-experimental-features=nd_range_barrier`` to use the dpct helper function
-``nd_range_barrier`` to migrate ``<synchronization API call>``.
+``nd_range_barrier`` to migrate *<synchronization API call>*.
 
 .. _msg-1087-end:
 

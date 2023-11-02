@@ -16,16 +16,11 @@ Detailed Help
 -------------
 
 |tool_name|  was not able to recognize the parameter value used
-as an engine type or a CUDA\* device attribute.
+as a CUDA\* device attribute.
 
 Suggestions to Fix
 ------------------
 
-If the parameter is an engine type:
-Rewrite this code manually by using a supported random number generator. See the
-`Random Number Generators <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/engines-basic-random-number-generators.html>`_ topic for more information.
-
-If the parameter is a CUDA device attribute:
 Redesign the code logic to remove use of the device attribute.
 
 For example, this original CUDA code:
