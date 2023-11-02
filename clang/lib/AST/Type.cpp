@@ -112,6 +112,25 @@ bool QualType::isConstant(QualType T, const ASTContext &Ctx) {
   return T.getAddressSpace() == LangAS::opencl_constant;
 }
 
+std::optional<QualType::NonConstantStorageReason>
+QualType::isNonConstantStorage(const ASTContext &Ctx, bool ExcludeCtor,
+                            bool ExcludeDtor) {
+  if (!isConstant(Ctx) && !(*this)->isReferenceType())
+    return NonConstantStorageReason::NonConstNonReferenceType;
+  if (!Ctx.getLangOpts().CPlusPlus)
+    return std::nullopt;
+  if (const CXXRecordDecl *Record =
+          Ctx.getBaseElementType(*this)->getAsCXXRecordDecl()) {
+    if (!ExcludeCtor)
+      return NonConstantStorageReason::NonTrivialCtor;
+    if (Record->hasMutableFields())
+      return NonConstantStorageReason::MutableField;
+    if (!Record->hasTrivialDestructor() && !ExcludeDtor)
+      return NonConstantStorageReason::NonTrivialDtor;
+  }
+  return std::nullopt;
+}
+
 // C++ [temp.dep.type]p1:
 //   A type is dependent if it is...
 //     - an array type constructed from any dependent type or whose
@@ -206,13 +225,12 @@ void ConstantArrayType::Profile(llvm::FoldingSetNodeID &ID,
     SizeExpr->Profile(ID, Context, true);
 }
 
-DependentSizedArrayType::DependentSizedArrayType(const ASTContext &Context,
-                                                 QualType et, QualType can,
+DependentSizedArrayType::DependentSizedArrayType(QualType et, QualType can,
                                                  Expr *e, ArraySizeModifier sm,
                                                  unsigned tq,
                                                  SourceRange brackets)
-    : ArrayType(DependentSizedArray, et, can, sm, tq, e),
-      Context(Context), SizeExpr((Stmt*) e), Brackets(brackets) {}
+    : ArrayType(DependentSizedArray, et, can, sm, tq, e), SizeExpr((Stmt *)e),
+      Brackets(brackets) {}
 
 void DependentSizedArrayType::Profile(llvm::FoldingSetNodeID &ID,
                                       const ASTContext &Context,
@@ -226,8 +244,7 @@ void DependentSizedArrayType::Profile(llvm::FoldingSetNodeID &ID,
   E->Profile(ID, Context, true);
 }
 
-DependentVectorType::DependentVectorType(const ASTContext &Context,
-                                         QualType ElementType,
+DependentVectorType::DependentVectorType(QualType ElementType,
                                          QualType CanonType, Expr *SizeExpr,
                                          SourceLocation Loc,
                                          VectorType::VectorKind VecKind)
@@ -236,7 +253,7 @@ DependentVectorType::DependentVectorType(const ASTContext &Context,
                ElementType->getDependence() |
                (SizeExpr ? toTypeDependence(SizeExpr->getDependence())
                          : TypeDependence::None)),
-      Context(Context), ElementType(ElementType), SizeExpr(SizeExpr), Loc(Loc) {
+      ElementType(ElementType), SizeExpr(SizeExpr), Loc(Loc) {
   VectorTypeBits.VecKind = VecKind;
 }
 
@@ -249,16 +266,16 @@ void DependentVectorType::Profile(llvm::FoldingSetNodeID &ID,
   SizeExpr->Profile(ID, Context, true);
 }
 
-DependentSizedExtVectorType::DependentSizedExtVectorType(
-    const ASTContext &Context, QualType ElementType, QualType can,
-    Expr *SizeExpr, SourceLocation loc)
+DependentSizedExtVectorType::DependentSizedExtVectorType(QualType ElementType,
+                                                         QualType can,
+                                                         Expr *SizeExpr,
+                                                         SourceLocation loc)
     : Type(DependentSizedExtVector, can,
            TypeDependence::DependentInstantiation |
                ElementType->getDependence() |
                (SizeExpr ? toTypeDependence(SizeExpr->getDependence())
                          : TypeDependence::None)),
-      Context(Context), SizeExpr(SizeExpr), ElementType(ElementType), loc(loc) {
-}
+      SizeExpr(SizeExpr), ElementType(ElementType), loc(loc) {}
 
 void
 DependentSizedExtVectorType::Profile(llvm::FoldingSetNodeID &ID,
@@ -268,8 +285,7 @@ DependentSizedExtVectorType::Profile(llvm::FoldingSetNodeID &ID,
   SizeExpr->Profile(ID, Context, true);
 }
 
-DependentAddressSpaceType::DependentAddressSpaceType(const ASTContext &Context,
-                                                     QualType PointeeType,
+DependentAddressSpaceType::DependentAddressSpaceType(QualType PointeeType,
                                                      QualType can,
                                                      Expr *AddrSpaceExpr,
                                                      SourceLocation loc)
@@ -278,8 +294,7 @@ DependentAddressSpaceType::DependentAddressSpaceType(const ASTContext &Context,
                PointeeType->getDependence() |
                (AddrSpaceExpr ? toTypeDependence(AddrSpaceExpr->getDependence())
                               : TypeDependence::None)),
-      Context(Context), AddrSpaceExpr(AddrSpaceExpr), PointeeType(PointeeType),
-      loc(loc) {}
+      AddrSpaceExpr(AddrSpaceExpr), PointeeType(PointeeType), loc(loc) {}
 
 void DependentAddressSpaceType::Profile(llvm::FoldingSetNodeID &ID,
                                         const ASTContext &Context,
@@ -318,12 +333,14 @@ ConstantMatrixType::ConstantMatrixType(TypeClass tc, QualType matrixType,
     : MatrixType(tc, matrixType, canonType), NumRows(nRows),
       NumColumns(nColumns) {}
 
-DependentSizedMatrixType::DependentSizedMatrixType(
-    const ASTContext &CTX, QualType ElementType, QualType CanonicalType,
-    Expr *RowExpr, Expr *ColumnExpr, SourceLocation loc)
+DependentSizedMatrixType::DependentSizedMatrixType(QualType ElementType,
+                                                   QualType CanonicalType,
+                                                   Expr *RowExpr,
+                                                   Expr *ColumnExpr,
+                                                   SourceLocation loc)
     : MatrixType(DependentSizedMatrix, ElementType, CanonicalType, RowExpr,
                  ColumnExpr),
-      Context(CTX), RowExpr(RowExpr), ColumnExpr(ColumnExpr), loc(loc) {}
+      RowExpr(RowExpr), ColumnExpr(ColumnExpr), loc(loc) {}
 
 void DependentSizedMatrixType::Profile(llvm::FoldingSetNodeID &ID,
                                        const ASTContext &CTX,
@@ -349,11 +366,10 @@ BitIntType::BitIntType(bool IsUnsigned, unsigned NumBits)
     : Type(BitInt, QualType{}, TypeDependence::None), IsUnsigned(IsUnsigned),
       NumBits(NumBits) {}
 
-DependentBitIntType::DependentBitIntType(const ASTContext &Context,
-                                         bool IsUnsigned, Expr *NumBitsExpr)
+DependentBitIntType::DependentBitIntType(bool IsUnsigned, Expr *NumBitsExpr)
     : Type(DependentBitInt, QualType{},
            toTypeDependence(NumBitsExpr->getDependence())),
-      Context(Context), ExprAndUnsigned(NumBitsExpr, IsUnsigned) {}
+      ExprAndUnsigned(NumBitsExpr, IsUnsigned) {}
 
 bool DependentBitIntType::isUnsigned() const {
   return ExprAndUnsigned.getInt();
@@ -1507,16 +1523,16 @@ bool QualType::UseExcessPrecision(const ASTContext &Ctx) {
           Ctx.getLangOpts().getFloat16ExcessPrecision() !=
               Ctx.getLangOpts().ExcessPrecisionKind::FPP_None)
         return true;
-      return false;
-    } break;
+      break;
+    }
     case BuiltinType::Kind::BFloat16: {
       const TargetInfo &TI = Ctx.getTargetInfo();
       if (TI.hasBFloat16Type() && !TI.hasFullBFloat16Type() &&
           Ctx.getLangOpts().getBFloat16ExcessPrecision() !=
               Ctx.getLangOpts().ExcessPrecisionKind::FPP_None)
         return true;
-      return false;
-    } break;
+      break;
+    }
     default:
       return false;
     }
@@ -1943,7 +1959,7 @@ bool Type::hasAutoForTrailingReturnType() const {
 bool Type::hasIntegerRepresentation() const {
   if (const auto *VT = dyn_cast<VectorType>(CanonicalType))
     return VT->getElementType()->isIntegerType();
-  if (CanonicalType->isVLSTBuiltinType()) {
+  if (CanonicalType->isSveVLSBuiltinType()) {
     const auto *VT = cast<BuiltinType>(CanonicalType);
     return VT->getKind() == BuiltinType::SveBool ||
            (VT->getKind() >= BuiltinType::SveInt8 &&
@@ -2160,7 +2176,7 @@ bool Type::hasUnsignedIntegerRepresentation() const {
     return VT->getElementType()->isUnsignedIntegerOrEnumerationType();
   if (const auto *VT = dyn_cast<MatrixType>(CanonicalType))
     return VT->getElementType()->isUnsignedIntegerOrEnumerationType();
-  if (CanonicalType->isVLSTBuiltinType()) {
+  if (CanonicalType->isSveVLSBuiltinType()) {
     const auto *VT = cast<BuiltinType>(CanonicalType);
     return VT->getKind() >= BuiltinType::SveUint8 &&
            VT->getKind() <= BuiltinType::SveUint64;
@@ -2353,7 +2369,7 @@ bool Type::isIncompleteType(NamedDecl **Def) const {
 }
 
 bool Type::isSizelessBuiltinType() const {
-  if (isSVESizelessBuiltinType() || isRVVSizelessBuiltinType())
+  if (isSizelessVectorType())
     return true;
 
   if (const BuiltinType *BT = getAs<BuiltinType>()) {
@@ -2387,6 +2403,10 @@ bool Type::isWebAssemblyTableType() const {
 
 bool Type::isSizelessType() const { return isSizelessBuiltinType(); }
 
+bool Type::isSizelessVectorType() const {
+  return isSVESizelessBuiltinType() || isRVVSizelessBuiltinType();
+}
+
 bool Type::isSVESizelessBuiltinType() const {
   if (const BuiltinType *BT = getAs<BuiltinType>()) {
     switch (BT->getKind()) {
@@ -2414,7 +2434,7 @@ bool Type::isRVVSizelessBuiltinType() const {
   return false;
 }
 
-bool Type::isVLSTBuiltinType() const {
+bool Type::isSveVLSBuiltinType() const {
   if (const BuiltinType *BT = getAs<BuiltinType>()) {
     switch (BT->getKind()) {
     case BuiltinType::SveInt8:
@@ -2441,7 +2461,7 @@ bool Type::isVLSTBuiltinType() const {
 }
 
 QualType Type::getSveEltType(const ASTContext &Ctx) const {
-  assert(isVLSTBuiltinType() && "unsupported type!");
+  assert(isSveVLSBuiltinType() && "unsupported type!");
 
   const BuiltinType *BTy = castAs<BuiltinType>();
   if (BTy->getKind() == BuiltinType::SveBool)
@@ -2647,6 +2667,8 @@ static bool
 HasNonDeletedDefaultedEqualityComparison(const CXXRecordDecl *Decl) {
   if (Decl->isUnion())
     return false;
+  if (Decl->isLambda())
+    return Decl->isCapturelessLambda();
 
   auto IsDefaultedOperatorEqualEqual = [&](const FunctionDecl *Function) {
     return Function->getOverloadedOperator() ==
@@ -3361,6 +3383,7 @@ StringRef FunctionType::getNameForCallConv(CallingConv CC) {
   case CC_SwiftAsync: return "swiftasynccall";
   case CC_PreserveMost: return "preserve_most";
   case CC_PreserveAll: return "preserve_all";
+  case CC_M68kRTD: return "m68k_rtd";
   }
 
   llvm_unreachable("Invalid calling convention.");
@@ -3713,8 +3736,8 @@ QualType DecltypeType::desugar() const {
   return QualType(this, 0);
 }
 
-DependentDecltypeType::DependentDecltypeType(const ASTContext &Context, Expr *E)
-    : DecltypeType(E, Context.DependentTy), Context(Context) {}
+DependentDecltypeType::DependentDecltypeType(Expr *E, QualType UnderlyingType)
+    : DecltypeType(E, UnderlyingType) {}
 
 void DependentDecltypeType::Profile(llvm::FoldingSetNodeID &ID,
                                     const ASTContext &Context, Expr *E) {
@@ -3840,6 +3863,7 @@ bool AttributedType::isCallingConv() const {
   case attr::IntelOclBicc:
   case attr::PreserveMost:
   case attr::PreserveAll:
+  case attr::M68kRTD:
     return true;
   }
   llvm_unreachable("invalid attr kind");

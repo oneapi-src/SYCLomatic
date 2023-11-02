@@ -555,6 +555,7 @@ struct OptionValueBase : public GenericOptionValue {
   // Some options may take their value from a different data type.
   template <class DT> void setValue(const DT & /*V*/) {}
 
+  // Returns whether this instance matches the argument.
   bool compare(const DataType & /*V*/) const { return false; }
 
   bool compare(const GenericOptionValue & /*V*/) const override {
@@ -590,7 +591,8 @@ public:
     Value = V;
   }
 
-  bool compare(const DataType &V) const { return Valid && (Value != V); }
+  // Returns whether this instance matches V.
+  bool compare(const DataType &V) const { return Valid && (Value == V); }
 
   bool compare(const GenericOptionValue &V) const override {
     const OptionValueCopy<DataType> &VC =
@@ -1480,7 +1482,7 @@ class opt
   }
 
   void printOptionValue(size_t GlobalWidth, bool Force) const override {
-    if (Force || this->getDefault().compare(this->getValue())) {
+    if (Force || !this->getDefault().compare(this->getValue())) {
       cl::printOptionDiff<ParserClass>(*this, Parser, this->getValue(),
                                        this->getDefault(), GlobalWidth);
     }
