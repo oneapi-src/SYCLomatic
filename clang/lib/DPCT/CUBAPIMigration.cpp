@@ -1151,9 +1151,9 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
         {
            NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort::sort";
         }
-      elif (FuncName == "SortDescending")
+      else if (FuncName == "SortDescending")
         {
-           NewFuncName = MapNames::getDpctNAmespace() + "group::radix_sort<DESCENDING=true>::sort";
+           NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort<DESCENDING=true>::sort";
         }
       requestFeature(HelperFeatureEnum::device_ext);
       DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
@@ -1173,6 +1173,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
       emplaceTransformation(new ReplaceStmt(BlockMC, Repl));  
   }
   
+}
 }
 
 void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
