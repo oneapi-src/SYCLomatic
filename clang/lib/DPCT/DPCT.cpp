@@ -308,14 +308,14 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   Rewriter Rewrite(Sources, DefaultLangOptions);
   SourceManager &SM = Rewrite.getSourceMgr();
 
-  const FileEntry *Entry = SM.getFileManager().getFile(Path).get();
+  auto Entry = SM.getFileManager().getOptionalFileRef(Path);
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);
     dpctExit(MigrationErrorInvalidFilePath);
   }
 
-  FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);
+  FileID FID = SM.getOrCreateFileID(*Entry, SrcMgr::C_User);
 
   SourceLocation EndOfFile = SM.getLocForEndOfFile(FID);
   unsigned int LineNumber = SM.getSpellingLineNumber(EndOfFile, nullptr);
