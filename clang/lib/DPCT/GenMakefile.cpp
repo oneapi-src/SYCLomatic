@@ -97,8 +97,8 @@ static void getCompileInfo(
           // Set the target name
           TargetName = Obj;
           IsTargetName = false;
-          Tool = "$(CC) -fsycl -o"; // use 'icpx -fsycl' to link the target file in the
-                             // generated Makefile.
+          Tool = "$(CC) -fsycl -o"; // use 'icpx -fsycl' to link the target file
+                                    // in the generated Makefile.
         } else if (llvm::StringRef(Obj).endswith(".o")) {
           llvm::SmallString<512> FilePathAbs(Obj);
 
@@ -126,6 +126,15 @@ static void getCompileInfo(
         // foo_generated_foo.cu.o ->foo_intermediate_link.o
         continue;
       }
+
+      SmallString<512> OutDirectory =
+          llvm::StringRef(Directory + "/" + TargetName);
+      llvm::sys::fs::make_absolute(OutDirectory);
+      llvm::sys::path::remove_dots(OutDirectory, /*remove_dot_dot=*/true);
+      makeCanonical(OutDirectory);
+      // Use relative path to out-root directoryy.
+      llvm::sys::path::replace_path_prefix(OutDirectory, InRoot, ".");
+      TargetName = OutDirectory.str().str();
 
       for (auto &Obj : ObjsInLKOrARCmd) {
         ObjsInLinkerCmdPerTarget[TargetName].push_back(Obj);
@@ -207,7 +216,6 @@ static void getCompileInfo(
         }
 
         IsIncludeWithWhitespace = false;
-
         if (!llvm::sys::fs::exists(IncPath)) {
           // Skip including path that does not exist.
           continue;
@@ -217,17 +225,17 @@ static void getCompileInfo(
         llvm::sys::fs::make_absolute(OutDirectory);
         llvm::sys::path::remove_dots(OutDirectory, /*remove_dot_dot=*/true);
         makeCanonical(OutDirectory);
-
-        if (!isChildPath(InRoot.str(), std::string(OutDirectory.c_str()),
-                         false)) {
+        if (!isChildOrSamePath(InRoot.str(),
+                               std::string(OutDirectory.c_str()))) {
           // Skip include path that is not in inRoot directory
           continue;
         }
 
-        rewriteDir(OutDirectory, InRoot, OutRoot);
-
         NewOptions += "-I";
-        llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot, ".");
+
+        // Use relative path to out-root directory as the including directory.
+        llvm::sys::path::replace_path_prefix(OutDirectory, InRoot, ".");
+
         NewOptions += OutDirectory.c_str();
         NewOptions += " ";
 
@@ -503,7 +511,11 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
           "TARGET_", std::to_string(TargetIdx))];
       // Use to tool "ld" or "ar" that generates the original target in the
       // compilation database.
-      OS << buildString("\t", Tool, " $@ $^ $(LIB) ", MKLOption, "\n\n");
+      if (Tool == "ar -r") { // "-qmkl" is not needed for "ar" target
+        OS << buildString("\t", Tool, " $@ $^ $(LIB)\n\n");
+      } else {
+        OS << buildString("\t", Tool, " $@ $^ $(LIB) ", MKLOption, "\n\n");
+      }
 
       for (unsigned Idx = 0; Idx < Entry.second.size(); Idx++) {
         std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) +

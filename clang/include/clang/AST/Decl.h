@@ -2010,6 +2010,17 @@ private:
   /// the DeclaratorDecl base class.
   DeclarationNameLoc DNLoc;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  /// Provides source range info for duplicated explicitly specified
+  /// template arguments range. This syntax is only allowed for CUDA
+  /// language.
+  /// If this variable is empty (invalid), it means there is no related
+  /// error in Sema. If it is not empty, it means there is an error
+  /// suppressed in Sema and we need do further modification in the
+  /// CompatWithClangRule migration rule.
+  SourceRange DuplicatedExplicitlySpecifiedTemplateArgumentsRange;
+
+#endif
   /// Specify that this function declaration is actually a function
   /// template specialization.
   ///
@@ -2946,6 +2957,19 @@ public:
   /// computed and stored.
   unsigned getODRHash() const;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  /// Returns the DuplicatedExplicitlySpecifiedTemplateArgumentsRange. This must
+  /// have been previously computed and stored.
+  SourceRange getDuplicatedExplicitlySpecifiedTemplateArgumentsRange() const {
+    return DuplicatedExplicitlySpecifiedTemplateArgumentsRange;
+  }
+
+  /// Sets the DuplicatedExplicitlySpecifiedTemplateArgumentsRange.
+  void setDuplicatedExplicitlySpecifiedTemplateArgumentsRange(SourceRange SR) {
+    DuplicatedExplicitlySpecifiedTemplateArgumentsRange = SR;
+  }
+
+#endif
   // Implement isa/cast/dyncast/etc.
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
   static bool classofKind(Kind K) {

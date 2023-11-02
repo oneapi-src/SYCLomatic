@@ -10540,8 +10540,17 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
         HasExplicitTemplateArgs = false;
       } else if (FunctionTemplate) {
         // Function template with explicit template arguments.
+#ifdef SYCLomatic_CUSTOMIZATION
+        if (getLangOpts().CUDA) {
+          NewFD->setDuplicatedExplicitlySpecifiedTemplateArgumentsRange(
+              SourceRange(TemplateId->LAngleLoc, TemplateId->RAngleLoc));
+        } else {
+#endif
         Diag(D.getIdentifierLoc(), diag::err_function_template_partial_spec)
           << SourceRange(TemplateId->LAngleLoc, TemplateId->RAngleLoc);
+#ifdef SYCLomatic_CUSTOMIZATION
+        }
+#endif
 
         HasExplicitTemplateArgs = false;
       } else {

@@ -4097,12 +4097,11 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasZdotu_v2", "cublasZdotc_v2", "cublasSnrm2_v2", "cublasDnrm2_v2",
         "cublasScnrm2_v2", "cublasDznrm2_v2", "cublasSrot_v2", "cublasDrot_v2",
         "cublasCsrot_v2", "cublasZdrot_v2", "cublasCrot_v2", "cublasZrot_v2",
-        "cublasSrotg_v2", "cublasDrotg_v2",
-        "cublasCrotg_v2", "cublasZrotg_v2", "cublasSrotm_v2", "cublasDrotm_v2",
-        "cublasSrotmg_v2", "cublasDrotmg_v2", "cublasSscal_v2",
-        "cublasDscal_v2", "cublasCscal_v2", "cublasCsscal_v2", "cublasZscal_v2",
-        "cublasZdscal_v2", "cublasSswap_v2", "cublasDswap_v2", "cublasCswap_v2",
-        "cublasZswap_v2",
+        "cublasSrotg_v2", "cublasDrotg_v2", "cublasCrotg_v2", "cublasZrotg_v2",
+        "cublasSrotm_v2", "cublasDrotm_v2", "cublasSrotmg_v2",
+        "cublasDrotmg_v2", "cublasSscal_v2", "cublasDscal_v2", "cublasCscal_v2",
+        "cublasCsscal_v2", "cublasZscal_v2", "cublasZdscal_v2",
+        "cublasSswap_v2", "cublasDswap_v2", "cublasCswap_v2", "cublasZswap_v2",
         /*Regular level 2*/
         "cublasSgbmv_v2", "cublasDgbmv_v2", "cublasCgbmv_v2", "cublasZgbmv_v2",
         "cublasSgemv_v2", "cublasDgemv_v2", "cublasCgemv_v2", "cublasZgemv_v2",
@@ -4110,19 +4109,18 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasZgeru_v2", "cublasZgerc_v2", "cublasSsbmv_v2", "cublasDsbmv_v2",
         "cublasSspmv_v2", "cublasDspmv_v2", "cublasSspr_v2", "cublasDspr_v2",
         "cublasSspr2_v2", "cublasDspr2_v2", "cublasSsymv_v2", "cublasDsymv_v2",
-        "cublasCsymv_v2", "cublasZsymv_v2",
-        "cublasSsyr_v2", "cublasDsyr_v2", "cublasSsyr2_v2", "cublasDsyr2_v2",
-        "cublasCsyr_v2", "cublasZsyr_v2", "cublasCsyr2_v2", "cublasZsyr2_v2",
-        "cublasStbmv_v2", "cublasDtbmv_v2", "cublasCtbmv_v2", "cublasZtbmv_v2",
-        "cublasStbsv_v2", "cublasDtbsv_v2", "cublasCtbsv_v2", "cublasZtbsv_v2",
-        "cublasStpmv_v2", "cublasDtpmv_v2", "cublasCtpmv_v2", "cublasZtpmv_v2",
-        "cublasStpsv_v2", "cublasDtpsv_v2", "cublasCtpsv_v2", "cublasZtpsv_v2",
-        "cublasStrmv_v2", "cublasDtrmv_v2", "cublasCtrmv_v2", "cublasZtrmv_v2",
-        "cublasStrsv_v2", "cublasDtrsv_v2", "cublasCtrsv_v2", "cublasZtrsv_v2",
-        "cublasChemv_v2", "cublasZhemv_v2", "cublasChbmv_v2", "cublasZhbmv_v2",
-        "cublasChpmv_v2", "cublasZhpmv_v2", "cublasCher_v2", "cublasZher_v2",
-        "cublasCher2_v2", "cublasZher2_v2", "cublasChpr_v2", "cublasZhpr_v2",
-        "cublasChpr2_v2", "cublasZhpr2_v2",
+        "cublasCsymv_v2", "cublasZsymv_v2", "cublasSsyr_v2", "cublasDsyr_v2",
+        "cublasSsyr2_v2", "cublasDsyr2_v2", "cublasCsyr_v2", "cublasZsyr_v2",
+        "cublasCsyr2_v2", "cublasZsyr2_v2", "cublasStbmv_v2", "cublasDtbmv_v2",
+        "cublasCtbmv_v2", "cublasZtbmv_v2", "cublasStbsv_v2", "cublasDtbsv_v2",
+        "cublasCtbsv_v2", "cublasZtbsv_v2", "cublasStpmv_v2", "cublasDtpmv_v2",
+        "cublasCtpmv_v2", "cublasZtpmv_v2", "cublasStpsv_v2", "cublasDtpsv_v2",
+        "cublasCtpsv_v2", "cublasZtpsv_v2", "cublasStrmv_v2", "cublasDtrmv_v2",
+        "cublasCtrmv_v2", "cublasZtrmv_v2", "cublasStrsv_v2", "cublasDtrsv_v2",
+        "cublasCtrsv_v2", "cublasZtrsv_v2", "cublasChemv_v2", "cublasZhemv_v2",
+        "cublasChbmv_v2", "cublasZhbmv_v2", "cublasChpmv_v2", "cublasZhpmv_v2",
+        "cublasCher_v2", "cublasZher_v2", "cublasCher2_v2", "cublasZher2_v2",
+        "cublasChpr_v2", "cublasZhpr_v2", "cublasChpr2_v2", "cublasZhpr2_v2",
         /*Regular level 3*/
         "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
         "cublasHgemm", "cublasCgemm3m", "cublasZgemm3m",
@@ -4166,10 +4164,9 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasIdamax", "cublasIcamax", "cublasIzamax", "cublasIsamin",
         "cublasIdamin", "cublasIcamin", "cublasIzamin", "cublasSasum",
         "cublasDasum", "cublasScasum", "cublasDzasum", "cublasSrot",
-        "cublasDrot", "cublasCsrot", "cublasZdrot", "cublasCrot",
-        "cublasZrot", "cublasSrotg",
-        "cublasDrotg", "cublasSrotm", "cublasDrotm", "cublasSrotmg",
-        "cublasDrotmg",
+        "cublasDrot", "cublasCsrot", "cublasZdrot", "cublasCrot", "cublasZrot",
+        "cublasSrotg", "cublasDrotg", "cublasSrotm", "cublasDrotm",
+        "cublasSrotmg", "cublasDrotmg",
         /*level 2*/
         "cublasSgemv", "cublasDgemv", "cublasCgemv", "cublasZgemv",
         "cublasSgbmv", "cublasDgbmv", "cublasCgbmv", "cublasZgbmv",
@@ -4195,7 +4192,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasSsymm", "cublasDsymm", "cublasCsymm", "cublasZsymm",
         "cublasChemm", "cublasZhemm", "cublasStrsm", "cublasDtrsm",
         "cublasCtrsm", "cublasZtrsm", "cublasStrmm", "cublasDtrmm",
-        "cublasCtrmm", "cublasZtrmm");
+        "cublasCtrmm", "cublasZtrmm", "cublasSgemm_v2_64", "cublasDgemm_v2_64",
+        "cublasCgemm_v2_64", "cublasZgemm_v2_64");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -14627,3 +14625,40 @@ void TypeRemoveRule::runRule(
 }
 
 REGISTER_RULE(TypeRemoveRule, PassKind::PK_Analysis)
+
+// The EDG frontend can allow code like below:
+//
+//     template <class T1, class T2> struct AAAAA {
+//       template <class T3> void foo(T3 x);
+//     };
+//     template <typename T4, typename T5>
+//     template <typename T6>
+//     void AAAAA<T4, T5>::foo<T6>(T6 x) {}
+//
+// But clang/gcc emits error.
+// We suppress the error in Sema and record the source range and remove
+// the "invalid" code in this rule.
+void CompatWithClangRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      cxxMethodDecl(hasParent(functionTemplateDecl())).bind("TemplateMethod"),
+      this);
+}
+
+void CompatWithClangRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto CMD = getNodeAsType<CXXMethodDecl>(Result, "TemplateMethod")) {
+    auto SR = CMD->getDuplicatedExplicitlySpecifiedTemplateArgumentsRange();
+    if (SR.isValid()) {
+      auto DefinitionSR = getDefinitionRange(SR.getBegin(), SR.getEnd());
+      auto Begin = DefinitionSR.getBegin();
+      auto End =
+          DefinitionSR.getEnd().getLocWithOffset(Lexer::MeasureTokenLength(
+              DefinitionSR.getEnd(), DpctGlobalInfo::getSourceManager(),
+              DpctGlobalInfo::getContext().getLangOpts()));
+      auto Length = End.getRawEncoding() - Begin.getRawEncoding();
+      emplaceTransformation(new ReplaceText(Begin, Length, ""));
+    }
+  }
+}
+
+REGISTER_RULE(CompatWithClangRule, PassKind::PK_Migration)
