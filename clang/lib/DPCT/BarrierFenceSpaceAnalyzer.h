@@ -158,7 +158,7 @@ private:
   }
   bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
   std::string
-  isSafeWriteAfterWrite(const std::set<const DeclRefExpr *> &WAWDRESet);
+  isSafeWriteInLoop(const std::set<const DeclRefExpr *> &WILDRESet);
 
   std::set<const Expr *> DeviceFunctionCallArgs;
 

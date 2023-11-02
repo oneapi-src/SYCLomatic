@@ -934,9 +934,13 @@ private:
 class IndexAnalysis : public ExprAnalysis {
 public:
   explicit IndexAnalysis(const Expr *E) : ExprAnalysis() { dispatch(E); }
+  // Based on isStrictlyMonotonic(), also check if threadIdx.x is under
+  // non-additive BinaryOP.
   inline bool isDifferenceBetweenThreadIdxXAndIndexConstant() {
     return isStrictlyMonotonic() && !IsThreadIdxXUnderNonAdditiveOp;
   }
+  // Check if sub nodes only have threadIdx.x, DRE, UnaryOP(+,-) and
+  // BinaryOP(+,-,*,/,%)
   inline bool isStrictlyMonotonic() {
     return HasThreadIdxX && !ContainUnknownNode;
   }

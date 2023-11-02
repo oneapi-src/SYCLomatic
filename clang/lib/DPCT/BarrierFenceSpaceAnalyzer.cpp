@@ -732,12 +732,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
   if (!std::get<0>(Res))
     return true;
 
-  IndexAnalysis SMA(std::get<0>(Res));
-  if (SMA.isDifferenceBetweenThreadIdxXAndIndexConstant()) {
+  IndexAnalysis IA(std::get<0>(Res));
+  if (IA.isDifferenceBetweenThreadIdxXAndIndexConstant()) {
     DREIncStepMap.insert({DRE, std::get<2>(Res)});
   }
   // Check if Index variable has 1:1 mapping to threadIdx.x in a block
-  return std::get<1>(Res) || !SMA.isStrictlyMonotonic();
+  return std::get<1>(Res) || !IA.isStrictlyMonotonic();
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::containsMacro(
@@ -790,20 +790,27 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
   return false;
 }
 
-std::string clang::dpct::BarrierFenceSpaceAnalyzer::isSafeWriteAfterWrite(
-    const std::set<const DeclRefExpr *> &WAWDRESet) {
-  if (WAWDRESet.size() > 1) {
+// This function recognizes pattern like below and check if it is safe to treat
+// the write operation as a non-global access.
+// for () {
+//   ...
+//   mem[idx] = var;
+//   ... 
+// }
+std::string clang::dpct::BarrierFenceSpaceAnalyzer::isSafeWriteInLoop(
+    const std::set<const DeclRefExpr *> &WILDRESet) {
+  if (WILDRESet.size() > 1) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isSafeWriteAfterWrite False case 1" << std::endl;
+    std::cout << "isSafeWriteInLoop False case 1" << std::endl;
 #endif
     return "";
   }
 
-  const DeclRefExpr *DRE = *WAWDRESet.begin();
+  const DeclRefExpr *DRE = *WILDRESet.begin();
   auto Iter = DREIncStepMap.find(DRE);
   if (Iter == DREIncStepMap.end()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isSafeWriteAfterWrite False case 2" << std::endl;
+    std::cout << "isSafeWriteInLoop False case 2" << std::endl;
 #endif
     return "";
   }
@@ -868,7 +875,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
       }
     }
     if (!WriteAfterWriteDRE.empty()) {
-      auto StepStr = isSafeWriteAfterWrite(WriteAfterWriteDRE);
+      auto StepStr = isSafeWriteInLoop(WriteAfterWriteDRE);
       if (StepStr.empty()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;

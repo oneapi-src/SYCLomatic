@@ -2215,9 +2215,18 @@ void IndexAnalysis::dispatch(const Stmt *Expression) {
 }
 
 void IndexAnalysis::analyzeExpr(const UnaryOperator *UO) {
+  if (UO->getOpcode() != UnaryOperatorKind::UO_Plus &&
+      UO->getOpcode() != UnaryOperatorKind::UO_Minus) {
+    ContainUnknownNode = true;
+    return;
+  }
   dispatch(UO->getSubExpr());
 }
 void IndexAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  if (!BO->isAdditiveOp() && !BO->isMultiplicativeOp()) {
+    ContainUnknownNode = true;
+    return;
+  }
   if (!BO->isAdditiveOp())
     ContainNonAdditiveOp.push(true);
   dispatch(BO->getLHS());
