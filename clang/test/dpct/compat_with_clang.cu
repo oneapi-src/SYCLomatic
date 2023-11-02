@@ -10,3 +10,15 @@
 __device__ inline void foo1(__half2 *array, __half a) {
   array[__brev(123)] = {a, __float2half(2.3f)};
 }
+
+
+template <class T1, class T2> struct AAAAA {
+  template <class T3> void foo(T3 x);
+};
+
+// CHECK: template <typename T4, typename T5>
+// CHECK-NEXT: template <typename T6>
+// CHECK-NEXT: void AAAAA<T4, T5>::foo(T6 x) {}
+template <typename T4, typename T5>
+template <typename T6>
+void AAAAA<T4, T5>::foo<T6>(T6 x) {}

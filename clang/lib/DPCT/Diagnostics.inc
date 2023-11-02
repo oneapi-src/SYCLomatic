@@ -243,8 +243,8 @@ DEF_WARNING(ONE_DIMENSION_KERNEL_BARRIER, 1113, "Consider replacing sycl::nd_ite
 DEF_COMMENT(ONE_DIMENSION_KERNEL_BARRIER, 1113, "Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function \"{0}\" is called in a multidimensional kernel.")
 DEF_WARNING(WAIT_REMOVE, 1114, "cudaMemcpy is migrated to asynchronization memcpy, assuming in the original code the source host memory is pageable memory. If the memory is not pageable, call wait() on event return by memcpy API to ensure synchronization behavior.")
 DEF_COMMENT(WAIT_REMOVE, 1114, "cudaMemcpy is migrated to asynchronization memcpy, assuming in the original code the source host memory is pageable memory. If the memory is not pageable, call wait() on event return by memcpy API to ensure synchronization behavior.")
-DEF_WARNING(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
-DEF_COMMENT(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
+DEF_WARNING(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory_for_overwrite is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
+DEF_COMMENT(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory_for_overwrite is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
 DEF_WARNING(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
 DEF_COMMENT(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
 // clang-format on

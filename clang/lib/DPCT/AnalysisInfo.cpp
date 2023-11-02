@@ -3758,7 +3758,7 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
       llvm::raw_string_ostream OS(Ret);
       OS << "auto &" << getName() << " = "
          << "*" << MapNames::getClNamespace()
-         << "ext::oneapi::group_local_memory<" << getType()->getBaseName();
+         << "ext::oneapi::group_local_memory_for_overwrite<" << getType()->getBaseName();
       for (auto &ArraySize : getType()->getRange()) {
         OS << "[" << ArraySize.getSize() << "]";
       }
