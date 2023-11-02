@@ -2671,8 +2671,13 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
           DpctGlobalInfo::getSourceManager().getFileOffset(CE->getRParenLoc());
     } else if (FuncInfo->NonDefaultParamNum == 0) {
       // if all params have default value
-      ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
-          CE->getArg(HasImplicitArg ? 1 : 0)->getBeginLoc());
+      if (CE->getNumArgs()) {
+        ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
+            CE->getArg(HasImplicitArg ? 1 : 0)->getBeginLoc());
+      } else {
+        ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
+            CE->getRParenLoc());
+      }
     } else {
       // if some params have default value, set ExtraArgLoc to the location
       // before the comma
@@ -3651,7 +3656,8 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
     auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
     if (!DpctGlobalInfo::useGroupLocalMemory() || !VI->isShared() ||
         VI->isExtern())
-      DeviceFunctionDecl::LinkRedecls(Func)->addVar(VI);
+      if (auto DFI = DeviceFunctionDecl::LinkRedecls(Func))
+        DFI->addVar(VI);
     return VI;
   }
   return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
@@ -3752,7 +3758,7 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
       llvm::raw_string_ostream OS(Ret);
       OS << "auto &" << getName() << " = "
          << "*" << MapNames::getClNamespace()
-         << "ext::oneapi::group_local_memory<" << getType()->getBaseName();
+         << "ext::oneapi::group_local_memory_for_overwrite<" << getType()->getBaseName();
       for (auto &ArraySize : getType()->getRange()) {
         OS << "[" << ArraySize.getSize() << "]";
       }
@@ -4274,7 +4280,8 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
 #endif // DPCT_DEBUG_BUILD
 
   } else {
-    DeviceFunctionDecl::LinkRedecls(FD)->setItem();
+    if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD))
+      DFI->setItem();
     OS << getNames(K).NonFreeQueriesName;
   }
 }
@@ -4323,7 +4330,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS,
 void FreeQueriesInfo::emplaceExtraDecl() {
   std::string Ret;
   llvm::raw_string_ostream OS(Ret);
-  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && FuncInfo) {
     if (auto VarMapHead =
             MemVarMap::getHeadWithoutPathCompression(&FuncInfo->getVarMap())) {
       Dimension = VarMapHead->Dim;

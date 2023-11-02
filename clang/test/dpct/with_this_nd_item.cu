@@ -20,8 +20,8 @@ using namespace cooperative_groups;
 // CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::experimental::this_nd_item<1>();
 // CHECK-NEXT:  int a = item_ct1.get_group(0) * item_ct1.get_local_range(0) + item_ct1.get_local_id(0) + item_ct1.get_group(0) +
 // CHECK-NEXT:  item_ct1.get_local_range(0) + item_ct1.get_local_id(0);
-// CHECK-NEXT:  auto cta = sycl::ext::oneapi::experimental::this_group<1>();
-// CHECK-NEXT:  auto b0 = sycl::ext::oneapi::experimental::this_group<1>(), b1 = sycl::ext::oneapi::experimental::this_group<1>();
+// CHECK-NEXT:  sycl::group<1> cta = sycl::ext::oneapi::experimental::this_group<1>();
+// CHECK-NEXT:  sycl::group<1> b0 = sycl::ext::oneapi::experimental::this_group<1>(), b1 = sycl::ext::oneapi::experimental::this_group<1>();
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT:  */
@@ -50,8 +50,8 @@ __global__ void test1() {
 // CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::experimental::this_nd_item<3>();
 // CHECK-NEXT:  int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
 // CHECK-NEXT:  item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
-// CHECK-NEXT:  auto cta = sycl::ext::oneapi::experimental::this_group<3>();
-// CHECK-NEXT:  auto b0 = sycl::ext::oneapi::experimental::this_group<3>(), b1 = sycl::ext::oneapi::experimental::this_group<3>();
+// CHECK-NEXT:  sycl::group<3> cta = sycl::ext::oneapi::experimental::this_group<3>();
+// CHECK-NEXT:  sycl::group<3> b0 = sycl::ext::oneapi::experimental::this_group<3>(), b1 = sycl::ext::oneapi::experimental::this_group<3>();
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT:  */

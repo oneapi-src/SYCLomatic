@@ -71,20 +71,6 @@ Limit extension change to ``.cu`` and ``.cuh`` files only. Default: ``off``.
 
 
 
-.. _opt-change-filename-extension:
-
-``--change-filename-extension=<file>``
-
-.. _desc-change-filename-extension:
-
-DEPRECATED: A comma-separated list that specifies which extensions of migrated
-files will be changed. Default: ``.cu``, ``.cuh``, ``.cpp``, ``.cxx``, ``.cc``,
-``.c``, ``.C``
-
-.. _end-change-filename-extension:
-
-
-
 .. _opt-check-unicode-security:
 
 ``--check-unicode-security``
@@ -183,8 +169,8 @@ Sets the range of formatting.
 
 The values are:
 
-- ``=migrated``: Only formats the migrated code (default).
 - ``=all``: Formats all code.
+- ``=migrated``: Only formats the migrated code (default).
 - ``=none``: Do not format any code.
 
 .. _end-format-range:
@@ -201,9 +187,10 @@ Sets the formatting style.
 
 The values are:
 
-- ``=llvm``: Use the LLVM coding style.
-- ``=google``: Use the Google\* coding style.
 - ``=custom``: Use the coding style defined in the ``.clang-format`` file (default).
+- ``=google``: Use the Google\* coding style.
+- ``=llvm``: Use the LLVM coding style.
+
 
 Example for the .clang-format file content:
 
@@ -240,6 +227,32 @@ Default: ``off``.
 Provides a list of ``dpct`` specific options.
 
 .. _end-help:
+
+
+
+.. _opt-helper-func-dir:
+
+``--helper-function-dir``
+
+.. _desc-helper-func-dir:
+
+Print the installation directory for helper function header files.
+
+.. _end-helper-func-dir:
+
+
+
+.. _opt-helper-func-pref:
+
+``--helper-function-preference=<value>``
+
+.. _desc-helper-func-pref:
+
+The preference of helper function usage in migration. Value:
+
+- ``=no-queue-device``: Call SYCL API to get queue and device instead of calling helper function.
+
+.. _end-helper-func-pref:
 
 
 
@@ -316,9 +329,12 @@ is used.
 A comma-separated list of extensions not to be used in migrated code.
 By default, these extensions are used in migrated code.
 
-- ``=enqueued_barriers``: Enqueued barriers extension.
-- ``=device_info``: Use the Intel extensions for device information if supported
+The values are:
+
+- ``=bfloat16``: The SYCL extensions for bfloat16.
+- ``=device_info``: The Intel extensions for device information if supported
   by the compiler and the backend.
+- ``=enqueued_barriers``: The enqueued barriers extension.
 
 .. _end-no-dpcpp-extensions:
 
@@ -411,11 +427,11 @@ output directory specified by the ``--out-root`` option.
 
 Sets the output verbosity level:
 
-- ``=silent``: Only messages from clang.
-- ``=normal``: 'silent' and warnings, errors, and notes from |tool_name|.
 - ``=detailed``: 'normal' and messages about which file is being processed.
 - ``=diagnostics``: 'detailed' and information about the detected conflicts
   and crashes (default).
+- ``=normal``: 'silent' and warnings, errors, and notes from |tool_name|.
+- ``=silent``: Only messages from clang.
 
 .. _end-output-verbosity:
 
@@ -424,7 +440,7 @@ Sets the output verbosity level:
 
 .. _opt-p:
 
--p
+``-p``
 
 .. _desc-p:
 
@@ -467,6 +483,20 @@ hidden, from the ``--in-root`` directory to the output directory.
 ``--process-all`` is ignored if input files are provided on the command line.
 
 .. _end-process-all:
+
+
+
+
+.. _opt-query-api-map:
+
+``-query-api-mapping=<api>``
+
+.. _desc-query-api-map:
+
+Query functionally-compatible SYCL API to migrate CUDA API.
+
+.. _end-query-api-map:
+
 
 
 
@@ -523,6 +553,7 @@ Only reports are generated. No SYCL code is generated. Default: ``off``.
 
 Specifies the type of report. Values are:
 
+- ``=all``: All reports.
 - ``=apis``: Information about API signatures that need migration and the
   number of times they were encountered. The report file name has the
   ``.apis`` suffix added.
@@ -530,7 +561,6 @@ Specifies the type of report. Values are:
   are migrated to SYCL, LOC migrated to SYCL with helper functions,
   LOC not needing migration, LOC needing migration but are not migrated.
   The report file name has the ``.stats`` suffix added (default).
-- ``=all``: All reports.
 
 .. _end-report-type:
 
@@ -567,7 +597,7 @@ Stop migration and generation of reports if parsing errors happened. Default: ``
 .. _desc-suppress-warnings:
 
 A comma-separated list of migration warnings to suppress. Valid warning IDs
-range from 1000 to 1100. Hyphen-separated ranges are also allowed. For
+range from 1000 to 1118. Hyphen-separated ranges are also allowed. For
 example: ``-suppress-warnings=1000-1010,1011``.
 
 .. _end-suppress-warnings:
@@ -606,13 +636,13 @@ Generates kernels with the kernel name. Default: ``off``.
 
 DEPRECATED: Customize the helper header files for migrated code. The values are:
 
-- ``=none``: No customization (default).
-- ``=file``: Limit helper header files to only the necessary files for the
-  migrated code and place them in the ``--out-root`` directory.
-- ``=api``: Limit helper header files to only the necessary APIs for the
-  migrated code and place them in the ``--out-root`` directory.
 - ``=all``: Generate a complete set of helper header files and place them
   in the ``--out-root`` directory.
+- ``=api``: Limit helper header files to only the necessary APIs for the
+  migrated code and place them in the ``--out-root`` directory.
+- ``=file``: Limit helper header files to only the necessary files for the
+  migrated code and place them in the ``--out-root`` directory.
+- ``=none``: No customization (default).
 
 .. _end-use-custom-helper:
 
@@ -650,6 +680,7 @@ By default, experimental features will not be used in migrated code.
 
 The values are:
 
+- ``=bfloat16_math_functions``: Experimental extension that allows use of bfloat16 math functions.
 - ``=dpl-experimental-api``: Experimental extension that allows use of experimental
   oneDPL APIs.
 - ``=free-function-queries``: Experimental extension that allows getting
@@ -661,8 +692,8 @@ The values are:
   group work-items.
 - ``=masked-sub-group-operation``: Experimental helper function used to execute
   sub-group operation with mask.
-- ``=nd_range_barrier``: Experimental helper function used to help cross
-  group synchronization during migration.
+- ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix``.
+- ``=nd_range_barrier``: Experimental helper function used to help cross-group synchronization during migration.
 - ``=occupancy-calculation``: Experimental helper function used to calculate occupancy.
 - ``=user-defined-reductions``: Experimental extension that allows user-defined
   reductions.
@@ -682,10 +713,10 @@ a comma-separated list. Default: ``dpct, sycl``.
 
 Possible values are:
 
-- ``=none``: Generate code without namespaces. Cannot be used with other values.
 - ``=cl``: DEPRECATED. Generate code with ``cl::sycl::`` namespace. Cannot be
   used with ``sycl`` or ``sycl-math`` values.
 - ``=dpct``: Generate code with ``dpct::`` namespace.
+- ``=none``: Generate code without namespaces. Cannot be used with other values.
 - ``=sycl``: Generate code with ``sycl::`` namespace. Cannot be used with ``cl``
   or ``sycl-math`` values.
 - ``=sycl-math``: Generate code with ``sycl::`` namespace, applied only for SYCL
@@ -703,9 +734,9 @@ Possible values are:
 
 Sets the Unified Shared Memory (USM) level to use in source code generation:
 
-- ``=restricted``: Uses USM API for memory management migration. (default).
 - ``=none``: Uses helper functions from |tool_name| header files
   for memory management migration.
+- ``=restricted``: Uses USM API for memory management migration. (default).
 
 .. _end-usm-level:
 
@@ -796,3 +827,15 @@ in alphabetical order.
        file specified by option `-parse-build-log`.
 
 .. _end-intercept-build-block:
+
+
+.. _report-opt-block:
+
+Specifying any of the following options will trigger report generation:
+
+-  ``--report-file-prefix``
+-  ``--report-type``
+-  ``--report-format``
+-  ``--report-only``
+
+.. _end-report-opt-block:
