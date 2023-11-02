@@ -701,12 +701,13 @@ struct device_sys_tag : public sys_tag {};
 struct host_sys_tag : public sys_tag {};
 
 #ifdef DPCT_USM_LEVEL_NONE
-template <typename Tag, typename T = void> class tagged_pointer {
+template <typename T, typename Tag> class tagged_pointer {
   static_assert(false,
                 "tagged_pointer is not supported with DPCT_USM_LEVEL_NONE");
 };
 template <typename PolicyOrTag, typename Pointer>
-void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr) {
+void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr,
+                                  ::std::ptrdiff_t) {
   static_assert(
       false,
       "release_temporary_allocation is not supported with DPCT_USM_LEVEL_NONE");
@@ -774,7 +775,7 @@ inline constexpr bool is_host_policy_or_tag_v =
 // tagged_pointer provides a wrapper around a raw pointer type with a tag of the
 // location of the allocated memory. Standard pointer operations are supported
 // with this class.
-template <typename Tag, typename T = void> class tagged_pointer {
+template <typename T, typename Tag> class tagged_pointer {
 public:
   using value_type = T;
   using difference_type = ::std::ptrdiff_t;
@@ -837,7 +838,7 @@ private:
 // Void specialization for tagged pointers. Iterator traits are not provided but
 // conversion to other non-void tagged pointers is allowed. Pointer arithmetic
 // is disallowed with this specialization.
-template <typename Tag> class tagged_pointer<Tag, void> {
+template <typename Tag> class tagged_pointer<void, Tag> {
 public:
   using difference_type = ::std::ptrdiff_t;
   using pointer = void *;
@@ -881,14 +882,14 @@ void *malloc_base(PolicyOrTag &&policy_or_tag, const ::std::size_t num_bytes) {
 
 template <typename PolicyOrTag>
 auto malloc(PolicyOrTag &&policy_or_tag, const ::std::size_t num_bytes) {
-  return tagged_pointer<internal::policy_or_tag_to_tag_t<PolicyOrTag>, void>(
+  return tagged_pointer<void, internal::policy_or_tag_to_tag_t<PolicyOrTag>>(
       internal::malloc_base(::std::forward<PolicyOrTag>(policy_or_tag),
                             num_bytes));
 }
 
 template <typename T, typename PolicyOrTag>
 auto malloc(PolicyOrTag &&policy_or_tag, const ::std::size_t num_elements) {
-  return tagged_pointer<internal::policy_or_tag_to_tag_t<PolicyOrTag>, T>(
+  return tagged_pointer<T, internal::policy_or_tag_to_tag_t<PolicyOrTag>>(
       static_cast<T *>(
           internal::malloc_base(::std::forward<PolicyOrTag>(policy_or_tag),
                                 num_elements * sizeof(T))));
@@ -924,7 +925,8 @@ auto get_temporary_allocation(PolicyOrTag &&policy_or_tag,
 }
 
 template <typename PolicyOrTag, typename Pointer>
-void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr) {
+void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr,
+                                  ::std::ptrdiff_t) {
   dpct::free(::std::forward<PolicyOrTag>(policy_or_tag), ptr);
 }
 #endif
