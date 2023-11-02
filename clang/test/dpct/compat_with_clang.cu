@@ -3,6 +3,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/compat_with_clang/compat_with_clang.dp.cpp
 
 #include "cuda_fp16.h"
+#include <cstdint>
 
 // CHECK: inline void foo1(sycl::half2 *array, sycl::half a) {
 // CHECK-NEXT:   array[dpct::reverse_bits<unsigned int>(123)] = {a, sycl::vec<float, 1>{2.3f}.convert<sycl::half, sycl::rounding_mode::automatic>()[0]};
@@ -11,6 +12,12 @@ __device__ inline void foo1(__half2 *array, __half a) {
   array[__brev(123)] = {a, __float2half(2.3f)};
 }
 
+// CHECK: void foo2(int a, int b) {
+// CHECK-NEXT:   sycl::range<3> block{1, 1, dpct::min(512, uint32_t(a * b))};
+// CHECK-NEXT: }
+void foo2(int a, int b) {
+  dim3 block{min(512, uint32_t(a * b))};
+}
 
 template <class T1, class T2> struct AAAAA {
   template <class T3> void foo(T3 x);

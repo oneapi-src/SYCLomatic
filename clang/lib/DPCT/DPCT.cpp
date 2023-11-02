@@ -308,14 +308,14 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   Rewriter Rewrite(Sources, DefaultLangOptions);
   SourceManager &SM = Rewrite.getSourceMgr();
 
-  const FileEntry *Entry = SM.getFileManager().getFile(Path).get();
+  auto Entry = SM.getFileManager().getOptionalFileRef(Path);
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);
     dpctExit(MigrationErrorInvalidFilePath);
   }
 
-  FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);
+  FileID FID = SM.getOrCreateFileID(*Entry, SrcMgr::C_User);
 
   SourceLocation EndOfFile = SM.getLocForEndOfFile(FID);
   unsigned int LineNumber = SM.getSpellingLineNumber(EndOfFile, nullptr);
@@ -909,39 +909,12 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  std::string CUDAVerMajor =
-      "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
-
-  std::string CUDAVerMinor =
-      "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
-  Tool.appendArgumentsAdjuster(
-      getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
-
   SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32
-  if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 3) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 4) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 5) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 6) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 0) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 1) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 2)) {
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
-                                  ArgumentInsertPosition::BEGIN));
-  } else {
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
-                                  ArgumentInsertPosition::BEGIN));
-  }
+  Tool.appendArgumentsAdjuster(
+      getInsertArgumentAdjuster("-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH",
+                                ArgumentInsertPosition::BEGIN));
 #endif
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fcuda-allow-variadic-functions", ArgumentInsertPosition::BEGIN));
@@ -951,6 +924,9 @@ int runDPCT(int argc, const char **argv) {
 
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fgpu-exclude-wrong-side-overloads", ArgumentInsertPosition::BEGIN));
+
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-Wno-c++11-narrowing", ArgumentInsertPosition::BEGIN));
 
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);

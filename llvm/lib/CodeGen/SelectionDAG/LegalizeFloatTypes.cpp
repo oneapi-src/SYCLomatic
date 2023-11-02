@@ -88,6 +88,7 @@ void DAGTypeLegalizer::SoftenFloatResult(SDNode *N, unsigned ResNo) {
     case ISD::FEXP:        R = SoftenFloatRes_FEXP(N); break;
     case ISD::STRICT_FEXP2:
     case ISD::FEXP2:       R = SoftenFloatRes_FEXP2(N); break;
+    case ISD::FEXP10:      R = SoftenFloatRes_FEXP10(N); break;
     case ISD::STRICT_FFLOOR:
     case ISD::FFLOOR:      R = SoftenFloatRes_FFLOOR(N); break;
     case ISD::STRICT_FLOG:
@@ -412,6 +413,13 @@ SDValue DAGTypeLegalizer::SoftenFloatRes_FEXP2(SDNode *N) {
                                               RTLIB::EXP2_F80,
                                               RTLIB::EXP2_F128,
                                               RTLIB::EXP2_PPCF128));
+}
+
+SDValue DAGTypeLegalizer::SoftenFloatRes_FEXP10(SDNode *N) {
+  return SoftenFloatRes_Unary(
+      N,
+      GetFPLibCall(N->getValueType(0), RTLIB::EXP10_F32, RTLIB::EXP10_F64,
+                   RTLIB::EXP10_F80, RTLIB::EXP10_F128, RTLIB::EXP10_PPCF128));
 }
 
 SDValue DAGTypeLegalizer::SoftenFloatRes_FFLOOR(SDNode *N) {
@@ -1305,6 +1313,7 @@ void DAGTypeLegalizer::ExpandFloatResult(SDNode *N, unsigned ResNo) {
   case ISD::FEXP:       ExpandFloatRes_FEXP(N, Lo, Hi); break;
   case ISD::STRICT_FEXP2:
   case ISD::FEXP2:      ExpandFloatRes_FEXP2(N, Lo, Hi); break;
+  case ISD::FEXP10:     ExpandFloatRes_FEXP10(N, Lo, Hi); break;
   case ISD::STRICT_FFLOOR:
   case ISD::FFLOOR:     ExpandFloatRes_FFLOOR(N, Lo, Hi); break;
   case ISD::STRICT_FLOG:
@@ -1498,6 +1507,15 @@ void DAGTypeLegalizer::ExpandFloatRes_FEXP2(SDNode *N,
                                        RTLIB::EXP2_F32, RTLIB::EXP2_F64,
                                        RTLIB::EXP2_F80, RTLIB::EXP2_F128,
                                        RTLIB::EXP2_PPCF128), Lo, Hi);
+}
+
+void DAGTypeLegalizer::ExpandFloatRes_FEXP10(SDNode *N, SDValue &Lo,
+                                             SDValue &Hi) {
+  ExpandFloatRes_Unary(N,
+                       GetFPLibCall(N->getValueType(0), RTLIB::EXP10_F32,
+                                    RTLIB::EXP10_F64, RTLIB::EXP10_F80,
+                                    RTLIB::EXP10_F128, RTLIB::EXP10_PPCF128),
+                       Lo, Hi);
 }
 
 void DAGTypeLegalizer::ExpandFloatRes_FFLOOR(SDNode *N,
@@ -2180,6 +2198,7 @@ bool DAGTypeLegalizer::PromoteFloatOperand(SDNode *N, unsigned OpNo) {
   // to use the promoted float operand.  Nodes that produce at least one
   // promotion-requiring floating point result have their operands legalized as
   // a part of PromoteFloatResult.
+  // clang-format off
   switch (N->getOpcode()) {
     default:
   #ifndef NDEBUG
@@ -2191,7 +2210,9 @@ bool DAGTypeLegalizer::PromoteFloatOperand(SDNode *N, unsigned OpNo) {
     case ISD::BITCAST:    R = PromoteFloatOp_BITCAST(N, OpNo); break;
     case ISD::FCOPYSIGN:  R = PromoteFloatOp_FCOPYSIGN(N, OpNo); break;
     case ISD::FP_TO_SINT:
-    case ISD::FP_TO_UINT: R = PromoteFloatOp_FP_TO_XINT(N, OpNo); break;
+    case ISD::FP_TO_UINT:
+    case ISD::LRINT:
+    case ISD::LLRINT:     R = PromoteFloatOp_UnaryOp(N, OpNo); break;
     case ISD::FP_TO_SINT_SAT:
     case ISD::FP_TO_UINT_SAT:
                           R = PromoteFloatOp_FP_TO_XINT_SAT(N, OpNo); break;
@@ -2200,6 +2221,7 @@ bool DAGTypeLegalizer::PromoteFloatOperand(SDNode *N, unsigned OpNo) {
     case ISD::SETCC:      R = PromoteFloatOp_SETCC(N, OpNo); break;
     case ISD::STORE:      R = PromoteFloatOp_STORE(N, OpNo); break;
   }
+  // clang-format on
 
   if (R.getNode())
     ReplaceValueWith(SDValue(N, 0), R);
@@ -2233,7 +2255,7 @@ SDValue DAGTypeLegalizer::PromoteFloatOp_FCOPYSIGN(SDNode *N, unsigned OpNo) {
 }
 
 // Convert the promoted float value to the desired integer type
-SDValue DAGTypeLegalizer::PromoteFloatOp_FP_TO_XINT(SDNode *N, unsigned OpNo) {
+SDValue DAGTypeLegalizer::PromoteFloatOp_UnaryOp(SDNode *N, unsigned OpNo) {
   SDValue Op = GetPromotedFloat(N->getOperand(0));
   return DAG.getNode(N->getOpcode(), SDLoc(N), N->getValueType(0), Op);
 }
@@ -2340,6 +2362,7 @@ void DAGTypeLegalizer::PromoteFloatResult(SDNode *N, unsigned ResNo) {
     case ISD::FCOS:
     case ISD::FEXP:
     case ISD::FEXP2:
+    case ISD::FEXP10:
     case ISD::FFLOOR:
     case ISD::FLOG:
     case ISD::FLOG2:
@@ -2721,6 +2744,7 @@ void DAGTypeLegalizer::SoftPromoteHalfResult(SDNode *N, unsigned ResNo) {
   case ISD::FCOS:
   case ISD::FEXP:
   case ISD::FEXP2:
+  case ISD::FEXP10:
   case ISD::FFLOOR:
   case ISD::FLOG:
   case ISD::FLOG2:
