@@ -61,11 +61,11 @@ auto isDeviceFuncCallExpr = []() {
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
                       "DeviceSegmentedSort", "DeviceHistogram");
   };
-  return callExpr(callee(functionDecl(allOf(
-      hasDeviceFuncName(),
-      hasDeclContext(cxxRecordDecl(allOf(
-          hasDeviceRecordName(),
-          hasAncestor(namespaceDecl(hasName("cub"))))))))));
+  return callExpr(callee(
+      functionDecl(allOf(hasDeviceFuncName(),
+                         hasDeclContext(cxxRecordDecl(allOf(
+                             hasDeviceRecordName(),
+                             hasAncestor(namespaceDecl(hasName("cub"))))))))));
 };
 
 } // namespace
@@ -161,12 +161,11 @@ void CubMemberCallRule::runRule(
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(
-          callee(functionDecl(allOf(
-              hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
-                         "SyncStream", "CurrentDevice", "DeviceCount",
-                         "DeviceCountUncached", "DeviceCountCachedValue"),
-              hasAncestor(namespaceDecl(hasName("cub")))))))
+      callExpr(callee(functionDecl(allOf(
+                   hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
+                              "SyncStream", "CurrentDevice", "DeviceCount",
+                              "DeviceCountUncached", "DeviceCountCachedValue"),
+                   hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
 }
@@ -563,9 +562,9 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 
   MF.addMatcher(
-      typedefDecl(
-          hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasAnyName(
-              "WarpScan", "WarpReduce", "BlockScan", "BlockReduce", "BlockRadixSort")))))))
+      typedefDecl(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(
+                      hasAnyName("WarpScan", "WarpReduce", "BlockScan",
+                                 "BlockReduce", "BlockRadixSort")))))))
           .bind("TypeDefDecl"),
       this);
 
@@ -579,12 +578,13 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("DeclStmt"),
       this);
 
-  MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
-                                      "InclusiveSum", "ExclusiveSum",
-                                      "InclusiveScan", "ExclusiveScan",
-                                      "Reduce", "Sum", "Broadcast", "Scan", "Sort")))))
-                    .bind("MemberCall"),
-                this);
+  MF.addMatcher(
+      cxxMemberCallExpr(
+          has(memberExpr(member(hasAnyName(
+              "InclusiveSum", "ExclusiveSum", "InclusiveScan", "ExclusiveScan",
+              "Reduce", "Sum", "Broadcast", "Scan", "Sort")))))
+          .bind("MemberCall"),
+      this);
 
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName(
@@ -703,7 +703,7 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   std::string CanonicalTypeStr = CanonicalType.getAsString();
   if (isTypeInAnalysisScope(CanonicalType.getTypePtr()))
     return;
-  
+
   if (maybeDependentCubType(TD->getTypeSourceInfo())) {
     emplaceTransformation(new ReplaceDecl(TD, ""));
     return;
@@ -751,7 +751,7 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
                 ObjTypeStr.find("class cub::WarpReduce") == 0 ||
                 ObjTypeStr.find("class cub::BlockScan") == 0 ||
                 ObjTypeStr.find("class cub::BlockReduce") == 0 ||
-                 ObjTypeStr.find("class cub::BlockRadixSort") == 0)) {
+                ObjTypeStr.find("class cub::BlockRadixSort") == 0)) {
             DeleteFlag = false;
             break;
           }
@@ -1141,39 +1141,37 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
     Repl = NewFuncName + "(" + ParamList + ")";
     emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
-  } else if (FuncName == "Sort" || FuncName == "SortDescending"){
+  } else if (FuncName == "Sort" || FuncName == "SortDescending") {
     if (BlockMC->getMethodDecl()
             ->getParamDecl(0)
             ->getType()
             ->isLValueReferenceType()) {
       GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
-      if (FuncName == "Sort")
-        {
-           NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort::sort";
-        }
-      else if (FuncName == "SortDescending")
-        {
-           NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort<DESCENDING=true>::sort";
-        }
+      if (FuncName == "Sort") {
+        NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort::sort";
+      } else if (FuncName == "SortDescending") {
+        NewFuncName = MapNames::getDpctNamespace() +
+                      "group::radix_sort<DESCENDING=true>::sort";
+      }
       requestFeature(HelperFeatureEnum::device_ext);
       DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                  HT_DPCT_DPL_Utils);
       const Expr *InData = FuncArgs[0];
       ExprAnalysis InEA(InData);
       OpRepl = getOpRepl(nullptr);
-      //Func Signature : sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0, int end_bit = 8 * sizeof(T)) 
-      if ((FuncName ==  "Sort" || FuncName == "SortDescending") && NumArgs != 4){
-      report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             "cub::" + FuncName);
-      return;
-      
+      // Func Signature : sort(const Item &item, T (&keys)[VALUES_PER_THREAD],
+      // int begin_bit = 0, int end_bit = 8 * sizeof(T))
+      if ((FuncName == "Sort" || FuncName == "SortDescending") &&
+          NumArgs != 4) {
+        report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               "cub::" + FuncName);
+        return;
       }
       CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
       Repl = NewFuncName + "(" + ParamList + ")";
-      emplaceTransformation(new ReplaceStmt(BlockMC, Repl));  
+      emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
+    }
   }
-  
-}
 }
 
 void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
