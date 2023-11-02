@@ -15,6 +15,7 @@
 #ifndef LLVM_CODEGEN_GLOBALISEL_GIMATCHTABLEEXECUTOR_H
 #define LLVM_CODEGEN_GLOBALISEL_GIMATCHTABLEEXECUTOR_H
 
+#include "llvm/ADT/Bitset.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/CodeGen/GlobalISel/Utils.h"
@@ -39,6 +40,7 @@ class APInt;
 class APFloat;
 class GISelKnownBits;
 class MachineInstr;
+class MachineIRBuilder;
 class MachineInstrBuilder;
 class MachineFunction;
 class MachineOperand;
@@ -46,32 +48,6 @@ class MachineRegisterInfo;
 class RegisterBankInfo;
 class TargetInstrInfo;
 class TargetRegisterInfo;
-
-/// Container class for CodeGen predicate results.
-/// This is convenient because std::bitset does not have a constructor
-/// with an initializer list of set bits.
-///
-/// Each GIMatchTableExecutor subclass should define a PredicateBitset class
-/// with:
-///   const unsigned MAX_SUBTARGET_PREDICATES = 192;
-///   using PredicateBitset = PredicateBitsetImpl<MAX_SUBTARGET_PREDICATES>;
-/// and updating the constant to suit the target. Tablegen provides a suitable
-/// definition for the predicates in use in <Target>GenGlobalISel.inc when
-/// GET_GLOBALISEL_PREDICATE_BITSET is defined.
-template <std::size_t MaxPredicates>
-class PredicateBitsetImpl : public std::bitset<MaxPredicates> {
-public:
-  // Cannot inherit constructors because it's not supported by VC++..
-  PredicateBitsetImpl() = default;
-
-  PredicateBitsetImpl(const std::bitset<MaxPredicates> &B)
-      : std::bitset<MaxPredicates>(B) {}
-
-  PredicateBitsetImpl(std::initializer_list<unsigned> Init) {
-    for (auto I : Init)
-      std::bitset<MaxPredicates>::set(I);
-  }
-};
 
 enum {
   GICXXPred_Invalid = 0,
@@ -283,6 +259,13 @@ enum {
   GIM_CheckIsSameOperand,
   GIM_CheckIsSameOperandIgnoreCopies,
 
+  /// Check we can replace all uses of a register with another.
+  /// - OldInsnID
+  /// - OldOpIdx
+  /// - NewInsnID
+  /// - NewOpIdx
+  GIM_CheckCanReplaceReg,
+
   /// Predicates with 'let PredicateCodeUsesOperands = 1' need to examine some
   /// named operands that will be recorded in RecordedOperands. Names of these
   /// operands are referenced in predicate argument list. Emitter determines
@@ -309,6 +292,11 @@ enum {
   /// - Opcode - The new opcode to use
   GIR_BuildMI,
 
+  /// Builds a constant and stores its result in a TempReg.
+  /// - TempRegID - Temp Register to define.
+  /// - Imm - The immediate to add
+  GIR_BuildConstant,
+
   /// Copy an operand to the specified instruction
   /// - NewInsnID - Instruction ID to modify
   /// - OldInsnID - Instruction ID to copy from
@@ -332,6 +320,7 @@ enum {
   /// Add an implicit register def to the specified instruction
   /// - InsnID - Instruction ID to modify
   /// - RegNum - The register to add
+  /// - Flags - Register Flags
   GIR_AddImplicitDef,
   /// Add an implicit register use to the specified instruction
   /// - InsnID - Instruction ID to modify
@@ -341,6 +330,13 @@ enum {
   /// - InsnID - Instruction ID to modify
   /// - RegNum - The register to add
   GIR_AddRegister,
+
+  /// Marks the implicit def of a register as dead.
+  /// - InsnID - Instruction ID to modify
+  /// - OpIdx - The implicit def operand index
+  ///
+  /// OpIdx starts at 0 for the first implicit def.
+  GIR_SetImplicitDefDead,
 
   /// Add a temporary register to the specified instruction
   /// - InsnID - Instruction ID to modify
@@ -359,6 +355,12 @@ enum {
   /// - InsnID - Instruction ID to modify
   /// - Imm - The immediate to add
   GIR_AddImm,
+
+  /// Add an CImm to the specified instruction
+  /// - InsnID - Instruction ID to modify
+  /// - Ty - Type of the constant immediate.
+  /// - Imm - The immediate to add
+  GIR_AddCImm,
 
   /// Render complex operands to the specified instruction
   /// - InsnID - Instruction ID to modify
@@ -386,7 +388,8 @@ enum {
   /// Calls a C++ function to perform an action when a match is complete.
   /// The MatcherState is passed to the function to allow it to modify
   /// instructions.
-  /// This is less constrained than a custom renderer and can update instructions
+  /// This is less constrained than a custom renderer and can update
+  /// instructions
   /// in the state.
   /// - FnID - The function to call.
   /// TODO: Remove this at some point when combiners aren't reliant on it. It's
@@ -441,6 +444,20 @@ enum {
   /// - Expected type
   GIR_MakeTempReg,
 
+  /// Replaces all references to a register from an instruction
+  /// with another register from another instruction.
+  /// - OldInsnID
+  /// - OldOpIdx
+  /// - NewInsnID
+  /// - NewOpIdx
+  GIR_ReplaceReg,
+
+  /// Replaces all references to a register with a temporary register.
+  /// - OldInsnID
+  /// - OldOpIdx
+  /// - TempRegIdx
+  GIR_ReplaceRegWithTempReg,
+
   /// A successful emission
   GIR_Done,
 
@@ -473,9 +490,7 @@ public:
   // For some predicates, we need to track the current MBB.
   MachineBasicBlock *CurMBB = nullptr;
 
-  virtual void setupGeneratedPerFunctionState(MachineFunction &MF) {
-    llvm_unreachable("TableGen should have emitted implementation");
-  }
+  virtual void setupGeneratedPerFunctionState(MachineFunction &MF) = 0;
 
   /// Setup per-MF executor state.
   virtual void setupMF(MachineFunction &mf, GISelKnownBits *kb,
@@ -546,14 +561,15 @@ protected:
   /// and false otherwise.
   template <class TgtExecutor, class PredicateBitset, class ComplexMatcherMemFn,
             class CustomRendererFn>
-  bool executeMatchTable(
-      TgtExecutor &Exec, NewMIVector &OutMIs, MatcherState &State,
-      const ExecInfoTy<PredicateBitset, ComplexMatcherMemFn, CustomRendererFn>
-          &ISelInfo,
-      const int64_t *MatchTable, const TargetInstrInfo &TII,
-      MachineRegisterInfo &MRI, const TargetRegisterInfo &TRI,
-      const RegisterBankInfo &RBI, const PredicateBitset &AvailableFeatures,
-      CodeGenCoverage *CoverageInfo) const;
+  bool executeMatchTable(TgtExecutor &Exec, MatcherState &State,
+                         const ExecInfoTy<PredicateBitset, ComplexMatcherMemFn,
+                                          CustomRendererFn> &ExecInfo,
+                         MachineIRBuilder &Builder, const int64_t *MatchTable,
+                         const TargetInstrInfo &TII, MachineRegisterInfo &MRI,
+                         const TargetRegisterInfo &TRI,
+                         const RegisterBankInfo &RBI,
+                         const PredicateBitset &AvailableFeatures,
+                         CodeGenCoverage *CoverageInfo) const;
 
   virtual const int64_t *getMatchTable() const {
     llvm_unreachable("Should have been overridden by tablegen if used");
@@ -581,12 +597,14 @@ protected:
     llvm_unreachable("Subclass does not implement testSimplePredicate!");
   }
 
-  virtual void runCustomAction(unsigned, const MatcherState &State) const {
+  virtual void runCustomAction(unsigned, const MatcherState &State,
+                               NewMIVector &OutMIs) const {
     llvm_unreachable("Subclass does not implement runCustomAction!");
   }
 
   bool isOperandImmEqual(const MachineOperand &MO, int64_t Value,
-                         const MachineRegisterInfo &MRI) const;
+                         const MachineRegisterInfo &MRI,
+                         bool Splat = false) const;
 
   /// Return true if the specified operand is a G_PTR_ADD with a G_CONSTANT on
   /// the right-hand side. GlobalISel's separation of pointer and integer types
