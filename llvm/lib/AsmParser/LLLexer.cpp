@@ -279,7 +279,7 @@ lltok::Kind LLLexer::LexDollar() {
       if (CurChar == '"') {
         StrVal.assign(TokStart + 2, CurPtr - 1);
         UnEscapeLexed(StrVal);
-        if (StringRef(StrVal).find_first_of(0) != StringRef::npos) {
+        if (StringRef(StrVal).contains(0)) {
           Error("Null bytes are not allowed in names");
           return lltok::Error;
         }
@@ -362,7 +362,7 @@ lltok::Kind LLLexer::LexVar(lltok::Kind Var, lltok::Kind VarID) {
       if (CurChar == '"') {
         StrVal.assign(TokStart+2, CurPtr-1);
         UnEscapeLexed(StrVal);
-        if (StringRef(StrVal).find_first_of(0) != StringRef::npos) {
+        if (StringRef(StrVal).contains(0)) {
           Error("Null bytes are not allowed in names");
           return lltok::Error;
         }
@@ -397,7 +397,7 @@ lltok::Kind LLLexer::LexQuote() {
 
   if (CurPtr[0] == ':') {
     ++CurPtr;
-    if (StringRef(StrVal).find_first_of(0) != StringRef::npos) {
+    if (StringRef(StrVal).contains(0)) {
       Error("Null bytes are not allowed in names");
       kind = lltok::Error;
     } else {
@@ -632,6 +632,7 @@ lltok::Kind LLLexer::LexIdentifier() {
   KEYWORD(amdgpu_kernel);
   KEYWORD(amdgpu_gfx);
   KEYWORD(tailcc);
+  KEYWORD(m68k_rtdcc);
 
   KEYWORD(cc);
   KEYWORD(c);
@@ -826,21 +827,7 @@ lltok::Kind LLLexer::LexIdentifier() {
   TYPEKEYWORD("x86_amx",   Type::getX86_AMXTy(Context));
   TYPEKEYWORD("token",     Type::getTokenTy(Context));
 
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
-  TYPEKEYWORD("ptr",       PointerType::getUnqual(Context));
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-  if (Keyword == "ptr") {
-    // setOpaquePointers() must be called before creating any pointer types.
-    if (!Context.hasSetOpaquePointersValue()) {
-      Context.setOpaquePointers(true);
-    } else if (Context.supportsTypedPointers()) {
-      Warning("ptr type is only supported in -opaque-pointers mode");
-      return lltok::Error;
-    }
-    TyVal = PointerType::getUnqual(Context);
-    return lltok::Type;
-  }
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
+  TYPEKEYWORD("ptr", PointerType::getUnqual(Context));
 
 #undef TYPEKEYWORD
 

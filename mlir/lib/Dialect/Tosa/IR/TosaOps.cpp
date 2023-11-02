@@ -39,6 +39,8 @@ using namespace mlir::tosa;
 #include "mlir/Dialect/Tosa/IR/TosaInterfaces.cpp.inc"
 
 namespace {
+#include "mlir/Dialect/Tosa/IR/TosaDialectBytecode.cpp.inc"
+
 //===----------------------------------------------------------------------===//
 // Dialect Function Inliner Interface.
 //===----------------------------------------------------------------------===//
@@ -62,6 +64,53 @@ struct TosaInlinerInterface : public DialectInlinerInterface {
             isa<tosa::WhileOp>(dest->getParentOp()));
   }
 };
+
+/// This class implements the bytecode interface for the Tosa dialect.
+struct TosaDialectBytecodeInterface : public BytecodeDialectInterface {
+  TosaDialectBytecodeInterface(Dialect *dialect)
+      : BytecodeDialectInterface(dialect) {}
+
+  //===--------------------------------------------------------------------===//
+  // Attributes
+
+  Attribute readAttribute(DialectBytecodeReader &reader) const override {
+    return ::readAttribute(getContext(), reader);
+  }
+
+  LogicalResult writeAttribute(Attribute attr,
+                               DialectBytecodeWriter &writer) const override {
+    return ::writeAttribute(attr, writer);
+  }
+
+  //===--------------------------------------------------------------------===//
+  // Types
+
+  Type readType(DialectBytecodeReader &reader) const override {
+    return ::readType(getContext(), reader);
+  }
+
+  LogicalResult writeType(Type type,
+                          DialectBytecodeWriter &writer) const override {
+    return ::writeType(type, writer);
+  }
+
+  void writeVersion(DialectBytecodeWriter &writer) const final {
+    // TODO: Populate.
+  }
+
+  std::unique_ptr<DialectVersion>
+  readVersion(DialectBytecodeReader &reader) const final {
+    // TODO: Populate
+    reader.emitError("Dialect does not support versioning");
+    return nullptr;
+  }
+
+  LogicalResult upgradeFromVersion(Operation *topLevelOp,
+                                   const DialectVersion &version_) const final {
+    return success();
+  }
+};
+
 } // namespace
 
 //===----------------------------------------------------------------------===//
@@ -69,7 +118,7 @@ struct TosaInlinerInterface : public DialectInlinerInterface {
 //===----------------------------------------------------------------------===//
 
 /// Returns the while loop body.
-Region &tosa::WhileOp::getLoopBody() { return getBody(); }
+SmallVector<Region *> tosa::WhileOp::getLoopRegions() { return {&getBody()}; }
 
 //===----------------------------------------------------------------------===//
 // Tosa dialect initialization.
@@ -84,7 +133,7 @@ void TosaDialect::initialize() {
 #define GET_ATTRDEF_LIST
 #include "mlir/Dialect/Tosa/IR/TosaAttributes.cpp.inc"
       >();
-  addInterfaces<TosaInlinerInterface>();
+  addInterfaces<TosaDialectBytecodeInterface, TosaInlinerInterface>();
 }
 
 Operation *TosaDialect::materializeConstant(OpBuilder &builder, Attribute value,
@@ -95,6 +144,49 @@ Operation *TosaDialect::materializeConstant(OpBuilder &builder, Attribute value,
     return builder.create<tosa::ConstOp>(loc, type,
                                          llvm::cast<ElementsAttr>(value));
   return nullptr;
+}
+
+//===----------------------------------------------------------------------===//
+// Parsers and printers
+//===----------------------------------------------------------------------===//
+
+ParseResult mlir::tosa::parseTypeOrAttr(OpAsmParser &parser, TypeAttr &typeAttr,
+                                        Attribute &attr) {
+  if (succeeded(parser.parseOptionalEqual())) {
+    if (failed(parser.parseAttribute(attr))) {
+      return parser.emitError(parser.getCurrentLocation())
+             << "expected attribute";
+    }
+    if (auto typedAttr = attr.dyn_cast<TypedAttr>()) {
+      typeAttr = TypeAttr::get(typedAttr.getType());
+    }
+    return success();
+  }
+
+  Type type;
+  if (failed(parser.parseColonType(type))) {
+    return parser.emitError(parser.getCurrentLocation()) << "expected type";
+  }
+  typeAttr = TypeAttr::get(type);
+
+  return success();
+}
+
+void mlir::tosa::printTypeOrAttr(OpAsmPrinter &p, Operation *op, TypeAttr type,
+                                 Attribute attr) {
+  bool needsSpace = false;
+  auto typedAttr = attr.dyn_cast_or_null<TypedAttr>();
+  if (!typedAttr || typedAttr.getType() != type.getValue()) {
+    p << ": ";
+    p.printAttribute(type);
+    needsSpace = true; // subsequent attr value needs a space separator
+  }
+  if (attr) {
+    if (needsSpace)
+      p << ' ';
+    p << "= ";
+    p.printAttribute(attr);
+  }
 }
 
 //===----------------------------------------------------------------------===//
@@ -162,6 +254,21 @@ template <typename T> static LogicalResult verifyConvOp(T op) {
   return success();
 }
 
+LogicalResult tosa::ArgMaxOp::verify() {
+  // Ensure output is of 32-bit integer
+  const auto resultETy = llvm::cast<ShapedType>(getType()).getElementType();
+  if (!resultETy.isIntOrIndex())
+    return emitOpError("result tensor is not of integer type");
+
+  // Ensure axis is within the tensor rank
+  const auto inputType = llvm::cast<ShapedType>(getInput().getType());
+  const int64_t axis = getAxisAttr().getInt();
+  if (inputType.hasRank() && ((axis < 0) || axis >= inputType.getRank()))
+    return emitOpError("specified axis is outside the rank of the tensor");
+
+  return success();
+}
+
 LogicalResult tosa::AvgPool2dOp::verify() {
   auto inputType = llvm::cast<ShapedType>(getInput().getType());
   if (hasZeroDimension(inputType))
@@ -183,18 +290,20 @@ LogicalResult tosa::AvgPool2dOp::verify() {
   if (llvm::isa<IntegerType>(inputETy) && !accType.isInteger(32))
     return emitOpError("accumulator type for integer tensor is not i32");
 
-  if ((inputETy.isBF16() || inputETy.isF16()) &&
-      !(accType.isF16() || accType.isF32()))
-    return emitOpError("accumulator type for f16/bf16 tensor is not f16/f32");
+  if (inputETy.isF16() && !(accType.isF16() || accType.isF32()))
+    return emitOpError("accumulator type for f16 tensor is not f16/f32");
+
+  if (inputETy.isBF16() && !accType.isF32())
+    return emitOpError("accumulator type for bf16 tensor is not f32");
 
   if (inputETy.isF32() && !accType.isF32())
     return emitOpError("accumulator type for f32 tensor is not f32");
 
-  if (inputETy.isF32() && resultETy.isF32())
-    return success();
-  if (inputETy.isInteger(8) && resultETy.isInteger(8))
-    return success();
-  if (inputETy.isInteger(16) && resultETy.isInteger(16))
+  if ((inputETy.isF32() && resultETy.isF32()) ||
+      (inputETy.isF16() && resultETy.isF16()) ||
+      (inputETy.isBF16() && resultETy.isBF16()) ||
+      (inputETy.isInteger(8) && resultETy.isInteger(8)) ||
+      (inputETy.isInteger(16) && resultETy.isInteger(16)))
     return success();
 
   return emitOpError("input/output element types are incompatible.");
@@ -1491,6 +1600,134 @@ std::optional<SmallVector<int64_t, 4>> ApplyScaleOp::getShapeForUnroll() {
   if (auto vt = llvm::dyn_cast<VectorType>(getType()))
     return llvm::to_vector<4>(vt.getShape());
   return std::nullopt;
+}
+
+// parse and print of IfOp refer to the implementation of SCF dialect.
+ParseResult IfOp::parse(OpAsmParser &parser, OperationState &result) {
+  // Create the regions for 'then'.
+  result.regions.reserve(2);
+  Region *thenRegion = result.addRegion();
+  Region *elseRegion = result.addRegion();
+
+  auto &builder = parser.getBuilder();
+  OpAsmParser::UnresolvedOperand cond;
+  // Create a i1 tensor type for the boolean condition.
+  Type i1Type = RankedTensorType::get({}, builder.getIntegerType(1));
+  if (parser.parseOperand(cond) ||
+      parser.resolveOperand(cond, i1Type, result.operands))
+    return failure();
+  // Parse optional results type list.
+  if (parser.parseOptionalArrowTypeList(result.types))
+    return failure();
+  // Parse the 'then' region.
+  if (parser.parseRegion(*thenRegion, /*arguments=*/{}, /*argTypes=*/{}))
+    return failure();
+
+  // If we find an 'else' keyword then parse the 'else' region.
+  if (!parser.parseOptionalKeyword("else")) {
+    if (parser.parseRegion(*elseRegion, /*arguments=*/{}, /*argTypes=*/{}))
+      return failure();
+  }
+
+  // Parse the optional attribute list.
+  if (parser.parseOptionalAttrDict(result.attributes))
+    return failure();
+  return success();
+}
+
+void IfOp::print(OpAsmPrinter &p) {
+  bool printBlockTerminators = false;
+
+  p << " " << getCond();
+  if (!getResults().empty()) {
+    p << " -> (" << getResultTypes() << ")";
+    // Print yield explicitly if the op defines values.
+    printBlockTerminators = true;
+  }
+  p << ' ';
+  p.printRegion(getThenBranch(),
+                /*printEntryBlockArgs=*/false,
+                /*printBlockTerminators=*/printBlockTerminators);
+
+  // Print the 'else' regions if it exists and has a block.
+  auto &elseRegion = getElseBranch();
+  if (!elseRegion.empty()) {
+    p << " else ";
+    p.printRegion(elseRegion,
+                  /*printEntryBlockArgs=*/false,
+                  /*printBlockTerminators=*/printBlockTerminators);
+  }
+
+  p.printOptionalAttrDict((*this)->getAttrs());
+}
+
+// parse and print of WhileOp refer to the implementation of SCF dialect.
+ParseResult WhileOp::parse(OpAsmParser &parser, OperationState &result) {
+  SmallVector<OpAsmParser::Argument, 4> regionArgs;
+  SmallVector<OpAsmParser::UnresolvedOperand, 4> operands;
+  Region *cond = result.addRegion();
+  Region *body = result.addRegion();
+
+  OptionalParseResult listResult =
+      parser.parseOptionalAssignmentList(regionArgs, operands);
+  if (listResult.has_value() && failed(listResult.value()))
+    return failure();
+
+  FunctionType functionType;
+  SMLoc typeLoc = parser.getCurrentLocation();
+  if (failed(parser.parseColonType(functionType)))
+    return failure();
+
+  result.addTypes(functionType.getResults());
+
+  if (functionType.getNumInputs() != operands.size()) {
+    return parser.emitError(typeLoc)
+           << "expected as many input types as operands "
+           << "(expected " << operands.size() << " got "
+           << functionType.getNumInputs() << ")";
+  }
+
+  // Resolve input operands.
+  if (failed(parser.resolveOperands(operands, functionType.getInputs(),
+                                    parser.getCurrentLocation(),
+                                    result.operands)))
+    return failure();
+
+  // Propagate the types into the region arguments.
+  for (size_t i = 0, e = regionArgs.size(); i != e; ++i)
+    regionArgs[i].type = functionType.getInput(i);
+
+  return failure(parser.parseRegion(*cond, regionArgs) ||
+                 parser.parseKeyword("do") || parser.parseRegion(*body) ||
+                 parser.parseOptionalAttrDictWithKeyword(result.attributes));
+}
+
+static void printInitializationList(OpAsmPrinter &parser,
+                                    Block::BlockArgListType blocksArgs,
+                                    ValueRange initializers,
+                                    StringRef prefix = "") {
+  assert(blocksArgs.size() == initializers.size() &&
+         "expected same length of arguments and initializers");
+  if (initializers.empty())
+    return;
+
+  parser << prefix << '(';
+  llvm::interleaveComma(
+      llvm::zip(blocksArgs, initializers), parser,
+      [&](auto it) { parser << std::get<0>(it) << " = " << std::get<1>(it); });
+  parser << ")";
+}
+
+void WhileOp::print(OpAsmPrinter &parser) {
+  printInitializationList(parser, getCond().front().getArguments(), getInputs(),
+                          " ");
+  parser << " : ";
+  parser.printFunctionalType(getInputs().getTypes(), getResults().getTypes());
+  parser << ' ';
+  parser.printRegion(getCond(), /*printEntryBlockArgs=*/false);
+  parser << " do ";
+  parser.printRegion(getBody());
+  parser.printOptionalAttrDictWithKeyword((*this)->getAttrs());
 }
 
 //===----------------------------------------------------------------------===//
