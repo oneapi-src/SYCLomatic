@@ -47,7 +47,7 @@ TemplateDependentStringInfo::TemplateDependentStringInfo(
     const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
         &InTDRs)
     : SourceStr(SrcStr) {
-  for (const auto &TDR : InTDRs){
+  for (const auto &TDR : InTDRs) {
     if (TDR.second->getOffset() > SourceStr.size() ||
         TDR.second->getOffset() + TDR.second->getLength() > SourceStr.size()) {
       ContainsTemplateDependentMacro = true;
@@ -118,8 +118,7 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation Loc) {
     TokenLen = 1;
   }
 
-  return std::pair<SourceLocation, size_t>(
-      Loc, TokenLen);
+  return std::pair<SourceLocation, size_t>(Loc, TokenLen);
 }
 
 std::pair<SourceLocation, size_t>
@@ -157,12 +156,10 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(SourceLocation Loc) {
   // if the last token is ">>" or ">>>",
   // since DPCT does not support nested template type migration,
   // the last token should be treated as ">"
-  if(Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)){
+  if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
     TokenLen = 1;
   }
-  return std::pair<size_t, size_t>(
-      getOffset(Loc),
-      TokenLen);
+  return std::pair<size_t, size_t>(getOffset(Loc), TokenLen);
 }
 
 std::pair<size_t, size_t>
@@ -272,7 +269,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
     auto End = getOffsetAndLength(EndLoc);
     SrcBeginLoc = BeginLoc;
     auto LastTokenLength = End.second;
-    if(ApplyGreaterTokenWorkAround)
+    if (ApplyGreaterTokenWorkAround)
       LastTokenLength = 0;
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
@@ -319,7 +316,8 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
   return std::pair<size_t, size_t>(Begin, End - Begin + LastTokenLength);
 }
 
-std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, SourceLocation *Loc) {
+std::pair<size_t, size_t>
+ExprAnalysis::getOffsetAndLength(const Expr *E, SourceLocation *Loc) {
   SourceLocation BeginLoc, EndLoc;
   size_t End = 0;
 
@@ -330,8 +328,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
       auto Range = getRangeInRange(E, CallSpellingBegin, CallSpellingEnd);
       auto DLBegin = SM.getDecomposedLoc(Range.first);
       auto DLEnd = SM.getDecomposedLoc(Range.second);
-      if (DLBegin.first == DLEnd.first &&
-          DLBegin.second <= DLEnd.second) {
+      if (DLBegin.first == DLEnd.first && DLBegin.second <= DLEnd.second) {
         BeginLoc = Range.first;
         EndLoc = Range.second;
         End = getOffset(EndLoc);
@@ -343,7 +340,8 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
     auto Range = getStmtExpansionSourceRange(E);
     BeginLoc = Range.getBegin();
     EndLoc = Range.getEnd();
-    End = getOffset(EndLoc) + Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+    End = getOffset(EndLoc) +
+          Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
   }
 
   // Find the begin/end location include prefix and postfix
@@ -402,8 +400,8 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
     std::tie(SrcBegin, SrcLength) =
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
     if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
-      ReplSet.init(std::string(
-          FileBuffer.value().getBuffer().data() + SrcBegin, SrcLength));
+      ReplSet.init(std::string(FileBuffer.value().getBuffer().data() + SrcBegin,
+                               SrcLength));
       return;
     }
   }
@@ -481,7 +479,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             clang::NestedNameSpecifier::SpecifierKind::NamespaceAlias;
     bool IsSpecicalAPI = isMathFunction(DRE->getNameInfo().getAsString()) ||
                          isCGAPI(DRE->getNameInfo().getAsString());
-                         // for thrust::log10 and thrust::sinh ...
+    // for thrust::log10 and thrust::sinh ...
     // log10 is a math function
     if (Qualifier->getAsNamespace() &&
         Qualifier->getAsNamespace()->getName() == "thrust" &&
@@ -668,7 +666,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     auto ItFieldRule = MapNames::ClassFieldMap.find(MemberExprName);
     if (!MemberExprRewriterFactoryBase::MemberExprRewriterMap)
       return;
-    auto Itr = MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName);
+    auto Itr = MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(
+        MemberExprName);
     if (Itr != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
       auto Rewriter = Itr->second->create(ME);
       auto Result = Rewriter->rewrite();
@@ -752,11 +751,11 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   } else if (BaseType == "cudaDeviceProp") {
     auto MemberName = ME->getMemberNameInfo().getAsString();
 
-    std::string ReplacementStr = MapNames::findReplacedName(DeviceInfoVarRule::PropNamesMap, MemberName);
+    std::string ReplacementStr =
+        MapNames::findReplacedName(DeviceInfoVarRule::PropNamesMap, MemberName);
     if (!ReplacementStr.empty()) {
       std::string TmplArg = "";
-      if (MemberName == "maxGridSize" ||
-          MemberName == "maxThreadsDim") {
+      if (MemberName == "maxGridSize" || MemberName == "maxThreadsDim") {
         // Similar code in ASTTraversal.cpp
         TmplArg = "<int *>";
       }
@@ -847,8 +846,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   dispatch(ME->getBase());
   RefString.clear();
   RefString +=
-    BaseType +
-    "." + ME->getMemberDecl()->getDeclName().getAsString();
+      BaseType + "." + ME->getMemberDecl()->getDeclName().getAsString();
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
@@ -942,8 +940,8 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         // the CallExpr will be rewritten into an if-else stmt,
         // DPCT needs to remove the following semicolon.
         std::string EndBracket =
-            "}" + std::string(
-                      getNL(getStmtExpansionSourceRange(CE).getBegin(), SM));
+            "}" +
+            std::string(getNL(getStmtExpansionSourceRange(CE).getBegin(), SM));
         if (ResultStr.length() > EndBracket.length() &&
             ResultStr.substr(ResultStr.length() - EndBracket.length(),
                              EndBracket.length()) == EndBracket) {
@@ -952,8 +950,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
               DpctGlobalInfo::getContext().getLangOpts());
           Token Tok;
           Lexer::getRawToken(EndLoc, Tok, SM,
-                             DpctGlobalInfo::getContext().getLangOpts(),
-                             true);
+                             DpctGlobalInfo::getContext().getLangOpts(), true);
           if (Tok.getKind() == tok::semi) {
             DpctGlobalInfo::getInstance().addReplacement(
                 std::make_shared<ExtReplacement>(SM, EndLoc, 1, "", nullptr));
@@ -991,7 +988,8 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
   if (StringRef(BaseType).startswith("cub::") ||
       StringRef(BaseType).startswith("cuda::std::")) {
-    if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
+    if (const auto *DRE =
+            dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
       if (const auto *RD = DRE->getDecl()->getType()->getAsCXXRecordDecl()) {
         BaseType.clear();
         llvm::raw_string_ostream OS(BaseType);
@@ -1038,7 +1036,6 @@ void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
   dispatch(RS->getRetValue());
 }
 
-
 void ExprAnalysis::removeCUDADeviceAttr(const LambdaExpr *LE) {
   // E.g.,
   // my_kernel<<<1, 1>>>([=] __device__(int idx) { idx++; });
@@ -1070,7 +1067,7 @@ void ExprAnalysis::analyzeExpr(const IfStmt *IS) {
 
   if (IS->getElse())
     // "else if" will also be handled here as another ifstmt
-    dispatch(IS->getElse());  
+    dispatch(IS->getElse());
 }
 
 void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
@@ -1141,7 +1138,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     auto PP = Context.getPrintingPolicy();
     PP.PrintCanonicalTypes = 1;
-    TSTL.getTypePtr()->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
+    TSTL.getTypePtr()->getTemplateName().print(OS, PP,
+                                               TemplateName::Qualified::Fully);
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
@@ -1172,8 +1170,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
       }
     }
     if (OS.str() != "cub::WarpScan" && OS.str() != "cub::WarpReduce" &&
-        OS.str() != "cub::BlockReduce" && OS.str() != "cub::BlockScan" 
-         && OS.str() != "cub::BlockRadixSort") {
+        OS.str() != "cub::BlockReduce" && OS.str() != "cub::BlockScan" &&
+        OS.str() != "cub::BlockRadixSort") {
       SR.setEnd(TSTL.getTemplateNameLoc());
     }
     analyzeTemplateSpecializationType(TSTL);
@@ -1718,7 +1716,6 @@ void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
   IsRedeclareRequired = false;
 }
 
-
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
   if (UO->getOpcode() == UO_Deref) {
     IsRedeclareRequired = true;
@@ -1777,8 +1774,7 @@ void FunctorAnalysis::addConstQuailfier(const CXXRecordDecl *CRD) {
   for (const auto &D : CRD->decls()) {
     const CXXMethodDecl *Method = dyn_cast<CXXMethodDecl>(D);
     if (!Method) {
-      if (const FunctionTemplateDecl *FTD =
-              dyn_cast<FunctionTemplateDecl>(D)) {
+      if (const FunctionTemplateDecl *FTD = dyn_cast<FunctionTemplateDecl>(D)) {
         if (const CXXMethodDecl *CMD =
                 dyn_cast_or_null<CXXMethodDecl>(FTD->getAsFunction())) {
           Method = CMD;
@@ -1949,7 +1945,7 @@ void KernelConfigAnalysis::handleDim3Args(const T *Ctor, ArgIter ArgBegin,
   ArgAppender(FirstArg);
   SizeOfHighestDimension = Evaluator(FirstArg);
 
-  while(++ArgBegin != ArgEnd) {
+  while (++ArgBegin != ArgEnd) {
     auto Arg = *ArgBegin;
     if (Arg->isDefaultArgument()) {
       return;
@@ -1999,7 +1995,8 @@ void KernelConfigAnalysis::handleDim3Ctor(const T *Ctor, SourceRange Parens,
                            SM.getExpansionRange(Parens.getEnd()).getEnd());
     }
   }
-  auto Range = getRangeInRange(Parens, CallSpellingBegin, CallSpellingEnd, false);
+  auto Range =
+      getRangeInRange(Parens, CallSpellingBegin, CallSpellingEnd, false);
   OS << '(';
   if (DoReverse && Dim3Args.size() == 3) {
     Reversed = true;
