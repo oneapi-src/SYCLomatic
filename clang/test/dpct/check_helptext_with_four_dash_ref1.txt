@@ -1,0 +1,2 @@
+// CHECK: Override validator version for module. Format: <major.minor>;Default: DXIL.dll version or current internal version
+// CHECK-NEXT: This line is inserted for checking END.

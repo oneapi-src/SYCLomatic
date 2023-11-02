@@ -1,2 +1,2 @@
-// CHECK: -z <arg>                Pass -z <arg> to the linker
+// CHECK: -hlsl-entry <value> Entry point name for hlsl
 // CHECK-NEXT: This line is inserted for checking END.

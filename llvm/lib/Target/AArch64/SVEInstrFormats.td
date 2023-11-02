@@ -2317,7 +2317,10 @@ multiclass sve_fp_3op_p_zds_a<bits<2> opc, string asm, string Ps,
            SVEPseudo2Instr<Ps # _D, 1>, SVEInstr2Rev<NAME # _D, revname # _D, isReverseInstr>;
 
   def : SVE_4_Op_Pat<nxv8f16, op, nxv8i1, nxv8f16, nxv8f16, nxv8f16, !cast<Instruction>(NAME # _H)>;
+  def : SVE_4_Op_Pat<nxv4f16, op, nxv4i1, nxv4f16, nxv4f16, nxv4f16, !cast<Instruction>(NAME # _H)>;
+  def : SVE_4_Op_Pat<nxv2f16, op, nxv2i1, nxv2f16, nxv2f16, nxv2f16, !cast<Instruction>(NAME # _H)>;
   def : SVE_4_Op_Pat<nxv4f32, op, nxv4i1, nxv4f32, nxv4f32, nxv4f32, !cast<Instruction>(NAME # _S)>;
+  def : SVE_4_Op_Pat<nxv2f32, op, nxv2i1, nxv2f32, nxv2f32, nxv2f32, !cast<Instruction>(NAME # _S)>;
   def : SVE_4_Op_Pat<nxv2f64, op, nxv2i1, nxv2f64, nxv2f64, nxv2f64, !cast<Instruction>(NAME # _D)>;
 }
 
@@ -7200,6 +7203,10 @@ multiclass sve_int_perm_cpy_v<string asm, SDPatternOperator op> {
 
   def : Pat<(nxv8f16 (op nxv8i1:$pg, f16:$splat, nxv8f16:$passthru)),
             (!cast<Instruction>(NAME # _H) $passthru, $pg, $splat)>;
+  def : Pat<(nxv4f16 (op nxv4i1:$pg, f16:$splat, nxv4f16:$passthru)),
+            (!cast<Instruction>(NAME # _H) $passthru, $pg, $splat)>;
+  def : Pat<(nxv2f16 (op nxv2i1:$pg, f16:$splat, nxv2f16:$passthru)),
+            (!cast<Instruction>(NAME # _H) $passthru, $pg, $splat)>;
   def : Pat<(nxv2f32 (op nxv2i1:$pg, f32:$splat, nxv2f32:$passthru)),
             (!cast<Instruction>(NAME # _S) $passthru, $pg, $splat)>;
   def : Pat<(nxv4f32 (op nxv4i1:$pg, f32:$splat, nxv4f32:$passthru)),
@@ -8714,8 +8721,8 @@ multiclass sve2_crypto_unary_op<bit opc, string asm, SDPatternOperator op> {
 // SVE BFloat16 Group
 //===----------------------------------------------------------------------===//
 
-class sve_float_dot<bit bf, string asm>
-: I<(outs ZPR32:$Zda), (ins ZPR32:$_Zda, ZPR16:$Zn, ZPR16:$Zm),
+class sve_float_dot<bit bf, bit o2, ZPRRegOp dst_ty, ZPRRegOp src_ty, string asm>
+: I<(outs dst_ty:$Zda), (ins dst_ty:$_Zda, src_ty:$Zn, src_ty:$Zm),
      asm, "\t$Zda, $Zn, $Zm", "", []>, Sched<[]> {
   bits<5> Zda;
   bits<5> Zn;
@@ -8724,7 +8731,8 @@ class sve_float_dot<bit bf, string asm>
   let Inst{22}    = bf;
   let Inst{21}    = 0b1;
   let Inst{20-16} = Zm;
-  let Inst{15-10} = 0b100000;
+  let Inst{15-11} = 0b10000;
+  let Inst{10}    = o2;
   let Inst{9-5}   = Zn;
   let Inst{4-0}   = Zda;
 
@@ -8734,24 +8742,24 @@ class sve_float_dot<bit bf, string asm>
   let mayRaiseFPException = 1;
 }
 
-multiclass sve_float_dot<bit bf, string asm, ValueType InVT, SDPatternOperator op> {
-  def NAME : sve_float_dot<bf, asm>;
+multiclass sve_float_dot<bit bf, bit o2, ZPRRegOp dst_ty, ZPRRegOp src_ty,
+                         string asm, ValueType InVT, SDPatternOperator op> {
+  def NAME : sve_float_dot<bf, o2, dst_ty, src_ty, asm>;
   def : SVE_3_Op_Pat<nxv4f32, op, nxv4f32, InVT, InVT, !cast<Instruction>(NAME)>;
 }
 
-class sve_float_dot_indexed<bit bf, string asm>
-: I<(outs ZPR32:$Zda), (ins ZPR32:$_Zda, ZPR16:$Zn, ZPR3b16:$Zm, VectorIndexS32b:$iop),
+class sve_float_dot_indexed<bit bf, ZPRRegOp dst_ty, ZPRRegOp src1_ty,
+                            ZPRRegOp src2_ty, Operand iop_ty, string asm>
+: I<(outs dst_ty:$Zda), (ins dst_ty:$_Zda, src1_ty:$Zn, src2_ty:$Zm, iop_ty:$iop),
     asm, "\t$Zda, $Zn, $Zm$iop", "", []>, Sched<[]> {
   bits<5> Zda;
   bits<5> Zn;
   bits<3> Zm;
-  bits<2> iop;
   let Inst{31-23} = 0b011001000;
   let Inst{22}    = bf;
   let Inst{21}    = 0b1;
-  let Inst{20-19} = iop;
   let Inst{18-16} = Zm;
-  let Inst{15-10} = 0b010000;
+  let Inst{15-12} = 0b0100;
   let Inst{9-5}   = Zn;
   let Inst{4-0}   = Zda;
 
@@ -8761,8 +8769,14 @@ class sve_float_dot_indexed<bit bf, string asm>
   let mayRaiseFPException = 1;
 }
 
-multiclass sve_float_dot_indexed<bit bf, string asm, ValueType InVT, SDPatternOperator op> {
-  def NAME : sve_float_dot_indexed<bf, asm>;
+multiclass sve_float_dot_indexed<bit bf, bits<2> opc, ZPRRegOp src1_ty,
+                                 ZPRRegOp src2_ty, string asm, ValueType InVT,
+                                 SDPatternOperator op> {
+  def NAME : sve_float_dot_indexed<bf, ZPR32, src1_ty, src2_ty, VectorIndexS32b, asm> {
+    bits<2> iop;
+    let Inst{20-19} = iop;
+    let Inst{11-10} = opc;
+  }
   def : SVE_4_Op_Imm_Pat<nxv4f32, op, nxv4f32, InVT, InVT, i32, VectorIndexS32b_timm, !cast<Instruction>(NAME)>;
 }
 

@@ -67,7 +67,7 @@ bool Replacement::isApplicable() const {
 
 bool Replacement::apply(Rewriter &Rewrite) const {
   SourceManager &SM = Rewrite.getSourceMgr();
-  auto Entry = SM.getFileManager().getFile(FilePath);
+  auto Entry = SM.getFileManager().getOptionalFileRef(FilePath);
   if (!Entry)
     return false;
 
@@ -122,16 +122,18 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
                                         StringRef ReplacementText) {
   const std::pair<FileID, unsigned> DecomposedLocation =
       Sources.getDecomposedLoc(Start);
-  const FileEntry *Entry = Sources.getFileEntryForID(DecomposedLocation.first);
+  OptionalFileEntryRef Entry =
+      Sources.getFileEntryRefForID(DecomposedLocation.first);
 #ifdef SYCLomatic_CUSTOMIZATION
-  if (Entry) {
+  if (Entry.has_value()) {
+    const auto &FileEntry = Entry->getFileEntry();
     // To avoid potential path inconsist issue,
     // using tryGetRealPathName while applicable.
-    if (!Entry->tryGetRealPathName().empty()) {
-      this->FilePath = Entry->tryGetRealPathName().str();
+    if (!FileEntry.tryGetRealPathName().empty()) {
+      this->FilePath = FileEntry.tryGetRealPathName().str();
     }
     else {
-      llvm::SmallString<512> FilePathAbs(Entry->getName());
+      llvm::SmallString<512> FilePathAbs(FileEntry.getName());
       Sources.getFileManager().makeAbsolutePath(FilePathAbs);
       llvm::sys::path::native(FilePathAbs);
       // Need to remove dot to keep the file path

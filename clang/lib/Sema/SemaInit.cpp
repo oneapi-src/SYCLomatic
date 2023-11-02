@@ -15,9 +15,11 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/ExprObjC.h"
 #include "clang/AST/ExprOpenMP.h"
+#include "clang/AST/IgnoreExpr.h"
 #include "clang/AST/TypeLoc.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/Specifiers.h"
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Sema/Designator.h"
 #include "clang/Sema/EnterExpressionEvaluationContext.h"
@@ -169,22 +171,9 @@ static void updateStringLiteralType(Expr *E, QualType Ty) {
   while (true) {
     E->setType(Ty);
     E->setValueKind(VK_PRValue);
-    if (isa<StringLiteral>(E) || isa<ObjCEncodeExpr>(E)) {
+    if (isa<StringLiteral>(E) || isa<ObjCEncodeExpr>(E))
       break;
-    } else if (ParenExpr *PE = dyn_cast<ParenExpr>(E)) {
-      E = PE->getSubExpr();
-    } else if (UnaryOperator *UO = dyn_cast<UnaryOperator>(E)) {
-      assert(UO->getOpcode() == UO_Extension);
-      E = UO->getSubExpr();
-    } else if (GenericSelectionExpr *GSE = dyn_cast<GenericSelectionExpr>(E)) {
-      E = GSE->getResultExpr();
-    } else if (ChooseExpr *CE = dyn_cast<ChooseExpr>(E)) {
-      E = CE->getChosenSubExpr();
-    } else if (PredefinedExpr *PE = dyn_cast<PredefinedExpr>(E)) {
-      E = PE->getFunctionName();
-    } else {
-      llvm_unreachable("unexpected expr in string literal init");
-    }
+    E = IgnoreParensSingleStep(E);
   }
 }
 
@@ -193,20 +182,9 @@ static void updateStringLiteralType(Expr *E, QualType Ty) {
 static void updateGNUCompoundLiteralRValue(Expr *E) {
   while (true) {
     E->setValueKind(VK_PRValue);
-    if (isa<CompoundLiteralExpr>(E)) {
+    if (isa<CompoundLiteralExpr>(E))
       break;
-    } else if (ParenExpr *PE = dyn_cast<ParenExpr>(E)) {
-      E = PE->getSubExpr();
-    } else if (UnaryOperator *UO = dyn_cast<UnaryOperator>(E)) {
-      assert(UO->getOpcode() == UO_Extension);
-      E = UO->getSubExpr();
-    } else if (GenericSelectionExpr *GSE = dyn_cast<GenericSelectionExpr>(E)) {
-      E = GSE->getResultExpr();
-    } else if (ChooseExpr *CE = dyn_cast<ChooseExpr>(E)) {
-      E = CE->getChosenSubExpr();
-    } else {
-      llvm_unreachable("unexpected expr in array compound literal init");
-    }
+    E = IgnoreParensSingleStep(E);
   }
 }
 
@@ -1980,7 +1958,7 @@ void InitListChecker::CheckArrayType(const InitializedEntity &Entity,
     // them in all sorts of strange places).
     bool HasErr = IList->getNumInits() != 0 || SemaRef.getLangOpts().CPlusPlus;
     if (!VerifyOnly) {
-      // C2x 6.7.9p4: An entity of variable length array type shall not be
+      // C23 6.7.10p4: An entity of variable length array type shall not be
       // initialized except by an empty initializer.
       //
       // The C extension warnings are issued from ParseBraceInitializer() and
@@ -2252,6 +2230,8 @@ void InitListChecker::CheckStructUnionTypes(
     !IList->isIdiomaticZeroInitializer(SemaRef.getLangOpts());
   bool HasDesignatedInit = false;
 
+  llvm::SmallPtrSet<FieldDecl *, 4> InitializedFields;
+
   while (Index < IList->getNumInits()) {
     Expr *Init = IList->getInit(Index);
     SourceLocation InitLoc = Init->getBeginLoc();
@@ -2267,20 +2247,23 @@ void InitListChecker::CheckStructUnionTypes(
 
       // Handle this designated initializer. Field will be updated to
       // the next field that we'll be initializing.
-      if (CheckDesignatedInitializer(Entity, IList, DIE, 0,
-                                     DeclType, &Field, nullptr, Index,
-                                     StructuredList, StructuredIndex,
-                                     true, TopLevelObject))
+      bool DesignatedInitFailed = CheckDesignatedInitializer(
+          Entity, IList, DIE, 0, DeclType, &Field, nullptr, Index,
+          StructuredList, StructuredIndex, true, TopLevelObject);
+      if (DesignatedInitFailed)
         hadError = true;
-      else if (!VerifyOnly) {
-        // Find the field named by the designated initializer.
-        RecordDecl::field_iterator F = RD->field_begin();
-        while (std::next(F) != Field)
-          ++F;
-        QualType ET = SemaRef.Context.getBaseElementType(F->getType());
-        if (checkDestructorReference(ET, InitLoc, SemaRef)) {
-          hadError = true;
-          return;
+
+      // Find the field named by the designated initializer.
+      DesignatedInitExpr::Designator *D = DIE->getDesignator(0);
+      if (!VerifyOnly && D->isFieldDesignator()) {
+        FieldDecl *F = D->getFieldDecl();
+        InitializedFields.insert(F);
+        if (!DesignatedInitFailed) {
+          QualType ET = SemaRef.Context.getBaseElementType(F->getType());
+          if (checkDestructorReference(ET, InitLoc, SemaRef)) {
+            hadError = true;
+            return;
+          }
         }
       }
 
@@ -2288,7 +2271,8 @@ void InitListChecker::CheckStructUnionTypes(
 
       // Disable check for missing fields when designators are used.
       // This matches gcc behaviour.
-      CheckForMissingFields = false;
+      if (!SemaRef.getLangOpts().CPlusPlus)
+        CheckForMissingFields = false;
       continue;
     }
 
@@ -2367,6 +2351,7 @@ void InitListChecker::CheckStructUnionTypes(
     CheckSubElementType(MemberEntity, IList, Field->getType(), Index,
                         StructuredList, StructuredIndex);
     InitializedSomething = true;
+    InitializedFields.insert(*Field);
 
     if (RD->isUnion() && StructuredList) {
       // Initialize the first field within the union.
@@ -2378,15 +2363,21 @@ void InitListChecker::CheckStructUnionTypes(
 
   // Emit warnings for missing struct field initializers.
   if (!VerifyOnly && InitializedSomething && CheckForMissingFields &&
-      Field != FieldEnd && !Field->getType()->isIncompleteArrayType() &&
       !RD->isUnion()) {
     // It is possible we have one or more unnamed bitfields remaining.
     // Find first (if any) named field and emit warning.
-    for (RecordDecl::field_iterator it = Field, end = RD->field_end();
+    for (RecordDecl::field_iterator it = HasDesignatedInit ? RD->field_begin()
+                                                           : Field,
+                                    end = RD->field_end();
          it != end; ++it) {
-      if (!it->isUnnamedBitfield() && !it->hasInClassInitializer()) {
+      if (HasDesignatedInit && InitializedFields.count(*it))
+        continue;
+
+      if (!it->isUnnamedBitfield() && !it->hasInClassInitializer() &&
+          !it->getType()->isIncompleteArrayType()) {
         SemaRef.Diag(IList->getSourceRange().getEnd(),
-                     diag::warn_missing_field_initializers) << *it;
+                     diag::warn_missing_field_initializers)
+            << *it;
         break;
       }
     }
@@ -2846,7 +2837,8 @@ InitListChecker::CheckDesignatedInitializer(const InitializedEntity &Entity,
 
       if (PrevField &&
           PrevField->getFieldIndex() > KnownField->getFieldIndex()) {
-        SemaRef.Diag(DIE->getBeginLoc(), diag::ext_designated_init_reordered)
+        SemaRef.Diag(DIE->getInit()->getBeginLoc(),
+                     diag::ext_designated_init_reordered)
             << KnownField << PrevField << DIE->getSourceRange();
 
         unsigned OldIndex = StructuredIndex - 1;
@@ -4514,6 +4506,17 @@ static void TryReferenceListInitialization(Sema &S,
   if (Sequence) {
     if (DestType->isRValueReferenceType() ||
         (T1Quals.hasConst() && !T1Quals.hasVolatile())) {
+      if (S.getLangOpts().CPlusPlus20 &&
+          isa<IncompleteArrayType>(T1->getUnqualifiedDesugaredType()) &&
+          DestType->isRValueReferenceType()) {
+        // C++20 [dcl.init.list]p3.10:
+        // List-initialization of an object or reference of type T is defined as
+        // follows:
+        // ..., unless T is “reference to array of unknown bound of U”, in which
+        // case the type of the prvalue is the type of x in the declaration U
+        // x[] H, where H is the initializer list.
+        Sequence.AddQualificationConversionStep(cv1T1, clang::VK_PRValue);
+      }
       Sequence.AddReferenceBindingStep(cv1T1IgnoreAS,
                                        /*BindingTemporary=*/true);
       if (T1Quals.hasAddressSpace())
@@ -5660,8 +5663,6 @@ static void TryOrBuildParenListInitialization(
            diag::warn_cxx17_compat_aggregate_init_paren_list)
         << Kind.getLocation() << SR << ResultType;
   }
-
-  return;
 }
 
 /// Attempt a user-defined conversion between two types (C++ [dcl.init]),
@@ -7398,8 +7399,9 @@ static bool shouldTrackImplicitObjectArg(const CXXMethodDecl *Callee) {
       return true;
   if (!isInStlNamespace(Callee->getParent()))
     return false;
-  if (!isRecordWithAttr<PointerAttr>(Callee->getThisObjectType()) &&
-      !isRecordWithAttr<OwnerAttr>(Callee->getThisObjectType()))
+  if (!isRecordWithAttr<PointerAttr>(
+          Callee->getFunctionObjectParameterType()) &&
+      !isRecordWithAttr<OwnerAttr>(Callee->getFunctionObjectParameterType()))
     return false;
   if (Callee->getReturnType()->isPointerType() ||
       isRecordWithAttr<PointerAttr>(Callee->getReturnType())) {
@@ -7534,7 +7536,7 @@ static bool implicitObjectParamIsLifetimeBound(const FunctionDecl *FD) {
       QualType LHST;
       auto *MD = dyn_cast<CXXMethodDecl>(FD);
       if (MD && MD->isCXXInstanceMember())
-        LHST = Ctx.getLValueReferenceType(MD->getThisObjectType());
+        LHST = Ctx.getLValueReferenceType(MD->getFunctionObjectParameterType());
       else
         LHST = MD->getParamDecl(0)->getType();
       if (Ctx.hasSameType(RetT, LHST))

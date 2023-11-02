@@ -54,6 +54,8 @@ const char *const CommonOptionsParser::HelpMessage =
 
 
 #ifdef SYCLomatic_CUSTOMIZATION
+extern int SDKVersionMajor;
+extern int SDKVersionMinor;
 namespace clang {
 namespace tooling {
 #ifdef _WIN32
@@ -424,6 +426,28 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
     Adjuster = combineAdjusters(
         std::move(Adjuster),
         getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
+
+    std::string CUDAVerMajorDefine = std::string("-D") +
+                                     "__CUDACC_VER_MAJOR__" + "=" +
+                                     std::to_string(SDKVersionMajor);
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster(CUDAVerMajorDefine.c_str(),
+                                  ArgumentInsertPosition::BEGIN));
+
+    std::string CUDAVerMinorDefine = std::string("-D") +
+                                     "__CUDACC_VER_MINOR__" + "=" +
+                                     std::to_string(SDKVersionMinor);
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster(CUDAVerMinorDefine.c_str(),
+                                  ArgumentInsertPosition::BEGIN));
+
+    std::string NVCCDefine = std::string("-D") + "__NVCC__";
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster(NVCCDefine.c_str(),
+                                  ArgumentInsertPosition::BEGIN));
   }
 #endif // SYCLomatic_CUSTOMIZATION
   AdjustingCompilations->appendArgumentsAdjuster(Adjuster);
