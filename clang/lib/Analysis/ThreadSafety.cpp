@@ -1008,11 +1008,7 @@ class ThreadSafetyAnalyzer {
   threadSafety::SExprBuilder SxBuilder;
 
   ThreadSafetyHandler &Handler;
-<<<<<<< HEAD
-  const CXXMethodDecl *CurrentMethod = nullptr;
-=======
   const FunctionDecl *CurrentFunction;
->>>>>>> upstream_syclomatic/SYCLomatic
   LocalVariableMap LocalVarMap;
   FactManager FactMan;
   std::vector<CFGBlockInfo> BlockInfo;

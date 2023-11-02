@@ -12354,10 +12354,6 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     if (isAssigned(C)) {
-<<<<<<< HEAD
-      requestFeature(HelperFeatureEnum::device_ext);
-=======
->>>>>>> upstream_syclomatic/SYCLomatic
       emplaceTransformation(new ReplaceToken(
           C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
                                 "get_kernel_function_info"));
