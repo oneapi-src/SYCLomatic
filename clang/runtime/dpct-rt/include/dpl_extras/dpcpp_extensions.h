@@ -9,8 +9,8 @@
 #ifndef __DPCT_DPCPP_EXTENSIONS_H__
 #define __DPCT_DPCPP_EXTENSIONS_H__
 
-#include <sycl/sycl.hpp>
 #include <stdexcept>
+#include <sycl/sycl.hpp>
 
 #ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
 #include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
@@ -56,10 +56,10 @@ constexpr auto __inclusive_scan_over_group(_Args... __args) {
 /// perform the scan.
 template <typename Item, typename T, class BinaryOperation,
           int VALUES_PER_THREAD>
-__dpct_inline__ void
-exclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
-               T (&outputs)[VALUES_PER_THREAD], T init,
-               BinaryOperation binary_op) {
+__dpct_inline__ void exclusive_scan(const Item &item,
+                                    T (&inputs)[VALUES_PER_THREAD],
+                                    T (&outputs)[VALUES_PER_THREAD], T init,
+                                    BinaryOperation binary_op) {
   T result = inputs[0];
 
 #pragma unroll
@@ -97,9 +97,9 @@ exclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
 /// in the work-items of the group. \returns exclusive scan of the first i
 /// work-items where item is the i-th work item.
 template <typename Item, typename T, class BinaryOperation>
-__dpct_inline__ T
-exclusive_scan(const Item &item, T input, T init, BinaryOperation binary_op,
-               T &group_aggregate) {
+__dpct_inline__ T exclusive_scan(const Item &item, T input, T init,
+                                 BinaryOperation binary_op,
+                                 T &group_aggregate) {
   T output = detail::__exclusive_scan_over_group(item.get_group(), input, init,
                                                  binary_op);
   if (item.get_local_linear_id() == item.get_local_range().size() - 1) {
@@ -246,8 +246,8 @@ private:
   }
 
   template <typename Item>
-  __dpct_inline__ void
-  exclusive_downsweep(const Item &item, packed_counter_type raking_partial) {
+  __dpct_inline__ void exclusive_downsweep(const Item &item,
+                                           packed_counter_type raking_partial) {
     packed_counter_type *ptr =
         reinterpret_cast<packed_counter_type *>(_local_memory);
     packed_counter_type sum = raking_partial;
@@ -375,9 +375,9 @@ public:
 
   /// Rearrange elements from rank order to blocked order
   template <typename Item>
-  __dpct_inline__ void
-  scatter_to_blocked(Item item, T (&keys)[VALUES_PER_THREAD],
-                     int (&ranks)[VALUES_PER_THREAD]) {
+  __dpct_inline__ void scatter_to_blocked(Item item,
+                                          T (&keys)[VALUES_PER_THREAD],
+                                          int (&ranks)[VALUES_PER_THREAD]) {
     T *buffer = reinterpret_cast<T *>(_local_memory);
 
 #pragma unroll
@@ -429,9 +429,8 @@ public:
   radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
 
   template <typename Item>
-  __dpct_inline__ void
-  sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-       int end_bit = 8 * sizeof(T)) {
+  __dpct_inline__ void sort(const Item &item, T (&keys)[VALUES_PER_THREAD],
+                            int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
 
     uint32_t(&unsigned_keys)[VALUES_PER_THREAD] =
         reinterpret_cast<uint32_t(&)[VALUES_PER_THREAD]>(keys);
@@ -466,6 +465,11 @@ public:
     }
   }
 
+  static radix_sort instance() {
+    static radix_sort rs;
+    return rs;
+  }
+
 private:
   static constexpr int RADIX_BITS = 4;
 
@@ -481,8 +485,8 @@ private:
 /// perform the scan. \returns value of the reduction using binary_op
 template <typename Item, typename T, class BinaryOperation,
           int VALUES_PER_THREAD>
-__dpct_inline__ T
-reduce(Item item, T (&inputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
+__dpct_inline__ T reduce(Item item, T (&inputs)[VALUES_PER_THREAD],
+                         BinaryOperation binary_op) {
   T result = inputs[0];
 
 #pragma unroll
@@ -501,10 +505,11 @@ reduce(Item item, T (&inputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
 /// perform the scan. \returns value of the reduction using binary_op
 template <typename Item, typename T, class BinaryOperation>
 __dpct_inline__
-typename ::std::enable_if_t<sycl::has_known_identity_v<BinaryOperation, T>, T>
-reduce_over_partial_group(const Item &item, const T &value,
-                          const ::std::uint16_t &items_to_reduce,
-                          BinaryOperation binary_op) {
+    typename ::std::enable_if_t<sycl::has_known_identity_v<BinaryOperation, T>,
+                                T>
+    reduce_over_partial_group(const Item &item, const T &value,
+                              const ::std::uint16_t &items_to_reduce,
+                              BinaryOperation binary_op) {
   T value_temp = (item.get_local_linear_id() < items_to_reduce)
                      ? value
                      : sycl::known_identity_v<BinaryOperation, T>;
@@ -561,8 +566,8 @@ inclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
 /// elements assigned to work-items in the group.
 template <typename Item, typename T, class BinaryOperation>
 __dpct_inline__ T inclusive_scan(const Item &item, T input,
-                                                BinaryOperation binary_op,
-                                                T &group_aggregate) {
+                                 BinaryOperation binary_op,
+                                 T &group_aggregate) {
   T output =
       detail::__inclusive_scan_over_group(item.get_group(), input, binary_op);
   if (item.get_local_linear_id() == item.get_local_range().size() - 1) {
@@ -656,7 +661,6 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
   });
 }
 
-
 #ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
 
 namespace experimental {
@@ -739,7 +743,6 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
 } // namespace experimental
 
 #endif // SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
-
 
 } // namespace device
 } // namespace dpct
