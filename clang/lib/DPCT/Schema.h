@@ -73,28 +73,6 @@ struct VarSchema {
 
 std::string getFilePathFromDecl(const Decl *D, const SourceManager &SM);
 
-inline void printSchema(const FieldSchema &FS) {
-  std::cout << "FieldName: " << FS.FieldName << '\n';
-  std::cout << "FieldType: " << FS.FieldType << '\n';
-  std::cout << "Memory Size Of Field: " << FS.ValSize << '\n';
-  std::cout << "FieldOffset: " << FS.Offset << '\n';
-  std::cout << "IsBasicType: " << std::boolalpha << FS.IsBasicType << '\n';
-  std::cout << "ValTypeOfField: " << FS.ValTypeOfField << '\n';
-  std::cout << std::endl;
-}
-
-inline void printSchema(const TypeSchema &TS) {
-  std::cout << "TypeName: " << TS.TypeName << '\n';
-  std::cout << "FieldNum: " << TS.FieldNum << '\n';
-  std::cout << "TypeSize" << TS.TypeSize << '\n';
-  std::cout << "IsBuiltInType: " << std::boolalpha << TS.IsVirtual << '\n';
-  std::cout << "File name: " << TS.FileName << '\n';
-  std::cout << "\n";
-  for (auto it : TS.Members) {
-    printSchema(it);
-  }
-  std::cout << "----------------------------------------------------\n\n";
-}
 
 inline void printSchema(const VarSchema &VS) {
   std::cout << "VarName: " << VS.VarName << '\n';

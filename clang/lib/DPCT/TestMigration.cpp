@@ -32,7 +32,7 @@ void clang::dpct::TESTRule::runRule(
           for (const auto *it : Ctor->arguments()) {
             // std::cout << it->IgnoreImpCasts()->getStmtClassName() << '\n';
             if (const auto *DRE = dyn_cast<DeclRefExpr>(it->IgnoreImpCasts())) {
-              printSchema(constructVarSchema(DRE));
+              constructVarSchema(DRE);
             }
           }
         }
@@ -49,7 +49,7 @@ void clang::dpct::TESTRule::runRule(
           }
         }
         if (const auto *DRE = dyn_cast<DeclRefExpr>(arg->IgnoreImpCasts())) {
-          printSchema(constructVarSchema(DRE));
+          constructVarSchema(DRE);
         }
       }
     }
