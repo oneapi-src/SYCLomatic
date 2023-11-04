@@ -459,7 +459,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
               SM.getExpansionLoc(Range.getBegin()))) {
         DpctGlobalInfo::getInstance().insertConstantMacroTMInfo(
             SM.getExpansionLoc(Range.getBegin()), TM);
-        TransformSet.emplace_back(TM);
+        auto &Map = DpctGlobalInfo::getConstantReplInsertFlagMap();
+        Map[TM] = false;
       }
     } else {
       TransformSet.emplace_back(TM);
@@ -8806,14 +8807,12 @@ void DeviceFunctionDeclRule::runRule(
 
 REGISTER_RULE(DeviceFunctionDeclRule, PassKind::PK_Analysis)
 
-/// __constant__/__shared__/__device__ var information collection
-void MemVarRule::registerMatcher(MatchFinder &MF) {
+void MemVarRefRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher =
       varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
                     hasAttr(attr::CUDAShared), hasAttr(attr::HIPManaged)),
               unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
                                 "warpSize")));
-  MF.addMatcher(DeclMatcher.bind("var"), this);
   MF.addMatcher(
       declRefExpr(anyOf(hasParent(implicitCastExpr(
                                       unless(hasParent(arraySubscriptExpr())))
@@ -8823,12 +8822,241 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
                   hasAncestor(functionDecl().bind("func")))
           .bind("used"),
       this);
+}
 
+void MemVarRefRule::runRule(const MatchFinder::MatchResult &Result) {
+  auto getRHSOfTheNonConstAssignedVar =
+      [](const DeclRefExpr *DRE) -> const Expr * {
+    auto isExpectedRHS = [](const Expr *E, DynTypedNode Current,
+                            QualType QT) -> bool {
+      return (E == Current.get<Expr>()) && QT->isPointerType() &&
+             !QT->getPointeeType().isConstQualified();
+    };
+
+    auto &Context = DpctGlobalInfo::getContext();
+    DynTypedNode Current = DynTypedNode::create(*DRE);
+    DynTypedNodeList Parents = Context.getParents(Current);
+    while (!Parents.empty()) {
+      const BinaryOperator *BO = Parents[0].get<BinaryOperator>();
+      const VarDecl *VD = Parents[0].get<VarDecl>();
+      if (BO) {
+        if (BO->isAssignmentOp() &&
+            isExpectedRHS(BO->getRHS(), Current, BO->getLHS()->getType()))
+          return BO->getRHS();
+      } else if (VD) {
+        if (VD->hasInit() &&
+            isExpectedRHS(VD->getInit(), Current, VD->getType()))
+          return VD->getInit();
+        return nullptr;
+      }
+      Current = Parents[0];
+      Parents = Context.getParents(Current);
+    }
+    return nullptr;
+  };
+
+  auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
+  auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
+  auto Decl = getAssistNodeAsType<VarDecl>(Result, "decl");
+  DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
+  if (DpctGlobalInfo::isOptimizeMigration() &&
+      Decl->hasAttr<CUDAConstantAttr>()) {
+    auto &VarUsedBySymbolAPISet =
+        DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
+    auto LocInfo = DpctGlobalInfo::getLocInfo(Decl->getBeginLoc());
+    if (VarUsedBySymbolAPISet.find(
+            LocInfo.first + std::to_string(LocInfo.second) +
+            Decl->getNameAsString()) == VarUsedBySymbolAPISet.end()) {
+      return;
+    }
+  }
+  if (MemVarRef && Func && Decl) {
+    if (isCubVar(Decl)) {
+      return;
+    }
+    auto GetReplRange =
+        [&](const Stmt *ReplaceNode) -> std::pair<SourceLocation, unsigned> {
+      auto Range = getDefinitionRange(ReplaceNode->getBeginLoc(),
+                                      ReplaceNode->getEndLoc());
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto Begin = Range.getBegin();
+      auto End = Range.getEnd();
+      auto Length = Lexer::MeasureTokenLength(
+          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+      Length +=
+          SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
+      return std::make_pair(Begin, Length);
+    };
+    const auto *Parent = getParentStmt(MemVarRef);
+    bool HasTypeCasted = false;
+    // 1. Handle assigning a 2 or more dimensions array pointer to a variable.
+    if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
+      if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
+        if (ICE->getCastKind() == CK_ArrayToPointerDecay &&
+            arrType->getElementType()->isArrayType() &&
+            isAssignOperator(getParentStmt(Parent))) {
+          auto Range = GetReplRange(MemVarRef);
+          emplaceTransformation(
+              new ReplaceText(Range.first, Range.second,
+                              buildString("(", ICE->getType(), ")",
+                                          Decl->getName(), ".get_ptr()")));
+          HasTypeCasted = true;
+        }
+      }
+    }
+    // 2. Handle address-of operation.
+    else if (const UnaryOperator *UO =
+                 dyn_cast_or_null<UnaryOperator>(Parent)) {
+      if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
+        CtTypeInfo TypeAnalysis(Decl, false);
+        auto Range = GetReplRange(UO);
+        if (TypeAnalysis.getDimension() >= 2) {
+          // Dim >= 2
+          emplaceTransformation(new ReplaceText(
+              Range.first, Range.second,
+              buildString("reinterpret_cast<", UO->getType(), ">(",
+                          Decl->getName(), ".get_ptr())")));
+          HasTypeCasted = true;
+        } else if (TypeAnalysis.getDimension() == 1) {
+          // Dim == 1
+          emplaceTransformation(
+              new ReplaceText(Range.first, Range.second,
+                              buildString("reinterpret_cast<", UO->getType(),
+                                          ">(&", Decl->getName(), ")")));
+          HasTypeCasted = true;
+        } else {
+          // Dim == 0
+          if (Decl->hasAttr<CUDAConstantAttr>() &&
+              (MemVarRef->getType()->getTypeClass() !=
+               Type::TypeClass::Elaborated)) {
+            const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef);
+            if (RHS) {
+              auto Range = GetReplRange(RHS);
+              emplaceTransformation(new ReplaceText(
+                  Range.first, Range.second,
+                  buildString("const_cast<", RHS->getType(), ">(",
+                              ExprAnalysis::ref(RHS), ")")));
+              HasTypeCasted = true;
+            }
+          }
+        }
+      }
+    }
+    if (!HasTypeCasted && Decl->hasAttr<CUDAConstantAttr>() &&
+        (MemVarRef->getType()->getTypeClass() ==
+         Type::TypeClass::ConstantArray)) {
+      const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef);
+      if (RHS) {
+        auto Range = GetReplRange(RHS);
+        emplaceTransformation(
+            new ReplaceText(Range.first, Range.second,
+                            buildString("const_cast<", RHS->getType(), ">(",
+                                        ExprAnalysis::ref(RHS), ")")));
+      }
+    }
+    auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
+    if (Func->isImplicit() ||
+        Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
+      return;
+    if (VD == nullptr)
+      return;
+    auto Var = Global.findMemVarInfo(VD);
+    if (Func->hasAttr<CUDAGlobalAttr>() || Func->hasAttr<CUDADeviceAttr>()) {
+      if (DpctGlobalInfo::useGroupLocalMemory() &&
+          VD->hasAttr<CUDASharedAttr>() && VD->getStorageClass() != SC_Extern) {
+        if (!Var)
+          return;
+        if (auto B = dyn_cast_or_null<CompoundStmt>(Func->getBody())) {
+          if (B->body_empty())
+            return;
+          emplaceTransformation(new InsertBeforeStmt(
+              B->body_front(), Var->getDeclarationReplacement(VD)));
+          return;
+        }
+      }
+    } else {
+      if (Var && !VD->getType()->isArrayType() &&
+          VD->hasAttr<HIPManagedAttr>()) {
+        emplaceTransformation(new InsertAfterStmt(MemVarRef, "[0]"));
+      }
+    }
+  }
+}
+
+REGISTER_RULE(MemVarRefRule, PassKind::PK_Migration)
+
+void ConstantMemVarRule::registerMatcher(MatchFinder &MF) {
+  auto DeclMatcher =
+      varDecl(hasAttr(attr::CUDAConstant),
+              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
+                                "warpSize")));
+  MF.addMatcher(DeclMatcher.bind("var"), this);
   MF.addMatcher(varDecl(hasParent(translationUnitDecl())).bind("hostGlobalVar"),
                 this);
 }
 
-void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
+void ConstantMemVarRule::runRule(const MatchFinder::MatchResult &Result) {
+  std::string CanonicalType;
+  auto IsVarUsedByRuntimeSymbolAPI = [&](const VarDecl *VarD) {
+    auto &VarUsedByRuntimeSymbolAPISet =
+        DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
+    auto LocInfo = DpctGlobalInfo::getLocInfo(VarD->getBeginLoc());
+    std::string Key = LocInfo.first + std::to_string(LocInfo.second) +
+                      VarD->getNameAsString();
+    if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
+        VarUsedByRuntimeSymbolAPISet.end()) {
+      return false;
+    }
+    return true;
+  };
+  if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
+    if (isCubVar(MemVar)) {
+      return;
+    }
+    
+    CanonicalType = MemVar->getType().getCanonicalType().getAsString();
+    if (CanonicalType.find("block_tile_memory") != std::string::npos) {
+      emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
+      return;
+    }
+    auto Info = MemVarInfo::buildMemVarInfo(MemVar);
+    if (!Info)
+      return;
+    if (DpctGlobalInfo::isOptimizeMigration()) {
+      if (!IsVarUsedByRuntimeSymbolAPI(MemVar)) {
+        Info->setNotUseDpctHelperTypeFlag(true);
+      }
+    }
+
+    Info->setIgnoreFlag(true);
+    if (currentIsDevice(MemVar, Info))
+      return;
+
+    Info->setIgnoreFlag(false);
+    if (!Info->isShared() && Info->getType()->getDimension() > 3 &&
+        DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      report(MemVar->getBeginLoc(), Diagnostics::EXCEED_MAX_DIMENSION, true);
+    }
+    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
+        MemVar, Info->getDeclarationReplacement(MemVar)));
+    return;
+  }
+
+  if (auto VD = getNodeAsType<VarDecl>(Result, "hostGlobalVar")) {
+    auto VarName = VD->getNameAsString();
+    bool IsHost =
+        !(VD->hasAttr<CUDAConstantAttr>() || VD->hasAttr<CUDADeviceAttr>() ||
+          VD->hasAttr<CUDASharedAttr>() || VD->hasAttr<HIPManagedAttr>());
+    if (IsHost) {
+      dpct::DpctGlobalInfo::getGlobalVarNameSet().insert(VarName);
+
+      if (currentIsHost(VD, VarName))
+        return;
+    }
+  }
+}
+
+void ConstantMemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
   // 1. emit DPCT1055 warning
   // 2. add a new variable for host
   // 3. insert dpct::constant_memory and add the info from that replacement
@@ -8880,7 +9108,7 @@ void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
   R = tooling::Replacement(R.getFilePath(), 0, 0, "");
 }
 
-void MemVarRule::previousDCurrentH(const VarDecl *VD, tooling::Replacement &R) {
+void ConstantMemVarRule::previousDCurrentH(const VarDecl *VD, tooling::Replacement &R) {
   // 1. change DeviceConstant to HostDeviceConstant
   // 2. emit DPCT1055 warning (warning info is from previous device case)
   // 3. add a new variable for host (decl info is from previous device case)
@@ -8909,7 +9137,7 @@ void MemVarRule::previousDCurrentH(const VarDecl *VD, tooling::Replacement &R) {
   emplaceTransformation(new InsertText(SL, std::move(NewDecl)));
 }
 
-void MemVarRule::removeHostConstantWarning(Replacement &R) {
+void ConstantMemVarRule::removeHostConstantWarning(Replacement &R) {
   std::string ReplStr = R.getReplacementText().str();
 
   // warning text of Diagnostics::HOST_CONSTANT
@@ -8928,70 +9156,7 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
   R.setReplacementText(Result);
 }
 
-void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
-                                          std::shared_ptr<MemVarInfo> Info) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  auto DS = Info->getDeclStmtOfVarType();
-  if (!DS)
-    return;
-  // this token is ';'
-  auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
-  auto GenDeclStmt = [=, &SM](
-                         StringRef TypeName) -> std::string {
-    bool IsReference = !Info->getType()->getDimension();
-    std::string Ret;
-    llvm::raw_string_ostream OS(Ret);
-    OS << getNL() << getIndent(InsertSL, SM);
-    OS << TypeName << ' ';
-    if (IsReference)
-      OS << '&';
-    else
-      OS << '*';
-    OS << Info->getName();
-    OS << " = ";
-    if (IsReference)
-      OS << '*';
-    // add typecast for the __shared__ variable, since after migration the
-    // __shared__ variable type will be uint8_t*
-    OS << '(' << TypeName << " *)";
-    OS << Info->getNameAppendSuffix() << ';';
-    return OS.str();
-  };
-  if (Info->isAnonymousType()) {
-    // keep the origin type declaration, only remove variable name
-    //  }  a_variable  ,  b_variable ;
-    //   |                |
-    // begin             end
-    // ReplaceToken replacing [begin, end]
-    SourceLocation Begin =
-        SM.getExpansionLoc(Info->getDeclOfVarType()->getBraceRange().getEnd());
-    Begin = Begin.getLocWithOffset(1); // this token is }
-    SourceLocation End = SM.getExpansionLoc(MemVar->getEndLoc());
-    emplaceTransformation(new ReplaceToken(Begin, End, ""));
-
-    std::string NewTypeName = Info->getLocalTypeName();
-
-    // add a typename
-    emplaceTransformation(new InsertText(
-        SM.getExpansionLoc(
-            Info->getDeclOfVarType()->getBraceRange().getBegin()),
-        " " + NewTypeName));
-
-    // add typecast for the __shared__ variable, since after migration the
-    // __shared__ variable type will be uint8_t*
-    emplaceTransformation(new InsertText(InsertSL, GenDeclStmt(NewTypeName)));
-  } else if (DS) {
-    // remove var decl
-    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-        MemVar, Info->getDeclarationReplacement(MemVar)));
-
-    Info->setLocalTypeName(Info->getType()->getBaseName());
-    emplaceTransformation(
-        new InsertText(InsertSL, GenDeclStmt(Info->getType()->getBaseName())));
-  }
-}
-
-bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
+bool ConstantMemVarRule::currentIsDevice(const VarDecl *MemVar,
                                  std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto BeginLoc = SM.getExpansionLoc(MemVar->getBeginLoc());
@@ -8999,9 +9164,14 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
   auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
   auto FileInfo = DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
   auto &S = FileInfo->getConstantMacroTMSet();
+  auto &Map = DpctGlobalInfo::getConstantReplInsertFlagMap();
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
+    if(!Map[TM]) {
+      TransformSet->emplace_back(TM);
+      Map[TM] = true;
+    }
     if ((TM->getConstantFlag() == dpct::ConstantFlagType::Device ||
          TM->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
         TM->getLineBeginOffset() == OffsetOfLineBegin) {
@@ -9011,8 +9181,6 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
       // R(dcpt::constant_memery):
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
-      if (!FileInfo->getRepls())
-        return false;
       auto &M = FileInfo->getRepls()->getReplMap();
       bool RemoveWarning = false;
       for (auto &R : M) {
@@ -9113,16 +9281,22 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
   return false;
 }
 
-bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
+bool ConstantMemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto BeginLoc = SM.getExpansionLoc(VD->getBeginLoc());
   auto OffsetOfLineBegin = getOffsetOfLineBegin(BeginLoc, SM);
   auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
   auto FileInfo = DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
   auto &S = FileInfo->getConstantMacroTMSet();
+  auto &Map = DpctGlobalInfo::getConstantReplInsertFlagMap();
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
+    
+    if(!Map[TM]) {
+      TransformSet->emplace_back(TM);
+      Map[TM] = true;
+    }
     if ((TM->getConstantFlag() == dpct::ConstantFlagType::Host ||
          TM->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
         TM->getLineBeginOffset() == OffsetOfLineBegin) {
@@ -9194,37 +9368,96 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
   return false;
 }
 
-void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
-  auto getRHSOfTheNonConstAssignedVar =
-      [](const DeclRefExpr *DRE) -> const Expr * {
-    auto isExpectedRHS = [](const Expr *E, DynTypedNode Current,
-                            QualType QT) -> bool {
-      return (E == Current.get<Expr>()) && QT->isPointerType() &&
-             !QT->getPointeeType().isConstQualified();
-    };
+REGISTER_RULE(ConstantMemVarRule, PassKind::PK_Migration)
 
-    auto &Context = DpctGlobalInfo::getContext();
-    DynTypedNode Current = DynTypedNode::create(*DRE);
-    DynTypedNodeList Parents = Context.getParents(Current);
-    while (!Parents.empty()) {
-      const BinaryOperator *BO = Parents[0].get<BinaryOperator>();
-      const VarDecl *VD = Parents[0].get<VarDecl>();
-      if (BO) {
-        if (BO->isAssignmentOp() &&
-            isExpectedRHS(BO->getRHS(), Current, BO->getLHS()->getType()))
-          return BO->getRHS();
-      } else if (VD) {
-        if (VD->hasInit() &&
-            isExpectedRHS(VD->getInit(), Current, VD->getType()))
-          return VD->getInit();
-        return nullptr;
-      }
-      Current = Parents[0];
-      Parents = Context.getParents(Current);
-    }
-    return nullptr;
+/// __constant__/__shared__/__device__ var information collection
+void MemVarRule::registerMatcher(MatchFinder &MF) {
+  auto DeclMatcherWithoutConstant =
+      varDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAShared),
+                    hasAttr(attr::HIPManaged)),
+              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
+                                "warpSize")));
+  auto DeclMatcherWithConstant =
+      varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
+                    hasAttr(attr::CUDAShared), hasAttr(attr::HIPManaged)),
+              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
+                                "warpSize")));
+  MF.addMatcher(DeclMatcherWithoutConstant.bind("var"), this);
+  MF.addMatcher(
+      declRefExpr(anyOf(hasParent(implicitCastExpr(
+                                      unless(hasParent(arraySubscriptExpr())))
+                                      .bind("impl")),
+                        anything()),
+                  to(DeclMatcherWithConstant.bind("decl")),
+                  hasAncestor(functionDecl().bind("func")))
+          .bind("used"),
+      this);
+}
+
+void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
+                                          std::shared_ptr<MemVarInfo> Info) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto DS = Info->getDeclStmtOfVarType();
+  if (!DS)
+    return;
+  // this token is ';'
+  auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
+  auto GenDeclStmt = [=, &SM](
+                         StringRef TypeName) -> std::string {
+    bool IsReference = !Info->getType()->getDimension();
+    std::string Ret;
+    llvm::raw_string_ostream OS(Ret);
+    OS << getNL() << getIndent(InsertSL, SM);
+    OS << TypeName << ' ';
+    if (IsReference)
+      OS << '&';
+    else
+      OS << '*';
+    OS << Info->getName();
+    OS << " = ";
+    if (IsReference)
+      OS << '*';
+    // add typecast for the __shared__ variable, since after migration the
+    // __shared__ variable type will be uint8_t*
+    OS << '(' << TypeName << " *)";
+    OS << Info->getNameAppendSuffix() << ';';
+    return OS.str();
   };
+  if (Info->isAnonymousType()) {
+    // keep the origin type declaration, only remove variable name
+    //  }  a_variable  ,  b_variable ;
+    //   |                |
+    // begin             end
+    // ReplaceToken replacing [begin, end]
+    SourceLocation Begin =
+        SM.getExpansionLoc(Info->getDeclOfVarType()->getBraceRange().getEnd());
+    Begin = Begin.getLocWithOffset(1); // this token is }
+    SourceLocation End = SM.getExpansionLoc(MemVar->getEndLoc());
+    emplaceTransformation(new ReplaceToken(Begin, End, ""));
 
+    std::string NewTypeName = Info->getLocalTypeName();
+
+    // add a typename
+    emplaceTransformation(new InsertText(
+        SM.getExpansionLoc(
+            Info->getDeclOfVarType()->getBraceRange().getBegin()),
+        " " + NewTypeName));
+
+    // add typecast for the __shared__ variable, since after migration the
+    // __shared__ variable type will be uint8_t*
+    emplaceTransformation(new InsertText(InsertSL, GenDeclStmt(NewTypeName)));
+  } else if (DS) {
+    // remove var decl
+    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
+        MemVar, Info->getDeclarationReplacement(MemVar)));
+
+    Info->setLocalTypeName(Info->getType()->getBaseName());
+    emplaceTransformation(
+        new InsertText(InsertSL, GenDeclStmt(Info->getType()->getBaseName())));
+  }
+}
+
+void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
@@ -9242,21 +9475,6 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     if (Info->isTypeDeclaredLocal()) {
       processTypeDeclaredLocal(MemVar, Info);
     } else {
-      // This IgnoreFlag is used to disable the replacement of
-      // "dpct::constant_memory<T, 0> a;"
-      // The reason is in previous migration executions, this variable has been
-      // migrated and saved the replacement in yaml. That replacement maybe has
-      // both host and device replacements, which is different from current
-      // replacement (only device). We want to use the Repl in yaml. so ignore
-      // this replacement.
-      Info->setIgnoreFlag(true);
-      if (MemVar->hasAttr<CUDAConstantAttr>()) {
-        if (currentIsDevice(MemVar, Info))
-          return;
-      }
-
-      Info->setIgnoreFlag(false);
-
       if (!Info->isShared() && Info->getType()->getDimension() > 3 &&
           DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
         report(MemVar->getBeginLoc(), Diagnostics::EXCEED_MAX_DIMENSION, true);
@@ -9274,86 +9492,6 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     if (isCubVar(Decl)) {
       return;
     }
-    auto GetReplRange =
-        [&](const Stmt *ReplaceNode) -> std::pair<SourceLocation, unsigned> {
-      auto Range = getDefinitionRange(ReplaceNode->getBeginLoc(),
-                                      ReplaceNode->getEndLoc());
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Begin = Range.getBegin();
-      auto End = Range.getEnd();
-      auto Length = Lexer::MeasureTokenLength(
-          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
-      Length +=
-          SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
-      return std::make_pair(Begin, Length);
-    };
-    const auto *Parent = getParentStmt(MemVarRef);
-    bool HasTypeCasted = false;
-    // 1. Handle assigning a 2 or more dimensions array pointer to a variable.
-    if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
-      if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
-        if (ICE->getCastKind() == CK_ArrayToPointerDecay &&
-            arrType->getElementType()->isArrayType() &&
-            isAssignOperator(getParentStmt(Parent))) {
-          auto Range = GetReplRange(MemVarRef);
-          emplaceTransformation(
-              new ReplaceText(Range.first, Range.second,
-                              buildString("(", ICE->getType(), ")",
-                                          Decl->getName(), ".get_ptr()")));
-          HasTypeCasted = true;
-        }
-      }
-    }
-    // 2. Handle address-of operation.
-    else if (const UnaryOperator *UO =
-                 dyn_cast_or_null<UnaryOperator>(Parent)) {
-      if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
-        CtTypeInfo TypeAnalysis(Decl, false);
-        auto Range = GetReplRange(UO);
-        if (TypeAnalysis.getDimension() >= 2) {
-          // Dim >= 2
-          emplaceTransformation(new ReplaceText(
-              Range.first, Range.second,
-              buildString("reinterpret_cast<", UO->getType(), ">(",
-                          Decl->getName(), ".get_ptr())")));
-          HasTypeCasted = true;
-        } else if (TypeAnalysis.getDimension() == 1) {
-          // Dim == 1
-          emplaceTransformation(
-              new ReplaceText(Range.first, Range.second,
-                              buildString("reinterpret_cast<", UO->getType(),
-                                          ">(&", Decl->getName(), ")")));
-          HasTypeCasted = true;
-        } else {
-          // Dim == 0
-          if (Decl->hasAttr<CUDAConstantAttr>() &&
-              (MemVarRef->getType()->getTypeClass() !=
-               Type::TypeClass::Elaborated)) {
-            const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef);
-            if (RHS) {
-              auto Range = GetReplRange(RHS);
-              emplaceTransformation(new ReplaceText(
-                  Range.first, Range.second,
-                  buildString("const_cast<", RHS->getType(), ">(",
-                              ExprAnalysis::ref(RHS), ")")));
-              HasTypeCasted = true;
-            }
-          }
-        }
-      }
-    }
-    if (!HasTypeCasted && Decl->hasAttr<CUDAConstantAttr>() &&
-        (MemVarRef->getType()->getTypeClass() ==
-         Type::TypeClass::ConstantArray)) {
-      const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef);
-      if (RHS) {
-        auto Range = GetReplRange(RHS);
-        emplaceTransformation(
-            new ReplaceText(Range.first, Range.second,
-                            buildString("const_cast<", RHS->getType(), ">(",
-                                        ExprAnalysis::ref(RHS), ")")));
-      }
-    }
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
     if (Func->isImplicit() ||
         Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
@@ -9363,41 +9501,13 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
 
     auto Var = Global.findMemVarInfo(VD);
     if (Func->hasAttr<CUDAGlobalAttr>() || Func->hasAttr<CUDADeviceAttr>()) {
-      if (DpctGlobalInfo::useGroupLocalMemory() &&
-          VD->hasAttr<CUDASharedAttr>() && VD->getStorageClass() != SC_Extern) {
-        if (!Var)
-          return;
-        if (auto B = dyn_cast_or_null<CompoundStmt>(Func->getBody())) {
-          if (B->body_empty())
-            return;
-          emplaceTransformation(new InsertBeforeStmt(
-              B->body_front(), Var->getDeclarationReplacement(VD)));
-          return;
-        }
-      } else {
+      if (!(DpctGlobalInfo::useGroupLocalMemory() &&
+          VD->hasAttr<CUDASharedAttr>() && VD->getStorageClass() != SC_Extern)) {
         if (Var) {
           if (auto DFI = DeviceFunctionDecl::LinkRedecls(Func))
             DFI->addVar(Var);
         }
       }
-    } else {
-      if (Var && !VD->getType()->isArrayType() &&
-          VD->hasAttr<HIPManagedAttr>()) {
-        emplaceTransformation(new InsertAfterStmt(MemVarRef, "[0]"));
-      }
-    }
-  }
-
-  if (auto VD = getNodeAsType<VarDecl>(Result, "hostGlobalVar")) {
-    auto VarName = VD->getNameAsString();
-    bool IsHost =
-        !(VD->hasAttr<CUDAConstantAttr>() || VD->hasAttr<CUDADeviceAttr>() ||
-          VD->hasAttr<CUDASharedAttr>() || VD->hasAttr<HIPManagedAttr>());
-    if (IsHost) {
-      dpct::DpctGlobalInfo::getGlobalVarNameSet().insert(VarName);
-
-      if (currentIsHost(VD, VarName))
-        return;
     }
   }
 }
@@ -14331,6 +14441,8 @@ REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
 REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
+
+REGISTER_RULE(DeviceConstantVarOptimizeRule, PassKind::PK_Analysis)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

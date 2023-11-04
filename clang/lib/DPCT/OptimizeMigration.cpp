@@ -95,5 +95,61 @@ void ForLoopUnrollRule::runRule(
   }
 }
 
+void DeviceConstantVarOptimizeRule::registerMatcher(
+    ast_matchers::MatchFinder &MF) {
+  auto DeclMatcher =
+      varDecl(hasAttr(attr::CUDAConstant),
+              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
+                                "warpSize")));
+  MF.addMatcher(DeclMatcher.bind("ConstantVar"), this);
+  if (DpctGlobalInfo::isOptimizeMigration()) {
+    auto RuntimeSymnolAPIName = [&]() {
+      return hasAnyName("cudaGetSymbolAddress", "cudaGetSymbolSize",
+                        "cudaMemcpyToSymbol", "cudaMemcpyFromSymbol");
+    };
+
+    MF.addMatcher(callExpr(callee(functionDecl(RuntimeSymnolAPIName())))
+                      .bind("RuntimeSymnolAPICall"),
+                  this);
+  }
+}
+
+void DeviceConstantVarOptimizeRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "ConstantVar")) {
+    if (isCubVar(MemVar)) {
+      return;
+    }
+    MemVarInfo::buildMemVarInfo(MemVar);
+    return;
+  }
+  if (auto CE = getNodeAsType<CallExpr>(Result, "RuntimeSymnolAPICall")) {
+    if (auto DC = CE->getDirectCallee()) {
+      std::string FuncName = getFunctionName(DC);
+      int SymbolArgIndex = 1;
+      if (FuncName == "cudaMemcpyToSymbol") {
+        SymbolArgIndex = 0;
+      }
+      auto SymbolExpr = CE->getArg(SymbolArgIndex);
+      auto DREResults = findDREInScope(SymbolExpr);
+      for (auto &Result : DREResults) {
+        const DeclRefExpr *MatchedDRE =
+            Result.getNodeAs<DeclRefExpr>("VarReference");
+        if (!MatchedDRE)
+          continue;
+        if (auto VD = dyn_cast_or_null<VarDecl>(MatchedDRE->getDecl())) {
+          if (VD->hasAttr<CUDAConstantAttr>()) {
+            auto &Set = DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
+            auto LocInfo = DpctGlobalInfo::getLocInfo(VD->getBeginLoc());
+            std::string Key = LocInfo.first + std::to_string(LocInfo.second) +
+                       VD->getNameAsString();
+            Set.insert(Key);
+          }
+        }
+      }
+    }
+  }
+}
+
 } // namespace dpct
 } // namespace clang

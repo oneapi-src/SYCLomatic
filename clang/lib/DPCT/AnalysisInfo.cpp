@@ -158,6 +158,9 @@ std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
 std::unordered_map<std::string, bool>
     DpctGlobalInfo::MallocHostInfoMap;
+std::map<std::shared_ptr<TextModification>, bool>
+    DpctGlobalInfo::ConstantReplInsertFlagMap;
+std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.
@@ -663,6 +666,13 @@ void DpctGlobalInfo::postProcess() {
     DpctGlobalInfo::setNeedRunAgain(true);
   }
   for (auto &File : FileMap) {
+    auto &S = File.second->getConstantMacroTMSet();
+    auto &Map = DpctGlobalInfo::getConstantReplInsertFlagMap();
+    for (auto &E : S) {
+      if (!Map[E]) {
+        addReplacement(E->getReplacement(DpctGlobalInfo::getContext()));
+      }
+    }
     File.second->postProcess();
   }
   if (!isFirstPass) {
@@ -1481,6 +1491,9 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
 }
 
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
+  if(VI->isNotUseDpctHelperType()) {
+    return;
+  }
   if (!VI->isShared()) {
     requestFeature(HelperFeatureEnum::device_ext);
     SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
@@ -3631,6 +3644,32 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
   newConstVarInit(Var);
 }
 
+inline std::string
+MemVarInfo::getMemoryType(const std::string &MemoryType,
+                          std::shared_ptr<CtTypeInfo> VarType) {
+  if (isNotUseDpctHelperType()) {
+    return buildString(MemoryType, VarType->getBaseName());
+  } else {
+    return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
+                       VarType->getDimension(), ">");
+  }
+}
+
+std::string MemVarInfo::getInitArguments(const std::string &MemSize,
+                                         bool MustArguments) {
+  if (isNotUseDpctHelperType()) {
+    return InitList.empty() ? "" : buildString(" = ", InitList);
+  } else {
+    if (InitList.empty())
+      return getType()->getRangeArgument(MemSize, MustArguments);
+    if (getType()->getDimension())
+      return buildString("(", getRangeClass(),
+                         getType()->getRangeArgument(MemSize, true),
+                         ", " + InitList, ")");
+    return buildString("(", InitList, ")");
+  }
+}
+
 std::shared_ptr<DeviceFunctionInfo> &
 DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
   DpctNameGenerator G;
@@ -3689,8 +3728,11 @@ std::string MemVarInfo::getMemoryType() {
   }
   case clang::dpct::MemVarInfo::Constant: {
     requestFeature(HelperFeatureEnum::device_ext);
-    static std::string ConstantMemory =
+    std::string ConstantMemory =
         MapNames::getDpctNamespace() + "constant_memory";
+    if (isNotUseDpctHelperType()) {
+      ConstantMemory = "const ";
+    }
     return getMemoryType(ConstantMemory, getType());
   }
   case clang::dpct::MemVarInfo::Shared: {

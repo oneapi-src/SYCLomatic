@@ -1945,6 +1945,14 @@ public:
   getMallocHostInfoMap(){
     return MallocHostInfoMap;
   };
+  static inline std::map<std::shared_ptr<TextModification>, bool> &
+  getConstantReplInsertFlagMap() {
+    return ConstantReplInsertFlagMap;
+  }
+  static inline std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
+    return VarUsedByRuntimeSymbolAPISet;
+  }
+
 private:
   DpctGlobalInfo();
 
@@ -2128,6 +2136,9 @@ private:
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
   static std::unordered_map<std::string, bool> MallocHostInfoMap;
+  static std::map<std::shared_ptr<TextModification>, bool>
+      ConstantReplInsertFlagMap;
+  static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -2448,6 +2459,9 @@ public:
                        getType()->getRangeArgument(MemSize, false), ";");
   }
   ParameterStream &getFuncDecl(ParameterStream &PS) {
+    //if(isNotUseDpctHelperType()) {
+    //  return PS;
+    //}
     if (AccMode == Value) {
       PS << getAccessorDataType(true, true) << " ";
     } else if (AccMode == Pointer) {
@@ -2476,6 +2490,9 @@ public:
     return PS << getArgName();
   }
   ParameterStream &getKernelArg(ParameterStream &PS) {
+    //if(isNotUseDpctHelperType()) {
+    //  return PS;
+    //}
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       if (AccMode == Pointer) {
         if (!getType()->isWritten())
@@ -2518,7 +2535,10 @@ public:
     }
     return Ret;
   }
-
+  void setNotUseDpctHelperTypeFlag(bool Flag) {
+    NotUseDpctHelperTypeFlag = Flag;
+  };
+  bool isNotUseDpctHelperType() { return NotUseDpctHelperTypeFlag; }
 private:
   bool isTreatPointerAsArray() {
     return getType()->isPointer() && getScope() == Global &&
@@ -2537,20 +2557,9 @@ private:
 
   std::string getMemoryType();
   inline std::string getMemoryType(const std::string &MemoryType,
-                                   std::shared_ptr<CtTypeInfo> VarType) {
-    return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
-                       VarType->getDimension(), ">");
-  }
+                                   std::shared_ptr<CtTypeInfo> VarType);
   std::string getInitArguments(const std::string &MemSize,
-                               bool MustArguments = false) {
-    if (InitList.empty())
-      return getType()->getRangeArgument(MemSize, MustArguments);
-    if (getType()->getDimension())
-      return buildString("(", getRangeClass(),
-                         getType()->getRangeArgument(MemSize, true),
-                         ", " + InitList, ")");
-    return buildString("(", InitList, ")");
-  }
+                               bool MustArguments = false);
   const std::string &getMemoryAttr();
   std::string getSyclAccessorType();
   std::string getDpctAccessorType() {
@@ -2613,6 +2622,7 @@ private:
   std::string LocalTypeName = "";
 
   static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  bool NotUseDpctHelperTypeFlag = false;
 };
 
 class TextureTypeInfo {
@@ -2786,6 +2796,7 @@ public:
 
   inline unsigned getOffset() { return Offset; }
   inline std::string getFilePath() { return FilePath; }
+  inline bool isNotUseDpctHelperType() { return false; }
 };
 
 // texture handle info
@@ -3304,6 +3315,9 @@ private:
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap) {
     for (const auto &VI : VarMap) {
+      if(VI.second->isNotUseDpctHelperType()) {
+        continue;
+      }
       if (PS.FormatInformation.EnableFormat) {
         ParameterStream TPS;
         GetArgOrParam<T, COD>()(TPS, VI.second);
