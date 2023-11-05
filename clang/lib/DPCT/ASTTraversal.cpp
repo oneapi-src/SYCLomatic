@@ -9159,7 +9159,7 @@ void ConstantMemVarRule::removeHostConstantWarning(Replacement &R) {
 }
 
 bool ConstantMemVarRule::currentIsDevice(const VarDecl *MemVar,
-                                 std::shared_ptr<MemVarInfo> Info) {
+                                         std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto BeginLoc = SM.getExpansionLoc(MemVar->getBeginLoc());
   auto OffsetOfLineBegin = getOffsetOfLineBegin(BeginLoc, SM);

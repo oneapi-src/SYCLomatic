@@ -2533,6 +2533,7 @@ public:
     NotUseDpctHelperTypeFlag = Flag;
   };
   bool isNotUseDpctHelperType() { return NotUseDpctHelperTypeFlag; }
+
 private:
   bool isTreatPointerAsArray() {
     return getType()->isPointer() && getScope() == Global &&
