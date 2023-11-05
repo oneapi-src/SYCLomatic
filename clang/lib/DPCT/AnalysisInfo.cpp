@@ -743,10 +743,13 @@ void DpctFileInfo::buildLinesInfo() {
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
 
-  auto FE = SM.getFileManager().getFile(FilePath);
-  if (std::error_code ec = FE.getError())
+  llvm::Expected<FileEntryRef> Result =
+      SM.getFileManager().getFileRef(FilePath);
+
+  if (auto E = Result.takeError())
     return;
-  auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
+
+  auto FID = SM.getOrCreateFileID(*Result, SrcMgr::C_User);
   auto &Content = SM.getSLocEntry(FID).getFile().getContentCache();
   if (!Content.SourceLineCache) {
     bool Invalid;
