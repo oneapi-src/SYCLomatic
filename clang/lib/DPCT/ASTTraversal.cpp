@@ -9013,7 +9013,7 @@ void ConstantMemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     if (isCubVar(MemVar)) {
       return;
     }
-    
+
     CanonicalType = MemVar->getType().getCanonicalType().getAsString();
     if (CanonicalType.find("block_tile_memory") != std::string::npos) {
       emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
@@ -9056,7 +9056,8 @@ void ConstantMemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-void ConstantMemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
+void ConstantMemVarRule::previousHCurrentD(const VarDecl *VD,
+                                           tooling::Replacement &R) {
   // 1. emit DPCT1055 warning
   // 2. add a new variable for host
   // 3. insert dpct::constant_memory and add the info from that replacement
@@ -9108,7 +9109,8 @@ void ConstantMemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replaceme
   R = tooling::Replacement(R.getFilePath(), 0, 0, "");
 }
 
-void ConstantMemVarRule::previousDCurrentH(const VarDecl *VD, tooling::Replacement &R) {
+void ConstantMemVarRule::previousDCurrentH(const VarDecl *VD,
+                                           tooling::Replacement &R) {
   // 1. change DeviceConstant to HostDeviceConstant
   // 2. emit DPCT1055 warning (warning info is from previous device case)
   // 3. add a new variable for host (decl info is from previous device case)
@@ -9168,7 +9170,7 @@ bool ConstantMemVarRule::currentIsDevice(const VarDecl *MemVar,
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
-    if(!Map[TM]) {
+    if (!Map[TM]) {
       TransformSet->emplace_back(TM);
       Map[TM] = true;
     }
@@ -9292,8 +9294,8 @@ bool ConstantMemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
-    
-    if(!Map[TM]) {
+
+    if (!Map[TM]) {
       TransformSet->emplace_back(TM);
       Map[TM] = true;
     }
@@ -9402,8 +9404,7 @@ void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
     return;
   // this token is ';'
   auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
-  auto GenDeclStmt = [=, &SM](
-                         StringRef TypeName) -> std::string {
+  auto GenDeclStmt = [=, &SM](StringRef TypeName) -> std::string {
     bool IsReference = !Info->getType()->getDimension();
     std::string Ret;
     llvm::raw_string_ostream OS(Ret);
@@ -9502,7 +9503,8 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     auto Var = Global.findMemVarInfo(VD);
     if (Func->hasAttr<CUDAGlobalAttr>() || Func->hasAttr<CUDADeviceAttr>()) {
       if (!(DpctGlobalInfo::useGroupLocalMemory() &&
-          VD->hasAttr<CUDASharedAttr>() && VD->getStorageClass() != SC_Extern)) {
+            VD->hasAttr<CUDASharedAttr>() &&
+            VD->getStorageClass() != SC_Extern)) {
         if (Var) {
           if (auto DFI = DeviceFunctionDecl::LinkRedecls(Func))
             DFI->addVar(Var);

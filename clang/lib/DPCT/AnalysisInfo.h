@@ -2459,9 +2459,6 @@ public:
                        getType()->getRangeArgument(MemSize, false), ";");
   }
   ParameterStream &getFuncDecl(ParameterStream &PS) {
-    //if(isNotUseDpctHelperType()) {
-    //  return PS;
-    //}
     if (AccMode == Value) {
       PS << getAccessorDataType(true, true) << " ";
     } else if (AccMode == Pointer) {
@@ -2490,9 +2487,6 @@ public:
     return PS << getArgName();
   }
   ParameterStream &getKernelArg(ParameterStream &PS) {
-    //if(isNotUseDpctHelperType()) {
-    //  return PS;
-    //}
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       if (AccMode == Pointer) {
         if (!getType()->isWritten())
@@ -3315,7 +3309,7 @@ private:
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap) {
     for (const auto &VI : VarMap) {
-      if(VI.second->isNotUseDpctHelperType()) {
+      if (VI.second->isNotUseDpctHelperType()) {
         continue;
       }
       if (PS.FormatInformation.EnableFormat) {

@@ -1494,7 +1494,7 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
 }
 
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
-  if(VI->isNotUseDpctHelperType()) {
+  if (VI->isNotUseDpctHelperType()) {
     return;
   }
   if (!VI->isShared()) {

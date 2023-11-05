@@ -142,7 +142,7 @@ void DeviceConstantVarOptimizeRule::runRule(
             auto &Set = DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
             auto LocInfo = DpctGlobalInfo::getLocInfo(VD->getBeginLoc());
             std::string Key = LocInfo.first + std::to_string(LocInfo.second) +
-                       VD->getNameAsString();
+                              VD->getNameAsString();
             Set.insert(Key);
           }
         }
