@@ -36,7 +36,8 @@ void print_data(int* data, int num) {
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
-//CHECK-NEXT:  dpct::group::radix_sort::sort(item_ct1, input, 0 , 8*sizeof(input));
+//CHECK-NEXT:  dpct::group::radix_sort radixsort_obj;
+//CHECK-NEXT:  radixsort_obj.sort(item_ct1, input, 0 , 8*sizeof(input));
 //CHECK-NEXT:  
 //CHECK-NEXT:}
 
@@ -54,7 +55,7 @@ __global__ void BlockRadixSortKernel(int *d_data)
     
    __syncthreads();
    
-   BlockRadixSortT(sort_temp_storage).SortKeys(thread_data);
+   BlockRadixSortT(sort_temp_storage).Sort(thread_data);
    
    typedef cub::BlockStore<int, BlockSize, ItemsPerThread, cub::BLOCK_STORE_WARP_TRANSPOSE> BlockStoreT;
    __shared__ typename BlockStoreT::TempStorage store_temp_storage;
