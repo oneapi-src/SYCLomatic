@@ -465,15 +465,11 @@ public:
     }
   }
 
-  static radix_sort instance() {
-    static radix_sort rs;
-    return rs;
-  }
+}
 
-private:
-  static constexpr int RADIX_BITS = 4;
+private : static constexpr int RADIX_BITS = 4;
 
-  uint8_t *_local_memory;
+uint8_t *_local_memory;
 };
 
 /// Perform a reduction of the data elements assigned to all threads in the
