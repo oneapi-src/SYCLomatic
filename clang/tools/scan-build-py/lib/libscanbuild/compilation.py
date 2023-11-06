@@ -190,8 +190,6 @@ IGNORED_FLAGS = {
     "-h" : 0,
     "--version" : 0,
     "-V" : 0,
-    "--options-file" : 0,
-    "-optf" : 0,
     #"-fopenmp": 0,
     "-forward-unknown-to-host-compiler" : 0,
     "-Xllc" : 0,
@@ -249,7 +247,23 @@ COMPILER_PATTERNS = frozenset(
     ]
 )
 
-def parse_args(args):
+def parse_option_file(file):
+    """Parse command line options from specified file"""
+    options = []
+    with open(file, 'r') as option_file:
+        for (ln, line) in enumerate(option_file.readlines()):
+            pattern_space = re.compile("\s+")
+            arg_split = [x for x in pattern_space.split(line) if x]
+            flags = parse_args(iter(arg_split))
+            options.extend(flags[0])
+    return options
+
+def abspath(cwd, name):
+    """Create normalized absolute path from input filename."""
+    fullname = name if os.path.isabs(name) else os.path.join(cwd, name)
+    return os.path.normpath(fullname)
+
+def parse_args(args, directory='.'):
     flags = []
     compiler = ''
     files = []
@@ -334,6 +348,12 @@ def parse_args(args):
         # some parameters could look like filename, take as compile option
         elif arg in {'-D', '-I'}:
             flags.extend([arg, next(args)])
+        # some command line options are passed from file specified by
+        elif arg in {'-optf', '--options-file'}:
+            value = next(args)
+            option_file = abspath(directory, value)
+            flags.extend(parse_option_file(option_file))
+            pass
         # parameter which looks source file is taken...
         elif re.match(r'^[^-].+', arg) and classify_source(arg):
             # nvcc compiler compiles source files with suffix cuda(.cu) and
@@ -431,6 +451,13 @@ def parse_args(args):
 
             new_opt = MAP_FLAGS[result[0]] + gpu_virtual_arch_to_arch(result[1])
             flags.append(new_opt)
+            pass
+        elif re.match(r'^--options-file=', arg) or re.match(r'^-optf=', arg):
+            #split by '=' and strip whitespace
+            result = [x.strip() for x in arg.split('=')]
+            value = result[1]
+            option_file = abspath(directory, value)
+            flags.extend(parse_option_file(option_file))
             pass
         elif re.match(r'^-isystem=', arg):
             #"-isystem=<directory>"" is not a effective option in clang command line,
@@ -540,6 +567,11 @@ def parse_args(args):
             pass
         elif re.match(r'^-dag-vectorize-ops=', arg):
             pass
+        # Remove double quotes from including path like -I"/path/"
+        elif re.match(r'^-I\"', arg):
+            arg = arg.replace('"', '')
+            flags.append(arg)
+            pass
         # and consider everything else as compile option.
         else:
            flags.append(arg)
@@ -549,7 +581,7 @@ def parse_args(args):
 
     return [flags, compiler, files, preprocess_output_files]
 
-def split_command(command):
+def split_command(command, directory='.'):
     """Returns a value when the command is a compilation, None otherwise.
 
     The value on success is a named tuple with the following attributes:
@@ -569,7 +601,7 @@ def split_command(command):
     # iterate on the compile options
     args = iter(command[1:])
 
-    ret = parse_args(args)
+    ret = parse_args(args, directory)
     if ret == None:
         return None
     else:

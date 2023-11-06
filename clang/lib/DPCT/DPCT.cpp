@@ -14,6 +14,7 @@
 #include "CallExprRewriter.h"
 #include "Config.h"
 #include "CrashRecovery.h"
+#include "Error.h"
 #include "ExternalReplacement.h"
 #include "GenHelperFunction.h"
 #include "GenMakefile.h"
@@ -36,6 +37,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
@@ -227,9 +229,13 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
-  } else if (!CudaIncludeDetector.isSupportedVersionAvailable()) {
-    ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
-    dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
+  } else if (!CudaIncludeDetector.isIncludePathValid()) {
+    ShowStatus(MigrationErrorCannotDetectCudaPath);
+    dpctExit(MigrationErrorCannotDetectCudaPath);
+  } else if (!CudaIncludeDetector.isVersionSupported()) {
+    ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
+    dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
+
   }
 
   makeCanonical(Path);
@@ -302,14 +308,14 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   Rewriter Rewrite(Sources, DefaultLangOptions);
   SourceManager &SM = Rewrite.getSourceMgr();
 
-  const FileEntry *Entry = SM.getFileManager().getFile(Path).get();
+  auto Entry = SM.getFileManager().getOptionalFileRef(Path);
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);
     dpctExit(MigrationErrorInvalidFilePath);
   }
 
-  FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);
+  FileID FID = SM.getOrCreateFileID(*Entry, SrcMgr::C_User);
 
   SourceLocation EndOfFile = SM.getLocForEndOfFile(FID);
   unsigned int LineNumber = SM.getSpellingLineNumber(EndOfFile, nullptr);
@@ -614,6 +620,31 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationSucceeded);
   }
 
+#ifndef _WIN32
+  if (InterceptBuildCommand) {
+    SmallString<512> PathToInterceptBuildBinary(DpctInstallPath);
+    llvm::sys::path::append(PathToInterceptBuildBinary, "bin",
+                            "intercept-build");
+    if (!llvm::sys::fs::exists(PathToInterceptBuildBinary)) {
+      DpctLog() << "Error: intercept-build tool not found"
+                << "\n";
+      ShowStatus(MigrationErrorInvalidInstallPath);
+      dpctExit(MigrationErrorInvalidInstallPath);
+    }
+    std::string InterceptBuildSystemCall(PathToInterceptBuildBinary.str());
+    for (int argumentIndex = 2; argumentIndex < argc; argumentIndex++) {
+      InterceptBuildSystemCall.append(" ");
+      InterceptBuildSystemCall.append(std::string(argv[argumentIndex]));
+    }
+    int processExitCode = system(InterceptBuildSystemCall.c_str());
+    if (processExitCode) {
+      ShowStatus(InterceptBuildError);
+      dpctExit(InterceptBuildError);
+    }
+    dpctExit(InterceptBuildSuccess);
+  }
+#endif
+
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
@@ -762,7 +793,12 @@ int runDPCT(int argc, const char **argv) {
   std::string QueryAPIMappingSrc;
   std::string QueryAPIMappingOpt;
   if (DpctGlobalInfo::isQueryAPIMapping()) {
+    APIMapping::setPrintAll(QueryAPIMapping == "-");
     APIMapping::initEntryMap();
+    if (APIMapping::getPrintAll()) {
+      APIMapping::printAll();
+      dpctExit(MigrationSucceeded);
+    }
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       ShowStatus(MigrationErrorNoAPIMapping);
@@ -873,45 +909,21 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  std::string CUDAVerMajor =
-      "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
-
-  std::string CUDAVerMinor =
-      "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
-  Tool.appendArgumentsAdjuster(
-      getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
-
   SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32
-  if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 3) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 4) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 5) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 6) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 0) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 1) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 2)) {
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
-                                  ArgumentInsertPosition::BEGIN));
-  } else {
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
-                                  ArgumentInsertPosition::BEGIN));
-  }
+  Tool.appendArgumentsAdjuster(
+      getInsertArgumentAdjuster("-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH",
+                                ArgumentInsertPosition::BEGIN));
 #endif
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fcuda-allow-variadic-functions", ArgumentInsertPosition::BEGIN));
 
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-Xclang", ArgumentInsertPosition::BEGIN));
+
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-Wno-c++11-narrowing", ArgumentInsertPosition::BEGIN));
 
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);
@@ -1108,7 +1120,8 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       if (RunResult == 1) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
-          StringRef ErrStr = getDpctTermStr();
+          std::string Err = getDpctTermStr();
+          StringRef ErrStr = Err;
           if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
                        QueryAPIMapping);
@@ -1135,8 +1148,7 @@ int runDPCT(int argc, const char **argv) {
 
   if (DpctGlobalInfo::isQueryAPIMapping()) {
     llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
-                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET
-                 << "Is migrated to" << QueryAPIMappingOpt << ":";
+                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET;
     DiagnosticsEngine Diagnostics(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
         IntrusiveRefCntPtr<DiagnosticOptions>(new DiagnosticOptions()));
@@ -1149,8 +1161,8 @@ int runDPCT(int argc, const char **argv) {
     const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
     static const std::string StartStr{"// Start"};
     static const std::string EndStr{"// End"};
+    std::string MigratedStr{""};
     bool Flag = false;
-    llvm::outs() << llvm::raw_ostream::BLUE;
     for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
          I.MoveToNextPiece()) {
       size_t StartPos = 0;
@@ -1167,10 +1179,16 @@ int runDPCT(int argc, const char **argv) {
           EndPos = TempStr.find_last_of('\n') + 1;
           Flag = false;
         }
-        llvm::outs() << I.piece().substr(StartPos, EndPos - StartPos);
+        MigratedStr += I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
-    llvm::outs() << llvm::raw_ostream::RESET;
+    if (MigratedStr.find_first_not_of(" \n") == std::string::npos) {
+      llvm::outs() << "The API is Removed.\n";
+    } else {
+      llvm::outs() << "Is migrated to" << QueryAPIMappingOpt << ":"
+                   << llvm::raw_ostream::BLUE << MigratedStr
+                   << llvm::raw_ostream::RESET;
+    }
     return MigrationSucceeded;
   }
 

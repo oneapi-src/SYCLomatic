@@ -239,6 +239,8 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::device_ext)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
+      {"cusparseAlgMode_t",
+       std::make_shared<TypeNameRule>("int")},
       {"cusparseSolveAnalysisInfo_t",
        std::make_shared<TypeNameRule>(
            "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>",
@@ -481,10 +483,16 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpGEMMDescr_t",
+          std::make_shared<TypeNameRule>("oneapi::mkl::sparse::matmat_descr_t")},
+      {"cusparseSpSVDescr_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpGEMMAlg_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpSVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"__half_raw", std::make_shared<TypeNameRule>("uint16_t")},
       {"cudaFuncAttributes",
        std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
                                       "kernel_function_info")},
+      {"ncclResult_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -890,6 +898,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDevAttrMultiProcessorCount",
        std::make_shared<EnumNameRule>(
            "get_max_compute_units",
+           HelperFeatureEnum::device_ext)},
+      {"cudaDevAttrMaxThreadsPerBlock",
+       std::make_shared<EnumNameRule>(
+           "get_max_work_group_size",
            HelperFeatureEnum::device_ext)},
       {"cudaDevAttrClockRate",
        std::make_shared<EnumNameRule>(
@@ -1300,6 +1312,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUSOLVER_EIG_RANGE_ALL", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::all")},
       {"CUSOLVER_EIG_RANGE_V", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::values")},
       {"CUSOLVER_EIG_RANGE_I", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
+      {"ncclSuccess", std::make_shared<EnumNameRule>("0")},
       // ...
   };
 
@@ -1646,16 +1659,6 @@ void MapNames::setExplicitNamespaceMap() {
                                  getClNamespace() + "half"},
         std::vector<int>{1, 2}, -1, -1, -1,
         "oneapi::mkl::blas::column_major::gemm"}},
-      {"cublasSgemm_v2",
-       {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-        std::vector<std::string>{"float", "float", "float"},
-        std::vector<int>{1, 2}, -1, -1, -1,
-        "oneapi::mkl::blas::column_major::gemm"}},
-      {"cublasDgemm_v2",
-       {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{1, 2}, -1, -1, -1,
-        "oneapi::mkl::blas::column_major::gemm"}},
       {"cublasHgemmStridedBatched",
        {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
         std::vector<std::string>{getClNamespace() + "half",
@@ -1759,6 +1762,10 @@ void MapNames::setExplicitNamespaceMap() {
   };
 
   BLASAPIWithRewriter = {
+      {"cublasSgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasDgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasCgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasZgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasNrm2Ex", getDpctNamespace() + "nrm2_ex"},
       {"cublasDotEx", getDpctNamespace() + "dot_ex"},
       {"cublasDotcEx", getDpctNamespace() + "dotc_ex"},
@@ -1808,7 +1815,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
       {"cublasZrot_v2", getDpctNamespace() + "rot"},
-      {"cublasGetStatusString", ""}};
+      {"cublasGetStatusString", ""},
+      {"cublasSgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasDgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasCgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasZgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"}};
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
                            "cusolverDnSetStream",
@@ -1940,6 +1951,12 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseDcsrmv",
                            "cusparseCcsrmv",
                            "cusparseZcsrmv",
+                           "cusparseScsrmv_mp",
+                           "cusparseDcsrmv_mp",
+                           "cusparseCcsrmv_mp",
+                           "cusparseZcsrmv_mp",
+                           "cusparseCsrmvEx",
+                           "cusparseCsrmvEx_bufferSize",
                            "cusparseScsrsv_analysis",
                            "cusparseDcsrsv_analysis",
                            "cusparseCcsrsv_analysis",
@@ -1979,7 +1996,17 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpMM_bufferSize",
                            "cusparseSpMV",
                            "cusparseSpMV_bufferSize",
-                           "cusparseSpMM_preprocess"};
+                           "cusparseSpMM_preprocess",
+                           "cusparseSpGEMM_compute",
+                           "cusparseSpGEMM_copy",
+                           "cusparseSpGEMM_createDescr",
+                           "cusparseSpGEMM_destroyDescr",
+                           "cusparseSpGEMM_workEstimation",
+                           "cusparseSpSV_createDescr",
+                           "cusparseSpSV_destroyDescr",
+                           "cusparseSpSV_solve",
+                           "cusparseSpSV_bufferSize",
+                           "cusparseSpSV_analysis"};
 }
 // clang-format on
 
@@ -2485,23 +2512,6 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"std::complex<double>"}, std::vector<int>{},
           1, -1, -1, "oneapi::mkl::blas::column_major::hpr2"}},
         /*BLAS level 3*/
-        {"cublasCgemm_v2",
-         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<int>{1, 2}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::gemm"}},
-        {"cublasZgemm_v2",
-         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<int>{1, 2}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::gemm"}},
         {"cublasCgemm3m",
          {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
@@ -4325,6 +4335,10 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
      MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__align__", "__dpct_align__",
                         HelperFeatureEnum::device_ext)},
+    {"__CUDA_ALIGN__",
+     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                        "__CUDA_ALIGN__", "__dpct_align__",
+                        HelperFeatureEnum::device_ext)},
     {"__noinline__",
      MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__noinline__", "__dpct_noinline__",
@@ -4478,7 +4492,7 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
     return Search->second;
   } else {
 #ifdef DPCT_DEBUG_BUILD
-    llvm::errs() << "[NOTE] Find new API\"" << APIName
+    llvm::errs() << "[NOTE] Find new API \"" << APIName
                  << "\" , please update migrated API database.\n";
     ShowStatus(MigrationError);
     dpctExit(MigrationError);
@@ -4572,6 +4586,7 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "size",
     "shfl_down",
     "reduce",
+    "num_threads",
     "shfl_up",
     "shfl_xor",
     "meta_group_rank",

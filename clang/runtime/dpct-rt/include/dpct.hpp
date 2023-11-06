@@ -39,7 +39,7 @@ template <int Arg> class dpct_kernel_scalar;
 #define __dpct_noinline__ __attribute__((noinline))
 #endif
 
-#define DPCT_COMPATIBILITY_TEMP (600)
+#define DPCT_COMPATIBILITY_TEMP (900)
 
 namespace dpct{
 enum error_code { success = 0, default_error = 999 };

@@ -526,8 +526,17 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
         CTSName = getNameSpace(NSD) + "::" + DRE->getNameInfo().getAsString();
       }
     } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
-      CTSName = getNestedNameSpecifierString(Qualifier) +
-                DRE->getNameInfo().getAsString();
+      if (DRE->getDecl()->isCXXClassMember()) {
+        std::string Result;
+        llvm::raw_string_ostream OS(Result);
+        DRE->getDecl()->printNestedNameSpecifier(OS);
+        DRE->getNameInfo().printName(
+            OS, DpctGlobalInfo::getContext().getPrintingPolicy());
+        CTSName = Result;
+      } else {
+        CTSName = getNestedNameSpecifierString(Qualifier) +
+                  DRE->getNameInfo().getAsString();
+      }
     }
   }
 

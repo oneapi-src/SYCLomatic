@@ -15,7 +15,7 @@
 #include "../graph_common.hpp"
 
 int main() {
-  queue Queue;
+  queue Queue{{sycl::ext::intel::property::queue::no_immediate_command_list{}}};
 
   using T = int;
 
@@ -79,7 +79,7 @@ int main() {
 
     host_accessor HostAccC(BufferC);
     for (size_t i = 0; i < Size; i++) {
-      assert(ReferenceC[i] == HostAccC[i]);
+      assert(check_value(i, ReferenceC[i], HostAccC[i], "HostAccC"));
     }
   }
 

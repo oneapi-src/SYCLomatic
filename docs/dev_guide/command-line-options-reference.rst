@@ -49,12 +49,6 @@ in alphabetical order.
           :start-after: desc-change-cuda-files-extension-only:
           :end-before: end-change-cuda-files-extension-only:
    * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-change-filename-extension:
-          :end-before: desc-change-filename-extension:
-     - .. include:: /_include_files/options_def.rst
-          :start-after: desc-change-filename-extension:
-          :end-before: end-change-filename-extension:
-   * - .. include:: /_include_files/options_def.rst
           :start-after: opt-check-unicode-security:
           :end-before: desc-check-unicode-security:
      - .. include:: /_include_files/options_def.rst
@@ -133,6 +127,18 @@ in alphabetical order.
           :start-after: desc-help:
           :end-before: end-help:
    * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-helper-func-dir:
+          :end-before: desc-helper-func-dir:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-helper-func-dir:
+          :end-before: end-helper-func-dir:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-helper-func-pref:
+          :end-before: desc-helper-func-pref:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-helper-func-pref:
+          :end-before: end-helper-func-pref:
+   * - .. include:: /_include_files/options_def.rst
           :start-after: opt-in-root:
           :end-before: desc-in-root:
      - .. include:: /_include_files/options_def.rst
@@ -210,6 +216,12 @@ in alphabetical order.
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-process-all:
           :end-before: end-process-all:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-query-api-map:
+          :end-before: desc-query-api-map:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-query-api-map:
+          :end-before: end-query-api-map:
    * - .. include:: /_include_files/options_def.rst
           :start-after: opt-report-file-prefix:
           :end-before: desc-report-file-prefix:
@@ -310,12 +322,9 @@ in alphabetical order.
 
 .. note::
 
-   Specifying any of these options will trigger report generation.
-
-   -  ``--report-file-prefix``
-   -  ``--report-type``
-   -  ``--report-format``
-   -  ``--report-only``
+   .. include:: /_include_files/options_def.rst
+      :start-after: report-opt-block:
+      :end-before: end-report-opt-block:
 
 Deprecated Command Line Options
 -------------------------------
@@ -328,12 +337,6 @@ The following table lists |tool_name| command line options that are deprecated.
 
    * - Deprecated Option
      - Suggested Replacement
-   * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-change-filename-extension:
-          :end-before: desc-change-filename-extension:
-     - .. include:: /_include_files/options_def.rst
-          :start-after: opt-change-cuda-files-extension-only:
-          :end-before: desc-change-cuda-files-extension-only:
    * - .. include:: /_include_files/options_def.rst
           :start-after: opt-custom-helper-name:
           :end-before: desc-custom-helper-name:

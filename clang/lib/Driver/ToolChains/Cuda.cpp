@@ -76,7 +76,9 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
 
   SDKVersionMajor = Major;
   SDKVersionMinor = Minor;
-
+  if (Major < 8) {
+    CV = CudaVersion::CUDA_80;
+  }
   if (Major == 8 && Minor == 0) {
     CV = CudaVersion::CUDA_80;
   } else if (Major == 9 && Minor == 0) {
@@ -120,8 +122,10 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
   if (CV != CudaVersion::UNKNOWN) {
     IsVersionSupported = true;
     return true;
+  } else if (Major >= 12) {
+    CV = CudaVersion::NEW;
+    return true;
   }
-
   return false;
 }
 #else
@@ -229,7 +233,6 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
   if (!IsFound)
     return false;
   IsValid = true;
-
   InstallPath = FilePath;
   IncludePath = FilePath;
 
@@ -354,11 +357,8 @@ CudaInstallationDetector::CudaInstallationDetector(
     for (const auto &Candidate : Candidates) {
       InstallPath = Candidate.Path;
       if (validateCudaHeaderDirectory(InstallPath + "/include/", D) ||
-          validateCudaHeaderDirectory(InstallPath, D)) {
-        // To certain CUDA version that dpct supports is available
-        IsSupportedVersionAvailable = true;
+          validateCudaHeaderDirectory(InstallPath, D))
         break;
-      }
     }
   }
 #else
@@ -809,8 +809,7 @@ void NVPTX::OpenMPLinker::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   AddStaticDeviceLibsLinking(C, *this, JA, Inputs, Args, CmdArgs, "nvptx",
-                             GPUArch, /*isBitCodeSDL=*/false,
-                             /*postClangLink=*/false);
+                             GPUArch, /*isBitCodeSDL=*/false);
 
   // Find nvlink and pass it as "--nvlink-path=" argument of
   // clang-nvlink-wrapper.
@@ -833,14 +832,14 @@ void NVPTX::Linker::ConstructJob(Compilation &C, const JobAction &JA,
                                  const char *LinkingOutput) const {
   const auto &TC =
       static_cast<const toolchains::NVPTXToolChain &>(getToolChain());
+  ArgStringList CmdArgs;
+
   assert(TC.getTriple().isNVPTX() && "Wrong platform");
 
-  ArgStringList CmdArgs;
+  assert((Output.isFilename() || Output.isNothing()) && "Invalid output.");
   if (Output.isFilename()) {
     CmdArgs.push_back("-o");
     CmdArgs.push_back(Output.getFilename());
-  } else {
-    assert(Output.isNothing() && "Invalid output.");
   }
 
   if (mustEmitDebugInfo(Args) == EmitSameDebugInfoAsHost)
@@ -890,8 +889,7 @@ void NVPTX::Linker::ConstructJob(Compilation &C, const JobAction &JA,
         const char *CubinF =
             Args.MakeArgString(getToolChain().getDriver().GetTemporaryPath(
                 llvm::sys::path::stem(InputFile), "cubin"));
-        if (std::error_code EC =
-                llvm::sys::fs::copy_file(InputFile, C.addTempFile(CubinF)))
+        if (llvm::sys::fs::copy_file(InputFile, C.addTempFile(CubinF)))
           continue;
 
         CmdArgs.push_back(CubinF);

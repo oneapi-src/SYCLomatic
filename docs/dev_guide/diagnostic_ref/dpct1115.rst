@@ -1,0 +1,107 @@
+.. _DPCT1115:
+
+DPCT1115
+========
+
+Message
+-------
+
+.. _msg-1115-start:
+
+The ``sycl::ext::oneapi::group_local_memory`` is used to allocate group-local
+memory at the none kernel functor scope of a work-group data parallel kernel.
+You may need to adjust the code.
+
+.. _msg-1115-end:
+
+Detailed Help
+-------------
+
+The ``sycl::ext::oneapi::group_local_memory`` can be used to allocate group-local
+memory at the kernel functor scope of a work-group data parallel kernel. The
+restriction that group-local variables must be defined at kernel functor scope
+may be lifted in a future version of this extension.
+
+Refer to `sycl_ext_oneapi_local_memory.asciidoc <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_local_memory.asciidoc>`_ for more details.
+
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <int S> __device__ void devfun() {
+     __shared__ int slm1[32 * S];
+     ...
+   }
+
+   template <int S> __global__ void kernel() {
+     __shared__ int slm2[S];
+     devfun<S>();
+   }
+
+   void hostfun() { kernel<256><<<1, 1>>>(); }
+
+
+
+results in the following migrated SYCL* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <int S> inline void devfun(int *p, const sycl::nd_item<3> &item_ct1) {
+     /*
+     DPCT1115:0: The sycl::ext::oneapi::group_local_memory is used to allocate
+     group-local memory at the none kernel functor scope of a work-group data
+     parallel kernel. You may need to adjust the code.
+     */
+     auto &slm1 =
+         *sycl::ext::oneapi::group_local_memory<int[32 * S]>(item_ct1.get_group());
+     ...
+   }
+
+   template <int S> __dpct_inline__ void kernel(const sycl::nd_item<3> &item_ct1) {
+     auto &slm2 =
+         *sycl::ext::oneapi::group_local_memory<int[S]>(item_ct1.get_group());
+     devfun<S>(item_ct1);
+   }
+
+   void hostfun() { dpct::get_default_queue().parallel_for(
+     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+     [=](sycl::nd_item<3> item_ct1) {
+       kernel<256>(item_ct1);
+     });
+   }
+
+
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <int S> inline void devfun(int *slm1) {
+     ...
+   }
+
+   template <int S> __dpct_inline__ void kernel(int *slm1, int *slm2) {
+
+     devfun<S>(slm1);
+   }
+
+   void hostfun() { dpct::get_default_queue().submit(
+     [&](sycl::handler &cgh) {
+       sycl::local_accessor<int, 1> slm1_acc_ct1(sycl::range<1>(32 * 256), cgh);
+       sycl::local_accessor<int, 1> slm2_acc_ct1(sycl::range<1>(256), cgh);
+
+       cgh.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel<256>(slm1_acc_ct1.get_pointer(), slm2_acc_ct1.get_pointer());
+         });
+     });
+
+

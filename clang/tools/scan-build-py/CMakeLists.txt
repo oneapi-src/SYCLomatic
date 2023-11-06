@@ -195,7 +195,13 @@ if (SYCLomatic_CUSTOMIZATION)
       )
     endif()
 
+    install(TARGETS intercept-stub
+    DESTINATION ${CMAKE_BINARY_DIR}/lib/libear
+    COMPONENT dpct-intercept-build
+    )
+
     list(APPEND dpct-intercept-build-dependends intercept-stub)
+    list(APPEND dpct-intercept-build-dependends lib/libear/intercept-stub)
 
     list(APPEND dpct-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libear/__init__.py)
 

@@ -54,6 +54,8 @@ const char *const CommonOptionsParser::HelpMessage =
 
 
 #ifdef SYCLomatic_CUSTOMIZATION
+extern int SDKVersionMajor;
+extern int SDKVersionMinor;
 namespace clang {
 namespace tooling {
 #ifdef _WIN32
@@ -176,6 +178,13 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 
   SourcePathList = SourcePaths;
 #ifdef SYCLomatic_CUSTOMIZATION
+#ifndef _WIN32
+  if (std::string(argv[1]) == "--intercept-build" ||
+      std::string(argv[1]) == "-intercept-build" ||
+      std::string(argv[1]) == "intercept-build") {
+    return llvm::Error::success();
+  }
+#endif
   if(!SourcePathList.empty()) {
     clang::tooling::FormatSearchPath = SourcePaths[0];
   }
@@ -394,6 +403,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       std::vector<CompileCommand> CompileCommandsForFile =
           AdjustingCompilations->getCompileCommands(SourceFile);
       for (CompileCommand &CompileCommand : CompileCommandsForFile) {
+        bool IsIncludeSearchPathOpt = false;
         for (auto &I : CompileCommand.CommandLine) {
           if (I.size() > 2 && I.substr(0, 2) == "-I") {
             std::string IncPath = I.substr(2);
@@ -401,6 +411,11 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
             if (StartPos != std::string::npos)
               IncPath = IncPath.substr(StartPos);
             ExtraIncPathList.push_back(IncPath);
+          } else if (I == "-I") {
+            IsIncludeSearchPathOpt = true;
+          } else if (IsIncludeSearchPathOpt) {
+            ExtraIncPathList.push_back(I);
+            IsIncludeSearchPathOpt = false;
           }
         }
       }
@@ -411,6 +426,28 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
     Adjuster = combineAdjusters(
         std::move(Adjuster),
         getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
+
+    std::string CUDAVerMajorDefine = std::string("-D") +
+                                     "__CUDACC_VER_MAJOR__" + "=" +
+                                     std::to_string(SDKVersionMajor);
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster(CUDAVerMajorDefine.c_str(),
+                                  ArgumentInsertPosition::BEGIN));
+
+    std::string CUDAVerMinorDefine = std::string("-D") +
+                                     "__CUDACC_VER_MINOR__" + "=" +
+                                     std::to_string(SDKVersionMinor);
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster(CUDAVerMinorDefine.c_str(),
+                                  ArgumentInsertPosition::BEGIN));
+
+    std::string NVCCDefine = std::string("-D") + "__NVCC__";
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster(NVCCDefine.c_str(),
+                                  ArgumentInsertPosition::BEGIN));
   }
 #endif // SYCLomatic_CUSTOMIZATION
   AdjustingCompilations->appendArgumentsAdjuster(Adjuster);

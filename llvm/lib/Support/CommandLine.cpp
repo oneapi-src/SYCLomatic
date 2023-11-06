@@ -1537,6 +1537,25 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
   GlobalParser->ActiveSubCommand = ChosenSubCommand;
 
   assert(ChosenSubCommand);
+
+#ifdef SYCLomatic_CUSTOMIZATION
+#ifndef _WIN32
+  if (std::string(argv[FirstArg]) == "--intercept-build" ||
+      std::string(argv[FirstArg]) == "-intercept-build" ||
+      std::string(argv[FirstArg]) == "intercept-build") {
+    StringRef ArgName = "intercept-build";
+    StringRef Value;
+    Option *Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
+                                       LongOptionsUseDoubleDash, false);
+    if (Handler) {
+      Handler->addOccurrence(0, ArgName, Value);
+      return true;
+    }
+    return false;
+  }
+#endif
+#endif // SYCLomatic_CUSTOMIZATION
+
   auto &ConsumeAfterOpt = ChosenSubCommand->ConsumeAfterOpt;
   auto &PositionalOpts = ChosenSubCommand->PositionalOpts;
   auto &SinkOpts = ChosenSubCommand->SinkOpts;
@@ -2193,7 +2212,7 @@ void generic_parser_base::printGenericOptionDiff(
 
   unsigned NumOpts = getNumOptions();
   for (unsigned i = 0; i != NumOpts; ++i) {
-    if (Value.compare(getOptionValue(i)))
+    if (!Value.compare(getOptionValue(i)))
       continue;
 
     outs() << "= " << getOption(i);
@@ -2201,7 +2220,7 @@ void generic_parser_base::printGenericOptionDiff(
     size_t NumSpaces = MaxOptWidth > L ? MaxOptWidth - L : 0;
     outs().indent(NumSpaces) << " (default: ";
     for (unsigned j = 0; j != NumOpts; ++j) {
-      if (Default.compare(getOptionValue(j)))
+      if (!Default.compare(getOptionValue(j)))
         continue;
       outs() << getOption(j);
       break;
