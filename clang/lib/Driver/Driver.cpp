@@ -3071,14 +3071,10 @@ void Driver::BuildInputs(const ToolChain &TC, DerivedArgList &Args,
 
   // CUDA/HIP and their preprocessor expansions can be accepted by CL mode.
   // Warn -x after last input file has no effect
-<<<<<<< HEAD
-  if (!IsCLMode()) {
-#ifndef SYCLomatic_CUSTOMIZATION
-=======
   auto LastXArg = Args.getLastArgValue(options::OPT_x);
   const llvm::StringSet<> ValidXArgs = {"cuda", "hip", "cui", "hipi"};
   if (!IsCLMode() || ValidXArgs.contains(LastXArg)) {
->>>>>>> origin/sycl
+#ifndef SYCLomatic_CUSTOMIZATION
     Arg *LastXArg = Args.getLastArgNoClaim(options::OPT_x);
     Arg *LastInputArg = Args.getLastArgNoClaim(options::OPT_INPUT);
     if (LastXArg && LastInputArg &&
