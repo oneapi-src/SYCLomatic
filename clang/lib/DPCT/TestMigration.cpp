@@ -1,4 +1,5 @@
-//===------------------------- TestMigration.cpp ---------------------------===//
+//===------------------------- TestMigration.cpp
+//---------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -33,12 +34,17 @@ void clang::dpct::TESTRule::runRule(
             // std::cout << it->IgnoreImpCasts()->getStmtClassName() << '\n';
             if (const auto *DRE = dyn_cast<DeclRefExpr>(it->IgnoreImpCasts())) {
               constructVarSchema(DRE);
+              serializeJsonArrayToFile(
+                  serializeSchemaToJsonArray(getRelatedTypeSchema(DRE->getType())),
+                  std::string("output_") +
+                      DpctGlobalInfo::getTypeName(DRE->getType()) + ".json");
             }
           }
         }
         if (const auto *CBTE = dyn_cast<CXXBindTemporaryExpr>(arg)) {
           // std::cout << CBTE->getSubExpr()->getStmtClassName() << '\n';
-          if (const auto *Ctor = dyn_cast<CXXConstructExpr>(CBTE->getSubExpr())) {
+          if (const auto *Ctor =
+                  dyn_cast<CXXConstructExpr>(CBTE->getSubExpr())) {
             for (const auto *it : Ctor->arguments()) {
               // std::cout << it->IgnoreImpCasts()->getStmtClassName() << '\n';
               if (const auto *DRE =
@@ -53,7 +59,8 @@ void clang::dpct::TESTRule::runRule(
         }
       }
     }
-   serializeSchemaMapToFile(TypeSchemaMap,"output.json");
+    serializeJsonArrayToFile(serializeSchemaToJsonArray(TypeSchemaMap),
+                             "output_all.json");
   }
   return;
 }
