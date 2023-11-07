@@ -109,6 +109,19 @@ int foo(int aaaaa){
   //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, m, n, k, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
   cusparseZcsrmm(handle, transA, m, n, k, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
 
+  cusparseOperation_t transB = CUSPARSE_OPERATION_NON_TRANSPOSE;
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, transB, m, n, k, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
+  cusparseDcsrmm2(handle, transA, transB, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
+
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, transB, m, n, k, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
+  cusparseZcsrmm2(handle, transA, transB, m, n, k, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
+
   size_t ws_size;
   void *ws;
   //CHECK: int alg = 0;
