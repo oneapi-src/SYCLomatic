@@ -73,17 +73,6 @@ struct VarSchema {
 
 std::string getFilePathFromDecl(const Decl *D, const SourceManager &SM);
 
-
-inline void printSchema(const VarSchema &VS) {
-  std::cout << "VarName: " << VS.VarName << '\n';
-  std::cout << "VarType: " << VS.VarType << '\n';
-  std::cout << "VarSize: " << VS.VarSize << '\n';
-  std::cout << "File name: " << VS.FileName << '\n';
-  std::cout << "IsBasicType: " << std::boolalpha << VS.IsBasicType << '\n';
-  std::cout << "ValTypeOfVar: " << VS.ValTypeOfVar << '\n';
-  std::cout << std::endl;
-}
-
 ValType getValType(const clang::QualType &QT);
 
 FieldSchema constructFieldSchema(const clang::FieldDecl *FD,
@@ -95,19 +84,23 @@ void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS);
 
 TypeSchema constructTypeSchema(const clang::RecordType *RT);
 
-void registerTypeSchema(const clang::QualType QT);
+TypeSchema registerTypeSchema(const clang::QualType QT);
 
 VarSchema constructVarSchema(const clang::DeclRefExpr *DRE);
 
 extern std::map<std::string, TypeSchema> TypeSchemaMap;
 
 llvm::json::Array
-serializeSchemaMapToJson(const std::map<std::string, TypeSchema> &TSMap);
+serializeSchemaToJsonArray(const std::map<std::string, TypeSchema> &TSMap);
+
+llvm::json::Array serializeSchemaToJsonArray(const std::vector<TypeSchema> &TSVec);
 
 llvm::json::Object serializeSchemaToJson(const TypeSchema &TS);
 
-void serializeSchemaMapToFile(const std::map<std::string, TypeSchema> &TSMap,
+void serializeJsonArrayToFile(llvm::json::Array &&Arr,
                               const std::string &FilePath);
+
+std::vector<TypeSchema> getRelatedTypeSchema(const clang::QualType QT);
 
 } // namespace dpct
 } // namespace clang

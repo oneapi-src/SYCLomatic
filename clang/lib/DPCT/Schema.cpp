@@ -1,4 +1,5 @@
-//===--------------------------- Schema.cpp --------------------------------===//
+//===--------------------------- Schema.cpp
+//--------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 #include "Schema.h"
+#include <deque>
 
 using namespace clang;
 using namespace clang::dpct;
@@ -84,15 +86,16 @@ void dpct::DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS) {
   return;
 }
 
-void dpct::registerTypeSchema(const clang::QualType QT) {
+TypeSchema dpct::registerTypeSchema(const clang::QualType QT) {
+  TypeSchema TS;
   if (QT.isNull())
-    return;
+    return TS;
   const std::string &KetStr = DpctGlobalInfo::getTypeName(QT);
   if (TypeSchemaMap.find(KetStr) != TypeSchemaMap.end())
-    return;
+    return TypeSchemaMap.find(KetStr)->second;
   clang::ASTContext &AstContext = dpct::DpctGlobalInfo::getContext();
   if (const clang::RecordType *RT = QT->getAs<clang::RecordType>()) {
-    TypeSchema TS;
+
     TS.TypeName = KetStr;
     TS.TypeSize = AstContext.getTypeSize(RT) / CHAR_BIT;
     TS.FileName =
@@ -108,7 +111,7 @@ void dpct::registerTypeSchema(const clang::QualType QT) {
     TS.FieldNum = TS.Members.size();
     TypeSchemaMap[KetStr] = TS;
   }
-  return;
+  return TS;
 }
 
 VarSchema dpct::constructVarSchema(const clang::DeclRefExpr *DRE) {
@@ -131,7 +134,7 @@ VarSchema dpct::constructVarSchema(const clang::DeclRefExpr *DRE) {
 std::map<std::string, TypeSchema> clang::dpct::TypeSchemaMap;
 
 llvm::json::Array
-dpct::serializeSchemaMapToJson(const std::map<std::string, TypeSchema> &TSMap) {
+dpct::serializeSchemaToJsonArray(const std::map<std::string, TypeSchema> &TSMap) {
   llvm::json::Array JArray;
   for (auto &it : TSMap) {
     JArray.push_back(serializeSchemaToJson(it.second));
@@ -170,20 +173,45 @@ llvm::json::Object dpct::serializeSchemaToJson(const TypeSchema &TS) {
   return JObj;
 }
 
-
-//For test
-// we need remove this function
-void dpct::serializeSchemaMapToFile(
-    const std::map<std::string, TypeSchema> &TSMap,
-    const std::string &FilePath) {
+// For test
+//  we need remove this function
+void dpct::serializeJsonArrayToFile(llvm::json::Array &&Arr,
+                                    const std::string &FilePath) {
   std::error_code EC;
   llvm::raw_fd_ostream FOut(FilePath, EC);
   if (!EC) {
-    llvm::json::OStream(FOut, 0).value(serializeSchemaMapToJson(TypeSchemaMap));
+    llvm::json::OStream(FOut, 0).value(std::move(Arr));
     // FOut << llvm::json:: ;
     FOut.close();
   } else {
     llvm::errs() << "Error opening file: " << EC.message() << "\n";
     return;
   }
+}
+
+std::vector<TypeSchema> dpct::getRelatedTypeSchema(const clang::QualType QT) {
+  if (QT.isNull())
+    return std::vector<TypeSchema>();
+  TypeSchema TS = registerTypeSchema(getDerefType(QT));
+  std::deque<TypeSchema> Q;
+  std::vector<TypeSchema> Res;
+  Q.push_back(TS);
+  while (!Q.empty()) {
+    TS = Q.front();
+    Res.push_back(TS);
+    Q.pop_front();
+    for (auto &it : TS.Members) {
+      if (TypeSchemaMap.find(it.FieldType) != TypeSchemaMap.end())
+        Q.push_back(TypeSchemaMap.find(it.FieldType)->second);
+    }
+  }
+  return Res;
+}
+
+llvm::json::Array dpct::serializeSchemaToJsonArray(const std::vector<TypeSchema> &SVec) {
+  llvm::json::Array JArray;
+  for (auto &it : SVec) {
+    JArray.push_back(serializeSchemaToJson(it));
+  }
+  return JArray;
 }
