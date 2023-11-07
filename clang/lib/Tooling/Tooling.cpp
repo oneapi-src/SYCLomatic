@@ -977,6 +977,7 @@ int ClangTool::run(ToolAction *Action) {
                    << llvm::toString(AbsPath.takeError()) << "\n";
       continue;
     }
+    
     AbsolutePaths.push_back(std::move(*AbsPath));
   }
 #ifdef SYCLomatic_CUSTOMIZATION

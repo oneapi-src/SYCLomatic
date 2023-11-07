@@ -2010,7 +2010,12 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpSV_destroyDescr",
                            "cusparseSpSV_solve",
                            "cusparseSpSV_bufferSize",
-                           "cusparseSpSV_analysis"};
+                           "cusparseSpSV_analysis",
+                           "cusparseScsrgemm",
+                           "cusparseDcsrgemm",
+                           "cusparseCcsrgemm",
+                           "cusparseZcsrgemm",
+                           "cusparseXcsrgemmNnz"};
 }
 // clang-format on
 
