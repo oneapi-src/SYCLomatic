@@ -358,7 +358,7 @@ unsigned int match_all_over_sub_group(sycl::sub_group g, unsigned member_mask,
 }
 
 namespace experimental {
-
+#if defined(__NVPTX__)
 #define CUDA_SHFL_SYNC(RES, MASK, VAL, SHFL_PARAM, C, SHUFFLE_INSTR)           \
   if constexpr (std::is_same_v<T, double>) {                                   \
     int x_a, x_b;                                                              \
@@ -386,7 +386,7 @@ namespace experimental {
   } else {                                                                     \
     RES = __nvvm_shfl_sync_##SHUFFLE_INSTR(MASK, VAL, SHFL_PARAM, C);          \
   }
-
+#endif
 /// Masked version of select_from_sub_group, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the
@@ -404,6 +404,7 @@ template <typename T>
 T select_from_sub_group(unsigned int member_mask,
                         sycl::sub_group g, T x, int remote_local_id,
                         int logical_sub_group_size = 32) {
+#if defined(__SYCL_DEVICE_ONLY__)
 #if defined(__SPIR__)
   unsigned int start_index =
       g.get_local_linear_id() / logical_sub_group_size * logical_sub_group_size;
@@ -416,6 +417,15 @@ T select_from_sub_group(unsigned int member_mask,
   CUDA_SHFL_SYNC(result, member_mask, x, remote_local_id, cVal, idx_i32)
   return result;
 #endif
+#else
+  (void)g;
+  (void)x;
+  (void)remote_local_id;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device.");
+#endif // __SYCL_DEVICE_ONLY__
 }
 
 /// Masked version of shift_sub_group_left, which execute masked sub-group
@@ -435,6 +445,7 @@ template <typename T>
 T shift_sub_group_left(unsigned int member_mask,
                        sycl::sub_group g, T x, unsigned int delta,
                        int logical_sub_group_size = 32) {
+#if defined(__SYCL_DEVICE_ONLY__)
 #if defined(__SPIR__)
   unsigned int id = g.get_local_linear_id();
   unsigned int end_index =
@@ -450,6 +461,15 @@ T shift_sub_group_left(unsigned int member_mask,
   CUDA_SHFL_SYNC(result, member_mask, x, delta, cVal, down_i32)
   return result;
 #endif
+#else
+  (void)g;
+  (void)x;
+  (void)delta;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device.");
+#endif // __SYCL_DEVICE_ONLY__
 }
 
 /// Masked version of shift_sub_group_right, which execute masked sub-group
@@ -469,6 +489,7 @@ template <typename T>
 T shift_sub_group_right(unsigned int member_mask,
                         sycl::sub_group g, T x, unsigned int delta,
                         int logical_sub_group_size = 32) {
+#if defined(__SYCL_DEVICE_ONLY__)
 #if defined(__SPIR__)
   unsigned int id = g.get_local_linear_id();
   unsigned int start_index =
@@ -484,6 +505,15 @@ T shift_sub_group_right(unsigned int member_mask,
   CUDA_SHFL_SYNC(result, member_mask, x, delta, cVal, up_i32)
   return result;
 #endif
+#else
+  (void)g;
+  (void)x;
+  (void)delta;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device.");
+#endif // __SYCL_DEVICE_ONLY__
 }
 
 /// Masked version of permute_sub_group_by_xor, which execute masked sub-group
@@ -503,6 +533,7 @@ template <typename T>
 T permute_sub_group_by_xor(unsigned int member_mask,
                            sycl::sub_group g, T x, unsigned int mask,
                            int logical_sub_group_size = 32) {
+#if defined(__SYCL_DEVICE_ONLY__)
 #if defined(__SPIR__)
   unsigned int id = g.get_local_linear_id();
   unsigned int start_index =
@@ -516,8 +547,19 @@ T permute_sub_group_by_xor(unsigned int member_mask,
   CUDA_SHFL_SYNC(result, member_mask, x, mask, cVal, bfly_i32)
   return result;
 #endif
+#else
+  (void)g;
+  (void)x;
+  (void)mask;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device.");
+#endif // __SYCL_DEVICE_ONLY__
 }
+#if defined(__NVPTX__)
 #undef CUDA_SHFL_SYNC
+#endif
 } // namespace experimental
 
 /// Computes the multiplication of two complex numbers.
