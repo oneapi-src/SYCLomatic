@@ -68,6 +68,47 @@ __global__ void ReduceKernel(int* data) {
   data[threadid] = output;
 }
 
+
+//CHECK: void ReduceKernel_Max(int* data, const sycl::nd_item<3> &item_ct1) {
+//CHECK:  int threadid = item_ct1.get_local_id(2);
+//CHECK:  int input = data[threadid];
+//CHECK:  int output = 0;
+//CHECK:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::maximum());
+//CHECK:  data[threadid] = output;
+//CHECK:}
+__global__ void ReduceKernel_Max(int* data) {
+  typedef cub::WarpReduce<int> WarpReduce;
+  __shared__ typename WarpReduce::TempStorage temp1;
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  output = WarpReduce(temp1).Reduce(input, cub::Max());
+  data[threadid] = output;
+}
+
+
+//CHECK: void ReduceKernel_Min(int* data, const sycl::nd_item<3> &item_ct1) {
+//CHECK:  int threadid = item_ct1.get_local_id(2);
+//CHECK:  int input = data[threadid];
+//CHECK:  int output = 0;
+//CHECK:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::minimum());
+//CHECK:  data[threadid] = output;
+//CHECK:}
+__global__ void ReduceKernel_Min(int* data) {
+  typedef cub::WarpReduce<int> WarpReduce;
+  __shared__ typename WarpReduce::TempStorage temp1;
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  output = WarpReduce(temp1).Reduce(input, cub::Min());
+  data[threadid] = output;
+}
+
+
 //CHECK: void ReduceKernel2(int* data, int valid_items, const sycl::nd_item<3> &item_ct1) {
 //CHECK:  int threadid = item_ct1.get_local_id(2);
 //CHECK:  int input = data[threadid];
@@ -136,6 +177,26 @@ int main() {
   ReduceKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
+
+  init_data(dev_data, TotalThread);
+//CHECK: q_ct1.parallel_for(
+//CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         ReduceKernel_Max(dev_data, item_ct1)
+//CHECK-NEXT:       });
+  ReduceKernel_Max<<<GridSize, BlockSize>>>(dev_data);
+  cudaDeviceSynchronize();
+  verify_data(dev_data, TotalThread);  
+  
+  init_data(dev_data, TotalThread);
+//CHECK: q_ct1.parallel_for(
+//CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         ReduceKernel_Min(dev_data, item_ct1)
+//CHECK-NEXT:       });
+  ReduceKernel_Min<<<GridSize, BlockSize>>>(dev_data);
+  cudaDeviceSynchronize();
+  verify_data(dev_data, TotalThread);  
 
   init_data(dev_data, TotalThread);
 //CHECK: q_ct1.parallel_for(
