@@ -44,10 +44,23 @@ static const char * const InvalidLocation = "";
 
 Replacement::Replacement() : FilePath(InvalidLocation) {}
 
+#ifdef SYCLomatic_CUSTOMIZATION
+Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
+                         StringRef ReplacementText)
+    : ReplacementRange(Offset, Length),
+      ReplacementText(std::string(ReplacementText)) {
+#if defined(_WIN32)
+  this->FilePath = std::string(FilePath.lower());
+#else
+  this->FilePath = std::string(FilePath);
+#endif
+}
+#else
 Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
                          StringRef ReplacementText)
     : FilePath(std::string(FilePath)), ReplacementRange(Offset, Length),
       ReplacementText(std::string(ReplacementText)) {}
+#endif // SYCLomatic_CUSTOMIZATION
 
 Replacement::Replacement(const SourceManager &Sources, SourceLocation Start,
                          unsigned Length, StringRef ReplacementText) {
@@ -130,9 +143,13 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
     // To avoid potential path inconsist issue,
     // using tryGetRealPathName while applicable.
     if (!FileEntry.tryGetRealPathName().empty()) {
-      this->FilePath = FileEntry.tryGetRealPathName().str();
-    }
-    else {
+      this->FilePath =
+#if defined(_WIN32)
+          FileEntry.tryGetRealPathName().lower();
+#else
+          FileEntry.tryGetRealPathName().str();
+#endif
+    } else {
       llvm::SmallString<512> FilePathAbs(FileEntry.getName());
       Sources.getFileManager().makeAbsolutePath(FilePathAbs);
       llvm::sys::path::native(FilePathAbs);
@@ -140,6 +157,11 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
       // added by ASTMatcher and added by
       // AnalysisInfo::getLocInfo() consistent.
       llvm::sys::path::remove_dots(FilePathAbs, true);
+#if defined(_WIN32)
+      std::transform(FilePathAbs.begin(), FilePathAbs.end(),
+                     FilePathAbs.begin(),
+                     [](unsigned char c) { return std::tolower(c); });
+#endif
       this->FilePath = std::string(FilePathAbs.str());
     }
   } else {

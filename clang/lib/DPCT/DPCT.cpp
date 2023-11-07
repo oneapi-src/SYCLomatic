@@ -241,7 +241,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   makeCanonical(Path);
 
   SmallString<512> CudaPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs, true);
+  std::error_code EC = dpct::real_path(Path, CudaPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
@@ -261,14 +261,13 @@ std::string getInstallPath(const char *invokeCommand) {
   }
 
   makeCanonical(InstalledPath);
-  llvm::sys::fs::real_path(InstalledPath, InstalledPath, true);
+  dpct::real_path(InstalledPath, InstalledPath, true);
   StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath));
   // Move up to parent directory of bin directory
   StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
 
   SmallString<512> InstallPathAbs;
-  std::error_code EC =
-      llvm::sys::fs::real_path(InstallPath, InstallPathAbs, true);
+  std::error_code EC = dpct::real_path(InstallPath, InstallPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidInstallPath);
     dpctExit(MigrationErrorInvalidInstallPath);
@@ -779,6 +778,10 @@ int runDPCT(int argc, const char **argv) {
     // Set a virtual file for --query-api-mapping.
     llvm::SmallString<16> VirtFile;
     llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+#if defined(_WIN32)
+    std::transform(VirtFile.begin(), VirtFile.end(), VirtFile.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+#endif
     // Need set a virtual path and it will used by AnalysisScope.
     InRoot = VirtFile.str().str();
     makeInRootCanonicalOrSetDefaults(InRoot, {});

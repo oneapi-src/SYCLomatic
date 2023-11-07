@@ -95,7 +95,7 @@ bool makeInRootCanonicalOrSetDefaults(
   }
 
   SmallString<512> InRootAbs;
-  std::error_code EC = llvm::sys::fs::real_path(InRoot, InRootAbs, true);
+  std::error_code EC = dpct::real_path(InRoot, InRootAbs, true);
   if ((bool)EC) {
     clang::dpct::ShowStatus(MigrationErrorInvalidInRootPath);
     dpctExit(MigrationErrorInvalidInRootPath);
@@ -133,8 +133,7 @@ bool makeAnalysisScopeCanonicalOrSetDefaults(string &AnalysisScope,
     return false;
   }
   SmallString<512> AnalysisScopeAbs;
-  std::error_code EC =
-      llvm::sys::fs::real_path(AnalysisScope, AnalysisScopeAbs, true);
+  std::error_code EC = dpct::real_path(AnalysisScope, AnalysisScopeAbs, true);
   if ((bool)EC) {
     return false;
   }
@@ -176,7 +175,7 @@ int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath) {
     return 1;
   }
   SmallString<512> AbsPath;
-  auto EC = llvm::sys::fs::real_path(Path, AbsPath, true);
+  auto EC = dpct::real_path(Path, AbsPath, true);
   if ((bool)EC) {
     return -1;
   }
