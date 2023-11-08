@@ -2,51 +2,51 @@
 // CHECK:     {
 // CHECK:         "file":"/path/to/debug.cpp",
 // CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/debug.cpp\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
 // CHECK:         "file":"/path/to/svm_template.cpp",
 // CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/svm_template.cpp\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
 // CHECK:         "file":"/path/to/svm-train.cpp",
 // CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/svm-train.cpp\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
 // CHECK:         "file":"/path/to/utils.cpp",
 // CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/utils.cpp\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
-// CHECK:         "file":"/path/to/libSVM/libSVM_utils.cpp",
-// CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/libSVM/libSVM_utils.cpp\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "file":"/path/to/libsvm/libsvm_utils.cpp",
+// CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/libsvm/libsvm_utils.cpp\"",
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
-// CHECK:         "file":"/path/to/libSVM/svm.cpp",
-// CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/libSVM/svm.cpp\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "file":"/path/to/libsvm/svm.cpp",
+// CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/libsvm/svm.cpp\"",
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
-// CHECK:         "file":"/path/to/libSVM/libSVM_wrapper.cpp",
-// CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/libSVM/libSVM_wrapper.cpp\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "file":"/path/to/libsvm/libsvm_wrapper.cpp",
+// CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/libsvm/libsvm_wrapper.cpp\"",
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
-// CHECK:         "file":"/path/to/cuSVM/cuSVM_wrapper.cpp",
-// CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/cuSVM/cuSVM_wrapper.cpp\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "file":"/path/to/cusvm/cusvm_wrapper.cpp",
+// CHECK:         "command":"ClCompile -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/cusvm/cusvm_wrapper.cpp\"",
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
-// CHECK:         "file":"/path/to/cuSVM/cuSVMSolver.cu",
-// CHECK:         "command":"CustomBuild -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/cuSVM/cuSVMSolver.cu\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "file":"/path/to/cusvm/cusvmsolver.cu",
+// CHECK:         "command":"CustomBuild -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"/path/to/cusvm/cusvmsolver.cu\"",
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
 // CHECK:         "file":"b_kernel.cu",
 // CHECK:         "command":"CustomBuild -DCOMPILE_WITH_CUSVM -DCOMPILE_WITH_LIBSVM -DNDEBUG -DWIN32 -D_CRT_SECURE_NO_WARNINGS -D_WINDOWS -I\"/path/to/.\" -I\"/path/to/cuSVM\" -I\"/path/to/libSVM\" \"b_kernel.cu\"",
-// CHECK:         "directory":"{{.*}}/b_vcxproj_test/Output"
+// CHECK:         "directory":"{{.*}}/b_vcxproj_test/output"
 // CHECK:     }
 // CHECK: ]

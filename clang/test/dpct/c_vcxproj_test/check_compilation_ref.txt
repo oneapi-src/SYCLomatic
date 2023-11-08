@@ -1,22 +1,22 @@
 // CHECK:[
 // CHECK:    {
-// CHECK:        "file":"BaseLib/Tmp_1.cpp",
-// CHECK:        "command":"ClCompile -DNDEBUG -DWIN32 -D_CONSOLE -D_DEBUG -I\"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include\" \"BaseLib/Tmp_1.cpp\"",
-// CHECK:        "directory":"{{.*}}/c_vcxproj_test/Output"
+// CHECK:        "file":"baselib/tmp_1.cpp",
+// CHECK:        "command":"ClCompile -DNDEBUG -DWIN32 -D_CONSOLE -D_DEBUG -I\"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include\" \"baselib/tmp_1.cpp\"",
+// CHECK:        "directory":"{{.*}}/c_vcxproj_test/output"
 // CHECK:    },
 // CHECK:    {
 // CHECK:        "file":"tmp_2.cpp",
 // CHECK:        "command":"ClCompile -DNDEBUG -DWIN32 -D_CONSOLE -D_DEBUG -I\"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include\" \"tmp_2.cpp\"",
-// CHECK:        "directory":"{{.*}}/c_vcxproj_test/Output"
+// CHECK:        "directory":"{{.*}}/c_vcxproj_test/output"
 // CHECK:    },
 // CHECK:    {
 // CHECK:        "file":"c_kernel.cu",
 // CHECK:        "command":"CudaCompile -DNDEBUG -DWIN32 -D_CONSOLE -D_DEBUG -I\"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include\" \"c_kernel.cu\"",
-// CHECK:        "directory":"{{.*}}/c_vcxproj_test/Output"
+// CHECK:        "directory":"{{.*}}/c_vcxproj_test/output"
 // CHECK:    },
 // CHECK:    {
-// CHECK:        "file":"CuTmp_1.cu",
-// CHECK:        "command":"None -DNDEBUG -DWIN32 -D_CONSOLE -D_DEBUG -I\"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include\" \"CuTmp_1.cu\"",
-// CHECK:        "directory":"{{.*}}/c_vcxproj_test/Output"
+// CHECK:        "file":"cutmp_1.cu",
+// CHECK:        "command":"None -DNDEBUG -DWIN32 -D_CONSOLE -D_DEBUG -I\"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include\" \"cutmp_1.cu\"",
+// CHECK:        "directory":"{{.*}}/c_vcxproj_test/output"
 // CHECK:    }
 // CHECK:]
