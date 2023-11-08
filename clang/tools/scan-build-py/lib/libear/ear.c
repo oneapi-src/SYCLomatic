@@ -1596,11 +1596,15 @@ void emit_cmake_warning(const char *bin) {
       (len > 5 && bin[len - 6] == '/' && bin[len - 5] == 'c' &&
        bin[len - 4] == 'm') &&
           bin[len - 3] == 'a' && bin[len - 2] == 'k' && bin[len - 1] == 'e') {
+
     perror(
-        "Warning: cmake is called during make running: please run make first "
-        "to make sure cmake configure steps are finished, then run "
-        "\"intercept-build make -B\" to generate compilation database. if "
-        "cmake configure steps are done, please ignore this message.\n");
+        "[intercept-build: Error]: cmake is called to generate project build "
+        "scripts when run \"intercept-build make\", the build scripts "
+        "generated may not be complete. To generate a complete compilation "
+        "database, suggest follow following steps:\n"
+        "1. Build the source project by running \"make -B\" in build folder.\n"
+        "2. Run \"intercept-build make -B\" to generate compilation database "
+        "in build folder.\n");
   }
 }
 

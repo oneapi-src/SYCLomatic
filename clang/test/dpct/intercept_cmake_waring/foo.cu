@@ -8,7 +8,7 @@
 // RUN: cp %S/CMakeLists.txt ./CMakeLists.txt
 // RUN: cp %S/bar.cpp bar.cpp
 // RUN: intercept-build make > intercept_log.txt 2>&1
-// RUN: grep "Warning: cmake is called during make running: please run make first" intercept_log.txt
+// RUN: grep "cmake is called to generate project build" ./intercept_log.txt
 #include <iostream>
 
 int main() {
