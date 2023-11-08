@@ -182,7 +182,7 @@ int main() {
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:         ReduceKernel_Max(dev_data, item_ct1)
+//CHECK-NEXT:         ReduceKernel_Max(dev_data, item_ct1);
 //CHECK-NEXT:       });
   ReduceKernel_Max<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -192,7 +192,7 @@ int main() {
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:         ReduceKernel_Min(dev_data, item_ct1)
+//CHECK-NEXT:         ReduceKernel_Min(dev_data, item_ct1);
 //CHECK-NEXT:       });
   ReduceKernel_Min<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
