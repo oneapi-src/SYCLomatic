@@ -1601,7 +1601,7 @@ void emit_cmake_warning(const char *bin) {
         "[intercept-build: Error]: cmake is called to generate project build "
         "scripts when run \"intercept-build make\", the build scripts "
         "generated may not be complete. To generate a complete compilation "
-        "database, suggest follow following steps:\n"
+        "database, suggest following steps:\n"
         "1. Build the source project by running \"make -B\" in build folder.\n"
         "2. Run \"intercept-build make -B\" to generate compilation database "
         "in build folder.\n");

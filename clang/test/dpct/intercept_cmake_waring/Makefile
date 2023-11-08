@@ -1,8 +1,7 @@
 program = main
 
 
-main: foo.cu
-	nvcc -c foo.cu
+main: foo.cpp
 	mkdir -p build
 	cd build && cmake .. && make
 

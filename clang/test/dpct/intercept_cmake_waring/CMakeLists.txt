@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(bar)
+project(foo)
 
-add_executable(bar bar.cpp)
+add_executable(foo foo.cpp)
