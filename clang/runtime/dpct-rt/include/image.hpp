@@ -622,7 +622,16 @@ public:
     return _data.set_channel_type(type);
   }
 
-  sycl::sampler get_sampler() { return _sampling_info.get_sampler(); }
+  sycl::sampler get_sampler() {
+    sycl::sampler smp = _sampling_info.get_sampler();
+    /// linear memory only used for sycl::filtering_mode::nearest.
+    if (_data.get_data_type() == image_data_type::linear) {
+      smp = sycl::sampler(smp.get_coordinate_normalization_mode(),
+                          smp.get_addressing_mode(),
+                          sycl::filtering_mode::nearest);
+    }
+    return smp;
+  }
 };
 inline image_wrapper_base::~image_wrapper_base() {}
 using image_wrapper_base_p = image_wrapper_base *;
