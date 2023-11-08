@@ -13,7 +13,9 @@ add_clang_subdirectory(clang-linker-wrapper)
 add_clang_subdirectory(clang-offload-packager)
 add_clang_subdirectory(clang-offload-bundler)
 add_clang_subdirectory(clang-offload-deps)
-add_clang_subdirectory(clang-offload-wrapper)
+# SYCLomatic_CUSTOMIZATION begin
+#add_clang_subdirectory(clang-offload-wrapper)
+# SYCLomatic_CUSTOMIZATION end
 add_clang_subdirectory(clang-scan-deps)
 add_clang_subdirectory(clang-offload-extract)
 if(HAVE_CLANG_REPL_SUPPORT)
