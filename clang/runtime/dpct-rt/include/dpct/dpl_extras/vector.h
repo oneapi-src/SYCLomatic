@@ -73,6 +73,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static
       typename ::std::enable_if_t<__has_construct<_Allocator, T *>::value, void>
       uninitialized_value_construct_n(_Allocator alloc, T *p, Size n) {
+    assert( p != nullptr && "value constructing null data");
     for (Size i = 0; i < n; i++) {
       ::std::allocator_traits<_Allocator>::construct(alloc, p + i);
     }
@@ -82,6 +83,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static typename ::std::enable_if_t<!__has_construct<_Allocator, T *>::value,
                                      void>
   uninitialized_value_construct_n(_Allocator alloc, T *p, Size n) {
+    assert( p != nullptr && "value constructing null data");
     ::std::uninitialized_value_construct_n(
         oneapi::dpl::execution::make_device_policy(get_default_queue()), p, n);
   }
@@ -90,6 +92,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static typename ::std::enable_if_t<
       __has_construct<_Allocator, T *, const Value &>::value, void>
   uninitialized_fill_n(_Allocator alloc, T *first, Size n, const Value &value) {
+    assert( first != nullptr && "filling null data");
     for (Size i = 0; i < n; i++) {
       ::std::allocator_traits<_Allocator>::construct(alloc, first + i, value);
     }
@@ -99,6 +102,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static typename ::std::enable_if_t<
       !__has_construct<_Allocator, T *, const Value &>::value, void>
   uninitialized_fill_n(_Allocator alloc, T *first, Size n, const Value &value) {
+    assert( first != nullptr && "filling null data");
     ::std::uninitialized_fill_n(
         oneapi::dpl::execution::make_device_policy(get_default_queue()), first,
         n, value);
@@ -107,6 +111,7 @@ template <typename _Allocator> struct device_allocator_traits {
   template <typename Iter1, typename Size, typename T>
   static void uninitialized_custom_copy_n(_Allocator alloc, Iter1 first, Size n,
                                           T *d_first) {
+    assert( d_first != nullptr && "copying into null data");
     for (Size i = 0; i < n; i++) {
       ::std::allocator_traits<_Allocator>::construct(alloc, d_first + i,
                                                      *(first + i));
@@ -121,6 +126,7 @@ template <typename _Allocator> struct device_allocator_traits {
       void>
   uninitialized_device_copy_n(_Allocator alloc, Iter1 first, Size n,
                               T *d_first) {
+    assert( d_first != nullptr && "copying into null data");
     uninitialized_custom_copy_n(alloc, first, n, d_first);
   }
 
@@ -132,6 +138,7 @@ template <typename _Allocator> struct device_allocator_traits {
       void>
   uninitialized_device_copy_n(_Allocator alloc, Iter1 first, Size n,
                               T *d_first) {
+    assert( d_first != nullptr && "copying into null data");
     ::std::uninitialized_copy_n(
         oneapi::dpl::execution::make_device_policy(get_default_queue()), first,
         n, d_first);
@@ -144,6 +151,7 @@ template <typename _Allocator> struct device_allocator_traits {
           typename ::std::iterator_traits<Iter1>::value_type>::value,
       void>
   uninitialized_host_copy_n(_Allocator alloc, Iter1 first, Size n, T *d_first) {
+    assert( d_first != nullptr && "copying into null data");
     uninitialized_custom_copy_n(alloc, first, n, d_first);
   }
 
@@ -154,6 +162,7 @@ template <typename _Allocator> struct device_allocator_traits {
           typename ::std::iterator_traits<Iter1>::value_type>::value,
       void>
   uninitialized_host_copy_n(_Allocator alloc, Iter1 first, Size n, T *d_first) {
+    assert( d_first != nullptr && "copying into null data");
     ::std::uninitialized_copy_n(first, n, d_first);
   }
 
@@ -161,6 +170,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static
       typename ::std::enable_if_t<__has_destroy<_Allocator, T *>::value, void>
       destroy_n(_Allocator alloc, T *p, Size n) {
+    assert( p != nullptr && "destroying null data");
     for (Size i = 0; i < n; i++) {
       ::std::allocator_traits<_Allocator>::destroy(alloc, p + i);
     }
@@ -170,6 +180,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static
       typename ::std::enable_if_t<!__has_destroy<_Allocator, T *>::value, void>
       destroy_n(_Allocator alloc, T *p, Size n) {
+    assert( p != nullptr && "destroying null data");
     ::std::destroy_n(
         oneapi::dpl::execution::make_device_policy(get_default_queue()), p, n);
   }
