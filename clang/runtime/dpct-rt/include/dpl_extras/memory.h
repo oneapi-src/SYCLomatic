@@ -706,8 +706,7 @@ template <typename T, typename Tag> class tagged_pointer {
                 "tagged_pointer is not supported with DPCT_USM_LEVEL_NONE");
 };
 template <typename PolicyOrTag, typename Pointer>
-void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr,
-                                  ::std::ptrdiff_t) {
+void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr) {
   static_assert(
       false,
       "release_temporary_allocation is not supported with DPCT_USM_LEVEL_NONE");
@@ -925,8 +924,7 @@ auto get_temporary_allocation(PolicyOrTag &&policy_or_tag,
 }
 
 template <typename PolicyOrTag, typename Pointer>
-void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr,
-                                  ::std::ptrdiff_t) {
+void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr) {
   dpct::free(::std::forward<PolicyOrTag>(policy_or_tag), ptr);
 }
 #endif
