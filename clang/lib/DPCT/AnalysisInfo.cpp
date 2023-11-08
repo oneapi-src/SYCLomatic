@@ -3960,14 +3960,18 @@ CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
 std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
                                          bool MustArguments) {
   std::string Arg = "(";
-  for (auto &R : Range) {
-    auto Size = R.getSize();
+  for (unsigned i = 0; i < Range.size(); ++i) {
+    auto Size = Range[i].getSize();
     if (Size.empty()) {
       if (MemSize.empty()) {
-        Arg += "1";
+        Arg += "1, ";
       } else {
         Arg += MemSize;
+        Arg += ", ";
       }
+      for (unsigned tmp = i + 1; tmp < Range.size(); ++tmp)
+        Arg += "1, ";
+      break;
     } else
       Arg += Size;
     Arg += ", ";
