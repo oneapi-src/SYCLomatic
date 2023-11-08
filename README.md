@@ -13,13 +13,11 @@
 
 SYCLomatic is a project to assist developers in migrating their existing code written in different programming languages to the SYCL\* C++ heterogeneous programming model. Final code editing and verification is a manual process done by the developer.
 
-Use c2s command to make it as easy as possible to migrate existing CUDA codebases to SYCL, which is an industry standard. Once code is migrated to SYCL, it can be compiled and executed by any compiler that implements the SYCL specification as shown here:  https://www.khronos.org/sycl/
-
-The SYCLomatic development branch is the SYCLomatic branch.
+Use `c2s`(SYCLomatic binary) command to make it as easy as possible to migrate existing CUDA codebases to SYCL, which is an industry standard. Once code is migrated to SYCL, it can be compiled and executed by any compiler that implements the SYCL specification as shown here:  https://www.khronos.org/sycl/
 
 ## Releases
 
-Daily builds of the SYCLomatic branch on Linux and Windows* are available at
+The development is in the SYCLomatic branch. Daily builds of the SYCLomatic branch on Linux and Windows* are available at
 [releases](/../../releases).
 A few times a year, we publish Release Notes to
 highlight all important changes made in the project: features implemented and
@@ -65,7 +63,7 @@ git clone https://github.com/oneapi-src/SYCLomatic.git
 Open a developer command prompt using one of two methods:
 
 * Click start menu and search for "**x64** Native Tools Command Prompt for VS 2019".
-* Win-R, write "cmd", click enter, then run
+* Win-R, type "cmd", click enter, then run
   `"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64`
 
 ```bat
@@ -107,7 +105,7 @@ ninja -j4 install-c2s
 ```
 
 
-**build success message**:
+**Build success message**:
 
 After a successful build, you should be able to see following message in the terminal output.
 ```
@@ -117,7 +115,7 @@ After a successful build, you should be able to see following message in the ter
 ```
 
 
-### Environment Setup
+### Deployment
 
 **Linux**:
 ```bash
@@ -149,16 +147,16 @@ dpct is an alias command for c2s.
 
 ## Test SYCLomatic 
 ### Run in-tree LIT tests
-
+SYCLomatic uses [LLVM Integrated Tester](https://llvm.org/docs/CommandGuide/lit.html) infrastructure to do the unit test.
 Note: Certain CUDA header files may need to be accessible to the tool.
-After build the SYCLomatic, you can run the list test by: 
-
+After building the SYCLomatic, you can run the list test by:
+```
 ninja check-clang-c2s
+```
 
+### Run end to end test suite (Recommend for contributors)
 
-### Run E2E test suite (Recommend for contributors)
-
-Follow instructions from the link below to build and run tests:
+The end to end test executes the migration, build and run steps. Follow instructions from the link below to build and run tests:
 [README](https://github.com/oneapi-src/SYCLomatic-test)
 
 ## Known Issues and Limitations
