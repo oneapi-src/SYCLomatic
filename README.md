@@ -13,7 +13,7 @@
 
 SYCLomatic is a project to assist developers in migrating their existing code written in different programming languages to the SYCL\* C++ heterogeneous programming model. Final code editing and verification is a manual process done by the developer.
 
-Use `c2s`(SYCLomatic binary) command to make it as easy as possible to migrate existing CUDA codebases to SYCL, which is an industry standard. Once code is migrated to SYCL, it can be compiled and executed by any compiler that implements the SYCL specification as shown here:  https://www.khronos.org/sycl/
+Use `c2s`(SYCLomatic binary) command to make it as easy as possible to migrate existing CUDA\* codebases to SYCL, which is an industry standard. Once code is migrated to SYCL, it can be compiled and executed by any compiler that implements the SYCL specification as shown here:  https://www.khronos.org/sycl/
 
 ## Releases
 
@@ -170,12 +170,14 @@ The end to end test executes the migration, build and run steps. Follow instruct
     * [Get Started](https://oneapi-src.github.io/SYCLomatic/get_started/index.html)
     * [Developer Guide and Reference](https://oneapi-src.github.io/SYCLomatic/dev_guide/index.html)
 * [oneAPI DPC++ Compiler documentation](https://intel.github.io/llvm-docs/)
-* [Book: Mastering Programming of Heterogeneous Systems using C++ & SYCL](https://protect-eu.mimecast.com/s/P9FyCjvlRipPPWgT5ya8e?domain=link.springer.com)
+* [Book: Data Parallel C++: Programming Accelerated Systems Using C++ and SYCL](https://link.springer.com/book/10.1007/978-1-4842-9691-2)
 * [Essentials of SYCL training](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/dpc-essentials.html)
 * oneAPI specification:
 [https://spec.oneapi.io/versions/latest/index.html](https://spec.oneapi.io/versions/latest/index.html)
 * SYCL\* 2020 specification:
 [https://www.khronos.org/registry/SYCL/](https://www.khronos.org/registry/SYCL/)
+* [CUDA\* to SYCL\* Catalog ](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/migrate-cuda-to-sycl-library.html): a list of successful SYCL migrated applications
+* [Awesome oneAPI](https://github.com/oneapi-community/awesome-oneapi): an awesome list of oneAPI projects
 * More information on oneAPI and DPC++ is available at [https://www.oneapi.com/](https://www.oneapi.com/)
 
 ## License
