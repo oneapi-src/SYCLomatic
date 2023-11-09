@@ -1,0 +1,15 @@
+[
+    {
+    "arguments":
+    [
+        "nvcc", 
+        "-c",
+        "one.cu"
+    ],
+    "command": "nvcc -c  one.cu",
+    "directory": ".",
+    "file": "./one.cu",
+    "output": "one.o"
+    }
+]
+
