@@ -176,7 +176,7 @@ The end to end test executes the migration, build and run steps. Follow instruct
 [https://spec.oneapi.io/versions/latest/index.html](https://spec.oneapi.io/versions/latest/index.html)
 * SYCL\* 2020 specification:
 [https://www.khronos.org/registry/SYCL/](https://www.khronos.org/registry/SYCL/)
-* [CUDA\* to SYCL\* Catalog ](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/migrate-cuda-to-sycl-library.html): a list of successful SYCL migrated applications
+* [CUDA\* to SYCL\* Catalog](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/migrate-cuda-to-sycl-library.html): a list of successful SYCL migrated applications
 * [Awesome oneAPI](https://github.com/oneapi-community/awesome-oneapi): an awesome list of oneAPI projects
 * More information on oneAPI and DPC++ is available at [https://www.oneapi.com/](https://www.oneapi.com/)
 
