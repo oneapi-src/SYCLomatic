@@ -44,13 +44,26 @@ void clang::dpct::NCCLRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void clang::dpct::NCCLRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "type")) {
+  if (const auto *TL = getNodeAsType<TypeLoc>(Result, "type")) {
     EA.analyze(*TL);
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
     EA.analyze(CE);
   } else if (const DeclRefExpr *DRE =
                  getNodeAsType<DeclRefExpr>(Result, "enum")) {
     EA.analyze(DRE);
+    const auto *ICE =
+        DpctGlobalInfo::findAncestor<clang::ImplicitCastExpr>(DRE);
+    if (ICE != nullptr) {
+      llvm::StringRef ReplStr = EA.getReplacedString();
+      if (ReplStr.starts_with("oneapi::ccl::")) {
+        emplaceTransformation(
+            new ReplaceStmt(DRE, DpctGlobalInfo::getTypeName(ICE->getType()) +
+                                     "(" + std::string(ReplStr) + ")"));
+        EA.applyAllSubExprRepl();
+        return;
+      }
+    }
+
   } else {
     return;
   }
