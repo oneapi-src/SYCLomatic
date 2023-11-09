@@ -48,20 +48,6 @@ __global__ void ShuffleIndexKernel1(int* data) {
 __global__ void ShuffleIndexKernel2(int* data) {
 
   int threadid = threadIdx.x;
-
-  int input = data[threadid];
-  int output = 0;
-// CHECK: /*
-// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::ShuffleIndex is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: output = cub::ShuffleIndex<32>(input, 0, 0xaaaaaaaa);
-  output = cub::ShuffleIndex<32>(input, 0, 0xaaaaaaaa);
-  data[threadid] = output;
-}
-
-__global__ void ShuffleIndexKernel3(int* data) {
-
-  int threadid = threadIdx.x;
   int input = data[threadid];
   int output = 0;
 // CHECK: /*
