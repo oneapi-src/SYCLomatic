@@ -35,11 +35,16 @@ namespace fs = llvm::sys::fs;
 using clang::tooling::Replacements;
 
 int save2Yaml(
-    StringRef YamlFile, StringRef SrcFileName,
+    StringRef YamlFile, StringRef SrcFileNameRef,
     const std::vector<clang::tooling::Replacement> &Replaces,
     const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest,
     const std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets) {
+  SmallString<512> SrcFileName;
+  llvm::sys::fs::real_path(SrcFileNameRef, SrcFileName, true);
+#if defined(_WIN32)
+  SrcFileName = SrcFileName.str().lower();
+#endif
   std::string YamlContent;
   llvm::raw_string_ostream YamlContentStream(YamlContent);
   llvm::yaml::Output YAMLOut(YamlContentStream);

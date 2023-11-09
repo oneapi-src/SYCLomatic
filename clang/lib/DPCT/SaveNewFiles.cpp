@@ -754,11 +754,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
 void loadYAMLIntoFileInfo(std::string Path) {
   SmallString<512> SourceFilePath(Path);
-
-  SourceFilePath = StringRef(
-      DpctGlobalInfo::removeSymlinks(DpctGlobalInfo::getFileManager(), Path));
-  makeCanonical(SourceFilePath);
-
+  llvm::sys::fs::real_path(SourceFilePath, SourceFilePath, true);
   std::string OriginPath = SourceFilePath.str().str();
   rewriteFileName(SourceFilePath);
   if (!rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),
