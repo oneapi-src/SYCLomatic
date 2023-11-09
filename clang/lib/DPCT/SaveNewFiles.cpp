@@ -139,7 +139,8 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
 
 #if defined(_WIN64)
   std::string Filename = sys::path::filename(FilePath).str();
-  std::string LocalFilePath = StringRef(FilePath).lower();
+  std::string LocalFilePath =
+      FilePathAbsValid ? FilePathAbs.str().lower() : StringRef(FilePath).lower();
   std::string LocalInRoot =
       InRootAbsValid ? InRootAbs.str().lower() : InRoot.lower();
   std::string LocalOutRoot =
