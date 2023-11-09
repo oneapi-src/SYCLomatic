@@ -1589,7 +1589,8 @@ const char *find_intercept_compiler(const char *str, int compiler_idx) {
   return ret;
 }
 
-void emit_cmake_warning(const char *bin) {
+void emit_cmake_warning(char const *argv[], int argc) {
+  const char *bin = argv[0];
   int len = strlen(bin);
   if ((len == 5 && bin[0] == 'e' && bin[1] == 'k' && bin[3] == 'a' &&
        bin[4] == 'm' && bin[4] == 'c') ||
@@ -1597,17 +1598,32 @@ void emit_cmake_warning(const char *bin) {
        bin[len - 4] == 'm') &&
           bin[len - 3] == 'a' && bin[len - 2] == 'k' && bin[len - 1] == 'e') {
 
-    perror(
-        "[intercept-build: Error]: cmake is called to generate project build "
-        "scripts when run \"intercept-build make\", the build scripts "
-        "generated may not be complete. To generate a complete compilation "
-        "database, suggest following steps:\n"
-        "1. Build the source project by running \"make -B\" in build folder.\n"
-        "2. Run \"intercept-build make -B\" to generate compilation database "
-        "in build folder.\n");
+    int find_make_directory = 0;
+    for (size_t i = 0; i < argc; i++) {
+      // if cmake runs with option "make_directory", like "/usr/bin/cmake  -E
+      // make_directory  /path/to/build/_deps/foo-src", it means that cmake
+      // configure is run in this directory.
+      if (strcmp(argv[i], "make_directory") == 0) {
+        find_make_directory = 1;
+        break;
+      }
+    }
+
+    static int print_once = 0;
+    if (find_make_directory && !print_once) {
+      perror(
+          "[intercept-build: Error]: cmake is called to generate project build "
+          "scripts when run \"intercept-build make\", the build scripts "
+          "generated may not be complete. To generate a complete compilation "
+          "database, suggest following steps:\n"
+          "1. Build the source project by running \"make -B\" in build "
+          "folder.\n"
+          "2. Run \"intercept-build make -B\" to generate compilation database "
+          "in build folder.\n");
+    }
+    print_once++;
   }
 }
-
 
 // Replace the command compiler with path to command "intercept-stub" with path.
 // src could be:"/path/to/clang++",
@@ -1741,7 +1757,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   size_t const argc = bear_strings_length(argv);
 #ifdef SYCLomatic_CUSTOMIZATION
 
-  emit_cmake_warning(argv[0]);
+  emit_cmake_warning(argv, argc);
 
   // compiler list should be intercepted.
   const char *const compiler_array[] = {"nvcc", "clang++"};
