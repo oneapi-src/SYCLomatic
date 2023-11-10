@@ -897,76 +897,204 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
 } // namespace detail
 
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
-/// TODO: need add comment.
-class image_mem_wrapper {
+namespace detail {
+inline int get_ele_byte(const sycl::image_channel_type &type) {
+  switch (type) {
+  case sycl::image_channel_type::signed_int8:
+  case sycl::image_channel_type::unsigned_int8:
+    return 1;
+  case sycl::image_channel_type::signed_int16:
+  case sycl::image_channel_type::unsigned_int16:
+    return 2;
+  case sycl::image_channel_type::signed_int32:
+  case sycl::image_channel_type::unsigned_int32:
+  case sycl::image_channel_type::fp32:
+    return 4;
+  default:
+    throw std::runtime_error("Unsupported image_channel_type in get_ele_byte!");
+    return 1;
+  }
+}
+} // namespace detail
+
+class image_channel_format {
 public:
-  image_mem_wrapper() = default;
-  inline void set_num_levels(image_data_type type,
-                             const sycl::queue &q = get_default_queue()) {
+  image_channel_format(sycl::image_channel_type channel_type,
+                       unsigned channel_num)
+      : channel_type(channel_type), channel_num(channel_num){};
+  inline sycl::image_channel_type get_channel_type() const {
+    return channel_type;
+  }
+  inline unsigned get_channel_num() const { return channel_num; }
+  sycl::image_channel_order get_channel_order() const {
+    switch (channel_num) {
+    case 1:
+      return sycl::image_channel_order::r;
+    case 2:
+      return sycl::image_channel_order::rg;
+    case 3:
+      return sycl::image_channel_order::rgb;
+    case 4:
+      return sycl::image_channel_order::rgba;
+    default:
+      throw std::runtime_error("Unsupported channel_num in get_channel_order!");
+    }
+  }
+
+private:
+  sycl::image_channel_type channel_type;
+  unsigned channel_num;
+};
+// TODO: this function need support by bindless image.
+template <typename T> image_channel_format create_image_channel_format() {
+  if constexpr (std::is_same_v<T, char>)
+    return image_channel_format(sycl::image_channel_type::signed_int8, 1);
+  if constexpr (std::is_same_v<T, sycl::char2>)
+    return image_channel_format(sycl::image_channel_type::signed_int8, 2);
+  if constexpr (std::is_same_v<T, sycl::char4>)
+    return image_channel_format(sycl::image_channel_type::signed_int8, 4);
+  if constexpr (std::is_same_v<T, unsigned char>)
+    return image_channel_format(sycl::image_channel_type::unsigned_int8, 1);
+  if constexpr (std::is_same_v<T, sycl::uchar2>)
+    return image_channel_format(sycl::image_channel_type::unsigned_int8, 2);
+  if constexpr (std::is_same_v<T, sycl::uchar4>)
+    return image_channel_format(sycl::image_channel_type::unsigned_int8, 4);
+  if constexpr (std::is_same_v<T, short>)
+    return image_channel_format(sycl::image_channel_type::signed_int16, 1);
+  if constexpr (std::is_same_v<T, sycl::short2>)
+    return image_channel_format(sycl::image_channel_type::signed_int16, 2);
+  if constexpr (std::is_same_v<T, sycl::short4>)
+    return image_channel_format(sycl::image_channel_type::signed_int16, 4);
+  if constexpr (std::is_same_v<T, unsigned short>)
+    return image_channel_format(sycl::image_channel_type::unsigned_int16, 1);
+  if constexpr (std::is_same_v<T, sycl::ushort2>)
+    return image_channel_format(sycl::image_channel_type::unsigned_int16, 2);
+  if constexpr (std::is_same_v<T, sycl::ushort4>)
+    return image_channel_format(sycl::image_channel_type::unsigned_int16, 4);
+  if constexpr (std::is_same_v<T, int>)
+    return image_channel_format(sycl::image_channel_type::signed_int32, 1);
+  if constexpr (std::is_same_v<T, sycl::int2>)
+    return image_channel_format(sycl::image_channel_type::signed_int32, 2);
+  if constexpr (std::is_same_v<T, sycl::int4>)
+    return image_channel_format(sycl::image_channel_type::signed_int32, 4);
+  if constexpr (std::is_same_v<T, unsigned int>)
+    return image_channel_format(sycl::image_channel_type::unsigned_int32, 1);
+  if constexpr (std::is_same_v<T, sycl::uint2>)
+    return image_channel_format(sycl::image_channel_type::unsigned_int32, 2);
+  if constexpr (std::is_same_v<T, sycl::uint4>)
+    return image_channel_format(sycl::image_channel_type::unsigned_int32, 4);
+  if constexpr (std::is_same_v<T, float>)
+    return image_channel_format(sycl::image_channel_type::fp32, 1);
+  if constexpr (std::is_same_v<T, sycl::float2>)
+    return image_channel_format(sycl::image_channel_type::fp32, 2);
+  if constexpr (std::is_same_v<T, sycl::float4>)
+    return image_channel_format(sycl::image_channel_type::fp32, 4);
+  throw std::runtime_error("Unsupported type in create_image_channel_format!");
+}
+
+/// TODO: need add comment.
+class image_data_wrapper {
+public:
+  image_data_wrapper() = default;
+  template <int dimensions>
+  image_data_wrapper(const image_channel_format &channel,
+                     sycl::range<dimensions> range) {
+    desc = sycl::ext::oneapi::experimental::image_descriptor(
+        range, channel.get_channel_order(), channel.get_channel_type());
+    // data_type = image_data_type::matrix;
+  }
+  inline void set_data_type(image_data_type type) {
     data_type = type;
     switch (data_type) {
     case image_data_type::linear:
+    case image_data_type::pitch:
+    case image_data_type::matrix:
       desc.num_levels = 1;
       break;
     default:
-      throw std::runtime_error(
-          "Unsupported image_data_type in set_num_levels!");
+      throw std::runtime_error("Unsupported image_data_type in set_data_type!");
       break;
     }
   }
-  inline void set_channel(image_channel channel,
-                          const sycl::queue &q = get_default_queue()) {
+  inline void set_channel(image_channel_format channel) {
     desc.channel_type = channel.get_channel_type();
     desc.channel_order = channel.get_channel_order();
     channel_num = channel.get_channel_num();
   }
-  inline void set_x(size_t x, const sycl::queue &q = get_default_queue()) {
-    desc.width = x;
+  inline void set_x(size_t x) { desc.width = x; }
+  inline size_t get_x() { return desc.width; }
+
+  inline void set_y(size_t y) { desc.height = y; }
+  inline size_t get_y() { return desc.height; }
+
+  inline void set_z(size_t z) { desc.depth = z; }
+  inline size_t get_z() { return desc.depth; }
+
+  inline void set_pitch(size_t pitch) {}
+
+  inline const sycl::ext::oneapi::experimental::image_descriptor
+  get_desc() const {
+    return desc;
   }
+
   inline void set_data_ptr(void *input) { data_ptr = input; }
-  sycl::ext::oneapi::experimental::sampled_image_handle
-  create_image(sampling_info &samp_info, sycl::queue &q) {
-    if (data_type == image_data_type::linear) {
-      // TODO: need change.
-      desc.width = desc.width / get_ele_byte(desc.channel_type) / channel_num;
-    }
-    auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    auto image_sampler =
-        sycl::ext::oneapi::experimental::bindless_image_sampler(
-            samp_info.get_addressing_mode(),
-            samp_info.get_coordinate_normalization_mode(),
-            samp_info.get_filtering_mode());
-    auto tex = sycl::ext::oneapi::experimental::create_image(
-        *mem, image_sampler, desc, q);
-    q.ext_oneapi_copy(data_ptr, mem->get_handle(), desc);
-    q.wait_and_throw();
-    return tex;
+  inline void set_data_ptr(image_data_wrapper *input) {
+    set_x(input->get_x());
+    set_y(input->get_y());
+    set_z(input->get_z());
+    desc.channel_type = input->get_channel_type();
+    desc.channel_order = input->get_channel_order();
+    channel_num = input->get_channel_num();
+    data_ptr = input->get_data_ptr();
   }
+  inline void *get_data_ptr() const { return data_ptr; }
+
+  inline image_data_type get_data_type() const { return data_type; }
+
+  inline sycl::image_channel_type get_channel_type() const {
+    return desc.channel_type;
+  }
+
+  inline sycl::image_channel_order get_channel_order() const {
+    return desc.channel_order;
+  }
+
+  inline unsigned get_channel_num() const { return channel_num; }
 
 private:
   sycl::ext::oneapi::experimental::image_descriptor desc{};
-  void *data_ptr{nullptr};
-  image_data_type data_type;
-  unsigned channel_num;
-  inline int get_ele_byte(const sycl::image_channel_type &type) {
-    switch (type) {
-    case sycl::image_channel_type::signed_int8:
-    case sycl::image_channel_type::unsigned_int8:
-      return 1;
-    case sycl::image_channel_type::signed_int16:
-    case sycl::image_channel_type::unsigned_int16:
-      return 2;
-    case sycl::image_channel_type::signed_int32:
-    case sycl::image_channel_type::unsigned_int32:
-    case sycl::image_channel_type::fp32:
-      return 4;
-    default:
-      throw std::runtime_error(
-          "Unsupported image_channel_type in get_ele_byte!");
-      return 1;
-    }
-  }
+  void *data_ptr = nullptr;
+  image_data_type data_type = image_data_type::matrix;
+  unsigned channel_num = 1;
 };
+using image_data_wrapper_p = image_data_wrapper *;
+
+static sycl::ext::oneapi::experimental::sampled_image_handle
+create_image_wrapper(const image_data_wrapper &wrapper, sampling_info samp_info,
+                     sycl::queue &q = get_default_queue()) {
+  auto desc = wrapper.get_desc();
+  if (wrapper.get_data_type() == image_data_type::linear) {
+    // TODO: need change.
+    desc.width = desc.width / detail::get_ele_byte(desc.channel_type) /
+                 wrapper.get_channel_num();
+    desc.height = 0;
+    desc.depth = 0;
+    // linear memory only use sycl::filtering_mode::nearest.
+    samp_info.set(sycl::filtering_mode::nearest);
+  } else if (wrapper.get_data_type() == image_data_type::pitch) {
+    desc.depth = 0;
+  }
+  auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
+  auto image_sampler = sycl::ext::oneapi::experimental::bindless_image_sampler(
+      samp_info.get_addressing_mode(),
+      samp_info.get_coordinate_normalization_mode(),
+      samp_info.get_filtering_mode());
+  auto tex = sycl::ext::oneapi::experimental::create_image(*mem, image_sampler,
+                                                           desc, q);
+  q.ext_oneapi_copy(wrapper.get_data_ptr(), mem->get_handle(), desc);
+  q.wait_and_throw();
+  return tex;
+}
 #endif
 } // namespace dpct
 

@@ -297,26 +297,36 @@ void MapNames::setExplicitNamespaceMap() {
       {"gesvdjInfo_t", std::make_shared<TypeNameRule>("int")},
       {"syevjInfo_t", std::make_shared<TypeNameRule>("int")},
       {"cudaChannelFormatDesc",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_channel",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "image_channel_format"
+               : getDpctNamespace() + "image_channel",
+           HelperFeatureEnum::device_ext)},
       {"cudaChannelFormatKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
                                           "image_channel_data_type",
                                       HelperFeatureEnum::device_ext)},
       {"cudaArray",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + (DpctGlobalInfo::useExtBindlessImages()
+                                     ? "image_data_wrapper"
+                                     : "image_matrix"),
+           HelperFeatureEnum::device_ext)},
       {"cudaArray_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix_p",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + (DpctGlobalInfo::useExtBindlessImages()
+                                     ? "image_data_wrapper_p"
+                                     : "image_matrix_p"),
+           HelperFeatureEnum::device_ext)},
       {"cudaTextureDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::device_ext)},
-      {"cudaResourceDesc", std::make_shared<TypeNameRule>(
-                               DpctGlobalInfo::useExtBindlessImages()
-                                   ? getDpctNamespace() + "image_mem_wrapper"
-                                   : getDpctNamespace() + "image_data",
-                               HelperFeatureEnum::device_ext)},
+      {"cudaResourceDesc",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + (DpctGlobalInfo::useExtBindlessImages()
+                                     ? "image_data_wrapper"
+                                     : "image_data"),
+           HelperFeatureEnum::device_ext)},
       {"cudaTextureObject_t",
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
