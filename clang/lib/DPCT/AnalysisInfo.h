@@ -1486,7 +1486,7 @@ public:
       std::string FilePath,
       std::shared_ptr<tooling::TranslationUnitReplacements> TUR) {
     SmallString<512> RealPath(FilePath);
-    llvm::sys::fs::real_path(RealPath, RealPath, true);
+    dpct::real_path(RealPath, RealPath, true);
     auto FileInfo = insertFile(RealPath.str().str());
     if (FileInfo->PreviousTUReplFromYAML == nullptr)
       FileInfo->PreviousTUReplFromYAML = TUR;
@@ -1494,7 +1494,7 @@ public:
   std::shared_ptr<tooling::TranslationUnitReplacements>
   getReplInfoFromYAMLSavedInFileInfo(std::string FilePath) {
     SmallString<512> RealPath(FilePath);
-    llvm::sys::fs::real_path(RealPath, RealPath, true);
+    dpct::real_path(RealPath, RealPath, true);
     auto FileInfo = findObject(FileMap, RealPath.str().str());
     if (FileInfo)
       return FileInfo->PreviousTUReplFromYAML;
@@ -1797,7 +1797,10 @@ public:
   }
 
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
-    return insertObject(FileMap, FilePath);
+    SmallString<128> RealPath(FilePath);
+    if (!DpctGlobalInfo::isQueryAPIMapping())
+      dpct::real_path(RealPath, RealPath, true);
+    return insertObject(FileMap, RealPath.str().str());
   }
 
   inline std::shared_ptr<DpctFileInfo> getMainFile() const {

@@ -41,10 +41,7 @@ int save2Yaml(
     const std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets) {
   SmallString<512> SrcFileName;
-  llvm::sys::fs::real_path(SrcFileNameRef, SrcFileName, true);
-#if defined(_WIN32)
-  SrcFileName = SrcFileName.str().lower();
-#endif
+  dpct::real_path(SrcFileNameRef, SrcFileName, true);
   std::string YamlContent;
   llvm::raw_string_ostream YamlContentStream(YamlContent);
   llvm::yaml::Output YAMLOut(YamlContentStream);
