@@ -931,8 +931,28 @@ bool Parser::ParseAsmOperandsOpt(SmallVectorImpl<IdentifierInfo *> &Names,
       return true;
     }
     Exprs.push_back(Res.get());
+#ifdef SYCLomatic_CUSTOMIZATION
+    // Relax the restrictions of the operand separator to be compatible with NVCC.
+    // Eg.
+    // ...
+    // float4 c;
+    // float  zero = 0.f;
+    // asm volatile("mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 \n"
+    //              "    {%0, %1, %2, %3}, \n"
+    //              "    {%4, %5}, \n"
+    //              "    {%6}, \n"
+    //              "    {%7, %7, %7, %7}; \n"
+    //              : "=f"(c.x), "=f"(c.y), "=f"(c.z), "=f"(c.w)
+    //              : "r"(a.x) "r"(a.y), "r"(b), "f"(zero));
+    // ...
+    // NVCC accept this code.
+    if (!TryConsumeToken(tok::comma) &&
+        !(getLangOpts().CUDA && Tok.is(tok::string_literal) &&
+          GetLookAheadToken(1).is(tok::l_paren)))
+#else
     // Eat the comma and continue parsing if it exists.
     if (!TryConsumeToken(tok::comma))
+#endif
       return false;
   }
 }

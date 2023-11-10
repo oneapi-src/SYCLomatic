@@ -151,9 +151,16 @@ Enable SYCL\* queue profiling in helper functions. Default: ``off``.
 
 .. _desc-extra-arg:
 
-Additional argument to append to the migration command line, example:
-``--extra-arg="-I /path/to/header"``. The options that can be passed this
-way can be found with the ``dpct -- -help`` command.
+Specify additional arguments to append to the migration command line. The option
+accepts a comma-separated list of extra arguments and may be used multiple times
+in a command. For example:
+
+.. code-block::
+
+   dpct xx.cu --extra-arg="-I /path, -I /path2" --extra-arg="-I /path/to/header"
+
+Use the ``dpct -- -help`` command to find options that can be passed as extra
+arguments for the migration command.
 
 .. _end-extra-arg:
 
