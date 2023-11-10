@@ -945,6 +945,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
+  DpctGlobalInfo::setMigrateCmakeScriptEnabled(MigrateCmakeStript);
+  DpctGlobalInfo::setMigrateCmakeScriptOnlyEnabled(MigrateCmakeStriptOnly);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
