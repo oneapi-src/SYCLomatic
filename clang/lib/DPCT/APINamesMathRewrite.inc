@@ -1987,6 +1987,8 @@ MATH_API_REWRITER_DEVICE(
             Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stwt"),
             std::string("'='"))))
 
+ENTRY_RENAMED("make_half2", MapNames::getClNamespace() + "half2")
+
 // Half Math Functions
 MATH_API_REWRITER_DEVICE_OVERLOAD(
     CheckArgType(0, "__half"),
