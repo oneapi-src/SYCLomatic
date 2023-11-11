@@ -175,7 +175,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapRequired("Priority", Doc->Priority);
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
-    Io.mapRequired("Includes", Doc->Includes);
+    Io.mapOptional("Includes", Doc->Includes);
     Io.mapOptional("Fields", Doc->Fields);
     Io.mapOptional("Methods", Doc->Methods);
     Io.mapOptional("EnumName", Doc->EnumName);

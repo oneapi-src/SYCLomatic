@@ -97,7 +97,11 @@ static std::string indent(const std::string &Input, int Indentation) {
     const bool ContainsNonWhitespace = (trim(Line).size() > 0);
     Output.push_back(ContainsNonWhitespace ? (Indent + Line) : "");
   }
-  return trim(join(Output, "\n"));
+  std::string Str = trim(join(Output, "\n"));
+  if (isWhitespace(Input[0])) {
+    Str = " " + Str;
+  }
+  return Str;
 }
 
 static std::string dedent(const std::string &Input, int Indentation) {
@@ -478,6 +482,25 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input) {
   std::stringstream OutputStream;
   const auto Pattern = parseMatchPattern(PP.In);
+#if 0 // use for debug print
+  int Count = 0;
+  printf("Pattern start:");
+  for(auto Element: Pattern) {
+    if (std::holds_alternative<CodeElement>(Element)) {
+      auto &Code = std::get<CodeElement>(Element);
+      printf("[%d]->[%s]\n", Count, Code.Name.c_str());
+    }
+    if (std::holds_alternative<LiteralElement>(Element)) {
+      const auto &Literal = std::get<LiteralElement>(Element);
+      printf("[%d]->[%c]\n", Count, Literal.Value);
+    }
+    if (std::holds_alternative<SpacingElement>(Element)) {
+      printf("[%d]->[%s]\n", Count, "space");
+    }
+    Count++;
+  }
+  printf("Pattern end.");
+#endif
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
@@ -503,6 +526,5 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
     OutputStream << Input[Index];
     Index++;
   }
-
   return OutputStream.str();
 }

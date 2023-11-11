@@ -388,10 +388,10 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), BuildScriptFile,
                     "Default name: Makefile.dpct."),
         llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeStript, "migrate-cmake-script",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScript, "migrate-cmake-script",
         llvm::cl::desc("migrate the cmakfile build script. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeStriptOnly, "migrate-cmake-script-only",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScriptOnly, "migrate-cmake-script-only",
         llvm::cl::desc("Only migrate the cmakfile build script. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 

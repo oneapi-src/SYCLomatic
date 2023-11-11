@@ -164,6 +164,7 @@ using FunPtrParserType = void (*)(std::string &, std::string &);
 void SetParserHandle(FunPtrParserType FPParser);
 void DoParserHandle(std::string &BuildDir, std::string &FilePath);
 #endif
+void SetMigrateCmakeScriptOnlyEnabled(bool Enable = true);
 #endif // SYCLomatic_CUSTOMIZATION
 
 }  // namespace tooling

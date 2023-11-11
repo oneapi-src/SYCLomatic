@@ -370,6 +370,34 @@ void applyPatternRewriter(const std::string &InputString,
   std::string LineEndingString;
   // pattern_rewriter require the input file to be LF
   bool IsCRLF = fixLineEndings(InputString, LineEndingString);
+
+  for (const auto &PR : MapNames::PatternRewriters) {
+    LineEndingString = applyPatternRewriter(PR, LineEndingString);
+  }
+  // Restore line ending for the formator
+  if (IsCRLF) {
+    std::stringstream ResultStream;
+    std::vector<std::string> SplitedStr = split(LineEndingString, '\n');
+    for (auto &SS : SplitedStr) {
+      ResultStream << SS << "\r\n";
+    }
+    Stream << llvm::StringRef(ResultStream.str().c_str());
+  } else {
+    Stream << llvm::StringRef(LineEndingString.c_str());
+  }
+}
+
+void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
+                                           llvm::raw_os_ostream &Stream) {
+  printf("applyPatternRewriter InputString: [%s]\n", InputString.c_str());
+  std::string LineEndingString;
+  // pattern_rewriter require the input file to be LF
+  bool IsCRLF = fixLineEndings(InputString, LineEndingString);
+
+  // TODO: convert cmake command to lower case in cmake script files
+
+
+
   for (const auto &PR : MapNames::PatternRewriters) {
     LineEndingString = applyPatternRewriter(PR, LineEndingString);
   }
