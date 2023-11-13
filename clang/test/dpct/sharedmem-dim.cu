@@ -53,7 +53,7 @@ int main(void)
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<uint8_t, 4> dpct_local_acc_ct1(sycl::range<4>(16*sizeof(int), 2, 2, 2), cgh);
+// CHECK-NEXT: sycl::local_accessor<uint8_t, 4> dpct_local_acc_ct1(sycl::range<4>(16*sizeof(int), 1, 1, 1), cgh);
 
   dynamicReverse<<<10,10,16*sizeof(int)>>>();
   return 0;
