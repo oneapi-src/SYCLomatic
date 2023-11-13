@@ -363,6 +363,8 @@ const Expr *getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
   if (!IdxDRE)
     return nullptr;
   const VarDecl *IdxVD = dyn_cast_or_null<VarDecl>(IdxDRE->getDecl());
+  if (!IdxVD)
+    return nullptr;
   if (IdxVD->getKind() != Decl::Var)
     return nullptr;
   const auto *IdxFD = dyn_cast_or_null<FunctionDecl>(IdxVD->getDeclContext());
