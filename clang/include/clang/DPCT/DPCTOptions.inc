@@ -85,6 +85,8 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ShowOrigCo
 #ifdef DPCT_DEBUG_BUILD
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<ReportTypeEnum>), ReportType, "report-type",
            DPCT_OPTION_VALUES(
+             DPCT_OPT_ENUM("all", int(ReportTypeEnum::RTE_All),
+                  "All of the reports.", false),
              DPCT_OPT_ENUM("apis", int(ReportTypeEnum::RTE_APIs),
             "Information about API signatures that need migration and the number of times\n"
             "they were encountered. The report file name will have .apis suffix added.", false),
@@ -93,8 +95,6 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<ReportTypeEnum>), ReportType
                   "SYCL, LOC migrated to SYCL with helper functions, LOC not needing migration,\n"
                   "LOC needing migration but are not migrated. The report file name has the .stats\n"
                   "suffix added (default)", false),
-             DPCT_OPT_ENUM("all", int(ReportTypeEnum::RTE_All),
-                  "All of the reports.", false),
              DPCT_OPT_ENUM("diags", int(ReportTypeEnum::RTE_Diags),
                   "diags information", true)
            ),
@@ -164,17 +164,17 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SyclNamedL
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<OutputVerbosityLevel>), OutputVerbosity, "output-verbosity",
            DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("silent", int(OutputVerbosityLevel::OVL_Silent),
-                                  "Only messages from clang.", false),
-             DPCT_OPT_ENUM("normal", int(OutputVerbosityLevel::OVL_Normal),
-                                  "\'silent\' and warnings, errors, and notes from dpct.",
-                                  false),
              DPCT_OPT_ENUM("detailed", int(OutputVerbosityLevel::OVL_Detailed),
                                   "\'normal\' and messages about which file is being processed.",
                                   false),
              DPCT_OPT_ENUM("diagnostics", int(OutputVerbosityLevel::OVL_Diagnostics),
                                   "\'detailed\' and information about the detected "
-                                  "conflicts and crashes. (default)", false)
+                                  "conflicts and crashes. (default)", false),
+             DPCT_OPT_ENUM("normal", int(OutputVerbosityLevel::OVL_Normal),
+                                  "\'silent\' and warnings, errors, and notes from dpct.",
+                                  false),
+             DPCT_OPT_ENUM("silent", int(OutputVerbosityLevel::OVL_Silent),
+                                  "Only messages from clang.", false)
            ),
            llvm::cl::desc("Sets the output verbosity level:"),
            llvm::cl::init(OutputVerbosityLevel::OVL_Diagnostics), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
@@ -192,11 +192,11 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), RuleFile
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<UsmLevel>), USMLevel, "usm-level",
            DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("restricted", int(UsmLevel::UL_Restricted),
-                     "Uses USM API for memory management migration. (default)", false),
              DPCT_OPT_ENUM("none", int(UsmLevel::UL_None),
                      "Uses helper functions from DPCT header files for memory "
-                     "management migration.", false)
+                     "management migration.", false),
+             DPCT_OPT_ENUM("restricted", int(UsmLevel::UL_Restricted),
+                     "Uses USM API for memory management migration. (default)", false)
            ),
            llvm::cl::desc("Sets the Unified Shared Memory (USM) level to use in source code generation.\n"),
            llvm::cl::init(UsmLevel::UL_Restricted), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
@@ -204,10 +204,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<UsmLevel>), USMLevel, "usm-level",
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<format::FormatRange>), FormatRng, "format-range",
            DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("migrated", int(format::FormatRange::migrated),
-                     "Only formats the migrated code (default).", false),
              DPCT_OPT_ENUM("all", int(format::FormatRange::all),
                      "Formats all code.", false),
+             DPCT_OPT_ENUM("migrated", int(format::FormatRange::migrated),
+                     "Only formats the migrated code (default).", false),
              DPCT_OPT_ENUM("none", int(format::FormatRange::none),
                      "Do not format any code.", false)
            ),
@@ -216,12 +216,12 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<format::FormatRange>), Forma
            llvm::cl::Optional)
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<DPCTFormatStyle>), FormatST, "format-style",
            DPCT_OPTION_VALUES(
+             DPCT_OPT_ENUM("custom", int(DPCTFormatStyle::FS_Custom),
+                     "Use the coding style defined in the .clang-format file (default).", false),
              DPCT_OPT_ENUM("llvm", int(DPCTFormatStyle::FS_LLVM),
                      "Use the LLVM coding style.", false),
              DPCT_OPT_ENUM("google", int(DPCTFormatStyle::FS_Google),
-                     "Use the Google coding style.", false),
-             DPCT_OPT_ENUM("custom", int(DPCTFormatStyle::FS_Custom),
-                     "Use the coding style defined in the .clang-format file (default).", false)
+                     "Use the Google coding style.", false)
            ),
            llvm::cl::desc("Sets the formatting style.\nThe values are:\n"),
            llvm::cl::init(DPCTFormatStyle::FS_Custom), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
@@ -276,16 +276,16 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<AssumedNDRangeDimEnum>), NDR
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExplicitNamespace, "use-explicit-namespace",
            DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("none", int(ExplicitNamespace::EN_None),
-                                     "Generate code without namespaces. Cannot "
-                                     "be used with other values.",
-                                     false),
              DPCT_OPT_ENUM("cl", int(ExplicitNamespace::EN_CL),
                "DEPRECATED: Generate code with cl::sycl:: namespace. Cannot be used with "
                "sycl or sycl-math values.",
                false),
              DPCT_OPT_ENUM("dpct", int(ExplicitNamespace::EN_DPCT),
                                      "Generate code with dpct:: namespace.",
+                                     false),
+             DPCT_OPT_ENUM("none", int(ExplicitNamespace::EN_None),
+                                     "Generate code without namespaces. Cannot "
+                                     "be used with other values.",
                                      false),
              DPCT_OPT_ENUM("sycl", int(ExplicitNamespace::EN_SYCL),
                "Generate code with sycl:: namespace. Cannot be used with cl or "
@@ -303,17 +303,17 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabled>), NoDPCPPExtensions, "no-dpcpp-extensions",
            DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("enqueued_barriers",
-                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
-                                     "Enqueued barriers extension.",
+             DPCT_OPT_ENUM("bfloat16",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16),
+                                     "Use the SYCL extensions for bfloat16.",
                                      false),
              DPCT_OPT_ENUM("device_info",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo),
                                      "Use the Intel extensions for device information if supported by the compiler and the backend.",
                                      false),
-             DPCT_OPT_ENUM("bfloat16",
-                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16),
-                                     "Use the SYCL extensions for bfloat16.",
+             DPCT_OPT_ENUM("enqueued_barriers",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
+                                     "Enqueued barriers extension.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
