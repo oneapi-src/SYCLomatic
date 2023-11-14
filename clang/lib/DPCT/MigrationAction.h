@@ -56,7 +56,8 @@ private:
 
 class DpctToolAction : public tooling::ToolAction {
 public:
-  DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
+  DpctToolAction(llvm::raw_ostream &DS,
+                 std::map<std::string, tooling::Replacements> &Replacements,
                  const std::string &RuleNames, std::vector<PassKind> Passes,
                  llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS);
   /// Perform an action for an invocation.

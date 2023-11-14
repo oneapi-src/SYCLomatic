@@ -404,7 +404,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
   std::vector<std::pair<clang::tooling::DpctPath, std::string>> MainSrcFilesDigest;
   clang::tooling::DpctPath OutPath;
-  std::cout << "Tool.getReplacements().size():" << Tool.getReplacements().size() << std::endl;
   if (Tool.getReplacements().empty()) {
     // There are no rules applying on the *.cpp files,
     // dpct just do nothing with them.

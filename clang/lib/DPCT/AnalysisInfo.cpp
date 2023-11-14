@@ -1099,7 +1099,8 @@ bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
   return ReplTxtWithSB;
 }
 
-void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
+void DpctFileInfo::emplaceReplacements(
+    std::map<clang::tooling::DpctPath, tooling::Replacements> &ReplSet) {
   if (!Repls->empty())
     Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }

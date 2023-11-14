@@ -244,8 +244,6 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
       }
       IncludeMap.erase(FilePath);
     }
-    //std::cout << "Repl->getFilePath().str():" << Repl->getFilePath().str() << std::endl;
-    //std::cout << "Repl->getReplacementText().str():" << Repl->getReplacementText().str() << std::endl;
     Global.addReplacement(Repl);
 
     StaticsInfo::printReplacements(Transforms, Context);
@@ -280,7 +278,6 @@ void DpctToolAction::runPasses() {
         Global.buildReplacements();
         Global.postProcess();
         Global.emplaceReplacements(Repls);
-        std::cout << "runWithCrashGuard Repls.size():" << Repls.size() << std::endl;
       },
       PostProcessFaultMsg);
 }

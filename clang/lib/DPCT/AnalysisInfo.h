@@ -273,7 +273,7 @@ using StmtList = std::vector<StmtWithWarning>;
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
-using ReplTy = std::map<clang::tooling::DpctPath, tooling::Replacements>;
+using ReplTy = std::map<std::string, tooling::Replacements>;
 
 template <class T> inline void merge(T &Master, const T &Branch) {
   Master.insert(Branch.begin(), Branch.end());
@@ -381,7 +381,8 @@ public:
   void postProcess();
 
   // Emplace stored replacements into replacement set.
-  void emplaceReplacements(ReplTy &ReplSet /*out*/);
+  void emplaceReplacements(std::map<clang::tooling::DpctPath,
+                                    tooling::Replacements> &ReplSet /*out*/);
 
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
@@ -1442,13 +1443,8 @@ public:
     if (DpctGlobalInfo::isNeedRunAgain())
       return;
     for (auto &FileRepl : FileReplCache) {
-      std::cout << "bbbbb FileRepl.first.getCanonicalPath():" << FileRepl.first.getCanonicalPath() << std::endl;
-      std::cout << "bbbbb FileRepl.second->getReplMap().size():" << FileRepl.second->getReplMap().size() << std::endl;
-      FileRepl.second->emplaceIntoReplSet(ReplSets[FileRepl.first]);
-    }
-    for (auto &FileRepl : ReplSets) {
-      std::cout << "ccccc FileRepl.first.getCanonicalPath():" << FileRepl.first.getCanonicalPath() << std::endl;
-      std::cout << "ccccc FileRepl.second.size():" << FileRepl.second.size() << std::endl;
+      FileRepl.second->emplaceIntoReplSet(
+          ReplSets[FileRepl.first.getCanonicalPath()]);
     }
   }
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);

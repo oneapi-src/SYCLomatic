@@ -1088,22 +1088,13 @@ int runDPCT(int argc, const char **argv) {
       DeviceFunctionDecl::reset();
     }
     DpctGlobalInfo::setRunRound(RunCount++);
-    ReplTy Repls;
-    std::cout << "DPCT.cpp Tool.getReplacements().size():" << Tool.getReplacements().size() << std::endl;
-    std::transform(
-        Tool.getReplacements().begin(), Tool.getReplacements().end(),
-        std::insert_iterator(Repls, Repls.end()),
-        [](const std::pair<std::string, clang::tooling::Replacements> &P) {
-          return std::pair<clang::tooling::DpctPath,
-                           clang::tooling::Replacements>(
-              clang::tooling::DpctPath(P.first), P.second);
-        });
-    DpctToolAction Action(
-        OutputFile.empty() && !DpctGlobalInfo::isQueryAPIMapping()
-            ? llvm::errs()
-            : DpctTerm(),
-        Repls, Passes, {PassKind::PK_Analysis, PassKind::PK_Migration},
-        Tool.getFiles().getVirtualFileSystemPtr());
+    DpctToolAction Action(OutputFile.empty() &&
+                                  !DpctGlobalInfo::isQueryAPIMapping()
+                              ? llvm::errs()
+                              : DpctTerm(),
+                          Tool.getReplacements(), Passes,
+                          {PassKind::PK_Analysis, PassKind::PK_Migration},
+                          Tool.getFiles().getVirtualFileSystemPtr());
 
     if (ProcessAllFlag) {
       clang::tooling::SetFileProcessHandle(InRoot.getCanonicalPath(),
