@@ -503,14 +503,6 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct1115.rst
           :start-after: msg-1115-start:
           :end-before: msg-1115-end:
-   * - :ref:`DPCT1116`
-     - .. include:: diagnostic_ref/dpct1116.rst
-          :start-after: msg-1116-start:
-          :end-before: msg-1116-end:
-   * - :ref:`DPCT1117`
-     - .. include:: diagnostic_ref/dpct1117.rst
-          :start-after: msg-1117-start:
-          :end-before: msg-1117-end:
    * - :ref:`DPCT1118`
      - .. include:: diagnostic_ref/dpct1118.rst
           :start-after: msg-1118-start:
