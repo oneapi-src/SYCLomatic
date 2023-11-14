@@ -387,16 +387,15 @@ void applyPatternRewriter(const std::string &InputString,
   }
 }
 
+
 void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
                                            llvm::raw_os_ostream &Stream) {
-  printf("applyPatternRewriter InputString: [%s]\n", InputString.c_str());
   std::string LineEndingString;
   // pattern_rewriter require the input file to be LF
   bool IsCRLF = fixLineEndings(InputString, LineEndingString);
 
-  // TODO: convert cmake command to lower case in cmake script files
-
-
+  // Convert cmake command to lower case in cmake script files
+  LineEndingString = convertCmakeCommandsToLower(LineEndingString);
 
   for (const auto &PR : MapNames::PatternRewriters) {
     LineEndingString = applyPatternRewriter(PR, LineEndingString);

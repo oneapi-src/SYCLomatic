@@ -667,7 +667,6 @@ static bool migrateCmakeScriptFile(StringRef InRoot, StringRef OutRoot,
         " fail: " + EC.message() + "\n";
     PrintMsg(ErrMsg);
   }
-  printf("### OutputFile: [%s]\n", OutFileName.c_str());
   std::ofstream Out(OutFileName.c_str(), std::ios::binary);
   if (Out.fail()) {
     std::string ErrMsg =
@@ -1278,9 +1277,9 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (MigrateCmakeScriptOnly) {
-    for (auto Entry : RuleFile) {
-      printf("Entry [%s]\n", Entry.c_str());
-    }
+    // for (auto Entry : RuleFile) {
+    //   printf("Entry [%s]\n", Entry.c_str());
+    // }
     auto CmakeScriptLists = OptParser->getSourcePathList();
     if (!CmakeScriptLists.empty()) {
       for (auto FilePath : CmakeScriptLists) {
