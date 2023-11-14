@@ -1290,7 +1290,11 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
 std::optional<std::string>
 DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
   if (auto RealPath = File.tryGetRealPathName(); !RealPath.empty())
+#if defined(_WIN32)
+    return RealPath.lower();
+#else
     return RealPath.str();
+#endif
 
   llvm::SmallString<512> FilePathAbs(File.getName());
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
@@ -1299,6 +1303,7 @@ DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
   // added by ASTMatcher and added by
   // AnalysisInfo::getLocInfo() consistent.
   llvm::sys::path::remove_dots(FilePathAbs, true);
+  makeCanonical(FilePathAbs);
   return (std::string)FilePathAbs;
 }
 std::optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
