@@ -27,7 +27,18 @@ namespace {
 /// Default \c PathComparator using \c llvm::sys::fs::equivalent().
 struct DefaultPathComparator : public PathComparator {
   bool equivalent(StringRef FileA, StringRef FileB) const override {
+#ifdef SYCLomatic_CUSTOMIZATION
+#if defined(_WIN32)
+    std::string FileAStr = FileA.lower();
+    std::string FileBStr = FileB.lower();
+    return FileAStr == FileBStr ||
+           llvm::sys::fs::equivalent(FileAStr, FileBStr);
+#else
     return FileA == FileB || llvm::sys::fs::equivalent(FileA, FileB);
+#endif
+#else
+    return FileA == FileB || llvm::sys::fs::equivalent(FileA, FileB);
+#endif
   }
 };
 
