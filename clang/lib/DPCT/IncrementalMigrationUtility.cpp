@@ -366,8 +366,10 @@ bool canContinueMigration(std::string &Msg) {
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   // Try to load the MainSourceFiles.yaml file
   SmallString<128> YamlFilePath(DpctGlobalInfo::getOutRoot());
+  if (!llvm::sys::fs::exists(YamlFilePath))
+    return true;
+  dpct::real_path(YamlFilePath, YamlFilePath, true);
   llvm::sys::path::append(YamlFilePath, "MainSourceFiles.yaml");
-
   if (!llvm::sys::fs::exists(YamlFilePath))
     return true;
   if (loadFromYaml(std::move(YamlFilePath), *PreTU) != 0) {
