@@ -318,7 +318,7 @@ bool operator!=(const clang::tooling::DpctPath &LHS,
 }
 bool operator<(const clang::tooling::DpctPath &LHS,
                const clang::tooling::DpctPath &RHS) {
-  return LHS.getCanonicalPath() == RHS.getCanonicalPath();
+  return LHS.getCanonicalPath() < RHS.getCanonicalPath();
 }
 } // namespace tooling
 } // namespace clang
