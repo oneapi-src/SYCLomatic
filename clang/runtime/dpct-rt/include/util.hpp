@@ -358,8 +358,8 @@ unsigned int match_all_over_sub_group(sycl::sub_group g, unsigned member_mask,
 }
 
 namespace experimental {
-#if defined(__NVPTX__)
-#define CUDA_SHFL_SYNC(RES, MASK, VAL, SHFL_PARAM, C, SHUFFLE_INSTR)           \
+#if defined(__NVPTX__) && defined(__SYCL_DEVICE_ONLY__)
+#define SHFL_SYNC(RES, MASK, VAL, SHFL_PARAM, C, SHUFFLE_INSTR)                \
   if constexpr (std::is_same_v<T, double>) {                                   \
     int x_a, x_b;                                                              \
     asm("mov.b64 {%0,%1},%2;" : "=r"(x_a), "=r"(x_b) : "d"(VAL));              \
@@ -414,7 +414,7 @@ T select_from_sub_group(unsigned int member_mask,
 #elif defined(__NVPTX__)
   T result;
   int cVal = ((32 - logical_sub_group_size) << 8) | 31;
-  CUDA_SHFL_SYNC(result, member_mask, x, remote_local_id, cVal, idx_i32)
+  SHFL_SYNC(result, member_mask, x, remote_local_id, cVal, idx_i32)
   return result;
 #endif
 #else
@@ -458,7 +458,7 @@ T shift_sub_group_left(unsigned int member_mask,
 #elif defined(__NVPTX__)
   T result;
   int cVal = ((32 - logical_sub_group_size) << 8) | 31;
-  CUDA_SHFL_SYNC(result, member_mask, x, delta, cVal, down_i32)
+  SHFL_SYNC(result, member_mask, x, delta, cVal, down_i32)
   return result;
 #endif
 #else
@@ -502,7 +502,7 @@ T shift_sub_group_right(unsigned int member_mask,
 #elif defined(__NVPTX__)
   T result;
   int cVal = ((32 - logical_sub_group_size) << 8);
-  CUDA_SHFL_SYNC(result, member_mask, x, delta, cVal, up_i32)
+  SHFL_SYNC(result, member_mask, x, delta, cVal, up_i32)
   return result;
 #endif
 #else
@@ -544,7 +544,7 @@ T permute_sub_group_by_xor(unsigned int member_mask,
 #elif defined(__NVPTX__)
   T result;
   int cVal = ((32 - logical_sub_group_size) << 8) | 31;
-  CUDA_SHFL_SYNC(result, member_mask, x, mask, cVal, bfly_i32)
+  SHFL_SYNC(result, member_mask, x, mask, cVal, bfly_i32)
   return result;
 #endif
 #else
@@ -558,7 +558,7 @@ T permute_sub_group_by_xor(unsigned int member_mask,
 #endif // __SYCL_DEVICE_ONLY__
 }
 #if defined(__NVPTX__)
-#undef CUDA_SHFL_SYNC
+#undef SHFL_SYNC
 #endif
 } // namespace experimental
 
