@@ -65,6 +65,11 @@ bfe(T source, uint32_t bit_start, uint32_t num_bits) {
   return (source >> bit_start) & MASK;
 }
 
+template <class... Types> class tuple : public std::tuple<Types...> {
+public:
+  using head_type = std::tuple_element_t<0, std::tuple<Types...>>;
+};
+
 namespace internal {
 
 template <class _ExecPolicy, class _T>
