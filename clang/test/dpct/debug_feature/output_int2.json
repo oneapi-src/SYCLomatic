@@ -1,0 +1,1 @@
+//CHECK: [{"FieldNum":2,"FilePath":"Invalid Path","IsVirtual":false,"Members":[{"IsBasicType":true,"Location":"None","Name":"x","Offset":0,"Type":"int","ValType":"ScalarValue","VarSize":4},{"IsBasicType":true,"Location":"None","Name":"y","Offset":4,"Type":"int","ValType":"ScalarValue","VarSize":4}],"SchemaType":"TYPE","TypeName":"int2","TypeSize":8}]
