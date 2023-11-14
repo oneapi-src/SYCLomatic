@@ -188,7 +188,7 @@ void test_simple_ifs() {
 // CHECK-NEXT:            return "cudaErrorLaunchOutOfResources";
 // CHECK-NEXT:        case {{[0-9]+}}:
 // CHECK-NEXT:            return "cudaErrorInvalidDeviceFunction";
-// CHECK-NEXT:        case 9:
+// CHECK-NEXT:        case dpct::default_error:
 // CHECK-NEXT:            return "cudaErrorInvalidConfiguration";
 // CHECK-NEXT:        case {{[0-9]+}}:
 // CHECK-NEXT:            return "cudaErrorInvalidDevice";
