@@ -187,6 +187,7 @@ add_clang_library(DPCT
   SpBLASAPIMigration.cpp
   TestMigration.cpp
   Schema.cpp
+  TypeSchemaForSYCL.cpp
 
   DEPENDS
   ClangDriverOptions
