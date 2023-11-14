@@ -16,7 +16,13 @@
 
 namespace clang {
 namespace dpct {
-ExtReplacements::ExtReplacements(std::string FilePath) : FilePath(FilePath) {}
+ExtReplacements::ExtReplacements(std::string NewFilePath) {
+#if defined(_WIN32)
+  std::transform(NewFilePath.begin(), NewFilePath.end(), NewFilePath.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+#endif
+  FilePath = NewFilePath;
+}
 
 bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl,
                                 std::shared_ptr<DpctFileInfo> FileInfo) {
