@@ -95,7 +95,7 @@ void ForLoopUnrollRule::runRule(
   }
 }
 
-void DeviceConstantVarOptimizeRule::registerMatcher(
+void DeviceConstantVarOptimizeAnalysisRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
   auto DeclMatcher =
       varDecl(hasAttr(attr::CUDAConstant),
@@ -114,13 +114,16 @@ void DeviceConstantVarOptimizeRule::registerMatcher(
   }
 }
 
-void DeviceConstantVarOptimizeRule::runRule(
+void DeviceConstantVarOptimizeAnalysisRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "ConstantVar")) {
     if (isCubVar(MemVar)) {
       return;
     }
     MemVarInfo::buildMemVarInfo(MemVar);
+    return;
+  }
+  if (!DpctGlobalInfo::isOptimizeMigration()) {
     return;
   }
   if (auto CE = getNodeAsType<CallExpr>(Result, "RuntimeSymnolAPICall")) {

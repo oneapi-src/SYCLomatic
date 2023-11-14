@@ -21,8 +21,8 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-class DeviceConstantVarOptimizeRule
-    : public NamedMigrationRule<DeviceConstantVarOptimizeRule> {
+class DeviceConstantVarOptimizeAnalysisRule
+    : public NamedMigrationRule<DeviceConstantVarOptimizeAnalysisRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

@@ -396,8 +396,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   // it means this __constant__ variable is used in host.
   // In this case, we need add "host_constant" flag in the replacement of
   // removing "__constant__"; and record the offset of the beginning of this
-  // line for finding this replacement in MemVarRule. Since the variable name
-  // is difficult to get here, the warning is also emitted in MemVarRule.
+  // line for finding this replacement in MemVarAnalysisRule. Since the variable
+  // name is difficult to get here, the warning is also emitted in
+  // MemVarAnalysisRule.
   if (MacroNameTok.getKind() == tok::identifier &&
       MacroNameTok.getIdentifierInfo() &&
       MacroNameTok.getIdentifierInfo()->getName() == "__annotate__" && MI &&
@@ -459,7 +460,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
               SM.getExpansionLoc(Range.getBegin()))) {
         DpctGlobalInfo::getInstance().insertConstantMacroTMInfo(
             SM.getExpansionLoc(Range.getBegin()), TM);
-        auto &Map = DpctGlobalInfo::getConstantReplInsertFlagMap();
+        auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
         Map[TM] = false;
       }
     } else {
@@ -8807,7 +8808,7 @@ void DeviceFunctionDeclRule::runRule(
 
 REGISTER_RULE(DeviceFunctionDeclRule, PassKind::PK_Analysis)
 
-void MemVarRefRule::registerMatcher(MatchFinder &MF) {
+void MemVarRefMigrationRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher =
       varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
                     hasAttr(attr::CUDAShared), hasAttr(attr::HIPManaged)),
@@ -8824,7 +8825,7 @@ void MemVarRefRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-void MemVarRefRule::runRule(const MatchFinder::MatchResult &Result) {
+void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   auto getRHSOfTheNonConstAssignedVar =
       [](const DeclRefExpr *DRE) -> const Expr * {
     auto isExpectedRHS = [](const Expr *E, DynTypedNode Current,
@@ -8983,9 +8984,9 @@ void MemVarRefRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(MemVarRefRule, PassKind::PK_Migration)
+REGISTER_RULE(MemVarRefMigrationRule, PassKind::PK_Migration)
 
-void ConstantMemVarRule::registerMatcher(MatchFinder &MF) {
+void ConstantMemVarMigrationRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher =
       varDecl(hasAttr(attr::CUDAConstant),
               unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
@@ -8994,8 +8995,12 @@ void ConstantMemVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(varDecl(hasParent(translationUnitDecl())).bind("hostGlobalVar"),
                 this);
 }
-
-void ConstantMemVarRule::runRule(const MatchFinder::MatchResult &Result) {
+// When using the --optimize-migration option, if the runtime symbol API does
+// not utilize this constant variable, the C++ 'const' qualifier can be applied
+// for migration. This approach eliminates the need for a helper class
+// constant_memory and further processing of this variable's references.
+void ConstantMemVarMigrationRule::runRule(
+    const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
   auto IsVarUsedByRuntimeSymbolAPI = [&](const VarDecl *VarD) {
     auto &VarUsedByRuntimeSymbolAPISet =
@@ -9024,7 +9029,7 @@ void ConstantMemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     if (DpctGlobalInfo::isOptimizeMigration()) {
       if (!IsVarUsedByRuntimeSymbolAPI(MemVar)) {
-        Info->setNotUseDpctHelperTypeFlag(true);
+        Info->setUseHelperFuncFlag(false);
       }
     }
 
@@ -9056,8 +9061,8 @@ void ConstantMemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-void ConstantMemVarRule::previousHCurrentD(const VarDecl *VD,
-                                           tooling::Replacement &R) {
+void ConstantMemVarMigrationRule::previousHCurrentD(const VarDecl *VD,
+                                                    tooling::Replacement &R) {
   // 1. emit DPCT1055 warning
   // 2. add a new variable for host
   // 3. insert dpct::constant_memory and add the info from that replacement
@@ -9109,8 +9114,8 @@ void ConstantMemVarRule::previousHCurrentD(const VarDecl *VD,
   R = tooling::Replacement(R.getFilePath(), 0, 0, "");
 }
 
-void ConstantMemVarRule::previousDCurrentH(const VarDecl *VD,
-                                           tooling::Replacement &R) {
+void ConstantMemVarMigrationRule::previousDCurrentH(const VarDecl *VD,
+                                                    tooling::Replacement &R) {
   // 1. change DeviceConstant to HostDeviceConstant
   // 2. emit DPCT1055 warning (warning info is from previous device case)
   // 3. add a new variable for host (decl info is from previous device case)
@@ -9139,7 +9144,7 @@ void ConstantMemVarRule::previousDCurrentH(const VarDecl *VD,
   emplaceTransformation(new InsertText(SL, std::move(NewDecl)));
 }
 
-void ConstantMemVarRule::removeHostConstantWarning(Replacement &R) {
+void ConstantMemVarMigrationRule::removeHostConstantWarning(Replacement &R) {
   std::string ReplStr = R.getReplacementText().str();
 
   // warning text of Diagnostics::HOST_CONSTANT
@@ -9158,15 +9163,15 @@ void ConstantMemVarRule::removeHostConstantWarning(Replacement &R) {
   R.setReplacementText(Result);
 }
 
-bool ConstantMemVarRule::currentIsDevice(const VarDecl *MemVar,
-                                         std::shared_ptr<MemVarInfo> Info) {
+bool ConstantMemVarMigrationRule::currentIsDevice(
+    const VarDecl *MemVar, std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto BeginLoc = SM.getExpansionLoc(MemVar->getBeginLoc());
   auto OffsetOfLineBegin = getOffsetOfLineBegin(BeginLoc, SM);
   auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
   auto FileInfo = DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
   auto &S = FileInfo->getConstantMacroTMSet();
-  auto &Map = DpctGlobalInfo::getConstantReplInsertFlagMap();
+  auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
@@ -9183,6 +9188,8 @@ bool ConstantMemVarRule::currentIsDevice(const VarDecl *MemVar,
       // R(dcpt::constant_memery):
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
+      if (!FileInfo->getRepls())
+        return false;
       auto &M = FileInfo->getRepls()->getReplMap();
       bool RemoveWarning = false;
       for (auto &R : M) {
@@ -9283,14 +9290,15 @@ bool ConstantMemVarRule::currentIsDevice(const VarDecl *MemVar,
   return false;
 }
 
-bool ConstantMemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
+bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
+                                                std::string VarName) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto BeginLoc = SM.getExpansionLoc(VD->getBeginLoc());
   auto OffsetOfLineBegin = getOffsetOfLineBegin(BeginLoc, SM);
   auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
   auto FileInfo = DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
   auto &S = FileInfo->getConstantMacroTMSet();
-  auto &Map = DpctGlobalInfo::getConstantReplInsertFlagMap();
+  auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
@@ -9370,10 +9378,10 @@ bool ConstantMemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
   return false;
 }
 
-REGISTER_RULE(ConstantMemVarRule, PassKind::PK_Migration)
+REGISTER_RULE(ConstantMemVarMigrationRule, PassKind::PK_Migration)
 
 /// __constant__/__shared__/__device__ var information collection
-void MemVarRule::registerMatcher(MatchFinder &MF) {
+void MemVarAnalysisRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcherWithoutConstant =
       varDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAShared),
                     hasAttr(attr::HIPManaged)),
@@ -9396,8 +9404,8 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
-                                          std::shared_ptr<MemVarInfo> Info) {
+void MemVarAnalysisRule::processTypeDeclaredLocal(
+    const VarDecl *MemVar, std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto DS = Info->getDeclStmtOfVarType();
   if (!DS)
@@ -9458,7 +9466,7 @@ void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
   }
 }
 
-void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
+void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
@@ -9514,7 +9522,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(MemVarRule, PassKind::PK_Analysis)
+REGISTER_RULE(MemVarAnalysisRule, PassKind::PK_Analysis)
 
 std::string MemoryMigrationRule::getTypeStrRemovedAddrOf(const Expr *E,
                                                          bool isCOCE) {
@@ -14535,7 +14543,7 @@ REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
 REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
 
-REGISTER_RULE(DeviceConstantVarOptimizeRule, PassKind::PK_Analysis)
+REGISTER_RULE(DeviceConstantVarOptimizeAnalysisRule, PassKind::PK_Analysis)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

@@ -1953,8 +1953,8 @@ public:
     return MallocHostInfoMap;
   };
   static inline std::map<std::shared_ptr<TextModification>, bool> &
-  getConstantReplInsertFlagMap() {
-    return ConstantReplInsertFlagMap;
+  getConstantReplProcessedFlagMap() {
+    return ConstantReplProcessedFlagMap;
   }
   static inline std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
     return VarUsedByRuntimeSymbolAPISet;
@@ -2143,8 +2143,10 @@ private:
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
   static std::unordered_map<std::string, bool> MallocHostInfoMap;
+  /// The key of this map is repl for specifier "__const__" and the value
+  /// "true" means this repl has been processed.
   static std::map<std::shared_ptr<TextModification>, bool>
-      ConstantReplInsertFlagMap;
+      ConstantReplProcessedFlagMap;
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
 };
 
@@ -2536,10 +2538,10 @@ public:
     }
     return Ret;
   }
-  void setNotUseDpctHelperTypeFlag(bool Flag) {
-    NotUseDpctHelperTypeFlag = Flag;
+  void setUseHelperFuncFlag(bool Flag) {
+    UseHelperFuncFlag = Flag;
   };
-  bool isNotUseDpctHelperType() { return NotUseDpctHelperTypeFlag; }
+  bool isUseHelperFunc() { return UseHelperFuncFlag; }
 
 private:
   bool isTreatPointerAsArray() {
@@ -2624,7 +2626,7 @@ private:
   std::string LocalTypeName = "";
 
   static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
-  bool NotUseDpctHelperTypeFlag = false;
+  bool UseHelperFuncFlag = true;
 };
 
 class TextureTypeInfo {
@@ -2798,7 +2800,7 @@ public:
 
   inline unsigned getOffset() { return Offset; }
   inline std::string getFilePath() { return FilePath; }
-  inline bool isNotUseDpctHelperType() { return false; }
+  inline bool isUseHelperFunc() { return true; }
 };
 
 // texture handle info
@@ -3317,7 +3319,7 @@ private:
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap) {
     for (const auto &VI : VarMap) {
-      if (VI.second->isNotUseDpctHelperType()) {
+      if (!VI.second->isUseHelperFunc()) {
         continue;
       }
       if (PS.FormatInformation.EnableFormat) {

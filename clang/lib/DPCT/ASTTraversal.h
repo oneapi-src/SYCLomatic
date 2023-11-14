@@ -1318,7 +1318,7 @@ public:
 };
 
 /// Migration rule for __constant__/__shared__/__device__ memory variables.
-class MemVarRule : public NamedMigrationRule<MemVarRule> {
+class MemVarAnalysisRule : public NamedMigrationRule<MemVarAnalysisRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1328,7 +1328,7 @@ private:
                                 std::shared_ptr<MemVarInfo> Info);
 };
 
-class ConstantMemVarRule : public NamedMigrationRule<ConstantMemVarRule> {
+class ConstantMemVarMigrationRule : public NamedMigrationRule<ConstantMemVarMigrationRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1341,7 +1341,7 @@ private:
   bool currentIsHost(const VarDecl *VD, std::string VarName);
 };
 
-class MemVarRefRule : public NamedMigrationRule<MemVarRefRule> {
+class MemVarRefMigrationRule : public NamedMigrationRule<MemVarRefMigrationRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
