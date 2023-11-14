@@ -365,20 +365,21 @@ bool printOptions(
 bool canContinueMigration(std::string &Msg) {
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   // Try to load the MainSourceFiles.yaml file
-  SmallString<128> YamlFilePath(DpctGlobalInfo::getOutRoot());
-  llvm::sys::path::append(YamlFilePath, "MainSourceFiles.yaml");
+  SmallString<128> YamlFilePathStr(DpctGlobalInfo::getOutRoot().getCanonicalPath());
+  llvm::sys::path::append(YamlFilePathStr, "MainSourceFiles.yaml");
+  clang::tooling::DpctPath YamlFilePath = YamlFilePathStr;
 
-  if (!llvm::sys::fs::exists(YamlFilePath))
+  if (!llvm::sys::fs::exists(YamlFilePath.getCanonicalPath()))
     return true;
-  if (loadFromYaml(std::move(YamlFilePath), *PreTU) != 0) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
+  if (loadFromYaml(YamlFilePath.getCanonicalPath(), *PreTU) != 0) {
+    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
     return true;
   }
 
   // check version
   auto VerCompRes = compareToolVersion(PreTU->DpctVersion);
   if (VerCompRes == VersionCmpResult::VCR_CMP_FAILED) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
+    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
     return true;
   }
   if (VerCompRes == VersionCmpResult::VCR_CURRENT_IS_NEWER ||
@@ -391,7 +392,7 @@ bool canContinueMigration(std::string &Msg) {
   int Res =
       checkDpctOptionSet(DpctGlobalInfo::getCurrentOptMap(), PreTU->OptionMap);
   if (Res == -2) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
+    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
     return true;
   }
 
@@ -400,7 +401,7 @@ bool canContinueMigration(std::string &Msg) {
     bool Ret = printOptions(PreTU->OptionMap, Msg);
     if (!Ret) {
       // parsing error, skip yaml
-      llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
+      llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
       return true;
     }
     return false;

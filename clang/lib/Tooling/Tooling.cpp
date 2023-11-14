@@ -61,6 +61,7 @@
 #include <vector>
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <setjmp.h>
+#include <iostream>
 #endif // SYCLomatic_CUSTOMIZATION
 
 #define DEBUG_TYPE "clang-tooling"
@@ -74,15 +75,15 @@ namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
 static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
-static std::vector<std::pair<std::string, std::vector<std::string>>>
+static std::vector<std::pair<clang::tooling::DpctPath, std::vector<std::string>>>
     *CompileTargetsMapPtr = nullptr;
 static StringRef InRoot;
 static StringRef OutRoot;
 static FileProcessType FileProcessHandle = nullptr;
-static std::set<std::string> *ReProcessFilePtr = nullptr;
+static std::set<clang::tooling::DpctPath> *ReProcessFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
-static std::set<std::string> *ModuleFiles = nullptr;
-static std::function<bool(const std::string &, bool)> IsExcludePathPtr;
+static std::set<clang::tooling::DpctPath> *ModuleFiles = nullptr;
+static std::function<bool(const DpctPath &)> IsExcludePathPtr;
 extern std::string VcxprojFilePath;
 
 void SetPrintHandle(PrintType Handle) {
@@ -94,7 +95,7 @@ void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
 }
 
 void SetCompileTargetsMap(
-    std::vector<std::pair<std::string, std::vector<std::string>>>
+    std::vector<std::pair<clang::tooling::DpctPath, std::vector<std::string>>>
         &CompileTargetsMap) {
   CompileTargetsMapPtr = &CompileTargetsMap;
 }
@@ -133,7 +134,7 @@ bool isFileProcessAllSet() {
   return FileProcessHandle != nullptr;
 }
 
-void SetReProcessFile(std::set<std::string> &ReProcessFile){
+void SetReProcessFile(std::set<clang::tooling::DpctPath> &ReProcessFile){
   ReProcessFilePtr = &ReProcessFile;
 }
 
@@ -148,18 +149,18 @@ unsigned int DoGetRunRound(){
   return 0;
 }
 
-std::set<std::string> GetReProcessFile(){
+std::set<clang::tooling::DpctPath> GetReProcessFile(){
   if(ReProcessFilePtr){
     return *ReProcessFilePtr;
   }
-  return std::set<std::string>();
+  return std::set<clang::tooling::DpctPath>();
 }
 
 void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
 static llvm::raw_ostream *OSTerm = nullptr;
 void SetDiagnosticOutput(llvm::raw_ostream &OStream) { OSTerm = &OStream; }
-void SetModuleFiles(std::set<std::string> &MF) { ModuleFiles = &MF; }
+void SetModuleFiles(std::set<clang::tooling::DpctPath> &MF) { ModuleFiles = &MF; }
 llvm::raw_ostream &DiagnosticsOS() {
   if (OSTerm != nullptr) {
     return *OSTerm;
@@ -188,13 +189,13 @@ std::string getRealFilePath(std::string File, clang::FileManager *FM){
 #endif
 }
 
-void SetIsExcludePathHandler(std::function<bool(const std::string &, bool)> Func){
+void SetIsExcludePathHandler(std::function<bool(const DpctPath &)> Func) {
   IsExcludePathPtr = Func;
 }
 
-bool isExcludePath(const std::string &Path, bool IsRelative) {
+bool isExcludePath(const std::string &Path) {
   if(IsExcludePathPtr) {
-    return IsExcludePathPtr(Path, IsRelative);
+    return IsExcludePathPtr(Path);
   } else {
     return false;
   }
@@ -242,10 +243,93 @@ void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
                  << "\n";
   }
 }
+void DpctPath::makeCanonical() {
+  if (_Path.empty()) {
+    return;
+  }
+  if (!_CanonicalPath.empty()) {
+    return;
+  }
+  auto Iter = CanonicalPathCache.find(_Path);
+  if (Iter != CanonicalPathCache.end()) {
+    _CanonicalPath = Iter->second;
+    return;
+  }
+
+  SmallString<512> Path(_Path);
+  if (!llvm::sys::path::is_absolute(Path)) {
+    SmallString<512> TempPath;
+    llvm::sys::fs::current_path(TempPath);
+    llvm::sys::path::append(TempPath, llvm::sys::path::Style::native, Path);
+    Path = TempPath;
+  }
+
+  llvm::sys::fs::expand_tilde(Path, Path);
+  llvm::sys::path::remove_dots(Path, /* remove_dot_dot= */ true);
+  llvm::sys::path::native(Path);
+
+  SmallString<512> RealPath;
+  // We need make sure the input `Path` for llvm::sys::fs::real_path is
+  // exsiting.
+  if (llvm::sys::fs::exists(Path)) {
+    llvm::sys::fs::real_path(Path, RealPath, true);
+  } else {
+    SmallString<512> Suffix;
+    if (llvm::sys::path::has_filename(Path)) {
+      Suffix = llvm::sys::path::filename(Path).str();
+      llvm::sys::path::remove_filename(Path);
+    }
+    while (!llvm::sys::fs::exists(Path)) {
+      if (!llvm::sys::path::has_parent_path(Path)) {
+        // 1. The path is incorrect
+        // 2. The "incorrect path" is by design, e.g., "LinkerEntry"
+        printf("Path:%s\n", Path.c_str());
+        printf("_Path:%s\n", _Path.c_str());
+        assert(0 && "no real directory found");
+        return;
+      }
+      llvm::sys::path::reverse_iterator RI = llvm::sys::path::rbegin(StringRef(Path));
+      SmallString<512> SuffixTemp(*RI);
+      llvm::sys::path::append(SuffixTemp, llvm::sys::path::Style::native, Suffix);
+      Suffix = SuffixTemp;
+      Path = SmallString<512>(llvm::sys::path::parent_path(Path).str());
+    }
+    llvm::sys::fs::real_path(Path, RealPath, true);
+    llvm::sys::path::append(RealPath, llvm::sys::path::Style::native, Suffix);
+  }
+#if defined(_WIN32)
+  _CanonicalPath = RealPath.str().lower();
+  if (_CanonicalPath.size() >= 3 && _CanonicalPath.substr(0, 3) == "unc") {
+    _CanonicalPath = "\\" + _CanonicalPath.substr(3);
+  }
+#else
+  _CanonicalPath = RealPath.str();
+#endif
+  CanonicalPathCache.insert(std::pair(_Path, _CanonicalPath));
+}
+std::unordered_map<std::string, std::string> DpctPath::CanonicalPathCache;
+bool operator==(const clang::tooling::DpctPath &LHS,
+                const clang::tooling::DpctPath &RHS) {
+  return LHS.getCanonicalPath() == RHS.getCanonicalPath();
+}
+bool operator!=(const clang::tooling::DpctPath &LHS,
+                const clang::tooling::DpctPath &RHS) {
+  return LHS.getCanonicalPath() != RHS.getCanonicalPath();
+}
+bool operator<(const clang::tooling::DpctPath &LHS,
+               const clang::tooling::DpctPath &RHS) {
+  return LHS.getCanonicalPath() == RHS.getCanonicalPath();
+}
 } // namespace tooling
-} // namespace 
+} // namespace clang
+namespace llvm {
+llvm::raw_ostream &operator<<(llvm::raw_ostream &OS,
+                              const clang::tooling::DpctPath &RHS) {
+  return OS << RHS.getCanonicalPath();
+}
+} // namespace llvm
 bool StopOnParseErrTooling=false;
-std::string InRootTooling;
+DpctPath InRootTooling;
 
 // filename, error#
 //  error: high32:processed sig error, low32: parse error
@@ -930,7 +1014,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         // FIXME: Diagnostics should be used instead.
         if (PrintErrorMessage && StopOnParseErrTooling) {
           std::string ErrMsg="Did not process 1 file(s) in -in-root folder \""
-                   + InRootTooling + "\":\n"
+                   + InRootTooling.getCanonicalPath() + "\":\n"
                    "    " + File.str() + ": " + std::to_string(CurFileParseErrCnt)
                    + " parsing error(s)\n";
           llvm::errs() << ErrMsg;
@@ -998,7 +1082,7 @@ int ClangTool::run(ToolAction *Action) {
   }
   } else {
      for (auto &File : GetReProcessFile())
-       AbsolutePaths.push_back(File);
+       AbsolutePaths.push_back(File.getCanonicalPath());
   }
 #endif // SYCLomatic_CUSTOMIZATION
   // Remember the working directory in case we need to restore it.
@@ -1082,7 +1166,7 @@ int ClangTool::run(ToolAction *Action) {
       }
     }
 #else
-    if(isExcludePath(File.str(), true)) {
+    if(isExcludePath(File.str())) {
       continue;
     }
     int Ret = processFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,

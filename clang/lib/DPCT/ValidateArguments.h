@@ -9,6 +9,8 @@
 #ifndef DPCT_VALIDATE_ARGUMENTS_H
 #define DPCT_VALIDATE_ARGUMENTS_H
 
+#include "clang/Tooling/Tooling.h"
+
 #include <string>
 #include <vector>
 
@@ -84,10 +86,10 @@ enum class ExperimentalFeatures : unsigned int {
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
 
 bool makeInRootCanonicalOrSetDefaults(
-    std::string &InRoot, const std::vector<std::string> SourceFiles);
-bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);
-bool makeAnalysisScopeCanonicalOrSetDefaults(std::string &AnalysisScope,
-                                             const std::string &InRoot);
+    clang::tooling::DpctPath &InRoot, const std::vector<std::string> SourceFiles);
+bool makeOutRootCanonicalOrSetDefaults(clang::tooling::DpctPath &OutRoot);
+bool makeAnalysisScopeCanonicalOrSetDefaults(clang::tooling::DpctPath &AnalysisScope,
+                                             const clang::tooling::DpctPath &InRoot);
 
 /// Make sure files passed to tool are under the
 /// input root directory and have an extension.
@@ -95,7 +97,7 @@ bool makeAnalysisScopeCanonicalOrSetDefaults(std::string &AnalysisScope,
 /// 0: success (InRoot and SourceFiles are valid)
 /// -1: fail for InRoot not valid or there is file SourceFiles not in InRoot
 /// -2: fail for there is file in SourceFiles without extension
-int validatePaths(const std::string &InRoot,
+int validatePaths(const clang::tooling::DpctPath &InRoot,
                   const std::vector<std::string> &SourceFiles);
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
                      std::string &RFile, bool &ROnly, bool &GenReport,
@@ -105,6 +107,6 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 ///  0: Path is valid
 ///  1: Path is empty, option SDK include path is not used
 /// -1: Path is invalid
-int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath);
+int checkSDKPathOrIncludePath(clang::tooling::DpctPath &Path);
 
 #endif // DPCT_VALIDATE_ARGUMENTS_H

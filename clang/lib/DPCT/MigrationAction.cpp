@@ -223,7 +223,7 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
   DpctGlobalInfo::getInstance().setMainFile(Info.MainFile);
   MigrationRuleManager MRM(Pass, Transforms, Info.Groups);
   Global.getProcessedFile().insert(Info.MainFile->getFilePath());
-  printFileStaging(getStagingName(Pass), Info.MainFile->getFilePath());
+  printFileStaging(getStagingName(Pass), Info.MainFile->getFilePath().getCanonicalPath());
   MRM.matchAST(Context, MigrationRuleNames);
   for (const auto &I : Transforms) {
     auto Repl = I->getReplacement(Context);
@@ -244,6 +244,8 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
       }
       IncludeMap.erase(FilePath);
     }
+    //std::cout << "Repl->getFilePath().str():" << Repl->getFilePath().str() << std::endl;
+    //std::cout << "Repl->getReplacementText().str():" << Repl->getReplacementText().str() << std::endl;
     Global.addReplacement(Repl);
 
     StaticsInfo::printReplacements(Transforms, Context);
@@ -278,6 +280,7 @@ void DpctToolAction::runPasses() {
         Global.buildReplacements();
         Global.postProcess();
         Global.emplaceReplacements(Repls);
+        std::cout << "runWithCrashGuard Repls.size():" << Repls.size() << std::endl;
       },
       PostProcessFaultMsg);
 }

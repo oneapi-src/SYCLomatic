@@ -43,12 +43,12 @@ extern std::function<unsigned int()> GetRunRound;
 extern std::function<void(SourceLocation, unsigned)> RecordTokenSplit;
 namespace dpct {
 int HostDeviceFuncInfo::MaxId = 0;
-std::string DpctGlobalInfo::InRoot = std::string();
-std::string DpctGlobalInfo::OutRoot = std::string();
-std::string DpctGlobalInfo::AnalysisScope = std::string();
+clang::tooling::DpctPath DpctGlobalInfo::InRoot;
+clang::tooling::DpctPath DpctGlobalInfo::OutRoot;
+clang::tooling::DpctPath DpctGlobalInfo::AnalysisScope;
 std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 // TODO: implement one of this for each source language.
-std::string DpctGlobalInfo::CudaPath = std::string();
+clang::tooling::DpctPath DpctGlobalInfo::CudaPath;
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
 clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
@@ -80,7 +80,7 @@ std::tuple<unsigned int, std::string, SourceRange>
         std::make_tuple<unsigned int, std::string, SourceRange>(0, "",
                                                                 SourceRange());
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
-std::vector<std::pair<std::string, size_t>>
+std::vector<std::pair<clang::tooling::DpctPath, size_t>>
     DpctGlobalInfo::ConditionalCompilationLoc;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
     DpctGlobalInfo::MacroTokenToMacroDefineLoc;
@@ -89,7 +89,7 @@ std::map<std::string, std::string>
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
 std::map<std::string, unsigned int> DpctGlobalInfo::BeginOfEmptyMacros;
 std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
-std::set<std::string> DpctGlobalInfo::IncludingFileSet;
+std::set<clang::tooling::DpctPath> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
 std::unordered_map<std::string, std::vector<clang::tooling::Replacement>>
     DpctGlobalInfo::FileRelpsMap;
@@ -119,7 +119,7 @@ std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
 unsigned int DpctGlobalInfo::RunRound = 0;
 bool DpctGlobalInfo::NeedRunAgain = false;
-std::set<std::string> DpctGlobalInfo::ModuleFiles;
+std::set<clang::tooling::DpctPath> DpctGlobalInfo::ModuleFiles;
 bool DpctGlobalInfo::OptimizeMigrationFlag = false;
 
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
@@ -130,10 +130,10 @@ HDFuncInfoMap DpctGlobalInfo::HostDeviceFuncInfoMap;
 CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
 std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
     DpctGlobalInfo::CudaArchMacroRepl;
-std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
+std::unordered_map<clang::tooling::DpctPath, std::shared_ptr<ExtReplacements>>
     DpctGlobalInfo::FileReplCache;
-std::set<std::string> DpctGlobalInfo::ReProcessFile;
-std::set<std::string> DpctGlobalInfo::ProcessedFile;
+std::set<clang::tooling::DpctPath> DpctGlobalInfo::ReProcessFile;
+std::set<clang::tooling::DpctPath> DpctGlobalInfo::ProcessedFile;
 std::unordered_map<std::string,
                    std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>>
     DpctGlobalInfo::SpellingLocToDFIsMapForAssumeNDRange;
@@ -152,9 +152,9 @@ std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
 std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
 std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
 std::unordered_map<std::string,
-                   std::unordered_map<std::string, std::vector<unsigned>>>
+                   std::unordered_map<clang::tooling::DpctPath, std::vector<unsigned>>>
     DpctGlobalInfo::RnnInputMap;
-std::unordered_map<std::string, std::vector<std::string>>
+std::unordered_map<clang::tooling::DpctPath, std::vector<clang::tooling::DpctPath>>
     DpctGlobalInfo::MainSourceFileMap;
 std::unordered_map<std::string, bool>
     DpctGlobalInfo::MallocHostInfoMap;
@@ -189,7 +189,7 @@ private:
     std::string ExtraVariableName;
   };
   struct MacroInfo {
-    std::string FilePath;
+    clang::tooling::DpctPath FilePath;
     unsigned Offset;
     unsigned Dimension = 0;
     std::vector<unsigned> Infos;
@@ -197,7 +197,7 @@ private:
   static std::vector<std::shared_ptr<FreeQueriesInfo>> InfoList;
   static std::vector<std::shared_ptr<MacroInfo>> MacroInfos;
 
-  std::string FilePath;
+  clang::tooling::DpctPath FilePath;
   unsigned ExtraDeclLoc = 0;
   unsigned Counter[FreeQueriesKind::End] = {0};
   std::string Indent;
@@ -729,12 +729,12 @@ bool DpctFileInfo::isInCudaPath() {
 }
 
 void DpctFileInfo::buildLinesInfo() {
-  if (FilePath.empty())
+  if (FilePath.getCanonicalPath().empty())
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
 
   llvm::Expected<FileEntryRef> Result =
-      SM.getFileManager().getFileRef(FilePath);
+      SM.getFileManager().getFileRef(FilePath.getCanonicalPath());
 
   if (auto E = Result.takeError())
     return;
@@ -969,7 +969,7 @@ void DpctFileInfo::buildReplacements() {
   if (!isInAnalysisScope())
     return;
 
-  if (FilePath.empty())
+  if (FilePath.getCanonicalPath().empty())
     return;
   // Traverse all the global variables stored one by one to check if its name
   // is same with normal global variable's name in host side, if the one is
@@ -1285,21 +1285,16 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
   }
 }
 
-std::optional<std::string>
+std::optional<clang::tooling::DpctPath>
 DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
   if (auto RealPath = File.tryGetRealPathName(); !RealPath.empty())
-    return RealPath.str();
+    return clang::tooling::DpctPath(RealPath);
 
   llvm::SmallString<512> FilePathAbs(File.getName());
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
-  llvm::sys::path::native(FilePathAbs);
-  // Need to remove dot to keep the file path
-  // added by ASTMatcher and added by
-  // AnalysisInfo::getLocInfo() consistent.
-  llvm::sys::path::remove_dots(FilePathAbs, true);
-  return (std::string)FilePathAbs;
+  return clang::tooling::DpctPath(FilePathAbs);
 }
-std::optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
+std::optional<clang::tooling::DpctPath> DpctGlobalInfo::getAbsolutePath(FileID ID) {
   assert(SM && "SourceManager must be initialized");
   if (const auto *FileEntry = SM->getFileEntryForID(ID))
     return getAbsolutePath(*FileEntry);
@@ -1639,7 +1634,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     ProcessRequireQueue.push_back(DeviceFuncInfo);
     ProcessedSet.insert(DeviceFuncInfo);
     // New function name, LocInfo
-    std::vector<std::pair<std::string, std::pair<std::string, unsigned>>>
+    std::vector<std::pair<std::string, std::pair<clang::tooling::DpctPath, unsigned>>>
         ShflFunctions;
     while (!ProcessRequireQueue.empty()) {
       auto SGSize = ProcessRequireQueue.front()->getSubGroupSize();
@@ -1952,7 +1947,7 @@ const DeclRefExpr *getAddressedRef(const Expr *E) {
 }
 
 std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
-    const std::pair<std::string, unsigned> &LocInfo, const CallExpr *CE) {
+    const std::pair<clang::tooling::DpctPath, unsigned> &LocInfo, const CallExpr *CE) {
   auto LaunchFD = CE->getDirectCallee();
   if (!LaunchFD || (LaunchFD->getName() != "cudaLaunchKernel" &&
                     LaunchFD->getName() != "cudaLaunchCooperativeKernel")) {
@@ -1985,7 +1980,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
 }
 
 std::shared_ptr<KernelCallExpr>
-KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
+KernelCallExpr::buildForWrapper(clang::tooling::DpctPath FilePath, const FunctionDecl *FD,
                                 std::shared_ptr<DeviceFunctionInfo> FuncInfo) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto Kernel =
@@ -2825,7 +2820,7 @@ void CallFunctionExpr::buildInfo() {
   if (!FuncInfo)
     return;
 
-  const std::string &DefFilePath = FuncInfo->getDefinitionFilePath();
+  const clang::tooling::DpctPath &DefFilePath = FuncInfo->getDefinitionFilePath();
   // SYCL_EXTERNAL macro is not needed if the device function is lambda
   // expression, becuase 'sycl_device' attribute cannot be applied or will be
   // ignored.
@@ -2839,7 +2834,7 @@ void CallFunctionExpr::buildInfo() {
   //
   // TODO: Need to revisit the condition to add SYCL_EXTERNAL macro if issues
   // are observed in the future.
-  if (!DefFilePath.empty() && DefFilePath != getFilePath() &&
+  if (!DefFilePath.getCanonicalPath().empty() && DefFilePath != getFilePath() &&
       !isIncludedFile(getFilePath(), DefFilePath) && !FuncInfo->isLambda()) {
     FuncInfo->setNeedSyclExternMacro();
   }
@@ -3189,7 +3184,7 @@ bool isModuleFunction(const FunctionDecl *FD) {
 }
 
 DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
-                                       const std::string &FilePathIn,
+                                       const clang::tooling::DpctPath &FilePathIn,
                                        const FunctionDecl *FD)
     : Offset(Offset), FilePath(FilePathIn), ParamsNum(FD->param_size()),
       ReplaceOffset(0), ReplaceLength(0),
@@ -3199,7 +3194,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
         FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
   }
-  if (!FilePath.empty()) {
+  if (!FilePath.getCanonicalPath().empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
     if (!(FileType & SPT_CudaHeader) && !(FileType & SPT_CppHeader) &&
         FD->isThisDeclarationADefinition()) {
@@ -3215,7 +3210,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
 }
 
 DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
-                                       const std::string &FilePathIn,
+                                       const clang::tooling::DpctPath &FilePathIn,
                                        const FunctionTypeLoc &FTL,
                                        const ParsedAttributes &Attrs,
                                        const FunctionDecl *Specialization)
@@ -3560,7 +3555,7 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
   }
 }
 
-MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
+MemVarInfo::MemVarInfo(unsigned Offset, const clang::tooling::DpctPath &FilePath,
                        const VarDecl *Var)
     : VarInfo(Offset, FilePath, Var,
               !(DpctGlobalInfo::useGroupLocalMemory() &&
@@ -3642,7 +3637,7 @@ DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
   // need to add filepath as prefix to differentiate them.
   if (FD->isStatic() || FD->isInAnonymousNamespace()) {
     auto LocInfo = DpctGlobalInfo::getLocInfo(FD);
-    Key = LocInfo.first + G.getName(FD);
+    Key = LocInfo.first.getCanonicalPath() + G.getName(FD);
   } else {
     Key = G.getName(FD);
   }
@@ -3923,7 +3918,7 @@ std::string MemVarMap::getExtraDeclParam(bool HasPreParam, bool HasPostParam,
                                                  FormatInformation);
 }
 std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam,
-                                          const std::string &Path) const {
+                                          const clang::tooling::DpctPath &Path) const {
   requestFeatureForAllVarMaps(Path);
   return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
 }
@@ -4173,7 +4168,7 @@ void SizeInfo::setTemplateList(
     TDSI = TDSI->applyTemplateArguments(TemplateList);
 }
 
-void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
+void TimeStubTypeInfo::buildInfo(clang::tooling::DpctPath FilePath, unsigned int Offset,
                                  bool isReplTxtWithSB) {
   if (isReplTxtWithSB)
     DpctGlobalInfo::getInstance().addReplacement(
@@ -4185,7 +4180,7 @@ void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
                                          nullptr));
 }
 
-void EventSyncTypeInfo::buildInfo(std::string FilePath, unsigned int Offset) {
+void EventSyncTypeInfo::buildInfo(clang::tooling::DpctPath FilePath, unsigned int Offset) {
   if (NeedReport)
     DiagnosticsUtils::report(FilePath, Offset,
                              Diagnostics::NOERROR_RETURN_COMMA_OP, true, false);
@@ -4198,7 +4193,7 @@ void EventSyncTypeInfo::buildInfo(std::string FilePath, unsigned int Offset) {
       FilePath, Offset, Length, ReplText, nullptr));
 }
 
-void BuiltinVarInfo::buildInfo(std::string FilePath, unsigned int Offset,
+void BuiltinVarInfo::buildInfo(clang::tooling::DpctPath FilePath, unsigned int Offset,
                                unsigned int ID) {
   std::string R = Repl + std::to_string(ID) + ")";
   DpctGlobalInfo::getInstance().addReplacement(
@@ -4535,7 +4530,7 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
     }
 
     std::string CounterKey =
-        HelperFuncReplInfoIter->second.DeclLocFile + ":" +
+        HelperFuncReplInfoIter->second.DeclLocFile.getCanonicalPath() + ":" +
         std::to_string(HelperFuncReplInfoIter->second.DeclLocOffset);
 
     auto TempVariableDeclCounterIter =

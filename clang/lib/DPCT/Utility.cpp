@@ -36,19 +36,19 @@ using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
-extern std::string DpctInstallPath; // Installation directory for this tool
+extern clang::tooling::DpctPath DpctInstallPath; // Installation directory for this tool
 bool IsUsingDefaultOutRoot = false;
 
-void removeDefaultOutRootFolder(const std::string &DefaultOutRoot) {
+void removeDefaultOutRootFolder(const clang::tooling::DpctPath &DefaultOutRoot) {
   if (isDirectory(DefaultOutRoot)) {
     std::error_code EC;
-    llvm::sys::fs::directory_iterator Iter(DefaultOutRoot, EC);
+    llvm::sys::fs::directory_iterator Iter(DefaultOutRoot.getCanonicalPath(), EC);
     if ((bool)EC)
       return;
     llvm::sys::fs::directory_iterator End;
     if (Iter == End) {
       // This folder is empty, then remove it.
-      llvm::sys::fs::remove_directories(DefaultOutRoot, false);
+      llvm::sys::fs::remove_directories(DefaultOutRoot.getCanonicalPath(), false);
     }
   }
 }
@@ -258,9 +258,8 @@ std::string getStmtSpelling(clang::SourceRange SR, SourceRange ParentRange) {
    
 }
 
-SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
-  SmallString<256> FilePath = SourcePath;
-  auto Extension = path::extension(FilePath);
+SourceProcessType GetSourceFileType(const clang::tooling::DpctPath &SourcePath) {
+  auto Extension = path::extension(SourcePath.getCanonicalPath());
 
   if (Extension == ".cu") {
     return SPT_CudaSource;
@@ -281,11 +280,11 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
   // C. If both A and B hold, then default to A.
   // clang-format on
   auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
-  if (FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
+  if (FileSetInDB.find(SourcePath.getCanonicalPath()) != end(FileSetInDB)) {
     return SPT_CppSource;
   }
   auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
-  if (IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
+  if (IncludingFileSet.find(SourcePath.getCanonicalPath()) != end(IncludingFileSet)) {
     return SPT_CppHeader;
   }
   if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
@@ -1554,7 +1553,7 @@ bool isOuterMostMacro(const Stmt *E) {
 bool isSameLocation(const SourceLocation L1, const SourceLocation L2) {
   auto LocInfo1 = dpct::DpctGlobalInfo::getInstance().getLocInfo(L1);
   auto LocInfo2 = dpct::DpctGlobalInfo::getInstance().getLocInfo(L2);
-  if (LocInfo1.first.compare(LocInfo2.first) ||
+  if (!LocInfo1.first.equalsTo(LocInfo2.first) ||
       LocInfo1.second != LocInfo2.second) {
     return false;
   }
@@ -1625,7 +1624,7 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
       getCombinedStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      (!It->second->FilePath.compare(
+      (It->second->FilePath.equalsTo(
            dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
        It->second->ReplaceTokenEndOffset ==
            dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
@@ -1637,7 +1636,7 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
       getCombinedStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      (!It->second->FilePath.compare(
+      (It->second->FilePath.equalsTo(
            dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
        It->second->ReplaceTokenEndOffset ==
            dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
@@ -1649,7 +1648,7 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
       getCombinedStrFromLoc(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      (!It->second->FilePath.compare(
+      (It->second->FilePath.equalsTo(
            dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
        It->second->ReplaceTokenEndOffset ==
            dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
@@ -1661,7 +1660,7 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
       getCombinedStrFromLoc(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      (!It->second->FilePath.compare(
+      (It->second->FilePath.equalsTo(
            dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
        It->second->ReplaceTokenEndOffset ==
            dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
@@ -1717,7 +1716,7 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
 
   // If DL.first(the FileId) or DL.second(the location) is different which means
   // begin and end are in different macro define, straddle
-  if (ItSpellingBegin->second->FilePath.compare(
+  if (!ItSpellingBegin->second->FilePath.equalsTo(
           ItSpellingEnd->second->FilePath) ||
       ItSpellingBegin->second->ReplaceTokenBeginOffset !=
           ItSpellingEnd->second->ReplaceTokenBeginOffset) {
@@ -2341,8 +2340,8 @@ unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
                      : Result;
 }
 
-bool isIncludedFile(const std::string &CurrentFile,
-                    const std::string &CheckingFile) {
+bool isIncludedFile(const clang::tooling::DpctPath &CurrentFile,
+                    const clang::tooling::DpctPath &CheckingFile) {
   auto CurrentFileInfo =
       dpct::DpctGlobalInfo::getInstance().insertFile(CurrentFile);
   auto CheckingFileInfo =
@@ -2380,7 +2379,7 @@ std::string getCombinedStrFromLoc(const clang::SourceLocation Loc) {
     return Loc.printToString(SM);
   }
   auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
-  return LocInfo.first + ":" + std::to_string(LocInfo.second);
+  return LocInfo.first.getCanonicalPath() + ":" + std::to_string(LocInfo.second);
 }
 
 std::string getFinalCastTypeNameStr(std::string CastTypeName) {
@@ -4239,7 +4238,7 @@ std::string getRemovedAPIWarningMessage(std::string FuncName) {
 }
 
 bool isUserDefinedDecl(const clang::Decl *D) {
-  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
+  clang::tooling::DpctPath InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
   if (InInstallPath || InCudaPath)
@@ -4385,7 +4384,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
   auto LocInfo =
       dpct::DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(VD->getBeginLoc()));
   auto &Map = dpct::DpctGlobalInfo::getMallocHostInfoMap();
-  std::string Key = LocInfo.first + "*" + std::to_string(LocInfo.second);
+  std::string Key = LocInfo.first.getCanonicalPath() + "*" + std::to_string(LocInfo.second);
   if(Map.count(Key)){
     return Map[Key];
   }
@@ -4643,8 +4642,7 @@ bool isFromCUDA(const Decl *D) {
   SourceLocation DeclLoc =
       dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
           D->getLocation());
-  std::string DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
-  makeCanonical(DeclLocFilePath);
+  clang::tooling::DpctPath DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
 
   // clang hacked the declarations of std::min/std::max
   // In original code, the declaration should be in standard lib,
@@ -4652,7 +4650,7 @@ bool isFromCUDA(const Decl *D) {
   // resolution by adding a special attribute.
   // So we need treat function which is declared in this file as it
   // is from standard lib.
-  SmallString<512> AlgorithmFileInCudaWrapper = StringRef(DpctInstallPath);
+  SmallString<512> AlgorithmFileInCudaWrapper = StringRef(DpctInstallPath.getCanonicalPath());
   path::append(AlgorithmFileInCudaWrapper, Twine("lib"), Twine("clang"),
                Twine(CLANG_VERSION_MAJOR_STRING), Twine("include"));
   path::append(AlgorithmFileInCudaWrapper, Twine("cuda_wrappers"),

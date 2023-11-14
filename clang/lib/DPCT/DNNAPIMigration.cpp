@@ -251,7 +251,7 @@ void CuDNNAPIRule::runRule(
 
     if (auto CS = DpctGlobalInfo::findAncestor<CompoundStmt>(CE, Condition)) {
       auto LocInfo = Global.getLocInfo(CS->getBeginLoc());
-      FuncInfo.CompoundLoc = LocInfo.first + std::to_string(LocInfo.second);
+      FuncInfo.CompoundLoc = LocInfo.first.getCanonicalPath() + std::to_string(LocInfo.second);
     } else {
       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, FuncName);
       return;
@@ -278,7 +278,7 @@ void CuDNNAPIRule::runRule(
           auto ArgName = RnnInputDecl->getName();
           auto DeclLocInfo = Global.getLocInfo(RnnInputDecl->getBeginLoc());
           std::string MapKey =
-              DeclLocInfo.first + std::to_string(DeclLocInfo.second) + ArgName.str();
+              DeclLocInfo.first.getCanonicalPath() + std::to_string(DeclLocInfo.second) + ArgName.str();
           auto &SubMap = RnnInputMap[MapKey];
           if (SubMap.empty()) {
             std::vector<const clang::DeclRefExpr *> MatchResults;

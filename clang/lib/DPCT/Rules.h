@@ -87,8 +87,8 @@ public:
     }
   };
 
-  static std::vector<std::string> RuleFiles;
-  std::string RuleFile;
+  static std::vector<clang::tooling::DpctPath> RuleFiles;
+  clang::tooling::DpctPath RuleFile;
   std::string RuleId;
   RulePriority Priority;
   RuleKind Kind;
@@ -106,7 +106,7 @@ public:
       : Priority(RulePriority::Default), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind)
       : RuleId(id), Priority(priority), Kind(kind) {}
-  static void setRuleFiles(std::string File) { RuleFiles.push_back(File); }
+  static void setRuleFiles(clang::tooling::DpctPath File) { RuleFiles.push_back(File); }
 };
 
 template <>
@@ -281,7 +281,7 @@ public:
     TemplateArg
   };
   std::string RuleName;
-  std::string RuleFile;
+  clang::tooling::DpctPath RuleFile;
   Kind Kind;
   size_t ArgIndex;
   std::string Str;
@@ -298,6 +298,6 @@ private:
   void consumeLParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
 };
 
-void importRules(llvm::cl::list<std::string> &RuleFiles);
+void importRules(std::vector<clang::tooling::DpctPath> &RuleFiles);
 
 #endif // DPCT_RULES_H

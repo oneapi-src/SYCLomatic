@@ -52,6 +52,7 @@
 #include <set>
 namespace clang {
 namespace tooling {
+class DpctPath;
 using PrintType = void (*)(const std::string &, bool);
 using FileProcessType = void (*)(StringRef, StringRef,
                                  std::vector<std::string> &);
@@ -62,23 +63,74 @@ void SetSDKIncludePath(const std::string &Path);
 void SetDiagnosticOutput(llvm::raw_ostream &OStream);
 void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB);
 void SetCompileTargetsMap(
-    std::vector<std::pair<std::string, std::vector<std::string>>>
+    std::vector<std::pair<clang::tooling::DpctPath, std::vector<std::string>>>
         &CompileTargetsMap);
 void SetFileProcessHandle(StringRef InRoot, StringRef OutRoot,
                           FileProcessType FileProcessHandle);
-void SetReProcessFile(std::set<std::string> &ReProcessFile);
-std::set<std::string> GetReProcessFile();
+void SetReProcessFile(std::set<clang::tooling::DpctPath> &ReProcessFile);
+std::set<clang::tooling::DpctPath> GetReProcessFile();
 void SetGetRunRound(std::function<unsigned int()> Func);
 unsigned int DoGetRunRound();
-void SetModuleFiles(std::set<std::string> &MF);
+void SetModuleFiles(std::set<clang::tooling::DpctPath> &MF);
 std::string getRealFilePath(std::string File, clang::FileManager *FM);
 void SetColorOptionPtr(unsigned int &ColorOption);
 void SetColorOptionValue(unsigned int ColorOption);
-void SetIsExcludePathHandler(
-    std::function<bool(const std::string &, bool)> Func);
+void SetIsExcludePathHandler(std::function<bool(const DpctPath &)> Func);
 bool isExcludePath(const std::string &Path, bool IsRelative);
+
+class DpctPath {
+public:
+  DpctPath() = default;
+  DpctPath(const std::string &Path) : _Path(Path) { makeCanonical(); }
+  DpctPath(const StringRef Path) : _Path(Path.str()) { makeCanonical(); }
+  DpctPath(const Twine &Path) : _Path(Path.str()) { makeCanonical(); }
+  DpctPath(const SmallVectorImpl<char> &Path) {
+    _Path = std::string(Path.data(), Path.size());
+    makeCanonical();
+  }
+  bool equalsTo(const std::string &RHS) {
+    return this->equalsTo(DpctPath(RHS));
+  }
+  bool equalsTo(const StringRef RHS) { return this->equalsTo(DpctPath(RHS)); }
+  bool equalsTo(const Twine &RHS) { return this->equalsTo(DpctPath(RHS)); }
+  bool equalsTo(const SmallVectorImpl<char> &RHS) {
+    return this->equalsTo(DpctPath(RHS));
+  }
+  bool equalsTo(DpctPath RHS) {
+    return getCanonicalPath() == RHS.getCanonicalPath();
+  }
+  std::string getCanonicalPath() const noexcept { return _CanonicalPath; }
+  StringRef getCanonicalPathRef() const noexcept { return _CanonicalPath; }
+  std::string getPath() const noexcept { return _Path; }
+  void setPath(const std::string &NewPath) {
+    _Path = NewPath;
+    _CanonicalPath.clear();
+    makeCanonical();
+  }
+
+private:
+  void makeCanonical();
+  std::string _Path;
+  std::string _CanonicalPath;
+  static std::unordered_map<std::string, std::string> CanonicalPathCache;
+};
+bool operator==(const clang::tooling::DpctPath &LHS,
+                const clang::tooling::DpctPath &RHS);
+bool operator!=(const clang::tooling::DpctPath &LHS,
+                const clang::tooling::DpctPath &RHS);
+bool operator<(const clang::tooling::DpctPath &LHS,
+               const clang::tooling::DpctPath &RHS);
 } // namespace tooling
 } // namespace clang
+template <> struct std::hash<clang::tooling::DpctPath> {
+  std::size_t operator()(const clang::tooling::DpctPath &DP) const noexcept {
+    return std::hash<std::string>{}(DP.getCanonicalPath());
+  }
+};
+namespace llvm {
+llvm::raw_ostream &operator<<(llvm::raw_ostream &OS,
+                              const clang::tooling::DpctPath &RHS);
+} // namespace llvm
 #endif // SYCLomatic_CUSTOMIZATION
 
 namespace clang {
@@ -95,8 +147,6 @@ class Compilation;
 } // namespace driver
 
 namespace tooling {
-
-
 
 class CompilationDatabase;
 
@@ -163,9 +213,7 @@ public:
 
   /// Called before a source file is processed by a FrontEndAction.
   /// \see clang::FrontendAction::BeginSourceFileAction
-  virtual bool handleBeginSource(CompilerInstance &CI) {
-    return true;
-  }
+  virtual bool handleBeginSource(CompilerInstance &CI) { return true; }
 
   /// Called after a source file is processed by a FrontendAction.
   /// \see clang::FrontendAction::EndSourceFileAction
@@ -184,8 +232,9 @@ public:
 /// std::unique_ptr<FrontendActionFactory> FactoryAdapter(
 ///   newFrontendActionFactory(&Factory));
 template <typename FactoryT>
-inline std::unique_ptr<FrontendActionFactory> newFrontendActionFactory(
-    FactoryT *ConsumerFactory, SourceFileCallbacks *Callbacks = nullptr);
+inline std::unique_ptr<FrontendActionFactory>
+newFrontendActionFactory(FactoryT *ConsumerFactory,
+                         SourceFileCallbacks *Callbacks = nullptr);
 
 /// Runs (and deletes) the tool on 'Code' with the -fsyntax-only flag.
 ///
@@ -196,8 +245,8 @@ inline std::unique_ptr<FrontendActionFactory> newFrontendActionFactory(
 ///                         clang modules.
 ///
 /// \return - True if 'ToolAction' was successfully executed.
-bool runToolOnCode(std::unique_ptr<FrontendAction> ToolAction, const Twine &Code,
-                   const Twine &FileName = "input.cc",
+bool runToolOnCode(std::unique_ptr<FrontendAction> ToolAction,
+                   const Twine &Code, const Twine &FileName = "input.cc",
                    std::shared_ptr<PCHContainerOperations> PCHContainerOps =
                        std::make_shared<PCHContainerOperations>());
 
@@ -258,7 +307,8 @@ buildASTFromCode(StringRef Code, StringRef FileName = "input.cc",
 /// \param PCHContainerOps The PCHContainerOperations for loading and creating
 /// clang modules.
 ///
-/// \param Adjuster A function to filter the command line arguments as specified.
+/// \param Adjuster A function to filter the command line arguments as
+/// specified.
 ///
 /// \return The resulting AST or null if an error occurred.
 std::unique_ptr<ASTUnit> buildASTFromCodeWithArgs(
@@ -321,9 +371,8 @@ public:
   /// \returns True if there were no errors during execution.
   bool run();
 
- private:
-  bool runInvocation(const char *BinaryName,
-                     driver::Compilation *Compilation,
+private:
+  bool runInvocation(const char *BinaryName, driver::Compilation *Compilation,
                      std::shared_ptr<CompilerInvocation> Invocation,
                      std::shared_ptr<PCHContainerOperations> PCHContainerOps);
 
@@ -371,7 +420,7 @@ public:
   ~ClangTool();
 #ifdef SYCLomatic_CUSTOMIZATION
   int processFiles(llvm::StringRef File, bool &ProcessingFailed,
-                    bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
+                   bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
 #endif // SYCLomatic_CUSTOMIZATION
   /// Set a \c DiagnosticConsumer to use during parsing.
   void setDiagnosticConsumer(DiagnosticConsumer *DiagConsumer) {
@@ -416,12 +465,10 @@ public:
 
   llvm::ArrayRef<std::string> getSourcePaths() const { return SourcePaths; }
 #ifdef SYCLomatic_CUSTOMIZATION
-  void setCompilationDatabaseDir(const std::string &Dir){
+  void setCompilationDatabaseDir(const std::string &Dir) {
     CompilationDatabaseDir = Dir;
   }
-  bool isInputfileSpecified() {
-    return !SourcePaths.empty();
-  }
+  bool isInputfileSpecified() { return !SourcePaths.empty(); }
 #endif // SYCLomatic_CUSTOMIZATION
 
 private:
@@ -462,8 +509,9 @@ std::unique_ptr<FrontendActionFactory> newFrontendActionFactory() {
 }
 
 template <typename FactoryT>
-inline std::unique_ptr<FrontendActionFactory> newFrontendActionFactory(
-    FactoryT *ConsumerFactory, SourceFileCallbacks *Callbacks) {
+inline std::unique_ptr<FrontendActionFactory>
+newFrontendActionFactory(FactoryT *ConsumerFactory,
+                         SourceFileCallbacks *Callbacks) {
   class FrontendActionFactoryAdapter : public FrontendActionFactory {
   public:
     explicit FrontendActionFactoryAdapter(FactoryT *ConsumerFactory,
@@ -482,8 +530,8 @@ inline std::unique_ptr<FrontendActionFactory> newFrontendActionFactory(
                              SourceFileCallbacks *Callbacks)
           : ConsumerFactory(ConsumerFactory), Callbacks(Callbacks) {}
 
-      std::unique_ptr<ASTConsumer>
-      CreateASTConsumer(CompilerInstance &, StringRef) override {
+      std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &,
+                                                     StringRef) override {
         return ConsumerFactory->newASTConsumer();
       }
 

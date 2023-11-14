@@ -16,7 +16,7 @@
 
 namespace clang {
 namespace dpct {
-ExtReplacements::ExtReplacements(std::string FilePath) : FilePath(FilePath) {}
+ExtReplacements::ExtReplacements(clang::tooling::DpctPath FilePath) : FilePath(FilePath) {}
 
 bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl,
                                 std::shared_ptr<DpctFileInfo> FileInfo) {
@@ -315,9 +315,12 @@ bool ExtReplacements::isDuplicated(std::shared_ptr<ExtReplacement> Repl,
 }
 
 void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
+  std::cout << "22Repl->getFilePath().str():" << Repl->getFilePath().str() << std::endl;
+  std::cout << "22Repl->getReplacementText().str():" << Repl->getReplacementText().str() << std::endl;
   auto const &FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
   if (isInvalid(Repl, FileInfo))
     return;
+  std::cout << "aaa" << std::endl;
   if (Repl->getLength()) {
     if (Repl->IsSYCLHeaderNeeded())
       FileInfo->insertHeader(HT_SYCL);

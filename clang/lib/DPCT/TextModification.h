@@ -25,7 +25,7 @@ using TransformSetTy = std::vector<std::shared_ptr<TextModification>>;
 
 class ReplaceInclude;
 using IncludeMapSetTy =
-    std::map<std::string, std::vector<std::unique_ptr<ReplaceInclude>>>;
+    std::map<clang::tooling::DpctPath, std::vector<std::unique_ptr<ReplaceInclude>>>;
 
 enum InsertPosition {
   IP_AlwaysLeft = 0,
@@ -48,9 +48,9 @@ public:
   /// \param FilePath A source file accessible via a SourceManager.
   /// \param Offset The byte offset of the start of the range in the file.
   /// \param Length The length of the range in bytes.
-  ExtReplacement(StringRef FilePath, unsigned Offset, unsigned Length,
+  ExtReplacement(clang::tooling::DpctPath FilePath, unsigned Offset, unsigned Length,
                  StringRef ReplacementText, const TextModification *_TM)
-      : Replacement(FilePath, Offset, Length, ReplacementText), TM(_TM) {}
+      : Replacement(FilePath.getCanonicalPath(), Offset, Length, ReplacementText), TM(_TM) {}
 
   /// Creates a Replacement of the range [Start, Start+Length) with
   /// ReplacementText.

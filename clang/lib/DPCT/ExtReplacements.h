@@ -41,7 +41,7 @@ class ExtReplacements {
   };
 
 public:
-  ExtReplacements(std::string FilePath);
+  ExtReplacements(clang::tooling::DpctPath FilePath);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl);
   void emplaceIntoReplSet(tooling::Replacements &ReplSet);
 
@@ -156,7 +156,7 @@ private:
     return false;
   }
 
-  std::string FilePath;
+  clang::tooling::DpctPath FilePath;
   ///< Offset, ExtReplacement>
   std::multimap<unsigned, std::shared_ptr<ExtReplacement>> ReplMap;
   ///< PairID, PairStatus>

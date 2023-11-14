@@ -168,17 +168,17 @@ void ShowStatus(int Status, std::string Message) {
     break;
   case MigrationErrorAPIMappingWrongCUDAHeader:
     StatusString =
-        "Error: Can not find '" + Message +
-        "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
+        "Error: Can not find '" + Message + "' in current CUDA header file: " +
+        DpctGlobalInfo::getCudaPath().getCanonicalPath() +
         ". Please check the API name or use a different CUDA header file with "
         "option \"--cuda-include-path\".";
     break;
   case MigrationErrorAPIMappingNoCUDAHeader:
-    StatusString =
-        "Error: Cannot find '" + Message +
-        "' in current CUDA header file: " + DpctGlobalInfo::getCudaPath() +
-        ". Please specify the header file for '" + Message +
-        "' with option \"--extra-arg\".";
+    StatusString = "Error: Cannot find '" + Message +
+                   "' in current CUDA header file: " +
+                   DpctGlobalInfo::getCudaPath().getCanonicalPath() +
+                   ". Please specify the header file for '" + Message +
+                   "' with option \"--extra-arg\".";
     break;
   case InterceptBuildError:
     StatusString = "Error: Call to intercept-build failed";
@@ -197,8 +197,8 @@ void ShowStatus(int Status, std::string Message) {
   return;
 }
 
-std::string getLoadYamlFailWarning(std::string YamlPath) {
-  return "Warning: Failed to load " + YamlPath +
+std::string getLoadYamlFailWarning(const clang::tooling::DpctPath &YamlPath) {
+  return "Warning: Failed to load " + YamlPath.getCanonicalPath() +
          ". Migration continues with incremental migration disabled. See "
          "https://www.intel.com/content/www/us/en/docs/"
          "dpcpp-compatibility-tool/developer-guide-reference/current/"

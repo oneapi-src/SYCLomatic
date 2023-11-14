@@ -75,10 +75,10 @@ using namespace llvm::cl;
 
 namespace clang {
 namespace tooling {
-std::string getFormatSearchPath();
+DpctPath getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
 #ifdef _WIN32
-extern std::string VcxprojFilePath;
+extern DpctPath VcxprojFilePath;
 #endif
 } // namespace tooling
 namespace dpct {
@@ -151,7 +151,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #undef DPCT_OPT_TYPE
 #undef DPCT_OPTIONS_IN_CLANG_DPCT
 
-static llvm::cl::opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
+static llvm::cl::opt<DpctPath> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
                                 llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat),
                                 llvm::cl::Optional, llvm::cl::Hidden);
 static llvm::cl::opt<std::string> Passes(
@@ -179,16 +179,21 @@ static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> A
 // clang-format on
 
 // TODO: implement one of this for each source language.
-std::string CudaPath;
-std::string DpctInstallPath;
+DpctPath CudaPath;
+DpctPath DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
-std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 std::unordered_map<std::string, bool> IsDirectoryCache;
 extern bool StopOnParseErrTooling;
-extern std::string InRootTooling;
+extern DpctPath InRootTooling;
 
-std::string getCudaInstallPath(int argc, const char **argv) {
+clang::tooling::DpctPath InRoot;
+clang::tooling::DpctPath OutRoot;
+clang::tooling::DpctPath CudaIncludePath;
+std::vector<clang::tooling::DpctPath> RuleFile;
+clang::tooling::DpctPath AnalysisScope;
+
+DpctPath getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
   Argv.reserve(argc);
   // do not copy "--" so the driver sees a possible SDK include path option
@@ -216,10 +221,10 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   driver::CudaInstallationDetector CudaIncludeDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  std::string Path = CudaIncludeDetector.getInstallPath().str();
+  DpctPath Path = CudaIncludeDetector.getInstallPath().str();
   dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
 
-  if (!CudaIncludePath.empty()) {
+  if (!CudaIncludePath.getPath().empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
       ShowStatus(MigrationErrorInvalidCudaIncludePath);
       dpctExit(MigrationErrorInvalidCudaIncludePath);
@@ -235,50 +240,35 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   } else if (!CudaIncludeDetector.isVersionSupported()) {
     ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
     dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
-
   }
 
-  makeCanonical(Path);
-
-  SmallString<512> CudaPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs, true);
-  if ((bool)EC) {
+  if (Path.getCanonicalPath().empty()) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
   }
-  return CudaPathAbs.str().str();
+  return Path;
 }
 
-std::string getInstallPath(const char *invokeCommand) {
-  SmallString<512> InstalledPath(invokeCommand);
+DpctPath getInstallPath(const char *invokeCommand) {
+  SmallString<512> InstalledPathStr(invokeCommand);
 
   // Do a PATH lookup, if there are no directory components.
-  if (llvm::sys::path::filename(InstalledPath) == InstalledPath) {
+  if (llvm::sys::path::filename(InstalledPathStr) == InstalledPathStr) {
     if (llvm::ErrorOr<std::string> Tmp = llvm::sys::findProgramByName(
-            llvm::sys::path::filename(InstalledPath.str()))) {
-      InstalledPath = *Tmp;
+            llvm::sys::path::filename(InstalledPathStr.str()))) {
+      InstalledPathStr = *Tmp;
     }
   }
 
-  makeCanonical(InstalledPath);
-  llvm::sys::fs::real_path(InstalledPath, InstalledPath, true);
-  StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath));
+  DpctPath InstalledPath(InstalledPathStr);
+  StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath.getCanonicalPathRef()));
   // Move up to parent directory of bin directory
-  StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
-
-  SmallString<512> InstallPathAbs;
-  std::error_code EC =
-      llvm::sys::fs::real_path(InstallPath, InstallPathAbs, true);
-  if ((bool)EC) {
-    ShowStatus(MigrationErrorInvalidInstallPath);
-    dpctExit(MigrationErrorInvalidInstallPath);
-  }
-  return InstallPathAbs.str().str();
+  InstalledPath = llvm::sys::path::parent_path(InstalledPathParent);
+  return InstalledPath;
 }
 
 // To validate the root path of the project to be migrated.
-void ValidateInputDirectory(std::string &InRoot) {
-
+void ValidateInputDirectory(DpctPath InRoot) {
   if (isChildOrSamePath(CudaPath, InRoot)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
     dpctExit(MigrationErrorRunFromSDKFolder);
@@ -296,7 +286,7 @@ void ValidateInputDirectory(std::string &InRoot) {
 }
 
 unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
-                            StringRef Path) {
+                            DpctPath Path) {
   // Set up Rewriter and to get source manager.
   LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
@@ -308,7 +298,7 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   Rewriter Rewrite(Sources, DefaultLangOptions);
   SourceManager &SM = Rewrite.getSourceMgr();
 
-  auto Entry = SM.getFileManager().getOptionalFileRef(Path);
+  auto Entry = SM.getFileManager().getOptionalFileRef(Path.getCanonicalPath());
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);
@@ -367,7 +357,7 @@ static void saveApisReport(void) {
     PrintMsg(OS.str());
   } else {
     std::string RFile =
-        OutRoot + "/" + ReportFilePrefix +
+        OutRoot.getCanonicalPath() + "/" + ReportFilePrefix +
         (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".apis.csv"
                                                               : ".apis.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
@@ -412,7 +402,7 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
     PrintMsg(OS.str());
   } else {
     std::string RFile =
-        OutRoot + "/" + ReportFilePrefix +
+        OutRoot.getCanonicalPath() + "/" + ReportFilePrefix +
         (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".stats.csv"
                                                               : ".stats.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
@@ -434,7 +424,7 @@ static void saveDiagsReport() {
     OS << "-------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile = OutRoot + "/" + ReportFilePrefix + ".diags.log";
+    std::string RFile = OutRoot.getCanonicalPath() + "/" + ReportFilePrefix + ".diags.log";
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -452,22 +442,14 @@ std::string printCTVersion() {
      << TOOL_NAME << " version " << DPCT_VERSION_MAJOR << "."
      << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
      << " Codebase:";
-  // getClangRepositoryPath() export the machine name of repo in release build.
-  // so skip the repo name.
-  std::string Path = "";
   std::string Revision = getClangRevision();
-  if (!Path.empty() || !Revision.empty()) {
+  if (!Revision.empty()) {
     OS << '(';
-    if (!Path.empty())
-      OS << Path;
     if (!Revision.empty()) {
-      if (!Path.empty())
-        OS << ' ';
       OS << Revision;
     }
     OS << ')';
   }
-
   OS << "\n";
   return OS.str();
 }
@@ -475,7 +457,7 @@ std::string printCTVersion() {
 static void DumpOutputFile(void) {
   // Redirect stdout/stderr output to <file> if option "-output-file" is set
   if (!OutputFile.empty()) {
-    std::string FilePath = OutRoot + "/" + OutputFile;
+    std::string FilePath = OutRoot.getCanonicalPath() + "/" + OutputFile;
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(FilePath));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -493,10 +475,11 @@ void PrintReportOnFault(const std::string &FaultMsg) {
     return;
 
   std::string FileApis =
-      OutRoot + "/" + ReportFilePrefix +
+      OutRoot.getCanonicalPath() + "/" + ReportFilePrefix +
       (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".apis.csv"
                                                             : ".apis.log");
-  std::string FileDiags = OutRoot + "/" + ReportFilePrefix + ".diags.log";
+  std::string FileDiags =
+      OutRoot.getCanonicalPath() + "/" + ReportFilePrefix + ".diags.log";
 
   std::ofstream File;
   File.open(FileApis, std::ios::app);
@@ -523,11 +506,13 @@ void parseFormatStyle() {
              DPCTFormatStyle::FS_LLVM) {
     StyleStr = "llvm";
   }
-  std::string StyleSearchPath = clang::tooling::getFormatSearchPath().empty()
-                                    ? clang::dpct::DpctGlobalInfo::getInRoot()
-                                    : clang::tooling::getFormatSearchPath();
+  DpctPath StyleSearchPath =
+      clang::tooling::getFormatSearchPath().getCanonicalPath().empty()
+          ? clang::dpct::DpctGlobalInfo::getInRoot()
+          : clang::tooling::getFormatSearchPath();
   llvm::Expected<clang::format::FormatStyle> StyleOrErr =
-      clang::format::getStyle(StyleStr, StyleSearchPath, "llvm");
+      clang::format::getStyle(StyleStr, StyleSearchPath.getCanonicalPath(),
+                              "llvm");
   clang::format::FormatStyle Style;
   if (!StyleOrErr) {
     PrintMsg(llvm::toString(StyleOrErr.takeError()) + "\n");
@@ -597,6 +582,15 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationOptionParsingError);
   }
 
+  InRoot = InRootOpt;
+  OutRoot = OutRootOpt;
+  CudaIncludePath = CudaIncludePathOpt;
+  std::transform(
+      RuleFileOpt.begin(), RuleFileOpt.end(),
+      std::back_insert_iterator(RuleFile),
+      [](const std::string &Str) { return clang::tooling::DpctPath(Str); });
+  AnalysisScope = AnalysisScopeOpt;
+
   if (!OutputFile.empty()) {
     // Set handle for libclangTooling to redirect warning message to DpctTerm
     clang::tooling::SetDiagnosticOutput(DpctTerm());
@@ -607,31 +601,32 @@ int runDPCT(int argc, const char **argv) {
   DpctInstallPath = getInstallPath(argv[0]);
 
   if (PathToHelperFunction) {
-    SmallString<512> pathToHelperFunction(DpctInstallPath);
-    llvm::sys::path::append(pathToHelperFunction, "include");
-    if (!llvm::sys::fs::exists(pathToHelperFunction)) {
+    SmallString<512> HelperFunctionPathStr(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(HelperFunctionPathStr, "include");
+    if (!llvm::sys::fs::exists(HelperFunctionPathStr)) {
       DpctLog() << "Error: Helper functions not found"
                 << "/n";
       ShowStatus(MigrationErrorInvalidInstallPath);
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    std::cout << pathToHelperFunction.c_str() << "\n";
+    std::cout << HelperFunctionPathStr.c_str() << "\n";
     ShowStatus(MigrationSucceeded);
     dpctExit(MigrationSucceeded);
   }
 
 #ifndef _WIN32
   if (InterceptBuildCommand) {
-    SmallString<512> PathToInterceptBuildBinary(DpctInstallPath);
-    llvm::sys::path::append(PathToInterceptBuildBinary, "bin",
+    SmallString<512> InterceptBuildBinaryPathStr(
+        DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(InterceptBuildBinaryPathStr, "bin",
                             "intercept-build");
-    if (!llvm::sys::fs::exists(PathToInterceptBuildBinary)) {
+    if (!llvm::sys::fs::exists(InterceptBuildBinaryPathStr)) {
       DpctLog() << "Error: intercept-build tool not found"
                 << "\n";
       ShowStatus(MigrationErrorInvalidInstallPath);
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    std::string InterceptBuildSystemCall(PathToInterceptBuildBinary.str());
+    std::string InterceptBuildSystemCall(InterceptBuildBinaryPathStr.str());
     for (int argumentIndex = 2; argumentIndex < argc; argumentIndex++) {
       InterceptBuildSystemCall.append(" ");
       InterceptBuildSystemCall.append(std::string(argv[argumentIndex]));
@@ -645,29 +640,32 @@ int runDPCT(int argc, const char **argv) {
   }
 #endif
 
-  if (InRoot.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
+  if (InRoot.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --in-root '" << InRoot.getPath() << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
-  if (OutRoot.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --out-root '" << OutRoot << "' is too long\n";
+  if (OutRoot.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --out-root '" << OutRoot.getPath()
+              << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
-  if (AnalysisScope.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --analysis-scope-path '" << AnalysisScope << "' is too long\n";
+  if (AnalysisScope.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --analysis-scope-path '" << AnalysisScope.getPath()
+              << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
-  if (CudaIncludePath.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --cuda-include-path '" << CudaIncludePath
+  if (CudaIncludePath.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --cuda-include-path '" << CudaIncludePath.getPath()
               << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
   if (OutputFile.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --output-file '" << OutputFile << "' is too long\n";
+    DpctLog() << "Error: --output-file '" << OutputFile
+              << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
@@ -698,7 +696,7 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::addChangeExtensions(".cuh");
   }
 
-  if (InRoot.empty() && ProcessAllFlag) {
+  if (InRoot.getPath().empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);
   }
@@ -718,20 +716,21 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationErrorNoFileTypeAvail);
   }
 
-  int SDKIncPathRes =
-      checkSDKPathOrIncludePath(CudaIncludePath, RealSDKIncludePath);
+  int SDKIncPathRes = checkSDKPathOrIncludePath(CudaIncludePath);
   if (SDKIncPathRes == -1) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKIncPathRes == 0) {
+    RealSDKIncludePath = CudaIncludePath.getCanonicalPath();
     HasSDKIncludeOption = true;
   }
 
-  int SDKPathRes = checkSDKPathOrIncludePath(SDKPath, RealSDKPath);
+  int SDKPathRes = checkSDKPathOrIncludePath(SDKPath);
   if (SDKPathRes == -1) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKPathRes == 0) {
+    RealSDKPath = SDKPath.getCanonicalPath();
     HasSDKPathOption = true;
   }
 
@@ -772,19 +771,21 @@ int runDPCT(int argc, const char **argv) {
 
   // TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
-  DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
+  DpctDiags() << "Cuda Include Path found: " << CudaPath.getCanonicalPath() << "\n";
 
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
     // Set a virtual file for --query-api-mapping.
-    llvm::SmallString<16> VirtFile;
-    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+    llvm::SmallString<16> VirtFolderSS;
+    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFolderSS);
+    DpctPath VirtFolderPath(VirtFolderSS);
+
     // Need set a virtual path and it will used by AnalysisScope.
-    InRoot = VirtFile.str().str();
-    makeInRootCanonicalOrSetDefaults(InRoot, {});
-    VirtFile = InRoot;
-    llvm::sys::path::append(VirtFile, "temp.cu");
-    SourcePathList.emplace_back(VirtFile);
+    InRoot = VirtFolderPath;
+
+    llvm::SmallString<16> VirtFileSS(VirtFolderPath.getCanonicalPath());
+    llvm::sys::path::append(VirtFileSS, "temp.cu");
+    SourcePathList.emplace_back(VirtFileSS);
     DpctGlobalInfo::setIsQueryAPIMapping(true);
   } else {
     SourcePathList = OptParser->getSourcePathList();
@@ -866,7 +867,7 @@ int runDPCT(int argc, const char **argv) {
     StopOnParseErr = true;
     Tool.setPrintErrorMessage(false);
   } else {
-    IsUsingDefaultOutRoot = OutRoot.empty();
+    IsUsingDefaultOutRoot = OutRoot.getPath().empty();
     if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
@@ -878,22 +879,15 @@ int runDPCT(int argc, const char **argv) {
     clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
   }
 
-  std::string CompilationsDir = OptParser->getCompilationsDir();
-  if (!CompilationsDir.empty()) {
-    // To convert the relative path to absolute path.
-    llvm::SmallString<128> AbsPath(CompilationsDir);
-    llvm::sys::fs::make_absolute(AbsPath);
-    llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
-    CompilationsDir = std::string(AbsPath.str());
-  }
+  DpctPath CompilationsDir(OptParser->getCompilationsDir());
 
-  Tool.setCompilationDatabaseDir(CompilationsDir);
+  Tool.setCompilationDatabaseDir(CompilationsDir.getCanonicalPath());
   ValidateInputDirectory(InRoot);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
   if (!makeAnalysisScopeCanonicalOrSetDefaults(AnalysisScope, InRoot) ||
-      (!InRoot.empty() && !isChildOrSamePath(AnalysisScope, InRoot))) {
+      (!InRoot.getPath().empty() && !isChildOrSamePath(AnalysisScope, InRoot))) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
@@ -909,7 +903,7 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  SetSDKIncludePath(CudaPath);
+  SetSDKIncludePath(CudaPath.getCanonicalPath());
 
 #ifdef _WIN32
   Tool.appendArgumentsAdjuster(
@@ -1020,15 +1014,13 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
 #ifdef _WIN32
-    if (!VcxprojFilePath.empty()) {
-      // To convert the relative path to absolute path.
-      llvm::SmallString<128> AbsPath(VcxprojFilePath);
-      llvm::sys::fs::make_absolute(AbsPath);
-      llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile, AbsPath.str().str(),
+    if (!VcxprojFilePath.getPath().empty()) {
+      setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
+                       VcxprojFilePath.getCanonicalPath(),
                        OptParser->isVcxprojfileSpecified());
     } else {
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile, VcxprojFilePath,
+      setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
+                       VcxprojFilePath.getPath(),
                        OptParser->isVcxprojfileSpecified());
     }
 #endif
@@ -1054,10 +1046,10 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_EnablepProfiling,
                      EnablepProfilingFlag, EnablepProfilingFlag);
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
-                     RuleFile.getNumOccurrences());
+                     RuleFileOpt.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
-                     AnalysisScope.getNumOccurrences());
+                     AnalysisScopeOpt.getNumOccurrences());
 
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
@@ -1096,16 +1088,27 @@ int runDPCT(int argc, const char **argv) {
       DeviceFunctionDecl::reset();
     }
     DpctGlobalInfo::setRunRound(RunCount++);
-    DpctToolAction Action(OutputFile.empty() &&
-                                  !DpctGlobalInfo::isQueryAPIMapping()
-                              ? llvm::errs()
-                              : DpctTerm(),
-                          Tool.getReplacements(), Passes,
-                          {PassKind::PK_Analysis, PassKind::PK_Migration},
-                          Tool.getFiles().getVirtualFileSystemPtr());
+    ReplTy Repls;
+    std::cout << "DPCT.cpp Tool.getReplacements().size():" << Tool.getReplacements().size() << std::endl;
+    std::transform(
+        Tool.getReplacements().begin(), Tool.getReplacements().end(),
+        std::insert_iterator(Repls, Repls.end()),
+        [](const std::pair<std::string, clang::tooling::Replacements> &P) {
+          return std::pair<clang::tooling::DpctPath,
+                           clang::tooling::Replacements>(
+              clang::tooling::DpctPath(P.first), P.second);
+        });
+    DpctToolAction Action(
+        OutputFile.empty() && !DpctGlobalInfo::isQueryAPIMapping()
+            ? llvm::errs()
+            : DpctTerm(),
+        Repls, Passes, {PassKind::PK_Analysis, PassKind::PK_Migration},
+        Tool.getFiles().getVirtualFileSystemPtr());
 
     if (ProcessAllFlag) {
-      clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
+      clang::tooling::SetFileProcessHandle(InRoot.getCanonicalPath(),
+                                           OutRoot.getCanonicalPath(),
+                                           processAllFiles);
     }
 
     int RunResult = Tool.run(&Action);
@@ -1228,7 +1231,7 @@ int runDPCT(int argc, const char **argv) {
 int run(int argc, const char **argv) {
   int Status = runDPCT(argc, argv);
   if (IsUsingDefaultOutRoot) {
-    removeDefaultOutRootFolder(OutRoot);
+    removeDefaultOutRootFolder(OutRoot.getCanonicalPath());
   }
   return Status;
 }

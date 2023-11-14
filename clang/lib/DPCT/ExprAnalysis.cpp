@@ -26,7 +26,7 @@
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
 
-extern std::string DpctInstallPath;
+extern clang::tooling::DpctPath DpctInstallPath;
 namespace clang {
 namespace dpct {
 

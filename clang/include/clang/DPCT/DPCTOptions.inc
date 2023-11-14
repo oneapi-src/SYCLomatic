@@ -40,7 +40,7 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), VcxprojFi
 #endif // !DPCT_OPTIONS_IN_CLANG_TOOLING
 
 #ifdef DPCT_OPTIONS_IN_CLANG_DPCT
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), InRoot, "in-root",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), InRootOpt, "in-root",
            llvm::cl::desc("The directory path for the root of the source tree that needs "
                 "to be migrated.\n"
                 "Only files under this root are migrated. Default: Current"
@@ -50,13 +50,13 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), InRoot, "
            llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat),
            llvm::cl::Optional)
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), OutRoot, "out-root",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), OutRootOpt, "out-root",
            llvm::cl::desc("The directory path for root of generated files. A directory is "
                 "created if it\n"
                 "does not exist. Default: dpct_output."),
            llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat),
            llvm::cl::Optional)
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), CudaIncludePath, "cuda-include-path",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), CudaIncludePathOpt, "cuda-include-path",
            llvm::cl::desc("The directory path of the CUDA header files."),
            llvm::cl::value_desc("dir"), cat(DPCTCat),
            llvm::cl::Optional)
@@ -186,7 +186,7 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), OutputFile, "out
                     "by the --out-root option."),
            llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), RuleFile, "rule-file",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), RuleFileOpt, "rule-file",
            llvm::cl::desc("Specifies the rule file path that contains rules used for migration.\n"),
            llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
@@ -402,7 +402,7 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), NoIncrementalMig
                    "Default: off (incremental migration happens)."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisScope, "analysis-scope-path",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisScopeOpt, "analysis-scope-path",
         llvm::cl::desc("The directory path for the analysis scope of the source tree that "
              "needs to be migrated.\n"
              "Default: the value of --in-root."),

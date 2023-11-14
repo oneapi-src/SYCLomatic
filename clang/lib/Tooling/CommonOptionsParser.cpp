@@ -59,11 +59,11 @@ extern int SDKVersionMinor;
 namespace clang {
 namespace tooling {
 #ifdef _WIN32
-std::string VcxprojFilePath;
+DpctPath VcxprojFilePath;
 #endif
 
-static std::string FormatSearchPath = "";
-std::string getFormatSearchPath() { return FormatSearchPath; }
+static DpctPath FormatSearchPath;
+DpctPath getFormatSearchPath() { return FormatSearchPath; }
 extern bool SpecifyLanguageInOption;
 void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
                                            bool SpecifyLanguageInOption);

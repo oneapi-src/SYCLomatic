@@ -116,21 +116,22 @@ void replaceEndOfLine(std::string &StrNeedProcess) {
 #endif
 }
 
-void genHelperFunction(const std::string &OutRoot) {
-  if (!llvm::sys::fs::is_directory(OutRoot))
-    llvm::sys::fs::create_directory(llvm::Twine(OutRoot));
-  std::string ToPath = OutRoot + "/include";
-  if (!llvm::sys::fs::is_directory(ToPath))
-    llvm::sys::fs::create_directory(llvm::Twine(ToPath));
-  ToPath = ToPath + "/dpct";
-  if (!llvm::sys::fs::is_directory(ToPath))
-    llvm::sys::fs::create_directory(llvm::Twine(ToPath));
-  if (!llvm::sys::fs::is_directory(llvm::Twine(ToPath + "/dpl_extras")))
-    llvm::sys::fs::create_directory(llvm::Twine(ToPath + "/dpl_extras"));
+void genHelperFunction(const clang::tooling::DpctPath &OutRoot) {
+  if (!llvm::sys::fs::is_directory(OutRoot.getCanonicalPath()))
+    llvm::sys::fs::create_directory(OutRoot.getCanonicalPath());
+  clang::tooling::DpctPath ToPath = OutRoot.getCanonicalPath() + "/include";
+  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath()))
+    llvm::sys::fs::create_directory(ToPath.getCanonicalPath());
+  ToPath = ToPath.getCanonicalPath() + "/dpct";
+  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath()))
+    llvm::sys::fs::create_directory(ToPath.getCanonicalPath());
+  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/dpl_extras"))
+    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/dpl_extras");
 
 #define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)                         \
   {                                                                            \
-    std::ofstream VAR_NAME##File(ToPath + "/" + #FILE_NAME, std::ios::binary); \
+    std::ofstream VAR_NAME##File(ToPath.getCanonicalPath() + "/" + #FILE_NAME, \
+                                 std::ios::binary);                            \
     std::string Code = VAR_NAME##AllContentStr;                                \
     replaceEndOfLine(Code);                                                    \
     VAR_NAME##File << Code;                                                    \
@@ -138,7 +139,8 @@ void genHelperFunction(const std::string &OutRoot) {
   }
 #define GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)              \
   {                                                                            \
-    std::ofstream VAR_NAME##File(ToPath + "/dpl_extras/" + #FILE_NAME,         \
+    std::ofstream VAR_NAME##File(ToPath.getCanonicalPath() + "/dpl_extras/" +  \
+                                     #FILE_NAME,                               \
                                  std::ios::binary);                            \
     std::string Code = VAR_NAME##AllContentStr;                                \
     replaceEndOfLine(Code);                                                    \

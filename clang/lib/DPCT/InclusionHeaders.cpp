@@ -131,7 +131,7 @@ void IncludesCallbacks::InclusionDirective(
   FileInfo->setFirstIncludeOffset(LocInfo.second);
   LastInclusionLocationUpdater Updater(FileInfo, FilenameRange.getEnd());
 
-  std::string IncludedFile;
+  clang::tooling::DpctPath IncludedFile;
   if (auto OptionalAbs = Global.getAbsolutePath(File->getFileEntry()))
     IncludedFile = OptionalAbs.value();
 
@@ -157,17 +157,15 @@ void IncludesCallbacks::InclusionDirective(
   };
 
   if (Global.isInAnalysisScope(IncludedFile)) {
-    auto FilePathWithoutSymlinks =
-        Global.removeSymlinks(SM.getFileManager(), IncludedFile);
-    IncludeFileMap[FilePathWithoutSymlinks] = false;
-    Global.getIncludingFileSet().insert(FilePathWithoutSymlinks);
+    IncludeFileMap[IncludedFile] = false;
+    Global.getIncludingFileSet().insert(IncludedFile);
 
     // The "IncludedFile" is included by the "IncludingFile".
     // If "IncludedFile" is not under the AnalysisScope folder, do not record
     // the including relationship information.
     Global.recordIncludingRelationship(LocInfo.first, IncludedFile);
 
-    SmallString<512> NewFileName = FileName;
+    clang::tooling::DpctPath NewFileName = FileName;
     rewriteFileName(NewFileName, IncludedFile);
     if (NewFileName != FileName) {
       const auto Extension = path::extension(FileName);
@@ -232,7 +230,7 @@ void IncludesCallbacks::InclusionDirective(
       SearchPath.startswith("/usr/local/cuda")) {
     // If CudaPath is in /usr/include,
     // for all the include files without starting with specified string, keep it
-    if (!StringRef(CudaPath).startswith("/usr/include") ||
+    if (!StringRef(CudaPath.getCanonicalPath()).startswith("/usr/include") ||
         isAlwaysRemoved(FileName)) {
       RemoveInslusion();
     }

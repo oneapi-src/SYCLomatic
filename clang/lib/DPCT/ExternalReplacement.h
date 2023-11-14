@@ -25,16 +25,16 @@ class Replacements;
 } // namespace tooling
 } // namespace clang
 
-int mergeExternalReps(std::string InRootSrcFilePath,
-                      std::string OutRootSrcFilePath,
+int mergeExternalReps(clang::tooling::DpctPath InRootSrcFilePath,
+                      clang::tooling::DpctPath OutRootSrcFilePath,
                       clang::tooling::Replacements &Replaces);
-int loadFromYaml(llvm::StringRef Input,
+int loadFromYaml(const clang::tooling::DpctPath& Input,
                  clang::tooling::TranslationUnitReplacements &TU);
 int save2Yaml(
-    llvm::StringRef YamlFile, llvm::StringRef SrcFileName,
+    clang::tooling::DpctPath& YamlFile, clang::tooling::DpctPath& SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
-    const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest,
-    const std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
+    const std::vector<std::pair<clang::tooling::DpctPath, std::string>> &MainSrcFilesDigest,
+    const std::map<clang::tooling::DpctPath, std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets);
 
 void mergeAndUniqueReps(
