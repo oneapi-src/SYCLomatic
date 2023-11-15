@@ -112,6 +112,7 @@ static bool formatFile(StringRef FileName,
 // TODO: it's global variable, refine in future
 std::map<std::string, bool> IncludeFileMap;
 
+
 bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
                 const StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
