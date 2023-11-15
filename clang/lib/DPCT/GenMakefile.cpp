@@ -169,7 +169,7 @@ static void getCompileInfo(
     const std::string Directory = Entry.second[0];
 
     llvm::SmallString<512> RealPath;
-    llvm::sys::fs::real_path(FileName, RealPath, true);
+    dpct::real_path(FileName, RealPath, true);
     if (!llvm::sys::path::is_absolute(FileName))
       RealPath = Directory + "/" + FileName;
     makeCanonical(RealPath);
