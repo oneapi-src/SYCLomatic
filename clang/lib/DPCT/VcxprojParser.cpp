@@ -369,12 +369,22 @@ void generateCompilationDatabase(const std::string &BuildDir) {
       std::string PrivateMacros;
       ProcessMacrosDefinedPrivate(PrivateMacros, Private);
 
-      std::string FileName = "\"file\":\"" + File + "\",";
+      std::string UnifiedFile = File;
+      std::string UnifiedBuildDir = BuildDir;
+#if defined(_WIN32)
+      std::transform(UnifiedFile.begin(), UnifiedFile.end(),
+                     UnifiedFile.begin(),
+                     [](unsigned char c) { return std::tolower(c); });
+      std::transform(UnifiedBuildDir.begin(), UnifiedBuildDir.end(),
+                     UnifiedBuildDir.begin(),
+                     [](unsigned char c) { return std::tolower(c); });
+#endif
+      std::string FileName = "\"file\":\"" + UnifiedFile + "\",";
       std::string Command = "\"command\":\"" + Compiler + Options +
                             MacrosDefined + PrivateMacros +
-                            DirectoriesIncluded + PrivateDirs + "\\\"" + File +
-                            "\\\"\",";
-      std::string Directory = "\"directory\":\"" + BuildDir + "\"";
+                            DirectoriesIncluded + PrivateDirs + "\\\"" +
+                            UnifiedFile + "\\\"\",";
+      std::string Directory = "\"directory\":\"" + UnifiedBuildDir + "\"";
       OutFile << "    {\n";
       OutFile << "        " << FileName << "\n";
       OutFile << "        " << Command << "\n";

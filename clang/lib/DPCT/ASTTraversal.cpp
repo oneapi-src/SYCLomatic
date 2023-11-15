@@ -11403,6 +11403,97 @@ void UnnamedTypesRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(UnnamedTypesRule, PassKind::PK_Migration)
 
+void TypeMmberRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(typedefDecl().bind("TypeDef"), this);
+}
+
+std::optional<SourceLocation>
+TypeMmberRule::findTokenEndBeforeColonColon(SourceLocation TokStart,
+                                            const SourceManager &SM) {
+  bool Invalid = false;
+  const char *OriginTokPtr = SM.getCharacterData(TokStart, &Invalid);
+  const char *TokPtr = OriginTokPtr;
+
+  if (Invalid)
+    return std::nullopt;
+
+  bool FoundColonColon = false;
+  // Find coloncolon
+  while (TokPtr && (TokPtr - 1)) {
+    if (*TokPtr == ':' && *(TokPtr - 1) == ':') {
+      TokPtr = TokPtr - 2;
+      FoundColonColon = true;
+      break;
+    }
+    --TokPtr;
+  }
+
+  if (!FoundColonColon)
+    return std::nullopt;
+
+  // Find previous non-space char
+  while (TokPtr) {
+    if (*TokPtr != ' ') {
+      break;
+    }
+    --TokPtr;
+  }
+
+  if (!TokPtr)
+    return std::nullopt;
+
+  unsigned int Length = OriginTokPtr - TokPtr - 1;
+  return TokStart.getLocWithOffset(-Length);
+}
+
+void TypeMmberRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (const TypedefDecl *TD =
+          getAssistNodeAsType<TypedefDecl>(Result, "TypeDef")) {
+    const FunctionDecl *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TD);
+    const ClassTemplateSpecializationDecl *CTSD =
+        DpctGlobalInfo::findAncestor<ClassTemplateSpecializationDecl>(TD);
+    if ((FD && FD->isTemplateInstantiation()) || CTSD) {
+      if (const ElaboratedType *ET =
+              dyn_cast<ElaboratedType>(TD->getUnderlyingType().getTypePtr())) {
+        if (const TypedefType *TT = dyn_cast<TypedefType>(ET->desugar())) {
+          std::string TypeStr =
+              DpctGlobalInfo::getOriginalTypeName(QualType(TT, 0));
+          StringRef TypeStrRef(TypeStr);
+          if (TypeStrRef.startswith("thrust::detail::cons<") &&
+              TypeStrRef.endswith("::head_type")) {
+            const auto &SM = DpctGlobalInfo::getSourceManager();
+            const auto &LangOpts = DpctGlobalInfo::getContext().getLangOpts();
+            auto DefinitionSR = getDefinitionRange(
+                TD->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
+                TD->getTypeSourceInfo()->getTypeLoc().getEndLoc());
+            SourceLocation BeginLoc = DefinitionSR.getBegin();
+            SourceLocation EndLoc = DefinitionSR.getEnd();
+            auto EndLocBeforeColonColonOpt =
+                findTokenEndBeforeColonColon(EndLoc, SM);
+            if (!EndLocBeforeColonColonOpt)
+              return;
+            SourceLocation EndLocBeforeColonColon =
+                EndLocBeforeColonColonOpt.value();
+            StringRef OriginTypeStr = Lexer::getSourceText(
+                Lexer::getAsCharRange(
+                    SourceRange(BeginLoc, EndLocBeforeColonColon), SM,
+                    LangOpts),
+                SM, LangOpts);
+            std::string Repl =
+                "typename std::tuple_element_t<0, " + OriginTypeStr.str() + ">";
+            EndLoc = EndLoc.getLocWithOffset(
+                Lexer::MeasureTokenLength(EndLoc, SM, LangOpts));
+            emplaceTransformation(
+                new ReplaceText(BeginLoc, EndLoc, std::move(Repl)));
+          }
+        }
+      }
+    }
+  }
+}
+
+REGISTER_RULE(TypeMmberRule, PassKind::PK_Migration)
+
 void CMemoryAPIRule::registerMatcher(MatchFinder &MF) {
   auto cMemoryAPI = [&]() { return hasAnyName("calloc", "realloc", "malloc"); };
 
