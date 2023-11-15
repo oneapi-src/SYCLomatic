@@ -58,7 +58,11 @@ cd $SYCLOMATIC_HOME
 git clone https://github.com/oneapi-src/SYCLomatic.git
 ```
 
+<<<<<<< HEAD
 **Windows (64-bit)**:
+=======
+See [openmp](/openmp) branch.
+>>>>>>> origin/sycl
 
 Open a developer command prompt using one of two methods:
 
