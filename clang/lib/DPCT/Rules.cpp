@@ -226,7 +226,7 @@ void deregisterAPIRule(MetaRuleObject &R) {
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
   MapNames::PatternRewriters.emplace_back(
-      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules));
+      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode));
 }
 
 void importRules(llvm::cl::list<std::string> &RuleFiles) {
@@ -249,12 +249,13 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
 #if 1 // for debug
     printf("Read rule start:\n");
     for(auto Entry: CurrentRules) {
-      printf("Entry ->RuleFile [%s]\n", Entry->RuleFile.c_str());
-      printf("Entry ->RuleId [%s]\n", Entry->RuleId.c_str());
-      printf("Entry ->In [%s]\n",  Entry->In.c_str());
-      printf("Entry ->Out [%s]\n", Entry->Out.c_str());
-      printf("Entry ->Priority [%d]\n", Entry->Priority);
-      printf("Entry ->Kind [%d]\n", Entry->Kind);
+      printf("\tEntry ->RuleFile [%s]\n", Entry->RuleFile.c_str());
+      printf("\tEntry ->RuleId [%s]\n", Entry->RuleId.c_str());
+      printf("\tEntry ->In [%s]\n",  Entry->In.c_str());
+      printf("\tEntry ->Out [%s]\n", Entry->Out.c_str());
+      printf("\tEntry ->Priority [%d]\n", Entry->Priority);
+      printf("\tEntry ->Kind [%d]\n", Entry->Kind);
+      printf("\tEntry ->MatchMode [%d]\n\n", Entry->MatchMode);
     }
     printf("Read rule end.\n\n");
 #endif

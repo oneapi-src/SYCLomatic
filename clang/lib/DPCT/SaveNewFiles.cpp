@@ -396,7 +396,23 @@ void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
 
   // Convert cmake command to lower case in cmake script files
   LineEndingString = convertCmakeCommandsToLower(LineEndingString);
+#if 0 // used to debug
+  printf("#### applyPatternRewriterToCmakeScriptFile ###\n");
+  for (const auto &PR : MapNames::PatternRewriters) {
+    printf("PR.MatchMode: [%d]\n", PR.MatchMode);
+    printf("PR.In: [%s]\n", PR.In.c_str());
+    printf("PR.Out: [%s]\n", PR.Out.c_str());
 
+    for (auto SubPR : PR.Subrules) {
+      printf("\tSubPR.first: [%s]\n", SubPR.first.c_str());
+      printf("\tSubPR.second.MatchMode: [%d]\n", SubPR.second.MatchMode);
+      printf("\tSubPR.second.In: [%s]\n", SubPR.second.In.c_str());
+      printf("\tSubPR.second.Out: [%s]\n", SubPR.second.Out.c_str());
+    }
+    printf("\n");
+  }
+  printf("#### applyPatternRewriterToCmakeScriptFile ###\n");
+#endif
   for (const auto &PR : MapNames::PatternRewriters) {
     LineEndingString = applyPatternRewriter(PR, LineEndingString);
   }
