@@ -131,10 +131,10 @@ bool rewriteDir(clang::tooling::DpctPath &FilePath, const clang::tooling::DpctPa
   auto PathDiff = std::mismatch(path::begin(FilePath.getCanonicalPathRef()),
                                 path::end(FilePath.getCanonicalPathRef()),
                                 path::begin(InRoot.getCanonicalPathRef()));
-  SmallString<512> NewFilePath = SmallString<512>(OutRoot.getCanonicalPath());
+  SmallString<512> NewFilePath =
+      SmallString<512>(OutRoot.getCanonicalPathRef());
   path::append(NewFilePath, PathDiff.first,
                path::end(FilePath.getCanonicalPathRef()));
-
 #if defined(_WIN64)
   sys::path::remove_filename(NewFilePath);
   sys::path::append(NewFilePath, Filename);
@@ -169,10 +169,9 @@ void rewriteFileName(clang::tooling::DpctPath &FileName,
 
 static std::vector<std::string> FilesNotInCompilationDB;
 
-void processallOptionAction(clang::tooling::DpctPath& InRoot, clang::tooling::DpctPath& OutRoot) {
-
+void processallOptionAction(clang::tooling::DpctPath &InRoot,
+                            clang::tooling::DpctPath &OutRoot) {
   for (const auto &File : FilesNotInCompilationDB) {
-
     if (IncludeFileMap.find(File) != IncludeFileMap.end()) {
       // Skip the files parsed by dpct parser.
       continue;
@@ -183,13 +182,12 @@ void processallOptionAction(clang::tooling::DpctPath& InRoot, clang::tooling::Dp
     if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
-    auto Parent = path::parent_path(OutputFile.getCanonicalPath());
+    auto Parent = path::parent_path(OutputFile.getCanonicalPathRef());
     std::error_code EC;
     EC = fs::create_directories(Parent);
     if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Create Directory : " + Parent.str() +
-          " fail: " + EC.message() + "\n";
+      std::string ErrMsg = "[ERROR] Create Directory : " + Parent.str() +
+                           " fail: " + EC.message() + "\n";
       PrintMsg(ErrMsg);
     }
 
@@ -442,7 +440,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
 
       std::error_code EC;
-      EC = fs::create_directories(path::parent_path(OutPath.getCanonicalPath()));
+      EC = fs::create_directories(path::parent_path(OutPath.getCanonicalPathRef()));
       if ((bool)EC) {
         std::string ErrMsg =
             "[ERROR] Create file : " + OutPath.getCanonicalPath() +
@@ -655,7 +653,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
 
       std::error_code EC;
-      EC = fs::create_directories(path::parent_path(FilePath.getCanonicalPath()));
+      EC = fs::create_directories(path::parent_path(FilePath.getCanonicalPathRef()));
       if ((bool)EC) {
         std::string ErrMsg =
             "[ERROR] Create file: " + FilePath.getCanonicalPath() +

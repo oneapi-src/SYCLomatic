@@ -151,7 +151,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #undef DPCT_OPT_TYPE
 #undef DPCT_OPTIONS_IN_CLANG_DPCT
 
-static llvm::cl::opt<DpctPath> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
+static llvm::cl::opt<std::string> SDKPathOpt("cuda-path", desc("Directory path of SDK.\n"),
                                 llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat),
                                 llvm::cl::Optional, llvm::cl::Hidden);
 static llvm::cl::opt<std::string> Passes(
@@ -190,6 +190,7 @@ extern DpctPath InRootTooling;
 clang::tooling::DpctPath InRoot;
 clang::tooling::DpctPath OutRoot;
 clang::tooling::DpctPath CudaIncludePath;
+clang::tooling::DpctPath SDKPath;
 std::vector<clang::tooling::DpctPath> RuleFile;
 clang::tooling::DpctPath AnalysisScope;
 
@@ -585,6 +586,7 @@ int runDPCT(int argc, const char **argv) {
   InRoot = InRootOpt;
   OutRoot = OutRootOpt;
   CudaIncludePath = CudaIncludePathOpt;
+  SDKPath = SDKPathOpt;
   std::transform(
       RuleFileOpt.begin(), RuleFileOpt.end(),
       std::back_insert_iterator(RuleFile),
@@ -1097,8 +1099,8 @@ int runDPCT(int argc, const char **argv) {
                           Tool.getFiles().getVirtualFileSystemPtr());
 
     if (ProcessAllFlag) {
-      clang::tooling::SetFileProcessHandle(InRoot.getCanonicalPath(),
-                                           OutRoot.getCanonicalPath(),
+      clang::tooling::SetFileProcessHandle(InRoot.getCanonicalPathRef(),
+                                           OutRoot.getCanonicalPathRef(),
                                            processAllFiles);
     }
 

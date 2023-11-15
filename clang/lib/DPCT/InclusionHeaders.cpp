@@ -165,8 +165,11 @@ void IncludesCallbacks::InclusionDirective(
     // the including relationship information.
     Global.recordIncludingRelationship(LocInfo.first, IncludedFile);
 
-    clang::tooling::DpctPath NewFileName = FileName;
-    rewriteFileName(NewFileName, IncludedFile);
+    clang::tooling::DpctPath NewFilePath = FileName;
+    rewriteFileName(NewFilePath, IncludedFile);
+    SmallString<512> NewFileName(FileName.str());
+    path::remove_filename(NewFileName);
+    path::append(NewFileName, path::filename(NewFilePath.getCanonicalPathRef()));
     if (NewFileName != FileName) {
       const auto Extension = path::extension(FileName);
       auto ReplacedStr = buildString("#include \"", NewFileName, "\"");

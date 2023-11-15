@@ -146,8 +146,8 @@ inline bool isDirectory(clang::tooling::DpctPath FilePath) {
 /// /x/y and /x/y/z -> true
 /// /x/y and /x/y   -> false
 /// /x/y and /x/yy/ -> false (not a prefix in terms of a path)
-inline bool isChildPath(clang::tooling::DpctPath Root,
-                        clang::tooling::DpctPath Child) {
+inline bool isChildPath(const clang::tooling::DpctPath &Root,
+                        const clang::tooling::DpctPath &Child) {
   if (Child.getPath().empty()) {
     return false;
   }
@@ -584,7 +584,7 @@ public:
   }
   ~PairedPrinter() { OS << Postfix; }
 };
-
+std::string appendPath(const std::string &P1, const std::string &P2);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

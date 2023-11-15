@@ -76,7 +76,7 @@ static void getCompileInfo(
     // Get value of key "directory" from compilation database
     const clang::tooling::DpctPath Directory = Entry.second[0];
 
-    if (llvm::StringRef(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
+    if (path::filename(FileName.getCanonicalPathRef()).startswith("LinkerEntry")) {
       // Parse linker cmd to get target name and objfile names
       std::vector<std::string> ObjsInLKOrARCmd;
 
@@ -102,7 +102,7 @@ static void getCompileInfo(
           clang::tooling::DpctPath FilePathAbs(Obj);
 
           if (!llvm::sys::path::is_absolute(Obj))
-            FilePathAbs = Directory.getCanonicalPath() + "/" + Obj;
+            FilePathAbs = dpct::appendPath(Directory.getCanonicalPath(), Obj);
 
           ObjsInLKOrARCmd.push_back(std::string(FilePathAbs.getCanonicalPath()));
         } else if (Obj == "ar") {
@@ -124,7 +124,8 @@ static void getCompileInfo(
         continue;
       }
 
-      clang::tooling::DpctPath OutDirectory = Directory.getCanonicalPath() + "/" + TargetName.getCanonicalPath();
+      clang::tooling::DpctPath OutDirectory = dpct::appendPath(
+          Directory.getCanonicalPath(), TargetName.getCanonicalPath());
       // Use relative path to out-root directory.
       SmallString<512> OutDirectoryStr(OutDirectory.getCanonicalPath());
       llvm::sys::path::replace_path_prefix(OutDirectoryStr, InRoot.getCanonicalPath(), ".");
@@ -161,11 +162,8 @@ static void getCompileInfo(
 
     const clang::tooling::DpctPath Directory = Entry.second[0];
 
-    clang::tooling::DpctPath RealPath;
-    if (!llvm::sys::path::is_absolute(FileName.getCanonicalPath()))
-      RealPath = Directory.getCanonicalPath() + "/" + FileName.getCanonicalPath();
     bool HasCudaSemantics = false;
-    if (IncludeFileMap.count(RealPath) && IncludeFileMap.at(RealPath)) {
+    if (IncludeFileMap.count(FileName) && IncludeFileMap.at(FileName)) {
       HasCudaSemantics = true;
     }
 
@@ -266,10 +264,6 @@ static void getCompileInfo(
         IsObjSpecified = true;
       } else if (IsObjName) {
         clang::tooling::DpctPath FilePathAbs(Option);
-
-        if (!llvm::sys::path::is_absolute(Option))
-          FilePathAbs = Directory.getCanonicalPath() + "/" + Option;
-
         Orig2ObjMap[FileName] = FilePathAbs;
         IsObjName = false;
       } else if (llvm::StringRef(Option).startswith("-O")) {
@@ -284,14 +278,16 @@ static void getCompileInfo(
       // For the case that "-o" is not specified in the compile command, the
       // default obj file is generated in the directory where the compile
       // command runs.
-      Orig2ObjMap[FileName] =
-          Directory.getCanonicalPath() + "/" + getCustomBaseName(FileName).getCanonicalPath() + ".o";
+      Orig2ObjMap[FileName] = dpct::appendPath(
+          Directory.getCanonicalPath(),
+          getCustomBaseName(FileName).getCanonicalPath() + ".o");
     }
 
     // if option "--use-custom-helper=<value>" is used to customize the helper
     // header files for migrated code, the path of the helper header files
     // should be included.
-    if (llvm::sys::fs::exists(OutRoot.getCanonicalPath() + "/include")) {
+    if (llvm::sys::fs::exists(
+            dpct::appendPath(OutRoot.getCanonicalPath(), "include"))) {
       NewOptions += "-I ./include ";
     }
 
@@ -304,8 +300,8 @@ static void getCompileInfo(
       NewOptions += "-I $(INCLUDE_CL) ";
     }
 
-    rewriteDir(FileName, InRoot, OutRoot);
     auto OrigFileName = FileName;
+    rewriteDir(FileName, InRoot, OutRoot);
     rewriteFileName(FileName);
 
     if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
@@ -315,7 +311,7 @@ static void getCompileInfo(
       CmpInfo.MigratedFileName = OutDirectory.c_str();
       CmpInfo.CompileOptions = NewOptions;
       CmpInfo.Compiler = Entry.second[1];
-      CmdsMap[Orig2ObjMap[FileName]] = CmpInfo;
+      CmdsMap[Orig2ObjMap[OrigFileName]] = CmpInfo;
     } else {
       SmallString<512> OutDirectory(OrigFileName.getCanonicalPath());
       llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot.getCanonicalPath(), ".");
@@ -323,7 +319,7 @@ static void getCompileInfo(
       CmpInfo.MigratedFileName = OutDirectory.c_str();
       CmpInfo.CompileOptions = NewOptions;
       CmpInfo.Compiler = Entry.second[1];
-      CmdsMap[Orig2ObjMap[FileName]] = CmpInfo;
+      CmdsMap[Orig2ObjMap[OrigFileName]] = CmpInfo;
     }
   }
 
@@ -377,9 +373,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::DpctPath OutR
   int TargetIdx = 0;
   for (const auto &Entry : CmdsPerTarget) {
     TargetName = Entry.first;
-    SmallString<512> TargetFilePath =
-        llvm::StringRef(OutRoot.getCanonicalPath() + "/" + TargetName.getCanonicalPath());
-    auto Parent = path::parent_path(TargetFilePath);
+    auto Parent = path::parent_path(TargetName.getCanonicalPathRef());
 
     if (!llvm::sys::fs::exists(Parent)) {
       std::error_code EC;
@@ -526,7 +520,8 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::DpctPath OutR
   else
     OS << buildString("\trm -f ", AllObjs, "\n");
 
-  std::string FileOut = OutRoot.getCanonicalPath() + "/" + BuildScriptName;
+  std::string FileOut =
+      dpct::appendPath(OutRoot.getCanonicalPath(), BuildScriptName);
   std::ofstream File;
   File.open(FileOut, std::ios::binary);
   if (File) {
@@ -535,14 +530,15 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::DpctPath OutR
   }
 }
 
-void genBuildScript(clang::tooling::RefactoringTool &Tool, clang::tooling::DpctPath& InRoot,
-                    clang::tooling::DpctPath& OutRoot, const std::string &BuildScriptName) {
-
+void genBuildScript(clang::tooling::RefactoringTool &Tool,
+                    clang::tooling::DpctPath &InRoot,
+                    clang::tooling::DpctPath &OutRoot,
+                    const std::string &BuildScriptName) {
   std::map<clang::tooling::DpctPath /*traget name*/,
            std::vector<clang::tooling::CompilationInfo>>
       NewCompileCmdsMap;
-
-  std::unordered_map<clang::tooling::DpctPath /*target*/, std::string /*ar or ld*/>
+  std::unordered_map<clang::tooling::DpctPath /*target*/,
+                     std::string /*ar or ld*/>
       ToolPerTarget;
 
   getCompileInfo(InRoot, OutRoot, NewCompileCmdsMap, ToolPerTarget);
@@ -565,8 +561,9 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool, clang::tooling::DpctP
   for (const auto &Entry : CompileCmdsPerTarget) {
     clang::tooling::DpctPath FileName = Entry.first;
     for (const auto &Option : Entry.second) {
-      std::string Key = Entry.first.getCanonicalPath() + Option.MigratedFileName +
-                        Option.CompileOptions + Option.Compiler;
+      std::string Key = Entry.first.getCanonicalPath() +
+                        Option.MigratedFileName + Option.CompileOptions +
+                        Option.Compiler;
       DuplicateFilter[Key] = true;
     }
   }
@@ -574,8 +571,9 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool, clang::tooling::DpctP
   if (NeedMergetYaml) {
     for (const auto &Entry : NewCompileCmdsMap) {
       for (const auto &Option : Entry.second) {
-        std::string Key = Entry.first.getCanonicalPath() + Option.MigratedFileName +
-                          Option.CompileOptions + Option.Compiler;
+        std::string Key = Entry.first.getCanonicalPath() +
+                          Option.MigratedFileName + Option.CompileOptions +
+                          Option.Compiler;
         auto Iter = DuplicateFilter.find(Key);
         if (Iter == DuplicateFilter.end()) {
           CompileCmdsPerTarget[Entry.first].push_back(Option);

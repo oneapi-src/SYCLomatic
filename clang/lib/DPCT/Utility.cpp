@@ -4706,5 +4706,10 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
     requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
   }
 }
+std::string appendPath(const std::string &P1, const std::string &P2) {
+  SmallString<512> TempPath(P1);
+  llvm::sys::path::append(TempPath, P2);
+  return TempPath.str().str();
+}
 } // namespace dpct
 } // namespace clang

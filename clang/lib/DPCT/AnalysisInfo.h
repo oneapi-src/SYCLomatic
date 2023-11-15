@@ -781,7 +781,7 @@ public:
     return isChildPath(AnalysisScope, FilePath);
   }
 
-  static bool isExcluded(clang::tooling::DpctPath FilePath) {
+  static bool isExcluded(const clang::tooling::DpctPath &FilePath) {
     static std::map<std::string, bool> Cache;
     if (FilePath.getPath().empty() || DpctGlobalInfo::getExcludePath().empty()) {
       return false;
