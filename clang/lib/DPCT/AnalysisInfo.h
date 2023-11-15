@@ -1312,9 +1312,9 @@ public:
                                         const ASTContext &Context) {
     if (auto ET = QT->getAs<ElaboratedType>()) {
       if (ET->getQualifier())
-        QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
-                              ET->getNamedType(),
-                              ET->getOwnedTagDecl());
+        QT = Context.getElaboratedType(ElaboratedTypeKeyword::None,
+                                       ET->getQualifier(), ET->getNamedType(),
+                                       ET->getOwnedTagDecl());
       else
         QT = ET->getNamedType();
     }
