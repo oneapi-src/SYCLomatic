@@ -621,6 +621,8 @@ public:
   ~PairedPrinter() { OS << Postfix; }
 };
 
+std::error_code real_path(const Twine &path, SmallVectorImpl<char> &output,
+                          bool expand_tilde = false);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {
