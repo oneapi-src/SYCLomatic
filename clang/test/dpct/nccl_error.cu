@@ -13,6 +13,12 @@ int main(){
   res = ncclGetVersion(&version);
   // CHECK: int atype = int(oneapi::ccl::datatype::int32);
   int atype = ncclInt32;
+  // CHECK: uint16_t uatype = uint16_t(oneapi::ccl::datatype::int32);
+  uint16_t uatype = ncclInt32;
+  // CHECK: long latype = long(oneapi::ccl::datatype::int32);
+  long latype = ncclInt32;
+  // CHECK: oneapi::ccl::datatype catype = oneapi::ccl::datatype::int32;
+  ncclDataType_t catype = ncclInt32;
   switch(atype) {        
        // CHECK: case int(oneapi::ccl::datatype::int32): std::cout << "Int32" << std::endl; break;
       case ncclInt32: std::cout << "Int32" << std::endl; break;
