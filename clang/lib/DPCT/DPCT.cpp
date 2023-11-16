@@ -1248,7 +1248,8 @@ int runDPCT(int argc, const char **argv) {
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScope.getNumOccurrences());
 
-    if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
+    if (!MigrateCmakeScriptOnly &&
+        clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
       if (!canContinueMigration(Msg)) {
         ShowStatus(MigrationErrorDifferentOptSet, Msg);
