@@ -998,7 +998,7 @@ template <class BaseT, class ArgValueT> class ArraySubscriptExprPrinter {
   ArgValueT ArgValue;
 
 public:
-  ArraySubscriptExprPrinter(BaseT base, ArgValueT &&Arg)
+  ArraySubscriptExprPrinter(const BaseT &base, ArgValueT &&Arg)
       : Base(base), ArgValue(std::forward<ArgValueT>(Arg)) {}
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Base);
