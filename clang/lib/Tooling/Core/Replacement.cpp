@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/Tooling/Core/Replacement.h"
+#include "clang/Tooling/Core/DpctPath.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/DiagnosticIDs.h"
 #include "clang/Basic/DiagnosticOptions.h"
@@ -44,10 +45,19 @@ static const char * const InvalidLocation = "";
 
 Replacement::Replacement() : FilePath(InvalidLocation) {}
 
+#ifdef SYCLomatic_CUSTOMIZATION
 Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
                          StringRef ReplacementText)
-    : FilePath(std::string(FilePath)), ReplacementRange(Offset, Length),
-      ReplacementText(std::string(ReplacementText)) {}
+    : ReplacementRange(Offset, Length),
+      ReplacementText(std::string(ReplacementText)) {
+  this->FilePath = clang::tooling::DpctPath(FilePath).getCanonicalPath();
+}
+#else
+ Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
+                          StringRef ReplacementText)
+     : FilePath(std::string(FilePath)), ReplacementRange(Offset, Length),
+       ReplacementText(std::string(ReplacementText)) {}
+#endif // SYCLomatic_CUSTOMIZATION
 
 Replacement::Replacement(const SourceManager &Sources, SourceLocation Start,
                          unsigned Length, StringRef ReplacementText) {
@@ -130,17 +140,11 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
     // To avoid potential path inconsist issue,
     // using tryGetRealPathName while applicable.
     if (!FileEntry.tryGetRealPathName().empty()) {
-      this->FilePath = FileEntry.tryGetRealPathName().str();
-    }
-    else {
+      this->FilePath = clang::tooling::DpctPath(FileEntry.tryGetRealPathName()).getCanonicalPath();
+    } else {
       llvm::SmallString<512> FilePathAbs(FileEntry.getName());
       Sources.getFileManager().makeAbsolutePath(FilePathAbs);
-      llvm::sys::path::native(FilePathAbs);
-      // Need to remove dot to keep the file path
-      // added by ASTMatcher and added by
-      // AnalysisInfo::getLocInfo() consistent.
-      llvm::sys::path::remove_dots(FilePathAbs, true);
-      this->FilePath = std::string(FilePathAbs.str());
+      this->FilePath = clang::tooling::DpctPath(FilePathAbs).getCanonicalPath();
     }
   } else {
     this->FilePath = std::string(InvalidLocation);
