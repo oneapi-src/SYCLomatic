@@ -53,10 +53,10 @@ Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
   this->FilePath = clang::tooling::DpctPath(FilePath).getCanonicalPath();
 }
 #else
- Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
-                          StringRef ReplacementText)
-     : FilePath(std::string(FilePath)), ReplacementRange(Offset, Length),
-       ReplacementText(std::string(ReplacementText)) {}
+Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
+                         StringRef ReplacementText)
+    : FilePath(std::string(FilePath)), ReplacementRange(Offset, Length),
+      ReplacementText(std::string(ReplacementText)) {}
 #endif // SYCLomatic_CUSTOMIZATION
 
 Replacement::Replacement(const SourceManager &Sources, SourceLocation Start,
