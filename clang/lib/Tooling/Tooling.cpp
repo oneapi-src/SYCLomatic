@@ -84,7 +84,7 @@ static std::set<clang::tooling::DpctPath> *ReProcessFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
 static std::set<clang::tooling::DpctPath> *ModuleFiles = nullptr;
 static std::function<bool(const DpctPath &)> IsExcludePathPtr;
-extern std::string VcxprojFilePath;
+extern clang::tooling::DpctPath VcxprojFilePath;
 
 void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
@@ -870,7 +870,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
           llvm::sys::path::extension(File) == ".cu") {
         const std::string Msg =
             "warning: " + File.str() +
-            " was found in <None> node in " + VcxprojFilePath + " and skipped; to "
+            " was found in <None> node in " + VcxprojFilePath.getCanonicalPath() + " and skipped; to "
             "migrate specify CUDA* Item Type for this file in project and try "
             "again.\n";
         DoPrintHandle(Msg, false);

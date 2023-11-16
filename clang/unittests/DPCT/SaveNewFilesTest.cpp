@@ -5,7 +5,6 @@ TEST(rewriteDir, fileUnderInRoot) {
 #if _WIN32
   clang::tooling::DpctPath AbsPath = StringRef{"p:/a/b/in/file.cpp"};
   rewriteDir(AbsPath, "p:/a/b/in", "p:/a/c");
-  std::replace(AbsPath.begin(), AbsPath.end(), '\\', '/');
   EXPECT_EQ(AbsPath, "p:/a/c/file.cpp");
 #else
   clang::tooling::DpctPath AbsPath = StringRef{"/a/b/in/file.cpp"};
@@ -18,7 +17,6 @@ TEST(rewriteDir, fileInDirUnderInRoot) {
 #if _WIN32
   clang::tooling::DpctPath AbsPath = StringRef{"p:/a/b/in/d/file.cpp"};
   rewriteDir(AbsPath, "p:/a/b/in", "p:/a/c");
-  std::replace(AbsPath.begin(), AbsPath.end(), '\\', '/');
   EXPECT_EQ(AbsPath, "p:/a/c/d/file.cpp");
 #else
   clang::tooling::DpctPath AbsPath = StringRef{"/a/b/in/d/file.cpp"};

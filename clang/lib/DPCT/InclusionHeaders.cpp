@@ -170,6 +170,7 @@ void IncludesCallbacks::InclusionDirective(
     SmallString<512> NewFileName(FileName.str());
     path::remove_filename(NewFileName);
     path::append(NewFileName, path::filename(NewFilePath.getCanonicalPathRef()));
+    NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
     if (NewFileName != FileName) {
       const auto Extension = path::extension(FileName);
       auto ReplacedStr = buildString("#include \"", NewFileName, "\"");

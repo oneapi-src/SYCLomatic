@@ -24,10 +24,6 @@ protected:
     TempDir = (path::stem(TempDirAbsolute) + "/").str();
 
     fs::create_directories(TempDirAbsolute + "/a/b/in");
-#if _WIN32
-    std::replace(TempDirAbsolute.begin(), TempDirAbsolute.end(), '\\', '/');
-    std::replace(TestRunPath.begin(), TestRunPath.end(), '\\', '/');
-#endif
   }
 
   void TearDown() override { fs::remove_directories(TempDirAbsolute); }
@@ -36,18 +32,12 @@ protected:
 TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRootEmpty) {
   clang::tooling::DpctPath OutRoot;
   getDefaultOutRoot(OutRoot);
-#if _WIN32
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRoot) {
   clang::tooling::DpctPath OutRoot = std::string("is not empty");
   getDefaultOutRoot(OutRoot);
-#if _WIN32
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
 }
 
@@ -55,12 +45,10 @@ TEST(getDefaultInRoot, noInroot) {
   clang::tooling::DpctPath inroot;
 #if _WIN32
   ASSERT_EQ(true, getDefaultInRoot(inroot, {"p:/a/b/in/file.cpp"}));
-  std::replace(inroot.begin(), inroot.end(), '\\', '/');
   ASSERT_EQ(inroot, "p:/a/b/in");
 
   ASSERT_EQ(true, getDefaultInRoot(inroot,
                                    {"p:/a/b/in/file.cpp", "p:/a/b/in/c/file.cpp"}));
-  std::replace(inroot.begin(), inroot.end(), '\\', '/');
   ASSERT_EQ(inroot, "p:/a/b/in");
 #else
   ASSERT_EQ(true, getDefaultInRoot(inroot, {"/a/b/in/file.cpp"}));
@@ -80,10 +68,6 @@ TEST_F(MakeCanonicalOrSetDefaults, empty) {
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
                       InRoot, {TempDirAbsolute + "/a/b/in/file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
-#if _WIN32
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b/in");
   ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
 }
@@ -106,10 +90,6 @@ TEST_F(MakeCanonicalOrSetDefaults, dotAtTheEnd) {
                       {TempDirAbsolute + "/a/b/in/file.cpp",
                        TempDirAbsolute + "/a/b/in/c/file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
-#if _WIN32
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b/in");
   ASSERT_EQ(OutRoot, TempDirAbsolute + "/a/b");
 }
@@ -122,10 +102,6 @@ TEST_F(MakeCanonicalOrSetDefaults, dotInTheMiddle) {
                       {TempDirAbsolute + "/a/b/./in/file.cpp",
                        TempDirAbsolute + "/a/b/in/c/file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
-#if _WIN32
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b/in");
   ASSERT_EQ(OutRoot, TempDirAbsolute + "/a/b");
 }
@@ -138,10 +114,6 @@ TEST_F(MakeCanonicalOrSetDefaults, dotDotAtTheEnd) {
                       {TempDirAbsolute + "/a/b/in/file.cpp",
                        TempDirAbsolute + "/a/b/in/c/file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
-#if _WIN32
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b");
   ASSERT_EQ(OutRoot, TempDirAbsolute + "/a/b");
 }
@@ -154,10 +126,6 @@ TEST_F(MakeCanonicalOrSetDefaults, dotDotInTheMiddle) {
                       {TempDirAbsolute + "/a/b/in/file.cpp",
                        TempDirAbsolute + "/a/b/in/c/file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
-#if _WIN32
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b/in");
   ASSERT_EQ(OutRoot, TempDirAbsolute + "/a/b");
 }
@@ -169,10 +137,6 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePaths) {
                                              {TempDir + "a/b/in/file.cpp",
                                               TempDir + "a/b/in/c/file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
-#if _WIN32
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b/in");
   ASSERT_EQ(OutRoot, TempDirAbsolute + "/a/b");
 }
@@ -182,10 +146,6 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePathsNoRoots) {
   clang::tooling::DpctPath OutRoot;
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot, {"file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
-#if _WIN32
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(InRoot, TestRunPath);
   ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output" );
 }
@@ -195,10 +155,6 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePathsDots) {
   clang::tooling::DpctPath OutRoot = std::string("..");
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot, {"./file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
-#if _WIN32
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(InRoot, TestRunPath);
   ASSERT_EQ(OutRoot, path::parent_path(TestRunPath));
 }
@@ -208,10 +164,6 @@ TEST_F(MakeCanonicalOrSetDefaults, relativeOutRoot) {
   clang::tooling::DpctPath OutRoot = std::string("..");
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot, {"./file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
-#if _WIN32
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
-  std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
-#endif
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b/in");
   ASSERT_EQ(OutRoot, path::parent_path(TestRunPath));
 }
@@ -232,7 +184,6 @@ TEST(validatePaths, inrootIsStringPrefix) {
 #if _WIN32
   string InRoot = "p:/a/b/in";
   ASSERT_EQ(false, validatePaths(InRoot, {"p:/a/b/infalse/file.cpp"}));
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   ASSERT_EQ(InRoot, "p:/a/b/in");
 #else
   string InRoot = "/a/b/in";
@@ -245,7 +196,6 @@ TEST(validatePaths, relativePaths) {
 #if _WIN32
   string InRoot = "p:/a/b/in";
   ASSERT_EQ(false, validatePaths(InRoot, {"./file.cpp"}));
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   ASSERT_EQ(InRoot, "p:/a/b/in");
 #else
   string InRoot = "/a/b/in";
@@ -259,7 +209,6 @@ TEST(validatePaths, secondFileNotInInroot) {
   string InRoot = "p:/a/b/in";
   ASSERT_EQ(false,
             validatePaths(InRoot, {"p:/a/b/in/file.cpp", "p:/a/b/c/in/file.cpp"}));
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   ASSERT_EQ(InRoot, "p:/a/b/in");
 #else
   string InRoot = "/a/b/in";
@@ -274,7 +223,6 @@ TEST(validatePaths, noExtension) {
   string InRoot = "p:/a/b/in";
   ASSERT_EQ(false,
             validatePaths(InRoot, {"p:/a/b/in/file", "p:/a/b/c/in/file.cpp"}));
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   ASSERT_EQ(InRoot, "p:/a/b/in");
 #else
   string InRoot = "/a/b/in";
@@ -288,7 +236,6 @@ TEST(validatePaths, noExtensionSecondNotInInroot) {
 #if _WIN32
   string InRoot = "p:/a/b/in";
   ASSERT_EQ(false, validatePaths(InRoot, {"invalid1", "p:/a/b/c/in/file.cpp"}));
-  std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   ASSERT_EQ(InRoot, "p:/a/b/in");
 #else
   string InRoot = "/a/b/in";
