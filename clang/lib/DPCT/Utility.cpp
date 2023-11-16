@@ -3446,8 +3446,8 @@ void findRelatedDREOffsets(std::set<const clang::DeclRefExpr *> &DRESet,
             if (auto RHSCE = dyn_cast_or_null<CallExpr>(
                     BO->getRHS()->IgnoreImplicitAsWritten())) {
               if (auto Callee = RHSCE->getDirectCallee()) {
-                dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc());
-                continue;
+                if(dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc()))
+                  continue;
               }
             }
           }
