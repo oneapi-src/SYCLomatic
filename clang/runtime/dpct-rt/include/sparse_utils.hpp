@@ -30,21 +30,16 @@ public:
   auto get_diag() const { return _diag; }
   auto get_uplo() const { return _uplo; }
   auto get_index_base() const { return _index_base; }
-  auto &get_matrix_handle_ref() { return _matrix_handle; }
   void set_matrix_type(matrix_type mt) { _matrix_type = mt; }
   void set_diag(oneapi::mkl::diag d) { _diag = d; }
   void set_uplo(oneapi::mkl::uplo u) { _uplo = u; }
   void set_index_base(oneapi::mkl::index_base ib) { _index_base = ib; }
-  void set_matrix_handle(oneapi::mkl::sparse::matrix_handle_t mh) {
-    _matrix_handle = mh;
-  }
 
 private:
   matrix_type _matrix_type = matrix_type::ge;
   oneapi::mkl::diag _diag = oneapi::mkl::diag::nonunit;
   oneapi::mkl::uplo _uplo = oneapi::mkl::uplo::upper;
   oneapi::mkl::index_base _index_base = oneapi::mkl::index_base::zero;
-  oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
 };
 
 namespace detail {
@@ -1202,64 +1197,94 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
 }
 #endif
 
-inline void csrgemm_nnz(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                        oneapi::mkl::transpose trans_b, int m, int n, int k,
-                        const std::shared_ptr<matrix_info> info_a, int nnz_a,
-                        const int *row_ptr_a, const int *idx_ptr_a,
-                        const std::shared_ptr<matrix_info> info_b, int nnzB,
-                        const int *row_ptr_b, const int *idx_ptr_b,
-                        const std::shared_ptr<matrix_info> info_c,
-                        int *row_ptr_c, int *nnz_ptr) {
-        
-        oneapi::mkl::sparse::init_matrix_handle(&(info_a->get_matrix_handle_ref()));
-        oneapi::mkl::sparse::init_matrix_handle(&(info_b->get_matrix_handle_ref()));
-        oneapi::mkl::sparse::init_matrix_handle(&(info_c->get_matrix_handle_ref()));
+template <typename T>
+inline void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                    oneapi::mkl::transpose trans_b, int m, int n, int k,
+                    const std::shared_ptr<matrix_info> info_a, const T *val_a,
+                    const int *row_ptr_a, const int *col_ind_a,
+                    const std::shared_ptr<matrix_info> info_b, const T *val_b,
+                    const int *row_ptr_b, const int *col_ind_b,
+                    const std::shared_ptr<matrix_info> info_c, T *val_c,
+                    const int *row_ptr_c, int *col_ind_c) {
+  oneapi::mkl::sparse::matrix_handle_t matrix_handle_a = nullptr;
+  oneapi::mkl::sparse::matrix_handle_t matrix_handle_b = nullptr;
+  oneapi::mkl::sparse::matrix_handle_t matrix_handle_c = nullptr;
+  oneapi::mkl::sparse::init_matrix_handle(&matrix_handle_a);
+  oneapi::mkl::sparse::init_matrix_handle(&matrix_handle_b);
+  oneapi::mkl::sparse::init_matrix_handle(&matrix_handle_c);
 
-        oneapi::mkl::sparse::set_csr_data(queue, info_a->get_matrix_handle_ref(), a_nrows, a_ncols, a_index, row_ptr_a, idx_ptr_a, a_val);
-        oneapi::mkl::sparse::set_csr_data(queue, info_b->get_matrix_handle_ref(), b_nrows, b_ncols, b_index, b_rowptr, b_colind, b_val);
+  int rows_c = m;
+  int cols_c = n;
+  int rows_a = (trans_a == oneapi::mkl::transpose) ? m : k;
+  int cols_a = (trans_a == oneapi::mkl::transpose) ? k : m;
+  int rows_b = (trans_b == oneapi::mkl::transpose) ? k : n;
+  int cols_b = (trans_b == oneapi::mkl::transpose) ? n : k;
 
-        //
-        // only c_rowptr exists at this point in process so create some
-        // dummy args for now
-        //
-        sycl::buffer<intType, 1> c_colind_dummy(0);
-        sycl::buffer<fpType, 1> c_vals_dummy(0);
-        oneapi::mkl::sparse::set_csr_data(main_queue, C, c_nrows, c_ncols, c_index, c_rowptr, c_colind_dummy,
-                                          c_vals_dummy);
+  auto data_row_ptr_a = dpct::detail::get_memory<T>(row_ptr_a);
+  auto data_col_ind_a = dpct::detail::get_memory<T>(col_ind_a);
+  auto data_val_a = dpct::detail::get_memory<T>(val_a);
+  oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_a, rows_a, cols_a,
+                                    info_a->get_index_base(), data_row_ptr_a,
+                                    data_col_ind_a, data_val_a);
+  auto data_row_ptr_b = dpct::detail::get_memory<T>(row_ptr_b);
+  auto data_col_ind_b = dpct::detail::get_memory<T>(col_ind_b);
+  auto data_val_b = dpct::detail::get_memory<T>(val_b);
+  oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_b, rows_b, cols_b,
+                                    info_b->get_index_base(), data_row_ptr_b,
+                                    data_col_ind_b, data_val_b);
 
-        //
-        // initialize the matmat descriptor
-        //
-        oneapi::mkl::sparse::init_matmat_descr(&descr);
-        oneapi::mkl::sparse::set_matmat_data(descr, viewA, opA, viewB, opB, viewC);
+  auto data_row_ptr_c = dpct::detail::get_memory<T>(row_ptr_c);
+  auto data_col_ind_c = dpct::detail::get_memory<T>(nullptr);
+  auto data_val_c = dpct::detail::get_memory<T>(nullptr);
+  oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_c, rows_c, cols_c,
+                                    info_c->get_index_base(), data_row_ptr_c,
+                                    data_col_ind_c, data_val_c);
 
-        //
-        // Stage 1:  work estimation
-        //
-        // Note we are using the simplified form (passing nullptr's) here and in compute
-        // where we let the library handle the allocation and lifetime of temporary
-        // workspaces internally.
-        //
-        req = oneapi::mkl::sparse::matmat_request::work_estimation;
-        oneapi::mkl::sparse::matmat(main_queue, A, B, C, req, descr, nullptr, nullptr);
+  oneapi::mkl::sparse::matmat_descr_t matmat_descr = nullptr;
+  oneapi::mkl::sparse::init_matmat_descr(&matmat_descr);
+  oneapi::mkl::sparse::set_matmat_data(
+      matmat_descr, oneapi::mkl::sparse::matrix_view_descr::general, trans_a,
+      oneapi::mkl::sparse::matrix_view_descr::general, trans_b,
+      oneapi::mkl::sparse::matrix_view_descr::general);
 
-        //
-        // Stage 2:  compute
-        //
-        req = oneapi::mkl::sparse::matmat_request::compute;
-        oneapi::mkl::sparse::matmat(main_queue, A, B, C, req, descr, nullptr, nullptr);
+  oneapi::mkl::sparse::matmat(
+      queue, matrix_handle_a, matrix_handle_b, matrix_handle_c,
+      oneapi::mkl::sparse::matmat_request::work_estimation, matmat_descr,
+      nullptr, nullptr);
 
-        //
-        // Stage 3:  finalize
-        //
+  oneapi::mkl::sparse::matmat(queue, matrix_handle_a, matrix_handle_b,
+                              matrix_handle_c,
+                              oneapi::mkl::sparse::matmat_request::compute,
+                              matmat_descr, nullptr, nullptr);
 
-        // Step 3.1  get nnz
-        req = oneapi::mkl::sparse::matmat_request::get_nnz;
-        sycl::buffer<std::int64_t, 1> c_nnzBuf(1);
-        oneapi::mkl::sparse::matmat(main_queue, A, B, C, req, descr, &c_nnzBuf, nullptr);
+  std::int64_t *nnz_c = dpct::dpct_malloc(sizeof(std::int64_t));
+  auto data_nnz_c = dpct::detail::get_memory<std::int64_t>(nnz_c);
+  oneapi::mkl::sparse::matmat(queue, matrix_handle_a, matrix_handle_b,
+                              matrix_handle_c,
+                              oneapi::mkl::sparse::matmat_request::get_nnz,
+                              matmat_descr, data_nnz_c, nullptr);
+  std::int64_t nnz_c_host;
+  dpct::memcpy(&nnz_c_host, nnz_c, sizeof(std::int64_t), device_to_host);
+  dpct::dpct_free(nnz_c);
 
+  col_ind_c = dpct::dpct_malloc(nnz_c_host * sizeof(int));
+  val_c = dpct::dpct_malloc(nnz_c_host * sizeof(T));
+  data_col_ind_c = dpct::detail::get_memory<T>(col_ind_c);
+  data_val_c = dpct::detail::get_memory<T>(val_c);
+  oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_c, rows_c, cols_c,
+                                    info_c->get_index_base(), data_row_ptr_c,
+                                    data_col_ind_c, data_val_c);
 
-
+  oneapi::mkl::sparse::matmat(queue, matrix_handle_a, matrix_handle_b,
+                              matrix_handle_c,
+                              oneapi::mkl::sparse::matmat_request::finalize,
+                              matmat_descr, nullptr, nullptr);
+  queue.wait();
+  oneapi::mkl::sparse::release_matmat_descr(&matmat_descr);
+  oneapi::mkl::sparse::release_matrix_handle(queue, &matrix_handle_a);
+  oneapi::mkl::sparse::release_matrix_handle(queue, &matrix_handle_b);
+  oneapi::mkl::sparse::release_matrix_handle(queue, &matrix_handle_c);
+  queue.wait();
 }
 
 } // namespace sparse
