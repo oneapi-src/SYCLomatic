@@ -1,5 +1,5 @@
 // RUN: dpct --format-range=none  -out-root %T/debug_feature/test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
-// RUN: FileCheck --input-file %T/../output_int2.json --match-full-lines %S/output_int2.json
+// RUN: FileCheck --input-file %T/../output_all.json --match-full-lines %S/output_all.json
 
 #include <cuda.h>
 
