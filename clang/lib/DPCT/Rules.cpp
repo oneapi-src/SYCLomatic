@@ -246,19 +246,6 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
     std::vector<std::shared_ptr<MetaRuleObject>> CurrentRules;
     llvm::yaml::Input YAMLIn(Buffer.get()->getBuffer());
     YAMLIn >> CurrentRules;
-#if 1 // for debug
-    printf("Read rule start:\n");
-    for(auto Entry: CurrentRules) {
-      printf("\tEntry ->RuleFile [%s]\n", Entry->RuleFile.c_str());
-      printf("\tEntry ->RuleId [%s]\n", Entry->RuleId.c_str());
-      printf("\tEntry ->In [%s]\n",  Entry->In.c_str());
-      printf("\tEntry ->Out [%s]\n", Entry->Out.c_str());
-      printf("\tEntry ->Priority [%d]\n", Entry->Priority);
-      printf("\tEntry ->Kind [%d]\n", Entry->Kind);
-      printf("\tEntry ->MatchMode [%d]\n\n", Entry->MatchMode);
-    }
-    printf("Read rule end.\n\n");
-#endif
     // store the rules, also prevent MetaRuleObjects from being destructed
     MetaRules.insert(MetaRules.end(), CurrentRules.begin(), CurrentRules.end());
 

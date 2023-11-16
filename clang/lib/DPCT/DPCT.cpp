@@ -72,7 +72,6 @@ using namespace clang::dpct;
 using namespace clang::tooling;
 
 using namespace llvm::cl;
-using namespace llvm;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
@@ -584,8 +583,6 @@ static std::string getCmakeBuildPathFromInRoot(StringRef InRoot,
       if (fs::exists(OutDirectory + "/CMakeFiles") &&
           fs::exists(OutDirectory + "/CMakeCache.txt")) {
         CmakeBuildDirectory = OutDirectory.str().str();
-        printf("#### Found Cmake Build Directory [%s]\n",
-               CmakeBuildDirectory.c_str());
         break;
       }
     }
@@ -721,7 +718,6 @@ int runDPCT(int argc, const char **argv) {
   // Set function handle for libclangTooling to parse vcxproj file.
   clang::tooling::SetParserHandle(vcxprojParser);
 #endif
-
   llvm::cl::SetVersionPrinter(
       [](llvm::raw_ostream &OS) { OS << printCTVersion() << "\n"; });
   auto OptParser =
@@ -1278,9 +1274,6 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (MigrateCmakeScriptOnly) {
-    // for (auto Entry : RuleFile) {
-    //   printf("Entry [%s]\n", Entry.c_str());
-    // }
     auto CmakeScriptLists = OptParser->getSourcePathList();
     if (!CmakeScriptLists.empty()) {
       for (auto FilePath : CmakeScriptLists) {
@@ -1442,9 +1435,6 @@ int runDPCT(int argc, const char **argv) {
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {
-    // check the input files should not be specified.
-    printf("Process cmake script migration for option --migrate-cmake-script "
-           "option\n");
     std::vector<std::string> CmakeScriptFiles;
     collectCmakeScripts(InRoot, OutRoot, CmakeScriptFiles);
     for (const auto &ScriptFile : CmakeScriptFiles) {
