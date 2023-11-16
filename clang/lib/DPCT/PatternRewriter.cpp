@@ -37,6 +37,9 @@ struct MatchResult {
   std::unordered_map<std::string, std::string> Bindings;
 };
 
+extern llvm::cl::opt<bool> MigrateCmakeScriptOnly;
+extern llvm::cl::opt<bool> MigrateCmakeScript;
+
 const std::unordered_map<std::string /*command*/, bool /*need lower*/>
     cmake_commands = {
         {"cmake_minimum_required", 1},
@@ -124,7 +127,6 @@ const std::unordered_map<std::string /*command*/, bool /*need lower*/>
         {"cuda_wrap_srcs", 1},
 
 };
-
 
 static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
@@ -601,6 +603,17 @@ std::string convertCmakeCommandsToLower(const std::string &InputString) {
   return OutputStream.str();
 }
 
+int skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
+                      int Index) {
+  const int Size = Input.size();
+  if (Input[Index] == '#') {
+    for (; Index < Size && Input[Index] != '\n'; Index++) {
+      OutputStream << Input[Index];
+    }
+  }
+  return Index;
+}
+
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input) {
   std::stringstream OutputStream;
@@ -608,6 +621,11 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
+
+    if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
+      Index = skipCmakeComments(OutputStream, Input, Index);
+    }
+
     auto Result = findMatch(Pattern, Input, Index);
 
     if (Result.has_value()) {

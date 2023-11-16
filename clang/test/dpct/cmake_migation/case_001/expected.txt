@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
+###CMake_minimum_required(VERSION 3.10)
+#CMake_minimum_required(VERSION 3.10)
 project(foo-bar LANGUAGES CXX)
    set(CMAKE_CXX_FLAGS "-fsycl")
 set (CMAKE_CXX_STANDARD 17)
