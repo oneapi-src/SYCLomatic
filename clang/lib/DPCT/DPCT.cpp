@@ -24,6 +24,7 @@
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
+#include "Schema.h"
 #include "Statics.h"
 #include "TypeLocRewriters.h"
 #include "Utility.h"
@@ -1027,6 +1028,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   MapNames::setExplicitNamespaceMap();
+  clang::dpct::setTypeSchemaMap();
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();

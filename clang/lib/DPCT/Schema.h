@@ -50,6 +50,11 @@ struct FieldSchema {
   int64_t ValSize = 0;
   int64_t Offset = 0;
   std::string Location = "None";
+  FieldSchema(const std::string &name = "", ValType VT = ScalarValue,
+              const std::string &FT = "", bool IBT = false, int64_t VS = 0,
+              int64_t OS = 0, const std::string &loc = "None")
+      : FieldName(name), ValTypeOfField(VT), FieldType(FT), IsBasicType(IBT),
+        ValSize(VS), Offset(OS), Location(loc) {}
 };
 
 struct TypeSchema {
@@ -59,6 +64,11 @@ struct TypeSchema {
   bool IsVirtual = false;
   std::string FileName;
   std::vector<FieldSchema> Members;
+  TypeSchema(const std::string &name = "", int FN = 0, int64_t TS = 0,
+             bool IV = false, const std::string &FP = "",
+             std::vector<FieldSchema> mem = std::vector<FieldSchema>())
+      : TypeName(name), FieldNum(FN), TypeSize(TS), IsVirtual(IV), FileName(FP),
+        Members(mem) {}
 };
 
 struct VarSchema {
@@ -69,6 +79,12 @@ struct VarSchema {
   bool IsBasicType = false;
   int64_t VarSize = 0;
   std::string Location = "None";
+  VarSchema(const std::string &name = "", ValType VT = ScalarValue,
+            const std::string &FP = "", const std::string &FT = "",
+            bool IBT = false, int64_t VS = 0, int64_t OS = 0,
+            const std::string &loc = "None")
+      : VarName(name), ValTypeOfVar(VT), FileName(FP), VarType(FT),
+        IsBasicType(IBT), VarSize(VS), Location(loc) {}
 };
 
 std::string getFilePathFromDecl(const Decl *D, const SourceManager &SM);
@@ -93,7 +109,8 @@ extern std::map<std::string, TypeSchema> TypeSchemaMap;
 llvm::json::Array
 serializeSchemaToJsonArray(const std::map<std::string, TypeSchema> &TSMap);
 
-llvm::json::Array serializeSchemaToJsonArray(const std::vector<TypeSchema> &TSVec);
+llvm::json::Array
+serializeSchemaToJsonArray(const std::vector<TypeSchema> &TSVec);
 
 llvm::json::Object serializeSchemaToJson(const TypeSchema &TS);
 
@@ -102,6 +119,7 @@ void serializeJsonArrayToFile(llvm::json::Array &&Arr,
 
 std::vector<TypeSchema> getRelatedTypeSchema(const clang::QualType QT);
 
+void setTypeSchemaMap();
 } // namespace dpct
 } // namespace clang
 
