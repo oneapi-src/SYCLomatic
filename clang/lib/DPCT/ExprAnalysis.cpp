@@ -118,7 +118,8 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation Loc) {
     TokenLen = 1;
   }
 
-  return std::pair<SourceLocation, size_t>(Loc, TokenLen);
+  return std::pair<SourceLocation, size_t>(
+    Loc, TokenLen);
 }
 
 std::pair<SourceLocation, size_t>
