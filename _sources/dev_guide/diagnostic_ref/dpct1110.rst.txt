@@ -1,0 +1,83 @@
+.. _DPCT1110:
+
+DPCT1110
+========
+
+Message
+-------
+
+.. _msg-1110-start:
+
+The total declared local variable size in device function <function name> exceeds
+128 bytes and may cause high register pressure. Consult with your hardware vendor
+to find the total register size available and adjust the code, or use smaller
+sub-group size to avoid high register pressure.
+
+.. _msg-1110-end:
+
+Detailed Help
+-------------
+
+In specific hardware configurations, the number of registers available for each
+work-item is limited. For instance, in the Intel Xe-LP GPU architecture, each
+hardware thread has 4KB of registers. Consequently, if the sub-group size is 32,
+then each work-item can utilize 128 bytes of registers (4KB/32). If the declared
+local variable size in a device function exceeds 128 bytes, some variables may be
+stored in local or global memory, potentially leading to reduced performance when
+frequently accessed. To address this issue, you can either decrease the sub-group
+size to make more registers available for each work-item, or follow the recommendations
+in the `Registerization and Avoid Register Spills <https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/current/registerization-and-avoiding-register-spills.html>`_ section of the oneAPI GPU
+Optimization Guide. For other hardware, please consult with your hardware vendor
+to get configuration information.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void Kernel(){
+     int result[50];
+     ...
+   }
+   int main{
+     ...
+     Kernel<<<1, 100>>>();
+   }
+
+results in the following migrated SYCL* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1110:0: The total declared local variable size in device function "Kernel" exceeds 128 bytes and may cause high register pressure. Consult with your hardware vendor to find the total register size available and adjust the code or use smaller    sub-group size to avoid high register pressure.
+   */
+   void Kernel(){
+     int result[50];
+     ...
+   }
+   int main{
+     ...
+     q.parallel_for(sycl::range(100), [=](sycl::nd_item<3> item) [[intel::reqd_sub_group_size(32)]] { Kernel(); });
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void Kernel(){
+     int result[50];
+     ...
+   }
+
+   int main{
+     ...
+     /*
+      Reduce sub_group size to make more registers available for each work-item, which may help to avoid high register pressure.
+     */
+     q.parallel_for(sycl::range(100), [=](sycl::nd_item<3> item) [[intel::reqd_sub_group_size(16)]] { Kernel(); });
+   }
