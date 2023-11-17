@@ -35,7 +35,7 @@
 // RUN: echo "=====util.gpuhead end====="
 // RUN: FileCheck %S/bar/util.gpuhead --match-full-lines --input-file %T/bar/util.gpuhead
 // RUN: echo "=====util_bar.hh begin====="
-// RUN: cat%T/bar/util_bar.hh
+// RUN: cat %T/bar/util_bar.hh
 // RUN: echo "=====util_bar.hh end====="
 // RUN: FileCheck %S/bar/util_bar.hh --match-full-lines --input-file %T/bar/util_bar.hh
 // RUN: echo "=====macro_def.hh begin====="
