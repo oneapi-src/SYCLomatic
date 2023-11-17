@@ -55,10 +55,6 @@ void DpctPath::makeCanonical() {
     }
     while (!llvm::sys::fs::exists(Path)) {
       if (!llvm::sys::path::has_parent_path(Path)) {
-        // 1. The path is incorrect
-        // 2. The "incorrect path" is by design, e.g., "LinkerEntry"
-        printf("Path:%s\n", Path.c_str());
-        printf("_Path:%s\n", _Path.c_str());
         assert(0 && "no real directory found");
         return;
       }
