@@ -93,6 +93,12 @@ struct AsyncInfoWrapperTy {
   /// object and only once.
   void finalize(Error &Err);
 
+  /// Register \p Ptr as an associated alloction that is freed after
+  /// finalization.
+  void freeAllocationAfterSynchronization(void *Ptr) {
+    AsyncInfoPtr->AssociatedAllocations.push_back(Ptr);
+  }
+
 private:
   GenericDeviceTy &Device;
   __tgt_async_info LocalAsyncInfo;
@@ -255,9 +261,8 @@ public:
 /// implement the necessary virtual function members.
 struct GenericKernelTy {
   /// Construct a kernel with a name and a execution mode.
-  GenericKernelTy(const char *Name, OMPTgtExecModeFlags ExecutionMode)
-      : Name(Name), ExecutionMode(ExecutionMode), PreferredNumThreads(0),
-        MaxNumThreads(0) {}
+  GenericKernelTy(const char *Name)
+      : Name(Name), PreferredNumThreads(0), MaxNumThreads(0) {}
 
   virtual ~GenericKernelTy() {}
 
@@ -279,11 +284,27 @@ struct GenericKernelTy {
   /// Get the kernel name.
   const char *getName() const { return Name; }
 
+  /// Return true if this kernel is a constructor or destructor.
+  bool isCtorOrDtor() const {
+    // TODO: This is not a great solution and should be revisited.
+    return StringRef(Name).endswith("tor");
+  }
+
   /// Get the kernel image.
   DeviceImageTy &getImage() const {
     assert(ImagePtr && "Kernel is not initialized!");
     return *ImagePtr;
   }
+
+  /// Return the kernel environment object for kernel \p Name.
+  const KernelEnvironmentTy &getKernelEnvironmentForKernel() {
+    return KernelEnvironment;
+  }
+
+  /// Return a device pointer to a new kernel launch environment.
+  Expected<KernelLaunchEnvironmentTy *>
+  getKernelLaunchEnvironment(GenericDeviceTy &GenericDevice,
+                             AsyncInfoWrapperTy &AsyncInfo) const;
 
   /// Indicate whether an execution mode is valid.
   static bool isValidExecutionMode(OMPTgtExecModeFlags ExecutionMode) {
@@ -299,7 +320,7 @@ struct GenericKernelTy {
 protected:
   /// Get the execution mode name of the kernel.
   const char *getExecutionModeName() const {
-    switch (ExecutionMode) {
+    switch (KernelEnvironment.Configuration.ExecMode) {
     case OMP_TGT_EXEC_MODE_SPMD:
       return "SPMD";
     case OMP_TGT_EXEC_MODE_GENERIC:
@@ -325,9 +346,10 @@ protected:
 private:
   /// Prepare the arguments before launching the kernel.
   void *prepareArgs(GenericDeviceTy &GenericDevice, void **ArgPtrs,
-                    ptrdiff_t *ArgOffsets, int32_t NumArgs,
+                    ptrdiff_t *ArgOffsets, uint32_t &NumArgs,
                     llvm::SmallVectorImpl<void *> &Args,
-                    llvm::SmallVectorImpl<void *> &Ptrs) const;
+                    llvm::SmallVectorImpl<void *> &Ptrs,
+                    KernelLaunchEnvironmentTy *KernelLaunchEnvironment) const;
 
   /// Get the number of threads and blocks for the kernel based on the
   /// user-defined threads and block clauses.
@@ -335,24 +357,27 @@ private:
                          uint32_t ThreadLimitClause[3]) const;
 
   /// The number of threads \p NumThreads can be adjusted by this method.
+  /// \p IsNumThreadsFromUser is true is \p NumThreads is defined by user via
+  /// thread_limit clause.
   uint64_t getNumBlocks(GenericDeviceTy &GenericDevice,
                         uint32_t BlockLimitClause[3], uint64_t LoopTripCount,
-                        uint32_t &NumThreads) const;
+                        uint32_t &NumThreads, bool IsNumThreadsFromUser) const;
 
   /// Indicate if the kernel works in Generic SPMD, Generic or SPMD mode.
   bool isGenericSPMDMode() const {
-    return ExecutionMode == OMP_TGT_EXEC_MODE_GENERIC_SPMD;
+    return KernelEnvironment.Configuration.ExecMode ==
+           OMP_TGT_EXEC_MODE_GENERIC_SPMD;
   }
   bool isGenericMode() const {
-    return ExecutionMode == OMP_TGT_EXEC_MODE_GENERIC;
+    return KernelEnvironment.Configuration.ExecMode ==
+           OMP_TGT_EXEC_MODE_GENERIC;
   }
-  bool isSPMDMode() const { return ExecutionMode == OMP_TGT_EXEC_MODE_SPMD; }
+  bool isSPMDMode() const {
+    return KernelEnvironment.Configuration.ExecMode == OMP_TGT_EXEC_MODE_SPMD;
+  }
 
   /// The kernel name.
   const char *Name;
-
-  /// The execution flags of the kernel.
-  OMPTgtExecModeFlags ExecutionMode;
 
   /// The image that contains this kernel.
   DeviceImageTy *ImagePtr = nullptr;
@@ -363,6 +388,12 @@ protected:
 
   /// The maximum number of threads which the kernel could leverage.
   uint32_t MaxNumThreads;
+
+  /// The kernel environment, including execution flags.
+  KernelEnvironmentTy KernelEnvironment;
+
+  /// The prototype kernel launch environment.
+  KernelLaunchEnvironmentTy KernelLaunchEnvironment;
 };
 
 /// Class representing a map of host pinned allocations. We track these pinned
@@ -609,7 +640,7 @@ struct GenericDeviceTy : public DeviceAllocatorTy {
   /// Deinitialize the device and free all its resources. After this call, the
   /// device is no longer considered ready, so no queries or modifications are
   /// allowed.
-  Error deinit();
+  Error deinit(GenericPluginTy &Plugin);
   virtual Error deinitImpl() = 0;
 
   /// Load the binary image into the device and return the target table.
@@ -622,6 +653,10 @@ struct GenericDeviceTy : public DeviceAllocatorTy {
   /// on some plugins. By default, it will be executed, but plugins can change
   /// this behavior by overriding the shouldSetupDeviceEnvironment function.
   Error setupDeviceEnvironment(GenericPluginTy &Plugin, DeviceImageTy &Image);
+
+  /// Setup the global device memory pool, if the plugin requires one.
+  Error setupDeviceMemoryPool(GenericPluginTy &Plugin, DeviceImageTy &Image,
+                              uint64_t PoolSize);
 
   // Setup the RPC server for this device if needed. This may not run on some
   // plugins like the CPU targets. By default, it will not be executed so it is
@@ -640,6 +675,21 @@ struct GenericDeviceTy : public DeviceAllocatorTy {
   /// structure in a non-blocking manner.
   Error queryAsync(__tgt_async_info *AsyncInfo);
   virtual Error queryAsyncImpl(__tgt_async_info &AsyncInfo) = 0;
+
+  /// Check whether the architecture supports VA management
+  virtual bool supportVAManagement() const { return false; }
+
+  /// Get the total device memory size
+  virtual Error getDeviceMemorySize(uint64_t &DSize);
+
+  /// Allocates \p RSize bytes (rounded up to page size) and hints the driver to
+  /// map it to \p VAddr. The obtained address is stored in \p Addr. At return
+  /// \p RSize contains the actual size which can be equal or larger than the
+  /// requested size.
+  virtual Error memoryVAMap(void **Addr, void *VAddr, size_t *RSize);
+
+  /// De-allocates device memory and unmaps the virtual address \p VAddr
+  virtual Error memoryVAUnMap(void *VAddr, size_t Size);
 
   /// Allocate data on the device or involving the device.
   Expected<void *> dataAlloc(int64_t Size, void *HostPtr, TargetAllocTy Kind);
@@ -779,8 +829,26 @@ struct GenericDeviceTy : public DeviceAllocatorTy {
     return OMPX_MinThreadsForLowTripCount;
   }
 
+  /// Get the total amount of hardware parallelism supported by the target
+  /// device. This is the total amount of warps or wavefronts that can be
+  /// resident on the device simultaneously.
+  virtual uint64_t getHardwareParallelism() const { return 0; }
+
   /// Get the RPC server running on this device.
   RPCServerTy *getRPCServer() const { return RPCServer; }
+
+  /// The number of parallel RPC ports to use on the device. In general, this
+  /// should be roughly equivalent to the amount of hardware parallelism the
+  /// device can support. This is because GPUs in general do not have forward
+  /// progress guarantees, so we minimize thread level dependencies by
+  /// allocating enough space such that each device thread can have a port. This
+  /// is likely overly pessimistic in the average case, but guarantees no
+  /// deadlocks at the cost of memory. This must be overloaded by targets
+  /// expecting to use the RPC server.
+  virtual uint64_t requestedRPCPortCount() const {
+    assert(!shouldSetupRPCServer() && "Default implementation cannot be used");
+    return 0;
+  }
 
 private:
   /// Register offload entry for global variable.
@@ -795,8 +863,7 @@ private:
 
   /// Allocate and construct a kernel object.
   virtual Expected<GenericKernelTy &>
-  constructKernel(const __tgt_offload_entry &KernelEntry,
-                  OMPTgtExecModeFlags ExecMode) = 0;
+  constructKernel(const __tgt_offload_entry &KernelEntry) = 0;
 
   /// Get and set the stack size and heap size for the device. If not used, the
   /// plugin can implement the setters as no-op and setting the output
@@ -810,6 +877,10 @@ private:
   /// that returning false in this function will change the behavior of the
   /// setupDeviceEnvironment() function.
   virtual bool shouldSetupDeviceEnvironment() const { return true; }
+
+  /// Indicate whether the device should setup the global device memory pool. If
+  /// false is return the value on the device will be uninitialized.
+  virtual bool shouldSetupDeviceMemoryPool() const { return true; }
 
   /// Indicate whether or not the device should setup the RPC server. This is
   /// only necessary for unhosted targets like the GPU.
@@ -836,10 +907,6 @@ private:
       UInt32Envar("LIBOMPTARGET_MIN_THREADS_FOR_LOW_TRIP_COUNT", 32);
 
 protected:
-  /// Return the execution mode used for kernel \p Name.
-  virtual Expected<OMPTgtExecModeFlags>
-  getExecutionModeForKernel(StringRef Name, DeviceImageTy &Image);
-
   /// Environment variables defined by the LLVM OpenMP implementation
   /// regarding the initial number of streams and events.
   UInt32Envar OMPX_InitialNumStreams;
@@ -888,10 +955,8 @@ protected:
 #endif
 
 private:
-
-  /// Return the kernel environment object for kernel \p Name.
-  Expected<KernelEnvironmentTy>
-  getKernelEnvironmentForKernel(StringRef Name, DeviceImageTy &Image);
+  DeviceMemoryPoolTy DeviceMemoryPool = {nullptr, 0};
+  DeviceMemoryPoolTrackingTy DeviceMemoryPoolTracking = {0, 0, ~0U, 0};
 };
 
 /// Class implementing common functionalities of offload plugins. Each plugin
@@ -926,6 +991,12 @@ struct GenericPluginTy {
 
   /// Get the number of active devices.
   int32_t getNumDevices() const { return NumDevices; }
+
+  /// Get the plugin-specific device identifier offset.
+  int32_t getDeviceIdStartIndex() const { return DeviceIdStartIndex; }
+
+  /// Set the plugin-specific device identifier offset.
+  void setDeviceIdStartIndex(int32_t Offset) { DeviceIdStartIndex = Offset; }
 
   /// Get the ELF code to recognize the binary image of this plugin.
   virtual uint16_t getMagicElfBits() const = 0;
@@ -989,7 +1060,12 @@ protected:
 
 private:
   /// Number of devices available for the plugin.
-  int32_t NumDevices;
+  int32_t NumDevices = 0;
+
+  /// Index offset, which when added to a DeviceId, will yield a unique
+  /// user-observable device identifier. This is especially important when
+  /// DeviceIds of multiple plugins / RTLs need to be distinguishable.
+  int32_t DeviceIdStartIndex = 0;
 
   /// Array of pointers to the devices. Initially, they are all set to nullptr.
   /// Once a device is initialized, the pointer is stored in the position given
@@ -1193,7 +1269,7 @@ public:
   }
 
   /// Get a resource from the pool or create new ones. If the function
-  /// succeeeds, the handle to the resource is saved in \p Handle.
+  /// succeeds, the handle to the resource is saved in \p Handle.
   virtual Error getResource(ResourceHandleTy &Handle) {
     // Get a resource with an empty resource processor.
     return getResourcesImpl(1, &Handle,
@@ -1201,7 +1277,7 @@ public:
   }
 
   /// Get multiple resources from the pool or create new ones. If the function
-  /// succeeeds, the handles to the resources are saved in \p Handles.
+  /// succeeds, the handles to the resources are saved in \p Handles.
   virtual Error getResources(uint32_t Num, ResourceHandleTy *Handles) {
     // Get resources with an empty resource processor.
     return getResourcesImpl(Num, Handles,
@@ -1217,7 +1293,7 @@ public:
 
 protected:
   /// Get multiple resources from the pool or create new ones. If the function
-  /// succeeeds, the handles to the resources are saved in \p Handles. Also
+  /// succeeds, the handles to the resources are saved in \p Handles. Also
   /// process each of the obtained resources with \p Processor.
   template <typename FuncTy>
   Error getResourcesImpl(uint32_t Num, ResourceHandleTy *Handles,

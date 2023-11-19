@@ -45,12 +45,13 @@ namespace sparse_tensor {
 ///
 class SparseTensorType {
 public:
-  // We memoize `lvlRank` and `dimToLvl` to avoid repeating the
-  // conditionals throughout the rest of the class.
+  // We memoize `lvlRank`, `dimToLvl`, and `lvlToDim` to avoid repeating
+  // the conditionals throughout the rest of the class.
   SparseTensorType(RankedTensorType rtp)
       : rtp(rtp), enc(getSparseTensorEncoding(rtp)),
         lvlRank(enc ? enc.getLvlRank() : getDimRank()),
-        dimToLvl(enc.isIdentity() ? AffineMap() : enc.getDimToLvl()) {
+        dimToLvl(enc.isIdentity() ? AffineMap() : enc.getDimToLvl()),
+        lvlToDim(enc.isIdentity() ? AffineMap() : enc.getLvlToDim()) {
     assert(rtp && "got null RankedTensorType");
     assert((!isIdentity() || getDimRank() == lvlRank) && "Rank mismatch");
   }
@@ -127,8 +128,8 @@ public:
   /// Allow implicit conversion to `RankedTensorType`, `ShapedType`,
   /// and `Type`.  These are implicit to help alleviate the impedance
   /// mismatch for code that has not been converted to use `SparseTensorType`
-  /// directly.  Once more of the sparse compiler has been converted to
-  /// using `SparseTensorType`, we may want to make these explicit instead.
+  /// directly.  Once more uses have been converted to `SparseTensorType`,
+  /// we may want to make these explicit instead.
   ///
   /// WARNING: This user-defined-conversion method causes overload
   /// ambiguity whenever passing a `SparseTensorType` directly to a
@@ -175,6 +176,10 @@ public:
   /// Returns the encoding (or the null-attribute for dense-tensors).
   SparseTensorEncodingAttr getEncoding() const { return enc; }
 
+  //
+  // SparseTensorEncodingAttr delegators
+  //
+
   /// Returns true for tensors which have an encoding, and false for
   /// those which do not.  Therefore tensors with an all-dense encoding
   /// return true.
@@ -188,18 +193,27 @@ public:
   /// (This is always true for dense-tensors.)
   bool isAllOrdered() const { return enc.isAllOrdered(); }
 
-  /// Returns true if the dimToLvl mapping is the identity.
-  /// (This is always true for dense-tensors.)
-  bool isIdentity() const { return !dimToLvl; }
+  /// Translates between level / dimension coordinate space.
+  ValueRange translateCrds(OpBuilder &builder, Location loc, ValueRange crds,
+                           CrdTransDirectionKind dir) const {
+    return enc.translateCrds(builder, loc, crds, dir);
+  }
 
   /// Returns true if the dimToLvl mapping is a permutation.
   /// (This is always true for dense-tensors.)
   bool isPermutation() const { return enc.isPermutation(); }
 
+  /// Returns true if the dimToLvl mapping is the identity.
+  /// (This is always true for dense-tensors.)
+  bool isIdentity() const { return enc.isIdentity(); }
+
   /// Returns the dimToLvl mapping (or the null-map for the identity).
   /// If you intend to compare the results of this method for equality,
   /// see `hasSameDimToLvl` instead.
   AffineMap getDimToLvl() const { return dimToLvl; }
+
+  /// Returns the lvlToDiml mapping (or the null-map for the identity).
+  AffineMap getLvlToDim() const { return lvlToDim; }
 
   /// Returns the dimToLvl mapping, where the identity map is expanded out
   /// into a full `AffineMap`.  This method is provided as a convenience,
@@ -230,6 +244,18 @@ public:
 
   /// Returns the dimension-shape.
   ArrayRef<DynSize> getDimShape() const { return rtp.getShape(); }
+
+  /// Returns the Level-shape.
+  SmallVector<DynSize> getLvlShape() const {
+    return getEncoding().tranlateShape(getDimShape(),
+                                       CrdTransDirectionKind::dim2lvl);
+  }
+
+  RankedTensorType getDemappedType() const {
+    auto lvlShape = getLvlShape();
+    return RankedTensorType::get(lvlShape, rtp.getElementType(),
+                                 enc.withoutDimToLvl());
+  }
 
   /// Safely looks up the requested dimension-DynSize.  If you intend
   /// to check the result with `ShapedType::isDynamic`, then see the
@@ -267,6 +293,7 @@ public:
   /// `ShapedType::Trait<T>::getNumDynamicDims`.
   int64_t getNumDynamicDims() const { return rtp.getNumDynamicDims(); }
 
+  ArrayRef<DimLevelType> getLvlTypes() const { return enc.getLvlTypes(); }
   DimLevelType getLvlType(Level l) const {
     // This OOB check is for dense-tensors, since this class knows
     // their lvlRank (whereas STEA::getLvlType will/can only check
@@ -306,12 +333,18 @@ private:
   // Memoized to avoid frequent redundant conditionals.
   const Level lvlRank;
   const AffineMap dimToLvl;
+  const AffineMap lvlToDim;
 };
 
-/// Convenience method to abbreviate wrapping `getRankedTensorType`.
+/// Convenience methods to abbreviate wrapping `getRankedTensorType`.
 template <typename T>
 inline SparseTensorType getSparseTensorType(T t) {
   return SparseTensorType(getRankedTensorType(t));
+}
+inline std::optional<SparseTensorType> tryGetSparseTensorType(Value v) {
+  if (isa<RankedTensorType>(v.getType()))
+    return getSparseTensorType(v);
+  return std::nullopt;
 }
 
 } // namespace sparse_tensor

@@ -87,12 +87,15 @@ struct DriverArgs {
   std::string Lang;
   std::string Sysroot;
   std::string ISysroot;
+  std::string Target;
+  std::string Stdlib;
 
   bool operator==(const DriverArgs &RHS) const {
     return std::tie(Driver, StandardIncludes, StandardCXXIncludes, Lang,
-                    Sysroot, ISysroot) ==
+                    Sysroot, ISysroot, Target, Stdlib) ==
            std::tie(RHS.Driver, RHS.StandardIncludes, RHS.StandardCXXIncludes,
-                    RHS.Lang, RHS.Sysroot, ISysroot);
+                    RHS.Lang, RHS.Sysroot, RHS.ISysroot, RHS.Target,
+                    RHS.Stdlib);
   }
 
   DriverArgs(const tooling::CompileCommand &Cmd, llvm::StringRef File) {
@@ -130,7 +133,29 @@ struct DriverArgs {
           ISysroot = Cmd.CommandLine[I + 1];
         else
           ISysroot = Arg.str();
+      } else if (Arg.consume_front("--target=")) {
+        Target = Arg.str();
+      } else if (Arg.consume_front("-target")) {
+        if (Arg.empty() && I + 1 < E)
+          Target = Cmd.CommandLine[I + 1];
+      } else if (Arg.consume_front("--stdlib")) {
+        if (Arg.consume_front("="))
+          Stdlib = Arg.str();
+        else if (Arg.empty() && I + 1 < E)
+          Stdlib = Cmd.CommandLine[I + 1];
+      } else if (Arg.consume_front("-stdlib=")) {
+        Stdlib = Arg.str();
       }
+    }
+
+    // Downgrade objective-c++-header (used in clangd's fallback flags for .h
+    // files) to c++-header, as some drivers may fail to run the extraction
+    // command if it contains `-xobjective-c++-header` and objective-c++ support
+    // is not installed.
+    // In practice, we don't see different include paths for the two on
+    // clang+mac, which is the most common objectve-c compiler.
+    if (Lang == "objective-c++-header") {
+      Lang = "c++-header";
     }
 
     // If language is not explicit in the flags, infer from the file.
@@ -157,6 +182,10 @@ struct DriverArgs {
       Args.append({"--sysroot", Sysroot});
     if (!ISysroot.empty())
       Args.append({"-isysroot", ISysroot});
+    if (!Target.empty())
+      Args.append({"-target", Target});
+    if (!Stdlib.empty())
+      Args.append({"--stdlib", Stdlib});
     return Args;
   }
 
@@ -188,6 +217,8 @@ template <> struct DenseMapInfo<DriverArgs> {
         Val.Lang,
         Val.Sysroot,
         Val.ISysroot,
+        Val.Target,
+        Val.Stdlib,
     });
   }
   static bool isEqual(const DriverArgs &LHS, const DriverArgs &RHS) {
@@ -325,7 +356,13 @@ extractSystemIncludesAndTarget(const DriverArgs &InputArgs,
   SPAN_ATTACH(Tracer, "driver", Driver);
   SPAN_ATTACH(Tracer, "lang", InputArgs.Lang);
 
-  if (!QueryDriverRegex.match(Driver)) {
+  // If driver was "../foo" then having to allowlist "/path/a/../foo" rather
+  // than "/path/foo" is absurd.
+  // Allow either to match the allowlist, then proceed with "/path/a/../foo".
+  // This was our historical behavior, and it *could* resolve to something else.
+  llvm::SmallString<256> NoDots(Driver);
+  llvm::sys::path::remove_dots(NoDots, /*remove_dot_dot=*/true);
+  if (!QueryDriverRegex.match(Driver) && !QueryDriverRegex.match(NoDots)) {
     vlog("System include extraction: not allowed driver {0}", Driver);
     return std::nullopt;
   }
@@ -352,8 +389,7 @@ extractSystemIncludesAndTarget(const DriverArgs &InputArgs,
     auto Path = llvm::StringRef(*BuiltinHeaders).trim();
     if (!Path.empty() && llvm::sys::path::is_absolute(Path)) {
       auto Size = Info->SystemIncludes.size();
-      llvm::erase_if(Info->SystemIncludes,
-                     [&](llvm::StringRef Entry) { return Path == Entry; });
+      llvm::erase(Info->SystemIncludes, Path);
       vlog("System includes extractor: builtin headers {0} {1}", Path,
            (Info->SystemIncludes.size() != Size)
                ? "excluded"

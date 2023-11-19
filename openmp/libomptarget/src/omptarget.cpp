@@ -531,7 +531,6 @@ int targetDataMapper(ident_t *Loc, DeviceTy &Device, void *ArgBase, void *Arg,
                      int64_t ArgSize, int64_t ArgType, map_var_info_t ArgNames,
                      void *ArgMapper, AsyncInfoTy &AsyncInfo,
                      TargetDataFuncPtrTy TargetDataFunction) {
-  TIMESCOPE_WITH_IDENT(Loc);
   DP("Calling the mapper function " DPxMOD "\n", DPxPTR(ArgMapper));
 
   // The mapper function fills up Components.
@@ -573,6 +572,7 @@ int targetDataBegin(ident_t *Loc, DeviceTy &Device, int32_t ArgNum,
                     int64_t *ArgTypes, map_var_info_t *ArgNames,
                     void **ArgMappers, AsyncInfoTy &AsyncInfo,
                     bool FromMapper) {
+  TIMESCOPE_WITH_IDENT(Loc);
   // process each input.
   for (int32_t I = 0; I < ArgNum; ++I) {
     // Ignore private variables and arrays - there is no mapping for them.
@@ -827,14 +827,13 @@ postProcessingTargetDataEnd(DeviceTy *Device,
     // remaining shadow pointer entries for this struct.
     const bool HasFrom = ArgType & OMP_TGT_MAPTYPE_FROM;
     if (HasFrom) {
-      Entry->foreachShadowPointerInfo(
-          [&](const ShadowPtrInfoTy &ShadowPtr) {
-            *ShadowPtr.HstPtrAddr = ShadowPtr.HstPtrVal;
-            DP("Restoring original host pointer value " DPxMOD " for host "
-               "pointer " DPxMOD "\n",
-               DPxPTR(ShadowPtr.HstPtrVal), DPxPTR(ShadowPtr.HstPtrAddr));
-            return OFFLOAD_SUCCESS;
-          });
+      Entry->foreachShadowPointerInfo([&](const ShadowPtrInfoTy &ShadowPtr) {
+        *ShadowPtr.HstPtrAddr = ShadowPtr.HstPtrVal;
+        DP("Restoring original host pointer value " DPxMOD " for host "
+           "pointer " DPxMOD "\n",
+           DPxPTR(ShadowPtr.HstPtrVal), DPxPTR(ShadowPtr.HstPtrAddr));
+        return OFFLOAD_SUCCESS;
+      });
     }
 
     // Give up the lock as we either don't need it anymore (e.g., done with
@@ -1002,7 +1001,6 @@ int targetDataEnd(ident_t *Loc, DeviceTy &Device, int32_t ArgNum,
 static int targetDataContiguous(ident_t *Loc, DeviceTy &Device, void *ArgsBase,
                                 void *HstPtrBegin, int64_t ArgSize,
                                 int64_t ArgType, AsyncInfoTy &AsyncInfo) {
-  TIMESCOPE_WITH_IDENT(Loc);
   TargetPointerResultTy TPR =
       Device.getTgtPtrBegin(HstPtrBegin, ArgSize, /*UpdateRefCount=*/false,
                             /*UseHoldRefCount=*/false, /*MustContain=*/true);
@@ -1096,7 +1094,6 @@ static int targetDataNonContiguous(ident_t *Loc, DeviceTy &Device,
                                    uint64_t Size, int64_t ArgType,
                                    int CurrentDim, int DimSize, uint64_t Offset,
                                    AsyncInfoTy &AsyncInfo) {
-  TIMESCOPE_WITH_IDENT(Loc);
   int Ret = OFFLOAD_SUCCESS;
   if (CurrentDim < DimSize) {
     for (unsigned int I = 0; I < NonContig[CurrentDim].Count; ++I) {
@@ -1715,9 +1712,9 @@ int target(ident_t *Loc, DeviceTy &Device, void *HostPtr,
 /// Enables the record replay mechanism by pre-allocating MemorySize
 /// and informing the record-replayer of whether to store the output
 /// in some file.
-int target_activate_rr(DeviceTy &Device, uint64_t MemorySize, bool isRecord,
-                       bool SaveOutput) {
-  return Device.RTL->activate_record_replay(Device.DeviceID, MemorySize,
+int target_activate_rr(DeviceTy &Device, uint64_t MemorySize, void *VAddr,
+                       bool isRecord, bool SaveOutput) {
+  return Device.RTL->activate_record_replay(Device.DeviceID, MemorySize, VAddr,
                                             isRecord, SaveOutput);
 }
 

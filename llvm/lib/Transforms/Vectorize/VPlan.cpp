@@ -19,7 +19,6 @@
 #include "VPlan.h"
 #include "VPlanCFG.h"
 #include "VPlanDominatorTree.h"
-#include "llvm/ADT/DepthFirstIterator.h"
 #include "llvm/ADT/PostOrderIterator.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
@@ -360,18 +359,15 @@ void VPTransformState::addMetadata(ArrayRef<Value *> To, Instruction *From) {
   }
 }
 
-void VPTransformState::setDebugLocFromInst(const Value *V) {
-  const Instruction *Inst = dyn_cast<Instruction>(V);
-  if (!Inst) {
-    Builder.SetCurrentDebugLocation(DebugLoc());
-    return;
-  }
-
-  const DILocation *DIL = Inst->getDebugLoc();
+void VPTransformState::setDebugLocFrom(DebugLoc DL) {
+  const DILocation *DIL = DL;
   // When a FSDiscriminator is enabled, we don't need to add the multiply
   // factors to the discriminators.
-  if (DIL && Inst->getFunction()->shouldEmitDebugInfoForProfiling() &&
-      !Inst->isDebugOrPseudoInst() && !EnableFSDiscriminator) {
+  if (DIL &&
+      Builder.GetInsertBlock()
+          ->getParent()
+          ->shouldEmitDebugInfoForProfiling() &&
+      !EnableFSDiscriminator) {
     // FIXME: For scalable vectors, assume vscale=1.
     auto NewDIL =
         DIL->cloneByMultiplyingDuplicationFactor(UF * VF.getKnownMinValue());
@@ -719,15 +715,6 @@ VPlanPtr VPlan::createInitialVPlan(const SCEV *TripCount, ScalarEvolution &SE) {
   Plan->TripCount =
       vputils::getOrCreateVPValueForSCEVExpr(*Plan, TripCount, SE);
   return Plan;
-}
-
-VPActiveLaneMaskPHIRecipe *VPlan::getActiveLaneMaskPhi() {
-  VPBasicBlock *Header = getVectorLoopRegion()->getEntryBasicBlock();
-  for (VPRecipeBase &R : Header->phis()) {
-    if (isa<VPActiveLaneMaskPHIRecipe>(&R))
-      return cast<VPActiveLaneMaskPHIRecipe>(&R);
-  }
-  return nullptr;
 }
 
 void VPlan::prepareToExecute(Value *TripCountV, Value *VectorTripCountV,

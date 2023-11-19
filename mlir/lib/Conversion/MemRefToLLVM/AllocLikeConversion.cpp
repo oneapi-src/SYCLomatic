@@ -18,7 +18,7 @@ namespace {
 // with SymbolTable trait instead of ModuleOp and make similar change here. This
 // allows call sites to use getParentWithTrait<OpTrait::SymbolTable> instead
 // of getParentOfType<ModuleOp> to pass down the operation.
-LLVM::LLVMFuncOp getNotalignedAllocFn(LLVMTypeConverter *typeConverter,
+LLVM::LLVMFuncOp getNotalignedAllocFn(const LLVMTypeConverter *typeConverter,
                                       ModuleOp module, Type indexType) {
   bool useGenericFn = typeConverter->getOptions().useGenericFunctions;
 
@@ -30,7 +30,7 @@ LLVM::LLVMFuncOp getNotalignedAllocFn(LLVMTypeConverter *typeConverter,
                                       typeConverter->useOpaquePointers());
 }
 
-LLVM::LLVMFuncOp getAlignedAllocFn(LLVMTypeConverter *typeConverter,
+LLVM::LLVMFuncOp getAlignedAllocFn(const LLVMTypeConverter *typeConverter,
                                    ModuleOp module, Type indexType) {
   bool useGenericFn = typeConverter->getOptions().useGenericFunctions;
 
@@ -57,9 +57,13 @@ Value AllocationOpLLVMLowering::createAligned(
 static Value castAllocFuncResult(ConversionPatternRewriter &rewriter,
                                  Location loc, Value allocatedPtr,
                                  MemRefType memRefType, Type elementPtrType,
-                                 LLVMTypeConverter &typeConverter) {
+                                 const LLVMTypeConverter &typeConverter) {
   auto allocatedPtrTy = cast<LLVM::LLVMPointerType>(allocatedPtr.getType());
-  unsigned memrefAddrSpace = *typeConverter.getMemRefAddressSpace(memRefType);
+  FailureOr<unsigned> maybeMemrefAddrSpace =
+      typeConverter.getMemRefAddressSpace(memRefType);
+  if (failed(maybeMemrefAddrSpace))
+    return Value();
+  unsigned memrefAddrSpace = *maybeMemrefAddrSpace;
   if (allocatedPtrTy.getAddressSpace() != memrefAddrSpace)
     allocatedPtr = rewriter.create<LLVM::AddrSpaceCastOp>(
         loc,
@@ -91,7 +95,8 @@ std::tuple<Value, Value> AllocationOpLLVMLowering::allocateBufferManuallyAlign(
   Value allocatedPtr =
       castAllocFuncResult(rewriter, loc, results.getResult(), memRefType,
                           elementPtrType, *getTypeConverter());
-
+  if (!allocatedPtr)
+    return std::make_tuple(Value(), Value());
   Value alignedPtr = allocatedPtr;
   if (alignment) {
     // Compute the aligned pointer.
@@ -182,6 +187,10 @@ LogicalResult AllocLikeOpLLVMLowering::matchAndRewrite(
   // Allocate the underlying buffer.
   auto [allocatedPtr, alignedPtr] =
       this->allocateBuffer(rewriter, loc, size, op);
+
+  if (!allocatedPtr || !alignedPtr)
+    return rewriter.notifyMatchFailure(loc,
+                                       "underlying buffer allocation failed");
 
   // Create the MemRef descriptor.
   auto memRefDescriptor = this->createMemRefDescriptor(

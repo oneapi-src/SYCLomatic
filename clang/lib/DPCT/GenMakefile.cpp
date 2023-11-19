@@ -97,8 +97,8 @@ static void getCompileInfo(
           // Set the target name
           TargetName = Obj;
           IsTargetName = false;
-          Tool = "$(CC) -fsycl -o"; // use 'icpx -fsycl' to link the target file in the
-                             // generated Makefile.
+          Tool = "$(CC) -fsycl -o"; // use 'icpx -fsycl' to link the target file
+                                    // in the generated Makefile.
         } else if (llvm::StringRef(Obj).endswith(".o")) {
           llvm::SmallString<512> FilePathAbs(Obj);
 
@@ -169,7 +169,7 @@ static void getCompileInfo(
     const std::string Directory = Entry.second[0];
 
     llvm::SmallString<512> RealPath;
-    llvm::sys::fs::real_path(FileName, RealPath, true);
+    dpct::real_path(FileName, RealPath, true);
     if (!llvm::sys::path::is_absolute(FileName))
       RealPath = Directory + "/" + FileName;
     makeCanonical(RealPath);
@@ -511,7 +511,11 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
           "TARGET_", std::to_string(TargetIdx))];
       // Use to tool "ld" or "ar" that generates the original target in the
       // compilation database.
-      OS << buildString("\t", Tool, " $@ $^ $(LIB) ", MKLOption, "\n\n");
+      if (Tool == "ar -r") { // "-qmkl" is not needed for "ar" target
+        OS << buildString("\t", Tool, " $@ $^ $(LIB)\n\n");
+      } else {
+        OS << buildString("\t", Tool, " $@ $^ $(LIB) ", MKLOption, "\n\n");
+      }
 
       for (unsigned Idx = 0; Idx < Entry.second.size(); Idx++) {
         std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) +

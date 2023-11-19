@@ -817,6 +817,26 @@ public:
   /// Determine whether this type is const-qualified.
   bool isConstQualified() const;
 
+  enum class NonConstantStorageReason {
+    MutableField,
+    NonConstNonReferenceType,
+    NonTrivialCtor,
+    NonTrivialDtor,
+  };
+  /// Determine whether instances of this type can be placed in immutable
+  /// storage.
+  /// If ExcludeCtor is true, the duration when the object's constructor runs
+  /// will not be considered. The caller will need to verify that the object is
+  /// not written to during its construction. ExcludeDtor works similarly.
+  std::optional<NonConstantStorageReason>
+  isNonConstantStorage(const ASTContext &Ctx, bool ExcludeCtor,
+                       bool ExcludeDtor);
+
+  bool isConstantStorage(const ASTContext &Ctx, bool ExcludeCtor,
+                         bool ExcludeDtor) {
+    return !isNonConstantStorage(Ctx, ExcludeCtor, ExcludeDtor);
+  }
+
   /// Determine whether this particular QualType instance has the
   /// "restrict" qualifier set, without looking through typedefs that may have
   /// added "restrict" at a different level.
@@ -1011,7 +1031,7 @@ public:
   /// type.  To strip qualifiers even from within a sugared array type, use
   /// ASTContext::getUnqualifiedArrayType.
   ///
-  /// Note: In C, the _Atomic qualifier is special (see C2x 6.2.5p29 for
+  /// Note: In C, the _Atomic qualifier is special (see C23 6.2.5p32 for
   /// details), and it is not stripped by this function. Use
   /// getAtomicUnqualifiedType() to strip qualifiers including _Atomic.
   inline QualType getUnqualifiedType() const;
@@ -1462,7 +1482,8 @@ class ExtQualsTypeCommonBase {
 /// in three low bits on the QualType pointer; a fourth bit records whether
 /// the pointer is an ExtQuals node. The extended qualifiers (address spaces,
 /// Objective-C GC attributes) are much more rare.
-class ExtQuals : public ExtQualsTypeCommonBase, public llvm::FoldingSetNode {
+class alignas(TypeAlignment) ExtQuals : public ExtQualsTypeCommonBase,
+                                        public llvm::FoldingSetNode {
   // NOTE: changing the fast qualifiers should be straightforward as
   // long as you don't make 'const' non-fast.
   // 1. Qualifiers:
@@ -1548,6 +1569,10 @@ enum class AutoTypeKeyword {
   GNUAutoType
 };
 
+enum class ArraySizeModifier;
+enum class ElaboratedTypeKeyword;
+enum class VectorKind;
+
 /// The base class of the type hierarchy.
 ///
 /// A central concept with types is that each type always has a canonical
@@ -1574,7 +1599,7 @@ enum class AutoTypeKeyword {
 ///
 /// Types, once created, are immutable.
 ///
-class alignas(8) Type : public ExtQualsTypeCommonBase {
+class alignas(TypeAlignment) Type : public ExtQualsTypeCommonBase {
 public:
   enum TypeClass {
 #define TYPE(Class, Base) Class,
@@ -1639,14 +1664,15 @@ protected:
 
     /// Storage class qualifiers from declarations like
     /// 'int X[static restrict 4]'. For function parameters only.
-    /// Actually an ArrayType::ArraySizeModifier.
+    /// Actually an ArraySizeModifier.
     unsigned SizeModifier : 3;
   };
+  enum { NumArrayTypeBits = NumTypeBits + 6 };
 
   class ConstantArrayTypeBitfields {
     friend class ConstantArrayType;
 
-    unsigned : NumTypeBits + 3 + 3;
+    unsigned : NumArrayTypeBits;
 
     /// Whether we have a stored size expression.
     unsigned HasStoredSizeExpr : 1;
@@ -1759,7 +1785,7 @@ protected:
     unsigned Keyword : 8;
   };
 
-  enum { NumTypeWithKeywordBits = 8 };
+  enum { NumTypeWithKeywordBits = NumTypeBits + 8 };
 
   class ElaboratedTypeBitfields {
     friend class ElaboratedType;
@@ -1892,7 +1918,6 @@ protected:
   class DependentTemplateSpecializationTypeBitfields {
     friend class DependentTemplateSpecializationType;
 
-    unsigned : NumTypeBits;
     unsigned : NumTypeWithKeywordBits;
 
     /// The number of template arguments named in this class template
@@ -1962,9 +1987,10 @@ protected:
   Type(TypeClass tc, QualType canon, TypeDependence Dependence)
       : ExtQualsTypeCommonBase(this,
                                canon.isNull() ? QualType(this_(), 0) : canon) {
-    static_assert(sizeof(*this) <= 8 + sizeof(ExtQualsTypeCommonBase),
+    static_assert(sizeof(*this) <=
+                      alignof(decltype(*this)) + sizeof(ExtQualsTypeCommonBase),
                   "changing bitfields changed sizeof(Type)!");
-    static_assert(alignof(decltype(*this)) % sizeof(void *) == 0,
+    static_assert(alignof(decltype(*this)) % TypeAlignment == 0,
                   "Insufficient alignment!");
     TypeBits.TC = tc;
     TypeBits.Dependence = static_cast<unsigned>(Dependence);
@@ -2038,6 +2064,9 @@ public:
   bool isSizelessType() const;
   bool isSizelessBuiltinType() const;
 
+  /// Returns true for all scalable vector types.
+  bool isSizelessVectorType() const;
+
   /// Returns true for SVE scalable vector types.
   bool isSVESizelessBuiltinType() const;
 
@@ -2055,7 +2084,7 @@ public:
   /// Determines if this is a sizeless type supported by the
   /// 'arm_sve_vector_bits' type attribute, which can be applied to a single
   /// SVE vector or predicate, excluding tuple types such as svint32x4_t.
-  bool isVLSTBuiltinType() const;
+  bool isSveVLSBuiltinType() const;
 
   /// Returns the representative type for the element of an SVE builtin type.
   /// This is used to represent fixed-length SVE vectors created with the
@@ -2264,7 +2293,7 @@ public:
   bool isCARCBridgableType() const;
   bool isTemplateTypeParmType() const;          // C++ template type parameter
   bool isNullPtrType() const;                   // C++11 std::nullptr_t or
-                                                // C2x nullptr_t
+                                                // C23   nullptr_t
   bool isNothrowT() const;                      // C++   std::nothrow_t
   bool isAlignValT() const;                     // C++17 std::align_val_t
   bool isStdByteType() const;                   // C++17 std::byte
@@ -3069,17 +3098,14 @@ public:
   }
 };
 
+/// Capture whether this is a normal array (e.g. int X[4])
+/// an array with a static size (e.g. int X[static 4]), or an array
+/// with a star size (e.g. int X[*]).
+/// 'static' is only allowed on function parameters.
+enum class ArraySizeModifier { Normal, Static, Star };
+
 /// Represents an array type, per C99 6.7.5.2 - Array Declarators.
 class ArrayType : public Type, public llvm::FoldingSetNode {
-public:
-  /// Capture whether this is a normal array (e.g. int X[4])
-  /// an array with a static size (e.g. int X[static 4]), or an array
-  /// with a star size (e.g. int X[*]).
-  /// 'static' is only allowed on function parameters.
-  enum ArraySizeModifier {
-    Normal, Static, Star
-  };
-
 private:
   /// The element type of the array.
   QualType ElementType;
@@ -3203,7 +3229,7 @@ public:
   static void Profile(llvm::FoldingSetNodeID &ID, QualType ET,
                       ArraySizeModifier SizeMod, unsigned TypeQuals) {
     ID.AddPointer(ET.getAsOpaquePtr());
-    ID.AddInteger(SizeMod);
+    ID.AddInteger(llvm::to_underlying(SizeMod));
     ID.AddInteger(TypeQuals);
   }
 };
@@ -3279,8 +3305,6 @@ public:
 class DependentSizedArrayType : public ArrayType {
   friend class ASTContext; // ASTContext creates these.
 
-  const ASTContext &Context;
-
   /// An assignment expression that will instantiate to the
   /// size of the array.
   ///
@@ -3291,8 +3315,8 @@ class DependentSizedArrayType : public ArrayType {
   /// The range spanned by the left and right array brackets.
   SourceRange Brackets;
 
-  DependentSizedArrayType(const ASTContext &Context, QualType et, QualType can,
-                          Expr *e, ArraySizeModifier sm, unsigned tq,
+  DependentSizedArrayType(QualType et, QualType can, Expr *e,
+                          ArraySizeModifier sm, unsigned tq,
                           SourceRange brackets);
 
 public:
@@ -3315,7 +3339,7 @@ public:
     return T->getTypeClass() == DependentSizedArray;
   }
 
-  void Profile(llvm::FoldingSetNodeID &ID) {
+  void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context) {
     Profile(ID, Context, getElementType(),
             getSizeModifier(), getIndexTypeCVRQualifiers(), getSizeExpr());
   }
@@ -3339,14 +3363,12 @@ public:
 class DependentAddressSpaceType : public Type, public llvm::FoldingSetNode {
   friend class ASTContext;
 
-  const ASTContext &Context;
   Expr *AddrSpaceExpr;
   QualType PointeeType;
   SourceLocation loc;
 
-  DependentAddressSpaceType(const ASTContext &Context, QualType PointeeType,
-                            QualType can, Expr *AddrSpaceExpr,
-                            SourceLocation loc);
+  DependentAddressSpaceType(QualType PointeeType, QualType can,
+                            Expr *AddrSpaceExpr, SourceLocation loc);
 
 public:
   Expr *getAddrSpaceExpr() const { return AddrSpaceExpr; }
@@ -3360,7 +3382,7 @@ public:
     return T->getTypeClass() == DependentAddressSpace;
   }
 
-  void Profile(llvm::FoldingSetNodeID &ID) {
+  void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context) {
     Profile(ID, Context, getPointeeType(), getAddrSpaceExpr());
   }
 
@@ -3381,7 +3403,6 @@ public:
 class DependentSizedExtVectorType : public Type, public llvm::FoldingSetNode {
   friend class ASTContext;
 
-  const ASTContext &Context;
   Expr *SizeExpr;
 
   /// The element type of the array.
@@ -3389,8 +3410,8 @@ class DependentSizedExtVectorType : public Type, public llvm::FoldingSetNode {
 
   SourceLocation loc;
 
-  DependentSizedExtVectorType(const ASTContext &Context, QualType ElementType,
-                              QualType can, Expr *SizeExpr, SourceLocation loc);
+  DependentSizedExtVectorType(QualType ElementType, QualType can,
+                              Expr *SizeExpr, SourceLocation loc);
 
 public:
   Expr *getSizeExpr() const { return SizeExpr; }
@@ -3404,7 +3425,7 @@ public:
     return T->getTypeClass() == DependentSizedExtVector;
   }
 
-  void Profile(llvm::FoldingSetNodeID &ID) {
+  void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context) {
     Profile(ID, Context, getElementType(), getSizeExpr());
   }
 
@@ -3412,6 +3433,34 @@ public:
                       QualType ElementType, Expr *SizeExpr);
 };
 
+enum class VectorKind {
+  /// not a target-specific vector type
+  Generic,
+
+  /// is AltiVec vector
+  AltiVecVector,
+
+  /// is AltiVec 'vector Pixel'
+  AltiVecPixel,
+
+  /// is AltiVec 'vector bool ...'
+  AltiVecBool,
+
+  /// is ARM Neon vector
+  Neon,
+
+  /// is ARM Neon polynomial vector
+  NeonPoly,
+
+  /// is AArch64 SVE fixed-length data vector
+  SveFixedLengthData,
+
+  /// is AArch64 SVE fixed-length predicate vector
+  SveFixedLengthPredicate,
+
+  /// is RISC-V RVV fixed-length data vector
+  RVVFixedLengthData,
+};
 
 /// Represents a GCC generic vector type. This type is created using
 /// __attribute__((vector_size(n)), where "n" specifies the vector size in
@@ -3419,36 +3468,6 @@ public:
 /// Since the constructor takes the number of vector elements, the
 /// client is responsible for converting the size into the number of elements.
 class VectorType : public Type, public llvm::FoldingSetNode {
-public:
-  enum VectorKind {
-    /// not a target-specific vector type
-    GenericVector,
-
-    /// is AltiVec vector
-    AltiVecVector,
-
-    /// is AltiVec 'vector Pixel'
-    AltiVecPixel,
-
-    /// is AltiVec 'vector bool ...'
-    AltiVecBool,
-
-    /// is ARM Neon vector
-    NeonVector,
-
-    /// is ARM Neon polynomial vector
-    NeonPolyVector,
-
-    /// is AArch64 SVE fixed-length data vector
-    SveFixedLengthDataVector,
-
-    /// is AArch64 SVE fixed-length predicate vector
-    SveFixedLengthPredicateVector,
-
-    /// is RISC-V RVV fixed-length data vector
-    RVVFixedLengthDataVector,
-  };
-
 protected:
   friend class ASTContext; // ASTContext creates these.
 
@@ -3483,7 +3502,7 @@ public:
     ID.AddPointer(ElementType.getAsOpaquePtr());
     ID.AddInteger(NumElements);
     ID.AddInteger(TypeClass);
-    ID.AddInteger(VecKind);
+    ID.AddInteger(llvm::to_underlying(VecKind));
   }
 
   static bool classof(const Type *T) {
@@ -3503,21 +3522,19 @@ public:
 class DependentVectorType : public Type, public llvm::FoldingSetNode {
   friend class ASTContext;
 
-  const ASTContext &Context;
   QualType ElementType;
   Expr *SizeExpr;
   SourceLocation Loc;
 
-  DependentVectorType(const ASTContext &Context, QualType ElementType,
-                           QualType CanonType, Expr *SizeExpr,
-                           SourceLocation Loc, VectorType::VectorKind vecKind);
+  DependentVectorType(QualType ElementType, QualType CanonType, Expr *SizeExpr,
+                      SourceLocation Loc, VectorKind vecKind);
 
 public:
   Expr *getSizeExpr() const { return SizeExpr; }
   QualType getElementType() const { return ElementType; }
   SourceLocation getAttributeLoc() const { return Loc; }
-  VectorType::VectorKind getVectorKind() const {
-    return VectorType::VectorKind(VectorTypeBits.VecKind);
+  VectorKind getVectorKind() const {
+    return VectorKind(VectorTypeBits.VecKind);
   }
 
   bool isSugared() const { return false; }
@@ -3527,13 +3544,13 @@ public:
     return T->getTypeClass() == DependentVector;
   }
 
-  void Profile(llvm::FoldingSetNodeID &ID) {
+  void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context) {
     Profile(ID, Context, getElementType(), getSizeExpr(), getVectorKind());
   }
 
   static void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context,
                       QualType ElementType, const Expr *SizeExpr,
-                      VectorType::VectorKind VecKind);
+                      VectorKind VecKind);
 };
 
 /// ExtVectorType - Extended vector type. This type is created using
@@ -3546,7 +3563,8 @@ class ExtVectorType : public VectorType {
   friend class ASTContext; // ASTContext creates these.
 
   ExtVectorType(QualType vecType, unsigned nElements, QualType canonType)
-      : VectorType(ExtVector, vecType, nElements, canonType, GenericVector) {}
+      : VectorType(ExtVector, vecType, nElements, canonType,
+                   VectorKind::Generic) {}
 
 public:
   static int getPointAccessorIdx(char c) {
@@ -3628,7 +3646,7 @@ public:
   QualType getElementType() const { return ElementType; }
 
   /// Valid elements types are the following:
-  /// * an integer type (as in C2x 6.2.5p19), but excluding enumerated types
+  /// * an integer type (as in C23 6.2.5p22), but excluding enumerated types
   ///   and _Bool
   /// * the standard floating types float or double
   /// * a half-precision floating point type, if one is supported on the target
@@ -3709,15 +3727,13 @@ public:
 class DependentSizedMatrixType final : public MatrixType {
   friend class ASTContext;
 
-  const ASTContext &Context;
   Expr *RowExpr;
   Expr *ColumnExpr;
 
   SourceLocation loc;
 
-  DependentSizedMatrixType(const ASTContext &Context, QualType ElementType,
-                           QualType CanonicalType, Expr *RowExpr,
-                           Expr *ColumnExpr, SourceLocation loc);
+  DependentSizedMatrixType(QualType ElementType, QualType CanonicalType,
+                           Expr *RowExpr, Expr *ColumnExpr, SourceLocation loc);
 
 public:
   Expr *getRowExpr() const { return RowExpr; }
@@ -3728,7 +3744,7 @@ public:
     return T->getTypeClass() == DependentSizedMatrix;
   }
 
-  void Profile(llvm::FoldingSetNodeID &ID) {
+  void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context) {
     Profile(ID, Context, getElementType(), getRowExpr(), getColumnExpr());
   }
 
@@ -4705,8 +4721,8 @@ public:
   }
 };
 
-/// Represents a `typeof` (or __typeof__) expression (a C2x feature and GCC
-/// extension) or a `typeof_unqual` expression (a C2x feature).
+/// Represents a `typeof` (or __typeof__) expression (a C23 feature and GCC
+/// extension) or a `typeof_unqual` expression (a C23 feature).
 class TypeOfExprType : public Type {
   Expr *TOExpr;
 
@@ -4739,15 +4755,12 @@ public:
 /// This class is used internally by the ASTContext to manage
 /// canonical, dependent types, only. Clients will only see instances
 /// of this class via TypeOfExprType nodes.
-class DependentTypeOfExprType
-  : public TypeOfExprType, public llvm::FoldingSetNode {
-  const ASTContext &Context;
-
+class DependentTypeOfExprType : public TypeOfExprType,
+                                public llvm::FoldingSetNode {
 public:
-  DependentTypeOfExprType(const ASTContext &Context, Expr *E, TypeOfKind Kind)
-      : TypeOfExprType(E, Kind), Context(Context) {}
+  DependentTypeOfExprType(Expr *E, TypeOfKind Kind) : TypeOfExprType(E, Kind) {}
 
-  void Profile(llvm::FoldingSetNodeID &ID) {
+  void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context) {
     Profile(ID, Context, getUnderlyingExpr(),
             getKind() == TypeOfKind::Unqualified);
   }
@@ -4756,8 +4769,8 @@ public:
                       Expr *E, bool IsUnqual);
 };
 
-/// Represents `typeof(type)`, a C2x feature and GCC extension, or
-/// `typeof_unqual(type), a C2x feature.
+/// Represents `typeof(type)`, a C23 feature and GCC extension, or
+/// `typeof_unqual(type), a C23 feature.
 class TypeOfType : public Type {
   friend class ASTContext; // ASTContext creates these.
 
@@ -4823,12 +4836,10 @@ public:
 /// canonical, dependent types, only. Clients will only see instances
 /// of this class via DecltypeType nodes.
 class DependentDecltypeType : public DecltypeType, public llvm::FoldingSetNode {
-  const ASTContext &Context;
-
 public:
-  DependentDecltypeType(const ASTContext &Context, Expr *E);
+  DependentDecltypeType(Expr *E, QualType UnderlyingTpe);
 
-  void Profile(llvm::FoldingSetNodeID &ID) {
+  void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context) {
     Profile(ID, Context, getUnderlyingExpr());
   }
 
@@ -5352,7 +5363,7 @@ public:
 
 /// Represents a C++11 auto or C++14 decltype(auto) type, possibly constrained
 /// by a type-constraint.
-class alignas(8) AutoType : public DeducedType, public llvm::FoldingSetNode {
+class AutoType : public DeducedType, public llvm::FoldingSetNode {
   friend class ASTContext; // ASTContext creates these
 
   ConceptDecl *TypeConstraintConcept;
@@ -5460,9 +5471,7 @@ public:
 /// TemplateArguments, followed by a QualType representing the
 /// non-canonical aliased type when the template is a type alias
 /// template.
-class alignas(8) TemplateSpecializationType
-    : public Type,
-      public llvm::FoldingSetNode {
+class TemplateSpecializationType : public Type, public llvm::FoldingSetNode {
   friend class ASTContext; // ASTContext creates these
 
   /// The name of the template being specialized.  This is
@@ -5645,6 +5654,32 @@ public:
   }
 };
 
+/// The elaboration keyword that precedes a qualified type name or
+/// introduces an elaborated-type-specifier.
+enum class ElaboratedTypeKeyword {
+  /// The "struct" keyword introduces the elaborated-type-specifier.
+  Struct,
+
+  /// The "__interface" keyword introduces the elaborated-type-specifier.
+  Interface,
+
+  /// The "union" keyword introduces the elaborated-type-specifier.
+  Union,
+
+  /// The "class" keyword introduces the elaborated-type-specifier.
+  Class,
+
+  /// The "enum" keyword introduces the elaborated-type-specifier.
+  Enum,
+
+  /// The "typename" keyword precedes the qualified type name, e.g.,
+  /// \c typename T::type.
+  Typename,
+
+  /// No keyword precedes the qualified type name.
+  None
+};
+
 /// The kind of a tag type.
 enum TagTypeKind {
   /// The "struct" keyword.
@@ -5663,32 +5698,6 @@ enum TagTypeKind {
   TTK_Enum
 };
 
-/// The elaboration keyword that precedes a qualified type name or
-/// introduces an elaborated-type-specifier.
-enum ElaboratedTypeKeyword {
-  /// The "struct" keyword introduces the elaborated-type-specifier.
-  ETK_Struct,
-
-  /// The "__interface" keyword introduces the elaborated-type-specifier.
-  ETK_Interface,
-
-  /// The "union" keyword introduces the elaborated-type-specifier.
-  ETK_Union,
-
-  /// The "class" keyword introduces the elaborated-type-specifier.
-  ETK_Class,
-
-  /// The "enum" keyword introduces the elaborated-type-specifier.
-  ETK_Enum,
-
-  /// The "typename" keyword precedes the qualified type name, e.g.,
-  /// \c typename T::type.
-  ETK_Typename,
-
-  /// No keyword precedes the qualified type name.
-  ETK_None
-};
-
 /// A helper class for Type nodes having an ElaboratedTypeKeyword.
 /// The keyword in stored in the free bits of the base class.
 /// Also provides a few static helpers for converting and printing
@@ -5698,7 +5707,7 @@ protected:
   TypeWithKeyword(ElaboratedTypeKeyword Keyword, TypeClass tc,
                   QualType Canonical, TypeDependence Dependence)
       : Type(tc, Canonical, Dependence) {
-    TypeWithKeywordBits.Keyword = Keyword;
+    TypeWithKeywordBits.Keyword = llvm::to_underlying(Keyword);
   }
 
 public:
@@ -5804,7 +5813,7 @@ public:
   static void Profile(llvm::FoldingSetNodeID &ID, ElaboratedTypeKeyword Keyword,
                       NestedNameSpecifier *NNS, QualType NamedType,
                       TagDecl *OwnedTagDecl) {
-    ID.AddInteger(Keyword);
+    ID.AddInteger(llvm::to_underlying(Keyword));
     ID.AddPointer(NNS);
     NamedType.Profile(ID);
     ID.AddPointer(OwnedTagDecl);
@@ -5863,7 +5872,7 @@ public:
 
   static void Profile(llvm::FoldingSetNodeID &ID, ElaboratedTypeKeyword Keyword,
                       NestedNameSpecifier *NNS, const IdentifierInfo *Name) {
-    ID.AddInteger(Keyword);
+    ID.AddInteger(llvm::to_underlying(Keyword));
     ID.AddPointer(NNS);
     ID.AddPointer(Name);
   }
@@ -5876,9 +5885,8 @@ public:
 /// Represents a template specialization type whose template cannot be
 /// resolved, e.g.
 ///   A<T>::template B<T>
-class alignas(8) DependentTemplateSpecializationType
-    : public TypeWithKeyword,
-      public llvm::FoldingSetNode {
+class DependentTemplateSpecializationType : public TypeWithKeyword,
+                                            public llvm::FoldingSetNode {
   friend class ASTContext; // ASTContext creates these
 
   /// The nested name specifier containing the qualifier.
@@ -6632,7 +6640,7 @@ public:
   bool isSugared() const { return false; }
   QualType desugar() const { return QualType(this, 0); }
 
-  void Profile(llvm::FoldingSetNodeID &ID) {
+  void Profile(llvm::FoldingSetNodeID &ID) const {
     Profile(ID, isUnsigned(), getNumBits());
   }
 
@@ -6647,12 +6655,10 @@ public:
 
 class DependentBitIntType final : public Type, public llvm::FoldingSetNode {
   friend class ASTContext;
-  const ASTContext &Context;
   llvm::PointerIntPair<Expr*, 1, bool> ExprAndUnsigned;
 
 protected:
-  DependentBitIntType(const ASTContext &Context, bool IsUnsigned,
-                      Expr *NumBits);
+  DependentBitIntType(bool IsUnsigned, Expr *NumBits);
 
 public:
   bool isUnsigned() const;
@@ -6662,7 +6668,7 @@ public:
   bool isSugared() const { return false; }
   QualType desugar() const { return QualType(this, 0); }
 
-  void Profile(llvm::FoldingSetNodeID &ID) {
+  void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context) {
     Profile(ID, Context, isUnsigned(), getNumBitsExpr());
   }
   static void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context,

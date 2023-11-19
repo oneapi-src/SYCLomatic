@@ -32,7 +32,7 @@
 // CHECK:OBJS_1 :=  ${TARGET_1_OBJ_0} ${TARGET_1_OBJ_1} ${TARGET_1_OBJ_2}
 // CHECK:all: $(TARGET)
 // CHECK:$(TARGET_0): $(OBJS_0)
-// CHECK:	$(CC) -fsycl -o $@ $^ $(LIB) 
+// CHECK:	$(CC) -fsycl -o $@ $^ $(LIB) -qmkl
 // CHECK:$(TARGET_0_OBJ_0):$(TARGET_0_SRC_0)
 // CHECK:	$(CC) -fsycl -c ${TARGET_0_SRC_0} -o ${TARGET_0_OBJ_0} $(TARGET_0_FLAG_0)
 // CHECK:$(TARGET_0_OBJ_1):$(TARGET_0_SRC_1)

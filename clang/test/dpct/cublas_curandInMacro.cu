@@ -46,16 +46,7 @@ int main() {
     cublasErrCheck(cublasSetStream(handle, stream1));
     cublasErrCheck(cublasGetStream(handle, &stream1));
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: cublasErrCheck([&](){
-    // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
-    // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
-    // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-    // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
-    // CHECK-NEXT: return 0;
-    // CHECK-NEXT: }());
+    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N)));
     cublasErrCheck(cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
     // CHECK: /*
@@ -97,16 +88,7 @@ int main() {
     int batchSize = 10;
 
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT:cublasErrCheck([&](){
-    // CHECK-NEXT:auto d_A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_A_C);
-    // CHECK-NEXT:auto d_B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_B_C);
-    // CHECK-NEXT:auto d_C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_C_C);
-    // CHECK-NEXT:oneapi::mkl::blas::column_major::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), d_A_C_buf_ct{{[0-9]+}}, N, d_B_C_buf_ct{{[0-9]+}}, N, std::complex<float>(beta_C.x(), beta_C.y()), d_C_C_buf_ct{{[0-9]+}}, N);
-    // CHECK-NEXT:return 0;
-    // CHECK-NEXT:}());
+    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_C, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_A_C)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_B_C)), N, dpct::get_value(&beta_C, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_C_C)), N)));
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
 
     // CHECK: /*

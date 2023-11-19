@@ -66,12 +66,12 @@ cub::DeviceHistogram::HistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::MultiHistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DevicePartition::Flagged,NO,
 cub::DevicePartition::If,NO,
-cub::DeviceMergeSort::SortPairs,NO,
+cub::DeviceMergeSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceMergeSort::SortPairsCopy,NO,
-cub::DeviceMergeSort::SortKeys,NO,
-cub::DeviceMergeSort::SortKeysCopy,NO,
-cub::DeviceMergeSort::StableSortPairs,NO,
-cub::DeviceMergeSort::StableSortKeys,NO,
+cub::DeviceMergeSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::SortKeysCopy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::StableSortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::StableSortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRadixSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`

@@ -519,6 +519,7 @@ __device__ inline __cuda_builtin_gridDim_t::operator uint3() const {
 #ifdef SYCLomatic_CUSTOMIZATION
 #include "__clang_dpct_math.h"
 #include <math.h>
+#include <algorithm>
 #endif // SYCLomatic_CUSTOMIZATION
 // curand_mtgp32_kernel helpfully redeclares blockDim and threadIdx in host
 // mode, giving them their "proper" types of dim3 and uint3.  This is

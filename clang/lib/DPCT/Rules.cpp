@@ -318,7 +318,8 @@ void OutputBuilder::parse(std::string &RuleOutputString) {
       SubBuilders.push_back(StringBuilder);
       SubBuilders.push_back(consumeKeyword(RuleOutputString, i));
       StrStartIdx = i;
-    } break;
+      break;
+    }
     default:
       break;
     }
@@ -371,7 +372,6 @@ void OutputBuilder::consumeLParen(std::string &OutStr, size_t &Idx,
 int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx,
                                    std::string &&Keyword) {
   ignoreWhitespaces(OutStr, Idx);
-
   if (Idx >= OutStr.size() || OutStr[Idx] != '$') {
     llvm::errs() << RuleFile << ":Error: in rule " << RuleName
                  << ", a positive integer is expected after "
@@ -469,6 +469,12 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
     ResultBuilder->Kind = Kind::Deref;
     ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$deref");
     consumeRParen(OutStr, Idx, "$deref");
+  } else if (OutStr.substr(Idx, 13) == "$template_arg") {
+    Idx += 13;
+    consumeLParen(OutStr, Idx, "$template_arg");
+    ResultBuilder->Kind = Kind::TemplateArg;
+    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$template_arg");
+    consumeRParen(OutStr, Idx, "$template_arg");
   } else {
     ResultBuilder->Kind = Kind::Arg;
     ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$");

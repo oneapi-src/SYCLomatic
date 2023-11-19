@@ -57,6 +57,8 @@ class APFloat;
   case TargetOpcode::G_VECREDUCE_FMUL:                                         \
   case TargetOpcode::G_VECREDUCE_FMAX:                                         \
   case TargetOpcode::G_VECREDUCE_FMIN:                                         \
+  case TargetOpcode::G_VECREDUCE_FMAXIMUM:                                     \
+  case TargetOpcode::G_VECREDUCE_FMINIMUM:                                     \
   case TargetOpcode::G_VECREDUCE_ADD:                                          \
   case TargetOpcode::G_VECREDUCE_MUL:                                          \
   case TargetOpcode::G_VECREDUCE_AND:                                          \
@@ -72,6 +74,8 @@ class APFloat;
   case TargetOpcode::G_VECREDUCE_FMUL:                                         \
   case TargetOpcode::G_VECREDUCE_FMAX:                                         \
   case TargetOpcode::G_VECREDUCE_FMIN:                                         \
+  case TargetOpcode::G_VECREDUCE_FMAXIMUM:                                     \
+  case TargetOpcode::G_VECREDUCE_FMINIMUM:                                     \
   case TargetOpcode::G_VECREDUCE_ADD:                                          \
   case TargetOpcode::G_VECREDUCE_MUL:                                          \
   case TargetOpcode::G_VECREDUCE_AND:                                          \
@@ -167,11 +171,13 @@ void reportGISelWarning(MachineFunction &MF, const TargetPassConfig &TPC,
 
 /// If \p VReg is defined by a G_CONSTANT, return the corresponding value.
 std::optional<APInt> getIConstantVRegVal(Register VReg,
-                                         const MachineRegisterInfo &MRI);
+                                         const MachineRegisterInfo &MRI,
+                                         bool LookThroughInstrs = false);
 
 /// If \p VReg is defined by a G_CONSTANT fits in int64_t returns it.
 std::optional<int64_t> getIConstantVRegSExtVal(Register VReg,
-                                               const MachineRegisterInfo &MRI);
+                                               const MachineRegisterInfo &MRI,
+                                               bool LookThroughInstrs = false);
 
 /// Simple struct used to hold a constant integer value and a virtual
 /// register.
@@ -272,6 +278,10 @@ std::optional<APFloat> ConstantFoldFPBinOp(unsigned Opcode, const Register Op1,
 SmallVector<APInt> ConstantFoldVectorBinop(unsigned Opcode, const Register Op1,
                                            const Register Op2,
                                            const MachineRegisterInfo &MRI);
+
+std::optional<APInt> ConstantFoldCastOp(unsigned Opcode, LLT DstTy,
+                                        const Register Op0,
+                                        const MachineRegisterInfo &MRI);
 
 std::optional<APInt> ConstantFoldExtOp(unsigned Opcode, const Register Op1,
                                        uint64_t Imm,

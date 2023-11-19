@@ -1052,6 +1052,12 @@ public:
     return static_cast<LambdaCaptureDefault>(getLambdaData().CaptureDefault);
   }
 
+  bool isCapturelessLambda() const {
+    if (!isLambda())
+      return false;
+    return getLambdaCaptureDefault() == LCD_None && capture_size() == 0;
+  }
+
   /// Set the captures for this lambda closure type.
   void setCaptures(ASTContext &Context, ArrayRef<LambdaCapture> Captures);
 
@@ -2061,6 +2067,17 @@ public:
   bool isStatic() const;
   bool isInstance() const { return !isStatic(); }
 
+  /// [C++2b][dcl.fct]/p7
+  /// An explicit object member function is a non-static
+  /// member function with an explicit object parameter. e.g.,
+  ///   void func(this SomeType);
+  bool isExplicitObjectMemberFunction() const;
+
+  /// [C++2b][dcl.fct]/p7
+  /// An implicit object member function is a non-static
+  /// member function without an explicit object parameter.
+  bool isImplicitObjectMemberFunction() const;
+
   /// Returns true if the given operator is implicitly static in a record
   /// context.
   static bool isStaticOverloadedOperator(OverloadedOperatorKind OOK) {
@@ -2169,13 +2186,18 @@ public:
   /// Return the type of the object pointed by \c this.
   ///
   /// See getThisType() for usage restriction.
-  QualType getThisObjectType() const;
+
+  QualType getFunctionObjectParameterReferenceType() const;
+  QualType getFunctionObjectParameterType() const {
+    return getFunctionObjectParameterReferenceType().getNonReferenceType();
+  }
+
+  unsigned getNumExplicitParams() const {
+    return getNumParams() - (isExplicitObjectMemberFunction() ? 1 : 0);
+  }
 
   static QualType getThisType(const FunctionProtoType *FPT,
                               const CXXRecordDecl *Decl);
-
-  static QualType getThisObjectType(const FunctionProtoType *FPT,
-                                    const CXXRecordDecl *Decl);
 
   Qualifiers getMethodQualifiers() const {
     return getType()->castAs<FunctionProtoType>()->getMethodQuals();
@@ -2875,6 +2897,12 @@ public:
   static bool classofKind(Kind K) { return K == CXXConversion; }
 };
 
+/// Represents the language in a linkage specification.
+///
+/// The values are part of the serialization ABI for
+/// ASTs and cannot be changed without altering that ABI.
+enum class LinkageSpecLanguageIDs { C = 1, CXX = 2 };
+
 /// Represents a linkage specification.
 ///
 /// For example:
@@ -2885,14 +2913,7 @@ class LinkageSpecDecl : public Decl, public DeclContext {
   virtual void anchor();
   // This class stores some data in DeclContext::LinkageSpecDeclBits to save
   // some space. Use the provided accessors to access it.
-public:
-  /// Represents the language in a linkage specification.
-  ///
-  /// The values are part of the serialization ABI for
-  /// ASTs and cannot be changed without altering that ABI.
-  enum LanguageIDs { lang_c = 1, lang_cxx = 2 };
 
-private:
   /// The source location for the extern keyword.
   SourceLocation ExternLoc;
 
@@ -2900,22 +2921,25 @@ private:
   SourceLocation RBraceLoc;
 
   LinkageSpecDecl(DeclContext *DC, SourceLocation ExternLoc,
-                  SourceLocation LangLoc, LanguageIDs lang, bool HasBraces);
+                  SourceLocation LangLoc, LinkageSpecLanguageIDs lang,
+                  bool HasBraces);
 
 public:
   static LinkageSpecDecl *Create(ASTContext &C, DeclContext *DC,
                                  SourceLocation ExternLoc,
-                                 SourceLocation LangLoc, LanguageIDs Lang,
-                                 bool HasBraces);
+                                 SourceLocation LangLoc,
+                                 LinkageSpecLanguageIDs Lang, bool HasBraces);
   static LinkageSpecDecl *CreateDeserialized(ASTContext &C, unsigned ID);
 
   /// Return the language specified by this linkage specification.
-  LanguageIDs getLanguage() const {
-    return static_cast<LanguageIDs>(LinkageSpecDeclBits.Language);
+  LinkageSpecLanguageIDs getLanguage() const {
+    return static_cast<LinkageSpecLanguageIDs>(LinkageSpecDeclBits.Language);
   }
 
   /// Set the language specified by this linkage specification.
-  void setLanguage(LanguageIDs L) { LinkageSpecDeclBits.Language = L; }
+  void setLanguage(LinkageSpecLanguageIDs L) {
+    LinkageSpecDeclBits.Language = llvm::to_underlying(L);
+  }
 
   /// Determines whether this linkage specification had braces in
   /// its syntactic form.

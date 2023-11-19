@@ -283,8 +283,7 @@ void WinEHStatePass::emitExceptionRegistrationRecord(Function *F) {
     RegNodeTy = getCXXEHRegistrationType();
     RegNode = Builder.CreateAlloca(RegNodeTy);
     // SavedESP = llvm.stacksave()
-    Value *SP = Builder.CreateCall(
-        Intrinsic::getDeclaration(TheModule, Intrinsic::stacksave), {});
+    Value *SP = Builder.CreateStackSave();
     Builder.CreateStore(SP, Builder.CreateStructGEP(RegNodeTy, RegNode, 0));
     // TryLevel = -1
     StateFieldIndex = 2;
@@ -313,8 +312,7 @@ void WinEHStatePass::emitExceptionRegistrationRecord(Function *F) {
       EHGuardNode = Builder.CreateAlloca(Int32Ty);
 
     // SavedESP = llvm.stacksave()
-    Value *SP = Builder.CreateCall(
-        Intrinsic::getDeclaration(TheModule, Intrinsic::stacksave), {});
+    Value *SP = Builder.CreateStackSave();
     Builder.CreateStore(SP, Builder.CreateStructGEP(RegNodeTy, RegNode, 0));
     // TryLevel = -2 / -1
     StateFieldIndex = 4;
@@ -371,9 +369,8 @@ void WinEHStatePass::emitExceptionRegistrationRecord(Function *F) {
 }
 
 Value *WinEHStatePass::emitEHLSDA(IRBuilder<> &Builder, Function *F) {
-  Value *FI8 = Builder.CreateBitCast(F, Type::getInt8PtrTy(F->getContext()));
   return Builder.CreateCall(
-      Intrinsic::getDeclaration(TheModule, Intrinsic::x86_seh_lsda), FI8);
+      Intrinsic::getDeclaration(TheModule, Intrinsic::x86_seh_lsda), F);
 }
 
 /// Generate a thunk that puts the LSDA of ParentFunc in EAX and then calls
@@ -423,8 +420,7 @@ void WinEHStatePass::linkExceptionRegistration(IRBuilder<> &Builder,
 
   Type *LinkTy = getEHLinkRegistrationType();
   // Handler = Handler
-  Value *HandlerI8 = Builder.CreateBitCast(Handler, Builder.getInt8PtrTy());
-  Builder.CreateStore(HandlerI8, Builder.CreateStructGEP(LinkTy, Link, 1));
+  Builder.CreateStore(Handler, Builder.CreateStructGEP(LinkTy, Link, 1));
   // Next = [fs:00]
   Constant *FSZero =
       Constant::getNullValue(LinkTy->getPointerTo()->getPointerTo(257));

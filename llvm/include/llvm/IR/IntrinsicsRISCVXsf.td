@@ -93,43 +93,63 @@ let TargetPrefix = "riscv" in {
       defvar range = ["c", "s", "i", "l"];
       foreach r = range in {
         foreach s = VCIXSuffix<r>.suffix in {
-          def "int_riscv_sf_vc_" # t # "_se_" # s : RISCVSFCustomVC_X</*HasDst*/0, /*HasSE*/1, ImmScalar>;
+          def "int_riscv_sf_vc_" # t # "_se_" # s : RISCVSFCustomVC_X<HasDst=0, HasSE=1, ImmScalar=ImmScalar>;
         }
       }
-      def "int_riscv_sf_vc_v_" # t # "_se" : RISCVSFCustomVC_X</*HasDst*/1, /*HasSE*/1, ImmScalar>;
-      def "int_riscv_sf_vc_v_" # t         : RISCVSFCustomVC_X</*HasDst*/1, /*HasSE*/0, ImmScalar>;
+      def "int_riscv_sf_vc_v_" # t # "_se" : RISCVSFCustomVC_X<HasDst=1, HasSE=1, ImmScalar=ImmScalar>;
+      def "int_riscv_sf_vc_v_" # t         : RISCVSFCustomVC_X<HasDst=1, HasSE=0, ImmScalar=ImmScalar>;
     }
   }
 
   multiclass RISCVSFCustomVC_XV<list<string> type> {
     foreach t = type in {
       defvar ImmScalar = !eq(t, "i");
-      def "int_riscv_sf_vc_" # t # "v_se"   : RISCVSFCustomVC_XV</*HasDst*/0, /*HasSE*/1, ImmScalar>;
-      def "int_riscv_sf_vc_v_" # t # "v_se" : RISCVSFCustomVC_XV</*HasDst*/1, /*HasSE*/1, ImmScalar>;
-      def "int_riscv_sf_vc_v_" # t # "v"    : RISCVSFCustomVC_XV</*HasDst*/1, /*HasSE*/0, ImmScalar>;
+      def "int_riscv_sf_vc_" # t # "v_se"   : RISCVSFCustomVC_XV<HasDst=0, HasSE=1, ImmScalar=ImmScalar>;
+      def "int_riscv_sf_vc_v_" # t # "v_se" : RISCVSFCustomVC_XV<HasDst=1, HasSE=1, ImmScalar=ImmScalar>;
+      def "int_riscv_sf_vc_v_" # t # "v"    : RISCVSFCustomVC_XV<HasDst=1, HasSE=0, ImmScalar=ImmScalar>;
     }
   }
 
   multiclass RISCVSFCustomVC_XVV<list<string> type> {
     foreach t = type in {
       defvar ImmScalar = !eq(t, "i");
-      def "int_riscv_sf_vc_" # t # "vv_se"   : RISCVSFCustomVC_XVV</*HasDst*/0, /*HasSE*/1, ImmScalar>;
-      def "int_riscv_sf_vc_v_" # t # "vv_se" : RISCVSFCustomVC_XVV</*HasDst*/1, /*HasSE*/1, ImmScalar>;
-      def "int_riscv_sf_vc_v_" # t # "vv"    : RISCVSFCustomVC_XVV</*HasDst*/1, /*HasSE*/0, ImmScalar>;
+      def "int_riscv_sf_vc_" # t # "vv_se"   : RISCVSFCustomVC_XVV<HasDst=0, HasSE=1, ImmScalar=ImmScalar>;
+      def "int_riscv_sf_vc_v_" # t # "vv_se" : RISCVSFCustomVC_XVV<HasDst=1, HasSE=1, ImmScalar=ImmScalar>;
+      def "int_riscv_sf_vc_v_" # t # "vv"    : RISCVSFCustomVC_XVV<HasDst=1, HasSE=0, ImmScalar=ImmScalar>;
     }
   }
 
   multiclass RISCVSFCustomVC_XVW<list<string> type> {
     foreach t = type in {
       defvar ImmScalar = !eq(t, "i");
-      def "int_riscv_sf_vc_" # t # "vw_se"   : RISCVSFCustomVC_XVW</*HasDst*/0, /*HasSE*/1, ImmScalar>;
-      def "int_riscv_sf_vc_v_" # t # "vw_se" : RISCVSFCustomVC_XVW</*HasDst*/1, /*HasSE*/1, ImmScalar>;
-      def "int_riscv_sf_vc_v_" # t # "vw"    : RISCVSFCustomVC_XVW</*HasDst*/1, /*HasSE*/0, ImmScalar>;
+      def "int_riscv_sf_vc_" # t # "vw_se"   : RISCVSFCustomVC_XVW<HasDst=0, HasSE=1, ImmScalar=ImmScalar>;
+      def "int_riscv_sf_vc_v_" # t # "vw_se" : RISCVSFCustomVC_XVW<HasDst=1, HasSE=1, ImmScalar=ImmScalar>;
+      def "int_riscv_sf_vc_v_" # t # "vw"    : RISCVSFCustomVC_XVW<HasDst=1, HasSE=0, ImmScalar=ImmScalar>;
     }
+  }
+
+  class RISCVSFCustomVMACC
+      : DefaultAttrsIntrinsic< [llvm_anyvector_ty],
+                   [LLVMMatchType<0>, llvm_anyvector_ty, llvm_anyvector_ty,
+                    llvm_anyint_ty, LLVMMatchType<3>],
+                   [ImmArg<ArgIndex<4>>, IntrNoMem] >, RISCVVIntrinsic {
+    let VLOperand = 3;
   }
 
   defm "" : RISCVSFCustomVC_X<["x", "i"]>;
   defm "" : RISCVSFCustomVC_XV<["x", "i", "v", "f"]>;
   defm "" : RISCVSFCustomVC_XVV<["x", "i", "v", "f"]>;
   defm "" : RISCVSFCustomVC_XVW<["x", "i", "v", "f"]>;
+
+  // XSfvqmaccdod
+  def int_riscv_sf_vqmaccu_2x8x2  : RISCVSFCustomVMACC;
+  def int_riscv_sf_vqmacc_2x8x2   : RISCVSFCustomVMACC;
+  def int_riscv_sf_vqmaccus_2x8x2 : RISCVSFCustomVMACC;
+  def int_riscv_sf_vqmaccsu_2x8x2 : RISCVSFCustomVMACC;
+
+  // XSfvqmaccqoq
+  def int_riscv_sf_vqmaccu_4x8x4  : RISCVSFCustomVMACC;
+  def int_riscv_sf_vqmacc_4x8x4   : RISCVSFCustomVMACC;
+  def int_riscv_sf_vqmaccus_4x8x4 : RISCVSFCustomVMACC;
+  def int_riscv_sf_vqmaccsu_4x8x4 : RISCVSFCustomVMACC;
 } // TargetPrefix = "riscv"

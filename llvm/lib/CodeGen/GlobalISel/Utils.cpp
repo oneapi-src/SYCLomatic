@@ -205,8 +205,15 @@ bool llvm::canReplaceReg(Register DstReg, Register SrcReg,
     return false;
   // Replace if either DstReg has no constraints or the register
   // constraints match.
-  return !MRI.getRegClassOrRegBank(DstReg) ||
-         MRI.getRegClassOrRegBank(DstReg) == MRI.getRegClassOrRegBank(SrcReg);
+  const auto &DstRBC = MRI.getRegClassOrRegBank(DstReg);
+  if (!DstRBC || DstRBC == MRI.getRegClassOrRegBank(SrcReg))
+    return true;
+
+  // Otherwise match if the Src is already a regclass that is covered by the Dst
+  // RegBank.
+  return DstRBC.is<const RegisterBank *>() && MRI.getRegClassOrNull(SrcReg) &&
+         DstRBC.get<const RegisterBank *>()->covers(
+             *MRI.getRegClassOrNull(SrcReg));
 }
 
 bool llvm::isTriviallyDead(const MachineInstr &MI,
@@ -283,9 +290,10 @@ void llvm::reportGISelFailure(MachineFunction &MF, const TargetPassConfig &TPC,
 }
 
 std::optional<APInt> llvm::getIConstantVRegVal(Register VReg,
-                                               const MachineRegisterInfo &MRI) {
-  std::optional<ValueAndVReg> ValAndVReg = getIConstantVRegValWithLookThrough(
-      VReg, MRI, /*LookThroughInstrs*/ false);
+                                               const MachineRegisterInfo &MRI,
+                                               bool LookThroughInstrs) {
+  std::optional<ValueAndVReg> ValAndVReg =
+      getIConstantVRegValWithLookThrough(VReg, MRI, LookThroughInstrs);
   assert((!ValAndVReg || ValAndVReg->VReg == VReg) &&
          "Value found while looking through instrs");
   if (!ValAndVReg)
@@ -294,8 +302,9 @@ std::optional<APInt> llvm::getIConstantVRegVal(Register VReg,
 }
 
 std::optional<int64_t>
-llvm::getIConstantVRegSExtVal(Register VReg, const MachineRegisterInfo &MRI) {
-  std::optional<APInt> Val = getIConstantVRegVal(VReg, MRI);
+llvm::getIConstantVRegSExtVal(Register VReg, const MachineRegisterInfo &MRI,
+                              bool LookThroughInstrs) {
+  std::optional<APInt> Val = getIConstantVRegVal(VReg, MRI, LookThroughInstrs);
   if (Val && Val->getBitWidth() <= 64)
     return Val->getSExtValue();
   return std::nullopt;
@@ -773,6 +782,29 @@ std::optional<APInt> llvm::ConstantFoldExtOp(unsigned Opcode,
   return std::nullopt;
 }
 
+std::optional<APInt> llvm::ConstantFoldCastOp(unsigned Opcode, LLT DstTy,
+                                              const Register Op0,
+                                              const MachineRegisterInfo &MRI) {
+  std::optional<APInt> Val = getIConstantVRegVal(Op0, MRI);
+  if (!Val)
+    return Val;
+
+  const unsigned DstSize = DstTy.getScalarSizeInBits();
+
+  switch (Opcode) {
+  case TargetOpcode::G_SEXT:
+    return Val->sext(DstSize);
+  case TargetOpcode::G_ZEXT:
+  case TargetOpcode::G_ANYEXT:
+    // TODO: DAG considers target preference when constant folding any_extend.
+    return Val->zext(DstSize);
+  default:
+    break;
+  }
+
+  llvm_unreachable("unexpected cast opcode to constant fold");
+}
+
 std::optional<APFloat>
 llvm::ConstantFoldIntToFloat(unsigned Opcode, LLT DstTy, Register Src,
                              const MachineRegisterInfo &MRI) {
@@ -1143,7 +1175,7 @@ llvm::getVectorSplat(const MachineInstr &MI, const MachineRegisterInfo &MRI) {
   if (auto Splat = getIConstantSplatSExtVal(MI, MRI))
     return RegOrConstant(*Splat);
   auto Reg = MI.getOperand(1).getReg();
-  if (any_of(make_range(MI.operands_begin() + 2, MI.operands_end()),
+  if (any_of(drop_begin(MI.operands(), 2),
              [&Reg](const MachineOperand &Op) { return Op.getReg() != Reg; }))
     return std::nullopt;
   return RegOrConstant(Reg);

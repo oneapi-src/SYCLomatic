@@ -393,6 +393,7 @@ declare void @f1(ptr nocapture sret(%struct.big))
 declare void @f2(ptr)
 
 declare void @f(ptr)
+declare void @f_byval(ptr byval(i32))
 declare void @f_full_readonly(ptr nocapture noalias readonly)
 
 define void @immut_param(ptr align 4 noalias %val) {
@@ -694,3 +695,34 @@ define void @immut_valid_align_branched(i1 %c, ptr noalias align 4 %val) {
   call void @f(ptr nocapture noalias readonly %val3)
   ret void
 }
+
+; Merge/drop noalias metadata when replacing parameter.
+define void @immut_param_noalias_metadata(ptr align 4 byval(i32) %ptr) {
+; CHECK-LABEL: @immut_param_noalias_metadata(
+; CHECK-NEXT:    store i32 1, ptr [[PTR:%.*]], align 4, !noalias !0
+; CHECK-NEXT:    call void @f(ptr noalias nocapture readonly [[PTR]])
+; CHECK-NEXT:    ret void
+;
+  %tmp = alloca i32, align 4
+  store i32 1, ptr %ptr, !noalias !2
+  call void @llvm.memcpy.p0.p0.i64(ptr align 4 %tmp, ptr align 4 %ptr, i64 4, i1 false)
+  call void @f(ptr nocapture noalias readonly %tmp), !alias.scope !2
+  ret void
+}
+
+define void @byval_param_noalias_metadata(ptr align 4 byval(i32) %ptr) {
+; CHECK-LABEL: @byval_param_noalias_metadata(
+; CHECK-NEXT:    store i32 1, ptr [[PTR:%.*]], align 4, !noalias !0
+; CHECK-NEXT:    call void @f_byval(ptr byval(i32) align 4 [[PTR]])
+; CHECK-NEXT:    ret void
+;
+  %tmp = alloca i32, align 4
+  store i32 1, ptr %ptr, !noalias !2
+  call void @llvm.memcpy.p0.p0.i64(ptr align 4 %tmp, ptr align 4 %ptr, i64 4, i1 false)
+  call void @f_byval(ptr align 4 byval(i32) %tmp), !alias.scope !2
+  ret void
+}
+
+!0 = !{!0}
+!1 = !{!1, !0}
+!2 = !{!1}

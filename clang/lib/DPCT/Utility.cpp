@@ -67,6 +67,10 @@ bool makeCanonical(SmallVectorImpl<char> &Path) {
   }
   path::native(Path);
   path::remove_dots(Path, /* remove_dot_dot= */ true);
+#if defined(_WIN32)
+  std::transform(Path.begin(), Path.end(), Path.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+#endif
   return true;
 }
 
@@ -3442,8 +3446,8 @@ void findRelatedDREOffsets(std::set<const clang::DeclRefExpr *> &DRESet,
             if (auto RHSCE = dyn_cast_or_null<CallExpr>(
                     BO->getRHS()->IgnoreImplicitAsWritten())) {
               if (auto Callee = RHSCE->getDirectCallee()) {
-                dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc());
-                continue;
+                if(dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc()))
+                  continue;
               }
             }
           }
@@ -4707,6 +4711,16 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
   if (CuDNNHelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {
     requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
   }
+}
+
+std::error_code real_path(const Twine &path, SmallVectorImpl<char> &output,
+                          bool expand_tilde) {
+  std::error_code EC = llvm::sys::fs::real_path(path, output, expand_tilde);
+#if defined(_WIN32)
+  std::transform(output.begin(), output.end(), output.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+#endif
+  return EC;
 }
 } // namespace dpct
 } // namespace clang

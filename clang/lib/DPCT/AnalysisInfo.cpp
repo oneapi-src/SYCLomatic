@@ -733,10 +733,13 @@ void DpctFileInfo::buildLinesInfo() {
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
 
-  auto FE = SM.getFileManager().getFile(FilePath);
-  if (std::error_code ec = FE.getError())
+  llvm::Expected<FileEntryRef> Result =
+      SM.getFileManager().getFileRef(FilePath);
+
+  if (auto E = Result.takeError())
     return;
-  auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
+
+  auto FID = SM.getOrCreateFileID(*Result, SrcMgr::C_User);
   auto &Content = SM.getSLocEntry(FID).getFile().getContentCache();
   if (!Content.SourceLineCache) {
     bool Invalid;
@@ -1285,7 +1288,11 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
 std::optional<std::string>
 DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
   if (auto RealPath = File.tryGetRealPathName(); !RealPath.empty())
+#if defined(_WIN32)
+    return RealPath.lower();
+#else
     return RealPath.str();
+#endif
 
   llvm::SmallString<512> FilePathAbs(File.getName());
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
@@ -1294,6 +1301,7 @@ DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
   // added by ASTMatcher and added by
   // AnalysisInfo::getLocInfo() consistent.
   llvm::sys::path::remove_dots(FilePathAbs, true);
+  makeCanonical(FilePathAbs);
   return (std::string)FilePathAbs;
 }
 std::optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
@@ -3758,7 +3766,7 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
       llvm::raw_string_ostream OS(Ret);
       OS << "auto &" << getName() << " = "
          << "*" << MapNames::getClNamespace()
-         << "ext::oneapi::group_local_memory<" << getType()->getBaseName();
+         << "ext::oneapi::group_local_memory_for_overwrite<" << getType()->getBaseName();
       for (auto &ArraySize : getType()->getRange()) {
         OS << "[" << ArraySize.getSize() << "]";
       }
@@ -3955,14 +3963,18 @@ CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
 std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
                                          bool MustArguments) {
   std::string Arg = "(";
-  for (auto &R : Range) {
-    auto Size = R.getSize();
+  for (unsigned i = 0; i < Range.size(); ++i) {
+    auto Size = Range[i].getSize();
     if (Size.empty()) {
       if (MemSize.empty()) {
-        Arg += "1";
+        Arg += "1, ";
       } else {
         Arg += MemSize;
+        Arg += ", ";
       }
+      for (unsigned tmp = i + 1; tmp < Range.size(); ++tmp)
+        Arg += "1, ";
+      break;
     } else
       Arg += Size;
     Arg += ", ";

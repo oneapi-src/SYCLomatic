@@ -1,4 +1,4 @@
-// REQUIRES: level_zero, gpu
+// REQUIRES: cuda || level_zero, gpu
 // RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 //
@@ -18,7 +18,7 @@ sycl::ext::oneapi::experimental::device_global<int, TestProperties>
 enum OperationPath { Explicit, RecordReplay, Shortcut };
 
 template <OperationPath PathKind> void test() {
-  queue Q;
+  queue Q{{sycl::ext::intel::property::queue::no_immediate_command_list{}}};
   int MemcpyWrite = 42, CopyWrite = 24, MemcpyRead = 1, CopyRead = 2;
 
   exp_ext::command_graph Graph{Q.get_context(), Q.get_device()};

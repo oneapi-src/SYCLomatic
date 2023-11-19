@@ -14,39 +14,31 @@
 // LOW2FLOAT-NEXT: Is migrated to:
 // LOW2FLOAT-NEXT:   h[0];
 
-/// Single Precision Intrinsics
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__expf | FileCheck %s -check-prefix=_EXPF
-// _EXPF: CUDA API:
-// _EXPF-NEXT:   __expf(f /*float*/);
-// _EXPF-NEXT: Is migrated to:
-// _EXPF-NEXT:   sycl::native::exp(f);
-
 /// Double Precision Intrinsics
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dadd_rd | FileCheck %s -check-prefix=__DADD_RD
 // __DADD_RD: CUDA API:
 // __DADD_RD-NEXT:   __dadd_rd(d1 /*double*/, d2 /*double*/);
-// __DADD_RD-NEXT: Is migrated to:
-// __DADD_RD-NEXT:   d1 + d2;
+// __DADD_RD-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DADD_RD-NEXT:   sycl::ext::intel::math::dadd_rd(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dadd_rn | FileCheck %s -check-prefix=__DADD_RN
 // __DADD_RN: CUDA API:
 // __DADD_RN-NEXT:   __dadd_rn(d1 /*double*/, d2 /*double*/);
-// __DADD_RN-NEXT: Is migrated to:
-// __DADD_RN-NEXT:   d1 + d2;
+// __DADD_RN-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DADD_RN-NEXT:   sycl::ext::intel::math::dadd_rn(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dadd_ru | FileCheck %s -check-prefix=__DADD_RU
 // __DADD_RU: CUDA API:
 // __DADD_RU-NEXT:   __dadd_ru(d1 /*double*/, d2 /*double*/);
-// __DADD_RU-NEXT: Is migrated to:
-// __DADD_RU-NEXT:   d1 + d2;
+// __DADD_RU-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DADD_RU-NEXT:   sycl::ext::intel::math::dadd_ru(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dadd_rz | FileCheck %s -check-prefix=__DADD_RZ
 // __DADD_RZ: CUDA API:
 // __DADD_RZ-NEXT:   __dadd_rz(d1 /*double*/, d2 /*double*/);
-// __DADD_RZ-NEXT: Is migrated to:
-// __DADD_RZ-NEXT:   d1 + d2;
+// __DADD_RZ-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DADD_RZ-NEXT:   sycl::ext::intel::math::dadd_rz(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__ddiv_rd | FileCheck %s -check-prefix=__DDIV_RD
 // __DDIV_RD: CUDA API:
@@ -75,26 +67,26 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dmul_rd | FileCheck %s -check-prefix=__DMUL_RD
 // __DMUL_RD: CUDA API:
 // __DMUL_RD-NEXT:   __dmul_rd(d1 /*double*/, d2 /*double*/);
-// __DMUL_RD-NEXT: Is migrated to:
-// __DMUL_RD-NEXT:   d1 * d2;
+// __DMUL_RD-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DMUL_RD-NEXT:   sycl::ext::intel::math::dmul_rd(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dmul_rn | FileCheck %s -check-prefix=__DMUL_RN
 // __DMUL_RN: CUDA API:
 // __DMUL_RN-NEXT:   __dmul_rn(d1 /*double*/, d2 /*double*/);
-// __DMUL_RN-NEXT: Is migrated to:
-// __DMUL_RN-NEXT:   d1 * d2;
+// __DMUL_RN-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DMUL_RN-NEXT:   sycl::ext::intel::math::dmul_rn(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dmul_ru | FileCheck %s -check-prefix=__DMUL_RU
 // __DMUL_RU: CUDA API:
 // __DMUL_RU-NEXT:   __dmul_ru(d1 /*double*/, d2 /*double*/);
-// __DMUL_RU-NEXT: Is migrated to:
-// __DMUL_RU-NEXT:   d1 * d2;
+// __DMUL_RU-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DMUL_RU-NEXT:   sycl::ext::intel::math::dmul_ru(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dmul_rz | FileCheck %s -check-prefix=__DMUL_RZ
 // __DMUL_RZ: CUDA API:
 // __DMUL_RZ-NEXT:   __dmul_rz(d1 /*double*/, d2 /*double*/);
-// __DMUL_RZ-NEXT: Is migrated to:
-// __DMUL_RZ-NEXT:   d1 * d2;
+// __DMUL_RZ-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DMUL_RZ-NEXT:   sycl::ext::intel::math::dmul_rz(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__drcp_rd | FileCheck %s -check-prefix=__DRCP_RD
 // __DRCP_RD: CUDA API:
@@ -147,26 +139,26 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dsub_rd | FileCheck %s -check-prefix=__DSUB_RD
 // __DSUB_RD: CUDA API:
 // __DSUB_RD-NEXT:   __dsub_rd(d1 /*double*/, d2 /*double*/);
-// __DSUB_RD-NEXT: Is migrated to:
-// __DSUB_RD-NEXT:   d1 - d2;
+// __DSUB_RD-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DSUB_RD-NEXT:   sycl::ext::intel::math::dsub_rd(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dsub_rn | FileCheck %s -check-prefix=__DSUB_RN
 // __DSUB_RN: CUDA API:
 // __DSUB_RN-NEXT:   __dsub_rn(d1 /*double*/, d2 /*double*/);
-// __DSUB_RN-NEXT: Is migrated to:
-// __DSUB_RN-NEXT:   d1 - d2;
+// __DSUB_RN-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DSUB_RN-NEXT:   sycl::ext::intel::math::dsub_rn(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dsub_ru | FileCheck %s -check-prefix=__DSUB_RU
 // __DSUB_RU: CUDA API:
 // __DSUB_RU-NEXT:   __dsub_ru(d1 /*double*/, d2 /*double*/);
-// __DSUB_RU-NEXT: Is migrated to:
-// __DSUB_RU-NEXT:   d1 - d2;
+// __DSUB_RU-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DSUB_RU-NEXT:   sycl::ext::intel::math::dsub_ru(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dsub_rz | FileCheck %s -check-prefix=__DSUB_RZ
 // __DSUB_RZ: CUDA API:
 // __DSUB_RZ-NEXT:   __dsub_rz(d1 /*double*/, d2 /*double*/);
-// __DSUB_RZ-NEXT: Is migrated to:
-// __DSUB_RZ-NEXT:   d1 - d2;
+// __DSUB_RZ-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __DSUB_RZ-NEXT:   sycl::ext::intel::math::dsub_rz(d1, d2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__fma_rd | FileCheck %s -check-prefix=__FMA_RD
 // __FMA_RD: CUDA API:

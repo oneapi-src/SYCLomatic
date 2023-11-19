@@ -1810,6 +1810,18 @@ public:
     ParmVarDeclBits.IsKNRPromoted = promoted;
   }
 
+  bool isExplicitObjectParameter() const {
+    return ExplicitObjectParameterIntroducerLoc.isValid();
+  }
+
+  void setExplicitObjectParameterLoc(SourceLocation Loc) {
+    ExplicitObjectParameterIntroducerLoc = Loc;
+  }
+
+  SourceLocation getExplicitObjectParamThisLoc() const {
+    return ExplicitObjectParameterIntroducerLoc;
+  }
+
   Expr *getDefaultArg();
   const Expr *getDefaultArg() const {
     return const_cast<ParmVarDecl *>(this)->getDefaultArg();
@@ -1876,7 +1888,10 @@ public:
   static bool classofKind(Kind K) { return K == ParmVar; }
 
 private:
+  friend class ASTDeclReader;
+
   enum { ParameterIndexSentinel = (1 << NumParameterIndexBits) - 1 };
+  SourceLocation ExplicitObjectParameterIntroducerLoc;
 
   void setParameterIndex(unsigned parameterIndex) {
     if (parameterIndex >= ParameterIndexSentinel) {
@@ -2010,6 +2025,17 @@ private:
   /// the DeclaratorDecl base class.
   DeclarationNameLoc DNLoc;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  /// Provides source range info for duplicated explicitly specified
+  /// template arguments range. This syntax is only allowed for CUDA
+  /// language.
+  /// If this variable is empty (invalid), it means there is no related
+  /// error in Sema. If it is not empty, it means there is an error
+  /// suppressed in Sema and we need do further modification in the
+  /// CompatWithClangRule migration rule.
+  SourceRange DuplicatedExplicitlySpecifiedTemplateArgumentsRange;
+
+#endif
   /// Specify that this function declaration is actually a function
   /// template specialization.
   ///
@@ -2641,6 +2667,23 @@ public:
   /// parameters have default arguments (in C++).
   unsigned getMinRequiredArguments() const;
 
+  /// Returns the minimum number of non-object arguments needed to call this
+  /// function. This produces the same value as getMinRequiredArguments except
+  /// it does not count the explicit object argument, if any.
+  unsigned getMinRequiredExplicitArguments() const;
+
+  bool hasCXXExplicitFunctionObjectParameter() const;
+
+  unsigned getNumNonObjectParams() const;
+
+  const ParmVarDecl *getNonObjectParameter(unsigned I) const {
+    return getParamDecl(hasCXXExplicitFunctionObjectParameter() ? I + 1 : I);
+  }
+
+  ParmVarDecl *getNonObjectParameter(unsigned I) {
+    return getParamDecl(hasCXXExplicitFunctionObjectParameter() ? I + 1 : I);
+  }
+
   /// Determine whether this function has a single parameter, or multiple
   /// parameters where all but the first have default arguments.
   ///
@@ -2814,9 +2857,7 @@ public:
 
   /// Determine whether this function is a function template
   /// specialization.
-  bool isFunctionTemplateSpecialization() const {
-    return getPrimaryTemplate() != nullptr;
-  }
+  bool isFunctionTemplateSpecialization() const;
 
   /// If this function is actually a function template specialization,
   /// retrieve information about this function template specialization.
@@ -2899,9 +2940,9 @@ public:
 
   /// Specifies that this function declaration is actually a
   /// dependent function template specialization.
-  void setDependentTemplateSpecialization(ASTContext &Context,
-                             const UnresolvedSetImpl &Templates,
-                      const TemplateArgumentListInfo &TemplateArgs);
+  void setDependentTemplateSpecialization(
+      ASTContext &Context, const UnresolvedSetImpl &Templates,
+      const TemplateArgumentListInfo *TemplateArgs);
 
   DependentFunctionTemplateSpecializationInfo *
   getDependentSpecializationInfo() const;
@@ -2946,6 +2987,19 @@ public:
   /// computed and stored.
   unsigned getODRHash() const;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  /// Returns the DuplicatedExplicitlySpecifiedTemplateArgumentsRange. This must
+  /// have been previously computed and stored.
+  SourceRange getDuplicatedExplicitlySpecifiedTemplateArgumentsRange() const {
+    return DuplicatedExplicitlySpecifiedTemplateArgumentsRange;
+  }
+
+  /// Sets the DuplicatedExplicitlySpecifiedTemplateArgumentsRange.
+  void setDuplicatedExplicitlySpecifiedTemplateArgumentsRange(SourceRange SR) {
+    DuplicatedExplicitlySpecifiedTemplateArgumentsRange = SR;
+  }
+
+#endif
   // Implement isa/cast/dyncast/etc.
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
   static bool classofKind(Kind K) {
@@ -3059,12 +3113,16 @@ public:
   /// store the data for the anonymous union or struct.
   bool isAnonymousStructOrUnion() const;
 
+  /// Returns the expression that represents the bit width, if this field
+  /// is a bit field. For non-bitfields, this returns \c nullptr.
   Expr *getBitWidth() const {
     if (!BitField)
       return nullptr;
     return hasInClassInitializer() ? InitAndBitWidth->BitWidth : BitWidth;
   }
 
+  /// Computes the bit width of this field, if this is a bit field.
+  /// May not be called on non-bitfields.
   unsigned getBitWidthValue(const ASTContext &Ctx) const;
 
   /// Set the bit-field width for this member.
@@ -3183,6 +3241,8 @@ public:
   // Implement isa/cast/dyncast/etc.
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
   static bool classofKind(Kind K) { return K >= firstField && K <= lastField; }
+
+  void printName(raw_ostream &OS, const PrintingPolicy &Policy) const override;
 };
 
 /// An instance of this object exists for each enum constant
@@ -4024,6 +4084,29 @@ public:
   static bool classofKind(Kind K) { return K == Enum; }
 };
 
+/// Enum that represents the different ways arguments are passed to and
+/// returned from function calls. This takes into account the target-specific
+/// and version-specific rules along with the rules determined by the
+/// language.
+enum class RecordArgPassingKind {
+  /// The argument of this type can be passed directly in registers.
+  CanPassInRegs,
+
+  /// The argument of this type cannot be passed directly in registers.
+  /// Records containing this type as a subobject are not forced to be passed
+  /// indirectly. This value is used only in C++. This value is required by
+  /// C++ because, in uncommon situations, it is possible for a class to have
+  /// only trivial copy/move constructors even when one of its subobjects has
+  /// a non-trivial copy/move constructor (if e.g. the corresponding copy/move
+  /// constructor in the derived class is deleted).
+  CannotPassInRegs,
+
+  /// The argument of this type cannot be passed directly in registers.
+  /// Records containing this type as a subobject are forced to be passed
+  /// indirectly.
+  CanNeverPassInRegs
+};
+
 /// Represents a struct/union/class.  For example:
 ///   struct X;                  // Forward declaration, no "body".
 ///   union Y { int A, B; };     // Has body with members A and B (FieldDecls).
@@ -4034,28 +4117,6 @@ class RecordDecl : public TagDecl {
 public:
   friend class DeclContext;
   friend class ASTDeclReader;
-  /// Enum that represents the different ways arguments are passed to and
-  /// returned from function calls. This takes into account the target-specific
-  /// and version-specific rules along with the rules determined by the
-  /// language.
-  enum ArgPassingKind : unsigned {
-    /// The argument of this type can be passed directly in registers.
-    APK_CanPassInRegs,
-
-    /// The argument of this type cannot be passed directly in registers.
-    /// Records containing this type as a subobject are not forced to be passed
-    /// indirectly. This value is used only in C++. This value is required by
-    /// C++ because, in uncommon situations, it is possible for a class to have
-    /// only trivial copy/move constructors even when one of its subobjects has
-    /// a non-trivial copy/move constructor (if e.g. the corresponding copy/move
-    /// constructor in the derived class is deleted).
-    APK_CannotPassInRegs,
-
-    /// The argument of this type cannot be passed directly in registers.
-    /// Records containing this type as a subobject are forced to be passed
-    /// indirectly.
-    APK_CanNeverPassInRegs
-  };
 
 protected:
   RecordDecl(Kind DK, TagKind TK, const ASTContext &C, DeclContext *DC,
@@ -4180,15 +4241,16 @@ public:
   /// it must have at least one trivial, non-deleted copy or move constructor.
   /// FIXME: This should be set as part of completeDefinition.
   bool canPassInRegisters() const {
-    return getArgPassingRestrictions() == APK_CanPassInRegs;
+    return getArgPassingRestrictions() == RecordArgPassingKind::CanPassInRegs;
   }
 
-  ArgPassingKind getArgPassingRestrictions() const {
-    return static_cast<ArgPassingKind>(RecordDeclBits.ArgPassingRestrictions);
+  RecordArgPassingKind getArgPassingRestrictions() const {
+    return static_cast<RecordArgPassingKind>(
+        RecordDeclBits.ArgPassingRestrictions);
   }
 
-  void setArgPassingRestrictions(ArgPassingKind Kind) {
-    RecordDeclBits.ArgPassingRestrictions = Kind;
+  void setArgPassingRestrictions(RecordArgPassingKind Kind) {
+    RecordDeclBits.ArgPassingRestrictions = llvm::to_underlying(Kind);
   }
 
   bool isParamDestroyedInCallee() const {
@@ -4265,6 +4327,30 @@ public:
   // Whether there are any fields (non-static data members) in this record.
   bool field_empty() const {
     return field_begin() == field_end();
+  }
+
+  FieldDecl *getLastField() {
+    FieldDecl *FD = nullptr;
+    for (FieldDecl *Field : fields())
+      FD = Field;
+    return FD;
+  }
+  const FieldDecl *getLastField() const {
+    return const_cast<RecordDecl *>(this)->getLastField();
+  }
+
+  template <typename Functor>
+  const FieldDecl *findFieldIf(Functor &Pred) const {
+    for (const Decl *D : decls()) {
+      if (const auto *FD = dyn_cast<FieldDecl>(D); FD && Pred(FD))
+        return FD;
+
+      if (const auto *RD = dyn_cast<RecordDecl>(D))
+        if (const FieldDecl *FD = RD->findFieldIf(Pred))
+          return FD;
+    }
+
+    return nullptr;
   }
 
   /// Note that the definition of this type is now complete.

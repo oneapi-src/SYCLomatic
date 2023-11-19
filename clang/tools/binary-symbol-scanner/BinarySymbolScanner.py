@@ -158,6 +158,8 @@ regex_ext_dict = {
     "nvSHMEM": ["^.*nvshmem_."],
     "CUDA": ["^.*cuda.", "^.*make_cuda."],
     "CUB": ["^.*Cub[A-Z]."],
+    "NVVM": ["^nvvm"],
+    "TensorRT": ["^nvinfer1", "^nvcaffeparser1", "^nvonnxparser", "^nvuffparser"],
     # AMD library signature regex TO BE COMPLETED (hipeigen, etc)
     "rocBLAS": ["^.*rocblas_."],
     "rocRAND": ["^.*rocrand."],

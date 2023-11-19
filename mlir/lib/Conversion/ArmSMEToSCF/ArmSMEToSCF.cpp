@@ -60,6 +60,7 @@ void getMemrefIndices(ValueRange indices, unsigned rank, Value tileSliceIndex,
 ///
 ///  AFTER:
 ///  ```mlir
+///  %ptrue_s = arith.constant dense<true> : vector<[4]xi1>
 ///  %tile_id = arm_sme.get_tile_id : i32
 ///  %tile = arm_sme.cast_tile_to_vector %tile_id : i32 to vector<[4]x[4]xi32>
 ///  %vscale = vector.vscale
@@ -69,7 +70,8 @@ void getMemrefIndices(ValueRange indices, unsigned rank, Value tileSliceIndex,
 ///  %svl_s = arith.muli %min_svl_s, %vscale : index
 ///  scf.for %tile_slice_idx = %c0 to %svl_s step %c1 {
 ///    %tile_update = arm_sme.load_tile_slice %src[%tile_slice_idx],
-///      %tile, %tile_slice_idx : memref<?x?xi32>, vector<[4]x[4]xi32>
+///      %ptrue_s, %tile, %tile_slice_idx
+///        : memref<?x?xi32>, vector<[4]xi1>, vector<[4]x[4]xi32>
 ///  }
 ///  ```
 struct TileLoadOpConversion : public OpRewritePattern<arm_sme::TileLoadOp> {
@@ -77,6 +79,11 @@ struct TileLoadOpConversion : public OpRewritePattern<arm_sme::TileLoadOp> {
 
   LogicalResult matchAndRewrite(arm_sme::TileLoadOp tileLoadOp,
                                 PatternRewriter &rewriter) const override {
+    if (tileLoadOp.getMask())
+      // TODO: add masked patterns.
+      return rewriter.notifyMatchFailure(
+          tileLoadOp, "op has mask, needs masked pattern(s)");
+
     OpBuilder::InsertionGuard g(rewriter);
     auto loc = tileLoadOp.getLoc();
     auto tileType = tileLoadOp.getVectorType();
@@ -109,6 +116,12 @@ struct TileLoadOpConversion : public OpRewritePattern<arm_sme::TileLoadOp> {
 
     rewriter.setInsertionPointToStart(forOp.getBody());
 
+    // Create an 'all true' predicate for the tile slice.
+    auto predicateType =
+        VectorType::get(tileType.getDimSize(1), rewriter.getI1Type(), true);
+    auto allTruePredicate = rewriter.create<arith::ConstantOp>(
+        loc, DenseElementsAttr::get(predicateType, true));
+
     // Create 'arm_sme.load_tile_slice' to load tile slice from memory into
     // tile.
     SmallVector<Value> memrefIndices;
@@ -116,9 +129,9 @@ struct TileLoadOpConversion : public OpRewritePattern<arm_sme::TileLoadOp> {
     getMemrefIndices(tileLoadOp.getIndices(),
                      tileLoadOp.getMemRefType().getRank(), tileSliceIndex,
                      numTileSlices, memrefIndices, loc, rewriter);
-    rewriter.create<arm_sme::LoadTileSliceOp>(loc, tileType,
-                                              tileLoadOp.getBase(), tile,
-                                              memrefIndices, tileSliceIndex);
+    rewriter.create<arm_sme::LoadTileSliceOp>(
+        loc, tileType, tileLoadOp.getBase(), allTruePredicate, tile,
+        memrefIndices, tileSliceIndex, tileLoadOp.getLayout());
 
     rewriter.setInsertionPointAfter(forOp);
 
@@ -134,7 +147,7 @@ struct TileLoadOpConversion : public OpRewritePattern<arm_sme::TileLoadOp> {
 ///
 ///  BEFORE:
 ///  ```mlir
-///  arm_sme.tile_store %tile, %dest[%c0, %c0]
+///  arm_sme.tile_store %tile, %dest[%c0, %c0] layout<vertical>
 ///    : memref<?x?xi32>, vector<[4]x[4]xi32
 ///  ```
 ///
@@ -146,8 +159,8 @@ struct TileLoadOpConversion : public OpRewritePattern<arm_sme::TileLoadOp> {
 ///  %min_svl_s = arith.constant 4 : index
 ///  %svl_s = arith.muli %min_svl_s, %vscale : index
 ///  scf.for %tile_slice_idx = %c0 to %svl_s step %c1 {
-///    arm_sme.store_tile_slice %tile, %tile_slice_idx, %dest[%tile_slice_idx]
-///      : memref<?x?xi32>, vector<[4]x[4]xi32>
+///    arm_sme.store_tile_slice %tile, %tile_slice_idx, %dest[%tile_slice_idx],
+///      layout<vertical> : memref<?x?xi32>, vector<[4]x[4]xi32>
 ///  }
 ///  ```
 struct TileStoreOpConversion : public OpRewritePattern<arm_sme::TileStoreOp> {
@@ -177,6 +190,12 @@ struct TileStoreOpConversion : public OpRewritePattern<arm_sme::TileStoreOp> {
 
     rewriter.setInsertionPointToStart(forOp.getBody());
 
+    // Create an 'all true' predicate for the tile slice.
+    auto predicateType =
+        VectorType::get(tileType.getDimSize(1), rewriter.getI1Type(), true);
+    auto allTruePredicate = rewriter.create<arith::ConstantOp>(
+        loc, DenseElementsAttr::get(predicateType, true));
+
     SmallVector<Value> memrefIndices;
     auto tileSliceIndex = forOp.getInductionVar();
     getMemrefIndices(tileStoreOp.getIndices(),
@@ -184,8 +203,69 @@ struct TileStoreOpConversion : public OpRewritePattern<arm_sme::TileStoreOp> {
                      numTileSlices, memrefIndices, loc, rewriter);
     rewriter.replaceOpWithNewOp<arm_sme::StoreTileSliceOp>(
         tileStoreOp, tileStoreOp.getValueToStore(), tileSliceIndex,
-        tileStoreOp.getBase(), memrefIndices);
+        allTruePredicate, tileStoreOp.getBase(), memrefIndices,
+        tileStoreOp.getLayout());
 
+    return success();
+  }
+};
+
+/// Lowers `vector.print` of a tile into a loop over the rows of the tile,
+/// extracting them via `arm_sme.move_tile_slice_to_vector`, then printing with
+/// a 1D `vector.print`.
+///
+///  BEFORE:
+///  ```mlir
+///  vector.print %tile : vector<[4]x[4]xf32>
+///  ```
+///  AFTER:
+///  ```mlir
+///  %c0 = arith.constant 0 : index
+///  %c1 = arith.constant 1 : index
+///  %c4 = arith.constant 4 : index
+///  %vscale = vector.vscale
+///  %svl_s = arith.muli %c4, %vscale : index
+///  scf.for %i = %c0 to %svl_s step %c1 {
+///    %tile_slice = arm_sme.move_tile_slice_to_vector %tile[%i]
+///                     : vector<[4]xf32> from vector<[4]x[4]xf32>
+///    vector.print %tile_slice : vector<[4]xf32>
+///  }
+///  ```
+struct TileVectorPrintOpConversion : public OpRewritePattern<vector::PrintOp> {
+  using OpRewritePattern<vector::PrintOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(vector::PrintOp printOp,
+                                PatternRewriter &rewriter) const override {
+    if (!printOp.getSource())
+      return failure();
+
+    VectorType vectorType = dyn_cast<VectorType>(printOp.getPrintType());
+    if (!vectorType || !arm_sme::isValidSMETileVectorType(vectorType))
+      return failure();
+
+    auto loc = printOp.getLoc();
+
+    // Create a loop over the rows of the tile.
+    auto vscale = rewriter.create<vector::VectorScaleOp>(loc);
+    auto minTileRows =
+        rewriter.create<arith::ConstantIndexOp>(loc, vectorType.getDimSize(0));
+    auto lowerBound = rewriter.create<arith::ConstantIndexOp>(loc, 0);
+    auto upperBound = rewriter.create<arith::MulIOp>(loc, minTileRows, vscale);
+    auto step = rewriter.create<arith::ConstantIndexOp>(loc, 1);
+    auto forOp = rewriter.create<scf::ForOp>(loc, lowerBound, upperBound, step);
+    {
+      // Loop body.
+      rewriter.setInsertionPointToStart(forOp.getBody());
+      // Extract the current row from the tile.
+      Value rowIndex = forOp.getInductionVar();
+      auto tileSlice = rewriter.create<arm_sme::MoveTileSliceToVectorOp>(
+          loc, printOp.getSource(), rowIndex);
+      // Print the row with a 1D vector.print.
+      rewriter.create<vector::PrintOp>(loc, tileSlice,
+                                       printOp.getPunctuation());
+    }
+
+    rewriter.eraseOp(printOp);
     return success();
   }
 };
@@ -193,8 +273,8 @@ struct TileStoreOpConversion : public OpRewritePattern<arm_sme::TileStoreOp> {
 } // namespace
 
 void mlir::populateArmSMEToSCFConversionPatterns(RewritePatternSet &patterns) {
-  patterns.add<TileLoadOpConversion, TileStoreOpConversion>(
-      patterns.getContext());
+  patterns.add<TileLoadOpConversion, TileStoreOpConversion,
+               TileVectorPrintOpConversion>(patterns.getContext());
 }
 
 namespace {
@@ -208,6 +288,12 @@ struct ConvertArmSMEToSCFPass
     target.addLegalDialect<arm_sme::ArmSMEDialect, vector::VectorDialect,
                            arith::ArithDialect, scf::SCFDialect>();
     target.addIllegalOp<arm_sme::TileLoadOp, arm_sme::TileStoreOp>();
+    target.addDynamicallyLegalOp<vector::PrintOp>([](vector::PrintOp op) {
+      if (!op.getSource())
+        return true;
+      VectorType vectorType = dyn_cast<VectorType>(op.getPrintType());
+      return !vectorType || !arm_sme::isValidSMETileVectorType(vectorType);
+    });
     if (failed(applyPartialConversion(getOperation(), target,
                                       std::move(patterns))))
       signalPassFailure();

@@ -241,7 +241,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
   makeCanonical(IncludePath);
   SmallString<512> CudaPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(IncludePath, CudaPathAbs, true);
+  std::error_code EC = dpct::real_path(Path, CudaPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
@@ -261,14 +261,13 @@ std::string getInstallPath(const char *invokeCommand) {
   }
 
   makeCanonical(InstalledPath);
-  llvm::sys::fs::real_path(InstalledPath, InstalledPath, true);
+  dpct::real_path(InstalledPath, InstalledPath, true);
   StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath));
   // Move up to parent directory of bin directory
   StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
 
   SmallString<512> InstallPathAbs;
-  std::error_code EC =
-      llvm::sys::fs::real_path(InstallPath, InstallPathAbs, true);
+  std::error_code EC = dpct::real_path(InstallPath, InstallPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidInstallPath);
     dpctExit(MigrationErrorInvalidInstallPath);
@@ -308,14 +307,14 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   Rewriter Rewrite(Sources, DefaultLangOptions);
   SourceManager &SM = Rewrite.getSourceMgr();
 
-  const FileEntry *Entry = SM.getFileManager().getFile(Path).get();
+  auto Entry = SM.getFileManager().getOptionalFileRef(Path);
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);
     dpctExit(MigrationErrorInvalidFilePath);
   }
 
-  FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);
+  FileID FID = SM.getOrCreateFileID(*Entry, SrcMgr::C_User);
 
   SourceLocation EndOfFile = SM.getLocForEndOfFile(FID);
   unsigned int LineNumber = SM.getSpellingLineNumber(EndOfFile, nullptr);
@@ -779,6 +778,10 @@ int runDPCT(int argc, const char **argv) {
     // Set a virtual file for --query-api-mapping.
     llvm::SmallString<16> VirtFile;
     llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+#if defined(_WIN32)
+    std::transform(VirtFile.begin(), VirtFile.end(), VirtFile.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+#endif
     // Need set a virtual path and it will used by AnalysisScope.
     InRoot = VirtFile.str().str();
     makeInRootCanonicalOrSetDefaults(InRoot, {});
@@ -909,45 +912,24 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  std::string CUDAVerMajor =
-      "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
-
-  std::string CUDAVerMinor =
-      "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
-  Tool.appendArgumentsAdjuster(
-      getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
-
   SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32
-  if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 3) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 4) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 5) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 6) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 0) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 1) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 2)) {
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
-                                  ArgumentInsertPosition::BEGIN));
-  } else {
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
-                                  ArgumentInsertPosition::BEGIN));
-  }
+  Tool.appendArgumentsAdjuster(
+      getInsertArgumentAdjuster("-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH",
+                                ArgumentInsertPosition::BEGIN));
 #endif
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fcuda-allow-variadic-functions", ArgumentInsertPosition::BEGIN));
 
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-Xclang", ArgumentInsertPosition::BEGIN));
+
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-fgpu-exclude-wrong-side-overloads", ArgumentInsertPosition::BEGIN));
+
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-Wno-c++11-narrowing", ArgumentInsertPosition::BEGIN));
 
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);
@@ -1172,8 +1154,7 @@ int runDPCT(int argc, const char **argv) {
 
   if (DpctGlobalInfo::isQueryAPIMapping()) {
     llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
-                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET
-                 << "Is migrated to" << QueryAPIMappingOpt << ":";
+                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET;
     DiagnosticsEngine Diagnostics(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
         IntrusiveRefCntPtr<DiagnosticOptions>(new DiagnosticOptions()));
@@ -1186,8 +1167,8 @@ int runDPCT(int argc, const char **argv) {
     const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
     static const std::string StartStr{"// Start"};
     static const std::string EndStr{"// End"};
+    std::string MigratedStr{""};
     bool Flag = false;
-    llvm::outs() << llvm::raw_ostream::BLUE;
     for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
          I.MoveToNextPiece()) {
       size_t StartPos = 0;
@@ -1204,10 +1185,16 @@ int runDPCT(int argc, const char **argv) {
           EndPos = TempStr.find_last_of('\n') + 1;
           Flag = false;
         }
-        llvm::outs() << I.piece().substr(StartPos, EndPos - StartPos);
+        MigratedStr += I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
-    llvm::outs() << llvm::raw_ostream::RESET;
+    if (MigratedStr.find_first_not_of(" \n") == std::string::npos) {
+      llvm::outs() << "The API is Removed.\n";
+    } else {
+      llvm::outs() << "Is migrated to" << QueryAPIMappingOpt << ":"
+                   << llvm::raw_ostream::BLUE << MigratedStr
+                   << llvm::raw_ostream::RESET;
+    }
     return MigrationSucceeded;
   }
 

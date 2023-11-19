@@ -322,12 +322,9 @@ in alphabetical order.
 
 .. note::
 
-   Specifying any of these options will trigger report generation.
-
-   -  ``--report-file-prefix``
-   -  ``--report-type``
-   -  ``--report-format``
-   -  ``--report-only``
+   .. include:: /_include_files/options_def.rst
+      :start-after: report-opt-block:
+      :end-before: end-report-opt-block:
 
 Deprecated Command Line Options
 -------------------------------

@@ -205,16 +205,17 @@ static bool isShortenableAtTheBeginning(Instruction *I) {
   return isa<AnyMemSetInst>(I);
 }
 
-static uint64_t getPointerSize(const Value *V, const DataLayout &DL,
-                               const TargetLibraryInfo &TLI,
-                               const Function *F) {
+static std::optional<TypeSize> getPointerSize(const Value *V,
+                                              const DataLayout &DL,
+                                              const TargetLibraryInfo &TLI,
+                                              const Function *F) {
   uint64_t Size;
   ObjectSizeOpts Opts;
   Opts.NullIsUnknownSize = NullPointerIsDefined(F);
 
   if (getObjectSize(V, Size, DL, &TLI, Opts))
-    return Size;
-  return MemoryLocation::UnknownSize;
+    return TypeSize::Fixed(Size);
+  return std::nullopt;
 }
 
 namespace {
@@ -629,20 +630,11 @@ static bool tryToShorten(Instruction *DeadI, int64_t &DeadStart,
 
   Value *OrigDest = DeadIntrinsic->getRawDest();
   if (!IsOverwriteEnd) {
-    Type *Int8PtrTy =
-        Type::getInt8PtrTy(DeadIntrinsic->getContext(),
-                           OrigDest->getType()->getPointerAddressSpace());
-    Value *Dest = OrigDest;
-    if (OrigDest->getType() != Int8PtrTy)
-      Dest = CastInst::CreatePointerCast(OrigDest, Int8PtrTy, "", DeadI);
     Value *Indices[1] = {
         ConstantInt::get(DeadWriteLength->getType(), ToRemoveSize)};
     Instruction *NewDestGEP = GetElementPtrInst::CreateInBounds(
-        Type::getInt8Ty(DeadIntrinsic->getContext()), Dest, Indices, "", DeadI);
+        Type::getInt8Ty(DeadIntrinsic->getContext()), OrigDest, Indices, "", DeadI);
     NewDestGEP->setDebugLoc(DeadIntrinsic->getDebugLoc());
-    if (NewDestGEP->getType() != OrigDest->getType())
-      NewDestGEP = CastInst::CreatePointerCast(NewDestGEP, OrigDest->getType(),
-                                               "", DeadI);
     DeadIntrinsic->setDest(NewDestGEP);
   }
 
@@ -874,7 +866,7 @@ struct DSEState {
   DSEState(Function &F, AliasAnalysis &AA, MemorySSA &MSSA, DominatorTree &DT,
            PostDominatorTree &PDT, AssumptionCache &AC,
            const TargetLibraryInfo &TLI, const LoopInfo &LI)
-      : F(F), AA(AA), EI(DT, LI, EphValues), BatchAA(AA, &EI), MSSA(MSSA),
+      : F(F), AA(AA), EI(DT, &LI, &EphValues), BatchAA(AA, &EI), MSSA(MSSA),
         DT(DT), PDT(PDT), TLI(TLI), DL(F.getParent()->getDataLayout()), LI(LI) {
     // Collect blocks with throwing instructions not modeled in MemorySSA and
     // alloc-like objects.
@@ -958,10 +950,11 @@ struct DSEState {
 
     // Check whether the killing store overwrites the whole object, in which
     // case the size/offset of the dead store does not matter.
-    if (DeadUndObj == KillingUndObj && KillingLocSize.isPrecise()) {
-      uint64_t KillingUndObjSize = getPointerSize(KillingUndObj, DL, TLI, &F);
-      if (KillingUndObjSize != MemoryLocation::UnknownSize &&
-          KillingUndObjSize == KillingLocSize.getValue())
+    if (DeadUndObj == KillingUndObj && KillingLocSize.isPrecise() &&
+        isIdentifiedObject(KillingUndObj)) {
+      std::optional<TypeSize> KillingUndObjSize =
+          getPointerSize(KillingUndObj, DL, TLI, &F);
+      if (KillingUndObjSize && *KillingUndObjSize == KillingLocSize.getValue())
         return OW_Complete;
     }
 
@@ -984,9 +977,15 @@ struct DSEState {
       return isMaskedStoreOverwrite(KillingI, DeadI, BatchAA);
     }
 
-    const uint64_t KillingSize = KillingLocSize.getValue();
-    const uint64_t DeadSize = DeadLoc.Size.getValue();
+    const TypeSize KillingSize = KillingLocSize.getValue();
+    const TypeSize DeadSize = DeadLoc.Size.getValue();
+    // Bail on doing Size comparison which depends on AA for now
+    // TODO: Remove AnyScalable once Alias Analysis deal with scalable vectors
+    const bool AnyScalable =
+        DeadSize.isScalable() || KillingLocSize.isScalable();
 
+    if (AnyScalable)
+      return OW_Unknown;
     // Query the alias information
     AliasResult AAR = BatchAA.alias(KillingLoc, DeadLoc);
 
@@ -1861,6 +1860,10 @@ struct DSEState {
     if (!TLI.getLibFunc(*InnerCallee, Func) || !TLI.has(Func) ||
         Func != LibFunc_malloc)
       return false;
+    // Gracefully handle malloc with unexpected memory attributes.
+    auto *MallocDef = dyn_cast_or_null<MemoryDef>(MSSA.getMemoryAccess(Malloc));
+    if (!MallocDef)
+      return false;
 
     auto shouldCreateCalloc = [](CallInst *Malloc, CallInst *Memset) {
       // Check for br(icmp ptr, null), truebb, falsebb) pattern at the end
@@ -1894,11 +1897,9 @@ struct DSEState {
     if (!Calloc)
       return false;
     MemorySSAUpdater Updater(&MSSA);
-    auto *LastDef =
-      cast<MemoryDef>(Updater.getMemorySSA()->getMemoryAccess(Malloc));
     auto *NewAccess =
-      Updater.createMemoryAccessAfter(cast<Instruction>(Calloc), LastDef,
-                                      LastDef);
+      Updater.createMemoryAccessAfter(cast<Instruction>(Calloc), nullptr,
+                                      MallocDef);
     auto *NewAccessMD = cast<MemoryDef>(NewAccess);
     Updater.insertDef(NewAccessMD, /*RenameUses=*/true);
     Updater.removeMemoryAccess(Malloc);

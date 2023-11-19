@@ -709,6 +709,7 @@ ENTRY(__ushort2half_rn, __ushort2half_rn, true, NO_FLAG, P4, "Successful")
 ENTRY(__ushort2half_ru, __ushort2half_ru, true, NO_FLAG, P4, "Successful")
 ENTRY(__ushort2half_rz, __ushort2half_rz, true, NO_FLAG, P4, "Successful")
 ENTRY(__ushort_as_half, __ushort_as_half, true, NO_FLAG, P4, "Successful")
+ENTRY(make_half2, make_half2, true, NO_FLAG, P4, "Successful")
 
 // Half Math Functions
 ENTRY(hceil, hceil, true, NO_FLAG, P4, "Successful")

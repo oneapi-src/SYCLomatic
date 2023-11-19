@@ -122,24 +122,25 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   SmallString<512> FilePathAbs;
   std::error_code EC;
   bool InRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(InRoot, InRootAbs, true);
+  EC = dpct::real_path(InRoot, InRootAbs, true);
   if ((bool)EC) {
     InRootAbsValid = false;
   }
   bool OutRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(OutRoot, OutRootAbs, true);
+  EC = dpct::real_path(OutRoot, OutRootAbs, true);
   if ((bool)EC) {
     OutRootAbsValid = false;
   }
   bool FilePathAbsValid = true;
-  EC = llvm::sys::fs::real_path(FilePath, FilePathAbs, true);
+  EC = dpct::real_path(FilePath, FilePathAbs, true);
   if ((bool)EC) {
     FilePathAbsValid = false;
   }
 
 #if defined(_WIN64)
   std::string Filename = sys::path::filename(FilePath).str();
-  std::string LocalFilePath = StringRef(FilePath).lower();
+  std::string LocalFilePath =
+      FilePathAbsValid ? FilePathAbs.str().lower() : StringRef(FilePath).lower();
   std::string LocalInRoot =
       InRootAbsValid ? InRootAbs.str().lower() : InRoot.lower();
   std::string LocalOutRoot =
@@ -553,19 +554,24 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
       tooling::applyAllReplacements(Entry.second, Rewrite);
 
+      llvm::Expected<FileEntryRef> Result =
+          Tool.getFiles().getFileRef(Entry.first);
+
+      if (auto E = Result.takeError()) {
+        continue;
+      }
+
       if (MapNames::PatternRewriters.empty()) {
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }
@@ -711,19 +717,22 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       llvm::raw_os_ostream Stream(File);
       std::string OutputString;
       llvm::raw_string_ostream RSW(OutputString);
+      llvm::Expected<FileEntryRef> Result =
+          Tool.getFiles().getFileRef(Entry.first);
+      if (auto E = Result.takeError()) {
+        continue;
+      }
       if (MapNames::PatternRewriters.empty()) {
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }
@@ -746,11 +755,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
 void loadYAMLIntoFileInfo(std::string Path) {
   SmallString<512> SourceFilePath(Path);
-
-  SourceFilePath = StringRef(
-      DpctGlobalInfo::removeSymlinks(DpctGlobalInfo::getFileManager(), Path));
-  makeCanonical(SourceFilePath);
-
+  dpct::real_path(SourceFilePath, SourceFilePath, true);
   std::string OriginPath = SourceFilePath.str().str();
   rewriteFileName(SourceFilePath);
   if (!rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),

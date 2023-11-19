@@ -2,11 +2,11 @@
 // CHECK:     {
 // CHECK:         "file":"a_kernel.cu",
 // CHECK:         "command":"CudaCompile -m64 -DNDEBUG -DWIN32 -DWIN64 -D_CONSOLE -D_DEBUG -I\"./header2\" -I\"path/to/MapHeaderFilePath/FilePath/header1\" -I\"path/to/includepath/MapIncludePath/header\" \"a_kernel.cu\"",
-// CHECK:         "directory":"{{.*}}/a_vcxproj_test/Output"
+// CHECK:         "directory":"{{.*}}/a_vcxproj_test/output"
 // CHECK:     },
 // CHECK:     {
 // CHECK:         "file":"b_kernel.cu",
 // CHECK:         "command":"CudaCompile -m64 -DNDEBUG -DWIN32 -DWIN64 -D_CONSOLE -D_DEBUG -D_MACRO -I\"./header2\" -I\"path/to/MapHeaderFilePath/FilePath/header1\" -I\"path/to/includepath/MapIncludePath/header\" -I\"./b_kernel/header2\" -I\"path/to/b_kernel/header1\" \"b_kernel.cu\"",
-// CHECK:         "directory":"{{.*}}/a_vcxproj_test/Output"
+// CHECK:         "directory":"{{.*}}/a_vcxproj_test/output"
 // CHECK:     }
 // CHECK: ]

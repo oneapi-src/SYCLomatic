@@ -436,6 +436,20 @@ multiclass VOP3PDOTIUInst <string OpName, SDPatternOperator intrinsic_node> {
 let SubtargetPredicate = HasDot8Insts  in {
 defm V_DOT4_I32_IU8 : VOP3PDOTIUInst<"v_dot4_i32_iu8", int_amdgcn_sudot4>;
 defm V_DOT8_I32_IU4 : VOP3PDOTIUInst<"v_dot8_i32_iu4", int_amdgcn_sudot8>;
+
+def : GCNPat < (int_amdgcn_sdot8 i32:$src0,
+                                 i32:$src1,
+                                 i32:$src2, (i1 timm:$clamp)),
+               (V_DOT8_I32_IU4  (i32 9), i32:$src0,
+                                (i32 9), i32:$src1, (i32 8), i32:$src2, i1:$clamp)
+>;
+
+def : GCNPat < (int_amdgcn_sdot4 i32:$src0,
+                                 i32:$src1,
+                                 i32:$src2, (i1 timm:$clamp)),
+               (V_DOT4_I32_IU8  (i32 9), i32:$src0,
+                                (i32 9), i32:$src1, (i32 8), i32:$src2, i1:$clamp)
+>;
 } // End SubtargetPredicate = HasDot8Insts
 
 def : UDot2Pat<V_DOT2_U32_U16>;
@@ -737,12 +751,16 @@ def MAIInstInfoTable : GenericTable {
   let PrimaryKeyName = "getMAIInstInfoHelper";
 }
 
-let SubtargetPredicate = HasPackedFP32Ops, isCommutable = 1, isReMaterializable = 1 in {
-  defm V_PK_FMA_F32 : VOP3PInst<"v_pk_fma_f32", VOP3P_Profile<VOP_V2F32_V2F32_V2F32_V2F32, VOP3_PACKED>, any_fma>;
-  defm V_PK_MUL_F32 : VOP3PInst<"v_pk_mul_f32", VOP3P_Profile<VOP_V2F32_V2F32_V2F32, VOP3_PACKED>, any_fmul>;
-  defm V_PK_ADD_F32 : VOP3PInst<"v_pk_add_f32", VOP3P_Profile<VOP_V2F32_V2F32_V2F32, VOP3_PACKED>, any_fadd>;
+let isCommutable = 1, isReMaterializable = 1 in {
+  let SubtargetPredicate = HasPackedFP32Ops in {
+    defm V_PK_FMA_F32 : VOP3PInst<"v_pk_fma_f32", VOP3P_Profile<VOP_V2F32_V2F32_V2F32_V2F32, VOP3_PACKED>, any_fma>;
+    defm V_PK_MUL_F32 : VOP3PInst<"v_pk_mul_f32", VOP3P_Profile<VOP_V2F32_V2F32_V2F32, VOP3_PACKED>, any_fmul>;
+    defm V_PK_ADD_F32 : VOP3PInst<"v_pk_add_f32", VOP3P_Profile<VOP_V2F32_V2F32_V2F32, VOP3_PACKED>, any_fadd>;
+  } // End SubtargetPredicate = HasPackedFP32Ops
+
+  let SubtargetPredicate = HasPkMovB32 in
   defm V_PK_MOV_B32 : VOP3PInst<"v_pk_mov_b32", VOP3P_Profile<VOP_V2I32_V2I32_V2I32, VOP3_PACKED>>;
-} // End SubtargetPredicate = HasPackedFP32Ops, isCommutable = 1
+} // End isCommutable = 1, isReMaterializable = 1
 
 def : MnemonicAlias<"v_accvgpr_read",  "v_accvgpr_read_b32">;
 def : MnemonicAlias<"v_accvgpr_write", "v_accvgpr_write_b32">;
@@ -847,34 +865,25 @@ def WMMAOpcode3AddrMappingTable : WMMAMappingTable {
 //    it converts the default pseudo to the pseudo where src2 is not the same as vdst.
 // 3) @earlyclobber on the destination satisfies the constraint during RA.
 
-multiclass WMMAInst<string Suffix, string Instr, VOPProfile P, SDPatternOperator node = null_frag, RegisterOperand _Src01RC64 = VRegSrc_256, WMMAType Type> {
+multiclass WMMAInst<string Suffix, string Instr, VOPProfile P, SDPatternOperator node = null_frag, RegisterOperand _Src01RC64 = VRegSrc_256, WMMAType Type, bit convertibleTo3Addr> {
 
   defvar WMMAConstraints2Addr = "@earlyclobber $vdst,$vdst = $src2";
   defvar WMMAConstraints3Addr = "@earlyclobber $vdst";
 
   defvar WMMAProfile = VOPProfileWMMA<P, Suffix, _Src01RC64, Type.hasClamp, Type.hasOpsel>;
-  if !eq(Suffix, "_w32") then {
+  let Mnemonic = Instr, mayRaiseFPException = 0, ReadsModeReg = 0 in {
+    let Constraints = WMMAConstraints2Addr, isConvertibleToThreeAddress = convertibleTo3Addr in {
+      def _twoaddr # Suffix : VOP3P_Pseudo<Instr # Suffix, WMMAProfile>;
+    }
+  }
+  if convertibleTo3Addr then {
     let Mnemonic = Instr, mayRaiseFPException = 0, ReadsModeReg = 0 in {
-      let Constraints = WMMAConstraints2Addr, isConvertibleToThreeAddress = 1 in {
-        def _twoaddr_w32 : VOP3P_Pseudo<Instr # Suffix, WMMAProfile>;
-      }
       let Constraints = WMMAConstraints3Addr, SchedRW = [Write32Bit, Write32Bit] in {
-        def _threeaddr_w32 : VOP3P_Pseudo<Instr # Suffix, WMMAProfile>;
+        def _threeaddr # Suffix : VOP3P_Pseudo<Instr # Suffix, WMMAProfile>;
       }
     }
-    def : WMMAOpcodeMapping<!cast<Instruction>(NAME # _twoaddr_w32),
-                            !cast<Instruction>(NAME # _threeaddr_w32)>;
-  } else if !eq(Suffix, "_w64") then {
-    let Mnemonic = Instr, mayRaiseFPException = 0, ReadsModeReg = 0 in {
-      let Constraints = WMMAConstraints2Addr, isConvertibleToThreeAddress = 1 in {
-        def _twoaddr_w64 : VOP3P_Pseudo<Instr # Suffix, WMMAProfile>;
-      }
-      let Constraints = WMMAConstraints3Addr, SchedRW = [Write32Bit, Write32Bit] in {
-        def _threeaddr_w64 : VOP3P_Pseudo<Instr # Suffix, WMMAProfile>;
-      }
-    }
-    def : WMMAOpcodeMapping<!cast<Instruction>(NAME # _twoaddr_w64),
-                            !cast<Instruction>(NAME # _threeaddr_w64)>;
+    def : WMMAOpcodeMapping<!cast<Instruction>(NAME # _twoaddr # Suffix),
+                          !cast<Instruction>(NAME # _threeaddr # Suffix)>;
   }
 
   if !eq(Type, WMMAOpSel) then {
@@ -888,21 +897,25 @@ multiclass WMMAInst<string Suffix, string Instr, VOPProfile P, SDPatternOperator
 
 
 let WaveSizePredicate = isWave32 in {
-  defm V_WMMA_F32_16X16X16_F16   : WMMAInst<"_w32", "v_wmma_f32_16x16x16_f16",  VOP_V8F32_V16F16_V16F16_V8F32, int_amdgcn_wmma_f32_16x16x16_f16, VRegSrc_256, WMMARegular>;
-  defm V_WMMA_F32_16X16X16_BF16  : WMMAInst<"_w32", "v_wmma_f32_16x16x16_bf16", VOP_V8F32_V16I16_V16I16_V8F32, int_amdgcn_wmma_f32_16x16x16_bf16, VRegSrc_256, WMMARegular>;
-  defm V_WMMA_F16_16X16X16_F16   : WMMAInst<"_w32", "v_wmma_f16_16x16x16_f16",   VOP_V16F16_V16F16_V16F16_V16F16, int_amdgcn_wmma_f16_16x16x16_f16, VRegSrc_256, WMMAOpSel>;
-  defm V_WMMA_BF16_16X16X16_BF16 : WMMAInst<"_w32", "v_wmma_bf16_16x16x16_bf16", VOP_V16I16_V16I16_V16I16_V16I16, int_amdgcn_wmma_bf16_16x16x16_bf16, VRegSrc_256, WMMAOpSel>;
-  defm V_WMMA_I32_16X16X16_IU8   : WMMAInst<"_w32", "v_wmma_i32_16x16x16_iu8",   VOP_V8I32_V4I32_V4I32_V8I32, int_amdgcn_wmma_i32_16x16x16_iu8, VRegSrc_128, WMMAUIClamp>;
-  defm V_WMMA_I32_16X16X16_IU4   : WMMAInst<"_w32", "v_wmma_i32_16x16x16_iu4",   VOP_V8I32_V2I32_V2I32_V8I32, int_amdgcn_wmma_i32_16x16x16_iu4, VRegSrc_64,  WMMAUIClamp>;
+  defm V_WMMA_F32_16X16X16_F16   : WMMAInst<"_w32", "v_wmma_f32_16x16x16_f16",  VOP_V8F32_V16F16_V16F16_V8F32, int_amdgcn_wmma_f32_16x16x16_f16, VRegSrc_256, WMMARegular, 1>;
+  defm V_WMMA_F32_16X16X16_BF16  : WMMAInst<"_w32", "v_wmma_f32_16x16x16_bf16", VOP_V8F32_V16I16_V16I16_V8F32, int_amdgcn_wmma_f32_16x16x16_bf16, VRegSrc_256, WMMARegular, 1>;
+  defm V_WMMA_F16_16X16X16_F16   : WMMAInst<"_w32", "v_wmma_f16_16x16x16_f16",   VOP_V16F16_V16F16_V16F16_V16F16, int_amdgcn_wmma_f16_16x16x16_f16, VRegSrc_256, WMMAOpSel, 1>;
+  defm V_WMMA_BF16_16X16X16_BF16 : WMMAInst<"_w32", "v_wmma_bf16_16x16x16_bf16", VOP_V16I16_V16I16_V16I16_V16I16, int_amdgcn_wmma_bf16_16x16x16_bf16, VRegSrc_256, WMMAOpSel, 1>;
+  defm V_WMMA_F16_16X16X16_F16_TIED   : WMMAInst<"_w32", "v_wmma_f16_16x16x16_f16",   VOP_V16F16_V16F16_V16F16_V16F16, int_amdgcn_wmma_f16_16x16x16_f16_tied, VRegSrc_256, WMMAOpSel, 0>;
+  defm V_WMMA_BF16_16X16X16_BF16_TIED : WMMAInst<"_w32", "v_wmma_bf16_16x16x16_bf16", VOP_V16I16_V16I16_V16I16_V16I16, int_amdgcn_wmma_bf16_16x16x16_bf16_tied, VRegSrc_256, WMMAOpSel, 0>;
+  defm V_WMMA_I32_16X16X16_IU8   : WMMAInst<"_w32", "v_wmma_i32_16x16x16_iu8",   VOP_V8I32_V4I32_V4I32_V8I32, int_amdgcn_wmma_i32_16x16x16_iu8, VRegSrc_128, WMMAUIClamp, 1>;
+  defm V_WMMA_I32_16X16X16_IU4   : WMMAInst<"_w32", "v_wmma_i32_16x16x16_iu4",   VOP_V8I32_V2I32_V2I32_V8I32, int_amdgcn_wmma_i32_16x16x16_iu4, VRegSrc_64,  WMMAUIClamp, 1>;
 }
 
 let WaveSizePredicate = isWave64 in {
-  defm V_WMMA_F32_16X16X16_F16   : WMMAInst<"_w64", "v_wmma_f32_16x16x16_f16",   VOP_V4F32_V16F16_V16F16_V4F32, int_amdgcn_wmma_f32_16x16x16_f16, VRegSrc_256, WMMARegular>;
-  defm V_WMMA_F32_16X16X16_BF16  : WMMAInst<"_w64", "v_wmma_f32_16x16x16_bf16",  VOP_V4F32_V16I16_V16I16_V4F32, int_amdgcn_wmma_f32_16x16x16_bf16, VRegSrc_256, WMMARegular>;
-  defm V_WMMA_F16_16X16X16_F16   : WMMAInst<"_w64", "v_wmma_f16_16x16x16_f16",   VOP_V8F16_V16F16_V16F16_V8F16, int_amdgcn_wmma_f16_16x16x16_f16, VRegSrc_256, WMMAOpSel>;
-  defm V_WMMA_BF16_16X16X16_BF16 : WMMAInst<"_w64", "v_wmma_bf16_16x16x16_bf16", VOP_V8I16_V16I16_V16I16_V8I16, int_amdgcn_wmma_bf16_16x16x16_bf16, VRegSrc_256, WMMAOpSel>;
-  defm V_WMMA_I32_16X16X16_IU8   : WMMAInst<"_w64", "v_wmma_i32_16x16x16_iu8",   VOP_V4I32_V4I32_V4I32_V4I32, int_amdgcn_wmma_i32_16x16x16_iu8, VRegSrc_128, WMMAUIClamp>;
-  defm V_WMMA_I32_16X16X16_IU4   : WMMAInst<"_w64", "v_wmma_i32_16x16x16_iu4",   VOP_V4I32_V2I32_V2I32_V4I32, int_amdgcn_wmma_i32_16x16x16_iu4, VRegSrc_64, WMMAUIClamp>;
+  defm V_WMMA_F32_16X16X16_F16   : WMMAInst<"_w64", "v_wmma_f32_16x16x16_f16",   VOP_V4F32_V16F16_V16F16_V4F32, int_amdgcn_wmma_f32_16x16x16_f16, VRegSrc_256, WMMARegular, 1>;
+  defm V_WMMA_F32_16X16X16_BF16  : WMMAInst<"_w64", "v_wmma_f32_16x16x16_bf16",  VOP_V4F32_V16I16_V16I16_V4F32, int_amdgcn_wmma_f32_16x16x16_bf16, VRegSrc_256, WMMARegular, 1>;
+  defm V_WMMA_F16_16X16X16_F16   : WMMAInst<"_w64", "v_wmma_f16_16x16x16_f16",   VOP_V8F16_V16F16_V16F16_V8F16, int_amdgcn_wmma_f16_16x16x16_f16, VRegSrc_256, WMMAOpSel, 1>;
+  defm V_WMMA_BF16_16X16X16_BF16 : WMMAInst<"_w64", "v_wmma_bf16_16x16x16_bf16", VOP_V8I16_V16I16_V16I16_V8I16, int_amdgcn_wmma_bf16_16x16x16_bf16, VRegSrc_256, WMMAOpSel, 1>;
+  defm V_WMMA_F16_16X16X16_F16_TIED   : WMMAInst<"_w64", "v_wmma_f16_16x16x16_f16",   VOP_V8F16_V16F16_V16F16_V8F16, int_amdgcn_wmma_f16_16x16x16_f16_tied, VRegSrc_256, WMMAOpSel, 0>;
+  defm V_WMMA_BF16_16X16X16_BF16_TIED : WMMAInst<"_w64", "v_wmma_bf16_16x16x16_bf16", VOP_V8I16_V16I16_V16I16_V8I16, int_amdgcn_wmma_bf16_16x16x16_bf16_tied, VRegSrc_256, WMMAOpSel, 0>;
+  defm V_WMMA_I32_16X16X16_IU8   : WMMAInst<"_w64", "v_wmma_i32_16x16x16_iu8",   VOP_V4I32_V4I32_V4I32_V4I32, int_amdgcn_wmma_i32_16x16x16_iu8, VRegSrc_128, WMMAUIClamp, 1>;
+  defm V_WMMA_I32_16X16X16_IU4   : WMMAInst<"_w64", "v_wmma_i32_16x16x16_iu4",   VOP_V4I32_V2I32_V2I32_V4I32, int_amdgcn_wmma_i32_16x16x16_iu4, VRegSrc_64, WMMAUIClamp, 1>;
 
 }
 
@@ -1067,16 +1080,23 @@ multiclass VOP3P_Real_MFMA_gfx940<bits<7> op, string Name = !cast<VOP3_Pseudo>(N
   defm : VOP3P_Real_MFMA_gfx940_aliases<Name, !subst("_1k", "", PS_ACD.Mnemonic), NAME>;
 }
 
-multiclass VOP3P_Real_MFMA<bits<7> op, string GFX940Name = !cast<VOP3_Pseudo>(NAME#"_e64").Mnemonic> :
-  VOP3P_Real_MFMA_gfx90a <op>,
-  VOP3P_Real_MFMA_gfx940 <op, GFX940Name> {
+multiclass VOP3P_Real_MFMA_vi<bits<7> op> {
   def _vi : VOP3P_Real<!cast<VOP3_Pseudo>(NAME#"_e64"), SIEncodingFamily.VI>,
             VOP3Pe_MAI <op, !cast<VOP3_Pseudo>(NAME#"_e64").Pfl, ?> {
+    let SubtargetPredicate = isGFX8GFX9NotGFX90A;
     let AssemblerPredicate = HasMAIInsts;
     let DecoderNamespace = "GFX8";
     let Constraints = "";
   }
 }
+
+multiclass VOP3P_Real_MFMA_vi_gfx90a<bits<7> op> :
+  VOP3P_Real_MFMA_gfx90a <op>,
+  VOP3P_Real_MFMA_vi <op>;
+
+multiclass VOP3P_Real_MFMA<bits<7> op, string GFX940Name = !cast<VOP3_Pseudo>(NAME#"_e64").Mnemonic> :
+  VOP3P_Real_MFMA_vi_gfx90a <op>,
+  VOP3P_Real_MFMA_gfx940 <op, GFX940Name>;
 
 multiclass VOP3P_Real_SMFMAC<bits<7> op, string alias> {
   def _gfx940 : VOP3P_Real<!cast<VOP3_Pseudo>(NAME#"_e64"), SIEncodingFamily.VI>,
@@ -1087,6 +1107,7 @@ multiclass VOP3P_Real_SMFMAC<bits<7> op, string alias> {
   def : MnemonicAlias<alias, !cast<VOP3_Pseudo>(NAME#"_e64").Mnemonic>;
 }
 
+let SubtargetPredicate = isGFX8GFX9 in {
 defm V_PK_MAD_I16 : VOP3P_Real_vi <0x00>;
 defm V_PK_MUL_LO_U16 : VOP3P_Real_vi <0x01>;
 defm V_PK_ADD_I16 : VOP3P_Real_vi <0x02>;
@@ -1107,7 +1128,7 @@ defm V_PK_ADD_F16 : VOP3P_Real_vi <0x0f>;
 defm V_PK_MUL_F16 : VOP3P_Real_vi <0x10>;
 defm V_PK_MIN_F16 : VOP3P_Real_vi <0x11>;
 defm V_PK_MAX_F16 : VOP3P_Real_vi <0x12>;
-
+} // End SubtargetPredicate = isGFX8GFX9
 
 let SubtargetPredicate = HasMadMixInsts in {
 defm V_MAD_MIX_F32 : VOP3P_Real_vi <0x20>;
@@ -1137,7 +1158,7 @@ defm V_DOT8_U32_U4  : VOP3P_Real_vi <0x2b>;
 defm V_DOT4_I32_I8  : VOP3P_Real_vi <0x28>;
 defm V_DOT8_I32_I4  : VOP3P_Real_vi <0x2a>;
 
-let SubtargetPredicate = HasMAIInsts in {
+let OtherPredicates = [HasMAIInsts] in {
 
 defm V_ACCVGPR_READ_B32  : VOP3P_Real_MAI <0x58>;
 defm V_ACCVGPR_WRITE_B32 : VOP3P_Real_MAI <0x59>;
@@ -1155,17 +1176,15 @@ defm V_MFMA_I32_32X32X4I8   : VOP3P_Real_MFMA <0x50, "v_mfma_i32_32x32x4_2b_i8">
 defm V_MFMA_I32_16X16X4I8   : VOP3P_Real_MFMA <0x51, "v_mfma_i32_16x16x4_4b_i8">;
 defm V_MFMA_I32_4X4X4I8     : VOP3P_Real_MFMA <0x52, "v_mfma_i32_4x4x4_16b_i8">;
 
-let SubtargetPredicate = isGFX908orGFX90A in {
-defm V_MFMA_I32_16X16X16I8  : VOP3P_Real_MFMA <0x55>;
-defm V_MFMA_I32_32X32X8I8   : VOP3P_Real_MFMA <0x54>;
-defm V_MFMA_F32_32X32X2BF16 : VOP3P_Real_MFMA <0x68>;
-defm V_MFMA_F32_16X16X2BF16 : VOP3P_Real_MFMA <0x69>;
-defm V_MFMA_F32_4X4X2BF16   : VOP3P_Real_MFMA <0x6b>;
-defm V_MFMA_F32_32X32X4BF16 : VOP3P_Real_MFMA <0x6c>;
-defm V_MFMA_F32_16X16X8BF16 : VOP3P_Real_MFMA <0x6d>;
-}
+defm V_MFMA_I32_16X16X16I8  : VOP3P_Real_MFMA_vi_gfx90a <0x55>;
+defm V_MFMA_I32_32X32X8I8   : VOP3P_Real_MFMA_vi_gfx90a <0x54>;
+defm V_MFMA_F32_32X32X2BF16 : VOP3P_Real_MFMA_vi_gfx90a <0x68>;
+defm V_MFMA_F32_16X16X2BF16 : VOP3P_Real_MFMA_vi_gfx90a <0x69>;
+defm V_MFMA_F32_4X4X2BF16   : VOP3P_Real_MFMA_vi_gfx90a <0x6b>;
+defm V_MFMA_F32_32X32X4BF16 : VOP3P_Real_MFMA_vi_gfx90a <0x6c>;
+defm V_MFMA_F32_16X16X8BF16 : VOP3P_Real_MFMA_vi_gfx90a <0x6d>;
 
-} // End SubtargetPredicate = HasMAIInsts
+} // End OtherPredicates = [HasMAIInsts]
 
 defm V_MFMA_F32_32X32X4BF16_1K  : VOP3P_Real_MFMA_gfx90a <0x63>;
 defm V_MFMA_F32_16X16X4BF16_1K  : VOP3P_Real_MFMA_gfx90a <0x64>;
@@ -1212,12 +1231,10 @@ defm V_SMFMAC_F32_32X32X32_BF8_FP8 : VOP3P_Real_SMFMAC <0x7d, "v_smfmac_f32_32x3
 defm V_SMFMAC_F32_32X32X32_FP8_BF8 : VOP3P_Real_SMFMAC <0x7e, "v_smfmac_f32_32x32x32fp8bf8">;
 defm V_SMFMAC_F32_32X32X32_FP8_FP8 : VOP3P_Real_SMFMAC <0x7f, "v_smfmac_f32_32x32x32fp8fp8">;
 
-let SubtargetPredicate = HasPackedFP32Ops in {
-  defm V_PK_FMA_F32 : VOP3P_Real_vi <0x30>;
-  defm V_PK_MUL_F32 : VOP3P_Real_vi <0x31>;
-  defm V_PK_ADD_F32 : VOP3P_Real_vi <0x32>;
-  defm V_PK_MOV_B32 : VOP3P_Real_vi <0x33>;
-} // End SubtargetPredicate = HasPackedFP32Ops
+defm V_PK_FMA_F32 : VOP3P_Real_vi <0x30>;
+defm V_PK_MUL_F32 : VOP3P_Real_vi <0x31>;
+defm V_PK_ADD_F32 : VOP3P_Real_vi <0x32>;
+defm V_PK_MOV_B32 : VOP3P_Real_vi <0x33>;
 
 //===----------------------------------------------------------------------===//
 // GFX10.

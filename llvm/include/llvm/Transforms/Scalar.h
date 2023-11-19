@@ -197,12 +197,6 @@ Pass *createLowerAtomicPass();
 
 //===----------------------------------------------------------------------===//
 //
-// LowerGuardIntrinsic - Lower guard intrinsics to normal control flow.
-//
-Pass *createLowerGuardIntrinsicPass();
-
-//===----------------------------------------------------------------------===//
-//
 // LowerWidenableCondition - Lower widenable condition to i1 true.
 //
 Pass *createLowerWidenableConditionPass();
@@ -222,12 +216,6 @@ Pass *createMergeICmpsLegacyPass();
 //
 FunctionPass *createInferAddressSpacesPass(unsigned AddressSpace = ~0u);
 extern char &InferAddressSpacesID;
-
-//===----------------------------------------------------------------------===//
-//
-// LowerExpectIntrinsics - Removes llvm.expect intrinsics and creates
-// "block_weights" metadata.
-FunctionPass *createLowerExpectIntrinsicPass();
 
 //===----------------------------------------------------------------------===//
 //
