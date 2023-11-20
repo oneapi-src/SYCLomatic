@@ -395,5 +395,6 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseXcsrgemmNnz",
-    CALL(MapNames::getDpctNamespace() + "sparse::set_nnz_to_zero", DEREF(0),
-         ARG(3), ARG(14), ARG(15), ARG(16))))
+    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm_nnz_estimiate",
+         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(13), ARG(14), ARG(15), ARG(16))))
