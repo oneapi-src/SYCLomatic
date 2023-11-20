@@ -2835,6 +2835,9 @@ void CallFunctionExpr::buildInfo() {
   //
   // TODO: Need to revisit the condition to add SYCL_EXTERNAL macro if issues
   // are observed in the future.
+  std::cout << "!!!!!CallFunctionExpr::buildInfo!!!!! DefFilePath.getCanonicalPath() [" << DefFilePath.getCanonicalPath() << "]" << std::endl;
+  std::cout << "!!!!!CallFunctionExpr::buildInfo!!!!! getFilePath().getCanonicalPath() [" << getFilePath().getCanonicalPath() << "]" << std::endl;
+  std::cout << "!!!!!CallFunctionExpr::buildInfo!!!!! FuncInfo->isLambda() [" << FuncInfo->isLambda() << "]" << std::endl;
   if (!DefFilePath.getCanonicalPath().empty() && DefFilePath != getFilePath() &&
       !isIncludedFile(getFilePath(), DefFilePath) && !FuncInfo->isLambda()) {
     FuncInfo->setNeedSyclExternMacro();
@@ -3103,6 +3106,7 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
 
   if (FuncInfo->IsSyclExternMacroNeeded()) {
     std::string StrRepl = "SYCL_EXTERNAL ";
+    std::cout << "!!!!!!!!!!!!!Add remplacement!!!!!!!!!!!! FilePath:[" << FilePath.getCanonicalPath() << "] Offset:[" << Offset << "]" << std::endl;
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
                                          nullptr));
