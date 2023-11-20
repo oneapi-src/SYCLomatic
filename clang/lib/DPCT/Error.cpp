@@ -45,8 +45,7 @@ void ShowStatus(int Status, std::string Message) {
         " and not supported yet. "
         "The latest supported version is " +
         dpct::DpctGlobalInfo::getCudaVersion() +
-        ". You can specify CUDA header files by option --cuda-include-path or "
-        "use --force-migration to do the migration.";
+        ". You can specify CUDA header files by --cuda-include-path option.";
     break;
   case MigrationErrorCudaVersionUnsupported:
     StatusString = "Error: The version of CUDA header files specified by "
@@ -55,8 +54,7 @@ void ShowStatus(int Status, std::string Message) {
                    " and not supported yet. The latest supported "
                    "version is " +
                    dpct::DpctGlobalInfo::getCudaVersion() +
-                   ". You can use --force-migration to "
-                   "do the migration.";
+                   ". Please switch to a supported CUDA header files.";
     break;
   case MigrationErrorCannotDetectCudaPath:
     StatusString = "Error: Could not detect path to CUDA header files. Use "

@@ -49,8 +49,8 @@ std::vector<std::string> ExtraIncPaths;
 int SDKVersionMajor=0;
 int SDKVersionMinor=0;
 
-bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath, CudaVersion& CV) {
-  CV = CudaVersion::UNKNOWN;
+bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath) {
+  Version = CudaVersion::UNKNOWN;
   std::ifstream CudaFile(FilePath, std::ios::in);
   if (!CudaFile.is_open()) {
     return false;
@@ -77,53 +77,54 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
   SDKVersionMajor = Major;
   SDKVersionMinor = Minor;
   if (Major < 8) {
-    CV = CudaVersion::CUDA_80;
+    Version = CudaVersion::CUDA_80;
   }
   if (Major == 8 && Minor == 0) {
-    CV = CudaVersion::CUDA_80;
+    Version = CudaVersion::CUDA_80;
   } else if (Major == 9 && Minor == 0) {
-    CV = CudaVersion::CUDA_90;
+    Version = CudaVersion::CUDA_90;
   } else if (Major == 9 && Minor == 1) {
-    CV = CudaVersion::CUDA_91;
+    Version = CudaVersion::CUDA_91;
   } else if (Major == 9 && Minor == 2) {
-    CV = CudaVersion::CUDA_92;
+    Version = CudaVersion::CUDA_92;
   } else if (Major == 10 && Minor == 0) {
-    CV = CudaVersion::CUDA_100;
+    Version = CudaVersion::CUDA_100;
   } else if (Major == 10 && Minor == 1) {
-    CV = CudaVersion::CUDA_101;
+    Version = CudaVersion::CUDA_101;
   } else if (Major == 10 && Minor == 2) {
-    CV = CudaVersion::CUDA_102;
+    Version = CudaVersion::CUDA_102;
   } else if (Major == 11 && Minor == 0) {
-    CV = CudaVersion::CUDA_110;
+    Version = CudaVersion::CUDA_110;
   } else if (Major == 11 && Minor == 1) {
-    CV = CudaVersion::CUDA_111;
+    Version = CudaVersion::CUDA_111;
   } else if (Major == 11 && Minor == 2) {
-    CV = CudaVersion::CUDA_112;
+    Version = CudaVersion::CUDA_112;
   } else if (Major == 11 && Minor == 3) {
-    CV = CudaVersion::CUDA_113;
+    Version = CudaVersion::CUDA_113;
   } else if (Major == 11 && Minor == 4) {
-    CV = CudaVersion::CUDA_114;
+    Version = CudaVersion::CUDA_114;
   } else if (Major == 11 && Minor == 5) {
-    CV = CudaVersion::CUDA_115;
+    Version = CudaVersion::CUDA_115;
   } else if (Major == 11 && Minor == 6) {
-    CV = CudaVersion::CUDA_116;
+    Version = CudaVersion::CUDA_116;
   } else if (Major == 11 && Minor == 7) {
-    CV = CudaVersion::CUDA_117;
+    Version = CudaVersion::CUDA_117;
   } else if (Major == 11 && Minor == 8) {
-    CV = CudaVersion::CUDA_118;
+    Version = CudaVersion::CUDA_118;
   } else if (Major == 12 && Minor == 0) {
-    CV = CudaVersion::CUDA_120;
+    Version = CudaVersion::CUDA_120;
   } else if (Major == 12 && Minor == 1) {
-    CV = CudaVersion::CUDA_121;
+    Version = CudaVersion::CUDA_121;
   } else if (Major == 12 && Minor == 2) {
-    CV = CudaVersion::CUDA_122;
+    Version = CudaVersion::CUDA_122;
   }
 
-  if (CV != CudaVersion::UNKNOWN) {
+  if (Version != CudaVersion::UNKNOWN) {
     IsVersionSupported = true;
     return true;
   } else if (Major >= 12) {
-    CV = CudaVersion::NEW;
+    Version = CudaVersion::NEW;
+    IsVersionPartSupported = true;
     return true;
   }
   return false;
@@ -230,7 +231,7 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
     return false;
   IsIncludePathValid = true;
   IncludePath = FilePath;
-  bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h", Version);
+  bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h");
   if (!IsFound)
     return false;
   IsValid = true;
@@ -357,9 +358,6 @@ CudaInstallationDetector::CudaInstallationDetector(
       InstallPath = Candidate.Path;
       if (validateCudaHeaderDirectory(InstallPath + "/include/", D) ||
           validateCudaHeaderDirectory(InstallPath, D))
-        break;
-      // DPCT exits execution when the auto detect CUDA version not supported yet.
-      if (IsIncludePathValid)
         break;
     }
   }

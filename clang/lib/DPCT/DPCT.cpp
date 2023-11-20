@@ -216,30 +216,30 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   driver::CudaInstallationDetector CudaIncludeDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  std::string IncludePath = CudaIncludeDetector.getIncludePath().str();
+  std::string Path = CudaIncludeDetector.getIncludePath().str();
   dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
   if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
       ShowStatus(MigrationErrorInvalidCudaIncludePath);
       dpctExit(MigrationErrorInvalidCudaIncludePath);
     }
-    if (!CudaIncludeDetector.isVersionSupported() && !ForceMigration) {
-      ShowStatus(MigrationErrorCudaVersionUnsupported, CudaIncludeDetector.getParsedCUDAVersion());
+    if (!CudaIncludeDetector.isVersionSupported() &&
+        !CudaIncludeDetector.isVersionPartSupported()) {
+      ShowStatus(MigrationErrorCudaVersionUnsupported,
+                 CudaIncludeDetector.getParsedCUDAVersion());
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
   } else if (!CudaIncludeDetector.isIncludePathValid()) {
     ShowStatus(MigrationErrorCannotDetectCudaPath);
     dpctExit(MigrationErrorCannotDetectCudaPath);
-  } else if (!CudaIncludeDetector.isVersionSupported() && !ForceMigration) {
-    ShowStatus(MigrationErrorDetectedCudaVersionUnsupported, CudaIncludeDetector.getParsedCUDAVersion());
+  } else if (!CudaIncludeDetector.isVersionSupported() &&
+             !CudaIncludeDetector.isVersionPartSupported()) {
+    ShowStatus(MigrationErrorDetectedCudaVersionUnsupported,
+               CudaIncludeDetector.getParsedCUDAVersion());
     dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
   }
 
-  if (ForceMigration) {
-    DpctLog() << " Warning: Specify --force-migration may cause the unexpected migration result.\n ";
-  }
-
-  makeCanonical(IncludePath);
+  makeCanonical(Path);
   SmallString<512> CudaPathAbs;
   std::error_code EC = dpct::real_path(Path, CudaPathAbs, true);
   if ((bool)EC) {
