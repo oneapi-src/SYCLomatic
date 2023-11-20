@@ -28,8 +28,11 @@ void print_data(int* data, int num) {
   std::cout << std::endl;
 }
 
-//CHECK: void SumKernel(int* data, const sycl::nd_item<3> &item_ct1) {
+//CHECK: void SumKernel(int* data, 
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
 //CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::plus<>());
@@ -37,16 +40,22 @@ void print_data(int* data, int num) {
 //CHECK-NEXT:}
 __global__ void SumKernel(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
+
   __shared__ typename WarpReduce::TempStorage temp1;
+
   int threadid = threadIdx.x;
+
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Sum(input);
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel(int* data, const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ReduceKernel(int* data,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
 //CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::plus<>());
@@ -54,16 +63,22 @@ __global__ void SumKernel(int* data) {
 //CHECK-NEXT:}
 __global__ void ReduceKernel(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
+
   __shared__ typename WarpReduce::TempStorage temp1;
+
   int threadid = threadIdx.x;
+
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Reduce(input, cub::Sum());
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel_Max(int* data, const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ReduceKernel_Max(int* data,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
 //CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::maximum<>());
@@ -71,16 +86,22 @@ __global__ void ReduceKernel(int* data) {
 //CHECK-NEXT:}
 __global__ void ReduceKernel_Max(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
+  
   __shared__ typename WarpReduce::TempStorage temp1;
+
   int threadid = threadIdx.x;
+
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Reduce(input, cub::Max());
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel_Min(int* data, const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ReduceKernel_Min(int* data,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
 //CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::minimum<>());
@@ -88,16 +109,22 @@ __global__ void ReduceKernel_Max(int* data) {
 //CHECK-NEXT:}
 __global__ void ReduceKernel_Min(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
+  
   __shared__ typename WarpReduce::TempStorage temp1;
+
   int threadid = threadIdx.x;
+
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Reduce(input, cub::Min());
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel2(int* data, int valid_items, const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ReduceKernel2(int* data,
+//CHECK-NEXT: int valid_items, const sycl::nd_item<3> &item_ct1) {
+//CHECK_EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
 //CHECK-NEXT:  output = dpct::group::reduce_over_partial_group(item_ct1, input, valid_items, sycl::plus<>());
@@ -105,25 +132,34 @@ __global__ void ReduceKernel_Min(int* data) {
 //CHECK-NEXT:}
 __global__ void ReduceKernel2(int* data, int valid_items) {
   typedef cub::WarpReduce<int> WarpReduce;
+
   __shared__ typename WarpReduce::TempStorage temp1;
+
   int threadid = threadIdx.x;
+
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Reduce(input, cub::Sum(), valid_items);
   data[threadid] = output;
 }
 
-// CHECK: void SumKernel2(int* data, int valid_items, const sycl::nd_item<3> &item_ct1) {
-// CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
-// CHECK-NEXT:  int input = data[threadid];
-// CHECK-NEXT:  int output = 0;
-// CHECK-NEXT:  output = dpct::group::reduce_over_partial_group(item_ct1, input, valid_items, sycl::plus<>());
-// CHECK-NEXT:  data[threadid] = output;
-// CHECK-NEXT: }
+//CHECK: void SumKernel2(int* data,
+//CHECK-NEXT: int valid_items, const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
+//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
+//CHECK-NEXT:  int input = data[threadid];
+//CHECK-NEXT:  int output = 0;
+//CHECK-NEXT:  output = dpct::group::reduce_over_partial_group(item_ct1, input, valid_items, sycl::plus<>());
+//CHECK-NEXT:  data[threadid] = output;
+//CHECK-NEXT: }
 __global__ void SumKernel2(int* data, int valid_items) {
   typedef cub::WarpReduce<int> WarpReduce;
+
   __shared__ typename WarpReduce::TempStorage temp1;
+
   int threadid = threadIdx.x;
+
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Sum(input, valid_items);
@@ -189,11 +225,11 @@ int main() {
   cudaDeviceSynchronize();
   verify_data(dev_data, 4);
 
-  // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:         SumKernel2(dev_data, 4, item_ct1);
-  // CHECK-NEXT:       });
+// CHECK: q_ct1.parallel_for(
+// CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+// CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+// CHECK-NEXT:         SumKernel2(dev_data, 4, item_ct1);
+// CHECK-NEXT:       });
   SumKernel2<<<GridSize, BlockSize>>>(dev_data, 4);
   cudaDeviceSynchronize();
   verify_data(dev_data, 4);
