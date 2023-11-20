@@ -202,11 +202,13 @@ public:
   /// instrprof file.
   static Expected<std::unique_ptr<InstrProfReader>>
   create(const Twine &Path, vfs::FileSystem &FS,
-         const InstrProfCorrelator *Correlator = nullptr);
+         const InstrProfCorrelator *Correlator = nullptr,
+         std::function<void(Error)> Warn = nullptr);
 
   static Expected<std::unique_ptr<InstrProfReader>>
   create(std::unique_ptr<MemoryBuffer> Buffer,
-         const InstrProfCorrelator *Correlator = nullptr);
+         const InstrProfCorrelator *Correlator = nullptr,
+         std::function<void(Error)> Warn = nullptr);
 
   /// \param Weight for raw profiles use this as the temporal profile trace
   ///               weight
@@ -323,11 +325,14 @@ private:
   // the variant types of the profile.
   uint64_t Version;
   uint64_t CountersDelta;
+  uint64_t BitmapDelta;
   uint64_t NamesDelta;
   const RawInstrProf::ProfileData<IntPtrT> *Data;
   const RawInstrProf::ProfileData<IntPtrT> *DataEnd;
   const char *CountersStart;
   const char *CountersEnd;
+  const char *BitmapStart;
+  const char *BitmapEnd;
   const char *NamesStart;
   const char *NamesEnd;
   // After value profile is all read, this pointer points to
@@ -341,10 +346,16 @@ private:
   /// Start address of binary id length and data pairs.
   const uint8_t *BinaryIdsStart;
 
+  std::function<void(Error)> Warn;
+
+  /// Maxium counter value 2^56.
+  static const uint64_t MaxCounterValue = (1ULL << 56);
+
 public:
 #ifdef SYCLomatic_CUSTOMIZATION
   RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
-                     const InstrProfCorrelator *Correlator)
+                     const InstrProfCorrelator *Correlator,
+                     std::function<void(Error)> Warn)
       : DataBuffer(std::move(DataBuffer)),
         Correlator(dyn_cast_or_null<const InstrProfCorrelatorImpl<IntPtrT>>(
             Correlator)),
@@ -352,14 +363,16 @@ public:
         Data(nullptr), DataEnd(nullptr), CountersStart(nullptr),
         CountersEnd(nullptr), NamesStart(nullptr), NamesEnd(nullptr),
         ValueDataStart(nullptr), ValueKindLast(0), CurValueDataSize(0),
-        BinaryIdsStart(nullptr) {}
+        BinaryIdsStart(nullptr), Warn(Warn) {}
 #else
   RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
-                     const InstrProfCorrelator *Correlator)
+                     const InstrProfCorrelator *Correlator,
+                     std::function<void(Error)> Warn)
       : DataBuffer(std::move(DataBuffer)),
         Correlator(dyn_cast_or_null<const InstrProfCorrelatorImpl<IntPtrT>>(
-            Correlator)) {}
-#endif //SYCLomatic_CUSTOMIZATION
+            Correlator)),
+        Warn(Warn) {}
+#endif // SYCLomatic_CUSTOMIZATION
   RawInstrProfReader(const RawInstrProfReader &) = delete;
   RawInstrProfReader &operator=(const RawInstrProfReader &) = delete;
 
@@ -386,6 +399,8 @@ public:
   bool useDebugInfoCorrelate() const override {
     return (Version & VARIANT_MASK_DBG_CORRELATE) != 0;
   }
+
+  bool useCorrelate() const { return useDebugInfoCorrelate(); }
 
   bool hasSingleByteCoverage() const override {
     return (Version & VARIANT_MASK_BYTE_COVERAGE) != 0;
@@ -441,6 +456,7 @@ private:
   Error readName(NamedInstrProfRecord &Record);
   Error readFuncHash(NamedInstrProfRecord &Record);
   Error readRawCounts(InstrProfRecord &Record);
+  Error readRawBitmapBytes(InstrProfRecord &Record);
   Error readValueProfilingData(InstrProfRecord &Record);
   bool atEnd() const { return Data == DataEnd; }
 
@@ -453,6 +469,7 @@ private:
       // As we advance to the next record, we maintain the correct CountersDelta
       // with respect to the next record.
       CountersDelta -= sizeof(*Data);
+      BitmapDelta -= sizeof(*Data);
     }
     Data++;
     ValueDataStart += CurValueDataSize;
@@ -745,6 +762,10 @@ public:
   /// Fill Counts with the profile data for the given function name.
   Error getFunctionCounts(StringRef FuncName, uint64_t FuncHash,
                           std::vector<uint64_t> &Counts);
+
+  /// Fill Bitmap Bytes with the profile data for the given function name.
+  Error getFunctionBitmapBytes(StringRef FuncName, uint64_t FuncHash,
+                               std::vector<uint8_t> &BitmapBytes);
 
   /// Return the maximum of all known function counts.
   /// \c UseCS indicates whether to use the context-sensitive count.
