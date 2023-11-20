@@ -19,6 +19,18 @@ int main(){
   long latype = ncclInt32;
   // CHECK: oneapi::ccl::datatype catype = oneapi::ccl::datatype::int32;
   ncclDataType_t catype = ncclInt32;
+
+  // CHECK: catype = oneapi::ccl::datatype::uint8;
+  catype = ncclUint8;
+  // CHECK: catype = {oneapi::ccl::datatype::uint8};
+  catype = {ncclUint8};
+  // CHECK: catype = (oneapi::ccl::datatype::uint8);
+  catype = (ncclUint8);
+  // CHECK: catype = std::forward<oneapi::ccl::datatype&&>(oneapi::ccl::datatype::uint8);
+  catype = std::forward<ncclDataType_t&&>(ncclUint8);
+  // CHECK: catype = std::move(oneapi::ccl::datatype::uint8);
+  catype = std::move(ncclUint8);
+
   switch(atype) {        
        // CHECK: case int(oneapi::ccl::datatype::int32): std::cout << "Int32" << std::endl; break;
       case ncclInt32: std::cout << "Int32" << std::endl; break;
