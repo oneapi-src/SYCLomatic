@@ -2840,6 +2840,7 @@ void CallFunctionExpr::buildInfo() {
   std::cout << "!!!!!CallFunctionExpr::buildInfo!!!!! FuncInfo->isLambda() [" << FuncInfo->isLambda() << "]" << std::endl;
   if (!DefFilePath.getCanonicalPath().empty() && DefFilePath != getFilePath() &&
       !isIncludedFile(getFilePath(), DefFilePath) && !FuncInfo->isLambda()) {
+    std::cout << "111111111111" << std::endl;
     FuncInfo->setNeedSyclExternMacro();
   }
 
