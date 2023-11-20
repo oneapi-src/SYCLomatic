@@ -61,11 +61,11 @@ auto isDeviceFuncCallExpr = []() {
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
                       "DeviceSegmentedSort", "DeviceHistogram");
   };
-  return callExpr(callee(
-      functionDecl(allOf(hasDeviceFuncName(),
-                         hasDeclContext(cxxRecordDecl(allOf(
-                             hasDeviceRecordName(),
-                             hasAncestor(namespaceDecl(hasName("cub"))))))))));
+  return callExpr(callee(functionDecl(allOf(
+      hasDeviceFuncName(),
+      hasDeclContext(cxxRecordDecl(allOf(
+          hasDeviceRecordName(),
+          hasAncestor(namespaceDecl(hasName("cub"))))))))));
 };
 
 } // namespace
