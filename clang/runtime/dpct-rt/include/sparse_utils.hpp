@@ -1197,6 +1197,55 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
 }
 #endif
 
+/// Set a CSR sparse matrix's non-zero elements number to zero.
+/// This function is only used for preventing user to allocate memory for the
+/// output of a sparse matrix, because some dpct sparse helper function allocate
+/// memory internally and no need for user to allocate memory explicitly.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] m Specifies the row number of the sparse matrix.
+/// \param [in] info Specifies the matrix info.
+/// \param [in, out] row_ptr An array of length \p m + 1.
+/// \param [out] nnz_host_ptr A host pointer saves the nnz of the sparse matrix.
+/// It will be rewritten to zero if is is not NULL.
+void set_nnz_to_zero(sycl::queue queue, int m,
+                     const std::shared_ptr<matrix_info> info, int *row_ptr,
+                     int *nnz_host_ptr) {
+  if (nnz_host_ptr) {
+    *nnz_host_ptr = 0;
+  }
+  int last_element_of_row_ptr = info->get_index_base();
+  dpct::dpct_memcpy(row_ptr + m, &last_element_of_row_ptr, sizeof(int),
+                    host_to_device);
+}
+
+/// Computes a  sparse matrix (CSR format)-sparse matrix (CSR format) product:
+/// C = op(A) * op(B)
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a The operation applied to the matrix A.
+/// \param [in] trans_b The operation applied to the matrix B.
+/// \param [in] trans_a The operation applied to the matrix A.
+/// \param [in] m The rows number of op(A) and C.
+/// \param [in] n The columns number of op(B) and C.
+/// \param [in] k The columns number of op(A) and rows number of op(B).
+/// \param [in] trans_a The operation applied to the matrix A.
+/// \param [in] trans_b The operation applied to the matrix B.
+/// \param [in] info_a Matrix info of the matrix A.
+/// \param [in] val_a An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] col_ind_a An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_c Matrix info of the matrix C.
+/// \param [in] val_b An array containing the non-zero elements of the matrix B.
+/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] col_ind_b An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_c Matrix info of the matrix C.
+/// \param [in] val_c An array containing the non-zero elements of the matrix C.
+/// \param [in] row_ptr_c An array of length row number + 1.
+/// \param [in] col_ind_c An array containing the column indices in index-based
+/// numbering.
 template <typename T>
 inline void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
                     oneapi::mkl::transpose trans_b, int m, int n, int k,
@@ -1204,8 +1253,8 @@ inline void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
                     const int *row_ptr_a, const int *col_ind_a,
                     const std::shared_ptr<matrix_info> info_b, const T *val_b,
                     const int *row_ptr_b, const int *col_ind_b,
-                    const std::shared_ptr<matrix_info> info_c, T *val_c,
-                    const int *row_ptr_c, int *col_ind_c) {
+                    const std::shared_ptr<matrix_info> info_c, T *&val_c,
+                    const int *row_ptr_c, int *&col_ind_c) {
   oneapi::mkl::sparse::matrix_handle_t matrix_handle_a = nullptr;
   oneapi::mkl::sparse::matrix_handle_t matrix_handle_b = nullptr;
   oneapi::mkl::sparse::matrix_handle_t matrix_handle_c = nullptr;
