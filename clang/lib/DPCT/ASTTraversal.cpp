@@ -9871,12 +9871,9 @@ void MemoryMigrationRule::mallocArrayMigration(const CallExpr *C,
                                                SourceManager &SM) {
 
   requestFeature(HelperFeatureEnum::device_ext);
-  mallocMigrationWithTransformation(SM, C, Name,
-                                    "new " + MapNames::getDpctNamespace() +
-                                        (DpctGlobalInfo::useExtBindlessImages()
-                                             ? "image_data_wrapper"
-                                             : "image_matrix"),
-                                    "", false);
+  mallocMigrationWithTransformation(
+      SM, C, Name, "new " + MapNames::getDpctNamespace() + "image_matrix", "",
+      false);
 
   emplaceTransformation(removeArg(C, FlagIndex, SM));
 
@@ -10251,32 +10248,11 @@ void MemoryMigrationRule::arrayMigration(
     aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
   } else if (NameRef == "cudaMemcpy2DToArray") {
-    if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::ostringstream OS;
-      std::string MemSizeStr = "(" + ExprAnalysis::ref(C->getArg(5)) + ") * (" +
-                               ExprAnalysis::ref(C->getArg(6)) + ")";
-
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << ExprAnalysis::ref(C->getArg(0)) << "->set_data_ptr("
-         << MapNames::getClNamespace() << "malloc_device(" << MemSizeStr
-         << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}}));\n";
-
-      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy("
-         << ExprAnalysis::ref(C->getArg(0)) << "->get_data_ptr(), &"
-         << ExprAnalysis::ref(C->getArg(3)) << ", " << MemSizeStr
-         << ").wait()";
-
-      emplaceTransformation(new ReplaceStmt(C, OS.str()));
-    } else {
-      insertToPitchedData(C, 0);
-      aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
-      aggregatePitchedData(C, 3, 4, SM);
-      insertZeroOffset(C, 5);
-      aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
-    }
+    insertToPitchedData(C, 0);
+    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+    aggregatePitchedData(C, 3, 4, SM);
+    insertZeroOffset(C, 5);
+    aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
   } else if (NameRef == "cudaMemcpyArrayToArray") {
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);

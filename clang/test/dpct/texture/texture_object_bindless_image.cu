@@ -10,13 +10,13 @@ __global__ void kernel(cudaTextureObject_t tex) {
 int main() {
   void *input;
   size_t sizeInBytes;
-  // CHECK: dpct::image_data_wrapper_p pArr;
+  // CHECK: dpct::image_matrix_p pArr;
   cudaArray_t pArr;
   // TODO: need support.
   // cudaMipmappedArray_t pMipMapArr;
-  // CHECK: dpct::image_channel_format desc;
+  // CHECK: dpct::image_channel desc;
   cudaChannelFormatDesc desc;
-  // CHECK: dpct::image_data_wrapper resDesc;
+  // CHECK: dpct::image_data resDesc;
   cudaResourceDesc resDesc;
   // CHECK: resDesc.set_data_type(dpct::image_data_type::matrix);
   resDesc.resType = cudaResourceTypeArray;
@@ -50,7 +50,7 @@ int main() {
   cudaTextureDesc texDesc;
   // CHECK: sycl::ext::oneapi::experimental::sampled_image_handle tex;
   cudaTextureObject_t tex;
-  // CHECK: tex = dpct::create_image_wrapper(resDesc, texDesc);
+  // CHECK: tex = dpct::create_bindless_image(resDesc, texDesc);
   cudaCreateTextureObject(&tex, &resDesc, &texDesc, NULL);
   // CHECK: sycl::ext::oneapi::experimental::destroy_image_handle(tex, dpct::get_in_order_queue());
   cudaDestroyTextureObject(tex);

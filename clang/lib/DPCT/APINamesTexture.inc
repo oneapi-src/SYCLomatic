@@ -6,23 +6,17 @@
 //
 //===----------------------------------------------------------------------===//
 CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
-    ENTRY_TEMPLATED("cudaCreateChannelDesc",
-                    TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                         "create_image_channel_format",
-                                     std::vector<size_t>(1, 0))),
-    CONDITIONAL_FACTORY_ENTRY(
-        [](const CallExpr *C) -> bool { return C->getNumArgs(); },
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                                ENTRY_RENAMED("cudaCreateChannelDesc",
-                                              MapNames::getDpctNamespace() +
-                                                  "image_channel")),
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            ENTRY_TEMPLATED("cudaCreateChannelDesc",
-                            TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                                 "image_channel::create",
-                                             std::vector<size_t>(1, 0))))))
+    [](const CallExpr *C) -> bool { return C->getNumArgs(); },
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ENTRY_RENAMED("cudaCreateChannelDesc",
+                                          MapNames::getDpctNamespace() +
+                                              "image_channel")),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ENTRY_TEMPLATED("cudaCreateChannelDesc",
+                        TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                             "image_channel::create",
+                                         std::vector<size_t>(1, 0)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_RENAMED("cudaCreateChannelDescHalf",
                                       MapNames::getDpctNamespace() +
@@ -131,12 +125,15 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToArray",
                                                       0 /*start arg idx*/)))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
-                                            CALL(MapNames::getDpctNamespace() +
-                                                     "create_image_wrapper",
-                                                 DEREF(1), DEREF(2)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cudaCreateTextureObject", DEREF(0),
+                            CALL(DpctGlobalInfo::useExtBindlessImages()
+                                     ? MapNames::getDpctNamespace() +
+                                           "create_bindless_image"
+                                     : MapNames::getDpctNamespace() +
+                                           "create_image_wrapper",
+                                 DEREF(1), DEREF(2)))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
