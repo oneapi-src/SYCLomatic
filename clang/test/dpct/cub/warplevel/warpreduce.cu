@@ -37,11 +37,8 @@ void print_data(int* data, int num) {
 //CHECK-NEXT:}
 __global__ void SumKernel(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
-
   __shared__ typename WarpReduce::TempStorage temp1;
-
   int threadid = threadIdx.x;
-
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Sum(input);
@@ -57,11 +54,8 @@ __global__ void SumKernel(int* data) {
 //CHECK-NEXT:}
 __global__ void ReduceKernel(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
-
   __shared__ typename WarpReduce::TempStorage temp1;
-
   int threadid = threadIdx.x;
-
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Reduce(input, cub::Sum());
@@ -78,9 +72,7 @@ __global__ void ReduceKernel(int* data) {
 __global__ void ReduceKernel_Max(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
   __shared__ typename WarpReduce::TempStorage temp1;
-
   int threadid = threadIdx.x;
-
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Reduce(input, cub::Max());
@@ -97,9 +89,7 @@ __global__ void ReduceKernel_Max(int* data) {
 __global__ void ReduceKernel_Min(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
   __shared__ typename WarpReduce::TempStorage temp1;
-
   int threadid = threadIdx.x;
-
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Reduce(input, cub::Min());
@@ -115,11 +105,8 @@ __global__ void ReduceKernel_Min(int* data) {
 //CHECK-NEXT:}
 __global__ void ReduceKernel2(int* data, int valid_items) {
   typedef cub::WarpReduce<int> WarpReduce;
-
   __shared__ typename WarpReduce::TempStorage temp1;
-
   int threadid = threadIdx.x;
-
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Reduce(input, cub::Sum(), valid_items);
@@ -135,11 +122,8 @@ __global__ void ReduceKernel2(int* data, int valid_items) {
 // CHECK-NEXT: }
 __global__ void SumKernel2(int* data, int valid_items) {
   typedef cub::WarpReduce<int> WarpReduce;
-
   __shared__ typename WarpReduce::TempStorage temp1;
-
   int threadid = threadIdx.x;
-
   int input = data[threadid];
   int output = 0;
   output = WarpReduce(temp1).Sum(input, valid_items);
