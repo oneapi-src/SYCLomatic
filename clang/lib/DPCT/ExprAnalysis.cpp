@@ -119,7 +119,7 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation Loc) {
   }
 
   return std::pair<SourceLocation, size_t>(
-  Loc, TokenLen);
+    Loc, TokenLen);
 }
 
 std::pair<SourceLocation, size_t>
@@ -403,7 +403,7 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
     if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
       ReplSet.init(std::string(
-        FileBuffer.value().getBuffer().data() + SrcBegin, SrcLength));
+          FileBuffer.value().getBuffer().data() + SrcBegin, SrcLength));
       return;
     }
   }
@@ -755,7 +755,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     std::string ReplacementStr = MapNames::findReplacedName(DeviceInfoVarRule::PropNamesMap, MemberName);
     if (!ReplacementStr.empty()) {
       std::string TmplArg = "";
-      if (MemberName == "maxGridSize" || 
+      if (MemberName == "maxGridSize" ||  
           MemberName == "maxThreadsDim") {
         // Similar code in ASTTraversal.cpp
         TmplArg = "<int *>";
@@ -1070,7 +1070,7 @@ void ExprAnalysis::analyzeExpr(const IfStmt *IS) {
 
   if (IS->getElse())
     // "else if" will also be handled here as another ifstmt
-    dispatch(IS->getElse());
+    dispatch(IS->getElse());  
 }
 
 void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
@@ -1778,7 +1778,7 @@ void FunctorAnalysis::addConstQuailfier(const CXXRecordDecl *CRD) {
     const CXXMethodDecl *Method = dyn_cast<CXXMethodDecl>(D);
     if (!Method) {
        if (const FunctionTemplateDecl *FTD =
-              dyn_cast<FunctionTemplateDecl>(D))
+              dyn_cast<FunctionTemplateDecl>(D)) {
         if (const CXXMethodDecl *CMD =
                 dyn_cast_or_null<CXXMethodDecl>(FTD->getAsFunction())) {
           Method = CMD;
