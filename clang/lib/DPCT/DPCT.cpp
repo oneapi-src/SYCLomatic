@@ -1255,7 +1255,7 @@ int runDPCT(int argc, const char **argv) {
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {
-    std::vector<std::string> CmakeScriptFiles;
+    std::vector<clang::tooling::DpctPath> CmakeScriptFiles;
     collectCmakeScripts(InRoot, OutRoot, CmakeScriptFiles);
     for (const auto &ScriptFile : CmakeScriptFiles) {
       if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
