@@ -8,6 +8,9 @@
 __global__ void kernelFuncHalfConversion() {
   half h;
   half2 h2;
+  double d;
+  // CHECK: h = sycl::half(d);
+  h = __double2half(d);
   // CHECK: h2 = sycl::half2(h, h);
   h2 = make_half2(h, h);
 }
