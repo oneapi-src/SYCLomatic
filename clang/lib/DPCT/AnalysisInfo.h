@@ -1112,6 +1112,18 @@ public:
   inline static void setGenBuildScriptEnabled(bool Enable = true) {
     GenBuildScript = Enable;
   }
+  inline static bool IsMigrateCmakeScriptEnabled() {
+    return MigrateCmakeScript;
+  }
+  inline static void setMigrateCmakeScriptEnabled(bool Enable = true) {
+    MigrateCmakeScript = Enable;
+  }
+  inline static bool IsMigrateCmakeScriptOnlyEnabled() {
+    return MigrateCmakeScriptOnly;
+  }
+  inline static void setMigrateCmakeScriptOnlyEnabled(bool Enable = true) {
+    MigrateCmakeScriptOnly = Enable;
+  }
   inline static bool isCommentsEnabled() { return EnableComments; }
   inline static void setCommentsEnabled(bool Enable = true) {
     EnableComments = Enable;
@@ -1312,9 +1324,9 @@ public:
                                         const ASTContext &Context) {
     if (auto ET = QT->getAs<ElaboratedType>()) {
       if (ET->getQualifier())
-        QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
-                              ET->getNamedType(),
-                              ET->getOwnedTagDecl());
+        QT = Context.getElaboratedType(ElaboratedTypeKeyword::None,
+                                       ET->getQualifier(), ET->getNamedType(),
+                                       ET->getOwnedTagDecl());
       else
         QT = ET->getNamedType();
     }
@@ -2041,6 +2053,8 @@ private:
   static bool EnableCtad;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
+  static bool MigrateCmakeScript;
+  static bool MigrateCmakeScriptOnly;
   static bool EnableComments;
   static std::string ClNamespace;
   static std::set<ExplicitNamespace> ExplicitNamespaceSet;
