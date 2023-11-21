@@ -30,6 +30,8 @@
 // DASH-NEXT: --in-root-exclude
 // DASH-NEXT: --intercept-build
 // DASH-NEXT: --keep-original-code
+// DASH-NEXT: --migrate-cmake-script
+// DASH-NEXT: --migrate-cmake-script-only
 // DASH-NEXT: --no-cl-namespace-inline
 // DASH-NEXT: --no-dpcpp-extensions=
 // DASH-NEXT: --no-dry-pattern

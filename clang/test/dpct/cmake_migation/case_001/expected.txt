@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.24)
+###CMake_minimum_required(VERSION 3.10)
+#CMake_minimum_required(VERSION 3.10)
+project(foo-bar LANGUAGES CXX)
+   set(CMAKE_CXX_FLAGS "-fsycl")
+set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+find_package(IntelSYCL REQUIRED)
+set(SOURCES
+    ${CMAKE_SOURCE_DIR}/foo/main.dp.cpp ${CMAKE_SOURCE_DIR}/foo/bar/util.dp.cpp)
+include_directories(
+    ${CMAKE_SOURCE_DIR}/foo/bar
+    ${CUDA_INCLUDE_DIRS}
+)
+add_executable(foo-bar ${SOURCES})
+

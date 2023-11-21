@@ -236,4 +236,3 @@ jobs:
           cd test_repo
           python run_test.py --suite ${{ matrix.test_suite }} --option option_usmnone_cpu
           echo $PWD
-      
