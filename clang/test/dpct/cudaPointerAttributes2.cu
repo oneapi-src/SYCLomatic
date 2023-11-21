@@ -26,7 +26,7 @@ int main() {
   cudaPointerAttributes attributes;
   // CHECK: attributes.init(h_A);
   cudaPointerGetAttributes(&attributes, h_A);
-  // CHECK: std::cout << attributes.get_device_id() << std::endl;
+  // CHECK: if (attributes.get_device_id() != (unsigned int)-1) {
   // CHECK: attributes.get_memory_type();
   // CHECK: std::cout << attributes.get_host_pointer() << std::endl;
   // CHECK: std::cout << attributes.get_device_pointer() << std::endl;
