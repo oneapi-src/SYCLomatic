@@ -37,6 +37,97 @@ struct MatchResult {
   std::unordered_map<std::string, std::string> Bindings;
 };
 
+extern llvm::cl::opt<bool> MigrateCmakeScriptOnly;
+extern llvm::cl::opt<bool> MigrateCmakeScript;
+
+const std::unordered_map<std::string /*command*/, bool /*need lower*/>
+    cmake_commands = {
+        {"cmake_minimum_required", 1},
+        {"cmake_parse_arguments", 1},
+        {"cmake_path", 1},
+        {"cmake_policy", 1},
+        {"file", 1},
+        {"find_file", 1},
+        {"find_library", 1},
+        {"find_package", 1},
+        {"find_path", 1},
+        {"find_program", 1},
+        {"foreach", 1},
+        {"function", 1},
+        {"get_cmake_property", 1},
+        {"get_directory_property", 1},
+        {"get_filename_component", 1},
+        {"get_property", 1},
+        {"list", 1},
+        {"macro", 1},
+        {"mark_as_advanced", 1},
+        {"message", 1},
+        {"separate_arguments", 1},
+        {"set", 1},
+        {"set_directory_properties", 1},
+        {"set_property", 1},
+        {"string", 1},
+        {"unset", 1},
+        {"add_compile_definitions", 1},
+        {"add_compile_options", 1},
+        {"add_custom_command", 1},
+        {"add_custom_target", 1},
+        {"add_definitions", 1},
+        {"add_dependencies", 1},
+        {"add_executable", 1},
+        {"add_library", 1},
+        {"add_link_options", 1},
+        {"add_subdirectory", 1},
+        {"add_test", 1},
+        {"build_command", 1},
+        {"define_property", 1},
+        {"include_directories", 1},
+        {"install", 1},
+        {"link_directories", 1},
+        {"link_libraries", 1},
+        {"project", 1},
+        {"set_source_files_properties", 1},
+        {"set_target_properties", 1},
+        {"set_tests_properties", 1},
+        {"source_group", 1},
+        {"target_compile_definitions", 1},
+        {"target_compile_features", 1},
+        {"target_compile_options", 1},
+        {"target_include_directories", 1},
+        {"target_link_directories", 1},
+        {"target_link_libraries", 1},
+        {"target_link_options", 1},
+        {"target_sources", 1},
+        {"try_compile", 1},
+        {"try_run", 1},
+        {"build_name", 1},
+        {"exec_program", 1},
+        {"export_library_dependencies", 1},
+        {"make_directory", 1},
+        {"remove", 1},
+        {"subdir_depends", 1},
+        {"subdirs", 1},
+        {"use_mangled_mesa", 1},
+        {"utility_source", 1},
+        {"variable_requires", 1},
+        {"write_file", 1},
+        {"cuda_add_cufft_to_target", 1},
+        {"cuda_add_cublas_to_target", 1},
+        {"cuda_add_executable", 1},
+        {"cuda_add_library", 1},
+        {"cuda_build_clean_target", 1},
+        {"cuda_compile", 1},
+        {"cuda_compile_ptx", 1},
+        {"cuda_compile_fatbin", 1},
+        {"cuda_compile_cubin", 1},
+        {"cuda_compute_separable_compilation_object_file_name", 1},
+        {"cuda_include_directories", 1},
+        {"cuda_link_separable_compilation_objects", 1},
+        {"cuda_select_nvcc_arch_flags", 1},
+        {"cuda_wrap_srcs", 1},
+
+};
+
 static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
 }
@@ -97,7 +188,11 @@ static std::string indent(const std::string &Input, int Indentation) {
     const bool ContainsNonWhitespace = (trim(Line).size() > 0);
     Output.push_back(ContainsNonWhitespace ? (Indent + Line) : "");
   }
-  return trim(join(Output, "\n"));
+  std::string Str = trim(join(Output, "\n"));
+  if (isWhitespace(Input[0])) {
+    Str = " " + Str;
+  }
+  return Str;
 }
 
 static std::string dedent(const std::string &Input, int Indentation) {
@@ -474,6 +569,51 @@ bool fixLineEndings(const std::string &Input, std::string &Output) {
   return isCRLF;
 }
 
+std::string convertCmakeCommandsToLower(const std::string &InputString) {
+  std::stringstream OutputStream;
+
+  const auto Lines = split(InputString, '\n');
+  std::vector<std::string> Output;
+  for (auto Line : Lines) {
+
+    int Size = Line.size();
+    int Index = 0;
+    for (; Index < Size && isWhitespace(Line[Index]); Index++) {
+    }
+    int Begin = Index;
+    for (Index = Begin + 1;
+         Index < Size && !isWhitespace(Line[Index]) && Line[Index] != '(';
+         Index++) {
+    }
+    int End = Index;
+    if (Index < Size && Line[Index] == '(') {
+      std::string Str = Line.substr(Begin, End - Begin);
+      std::transform(Str.begin(), Str.end(), Str.begin(),
+                     [](unsigned char c) { return std::tolower(c); });
+      if (cmake_commands.find(Str) != cmake_commands.end()) {
+        for (int Idx = Begin; Idx < End; Idx++) {
+          Line[Idx] = Str[Idx - Begin];
+        }
+      }
+    }
+
+    OutputStream << Line << "\n";
+  }
+
+  return OutputStream.str();
+}
+
+int skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
+                      int Index) {
+  const int Size = Input.size();
+  if (Input[Index] == '#') {
+    for (; Index < Size && Input[Index] != '\n'; Index++) {
+      OutputStream << Input[Index];
+    }
+  }
+  return Index;
+}
+
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input) {
   std::stringstream OutputStream;
@@ -481,6 +621,11 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
+
+    if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
+      Index = skipCmakeComments(OutputStream, Input, Index);
+    }
+
     auto Result = findMatch(Pattern, Input, Index);
 
     if (Result.has_value()) {
@@ -494,8 +639,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       }
 
       const int Indentation = detectIndentation(Input, Index);
-      instantiateTemplate(PP.Out, Match.Bindings, Indentation,
-                                            OutputStream);
+      instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
       continue;
     }
@@ -503,6 +647,5 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
     OutputStream << Input[Index];
     Index++;
   }
-
   return OutputStream.str();
 }

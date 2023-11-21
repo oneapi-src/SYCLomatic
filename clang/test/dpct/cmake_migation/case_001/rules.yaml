@@ -1,0 +1,35 @@
+- Rule: rule_cmake_minimum_required
+  Kind: PatternRewriter
+  MatchMode: Partial
+  Priority: Takeover
+  In: cmake_minimum_required(${name})
+  Out: cmake_minimum_required(VERSION 3.24)
+
+- Rule: rule_project
+  Kind: PatternRewriter
+  MatchMode: Full
+  Priority: Takeover
+  In: project(${arg0} ${value})
+  Out: project(${arg0} ${value})
+   set(CMAKE_CXX_FLAGS "-fsycl")
+  Subrules:
+    value:
+      In: CUDA
+      Out: ""
+
+- Rule: rule_find_package
+  Kind: PatternRewriter
+  Priority: Takeover
+  In: find_package(${arg0} REQUIRED)
+  Out: find_package(IntelSYCL REQUIRED)
+
+- Rule: rule_set
+  Kind: PatternRewriter
+  Priority: Takeover
+  In: set(${value})
+  Out: set(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
