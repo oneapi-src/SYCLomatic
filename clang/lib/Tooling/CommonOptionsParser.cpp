@@ -26,6 +26,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Path.h"
 
 using namespace clang::tooling;
 using namespace llvm;
@@ -178,6 +179,21 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 
   SourcePathList = SourcePaths;
 #ifdef SYCLomatic_CUSTOMIZATION
+  bool IsMigrateCmakeScriptOnlySpecified = false;
+  for (auto i = 0; i < argc; i++) {
+    int Res1 = strcmp(argv[i], "--migrate-cmake-script-only");
+    int Res2 = strcmp(argv[i], "-migrate-cmake-script-only");
+    if (Res1 == 0 || Res2 == 0) {
+      IsMigrateCmakeScriptOnlySpecified = true;
+      break;
+    }
+  }
+  if (IsMigrateCmakeScriptOnlySpecified) {
+    Compilations.reset(
+        new FixedCompilationDatabase(".", std::vector<std::string>()));
+    return llvm::Error::success();
+  }
+
 #ifndef _WIN32
   if (std::string(argv[1]) == "--intercept-build" ||
       std::string(argv[1]) == "-intercept-build" ||

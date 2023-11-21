@@ -150,6 +150,46 @@ int validatePaths(const clang::tooling::DpctPath &InRoot,
   return Ok;
 }
 
+int validateCmakeScriptPaths(const clang::tooling::DpctPath &InRoot,
+                             const std::vector<std::string> &CmakeScriptPaths) {
+  int Ok = 0;
+  for (const auto &FilePath : CmakeScriptPaths) {
+    clang::tooling::DpctPath Canonical(FilePath);
+    if (!llvm::sys::fs::exists(Canonical.getCanonicalPath())) {
+      Ok = -2;
+      std::string Name =
+          fs::is_directory(Canonical.getCanonicalPath()) ? "Directory" : "File";
+      llvm::errs() << "Error: " << Name << "'" << Canonical.getCanonicalPath()
+                   << "' does not exit.\n";
+    }
+    if (fs::is_directory(Canonical.getCanonicalPath()) &&
+        !isChildOrSamePath(InRoot, Canonical)) {
+      Ok = -3;
+      llvm::errs() << "Error: Directory '" << Canonical.getCanonicalPath()
+                   << "' is not under the specified input root directory '"
+                   << InRoot << "'\n";
+    }
+    if (fs::is_regular_file(Canonical.getCanonicalPath()) &&
+        !isChildPath(InRoot, Canonical)) {
+      Ok = -4;
+      llvm::errs() << "Error: File '" << Canonical.getCanonicalPath()
+                   << "' is not under the specified input root directory '"
+                   << InRoot << "'\n";
+    }
+
+    if (fs::is_regular_file(Canonical.getCanonicalPath())) {
+      llvm::StringRef Name =
+          llvm::sys::path::filename(Canonical.getCanonicalPathRef());
+      if (Name != "CMakeLists.txt" && !Name.ends_with(".cmake")) {
+        Ok = -5;
+        llvm::errs() << "Error: File '" << Canonical.getCanonicalPath()
+                     << "' is not valid cmake script file.\n";
+      }
+    }
+  }
+  return Ok;
+}
+
 int checkSDKPathOrIncludePath(clang::tooling::DpctPath &Path) {
   if (Path.getPath().empty())
     return 1;

@@ -62,6 +62,8 @@ DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::GenBuildScript = false;
+bool DpctGlobalInfo::MigrateCmakeScript = false;
+bool DpctGlobalInfo::MigrateCmakeScriptOnly = false;
 bool DpctGlobalInfo::EnableComments = false;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;

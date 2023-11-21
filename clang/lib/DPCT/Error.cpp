@@ -183,6 +183,21 @@ void ShowStatus(int Status, std::string Message) {
   case InterceptBuildError:
     StatusString = "Error: Call to intercept-build failed";
     break;
+  case MigrationErrorCMakeScriptPathInvalid:
+    StatusString = "Error: Path of Cmake Script is invalid.\n";
+    break;
+  case MigrateCmakeScriptOnlyNotSpecifed:
+    StatusString = "Error: option '-migrate-cmake-script-only' is not specified "
+                   "for cmake script migartion.\n";
+    break;
+  case MigarteCmakeScriptIncorrectUse:
+    StatusString = "Error: option '-migrate-cmake-script' is only used for "
+                   "whole project code migration.\n";
+    break;
+  case MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse:
+    StatusString = "Error: option '-migrate-cmake-script' and "
+                   "'-migrate-cmake-script-only' cannot be used together.\n";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

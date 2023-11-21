@@ -3424,7 +3424,7 @@ void LinkageSpecDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       getNodeAsType<LinkageSpecDecl>(Result, "LinkageSpecDecl");
   if (!LSD)
     return;
-  if (LSD->getLanguage() != clang::LinkageSpecDecl::LanguageIDs::lang_c)
+  if (LSD->getLanguage() != clang::LinkageSpecLanguageIDs::C)
     return;
   if (!LSD->hasBraces())
     return;
