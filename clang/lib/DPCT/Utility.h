@@ -103,6 +103,7 @@ public:
   ParensPrinter(StreamT &OS) : OS(OS) { OS << "("; }
   ~ParensPrinter() { OS << ")"; }
 };
+extern std::unordered_set<std::string> NeedParenAPISet;
 
 template <class StreamT> class CurlyBracketsPrinter {
   StreamT &OS;

@@ -2039,12 +2039,20 @@ getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &NNSL) {
   return std::string();
 }
 
+std::unordered_set<std::string> NeedParenAPISet;
+
 bool needExtraParens(const Expr *E) {
   switch (E->IgnoreImplicitAsWritten()->getStmtClass()) {
+  case Stmt::CallExprClass:
+    if (const auto *CE = dyn_cast<CallExpr>(E->IgnoreImplicitAsWritten()))
+      if (const auto *CD = CE->getCalleeDecl())
+        if (const auto *F = CD->getAsFunction())
+          if (NeedParenAPISet.count(F->getNameAsString()))
+            return true;
+    return false;
   case Stmt::DeclRefExprClass:
   case Stmt::MemberExprClass:
   case Stmt::ParenExprClass:
-  case Stmt::CallExprClass:
   case Stmt::IntegerLiteralClass:
   case Stmt::FloatingLiteralClass:
   case Stmt::StringLiteralClass:
