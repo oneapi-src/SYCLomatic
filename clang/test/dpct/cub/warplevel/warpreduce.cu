@@ -120,8 +120,8 @@ __global__ void ReduceKernel_Min(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel2(int* data,
-//CHECK-NEXT: int valid_items, const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ReduceKernel2(int* data, int valid_items,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK_EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -143,8 +143,8 @@ __global__ void ReduceKernel2(int* data, int valid_items) {
   data[threadid] = output;
 }
 
-//CHECK: void SumKernel2(int* data,
-//CHECK-NEXT: int valid_items, const sycl::nd_item<3> &item_ct1) {
+//CHECK: void SumKernel2(int* data, int valid_items,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
