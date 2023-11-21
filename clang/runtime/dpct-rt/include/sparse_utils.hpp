@@ -272,7 +272,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans_a,
 /// have the in_order property when using the USM mode.
 /// \param [in] trans The operation applied to the matrix A.
 /// \param [in] sparse_rows Number of rows of the matrix A.
-/// \param [in] dense_cols Number of columns of the matrix B or C.
+/// \param [in] dense_cols Number of columns of the matrix op(B) or C.
 /// \param [in] sparse_cols Number of columns of the matrix A.
 /// \param [in] alpha Scaling factor for the matrix A.
 /// \param [in] info Matrix info of the matrix A.
@@ -1285,6 +1285,7 @@ void csrgemm_nnz_estimiate(sycl::queue queue, oneapi::mkl::transpose trans_a,
       {}
 #endif
   );
+  queue.wait();
 
   oneapi::mkl::sparse::matmat(queue, matrix_handle_a, matrix_handle_b,
                               matrix_handle_c,
@@ -1313,6 +1314,7 @@ void csrgemm_nnz_estimiate(sycl::queue queue, oneapi::mkl::transpose trans_a,
                               matrix_handle_c,
                               oneapi::mkl::sparse::matmat_request::get_nnz,
                               matmat_descr, nnz_c, nullptr, {});
+  queue.wait();
   nnz_c_int = *nnz_c;
 #endif
 
@@ -1413,6 +1415,7 @@ inline void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
       , {}
 #endif
   );
+  queue.wait();
 
   oneapi::mkl::sparse::matmat(queue, matrix_handle_a, matrix_handle_b,
                               matrix_handle_c,
