@@ -184,7 +184,7 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Call to intercept-build failed";
     break;
   case MigrationErrorCMakeScriptPathInvalid:
-    StatusString = "Error: Cmake Script Path invalid.\n";
+    StatusString = "Error: Path of Cmake Script is invalid.\n";
     break;
   case MigrateCmakeScriptOnlyNotSpecifed:
     StatusString = "Error: option '-migrate-cmake-script-only' is not specified "
