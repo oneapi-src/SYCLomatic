@@ -389,6 +389,25 @@ void applyPatternRewriter(const std::string &InputString,
 
 void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
                                            llvm::raw_os_ostream &Stream) {
+#if 1 // used to debug
+  printf("\n#### applyPatternRewriterToCmakeScriptFile ###\n");
+  for (const auto &PR : MapNames::PatternRewriters) {
+    printf("PR.MatchMode: [%d]\n", PR.MatchMode);
+    printf("PR.In: [%s]\n", PR.In.c_str());
+    printf("PR.Out: [%s]\n", PR.Out.c_str());
+    printf("PR.RuleId: [%s]\n", PR.RuleId.c_str());
+
+    for (auto SubPR : PR.Subrules) {
+      printf("\tSubPR.first: [%s]\n", SubPR.first.c_str());
+      printf("\tSubPR.second.MatchMode: [%d]\n", SubPR.second.MatchMode);
+      printf("\tSubPR.second.In: [%s]\n", SubPR.second.In.c_str());
+      printf("\tSubPR.second.Out: [%s]\n", SubPR.second.Out.c_str());
+    }
+    printf("\n");
+  }
+  printf("#### applyPatternRewriterToCmakeScriptFile ###\n");
+#endif
+
   std::string LineEndingString;
   // pattern_rewriter require the input file to be LF
   bool IsCRLF = fixLineEndings(InputString, LineEndingString);
