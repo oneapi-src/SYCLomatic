@@ -1195,7 +1195,6 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
   detail::spblas_shim<detail::spsv_impl>(a->get_value_type(), queue, uplo, diag,
                                          trans_a, alpha, a, x, y);
 }
-#endif
 
 namespace detail {
 template <typename T>
@@ -1337,6 +1336,7 @@ csrgemm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
   queue.wait();
 }
 } // namespace detail
+#endif
 
 /// If \p val_a , \p val_b , \p val_c and \p col_ind_c are not NULL, this
 /// routine computes a sparse matrix (CSR format)-sparse matrix (CSR format)
