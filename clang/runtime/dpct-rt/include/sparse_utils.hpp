@@ -298,7 +298,9 @@ namespace detail {
 #ifdef DPCT_USM_LEVEL_NONE
 #define SPARSE_CALL(CALL, HANDLE) CALL;
 #else
-#define SPARSE_CALL(CALL, HANDLE) HANDLE->add_dependency(CALL);
+#define SPARSE_CALL(CALL, HANDLE)                                              \
+  sycl::event e = CALL;                                                        \
+  HANDLE->add_dependency(e);
 #endif
 
 template <typename T> struct optimize_csrsv_impl {
