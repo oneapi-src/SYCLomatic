@@ -354,8 +354,7 @@ private:
 public:
 #ifdef SYCLomatic_CUSTOMIZATION
   RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
-                     const InstrProfCorrelator *Correlator,
-                     std::function<void(Error)> Warn)
+                     const InstrProfCorrelator *Correlator)
       : DataBuffer(std::move(DataBuffer)),
         Correlator(dyn_cast_or_null<const InstrProfCorrelatorImpl<IntPtrT>>(
             Correlator)),
@@ -363,7 +362,7 @@ public:
         Data(nullptr), DataEnd(nullptr), CountersStart(nullptr),
         CountersEnd(nullptr), NamesStart(nullptr), NamesEnd(nullptr),
         ValueDataStart(nullptr), ValueKindLast(0), CurValueDataSize(0),
-        BinaryIdsStart(nullptr), Warn(Warn) {}
+        BinaryIdsStart(nullptr) {}
 #else
   RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
                      const InstrProfCorrelator *Correlator,
@@ -372,7 +371,6 @@ public:
         Correlator(dyn_cast_or_null<const InstrProfCorrelatorImpl<IntPtrT>>(
             Correlator)),
         Warn(Warn) {}
-#endif // SYCLomatic_CUSTOMIZATION
   RawInstrProfReader(const RawInstrProfReader &) = delete;
   RawInstrProfReader &operator=(const RawInstrProfReader &) = delete;
 

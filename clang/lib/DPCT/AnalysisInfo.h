@@ -1112,18 +1112,6 @@ public:
   inline static void setGenBuildScriptEnabled(bool Enable = true) {
     GenBuildScript = Enable;
   }
-  inline static bool IsMigrateCmakeScriptEnabled() {
-    return MigrateCmakeScript;
-  }
-  inline static void setMigrateCmakeScriptEnabled(bool Enable = true) {
-    MigrateCmakeScript = Enable;
-  }
-  inline static bool IsMigrateCmakeScriptOnlyEnabled() {
-    return MigrateCmakeScriptOnly;
-  }
-  inline static void setMigrateCmakeScriptOnlyEnabled(bool Enable = true) {
-    MigrateCmakeScriptOnly = Enable;
-  }
   inline static bool isCommentsEnabled() { return EnableComments; }
   inline static void setCommentsEnabled(bool Enable = true) {
     EnableComments = Enable;
@@ -1324,9 +1312,9 @@ public:
                                         const ASTContext &Context) {
     if (auto ET = QT->getAs<ElaboratedType>()) {
       if (ET->getQualifier())
-        QT = Context.getElaboratedType(ElaboratedTypeKeyword::None,
-                                       ET->getQualifier(), ET->getNamedType(),
-                                       ET->getOwnedTagDecl());
+        QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
+                              ET->getNamedType(),
+                              ET->getOwnedTagDecl());
       else
         QT = ET->getNamedType();
     }
@@ -1497,17 +1485,13 @@ public:
   void insertReplInfoFromYAMLToFileInfo(
       std::string FilePath,
       std::shared_ptr<tooling::TranslationUnitReplacements> TUR) {
-    SmallString<512> RealPath(FilePath);
-    dpct::real_path(RealPath, RealPath, true);
-    auto FileInfo = insertFile(RealPath.str().str());
+    auto FileInfo = insertFile(FilePath);
     if (FileInfo->PreviousTUReplFromYAML == nullptr)
       FileInfo->PreviousTUReplFromYAML = TUR;
   }
   std::shared_ptr<tooling::TranslationUnitReplacements>
   getReplInfoFromYAMLSavedInFileInfo(std::string FilePath) {
-    SmallString<512> RealPath(FilePath);
-    dpct::real_path(RealPath, RealPath, true);
-    auto FileInfo = findObject(FileMap, RealPath.str().str());
+    auto FileInfo = findObject(FileMap, FilePath);
     if (FileInfo)
       return FileInfo->PreviousTUReplFromYAML;
     else
@@ -1809,10 +1793,7 @@ public:
   }
 
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
-    SmallString<128> RealPath(FilePath);
-    if (!DpctGlobalInfo::isQueryAPIMapping())
-      dpct::real_path(RealPath, RealPath, true);
-    return insertObject(FileMap, RealPath.str().str());
+    return insertObject(FileMap, FilePath);
   }
 
   inline std::shared_ptr<DpctFileInfo> getMainFile() const {
@@ -1964,14 +1945,6 @@ public:
   getMallocHostInfoMap(){
     return MallocHostInfoMap;
   };
-  static inline std::map<std::shared_ptr<TextModification>, bool> &
-  getConstantReplProcessedFlagMap() {
-    return ConstantReplProcessedFlagMap;
-  }
-  static inline std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
-    return VarUsedByRuntimeSymbolAPISet;
-  }
-
 private:
   DpctGlobalInfo();
 
@@ -2061,8 +2034,6 @@ private:
   static bool EnableCtad;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
-  static bool MigrateCmakeScript;
-  static bool MigrateCmakeScriptOnly;
   static bool EnableComments;
   static std::string ClNamespace;
   static std::set<ExplicitNamespace> ExplicitNamespaceSet;
@@ -2157,11 +2128,6 @@ private:
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
   static std::unordered_map<std::string, bool> MallocHostInfoMap;
-  /// The key of this map is repl for specifier "__const__" and the value
-  /// "true" means this repl has been processed.
-  static std::map<std::shared_ptr<TextModification>, bool>
-      ConstantReplProcessedFlagMap;
-  static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -2552,10 +2518,6 @@ public:
     }
     return Ret;
   }
-  void setUseHelperFuncFlag(bool Flag) {
-    UseHelperFuncFlag = Flag;
-  };
-  bool isUseHelperFunc() { return UseHelperFuncFlag; }
 
 private:
   bool isTreatPointerAsArray() {
@@ -2575,9 +2537,20 @@ private:
 
   std::string getMemoryType();
   inline std::string getMemoryType(const std::string &MemoryType,
-                                   std::shared_ptr<CtTypeInfo> VarType);
+                                   std::shared_ptr<CtTypeInfo> VarType) {
+    return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
+                       VarType->getDimension(), ">");
+  }
   std::string getInitArguments(const std::string &MemSize,
-                               bool MustArguments = false);
+                               bool MustArguments = false) {
+    if (InitList.empty())
+      return getType()->getRangeArgument(MemSize, MustArguments);
+    if (getType()->getDimension())
+      return buildString("(", getRangeClass(),
+                         getType()->getRangeArgument(MemSize, true),
+                         ", " + InitList, ")");
+    return buildString("(", InitList, ")");
+  }
   const std::string &getMemoryAttr();
   std::string getSyclAccessorType();
   std::string getDpctAccessorType() {
@@ -2640,7 +2613,6 @@ private:
   std::string LocalTypeName = "";
 
   static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
-  bool UseHelperFuncFlag = true;
 };
 
 class TextureTypeInfo {
@@ -2814,7 +2786,6 @@ public:
 
   inline unsigned getOffset() { return Offset; }
   inline std::string getFilePath() { return FilePath; }
-  inline bool isUseHelperFunc() { return true; }
 };
 
 // texture handle info
@@ -3333,9 +3304,6 @@ private:
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap) {
     for (const auto &VI : VarMap) {
-      if (!VI.second->isUseHelperFunc()) {
-        continue;
-      }
       if (PS.FormatInformation.EnableFormat) {
         ParameterStream TPS;
         GetArgOrParam<T, COD>()(TPS, VI.second);

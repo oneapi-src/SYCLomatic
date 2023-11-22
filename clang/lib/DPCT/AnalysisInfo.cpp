@@ -62,8 +62,6 @@ DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::GenBuildScript = false;
-bool DpctGlobalInfo::MigrateCmakeScript = false;
-bool DpctGlobalInfo::MigrateCmakeScriptOnly = false;
 bool DpctGlobalInfo::EnableComments = false;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
@@ -160,9 +158,6 @@ std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
 std::unordered_map<std::string, bool>
     DpctGlobalInfo::MallocHostInfoMap;
-std::map<std::shared_ptr<TextModification>, bool>
-    DpctGlobalInfo::ConstantReplProcessedFlagMap;
-std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.
@@ -668,13 +663,6 @@ void DpctGlobalInfo::postProcess() {
     DpctGlobalInfo::setNeedRunAgain(true);
   }
   for (auto &File : FileMap) {
-    auto &S = File.second->getConstantMacroTMSet();
-    auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
-    for (auto &E : S) {
-      if (!Map[E]) {
-        addReplacement(E->getReplacement(DpctGlobalInfo::getContext()));
-      }
-    }
     File.second->postProcess();
   }
   if (!isFirstPass) {
@@ -1300,11 +1288,7 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
 std::optional<std::string>
 DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
   if (auto RealPath = File.tryGetRealPathName(); !RealPath.empty())
-#if defined(_WIN32)
-    return RealPath.lower();
-#else
     return RealPath.str();
-#endif
 
   llvm::SmallString<512> FilePathAbs(File.getName());
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
@@ -1313,7 +1297,6 @@ DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
   // added by ASTMatcher and added by
   // AnalysisInfo::getLocInfo() consistent.
   llvm::sys::path::remove_dots(FilePathAbs, true);
-  makeCanonical(FilePathAbs);
   return (std::string)FilePathAbs;
 }
 std::optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
@@ -1501,9 +1484,6 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
 }
 
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
-  if (!VI->isUseHelperFunc()) {
-    return;
-  }
   if (!VI->isShared()) {
     requestFeature(HelperFeatureEnum::device_ext);
     SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
@@ -3654,32 +3634,6 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
   newConstVarInit(Var);
 }
 
-inline std::string
-MemVarInfo::getMemoryType(const std::string &MemoryType,
-                          std::shared_ptr<CtTypeInfo> VarType) {
-  if (isUseHelperFunc()) {
-    return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
-                       VarType->getDimension(), ">");
-  } else {
-    return buildString(MemoryType, VarType->getBaseName());
-  }
-}
-
-std::string MemVarInfo::getInitArguments(const std::string &MemSize,
-                                         bool MustArguments) {
-  if (isUseHelperFunc()) {
-    if (InitList.empty())
-      return getType()->getRangeArgument(MemSize, MustArguments);
-    if (getType()->getDimension())
-      return buildString("(", getRangeClass(),
-                         getType()->getRangeArgument(MemSize, true),
-                         ", " + InitList, ")");
-    return buildString("(", InitList, ")");
-  } else {
-    return InitList.empty() ? "" : buildString(" = ", InitList);
-  }
-}
-
 std::shared_ptr<DeviceFunctionInfo> &
 DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
   DpctNameGenerator G;
@@ -3738,11 +3692,8 @@ std::string MemVarInfo::getMemoryType() {
   }
   case clang::dpct::MemVarInfo::Constant: {
     requestFeature(HelperFeatureEnum::device_ext);
-    std::string ConstantMemory =
+    static std::string ConstantMemory =
         MapNames::getDpctNamespace() + "constant_memory";
-    if (!isUseHelperFunc()) {
-      ConstantMemory = "const ";
-    }
     return getMemoryType(ConstantMemory, getType());
   }
   case clang::dpct::MemVarInfo::Shared: {
@@ -4007,18 +3958,14 @@ CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
 std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
                                          bool MustArguments) {
   std::string Arg = "(";
-  for (unsigned i = 0; i < Range.size(); ++i) {
-    auto Size = Range[i].getSize();
+  for (auto &R : Range) {
+    auto Size = R.getSize();
     if (Size.empty()) {
       if (MemSize.empty()) {
-        Arg += "1, ";
+        Arg += "1";
       } else {
         Arg += MemSize;
-        Arg += ", ";
       }
-      for (unsigned tmp = i + 1; tmp < Range.size(); ++tmp)
-        Arg += "1, ";
-      break;
     } else
       Arg += Size;
     Arg += ", ";

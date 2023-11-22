@@ -1318,17 +1318,7 @@ public:
 };
 
 /// Migration rule for __constant__/__shared__/__device__ memory variables.
-class MemVarAnalysisRule : public NamedMigrationRule<MemVarAnalysisRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  void processTypeDeclaredLocal(const VarDecl *MemVar,
-                                std::shared_ptr<MemVarInfo> Info);
-};
-
-class ConstantMemVarMigrationRule : public NamedMigrationRule<ConstantMemVarMigrationRule> {
+class MemVarRule : public NamedMigrationRule<MemVarRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1337,14 +1327,10 @@ private:
   void previousHCurrentD(const VarDecl *VD, tooling::Replacement &R);
   void previousDCurrentH(const VarDecl *VD, tooling::Replacement &R);
   void removeHostConstantWarning(tooling::Replacement &R);
+  void processTypeDeclaredLocal(const VarDecl *MemVar,
+                                std::shared_ptr<MemVarInfo> Info);
   bool currentIsDevice(const VarDecl *MemVar, std::shared_ptr<MemVarInfo> Info);
   bool currentIsHost(const VarDecl *VD, std::string VarName);
-};
-
-class MemVarRefMigrationRule : public NamedMigrationRule<MemVarRefMigrationRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for memory management routine.
@@ -1805,16 +1791,6 @@ public:
 };
 
 class TypeRemoveRule : public NamedMigrationRule<TypeRemoveRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-class TypeMmberRule : public NamedMigrationRule<TypeMmberRule> {
-  std::optional<SourceLocation>
-  findTokenEndBeforeColonColon(SourceLocation TokStart,
-                               const SourceManager &SM);
-
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

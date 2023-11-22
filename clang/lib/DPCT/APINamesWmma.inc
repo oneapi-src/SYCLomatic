@@ -7,14 +7,12 @@
 //===----------------------------------------------------------------------===//
 
 CONDITIONAL_FACTORY_ENTRY(
-    checkEnableJointMatrix(),
-    CALL_FACTORY_ENTRY(
-        "nvcuda::wmma::fill_fragment",
-        CALL(MapNames::getClNamespace() +
-                 "ext::oneapi::experimental::matrix::joint_matrix_fill",
-             SUBGROUP, ARG(0), ARG(1))),
-    ENTRY_UNSUPPORTED("nvcuda::wmma::fill_fragment",
-                      Diagnostics::API_NOT_MIGRATED))
+        checkEnableJointMatrix(),
+        CALL_FACTORY_ENTRY("nvcuda::wmma::fill_fragment",
+                           CALL(MapNames::getClNamespace() +
+                                "ext::oneapi::experimental::matrix::joint_matrix_fill",
+                                SUBGROUP, ARG(0), ARG(1))),
+        ENTRY_UNSUPPORTED("nvcuda::wmma::fill_fragment", Diagnostics::API_NOT_MIGRATED))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkEnableJointMatrix(),
@@ -53,11 +51,11 @@ CONDITIONAL_FACTORY_ENTRY(
 
 CONDITIONAL_FACTORY_ENTRY(
     checkEnableJointMatrix(),
-    CALL_FACTORY_ENTRY(
-        "nvcuda::wmma::mma_sync",
+    ASSIGN_FACTORY_ENTRY(
+        "nvcuda::wmma::mma_sync", ARG(0),
         CALL(MapNames::getClNamespace() +
                  "ext::oneapi::experimental::matrix::joint_matrix_mad",
-             SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
+             SUBGROUP, ARG(1), ARG(2), ARG(3))),
     ENTRY_UNSUPPORTED("nvcuda::wmma::mma_sync", Diagnostics::API_NOT_MIGRATED))
 
 CONDITIONAL_FACTORY_ENTRY(

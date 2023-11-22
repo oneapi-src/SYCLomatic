@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T/math/cuda_typecast %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/math/cuda_typecast/cuda_typecast.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/cuda_typecast %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/cuda_typecast/cuda_typecast.dp.cpp
 
 // CHECK:#include <sycl/sycl.hpp>
 // CHECK-NEXT:#include <dpct/dpct.hpp>

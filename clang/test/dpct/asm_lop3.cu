@@ -1,5 +1,5 @@
-// RUN: dpct -out-root %T/lop3 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/lop3/lop3.dp.cpp
+// RUN: dpct -out-root %T/asm_lop3 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/asm_lop3/asm_lop3.dp.cpp
 // clang-format off
 #include <cstdint>
 

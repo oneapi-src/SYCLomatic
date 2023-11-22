@@ -18,23 +18,19 @@
 enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum, DisableAPIMigration, PatternRewriter };
 
 enum RulePriority { Takeover, Default, Fallback };
-enum RuleMatchMode { Partial , Full };
 
 struct TypeNameRule {
   std::string NewName;
   clang::dpct::HelperFeatureEnum RequestFeature;
   RulePriority Priority;
-  RuleMatchMode MatchMode;
   std::vector<std::string> Includes;
   TypeNameRule(std::string Name)
       : NewName(Name),
         RequestFeature(clang::dpct::HelperFeatureEnum::none),
-        Priority(RulePriority::Fallback),
-        MatchMode(RuleMatchMode::Partial) {}
+        Priority(RulePriority::Fallback) {}
   TypeNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
-               RulePriority Priority = RulePriority::Fallback,
-               RuleMatchMode MatchMode = RuleMatchMode::Partial)
-      : NewName(Name), RequestFeature(Feature), Priority(Priority), MatchMode(MatchMode) {}
+               RulePriority Priority = RulePriority::Fallback)
+      : NewName(Name), RequestFeature(Feature), Priority(Priority) {}
 };
 
 struct ClassFieldRule : public TypeNameRule {
@@ -42,13 +38,11 @@ struct ClassFieldRule : public TypeNameRule {
   std::string GetterName;
   ClassFieldRule(std::string Name) : TypeNameRule(Name) {}
   ClassFieldRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
-                 RulePriority Priority = RulePriority::Fallback,
-                 RuleMatchMode MatchMode = RuleMatchMode::Partial)
+                 RulePriority Priority = RulePriority::Fallback)
       : TypeNameRule(Name, Feature) {}
   ClassFieldRule(std::string SetterName, std::string GetterName,
                  clang::dpct::HelperFeatureEnum Feature,
-                 RulePriority Priority = RulePriority::Fallback,
-                 RuleMatchMode MatchMode = RuleMatchMode::Partial)
+                 RulePriority Priority = RulePriority::Fallback)
       : TypeNameRule(SetterName, Feature), SetterName(SetterName),
         GetterName(GetterName) {}
 };
@@ -56,8 +50,7 @@ struct ClassFieldRule : public TypeNameRule {
 struct EnumNameRule : public TypeNameRule {
   EnumNameRule(std::string Name) : TypeNameRule(Name) {}
   EnumNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
-                 RulePriority Priority = RulePriority::Fallback,
-                 RuleMatchMode MatchMode = RuleMatchMode::Partial)
+                 RulePriority Priority = RulePriority::Fallback)
       : TypeNameRule(Name, Feature) {}
 };
 
@@ -84,15 +77,12 @@ public:
   struct PatternRewriter {
     std::string In;
     std::string Out;
-    RuleMatchMode MatchMode;
     std::map<std::string, PatternRewriter> Subrules;
     PatternRewriter(){};
-
     PatternRewriter(
         const std::string &I, const std::string &O,
-        const std::map<std::string, PatternRewriter> &S,
-        RuleMatchMode MatchMode)
-        : In(I), Out(O), MatchMode(MatchMode) {
+        const std::map<std::string, PatternRewriter> &S)
+        : In(I), Out(O) {
       Subrules = std::move(S);
     }
   };
@@ -101,7 +91,6 @@ public:
   std::string RuleFile;
   std::string RuleId;
   RulePriority Priority;
-  RuleMatchMode MatchMode;
   RuleKind Kind;
   std::string In;
   std::string Out;
@@ -114,9 +103,9 @@ public:
   std::vector<std::shared_ptr<ClassMethod>> Methods;
   std::map<std::string, PatternRewriter> Subrules;
   MetaRuleObject()
-      : Priority(RulePriority::Default), MatchMode(RuleMatchMode::Partial), Kind(RuleKind::API) {}
-  MetaRuleObject(std::string id, RulePriority priority, RuleKind kind, RuleMatchMode MatchMode)
-      : RuleId(id), Priority(priority), MatchMode(MatchMode), Kind(kind) {}
+      : Priority(RulePriority::Default), Kind(RuleKind::API) {}
+  MetaRuleObject(std::string id, RulePriority priority, RuleKind kind)
+      : RuleId(id), Priority(priority), Kind(kind) {}
   static void setRuleFiles(std::string File) { RuleFiles.push_back(File); }
 };
 
@@ -163,14 +152,6 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RulePriority> {
   }
 };
 
-template <> struct llvm::yaml::ScalarEnumerationTraits<RuleMatchMode> {
-  static void enumeration(llvm::yaml::IO &Io, RuleMatchMode &Value) {
-    Io.enumCase(Value, "Partial", RuleMatchMode::Partial);
-    Io.enumCase(Value, "Full", RuleMatchMode::Full);
-
-  }
-};
-
 template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
   static void enumeration(llvm::yaml::IO &Io, RuleKind &Value) {
     Io.enumCase(Value, "API", RuleKind::API);
@@ -194,7 +175,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapRequired("Priority", Doc->Priority);
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
-    Io.mapOptional("Includes", Doc->Includes);
+    Io.mapRequired("Includes", Doc->Includes);
     Io.mapOptional("Fields", Doc->Fields);
     Io.mapOptional("Methods", Doc->Methods);
     Io.mapOptional("EnumName", Doc->EnumName);
@@ -202,7 +183,6 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("Postfix", Doc->Postfix);
     Io.mapOptional("Attributes", Doc->RuleAttributes);
     Io.mapOptional("Subrules", Doc->Subrules);
-    Io.mapOptional("MatchMode", Doc->MatchMode);
   }
 };
 
@@ -250,7 +230,6 @@ class RuleBase {
 public:
   std::string Id;
   RulePriority Priority;
-  RuleMatchMode MatchMode;
   RuleKind Kind;
   std::string In;
   std::string Out;

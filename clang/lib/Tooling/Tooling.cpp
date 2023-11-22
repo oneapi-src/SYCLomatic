@@ -969,7 +969,7 @@ int ClangTool::run(ToolAction *Action) {
   if(DoGetRunRound() == 0) {
 #endif // SYCLomatic_CUSTOMIZATION
   AbsolutePaths.reserve(SourcePaths.size());
-  for (auto SourcePath : SourcePaths) {
+  for (const auto &SourcePath : SourcePaths) {
     auto AbsPath = getAbsolutePath(*OverlayFileSystem, SourcePath);
     if (!AbsPath) {
       llvm::errs() << "Skipping " << SourcePath
@@ -977,10 +977,6 @@ int ClangTool::run(ToolAction *Action) {
                    << llvm::toString(AbsPath.takeError()) << "\n";
       continue;
     }
-#if defined(_WIN32)
-    std::transform(AbsPath->begin(), AbsPath->end(), AbsPath->begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-#endif
     AbsolutePaths.push_back(std::move(*AbsPath));
   }
 #ifdef SYCLomatic_CUSTOMIZATION
@@ -988,11 +984,7 @@ int ClangTool::run(ToolAction *Action) {
   // migrate all relevant files it detects in the compilation database.
   if (SourcePaths.size() == 0) {
     std::vector<std::string> SourcePaths = Compilations.getAllFiles();
-    for (auto SourcePath : SourcePaths) {
-#if defined(_WIN32)
-      std::transform(SourcePath.begin(), SourcePath.end(), SourcePath.begin(),
-                     [](unsigned char c) { return std::tolower(c); });
-#endif
+    for (const auto &SourcePath : SourcePaths) {
       AbsolutePaths.push_back(SourcePath);
       CollectFileFromDB(SourcePath);
     }
@@ -1005,13 +997,8 @@ int ClangTool::run(ToolAction *Action) {
     }
   }
   } else {
-    for (auto File : GetReProcessFile()) {
-#if defined(_WIN32)
-      std::transform(File.begin(), File.end(), File.begin(),
-                     [](unsigned char c) { return std::tolower(c); });
-#endif
-      AbsolutePaths.push_back(File);
-    }
+     for (auto &File : GetReProcessFile())
+       AbsolutePaths.push_back(File);
   }
 #endif // SYCLomatic_CUSTOMIZATION
   // Remember the working directory in case we need to restore it.

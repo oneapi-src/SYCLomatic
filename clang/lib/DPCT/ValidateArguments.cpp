@@ -95,7 +95,7 @@ bool makeInRootCanonicalOrSetDefaults(
   }
 
   SmallString<512> InRootAbs;
-  std::error_code EC = dpct::real_path(InRoot, InRootAbs, true);
+  std::error_code EC = llvm::sys::fs::real_path(InRoot, InRootAbs, true);
   if ((bool)EC) {
     clang::dpct::ShowStatus(MigrationErrorInvalidInRootPath);
     dpctExit(MigrationErrorInvalidInRootPath);
@@ -133,7 +133,8 @@ bool makeAnalysisScopeCanonicalOrSetDefaults(string &AnalysisScope,
     return false;
   }
   SmallString<512> AnalysisScopeAbs;
-  std::error_code EC = dpct::real_path(AnalysisScope, AnalysisScopeAbs, true);
+  std::error_code EC =
+      llvm::sys::fs::real_path(AnalysisScope, AnalysisScopeAbs, true);
   if ((bool)EC) {
     return false;
   }
@@ -170,53 +171,12 @@ int validatePaths(const std::string &InRoot,
   return Ok;
 }
 
-int validateCmakeScriptPaths(const std::string &InRoot,
-                             const std::vector<std::string> &CmakeScriptPaths) {
-  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
-  int Ok = 0;
-  for (const auto &FilePath : CmakeScriptPaths) {
-    auto AbsPath = FilePath;
-    if (!makeCanonical(AbsPath)) {
-      Ok = -1;
-      continue;
-    }
-    if (!llvm::sys::fs::exists(AbsPath)) {
-      Ok = -2;
-      std::string Name = fs::is_directory(AbsPath) ? "Directory" : "File";
-      llvm::errs() << "Error: " << Name << "'" << AbsPath
-                   << "' does not exit.\n";
-    }
-    if (fs::is_directory(AbsPath) && !isChildOrSamePath(InRoot, AbsPath)) {
-      Ok = -3;
-      llvm::errs() << "Error: Directory '" << AbsPath
-                   << "' is not under the specified input root directory '"
-                   << InRoot << "'\n";
-    }
-    if (fs::is_regular_file(AbsPath) && !isChildPath(InRoot, AbsPath)) {
-      Ok = -4;
-      llvm::errs() << "Error: File '" << AbsPath
-                   << "' is not under the specified input root directory '"
-                   << InRoot << "'\n";
-    }
-
-    if (fs::is_regular_file(AbsPath)) {
-      llvm::StringRef Name = llvm::sys::path::filename(AbsPath);
-      if (Name != "CMakeLists.txt" && !Name.ends_with(".cmake")) {
-        Ok = -5;
-        llvm::errs() << "Error: File '" << AbsPath
-                     << "' is not valid cmake script file.\n";
-      }
-    }
-  }
-  return Ok;
-}
-
 int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath) {
   if (Path.empty()) {
     return 1;
   }
   SmallString<512> AbsPath;
-  auto EC = dpct::real_path(Path, AbsPath, true);
+  auto EC = llvm::sys::fs::real_path(Path, AbsPath, true);
   if ((bool)EC) {
     return -1;
   }

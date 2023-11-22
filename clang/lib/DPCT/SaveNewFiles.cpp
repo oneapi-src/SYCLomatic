@@ -122,25 +122,24 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   SmallString<512> FilePathAbs;
   std::error_code EC;
   bool InRootAbsValid = true;
-  EC = dpct::real_path(InRoot, InRootAbs, true);
+  EC = llvm::sys::fs::real_path(InRoot, InRootAbs, true);
   if ((bool)EC) {
     InRootAbsValid = false;
   }
   bool OutRootAbsValid = true;
-  EC = dpct::real_path(OutRoot, OutRootAbs, true);
+  EC = llvm::sys::fs::real_path(OutRoot, OutRootAbs, true);
   if ((bool)EC) {
     OutRootAbsValid = false;
   }
   bool FilePathAbsValid = true;
-  EC = dpct::real_path(FilePath, FilePathAbs, true);
+  EC = llvm::sys::fs::real_path(FilePath, FilePathAbs, true);
   if ((bool)EC) {
     FilePathAbsValid = false;
   }
 
 #if defined(_WIN64)
   std::string Filename = sys::path::filename(FilePath).str();
-  std::string LocalFilePath =
-      FilePathAbsValid ? FilePathAbs.str().lower() : StringRef(FilePath).lower();
+  std::string LocalFilePath = StringRef(FilePath).lower();
   std::string LocalInRoot =
       InRootAbsValid ? InRootAbs.str().lower() : InRoot.lower();
   std::string LocalOutRoot =
@@ -370,31 +369,6 @@ void applyPatternRewriter(const std::string &InputString,
   std::string LineEndingString;
   // pattern_rewriter require the input file to be LF
   bool IsCRLF = fixLineEndings(InputString, LineEndingString);
-
-  for (const auto &PR : MapNames::PatternRewriters) {
-    LineEndingString = applyPatternRewriter(PR, LineEndingString);
-  }
-  // Restore line ending for the formator
-  if (IsCRLF) {
-    std::stringstream ResultStream;
-    std::vector<std::string> SplitedStr = split(LineEndingString, '\n');
-    for (auto &SS : SplitedStr) {
-      ResultStream << SS << "\r\n";
-    }
-    Stream << llvm::StringRef(ResultStream.str().c_str());
-  } else {
-    Stream << llvm::StringRef(LineEndingString.c_str());
-  }
-}
-
-void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
-                                           llvm::raw_os_ostream &Stream) {
-  std::string LineEndingString;
-  // pattern_rewriter require the input file to be LF
-  bool IsCRLF = fixLineEndings(InputString, LineEndingString);
-
-  // Convert cmake command to lower case in cmake script files
-  LineEndingString = convertCmakeCommandsToLower(LineEndingString);
   for (const auto &PR : MapNames::PatternRewriters) {
     LineEndingString = applyPatternRewriter(PR, LineEndingString);
   }
@@ -780,7 +754,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
 void loadYAMLIntoFileInfo(std::string Path) {
   SmallString<512> SourceFilePath(Path);
-  dpct::real_path(SourceFilePath, SourceFilePath, true);
+
+  SourceFilePath = StringRef(
+      DpctGlobalInfo::removeSymlinks(DpctGlobalInfo::getFileManager(), Path));
+  makeCanonical(SourceFilePath);
+
   std::string OriginPath = SourceFilePath.str().str();
   rewriteFileName(SourceFilePath);
   if (!rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),

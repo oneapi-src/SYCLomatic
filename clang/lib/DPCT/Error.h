@@ -58,10 +58,6 @@ enum ProcessStatus {
   MigrationErrorAPIMappingNoCUDAHeader = -45,
   MigrationErrorCannotDetectCudaPath = -46,
   InterceptBuildError = -47,
-  MigrationErrorCMakeScriptPathInvalid = -48,
-  MigrateCmakeScriptOnlyNotSpecifed = -49,
-  MigarteCmakeScriptIncorrectUse = -50,
-  MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse= -51,
 };
 
 namespace clang {
