@@ -54,7 +54,7 @@ void clang::dpct::NCCLRule::runRule(
     const auto *ICE = DpctGlobalInfo::findParent<clang::ImplicitCastExpr>(DRE);
     if (ICE != nullptr) {
       std::string ReplStr = EA.getReplacedString();
-      if (ReplStr.rfind("oneapi::ccl::", 0) == 0) {
+      if (ReplStr.find("oneapi::ccl::", 0) == 0) {
         emplaceTransformation(
             new ReplaceStmt(DRE, DpctGlobalInfo::getTypeName(ICE->getType()) +
                                      "(" + std::string(ReplStr) + ")"));
