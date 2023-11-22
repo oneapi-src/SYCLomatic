@@ -8863,7 +8863,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
     auto LocInfo = DpctGlobalInfo::getLocInfo(Decl->getBeginLoc());
     if (VarUsedBySymbolAPISet.find(
-            LocInfo.first + std::to_string(LocInfo.second) +
+            LocInfo.first.getCanonicalPath() + std::to_string(LocInfo.second) +
             Decl->getNameAsString()) == VarUsedBySymbolAPISet.end()) {
       return;
     }
@@ -9003,8 +9003,8 @@ void ConstantMemVarMigrationRule::runRule(
     auto &VarUsedByRuntimeSymbolAPISet =
         DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
     auto LocInfo = DpctGlobalInfo::getLocInfo(VarD->getBeginLoc());
-    std::string Key = LocInfo.first + std::to_string(LocInfo.second) +
-                      VarD->getNameAsString();
+    std::string Key = LocInfo.first.getCanonicalPath() +
+                      std::to_string(LocInfo.second) + VarD->getNameAsString();
     if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
         VarUsedByRuntimeSymbolAPISet.end()) {
       return false;
