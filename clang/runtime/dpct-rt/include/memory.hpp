@@ -1453,7 +1453,10 @@ public:
           "dpct::pointer_attributes: only works for USM pointer.");
 #else
     memory_type = sycl::get_pointer_type(ptr, q.get_context());
-    if (memory_type == sycl::usm::alloc::unknown) return;
+    if (memory_type == sycl::usm::alloc::unknown) {
+      device_id = -1;
+      return;
+    }
     device_pointer = (memory_type !=
                         sycl::usm::alloc::unknown) ? ptr : nullptr;
     host_pointer = (memory_type !=
