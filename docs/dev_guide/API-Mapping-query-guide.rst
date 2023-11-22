@@ -15,7 +15,7 @@ API mapping query example:
       Is migrated to:
         *pDev = (void *)sycl::malloc_device(s, dpct::get_in_order_queue());
 
-- You can use ``tab`` button to auto-complete the CUDA API names.
+- You can use ``tab`` button to auto-complete the CUDA API names (In Linux OS only).
 
     .. code-block:: bash
 
