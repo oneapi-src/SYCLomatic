@@ -24,6 +24,7 @@
 #include "NCCLAPIMigration.h"
 #include "OptimizeMigration.h"
 #include "SaveNewFiles.h"
+#include "SpBLASAPIMigration.h"
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
@@ -14435,7 +14436,7 @@ REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
 REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
 
-REGISTER_RULE(LibraryTypeLocRule, PassKind::PK_Migration)
+REGISTER_RULE(SpBLASTypeLocRule, PassKind::PK_Migration)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

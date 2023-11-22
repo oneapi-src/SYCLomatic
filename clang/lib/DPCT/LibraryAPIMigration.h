@@ -9,7 +9,6 @@
 #ifndef DPCT_LIBRARY_API_MIGRAION_H
 #define DPCT_LIBRARY_API_MIGRAION_H
 
-#include "ASTTraversal.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 
@@ -18,7 +17,6 @@
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/ParentMapContext.h"
-#include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
@@ -96,13 +94,6 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
               LibraryMigrationFlags &Flags,
               LibraryMigrationStrings &ReplaceStrs,
               LibraryMigrationLocations &Locations);
-
-class LibraryTypeLocRule
-    : public clang::dpct::NamedMigrationRule<LibraryTypeLocRule> {
-public:
-  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
-  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
-};
 
 } // namespace dpct
 } // namespace clang
