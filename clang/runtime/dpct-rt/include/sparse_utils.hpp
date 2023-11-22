@@ -1337,10 +1337,48 @@ csrgemm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
 }
 } // namespace detail
 
-/// If \p val_a , \p val_b , \p val_c and \p col_ind_c are not NULL, this
-/// routine computes a sparse matrix (CSR format)-sparse matrix (CSR format)
-/// product C = op(A) * op(B). Otherwise, this routine estimiates the non-zero
-/// elements number in the result matrix C.
+/// Estimiate the non-zero elements number of the result of a
+/// sparse matrix (CSR format)-sparse matrix (CSR format) product:
+/// C = op(A) * op(B)
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a The operation applied to the matrix A.
+/// \param [in] trans_b The operation applied to the matrix B.
+/// \param [in] m The rows number of op(A) and C.
+/// \param [in] n The columns number of op(B) and C.
+/// \param [in] k The columns number of op(A) and rows number of op(B).
+/// \param [in] trans_a The operation applied to the matrix A.
+/// \param [in] trans_b The operation applied to the matrix B.
+/// \param [in] info_a Matrix info of the matrix A.
+/// \param [in] nnz_a Non-zero elements number of matrix A.
+/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] col_ind_a An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_b Matrix info of the matrix B.
+/// \param [in] nnz_b Non-zero elements number of matrix B.
+/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] col_ind_b An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_c Matrix info of the matrix C.
+/// \param [in] row_ptr_c An array of length row number + 1.
+/// \param [out] nnz_host_ptr Non-zero elements number of matrix C.
+void csrgemm_nnz_estimiate(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                           oneapi::mkl::transpose trans_b, int m, int n, int k,
+                           const std::shared_ptr<matrix_info> info_a, int nnz_a,
+                           const int *row_ptr_a, const int *col_ind_a,
+                           const std::shared_ptr<matrix_info> info_b, int nnz_b,
+                           const int *row_ptr_b, const int *col_ind_b,
+                           const std::shared_ptr<matrix_info> info_c,
+                           int *row_ptr_c, int *nnz_host_ptr) {
+  detail::csrgemm_impl<float>(queue, trans_a, trans_b, m, n, k, info_a, nnz_a,
+                              (const float *)nullptr, row_ptr_a, col_ind_a,
+                              info_b, nnz_b, (const float *)nullptr, row_ptr_b,
+                              col_ind_b, info_c, (float *)nullptr, row_ptr_c,
+                              nullptr, nnz_host_ptr, true);
+}
+
+/// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
+/// C = op(A) * op(B)
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
 /// \param [in] trans_a The operation applied to the matrix A.
@@ -1349,46 +1387,33 @@ csrgemm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
 /// \param [in] n The columns number of op(B) and C.
 /// \param [in] k The columns number of op(A) and rows number of op(B).
 /// \param [in] info_a Matrix info of the matrix A.
-/// \param [in] nnz_a Non-zero elements number of matrix A.
 /// \param [in] val_a An array containing the non-zero elements of the matrix A.
 /// \param [in] row_ptr_a An array of length row number + 1.
 /// \param [in] col_ind_a An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_b Matrix info of the matrix B.
-/// \param [in] nnz_b Non-zero elements number of matrix B.
 /// \param [in] val_b An array containing the non-zero elements of the matrix B.
 /// \param [in] row_ptr_b An array of length row number + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_c Matrix info of the matrix C.
 /// \param [out] val_c An array containing the non-zero elements of the matrix C.
-/// \param [in, out] row_ptr_c An array of length row number + 1.
+/// \param [in] row_ptr_c An array of length row number + 1.
 /// \param [out] col_ind_c An array containing the column indices in index-based
 /// numbering.
-/// \param [out] nnz_host_ptr Non-zero elements number of matrix C.
 template <typename T>
 inline void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
                     oneapi::mkl::transpose trans_b, int m, int n, int k,
-                    const std::shared_ptr<matrix_info> info_a, int nnz_a,
-                    const T *val_a, const int *row_ptr_a, const int *col_ind_a,
-                    const std::shared_ptr<matrix_info> info_b, int nnz_b,
-                    const T *val_b, const int *row_ptr_b, const int *col_ind_b,
+                    const std::shared_ptr<matrix_info> info_a, const T *val_a,
+                    const int *row_ptr_a, const int *col_ind_a,
+                    const std::shared_ptr<matrix_info> info_b, const T *val_b,
+                    const int *row_ptr_b, const int *col_ind_b,
                     const std::shared_ptr<matrix_info> info_c, T *val_c,
-                    int *row_ptr_c, int *col_ind_c, int *nnz_host_ptr) {
-  if (val_a && val_b && val_c && col_ind_c) {
-    using Ty = typename std::conditional<std::is_void_v<T>, float, T>::type;
-    detail::csrgemm_impl<Ty>(queue, trans_a, trans_b, m, n, k, info_a, nnz_a,
-                             (const Ty *)val_a, row_ptr_a, col_ind_a, info_b,
-                             nnz_b, (const Ty *)val_b, row_ptr_b, col_ind_b,
-                             info_c, (Ty *)val_c, row_ptr_c, col_ind_c,
-                             nnz_host_ptr, false);
-  } else {
-    detail::csrgemm_impl<float>(queue, trans_a, trans_b, m, n, k, info_a, nnz_a,
-                                (const float *)val_a, row_ptr_a, col_ind_a,
-                                info_b, nnz_b, (const float *)val_b, row_ptr_b,
-                                col_ind_b, info_c, (float *)val_c, row_ptr_c,
-                                col_ind_c, nnz_host_ptr, true);
-  }
+                    const int *row_ptr_c, int *col_ind_c) {
+  detail::csrgemm_impl<T>(queue, trans_a, trans_b, m, n, k, info_a, 0, val_a,
+                          row_ptr_a, col_ind_a, info_b, 0, val_b, row_ptr_b,
+                          col_ind_b, info_c, val_c, row_ptr_c, col_ind_c,
+                          nullptr, false);
 }
 #endif
 
