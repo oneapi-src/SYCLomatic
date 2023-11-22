@@ -370,32 +370,35 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseScsrgemm",
-    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm", DEREF(0), ARG(1),
-         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8), ARG(9), ARG(10),
-         ARG(11), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17), ARG(18),
-         ARG(19))))
+    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm<float>", DEREF(0),
+         ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
+         ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+         ARG(18), ARG(19), ARG("nullptr"))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseDcsrgemm",
-    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm", DEREF(0), ARG(1),
-         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8), ARG(9), ARG(10),
-         ARG(11), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17), ARG(18),
-         ARG(19))))
+    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm<double>", DEREF(0),
+         ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
+         ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+         ARG(18), ARG(19), ARG("nullptr"))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseCcsrgemm",
-    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm", DEREF(0), ARG(1),
-         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8), ARG(9), ARG(10),
-         ARG(11), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17), ARG(18),
-         ARG(19))))
+    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm<" +
+             MapNames::getClNamespace() + "float2>",
+         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+         ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15),
+         ARG(16), ARG(17), ARG(18), ARG(19), ARG("nullptr"))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseZcsrgemm",
-    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm", DEREF(0), ARG(1),
-         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8), ARG(9), ARG(10),
-         ARG(11), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17), ARG(18),
-         ARG(19))))
+    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm<" +
+             MapNames::getClNamespace() + "double2>",
+         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+         ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15),
+         ARG(16), ARG(17), ARG(18), ARG(19), ARG("nullptr"))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseXcsrgemmNnz",
-    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm_nnz_estimiate",
-         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
-         ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15),
-         ARG(16))))
+    CALL(MapNames::getDpctNamespace() + "sparse::csrgemm", DEREF(0), ARG(1),
+         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+         ARG("(const void *)nullptr"), ARG(8), ARG(9), ARG(10), ARG(11),
+         ARG("(const void *)nullptr"), ARG(12), ARG(13), ARG(14),
+         ARG("(void *)nullptr"), ARG(15), ARG("nullptr"), ARG(16))))
