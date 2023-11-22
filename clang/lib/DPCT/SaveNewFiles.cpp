@@ -12,12 +12,9 @@
 #include "Diagnostics.h"
 #include "ExternalReplacement.h"
 #include "GenMakefile.h"
+#include "PatternRewriter.h"
 #include "Statics.h"
-
-#include "llvm/ADT/StringRef.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/Path.h"
-#include <algorithm>
+#include "Utility.h"
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
@@ -25,13 +22,15 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/Tooling/Refactoring.h"
 
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_os_ostream.h"
 
-#include "Utility.h"
-#include "PatternRewriter.h"
-#include "llvm/Support/raw_os_ostream.h"
+#include <algorithm>
 #include <cassert>
 #include <fstream>
+
 using namespace clang::dpct;
 using namespace llvm;
 namespace path = llvm::sys::path;
@@ -150,7 +149,7 @@ void rewriteFileName(clang::tooling::DpctPath &FileName) {
 
 void rewriteFileName(clang::tooling::DpctPath &FileName,
                      const clang::tooling::DpctPath &FullPathName) {
-  SmallString<512> CanonicalPathStr(StringRef(FileName.getCanonicalPath()));
+  SmallString<512> CanonicalPathStr(StringRef(FileName.getCanonicalPathRef()));
   const auto Extension = path::extension(CanonicalPathStr);
   SourceProcessType FileType = GetSourceFileType(FullPathName);
   // If user does not specify which extension need be changed, we change all the

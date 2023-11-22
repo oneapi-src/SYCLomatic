@@ -3105,7 +3105,6 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
 
   if (FuncInfo->IsSyclExternMacroNeeded()) {
     std::string StrRepl = "SYCL_EXTERNAL ";
-    std::cout << "!!!!!!!!!!!!!Add remplacement!!!!!!!!!!!! FilePath:[" << FilePath.getCanonicalPath() << "] Offset:[" << Offset << "]" << std::endl;
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
                                          nullptr));
