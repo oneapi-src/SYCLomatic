@@ -1412,7 +1412,7 @@ inline void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
                     const int *row_ptr_c, int *col_ind_c) {
   detail::csrgemm_impl<T>(queue, trans_a, trans_b, m, n, k, info_a, 0, val_a,
                           row_ptr_a, col_ind_a, info_b, 0, val_b, row_ptr_b,
-                          col_ind_b, info_c, val_c, row_ptr_c, col_ind_c,
+                          col_ind_b, info_c, val_c, (int *)row_ptr_c, col_ind_c,
                           nullptr, false);
 }
 #endif

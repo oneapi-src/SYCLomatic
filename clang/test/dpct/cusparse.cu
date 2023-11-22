@@ -271,11 +271,11 @@ void foo4(){
   int* row_ptr_c;
   int* col_ind_c;
 
-  // CHECK: dpct::sparse::csrgemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, 4, (const void *)nullptr, row_ptr_a, col_ind_a, descrB, 5, (const void *)nullptr, row_ptr_b, col_ind_b, descrC, (void *)nullptr, row_ptr_c, nullptr, &c_nnz);
-  // CHECK-NEXT: dpct::sparse::csrgemm<float>(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, 4, val_a_s, row_ptr_a, col_ind_a, descrB, 5, val_b_s, row_ptr_b, col_ind_b, descrC, val_c_s, row_ptr_c, col_ind_c, nullptr);
-  // CHECK-NEXT: dpct::sparse::csrgemm<double>(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, 4, val_a_d, row_ptr_a, col_ind_a, descrB, 5, val_b_d, row_ptr_b, col_ind_b, descrC, val_c_d, row_ptr_c, col_ind_c, nullptr);
-  // CHECK-NEXT: dpct::sparse::csrgemm<sycl::float2>(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, 4, val_a_c, row_ptr_a, col_ind_a, descrB, 5, val_b_c, row_ptr_b, col_ind_b, descrC, val_c_c, row_ptr_c, col_ind_c, nullptr);
-  // CHECK-NEXT: dpct::sparse::csrgemm<sycl::double2>(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, 4, val_a_z, row_ptr_a, col_ind_a, descrB, 5, val_b_z, row_ptr_b, col_ind_b, descrC, val_c_z, row_ptr_c, col_ind_c, nullptr);
+  // CHECK: dpct::sparse::csrgemm_nnz_estimiate(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, 4, row_ptr_a, col_ind_a, descrB, 5, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
+  // CHECK-NEXT: dpct::sparse::csrgemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, val_a_s, row_ptr_a, col_ind_a, descrB, val_b_s, row_ptr_b, col_ind_b, descrC, val_c_s, row_ptr_c, col_ind_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, val_a_d, row_ptr_a, col_ind_a, descrB, val_b_d, row_ptr_b, col_ind_b, descrC, val_c_d, row_ptr_c, col_ind_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, val_a_c, row_ptr_a, col_ind_a, descrB, val_b_c, row_ptr_b, col_ind_b, descrC, val_c_c, row_ptr_c, col_ind_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, val_a_z, row_ptr_a, col_ind_a, descrB, val_b_z, row_ptr_b, col_ind_b, descrC, val_c_z, row_ptr_c, col_ind_c);
   cusparseXcsrgemmNnz(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 3, 4, descrA, 4, row_ptr_a,col_ind_a, descrB, 5, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
   cusparseScsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 3, 4, descrA, 4, val_a_s, row_ptr_a, col_ind_a, descrB, 5, val_b_s, row_ptr_b, col_ind_b, descrC, val_c_s, row_ptr_c, col_ind_c);
   cusparseDcsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 3, 4, descrA, 4, val_a_d, row_ptr_a, col_ind_a, descrB, 5, val_b_d, row_ptr_b, col_ind_b, descrC, val_c_d, row_ptr_c, col_ind_c);
