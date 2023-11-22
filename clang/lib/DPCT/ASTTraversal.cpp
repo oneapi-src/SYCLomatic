@@ -12798,6 +12798,9 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> APINamesSelected = {
       "cudaCreateChannelDesc",
       "cudaCreateChannelDescHalf",
+      "cudaCreateChannelDescHalf1",
+      "cudaCreateChannelDescHalf2",
+      "cudaCreateChannelDescHalf4",
       "cudaUnbindTexture",
       "cudaBindTextureToArray",
       "cudaBindTexture",
