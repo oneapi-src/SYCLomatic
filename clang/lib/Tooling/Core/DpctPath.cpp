@@ -68,7 +68,7 @@ void DpctPath::makeCanonical() {
     llvm::sys::path::append(RealPath, llvm::sys::path::Style::native, Suffix);
   }
 #if defined(_WIN32)
-  // _CanonicalPath = RealPath.str().lower();
+  _CanonicalPath = RealPath.str().lower();
   if (_CanonicalPath.size() >= 3 && _CanonicalPath.substr(0, 3) == "unc") {
     _CanonicalPath = "\\" + _CanonicalPath.substr(3);
   }
