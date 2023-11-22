@@ -81,5 +81,28 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
                   SM.getDecomposedLoc(Locations.PrefixInsertLoc).second;
 }
 
+using namespace clang::ast_matchers;
+
+void LibraryTypeLocRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto TargetTypeName = [&]() {
+    return hasAnyName("csrsv2Info_t", "cusparseSolvePolicy_t");
+  };
+
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
+          .bind("loc"),
+      this);
+}
+
+void LibraryTypeLocRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
+    ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+
 } // namespace dpct
 } // namespace clang

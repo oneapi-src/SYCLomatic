@@ -296,11 +296,9 @@ private:
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 namespace detail {
 #ifdef DPCT_USM_LEVEL_NONE
-#define SPARSE_CALL(X, Y) X;
+#define SPARSE_CALL(CALL, OPTIMIZE_INFO) CALL;
 #else
-#define SPARSE_CALL(X, Y)                                                      \
-  sycl::event e = X;                                                           \
-  Y->add_dependency(e);
+#define SPARSE_CALL(CALL, OPTIMIZE_INFO) OPTIMIZE_INFO->add_dependency(CALL);
 #endif
 
 template <typename T> struct optimize_csrsv_impl {
