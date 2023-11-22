@@ -1198,16 +1198,15 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
 
 namespace detail {
 template <typename T>
-inline void
-csrgemm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
-             oneapi::mkl::transpose trans_b, int m, int n, int k,
-             const std::shared_ptr<matrix_info> info_a, int nnz_a,
-             const T *val_a, const int *row_ptr_a, const int *col_ind_a,
-             const std::shared_ptr<matrix_info> info_b, int nnz_b,
-             const T *val_b, const int *row_ptr_b, const int *col_ind_b,
-             const std::shared_ptr<matrix_info> info_c, T *val_c,
-             int *row_ptr_c, int *col_ind_c, int *nnz_host_ptr,
-             bool is_estimation) {
+void csrgemm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                  oneapi::mkl::transpose trans_b, int m, int n, int k,
+                  const std::shared_ptr<matrix_info> info_a, int nnz_a,
+                  const T *val_a, const int *row_ptr_a, const int *col_ind_a,
+                  const std::shared_ptr<matrix_info> info_b, int nnz_b,
+                  const T *val_b, const int *row_ptr_b, const int *col_ind_b,
+                  const std::shared_ptr<matrix_info> info_c, T *val_c,
+                  int *row_ptr_c, int *col_ind_c, int *nnz_host_ptr,
+                  bool is_estimation) {
   using Ty = typename dpct::DataType<T>::T2;
   oneapi::mkl::sparse::matrix_handle_t matrix_handle_a = nullptr;
   oneapi::mkl::sparse::matrix_handle_t matrix_handle_b = nullptr;
@@ -1362,14 +1361,15 @@ csrgemm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
 /// \param [in] info_c Matrix info of the matrix C.
 /// \param [in] row_ptr_c An array of length row number + 1.
 /// \param [out] nnz_host_ptr Non-zero elements number of matrix C.
-void csrgemm_nnz_estimiate(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                           oneapi::mkl::transpose trans_b, int m, int n, int k,
-                           const std::shared_ptr<matrix_info> info_a, int nnz_a,
-                           const int *row_ptr_a, const int *col_ind_a,
-                           const std::shared_ptr<matrix_info> info_b, int nnz_b,
-                           const int *row_ptr_b, const int *col_ind_b,
-                           const std::shared_ptr<matrix_info> info_c,
-                           int *row_ptr_c, int *nnz_host_ptr) {
+inline void
+csrgemm_nnz_estimiate(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                      oneapi::mkl::transpose trans_b, int m, int n, int k,
+                      const std::shared_ptr<matrix_info> info_a, int nnz_a,
+                      const int *row_ptr_a, const int *col_ind_a,
+                      const std::shared_ptr<matrix_info> info_b, int nnz_b,
+                      const int *row_ptr_b, const int *col_ind_b,
+                      const std::shared_ptr<matrix_info> info_c, int *row_ptr_c,
+                      int *nnz_host_ptr) {
   detail::csrgemm_impl<float>(queue, trans_a, trans_b, m, n, k, info_a, nnz_a,
                               (const float *)nullptr, row_ptr_a, col_ind_a,
                               info_b, nnz_b, (const float *)nullptr, row_ptr_b,
@@ -1402,14 +1402,14 @@ void csrgemm_nnz_estimiate(sycl::queue queue, oneapi::mkl::transpose trans_a,
 /// \param [out] col_ind_c An array containing the column indices in index-based
 /// numbering.
 template <typename T>
-inline void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                    oneapi::mkl::transpose trans_b, int m, int n, int k,
-                    const std::shared_ptr<matrix_info> info_a, const T *val_a,
-                    const int *row_ptr_a, const int *col_ind_a,
-                    const std::shared_ptr<matrix_info> info_b, const T *val_b,
-                    const int *row_ptr_b, const int *col_ind_b,
-                    const std::shared_ptr<matrix_info> info_c, T *val_c,
-                    const int *row_ptr_c, int *col_ind_c) {
+void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
+             oneapi::mkl::transpose trans_b, int m, int n, int k,
+             const std::shared_ptr<matrix_info> info_a, const T *val_a,
+             const int *row_ptr_a, const int *col_ind_a,
+             const std::shared_ptr<matrix_info> info_b, const T *val_b,
+             const int *row_ptr_b, const int *col_ind_b,
+             const std::shared_ptr<matrix_info> info_c, T *val_c,
+             const int *row_ptr_c, int *col_ind_c) {
   detail::csrgemm_impl<T>(queue, trans_a, trans_b, m, n, k, info_a, 0, val_a,
                           row_ptr_a, col_ind_a, info_b, 0, val_b, row_ptr_b,
                           col_ind_b, info_c, val_c, (int *)row_ptr_c, col_ind_c,
