@@ -1336,7 +1336,6 @@ csrgemm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
   queue.wait();
 }
 } // namespace detail
-#endif
 
 /// If \p val_a , \p val_b , \p val_c and \p col_ind_c are not NULL, this
 /// routine computes a sparse matrix (CSR format)-sparse matrix (CSR format)
@@ -1391,6 +1390,7 @@ inline void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
                                 col_ind_c, nnz_host_ptr, true);
   }
 }
+#endif
 
 } // namespace sparse
 } // namespace dpct
