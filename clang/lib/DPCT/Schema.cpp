@@ -55,6 +55,7 @@ inline FieldSchema dpct::constructFieldSchema(const clang::FieldDecl *FD) {
   FS.ValTypeOfField = getValType(FT);
   FS.ValSize = AstContext.getTypeSize(FT) / CHAR_BIT;
   FS.Offset = AstContext.getFieldOffset(FD) / CHAR_BIT;
+  FS.TypeSize = AstContext.getTypeSize(OriginT)/ CHAR_BIT;
   if (!FS.IsBasicType)
     registerTypeSchema(OriginT);
   return FS;
@@ -85,7 +86,7 @@ void dpct::DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS) {
   return;
 }
 
-TypeSchema dpct::registerTypeSchema(const clang::QualType QT) {
+TypeSchema dpct::registerTypeSchema(const clang::QualType &QT) {
   TypeSchema TS;
   if (QT.isNull())
     return TS;
@@ -93,10 +94,9 @@ TypeSchema dpct::registerTypeSchema(const clang::QualType QT) {
   if (TypeSchemaMap.find(KetStr) != TypeSchemaMap.end())
     return TypeSchemaMap.find(KetStr)->second;
   clang::ASTContext &AstContext = dpct::DpctGlobalInfo::getContext();
+  TS.TypeName = KetStr;
+  TS.TypeSize = AstContext.getTypeSize(QT) / CHAR_BIT;
   if (const clang::RecordType *RT = QT->getAs<clang::RecordType>()) {
-
-    TS.TypeName = KetStr;
-    TS.TypeSize = AstContext.getTypeSize(RT) / CHAR_BIT;
     TS.FileName =
         getFilePathFromDecl(RT->getDecl(), DpctGlobalInfo::getSourceManager());
     for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
@@ -108,8 +108,8 @@ TypeSchema dpct::registerTypeSchema(const clang::QualType QT) {
       DFSBaseClass(RD, TS);
     }
     TS.FieldNum = TS.Members.size();
-    TypeSchemaMap[KetStr] = TS;
   }
+  TypeSchemaMap[KetStr] = TS;
   return TS;
 }
 
@@ -124,6 +124,7 @@ VarSchema dpct::constructVarSchema(const clang::DeclRefExpr *DRE) {
       getFilePathFromDecl(DRE->getDecl(), DpctGlobalInfo::getSourceManager());
   VA.VarSize = AstContext.getTypeSize(DRE->getType()) / CHAR_BIT;
   VA.VarType = DpctGlobalInfo::getTypeName(getDerefType(DRE->getType()));
+  VA.TypeSize = AstContext.getTypeSize(getDerefType(DRE->getType()))/ CHAR_BIT;
   if (!VA.IsBasicType) {
     registerTypeSchema(getDerefType(DRE->getType()));
   }
@@ -132,28 +133,29 @@ VarSchema dpct::constructVarSchema(const clang::DeclRefExpr *DRE) {
 
 std::map<std::string, TypeSchema> clang::dpct::TypeSchemaMap;
 
-llvm::json::Array
-dpct::serializeSchemaToJsonArray(const std::map<std::string, TypeSchema> &TSMap) {
+llvm::json::Array dpct::serializeSchemaToJsonArray(
+    const std::map<std::string, TypeSchema> &TSMap) {
   llvm::json::Array JArray;
   for (auto &it : TSMap) {
-    JArray.push_back(serializeSchemaToJson(it.second));
+    JArray.push_back(serializeTypeSchemaToJson(it.second));
   }
   return JArray;
 }
 
 llvm::json::Object serializeFieldSchemaToJson(const FieldSchema &FS) {
   llvm::json::Object JObj;
-  JObj.try_emplace("Name", FS.FieldName);
+  JObj.try_emplace("VarName", FS.FieldName);
   JObj.try_emplace("Type", FS.FieldType);
   JObj.try_emplace("IsBasicType", FS.IsBasicType);
   JObj.try_emplace("ValType", getValTypeStr(FS.ValTypeOfField));
-  JObj.try_emplace("VarSize", FS.ValSize);
+  JObj.try_emplace("ValSize", FS.ValSize);
   JObj.try_emplace("Offset", FS.Offset);
   JObj.try_emplace("Location", FS.Location);
+  JObj.try_emplace("TypeSize", FS.TypeSize);
   return JObj;
 }
 
-llvm::json::Object dpct::serializeSchemaToJson(const TypeSchema &TS) {
+llvm::json::Object dpct::serializeTypeSchemaToJson(const TypeSchema &TS) {
   llvm::json::Object JObj;
   JObj.try_emplace("SchemaType", "TYPE");
   JObj.try_emplace("TypeName", TS.TypeName);
@@ -169,6 +171,20 @@ llvm::json::Object dpct::serializeSchemaToJson(const TypeSchema &TS) {
     JObj.try_emplace("Members", std::move(JArray));
   }
 
+  return JObj;
+}
+
+llvm::json::Object dpct::serializeVarSchemaToJson(const VarSchema &VS) {
+  llvm::json::Object JObj;
+  JObj.try_emplace("SchemaType", "DATA");
+  JObj.try_emplace("VarName", VS.VarName);
+  JObj.try_emplace("TypeName", VS.VarType);
+  JObj.try_emplace("IsBasicType", VS.IsBasicType);
+  JObj.try_emplace("TypeSize", VS.TypeSize);
+  JObj.try_emplace("ValSize", VS.VarSize);
+  JObj.try_emplace("ValType", getValTypeStr(VS.ValTypeOfVar));
+  JObj.try_emplace("FilePath", VS.FileName);
+  JObj.try_emplace("Location", VS.Location);
   return JObj;
 }
 
@@ -207,10 +223,13 @@ std::vector<TypeSchema> dpct::getRelatedTypeSchema(const clang::QualType QT) {
   return Res;
 }
 
-llvm::json::Array dpct::serializeSchemaToJsonArray(const std::vector<TypeSchema> &SVec) {
+llvm::json::Array
+dpct::serializeSchemaToJsonArray(const std::vector<TypeSchema> &SVec) {
   llvm::json::Array JArray;
   for (auto &it : SVec) {
-    JArray.push_back(serializeSchemaToJson(it));
+    JArray.push_back(serializeTypeSchemaToJson(it));
   }
   return JArray;
 }
+
+

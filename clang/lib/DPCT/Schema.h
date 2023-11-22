@@ -48,6 +48,7 @@ struct FieldSchema {
   std::string FieldType;
   bool IsBasicType = false;
   int64_t ValSize = 0;
+  int64_t TypeSize = 0;
   int64_t Offset = 0;
   std::string Location = "None";
   FieldSchema(const std::string &name = "", ValType VT = ScalarValue,
@@ -77,6 +78,7 @@ struct VarSchema {
   std::string FileName;
   std::string VarType;
   bool IsBasicType = false;
+  int64_t TypeSize = 0;
   int64_t VarSize = 0;
   std::string Location = "None";
   VarSchema(const std::string &name = "", ValType VT = ScalarValue,
@@ -100,7 +102,7 @@ void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS);
 
 TypeSchema constructTypeSchema(const clang::RecordType *RT);
 
-TypeSchema registerTypeSchema(const clang::QualType QT);
+TypeSchema registerTypeSchema(const clang::QualType &QT);
 
 VarSchema constructVarSchema(const clang::DeclRefExpr *DRE);
 
@@ -112,7 +114,9 @@ serializeSchemaToJsonArray(const std::map<std::string, TypeSchema> &TSMap);
 llvm::json::Array
 serializeSchemaToJsonArray(const std::vector<TypeSchema> &TSVec);
 
-llvm::json::Object serializeSchemaToJson(const TypeSchema &TS);
+llvm::json::Object serializeTypeSchemaToJson(const TypeSchema &TS);
+
+llvm::json::Object serializeVarSchemaToJson(const VarSchema &VS);
 
 void serializeJsonArrayToFile(llvm::json::Array &&Arr,
                               const std::string &FilePath);
@@ -120,6 +124,20 @@ void serializeJsonArrayToFile(llvm::json::Array &&Arr,
 std::vector<TypeSchema> getRelatedTypeSchema(const clang::QualType QT);
 
 void setTypeSchemaMap();
+
+inline std::string jsonToString(llvm::json::Array Arr){
+  std::string Str;
+  llvm::raw_string_ostream  OS(Str);
+  llvm::json::OStream(OS).value(std::move(Arr));
+  return OS.str();
+}
+
+inline std::string jsonToString(llvm::json::Object Obj){
+  std::string Str;
+  llvm::raw_string_ostream  OS(Str);
+  llvm::json::OStream(OS).value(std::move(Obj));
+  return OS.str();
+}
 } // namespace dpct
 } // namespace clang
 

@@ -67,8 +67,7 @@ void clang::dpct::TESTRule::runRule(
         }
       }
     }
-    serializeJsonArrayToFile(serializeSchemaToJsonArray(TypeSchemaMap),
-                             "output_all.json");
+    std::cout<<clang::dpct::jsonToString(serializeSchemaToJsonArray(TypeSchemaMap));
   }
   return;
 }
