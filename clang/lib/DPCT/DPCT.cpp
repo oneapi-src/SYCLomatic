@@ -29,6 +29,7 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
+#include "MigrateCmakeScript.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Format/Format.h"
@@ -235,7 +236,6 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   } else if (!CudaIncludeDetector.isVersionSupported()) {
     ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
     dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
-
   }
 
   makeCanonical(Path);
@@ -708,13 +708,41 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationErrorInvalidInRootOrOutRoot);
   }
 
-  int ValidPath = validatePaths(InRoot, OptParser->getSourcePathList());
-  if (ValidPath == -1) {
-    ShowStatus(MigrationErrorInvalidInRootPath);
-    dpctExit(MigrationErrorInvalidInRootPath);
-  } else if (ValidPath == -2) {
-    ShowStatus(MigrationErrorNoFileTypeAvail);
-    dpctExit(MigrationErrorNoFileTypeAvail);
+  if (!MigrateCmakeScriptOnly) {
+    int ValidPath = validatePaths(InRoot, OptParser->getSourcePathList());
+    if (ValidPath == -1) {
+      ShowStatus(MigrationErrorInvalidInRootPath);
+      dpctExit(MigrationErrorInvalidInRootPath);
+    } else if (ValidPath == -2) {
+      ShowStatus(MigrationErrorNoFileTypeAvail);
+      dpctExit(MigrationErrorNoFileTypeAvail);
+    }
+
+    if (cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrateCmakeScriptOnlyNotSpecifed);
+      dpctExit(MigrateCmakeScriptOnlyNotSpecifed);
+    }
+
+  } else {
+    // To validate the path of cmake file script or directory
+    int ValidPath =
+        validateCmakeScriptPaths(InRoot, OptParser->getSourcePathList());
+    if (ValidPath == -1) {
+      ShowStatus(MigrationErrorInvalidInRootPath);
+      dpctExit(MigrationErrorInvalidInRootPath);
+    } else if (ValidPath < -1) {
+      ShowStatus(MigrationErrorCMakeScriptPathInvalid);
+      dpctExit(MigrationErrorCMakeScriptPathInvalid);
+    }
+  }
+
+  if (MigrateCmakeScript && !OptParser->getSourcePathList().empty()) {
+    ShowStatus(MigarteCmakeScriptIncorrectUse);
+    dpctExit(MigarteCmakeScriptIncorrectUse);
+  }
+  if (MigrateCmakeScript && MigrateCmakeScriptOnly) {
+    ShowStatus(MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse);
+    dpctExit(MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse);
   }
 
   int SDKIncPathRes =
@@ -945,6 +973,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
+  DpctGlobalInfo::setMigrateCmakeScriptEnabled(MigrateCmakeScript);
+  DpctGlobalInfo::setMigrateCmakeScriptOnlyEnabled(MigrateCmakeScriptOnly);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
@@ -1054,15 +1084,16 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling,
-                     EnablepProfilingFlag, EnablepProfilingFlag);
+    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling, EnablepProfilingFlag,
+                     EnablepProfilingFlag);
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
                      RuleFile.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScope.getNumOccurrences());
 
-    if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
+    if (!MigrateCmakeScriptOnly &&
+        clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
       if (!canContinueMigration(Msg)) {
         ShowStatus(MigrationErrorDifferentOptSet, Msg);
@@ -1088,6 +1119,11 @@ int runDPCT(int argc, const char **argv) {
 
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();
+  }
+
+  if (MigrateCmakeScriptOnly) {
+    migrateCmakeScriptOnly(OptParser, InRoot, OutRoot);
+    return MigrationSucceeded;
   }
 
   volatile int RunCount = 0;
@@ -1223,6 +1259,15 @@ int runDPCT(int argc, const char **argv) {
   // if run was successful
   int Status = saveNewFiles(Tool, InRoot, OutRoot);
   ShowStatus(Status);
+
+  if (MigrateCmakeScript) {
+    std::vector<std::string> CmakeScriptFiles;
+    collectCmakeScripts(InRoot, OutRoot, CmakeScriptFiles);
+    for (const auto &ScriptFile : CmakeScriptFiles) {
+      if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
+        continue;
+    }
+  }
 
   DumpOutputFile();
   return Status;

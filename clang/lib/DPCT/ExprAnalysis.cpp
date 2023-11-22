@@ -1127,7 +1127,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     auto QualifierLoc = ETL.getQualifierLoc();
     TL = ETL.getNamedTypeLoc();
     TyName = getNestedNameSpecifierString(QualifierLoc);
-    if (ETL.getTypePtr()->getKeyword() == ETK_Typename) {
+    if (ETL.getTypePtr()->getKeyword() == ElaboratedTypeKeyword::Typename) {
       if (QualifierLoc)
         SR.setBegin(QualifierLoc.getBeginLoc());
       else

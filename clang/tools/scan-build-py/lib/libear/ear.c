@@ -1592,8 +1592,8 @@ const char *find_intercept_compiler(const char *str, int compiler_idx) {
 void emit_cmake_warning(char const *argv[], int argc) {
   const char *bin = argv[0];
   int len = strlen(bin);
-  if ((len == 5 && bin[0] == 'e' && bin[1] == 'k' && bin[3] == 'a' &&
-       bin[4] == 'm' && bin[4] == 'c') ||
+  if ((len == 5 && bin[0] == 'e' && bin[1] == 'k' && bin[2] == 'a' &&
+       bin[3] == 'm' && bin[4] == 'c') ||
       (len > 5 && bin[len - 6] == '/' && bin[len - 5] == 'c' &&
        bin[len - 4] == 'm') &&
           bin[len - 3] == 'a' && bin[len - 2] == 'k' && bin[len - 1] == 'e') {

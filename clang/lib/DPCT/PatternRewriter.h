@@ -19,4 +19,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
 
 bool fixLineEndings(const std::string &Input, std::string &Output);
 
+std::string convertCmakeCommandsToLower(const std::string &InputString);
+
 #endif // DPCT_PATTERN_REWRITER_H

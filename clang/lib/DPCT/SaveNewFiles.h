@@ -12,6 +12,7 @@
 #include "ValidateArguments.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/raw_os_ostream.h"
 #include <map>
 
 #define DiagRef                                                                \
@@ -68,4 +69,8 @@ void rewriteFileName(llvm::SmallString<512> &FileName);
 // whether the file is in database.
 void rewriteFileName(llvm::SmallString<512> &FileName,
                      llvm::StringRef FullPathName);
+
+// apply patter rewrite rules to migrate cmake script file
+void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
+                                           llvm::raw_os_ostream &Stream);
 #endif // DPCT_SAVE_NEW_FILES_H

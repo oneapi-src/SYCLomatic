@@ -97,6 +97,18 @@ bool makeAnalysisScopeCanonicalOrSetDefaults(std::string &AnalysisScope,
 /// -2: fail for there is file in SourceFiles without extension
 int validatePaths(const std::string &InRoot,
                   const std::vector<std::string> &SourceFiles);
+
+/// Make sure cmake script path is valide file path or directory path.
+/// return value:
+/// 0: success (InRoot and CmakeScriptPaths are valid)
+/// -1: fail for InRoot not valid
+/// -2: fail for there is file or directory not existing in CmakeScriptPaths
+/// -3: fail for there is directory not in InRoot directory in CmakeScriptPaths
+/// -4: fail for there is file not in InRoot directory in CmakeScriptPaths
+/// -5: fail for there is file that is is not a cmake script file in CmakeScriptPaths
+int validateCmakeScriptPaths(const std::string &InRoot,
+                             const std::vector<std::string> &CmakeScriptPaths);
+
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
                      std::string &RFile, bool &ROnly, bool &GenReport,
                      std::string &DVerbose);
