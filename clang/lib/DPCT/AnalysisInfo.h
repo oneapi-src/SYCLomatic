@@ -1964,12 +1964,6 @@ public:
   getMallocHostInfoMap(){
     return MallocHostInfoMap;
   };
-<<<<<<< HEAD
-  static inline std::unordered_map<std::string, std::string> &
-  getSpecialReplForEAMap() {
-    return SpecialReplForEAMap;
-  };
-=======
   static inline std::map<std::shared_ptr<TextModification>, bool> &
   getConstantReplProcessedFlagMap() {
     return ConstantReplProcessedFlagMap;
@@ -1977,7 +1971,11 @@ public:
   static inline std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
     return VarUsedByRuntimeSymbolAPISet;
   }
->>>>>>> upstream/SYCLomatic
+
+  static inline std::unordered_map<std::string, std::string> &
+  getSpecialReplForEAMap() {
+    return SpecialReplForEAMap;
+  };
 
 private:
   DpctGlobalInfo();
@@ -2164,15 +2162,12 @@ private:
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
   static std::unordered_map<std::string, bool> MallocHostInfoMap;
-<<<<<<< HEAD
-  static std::unordered_map<std::string, std::string> SpecialReplForEAMap;
-=======
   /// The key of this map is repl for specifier "__const__" and the value
   /// "true" means this repl has been processed.
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
->>>>>>> upstream/SYCLomatic
+  static std::unordered_map<std::string, std::string> SpecialReplForEAMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -2563,17 +2558,14 @@ public:
     }
     return Ret;
   }
-<<<<<<< HEAD
-  void setManualInitValue(const std::string &Init) {
-    InitList = Init;
-    IsManualInitSet = true;
-  }
-=======
   void setUseHelperFuncFlag(bool Flag) {
     UseHelperFuncFlag = Flag;
   };
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
->>>>>>> upstream/SYCLomatic
+  void setManualInitValue(const std::string &Init) {
+    InitList = Init;
+    IsManualInitSet = true;
+  }
 
 private:
   bool isTreatPointerAsArray() {
