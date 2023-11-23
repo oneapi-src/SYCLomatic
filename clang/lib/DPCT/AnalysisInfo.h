@@ -986,6 +986,8 @@ public:
   static unsigned getHelperFuncPreferenceFlag() {
     return HelperFuncPreferenceFlag;
   }
+  static bool isAnalysisModeEnabled() { return AnalysisModeFlag; }
+  static void enableAnalysisMode() { AnalysisModeFlag = true; }
 
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
@@ -2135,6 +2137,7 @@ private:
   static unsigned ExtensionDDFlag;
   static unsigned ExperimentalFlag;
   static unsigned HelperFuncPreferenceFlag;
+  static bool AnalysisModeFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;

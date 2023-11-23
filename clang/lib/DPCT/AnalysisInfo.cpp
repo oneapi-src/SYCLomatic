@@ -151,6 +151,7 @@ unsigned DpctGlobalInfo::ExtensionDEFlag = static_cast<unsigned>(-1);
 unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
+bool DpctGlobalInfo::AnalysisModeFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
