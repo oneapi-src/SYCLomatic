@@ -869,10 +869,11 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
       if ((!CommandLine.empty() && CommandLine[0] == "None") &&
           llvm::sys::path::extension(File) == ".cu") {
         const std::string Msg =
-            "warning: " + File.str() +
-            " was found in <None> node in " + VcxprojFilePath.getCanonicalPath() + " and skipped; to "
-            "migrate specify CUDA* Item Type for this file in project and try "
-            "again.\n";
+            "warning: " + File.str() + " was found in <None> node in " +
+            llvm::sys::path::filename(VcxprojFilePath.getCanonicalPathRef())
+                .str() +
+            " and skipped; to migrate specify CUDA* Item Type for this file in "
+            "project and try again.\n";
         DoPrintHandle(Msg, false);
         return -1;
       }

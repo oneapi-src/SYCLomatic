@@ -31,6 +31,7 @@ void DpctPath::makeCanonical() {
   }
 
   llvm::SmallString<512> Path(_Path);
+  llvm::sys::fs::expand_tilde(Path, Path);
   if (!llvm::sys::path::is_absolute(Path)) {
     llvm::SmallString<512> TempPath;
     llvm::sys::fs::current_path(TempPath);
@@ -38,7 +39,6 @@ void DpctPath::makeCanonical() {
     Path = TempPath;
   }
 
-  llvm::sys::fs::expand_tilde(Path, Path);
   llvm::sys::path::remove_dots(Path, /* remove_dot_dot= */ true);
   llvm::sys::path::native(Path);
 
