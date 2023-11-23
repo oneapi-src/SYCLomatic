@@ -54,21 +54,35 @@ For example, this original CUDA code:
 .. code-block:: cpp
    :linenos:
 
-     char *ptxFile = "module.ptx";
-     cuModuleLoad(&module, ptxFile);
+   void test() {
+     CUmodule module;
+     std::string ptxFile("module.ptx");
+     cuModuleLoad(&module, ptxFile.c_str());
+   }
 
 results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
 
-     char *ptxFile = "module.ptx";
-     module = dpct::load_kernel_library(ptxFile);
+   void test() {
+     dpct::kernel_library module;
+     std::string ptxFile("module.ptx");
+     /*
+     DPCT1103:0: 'ptxFile.c_str()' should be a dynamic library. The dynamic library
+     should supply wrapped kernel functions.
+     */
+     module = dpct::load_kernel_library(ptxFile.c_str());
+   }
 
 which is rewritten to:
 
 .. code-block:: cpp
    :linenos:
 
-     char *libraryFile = "library.so";
+   void test() {
+     dpct::kernel_library module;
+     std::string libraryFile("library.so");
      module = dpct::load_kernel_library(libraryFile);
+   }
+

@@ -26,45 +26,83 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
   
-     _global_ void kernel() {
-       int Input, Output1, Output2, Lane;
-       ...
-  
-       // original code logic
-       Output1 = __shfl(Input, Lane, 32);
-       Output2 = __shfl_xor(Input, Lane, 16);
-     }
+    __global__ void WarningTestKernel1(int* data) {
+      typedef cub::WarpScan<int> WarpScan;
+      typedef cub::WarpScan<int, 16> WarpScan16;
+    
+      typename WarpScan::TempStorage temp1;
+      typename WarpScan16::TempStorage temp2;
+    
+      int input = data[threadIdx.x];
+      int output = 0;
+      WarpScan(temp1).InclusiveSum(input, output);
+      ...
+    
+      WarpScan16(temp2).InclusiveSum(input, output);
+      ...
+    }
+    
+    void foo(int* data) {
+      WarningTestKernel1<<<1, 32>>>(data);
+    }
 
 results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
   
-     void kernel(int WarpSize, sycl::nd_item<3> item_ct1) {
-       int Input, Output1, Output2, Lane;
-       ...
-  
-       // original code logic
-       Output1 = Item_ct1.get_sub_group().shuffle(Input, Lane, 32);
-       /* DPCT1085 */
-       Output2 = Item_ct1.get_sub_group().shuffle_xor(Input, Lane, 16);
-     }
+    void WarningTestKernel1(int* data, const sycl::nd_item<3> &item_ct1) {
+    
+      int input = data[item_ct1.get_local_id(2)];
+      int output = 0;
+      output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input,
+                                               sycl::plus<>());
+      ...
+    
+      /*
+      DPCT1085:0: The function inclusive_scan_over_group requires sub-group size to
+      be 16, while other sub-group functions in the same SYCL kernel require a
+      different sub-group size. You may need to adjust the code.
+      */
+      output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input,
+                                               sycl::plus<>());
+      ...
+    }
+    
+    void foo(int* data) {
+      dpct::get_in_order_queue().parallel_for(
+          sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
+          [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]] {
+            WarningTestKernel1(data, item_ct1);
+          });
+    }
 
 which is manually adjusted to:
 
 .. code-block:: cpp
    :linenos:
-  
-     void kernel(int WarpSize, sycl::nd_item<3> item_ct1) {
-       int Input, Output, SrcLane;
-       ...
-  
-       // redesigned code logic
-       Output1 = Item_ct1.get_sub_group().shuffle(Input, Lane, 32);
-       /* DPCT1085 */
-       // redesign the code logic to unify sub-group size in the same kernel
-       Output2 = Item_ct1.get_sub_group().shuffle_xor(Input, Lane, 32);
-     }
+
+    void WarningTestKernel1(int* data, const sycl::nd_item<3> &item_ct1) {
+    
+      int input = data[item_ct1.get_local_id(2)];
+      int output = 0;
+      output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input,
+                                               sycl::plus<>());
+      ...
+    
+      // redesign the code logic to unify sub-group size in the same kernel
+      output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input,
+                                               sycl::plus<>());
+      ...
+    }
+    
+    void foo(int* data) {
+      dpct::get_in_order_queue().parallel_for(
+          sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
+          [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]] {
+            WarningTestKernel1(data, item_ct1);
+          });
+    }
 
 Suggestions to Fix
 ------------------
