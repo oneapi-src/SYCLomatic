@@ -12,6 +12,7 @@
 #include "Diagnostics.h"
 #include "ExternalReplacement.h"
 #include "GenMakefile.h"
+#include "MigrateCmakeScript.h"
 #include "Statics.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -414,6 +415,15 @@ void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
 
   // Convert cmake command to lower case in cmake script files
   LineEndingString = convertCmakeCommandsToLower(LineEndingString);
+
+  std::map<std::string, std::string> VariablesMap;
+  parseVariable(LineEndingString, VariablesMap);
+  for (auto Entry: VariablesMap) {
+    printf("[%s] --> [%s]\n", Entry.first.c_str(), Entry.second.c_str());
+  }
+
+  cmakeSyntaxProcessed(LineEndingString, VariablesMap);
+
   for (const auto &PR : MapNames::PatternRewriters) {
     LineEndingString = applyPatternRewriter(PR, LineEndingString);
   }
