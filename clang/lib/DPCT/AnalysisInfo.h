@@ -1437,9 +1437,6 @@ public:
   }
 
   void buildReplacements();
-  std::set<clang::tooling::DpctPath> &getProcessedFile() {
-    return ProcessedFile;
-  }
   void processCudaArchMacro();
   void generateHostCode(
       std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
@@ -2104,7 +2101,6 @@ private:
   static std::unordered_map<clang::tooling::DpctPath, std::shared_ptr<ExtReplacements>>
       FileReplCache;
   static std::set<clang::tooling::DpctPath> ReProcessFile;
-  static std::set<clang::tooling::DpctPath> ProcessedFile;
   static bool NeedRunAgain;
   static unsigned int RunRound;
   static std::set<clang::tooling::DpctPath> ModuleFiles;

@@ -135,7 +135,6 @@ std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
 std::unordered_map<clang::tooling::DpctPath, std::shared_ptr<ExtReplacements>>
     DpctGlobalInfo::FileReplCache;
 std::set<clang::tooling::DpctPath> DpctGlobalInfo::ReProcessFile;
-std::set<clang::tooling::DpctPath> DpctGlobalInfo::ProcessedFile;
 std::unordered_map<std::string,
                    std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>>
     DpctGlobalInfo::SpellingLocToDFIsMapForAssumeNDRange;
@@ -645,8 +644,7 @@ void DpctGlobalInfo::postProcess() {
         if (isFirstPass) {
           auto &MSFiles = MSMap[LocInfo.FilePath];
           for (auto &File : MSFiles) {
-            if (ProcessedFile.count(File))
-              ReProcessFile.emplace(File);
+            ReProcessFile.emplace(File);
           }
         }
         if (LocInfo.Type == HDFuncInfoType::HDFI_Call &&
