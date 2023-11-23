@@ -31,7 +31,7 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
   
-     cuSetTexFlags(tex, CU_TRSF_NORMALIZED_COORDINATES); // Need manually fix the read code if the flag CU_TRSF_READ_AS_INTEGER is unset.
+     cuTexRefSetFlags(tex, CU_TRSF_NORMALIZED_COORDINATES);
      ...
      result = tex2D(tex, 0.5f, 0.5f);
 
@@ -40,7 +40,12 @@ results in the following migrated SYCL code:
 .. code-block:: cpp
    :linenos:
   
-     tex.set(sycl::coordinate_normalization_mode::normalized);
+     /*
+     DPCT1074:0: The SYCL Image class does not support some of the flags used in
+     the original code. Unsupported flags were ignored. Data read from SYCL Image
+     could not be normalized as specified in the original code.
+     */
+     tex->set(sycl::coordinate_normalization_mode::normalized); // Need manually fix the read code if the flag CU_TRSF_READ_AS_INTEGER is unset.
      ...
      result = tex.read(0.5f, 0.5f); // data normalization does not match original code
 
@@ -49,6 +54,6 @@ which is manually adjusted to:
 .. code-block:: cpp
    :linenos:
   
-     tex.set(sycl::coordinate_normalization_mode::normalized);
+     tex->set(sycl::coordinate_normalization_mode::normalized);
      ...
      result = normalization(tex.read(0.5f, 0.5f)); // Implement the function "normalization" to normalize the result data as required.
