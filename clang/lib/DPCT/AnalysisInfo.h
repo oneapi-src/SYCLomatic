@@ -1456,9 +1456,6 @@ public:
   }
 
   void buildReplacements();
-  std::set<std::string> &getProcessedFile() {
-    return ProcessedFile;
-  }
   void processCudaArchMacro();
   void generateHostCode(
       std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
@@ -2129,7 +2126,6 @@ private:
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
       FileReplCache;
   static std::set<std::string> ReProcessFile;
-  static std::set<std::string> ProcessedFile;
   static bool NeedRunAgain;
   static unsigned int RunRound;
   static std::set<std::string> ModuleFiles;
