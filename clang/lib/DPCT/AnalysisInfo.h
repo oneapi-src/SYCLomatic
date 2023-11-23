@@ -1964,6 +1964,14 @@ public:
   getMallocHostInfoMap(){
     return MallocHostInfoMap;
   };
+  static inline std::map<std::shared_ptr<TextModification>, bool> &
+  getConstantReplProcessedFlagMap() {
+    return ConstantReplProcessedFlagMap;
+  }
+  static inline std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
+    return VarUsedByRuntimeSymbolAPISet;
+  }
+
 private:
   DpctGlobalInfo();
 
@@ -2149,6 +2157,11 @@ private:
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
   static std::unordered_map<std::string, bool> MallocHostInfoMap;
+  /// The key of this map is repl for specifier "__const__" and the value
+  /// "true" means this repl has been processed.
+  static std::map<std::shared_ptr<TextModification>, bool>
+      ConstantReplProcessedFlagMap;
+  static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -2539,6 +2552,10 @@ public:
     }
     return Ret;
   }
+  void setUseHelperFuncFlag(bool Flag) {
+    UseHelperFuncFlag = Flag;
+  };
+  bool isUseHelperFunc() { return UseHelperFuncFlag; }
 
 private:
   bool isTreatPointerAsArray() {
@@ -2558,20 +2575,9 @@ private:
 
   std::string getMemoryType();
   inline std::string getMemoryType(const std::string &MemoryType,
-                                   std::shared_ptr<CtTypeInfo> VarType) {
-    return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
-                       VarType->getDimension(), ">");
-  }
+                                   std::shared_ptr<CtTypeInfo> VarType);
   std::string getInitArguments(const std::string &MemSize,
-                               bool MustArguments = false) {
-    if (InitList.empty())
-      return getType()->getRangeArgument(MemSize, MustArguments);
-    if (getType()->getDimension())
-      return buildString("(", getRangeClass(),
-                         getType()->getRangeArgument(MemSize, true),
-                         ", " + InitList, ")");
-    return buildString("(", InitList, ")");
-  }
+                               bool MustArguments = false);
   const std::string &getMemoryAttr();
   std::string getSyclAccessorType();
   std::string getDpctAccessorType() {
@@ -2634,6 +2640,7 @@ private:
   std::string LocalTypeName = "";
 
   static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  bool UseHelperFuncFlag = true;
 };
 
 class TextureTypeInfo {
@@ -2807,6 +2814,7 @@ public:
 
   inline unsigned getOffset() { return Offset; }
   inline std::string getFilePath() { return FilePath; }
+  inline bool isUseHelperFunc() { return true; }
 };
 
 // texture handle info
@@ -3325,6 +3333,9 @@ private:
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap) {
     for (const auto &VI : VarMap) {
+      if (!VI.second->isUseHelperFunc()) {
+        continue;
+      }
       if (PS.FormatInformation.EnableFormat) {
         ParameterStream TPS;
         GetArgOrParam<T, COD>()(TPS, VI.second);
