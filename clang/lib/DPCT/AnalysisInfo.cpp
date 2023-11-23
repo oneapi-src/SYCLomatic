@@ -3217,10 +3217,14 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
         FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
   }
+  std::cout << "!!!!!!!!!!!!!!! DeviceFunctionDecl FilePath.getCanonicalPath():" << FilePath.getCanonicalPath() << std::endl;
   if (!FilePath.getCanonicalPath().empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
+    std::cout << "!!!!!!!!!!!!!!! FileType:" << FileType << std::endl;
+    std::cout << "!!!!!!!!!!!!!!! FD->isThisDeclarationADefinition():" << FD->isThisDeclarationADefinition() << std::endl;
     if (!(FileType & SPT_CudaHeader) && !(FileType & SPT_CppHeader) &&
         FD->isThisDeclarationADefinition()) {
+      std::cout << "!!!!!!!!!!!!!!! setDefinitionFilePath"  << std::endl;
       FuncInfo->setDefinitionFilePath(FilePath);
     }
   }
