@@ -66,7 +66,7 @@ inline void setValueToOptMap(std::string Key, std::string Value,
 template <>
 inline void setValueToOptMap(std::string Key, clang::tooling::DpctPath Value,
                              bool Specified) {
-  setValueToOptMap(Key, Value.getCanonicalPath(), Specified);
+  setValueToOptMap(Key, Value.getCanonicalPath().str(), Specified);
 }
 template <>
 inline void setValueToOptMap(std::string Key, bool Value, bool Specified) {
