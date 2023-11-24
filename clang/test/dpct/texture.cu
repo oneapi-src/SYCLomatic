@@ -66,6 +66,12 @@ int main() {
 
   // CHECK: dpct::image_channel halfChn = dpct::image_channel::create<sycl::half>();
   cudaChannelFormatDesc halfChn = cudaCreateChannelDescHalf();
+  // CHECK: dpct::image_channel half1Chn = dpct::image_channel::create<sycl::half>();
+  cudaChannelFormatDesc half1Chn = cudaCreateChannelDescHalf1();
+  // CHECK: dpct::image_channel half2Chn = dpct::image_channel::create<sycl::half2>();
+  cudaChannelFormatDesc half2Chn = cudaCreateChannelDescHalf2();
+  // CHECK: dpct::image_channel half4Chn = dpct::image_channel::create<sycl::half4>();
+  cudaChannelFormatDesc half4Chn = cudaCreateChannelDescHalf4();
 
   // CHECK: dpct::image_channel float4Chn = dpct::image_channel::create<sycl::float4>();
   cudaChannelFormatDesc float4Chn = cudaCreateChannelDesc<float4>();
