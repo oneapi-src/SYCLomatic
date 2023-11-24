@@ -1033,7 +1033,7 @@ template <UnaryOperatorKind UO, class ArgValue>
 inline std::shared_ptr<CallExprRewriterFactoryBase> createUnaryOpRewriterFactory(
     const std::string &SourceName,
     std::function<ArgValue(const CallExpr *)> &&ArgValueCreator) {
-  NeedParenAPISet.insert(SourceName);
+  DpctGlobalInfo::setNeedParenAPI(SourceName);
   return std::make_shared<
       CallExprRewriterFactory<UnaryOpRewriter<UO, ArgValue>,
                               std::function<ArgValue(const CallExpr *)>>>(
@@ -1050,7 +1050,7 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createBinaryOpRewriterFactor
     const std::string &SourceName,
     std::function<LValue(const CallExpr *)> &&LValueCreator,
     std::function<RValue(const CallExpr *)> &&RValueCreator) {
-  NeedParenAPISet.insert(SourceName);
+  DpctGlobalInfo::setNeedParenAPI(SourceName);
   return std::make_shared<
       CallExprRewriterFactory<BinaryOpRewriter<BO, LValue, RValue>,
                               std::function<LValue(const CallExpr *)>,
