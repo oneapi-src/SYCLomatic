@@ -969,7 +969,11 @@ int ClangTool::run(ToolAction *Action) {
   if(DoGetRunRound() == 0) {
 #endif // SYCLomatic_CUSTOMIZATION
   AbsolutePaths.reserve(SourcePaths.size());
+#ifdef SYCLomatic_CUSTOMIZATION
+  for (auto &SourcePath : SourcePaths) {
+#else
   for (auto SourcePath : SourcePaths) {
+#endif // SYCLomatic_CUSTOMIZATION
     auto AbsPath = getAbsolutePath(*OverlayFileSystem, SourcePath);
     if (!AbsPath) {
       llvm::errs() << "Skipping " << SourcePath
@@ -1005,7 +1009,7 @@ int ClangTool::run(ToolAction *Action) {
     }
   }
   } else {
-    for (auto File : GetReProcessFile()) {
+    for (auto &File : GetReProcessFile()) {
 #if defined(_WIN32)
       std::transform(File.begin(), File.end(), File.begin(),
                      [](unsigned char c) { return std::tolower(c); });
