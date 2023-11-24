@@ -638,9 +638,7 @@ private:
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
       AtomicMap;
-public:
   std::shared_ptr<ExtReplacements> Repls;
-private:
   size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
 

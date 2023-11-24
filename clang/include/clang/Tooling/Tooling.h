@@ -35,7 +35,9 @@
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Frontend/PCHContainerOperations.h"
 #include "clang/Tooling/ArgumentsAdjusters.h"
+#ifdef SYCLomatic_CUSTOMIZATION
 #include "clang/Tooling/Core/DpctPath.h"
+#endif // SYCLomatic_CUSTOMIZATION
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
 #include "llvm/ADT/StringMap.h"
@@ -96,6 +98,8 @@ class Compilation;
 } // namespace driver
 
 namespace tooling {
+
+
 
 class CompilationDatabase;
 
@@ -162,7 +166,9 @@ public:
 
   /// Called before a source file is processed by a FrontEndAction.
   /// \see clang::FrontendAction::BeginSourceFileAction
-  virtual bool handleBeginSource(CompilerInstance &CI) { return true; }
+  virtual bool handleBeginSource(CompilerInstance &CI) {
+    return true;
+  }
 
   /// Called after a source file is processed by a FrontendAction.
   /// \see clang::FrontendAction::EndSourceFileAction
@@ -181,9 +187,8 @@ public:
 /// std::unique_ptr<FrontendActionFactory> FactoryAdapter(
 ///   newFrontendActionFactory(&Factory));
 template <typename FactoryT>
-inline std::unique_ptr<FrontendActionFactory>
-newFrontendActionFactory(FactoryT *ConsumerFactory,
-                         SourceFileCallbacks *Callbacks = nullptr);
+inline std::unique_ptr<FrontendActionFactory> newFrontendActionFactory(
+    FactoryT *ConsumerFactory, SourceFileCallbacks *Callbacks = nullptr);
 
 /// Runs (and deletes) the tool on 'Code' with the -fsyntax-only flag.
 ///
@@ -194,8 +199,8 @@ newFrontendActionFactory(FactoryT *ConsumerFactory,
 ///                         clang modules.
 ///
 /// \return - True if 'ToolAction' was successfully executed.
-bool runToolOnCode(std::unique_ptr<FrontendAction> ToolAction,
-                   const Twine &Code, const Twine &FileName = "input.cc",
+bool runToolOnCode(std::unique_ptr<FrontendAction> ToolAction, const Twine &Code,
+                   const Twine &FileName = "input.cc",
                    std::shared_ptr<PCHContainerOperations> PCHContainerOps =
                        std::make_shared<PCHContainerOperations>());
 
@@ -256,8 +261,7 @@ buildASTFromCode(StringRef Code, StringRef FileName = "input.cc",
 /// \param PCHContainerOps The PCHContainerOperations for loading and creating
 /// clang modules.
 ///
-/// \param Adjuster A function to filter the command line arguments as
-/// specified.
+/// \param Adjuster A function to filter the command line arguments as specified.
 ///
 /// \return The resulting AST or null if an error occurred.
 std::unique_ptr<ASTUnit> buildASTFromCodeWithArgs(
@@ -320,8 +324,9 @@ public:
   /// \returns True if there were no errors during execution.
   bool run();
 
-private:
-  bool runInvocation(const char *BinaryName, driver::Compilation *Compilation,
+ private:
+  bool runInvocation(const char *BinaryName,
+                     driver::Compilation *Compilation,
                      std::shared_ptr<CompilerInvocation> Invocation,
                      std::shared_ptr<PCHContainerOperations> PCHContainerOps);
 
@@ -369,7 +374,7 @@ public:
   ~ClangTool();
 #ifdef SYCLomatic_CUSTOMIZATION
   int processFiles(llvm::StringRef File, bool &ProcessingFailed,
-                   bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
+                    bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
 #endif // SYCLomatic_CUSTOMIZATION
   /// Set a \c DiagnosticConsumer to use during parsing.
   void setDiagnosticConsumer(DiagnosticConsumer *DiagConsumer) {
@@ -414,10 +419,12 @@ public:
 
   llvm::ArrayRef<std::string> getSourcePaths() const { return SourcePaths; }
 #ifdef SYCLomatic_CUSTOMIZATION
-  void setCompilationDatabaseDir(const std::string &Dir) {
+  void setCompilationDatabaseDir(const std::string &Dir){
     CompilationDatabaseDir = Dir;
   }
-  bool isInputfileSpecified() { return !SourcePaths.empty(); }
+  bool isInputfileSpecified() {
+    return !SourcePaths.empty();
+  }
 #endif // SYCLomatic_CUSTOMIZATION
 
 private:
@@ -458,9 +465,8 @@ std::unique_ptr<FrontendActionFactory> newFrontendActionFactory() {
 }
 
 template <typename FactoryT>
-inline std::unique_ptr<FrontendActionFactory>
-newFrontendActionFactory(FactoryT *ConsumerFactory,
-                         SourceFileCallbacks *Callbacks) {
+inline std::unique_ptr<FrontendActionFactory> newFrontendActionFactory(
+    FactoryT *ConsumerFactory, SourceFileCallbacks *Callbacks) {
   class FrontendActionFactoryAdapter : public FrontendActionFactory {
   public:
     explicit FrontendActionFactoryAdapter(FactoryT *ConsumerFactory,
@@ -479,8 +485,8 @@ newFrontendActionFactory(FactoryT *ConsumerFactory,
                              SourceFileCallbacks *Callbacks)
           : ConsumerFactory(ConsumerFactory), Callbacks(Callbacks) {}
 
-      std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &,
-                                                     StringRef) override {
+      std::unique_ptr<ASTConsumer>
+      CreateASTConsumer(CompilerInstance &, StringRef) override {
         return ConsumerFactory->newASTConsumer();
       }
 
