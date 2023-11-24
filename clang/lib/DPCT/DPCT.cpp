@@ -225,8 +225,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
     }
     if (!CudaIncludeDetector.isVersionSupported() &&
         !CudaIncludeDetector.isVersionPartSupported()) {
-      ShowStatus(MigrationErrorCudaVersionUnsupported,
-                 CudaIncludeDetector.getParsedCUDAVersion());
+      ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
   } else if (!CudaIncludeDetector.isIncludePathValid()) {
@@ -234,8 +233,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
     dpctExit(MigrationErrorCannotDetectCudaPath);
   } else if (!CudaIncludeDetector.isVersionSupported() &&
              !CudaIncludeDetector.isVersionPartSupported()) {
-    ShowStatus(MigrationErrorDetectedCudaVersionUnsupported,
-               CudaIncludeDetector.getParsedCUDAVersion());
+    ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
     dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
   }
 
