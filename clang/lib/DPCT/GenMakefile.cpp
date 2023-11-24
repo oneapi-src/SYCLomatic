@@ -76,7 +76,7 @@ static void getCompileInfo(
     // Get value of key "directory" from compilation database
     const clang::tooling::DpctPath Directory = Entry.second[0];
 
-    if (path::filename(FileName.getCanonicalPathRef()).startswith("LinkerEntry")) {
+    if (path::filename(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
       // Parse linker cmd to get target name and objfile names
       std::vector<std::string> ObjsInLKOrARCmd;
 
@@ -102,7 +102,7 @@ static void getCompileInfo(
           clang::tooling::DpctPath FilePathAbs(Obj);
 
           if (!llvm::sys::path::is_absolute(Obj))
-            FilePathAbs = dpct::appendPath(Directory.getCanonicalPath(), Obj);
+            FilePathAbs = dpct::appendPath(Directory.getCanonicalPath().str(), Obj);
 
           ObjsInLKOrARCmd.push_back(std::string(FilePathAbs.getCanonicalPath()));
         } else if (Obj == "ar") {
@@ -125,7 +125,7 @@ static void getCompileInfo(
       }
 
       clang::tooling::DpctPath OutDirectory = dpct::appendPath(
-          Directory.getCanonicalPath(), TargetName);
+          Directory.getCanonicalPath().str(), TargetName);
       // Use relative path to out-root directory.
       SmallString<512> OutDirectoryStr(OutDirectory.getCanonicalPath());
       llvm::sys::path::replace_path_prefix(OutDirectoryStr, InRoot.getCanonicalPath(), ".");
@@ -279,15 +279,15 @@ static void getCompileInfo(
       // default obj file is generated in the directory where the compile
       // command runs.
       Orig2ObjMap[FileName] = dpct::appendPath(
-          Directory.getCanonicalPath(),
-          getCustomBaseName(FileName).getCanonicalPath() + ".o");
+          Directory.getCanonicalPath().str(),
+          getCustomBaseName(FileName).getCanonicalPath().str() + ".o");
     }
 
     // if option "--use-custom-helper=<value>" is used to customize the helper
     // header files for migrated code, the path of the helper header files
     // should be included.
     if (llvm::sys::fs::exists(
-            dpct::appendPath(OutRoot.getCanonicalPath(), "include"))) {
+            dpct::appendPath(OutRoot.getCanonicalPath().str(), "include"))) {
       NewOptions += "-I ./include ";
     }
 
@@ -373,7 +373,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::DpctPath OutR
   int TargetIdx = 0;
   for (const auto &Entry : CmdsPerTarget) {
     TargetName = Entry.first;
-    auto Parent = path::parent_path(TargetName.getCanonicalPathRef());
+    auto Parent = path::parent_path(TargetName.getCanonicalPath());
 
     if (!llvm::sys::fs::exists(Parent)) {
       std::error_code EC;
@@ -528,7 +528,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::DpctPath OutR
     OS << buildString("\trm -f ", AllObjs, "\n");
 
   std::string FileOut =
-      dpct::appendPath(OutRoot.getCanonicalPath(), BuildScriptName);
+      dpct::appendPath(OutRoot.getCanonicalPath().str(), BuildScriptName);
   std::ofstream File;
   File.open(FileOut, std::ios::binary);
   if (File) {
@@ -568,7 +568,7 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool,
   for (const auto &Entry : CompileCmdsPerTarget) {
     clang::tooling::DpctPath FileName = Entry.first;
     for (const auto &Option : Entry.second) {
-      std::string Key = Entry.first.getCanonicalPath() +
+      std::string Key = Entry.first.getCanonicalPath().str() +
                         Option.MigratedFileName + Option.CompileOptions +
                         Option.Compiler;
       DuplicateFilter[Key] = true;
@@ -578,7 +578,7 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool,
   if (NeedMergetYaml) {
     for (const auto &Entry : NewCompileCmdsMap) {
       for (const auto &Option : Entry.second) {
-        std::string Key = Entry.first.getCanonicalPath() +
+        std::string Key = Entry.first.getCanonicalPath().str() +
                           Option.MigratedFileName + Option.CompileOptions +
                           Option.Compiler;
         auto Iter = DuplicateFilter.find(Key);

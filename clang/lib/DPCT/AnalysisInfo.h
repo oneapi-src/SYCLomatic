@@ -789,16 +789,16 @@ public:
     if (FilePath.getCanonicalPath().empty()) {
       return false;
     }
-    if (Cache.count(FilePath.getCanonicalPath())) {
-      return Cache[FilePath.getCanonicalPath()];
+    if (Cache.count(FilePath.getCanonicalPath().str())) {
+      return Cache[FilePath.getCanonicalPath().str()];
     }
     for (auto &Path : DpctGlobalInfo::getExcludePath()) {
       if (isChildOrSamePath(Path.first, FilePath)) {
-        Cache[FilePath.getCanonicalPath()] = true;
+        Cache[FilePath.getCanonicalPath().str()] = true;
         return true;
       }
     }
-    Cache[FilePath.getCanonicalPath()] = false;
+    Cache[FilePath.getCanonicalPath().str()] = false;
     return false;
   }
   // TODO: implement one of this for each source language.
@@ -1005,7 +1005,7 @@ public:
       }
       clang::tooling::DpctPath PathBuf = *Itr;
       if (PathBuf.getCanonicalPath().empty()) {
-        clang::dpct::PrintMsg("Note: Path " + PathBuf.getPath() +
+        clang::dpct::PrintMsg("Note: Path " + PathBuf.getPath().str() +
                               " is invalid and will be ignored by option "
                               "--in-root-exclude.\n");
         continue;
@@ -1019,7 +1019,8 @@ public:
           llvm::sys::fs::is_regular_file(*Itr) ||
           llvm::sys::fs::is_symlink_file(*Itr)) {
         if (!isChildOrSamePath(InRoot, *Itr)) {
-          clang::dpct::PrintMsg("Note: Path " + PathBuf.getCanonicalPath() +
+          clang::dpct::PrintMsg("Note: Path " +
+                                PathBuf.getCanonicalPath().str() +
                                 " is not in --in-root directory and will be "
                                 "ignored by --in-root-exclude.\n");
         } else {
@@ -1045,7 +1046,7 @@ public:
           }
         }
       } else {
-        clang::dpct::PrintMsg("Note: Path " + PathBuf.getCanonicalPath() +
+        clang::dpct::PrintMsg("Note: Path " + PathBuf.getCanonicalPath().str() +
                               " is invalid and will be ignored by option "
                               "--in-root-exclude.\n");
       }
@@ -1453,7 +1454,7 @@ public:
       return;
     for (auto &FileRepl : FileReplCache) {
       FileRepl.second->emplaceIntoReplSet(
-          ReplSets[FileRepl.first.getCanonicalPath()]);
+          ReplSets[FileRepl.first.getCanonicalPath().str()]);
     }
   }
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
@@ -4519,7 +4520,8 @@ template <typename T> int getPlaceholderIdx(const T *S) {
   Loc = SM.getExpansionLoc(Loc);
 
   auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
-  std::string Key = LocInfo.first.getCanonicalPath() + ":" + std::to_string(LocInfo.second);
+  std::string Key = LocInfo.first.getCanonicalPath().str() + ":" +
+                    std::to_string(LocInfo.second);
   auto Iter = DpctGlobalInfo::getTempVariableHandledMap().find(Key);
   if (Iter != DpctGlobalInfo::getTempVariableHandledMap().end()) {
     return Iter->second;
@@ -4534,7 +4536,8 @@ template <typename T> bool UpdatePlaceholderIdxMap(const T *S, int Index) {
   auto Range = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
   SourceLocation Loc = Range.getBegin();
   auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
-  std::string Key = LocInfo.first.getCanonicalPath() + ":" + std::to_string(LocInfo.second);
+  std::string Key = LocInfo.first.getCanonicalPath().str() + ":" +
+                    std::to_string(LocInfo.second);
   auto Iter = DpctGlobalInfo::getTempVariableHandledMap().find(Key);
   if (Iter != DpctGlobalInfo::getTempVariableHandledMap().end()) {
     return true;
@@ -4588,8 +4591,8 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
 
   DpctGlobalInfo::getHelperFuncReplInfoMap().insert(
       std::make_pair(Index, HFInfo));
-  std::string KeyForDeclCounter =
-      HFInfo.DeclLocFile.getCanonicalPath() + ":" + std::to_string(HFInfo.DeclLocOffset);
+  std::string KeyForDeclCounter = HFInfo.DeclLocFile.getCanonicalPath().str() +
+                                  ":" + std::to_string(HFInfo.DeclLocOffset);
 
   if (DpctGlobalInfo::getTempVariableDeclCounterMap().count(
           KeyForDeclCounter) == 0) {

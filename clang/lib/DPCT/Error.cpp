@@ -169,14 +169,14 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorAPIMappingWrongCUDAHeader:
     StatusString =
         "Error: Can not find '" + Message + "' in current CUDA header file: " +
-        DpctGlobalInfo::getCudaPath().getCanonicalPath() +
+        DpctGlobalInfo::getCudaPath().getCanonicalPath().str() +
         ". Please check the API name or use a different CUDA header file with "
         "option \"--cuda-include-path\".";
     break;
   case MigrationErrorAPIMappingNoCUDAHeader:
     StatusString = "Error: Cannot find '" + Message +
                    "' in current CUDA header file: " +
-                   DpctGlobalInfo::getCudaPath().getCanonicalPath() +
+                   DpctGlobalInfo::getCudaPath().getCanonicalPath().str() +
                    ". Please specify the header file for '" + Message +
                    "' with option \"--extra-arg\".";
     break;
@@ -213,7 +213,7 @@ void ShowStatus(int Status, std::string Message) {
 }
 
 std::string getLoadYamlFailWarning(const clang::tooling::DpctPath &YamlPath) {
-  return "Warning: Failed to load " + YamlPath.getCanonicalPath() +
+  return "Warning: Failed to load " + YamlPath.getCanonicalPath().str() +
          ". Migration continues with incremental migration disabled. See "
          "https://www.intel.com/content/www/us/en/docs/"
          "dpcpp-compatibility-tool/developer-guide-reference/current/"

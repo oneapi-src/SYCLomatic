@@ -25,7 +25,7 @@ namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
 static std::string readFile(const clang::tooling::DpctPath &Name) {
-  std::ifstream Stream(Name.getCanonicalPath(),
+  std::ifstream Stream(Name.getCanonicalPath().str(),
                        std::ios::in | std::ios::binary);
   std::string Contents((std::istreambuf_iterator<char>(Stream)),
                        (std::istreambuf_iterator<char>()));
@@ -38,7 +38,7 @@ getCmakeBuildPathFromInRoot(const clang::tooling::DpctPath &InRoot,
   std::error_code EC;
 
   clang::tooling::DpctPath CmakeBuildDirectory;
-  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPathRef(), EC),
+  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
        End;
        Iter != End; Iter.increment(EC)) {
     if ((bool)EC) {
@@ -55,8 +55,8 @@ getCmakeBuildPathFromInRoot(const clang::tooling::DpctPath &InRoot,
       continue;
 
     bool IsHidden = false;
-    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPathRef()),
-                              PE = path::end(FilePath.getCanonicalPathRef());
+    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPath()),
+                              PE = path::end(FilePath.getCanonicalPath());
          PI != PE; ++PI) {
       StringRef Comp = *PI;
       if (Comp.startswith(".")) {
@@ -71,8 +71,9 @@ getCmakeBuildPathFromInRoot(const clang::tooling::DpctPath &InRoot,
 
     if (Iter->type() == fs::file_type::directory_file) {
       const clang::tooling::DpctPath Path = Iter->path();
-      if (fs::exists(appendPath(Path.getCanonicalPath(), "CMakeFiles")) &&
-          fs::exists(appendPath(Path.getCanonicalPath(), "CMakeCache.txt"))) {
+      if (fs::exists(appendPath(Path.getCanonicalPath().str(), "CMakeFiles")) &&
+          fs::exists(
+              appendPath(Path.getCanonicalPath().str(), "CMakeCache.txt"))) {
         CmakeBuildDirectory = Path;
         break;
       }
@@ -89,7 +90,7 @@ void collectCmakeScripts(
 
   clang::tooling::DpctPath CmakeBuildDirectory =
       getCmakeBuildPathFromInRoot(InRoot, OutRoot);
-  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPathRef(), EC),
+  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
        End;
        Iter != End; Iter.increment(EC)) {
     if ((bool)EC) {
@@ -111,8 +112,8 @@ void collectCmakeScripts(
       continue;
 
     bool IsHidden = false;
-    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPathRef()),
-                              PE = path::end(FilePath.getCanonicalPathRef());
+    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPath()),
+                              PE = path::end(FilePath.getCanonicalPath());
          PI != PE; ++PI) {
       StringRef Comp = *PI;
       if (Comp.startswith(".")) {
@@ -127,7 +128,7 @@ void collectCmakeScripts(
 
     if (Iter->type() == fs::file_type::regular_file) {
       llvm::StringRef Name =
-          llvm::sys::path::filename(FilePath.getCanonicalPathRef());
+          llvm::sys::path::filename(FilePath.getCanonicalPath());
       if (Name == "CMakeLists.txt" || Name.ends_with(".cmake")) {
         CmakeScriptFiles.push_back(FilePath);
       }
@@ -142,7 +143,7 @@ bool migrateCmakeScriptFile(const clang::tooling::DpctPath &InRoot,
   if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
     return false;
   }
-  auto Parent = path::parent_path(OutFileName.getCanonicalPathRef());
+  auto Parent = path::parent_path(OutFileName.getCanonicalPath());
   std::error_code EC;
   EC = fs::create_directories(Parent);
   if ((bool)EC) {
@@ -150,10 +151,10 @@ bool migrateCmakeScriptFile(const clang::tooling::DpctPath &InRoot,
                          " fail: " + EC.message() + "\n";
     PrintMsg(ErrMsg);
   }
-  std::ofstream Out(OutFileName.getCanonicalPath(), std::ios::binary);
+  std::ofstream Out(OutFileName.getCanonicalPath().str(), std::ios::binary);
   if (Out.fail()) {
     std::string ErrMsg =
-        "[ERROR] Create file : " + OutFileName.getCanonicalPath() +
+        "[ERROR] Create file : " + OutFileName.getCanonicalPath().str() +
         " failure!\n";
     PrintMsg(ErrMsg);
   }

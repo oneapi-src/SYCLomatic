@@ -127,13 +127,13 @@ bool rewriteDir(clang::tooling::DpctPath &FilePath, const clang::tooling::DpctPa
     //  AnalysisScope : /path/to
     return false;
   }
-  auto PathDiff = std::mismatch(path::begin(FilePath.getCanonicalPathRef()),
-                                path::end(FilePath.getCanonicalPathRef()),
-                                path::begin(InRoot.getCanonicalPathRef()));
+  auto PathDiff = std::mismatch(path::begin(FilePath.getCanonicalPath()),
+                                path::end(FilePath.getCanonicalPath()),
+                                path::begin(InRoot.getCanonicalPath()));
   SmallString<512> NewFilePath =
-      SmallString<512>(OutRoot.getCanonicalPathRef());
+      SmallString<512>(OutRoot.getCanonicalPath());
   path::append(NewFilePath, PathDiff.first,
-               path::end(FilePath.getCanonicalPathRef()));
+               path::end(FilePath.getCanonicalPath()));
 #if defined(_WIN64)
   sys::path::remove_filename(NewFilePath);
   sys::path::append(NewFilePath, Filename);
@@ -149,7 +149,7 @@ void rewriteFileName(clang::tooling::DpctPath &FileName) {
 
 void rewriteFileName(clang::tooling::DpctPath &FileName,
                      const clang::tooling::DpctPath &FullPathName) {
-  SmallString<512> CanonicalPathStr(StringRef(FileName.getCanonicalPathRef()));
+  SmallString<512> CanonicalPathStr(StringRef(FileName.getCanonicalPath()));
   const auto Extension = path::extension(CanonicalPathStr);
   SourceProcessType FileType = GetSourceFileType(FullPathName);
   // If user does not specify which extension need be changed, we change all the
@@ -181,7 +181,7 @@ void processallOptionAction(clang::tooling::DpctPath &InRoot,
     if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
-    auto Parent = path::parent_path(OutputFile.getCanonicalPathRef());
+    auto Parent = path::parent_path(OutputFile.getCanonicalPath());
     std::error_code EC;
     EC = fs::create_directories(Parent);
     if ((bool)EC) {
@@ -190,10 +190,10 @@ void processallOptionAction(clang::tooling::DpctPath &InRoot,
       PrintMsg(ErrMsg);
     }
 
-    std::ofstream Out(OutputFile.getCanonicalPath());
+    std::ofstream Out(OutputFile.getCanonicalPath().str());
     if (Out.fail()) {
       std::string ErrMsg =
-          "[ERROR] Create file : " + OutputFile.getCanonicalPath() +
+          "[ERROR] Create file : " + OutputFile.getCanonicalPath().str() +
           " failure!\n";
       PrintMsg(ErrMsg);
     }
@@ -272,9 +272,9 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
       std::error_code EC;
       EC = fs::create_directories(OutDirectory.getCanonicalPath());
       if ((bool)EC) {
-        std::string ErrMsg =
-            "[ERROR] Create Directory : " + OutDirectory.getCanonicalPath() +
-            " fail: " + EC.message() + "\n";
+        std::string ErrMsg = "[ERROR] Create Directory : " +
+                             OutDirectory.getCanonicalPath().str() +
+                             " fail: " + EC.message() + "\n";
         PrintMsg(ErrMsg);
       }
     }
@@ -400,8 +400,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                      bool /*false:Not processed in current migration*/>
       MainSrcFileMap;
 
-  std::string YamlFile =
-      OutRoot.getCanonicalPath() + "/" + DpctGlobalInfo::getYamlFileName();
+  std::string YamlFile = appendPath(OutRoot.getCanonicalPath().str(),
+                                    DpctGlobalInfo::getYamlFileName());
   std::string SrcFile = "MainSrcFiles_placehold";
 
   if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
@@ -464,10 +464,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
 
       std::error_code EC;
-      EC = fs::create_directories(path::parent_path(OutPath.getCanonicalPathRef()));
+      EC = fs::create_directories(path::parent_path(OutPath.getCanonicalPath()));
       if ((bool)EC) {
         std::string ErrMsg =
-            "[ERROR] Create file : " + OutPath.getCanonicalPath() +
+            "[ERROR] Create file : " + OutPath.getCanonicalPath().str() +
             " fail: " + EC.message() + "\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
@@ -475,11 +475,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
-      std::ofstream File(OutPath.getCanonicalPath(), std::ios::binary);
+      std::ofstream File(OutPath.getCanonicalPath().str(), std::ios::binary);
       llvm::raw_os_ostream Stream(File);
       if (!File) {
         std::string ErrMsg =
-            "[ERROR] Create file: " + OutPath.getCanonicalPath() + " fail.\n";
+            "[ERROR] Create file: " + OutPath.getCanonicalPath().str() +
+            " fail.\n";
         PrintMsg(ErrMsg);
         status = MigrationSaveOutFail;
         return status;
@@ -568,8 +569,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       ProcessedFileNumber = GroupResult.size();
     }
     std::string ReportMsg = "Processed " + std::to_string(ProcessedFileNumber) +
-                            " file(s) in -in-root folder \"" + InRoot.getCanonicalPath() +
-                            "\"";
+                            " file(s) in -in-root folder \"" +
+                            InRoot.getCanonicalPath().str() + "\"";
     std::string ErrorFileMsg;
     int ErrNum = 0;
     for (const auto &KV : ErrorCnt) {
@@ -677,10 +678,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
 
       std::error_code EC;
-      EC = fs::create_directories(path::parent_path(FilePath.getCanonicalPathRef()));
+      EC = fs::create_directories(path::parent_path(FilePath.getCanonicalPath()));
       if ((bool)EC) {
         std::string ErrMsg =
-            "[ERROR] Create file: " + FilePath.getCanonicalPath() +
+            "[ERROR] Create file: " + FilePath.getCanonicalPath().str() +
             " fail: " + EC.message() + "\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
@@ -688,11 +689,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
-      std::ofstream File(FilePath.getCanonicalPath(), std::ios::binary);
+      std::ofstream File(FilePath.getCanonicalPath().str(), std::ios::binary);
 
       if (!File) {
         std::string ErrMsg =
-            "[ERROR] Create file: " + FilePath.getCanonicalPath() +
+            "[ERROR] Create file: " + FilePath.getCanonicalPath().str() +
             " failed.\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);

@@ -870,7 +870,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
           llvm::sys::path::extension(File) == ".cu") {
         const std::string Msg =
             "warning: " + File.str() + " was found in <None> node in " +
-            llvm::sys::path::filename(VcxprojFilePath.getCanonicalPathRef())
+            llvm::sys::path::filename(VcxprojFilePath.getCanonicalPath())
                 .str() +
             " and skipped; to migrate specify CUDA* Item Type for this file in "
             "project and try again.\n";
@@ -932,7 +932,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         // FIXME: Diagnostics should be used instead.
         if (PrintErrorMessage && StopOnParseErrTooling) {
           std::string ErrMsg="Did not process 1 file(s) in -in-root folder \""
-                   + InRootTooling.getCanonicalPath() + "\":\n"
+                   + InRootTooling.getCanonicalPath().str() + "\":\n"
                    "    " + File.str() + ": " + std::to_string(CurFileParseErrCnt)
                    + " parsing error(s)\n";
           llvm::errs() << ErrMsg;
@@ -1000,7 +1000,7 @@ int ClangTool::run(ToolAction *Action) {
   }
   } else {
      for (auto &File : GetReProcessFile())
-       AbsolutePaths.push_back(File.getCanonicalPath());
+       AbsolutePaths.push_back(File.getCanonicalPath().str());
   }
 #endif // SYCLomatic_CUSTOMIZATION
   // Remember the working directory in case we need to restore it.

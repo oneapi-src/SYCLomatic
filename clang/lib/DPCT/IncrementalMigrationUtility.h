@@ -101,9 +101,10 @@ inline void setValueToOptMap(std::string Key,
                              std::vector<clang::tooling::DpctPath> Value,
                              bool Specified) {
   std::vector<std::string> StrVec;
-  std::transform(
-      Value.begin(), Value.end(), std::back_insert_iterator(StrVec),
-      [](const clang::tooling::DpctPath &DP) { return DP.getCanonicalPath(); });
+  std::transform(Value.begin(), Value.end(), std::back_insert_iterator(StrVec),
+                 [](const clang::tooling::DpctPath &DP) {
+                   return DP.getCanonicalPath().str();
+                 });
   setValueToOptMap(Key, StrVec, Specified);
 }
 

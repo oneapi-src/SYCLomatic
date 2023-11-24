@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "GenHelperFunction.h"
+#include "Utility.h"
 
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/FileSystem.h"
@@ -130,8 +131,9 @@ void genHelperFunction(const clang::tooling::DpctPath &OutRoot) {
 
 #define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)                         \
   {                                                                            \
-    std::ofstream VAR_NAME##File(ToPath.getCanonicalPath() + "/" + #FILE_NAME, \
-                                 std::ios::binary);                            \
+    std::ofstream VAR_NAME##File(                                              \
+        appendPath(ToPath.getCanonicalPath().str(), #FILE_NAME),               \
+        std::ios::binary);                                                     \
     std::string Code = VAR_NAME##AllContentStr;                                \
     replaceEndOfLine(Code);                                                    \
     VAR_NAME##File << Code;                                                    \
@@ -139,9 +141,10 @@ void genHelperFunction(const clang::tooling::DpctPath &OutRoot) {
   }
 #define GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)              \
   {                                                                            \
-    std::ofstream VAR_NAME##File(ToPath.getCanonicalPath() + "/dpl_extras/" +  \
-                                     #FILE_NAME,                               \
-                                 std::ios::binary);                            \
+    std::ofstream VAR_NAME##File(                                              \
+        appendPath(appendPath(ToPath.getCanonicalPath().str(), "dpl_extras"),  \
+                   #FILE_NAME),                                                \
+        std::ios::binary);                                                     \
     std::string Code = VAR_NAME##AllContentStr;                                \
     replaceEndOfLine(Code);                                                    \
     VAR_NAME##File << Code;                                                    \

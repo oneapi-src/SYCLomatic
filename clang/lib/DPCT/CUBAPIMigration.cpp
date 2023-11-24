@@ -351,7 +351,8 @@ void removeVarDecl(const VarDecl *VD) {
   auto &Context = DpctGlobalInfo::getContext();
   if (const auto *DS = Context.getParents(*VD)[0].get<DeclStmt>()) {
     auto LocInfo = DpctGlobalInfo::getLocInfo(DS->getBeginLoc());
-    std::string Key = LocInfo.first.getCanonicalPath() + std::to_string(LocInfo.second);
+    std::string Key =
+        LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second);
     auto Decls = DS->decls();
     unsigned int DeclNum = DS->decls().end() - DS->decls().begin();
     // if this declstmt has one sub decl, then we just need to remove whole
@@ -519,7 +520,9 @@ void CubDeviceLevelRule::removeRedundantTempVar(const CallExpr *CE) {
               DpctGlobalInfo::getContext()));
         }
         DpctGlobalInfo::addPriorityReplInfo(
-            LocInfo.first.getCanonicalPath() + std::to_string(LocInfo.second), Info);
+            LocInfo.first.getCanonicalPath().str() +
+                std::to_string(LocInfo.second),
+            Info);
         Itr++;
       }
     }

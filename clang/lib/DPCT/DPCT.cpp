@@ -263,7 +263,7 @@ DpctPath getInstallPath(const char *invokeCommand) {
   }
 
   DpctPath InstalledPath(InstalledPathStr);
-  StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath.getCanonicalPathRef()));
+  StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath.getCanonicalPath()));
   // Move up to parent directory of bin directory
   InstalledPath = llvm::sys::path::parent_path(InstalledPathParent);
   return InstalledPath;
@@ -358,10 +358,11 @@ static void saveApisReport(void) {
     OS << "-------------------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile =
-        OutRoot.getCanonicalPath() + "/" + ReportFilePrefix +
-        (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".apis.csv"
-                                                              : ".apis.log");
+    std::string RFile = appendPath(
+        OutRoot.getCanonicalPath().str(),
+        ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+                                ? ".apis.csv"
+                                : ".apis.log"));
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -403,10 +404,11 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
     OS << "-------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile =
-        OutRoot.getCanonicalPath() + "/" + ReportFilePrefix +
-        (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".stats.csv"
-                                                              : ".stats.log");
+    std::string RFile = appendPath(
+        OutRoot.getCanonicalPath().str(),
+        ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+                                ? ".stats.csv"
+                                : ".stats.log"));
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -426,7 +428,8 @@ static void saveDiagsReport() {
     OS << "-------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile = OutRoot.getCanonicalPath() + "/" + ReportFilePrefix + ".diags.log";
+    std::string RFile = appendPath(OutRoot.getCanonicalPath().str(),
+                                   ReportFilePrefix + ".diags.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -459,7 +462,7 @@ std::string printCTVersion() {
 static void DumpOutputFile(void) {
   // Redirect stdout/stderr output to <file> if option "-output-file" is set
   if (!OutputFile.empty()) {
-    std::string FilePath = OutRoot.getCanonicalPath() + "/" + OutputFile;
+    std::string FilePath = appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(FilePath));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -476,12 +479,13 @@ void PrintReportOnFault(const std::string &FaultMsg) {
   if (ReportFilePrefix == "stdcout")
     return;
 
-  std::string FileApis =
-      OutRoot.getCanonicalPath() + "/" + ReportFilePrefix +
-      (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".apis.csv"
-                                                            : ".apis.log");
-  std::string FileDiags =
-      OutRoot.getCanonicalPath() + "/" + ReportFilePrefix + ".diags.log";
+  std::string FileApis = appendPath(
+      OutRoot.getCanonicalPath().str(),
+      ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+                              ? ".apis.csv"
+                              : ".apis.log"));
+  std::string FileDiags = appendPath(OutRoot.getCanonicalPath().str(),
+                                     ReportFilePrefix + ".diags.log");
 
   std::ofstream File;
   File.open(FileApis, std::ios::app);
@@ -912,7 +916,7 @@ int runDPCT(int argc, const char **argv) {
 
   DpctPath CompilationsDir(OptParser->getCompilationsDir());
 
-  Tool.setCompilationDatabaseDir(CompilationsDir.getCanonicalPath());
+  Tool.setCompilationDatabaseDir(CompilationsDir.getCanonicalPath().str());
   ValidateInputDirectory(InRoot);
 
   // AnalysisScope defaults to the value of InRoot
@@ -934,7 +938,7 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  SetSDKIncludePath(CudaPath.getCanonicalPath());
+  SetSDKIncludePath(CudaPath.getCanonicalPath().str());
 
 #ifdef _WIN32
   Tool.appendArgumentsAdjuster(
@@ -1136,8 +1140,8 @@ int runDPCT(int argc, const char **argv) {
                           Tool.getFiles().getVirtualFileSystemPtr());
 
     if (ProcessAllFlag) {
-      clang::tooling::SetFileProcessHandle(InRoot.getCanonicalPathRef(),
-                                           OutRoot.getCanonicalPathRef(),
+      clang::tooling::SetFileProcessHandle(InRoot.getCanonicalPath(),
+                                           OutRoot.getCanonicalPath(),
                                            processAllFiles);
     }
 

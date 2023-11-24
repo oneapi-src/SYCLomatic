@@ -45,9 +45,8 @@ public:
   bool equalsTo(DpctPath RHS) {
     return getCanonicalPath() == RHS.getCanonicalPath();
   }
-  std::string getCanonicalPath() const noexcept { return _CanonicalPath; }
-  llvm::StringRef getCanonicalPathRef() const noexcept { return _CanonicalPath; }
-  std::string getPath() const noexcept { return _Path; }
+  llvm::StringRef getCanonicalPath() const noexcept { return _CanonicalPath; }
+  llvm::StringRef getPath() const noexcept { return _Path; }
   void setPath(const std::string &NewPath) {
     _Path = NewPath;
     _CanonicalPath.clear();
@@ -70,7 +69,7 @@ bool operator<(const clang::tooling::DpctPath &LHS,
 } // namespace clang
 template <> struct std::hash<clang::tooling::DpctPath> {
   std::size_t operator()(const clang::tooling::DpctPath &DP) const noexcept {
-    return std::hash<std::string>{}(DP.getCanonicalPath());
+    return std::hash<std::string>{}(DP.getCanonicalPath().str());
   }
 };
 namespace llvm {

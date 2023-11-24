@@ -127,8 +127,8 @@ extern std::unordered_map<std::string, bool> ChildOrSameCache;
 /// \return true: directory path, false: not directory path.
 inline bool isDirectory(clang::tooling::DpctPath FilePath) {
   std::string CanonicalFilePath = !FilePath.getCanonicalPath().empty()
-                                      ? FilePath.getCanonicalPath()
-                                      : FilePath.getPath();
+                                      ? FilePath.getCanonicalPath().str()
+                                      : FilePath.getPath().str();
   auto Iter = IsDirectoryCache.find(CanonicalFilePath);
   if (Iter != IsDirectoryCache.end()) {
     return Iter->second;
@@ -153,11 +153,11 @@ inline bool isChildPath(const clang::tooling::DpctPath &Root,
   }
 
   std::string RootCanonicalPath = !Root.getCanonicalPath().empty()
-                                      ? Root.getCanonicalPath()
-                                      : Root.getPath();
+                                      ? Root.getCanonicalPath().str()
+                                      : Root.getPath().str();
   std::string ChildCanonicalPath = !Child.getCanonicalPath().empty()
-                                       ? Child.getCanonicalPath()
-                                       : Child.getPath();
+                                       ? Child.getCanonicalPath().str()
+                                       : Child.getPath().str();
   auto Key = RootCanonicalPath + ":" + ChildCanonicalPath;
   auto Iter = ChildPathCache.find(Key);
   if (Iter != ChildPathCache.end()) {
@@ -186,11 +186,11 @@ inline bool isChildOrSamePath(clang::tooling::DpctPath Root,
   }
 
   std::string RootCanonicalPath = !Root.getCanonicalPath().empty()
-                                      ? Root.getCanonicalPath()
-                                      : Root.getPath();
+                                      ? Root.getCanonicalPath().str()
+                                      : Root.getPath().str();
   std::string ChildCanonicalPath = !Child.getCanonicalPath().empty()
-                                       ? Child.getCanonicalPath()
-                                       : Child.getPath();
+                                       ? Child.getCanonicalPath().str()
+                                       : Child.getPath().str();
   auto Key = RootCanonicalPath + ":" + ChildCanonicalPath;
   auto Iter = ChildOrSameCache.find(Key);
   if (Iter != ChildOrSameCache.end()) {

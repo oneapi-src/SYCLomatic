@@ -280,7 +280,7 @@ SourceProcessType GetSourceFileType(const clang::tooling::DpctPath &SourcePath) 
   // C. If both A and B hold, then default to A.
   // clang-format on
   auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
-  if (FileSetInDB.find(SourcePath.getCanonicalPath()) != end(FileSetInDB)) {
+  if (FileSetInDB.find(SourcePath.getCanonicalPath().str()) != end(FileSetInDB)) {
     return SPT_CppSource;
   }
   auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
@@ -2379,7 +2379,7 @@ std::string getCombinedStrFromLoc(const clang::SourceLocation Loc) {
     return Loc.printToString(SM);
   }
   auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
-  return LocInfo.first.getCanonicalPath() + ":" + std::to_string(LocInfo.second);
+  return LocInfo.first.getCanonicalPath().str() + ":" + std::to_string(LocInfo.second);
 }
 
 std::string getFinalCastTypeNameStr(std::string CastTypeName) {
@@ -4384,7 +4384,8 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
   auto LocInfo =
       dpct::DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(VD->getBeginLoc()));
   auto &Map = dpct::DpctGlobalInfo::getMallocHostInfoMap();
-  std::string Key = LocInfo.first.getCanonicalPath() + "*" + std::to_string(LocInfo.second);
+  std::string Key = LocInfo.first.getCanonicalPath().str() + "*" +
+                    std::to_string(LocInfo.second);
   if(Map.count(Key)){
     return Map[Key];
   }

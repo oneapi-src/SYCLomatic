@@ -144,7 +144,7 @@ void DeviceConstantVarOptimizeAnalysisRule::runRule(
           if (VD->hasAttr<CUDAConstantAttr>()) {
             auto &Set = DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
             auto LocInfo = DpctGlobalInfo::getLocInfo(VD->getBeginLoc());
-            std::string Key = LocInfo.first.getCanonicalPath() +
+            std::string Key = LocInfo.first.getCanonicalPath().str() +
                               std::to_string(LocInfo.second) +
                               VD->getNameAsString();
             Set.insert(Key);

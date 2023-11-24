@@ -179,7 +179,7 @@ int validateCmakeScriptPaths(const clang::tooling::DpctPath &InRoot,
 
     if (fs::is_regular_file(Canonical.getCanonicalPath())) {
       llvm::StringRef Name =
-          llvm::sys::path::filename(Canonical.getCanonicalPathRef());
+          llvm::sys::path::filename(Canonical.getCanonicalPath());
       if (Name != "CMakeLists.txt" && !Name.ends_with(".cmake")) {
         Ok = -5;
         llvm::errs() << "Error: File '" << Canonical.getCanonicalPath()

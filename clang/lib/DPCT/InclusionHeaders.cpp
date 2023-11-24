@@ -169,7 +169,7 @@ void IncludesCallbacks::InclusionDirective(
     rewriteFileName(NewFilePath, IncludedFile);
     SmallString<512> NewFileName(FileName.str());
     path::remove_filename(NewFileName);
-    path::append(NewFileName, path::filename(NewFilePath.getCanonicalPathRef()));
+    path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
     NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
     if (NewFileName != FileName) {
       const auto Extension = path::extension(FileName);

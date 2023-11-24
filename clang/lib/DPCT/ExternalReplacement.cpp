@@ -58,7 +58,7 @@ int save2Yaml(
                  });
 
   for (const auto &Entry : CompileTargets) {
-    TUR.CompileTargets[Entry.first.getCanonicalPath()] = Entry.second;
+    TUR.CompileTargets[Entry.first.getCanonicalPath().str()] = Entry.second;
   }
 
   TUR.DpctVersion = clang::dpct::getDpctVersionStr();
@@ -74,7 +74,7 @@ int save2Yaml(
   YamlContentStream.flush();
   // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
   // on windows.
-  std::ofstream File(YamlFile.getCanonicalPath(), std::ios::binary);
+  std::ofstream File(YamlFile.getCanonicalPath().str(), std::ios::binary);
   llvm::raw_os_ostream Stream(File);
   Stream << YamlContent;
   return 0;

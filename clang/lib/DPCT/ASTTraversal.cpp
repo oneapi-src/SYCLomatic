@@ -814,7 +814,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     if (IsFileInCmd || ProcessAllFlag ||
         GetSourceFileType(InFile.getCanonicalPath()) & SPT_CudaSource) {
       IncludeFileMap[DpctGlobalInfo::removeSymlinks(
-          SM.getFileManager(), InFile.getCanonicalPath())] = false;
+          SM.getFileManager(), InFile.getCanonicalPath().str())] = false;
     }
     IsFileInCmd = false;
 
@@ -4264,8 +4264,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   const SourceManager *SM = Result.SourceManager;
   auto Loc = DpctGlobalInfo::getLocInfo(SM->getExpansionLoc(CE->getBeginLoc()));
   DpctGlobalInfo::updateInitSuffixIndexInRule(
-      DpctGlobalInfo::getSuffixIndexInitValue(Loc.first.getCanonicalPath() +
-                                              std::to_string(Loc.second)));
+      DpctGlobalInfo::getSuffixIndexInitValue(
+          Loc.first.getCanonicalPath().str() + std::to_string(Loc.second)));
 
   SourceLocation FuncNameBegin(CE->getBeginLoc());
   SourceLocation FuncCallEnd(CE->getEndLoc());
@@ -8863,7 +8863,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
     auto LocInfo = DpctGlobalInfo::getLocInfo(Decl->getBeginLoc());
     if (VarUsedBySymbolAPISet.find(
-            LocInfo.first.getCanonicalPath() + std::to_string(LocInfo.second) +
+            LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second) +
             Decl->getNameAsString()) == VarUsedBySymbolAPISet.end()) {
       return;
     }
@@ -9003,7 +9003,7 @@ void ConstantMemVarMigrationRule::runRule(
     auto &VarUsedByRuntimeSymbolAPISet =
         DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
     auto LocInfo = DpctGlobalInfo::getLocInfo(VarD->getBeginLoc());
-    std::string Key = LocInfo.first.getCanonicalPath() +
+    std::string Key = LocInfo.first.getCanonicalPath().str() +
                       std::to_string(LocInfo.second) + VarD->getNameAsString();
     if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
         VarUsedByRuntimeSymbolAPISet.end()) {
@@ -9901,7 +9901,7 @@ void MemoryMigrationRule::mallocMigration(
       Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
-          LocInfo.first.getCanonicalPath() + std::to_string(LocInfo.second), Info);
+          LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     } else {
       DpctGlobalInfo::getInstance().insertCudaMalloc(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
@@ -9921,7 +9921,7 @@ void MemoryMigrationRule::mallocMigration(
                          EA.getSubExprRepl().end());
 
       DpctGlobalInfo::addPriorityReplInfo(
-          LocInfo.first.getCanonicalPath() + std::to_string(LocInfo.second), Info);
+          LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
@@ -9940,7 +9940,7 @@ void MemoryMigrationRule::mallocMigration(
       Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
-          LocInfo.first.getCanonicalPath() + std::to_string(LocInfo.second), Info);
+          LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     } else {
       ManagedPointerAnalysis MPA(C, IsAssigned);
       MPA.RecursiveAnalyze();
@@ -10675,7 +10675,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
       Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
-          LocInfo.first.getCanonicalPath() + std::to_string(LocInfo.second), Info);
+          LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     } else {
       report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              MapNames::ITFName.at(Name));
@@ -14460,7 +14460,7 @@ void CudaArchMacroRule::runRule(
     if (!FD->isThisDeclarationADefinition()) {
       HDFLI.Type = HDFuncInfoType::HDFI_Decl;
       HDFIMap[ManglingName].LocInfos.insert(
-          {HDFLI.FilePath.getCanonicalPath() + "Decl" + std::to_string(HDFLI.FuncEndOffset),
+          {HDFLI.FilePath.getCanonicalPath().str() + "Decl" + std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
       return;
     }
@@ -14478,7 +14478,7 @@ void CudaArchMacroRule::runRule(
     if (NeedInsert) {
       HDFIMap[ManglingName].isDefInserted = true;
       HDFIMap[ManglingName].LocInfos.insert(
-          {HDFLI.FilePath.getCanonicalPath() + "Def" + std::to_string(HDFLI.FuncEndOffset),
+          {HDFLI.FilePath.getCanonicalPath().str() + "Def" + std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
     }
   } // address __host__ __device__ function call
@@ -14512,7 +14512,7 @@ void CudaArchMacroRule::runRule(
       HDFLI.FilePath = LocInfo.first;
       HDFLI.FuncEndOffset = LocInfo.second + Offset;
       HDFIMap[ManglingName].LocInfos.insert(
-          {HDFLI.FilePath.getCanonicalPath() + "Call" + std::to_string(HDFLI.FuncEndOffset),
+          {HDFLI.FilePath.getCanonicalPath().str() + "Call" + std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
       HDFIMap[ManglingName].isCalledInHost = true;
     }
