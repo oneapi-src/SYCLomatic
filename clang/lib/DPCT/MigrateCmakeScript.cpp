@@ -421,6 +421,46 @@ std::string getVarName(const std::string &Variable,
   return Value;
 }
 
+static std::string processArgOfCmakeVersionRequired(
+    const std::string &Arg,
+    const std::map<std::string, std::string> &VariablesMap) {
+  size_t Pos = Arg.find("...");
+  std::string ReplArg;
+  if (Pos != std::string::npos) {
+    const auto StrArray = split(Arg, "...");
+
+    std::string MinVer = getVarName(StrArray[0], VariablesMap);
+    std::string MaxVer = getVarName(StrArray[1], VariablesMap);
+
+    if (std::atof(MinVer.c_str()) >= 3.24) {
+      ReplArg = MinVer + "..." + MaxVer;
+    } else if (std::atof(MinVer.c_str()) < 3.24 &&
+               std::atof(MaxVer.c_str()) > 3.24) {
+      ReplArg = "3.24..." + MaxVer;
+    } else {
+      ReplArg = "3.24";
+    }
+
+  } else {
+    std::string Ver = getVarName(Arg, VariablesMap);
+    if (std::atof(Ver.c_str()) < 3.24) {
+      ReplArg = "3.24";
+    } else {
+      ReplArg = Ver;
+    }
+  }
+  return ReplArg;
+}
+
+int skipCmakeComments(const std::string &Input, int Index) {
+  const int Size = Input.size();
+  if (Input[Index] == '#') {
+    for (; Index < Size && Input[Index] != '\n'; Index++) {
+    }
+  }
+  return Index;
+}
+
 void cmakeSyntaxProcessed(
     std::string &Input,
     const std::map<std::string, std::string> &VariablesMap) {
@@ -430,10 +470,8 @@ void cmakeSyntaxProcessed(
   while (Index < Size) {
 
     // Skip comments
-    if (Input[Index] == '#') {
-      for (; Index < Size && Input[Index] != '\n'; Index++) {
-      }
-    }
+    skipCmakeComments(Input, Index);
+
     int Begin, End;
     // Go the begin of cmake command
     Index = skipWhileSpaces(Input, Index);
@@ -454,11 +492,11 @@ void cmakeSyntaxProcessed(
         std::string VarName;
         std::string Value;
 
-        // Get the begin of firt argument of set
+        // Get the begin of firt argument of cmake_minimum_required
         Index = skipWhileSpaces(Input, Index);
         Begin = Index;
 
-        // Get the end of the first argument of set
+        // Get the end of the first argument of cmake_minimum_required
         Index = gotoEndOfCmakeWord(Input, Index, ')');
         End = Index;
 
@@ -476,43 +514,12 @@ void cmakeSyntaxProcessed(
         // Get the name of the second argument
         Value = Input.substr(Begin, End - Begin);
 
-        // Only check the set commands which has two arguments
-        if (Input[Index] == ')') {
-          size_t Pos = Value.find("...");
-          std::string ReplStr;
-          if (Pos != std::string::npos) {
-            const auto StrArray = split(Value, "...");
+        std::string ReplStr =
+            processArgOfCmakeVersionRequired(Value, VariablesMap);
 
-            std::string MinVer = getVarName(StrArray[0], VariablesMap);
-            std::string MaxVer = getVarName(StrArray[1], VariablesMap);
-
-            if (std::atof(MinVer.c_str()) >= 3.24) {
-              ReplStr = MinVer + "..." + MaxVer;
-            } else if (std::atof(MinVer.c_str()) < 3.24 &&
-                       std::atof(MaxVer.c_str()) > 3.24) {
-              ReplStr = "3.24..." + MaxVer;
-            } else {
-              ReplStr = "3.24";
-            }
-
-          } else if (Value.find("${")) {
-            std::string Ver = getVarName(Value, VariablesMap);
-            if (std::atof(Ver.c_str()) < 3.24) {
-              ReplStr = "3.24";
-            } else {
-              ReplStr = Ver;
-            }
-          } else {
-            if (std::atof(Value.c_str()) < 3.24) {
-              ReplStr = "3.24";
-            } else {
-              ReplStr = Value;
-            }
-          }
-          Input.replace(Begin, End - Begin, ReplStr);
-          Size = Input.size();            // Update string size
-          Index = Begin + ReplStr.size(); // update index
-        }
+        Input.replace(Begin, End - Begin, ReplStr);
+        Size = Input.size();            // Update string size
+        Index = Begin + ReplStr.size(); // update index
       }
 
       // Go the ')' of cmake command
@@ -520,7 +527,6 @@ void cmakeSyntaxProcessed(
     }
 
     Index++;
-    Size = Input.size();
   }
 }
 
@@ -533,18 +539,19 @@ std::string convertCmakeCommandsToLower(const std::string &InputString) {
 
     int Size = Line.size();
     int Index = 0;
-    for (; Index < Size && isWhitespace(Line[Index]); Index++) {
-    }
+
+    // Go the begin of cmake command
+    Index = skipWhileSpaces(Line, Index);
     int Begin = Index;
-    for (Index = Begin + 1;
-         Index < Size && !isWhitespace(Line[Index]) && Line[Index] != '(';
-         Index++) {
-    }
+
+    // Go the end of cmake command
+    Index = gotoEndOfCmakeWord(Line, Begin + 1, '(');
     int End = Index;
+
     if (Index < Size && Line[Index] == '(') {
       std::string Str = Line.substr(Begin, End - Begin);
       std::transform(Str.begin(), Str.end(), Str.begin(),
-                     [](unsigned char c) { return std::tolower(c); });
+                     [](unsigned char Char) { return std::tolower(Char); });
       if (cmake_commands.find(Str) != cmake_commands.end()) {
         for (int Idx = Begin; Idx < End; Idx++) {
           Line[Idx] = Str[Idx - Begin];
