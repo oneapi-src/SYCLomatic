@@ -28,8 +28,7 @@ void print_data(int* data, int num) {
   std::cout << std::endl;
 }
 
-// CHECK: void SumKernel(int* data, const sycl::nd_item<3> &item_ct1) {
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void SumKernel(int* data, const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -37,7 +36,7 @@ void print_data(int* data, int num) {
 //CHECK-NEXT:  int output = 0;
 //CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
-//CHECK-NEXT:}
+//CHECK:}
 __global__ void SumKernel(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
 
@@ -51,8 +50,7 @@ __global__ void SumKernel(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ReduceKernel(int* data, const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -60,7 +58,7 @@ __global__ void SumKernel(int* data) {
 //CHECK-NEXT:  int output = 0;
 //CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
-//CHECK-NEXT:}
+//CHECK:}
 __global__ void ReduceKernel(int* data) {
   typedef cub::WarpReduce<int> WarpReduce;
 
@@ -74,8 +72,7 @@ __global__ void ReduceKernel(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel_Max(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ReduceKernel_Max(int* data, const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -97,8 +94,7 @@ __global__ void ReduceKernel_Max(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel_Min(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ReduceKernel_Min(int* data, const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -120,10 +116,9 @@ __global__ void ReduceKernel_Min(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel2(int* data, int valid_items,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ReduceKernel2(int* data, int valid_items, const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-NEXt:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
@@ -143,16 +138,15 @@ __global__ void ReduceKernel2(int* data, int valid_items) {
   data[threadid] = output;
 }
 
-//CHECK: void SumKernel2(int* data, int valid_items,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
-//CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
-//CHECK-EMPTY:
-//CHECK-NEXT:  int input = data[threadid];
-//CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = dpct::group::reduce_over_partial_group(item_ct1, input, valid_items, sycl::plus<>());
-//CHECK-NEXT:  data[threadid] = output;
-//CHECK-NEXT: }
+// CHECK: void SumKernel2(int* data, int valid_items, const sycl::nd_item<3> &item_ct1) {
+// CHECK-EMPTY:
+// CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+// CHECK-EMPTY:
+// CHECK-NEXT:  int input = data[threadid];
+// CHECK-NEXT:  int output = 0;
+// CHECK-NEXT:  output = dpct::group::reduce_over_partial_group(item_ct1, input, valid_items, sycl::plus<>());
+// CHECK-NEXT:  data[threadid] = output;
+// CHECK-NEXT: }
 __global__ void SumKernel2(int* data, int valid_items) {
   typedef cub::WarpReduce<int> WarpReduce;
 
