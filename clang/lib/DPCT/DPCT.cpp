@@ -1053,11 +1053,11 @@ int runDPCT(int argc, const char **argv) {
 #ifdef _WIN32
     if (!VcxprojFilePath.getPath().empty()) {
       setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
-                       VcxprojFilePath.getCanonicalPath(),
+                       VcxprojFilePath.getCanonicalPath().str(),
                        OptParser->isVcxprojfileSpecified());
     } else {
       setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
-                       VcxprojFilePath.getPath(),
+                       VcxprojFilePath.getPath().str(),
                        OptParser->isVcxprojfileSpecified());
     }
 #endif
