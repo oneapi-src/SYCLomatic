@@ -55,7 +55,6 @@
 #include <set>
 namespace clang {
 namespace tooling {
-class DpctPath;
 using PrintType = void (*)(const std::string &, bool);
 using FileProcessType = void (*)(StringRef, StringRef,
                                  std::vector<std::string> &);
