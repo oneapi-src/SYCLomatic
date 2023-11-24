@@ -222,7 +222,6 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
   DpctGlobalInfo::setContext(Context);
   DpctGlobalInfo::getInstance().setMainFile(Info.MainFile);
   MigrationRuleManager MRM(Pass, Transforms, Info.Groups);
-  Global.getProcessedFile().insert(Info.MainFile->getFilePath());
   printFileStaging(getStagingName(Pass), Info.MainFile->getFilePath());
   MRM.matchAST(Context, MigrationRuleNames);
   for (const auto &I : Transforms) {

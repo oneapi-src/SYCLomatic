@@ -388,6 +388,13 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), BuildScriptFile,
                     "Default name: Makefile.dpct."),
         llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScript, "migrate-cmake-script",
+        llvm::cl::desc("EXPERIMENTAL: Migrate the cmakfile build script. Default: off."),
+        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScriptOnly, "migrate-cmake-script-only",
+        llvm::cl::desc("EXPERIMENTAL: Only migrate the cmakfile build script. Default: off."),
+        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ExcludePathList, "in-root-exclude",
         llvm::cl::desc("Excludes the specified directory or file from processing."),
         llvm::cl::value_desc("dir|file"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
