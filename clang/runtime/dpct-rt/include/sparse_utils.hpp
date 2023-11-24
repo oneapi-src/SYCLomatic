@@ -1164,6 +1164,46 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
   detail::spblas_shim<detail::spsv_impl>(a->get_value_type(), queue, uplo, diag,
                                          trans_a, alpha, a, x, y);
 }
+
+inline void csr2csc(sycl::queue queue, int m, int n, const void *from_val,
+                    const int *from_row_ptr, const int *from_col_ind,
+                    void *to_val, int *to_row_ptr, int *to_col_ind,
+                    library_data_t value_type, oneapi::mkl::index_base base) {
+  oneapi::mkl::sparse::matrix_handle_t from_handle = nullptr;
+  oneapi::mkl::sparse::matrix_handle_t to_handle = nullptr;
+  oneapi::mkl::sparse::init_matrix_handle(&from_handle);
+  oneapi::mkl::sparse::init_matrix_handle(&to_handle);
+
+#define CASE(LABEL, TYPE)                                                      \
+  case LABEL: {                                                                \
+    auto data_from_row_ptr = dpct::detail::get_memory<int>(from_row_ptr);      \
+    auto data_from_col_ind = dpct::detail::get_memory<int>(from_col_ind);      \
+    auto data_from_val = dpct::detail::get_memory<TYPE>(from_val);             \
+    auto data_to_row_ptr = dpct::detail::get_memory<int>(to_row_ptr);          \
+    auto data_to_col_ind = dpct::detail::get_memory<int>(to_col_ind);          \
+    auto data_to_val = dpct::detail::get_memory<TYPE>(to_val);                 \
+    oneapi::mkl::sparse::set_csr_data(queue, from_handle, m, n, base,          \
+                                      data_from_row_ptr, data_from_col_ind,    \
+                                      data_from_val);                          \
+    oneapi::mkl::sparse::set_csr_data(queue, to_handle, n, m, base,            \
+                                      data_to_row_ptr, data_to_col_ind,        \
+                                      data_to_val);                            \
+  }
+
+  switch (value_type) {
+    CASE(library_data_t::real_float, float)
+    CASE(library_data_t::real_double, double)
+    CASE(library_data_t::complex_float, std::complex<float>)
+    CASE(library_data_t::complex_double, std::complex<double>)
+  }
+#undef CASE
+
+  sycl::event e = oneapi::mkl::sparse::omatcopy(
+      queue, oneapi::mkl::transpose::trans, from_handle, to_handle);
+
+  oneapi::mkl::sparse::release_matrix_handle(queue, &from_handle, {e});
+  oneapi::mkl::sparse::release_matrix_handle(queue, &to_handle, {e});
+}
 #endif
 } // namespace sparse
 } // namespace dpct
