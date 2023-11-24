@@ -1377,6 +1377,31 @@ protected:
   bool handle_vmin(const InlineAsmInstruction *I) override {
     return HandleOneElementAddSubMinMax(I, "dpct::extend_min");
   }
+
+  bool handle_brev(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type || (Type->getKind() != InlineAsmBuiltinType::TK_b32 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_b64))
+      return SYCLGenError();
+    
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "reverse_bits<"
+         << TypeStr << ">(";
+    if (emitStmt(Inst->getInputOperand(0)))
+      return SYCLGenError();
+    OS() << ")";
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Dpct);
+    return SYCLGenSuccess();
+  }
 };
 } // namespace
 

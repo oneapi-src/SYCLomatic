@@ -30,10 +30,11 @@ endif()
 if (NOT TARGET LLVMGenXIntrinsics)
   if (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
     set(LLVMGenXIntrinsics_GIT_REPO https://github.com/intel/vc-intrinsics.git)
-    # Author: Jinsong Ji <jinsong.ji@intel.com>
-    # Date:   Thu Aug 10 14:41:52 2023 +0000
-    #    Guard removed typed pointer enum within version macro
-    set(LLVMGenXIntrinsics_GIT_TAG 17a53f4304463b8e7e639d57ef17479040a8a2ad)
+    # Author: Artur Gainullin <artur.gainullin@intel.com>
+    # Date:   Thu Nov 9 00:37:24 2023 +0000
+
+    # Replace old kernel with rewritten kernel in metadata only since LLVM 17
+    set(LLVMGenXIntrinsics_GIT_TAG a8403355ada112b72d1fc7db29fd04325eecee60)
 
     if (INTEL_CUSTOMIZATION)
       # for xmain builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
