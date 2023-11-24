@@ -28,7 +28,7 @@ void print_data(int* data, int num) {
   std::cout << std::endl;
 }
 
-//CHECK: void SumKernel(int* data, 
+// CHECK: void SumKernel(int* data, const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
