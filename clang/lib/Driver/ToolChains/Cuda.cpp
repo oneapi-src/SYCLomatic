@@ -73,7 +73,6 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
   int DefineVersion = std::stoi(Res);
   int Major = DefineVersion / 1000;
   int Minor = (DefineVersion % 100) / 10;
-  ParsedCUDAVersion = llvm::itostr(Major) + "." + llvm::itostr(Minor);
   SDKVersionMajor = Major;
   SDKVersionMinor = Minor;
   if (Major < 8) {

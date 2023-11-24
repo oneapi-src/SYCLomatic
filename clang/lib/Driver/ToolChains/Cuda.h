@@ -33,7 +33,6 @@ private:
   bool IsIncludePathValid = false;
   bool IsVersionSupported = false;
   bool IsVersionPartSupported = false;
-  std::string ParsedCUDAVersion = "";
 #endif // SYCLomatic_CUSTOMIZATION
   CudaVersion Version = CudaVersion::UNKNOWN;
   std::string InstallPath;
@@ -71,9 +70,6 @@ public:
   /// validate whether FilePath is the directory of CUDA header files
   bool validateCudaHeaderDirectory(const std::string &FilePath,
                                    const Driver &D);
-  const std::string getParsedCUDAVersion() {
-    return ParsedCUDAVersion;
-  }
 #endif // SYCLomatic_CUSTOMIZATION
   /// Print information about the detected CUDA installation.
   void print(raw_ostream &OS) const;
