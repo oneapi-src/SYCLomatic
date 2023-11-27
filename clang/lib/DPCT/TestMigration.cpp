@@ -58,7 +58,6 @@ void clang::dpct::TESTRule::runRule(
           }
         }
         if (const auto *DRE = dyn_cast<DeclRefExpr>(arg->IgnoreImpCasts())) {
-          std::cout<<"enter this3\n";
           constructVarSchema(DRE);
           // serializeJsonArrayToFile(
           //     serializeSchemaToJsonArray(getRelatedTypeSchema(DRE->getType())),
@@ -67,7 +66,10 @@ void clang::dpct::TESTRule::runRule(
         }
       }
     }
-    std::cout<<clang::dpct::jsonToString(serializeSchemaToJsonArray(TypeSchemaMap));
+    serializeJsonArrayToFile(serializeSchemaToJsonArray(CTypeSchemaMap),
+                             "output_all_cuda.json");
+    serializeJsonArrayToFile(serializeSchemaToJsonArray(STypeSchemaMap),
+                             "output_all_sycl.json");
   }
   return;
 }

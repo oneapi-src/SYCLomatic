@@ -9,9 +9,9 @@
 #include "Schema.h"
 using namespace clang;
 using namespace clang::dpct;
-void clang::dpct::setTypeSchemaMap() {
-  TypeSchemaMap["sycl::int2"] = TypeSchema(
+void clang::dpct::setSTypeSchemaMap() {
+  STypeSchemaMap["sycl::int2"] = TypeSchema(
       "sycl::int2", 1, 8, false, "sycl header path",
       std::vector<FieldSchema>(1, FieldSchema("m_Data", ValType::ArrayValue,
-                                              "int", true, 8, 0, "None")));
+                                              "int", true, 8, 4, 0, "None")));
 }
