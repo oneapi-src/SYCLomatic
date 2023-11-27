@@ -3,7 +3,7 @@ API-Mapping Query Guide
 
 |tool_name| provides the functionality for users to query functionally
 compatible SYCL API for some CUDA API. The API query functionality can assist
-user on manual code migration and help user understand the SYCL API.
+users on manual code migration and help users understand the SYCL API.
 
 API mapping query example:
 
