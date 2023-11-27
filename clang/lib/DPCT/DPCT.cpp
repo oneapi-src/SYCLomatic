@@ -217,29 +217,28 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   driver::CudaInstallationDetector CudaIncludeDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  std::string Path = CudaIncludeDetector.getInstallPath().str();
+  std::string Path = CudaIncludeDetector.getIncludePath().str();
   dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
-
   if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
       ShowStatus(MigrationErrorInvalidCudaIncludePath);
       dpctExit(MigrationErrorInvalidCudaIncludePath);
     }
-
-    if (!CudaIncludeDetector.isVersionSupported()) {
+    if (!CudaIncludeDetector.isVersionSupported() &&
+        !CudaIncludeDetector.isVersionPartSupported()) {
       ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
   } else if (!CudaIncludeDetector.isIncludePathValid()) {
     ShowStatus(MigrationErrorCannotDetectCudaPath);
     dpctExit(MigrationErrorCannotDetectCudaPath);
-  } else if (!CudaIncludeDetector.isVersionSupported()) {
+  } else if (!CudaIncludeDetector.isVersionSupported() &&
+             !CudaIncludeDetector.isVersionPartSupported()) {
     ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
     dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
   }
 
   makeCanonical(Path);
-
   SmallString<512> CudaPathAbs;
   std::error_code EC = dpct::real_path(Path, CudaPathAbs, true);
   if ((bool)EC) {
