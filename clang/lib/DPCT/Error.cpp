@@ -40,9 +40,11 @@ void ShowStatus(int Status, std::string Message) {
                    "--cuda-include-path is invalid.";
     break;
   case MigrationErrorDetectedCudaVersionUnsupported:
-    StatusString = "Error: The auto detect CUDA header files version is not supported. "
-                  "The latest supported version is " + dpct::DpctGlobalInfo::getCudaVersion() +
-                  ". You can specify CUDA header files by option --cuda-include-path.";
+    StatusString =
+        "Error: The auto detect CUDA header files version is not supported. "
+        "The latest supported version is " +
+        dpct::DpctGlobalInfo::getCudaVersion() +
+        ". You can specify CUDA header files by option --cuda-include-path.";
     break;
   case MigrationErrorCudaVersionUnsupported:
     StatusString = "Error: The version of CUDA header files specified by "
