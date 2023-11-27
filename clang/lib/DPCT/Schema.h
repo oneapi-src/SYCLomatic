@@ -53,9 +53,9 @@ struct FieldSchema {
   std::string Location = "None";
   FieldSchema(const std::string &name = "", ValType VT = ScalarValue,
               const std::string &FT = "", bool IBT = false, int64_t VS = 0,
-              int64_t OS = 0, const std::string &loc = "None")
+              int64_t TS = 0, int64_t OS = 0, const std::string &loc = "None")
       : FieldName(name), ValTypeOfField(VT), FieldType(FT), IsBasicType(IBT),
-        ValSize(VS), Offset(OS), Location(loc) {}
+        ValSize(VS), TypeSize(TS), Offset(OS), Location(loc) {}
 };
 
 struct TypeSchema {
@@ -93,20 +93,19 @@ std::string getFilePathFromDecl(const Decl *D, const SourceManager &SM);
 
 ValType getValType(const clang::QualType &QT);
 
-FieldSchema constructFieldSchema(const clang::FieldDecl *FD,
-                                 std::string ClassTypeName);
-
-inline FieldSchema constructFieldSchema(const clang::FieldDecl *FD);
-
-void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS);
-
 TypeSchema constructTypeSchema(const clang::RecordType *RT);
 
-TypeSchema registerTypeSchema(const clang::QualType &QT);
+TypeSchema registerTypeSchema(const clang::QualType &QT, int OffSet=0);
+
+TypeSchema registerSYCLTypeSchema(const clang::QualType &QT, int OffSet=0);
 
 VarSchema constructVarSchema(const clang::DeclRefExpr *DRE);
 
-extern std::map<std::string, TypeSchema> TypeSchemaMap;
+VarSchema constructSyclVarSchema(const VarSchema &CVS);
+
+extern std::map<std::string, TypeSchema> CTypeSchemaMap;
+
+extern std::map<std::string, TypeSchema> STypeSchemaMap;
 
 llvm::json::Array
 serializeSchemaToJsonArray(const std::map<std::string, TypeSchema> &TSMap);
@@ -121,20 +120,22 @@ llvm::json::Object serializeVarSchemaToJson(const VarSchema &VS);
 void serializeJsonArrayToFile(llvm::json::Array &&Arr,
                               const std::string &FilePath);
 
-std::vector<TypeSchema> getRelatedTypeSchema(const clang::QualType QT);
+std::vector<TypeSchema>
+getRelatedTypeSchema(const std::string &TypeName,
+                     const std::map<std::string, TypeSchema> &TypeSchemaMap);
 
-void setTypeSchemaMap();
+void setSTypeSchemaMap();
 
-inline std::string jsonToString(llvm::json::Array Arr){
+inline std::string jsonToString(llvm::json::Array Arr) {
   std::string Str;
-  llvm::raw_string_ostream  OS(Str);
+  llvm::raw_string_ostream OS(Str);
   llvm::json::OStream(OS).value(std::move(Arr));
   return OS.str();
 }
 
-inline std::string jsonToString(llvm::json::Object Obj){
+inline std::string jsonToString(llvm::json::Object Obj) {
   std::string Str;
-  llvm::raw_string_ostream  OS(Str);
+  llvm::raw_string_ostream OS(Str);
   llvm::json::OStream(OS).value(std::move(Obj));
   return OS.str();
 }

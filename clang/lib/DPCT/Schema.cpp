@@ -44,7 +44,7 @@ ValType dpct::getValType(const clang::QualType &QT) {
   }
 }
 
-inline FieldSchema dpct::constructFieldSchema(const clang::FieldDecl *FD) {
+FieldSchema constructFieldSchema(const clang::FieldDecl *FD) {
   clang::ASTContext &AstContext = dpct::DpctGlobalInfo::getContext();
   FieldSchema FS;
   const clang::QualType FT = FD->getType().getCanonicalType();
@@ -55,61 +55,130 @@ inline FieldSchema dpct::constructFieldSchema(const clang::FieldDecl *FD) {
   FS.ValTypeOfField = getValType(FT);
   FS.ValSize = AstContext.getTypeSize(FT) / CHAR_BIT;
   FS.Offset = AstContext.getFieldOffset(FD) / CHAR_BIT;
-  FS.TypeSize = AstContext.getTypeSize(OriginT)/ CHAR_BIT;
+  FS.TypeSize = AstContext.getTypeSize(OriginT) / CHAR_BIT;
   if (!FS.IsBasicType)
     registerTypeSchema(OriginT);
   return FS;
 }
 
-inline FieldSchema dpct::constructFieldSchema(const clang::FieldDecl *FD,
-                                              std::string ClassTypeName) {
-  FieldSchema FS = constructFieldSchema(FD);
-  FS.FieldName = ClassTypeName + "::" + FD->getNameAsString();
-  return FS;
-}
-
-void dpct::DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS) {
+void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS, int BaseOffset) {
   if (RD == nullptr)
     return;
-  for (auto base : RD->bases()) {
-    clang::CXXRecordDecl *BCD = base.getType()->getAsCXXRecordDecl();
+  for (const auto &base : RD->bases()) {
     if (base.isVirtual())
       TS.IsVirtual = true;
+    clang::CXXRecordDecl *BCD = base.getType()->getAsCXXRecordDecl();
     if (BCD) {
-      for (const clang::FieldDecl *field : BCD->fields()) {
-        TS.Members.push_back(
-            constructFieldSchema(field, BCD->getNameAsString()));
+      auto TsTmp = registerTypeSchema(base.getType());
+      for (auto mem : TsTmp.Members) {
+        mem.Offset += BaseOffset;
+        mem.FieldName = base.getType().getAsString() + "::" + mem.FieldName;
+        TS.Members.emplace_back(mem);
       }
-      DFSBaseClass(BCD, TS);
+      BaseOffset += TsTmp.TypeSize;
     }
   }
   return;
 }
 
-TypeSchema dpct::registerTypeSchema(const clang::QualType &QT) {
-  TypeSchema TS;
-  if (QT.isNull())
-    return TS;
+int DFSBaseClassForSYCL(clang::CXXRecordDecl *RD, TypeSchema &TS,
+                        int BaseOffset) {
+  if (RD == nullptr)
+    return BaseOffset;
+  for (const auto &base : RD->bases()) {
+    if (base.isVirtual())
+      TS.IsVirtual = true;
+    clang::CXXRecordDecl *BCD = base.getType()->getAsCXXRecordDecl();
+    if (BCD) {
+      auto TsTmp = registerSYCLTypeSchema(base.getType());
+      for (auto mem : TsTmp.Members) {
+        mem.Offset += BaseOffset;
+        mem.FieldName = base.getType().getAsString() + "::" + mem.FieldName;
+        TS.Members.emplace_back(mem);
+      }
+      BaseOffset += TsTmp.TypeSize;
+    }
+  }
+  return BaseOffset;
+}
+
+FieldSchema convertCFieldSchemaToSFieldSChema(const FieldSchema &CFS,
+                                              int BaseOF, int OffSet) {
+  FieldSchema SFS = CFS;
+  if (MapNames::TypeNamesMap.find(CFS.FieldType) !=
+      MapNames::TypeNamesMap.end()) {
+    SFS.FieldType = MapNames::TypeNamesMap[CFS.FieldType]->NewName;
+  }
+  if (STypeSchemaMap.find(SFS.FieldType) != STypeSchemaMap.end()) {
+    SFS.TypeSize = STypeSchemaMap[SFS.FieldType].TypeSize;
+    SFS.Offset = CFS.Offset - BaseOF + OffSet;
+    if (SFS.ValTypeOfField == ValType::ArrayValue) {
+      SFS.ValSize = CFS.ValSize / CFS.TypeSize * SFS.TypeSize;
+    } else if (SFS.ValTypeOfField == ValType::ScalarValue) {
+      SFS.ValSize = CFS.TypeSize;
+    }
+  }
+  return SFS;
+}
+
+TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT, int OffSet) {
   const std::string &KetStr = DpctGlobalInfo::getTypeName(QT);
-  if (TypeSchemaMap.find(KetStr) != TypeSchemaMap.end())
-    return TypeSchemaMap.find(KetStr)->second;
+  if (STypeSchemaMap.find(KetStr) != STypeSchemaMap.end())
+    return STypeSchemaMap[KetStr];
+  if (MapNames::TypeNamesMap.find(KetStr) != MapNames::TypeNamesMap.end())
+    return STypeSchemaMap[MapNames::TypeNamesMap[KetStr]->NewName];
+  TypeSchema TS;
+  TS.TypeName = KetStr;
   clang::ASTContext &AstContext = dpct::DpctGlobalInfo::getContext();
+  if (const clang::RecordType *RT = QT->getAs<clang::RecordType>()) {
+    TS.FileName =
+        getFilePathFromDecl(RT->getDecl(), DpctGlobalInfo::getSourceManager());
+    if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
+      clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
+      // visit base class
+      OffSet = DFSBaseClassForSYCL(RD, TS, OffSet);
+    }
+    int BaseOF = RT->getDecl()->field_empty()
+                     ? 0
+                     : AstContext.getFieldOffset(*RT->getDecl()->field_begin());
+    for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
+      TS.Members.push_back(convertCFieldSchemaToSFieldSChema(
+          constructFieldSchema(field), BaseOF, OffSet));
+    }
+    TS.FieldNum = TS.Members.size();
+    TS.TypeSize = TS.FieldNum == 0
+                      ? 0
+                      : (TS.Members.back().Offset + TS.Members.back().ValSize);
+  }
+  STypeSchemaMap[KetStr] = TS;
+  return TS;
+}
+
+TypeSchema dpct::registerTypeSchema(const clang::QualType &QT, int OffSet) {
+  if (QT.isNull())
+    return TypeSchema();
+  const std::string &KetStr = DpctGlobalInfo::getTypeName(QT);
+  if (CTypeSchemaMap.find(KetStr) != CTypeSchemaMap.end())
+    return CTypeSchemaMap[KetStr];
+  clang::ASTContext &AstContext = dpct::DpctGlobalInfo::getContext();
+  TypeSchema TS;
   TS.TypeName = KetStr;
   TS.TypeSize = AstContext.getTypeSize(QT) / CHAR_BIT;
   if (const clang::RecordType *RT = QT->getAs<clang::RecordType>()) {
     TS.FileName =
         getFilePathFromDecl(RT->getDecl(), DpctGlobalInfo::getSourceManager());
-    for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
-      TS.Members.push_back(constructFieldSchema(field));
-    }
     if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
       clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
       // visit base class
-      DFSBaseClass(RD, TS);
+      DFSBaseClass(RD, TS, OffSet);
+    }
+    for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
+      TS.Members.push_back(constructFieldSchema(field));
     }
     TS.FieldNum = TS.Members.size();
   }
-  TypeSchemaMap[KetStr] = TS;
+  CTypeSchemaMap[KetStr] = TS;
+  registerSYCLTypeSchema(QT);
   return TS;
 }
 
@@ -124,14 +193,36 @@ VarSchema dpct::constructVarSchema(const clang::DeclRefExpr *DRE) {
       getFilePathFromDecl(DRE->getDecl(), DpctGlobalInfo::getSourceManager());
   VA.VarSize = AstContext.getTypeSize(DRE->getType()) / CHAR_BIT;
   VA.VarType = DpctGlobalInfo::getTypeName(getDerefType(DRE->getType()));
-  VA.TypeSize = AstContext.getTypeSize(getDerefType(DRE->getType()))/ CHAR_BIT;
+  VA.TypeSize = AstContext.getTypeSize(getDerefType(DRE->getType())) / CHAR_BIT;
   if (!VA.IsBasicType) {
     registerTypeSchema(getDerefType(DRE->getType()));
   }
   return VA;
 }
 
-std::map<std::string, TypeSchema> clang::dpct::TypeSchemaMap;
+VarSchema dpct::constructSyclVarSchema(const VarSchema &CVS) {
+  VarSchema VA = CVS;
+  // Is SYCL type
+  if (MapNames::TypeNamesMap.find(CVS.VarType) !=
+      MapNames::TypeNamesMap.end()) {
+    VA.VarType = MapNames::TypeNamesMap[CVS.VarType]->NewName;
+    // Can find SYCL Schema
+    if (STypeSchemaMap.find(VA.VarType) != STypeSchemaMap.end()) {
+      VA.TypeSize =
+          STypeSchemaMap[MapNames::TypeNamesMap[CVS.VarType]->NewName].TypeSize;
+      if (CVS.ValTypeOfVar == ValType::ArrayValue) {
+        VA.VarSize = CVS.VarSize / CVS.TypeSize * VA.TypeSize;
+      } else if (CVS.ValTypeOfVar == ValType::ScalarValue) {
+        VA.VarSize = VA.TypeSize;
+      }
+    }
+  }
+  return VA;
+}
+
+std::map<std::string, TypeSchema> clang::dpct::CTypeSchemaMap;
+
+std::map<std::string, TypeSchema> clang::dpct::STypeSchemaMap;
 
 llvm::json::Array dpct::serializeSchemaToJsonArray(
     const std::map<std::string, TypeSchema> &TSMap) {
@@ -145,7 +236,7 @@ llvm::json::Array dpct::serializeSchemaToJsonArray(
 llvm::json::Object serializeFieldSchemaToJson(const FieldSchema &FS) {
   llvm::json::Object JObj;
   JObj.try_emplace("VarName", FS.FieldName);
-  JObj.try_emplace("Type", FS.FieldType);
+  JObj.try_emplace("TypeName", FS.FieldType);
   JObj.try_emplace("IsBasicType", FS.IsBasicType);
   JObj.try_emplace("ValType", getValTypeStr(FS.ValTypeOfField));
   JObj.try_emplace("ValSize", FS.ValSize);
@@ -204,10 +295,12 @@ void dpct::serializeJsonArrayToFile(llvm::json::Array &&Arr,
   }
 }
 
-std::vector<TypeSchema> dpct::getRelatedTypeSchema(const clang::QualType QT) {
-  if (QT.isNull())
+std::vector<TypeSchema> dpct::getRelatedTypeSchema(
+    const std::string &TypeName,
+    const std::map<std::string, TypeSchema> &TypeSchemaMap) {
+  if (TypeSchemaMap.find(TypeName) == TypeSchemaMap.end())
     return std::vector<TypeSchema>();
-  TypeSchema TS = registerTypeSchema(getDerefType(QT));
+  TypeSchema TS = TypeSchemaMap.find(TypeName)->second;
   std::deque<TypeSchema> Q;
   std::vector<TypeSchema> Res;
   Q.push_back(TS);
@@ -231,5 +324,3 @@ dpct::serializeSchemaToJsonArray(const std::vector<TypeSchema> &SVec) {
   }
   return JArray;
 }
-
-
