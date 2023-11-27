@@ -2002,6 +2002,8 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpGEMM_createDescr",
                            "cusparseSpGEMM_destroyDescr",
                            "cusparseSpGEMM_workEstimation",
+                           "cusparseCsr2cscEx2_bufferSize",
+                           "cusparseCsr2cscEx2",
                            "cusparseSpSV_createDescr",
                            "cusparseSpSV_destroyDescr",
                            "cusparseSpSV_solve",

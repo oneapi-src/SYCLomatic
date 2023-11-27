@@ -3720,6 +3720,7 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseSpMM_preprocess", "cusparseSpGEMM_compute",
         "cusparseSpGEMM_copy", "cusparseSpGEMM_createDescr",
         "cusparseSpGEMM_destroyDescr", "cusparseSpGEMM_workEstimation",
+        "cusparseCsr2cscEx2_bufferSize", "cusparseCsr2cscEx2",
         "cusparseSpSV_createDescr", "cusparseSpSV_destroyDescr",
         "cusparseSpSV_solve", "cusparseSpSV_bufferSize",
         "cusparseSpSV_analysis");
