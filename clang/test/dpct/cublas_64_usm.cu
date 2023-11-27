@@ -44,4 +44,14 @@ void foo() {
   status = cublasDgemm_64(handle, transa, transb, m, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc);
   status = cublasCgemm_64(handle, transa, transb, m, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
   status = cublasZgemm_64(handle, transa, transb, m, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
+
+  cublasFillMode_t uplo;
+  //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, uplo, transa, n, k, dpct::get_value(alpha_s, *handle), A_s, lda, dpct::get_value(B_s, *handle), C_s, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, uplo, transa, n, k, dpct::get_value(alpha_d, *handle), A_d, lda, dpct::get_value(B_d, *handle), C_d, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, uplo, transa, n, k, dpct::get_value(alpha_c, *handle), (std::complex<float>*)A_c, lda, dpct::get_value(B_c, *handle), (std::complex<float>*)C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, uplo, transa, n, k, dpct::get_value(alpha_z, *handle), (std::complex<double>*)A_z, lda, dpct::get_value(B_z, *handle), (std::complex<double>*)C_z, ldc));
+  status = cublasSsyrk_64(handle, uplo, transa, n, k, alpha_s, A_s, lda, B_s, C_s, ldc);
+  status = cublasDsyrk_64(handle, uplo, transa, n, k, alpha_d, A_d, lda, B_d, C_d, ldc);
+  status = cublasCsyrk_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, C_c, ldc);
+  status = cublasZsyrk_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, C_z, ldc);
 }

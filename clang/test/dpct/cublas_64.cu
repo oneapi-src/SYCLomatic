@@ -44,4 +44,14 @@ void foo() {
   status = cublasDgemm_64(handle, transa, transb, m, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc);
   status = cublasCgemm_64(handle, transa, transb, m, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
   status = cublasZgemm_64(handle, transa, transb, m, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
+
+  cublasFillMode_t uplo;
+  //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, uplo, transa, n, k, dpct::get_value(alpha_s, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::get_value(B_s, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(C_s)), ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, uplo, transa, n, k, dpct::get_value(alpha_d, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::get_value(B_d, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_d)), ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, uplo, transa, n, k, dpct::get_value(alpha_c, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::get_value(B_c, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, uplo, transa, n, k, dpct::get_value(alpha_z, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::get_value(B_z, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc));
+  status = cublasSsyrk_64(handle, uplo, transa, n, k, alpha_s, A_s, lda, B_s, C_s, ldc);
+  status = cublasDsyrk_64(handle, uplo, transa, n, k, alpha_d, A_d, lda, B_d, C_d, ldc);
+  status = cublasCsyrk_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, C_c, ldc);
+  status = cublasZsyrk_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, C_z, ldc);
 }
