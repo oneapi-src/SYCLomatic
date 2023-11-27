@@ -223,23 +223,23 @@ DpctPath getCudaInstallPath(int argc, const char **argv) {
   driver::CudaInstallationDetector CudaIncludeDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  DpctPath Path = CudaIncludeDetector.getInstallPath().str();
+  DpctPath Path = CudaIncludeDetector.getIncludePath().str();
   dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
-
   if (!CudaIncludePath.getPath().empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
       ShowStatus(MigrationErrorInvalidCudaIncludePath);
       dpctExit(MigrationErrorInvalidCudaIncludePath);
     }
-
-    if (!CudaIncludeDetector.isVersionSupported()) {
+    if (!CudaIncludeDetector.isVersionSupported() &&
+        !CudaIncludeDetector.isVersionPartSupported()) {
       ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
   } else if (!CudaIncludeDetector.isIncludePathValid()) {
     ShowStatus(MigrationErrorCannotDetectCudaPath);
     dpctExit(MigrationErrorCannotDetectCudaPath);
-  } else if (!CudaIncludeDetector.isVersionSupported()) {
+  } else if (!CudaIncludeDetector.isVersionSupported() &&
+             !CudaIncludeDetector.isVersionPartSupported()) {
     ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
     dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
   }

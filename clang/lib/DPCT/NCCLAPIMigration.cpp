@@ -1,4 +1,4 @@
-//===--------------- NCCLAPIMigration.cpp -----------------------------------===//
+//===------------------- NCCLAPIMigration.cpp ------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -44,13 +44,25 @@ void clang::dpct::NCCLRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void clang::dpct::NCCLRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "type")) {
+  if (const auto *TL = getNodeAsType<TypeLoc>(Result, "type")) {
     EA.analyze(*TL);
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
     EA.analyze(CE);
   } else if (const DeclRefExpr *DRE =
                  getNodeAsType<DeclRefExpr>(Result, "enum")) {
     EA.analyze(DRE);
+    const auto *ICE = DpctGlobalInfo::findParent<clang::ImplicitCastExpr>(DRE);
+    if (ICE != nullptr) {
+      std::string ReplStr = EA.getReplacedString();
+      if (ReplStr.find("oneapi::ccl::", 0) == 0) {
+        emplaceTransformation(
+            new ReplaceStmt(DRE, DpctGlobalInfo::getTypeName(ICE->getType()) +
+                                     "(" + std::string(ReplStr) + ")"));
+        EA.applyAllSubExprRepl();
+        return;
+      }
+    }
+
   } else {
     return;
   }
