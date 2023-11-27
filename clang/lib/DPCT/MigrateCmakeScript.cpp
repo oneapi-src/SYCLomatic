@@ -6,12 +6,14 @@
 //
 //===----------------------------------------------------------------------===//
 #include "MigrateCmakeScript.h"
+#include "PatternRewriter.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
 #include "Utility.h"
 
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/raw_os_ostream.h"
 
 #include <algorithm>
 #include <cstring>
@@ -213,6 +215,37 @@ void collectCmakeScripts(StringRef InRoot, StringRef OutRoot,
         CmakeScriptFiles.push_back(OutputFile.str().str());
       }
     }
+  }
+}
+
+// apply patter rewrite rules to migrate cmake script file
+static void
+applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
+                                      llvm::raw_os_ostream &Stream) {
+  std::string LineEndingString;
+  // pattern_rewriter require the input file to be LF
+  bool IsCRLF = fixLineEndings(InputString, LineEndingString);
+
+  // Convert cmake command to lower case in cmake script files
+  LineEndingString = convertCmakeCommandsToLower(LineEndingString);
+
+  std::map<std::string, std::string> VariablesMap;
+  parseVariable(LineEndingString, VariablesMap);
+  cmakeSyntaxProcessed(LineEndingString, VariablesMap);
+
+  for (const auto &PR : MapNames::PatternRewriters) {
+    LineEndingString = applyPatternRewriter(PR, LineEndingString);
+  }
+  // Restore line ending for the formator
+  if (IsCRLF) {
+    std::stringstream ResultStream;
+    std::vector<std::string> SplitedStr = split(LineEndingString, '\n');
+    for (auto &SS : SplitedStr) {
+      ResultStream << SS << "\r\n";
+    }
+    Stream << llvm::StringRef(ResultStream.str().c_str());
+  } else {
+    Stream << llvm::StringRef(LineEndingString.c_str());
   }
 }
 
