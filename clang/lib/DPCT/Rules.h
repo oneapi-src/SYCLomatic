@@ -97,8 +97,8 @@ public:
     }
   };
 
-  static std::vector<clang::tooling::DpctPath> RuleFiles;
-  clang::tooling::DpctPath RuleFile;
+  static std::vector<clang::tooling::UnifiedPath> RuleFiles;
+  clang::tooling::UnifiedPath RuleFile;
   std::string RuleId;
   RulePriority Priority;
   RuleMatchMode MatchMode;
@@ -117,7 +117,7 @@ public:
       : Priority(RulePriority::Default), MatchMode(RuleMatchMode::Partial), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind, RuleMatchMode MatchMode)
       : RuleId(id), Priority(priority), MatchMode(MatchMode), Kind(kind) {}
-  static void setRuleFiles(clang::tooling::DpctPath File) { RuleFiles.push_back(File); }
+  static void setRuleFiles(clang::tooling::UnifiedPath File) { RuleFiles.push_back(File); }
 };
 
 template <>
@@ -302,7 +302,7 @@ public:
     TemplateArg
   };
   std::string RuleName;
-  clang::tooling::DpctPath RuleFile;
+  clang::tooling::UnifiedPath RuleFile;
   Kind Kind;
   size_t ArgIndex;
   std::string Str;
@@ -319,6 +319,6 @@ private:
   void consumeLParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
 };
 
-void importRules(std::vector<clang::tooling::DpctPath> &RuleFiles);
+void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
 
 #endif // DPCT_RULES_H

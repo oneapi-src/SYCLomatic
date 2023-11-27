@@ -16,7 +16,7 @@
 
 namespace clang {
 namespace dpct {
-ExtReplacements::ExtReplacements(clang::tooling::DpctPath FilePath) : FilePath(FilePath) {}
+ExtReplacements::ExtReplacements(clang::tooling::UnifiedPath FilePath) : FilePath(FilePath) {}
 
 bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl,
                                 std::shared_ptr<DpctFileInfo> FileInfo) {

@@ -76,10 +76,10 @@ using namespace llvm::cl;
 
 namespace clang {
 namespace tooling {
-DpctPath getFormatSearchPath();
+UnifiedPath getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
 #ifdef _WIN32
-extern DpctPath VcxprojFilePath;
+extern UnifiedPath VcxprojFilePath;
 #endif
 } // namespace tooling
 namespace dpct {
@@ -180,22 +180,22 @@ static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> A
 // clang-format on
 
 // TODO: implement one of this for each source language.
-DpctPath CudaPath;
-DpctPath DpctInstallPath;
+UnifiedPath CudaPath;
+UnifiedPath DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
 std::unordered_map<std::string, bool> IsDirectoryCache;
 extern bool StopOnParseErrTooling;
-extern DpctPath InRootTooling;
+extern UnifiedPath InRootTooling;
 
-clang::tooling::DpctPath InRoot;
-clang::tooling::DpctPath OutRoot;
-clang::tooling::DpctPath CudaIncludePath;
-clang::tooling::DpctPath SDKPath;
-std::vector<clang::tooling::DpctPath> RuleFile;
-clang::tooling::DpctPath AnalysisScope;
+clang::tooling::UnifiedPath InRoot;
+clang::tooling::UnifiedPath OutRoot;
+clang::tooling::UnifiedPath CudaIncludePath;
+clang::tooling::UnifiedPath SDKPath;
+std::vector<clang::tooling::UnifiedPath> RuleFile;
+clang::tooling::UnifiedPath AnalysisScope;
 
-DpctPath getCudaInstallPath(int argc, const char **argv) {
+UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
   Argv.reserve(argc);
   // do not copy "--" so the driver sees a possible SDK include path option
@@ -223,7 +223,7 @@ DpctPath getCudaInstallPath(int argc, const char **argv) {
   driver::CudaInstallationDetector CudaIncludeDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  DpctPath Path = CudaIncludeDetector.getIncludePath().str();
+  UnifiedPath Path = CudaIncludeDetector.getIncludePath().str();
   dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
   if (!CudaIncludePath.getPath().empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
@@ -251,7 +251,7 @@ DpctPath getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
-DpctPath getInstallPath(const char *invokeCommand) {
+UnifiedPath getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPathStr(invokeCommand);
 
   // Do a PATH lookup, if there are no directory components.
@@ -262,7 +262,7 @@ DpctPath getInstallPath(const char *invokeCommand) {
     }
   }
 
-  DpctPath InstalledPath(InstalledPathStr);
+  UnifiedPath InstalledPath(InstalledPathStr);
   StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath.getCanonicalPath()));
   // Move up to parent directory of bin directory
   InstalledPath = llvm::sys::path::parent_path(InstalledPathParent);
@@ -270,7 +270,7 @@ DpctPath getInstallPath(const char *invokeCommand) {
 }
 
 // To validate the root path of the project to be migrated.
-void ValidateInputDirectory(DpctPath InRoot) {
+void ValidateInputDirectory(UnifiedPath InRoot) {
   if (isChildOrSamePath(CudaPath, InRoot)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
     dpctExit(MigrationErrorRunFromSDKFolder);
@@ -288,7 +288,7 @@ void ValidateInputDirectory(DpctPath InRoot) {
 }
 
 unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
-                            DpctPath Path) {
+                            UnifiedPath Path) {
   // Set up Rewriter and to get source manager.
   LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
@@ -512,7 +512,7 @@ void parseFormatStyle() {
              DPCTFormatStyle::FS_LLVM) {
     StyleStr = "llvm";
   }
-  DpctPath StyleSearchPath =
+  UnifiedPath StyleSearchPath =
       clang::tooling::getFormatSearchPath().getCanonicalPath().empty()
           ? clang::dpct::DpctGlobalInfo::getInRoot()
           : clang::tooling::getFormatSearchPath();
@@ -595,7 +595,7 @@ int runDPCT(int argc, const char **argv) {
   std::transform(
       RuleFileOpt.begin(), RuleFileOpt.end(),
       std::back_insert_iterator(RuleFile),
-      [](const std::string &Str) { return clang::tooling::DpctPath(Str); });
+      [](const std::string &Str) { return clang::tooling::UnifiedPath(Str); });
   AnalysisScope = AnalysisScopeOpt;
 
   if (!OutputFile.empty()) {
@@ -813,7 +813,7 @@ int runDPCT(int argc, const char **argv) {
     // Set a virtual file for --query-api-mapping.
     llvm::SmallString<16> VirtFolderSS;
     llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFolderSS);
-    DpctPath VirtFolderPath(VirtFolderSS);
+    UnifiedPath VirtFolderPath(VirtFolderSS);
 
     // Need set a virtual path and it will used by AnalysisScope.
     InRoot = VirtFolderPath;
@@ -914,7 +914,7 @@ int runDPCT(int argc, const char **argv) {
     clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
   }
 
-  DpctPath CompilationsDir(OptParser->getCompilationsDir());
+  UnifiedPath CompilationsDir(OptParser->getCompilationsDir());
 
   Tool.setCompilationDatabaseDir(CompilationsDir.getCanonicalPath().str());
   ValidateInputDirectory(InRoot);
@@ -1259,7 +1259,7 @@ int runDPCT(int argc, const char **argv) {
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {
-    std::vector<clang::tooling::DpctPath> CmakeScriptFiles;
+    std::vector<clang::tooling::UnifiedPath> CmakeScriptFiles;
     collectCmakeScripts(InRoot, OutRoot, CmakeScriptFiles);
     for (const auto &ScriptFile : CmakeScriptFiles) {
       if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))

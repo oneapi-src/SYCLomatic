@@ -36,10 +36,10 @@ using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
-extern clang::tooling::DpctPath DpctInstallPath; // Installation directory for this tool
+extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
 bool IsUsingDefaultOutRoot = false;
 
-void removeDefaultOutRootFolder(const clang::tooling::DpctPath &DefaultOutRoot) {
+void removeDefaultOutRootFolder(const clang::tooling::UnifiedPath &DefaultOutRoot) {
   if (isDirectory(DefaultOutRoot)) {
     std::error_code EC;
     llvm::sys::fs::directory_iterator Iter(DefaultOutRoot.getCanonicalPath(), EC);
@@ -258,7 +258,7 @@ std::string getStmtSpelling(clang::SourceRange SR, SourceRange ParentRange) {
    
 }
 
-SourceProcessType GetSourceFileType(const clang::tooling::DpctPath &SourcePath) {
+SourceProcessType GetSourceFileType(const clang::tooling::UnifiedPath &SourcePath) {
   auto Extension = path::extension(SourcePath.getCanonicalPath());
 
   if (Extension == ".cu") {
@@ -2340,8 +2340,8 @@ unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
                      : Result;
 }
 
-bool isIncludedFile(const clang::tooling::DpctPath &CurrentFile,
-                    const clang::tooling::DpctPath &CheckingFile) {
+bool isIncludedFile(const clang::tooling::UnifiedPath &CurrentFile,
+                    const clang::tooling::UnifiedPath &CheckingFile) {
   auto CurrentFileInfo =
       dpct::DpctGlobalInfo::getInstance().insertFile(CurrentFile);
   auto CheckingFileInfo =
@@ -4238,7 +4238,7 @@ std::string getRemovedAPIWarningMessage(std::string FuncName) {
 }
 
 bool isUserDefinedDecl(const clang::Decl *D) {
-  clang::tooling::DpctPath InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
+  clang::tooling::UnifiedPath InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
   if (InInstallPath || InCudaPath)
@@ -4643,7 +4643,7 @@ bool isFromCUDA(const Decl *D) {
   SourceLocation DeclLoc =
       dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
           D->getLocation());
-  clang::tooling::DpctPath DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+  clang::tooling::UnifiedPath DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
 
   // clang hacked the declarations of std::min/std::max
   // In original code, the declaration should be in standard lib,

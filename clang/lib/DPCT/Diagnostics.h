@@ -292,7 +292,7 @@ private:
 };
 
 template <typename IDTy, typename... Ts>
-bool report(const clang::tooling::DpctPath &FileAbsPath, unsigned int Offset, IDTy MsgID,
+bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals);
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
@@ -380,7 +380,7 @@ private:
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
-bool report(const clang::tooling::DpctPath &FileAbsPath, unsigned int Offset, IDTy MsgID,
+bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals) {
   // Do not emit diagnostic message for source location outside --in-root
   if (!DpctGlobalInfo::isInRoot(FileAbsPath))

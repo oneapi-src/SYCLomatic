@@ -26,7 +26,7 @@
 #include "clang/Driver/Options.h"
 #include <cstdarg>
 
-extern clang::tooling::DpctPath DpctInstallPath; // Installation directory for this tool
+extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
 
 using namespace clang::ast_matchers;
 namespace clang {

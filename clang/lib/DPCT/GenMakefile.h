@@ -28,15 +28,15 @@ class RefactoringTool;
 /// Generates makefile for migrated file(s) in -out-root directory.
 /// The name of generated makefile is specified by \p BuildScriptName
 void genBuildScript(clang::tooling::RefactoringTool &Tool,
-                    clang::tooling::DpctPath& InRoot, clang::tooling::DpctPath& OutRoot,
+                    clang::tooling::UnifiedPath& InRoot, clang::tooling::UnifiedPath& OutRoot,
                     const std::string &BuildScriptName);
 
-extern std::map<clang::tooling::DpctPath /*target*/,
+extern std::map<clang::tooling::UnifiedPath /*target*/,
                 std::vector<clang::tooling::CompilationInfo>>
     CompileCmdsPerTarget;
 
 extern std::vector<
-    std::pair<clang::tooling::DpctPath /*target*/,
+    std::pair<clang::tooling::UnifiedPath /*target*/,
               std::vector<std::string> /*orginal compile command*/>>
     CompileTargetsMap;
 

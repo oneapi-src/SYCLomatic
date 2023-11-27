@@ -64,7 +64,7 @@ inline void setValueToOptMap(std::string Key, std::string Value,
       clang::tooling::OptionInfo(Value, Specified);
 }
 template <>
-inline void setValueToOptMap(std::string Key, clang::tooling::DpctPath Value,
+inline void setValueToOptMap(std::string Key, clang::tooling::UnifiedPath Value,
                              bool Specified) {
   setValueToOptMap(Key, Value.getCanonicalPath().str(), Specified);
 }
@@ -98,11 +98,11 @@ inline void setValueToOptMap(std::string Key, std::vector<std::string> StrVec,
 }
 template <>
 inline void setValueToOptMap(std::string Key,
-                             std::vector<clang::tooling::DpctPath> Value,
+                             std::vector<clang::tooling::UnifiedPath> Value,
                              bool Specified) {
   std::vector<std::string> StrVec;
   std::transform(Value.begin(), Value.end(), std::back_insert_iterator(StrVec),
-                 [](const clang::tooling::DpctPath &DP) {
+                 [](const clang::tooling::UnifiedPath &DP) {
                    return DP.getCanonicalPath().str();
                  });
   setValueToOptMap(Key, StrVec, Specified);

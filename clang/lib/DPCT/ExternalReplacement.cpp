@@ -35,10 +35,10 @@ namespace fs = llvm::sys::fs;
 using clang::tooling::Replacements;
 
 int save2Yaml(
-    clang::tooling::DpctPath& YamlFile, clang::tooling::DpctPath& SrcFileName,
+    clang::tooling::UnifiedPath& YamlFile, clang::tooling::UnifiedPath& SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
-    const std::vector<std::pair<clang::tooling::DpctPath, std::string>> &MainSrcFilesDigest,
-    const std::map<clang::tooling::DpctPath, std::vector<clang::tooling::CompilationInfo>>
+    const std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest,
+    const std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets) {
   std::string YamlContent;
   llvm::raw_string_ostream YamlContentStream(YamlContent);
@@ -52,7 +52,7 @@ int save2Yaml(
 
   std::transform(MainSrcFilesDigest.begin(), MainSrcFilesDigest.end(),
                  std::back_insert_iterator(TUR.MainSourceFilesDigest),
-                 [](const std::pair<clang::tooling::DpctPath, std::string> &P) {
+                 [](const std::pair<clang::tooling::UnifiedPath, std::string> &P) {
                    return std::pair<std::string, std::string>(
                        P.first.getCanonicalPath(), P.second);
                  });
@@ -80,7 +80,7 @@ int save2Yaml(
   return 0;
 }
 
-int loadFromYaml(const clang::tooling::DpctPath& Input,
+int loadFromYaml(const clang::tooling::UnifiedPath& Input,
                  clang::tooling::TranslationUnitReplacements &TU) {
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
       llvm::MemoryBuffer::getFile(Input.getCanonicalPath());
@@ -145,9 +145,9 @@ void mergeAndUniqueReps(
   }
 }
 
-int mergeExternalReps(clang::tooling::DpctPath InRootSrcFilePath,
-                      clang::tooling::DpctPath OutRootSrcFilePath, Replacements &Replaces) {
-  clang::tooling::DpctPath YamlFile = OutRootSrcFilePath.getCanonicalPath() + ".yaml";
+int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
+                      clang::tooling::UnifiedPath OutRootSrcFilePath, Replacements &Replaces) {
+  clang::tooling::UnifiedPath YamlFile = OutRootSrcFilePath.getCanonicalPath() + ".yaml";
 
   auto PreTU = clang::dpct::DpctGlobalInfo::getInstance()
                    .getReplInfoFromYAMLSavedInFileInfo(InRootSrcFilePath);
@@ -164,9 +164,9 @@ int mergeExternalReps(clang::tooling::DpctPath InRootSrcFilePath,
                                                  Replaces.end());
 
   auto Hash = llvm::sys::fs::md5_contents(InRootSrcFilePath.getCanonicalPath());
-  std::pair<clang::tooling::DpctPath, std::string> FileDigest = {InRootSrcFilePath,
+  std::pair<clang::tooling::UnifiedPath, std::string> FileDigest = {InRootSrcFilePath,
                                                     Hash->digest().c_str()};
-  std::map<clang::tooling::DpctPath, std::vector<clang::tooling::CompilationInfo>>
+  std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
       CompileTargets;
   save2Yaml(YamlFile, OutRootSrcFilePath, Repls,
             {FileDigest}, CompileTargets);

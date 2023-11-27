@@ -1,4 +1,4 @@
-//===-------------------- DpctPath.h ----------------------------*- C++ -*-===//
+//===-------------------- UnifiedPath.h -------------------------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -20,29 +20,29 @@
 namespace clang {
 namespace tooling {
 
-class DpctPath {
+class UnifiedPath {
 public:
-  DpctPath() = default;
-  DpctPath(const std::string &Path) : _Path(Path) { makeCanonical(); }
-  DpctPath(const llvm::StringRef Path) : _Path(Path.str()) { makeCanonical(); }
-  DpctPath(const llvm::Twine &Path) : _Path(Path.str()) { makeCanonical(); }
-  DpctPath(const llvm::SmallVectorImpl<char> &Path) {
+  UnifiedPath() = default;
+  UnifiedPath(const std::string &Path) : _Path(Path) { makeCanonical(); }
+  UnifiedPath(const llvm::StringRef Path) : _Path(Path.str()) { makeCanonical(); }
+  UnifiedPath(const llvm::Twine &Path) : _Path(Path.str()) { makeCanonical(); }
+  UnifiedPath(const llvm::SmallVectorImpl<char> &Path) {
     _Path = std::string(Path.data(), Path.size());
     makeCanonical();
   }
-  DpctPath(const char *Path) {
+  UnifiedPath(const char *Path) {
     _Path = std::string(Path);
     makeCanonical();
   }
   bool equalsTo(const std::string &RHS) {
-    return this->equalsTo(DpctPath(RHS));
+    return this->equalsTo(UnifiedPath(RHS));
   }
-  bool equalsTo(const llvm::StringRef RHS) { return this->equalsTo(DpctPath(RHS)); }
-  bool equalsTo(const llvm::Twine &RHS) { return this->equalsTo(DpctPath(RHS)); }
+  bool equalsTo(const llvm::StringRef RHS) { return this->equalsTo(UnifiedPath(RHS)); }
+  bool equalsTo(const llvm::Twine &RHS) { return this->equalsTo(UnifiedPath(RHS)); }
   bool equalsTo(const llvm::SmallVectorImpl<char> &RHS) {
-    return this->equalsTo(DpctPath(RHS));
+    return this->equalsTo(UnifiedPath(RHS));
   }
-  bool equalsTo(DpctPath RHS) {
+  bool equalsTo(UnifiedPath RHS) {
     return getCanonicalPath() == RHS.getCanonicalPath();
   }
   llvm::StringRef getCanonicalPath() const noexcept { return _CanonicalPath; }
@@ -59,22 +59,22 @@ private:
   std::string _CanonicalPath;
   static std::unordered_map<std::string, std::string> CanonicalPathCache;
 };
-bool operator==(const clang::tooling::DpctPath &LHS,
-                const clang::tooling::DpctPath &RHS);
-bool operator!=(const clang::tooling::DpctPath &LHS,
-                const clang::tooling::DpctPath &RHS);
-bool operator<(const clang::tooling::DpctPath &LHS,
-               const clang::tooling::DpctPath &RHS);
+bool operator==(const clang::tooling::UnifiedPath &LHS,
+                const clang::tooling::UnifiedPath &RHS);
+bool operator!=(const clang::tooling::UnifiedPath &LHS,
+                const clang::tooling::UnifiedPath &RHS);
+bool operator<(const clang::tooling::UnifiedPath &LHS,
+               const clang::tooling::UnifiedPath &RHS);
 } // namespace tooling
 } // namespace clang
-template <> struct std::hash<clang::tooling::DpctPath> {
-  std::size_t operator()(const clang::tooling::DpctPath &DP) const noexcept {
+template <> struct std::hash<clang::tooling::UnifiedPath> {
+  std::size_t operator()(const clang::tooling::UnifiedPath &DP) const noexcept {
     return std::hash<std::string>{}(DP.getCanonicalPath().str());
   }
 };
 namespace llvm {
 llvm::raw_ostream &operator<<(llvm::raw_ostream &OS,
-                              const clang::tooling::DpctPath &RHS);
+                              const clang::tooling::UnifiedPath &RHS);
 } // namespace llvm
 
 #endif // LLVM_CLANG_TOOLING_CORE_DPCTPATH_H

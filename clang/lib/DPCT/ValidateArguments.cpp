@@ -24,7 +24,7 @@ namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
 // Set OutRoot to the current working directory.
-static bool getDefaultOutRoot(clang::tooling::DpctPath &OutRootPar) {
+static bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar) {
   SmallString<256> OutRoot;
   if (fs::current_path(OutRoot) != std::error_code()) {
     llvm::errs() << "Could not get current path.\n";
@@ -64,14 +64,14 @@ static bool getDefaultOutRoot(clang::tooling::DpctPath &OutRootPar) {
 // set InRoot to the directory of the first input source file.
 // If input source file does not exist,
 // set InRoot to ".".
-static bool getDefaultInRoot(clang::tooling::DpctPath &InRootPar,
+static bool getDefaultInRoot(clang::tooling::UnifiedPath &InRootPar,
                              const vector<string> &SourceFiles) {
   if (SourceFiles.size() == 0) {
     InRootPar.setPath(".");
     return true;
   }
 
-  clang::tooling::DpctPath InRoot = SourceFiles.front();
+  clang::tooling::UnifiedPath InRoot = SourceFiles.front();
   // Remove the last component from path.
   SmallString<512> InRootStr(InRoot.getCanonicalPath());
   path::remove_filename(InRootStr);
@@ -82,7 +82,7 @@ static bool getDefaultInRoot(clang::tooling::DpctPath &InRootPar,
 }
 
 bool makeInRootCanonicalOrSetDefaults(
-    clang::tooling::DpctPath &InRoot,
+    clang::tooling::UnifiedPath &InRoot,
     const std::vector<std::string> SourceFiles) {
   if (InRoot.getPath().empty()) {
     if (!getDefaultInRoot(InRoot, SourceFiles))
@@ -100,7 +100,7 @@ bool makeInRootCanonicalOrSetDefaults(
   return true;
 }
 
-bool makeOutRootCanonicalOrSetDefaults(clang::tooling::DpctPath &OutRoot) {
+bool makeOutRootCanonicalOrSetDefaults(clang::tooling::UnifiedPath &OutRoot) {
   if (OutRoot.getPath().empty()) {
     if (!getDefaultOutRoot(OutRoot))
       return false;
@@ -109,8 +109,8 @@ bool makeOutRootCanonicalOrSetDefaults(clang::tooling::DpctPath &OutRoot) {
 }
 
 bool makeAnalysisScopeCanonicalOrSetDefaults(
-    clang::tooling::DpctPath &AnalysisScope,
-    const clang::tooling::DpctPath &InRoot) {
+    clang::tooling::UnifiedPath &AnalysisScope,
+    const clang::tooling::UnifiedPath &InRoot) {
   if (AnalysisScope.getPath().empty()) {
     // AnalysisScope defaults to the value of InRoot
     AnalysisScope = InRoot;
@@ -123,11 +123,11 @@ bool makeAnalysisScopeCanonicalOrSetDefaults(
 }
 
 // Make sure all files have an extension and are under InRoot.
-int validatePaths(const clang::tooling::DpctPath &InRoot,
+int validatePaths(const clang::tooling::UnifiedPath &InRoot,
                   const std::vector<std::string> &SourceFiles) {
   int Ok = 0;
   for (const auto &FilePath : SourceFiles) {
-    clang::tooling::DpctPath CanonicalPath(FilePath);
+    clang::tooling::UnifiedPath CanonicalPath(FilePath);
     if (CanonicalPath.getCanonicalPath().empty()) {
       Ok = -1;
       continue;
@@ -150,11 +150,11 @@ int validatePaths(const clang::tooling::DpctPath &InRoot,
   return Ok;
 }
 
-int validateCmakeScriptPaths(const clang::tooling::DpctPath &InRoot,
+int validateCmakeScriptPaths(const clang::tooling::UnifiedPath &InRoot,
                              const std::vector<std::string> &CmakeScriptPaths) {
   int Ok = 0;
   for (const auto &FilePath : CmakeScriptPaths) {
-    clang::tooling::DpctPath Canonical(FilePath);
+    clang::tooling::UnifiedPath Canonical(FilePath);
     if (!llvm::sys::fs::exists(Canonical.getCanonicalPath())) {
       Ok = -2;
       std::string Name =
@@ -190,7 +190,7 @@ int validateCmakeScriptPaths(const clang::tooling::DpctPath &InRoot,
   return Ok;
 }
 
-int checkSDKPathOrIncludePath(clang::tooling::DpctPath &Path) {
+int checkSDKPathOrIncludePath(clang::tooling::UnifiedPath &Path) {
   if (Path.getPath().empty())
     return 1;
   if (Path.getCanonicalPath().empty())

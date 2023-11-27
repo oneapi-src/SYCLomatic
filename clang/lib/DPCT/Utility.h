@@ -74,7 +74,7 @@ class Replacements;
 } // namespace clang
 
 extern bool IsUsingDefaultOutRoot;
-void removeDefaultOutRootFolder(const clang::tooling::DpctPath &DefaultOutRoot);
+void removeDefaultOutRootFolder(const clang::tooling::UnifiedPath &DefaultOutRoot);
 void dpctExit(int ExitCode, bool NeedCleanUp = true);
 
 // classes for keeping track of Stmt->String mappings
@@ -113,10 +113,6 @@ public:
   ~CurlyBracketsPrinter() { OS << "}"; }
 };
 
-//bool makeCanonical(llvm::SmallVectorImpl<char> &Path);
-//bool makeCanonical(std::string &Path);
-//bool isCanonical(llvm::StringRef Path);
-
 //extern std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 extern std::unordered_map<std::string, bool> IsDirectoryCache;
 extern std::unordered_map<std::string, bool> ChildPathCache;
@@ -125,7 +121,7 @@ extern std::unordered_map<std::string, bool> ChildOrSameCache;
 /// Check \param FilePath is whether a directory path
 /// \param [in] FilePath is a file path.
 /// \return true: directory path, false: not directory path.
-inline bool isDirectory(clang::tooling::DpctPath FilePath) {
+inline bool isDirectory(clang::tooling::UnifiedPath FilePath) {
   std::string CanonicalFilePath = !FilePath.getCanonicalPath().empty()
                                       ? FilePath.getCanonicalPath().str()
                                       : FilePath.getPath().str();
@@ -146,8 +142,8 @@ inline bool isDirectory(clang::tooling::DpctPath FilePath) {
 /// /x/y and /x/y/z -> true
 /// /x/y and /x/y   -> false
 /// /x/y and /x/yy/ -> false (not a prefix in terms of a path)
-inline bool isChildPath(const clang::tooling::DpctPath &Root,
-                        const clang::tooling::DpctPath &Child) {
+inline bool isChildPath(const clang::tooling::UnifiedPath &Root,
+                        const clang::tooling::UnifiedPath &Child) {
   if (Child.getPath().empty()) {
     return false;
   }
@@ -179,8 +175,8 @@ inline bool isChildPath(const clang::tooling::DpctPath &Root,
 /// \param [in] Root A path as reference.
 /// \param [in] Child A path to be checked.
 /// \return true: child path, false: not child path
-inline bool isChildOrSamePath(clang::tooling::DpctPath Root,
-                              clang::tooling::DpctPath Child) {
+inline bool isChildOrSamePath(clang::tooling::UnifiedPath Root,
+                              clang::tooling::UnifiedPath Child) {
   if (Child.getPath().empty()) {
     return false;
   }
@@ -258,7 +254,7 @@ enum SourceProcessType {
   SPT_CppHeader = 8,
 };
 
-SourceProcessType GetSourceFileType(const clang::tooling::DpctPath &SourcePath);
+SourceProcessType GetSourceFileType(const clang::tooling::UnifiedPath &SourcePath);
 
 const std::string &getFmtEndStatement(void);
 const std::string &getFmtStatementIndent(std::string &BaseIndent);
@@ -440,8 +436,8 @@ getRangeInRange(clang::SourceRange Range, clang::SourceLocation RangeBegin,
                 clang::SourceLocation RangeEnd, bool IncludeLastToken = true);
 unsigned int calculateIndentWidth(const clang::CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag);
-bool isIncludedFile(const clang::tooling::DpctPath &CurrentFile,
-                    const clang::tooling::DpctPath &CheckingFile);
+bool isIncludedFile(const clang::tooling::UnifiedPath &CurrentFile,
+                    const clang::tooling::UnifiedPath &CheckingFile);
 clang::SourceRange getRangeInsideFuncLikeMacro(const clang::Stmt *S);
 std::string getCombinedStrFromLoc(const clang::SourceLocation Loc);
 

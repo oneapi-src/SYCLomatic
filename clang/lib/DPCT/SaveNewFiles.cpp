@@ -38,13 +38,13 @@ namespace fs = llvm::sys::fs;
 
 namespace clang {
 namespace tooling {
-DpctPath getFormatSearchPath();
+UnifiedPath getFormatSearchPath();
 }
 } // namespace clang
 
 extern std::map<std::string, uint64_t> ErrorCnt;
 
-static bool formatFile(const clang::tooling::DpctPath& FileName,
+static bool formatFile(const clang::tooling::UnifiedPath& FileName,
                        const std::vector<clang::tooling::Range> &Ranges,
                        clang::tooling::Replacements &FormatChanges) {
   ErrorOr<std::unique_ptr<MemoryBuffer>> ErrorOrMemoryBuffer =
@@ -109,10 +109,10 @@ static bool formatFile(const clang::tooling::DpctPath& FileName,
 }
 
 // TODO: it's global variable, refine in future
-std::map<clang::tooling::DpctPath, bool> IncludeFileMap;
+std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 
-bool rewriteDir(clang::tooling::DpctPath &FilePath, const clang::tooling::DpctPath& InRoot,
-                const clang::tooling::DpctPath& OutRoot) {
+bool rewriteDir(clang::tooling::UnifiedPath &FilePath, const clang::tooling::UnifiedPath& InRoot,
+                const clang::tooling::UnifiedPath& OutRoot) {
 #if defined(_WIN64)
   std::string Filename = sys::path::filename(FilePath.getPath()).str();
 #endif
@@ -143,12 +143,12 @@ bool rewriteDir(clang::tooling::DpctPath &FilePath, const clang::tooling::DpctPa
   return true;
 }
 
-void rewriteFileName(clang::tooling::DpctPath &FileName) {
+void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
   rewriteFileName(FileName, FileName);
 }
 
-void rewriteFileName(clang::tooling::DpctPath &FileName,
-                     const clang::tooling::DpctPath &FullPathName) {
+void rewriteFileName(clang::tooling::UnifiedPath &FileName,
+                     const clang::tooling::UnifiedPath &FullPathName) {
   SmallString<512> CanonicalPathStr(StringRef(FileName.getCanonicalPath()));
   const auto Extension = path::extension(CanonicalPathStr);
   SourceProcessType FileType = GetSourceFileType(FullPathName);
@@ -168,8 +168,8 @@ void rewriteFileName(clang::tooling::DpctPath &FileName,
 
 static std::vector<std::string> FilesNotInCompilationDB;
 
-void processallOptionAction(clang::tooling::DpctPath &InRoot,
-                            clang::tooling::DpctPath &OutRoot) {
+void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
+                            clang::tooling::UnifiedPath &OutRoot) {
   for (const auto &File : FilesNotInCompilationDB) {
     if (IncludeFileMap.find(File) != IncludeFileMap.end()) {
       // Skip the files parsed by dpct parser.
@@ -177,7 +177,7 @@ void processallOptionAction(clang::tooling::DpctPath &InRoot,
     }
 
     std::ifstream In(File);
-    clang::tooling::DpctPath OutputFile = File;
+    clang::tooling::UnifiedPath OutputFile = File;
     if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
@@ -237,7 +237,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
     }
 
     if (Iter->type() == fs::file_type::regular_file) {
-      clang::tooling::DpctPath OutputFile = FilePath;
+      clang::tooling::UnifiedPath OutputFile = FilePath;
       if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
         continue;
       }
@@ -261,7 +261,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
 
     } else if (Iter->type() == fs::file_type::directory_file) {
       const auto Path = Iter->path();
-      clang::tooling::DpctPath OutDirectory = Path;
+      clang::tooling::UnifiedPath OutDirectory = Path;
       if (!rewriteDir(OutDirectory, InRoot, OutRoot)) {
         continue;
       }
@@ -292,7 +292,7 @@ static void getMainSrcFilesRepls(
       MainSrcFilesRepls.push_back(Repl);
 }
 static void getMainSrcFilesDigest(
-    std::vector<std::pair<clang::tooling::DpctPath, std::string>> &MainSrcFilesDigest) {
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest) {
   auto &DigestMap = DpctGlobalInfo::getDigestMap();
   for (const auto &Entry : DigestMap)
     MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
@@ -300,8 +300,8 @@ static void getMainSrcFilesDigest(
 
 static void saveUpdatedMigrationDataIntoYAML(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
-    std::vector<std::pair<clang::tooling::DpctPath, std::string>> &MainSrcFilesDigest,
-    clang::tooling::DpctPath YamlFile, clang::tooling::DpctPath SrcFile,
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest,
+    clang::tooling::UnifiedPath YamlFile, clang::tooling::UnifiedPath SrcFile,
     std::unordered_map<std::string, bool> &MainSrcFileMap) {
   // Save history repls to yaml file.
   auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
@@ -380,8 +380,8 @@ void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
 /// \returns 0 upon success. Non-zero upon failure.
 /// Prerequisite: InRoot and OutRoot are both absolute paths
 int saveNewFiles(clang::tooling::RefactoringTool &Tool,
-                 clang::tooling::DpctPath InRoot,
-                 clang::tooling::DpctPath OutRoot) {
+                 clang::tooling::UnifiedPath InRoot,
+                 clang::tooling::UnifiedPath OutRoot) {
   using namespace clang;
   volatile ProcessStatus status = MigrationSucceeded;
   // Set up Rewriter.
@@ -424,8 +424,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   }
 
   std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
-  std::vector<std::pair<clang::tooling::DpctPath, std::string>> MainSrcFilesDigest;
-  clang::tooling::DpctPath OutPath;
+  std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> MainSrcFilesDigest;
+  clang::tooling::UnifiedPath OutPath;
   if (Tool.getReplacements().empty()) {
     // There are no rules applying on the *.cpp files,
     // dpct just do nothing with them.
@@ -434,9 +434,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     getMainSrcFilesRepls(MainSrcFilesRepls);
     getMainSrcFilesDigest(MainSrcFilesDigest);
   } else {
-    std::unordered_map<clang::tooling::DpctPath, std::vector<clang::tooling::Range>>
+    std::unordered_map<clang::tooling::UnifiedPath, std::vector<clang::tooling::Range>>
         FileRangesMap;
-    std::unordered_map<clang::tooling::DpctPath, std::vector<clang::tooling::Range>>
+    std::unordered_map<clang::tooling::UnifiedPath, std::vector<clang::tooling::Range>>
         FileBlockLevelFormatRangesMap;
     // There are matching rules for *.cpp files, *.cu files, also header files
     // included, migrate these files into *.dp.cpp files.
@@ -650,7 +650,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   // The necessary header files which have no replacements will be copied to
   // "-out-root" directory.
   for (const auto &Entry : IncludeFileMap) {
-    clang::tooling::DpctPath FilePath = Entry.first;
+    clang::tooling::UnifiedPath FilePath = Entry.first;
     if (!Entry.second) {
       bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
       if (IsExcluded) {
@@ -738,15 +738,15 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   return status;
 }
 
-void loadYAMLIntoFileInfo(clang::tooling::DpctPath Path) {
-  clang::tooling::DpctPath OriginPath = Path;
+void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path) {
+  clang::tooling::UnifiedPath OriginPath = Path;
   rewriteFileName(Path);
   if (!rewriteDir(Path, DpctGlobalInfo::getInRoot(),
                   DpctGlobalInfo::getOutRoot())) {
     return;
   }
 
-  clang::tooling::DpctPath YamlFilePath = Path.getCanonicalPath() + ".yaml";
+  clang::tooling::UnifiedPath YamlFilePath = Path.getCanonicalPath() + ".yaml";
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (fs::exists(YamlFilePath.getCanonicalPath())) {
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {

@@ -1,4 +1,4 @@
-//===----------------------- DpctPath.cpp ---------------------------------===//
+//===----------------------- UnifiedPath.cpp ------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,12 +6,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "clang/Tooling/Core/DpctPath.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "llvm/Support/Path.h"
 
 namespace clang {
 namespace tooling {
-void DpctPath::makeCanonical() {
+void UnifiedPath::makeCanonical() {
   if (_Path.empty()) {
     return;
   }
@@ -44,7 +44,7 @@ void DpctPath::makeCanonical() {
 
   llvm::SmallString<512> RealPath;
   // We need make sure the input `Path` for llvm::sys::fs::real_path is
-  // exsiting.
+  // exsiting, or else the behavior of real_path() is unexpected. 
   if (llvm::sys::fs::exists(Path)) {
     llvm::sys::fs::real_path(Path, RealPath, true);
   } else {
@@ -77,24 +77,24 @@ void DpctPath::makeCanonical() {
 #endif
   CanonicalPathCache.insert(std::pair(_Path, _CanonicalPath));
 }
-std::unordered_map<std::string, std::string> DpctPath::CanonicalPathCache;
-bool operator==(const clang::tooling::DpctPath &LHS,
-                const clang::tooling::DpctPath &RHS) {
+std::unordered_map<std::string, std::string> UnifiedPath::CanonicalPathCache;
+bool operator==(const clang::tooling::UnifiedPath &LHS,
+                const clang::tooling::UnifiedPath &RHS) {
   return LHS.getCanonicalPath() == RHS.getCanonicalPath();
 }
-bool operator!=(const clang::tooling::DpctPath &LHS,
-                const clang::tooling::DpctPath &RHS) {
+bool operator!=(const clang::tooling::UnifiedPath &LHS,
+                const clang::tooling::UnifiedPath &RHS) {
   return LHS.getCanonicalPath() != RHS.getCanonicalPath();
 }
-bool operator<(const clang::tooling::DpctPath &LHS,
-               const clang::tooling::DpctPath &RHS) {
+bool operator<(const clang::tooling::UnifiedPath &LHS,
+               const clang::tooling::UnifiedPath &RHS) {
   return LHS.getCanonicalPath() < RHS.getCanonicalPath();
 }
 } // namespace tooling
 } // namespace clang
 namespace llvm {
 llvm::raw_ostream &operator<<(llvm::raw_ostream &OS,
-                              const clang::tooling::DpctPath &RHS) {
+                              const clang::tooling::UnifiedPath &RHS) {
   return OS << RHS.getCanonicalPath();
 }
 } // namespace llvm

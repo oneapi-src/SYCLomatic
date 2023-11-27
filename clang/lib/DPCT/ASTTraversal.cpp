@@ -59,7 +59,7 @@ using namespace clang::ast_matchers;
 using namespace clang::dpct;
 using namespace clang::tooling;
 
-extern clang::tooling::DpctPath DpctInstallPath; // Installation directory for this tool
+extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
 extern llvm::cl::opt<UsmLevel> USMLevel;
 extern bool ProcessAllFlag;
 extern bool ExplicitClNamespace;
@@ -523,7 +523,7 @@ IncludesCallbacks::removeMacroInvocationAndTrailingSpaces(SourceRange Range) {
 void IncludesCallbacks::Else(SourceLocation Loc, SourceLocation IfLoc) {
   if (isInAnalysisScope(Loc)) {
     auto &Map = DpctGlobalInfo::getInstance()
-                    .getCudaArchPPInfoMap()[clang::tooling::DpctPath(SM.getFilename(Loc))];
+                    .getCudaArchPPInfoMap()[clang::tooling::UnifiedPath(SM.getFilename(Loc))];
     unsigned Offset = SM.getFileOffset(IfLoc);
     DirectiveInfo DI;
     DI.DirectiveLoc = SM.getFileOffset(Loc);
@@ -810,7 +810,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
       return;
     }
 
-    clang::tooling::DpctPath InFile = SM.getFilename(Loc).str();
+    clang::tooling::UnifiedPath InFile = SM.getFilename(Loc).str();
     if (IsFileInCmd || ProcessAllFlag ||
         GetSourceFileType(InFile.getCanonicalPath()) & SPT_CudaSource) {
       IncludeFileMap[DpctGlobalInfo::removeSymlinks(

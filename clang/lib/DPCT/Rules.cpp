@@ -15,7 +15,7 @@
 #include "llvm/Support/YAMLTraits.h"
 #include "NCCLAPIMigration.h"
 
-std::vector<clang::tooling::DpctPath> MetaRuleObject::RuleFiles;
+std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
 template <class Functor>
@@ -229,7 +229,7 @@ void registerPatternRewriterRule(MetaRuleObject &R) {
       MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode));
 }
 
-void importRules(std::vector<clang::tooling::DpctPath> &RuleFiles) {
+void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
     // open the yaml file
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =

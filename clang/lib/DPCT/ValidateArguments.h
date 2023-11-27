@@ -86,10 +86,10 @@ enum class ExperimentalFeatures : unsigned int {
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
 
 bool makeInRootCanonicalOrSetDefaults(
-    clang::tooling::DpctPath &InRoot, const std::vector<std::string> SourceFiles);
-bool makeOutRootCanonicalOrSetDefaults(clang::tooling::DpctPath &OutRoot);
-bool makeAnalysisScopeCanonicalOrSetDefaults(clang::tooling::DpctPath &AnalysisScope,
-                                             const clang::tooling::DpctPath &InRoot);
+    clang::tooling::UnifiedPath &InRoot, const std::vector<std::string> SourceFiles);
+bool makeOutRootCanonicalOrSetDefaults(clang::tooling::UnifiedPath &OutRoot);
+bool makeAnalysisScopeCanonicalOrSetDefaults(clang::tooling::UnifiedPath &AnalysisScope,
+                                             const clang::tooling::UnifiedPath &InRoot);
 
 /// Make sure files passed to tool are under the
 /// input root directory and have an extension.
@@ -97,7 +97,7 @@ bool makeAnalysisScopeCanonicalOrSetDefaults(clang::tooling::DpctPath &AnalysisS
 /// 0: success (InRoot and SourceFiles are valid)
 /// -1: fail for InRoot not valid or there is file SourceFiles not in InRoot
 /// -2: fail for there is file in SourceFiles without extension
-int validatePaths(const clang::tooling::DpctPath &InRoot,
+int validatePaths(const clang::tooling::UnifiedPath &InRoot,
                   const std::vector<std::string> &SourceFiles);
 
 /// Make sure cmake script path is valide file path or directory path.
@@ -108,7 +108,7 @@ int validatePaths(const clang::tooling::DpctPath &InRoot,
 /// -3: fail for there is directory not in InRoot directory in CmakeScriptPaths
 /// -4: fail for there is file not in InRoot directory in CmakeScriptPaths
 /// -5: fail for there is file that is is not a cmake script file in CmakeScriptPaths
-int validateCmakeScriptPaths(const clang::tooling::DpctPath &InRoot,
+int validateCmakeScriptPaths(const clang::tooling::UnifiedPath &InRoot,
                              const std::vector<std::string> &CmakeScriptPaths);
 
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
@@ -119,6 +119,6 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 ///  0: Path is valid
 ///  1: Path is empty, option SDK include path is not used
 /// -1: Path is invalid
-int checkSDKPathOrIncludePath(clang::tooling::DpctPath &Path);
+int checkSDKPathOrIncludePath(clang::tooling::UnifiedPath &Path);
 
 #endif // DPCT_VALIDATE_ARGUMENTS_H

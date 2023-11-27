@@ -39,7 +39,7 @@ extern const std::string DplExtrasNumericAllContentStr;
 extern const std::string DplExtrasVectorAllContentStr;
 extern const std::string DplExtrasDpcppExtensionsAllContentStr;
 void replaceEndOfLine(std::string &StrNeedProcess);
-void genHelperFunction(const clang::tooling::DpctPath &OutRoot);
+void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot);
 }
 } // namespace clang
 

@@ -30,19 +30,19 @@ protected:
 };
 
 TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRootEmpty) {
-  clang::tooling::DpctPath OutRoot;
+  clang::tooling::UnifiedPath OutRoot;
   getDefaultOutRoot(OutRoot);
   ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRoot) {
-  clang::tooling::DpctPath OutRoot = std::string("is not empty");
+  clang::tooling::UnifiedPath OutRoot = std::string("is not empty");
   getDefaultOutRoot(OutRoot);
   ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
 }
 
 TEST(getDefaultInRoot, noInroot) {
-  clang::tooling::DpctPath inroot;
+  clang::tooling::UnifiedPath inroot;
 #if _WIN32
   ASSERT_EQ(true, getDefaultInRoot(inroot, {"p:/a/b/in/file.cpp"}));
   ASSERT_EQ(inroot, "p:/a/b/in");
@@ -63,8 +63,8 @@ TEST(getDefaultInRoot, noInroot) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, empty) {
-  clang::tooling::DpctPath InRoot;
-  clang::tooling::DpctPath OutRoot;
+  clang::tooling::UnifiedPath InRoot;
+  clang::tooling::UnifiedPath OutRoot;
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
                       InRoot, {TempDirAbsolute + "/a/b/in/file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
@@ -73,8 +73,8 @@ TEST_F(MakeCanonicalOrSetDefaults, empty) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, emptyOnlyOneFileAllowed) {
-  clang::tooling::DpctPath InRoot;
-  clang::tooling::DpctPath OutRoot;
+  clang::tooling::UnifiedPath InRoot;
+  clang::tooling::UnifiedPath OutRoot;
   ASSERT_EQ(false,
             makeInRootCanonicalOrSetDefaults(
                 InRoot,{"/a/b/in/file.cpp", "/a/b/in/file.cpp"}));
@@ -83,8 +83,8 @@ TEST_F(MakeCanonicalOrSetDefaults, emptyOnlyOneFileAllowed) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, dotAtTheEnd) {
-  clang::tooling::DpctPath InRoot = TempDirAbsolute + "/a/b/in/.";
-  clang::tooling::DpctPath OutRoot = TempDirAbsolute + "/a/b/.";
+  clang::tooling::UnifiedPath InRoot = TempDirAbsolute + "/a/b/in/.";
+  clang::tooling::UnifiedPath OutRoot = TempDirAbsolute + "/a/b/.";
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
                       InRoot,
                       {TempDirAbsolute + "/a/b/in/file.cpp",
@@ -95,8 +95,8 @@ TEST_F(MakeCanonicalOrSetDefaults, dotAtTheEnd) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, dotInTheMiddle) {
-  clang::tooling::DpctPath InRoot = TempDirAbsolute + "/a/b/./in/.";
-  clang::tooling::DpctPath OutRoot = TempDirAbsolute + "/a/b/.";
+  clang::tooling::UnifiedPath InRoot = TempDirAbsolute + "/a/b/./in/.";
+  clang::tooling::UnifiedPath OutRoot = TempDirAbsolute + "/a/b/.";
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
                       InRoot,
                       {TempDirAbsolute + "/a/b/./in/file.cpp",
@@ -107,8 +107,8 @@ TEST_F(MakeCanonicalOrSetDefaults, dotInTheMiddle) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, dotDotAtTheEnd) {
-  clang::tooling::DpctPath InRoot = TempDirAbsolute + "/a/b/in/..";
-  clang::tooling::DpctPath OutRoot = TempDirAbsolute + "/a/b/";
+  clang::tooling::UnifiedPath InRoot = TempDirAbsolute + "/a/b/in/..";
+  clang::tooling::UnifiedPath OutRoot = TempDirAbsolute + "/a/b/";
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
                       InRoot,
                       {TempDirAbsolute + "/a/b/in/file.cpp",
@@ -119,8 +119,8 @@ TEST_F(MakeCanonicalOrSetDefaults, dotDotAtTheEnd) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, dotDotInTheMiddle) {
-  clang::tooling::DpctPath InRoot = TempDirAbsolute + "/a/b/../b/in";
-  clang::tooling::DpctPath OutRoot = TempDirAbsolute + "/a/b/";
+  clang::tooling::UnifiedPath InRoot = TempDirAbsolute + "/a/b/../b/in";
+  clang::tooling::UnifiedPath OutRoot = TempDirAbsolute + "/a/b/";
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
                       InRoot,
                       {TempDirAbsolute + "/a/b/in/file.cpp",
@@ -131,8 +131,8 @@ TEST_F(MakeCanonicalOrSetDefaults, dotDotInTheMiddle) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, relativePaths) {
-  clang::tooling::DpctPath InRoot = TempDir + "a/b/../b/in";
-  clang::tooling::DpctPath OutRoot = TempDir + "a/b/";
+  clang::tooling::UnifiedPath InRoot = TempDir + "a/b/../b/in";
+  clang::tooling::UnifiedPath OutRoot = TempDir + "a/b/";
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot,
                                              {TempDir + "a/b/in/file.cpp",
                                               TempDir + "a/b/in/c/file.cpp"}));
@@ -142,8 +142,8 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePaths) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, relativePathsNoRoots) {
-  clang::tooling::DpctPath InRoot;
-  clang::tooling::DpctPath OutRoot;
+  clang::tooling::UnifiedPath InRoot;
+  clang::tooling::UnifiedPath OutRoot;
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot, {"file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
   ASSERT_EQ(InRoot, TestRunPath);
@@ -151,8 +151,8 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePathsNoRoots) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, relativePathsDots) {
-  clang::tooling::DpctPath InRoot = std::string(".");
-  clang::tooling::DpctPath OutRoot = std::string("..");
+  clang::tooling::UnifiedPath InRoot = std::string(".");
+  clang::tooling::UnifiedPath OutRoot = std::string("..");
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot, {"./file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
   ASSERT_EQ(InRoot, TestRunPath);
@@ -160,8 +160,8 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePathsDots) {
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, relativeOutRoot) {
-  clang::tooling::DpctPath InRoot = TempDirAbsolute + "/a/b/in";
-  clang::tooling::DpctPath OutRoot = std::string("..");
+  clang::tooling::UnifiedPath InRoot = TempDirAbsolute + "/a/b/in";
+  clang::tooling::UnifiedPath OutRoot = std::string("..");
   ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot, {"./file.cpp"}));
   ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b/in");

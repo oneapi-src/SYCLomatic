@@ -75,16 +75,16 @@ namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
 static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
-static std::vector<std::pair<clang::tooling::DpctPath, std::vector<std::string>>>
+static std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
     *CompileTargetsMapPtr = nullptr;
 static StringRef InRoot;
 static StringRef OutRoot;
 static FileProcessType FileProcessHandle = nullptr;
-static std::set<clang::tooling::DpctPath> *ReProcessFilePtr = nullptr;
+static std::set<clang::tooling::UnifiedPath> *ReProcessFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
-static std::set<clang::tooling::DpctPath> *ModuleFiles = nullptr;
-static std::function<bool(const DpctPath &)> IsExcludePathPtr;
-extern clang::tooling::DpctPath VcxprojFilePath;
+static std::set<clang::tooling::UnifiedPath> *ModuleFiles = nullptr;
+static std::function<bool(const UnifiedPath &)> IsExcludePathPtr;
+extern clang::tooling::UnifiedPath VcxprojFilePath;
 
 void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
@@ -95,7 +95,7 @@ void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
 }
 
 void SetCompileTargetsMap(
-    std::vector<std::pair<clang::tooling::DpctPath, std::vector<std::string>>>
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
         &CompileTargetsMap) {
   CompileTargetsMapPtr = &CompileTargetsMap;
 }
@@ -134,7 +134,7 @@ bool isFileProcessAllSet() {
   return FileProcessHandle != nullptr;
 }
 
-void SetReProcessFile(std::set<clang::tooling::DpctPath> &ReProcessFile){
+void SetReProcessFile(std::set<clang::tooling::UnifiedPath> &ReProcessFile){
   ReProcessFilePtr = &ReProcessFile;
 }
 
@@ -149,18 +149,18 @@ unsigned int DoGetRunRound(){
   return 0;
 }
 
-std::set<clang::tooling::DpctPath> GetReProcessFile(){
+std::set<clang::tooling::UnifiedPath> GetReProcessFile(){
   if(ReProcessFilePtr){
     return *ReProcessFilePtr;
   }
-  return std::set<clang::tooling::DpctPath>();
+  return std::set<clang::tooling::UnifiedPath>();
 }
 
 void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
 static llvm::raw_ostream *OSTerm = nullptr;
 void SetDiagnosticOutput(llvm::raw_ostream &OStream) { OSTerm = &OStream; }
-void SetModuleFiles(std::set<clang::tooling::DpctPath> &MF) { ModuleFiles = &MF; }
+void SetModuleFiles(std::set<clang::tooling::UnifiedPath> &MF) { ModuleFiles = &MF; }
 llvm::raw_ostream &DiagnosticsOS() {
   if (OSTerm != nullptr) {
     return *OSTerm;
@@ -189,7 +189,7 @@ std::string getRealFilePath(std::string File, clang::FileManager *FM){
 #endif
 }
 
-void SetIsExcludePathHandler(std::function<bool(const DpctPath &)> Func) {
+void SetIsExcludePathHandler(std::function<bool(const UnifiedPath &)> Func) {
   IsExcludePathPtr = Func;
 }
 
@@ -246,7 +246,7 @@ void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
 } // namespace tooling
 } // namespace clang
 bool StopOnParseErrTooling=false;
-DpctPath InRootTooling;
+UnifiedPath InRootTooling;
 
 // filename, error#
 //  error: high32:processed sig error, low32: parse error

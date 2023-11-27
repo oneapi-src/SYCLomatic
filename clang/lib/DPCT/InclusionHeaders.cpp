@@ -131,7 +131,7 @@ void IncludesCallbacks::InclusionDirective(
   FileInfo->setFirstIncludeOffset(LocInfo.second);
   LastInclusionLocationUpdater Updater(FileInfo, FilenameRange.getEnd());
 
-  clang::tooling::DpctPath IncludedFile;
+  clang::tooling::UnifiedPath IncludedFile;
   if (auto OptionalAbs = Global.getAbsolutePath(File->getFileEntry()))
     IncludedFile = OptionalAbs.value();
 
@@ -165,7 +165,7 @@ void IncludesCallbacks::InclusionDirective(
     // the including relationship information.
     Global.recordIncludingRelationship(LocInfo.first, IncludedFile);
 
-    clang::tooling::DpctPath NewFilePath = FileName;
+    clang::tooling::UnifiedPath NewFilePath = FileName;
     rewriteFileName(NewFilePath, IncludedFile);
     SmallString<512> NewFileName(FileName.str());
     path::remove_filename(NewFileName);

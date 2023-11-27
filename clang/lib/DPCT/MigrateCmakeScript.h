@@ -10,22 +10,22 @@
 #define DPCT_MIGRATE_CMAKE_SCRIPT_H
 
 #include "clang/Tooling/CommonOptionsParser.h"
-#include "clang/Tooling/Core/DpctPath.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 
-clang::tooling::DpctPath
-getCmakeBuildPathFromInRoot(const clang::tooling::DpctPath &InRoot,
-                            const clang::tooling::DpctPath &OutRoot);
+clang::tooling::UnifiedPath
+getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
+                            const clang::tooling::UnifiedPath &OutRoot);
 void collectCmakeScripts(
-    const clang::tooling::DpctPath &InRoot,
-    const clang::tooling::DpctPath &OutRoot,
-    std::vector<clang::tooling::DpctPath> &CmakeScriptFiles);
-bool migrateCmakeScriptFile(const clang::tooling::DpctPath &InRoot,
-                            const clang::tooling::DpctPath &OutRoot,
-                            const clang::tooling::DpctPath &InFileName);
+    const clang::tooling::UnifiedPath &InRoot,
+    const clang::tooling::UnifiedPath &OutRoot,
+    std::vector<clang::tooling::UnifiedPath> &CmakeScriptFiles);
+bool migrateCmakeScriptFile(const clang::tooling::UnifiedPath &InRoot,
+                            const clang::tooling::UnifiedPath &OutRoot,
+                            const clang::tooling::UnifiedPath &InFileName);
 bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
 
 void migrateCmakeScriptOnly(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
-    const clang::tooling::DpctPath &InRoot,
-    const clang::tooling::DpctPath &OutRoot);
+    const clang::tooling::UnifiedPath &InRoot,
+    const clang::tooling::UnifiedPath &OutRoot);
 #endif

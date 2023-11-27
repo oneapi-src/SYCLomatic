@@ -37,15 +37,15 @@ class RefactoringTool;
 /// \returns 0 upon success. Non-zero upon failure.
 /// Prerequisite: InRoot and OutRoot are both absolute paths
 int saveNewFiles(clang::tooling::RefactoringTool &Tool,
-                 clang::tooling::DpctPath InRoot,
-                 clang::tooling::DpctPath OutRoot);
+                 clang::tooling::UnifiedPath InRoot,
+                 clang::tooling::UnifiedPath OutRoot);
 
-void loadYAMLIntoFileInfo(clang::tooling::DpctPath Path);
+void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);
 
-// clang::tooling::DpctPath:  source file name including path.
+// clang::tooling::UnifiedPath:  source file name including path.
 // bool: false: the source file has no replacement.
 //       true:  the source file has replacement.
-extern std::map<clang::tooling::DpctPath, bool> IncludeFileMap;
+extern std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 
 // This function is registered by SetFileProcessHandle() called by runDPCT() in
 // DPCT.cpp, and called in Tooling.cpp::DoFileProcessHandle(). It traverses all
@@ -59,17 +59,17 @@ void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
 /// Replace file path specified by \pInRoot with \pOutRoot in \pFilePath.
 ///
 /// \returns true if file path is rewritten, false otherwise.
-bool rewriteDir(clang::tooling::DpctPath &FilePath, const clang::tooling::DpctPath& InRoot,
-                const clang::tooling::DpctPath& OutRoot);
+bool rewriteDir(clang::tooling::UnifiedPath &FilePath, const clang::tooling::UnifiedPath& InRoot,
+                const clang::tooling::UnifiedPath& OutRoot);
 
 // Replace file name \p FileName with new migrated name.
-void rewriteFileName(clang::tooling::DpctPath &FileName);
+void rewriteFileName(clang::tooling::UnifiedPath &FileName);
 // Replace file name \p FileName with new migrated name.
 // This overloaded function is added because in some cases, the \p FileName is
 // relative path, and absolute path \p FullPathName is needed to determine
 // whether the file is in database.
-void rewriteFileName(clang::tooling::DpctPath &FileName,
-                     const clang::tooling::DpctPath& FullPathName);
+void rewriteFileName(clang::tooling::UnifiedPath &FileName,
+                     const clang::tooling::UnifiedPath& FullPathName);
 
 // apply patter rewrite rules to migrate cmake script file
 void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,

@@ -367,7 +367,7 @@ bool canContinueMigration(std::string &Msg) {
   // Try to load the MainSourceFiles.yaml file
   SmallString<128> YamlFilePathStr(DpctGlobalInfo::getOutRoot().getCanonicalPath());
   llvm::sys::path::append(YamlFilePathStr, "MainSourceFiles.yaml");
-  clang::tooling::DpctPath YamlFilePath = YamlFilePathStr;
+  clang::tooling::UnifiedPath YamlFilePath = YamlFilePathStr;
 
   if (!llvm::sys::fs::exists(YamlFilePath.getCanonicalPath()))
     return true;

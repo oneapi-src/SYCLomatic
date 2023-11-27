@@ -117,10 +117,10 @@ void replaceEndOfLine(std::string &StrNeedProcess) {
 #endif
 }
 
-void genHelperFunction(const clang::tooling::DpctPath &OutRoot) {
+void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   if (!llvm::sys::fs::is_directory(OutRoot.getCanonicalPath()))
     llvm::sys::fs::create_directory(OutRoot.getCanonicalPath());
-  clang::tooling::DpctPath ToPath = OutRoot.getCanonicalPath() + "/include";
+  clang::tooling::UnifiedPath ToPath = OutRoot.getCanonicalPath() + "/include";
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath()))
     llvm::sys::fs::create_directory(ToPath.getCanonicalPath());
   ToPath = ToPath.getCanonicalPath() + "/dpct";

@@ -4,7 +4,7 @@ add_clang_library(clangToolingCore
   Diagnostic.cpp
   Replacement.cpp
 # SYCLomatic_CUSTOMIZATION begin
-  DpctPath.cpp
+  UnifiedPath.cpp
 # SYCLomatic_CUSTOMIZATION end
 
   LINK_LIBS
