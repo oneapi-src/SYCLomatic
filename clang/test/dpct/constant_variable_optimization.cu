@@ -6,7 +6,7 @@
 
 
 // CHECK: static const int dev_a = 11;
-// CHECK: static const int dev_b = {1, 2, 3};
+// CHECK: static const int dev_b[32] = {1, 2, 3};
 // CHECK: static dpct::constant_memory<int, 0> dev_c(1);
 // CHECK: static dpct::constant_memory<int, 1> dev_d(sycl::range<1>(5), {22});
 __constant__ int dev_a = 11;

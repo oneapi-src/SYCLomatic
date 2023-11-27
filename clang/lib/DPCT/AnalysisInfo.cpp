@@ -3843,6 +3843,18 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   case clang::dpct::MemVarInfo::Global: {
     if (isShared())
       return "";
+    if ((getAttr() == MemVarInfo::VarAttrKind::Constant) &&
+        !isUseHelperFunc()) {
+      std::string Dims;
+      const static std::string NullString;
+      for (auto &Dim : getType()->getRange()) {
+        Dims = Dims + "[" + Dim.getSize() + "]";
+      }
+      return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
+                         getConstVarName() + Dims,
+                         PointerAsArray ? "" : getInitArguments(NullString),
+                         ";");
+    }
     return getMemoryDecl();
   }
   }
