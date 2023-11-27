@@ -61,6 +61,7 @@ format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::EnableCtad = false;
+bool DpctGlobalInfo::EnableDebug = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::MigrateCmakeScript = false;
 bool DpctGlobalInfo::MigrateCmakeScriptOnly = false;

@@ -243,6 +243,10 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ProcessAll
                  "Default: off."),
            llvm::cl::cat(DPCTCat), llvm::cl::location(ProcessAllFlag))
 
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableDebug, "enable-debug",
+           llvm::cl::desc("Generate instrumented CUDA and SYCL code for debug purpose."),
+           llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCTAD, "enable-ctad",
            llvm::cl::desc("Use a C++17 class template argument deduction (CTAD) in "
                    "your generated code.\n"
