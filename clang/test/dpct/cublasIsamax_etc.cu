@@ -1217,39 +1217,18 @@ int main() {
   cublasDsyr2k(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, n, k, &alpha_D, A_D, lda, B_D, ldb, &beta_D, C_D, ldc);
 
   // cublas<T>trsm
-  // CHECK: {
-  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
-  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::left, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, C_S_buf_ct{{[0-9]+}}, ldc));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
-  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, C_S_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::left, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, m, n, dpct::get_value(&alpha_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(C_S)), ldc));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, dpct::get_value(&alpha_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(C_S)), ldc);
   status = cublasStrsm(handle, (cublasSideMode_t)0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, m, n, &alpha_S, A_S, lda, C_S, ldc);
   cublasStrsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_S, A_S, lda, C_S, ldc);
 
-  // CHECK: {
-  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
-  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::right, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
-  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::right, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, m, n, dpct::get_value(&alpha_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_D)), ldc));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, dpct::get_value(&alpha_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_D)), ldc);
   status = cublasDtrsm(handle, (cublasSideMode_t)1, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, m, n, &alpha_D, A_D, lda, C_D, ldc);
   cublasDtrsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_D, A_D, lda, C_D, ldc);
 
 
-  // CHECK: {
-  // CHECK-NEXT: auto transpose_ct{{[0-9]+}} = foo();
-  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
-  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::trsm(*handle, (oneapi::mkl::side)foo(), foo()==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, (int)transpose_ct{{[0-9]+}}==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)transpose_ct{{[0-9]+}}, (oneapi::mkl::diag)foo(), m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: oneapi::mkl::blas::column_major::trsm(*handle, (oneapi::mkl::side)foo(), foo() == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(foo()), (oneapi::mkl::diag)foo(), m, n, dpct::get_value(&alpha_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_D)), ldc);
   cublasDtrsm(handle, (cublasSideMode_t)foo(), (cublasFillMode_t)foo(), (cublasOperation_t)foo(), (cublasDiagType_t)foo(), m, n, &alpha_D, A_D, lda, C_D, ldc);
 
   // CHECK: {

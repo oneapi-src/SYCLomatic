@@ -291,6 +291,55 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
+        "cublasStrmm_v2_64",
+        CALL(MapNames::getDpctNamespace() + "trmm",
+             DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+             ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+             ARG(13)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasDtrmm_v2_64",
+        CALL(MapNames::getDpctNamespace() + "trmm",
+             DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+             ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+             ARG(13)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasCtrmm_v2_64",
+        CALL(MapNames::getDpctNamespace() + "trmm",
+             DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+             ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+             ARG(13)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasZtrmm_v2_64",
+        CALL(MapNames::getDpctNamespace() + "trmm",
+             DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+             ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+             ARG(13)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
         "cublasHgemmBatched",
         CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -740,6 +789,150 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasZsymm_v2_64",
     CALL("oneapi::mkl::blas::column_major::symm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         ARG(3), ARG(4),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5), DEREF(0)),
+         BUFFER_OR_USM_PTR(6, "std::complex<double>"), ARG(7),
+         BUFFER_OR_USM_PTR(8, "std::complex<double>"), ARG(9),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10), DEREF(0)),
+         BUFFER_OR_USM_PTR(11, "std::complex<double>"), ARG(12))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasStrsm_v2",
+    CALL("oneapi::mkl::blas::column_major::trsm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+         ARG(5), ARG(6),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7), DEREF(0)),
+         BUFFER_OR_USM_PTR(8, "float"), ARG(9), BUFFER_OR_USM_PTR(10, "float"),
+         ARG(11))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasDtrsm_v2",
+    CALL("oneapi::mkl::blas::column_major::trsm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+         ARG(5), ARG(6),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7), DEREF(0)),
+         BUFFER_OR_USM_PTR(8, "double"), ARG(9),
+         BUFFER_OR_USM_PTR(10, "double"), ARG(11))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasCtrsm_v2",
+    CALL("oneapi::mkl::blas::column_major::trsm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+         ARG(5), ARG(6),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7), DEREF(0)),
+         BUFFER_OR_USM_PTR(8, "std::complex<float>"), ARG(9),
+         BUFFER_OR_USM_PTR(10, "std::complex<float>"), ARG(11))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasZtrsm_v2",
+    CALL("oneapi::mkl::blas::column_major::trsm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+         ARG(5), ARG(6),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7), DEREF(0)),
+         BUFFER_OR_USM_PTR(8, "std::complex<double>"), ARG(9),
+         BUFFER_OR_USM_PTR(10, "std::complex<double>"), ARG(11))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasStrsm_v2_64",
+    CALL("oneapi::mkl::blas::column_major::trsm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+         ARG(5), ARG(6),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7), DEREF(0)),
+         BUFFER_OR_USM_PTR(8, "float"), ARG(9), BUFFER_OR_USM_PTR(10, "float"),
+         ARG(11))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasDtrsm_v2_64",
+    CALL("oneapi::mkl::blas::column_major::trsm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+         ARG(5), ARG(6),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7), DEREF(0)),
+         BUFFER_OR_USM_PTR(8, "double"), ARG(9),
+         BUFFER_OR_USM_PTR(10, "double"), ARG(11))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasCtrsm_v2_64",
+    CALL("oneapi::mkl::blas::column_major::trsm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+         ARG(5), ARG(6),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7), DEREF(0)),
+         BUFFER_OR_USM_PTR(8, "std::complex<float>"), ARG(9),
+         BUFFER_OR_USM_PTR(10, "std::complex<float>"), ARG(11))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasZtrsm_v2_64",
+    CALL("oneapi::mkl::blas::column_major::trsm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
+         ARG(5), ARG(6),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7), DEREF(0)),
+         BUFFER_OR_USM_PTR(8, "std::complex<double>"), ARG(9),
+         BUFFER_OR_USM_PTR(10, "std::complex<double>"), ARG(11))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasChemm_v2",
+    CALL("oneapi::mkl::blas::column_major::hemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         ARG(3), ARG(4),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5), DEREF(0)),
+         BUFFER_OR_USM_PTR(6, "std::complex<float>"), ARG(7),
+         BUFFER_OR_USM_PTR(8, "std::complex<float>"), ARG(9),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10), DEREF(0)),
+         BUFFER_OR_USM_PTR(11, "std::complex<float>"), ARG(12))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasZhemm_v2",
+    CALL("oneapi::mkl::blas::column_major::hemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         ARG(3), ARG(4),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5), DEREF(0)),
+         BUFFER_OR_USM_PTR(6, "std::complex<double>"), ARG(7),
+         BUFFER_OR_USM_PTR(8, "std::complex<double>"), ARG(9),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10), DEREF(0)),
+         BUFFER_OR_USM_PTR(11, "std::complex<double>"), ARG(12))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasChemm_v2_64",
+    CALL("oneapi::mkl::blas::column_major::hemm", DEREF(0),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
+         ARG(3), ARG(4),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5), DEREF(0)),
+         BUFFER_OR_USM_PTR(6, "std::complex<float>"), ARG(7),
+         BUFFER_OR_USM_PTR(8, "std::complex<float>"), ARG(9),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10), DEREF(0)),
+         BUFFER_OR_USM_PTR(11, "std::complex<float>"), ARG(12))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasZhemm_v2_64",
+    CALL("oneapi::mkl::blas::column_major::hemm", DEREF(0),
          BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
          BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
          ARG(3), ARG(4),
