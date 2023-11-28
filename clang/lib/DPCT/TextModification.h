@@ -199,7 +199,7 @@ public:
     BlockLevelFormatFlag = Flag;
   }
   bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
-
+  bool IsForCUDADebug = false;
 private:
   const TMID ID;
   Group Key;
@@ -624,22 +624,18 @@ class ReplaceText : public TextModification {
   std::string T;
 
 public:
-  ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
+  ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
+              bool NotFormatFlag = false, bool IsForCUDADebug = false)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
         T(std::move(S)) {
-    this->NotFormatFlag = false;
+    this->NotFormatFlag = NotFormatFlag;
+    this->IsForCUDADebug = IsForCUDADebug;
   }
   ReplaceText(const SourceLocation &Begin, const SourceLocation &End,
               std::string &&S)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin),
         Len(End.getRawEncoding() - Begin.getRawEncoding()), T(std::move(S)) {
     this->NotFormatFlag = false;
-  }
-  ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
-              bool NotFormatFlag)
-      : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
-        T(std::move(S)) {
-    this->NotFormatFlag = NotFormatFlag;
   }
 
   std::shared_ptr<ExtReplacement>

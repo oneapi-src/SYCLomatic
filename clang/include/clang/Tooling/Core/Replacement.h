@@ -141,6 +141,7 @@ public:
   StringRef getReplacementText() const { return ReplacementText; }
 #ifdef SYCLomatic_CUSTOMIZATION
   void setReplacementText(const std::string Str) { ReplacementText = Str; }
+  bool IsForCUDADebug = false;
 #endif // SYCLomatic_CUSTOMIZATION
   /// @}
 
@@ -373,8 +374,12 @@ private:
 /// other applications.
 ///
 /// \returns true if all replacements apply. false otherwise.
+#ifdef SYCLomatic_CUSTOMIZATION
+bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite,
+                          bool IsDebugCUDA = false);
+#else
 bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite);
-
+#endif // SYCLomatic_CUSTOMIZATION
 /// Applies all replacements in \p Replaces to \p Code.
 ///
 /// This completely ignores the path stored in each replacement. If all

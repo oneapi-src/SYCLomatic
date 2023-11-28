@@ -373,8 +373,14 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       &DiagnosticPrinter, false);
   SourceManager Sources(Diagnostics, Tool.getFiles());
   Rewriter Rewrite(Sources, DefaultLangOptions);
+  Rewriter DebugCUDARewrite(Sources, DefaultLangOptions);
   extern bool ProcessAllFlag;
+<<<<<<< HEAD
 
+=======
+  SmallString<512> OutPath;
+  
+>>>>>>> Enabling generate instrumented CUDA code.
   // The variable defined here assists to merge history records.
   std::unordered_map<std::string /*FileName*/,
                      bool /*false:Not processed in current migration*/>
@@ -383,7 +389,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   std::string YamlFile = appendPath(OutRoot.getCanonicalPath().str(),
                                     DpctGlobalInfo::getYamlFileName());
   std::string SrcFile = "MainSrcFiles_placehold";
-
+  std::string DebugCUDAFolder = OutRoot.str() + "_debug";
   if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
     auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
     for (const auto &Repl : PreTU->Replacements) {
@@ -438,8 +444,21 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         IncludeFileMap[OutPath] = true;
       }
 
+<<<<<<< HEAD
+=======
+      // This operation won't fail; it already succeeded once during argument
+      // validation.
+      makeCanonical(OutPath);
+      std::string OriginalPathStr = OutPath.str().str();
+      SmallString<512> DebugCUDAPath = SmallString<512>(OriginalPathStr);
+>>>>>>> Enabling generate instrumented CUDA code.
       rewriteFileName(OutPath);
       if (!rewriteDir(OutPath, InRoot, OutRoot)) {
+        continue;
+      }
+
+      if (dpct::DpctGlobalInfo::isDebugEnabled() &&
+          !rewriteDir(DebugCUDAPath, InRoot, DebugCUDAFolder)) {
         continue;
       }
 
@@ -453,6 +472,18 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         PrintMsg(ErrMsg);
         return status;
       }
+
+      if (dpct::DpctGlobalInfo::isDebugEnabled()) {
+        EC = fs::create_directories(path::parent_path(DebugCUDAPath));
+        if ((bool)EC) {
+          std::string ErrMsg =
+              "[ERROR] Create file : " + std::string(DebugCUDAPath.str()) +
+              " fail: " + EC.message() + "\n";
+          status = MigrationSaveOutFail;
+          PrintMsg(ErrMsg);
+          return status;
+        }
+      }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
       std::ofstream File(OutPath.getCanonicalPath().str(), std::ios::binary);
@@ -461,6 +492,15 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         std::string ErrMsg =
             "[ERROR] Create file: " + OutPath.getCanonicalPath().str() +
             " fail.\n";
+        PrintMsg(ErrMsg);
+        status = MigrationSaveOutFail;
+        return status;
+      }
+      std::ofstream DebugCUDAFile(DebugCUDAPath.str().str(), std::ios::binary);
+      llvm::raw_os_ostream DebugCUDAStream(DebugCUDAFile);
+      if (dpct::DpctGlobalInfo::isDebugEnabled() && !DebugCUDAFile) {
+        std::string ErrMsg =
+            "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
         PrintMsg(ErrMsg);
         status = MigrationSaveOutFail;
         return status;
@@ -516,7 +556,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       FileBlockLevelFormatRangesMap.insert(
           std::make_pair(OutPath, BlockLevelFormatRanges));
 
-      tooling::applyAllReplacements(Entry.second, Rewrite);
+      tooling::applyAllReplacements(Entry.second, Rewrite, false);
+      if (dpct::DpctGlobalInfo::isDebugEnabled())
+        tooling::applyAllReplacements(Entry.second, DebugCUDARewrite, true);
 
       llvm::Expected<FileEntryRef> Result =
           Tool.getFiles().getFileRef(Entry.first);
@@ -530,6 +572,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
             .getEditBuffer(Sources.getOrCreateFileID(
                 *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
+        if (dpct::DpctGlobalInfo::isDebugEnabled()) {
+          DebugCUDARewrite
+              .getEditBuffer(Sources.getOrCreateFileID(
+                  *Result, clang::SrcMgr::C_User /*normal user code*/))
+              .write(DebugCUDAStream);
+        }
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
