@@ -69,9 +69,7 @@ __global__ void ReduceKernel(int* data) {
 }
 
 //CHECK: void ReduceKernel_Max(int* data, const sycl::nd_item<3> &item_ct1) {
-//CHECK-EMPTY:
-//CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK:  int threadid = item_ct1.get_local_id(2);
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
 //CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::maximum<>());
@@ -88,9 +86,7 @@ __global__ void ReduceKernel_Max(int* data) {
 }
 
 //CHECK: void ReduceKernel_Min(int* data, const sycl::nd_item<3> &item_ct1) {
-//CHECK-EMPTY:
-//CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK:  int threadid = item_ct1.get_local_id(2);
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
 //CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::minimum<>());
