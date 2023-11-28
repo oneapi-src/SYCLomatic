@@ -17,7 +17,9 @@ as specified in the original code.
 Detailed Help
 -------------
 
-Data read from SYCL\* image cannot be normalized to a float in the range of (0, 1]
+Data read from `tex` in original code is normalized to a float in the range of (0, 1]
+by default, unless `CU_TRSF_READ_AS_INTEGER` is set.
+While aata read from SYCL\* image cannot be normalized to a float in the range of (0, 1]
 using the standard SYCL API. All flags used in the original code are ignored,
 except coordinate normalization mode.
 
@@ -31,6 +33,7 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
   
+     // User does not set CU_TRSF_READ_AS_INTEGER here.
      cuTexRefSetFlags(tex, CU_TRSF_NORMALIZED_COORDINATES);
      ...
      result = tex2D(tex, 0.5f, 0.5f);
@@ -45,7 +48,7 @@ results in the following migrated SYCL code:
      the original code. Unsupported flags were ignored. Data read from SYCL Image
      could not be normalized as specified in the original code.
      */
-     tex->set(sycl::coordinate_normalization_mode::normalized); // Need manually fix the read code if the flag CU_TRSF_READ_AS_INTEGER is unset.
+     tex->set(sycl::coordinate_normalization_mode::normalized);
      ...
      result = tex.read(0.5f, 0.5f); // data normalization does not match original code
 

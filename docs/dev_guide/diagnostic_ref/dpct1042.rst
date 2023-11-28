@@ -19,7 +19,7 @@ Detailed Help
 -------------
 
 The size of the arguments passed to the SYCL\* kernel for non-custom SYCL device
-has a limit (see SYCL 1.2.1 standard, 4.6.4.2 Device information descriptors).
+has a limit (see SYCL 2020 standard, 4.6.4.2 Device information descriptors).
 
 In cases where this warning occurs, you need to adjust the code manually to
 decrease the number of accessors or other arguments that are captured by the SYCL
@@ -126,45 +126,30 @@ which is rewritten to:
 
     #define ARRAY_SIZE 2
 
-    static dpct::constant_memory<int, 1> device0(ARRAY_SIZE);
-    static dpct::constant_memory<int, 1> device1(ARRAY_SIZE);
-    static dpct::constant_memory<int, 1> device2(ARRAY_SIZE);
-    ...
-    static dpct::constant_memory<int, 1> device30(ARRAY_SIZE + ARRAY_SIZE);
+    static dpct::constant_memory<int, 1> device0(ARRAY_SIZE * 32);
     
     // kernel function declaration
-    void kernel(int *out, const sycl::nd_item<3> &item_ct1, int const *device0,
-                int const *device1, int const *device2, ..., int const *device30) {
+    void kernel(int *out, const sycl::nd_item<3> &item_ct1, int const *device0) {
       int i = item_ct1.get_local_range(2) * item_ct1.get_group(2) +
               item_ct1.get_local_id(2);
-      out[i] = device0[i] + device1[i] + device2[i] +
-               ... +
-               device30[i] + device30[ARRAY_SIZE + i];
+      for (int j = 0; j < 32; j++) {
+        out[i] += device0[ARRAY_SIZE * j + i];
+      }
     }
     
     void test_function(int *out) {
 
       dpct::get_out_of_order_queue().submit([&](sycl::handler &cgh) {
         device0.init();
-        device1.init();
-        device2.init();
-        ...
-        device30.init();
     
         auto device0_acc_ct1 = device0.get_access(cgh);
-        auto device1_acc_ct1 = device1.get_access(cgh);
-        auto device2_acc_ct1 = device2.get_access(cgh);
-        ...
-        auto device30_acc_ct1 = device30.get_access(cgh);
         dpct::access_wrapper<int *> out_acc_ct0(out, cgh);
     
         cgh.parallel_for(
             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
             [=](sycl::nd_item<3> item_ct1) {
               kernel(out_acc_ct0.get_raw_pointer(), item_ct1,
-                     device0_acc_ct1.get_pointer(), device1_acc_ct1.get_pointer(),
-                     device2_acc_ct1.get_pointer(), ...,
-                     device30_acc_ct1.get_pointer());
+                     device0_acc_ct1.get_pointer());
             });
       });
     }
