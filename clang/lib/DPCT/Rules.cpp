@@ -226,7 +226,7 @@ void deregisterAPIRule(MetaRuleObject &R) {
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
   MapNames::PatternRewriters.emplace_back(
-      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode));
+      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId));
 }
 
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {

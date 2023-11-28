@@ -70,8 +70,4 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName);
 // whether the file is in database.
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
                      const clang::tooling::UnifiedPath& FullPathName);
-
-// apply patter rewrite rules to migrate cmake script file
-void applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
-                                           llvm::raw_os_ostream &Stream);
 #endif // DPCT_SAVE_NEW_FILES_H

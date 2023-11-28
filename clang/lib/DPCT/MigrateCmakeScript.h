@@ -12,6 +12,8 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Core/UnifiedPath.h"
 
+#include <map>
+
 clang::tooling::UnifiedPath
 getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot);
@@ -28,4 +30,12 @@ void migrateCmakeScriptOnly(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot);
+
+void parseVariable(const std::string &Input,
+                   std::map<std::string, std::string> &VariablesMap);
+
+void cmakeSyntaxProcessed(
+    std::string &Input, const std::map<std::string, std::string> &VariablesMap);
+
+std::string convertCmakeCommandsToLower(const std::string &InputString);
 #endif
