@@ -2040,11 +2040,15 @@ getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &NNSL) {
 }
 
 bool needExtraParens(const Expr *E) {
-  switch (E->IgnoreImplicitAsWritten()->getStmtClass()) {
+  E = E->IgnoreImplicitAsWritten();
+  switch (E->getStmtClass()) {
+  case Stmt::CallExprClass:
+    if (const auto *DC = static_cast<const CallExpr *>(E)->getDirectCallee())
+      return dpct::DpctGlobalInfo::isNeedParenAPI(DC->getNameAsString());
+    return false;
   case Stmt::DeclRefExprClass:
   case Stmt::MemberExprClass:
   case Stmt::ParenExprClass:
-  case Stmt::CallExprClass:
   case Stmt::IntegerLiteralClass:
   case Stmt::FloatingLiteralClass:
   case Stmt::StringLiteralClass:
@@ -2059,13 +2063,9 @@ bool needExtraParens(const Expr *E) {
     else
       return true;
   }
-  case Stmt::CXXOperatorCallExprClass: {
-    if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
-      if (COCE->getOperator() == clang::OO_Subscript)
-        return false;
-    }
-    return true;
-  }
+  case Stmt::CXXOperatorCallExprClass:
+    return static_cast<const CXXOperatorCallExpr *>(E)->getOperator() !=
+           clang::OO_Subscript;
   default:
     return true;
   }
