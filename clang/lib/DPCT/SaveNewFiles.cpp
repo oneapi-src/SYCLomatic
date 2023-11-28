@@ -756,7 +756,50 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
 
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesDigest,
                                    YamlFile, SrcFile, MainSrcFileMap);
+  if (dpct::DpctGlobalInfo::isDebugEnabled()) {
+    std::string SchemaPathCUDA = DebugCUDAFolder + "/generated_schema.hpp";
+    std::string SchemaPathSYCL = OutRoot.str() + "/generated_schema.hpp";
+    std::error_code EC;
+    EC = fs::create_directories(path::parent_path(SchemaPathCUDA));
+    if ((bool)EC) {
+      std::string ErrMsg =
+          "[ERROR] Create file: " + std::string(SchemaPathCUDA) +
+          " fail: " + EC.message() + "\n";
+      status = MigrationSaveOutFail;
+      PrintMsg(ErrMsg);
+      return status;
+    }
+    std::ofstream SchemaFileCUDA(SchemaPathCUDA, std::ios::binary);
+    if (!SchemaFileCUDA) {
+      std::string ErrMsg =
+          "[ERROR] Create file: " + std::string(SchemaPathCUDA) + " failed.\n";
+      status = MigrationSaveOutFail;
+      PrintMsg(ErrMsg);
+      return status;
+    }
+    llvm::raw_os_ostream SchemaStreamCUDA(SchemaFileCUDA);
+    SchemaStreamCUDA << "SchemaStreamCUDA";
 
+    EC = fs::create_directories(path::parent_path(SchemaPathSYCL));
+    if ((bool)EC) {
+      std::string ErrMsg =
+          "[ERROR] Create file: " + std::string(SchemaPathSYCL) +
+          " fail: " + EC.message() + "\n";
+      status = MigrationSaveOutFail;
+      PrintMsg(ErrMsg);
+      return status;
+    }
+    std::ofstream SchemaFileSYCL(SchemaPathSYCL, std::ios::binary);
+    if (!SchemaFileSYCL) {
+      std::string ErrMsg =
+          "[ERROR] Create file: " + std::string(SchemaPathSYCL) + " failed.\n";
+      status = MigrationSaveOutFail;
+      PrintMsg(ErrMsg);
+      return status;
+    }
+    llvm::raw_os_ostream SchemaStreamSYCL(SchemaFileSYCL);
+    SchemaStreamSYCL << "SchemaStreamSYCL";
+  }
   processallOptionAction(InRoot, OutRoot);
 
   return status;
