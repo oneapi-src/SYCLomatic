@@ -12,6 +12,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "llvm/ADT/StringRef.h"
 
+#include <map>
 
 std::string getCmakeBuildPathFromInRoot(llvm::StringRef InRoot,
                                         llvm::StringRef OutRoot);
@@ -24,4 +25,12 @@ bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
 void migrateCmakeScriptOnly(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     llvm::StringRef InRoot, llvm::StringRef OutRoot);
+
+void parseVariable(const std::string &Input,
+                   std::map<std::string, std::string> &VariablesMap);
+
+void cmakeSyntaxProcessed(
+    std::string &Input, const std::map<std::string, std::string> &VariablesMap);
+
+std::string convertCmakeCommandsToLower(const std::string &InputString);
 #endif
