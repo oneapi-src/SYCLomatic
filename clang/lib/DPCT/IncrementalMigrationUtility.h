@@ -101,7 +101,8 @@ inline void setValueToOptMap(std::string Key,
                              std::vector<clang::tooling::UnifiedPath> Value,
                              bool Specified) {
   std::vector<std::string> StrVec;
-  std::transform(Value.begin(), Value.end(), std::back_insert_iterator(StrVec),
+  std::transform(Value.begin(), Value.end(),
+                 std::back_insert_iterator<std::vector<std::string>>(StrVec),
                  [](const clang::tooling::UnifiedPath &DP) {
                    return DP.getCanonicalPath().str();
                  });

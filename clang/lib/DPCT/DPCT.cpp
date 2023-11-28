@@ -594,7 +594,8 @@ int runDPCT(int argc, const char **argv) {
   SDKPath = SDKPathOpt;
   std::transform(
       RuleFileOpt.begin(), RuleFileOpt.end(),
-      std::back_insert_iterator(RuleFile),
+      std::back_insert_iterator<std::vector<clang::tooling::UnifiedPath>>(
+          RuleFile),
       [](const std::string &Str) { return clang::tooling::UnifiedPath(Str); });
   AnalysisScope = AnalysisScopeOpt;
 

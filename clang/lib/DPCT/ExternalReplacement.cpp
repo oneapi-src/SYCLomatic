@@ -50,12 +50,15 @@ int save2Yaml(
   TUR.Replacements.insert(TUR.Replacements.end(), Replaces.begin(),
                           Replaces.end());
 
-  std::transform(MainSrcFilesDigest.begin(), MainSrcFilesDigest.end(),
-                 std::back_insert_iterator(TUR.MainSourceFilesDigest),
-                 [](const std::pair<clang::tooling::UnifiedPath, std::string> &P) {
-                   return std::pair<std::string, std::string>(
-                       P.first.getCanonicalPath(), P.second);
-                 });
+  std::transform(
+      MainSrcFilesDigest.begin(), MainSrcFilesDigest.end(),
+      std::back_insert_iterator<
+          std::vector<std::pair<std::string, std::string>>>(
+          TUR.MainSourceFilesDigest),
+      [](const std::pair<clang::tooling::UnifiedPath, std::string> &P) {
+        return std::pair<std::string, std::string>(P.first.getCanonicalPath(),
+                                                   P.second);
+      });
 
   for (const auto &Entry : CompileTargets) {
     TUR.CompileTargets[Entry.first.getCanonicalPath().str()] = Entry.second;
