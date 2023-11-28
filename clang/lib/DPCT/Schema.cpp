@@ -61,15 +61,30 @@ FieldSchema constructFieldSchema(const clang::FieldDecl *FD) {
   return FS;
 }
 
-void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS, int BaseOffset) {
+uint32_t getFieldTypeAlign(const FieldSchema &FS) {
+  if (FS.ValTypeOfField == ValType::Pointer ||
+      FS.ValTypeOfField == ValType::PointerOfPointer) {
+    return 8;
+  } else if (FS.IsBasicType) {
+    return FS.TypeSize;
+  } else {
+    return STypeSchemaMap[FS.FieldType].TypeAlign;
+  }
+}
+
+int ceilDevide(int num, int base) { return ((num + base - 1) / base) * base; }
+
+void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS) {
   if (RD == nullptr)
     return;
+  int BaseOffset = 0;
   for (const auto &base : RD->bases()) {
     if (base.isVirtual())
       TS.IsVirtual = true;
     clang::CXXRecordDecl *BCD = base.getType()->getAsCXXRecordDecl();
     if (BCD) {
       auto TsTmp = registerTypeSchema(base.getType());
+      BaseOffset = ceilDevide(BaseOffset, TsTmp.TypeAlign);
       for (auto mem : TsTmp.Members) {
         mem.Offset += BaseOffset;
         mem.FieldName = base.getType().getAsString() + "::" + mem.FieldName;
@@ -81,8 +96,8 @@ void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS, int BaseOffset) {
   return;
 }
 
-int DFSBaseClassForSYCL(clang::CXXRecordDecl *RD, TypeSchema &TS,
-                        int BaseOffset) {
+int DFSBaseClassForSYCL(clang::CXXRecordDecl *RD, TypeSchema &TS) {
+  int BaseOffset = 0;
   if (RD == nullptr)
     return BaseOffset;
   for (const auto &base : RD->bases()) {
@@ -91,10 +106,13 @@ int DFSBaseClassForSYCL(clang::CXXRecordDecl *RD, TypeSchema &TS,
     clang::CXXRecordDecl *BCD = base.getType()->getAsCXXRecordDecl();
     if (BCD) {
       auto TsTmp = registerSYCLTypeSchema(base.getType());
+      BaseOffset = ceilDevide(BaseOffset, TsTmp.TypeAlign);
       for (auto mem : TsTmp.Members) {
         mem.Offset += BaseOffset;
         mem.FieldName = base.getType().getAsString() + "::" + mem.FieldName;
         TS.Members.emplace_back(mem);
+        if (TsTmp.TypeAlign > TS.TypeAlign)
+          TS.TypeAlign = TsTmp.TypeAlign;
       }
       BaseOffset += TsTmp.TypeSize;
     }
@@ -102,8 +120,7 @@ int DFSBaseClassForSYCL(clang::CXXRecordDecl *RD, TypeSchema &TS,
   return BaseOffset;
 }
 
-FieldSchema convertCFieldSchemaToSFieldSChema(const FieldSchema &CFS,
-                                              int BaseOF, int OffSet) {
+FieldSchema convertCFieldSchemaToSFieldSChema(const FieldSchema &CFS) {
   FieldSchema SFS = CFS;
   if (MapNames::TypeNamesMap.find(CFS.FieldType) !=
       MapNames::TypeNamesMap.end()) {
@@ -111,7 +128,6 @@ FieldSchema convertCFieldSchemaToSFieldSChema(const FieldSchema &CFS,
   }
   if (STypeSchemaMap.find(SFS.FieldType) != STypeSchemaMap.end()) {
     SFS.TypeSize = STypeSchemaMap[SFS.FieldType].TypeSize;
-    SFS.Offset = CFS.Offset - BaseOF + OffSet;
     if (SFS.ValTypeOfField == ValType::ArrayValue) {
       SFS.ValSize = CFS.ValSize / CFS.TypeSize * SFS.TypeSize;
     } else if (SFS.ValTypeOfField == ValType::ScalarValue) {
@@ -121,7 +137,7 @@ FieldSchema convertCFieldSchemaToSFieldSChema(const FieldSchema &CFS,
   return SFS;
 }
 
-TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT, int OffSet) {
+TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
   const std::string &KetStr = DpctGlobalInfo::getTypeName(QT);
   if (STypeSchemaMap.find(KetStr) != STypeSchemaMap.end())
     return STypeSchemaMap[KetStr];
@@ -129,32 +145,38 @@ TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT, int OffSet) {
     return STypeSchemaMap[MapNames::TypeNamesMap[KetStr]->NewName];
   TypeSchema TS;
   TS.TypeName = KetStr;
-  clang::ASTContext &AstContext = dpct::DpctGlobalInfo::getContext();
   if (const clang::RecordType *RT = QT->getAs<clang::RecordType>()) {
     TS.FileName =
         getFilePathFromDecl(RT->getDecl(), DpctGlobalInfo::getSourceManager());
+    int OffSet = 0;
     if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
       clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
       // visit base class
-      OffSet = DFSBaseClassForSYCL(RD, TS, OffSet);
+       OffSet = DFSBaseClassForSYCL(RD, TS);
     }
-    int BaseOF = RT->getDecl()->field_empty()
-                     ? 0
-                     : AstContext.getFieldOffset(*RT->getDecl()->field_begin());
+    
     for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
-      TS.Members.push_back(convertCFieldSchemaToSFieldSChema(
-          constructFieldSchema(field), BaseOF, OffSet));
+      auto FsTmp =
+          convertCFieldSchemaToSFieldSChema(constructFieldSchema(field));
+      // Update Field Offset
+      int CurAlign = getFieldTypeAlign(FsTmp);
+      FsTmp.Offset = ceilDevide(OffSet, CurAlign);
+      OffSet = FsTmp.Offset + FsTmp.ValSize;
+      TS.Members.push_back(FsTmp);
+      TS.TypeAlign = std::max(TS.TypeAlign, CurAlign);
     }
     TS.FieldNum = TS.Members.size();
-    TS.TypeSize = TS.FieldNum == 0
-                      ? 0
-                      : (TS.Members.back().Offset + TS.Members.back().ValSize);
+    TS.TypeSize =
+        TS.FieldNum == 0
+            ? 0
+            : ceilDevide((TS.Members.back().Offset + TS.Members.back().ValSize),
+                         TS.TypeAlign);
   }
   STypeSchemaMap[KetStr] = TS;
   return TS;
 }
 
-TypeSchema dpct::registerTypeSchema(const clang::QualType &QT, int OffSet) {
+TypeSchema dpct::registerTypeSchema(const clang::QualType &QT) {
   if (QT.isNull())
     return TypeSchema();
   const std::string &KetStr = DpctGlobalInfo::getTypeName(QT);
@@ -170,12 +192,13 @@ TypeSchema dpct::registerTypeSchema(const clang::QualType &QT, int OffSet) {
     if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
       clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
       // visit base class
-      DFSBaseClass(RD, TS, OffSet);
+      DFSBaseClass(RD, TS);
     }
     for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
       TS.Members.push_back(constructFieldSchema(field));
     }
     TS.FieldNum = TS.Members.size();
+    TS.TypeAlign = AstContext.getTypeAlign(QT) / CHAR_BIT;
   }
   CTypeSchemaMap[KetStr] = TS;
   registerSYCLTypeSchema(QT);
@@ -254,6 +277,7 @@ llvm::json::Object dpct::serializeTypeSchemaToJson(const TypeSchema &TS) {
   JObj.try_emplace("IsVirtual", TS.IsVirtual);
   JObj.try_emplace("TypeSize", TS.TypeSize);
   JObj.try_emplace("FilePath", TS.FileName);
+  JObj.try_emplace("TypeAlign", TS.TypeAlign);
   if (!TS.Members.empty()) {
     llvm::json::Array JArray;
     for (const auto &it : TS.Members) {

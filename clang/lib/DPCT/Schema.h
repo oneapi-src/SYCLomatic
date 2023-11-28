@@ -43,50 +43,51 @@ inline std::string getValTypeStr(ValType tt) {
 }
 
 struct FieldSchema {
-  std::string FieldName;
   ValType ValTypeOfField;
-  std::string FieldType;
   bool IsBasicType = false;
   int64_t ValSize = 0;
   int64_t TypeSize = 0;
   int64_t Offset = 0;
+  std::string FieldName;
+  std::string FieldType;
   std::string Location = "None";
   FieldSchema(const std::string &name = "", ValType VT = ScalarValue,
               const std::string &FT = "", bool IBT = false, int64_t VS = 0,
               int64_t TS = 0, int64_t OS = 0, const std::string &loc = "None")
-      : FieldName(name), ValTypeOfField(VT), FieldType(FT), IsBasicType(IBT),
-        ValSize(VS), TypeSize(TS), Offset(OS), Location(loc) {}
+      : ValTypeOfField(VT), IsBasicType(IBT), ValSize(VS), TypeSize(TS),
+        Offset(OS), FieldName(name), FieldType(FT), Location(loc) {}
 };
 
 struct TypeSchema {
-  std::string TypeName;
-  int FieldNum = 0;
-  int64_t TypeSize = 0;
   bool IsVirtual = false;
+  int FieldNum = 0;
+  int TypeAlign = 1;
+  int64_t TypeSize = 0;
+  std::string TypeName;
   std::string FileName;
   std::vector<FieldSchema> Members;
-  TypeSchema(const std::string &name = "", int FN = 0, int64_t TS = 0,
-             bool IV = false, const std::string &FP = "",
+  TypeSchema(const std::string &name = "", int FN = 0, int TA = 1,
+             int64_t TS = 0, bool IV = false, const std::string &FP = "",
              std::vector<FieldSchema> mem = std::vector<FieldSchema>())
-      : TypeName(name), FieldNum(FN), TypeSize(TS), IsVirtual(IV), FileName(FP),
-        Members(mem) {}
+      : IsVirtual(IV), FieldNum(FN), TypeAlign(TA), TypeSize(TS),
+        TypeName(name), FileName(FP), Members(mem) {}
 };
 
 struct VarSchema {
-  std::string VarName;
-  ValType ValTypeOfVar;
-  std::string FileName;
-  std::string VarType;
   bool IsBasicType = false;
+  ValType ValTypeOfVar;
   int64_t TypeSize = 0;
   int64_t VarSize = 0;
+  std::string VarName;
+  std::string FileName;
+  std::string VarType;
   std::string Location = "None";
   VarSchema(const std::string &name = "", ValType VT = ScalarValue,
             const std::string &FP = "", const std::string &FT = "",
             bool IBT = false, int64_t VS = 0, int64_t OS = 0,
             const std::string &loc = "None")
-      : VarName(name), ValTypeOfVar(VT), FileName(FP), VarType(FT),
-        IsBasicType(IBT), VarSize(VS), Location(loc) {}
+      : IsBasicType(IBT), ValTypeOfVar(VT), VarSize(VS), VarName(name),
+        FileName(FP), VarType(FT), Location(loc) {}
 };
 
 std::string getFilePathFromDecl(const Decl *D, const SourceManager &SM);
@@ -95,9 +96,9 @@ ValType getValType(const clang::QualType &QT);
 
 TypeSchema constructTypeSchema(const clang::RecordType *RT);
 
-TypeSchema registerTypeSchema(const clang::QualType &QT, int OffSet=0);
+TypeSchema registerTypeSchema(const clang::QualType &QT);
 
-TypeSchema registerSYCLTypeSchema(const clang::QualType &QT, int OffSet=0);
+TypeSchema registerSYCLTypeSchema(const clang::QualType &QT);
 
 VarSchema constructVarSchema(const clang::DeclRefExpr *DRE);
 
