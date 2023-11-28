@@ -11,6 +11,8 @@
 // this file should be removed
 #include "TestMigration.h"
 #include "Schema.h"
+#include "Utility.h"
+#include "AnalysisInfo.h"
 
 using namespace clang::dpct;
 using namespace clang::ast_matchers;
@@ -24,7 +26,7 @@ void clang::dpct::TESTRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void clang::dpct::TESTRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
-
+    auto &SM = dpct::DpctGlobalInfo::getSourceManager();
     if (CE->getNumArgs() != 0) {
 
       for (const auto *arg : CE->arguments()) {
@@ -70,6 +72,15 @@ void clang::dpct::TESTRule::runRule(
                              "output_all_cuda.json");
     serializeJsonArrayToFile(serializeSchemaToJsonArray(STypeSchemaMap),
                              "output_all_sycl.json");
+    auto DefRange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
+    auto Length = Lexer::MeasureTokenLength(
+        DefRange.getEnd(), SM,
+        dpct::DpctGlobalInfo::getContext().getLangOpts());
+    Length += SM.getDecomposedLoc(DefRange.getEnd()).second -
+              SM.getDecomposedLoc(DefRange.getBegin()).second;
+    std::string Replacement = "AAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    emplaceTransformation(
+        new ReplaceText(DefRange.getBegin(), Length, std::move(Replacement), false, true));
   }
   return;
 }
