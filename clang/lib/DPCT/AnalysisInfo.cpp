@@ -2848,14 +2848,8 @@ void CallFunctionExpr::buildInfo() {
   //
   // TODO: Need to revisit the condition to add SYCL_EXTERNAL macro if issues
   // are observed in the future.
-  std::cout << "!!!!!!!!!!!!! FuncInfo.get():" << FuncInfo.get() << std::endl;
-  std::cout << "!!!!!!!!!!!!! DefFilePath.getCanonicalPath().str():" << DefFilePath.getCanonicalPath().str() << std::endl;
-  std::cout << "!!!!!!!!!!!!! getFilePath().getCanonicalPath().str():" << getFilePath().getCanonicalPath().str() << std::endl;
-  std::cout << "!!!!!!!!!!!!! isIncludedFile(getFilePath(), DefFilePath):" << isIncludedFile(getFilePath(), DefFilePath) << std::endl;
-  std::cout << "!!!!!!!!!!!!! FuncInfo->isLambda():" << FuncInfo->isLambda() << std::endl;
   if (!DefFilePath.getCanonicalPath().empty() && DefFilePath != getFilePath() &&
       !isIncludedFile(getFilePath(), DefFilePath) && !FuncInfo->isLambda()) {
-    std::cout << "!!!!!!!!!!!!! setNeedSyclExternMacro" << std::endl;
     FuncInfo->setNeedSyclExternMacro();
   }
 
@@ -3122,7 +3116,6 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
 
   if (FuncInfo->IsSyclExternMacroNeeded()) {
     std::string StrRepl = "SYCL_EXTERNAL ";
-    std::cout << "!!!!!!!!!!!!! SYCL_EXTERNAL replacement FilePath.getCanonicalPath().str():" << FilePath.getCanonicalPath().str() << ", Offset:" << Offset << std::endl;
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
                                          nullptr));
@@ -3215,14 +3208,10 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
         FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
   }
-  std::cout << "!!!!!!!!!!!!!!! DeviceFunctionDecl FilePath.getCanonicalPath().str():" << FilePath.getCanonicalPath().str() << std::endl;
   if (!FilePath.getCanonicalPath().empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
-    std::cout << "!!!!!!!!!!!!!!! FileType:" << FileType << std::endl;
-    std::cout << "!!!!!!!!!!!!!!! FD->isThisDeclarationADefinition():" << FD->isThisDeclarationADefinition() << std::endl;
     if (!(FileType & SPT_CudaHeader) && !(FileType & SPT_CppHeader) &&
         FD->isThisDeclarationADefinition()) {
-      std::cout << "!!!!!!!!!!!!!!! setDefinitionFilePath"  << std::endl;
       FuncInfo->setDefinitionFilePath(FilePath);
     }
   }
