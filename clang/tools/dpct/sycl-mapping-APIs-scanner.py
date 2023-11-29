@@ -182,7 +182,7 @@ if __name__ == '__main__':
             print(dirname)
     
         element_strings = []  # List of element strings from api_migration_status_arrays module
-        module_vars = vars(myarrays_20230926)
+        module_vars = vars(api_migration_status_arrays)
     
         for var_name, var_value in module_vars.items():
             if isinstance(var_value, list) and var_name != "ASM_API_migration_status":
@@ -192,7 +192,7 @@ if __name__ == '__main__':
         print("report.csv should be generated.")
         print_report("report.csv")
         
-        generate_ASM_csv_report(folder_paths, myarrays_20230926.ASM_API_migration_status, brkflag)
+        generate_ASM_csv_report(folder_paths, api_migration_status_arrays.ASM_API_migration_status, brkflag)
         print("report_ASM.csv should be generated. use \"--printcsv report_ASM.csv\" to list unsupported PTXs if there is")
         
         
