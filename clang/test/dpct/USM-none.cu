@@ -2,6 +2,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/USM-none %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/USM-none/USM-none.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/USM-none/USM-none.dp.cpp -o %T/USM-none/USM-none.dp.o %}
 
 // CHECK: #define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT: #include <sycl/sycl.hpp>

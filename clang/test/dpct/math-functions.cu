@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/math-functions %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/math-functions/math-functions.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/math-functions/math-functions.dp.cpp -o %T/math-functions/math-functions.dp.o %}
 
 #include <cmath>
 

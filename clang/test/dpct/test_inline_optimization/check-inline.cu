@@ -8,8 +8,10 @@
 
 // RUN: dpct --format-range=none --optimize-migration -in-root=%T -out-root=%T/test_inline_optimization  -p=%T  --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/test_inline_optimization/check-inline.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/test_inline_optimization/check-inline.dp.cpp -o %T/test_inline_optimization/check-inline.dp.o %}
 // RUN: FileCheck %S/test.h --match-full-lines --input-file %T/test_inline_optimization/test.h
 // RUN: FileCheck %S/test.cu --match-full-lines --input-file %T/test_inline_optimization/test.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/test_inline_optimization/test.dp.cpp -o %T/test_inline_optimization/test.dp.o %}
 
 #include "test.h"
 // CHECK: inline int test() {

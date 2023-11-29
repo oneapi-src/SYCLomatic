@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/template-instantiation %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-instantiation/template-instantiation.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/template-instantiation/template-instantiation.dp.cpp -o %T/template-instantiation/template-instantiation.dp.o %}
 
 #include <vector>
 

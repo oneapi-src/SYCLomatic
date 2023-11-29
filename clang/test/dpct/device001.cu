@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.1, v9.2
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/device001 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device001/device001.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/device001/device001.dp.cpp -o %T/device001/device001.dp.o %}
 
 #include <algorithm>
 #include <vector>

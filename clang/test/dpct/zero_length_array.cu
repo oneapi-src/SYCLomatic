@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/zero_length_array %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/zero_length_array/zero_length_array.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/zero_length_array/zero_length_array.dp.cpp -o %T/zero_length_array/zero_length_array.dp.o %}
 
 #include <stdio.h>
 

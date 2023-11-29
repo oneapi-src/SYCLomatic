@@ -4,6 +4,7 @@
 
 // RUN: dpct --format-range=none -in-root=%T  -out-root=%T/out case_in_db.c --format-range=none --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %T/case_in_db.c --match-full-lines --input-file %T/out/case_in_db.c.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/out/case_in_db.c.dp.cpp -o %T/out/case_in_db.c.dp.o %}
 
 
 // CHECK: #include <sycl/sycl.hpp>

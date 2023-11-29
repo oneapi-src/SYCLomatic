@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/histogram %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/histogram/histogram.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/histogram/histogram.dp.cpp -o %T/histogram/histogram.dp.o %}
 #include <cstdint>
 #include <cuda_runtime.h>
 

@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 //  RUN: dpct --assume-nd-range-dim=1 --format-range=none -out-root %T/with_this_nd_item %s --cuda-include-path="%cuda-path/include" -use-experimental-features=free-function-queries -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14
 //  RUN: FileCheck --input-file %T/with_this_nd_item/with_this_nd_item.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/with_this_nd_item/with_this_nd_item.dp.cpp -o %T/with_this_nd_item/with_this_nd_item.dp.o %}
 
 #include "cooperative_groups.h"
 

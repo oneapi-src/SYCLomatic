@@ -2,6 +2,7 @@
 // UNSUPPORTED: cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8, cuda-12.0, cuda-12.1, cuda-12.2
 // RUN: dpct --format-range=none -out-root %T/Out/cudaPointerAttributes %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/Out/cudaPointerAttributes/cudaPointerAttributes.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/Out/cudaPointerAttributes/cudaPointerAttributes.dp.cpp -o %T/Out/cudaPointerAttributes/cudaPointerAttributes.dp.o %}
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <stdlib.h>

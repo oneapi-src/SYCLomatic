@@ -2,7 +2,9 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/device_seg_user_def_reduce %S/device_seg_user_def_reduce.cu --use-experimental-features=user-defined-reductions --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1092
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp -o %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.o %}
 // RUN: FileCheck --input-file %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1026
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp -o %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.o %}
 // RUN: rm -rf %T/devicelevel/device_seg_user_def_reduce/
 
 #include <iostream>

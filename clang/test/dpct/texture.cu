@@ -2,6 +2,7 @@
 // UNSUPPORTED: v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/texture %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/texture/texture.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/texture/texture.dp.cpp -o %T/texture/texture.dp.o %}
 
 #include <stdio.h>
 

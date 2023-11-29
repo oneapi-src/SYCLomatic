@@ -2,6 +2,7 @@
 // UNSUPPORTED: v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8, v12.0, v12.1, v12.2
 // RUN: dpct -in-root %S -out-root %T/convolution_v7 %S/convolution_v7.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/convolution_v7/convolution_v7.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/convolution_v7/convolution_v7.dp.cpp -o %T/convolution_v7/convolution_v7.dp.o %}
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>

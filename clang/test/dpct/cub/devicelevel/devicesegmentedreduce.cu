@@ -2,8 +2,11 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/devicesegmentedreduce %S/devicesegmentedreduce.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1091
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp -o %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.o %}
 // RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1092
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp -o %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.o %}
 // RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1026
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp -o %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.o %}
 
 #include <algorithm>
 #include <initializer_list>

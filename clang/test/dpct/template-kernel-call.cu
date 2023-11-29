@@ -2,6 +2,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call/template-kernel-call.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/template-kernel-call/template-kernel-call.dp.cpp -o %T/template-kernel-call/template-kernel-call.dp.o %}
 
 #include <vector>
 

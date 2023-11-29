@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/occupancy_expr %s --use-experimental-features=occupancy-calculation --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/occupancy_expr/occupancy_expr.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/occupancy_expr/occupancy_expr.dp.cpp -o %T/occupancy_expr/occupancy_expr.dp.o %}
 
 __global__ void k() {}
 

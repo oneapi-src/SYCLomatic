@@ -4,6 +4,7 @@
 // UNSUPPORTED: v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call-cuda12.0-not-support %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call-cuda12.0-not-support/template-kernel-call-cuda12.0-not-support.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/template-kernel-call-cuda12.0-not-support/template-kernel-call-cuda12.0-not-support.dp.cpp -o %T/template-kernel-call-cuda12.0-not-support/template-kernel-call-cuda12.0-not-support.dp.o %}
 
 texture<float4, 1, cudaReadModeElementType> posTexture;
 texture<int4, 1, cudaReadModeElementType> posTexture_dp;

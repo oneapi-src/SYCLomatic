@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/launch-kernel-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel-usm/launch-kernel-usm.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/launch-kernel-usm/launch-kernel-usm.dp.cpp -o %T/launch-kernel-usm/launch-kernel-usm.dp.o %}
 
 // CHECK: void template_device(T *d, T *s) {
 template<class T>

@@ -1,5 +1,6 @@
 // RUN: dpct -in-root %S -out-root %T/sum %S/sum.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/sum/sum.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/sum/sum.dp.cpp -o %T/sum/sum.dp.o %}
 
 // CHECK: #include <dpct/dnnl_utils.hpp>
 // CHECK: #include <sycl/sycl.hpp>

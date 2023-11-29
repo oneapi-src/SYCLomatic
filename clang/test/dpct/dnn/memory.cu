@@ -1,5 +1,6 @@
 // RUN: dpct -in-root %S -out-root %T/memory %S/memory.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/memory/memory.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/memory/memory.dp.cpp -o %T/memory/memory.dp.o %}
 
 // CHECK: #include <dpct/dnnl_utils.hpp>
 // CHECK: #include <sycl/sycl.hpp>

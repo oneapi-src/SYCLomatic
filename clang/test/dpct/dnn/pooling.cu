@@ -1,5 +1,6 @@
 // RUN: dpct -in-root %S -out-root %T/pooling %S/pooling.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/pooling/pooling.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/pooling/pooling.dp.cpp -o %T/pooling/pooling.dp.o %}
 
 // CHECK: #include <dpct/dnnl_utils.hpp>
 // CHECK: #include <sycl/sycl.hpp>

@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -out-root %T/driver_context %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/driver_context/driver_context.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/driver_context/driver_context.dp.cpp -o %T/driver_context/driver_context.dp.o %}
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 

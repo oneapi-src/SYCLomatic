@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_pinned_alloc %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/cuda_pinned_alloc/cuda_pinned_allocator.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda_pinned_alloc/cuda_pinned_allocator.dp.cpp -o %T/cuda_pinned_alloc/cuda_pinned_allocator.dp.o %}
 
 
 #include <iostream>

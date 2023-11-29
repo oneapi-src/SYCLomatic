@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -out-root %T/types007 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck %s --match-full-lines --input-file %T/types007/types007.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/types007/types007.dp.cpp -o %T/types007/types007.dp.o %}
 
 #include <thrust/device_ptr.h>
 #include <thrust/host_vector.h>

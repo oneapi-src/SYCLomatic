@@ -2,6 +2,7 @@
 // RUN: cd %T
 // RUN: dpct -out-root %T/cuda-device-api cuda-device-api.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-device-api/cuda-device-api.dp.cpp --match-full-lines cuda-device-api.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda-device-api/cuda-device-api.dp.cpp -o %T/cuda-device-api/cuda-device-api.dp.o %}
 
 void foo() {
   size_t *pValue;

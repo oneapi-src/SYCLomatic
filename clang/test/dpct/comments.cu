@@ -2,6 +2,7 @@
 // UNSUPPORTED: v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none -out-root %T/comments %s --cuda-include-path="%cuda-path/include" --comments -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/comments/comments.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/comments/comments.dp.cpp -o %T/comments/comments.dp.o %}
 
 static texture<uint2, 1> tex21;
 

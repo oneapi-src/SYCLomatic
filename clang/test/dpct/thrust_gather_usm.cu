@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust_gather_usm %s --cuda-include-path="%cuda-path/include" --usm-level=restricted
 // RUN: FileCheck --input-file %T/thrust_gather_usm/thrust_gather_usm.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_gather_usm/thrust_gather_usm.dp.cpp -o %T/thrust_gather_usm/thrust_gather_usm.dp.o %}
 
 #include <thrust/gather.h>
 #include <thrust/device_vector.h>

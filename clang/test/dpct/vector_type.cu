@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/vector_type %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/vector_type/vector_type.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/vector_type/vector_type.dp.cpp -o %T/vector_type/vector_type.dp.o %}
 
 #include <vector>
 

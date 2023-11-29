@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/global_var_main %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/global_var_main/global_var_main.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/global_var_main/global_var_main.dp.cpp -o %T/global_var_main/global_var_main.dp.o %}
 // RUN: FileCheck --input-file %T/global_var_main/global_var_definition.dp.hpp --match-full-lines %S/global_var_definition.cuh
 
 #include <cuda.h>

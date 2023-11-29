@@ -6,6 +6,7 @@
 // RUN: mkdir %T/macro_test-cuda12.0-not-support_output
 // RUN: dpct -out-root %T/macro_test-cuda12.0-not-support_output macro_test-cuda12.0-not-support.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test-cuda12.0-not-support_output/macro_test-cuda12.0-not-support.dp.cpp --match-full-lines macro_test-cuda12.0-not-support.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/macro_test-cuda12.0-not-support_output/macro_test-cuda12.0-not-support.dp.cpp -o %T/macro_test-cuda12.0-not-support_output/macro_test-cuda12.0-not-support.dp.o %}
 #include <math.h>
 #include <iostream>
 #include <cmath>

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cuda_const_usm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_const_usm/cuda_const_usm.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda_const_usm/cuda_const_usm.dp.cpp -o %T/cuda_const_usm/cuda_const_usm.dp.o %}
 
 #include <stdio.h>
 

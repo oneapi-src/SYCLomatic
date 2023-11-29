@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/redefine_sycl_type %s %S/redefine_sycl_type_b.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/redefine_sycl_type/redefine_sycl_type_a.c.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/redefine_sycl_type/redefine_sycl_type_a.c.dp.cpp -o %T/redefine_sycl_type/redefine_sycl_type_a.c.dp.o %}
 #include <stdio.h>
 #include <unistd.h>
 #include <fstream>

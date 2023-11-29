@@ -2,6 +2,7 @@
 // RUN:      --out-root=%T/module_wrapper_gen \
 // RUN:      --cuda-include-path="%cuda-path/include" %s
 // RUN: FileCheck %s --input-file=%T/module_wrapper_gen/module_wrapper_gen.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl --input-file=%T/module_wrapper_gen/module_wrapper_gen.dp.cpp -o --input-file=%T/module_wrapper_gen/module_wrapper_gen.dp.o %}
 
 // START
 

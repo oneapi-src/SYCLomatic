@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/malloc %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/malloc/malloc.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/malloc/malloc.dp.cpp -o %T/malloc/malloc.dp.o %}
 #include <cuda_runtime.h>
 
 template <class T>

@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/types001 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck %s --match-full-lines --input-file %T/types001/types001.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/types001/types001.dp.cpp -o %T/types001/types001.dp.o %}
 
 #include <cuda.h>
 #include <cublas.h>

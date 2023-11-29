@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/occupancy %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/occupancy/occupancy.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/occupancy/occupancy.dp.cpp -o %T/occupancy/occupancy.dp.o %}
 
 __global__ void k() {}
 

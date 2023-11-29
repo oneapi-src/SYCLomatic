@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.1, v9.2
 // RUN: dpct --no-dpcpp-extensions=device_info -out-root %T/device004 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device004/device004.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/device004/device004.dp.cpp -o %T/device004/device004.dp.o %}
 
 #include <cuda.h>
 #include <iostream>

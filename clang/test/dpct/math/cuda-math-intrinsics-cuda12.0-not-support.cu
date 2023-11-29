@@ -2,6 +2,7 @@
 // UNSUPPORTED: v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none -out-root %T/math/cuda-math-intrinsics-cuda12.0-not-support %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/cuda-math-intrinsics-cuda12.0-not-support/cuda-math-intrinsics-cuda12.0-not-support.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/math/cuda-math-intrinsics-cuda12.0-not-support/cuda-math-intrinsics-cuda12.0-not-support.dp.cpp -o %T/math/cuda-math-intrinsics-cuda12.0-not-support/cuda-math-intrinsics-cuda12.0-not-support.dp.o %}
 
 // crt wrapper API
 __device__ void foo1() {

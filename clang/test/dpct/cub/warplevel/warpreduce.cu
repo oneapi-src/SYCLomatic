@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/warplevel/warpreduce %S/warpreduce.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/warplevel/warpreduce/warpreduce.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/warplevel/warpreduce/warpreduce.dp.cpp -o %T/warplevel/warpreduce/warpreduce.dp.o %}
 // clang-format off
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK: #include <oneapi/dpl/algorithm>
