@@ -262,15 +262,12 @@ def ext_clang_diagnose_if : Extension<"'diagnose_if' is a clang extension">,
                             InGroup<GccCompat>;
 def err_too_large_for_fixed_point : Error<
   "this value is too large for this fixed point type">;
-<<<<<<< HEAD
 
 // SYCLomatic_CUSTOMIZATION begin
 def err_fixed_point_not_enabled : Error<"migrate with "
   "'--extra-arg=\"-ffixed-point\"' to enable fixed point types">;
 // SYCLomatic_CUSTOMIZATION end
 
-=======
->>>>>>> origin/sycl
 def err_unimplemented_conversion_with_fixed_point_type : Error<
   "conversion between fixed point and %0 is not yet supported">;
 
