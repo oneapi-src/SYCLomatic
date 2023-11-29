@@ -89,9 +89,6 @@ public:
     std::map<std::string, PatternRewriter> Subrules;
     PatternRewriter(){};
 
-    void setSubrule(std::map<std::string, PatternRewriter> &S,
-                    RuleMatchMode MatchMode, std::string RuleId);
-
     PatternRewriter &operator=(const PatternRewriter &PR);
     PatternRewriter(const PatternRewriter &PR);
     PatternRewriter(const std::string &I, const std::string &O,

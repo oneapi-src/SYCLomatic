@@ -544,29 +544,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   std::stringstream OutputStream;
   const auto Pattern = parseMatchPattern(PP.In);
 
-  printf("Input: [%s]\n", Input.c_str());
-
-#if 1 // use for debug print
-  int Count = 0;
-  printf("Pattern start:\n");
-  for (auto Element : Pattern) {
-    if (std::holds_alternative<CodeElement>(Element)) {
-      auto &Code = std::get<CodeElement>(Element);
-      printf("\t[%d]->[%s]:[%d]\n", Count, Code.Name.c_str(),
-             Code.SuffixLength);
-    }
-    if (std::holds_alternative<LiteralElement>(Element)) {
-      const auto &Literal = std::get<LiteralElement>(Element);
-      printf("\t[%d]->[%c]\n", Count, Literal.Value);
-    }
-    if (std::holds_alternative<SpacingElement>(Element)) {
-      printf("\t[%d]->[%s]\n", Count, "space");
-    }
-    Count++;
-  }
-  printf("Pattern end.\n\n");
-#endif
-
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
