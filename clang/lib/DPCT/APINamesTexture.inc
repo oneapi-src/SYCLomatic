@@ -83,13 +83,25 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex1D", 0x01, 1))
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    CALL_FACTORY_ENTRY(
-        "tex2D",
-        CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
-                                  "ext::oneapi::experimental::read_image",
-                              0),
-             ARG(0),
-             CALL(MapNames::getClNamespace() + "float2", ARG(1), ARG(2)))),
+    CONDITIONAL_FACTORY_ENTRY(
+        [](const CallExpr *C) -> bool {
+          return getTemplateArgsList(C).empty();
+        },
+        CALL_FACTORY_ENTRY("tex2D",
+                           CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                    MapNames::getClNamespace() +
+                                        "ext::oneapi::experimental::read_image",
+                                    getArgTemplate(0, 0)),
+                                ARG(0),
+                                CALL(MapNames::getClNamespace() + "float2",
+                                     ARG(1), ARG(2)))),
+        CALL_FACTORY_ENTRY(
+            "tex2D",
+            CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
+                                      "ext::oneapi::experimental::read_image",
+                                  0),
+                 ARG(0),
+                 CALL(MapNames::getClNamespace() + "float2", ARG(1), ARG(2))))),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ENTRY_TEXTURE("tex2D", 0x02, 1, 2)))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,

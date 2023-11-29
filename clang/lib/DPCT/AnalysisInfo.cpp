@@ -1467,9 +1467,6 @@ void KernelCallExpr::addDevCapCheckStmt() {
 }
 
 void KernelCallExpr::addAccessorDecl() {
-  if (DpctGlobalInfo::useExtBindlessImages()) {
-    return;
-  }
   auto &VM = getVarMap();
   if (VM.hasExternShared()) {
     addAccessorDecl(VM.getMap(MemVarInfo::Extern).begin()->second);

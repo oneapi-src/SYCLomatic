@@ -10025,6 +10025,25 @@ void MemoryMigrationRule::mallocMigration(
   } else if (Name == "cudaMalloc3DArray") {
     mallocArrayMigration(C, Name, 3, *Result.SourceManager);
   } else if (Name == "cudaMallocArray") {
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      DerefExpr(C->getArg(0), C).print(OS);
+      OS << " = new " << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::image_mem("
+         << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::image_descriptor({"
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(3)) << "}, ";
+      DerefExpr(C->getArg(1), C).print(OS);
+      OS << ".get_channel_order(), ";
+      DerefExpr(C->getArg(1), C).print(OS);
+      OS << ".get_channel_type()), ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      return emplaceTransformation(new ReplaceStmt(C, Replacement));
+    }
     mallocArrayMigration(C, Name, 4, *Result.SourceManager);
     static std::string SizeClassName =
         DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 2);
@@ -10248,11 +10267,33 @@ void MemoryMigrationRule::arrayMigration(
     aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
   } else if (NameRef == "cudaMemcpy2DToArray") {
-    insertToPitchedData(C, 0);
-    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
-    aggregatePitchedData(C, 3, 4, SM);
-    insertZeroOffset(C, 5);
-    aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.ext_oneapi_copy("
+         << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << MapNames::getClNamespace() << "range<3>(0, 0, 0), "
+         << MapNames::getClNamespace() << "range<3>(0, 0, 0), "
+         << ExprAnalysis::ref(C->getArg(0)) << "->get_handle(), "
+         << MapNames::getClNamespace() << "range<3>("
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", 0), "
+         << ExprAnalysis::ref(C->getArg(0)) << "->get_descriptor(), "
+         << MapNames::getClNamespace() << "range<3>("
+         << ExprAnalysis::ref(C->getArg(5)) << " / "
+         << MapNames::getDpctNamespace() << "getEleSize("
+         << ExprAnalysis::ref(C->getArg(0)) << "->get_descriptor()), "
+         << ExprAnalysis::ref(C->getArg(6)) << ", 0))";
+      return emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      insertToPitchedData(C, 0);
+      aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+      aggregatePitchedData(C, 3, 4, SM);
+      insertZeroOffset(C, 5);
+      aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+    }
   } else if (NameRef == "cudaMemcpyArrayToArray") {
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);

@@ -304,11 +304,17 @@ void MapNames::setExplicitNamespaceMap() {
                                           "image_channel_data_type",
                                       HelperFeatureEnum::device_ext)},
       {"cudaArray",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() + "ext::oneapi::experimental::image_mem"
+               : getDpctNamespace() + "image_matrix",
+           HelperFeatureEnum::device_ext)},
       {"cudaArray_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix_p",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() + "ext::oneapi::experimental::image_mem*"
+               : getDpctNamespace() + "image_matrix_p",
+           HelperFeatureEnum::device_ext)},
       {"cudaTextureDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::device_ext)},

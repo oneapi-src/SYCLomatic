@@ -837,6 +837,44 @@ inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
   };
 }
 
+inline std::function<std::string(const CallExpr *C)>
+getArgTemplate(size_t Idx, size_t SubIdx) {
+  return [=](const CallExpr *C) -> std::string {
+    if (Idx >= C->getNumArgs())
+      return "";
+    auto Type = C->getArg(Idx)->getType();
+    Type->dump();
+    std::string TemplateArgStr = "";
+    while (const auto *ET = dyn_cast<ElaboratedType>(Type)) {
+      Type = ET->getNamedType();
+      Type->dump();
+      if (const auto *TST = dyn_cast<TemplateSpecializationType>(Type)) {
+        auto TAL = TST->template_arguments();
+        if (SubIdx >= TAL.size())
+          return TemplateArgStr;
+        const auto &TA = TAL[Idx];
+        TemplateArgumentInfo TAI;
+        switch (TA.getKind()) {
+        case TemplateArgument::Integral:
+          TAI.setAsNonType(TA.getAsIntegral());
+          break;
+        case TemplateArgument::Expression:
+          TAI.setAsNonType(TA.getAsExpr());
+          break;
+        case TemplateArgument::Type:
+          TAI.setAsType(TA.getAsType());
+          break;
+        default:
+          break;
+        }
+        TemplateArgStr = TAI.getString();
+        break;
+      }
+    }
+    return TemplateArgStr;
+  };
+}
+
 // Can only be used if CheckCanUseTemplateMalloc is true.
 inline std::function<std::string(const CallExpr *C)> getDoubleDerefedType(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {

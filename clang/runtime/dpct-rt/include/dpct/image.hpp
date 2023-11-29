@@ -841,6 +841,49 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 }
 
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+/// TODO: ???
+static inline size_t
+getEleSize(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
+  size_t channel_num, channel_size;
+  switch (decs.channel_order) {
+  case sycl::image_channel_order::r:
+    channel_num = 1;
+    break;
+  case sycl::image_channel_order::rg:
+    channel_num = 2;
+    break;
+  case sycl::image_channel_order::rgb:
+    channel_num = 3;
+    break;
+  case sycl::image_channel_order::rgba:
+    channel_num = 4;
+    break;
+  default:
+    throw std::runtime_error("Unsupported channel_order in getEleSize!");
+    break;
+  }
+  switch (decs.channel_type) {
+  case sycl::image_channel_type::signed_int8:
+  case sycl::image_channel_type::unsigned_int8:
+    channel_size = 1;
+    break;
+  case sycl::image_channel_type::fp16:
+  case sycl::image_channel_type::signed_int16:
+  case sycl::image_channel_type::unsigned_int16:
+    channel_size = 2;
+    break;
+  case sycl::image_channel_type::fp32:
+  case sycl::image_channel_type::signed_int32:
+  case sycl::image_channel_type::unsigned_int32:
+    channel_size = 4;
+    break;
+  default:
+    throw std::runtime_error("Unsupported channel_type in getEleSize!");
+    break;
+  }
+  return channel_num * channel_size;
+}
+
 /// Create bindless image according to image data and sampling info.
 /// \param data Image data used to create bindless image.
 /// \param info Image sampling info used to create bindless image.
@@ -863,11 +906,11 @@ create_bindless_image(image_data data, sampling_info info,
     samp.filtering = sycl::filtering_mode::nearest;
     // TODO: Use pointer to create image when bindless image support.
     auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    auto tex =
+    auto img =
         sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
     q.ext_oneapi_copy(data.get_data_ptr(), mem->get_handle(), desc);
     q.wait_and_throw();
-    return tex;
+    return img;
   }
   case image_data_type::pitch: {
     desc.width = data.get_x();
@@ -879,25 +922,10 @@ create_bindless_image(image_data data, sampling_info info,
         data.get_data_ptr(), data.get_pitch(), samp, desc, q);
   }
   case image_data_type::matrix: {
-    auto image = static_cast<image_matrix_p>(data.get_data_ptr());
-    auto t = image->get_range();
-    desc.width = t[0];
-    if (image->get_dims() > 1) {
-      desc.height = t[1];
-      if (image->get_dims() > 2)
-        desc.depth = t[2];
-    }
-    desc.num_levels = 1;
-    desc.channel_order = image->get_channel().get_channel_order();
-    desc.channel_type = image->get_channel().get_channel_type();
-    auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    auto tex =
-        sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
-    // TODO: Need copy the memory to host before using 'ext_oneapi_copy'.
-    q.ext_oneapi_copy(image->to_pitched_data().get_data_ptr(),
-                      mem->get_handle(), desc);
-    q.wait_and_throw();
-    return tex;
+    const auto mem = static_cast<sycl::ext::oneapi::experimental::image_mem *>(
+        data.get_data_ptr());
+    return sycl::ext::oneapi::experimental::create_image(
+        *mem, samp, mem->get_descriptor(), q);
   }
   default:
     throw std::runtime_error(
@@ -906,6 +934,72 @@ create_bindless_image(image_data data, sampling_info info,
   }
   return sycl::ext::oneapi::experimental::sampled_image_handle();
 }
+
+/// TODO: ???
+template <class T, int dimensions> class bindless_image_wrapper {
+public:
+  bindless_image_wrapper() : channelDesc(image_channel::create<T>()) {}
+  void attach(void *data, const image_channel &channel, size_t size = UINT_MAX,
+              sycl::queue &q = get_default_queue()) {
+    auto desc = sycl::ext::oneapi::experimental::image_descriptor(
+        {size}, channel.get_channel_order(), channel.get_channel_type());
+    auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
+        _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
+    img = sycl::ext::oneapi::experimental::create_image(data, 0, samp, desc, q);
+  }
+  void attach(void *data, size_t size = UINT_MAX,
+              sycl::queue &q = get_default_queue()) {
+    attach(data, channelDesc, size, q);
+  }
+  void attach(void *data, const image_channel &channel, size_t width,
+              size_t height, size_t pitch,
+              sycl::queue &q = get_default_queue()) {
+    auto desc = sycl::ext::oneapi::experimental::image_descriptor(
+        {width, height}, channel.get_channel_order(),
+        channel.get_channel_type());
+    auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
+        _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
+    img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp, desc,
+                                                        q);
+  }
+  void attach(void *data, size_t width, size_t height, size_t pitch,
+              sycl::queue &q = get_default_queue()) {
+    attach(data, channelDesc, width, height, pitch, q);
+  }
+  void attach(sycl::ext::oneapi::experimental::image_mem *mem,
+              const image_channel &channel,
+              sycl::queue &q = get_default_queue()) {
+    auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
+        _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
+    img = sycl::ext::oneapi::experimental::create_image(
+        *mem, samp, mem->get_descriptor(), q);
+  }
+  void attach(sycl::ext::oneapi::experimental::image_mem *mem,
+              sycl::queue &q = get_default_queue()) {
+    attach(mem, channelDesc, q);
+  }
+  void detach(sycl::queue &q = get_default_queue()) {
+    destroy_image_handle(img, q);
+  }
+  void set_channel(image_channel channel) { channelDesc = channel; }
+  void set(sycl::addressing_mode addressing_mode) {
+    _addressing_mode = addressing_mode;
+  }
+  void set(sycl::coordinate_normalization_mode addressing_mode) {
+    _coordinate_normalization_mode = addressing_mode;
+  }
+  void set(sycl::filtering_mode filtering_mode) {
+    _filtering_mode = filtering_mode;
+  }
+
+private:
+  image_channel channelDesc;
+  sycl::addressing_mode _addressing_mode = sycl::addressing_mode::clamp_to_edge;
+  sycl::coordinate_normalization_mode _coordinate_normalization_mode =
+      sycl::coordinate_normalization_mode::unnormalized;
+  sycl::filtering_mode _filtering_mode = sycl::filtering_mode::nearest;
+  sycl::ext::oneapi::experimental::sampled_image_handle img;
+};
 #endif
 
 namespace detail {
