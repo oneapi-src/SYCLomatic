@@ -1186,33 +1186,13 @@ int main() {
   cublasDsyrk(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, n, k, &alpha_D, A_D, lda, &beta_D, C_D, ldc);
 
   // cublas<T>syr2k
-  // CHECK: {
-  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
-  // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
-  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2k(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, B_S_buf_ct{{[0-9]+}}, ldb, beta_S, C_S_buf_ct{{[0-9]+}}, ldc));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
-  // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
-  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr2k(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, n, k, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, B_S_buf_ct{{[0-9]+}}, ldb, beta_S, C_S_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2k(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, dpct::get_value(&alpha_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(B_S)), ldb, dpct::get_value(&beta_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(C_S)), ldc));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr2k(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, n, k, dpct::get_value(&alpha_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(B_S)), ldb, dpct::get_value(&beta_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(C_S)), ldc);
   status = cublasSsyr2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_S, A_S, lda, B_S, ldb, &beta_S, C_S, ldc);
   cublasSsyr2k(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, n, k, &alpha_S, A_S, lda, B_S, ldb, &beta_S, C_S, ldc);
 
-  // CHECK: {
-  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
-  // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
-  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2k(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, B_D_buf_ct{{[0-9]+}}, ldb, beta_D, C_D_buf_ct{{[0-9]+}}, ldc));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
-  // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
-  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr2k(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, n, k, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, B_D_buf_ct{{[0-9]+}}, ldb, beta_D, C_D_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2k(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, dpct::get_value(&alpha_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(B_D)), ldb, dpct::get_value(&beta_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_D)), ldc));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr2k(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, n, k, dpct::get_value(&alpha_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(B_D)), ldb, dpct::get_value(&beta_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_D)), ldc);
   status = cublasDsyr2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_D, A_D, lda, B_D, ldb, &beta_D, C_D, ldc);
   cublasDsyr2k(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, n, k, &alpha_D, A_D, lda, B_D, ldb, &beta_D, C_D, ldc);
 
