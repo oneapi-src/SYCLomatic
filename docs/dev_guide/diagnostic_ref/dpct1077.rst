@@ -38,7 +38,7 @@ For example, this original CUDA\* code:
    #include "test.h"
    
    void foo() {
-     int32_t a;
+     int2 a;
      ...
    }
 
@@ -63,7 +63,7 @@ results in the following migrated SYCL code:
    #include "test.h"
    
    void foo() {
-     int32_t a;
+     int2 a;
      ...
    }
 
@@ -84,6 +84,6 @@ which is rewritten to:
    #include "test.h"
    
    void foo() {
-     sycl::int2 a;
+     int32_t a;
      ...
    }

@@ -60,6 +60,7 @@ which is rewritten to:
 
    void foo_dev() {
      ...
+     // Assuming strong memory order restrictions are need here
      sycl::atomic_fence(sycl::memory_order::seq_cst, sycl::memory_scope::device);
      ...
    }

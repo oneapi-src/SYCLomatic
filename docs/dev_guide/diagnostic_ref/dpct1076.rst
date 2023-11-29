@@ -37,10 +37,7 @@ For example, this original CUDA\* code:
    
      ...
    
-     if (condition)
-       cudaDeviceGetAttribute(val, attr, 0);
-     else
-       cudaDeviceGetAttribute(val, attr, 0);
+     cudaDeviceGetAttribute(val, attr, 0);
    }
 
 results in the following migrated SYCL code:
@@ -57,18 +54,11 @@ results in the following migrated SYCL code:
    
      ...
    
-     if (condition)
-       /*
-       DPCT1076:0: The device attribute was not recognized. You may need to adjust
-       the code.
-       */
-       cudaDeviceGetAttribute(val, attr, 0);
-     else
-       /*
-       DPCT1076:1: The device attribute was not recognized. You may need to adjust
-       the code.
-       */
-       cudaDeviceGetAttribute(val, attr, 0);
+     /*
+     DPCT1076:1: The device attribute was not recognized. You may need to adjust
+     the code.
+     */
+     cudaDeviceGetAttribute(val, attr, 0);
    }
 
 which is rewritten to:
