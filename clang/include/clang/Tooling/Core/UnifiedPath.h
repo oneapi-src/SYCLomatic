@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_CLANG_TOOLING_CORE_DPCTPATH_H
-#define LLVM_CLANG_TOOLING_CORE_DPCTPATH_H
+#ifndef LLVM_CLANG_TOOLING_CORE_UNIFIEDPATH_H
+#define LLVM_CLANG_TOOLING_CORE_UNIFIEDPATH_H
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
@@ -77,4 +77,4 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS,
                               const clang::tooling::UnifiedPath &RHS);
 } // namespace llvm
 
-#endif // LLVM_CLANG_TOOLING_CORE_DPCTPATH_H
+#endif // LLVM_CLANG_TOOLING_CORE_UNIFIEDPATH_H
