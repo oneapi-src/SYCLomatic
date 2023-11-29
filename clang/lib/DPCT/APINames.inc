@@ -357,6 +357,10 @@ ENTRY(cudaGetSurfaceReference, cudaGetSurfaceReference, false, NO_FLAG, P4, "com
 
 // low level texture object management functions of runtime API
 ENTRY(cudaCreateChannelDesc, cudaCreateChannelDesc, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaCreateChannelDescHalf, cudaCreateChannelDescHalf, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaCreateChannelDescHalf1, cudaCreateChannelDescHalf1, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaCreateChannelDescHalf2, cudaCreateChannelDescHalf2, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaCreateChannelDescHalf4, cudaCreateChannelDescHalf4, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaCreateTextureObject, cudaCreateTextureObject, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaDestroyTextureObject, cudaDestroyTextureObject, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaGetChannelDesc, cudaGetChannelDesc, true, NO_FLAG, P0, "Successful")

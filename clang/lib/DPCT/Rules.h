@@ -85,20 +85,38 @@ public:
     std::string In;
     std::string Out;
     RuleMatchMode MatchMode;
+    std::string RuleId;
     std::map<std::string, PatternRewriter> Subrules;
     PatternRewriter(){};
 
-    PatternRewriter(
-        const std::string &I, const std::string &O,
-        const std::map<std::string, PatternRewriter> &S,
-        RuleMatchMode MatchMode)
-        : In(I), Out(O), MatchMode(MatchMode) {
-      Subrules = std::move(S);
+    PatternRewriter &operator=(const PatternRewriter &PR) {
+
+      RuleId = PR.RuleId;
+      In = PR.In;
+      Out = PR.Out;
+      MatchMode = PR.MatchMode;
+      Subrules = PR.Subrules;
+
+      return *this;
     }
+
+    PatternRewriter(const PatternRewriter &PR) {
+      RuleId = PR.RuleId;
+      In = PR.In;
+      Out = PR.Out;
+      MatchMode = PR.MatchMode;
+
+      Subrules = PR.Subrules;
+    }
+
+    PatternRewriter(const std::string &I, const std::string &O,
+                    const std::map<std::string, PatternRewriter> &S,
+                    RuleMatchMode MatchMode, std::string RuleId)
+        : In(I), Out(O), MatchMode(MatchMode), RuleId(RuleId), Subrules(S) {}
   };
 
-  static std::vector<std::string> RuleFiles;
-  std::string RuleFile;
+  static std::vector<clang::tooling::UnifiedPath> RuleFiles;
+  clang::tooling::UnifiedPath RuleFile;
   std::string RuleId;
   RulePriority Priority;
   RuleMatchMode MatchMode;
@@ -117,7 +135,7 @@ public:
       : Priority(RulePriority::Default), MatchMode(RuleMatchMode::Partial), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind, RuleMatchMode MatchMode)
       : RuleId(id), Priority(priority), MatchMode(MatchMode), Kind(kind) {}
-  static void setRuleFiles(std::string File) { RuleFiles.push_back(File); }
+  static void setRuleFiles(clang::tooling::UnifiedPath File) { RuleFiles.push_back(File); }
 };
 
 template <>
@@ -302,7 +320,7 @@ public:
     TemplateArg
   };
   std::string RuleName;
-  std::string RuleFile;
+  clang::tooling::UnifiedPath RuleFile;
   Kind Kind;
   size_t ArgIndex;
   std::string Str;
@@ -319,6 +337,6 @@ private:
   void consumeLParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
 };
 
-void importRules(llvm::cl::list<std::string> &RuleFiles);
+void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
 
 #endif // DPCT_RULES_H
