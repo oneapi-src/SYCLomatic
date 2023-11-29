@@ -1,0 +1,24 @@
+.. _DPCT1067:
+
+DPCT1067
+========
+
+Message
+-------
+
+.. _msg-1067-start:
+
+The *<parameter name>* parameter could not be migrated. You may need to update
+the code manually.
+
+.. _msg-1067-end:
+
+Detailed Help
+-------------
+
+|ccl_long| (|ccl|) currently does not support average reduction operation.
+
+Suggestions to Fix
+------------------
+
+Rewrite the code manually.

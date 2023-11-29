@@ -1,0 +1,85 @@
+.. _DPCT1118:
+
+DPCT1118
+========
+
+Message
+-------
+
+.. _msg-1118-start:
+
+SYCL group functions and algorithms must be encountered in converged control flow.
+
+.. _msg-1118-end:
+
+Detailed Help
+-------------
+
+SYCL\* group functions and algorithms must be encountered in converged control
+flow for all work-items in a work-group. If a work-item completes the kernel and
+exits early without reaching a collective work-group operation like ``barrier``,
+all the other work-items in the work-group reaching the collective operation will
+wait for the exited work-item.
+
+Refer to :ref:`faq-hang-wg-synch` for additional information.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel(float *data) {
+     int tid = threadIdx.x;
+     if (tid < 32) {
+       if (data[tid] < data[tid + 32]) {
+         data[tid] = data[tid + 32];
+       }
+       __syncthreads();
+       ...
+     }
+   }
+
+
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(float *data, const sycl::nd_item<3> &item_ct1) {
+     int tid = item_ct1.get_local_id(2);
+     if (tid < 32) {
+       if (data[tid] < data[tid + 32]) {
+         data[tid] = data[tid + 32];
+       }
+       /*
+       DPCT1118:0: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+       */
+       /*
+       DPCT1065:1: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+       */
+       item_ct1.barrier();
+     }
+   }
+
+
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(float *data, const sycl::nd_item<3> &item_ct1) {
+     int tid = item_ct1.get_local_id(2);
+
+     if (tid < 32) {
+       if (data[tid] < data[tid + 32]) {
+         data[tid] = data[tid + 32];
+       }
+     }
+     item_ct1.barrier();
+     ...
+   }

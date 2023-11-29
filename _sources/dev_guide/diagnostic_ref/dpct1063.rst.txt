@@ -1,0 +1,57 @@
+.. _DPCT1063:
+
+DPCT1063
+========
+
+Message
+-------
+
+.. _msg-1063-start:
+
+Advice parameter is device-defined *<additional action>*. You may need to adjust it.
+
+.. _msg-1063-end:
+
+Detailed Help
+-------------
+
+The advice value is device-defined advice for the specified memory allocation. A
+value of 0 reverts the advice to the default behavior. Replace the value with
+the one required by your device.
+
+Suggestions to Fix
+------------------
+
+Consult with your hardware vendor to find a replacement.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(int *devPtr, int device, size_t count) {
+     cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(int *devPtr, int device, size_t count) {
+     /*
+     DPCT1063:0: Advice parameter is device-defined and was set to 0. You may need
+     to adjust it.
+     */
+     dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(int *devPtr, int device, size_t count) {
+     dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0);
+   }
+
