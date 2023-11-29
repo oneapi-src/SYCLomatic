@@ -332,10 +332,6 @@ template <typename T> struct csrsv_impl {
                   std::shared_ptr<optimize_info> optimize_info, const void *x,
                   void *y) {
     using Ty = typename dpct::DataType<T>::T2;
-    if (info->get_matrix_type() != matrix_info::matrix_type::tr)
-      throw std::runtime_error(
-          "dpct::sparse::csrsv_impl()(): oneapi::mkl::sparse::trsv "
-          "only accept triangular matrix.");
     auto alpha_value =
         dpct::detail::get_value(static_cast<const Ty *>(alpha), queue);
     Ty *new_x_ptr = nullptr;
