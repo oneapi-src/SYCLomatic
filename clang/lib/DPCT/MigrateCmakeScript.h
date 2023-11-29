@@ -22,16 +22,6 @@ void collectCmakeScriptsSpecified(
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot);
 
-void doCmakeScriptMigration(const clang::tooling::UnifiedPath & InRoot, const clang::tooling::UnifiedPath & OutRoot);
-
+void doCmakeScriptMigration(const clang::tooling::UnifiedPath &  InRoot, const clang::tooling::UnifiedPath &  OutRoot);
 bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
-
-void parseVariable(const std::string &Input,
-                   std::map<std::string, std::string> &VariablesMap);
-
-void cmakeSyntaxProcessed(
-    std::string &Input, const std::map<std::string, std::string> &VariablesMap);
-
-std::string convertCmakeCommandsToLower(const std::string &InputString);
-
 #endif

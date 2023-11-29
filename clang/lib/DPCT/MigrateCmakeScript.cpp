@@ -116,6 +116,12 @@ const std::unordered_map<std::string /*command*/, bool /*need lower*/>
 
 
 std::vector<std::string /*cmake scrile file path*/> CmakeScriptFilesSet;
+std::map<std::string /*outfile path*/, std::string /*content*/>
+    CmakeScriptFileBufferMap;
+std::map<std::string /*file name*/, bool /*is crlf*/> ScriptFileCRLFMap;
+std::map<std::string /*variable name*/, std::string /*value*/> VariablesMap;
+
+void cmakeSyntaxProcessed(std::string &Input);
 
 static std::string readFile(const clang::tooling::UnifiedPath &Name) {
   std::ifstream Stream(Name.getCanonicalPath().str(),
@@ -226,61 +232,8 @@ void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot, const clang:
   }
 }
 
-// apply patter rewrite rules to migrate cmake script file
-static void
-applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
-                                      llvm::raw_os_ostream &Stream) {
-
-#if 1 // used to debug
-  printf("\n#### applyPatternRewriterToCmakeScriptFile ###\n");
-  for (const auto &PR : MapNames::PatternRewriters) {
-    printf("PR.MatchMode: [%d]\n", PR.MatchMode);
-    printf("PR.In: [%s]\n", PR.In.c_str());
-    printf("PR.Out: [%s]\n", PR.Out.c_str());
-    printf("PR.RuleId: [%s]\n", PR.RuleId.c_str());
-
-    for (auto &SubPR : PR.Subrules) {
-      printf("\tSubPR.first: [%s]\n", SubPR.first.c_str());
-      printf("\tSubPR.second.RuleId: [%s]\n", SubPR.second.RuleId.c_str());
-      printf("\tSubPR.second.MatchMode: [%d]\n", SubPR.second.MatchMode);
-      printf("\tSubPR.second.In: [%s]\n", SubPR.second.In.c_str());
-      printf("\tSubPR.second.Out: [%s]\n", SubPR.second.Out.c_str());
-    }
-    printf("\n");
-  }
-  printf("#### applyPatternRewriterToCmakeScriptFile ###\n");
-#endif
-
-  std::string LineEndingString;
-  // pattern_rewriter require the input file to be LF
-  bool IsCRLF = fixLineEndings(InputString, LineEndingString);
-
-  // Convert cmake command to lower case in cmake script files
-  LineEndingString = convertCmakeCommandsToLower(LineEndingString);
-
-  std::map<std::string, std::string> VariablesMap;
-  parseVariable(LineEndingString, VariablesMap);
-  cmakeSyntaxProcessed(LineEndingString, VariablesMap);
-
-  for (const auto &PR : MapNames::PatternRewriters) {
-    LineEndingString = applyPatternRewriter(PR, LineEndingString);
-  }
-  // Restore line ending for the formator
-  if (IsCRLF) {
-    std::stringstream ResultStream;
-    std::vector<std::string> SplitedStr = split(LineEndingString, '\n');
-    for (auto &SS : SplitedStr) {
-      ResultStream << SS << "\r\n";
-    }
-    Stream << llvm::StringRef(ResultStream.str().c_str());
-  } else {
-    Stream << llvm::StringRef(LineEndingString.c_str());
-  }
-}
-
-bool migrateCmakeScriptFile(const clang::tooling::UnifiedPath &InRoot,
-                            const clang::tooling::UnifiedPath &OutRoot,
-                            const clang::tooling::UnifiedPath &InFileName) {
+bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot, const clang::tooling::UnifiedPath OutRoot,
+                              clang::tooling::UnifiedPath InFileName) {
   clang::tooling::UnifiedPath OutFileName(InFileName);
   if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
     return false;
@@ -293,19 +246,8 @@ bool migrateCmakeScriptFile(const clang::tooling::UnifiedPath &InRoot,
                          " fail: " + EC.message() + "\n";
     PrintMsg(ErrMsg);
   }
-  std::ofstream Out(OutFileName.getCanonicalPath().str(), std::ios::binary);
-  if (Out.fail()) {
-    std::string ErrMsg =
-        "[ERROR] Create file : " + OutFileName.getCanonicalPath().str() +
-        " failure!\n";
-    PrintMsg(ErrMsg);
-  }
 
-  llvm::raw_os_ostream Stream(Out);
-  applyPatternRewriterToCmakeScriptFile(readFile(InFileName), Stream);
-
-  Stream.flush();
-  Out.close();
+  CmakeScriptFileBufferMap[OutFileName] = readFile(InFileName);
   return true;
 }
 
@@ -340,13 +282,6 @@ void collectCmakeScriptsSpecified(
   }
 }
 
-void doCmakeScriptMigration(StringRef InRoot, StringRef OutRoot) {
-  for (const auto &ScriptFile : CmakeScriptFilesSet) {
-    if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
-      continue;
-  }
-}
-
 static size_t skipWhileSpaces(const std::string Input, size_t Index) {
   size_t Size = Input.size();
   for (; Index < Size && isWhitespace(Input[Index]); Index++) {
@@ -370,8 +305,42 @@ static size_t gotoEndOfCmakeCommandStmt(const std::string Input, size_t Index) {
   return Index;
 }
 
-void parseVariable(const std::string &Input,
-                   std::map<std::string, std::string> &VariablesMap) {
+static std::vector<std::string> split(const std::string &Input,
+                                      const std::string &Delimiter) {
+  std::vector<std::string> Vec;
+  if (!Input.empty()) {
+
+    size_t Index = 0;
+    size_t Pos = Input.find(Delimiter, Index);
+    while (Index < Input.size() && Pos != std::string::npos) {
+      Vec.push_back(Input.substr(Index, Pos - Index));
+
+      Index = Pos + Delimiter.size();
+      Pos = Input.find(Delimiter, Index);
+    }
+    // Append the remaining part
+    Vec.push_back(Input.substr(Index));
+  }
+  return Vec;
+}
+
+std::string getVarName(const std::string &Variable) {
+  std::string Value;
+  if (Variable[0] == '$' && Variable[1] == '{') {
+    auto Name = Variable.substr(2, Variable.size() - 3);
+
+    auto Iter = VariablesMap.find(Name);
+    if (VariablesMap.find(Name) != VariablesMap.end()) {
+      Value = Iter->second;
+    }
+  } else {
+    Value = Variable;
+  }
+
+  return Value;
+}
+
+static void parseVariable(const std::string &Input) {
 
   const int Size = Input.size();
   int Index = 0;
@@ -443,42 +412,6 @@ void parseVariable(const std::string &Input,
   }
 }
 
-static std::vector<std::string> split(const std::string &Input,
-                                      const std::string &Delimiter) {
-  std::vector<std::string> Vec;
-  if (!Input.empty()) {
-
-    size_t Index = 0;
-    size_t Pos = Input.find(Delimiter, Index);
-    while (Index < Input.size() && Pos != std::string::npos) {
-      Vec.push_back(Input.substr(Index, Pos - Index));
-
-      Index = Pos + Delimiter.size();
-      Pos = Input.find(Delimiter, Index);
-    }
-    // Append the remaining part
-    Vec.push_back(Input.substr(Index));
-  }
-  return Vec;
-}
-
-std::string getVarName(const std::string &Variable,
-                       const std::map<std::string, std::string> &VariablesMap) {
-  std::string Value;
-  if (Variable[0] == '$' && Variable[1] == '{') {
-    auto Name = Variable.substr(2, Variable.size() - 3);
-
-    auto Iter = VariablesMap.find(Name);
-    if (VariablesMap.find(Name) != VariablesMap.end()) {
-      Value = Iter->second;
-    }
-  } else {
-    Value = Variable;
-  }
-
-  return Value;
-}
-
 static std::string processArgOfCmakeVersionRequired(
     const std::string &Arg,
     const std::map<std::string, std::string> &VariablesMap) {
@@ -487,8 +420,8 @@ static std::string processArgOfCmakeVersionRequired(
   if (Pos != std::string::npos) {
     const auto StrArray = split(Arg, "...");
 
-    std::string MinVer = getVarName(StrArray[0], VariablesMap);
-    std::string MaxVer = getVarName(StrArray[1], VariablesMap);
+    std::string MinVer = getVarName(StrArray[0]);
+    std::string MaxVer = getVarName(StrArray[1]);
 
     if (std::atof(MinVer.c_str()) >= 3.24) {
       ReplArg = MinVer + "..." + MaxVer;
@@ -500,7 +433,7 @@ static std::string processArgOfCmakeVersionRequired(
     }
 
   } else {
-    std::string Ver = getVarName(Arg, VariablesMap);
+    std::string Ver = getVarName(Arg);
     if (std::atof(Ver.c_str()) < 3.24) {
       ReplArg = "3.24";
     } else {
@@ -519,18 +452,51 @@ int skipCmakeComments(const std::string &Input, int Index) {
   return Index;
 }
 
-void cmakeSyntaxProcessed(
-    std::string &Input,
-    const std::map<std::string, std::string> &VariablesMap) {
+void processCmakeMinimumRequired(std::string &Input, size_t &Size,
+                                 size_t &Index) {
+  std::string VarName;
+  std::string Value;
+  size_t Begin, End;
 
-  int Size = Input.size();
-  int Index = 0;
+  // Get the begin of firt argument of cmake_minimum_required
+  Index = skipWhileSpaces(Input, Index);
+  Begin = Index;
+
+  // Get the end of the first argument of cmake_minimum_required
+  Index = gotoEndOfCmakeWord(Input, Index, ')');
+  End = Index;
+
+  // Get the name of the first argument
+  VarName = Input.substr(Begin, End - Begin);
+
+  // Get the begin of the second argument
+  Index = skipWhileSpaces(Input, End + 1);
+  Begin = Index;
+
+  // Get the end of the second argument
+  Index = gotoEndOfCmakeWord(Input, Begin + 1, ')');
+  End = Index;
+
+  // Get the name of the second argument
+  Value = Input.substr(Begin, End - Begin);
+
+  std::string ReplStr = processArgOfCmakeVersionRequired(Value, VariablesMap);
+
+  Input.replace(Begin, End - Begin, ReplStr);
+  Size = Input.size();            // Update string size
+  Index = Begin + ReplStr.size(); // Update index
+}
+
+void applyImplicitMigrationRules(std::string &Input) {
+
+  size_t Size = Input.size();
+  size_t Index = 0;
   while (Index < Size) {
 
     // Skip comments
     skipCmakeComments(Input, Index);
 
-    int Begin, End;
+    size_t Begin, End;
     // Go the begin of cmake command
     Index = skipWhileSpaces(Input, Index);
     Begin = Index;
@@ -546,7 +512,7 @@ void cmakeSyntaxProcessed(
       std::string Command = Input.substr(Begin, End - Begin);
 
       if (Command == "cmake_minimum_required") {
-
+#if 0
         std::string VarName;
         std::string Value;
 
@@ -578,6 +544,9 @@ void cmakeSyntaxProcessed(
         Input.replace(Begin, End - Begin, ReplStr);
         Size = Input.size();            // Update string size
         Index = Begin + ReplStr.size(); // update index
+#else
+        processCmakeMinimumRequired(Input, Size, Index);
+#endif
       }
 
       // Go the ')' of cmake command
@@ -588,7 +557,7 @@ void cmakeSyntaxProcessed(
   }
 }
 
-std::string convertCmakeCommandsToLower(const std::string &InputString) {
+static std::string convertCmakeCommandsToLower(const std::string &InputString) {
   std::stringstream OutputStream;
 
   const auto Lines = split(InputString, '\n');
@@ -621,4 +590,113 @@ std::string convertCmakeCommandsToLower(const std::string &InputString) {
   }
 
   return OutputStream.str();
+}
+
+static void doCmakeScriptAnalysis() {
+
+  for (auto &Entry : CmakeScriptFileBufferMap) {
+    auto &Buffer = Entry.second;
+
+    // Collect varible name and its value
+    parseVariable(Buffer);
+  }
+}
+
+static void unifyInputFileFormat() {
+  for (auto &Entry : CmakeScriptFileBufferMap) {
+    auto &Buffer = Entry.second;
+
+    // Convert input file to be LF
+    bool IsCRLF = fixLineEndings(Buffer, Buffer);
+    ScriptFileCRLFMap[Entry.first] = IsCRLF;
+
+    // Convert cmake command to lower case in cmake script files
+    Buffer = convertCmakeCommandsToLower(Buffer);
+  }
+}
+
+static void applyCmakeMigrationRules() {
+  for (auto &Entry : CmakeScriptFileBufferMap) {
+    auto &Buffer = Entry.second;
+
+    // Apply implicit migration rules
+    applyImplicitMigrationRules(Buffer);
+
+    // Apply user define migration rules
+    for (const auto &PR : MapNames::PatternRewriters) {
+      if (PR.RuleId.find("cmake_minimum_required") != std::string::npos) {
+        llvm::outs() << "Migration for cmake_minimum_required has been "
+                        "implemented as implicit rule, so migration rule \'"
+                     << PR.RuleId << "\' is skipped.\n ";
+        continue;
+      }
+
+#if 1 // used to debug
+      printf("\n#### applyPatternRewriterToCmakeScriptFile ###\n");
+      for (const auto &PR : MapNames::PatternRewriters) {
+        printf("PR.MatchMode: [%d]\n", PR.MatchMode);
+        printf("PR.In: [%s]\n", PR.In.c_str());
+        printf("PR.Out: [%s]\n", PR.Out.c_str());
+        printf("PR.RuleId: [%s]\n", PR.RuleId.c_str());
+
+        for (auto &SubPR : PR.Subrules) {
+          printf("\tSubPR.first: [%s]\n", SubPR.first.c_str());
+          printf("\tSubPR.second.RuleId: [%s]\n", SubPR.second.RuleId.c_str());
+          printf("\tSubPR.second.MatchMode: [%d]\n", SubPR.second.MatchMode);
+          printf("\tSubPR.second.In: [%s]\n", SubPR.second.In.c_str());
+          printf("\tSubPR.second.Out: [%s]\n", SubPR.second.Out.c_str());
+        }
+        printf("\n");
+      }
+      printf("#### applyPatternRewriterToCmakeScriptFile ###\n");
+#endif
+
+      Buffer = applyPatternRewriter(PR, Buffer);
+    }
+  }
+}
+
+static void loadBufferFromFile(StringRef InRoot, StringRef OutRoot) {
+  for (const auto &ScriptFile : CmakeScriptFilesSet) {
+    if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile))
+      continue;
+  }
+}
+
+static void storeBufferToFile() {
+  for (auto &Entry : CmakeScriptFileBufferMap) {
+    auto &FileName = Entry.first;
+    auto &Buffer = Entry.second;
+    std::ofstream Out(FileName, std::ios::binary);
+    if (Out.fail()) {
+      std::string ErrMsg =
+          "[ERROR] Create file : " + std::string(FileName.c_str()) +
+          " failure!\n";
+      PrintMsg(ErrMsg);
+    }
+
+    llvm::raw_os_ostream Stream(Out);
+
+    // Restore original endline format
+    auto IsCRLF = ScriptFileCRLFMap[FileName];
+    if (IsCRLF) {
+      std::stringstream ResultStream;
+      std::vector<std::string> SplitedStr = split(Buffer, '\n');
+      for (auto &SS : SplitedStr) {
+        ResultStream << SS << "\r\n";
+      }
+      Stream << llvm::StringRef(ResultStream.str().c_str());
+    } else {
+      Stream << llvm::StringRef(Buffer.c_str());
+    }
+    Stream.flush();
+  }
+}
+
+void doCmakeScriptMigration(StringRef InRoot, StringRef OutRoot) {
+  loadBufferFromFile(InRoot, OutRoot);
+  unifyInputFileFormat();
+  doCmakeScriptAnalysis();
+  applyCmakeMigrationRules();
+  storeBufferToFile();
 }
