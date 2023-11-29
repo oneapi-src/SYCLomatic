@@ -15,7 +15,7 @@
 #include "llvm/Support/YAMLTraits.h"
 #include "NCCLAPIMigration.h"
 
-std::vector<std::string> MetaRuleObject::RuleFiles;
+std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
 template <class Functor>
@@ -229,12 +229,11 @@ void registerPatternRewriterRule(MetaRuleObject &R) {
       MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId));
 }
 
-void importRules(llvm::cl::list<std::string> &RuleFiles) {
+void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
-    makeCanonical(RuleFile);
     // open the yaml file
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
-        llvm::MemoryBuffer::getFile(RuleFile);
+        llvm::MemoryBuffer::getFile(RuleFile.getCanonicalPath());
     if (!Buffer) {
       llvm::errs() << "Error: failed to read " << RuleFile << ": "
                    << Buffer.getError().message() << "\n";
