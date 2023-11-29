@@ -23,6 +23,24 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                                           "image_channel::create<" +
                                           MapNames::getClNamespace() +
                                           "half>"))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ENTRY_RENAMED("cudaCreateChannelDescHalf1",
+                                      MapNames::getDpctNamespace() +
+                                          "image_channel::create<" +
+                                          MapNames::getClNamespace() +
+                                          "half>"))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ENTRY_RENAMED("cudaCreateChannelDescHalf2",
+                                      MapNames::getDpctNamespace() +
+                                          "image_channel::create<" +
+                                          MapNames::getClNamespace() +
+                                          "half2>"))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ENTRY_RENAMED("cudaCreateChannelDescHalf4",
+                                      MapNames::getDpctNamespace() +
+                                          "image_channel::create<" +
+                                          MapNames::getClNamespace() +
+                                          "half4>"))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
