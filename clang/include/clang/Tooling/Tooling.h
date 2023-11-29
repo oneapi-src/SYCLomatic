@@ -35,6 +35,9 @@
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Frontend/PCHContainerOperations.h"
 #include "clang/Tooling/ArgumentsAdjusters.h"
+#ifdef SYCLomatic_CUSTOMIZATION
+#include "clang/Tooling/Core/UnifiedPath.h"
+#endif // SYCLomatic_CUSTOMIZATION
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
 #include "llvm/ADT/StringMap.h"
@@ -62,20 +65,19 @@ void SetSDKIncludePath(const std::string &Path);
 void SetDiagnosticOutput(llvm::raw_ostream &OStream);
 void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB);
 void SetCompileTargetsMap(
-    std::vector<std::pair<std::string, std::vector<std::string>>>
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
         &CompileTargetsMap);
 void SetFileProcessHandle(StringRef InRoot, StringRef OutRoot,
                           FileProcessType FileProcessHandle);
-void SetReProcessFile(std::set<std::string> &ReProcessFile);
-std::set<std::string> GetReProcessFile();
+void SetReProcessFile(std::set<clang::tooling::UnifiedPath> &ReProcessFile);
+std::set<clang::tooling::UnifiedPath> GetReProcessFile();
 void SetGetRunRound(std::function<unsigned int()> Func);
 unsigned int DoGetRunRound();
-void SetModuleFiles(std::set<std::string> &MF);
+void SetModuleFiles(std::set<clang::tooling::UnifiedPath> &MF);
 std::string getRealFilePath(std::string File, clang::FileManager *FM);
 void SetColorOptionPtr(unsigned int &ColorOption);
 void SetColorOptionValue(unsigned int ColorOption);
-void SetIsExcludePathHandler(
-    std::function<bool(const std::string &, bool)> Func);
+void SetIsExcludePathHandler(std::function<bool(const UnifiedPath &)> Func);
 bool isExcludePath(const std::string &Path, bool IsRelative);
 } // namespace tooling
 } // namespace clang
