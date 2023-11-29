@@ -10,21 +10,26 @@
 #define DPCT_MIGRATE_CMAKE_SCRIPT_H
 
 #include "clang/Tooling/CommonOptionsParser.h"
-#include "llvm/ADT/StringRef.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 
 #include <map>
 
-std::string getCmakeBuildPathFromInRoot(llvm::StringRef InRoot,
-                                        llvm::StringRef OutRoot);
-void collectCmakeScripts(llvm::StringRef InRoot, llvm::StringRef OutRoot,
-                         std::vector<std::string> &CmakeScriptFiles);
-bool migrateCmakeScriptFile(llvm::StringRef InRoot, llvm::StringRef OutRoot,
-                            std::string InFileName);
+clang::tooling::UnifiedPath
+getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
+                            const clang::tooling::UnifiedPath &OutRoot);
+void collectCmakeScripts(
+    const clang::tooling::UnifiedPath &InRoot,
+    const clang::tooling::UnifiedPath &OutRoot,
+    std::vector<clang::tooling::UnifiedPath> &CmakeScriptFiles);
+bool migrateCmakeScriptFile(const clang::tooling::UnifiedPath &InRoot,
+                            const clang::tooling::UnifiedPath &OutRoot,
+                            const clang::tooling::UnifiedPath &InFileName);
 bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
 
 void migrateCmakeScriptOnly(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
-    llvm::StringRef InRoot, llvm::StringRef OutRoot);
+    const clang::tooling::UnifiedPath &InRoot,
+    const clang::tooling::UnifiedPath &OutRoot);
 
 void parseVariable(const std::string &Input,
                    std::map<std::string, std::string> &VariablesMap);

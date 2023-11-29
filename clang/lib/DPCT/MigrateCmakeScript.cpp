@@ -114,34 +114,39 @@ const std::unordered_map<std::string /*command*/, bool /*need lower*/>
 
 };
 
-static std::string readFile(const std::string &Name) {
-  std::ifstream Stream(Name, std::ios::in | std::ios::binary);
+static std::string readFile(const clang::tooling::UnifiedPath &Name) {
+  std::ifstream Stream(Name.getCanonicalPath().str(),
+                       std::ios::in | std::ios::binary);
   std::string Contents((std::istreambuf_iterator<char>(Stream)),
                        (std::istreambuf_iterator<char>()));
   return Contents;
 }
 
-std::string getCmakeBuildPathFromInRoot(StringRef InRoot, StringRef OutRoot) {
+clang::tooling::UnifiedPath
+getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
+                            const clang::tooling::UnifiedPath &OutRoot) {
   std::error_code EC;
 
-  std::string CmakeBuildDirectory;
-  for (fs::recursive_directory_iterator Iter(Twine(InRoot), EC), End;
+  clang::tooling::UnifiedPath CmakeBuildDirectory;
+  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
+       End;
        Iter != End; Iter.increment(EC)) {
     if ((bool)EC) {
-      std::string ErrMsg = "[ERROR] Access : " + std::string(InRoot.str()) +
-                           " fail: " + EC.message() + "\n";
+      std::string ErrMsg =
+          "[ERROR] Access : " + std::string(InRoot.getCanonicalPath()) +
+          " fail: " + EC.message() + "\n";
       PrintMsg(ErrMsg);
     }
 
-    auto FilePath = Iter->path();
+    clang::tooling::UnifiedPath FilePath(Iter->path());
 
     // Skip output directory if it is in the in-root directory.
-    if (isChildOrSamePath(OutRoot.str(), FilePath))
+    if (isChildOrSamePath(OutRoot, FilePath))
       continue;
 
     bool IsHidden = false;
-    for (path::const_iterator PI = path::begin(FilePath),
-                              PE = path::end(FilePath);
+    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPath()),
+                              PE = path::end(FilePath.getCanonicalPath());
          PI != PE; ++PI) {
       StringRef Comp = *PI;
       if (Comp.startswith(".")) {
@@ -155,11 +160,11 @@ std::string getCmakeBuildPathFromInRoot(StringRef InRoot, StringRef OutRoot) {
     }
 
     if (Iter->type() == fs::file_type::directory_file) {
-      const auto Path = Iter->path();
-      SmallString<512> OutDirectory = llvm::StringRef(Path);
-      if (fs::exists(OutDirectory + "/CMakeFiles") &&
-          fs::exists(OutDirectory + "/CMakeCache.txt")) {
-        CmakeBuildDirectory = OutDirectory.str().str();
+      const clang::tooling::UnifiedPath Path = Iter->path();
+      if (fs::exists(appendPath(Path.getCanonicalPath().str(), "CMakeFiles")) &&
+          fs::exists(
+              appendPath(Path.getCanonicalPath().str(), "CMakeCache.txt"))) {
+        CmakeBuildDirectory = Path;
         break;
       }
     }
@@ -167,34 +172,38 @@ std::string getCmakeBuildPathFromInRoot(StringRef InRoot, StringRef OutRoot) {
   return CmakeBuildDirectory;
 }
 
-void collectCmakeScripts(StringRef InRoot, StringRef OutRoot,
-                         std::vector<std::string> &CmakeScriptFiles) {
+void collectCmakeScripts(
+    const clang::tooling::UnifiedPath &InRoot,
+    const clang::tooling::UnifiedPath &OutRoot,
+    std::vector<clang::tooling::UnifiedPath> &CmakeScriptFiles) {
   std::error_code EC;
 
-  std::string CmakeBuildDirectory =
+  clang::tooling::UnifiedPath CmakeBuildDirectory =
       getCmakeBuildPathFromInRoot(InRoot, OutRoot);
-  for (fs::recursive_directory_iterator Iter(Twine(InRoot), EC), End;
+  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
+       End;
        Iter != End; Iter.increment(EC)) {
     if ((bool)EC) {
-      std::string ErrMsg = "[ERROR] Access : " + std::string(InRoot.str()) +
-                           " fail: " + EC.message() + "\n";
+      std::string ErrMsg =
+          "[ERROR] Access : " + std::string(InRoot.getCanonicalPath()) +
+          " fail: " + EC.message() + "\n";
       PrintMsg(ErrMsg);
     }
 
-    auto FilePath = Iter->path();
+    clang::tooling::UnifiedPath FilePath(Iter->path());
 
     // Skip output directory if it is in the in-root directory.
-    if (isChildOrSamePath(OutRoot.str(), FilePath))
+    if (isChildOrSamePath(OutRoot, FilePath))
       continue;
 
     // Skip cmake build directory if it is in the in-root directory.
-    if (!CmakeBuildDirectory.empty() &&
+    if (!CmakeBuildDirectory.getPath().empty() &&
         isChildOrSamePath(CmakeBuildDirectory, FilePath))
       continue;
 
     bool IsHidden = false;
-    for (path::const_iterator PI = path::begin(FilePath),
-                              PE = path::end(FilePath);
+    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPath()),
+                              PE = path::end(FilePath.getCanonicalPath());
          PI != PE; ++PI) {
       StringRef Comp = *PI;
       if (Comp.startswith(".")) {
@@ -208,11 +217,10 @@ void collectCmakeScripts(StringRef InRoot, StringRef OutRoot,
     }
 
     if (Iter->type() == fs::file_type::regular_file) {
-      SmallString<512> OutputFile = llvm::StringRef(FilePath);
-
-      llvm::StringRef Name = llvm::sys::path::filename(FilePath);
+      llvm::StringRef Name =
+          llvm::sys::path::filename(FilePath.getCanonicalPath());
       if (Name == "CMakeLists.txt" || Name.ends_with(".cmake")) {
-        CmakeScriptFiles.push_back(OutputFile.str().str());
+        CmakeScriptFiles.push_back(FilePath);
       }
     }
   }
@@ -249,26 +257,25 @@ applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
   }
 }
 
-bool migrateCmakeScriptFile(StringRef InRoot, StringRef OutRoot,
-                            std::string InFileName) {
-  makeCanonical(InFileName);
-  SmallString<512> OutFileName = llvm::StringRef(InFileName);
+bool migrateCmakeScriptFile(const clang::tooling::UnifiedPath &InRoot,
+                            const clang::tooling::UnifiedPath &OutRoot,
+                            const clang::tooling::UnifiedPath &InFileName) {
+  clang::tooling::UnifiedPath OutFileName(InFileName);
   if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
     return false;
   }
-  auto Parent = path::parent_path(OutFileName);
+  auto Parent = path::parent_path(OutFileName.getCanonicalPath());
   std::error_code EC;
   EC = fs::create_directories(Parent);
   if ((bool)EC) {
-    std::string ErrMsg =
-        "[ERROR] Create Directory : " + std::string(Parent.str()) +
-        " fail: " + EC.message() + "\n";
+    std::string ErrMsg = "[ERROR] Create Directory : " + Parent.str() +
+                         " fail: " + EC.message() + "\n";
     PrintMsg(ErrMsg);
   }
-  std::ofstream Out(OutFileName.c_str(), std::ios::binary);
+  std::ofstream Out(OutFileName.getCanonicalPath().str(), std::ios::binary);
   if (Out.fail()) {
     std::string ErrMsg =
-        "[ERROR] Create file : " + std::string(OutFileName.c_str()) +
+        "[ERROR] Create file : " + OutFileName.getCanonicalPath().str() +
         " failure!\n";
     PrintMsg(ErrMsg);
   }
@@ -295,13 +302,13 @@ bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles) {
 
 void migrateCmakeScriptOnly(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
-    StringRef InRoot, StringRef OutRoot) {
-
+    const clang::tooling::UnifiedPath &InRoot,
+    const clang::tooling::UnifiedPath &OutRoot) {
   auto CmakeScriptLists = OptParser->getSourcePathList();
   if (!CmakeScriptLists.empty()) {
     for (auto FilePath : CmakeScriptLists) {
       if (fs::is_directory(FilePath)) {
-        std::vector<std::string> CmakeScriptFiles;
+        std::vector<clang::tooling::UnifiedPath> CmakeScriptFiles;
         collectCmakeScripts(FilePath, OutRoot, CmakeScriptFiles);
         for (const auto &ScriptFile : CmakeScriptFiles) {
           if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
@@ -313,7 +320,7 @@ void migrateCmakeScriptOnly(
       }
     }
   } else {
-    std::vector<std::string> CmakeScriptFiles;
+    std::vector<clang::tooling::UnifiedPath> CmakeScriptFiles;
     collectCmakeScripts(InRoot, OutRoot, CmakeScriptFiles);
     for (const auto &ScriptFile : CmakeScriptFiles) {
       if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))

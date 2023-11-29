@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/Tooling/Core/Replacement.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/DiagnosticIDs.h"
 #include "clang/Basic/DiagnosticOptions.h"
@@ -49,11 +50,7 @@ Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
                          StringRef ReplacementText)
     : ReplacementRange(Offset, Length),
       ReplacementText(std::string(ReplacementText)) {
-#if defined(_WIN32)
-  this->FilePath = std::string(FilePath.lower());
-#else
-  this->FilePath = std::string(FilePath);
-#endif
+  this->FilePath = clang::tooling::UnifiedPath(FilePath).getCanonicalPath();
 }
 #else
 Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
@@ -143,26 +140,11 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
     // To avoid potential path inconsist issue,
     // using tryGetRealPathName while applicable.
     if (!FileEntry.tryGetRealPathName().empty()) {
-      this->FilePath =
-#if defined(_WIN32)
-          FileEntry.tryGetRealPathName().lower();
-#else
-          FileEntry.tryGetRealPathName().str();
-#endif
+      this->FilePath = clang::tooling::UnifiedPath(FileEntry.tryGetRealPathName()).getCanonicalPath();
     } else {
       llvm::SmallString<512> FilePathAbs(FileEntry.getName());
       Sources.getFileManager().makeAbsolutePath(FilePathAbs);
-      llvm::sys::path::native(FilePathAbs);
-      // Need to remove dot to keep the file path
-      // added by ASTMatcher and added by
-      // AnalysisInfo::getLocInfo() consistent.
-      llvm::sys::path::remove_dots(FilePathAbs, true);
-#if defined(_WIN32)
-      std::transform(FilePathAbs.begin(), FilePathAbs.end(),
-                     FilePathAbs.begin(),
-                     [](unsigned char c) { return std::tolower(c); });
-#endif
-      this->FilePath = std::string(FilePathAbs.str());
+      this->FilePath = clang::tooling::UnifiedPath(FilePathAbs).getCanonicalPath();
     }
   } else {
     this->FilePath = std::string(InvalidLocation);
