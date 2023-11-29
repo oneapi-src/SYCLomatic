@@ -625,6 +625,14 @@ void MapNames::setExplicitNamespaceMap() {
         std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::convolution_algorithm_info",
            HelperFeatureEnum::device_ext)},
+      {"cudnnConvolutionBwdFilterAlgoPerf_t",
+        std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::convolution_algorithm_info",
+           HelperFeatureEnum::device_ext)},
+      {"cudnnConvolutionBwdDataAlgoPerf_t",
+        std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::convolution_algorithm_info",
+           HelperFeatureEnum::device_ext)},
       {"cudnnRNNMode_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_mode",
                                       HelperFeatureEnum::device_ext)},
