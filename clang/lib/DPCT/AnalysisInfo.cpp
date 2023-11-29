@@ -162,12 +162,9 @@ std::unordered_map<std::string, bool>
 std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
 std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
-<<<<<<< HEAD
 std::unordered_map<std::string, std::string>
     DpctGlobalInfo::SpecialReplForEAMap;
-=======
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
->>>>>>> upstream/SYCLomatic
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.

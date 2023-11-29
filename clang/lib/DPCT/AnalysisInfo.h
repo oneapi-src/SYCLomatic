@@ -2169,11 +2169,8 @@ private:
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
-<<<<<<< HEAD
   static std::unordered_map<std::string, std::string> SpecialReplForEAMap;
-=======
   static std::unordered_set<std::string> NeedParenAPISet;
->>>>>>> upstream/SYCLomatic
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
