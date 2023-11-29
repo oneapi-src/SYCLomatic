@@ -85,16 +85,34 @@ public:
     std::string In;
     std::string Out;
     RuleMatchMode MatchMode;
+    std::string RuleId;
     std::map<std::string, PatternRewriter> Subrules;
     PatternRewriter(){};
 
-    PatternRewriter(
-        const std::string &I, const std::string &O,
-        const std::map<std::string, PatternRewriter> &S,
-        RuleMatchMode MatchMode)
-        : In(I), Out(O), MatchMode(MatchMode) {
-      Subrules = std::move(S);
+    PatternRewriter &operator=(const PatternRewriter &PR) {
+
+      RuleId = PR.RuleId;
+      In = PR.In;
+      Out = PR.Out;
+      MatchMode = PR.MatchMode;
+      Subrules = PR.Subrules;
+
+      return *this;
     }
+
+    PatternRewriter(const PatternRewriter &PR) {
+      RuleId = PR.RuleId;
+      In = PR.In;
+      Out = PR.Out;
+      MatchMode = PR.MatchMode;
+
+      Subrules = PR.Subrules;
+    }
+
+    PatternRewriter(const std::string &I, const std::string &O,
+                    const std::map<std::string, PatternRewriter> &S,
+                    RuleMatchMode MatchMode, std::string RuleId)
+        : In(I), Out(O), MatchMode(MatchMode), RuleId(RuleId), Subrules(S) {}
   };
 
   static std::vector<std::string> RuleFiles;
