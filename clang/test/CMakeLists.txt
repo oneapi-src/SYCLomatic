@@ -82,6 +82,10 @@ list(APPEND CLANG_TEST_DEPS
   dpct-binary
   )
 
+if(BUILD_LIT)
+  set(BUILD_LIT "TRUE")
+endif()
+
 if(CLANG_ENABLE_STATIC_ANALYZER)
   list(APPEND CLANG_TEST_DEPS
     clang-check
