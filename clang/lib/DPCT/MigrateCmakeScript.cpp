@@ -114,6 +114,9 @@ const std::unordered_map<std::string /*command*/, bool /*need lower*/>
 
 };
 
+
+std::vector<std::string /*cmake scrile file path*/> CmakeScriptFilesSet;
+
 static std::string readFile(const clang::tooling::UnifiedPath &Name) {
   std::ifstream Stream(Name.getCanonicalPath().str(),
                        std::ios::in | std::ios::binary);
@@ -172,10 +175,7 @@ getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
   return CmakeBuildDirectory;
 }
 
-void collectCmakeScripts(
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::vector<clang::tooling::UnifiedPath> &CmakeScriptFiles) {
+void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot, const clang::tooling::UnifiedPath &OutRoot) {
   std::error_code EC;
 
   clang::tooling::UnifiedPath CmakeBuildDirectory =
@@ -220,7 +220,7 @@ void collectCmakeScripts(
       llvm::StringRef Name =
           llvm::sys::path::filename(FilePath.getCanonicalPath());
       if (Name == "CMakeLists.txt" || Name.ends_with(".cmake")) {
-        CmakeScriptFiles.push_back(FilePath);
+        CmakeScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
       }
     }
   }
@@ -321,7 +321,7 @@ bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles) {
   return IsCmakeScript;
 }
 
-void migrateCmakeScriptOnly(
+void collectCmakeScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot) {
@@ -329,24 +329,21 @@ void migrateCmakeScriptOnly(
   if (!CmakeScriptLists.empty()) {
     for (auto FilePath : CmakeScriptLists) {
       if (fs::is_directory(FilePath)) {
-        std::vector<clang::tooling::UnifiedPath> CmakeScriptFiles;
-        collectCmakeScripts(FilePath, OutRoot, CmakeScriptFiles);
-        for (const auto &ScriptFile : CmakeScriptFiles) {
-          if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
-            continue;
-        }
+
+        collectCmakeScripts(FilePath, OutRoot);
       } else {
-        if (!migrateCmakeScriptFile(InRoot, OutRoot, FilePath))
-          continue;
+        CmakeScriptFilesSet.push_back(FilePath);
       }
     }
   } else {
-    std::vector<clang::tooling::UnifiedPath> CmakeScriptFiles;
-    collectCmakeScripts(InRoot, OutRoot, CmakeScriptFiles);
-    for (const auto &ScriptFile : CmakeScriptFiles) {
-      if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
-        continue;
-    }
+    collectCmakeScripts(InRoot, OutRoot);
+  }
+}
+
+void doCmakeScriptMigration(StringRef InRoot, StringRef OutRoot) {
+  for (const auto &ScriptFile : CmakeScriptFilesSet) {
+    if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
+      continue;
   }
 }
 

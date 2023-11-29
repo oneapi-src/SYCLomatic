@@ -1119,7 +1119,8 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (MigrateCmakeScriptOnly) {
-    migrateCmakeScriptOnly(OptParser, InRoot, OutRoot);
+    collectCmakeScriptsSpecified(OptParser, InRoot, OutRoot);
+    doCmakeScriptMigration(InRoot, OutRoot);
     return MigrationSucceeded;
   }
 
@@ -1260,12 +1261,8 @@ int runDPCT(int argc, const char **argv) {
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {
-    std::vector<clang::tooling::UnifiedPath> CmakeScriptFiles;
-    collectCmakeScripts(InRoot, OutRoot, CmakeScriptFiles);
-    for (const auto &ScriptFile : CmakeScriptFiles) {
-      if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
-        continue;
-    }
+    collectCmakeScripts(InRoot, OutRoot);
+    doCmakeScriptMigration(InRoot, OutRoot);
   }
 
   DumpOutputFile();
