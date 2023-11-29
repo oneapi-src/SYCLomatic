@@ -396,7 +396,9 @@ static void parseVariable(const std::string &Input) {
         // Get the name of the second argument
         Value = Input.substr(Begin, End - Begin);
 
-        // Only check the set commands which has two arguments
+        // Only check the set commands which has two arguments.
+        // And skip cmake reserves identifiers that begins with "CMAKE_" and
+        // "_CMAKE_".
         if (Input[Index] == ')' &&
             !llvm::StringRef(VarName).starts_with("CMAKE_") &&
             !llvm::StringRef(VarName).starts_with("_CMAKE_ ")) {
