@@ -225,8 +225,62 @@ void deregisterAPIRule(MetaRuleObject &R) {
 }
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
+
+#if 1 // used to debug
+  printf("\n#### registerPatternRewriterRule ###\n");
+
+
+    for (auto &SubPR : R.Subrules) {
+      printf("\tSubPR.first: [%s]\n", SubPR.first.c_str());
+      printf("\tSubPR.second.RuleId: [%s]\n", SubPR.second.RuleId.c_str());
+      printf("\tSubPR.second.MatchMode: [%d]\n", SubPR.second.MatchMode);
+      printf("\tSubPR.second.In: [%s]\n", SubPR.second.In.c_str());
+      printf("\tSubPR.second.Out: [%s]\n", SubPR.second.Out.c_str());
+      printf("\tSubPR.second.Out: [0x%x]\n", &SubPR);
+    }
+
+  printf("#### registerPatternRewriterRule ###\n");
+#endif
+
   MapNames::PatternRewriters.emplace_back(
       MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId));
+}
+
+MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
+    const MetaRuleObject::PatternRewriter &PR) {
+  RuleId = PR.RuleId;
+  In = PR.In;
+  Out = PR.Out;
+  MatchMode = PR.MatchMode;
+  Subrules = PR.Subrules;
+
+  return *this;
+}
+
+#if 0
+MetaRuleObject::PatternRewriter::PatternRewriter(
+    const MetaRuleObject::PatternRewriter &PR) {
+  RuleId = PR.RuleId;
+  In = PR.In;
+  Out = PR.Out;
+  MatchMode = PR.MatchMode;
+  Subrules = PR.Subrules;
+}
+#else
+MetaRuleObject::PatternRewriter::PatternRewriter(
+    const MetaRuleObject::PatternRewriter &PR)
+    : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), RuleId(PR.RuleId),
+      Subrules(PR.Subrules) {}
+
+#endif
+
+MetaRuleObject::PatternRewriter::PatternRewriter(
+    const std::string &I, const std::string &O,
+    const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
+    std::string RuleId)
+    : In(I), Out(O), MatchMode(MatchMode), RuleId(RuleId) {
+
+  Subrules = S;
 }
 
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
