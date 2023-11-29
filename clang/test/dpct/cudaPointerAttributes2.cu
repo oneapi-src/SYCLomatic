@@ -26,13 +26,16 @@ int main() {
   cudaPointerAttributes attributes;
   // CHECK: attributes.init(h_A);
   cudaPointerGetAttributes(&attributes, h_A);
-  // CHECK: std::cout << attributes.get_device_id() << std::endl;
-  // CHECK: std::cout << attributes.get_memory_type() << std::endl;
+  // CHECK: if (attributes.get_device_id() != (unsigned int)-1) {
+  // CHECK: attributes.get_memory_type();
   // CHECK: std::cout << attributes.get_host_pointer() << std::endl;
   // CHECK: std::cout << attributes.get_device_pointer() << std::endl;
   std::cout << "====== Host Attributes =======" << std::endl;
-  std::cout << attributes.device << std::endl;
-  std::cout << attributes.type << std::endl;
+  // The malloc memory is not a USM allocation memory. So the device attr is the default value(-1);
+  if (attributes.device != (unsigned int)-1) {
+    return -1;
+  }
+  attributes.type;
   std::cout << attributes.hostPointer << std::endl;
   std::cout << attributes.devicePointer << std::endl;
 
@@ -43,7 +46,7 @@ int main() {
   std::cout << "====== Malloc Host Attributes =======" << std::endl;
   std::cout << "malloc host " << malloc_host << std::endl;
   std::cout << attributes2.device << std::endl;
-  std::cout << attributes2.type << std::endl;
+  attributes2.type;
   std::cout << attributes2.hostPointer << std::endl;
   std::cout << attributes2.devicePointer << std::endl;
 
@@ -52,10 +55,10 @@ int main() {
   // CHECK: attributes3->init(d_A);
   cudaPointerGetAttributes (attributes3, d_A);
   // CHECK: std::cout << attributes3->get_device_id() << std::endl;
-  // CHECK: std::cout << attributes3->get_memory_type() << std::endl;
+  // CHECK: attributes3->get_memory_type();
   std::cout << "====== Device Attributes =======" << std::endl;
   std::cout << attributes3->device << std::endl;
-  std::cout << attributes3->type << std::endl;
+  attributes3->type;
   std::cout << attributes3->hostPointer << std::endl;
   std::cout << attributes3->devicePointer << std::endl;
   // CHECK: if (attributes3->get_memory_type() == sycl::usm::alloc::host) {
