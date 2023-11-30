@@ -24,6 +24,7 @@
 #include "NCCLAPIMigration.h"
 #include "OptimizeMigration.h"
 #include "SaveNewFiles.h"
+#include "SpBLASAPIMigration.h"
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
@@ -59,8 +60,7 @@ using namespace clang::ast_matchers;
 using namespace clang::dpct;
 using namespace clang::tooling;
 
-extern std::string CudaPath;
-extern std::string DpctInstallPath; // Installation directory for this tool
+extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
 extern llvm::cl::opt<UsmLevel> USMLevel;
 extern bool ProcessAllFlag;
 extern bool ExplicitClNamespace;
@@ -524,7 +524,7 @@ IncludesCallbacks::removeMacroInvocationAndTrailingSpaces(SourceRange Range) {
 void IncludesCallbacks::Else(SourceLocation Loc, SourceLocation IfLoc) {
   if (isInAnalysisScope(Loc)) {
     auto &Map = DpctGlobalInfo::getInstance()
-                    .getCudaArchPPInfoMap()[SM.getFilename(Loc).str()];
+                    .getCudaArchPPInfoMap()[clang::tooling::UnifiedPath(SM.getFilename(Loc))];
     unsigned Offset = SM.getFileOffset(IfLoc);
     DirectiveInfo DI;
     DI.DirectiveLoc = SM.getFileOffset(Loc);
@@ -811,17 +811,15 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
       return;
     }
 
-    std::string InFile = SM.getFilename(Loc).str();
-    InFile = getAbsolutePath(InFile);
-    makeCanonical(InFile);
+    clang::tooling::UnifiedPath InFile = SM.getFilename(Loc).str();
     if (IsFileInCmd || ProcessAllFlag ||
-        GetSourceFileType(InFile) & SPT_CudaSource) {
-      IncludeFileMap[DpctGlobalInfo::removeSymlinks(SM.getFileManager(),
-                                                    InFile)] = false;
+        GetSourceFileType(InFile.getCanonicalPath()) & SPT_CudaSource) {
+      IncludeFileMap[DpctGlobalInfo::removeSymlinks(
+          SM.getFileManager(), InFile.getCanonicalPath().str())] = false;
     }
     IsFileInCmd = false;
 
-    loadYAMLIntoFileInfo(InFile);
+    loadYAMLIntoFileInfo(InFile.getCanonicalPath());
   }
 }
 
@@ -3604,7 +3602,7 @@ REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUSPARSE_STATUS.*)|(CUSPARSE_POINTER_MODE.*)|"
-                                "(CUSPARSE_ALG.*)"))))
+                                "(CUSPARSE_ALG.*)|(CUSPARSE_SOLVE_POLICY.*)"))))
                     .bind("SPBLASStatusConstants"),
                 this);
   MF.addMatcher(
@@ -3695,13 +3693,25 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseGetMatIndexBase", "cusparseSetMatDiagType",
         "cusparseGetMatDiagType", "cusparseSetMatFillMode",
         "cusparseGetMatFillMode", "cusparseCreateSolveAnalysisInfo",
-        "cusparseDestroySolveAnalysisInfo",
+        "cusparseDestroySolveAnalysisInfo", "cusparseCreateCsrsv2Info",
+        "cusparseDestroyCsrsv2Info",
         /*level 2*/
         "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv", "cusparseZcsrmv",
         "cusparseScsrmv_mp", "cusparseDcsrmv_mp", "cusparseCcsrmv_mp",
         "cusparseZcsrmv_mp", "cusparseCsrmvEx", "cusparseCsrmvEx_bufferSize",
         "cusparseScsrsv_analysis", "cusparseDcsrsv_analysis",
         "cusparseCcsrsv_analysis", "cusparseZcsrsv_analysis",
+        "cusparseScsrsv_solve", "cusparseDcsrsv_solve", "cusparseCcsrsv_solve",
+        "cusparseZcsrsv_solve", "cusparseScsrsv2_bufferSize",
+        "cusparseDcsrsv2_bufferSize", "cusparseCcsrsv2_bufferSize",
+        "cusparseZcsrsv2_bufferSize", "cusparseScsrsv2_analysis",
+        "cusparseDcsrsv2_analysis", "cusparseCcsrsv2_analysis",
+        "cusparseZcsrsv2_analysis", "cusparseScsrsv2_solve",
+        "cusparseDcsrsv2_solve", "cusparseCcsrsv2_solve",
+        "cusparseZcsrsv2_solve", "cusparseCcsrsv2_bufferSizeExt",
+        "cusparseDcsrsv2_bufferSizeExt", "cusparseScsrsv2_bufferSizeExt",
+        "cusparseZcsrsv2_bufferSizeExt", "cusparseCsrsv_analysisEx",
+        "cusparseCsrsv_solveEx",
         /*level 3*/
         "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
         /*Generic*/
@@ -4267,8 +4277,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   const SourceManager *SM = Result.SourceManager;
   auto Loc = DpctGlobalInfo::getLocInfo(SM->getExpansionLoc(CE->getBeginLoc()));
   DpctGlobalInfo::updateInitSuffixIndexInRule(
-      DpctGlobalInfo::getSuffixIndexInitValue(Loc.first +
-                                              std::to_string(Loc.second)));
+      DpctGlobalInfo::getSuffixIndexInitValue(
+          Loc.first.getCanonicalPath().str() + std::to_string(Loc.second)));
 
   SourceLocation FuncNameBegin(CE->getBeginLoc());
   SourceLocation FuncCallEnd(CE->getEndLoc());
@@ -8866,7 +8876,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
     auto LocInfo = DpctGlobalInfo::getLocInfo(Decl->getBeginLoc());
     if (VarUsedBySymbolAPISet.find(
-            LocInfo.first + std::to_string(LocInfo.second) +
+            LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second) +
             Decl->getNameAsString()) == VarUsedBySymbolAPISet.end()) {
       return;
     }
@@ -9006,8 +9016,8 @@ void ConstantMemVarMigrationRule::runRule(
     auto &VarUsedByRuntimeSymbolAPISet =
         DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
     auto LocInfo = DpctGlobalInfo::getLocInfo(VarD->getBeginLoc());
-    std::string Key = LocInfo.first + std::to_string(LocInfo.second) +
-                      VarD->getNameAsString();
+    std::string Key = LocInfo.first.getCanonicalPath().str() +
+                      std::to_string(LocInfo.second) + VarD->getNameAsString();
     if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
         VarUsedByRuntimeSymbolAPISet.end()) {
       return false;
@@ -9904,7 +9914,7 @@ void MemoryMigrationRule::mallocMigration(
       Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
-          LocInfo.first + std::to_string(LocInfo.second), Info);
+          LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     } else {
       DpctGlobalInfo::getInstance().insertCudaMalloc(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
@@ -9924,7 +9934,7 @@ void MemoryMigrationRule::mallocMigration(
                          EA.getSubExprRepl().end());
 
       DpctGlobalInfo::addPriorityReplInfo(
-          LocInfo.first + std::to_string(LocInfo.second), Info);
+          LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
@@ -9943,7 +9953,7 @@ void MemoryMigrationRule::mallocMigration(
       Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
-          LocInfo.first + std::to_string(LocInfo.second), Info);
+          LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     } else {
       ManagedPointerAnalysis MPA(C, IsAssigned);
       MPA.RecursiveAnalyze();
@@ -10678,7 +10688,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
       Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
-          LocInfo.first + std::to_string(LocInfo.second), Info);
+          LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     } else {
       report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              MapNames::ITFName.at(Name));
@@ -14466,7 +14476,7 @@ void CudaArchMacroRule::runRule(
     if (!FD->isThisDeclarationADefinition()) {
       HDFLI.Type = HDFuncInfoType::HDFI_Decl;
       HDFIMap[ManglingName].LocInfos.insert(
-          {HDFLI.FilePath + "Decl" + std::to_string(HDFLI.FuncEndOffset),
+          {HDFLI.FilePath.getCanonicalPath().str() + "Decl" + std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
       return;
     }
@@ -14484,7 +14494,7 @@ void CudaArchMacroRule::runRule(
     if (NeedInsert) {
       HDFIMap[ManglingName].isDefInserted = true;
       HDFIMap[ManglingName].LocInfos.insert(
-          {HDFLI.FilePath + "Def" + std::to_string(HDFLI.FuncEndOffset),
+          {HDFLI.FilePath.getCanonicalPath().str() + "Def" + std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
     }
   } // address __host__ __device__ function call
@@ -14518,7 +14528,7 @@ void CudaArchMacroRule::runRule(
       HDFLI.FilePath = LocInfo.first;
       HDFLI.FuncEndOffset = LocInfo.second + Offset;
       HDFIMap[ManglingName].LocInfos.insert(
-          {HDFLI.FilePath + "Call" + std::to_string(HDFLI.FuncEndOffset),
+          {HDFLI.FilePath.getCanonicalPath().str() + "Call" + std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
       HDFIMap[ManglingName].isCalledInHost = true;
     }
@@ -14545,6 +14555,8 @@ REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
 REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
+
+REGISTER_RULE(SpBLASTypeLocRule, PassKind::PK_Migration)
 
 REGISTER_RULE(DeviceConstantVarOptimizeAnalysisRule, PassKind::PK_Analysis)
 

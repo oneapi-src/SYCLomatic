@@ -10,6 +10,7 @@
 #define DPCT_GEN_MAKEFILE_H
 
 #include "clang/Tooling/Core/Replacement.h"
+#include "clang/Tooling/Tooling.h"
 
 #include <map>
 #include <string>
@@ -27,15 +28,15 @@ class RefactoringTool;
 /// Generates makefile for migrated file(s) in -out-root directory.
 /// The name of generated makefile is specified by \p BuildScriptName
 void genBuildScript(clang::tooling::RefactoringTool &Tool,
-                    llvm::StringRef InRoot, llvm::StringRef OutRoot,
+                    clang::tooling::UnifiedPath& InRoot, clang::tooling::UnifiedPath& OutRoot,
                     const std::string &BuildScriptName);
 
-extern std::map<std::string /*target*/,
+extern std::map<clang::tooling::UnifiedPath /*target*/,
                 std::vector<clang::tooling::CompilationInfo>>
     CompileCmdsPerTarget;
 
 extern std::vector<
-    std::pair<std::string /*target*/,
+    std::pair<clang::tooling::UnifiedPath /*target*/,
               std::vector<std::string> /*orginal compile command*/>>
     CompileTargetsMap;
 

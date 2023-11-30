@@ -61,6 +61,7 @@
 #include <vector>
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <setjmp.h>
+#include <iostream>
 #endif // SYCLomatic_CUSTOMIZATION
 
 #define DEBUG_TYPE "clang-tooling"
@@ -74,16 +75,16 @@ namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
 static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
-static std::vector<std::pair<std::string, std::vector<std::string>>>
+static std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
     *CompileTargetsMapPtr = nullptr;
 static StringRef InRoot;
 static StringRef OutRoot;
 static FileProcessType FileProcessHandle = nullptr;
-static std::set<std::string> *ReProcessFilePtr = nullptr;
+static std::set<clang::tooling::UnifiedPath> *ReProcessFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
-static std::set<std::string> *ModuleFiles = nullptr;
-static std::function<bool(const std::string &, bool)> IsExcludePathPtr;
-extern std::string VcxprojFilePath;
+static std::set<clang::tooling::UnifiedPath> *ModuleFiles = nullptr;
+static std::function<bool(const UnifiedPath &)> IsExcludePathPtr;
+extern clang::tooling::UnifiedPath VcxprojFilePath;
 
 void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
@@ -94,7 +95,7 @@ void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
 }
 
 void SetCompileTargetsMap(
-    std::vector<std::pair<std::string, std::vector<std::string>>>
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
         &CompileTargetsMap) {
   CompileTargetsMapPtr = &CompileTargetsMap;
 }
@@ -133,7 +134,7 @@ bool isFileProcessAllSet() {
   return FileProcessHandle != nullptr;
 }
 
-void SetReProcessFile(std::set<std::string> &ReProcessFile){
+void SetReProcessFile(std::set<clang::tooling::UnifiedPath> &ReProcessFile){
   ReProcessFilePtr = &ReProcessFile;
 }
 
@@ -148,18 +149,18 @@ unsigned int DoGetRunRound(){
   return 0;
 }
 
-std::set<std::string> GetReProcessFile(){
+std::set<clang::tooling::UnifiedPath> GetReProcessFile(){
   if(ReProcessFilePtr){
     return *ReProcessFilePtr;
   }
-  return std::set<std::string>();
+  return std::set<clang::tooling::UnifiedPath>();
 }
 
 void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
 static llvm::raw_ostream *OSTerm = nullptr;
 void SetDiagnosticOutput(llvm::raw_ostream &OStream) { OSTerm = &OStream; }
-void SetModuleFiles(std::set<std::string> &MF) { ModuleFiles = &MF; }
+void SetModuleFiles(std::set<clang::tooling::UnifiedPath> &MF) { ModuleFiles = &MF; }
 llvm::raw_ostream &DiagnosticsOS() {
   if (OSTerm != nullptr) {
     return *OSTerm;
@@ -188,13 +189,13 @@ std::string getRealFilePath(std::string File, clang::FileManager *FM){
 #endif
 }
 
-void SetIsExcludePathHandler(std::function<bool(const std::string &, bool)> Func){
+void SetIsExcludePathHandler(std::function<bool(const UnifiedPath &)> Func) {
   IsExcludePathPtr = Func;
 }
 
-bool isExcludePath(const std::string &Path, bool IsRelative) {
+bool isExcludePath(const std::string &Path) {
   if(IsExcludePathPtr) {
-    return IsExcludePathPtr(Path, IsRelative);
+    return IsExcludePathPtr(Path);
   } else {
     return false;
   }
@@ -243,9 +244,9 @@ void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
   }
 }
 } // namespace tooling
-} // namespace 
+} // namespace clang
 bool StopOnParseErrTooling=false;
-std::string InRootTooling;
+UnifiedPath InRootTooling;
 
 // filename, error#
 //  error: high32:processed sig error, low32: parse error
@@ -868,10 +869,11 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
       if ((!CommandLine.empty() && CommandLine[0] == "None") &&
           llvm::sys::path::extension(File) == ".cu") {
         const std::string Msg =
-            "warning: " + File.str() +
-            " was found in <None> node in " + VcxprojFilePath + " and skipped; to "
-            "migrate specify CUDA* Item Type for this file in project and try "
-            "again.\n";
+            "warning: " + File.str() + " was found in <None> node in " +
+            llvm::sys::path::filename(VcxprojFilePath.getCanonicalPath())
+                .str() +
+            " and skipped; to migrate specify CUDA* Item Type for this file in "
+            "project and try again.\n";
         DoPrintHandle(Msg, false);
         return -1;
       }
@@ -930,7 +932,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         // FIXME: Diagnostics should be used instead.
         if (PrintErrorMessage && StopOnParseErrTooling) {
           std::string ErrMsg="Did not process 1 file(s) in -in-root folder \""
-                   + InRootTooling + "\":\n"
+                   + InRootTooling.getCanonicalPath().str() + "\":\n"
                    "    " + File.str() + ": " + std::to_string(CurFileParseErrCnt)
                    + " parsing error(s)\n";
           llvm::errs() << ErrMsg;
@@ -969,7 +971,7 @@ int ClangTool::run(ToolAction *Action) {
   if(DoGetRunRound() == 0) {
 #endif // SYCLomatic_CUSTOMIZATION
   AbsolutePaths.reserve(SourcePaths.size());
-  for (auto SourcePath : SourcePaths) {
+  for (const auto &SourcePath : SourcePaths) {
     auto AbsPath = getAbsolutePath(*OverlayFileSystem, SourcePath);
     if (!AbsPath) {
       llvm::errs() << "Skipping " << SourcePath
@@ -977,10 +979,6 @@ int ClangTool::run(ToolAction *Action) {
                    << llvm::toString(AbsPath.takeError()) << "\n";
       continue;
     }
-#if defined(_WIN32)
-    std::transform(AbsPath->begin(), AbsPath->end(), AbsPath->begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-#endif
     AbsolutePaths.push_back(std::move(*AbsPath));
   }
 #ifdef SYCLomatic_CUSTOMIZATION
@@ -988,11 +986,7 @@ int ClangTool::run(ToolAction *Action) {
   // migrate all relevant files it detects in the compilation database.
   if (SourcePaths.size() == 0) {
     std::vector<std::string> SourcePaths = Compilations.getAllFiles();
-    for (auto SourcePath : SourcePaths) {
-#if defined(_WIN32)
-      std::transform(SourcePath.begin(), SourcePath.end(), SourcePath.begin(),
-                     [](unsigned char c) { return std::tolower(c); });
-#endif
+    for (const auto &SourcePath : SourcePaths) {
       AbsolutePaths.push_back(SourcePath);
       CollectFileFromDB(SourcePath);
     }
@@ -1005,13 +999,8 @@ int ClangTool::run(ToolAction *Action) {
     }
   }
   } else {
-    for (auto File : GetReProcessFile()) {
-#if defined(_WIN32)
-      std::transform(File.begin(), File.end(), File.begin(),
-                     [](unsigned char c) { return std::tolower(c); });
-#endif
-      AbsolutePaths.push_back(File);
-    }
+     for (auto &File : GetReProcessFile())
+       AbsolutePaths.push_back(File.getCanonicalPath().str());
   }
 #endif // SYCLomatic_CUSTOMIZATION
   // Remember the working directory in case we need to restore it.
@@ -1095,7 +1084,7 @@ int ClangTool::run(ToolAction *Action) {
       }
     }
 #else
-    if(isExcludePath(File.str(), true)) {
+    if(isExcludePath(File.str())) {
       continue;
     }
     int Ret = processFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
