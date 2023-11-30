@@ -114,11 +114,12 @@ const std::unordered_map<std::string /*command*/, bool /*need lower*/>
 
 };
 
-
-std::vector<std::string /*cmake scrile file path*/> CmakeScriptFilesSet;
-std::map<std::string /*outfile path*/, std::string /*content*/>
+std::vector<clang::tooling::UnifiedPath /*cmake scrile file path*/>
+    CmakeScriptFilesSet;
+std::map<clang::tooling::UnifiedPath /*outfile path*/, std::string /*content*/>
     CmakeScriptFileBufferMap;
-std::map<std::string /*file name*/, bool /*is crlf*/> ScriptFileCRLFMap;
+std::map<clang::tooling::UnifiedPath /*file name*/, bool /*is crlf*/>
+    ScriptFileCRLFMap;
 std::map<std::string /*variable name*/, std::string /*value*/> VariablesMap;
 
 void cmakeSyntaxProcessed(std::string &Input);
@@ -181,7 +182,8 @@ getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
   return CmakeBuildDirectory;
 }
 
-void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot, const clang::tooling::UnifiedPath &OutRoot) {
+void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
+                         const clang::tooling::UnifiedPath &OutRoot) {
   std::error_code EC;
 
   clang::tooling::UnifiedPath CmakeBuildDirectory =
@@ -232,7 +234,8 @@ void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot, const clang:
   }
 }
 
-bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot, const clang::tooling::UnifiedPath OutRoot,
+bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
+                              const clang::tooling::UnifiedPath OutRoot,
                               clang::tooling::UnifiedPath InFileName) {
   clang::tooling::UnifiedPath OutFileName(InFileName);
   if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
@@ -603,7 +606,8 @@ static void applyCmakeMigrationRules() {
   }
 }
 
-static void loadBufferFromFile(StringRef InRoot, StringRef OutRoot) {
+static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
+                               const clang::tooling::UnifiedPath &OutRoot) {
   for (const auto &ScriptFile : CmakeScriptFilesSet) {
     if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile))
       continue;
@@ -614,10 +618,10 @@ static void storeBufferToFile() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &FileName = Entry.first;
     auto &Buffer = Entry.second;
-    std::ofstream Out(FileName, std::ios::binary);
+    std::ofstream Out(FileName.getCanonicalPath().str(), std::ios::binary);
     if (Out.fail()) {
       std::string ErrMsg =
-          "[ERROR] Create file : " + std::string(FileName.c_str()) +
+          "[ERROR] Create file : " + std::string(FileName.getCanonicalPath()) +
           " failure!\n";
       PrintMsg(ErrMsg);
     }
@@ -640,7 +644,8 @@ static void storeBufferToFile() {
   }
 }
 
-void doCmakeScriptMigration(StringRef InRoot, StringRef OutRoot) {
+void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
+                            const clang::tooling::UnifiedPath &OutRoot) {
   loadBufferFromFile(InRoot, OutRoot);
   unifyInputFileFormat();
   doCmakeScriptAnalysis();
