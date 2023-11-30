@@ -37,6 +37,9 @@ struct MatchResult {
   std::unordered_map<std::string, std::string> Bindings;
 };
 
+extern llvm::cl::opt<bool> MigrateCmakeScriptOnly;
+extern llvm::cl::opt<bool> MigrateCmakeScript;
+
 static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
 }
@@ -97,7 +100,11 @@ static std::string indent(const std::string &Input, int Indentation) {
     const bool ContainsNonWhitespace = (trim(Line).size() > 0);
     Output.push_back(ContainsNonWhitespace ? (Indent + Line) : "");
   }
-  return trim(join(Output, "\n"));
+  std::string Str = trim(join(Output, "\n"));
+  if (isWhitespace(Input[0])) {
+    Str = " " + Str;
+  }
+  return Str;
 }
 
 static std::string dedent(const std::string &Input, int Indentation) {
@@ -474,6 +481,18 @@ bool fixLineEndings(const std::string &Input, std::string &Output) {
   return isCRLF;
 }
 
+int skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
+                      int Index) {
+  const int Size = Input.size();
+  if (Input[Index] == '#') {
+    for (; Index < Size && Input[Index] != '\n'; Index++) {
+      OutputStream << Input[Index];
+    }
+  }
+  return Index;
+}
+
+
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input) {
   std::stringstream OutputStream;
@@ -481,6 +500,11 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
+
+    if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
+      Index = skipCmakeComments(OutputStream, Input, Index);
+    }
+
     auto Result = findMatch(Pattern, Input, Index);
 
     if (Result.has_value()) {
@@ -494,8 +518,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       }
 
       const int Indentation = detectIndentation(Input, Index);
-      instantiateTemplate(PP.Out, Match.Bindings, Indentation,
-                                            OutputStream);
+      instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
       continue;
     }
@@ -503,6 +526,5 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
     OutputStream << Input[Index];
     Index++;
   }
-
   return OutputStream.str();
 }

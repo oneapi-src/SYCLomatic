@@ -131,7 +131,7 @@ void IncludesCallbacks::InclusionDirective(
   FileInfo->setFirstIncludeOffset(LocInfo.second);
   LastInclusionLocationUpdater Updater(FileInfo, FilenameRange.getEnd());
 
-  std::string IncludedFile;
+  clang::tooling::UnifiedPath IncludedFile;
   if (auto OptionalAbs = Global.getAbsolutePath(File->getFileEntry()))
     IncludedFile = OptionalAbs.value();
 
@@ -157,18 +157,20 @@ void IncludesCallbacks::InclusionDirective(
   };
 
   if (Global.isInAnalysisScope(IncludedFile)) {
-    auto FilePathWithoutSymlinks =
-        Global.removeSymlinks(SM.getFileManager(), IncludedFile);
-    IncludeFileMap[FilePathWithoutSymlinks] = false;
-    Global.getIncludingFileSet().insert(FilePathWithoutSymlinks);
+    IncludeFileMap[IncludedFile] = false;
+    Global.getIncludingFileSet().insert(IncludedFile);
 
     // The "IncludedFile" is included by the "IncludingFile".
     // If "IncludedFile" is not under the AnalysisScope folder, do not record
     // the including relationship information.
     Global.recordIncludingRelationship(LocInfo.first, IncludedFile);
 
-    SmallString<512> NewFileName = FileName;
-    rewriteFileName(NewFileName, IncludedFile);
+    clang::tooling::UnifiedPath NewFilePath = FileName;
+    rewriteFileName(NewFilePath, IncludedFile);
+    SmallString<512> NewFileName(FileName.str());
+    path::remove_filename(NewFileName);
+    path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
+    NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
     if (NewFileName != FileName) {
       const auto Extension = path::extension(FileName);
       auto ReplacedStr = buildString("#include \"", NewFileName, "\"");
@@ -232,7 +234,7 @@ void IncludesCallbacks::InclusionDirective(
       SearchPath.startswith("/usr/local/cuda")) {
     // If CudaPath is in /usr/include,
     // for all the include files without starting with specified string, keep it
-    if (!StringRef(CudaPath).startswith("/usr/include") ||
+    if (!StringRef(CudaPath.getCanonicalPath()).startswith("/usr/include") ||
         isAlwaysRemoved(FileName)) {
       RemoveInslusion();
     }
