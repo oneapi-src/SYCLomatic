@@ -182,6 +182,7 @@ add_clang_library(DPCT
   WMMAAPIMigration.cpp
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
+  SpBLASAPIMigration.cpp
 
   DEPENDS
   ClangDriverOptions
