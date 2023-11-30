@@ -9,6 +9,7 @@
 #ifndef DPCT_GEN_HELPER_FUNCTION_H
 #define DPCT_GEN_HELPER_FUNCTION_H
 
+#include "clang/Tooling/Tooling.h"
 #include <string>
 
 namespace clang {
@@ -38,7 +39,7 @@ extern const std::string DplExtrasNumericAllContentStr;
 extern const std::string DplExtrasVectorAllContentStr;
 extern const std::string DplExtrasDpcppExtensionsAllContentStr;
 void replaceEndOfLine(std::string &StrNeedProcess);
-void genHelperFunction(const std::string &OutRoot);
+void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot);
 }
 } // namespace clang
 
