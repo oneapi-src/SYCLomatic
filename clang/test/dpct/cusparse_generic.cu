@@ -163,9 +163,7 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_createDescr was removed because this call is redundant in SYCL.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_bufferSize was removed because this call is redundant in SYCL.
-  //CHECK-NEXT:*/
+  //CHECK-NEXT:workspace_size = 0;
   //CHECK-NEXT:dpct::sparse::spsv_optimize(*handle, oneapi::mkl::transpose::nontrans, matA_sparse);
   //CHECK-NEXT:dpct::sparse::spsv(*handle, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, vecX, vecY, computeType);
   //CHECK-NEXT:/*
