@@ -114,13 +114,15 @@ const std::unordered_map<std::string /*command*/, bool /*need lower*/>
 
 };
 
-std::vector<clang::tooling::UnifiedPath /*cmake scrile file path*/>
+static std::vector<clang::tooling::UnifiedPath /*file path*/>
     CmakeScriptFilesSet;
-std::map<clang::tooling::UnifiedPath /*outfile path*/, std::string /*content*/>
+static std::map<clang::tooling::UnifiedPath /*file path*/,
+                std::string /*content*/>
     CmakeScriptFileBufferMap;
-std::map<clang::tooling::UnifiedPath /*file name*/, bool /*is crlf*/>
+static std::map<clang::tooling::UnifiedPath /*file name*/, bool /*is crlf*/>
     ScriptFileCRLFMap;
-std::map<std::string /*variable name*/, std::string /*value*/> VariablesMap;
+static std::map<std::string /*variable name*/, std::string /*value*/>
+    CmakeVarMap;
 
 void cmakeSyntaxProcessed(std::string &Input);
 
@@ -332,8 +334,8 @@ std::string getVarName(const std::string &Variable) {
   if (Variable[0] == '$' && Variable[1] == '{') {
     auto Name = Variable.substr(2, Variable.size() - 3);
 
-    auto Iter = VariablesMap.find(Name);
-    if (VariablesMap.find(Name) != VariablesMap.end()) {
+    auto Iter = CmakeVarMap.find(Name);
+    if (CmakeVarMap.find(Name) != CmakeVarMap.end()) {
       Value = Iter->second;
     }
   } else {
@@ -405,7 +407,7 @@ static void parseVariable(const std::string &Input) {
         if (Input[Index] == ')' &&
             !llvm::StringRef(VarName).starts_with("CMAKE_") &&
             !llvm::StringRef(VarName).starts_with("_CMAKE_ ")) {
-          VariablesMap[VarName] = Value;
+          CmakeVarMap[VarName] = Value;
         }
       }
 
@@ -419,7 +421,7 @@ static void parseVariable(const std::string &Input) {
 
 static std::string processArgOfCmakeVersionRequired(
     const std::string &Arg,
-    const std::map<std::string, std::string> &VariablesMap) {
+    const std::map<std::string, std::string> &CmakeVarMap) {
   size_t Pos = Arg.find("...");
   std::string ReplArg;
   if (Pos != std::string::npos) {
@@ -485,7 +487,7 @@ void processCmakeMinimumRequired(std::string &Input, size_t &Size,
   // Get the name of the second argument
   Value = Input.substr(Begin, End - Begin);
 
-  std::string ReplStr = processArgOfCmakeVersionRequired(Value, VariablesMap);
+  std::string ReplStr = processArgOfCmakeVersionRequired(Value, CmakeVarMap);
 
   Input.replace(Begin, End - Begin, ReplStr);
   Size = Input.size();            // Update string size
