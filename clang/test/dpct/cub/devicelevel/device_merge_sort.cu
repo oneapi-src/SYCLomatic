@@ -30,7 +30,7 @@ void sort_pairs() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortPairs was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortPairs was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: dpct::sort(oneapi::dpl::execution::device_policy(q_ct1), d_keys, d_keys + num_items, d_values, op);
   // CHECK: }
@@ -48,7 +48,7 @@ void sort_pairs() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortPairs was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortPairs was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: dpct::sort(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, d_values, op);
   // CHECK: }
@@ -66,7 +66,7 @@ void sort_pairs() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortPairs was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortPairs was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: dpct::sort(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, d_values, op);
   // CHECK: }
@@ -85,7 +85,7 @@ void stable_sort_pairs() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortPairs was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortPairs was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: dpct::stable_sort(oneapi::dpl::execution::device_policy(q_ct1), d_keys, d_keys + num_items, d_values, op);
   // CHECK: }
@@ -103,7 +103,7 @@ void stable_sort_pairs() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortPairs was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortPairs was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: dpct::stable_sort(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, d_values, op);
   // CHECK: }
@@ -121,7 +121,7 @@ void stable_sort_pairs() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortPairs was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortPairs was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: dpct::stable_sort(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, d_values, op);
   // CHECK: }
@@ -140,7 +140,7 @@ void sort_keys() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeys was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeys was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: oneapi::dpl::sort(oneapi::dpl::execution::device_policy(q_ct1), d_keys, d_keys + num_items, op);
   // CHECK: }
@@ -158,7 +158,7 @@ void sort_keys() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeys was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeys was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: oneapi::dpl::sort(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, op);
   // CHECK: }
@@ -176,7 +176,7 @@ void sort_keys() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeys was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeys was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: oneapi::dpl::sort(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, op);
   // CHECK: }
@@ -195,7 +195,7 @@ void stable_sort_keys() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortKeys was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortKeys was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: oneapi::dpl::stable_sort(oneapi::dpl::execution::device_policy(q_ct1), d_keys, d_keys + num_items, op);
   // CHECK: }
@@ -213,7 +213,7 @@ void stable_sort_keys() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortKeys was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortKeys was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: oneapi::dpl::stable_sort(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, op);
   // CHECK: }
@@ -231,7 +231,7 @@ void stable_sort_keys() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortKeys was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::StableSortKeys was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: oneapi::dpl::stable_sort(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, op);
   // CHECK: }
@@ -250,7 +250,7 @@ void sort_keys_copy() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeysCopy was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeysCopy was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: oneapi::dpl::partial_sort_copy(oneapi::dpl::execution::device_policy(q_ct1), d_keys, d_keys + num_items, d_outs, d_outs + num_items, op);
   // CHECK: }
@@ -268,7 +268,7 @@ void sort_keys_copy() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeysCopy was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeysCopy was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: oneapi::dpl::partial_sort_copy(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, d_outs, d_outs + num_items, op);
   // CHECK: }
@@ -286,7 +286,7 @@ void sort_keys_copy() {
   // CHECK-NOT: void *temp_storage = nullptr;
   // CHECK-NOT: size_t temp_storage_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeysCopy was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{.*}}: The call to cub::DeviceMergeSort::SortKeysCopy was removed because this functionality is redundant in SYCL.
   // CHECK: */
   // CHECK-NEXT: oneapi::dpl::partial_sort_copy(oneapi::dpl::execution::device_policy(*s), d_keys, d_keys + num_items, d_outs, d_outs + num_items, op);
   // CHECK: }

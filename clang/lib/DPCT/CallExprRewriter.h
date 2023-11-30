@@ -341,7 +341,7 @@ public:
 
   std::optional<std::string> rewrite() override {
     std::string Msg =
-        Message.empty() ? "this call is redundant in SYCL." : Message;
+        Message.empty() ? "this functionality is redundant in SYCL." : Message;
     if (IsAssigned) {
       report(Diagnostics::FUNC_CALL_REMOVED_0, false, CalleeName, Msg);
       return std::optional<std::string>("0");

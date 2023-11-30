@@ -94,7 +94,7 @@ int main() {
   //CHECK-NEXT:void *externalBuffer;
   //CHECK-NEXT:bufferSize = 0;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpMM_preprocess was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpMM_preprocess was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:dpct::sparse::spmm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA, matB, beta, matC, computeType);
   cusparseHandle_t handle;
@@ -161,13 +161,13 @@ int main() {
   //CHECK:int spsvDescr;
   //CHECK-NEXT:int alg4;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_createDescr was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_createDescr was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:workspace_size = 0;
   //CHECK-NEXT:dpct::sparse::spsv_optimize(*handle, oneapi::mkl::transpose::nontrans, matA_sparse);
   //CHECK-NEXT:dpct::sparse::spsv(*handle, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, vecX, vecY, computeType);
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_destroyDescr was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_destroyDescr was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   cusparseSpSVDescr_t spsvDescr;
   cusparseSpSVAlg_t alg4;

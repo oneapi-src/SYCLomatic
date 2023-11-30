@@ -20,7 +20,7 @@ bool histgram_even() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::HistogramEven(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramEven was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramEven was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::histogram_even(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);
   cub::DeviceHistogram::HistogramEven(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);
   return true;
@@ -40,7 +40,7 @@ bool histgram_even_roi() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::HistogramEven(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_samples, num_rows, row_stride_bytes);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramEven was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramEven was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::histogram_even_roi(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_samples, num_rows, row_stride_bytes);
   cub::DeviceHistogram::HistogramEven(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_samples, num_rows, row_stride_bytes);
   return true;
@@ -58,7 +58,7 @@ bool multi_histgram_even() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_pixels);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramEven was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramEven was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::multi_histogram_even<4, 3>(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, lower_level, upper_level, num_pixels);
   cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_pixels);
 
@@ -79,7 +79,7 @@ bool multi_histgram_even_roi() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramEven was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramEven was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::multi_histogram_even_roi<4, 3>(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes);
   cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes);
 
@@ -97,7 +97,7 @@ bool histgram_range() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::HistogramRange(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_samples);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramRange was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramRange was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::histogram_range(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, d_levels, num_samples);
   cub::DeviceHistogram::HistogramRange(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_samples);
 
@@ -117,7 +117,7 @@ bool histgram_range_roi() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::HistogramRange(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels,d_levels, num_row_samples, num_rows, row_stride_bytes);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramRange was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramRange was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::histogram_range_roi(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, d_levels, num_row_samples, num_rows, row_stride_bytes);
   cub::DeviceHistogram::HistogramRange(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels,d_levels, num_row_samples, num_rows, row_stride_bytes);
 
@@ -136,7 +136,7 @@ bool multi_histgram_range() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels,d_levels, num_pixels);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramRange was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramRange was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::multi_histogram_range<4, 3>(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, d_levels, num_pixels);
   cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_pixels);
 
@@ -158,7 +158,7 @@ bool multi_histgram_range_roi() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_row_pixels, num_rows, row_stride_bytes);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramRange was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramRange was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::multi_histogram_range_roi<4, 3>(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, d_levels, num_row_pixels, num_rows, row_stride_bytes);
   cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_row_pixels, num_rows, row_stride_bytes);
 
@@ -180,7 +180,7 @@ bool histgram_even_stream() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::HistogramEven(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples, S);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramEven was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramEven was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::histogram_even(oneapi::dpl::execution::device_policy(*S), d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);
   cub::DeviceHistogram::HistogramEven(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples, S);
 
@@ -204,7 +204,7 @@ bool histgram_even_roi_stream() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::HistogramEven(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_samples, num_rows, row_stride_bytes, S);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramEven was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramEven was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::histogram_even_roi(oneapi::dpl::execution::device_policy(*S), d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_samples, num_rows, row_stride_bytes);
   cub::DeviceHistogram::HistogramEven(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_samples, num_rows, row_stride_bytes, S);
 
@@ -227,7 +227,7 @@ bool multi_histgram_even_stream() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_pixels, S);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramEven was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramEven was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::multi_histogram_even<4, 3>(oneapi::dpl::execution::device_policy(*S), d_samples, d_histogram, num_levels, lower_level, upper_level, num_pixels);
   cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_pixels, S);
 
@@ -251,7 +251,7 @@ bool multi_histgram_even_roi_stream() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes, S);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramEven was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramEven was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::multi_histogram_even_roi<4, 3>(oneapi::dpl::execution::device_policy(*S), d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes);
   cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes, S);
 
@@ -271,7 +271,7 @@ bool histgram_range_stream() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::HistogramRange(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_samples, S);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramRange was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramRange was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::histogram_range(oneapi::dpl::execution::device_policy(*S), d_samples, d_histogram, num_levels, d_levels, num_samples);
   cub::DeviceHistogram::HistogramRange(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_samples, S);
   return true;
@@ -292,7 +292,7 @@ bool histgram_range_roi_stream() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::HistogramRange(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_row_samples, num_rows, row_stride_bytes, S);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramRange was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::HistogramRange was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::histogram_range_roi(oneapi::dpl::execution::device_policy(*S), d_samples, d_histogram, num_levels, d_levels, num_row_samples, num_rows, row_stride_bytes);
   cub::DeviceHistogram::HistogramRange(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_row_samples, num_rows, row_stride_bytes, S);
 
@@ -313,7 +313,7 @@ bool multi_histgram_range_stream() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_pixels, S);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramRange was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramRange was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::multi_histogram_range<4, 3>(oneapi::dpl::execution::device_policy(*S), d_samples, d_histogram, num_levels, d_levels, num_pixels);
   cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_pixels, S);
 
@@ -338,7 +338,7 @@ bool multi_histgram_range_roi_stream() {
   size_t temp_storage_bytes = 0;
   cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_row_pixels, num_rows, row_stride_bytes, S);
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramRange was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceHistogram::MultiHistogramRange was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::multi_histogram_range_roi<4, 3>(oneapi::dpl::execution::device_policy(*S), d_samples, d_histogram, num_levels, d_levels, num_row_pixels, num_rows, row_stride_bytes);
   cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels, num_row_pixels, num_rows, row_stride_bytes, S);
 

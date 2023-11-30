@@ -27,10 +27,10 @@ int foo(int aaaaa){
 
   //CHECK: int mode = 1;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseGetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseGetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   cusparsePointerMode_t mode = CUSPARSE_POINTER_MODE_DEVICE;
   cusparseGetPointerMode(handle, &mode);
@@ -76,7 +76,7 @@ int foo(int aaaaa){
   cusparseStatus_t status;
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyMatDescr was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyMatDescr was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: handle = nullptr;
   cusparseDestroyMatDescr(descrA);

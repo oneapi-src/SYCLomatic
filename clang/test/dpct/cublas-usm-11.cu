@@ -47,10 +47,10 @@ void foo3() {
   cublasHandle_t handle;
   //CHECK: int Mathmode;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetMathMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetMathMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetMathMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetMathMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   cublasMath_t Mathmode;
   cublasGetMathMode(handle, &Mathmode);

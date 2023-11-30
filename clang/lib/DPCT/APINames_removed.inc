@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-ENTRY(cublasInit,                      "this call is redundant in SYCL.")
-ENTRY(cublasShutdown,                  "this call is redundant in SYCL.")
-ENTRY(cublasGetError,                  "this call is redundant in SYCL.")
+ENTRY(cublasInit,                      "this functionality is redundant in SYCL.")
+ENTRY(cublasShutdown,                  "this functionality is redundant in SYCL.")
+ENTRY(cublasGetError,                  "this functionality is redundant in SYCL.")
 
 ENTRY(cudaDeviceSetLimit,              "SYCL currently does not support setting resource limits on devices.")
 ENTRY(cudaThreadSetLimit,              "SYCL currently does not support setting resource limits on devices.")
@@ -20,11 +20,11 @@ ENTRY(cuCtxSetLimit,                   "SYCL currently does not support setting 
 ENTRY(cuCtxGetLimit,                   "SYCL currently does not support getting resource limits on devices.")
 ENTRY(cuCtxSetCacheConfig,             "SYCL currently does not support setting cache config on devices.")
 
-ENTRY(cudaEventCreate,                 "this call is redundant in SYCL.")
-ENTRY(cudaEventCreateWithFlags,        "this call is redundant in SYCL.")
-ENTRY(cudaEventDestroy,                "this call is redundant in SYCL.")
-ENTRY(cuEventDestroy_v2,               "this call is redundant in SYCL.")
-ENTRY(cuEventCreate,                   "this call is redundant in SYCL.")
+ENTRY(cudaEventCreate,                 "this functionality is redundant in SYCL.")
+ENTRY(cudaEventCreateWithFlags,        "this functionality is redundant in SYCL.")
+ENTRY(cudaEventDestroy,                "this functionality is redundant in SYCL.")
+ENTRY(cuEventDestroy_v2,               "this functionality is redundant in SYCL.")
+ENTRY(cuEventCreate,                   "this functionality is redundant in SYCL.")
 
 ENTRY(cudaStreamAttachMemAsync,        "SYCL currently does not support associating USM with a specific queue.")
 ENTRY(cuStreamAttachMemAsync,          "SYCL currently does not support associating USM with a specific queue.")
