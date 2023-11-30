@@ -3606,10 +3606,11 @@ void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
                     .bind("SPBLASStatusConstants"),
                 this);
   MF.addMatcher(
-      declRefExpr(to(enumConstantDecl(matchesName(
-                      "(CUSPARSE_OPERATION_.*)|(CUSPARSE_FILL_MODE_.*)|("
-                      "CUSPARSE_DIAG_TYPE_.*)|(CUSPARSE_INDEX_.*)|(CUSPARSE_"
-                      "MATRIX_TYPE_.*)|(CUSPARSE_ORDER_.*)"))))
+      declRefExpr(
+          to(enumConstantDecl(matchesName(
+              "(CUSPARSE_OPERATION_.*)|(CUSPARSE_FILL_MODE_.*)|("
+              "CUSPARSE_DIAG_TYPE_.*)|(CUSPARSE_INDEX_.*)|(CUSPARSE_"
+              "MATRIX_TYPE_.*)|(CUSPARSE_ORDER_.*)|(CUSPARSE_ACTION_.*)"))))
           .bind("SPBLASNamedValueConstants"),
       this);
 }

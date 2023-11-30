@@ -1348,6 +1348,10 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "library_data_t::real_int64"},
       {"CUSPARSE_ORDER_COL", "oneapi::mkl::layout::col_major"},
       {"CUSPARSE_ORDER_ROW", "oneapi::mkl::layout::row_major"},
+      {"CUSPARSE_ACTION_SYMBOLIC",
+       getDpctNamespace() + "sparse::conversion_scope::index"},
+      {"CUSPARSE_ACTION_NUMERIC",
+       getDpctNamespace() + "sparse::conversion_scope::index_and_value"},
   };
 
   ClassFieldMap = {};

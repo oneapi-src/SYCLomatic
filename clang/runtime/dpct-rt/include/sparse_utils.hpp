@@ -42,6 +42,8 @@ private:
   oneapi::mkl::index_base _index_base = oneapi::mkl::index_base::zero;
 };
 
+enum class conversion_scope : int { index = 0, index_and_value };
+
 namespace detail {
 template <template <typename> typename functor_t, typename... args_t>
 inline void spblas_shim(library_data_t type, args_t &&...args) {
@@ -1242,10 +1244,30 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
                                          trans_a, alpha, a, x, y);
 }
 
-inline void csr2csc(sycl::queue queue, int m, int n, const void *from_val,
-                    const int *from_row_ptr, const int *from_col_ind,
-                    void *to_val, int *to_row_ptr, int *to_col_ind,
-                    library_data_t value_type, oneapi::mkl::index_base base) {
+/// Convert a CSR sparse matrix to a CSC sparse matrix.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] m Number of rows of the matrix.
+/// \param [in] n Number of columns of the matrix.
+/// \param [in] nnz Number of non-zero elements.
+/// \param [in] from_val An array containing the non-zero elements of the input
+/// matrix.
+/// \param [in] from_row_ptr An array of length \p m + 1.
+/// \param [in] from_col_ind An array containing the column indices in
+/// index-based numbering.
+/// \param [out] to_val An array containing the non-zero elements of the output
+/// matrix.
+/// \param [out] to_col_ptr An array of length \p n + 1.
+/// \param [out] to_row_ind An array containing the row indices in index-based
+/// numbering.
+/// \param [in] value_type Data type of \p from_val and \p to_val .
+/// \param [in] range Specifies the conversion scope.
+/// \param [in] base Specifies the index base.
+inline void csr2csc(sycl::queue queue, int m, int n, int nnz,
+                    const void *from_val, const int *from_row_ptr,
+                    const int *from_col_ind, void *to_val, int *to_col_ptr,
+                    int *to_row_ind, library_data_t value_type,
+                    conversion_scope range, oneapi::mkl::index_base base) {
 #define CASE(LABEL, TYPE)                                                      \
   case LABEL: {                                                                \
     oneapi::mkl::sparse::matrix_handle_t from_handle = nullptr;                \
@@ -1255,19 +1277,27 @@ inline void csr2csc(sycl::queue queue, int m, int n, const void *from_val,
     auto data_from_row_ptr = dpct::detail::get_memory<int>(from_row_ptr);      \
     auto data_from_col_ind = dpct::detail::get_memory<int>(from_col_ind);      \
     auto data_from_val = dpct::detail::get_memory<TYPE>(from_val);             \
-    auto data_to_row_ptr = dpct::detail::get_memory<int>(to_row_ptr);          \
-    auto data_to_col_ind = dpct::detail::get_memory<int>(to_col_ind);          \
-    auto data_to_val = dpct::detail::get_memory<TYPE>(to_val);                 \
+    auto data_to_col_ptr = dpct::detail::get_memory<int>(to_col_ptr);          \
+    auto data_to_row_ind = dpct::detail::get_memory<int>(to_row_ind);          \
+    void *new_to_value = to_val;                                               \
+    if (range == conversion_scope::index) {                                    \
+      new_to_value = dpct::dpct_malloc(sizeof(TYPE) * nnz);                    \
+    }                                                                          \
+    auto data_to_val = dpct::detail::get_memory<TYPE>(new_to_value);           \
     oneapi::mkl::sparse::set_csr_data(queue, from_handle, m, n, base,          \
                                       data_from_row_ptr, data_from_col_ind,    \
                                       data_from_val);                          \
     oneapi::mkl::sparse::set_csr_data(queue, to_handle, n, m, base,            \
-                                      data_to_row_ptr, data_to_col_ind,        \
+                                      data_to_col_ptr, data_to_row_ind,        \
                                       data_to_val);                            \
-    sycl::event e = oneapi::mkl::sparse::omatcopy(                             \
+    sycl::event e1 = oneapi::mkl::sparse::omatcopy(                            \
         queue, oneapi::mkl::transpose::trans, from_handle, to_handle);         \
-    oneapi::mkl::sparse::release_matrix_handle(queue, &from_handle, {e});      \
-    oneapi::mkl::sparse::release_matrix_handle(queue, &to_handle, {e});        \
+    oneapi::mkl::sparse::release_matrix_handle(queue, &from_handle, {e1});     \
+    sycl::event e2 =                                                           \
+        oneapi::mkl::sparse::release_matrix_handle(queue, &to_handle, {e1});   \
+    if (range == conversion_scope::index) {                                    \
+      dpct::async_dpct_free({new_to_value}, {e2}, queue);                      \
+    }                                                                          \
     break;                                                                     \
   }
 

@@ -319,3 +319,6 @@ TYPE_REWRITE_ENTRY("csrsv2Info_t",
                                     MapNames::getDpctNamespace() +
                                     "sparse::optimize_info>")))
 TYPE_REWRITE_ENTRY("cusparseSolvePolicy_t", TYPE_FACTORY(STR("int")))
+TYPE_REWRITE_ENTRY("cusparseAction_t",
+                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                    "sparse::conversion_scope")))
