@@ -1336,7 +1336,7 @@ void csrgemm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
 }
 } // namespace detail
 
-/// Estimiate the non-zero elements number of the result of a
+/// Estimate the non-zero elements number of the result of a
 /// sparse matrix (CSR format)-sparse matrix (CSR format) product:
 /// C = op(A) * op(B)
 /// \param [in] queue The queue where the routine should be executed. It must
@@ -1362,14 +1362,14 @@ void csrgemm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
 /// \param [in] row_ptr_c An array of length row number + 1.
 /// \param [out] nnz_host_ptr Non-zero elements number of matrix C.
 inline void
-csrgemm_nnz_estimiate(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                      oneapi::mkl::transpose trans_b, int m, int n, int k,
-                      const std::shared_ptr<matrix_info> info_a, int nnz_a,
-                      const int *row_ptr_a, const int *col_ind_a,
-                      const std::shared_ptr<matrix_info> info_b, int nnz_b,
-                      const int *row_ptr_b, const int *col_ind_b,
-                      const std::shared_ptr<matrix_info> info_c, int *row_ptr_c,
-                      int *nnz_host_ptr) {
+csrgemm_nnz_estimate(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                     oneapi::mkl::transpose trans_b, int m, int n, int k,
+                     const std::shared_ptr<matrix_info> info_a, int nnz_a,
+                     const int *row_ptr_a, const int *col_ind_a,
+                     const std::shared_ptr<matrix_info> info_b, int nnz_b,
+                     const int *row_ptr_b, const int *col_ind_b,
+                     const std::shared_ptr<matrix_info> info_c, int *row_ptr_c,
+                     int *nnz_host_ptr) {
   detail::csrgemm_impl<float>(queue, trans_a, trans_b, m, n, k, info_a, nnz_a,
                               (const float *)nullptr, row_ptr_a, col_ind_a,
                               info_b, nnz_b, (const float *)nullptr, row_ptr_b,
