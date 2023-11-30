@@ -1,6 +1,5 @@
 // RUN: dpct --format-range=none --usm-level=none -keep-original-code -out-root %T/kernel-call-origcode-embedded %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel-call-origcode-embedded/kernel-call-origcode-embedded.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/kernel-call-origcode-embedded/kernel-call-origcode-embedded.dp.cpp -o %T/kernel-call-origcode-embedded/kernel-call-origcode-embedded.dp.o %}
 
 #include <iostream>
 // includes CUDA

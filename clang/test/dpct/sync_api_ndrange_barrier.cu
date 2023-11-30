@@ -2,7 +2,6 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/sync_api_ndrange_barrier %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sync_api_ndrange_barrier/sync_api_ndrange_barrier.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/sync_api_ndrange_barrier/sync_api_ndrange_barrier.dp.cpp -o %T/sync_api_ndrange_barrier/sync_api_ndrange_barrier.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>

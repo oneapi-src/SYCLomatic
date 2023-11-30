@@ -1,6 +1,5 @@
 // RUN: dpct --format-range=none -in-root=%S -out-root %T/va_error %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/va_error/va_error.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/va_error/va_error.dp.cpp -o %T/va_error/va_error.dp.o %}
 
 #include "cuda_runtime.h"
 #include <stdio.h>

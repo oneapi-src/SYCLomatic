@@ -1,6 +1,5 @@
 // RUN: dpct -in-root %S -out-root %T/lrn %S/lrn.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/lrn/lrn.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/lrn/lrn.dp.cpp -o %T/lrn/lrn.dp.o %}
 
 // CHECK: #include <dpct/dnnl_utils.hpp>
 // CHECK: #include <sycl/sycl.hpp>

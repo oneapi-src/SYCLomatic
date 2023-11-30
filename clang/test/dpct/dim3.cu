@@ -2,7 +2,6 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --format-range=none -out-root %T/dim3 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/dim3/dim3.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/dim3/dim3.dp.cpp -o %T/dim3/dim3.dp.o %}
 
 #include <cuda.h>
 

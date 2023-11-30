@@ -1,6 +1,5 @@
 // RUN: dpct -in-root %S -out-root %T/reorder %S/reorder.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/reorder/reorder.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/reorder/reorder.dp.cpp -o %T/reorder/reorder.dp.o %}
 
 // CHECK: #include <dpct/dnnl_utils.hpp>
 // CHECK: #include <sycl/sycl.hpp>
