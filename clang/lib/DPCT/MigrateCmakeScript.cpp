@@ -422,6 +422,8 @@ static void parseVariable(const std::string &Input) {
 static std::string processArgOfCmakeVersionRequired(
     const std::string &Arg,
     const std::map<std::string, std::string> &CmakeVarMap) {
+  const std::string CmakeMinVerion =
+      "3.24"; // The minimal version used in SYCL compiler
   size_t Pos = Arg.find("...");
   std::string ReplArg;
   if (Pos != std::string::npos) {
@@ -430,19 +432,19 @@ static std::string processArgOfCmakeVersionRequired(
     std::string MinVer = getVarName(StrArray[0]);
     std::string MaxVer = getVarName(StrArray[1]);
 
-    if (std::atof(MinVer.c_str()) >= 3.24) {
+    if (std::atof(MinVer.c_str()) >= std::atof(CmakeMinVerion.c_str())) {
       ReplArg = MinVer + "..." + MaxVer;
-    } else if (std::atof(MinVer.c_str()) < 3.24 &&
-               std::atof(MaxVer.c_str()) > 3.24) {
-      ReplArg = "3.24..." + MaxVer;
+    } else if (std::atof(MinVer.c_str()) < std::atof(CmakeMinVerion.c_str()) &&
+               std::atof(MaxVer.c_str()) > std::atof(CmakeMinVerion.c_str())) {
+      ReplArg = CmakeMinVerion + "..." + MaxVer;
     } else {
-      ReplArg = "3.24";
+      ReplArg = CmakeMinVerion;
     }
 
   } else {
     std::string Ver = getVarName(Arg);
-    if (std::atof(Ver.c_str()) < 3.24) {
-      ReplArg = "3.24";
+    if (std::atof(Ver.c_str()) < std::atof(CmakeMinVerion.c_str())) {
+      ReplArg = CmakeMinVerion;
     } else {
       ReplArg = Ver;
     }

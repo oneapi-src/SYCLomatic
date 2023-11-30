@@ -5,7 +5,7 @@
 # This file will be installed to folder:
 # {dpct_install_folder}/extensions/opt_rules.
 # The rule specified in this file can be imported with commandline option:
-# --rule-file={dpct_install_folder}/extensions/opt_rules/intel_specific_math.yaml
+# --rule-file={dpct_install_folder}/extensions/opt_rules/cmake_script_migration_rule.yaml
 ---
 - Rule: rule_cmake_minimum_required
   Kind: PatternRewriter
