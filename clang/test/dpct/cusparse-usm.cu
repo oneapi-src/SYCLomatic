@@ -126,9 +126,7 @@ int foo(int aaaaa){
   void *ws;
   //CHECK: int alg = 0;
   //CHECK-NEXT: alg = 1;
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseCsrmvEx_bufferSize was removed because this call is redundant in SYCL.
-  //CHECK-NEXT: */
+  //CHECK-NEXT: ws_size = 0;
   //CHECK-NEXT: dpct::sparse::csrmv(*handle, transA, m, n, &alpha, dpct::library_data_t::real_double, descrA, csrValA, dpct::library_data_t::real_double, csrRowPtrA, csrColIndA, x, dpct::library_data_t::real_double, &beta, dpct::library_data_t::real_double, y, dpct::library_data_t::real_double);
   cusparseAlgMode_t alg = CUSPARSE_ALG0;
   alg = CUSPARSE_ALG1;
