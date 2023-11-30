@@ -382,6 +382,9 @@ private:
 template <typename IDTy, typename... Ts>
 bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals) {
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    return true;
+  }
   // Do not emit diagnostic message for source location outside --in-root
   if (!DpctGlobalInfo::isInRoot(FileAbsPath))
     return false;

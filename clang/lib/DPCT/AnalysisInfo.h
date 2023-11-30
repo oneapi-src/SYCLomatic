@@ -1968,6 +1968,12 @@ public:
   static inline std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
     return VarUsedByRuntimeSymbolAPISet;
   }
+  static inline void setNeedParenAPI(const std::string &Name) {
+    NeedParenAPISet.insert(Name);
+  };
+  static inline bool isNeedParenAPI(const std::string &Name) {
+    return NeedParenAPISet.count(Name);
+  };
 
   static inline std::unordered_map<std::string, std::string> &
   getSpecialReplForEAMap() {
@@ -2164,6 +2170,7 @@ private:
       ConstantReplProcessedFlagMap;
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
   static std::unordered_map<std::string, std::string> SpecialReplForEAMap;
+  static std::unordered_set<std::string> NeedParenAPISet;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

@@ -164,6 +164,7 @@ std::map<std::shared_ptr<TextModification>, bool>
 std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
 std::unordered_map<std::string, std::string>
     DpctGlobalInfo::SpecialReplForEAMap;
+std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.
