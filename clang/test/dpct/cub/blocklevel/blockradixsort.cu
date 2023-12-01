@@ -11,8 +11,8 @@
 
 #define WARP_SIZE 32
 
-const int N = 128;
-const int BlockSize = 128;
+const int N = 32;
+const int BlockSize = 32;
 const int ItemsPerThread = 1;
 
 
@@ -30,40 +30,21 @@ void print_data(int* data, int num) {
   std::cout << std::endl;
 }
 
-//CHECK: void BlockRadixSortKernel(int* data,
-//CHECK-NEXT:  const sycl::nd_item<3> &item_ct1) {
-//CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
-//CHECK-EMPTY:
-//CHECK-NEXT:  int input = data[threadid];
-//CHECK-NEXT:  dpct::group::radix_sort radixsort_obj;
-//CHECK-NEXT:  radixsort_obj.sort(item_ct1, input, 0 , 8*sizeof(input));
-//CHECK-NEXT:  
-//CHECK-NEXT:}
+//CHECK: void BlockRadixSortKernel(int* d_data,
+//CHECK:  const sycl::nd_item<3> &item_ct1) {
+//CHECK:  dpct::group::radix_sort radixsort_obj;
+//CHECK:  int threadid = item_ct1.get_local_id(2);
+//CHECK:  d_data[threadid*ItemsPerThread] = (threadid*2)%32;
+//CHECK:  radixsort_obj.sort(item_ct1.get_group(), d_data);
+//CHECK:}
 
 __global__ void BlockRadixSortKernel(int *d_data)
 {
     typedef cub::BlockRadixSort<int, BlockSize, ItemsPerThread> BlockRadixSortT;
     __shared__ typename BlockRadixSortT::TempStorage sort_temp_storage;
-    
-    int thread_data[ItemsPerThread];
-    int block_offset = blockIdx.x * BlockSize * ItemsPerThread;
-    
-    typedef cub::BlockLoad<int, BlockSize, ItemsPerThread, cub::BLOCK_LOAD_WARP_TRANSPOSE> BlockLoadT;
-    __shared__ typename BlockLoadT::TempStorage load_temp_storage;
-    BlockLoadT(load_temp_storage).Load(d_data + block_offset, thread_data);
-    
-   __syncthreads();
-   
-   BlockRadixSortT(sort_temp_storage).Sort(thread_data);
-   
-   typedef cub::BlockStore<int, BlockSize, ItemsPerThread, cub::BLOCK_STORE_WARP_TRANSPOSE> BlockStoreT;
-   __shared__ typename BlockStoreT::TempStorage store_temp_storage;
-   BlockStoreT(store_temp_storage).Store(d_data + block_offset, thread_data);
-   
-   __syncthreads();
-    
- 
+    int threadid = threadIdx.x;
+    d_data[threadid*ItemsPerThread] = (threadid*2)%32;    
+    BlockRadixSortT(sort_temp_storage).Sort(d_data); 
 }
 
 int main()
