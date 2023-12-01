@@ -1155,6 +1155,34 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (MigrateCmakeScriptOnly) {
+
+#if 1
+
+    std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
+                                          DpctGlobalInfo::getYamlFileName());
+    auto PreTU =
+        std::make_shared<clang::tooling::TranslationUnitReplacements>();
+    if (llvm::sys::fs::exists(YamlFilePath)) {
+      if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
+
+      } else {
+        llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
+      }
+    }
+    printf("######MigrateCmakeScriptOnly########\n");
+    for(auto &Entry: PreTU->MainSourceFilesDigest) {
+      printf("MainSourceFile[%s] --> [%s]\n", Entry.first.c_str(), Entry.second.c_str());
+    }
+    for (const auto &Entry : PreTU->CompileTargets) {
+      printf("Directory:[%s]\n", Entry.first.c_str());
+      for (auto &Val : Entry.second) {
+        printf("\t[%s]\n", Val.MigratedFileName.c_str());
+      }
+      printf("\n");
+    }
+    printf("####################################\n");
+#endif
+
     collectCmakeScriptsSpecified(OptParser, InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
     return MigrationSucceeded;
@@ -1302,6 +1330,19 @@ int runDPCT(int argc, const char **argv) {
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {
+
+#if 1
+    auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
+    printf("########MigrateCmakeScript#############\n");
+    for (const auto &Entry : PreTU->CompileTargets) {
+      for (auto &Val : Entry.second) {
+        printf("\t[%s]\n", Val.MigratedFileName.c_str());
+      }
+      printf("\n");
+    }
+    printf("####################################\n");
+#endif
+
     collectCmakeScripts(InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
   }
