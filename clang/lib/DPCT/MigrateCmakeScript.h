@@ -17,25 +17,14 @@
 clang::tooling::UnifiedPath
 getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot);
-void collectCmakeScripts(
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::vector<clang::tooling::UnifiedPath> &CmakeScriptFiles);
-bool migrateCmakeScriptFile(const clang::tooling::UnifiedPath &InRoot,
-                            const clang::tooling::UnifiedPath &OutRoot,
-                            const clang::tooling::UnifiedPath &InFileName);
-bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
-
-void migrateCmakeScriptOnly(
+void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
+                         const clang::tooling::UnifiedPath &OutRoot);
+void collectCmakeScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot);
 
-void parseVariable(const std::string &Input,
-                   std::map<std::string, std::string> &VariablesMap);
-
-void cmakeSyntaxProcessed(
-    std::string &Input, const std::map<std::string, std::string> &VariablesMap);
-
-std::string convertCmakeCommandsToLower(const std::string &InputString);
+void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
+                            const clang::tooling::UnifiedPath &OutRoot);
+bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
 #endif
