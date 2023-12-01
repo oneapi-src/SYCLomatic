@@ -226,8 +226,11 @@ class InsertText : public TextModification {
   unsigned PairID;
 
 public:
-  InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0)
-      : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {}
+  InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0,
+             bool IsForCUDADebug = false)
+      : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {
+    this->IsForCUDADebug = IsForCUDADebug;
+  }
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
