@@ -496,6 +496,9 @@ void processCmakeMinimumRequired(std::string &Input, size_t &Size,
   Index = Begin + ReplStr.size(); // Update index
 }
 
+// Implicit migration rule is used when the migration logic is difficult to be
+// described with yaml based rule syntax. Currently only migration of
+// cmake_minimum_required() is implemented by implicit migration rule.
 void applyImplicitMigrationRules(std::string &Input) {
 
   size_t Size = Input.size();
@@ -599,6 +602,11 @@ static void applyCmakeMigrationRules() {
 
     // Apply user define migration rules
     for (const auto &PR : MapNames::PatternRewriters) {
+
+      // Once implicit migration rule for some cmake syntax is implemented, the
+      // yaml based rule for the same cmake syntax will be skipped and a msg is
+      // emitted to notify the user. Currently, only migration of
+      // cmake_minimum_required() is implemented by implicit migration rule.
       if (PR.RuleId.find("cmake_minimum_required") != std::string::npos) {
         llvm::outs() << "Migration for cmake_minimum_required has been "
                         "implemented as implicit rule, so migration rule \'"
