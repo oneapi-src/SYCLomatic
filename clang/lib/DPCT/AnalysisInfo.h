@@ -1955,6 +1955,8 @@ public:
     return NeedParenAPISet.count(Name);
   };
 
+  std::string SchemaFileContentCUDA = "";
+  std::string SchemaFileContentSYCL = "";
 private:
   DpctGlobalInfo();
 

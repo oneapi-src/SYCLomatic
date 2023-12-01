@@ -371,12 +371,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   Rewriter Rewrite(Sources, DefaultLangOptions);
   Rewriter DebugCUDARewrite(Sources, DefaultLangOptions);
   extern bool ProcessAllFlag;
-<<<<<<< HEAD
 
-=======
   SmallString<512> OutPath;
   
->>>>>>> Enabling generate instrumented CUDA code.
   // The variable defined here assists to merge history records.
   std::unordered_map<std::string /*FileName*/,
                      bool /*false:Not processed in current migration*/>
@@ -440,14 +437,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         IncludeFileMap[OutPath] = true;
       }
 
-<<<<<<< HEAD
-=======
       // This operation won't fail; it already succeeded once during argument
       // validation.
       makeCanonical(OutPath);
       std::string OriginalPathStr = OutPath.str().str();
       SmallString<512> DebugCUDAPath = SmallString<512>(OriginalPathStr);
->>>>>>> Enabling generate instrumented CUDA code.
       rewriteFileName(OutPath);
       if (!rewriteDir(OutPath, InRoot, OutRoot)) {
         continue;
@@ -778,7 +772,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       return status;
     }
     llvm::raw_os_ostream SchemaStreamCUDA(SchemaFileCUDA);
-    SchemaStreamCUDA << "SchemaStreamCUDA";
+    SchemaStreamCUDA
+        << dpct::DpctGlobalInfo::getInstance().SchemaFileContentCUDA;
 
     EC = fs::create_directories(path::parent_path(SchemaPathSYCL));
     if ((bool)EC) {
@@ -798,7 +793,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       return status;
     }
     llvm::raw_os_ostream SchemaStreamSYCL(SchemaFileSYCL);
-    SchemaStreamSYCL << "SchemaStreamSYCL";
+    SchemaStreamSYCL
+        << dpct::DpctGlobalInfo::getInstance().SchemaFileContentSYCL;
   }
   processallOptionAction(InRoot, OutRoot);
 

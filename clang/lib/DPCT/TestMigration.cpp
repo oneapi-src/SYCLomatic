@@ -19,7 +19,7 @@ using namespace clang::ast_matchers;
 
 void clang::dpct::TESTRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(callee(functionDecl(hasAnyName("faketest")))).bind("call"),
+      callExpr(callee(functionDecl(hasAnyName("cudaMemcpy")))).bind("call"),
       this);
 }
 

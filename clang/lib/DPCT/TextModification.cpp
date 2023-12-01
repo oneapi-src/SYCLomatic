@@ -387,6 +387,8 @@ InsertText::getReplacement(const ASTContext &Context) const {
   R->setPairID(PairID);
   R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   R->setInsertPosition(InsertPos);
+  
+  R->IsForCUDADebug = IsForCUDADebug;
   return R;
 }
 

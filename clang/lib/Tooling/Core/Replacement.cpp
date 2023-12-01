@@ -312,11 +312,14 @@ llvm::Error Replacements::add(const Replacement &R) {
       // Check if two insertions are order-independent: if inserting them in
       // either order produces the same text, they are order-independent.
       if ((R.getReplacementText() + I->getReplacementText()).str() !=
-          (I->getReplacementText() + R.getReplacementText()).str())
+          (I->getReplacementText() + R.getReplacementText()).str() && R.IsForCUDADebug == I->IsForCUDADebug)
 #ifdef SYCLomatic_CUSTOMIZATION
 #ifndef NDEBUG
-        return llvm::make_error<ReplacementError>(
+        {
+          std::cout<<"insert"<<R.getReplacementText().str()<<std::endl;
+          return llvm::make_error<ReplacementError>(
             replacement_error::insert_conflict, R, *I);
+        }
       // If insertions are order-independent, we can merge them.
       Replacement NewR(
           R.getFilePath(), R.getOffset(), 0,
