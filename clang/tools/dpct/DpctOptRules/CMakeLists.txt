@@ -3,6 +3,7 @@ set(dpct_opt_rule_files
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/intel_specific_math.yaml
 )
 
+<<<<<<< HEAD
 if(INTEL_DEPLOY_UNIFIED_LAYOUT)
   install(
     FILES ${dpct_opt_rule_files}
@@ -16,8 +17,27 @@ else()
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
     DESTINATION ./extensions/opt_rules)
 endif()
+=======
+set(dpct_cmake_rule_files
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/cmake_script_migration_rule.yaml
+)
+
+install(
+  FILES ${dpct_opt_rule_files}
+  COMPONENT dpct-opt-rules
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  DESTINATION ./extensions/opt_rules)
+>>>>>>> upstream/SYCLomatic
+
+install(
+  FILES ${dpct_cmake_rule_files}
+  COMPONENT dpct-cmake-rules
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  DESTINATION ./extensions/opt_rules/cmake_rules)
 
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-opt-rules
                            COMPONENT dpct-opt-rules)
+  add_llvm_install_targets(install-dpct-cmake-rules
+                           COMPONENT dpct-cmake-rules)
 endif()
