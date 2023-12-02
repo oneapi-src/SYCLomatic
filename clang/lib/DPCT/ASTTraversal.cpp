@@ -1539,7 +1539,8 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   auto CELocInfo =
       DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CE->getBeginLoc()));
   if (AtomicFunctionOptimizationRule::OptimizedCESet.count(
-          CELocInfo.first + ":" + std::to_string(CELocInfo.second))) {
+          CELocInfo.first.getCanonicalPath().str() + ":" +
+          std::to_string(CELocInfo.second))) {
     return;
   }
 
@@ -1598,7 +1599,8 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
   unsigned int UpperLimit = 0, Step = 0;
   auto CELocInfo =
       DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CE->getBeginLoc()));
-  std::string CEKey = CELocInfo.first + ":" + std::to_string(CELocInfo.second);
+  std::string CEKey = CELocInfo.first.getCanonicalPath().str() + ":" +
+                      std::to_string(CELocInfo.second);
 
   auto ReplaceCE = [&](std::string Name, unsigned int Step) {
     std::string StepStr = std::to_string(Step);
@@ -1882,8 +1884,8 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
         RefEA.getReplacedString() + " / " + std::to_string(Step);
     auto LocInfo = DpctGlobalInfo::getLocInfo(
         SM.getExpansionLoc(RValueRef->getBeginLoc()));
-    SpecialReplMap[LocInfo.first + ":" + std::to_string(LocInfo.second)] =
-        RefRepl;
+    SpecialReplMap[LocInfo.first.getCanonicalPath().str() + ":" +
+                   std::to_string(LocInfo.second)] = RefRepl;
     emplaceTransformation(new ReplaceStmt(RValueRef, RefRepl));
   }
   // 6.Generate Repl for atomic compare functions

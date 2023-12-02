@@ -474,7 +474,8 @@ bool ExprAnalysis::getSpecialRepl(const Stmt *S, std::string &Str) {
   auto &Map = DpctGlobalInfo::getSpecialReplForEAMap();
   auto LocInfo =
       DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(S->getBeginLoc()));
-  std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
+  std::string Key = LocInfo.first.getCanonicalPath().str() + ":" +
+                    std::to_string(LocInfo.second);
   auto it = Map.find(Key);
   if (it == Map.end()) {
     return false;

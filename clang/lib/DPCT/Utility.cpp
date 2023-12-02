@@ -4651,14 +4651,15 @@ bool isFromCUDA(const Decl *D) {
   // resolution by adding a special attribute.
   // So we need treat function which is declared in this file as it
   // is from standard lib.
-  SmallString<512> AlgorithmFileInCudaWrapper = StringRef(DpctInstallPath.getCanonicalPath());
+  SmallString<512> AlgorithmFileInCudaWrapper =
+      DpctInstallPath.getCanonicalPath();
   path::append(AlgorithmFileInCudaWrapper, Twine("lib"), Twine("clang"),
                Twine(CLANG_VERSION_MAJOR_STRING), Twine("include"));
   path::append(AlgorithmFileInCudaWrapper, Twine("cuda_wrappers"),
                Twine("algorithm"));
 
   SmallString<512> AlgorithmFileInCudaWrapperWithUnifiedLayout =
-      StringRef(DpctInstallPath);
+      DpctInstallPath.getCanonicalPath();
   path::append(AlgorithmFileInCudaWrapperWithUnifiedLayout, Twine("opt"),
                Twine("dpct"));
   path::append(AlgorithmFileInCudaWrapperWithUnifiedLayout, Twine("lib"),
