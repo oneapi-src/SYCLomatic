@@ -1246,9 +1246,10 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
 
 namespace detail {
 template <typename T> struct csr2csc_impl {
-  void operator()(sycl::queue queue, int m, int n, int nnz, const T *from_val,
-                  const int *from_row_ptr, const int *from_col_ind, T *to_val,
-                  int *to_col_ptr, int *to_row_ind, conversion_scope range,
+  void operator()(sycl::queue queue, int m, int n, int nnz,
+                  const void *from_val, const int *from_row_ptr,
+                  const int *from_col_ind, void *to_val, int *to_col_ptr,
+                  int *to_row_ind, conversion_scope range,
                   oneapi::mkl::index_base base) {
     using Ty = typename dpct::DataType<T>::T2;
     oneapi::mkl::sparse::matrix_handle_t from_handle = nullptr;
@@ -1279,8 +1280,9 @@ template <typename T> struct csr2csc_impl {
     if (range == conversion_scope::index) {
       dpct::async_dpct_free({new_to_value}, {e2}, queue);
     }
-  };
-}
+  }
+};
+} // namespace detail
 
 /// Convert a CSR sparse matrix to a CSC sparse matrix.
 /// \param [in] queue The queue where the routine should be executed. It must
