@@ -117,19 +117,6 @@ int main(){
   //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, m, n, k, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, ldb, &beta_C, y_C, ldc);
   cusparseCcsrmm(handle, transA, m, n, k, nnz, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, ldb, &beta_C, y_C, ldc);
 
-  cusparseOperation_t transB = CUSPARSE_OPERATION_NON_TRANSPOSE;
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, transB, m, n, k, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
-  cusparseScsrmm2(handle, transA, transB, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
-
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, transB, m, n, k, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, ldb, &beta_C, y_C, ldc);
-  cusparseCcsrmm2(handle, transA, transB, m, n, k, nnz, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, ldb, &beta_C, y_C, ldc);
-
   //CHECK:int status;
   cusparseStatus_t status;
 
@@ -207,60 +194,6 @@ void foo3(){
   const double* val_b_d;
   const float2* val_b_c;
   const double2* val_b_z;
-
-  float* val_c_s;
-  double* val_c_d;
-  float2* val_c_c;
-  double2* val_c_z;
-
-  const float* alpha_s;
-  const double* alpha_d;
-  const float2* alpha_c;
-  const double2* alpha_z;
-
-  const float* beta_s;
-  const double* beta_d;
-  const float2* beta_c;
-  const double2* beta_z;
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 2, 5, alpha_s, descrA, val_a_s, row_ptr_a, col_ind_a, val_b_s, 5, beta_s, val_c_s, 4);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 2, 5, alpha_d, descrA, val_a_d, row_ptr_a, col_ind_a, val_b_d, 5, beta_d, val_c_d, 4);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 2, 5, alpha_c, descrA, val_a_c, row_ptr_a, col_ind_a, val_b_c, 5, beta_c, val_c_c, 4);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 2, 5, alpha_z, descrA, val_a_z, row_ptr_a, col_ind_a, val_b_z, 5, beta_z, val_c_z, 4);
-  cusparseScsrmm2(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 4, 2, 5, 9, alpha_s, descrA, val_a_s, row_ptr_a, col_ind_a, val_b_s, 5, beta_s, val_c_s, 4);
-  cusparseDcsrmm2(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 4, 2, 5, 9, alpha_d, descrA, val_a_d, row_ptr_a, col_ind_a, val_b_d, 5, beta_d, val_c_d, 4);
-  cusparseCcsrmm2(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 4, 2, 5, 9, alpha_c, descrA, val_a_c, row_ptr_a, col_ind_a, val_b_c, 5, beta_c, val_c_c, 4);
-  cusparseZcsrmm2(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 4, 2, 5, 9, alpha_z, descrA, val_a_z, row_ptr_a, col_ind_a, val_b_z, 5, beta_z, val_c_z, 4);
-}
-
-void foo4(){
-  int c_nnz;
-  cusparseMatDescr_t descrB;
-  cusparseMatDescr_t descrC;
-
-  const float* val_a_s;
-  const double* val_a_d;
-  const float2* val_a_c;
-  const double2* val_a_z;
-  const int* row_ptr_a;
-  const int* col_ind_a;
-
-  const float* val_b_s;
-  const double* val_b_d;
-  const float2* val_b_c;
-  const double2* val_b_z;
   const int* row_ptr_b;
   const int* col_ind_b;
 
@@ -283,7 +216,7 @@ void foo4(){
   cusparseZcsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 3, 4, descrA, 4, val_a_z, row_ptr_a, col_ind_a, descrB, 5, val_b_z, row_ptr_b, col_ind_b, descrC, val_c_z, row_ptr_c, col_ind_c);
 }
 
-void foo5() {
+void foo4() {
   cusparseHandle_t handle;
   cusparseMatDescr_t descrA;
 
@@ -388,7 +321,7 @@ void foo5() {
   cusparseDestroyCsrsv2Info(info2);
 }
 
-void foo6() {
+void foo5() {
   cusparseHandle_t handle;
   cusparseMatDescr_t descrA;
   cusparseSolveAnalysisInfo_t info;

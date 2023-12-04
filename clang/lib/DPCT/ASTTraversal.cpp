@@ -3715,7 +3715,6 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseCsrsv_solveEx",
         /*level 3*/
         "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
-        "cusparseScsrmm2", "cusparseDcsrmm2", "cusparseCcsrmm2", "cusparseZcsrmm2",
         "cusparseScsrgemm", "cusparseDcsrgemm", "cusparseCcsrgemm", "cusparseZcsrgemm",
         "cusparseXcsrgemmNnz",
         /*Generic*/
@@ -3767,7 +3766,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
         Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
         "general/symmetric/triangular");
-  } else if (FuncNameRef.endswith("csrmm") || FuncNameRef.endswith("csrmm2")) {
+  } else if (FuncNameRef.endswith("csrmm")) {
     report(
         DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
         Diagnostics::UNSUPPORT_MATRIX_TYPE, true, "general");
