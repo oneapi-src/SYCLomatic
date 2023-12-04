@@ -15,7 +15,8 @@ using namespace clang::ast_matchers;
 
 void SpBLASTypeLocRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
-    return hasAnyName("csrsv2Info_t", "cusparseSolvePolicy_t");
+    return hasAnyName("csrsv2Info_t", "cusparseSolvePolicy_t",
+                      "cusparseAction_t");
   };
 
   MF.addMatcher(
