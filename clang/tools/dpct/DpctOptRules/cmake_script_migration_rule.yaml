@@ -44,3 +44,16 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
+- Rule: rule_cmake_cxx_standard
+  Kind: PatternRewriter
+  MatchMode: Partial
+  Priority: Takeover
+  In: set (CMAKE_CXX_STANDARD ${version})
+  Out: set (CMAKE_CXX_STANDARD 17)
+
+- Rule: rule_cmake_cxx_compiler
+  Kind: PatternRewriter
+  MatchMode: Partial
+  Priority: Takeover
+  In: set (CMAKE_CXX_COMPILER ${version})
+  Out: set (CMAKE_CXX_COMPILER icpx)
