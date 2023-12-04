@@ -1,6 +1,0 @@
-- Rule: rule_cmake_cxx_standard
-  Kind: PatternRewriter
-  MatchMode: Partial
-  Priority: Takeover
-  In: set (CMAKE_CXX_STANDARD ${version})
-  Out: set (CMAKE_CXX_STANDARD 17)
