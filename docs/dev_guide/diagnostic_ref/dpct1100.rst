@@ -43,6 +43,7 @@ For example, this original CUDA\* code:
      cudaMalloc(&workspace, worksize);
      cufftSetWorkArea(plan, workspace);
      cufftExecC2C(plan, idata, odata, CUFFT_FORWARD);
+     ...
    }
 
 results in the following migrated SYCL code:
@@ -82,6 +83,7 @@ results in the following migrated SYCL code:
      plan->set_workspace(workspace);
      plan->compute<sycl::float2, sycl::float2>(idata, odata,
                                                dpct::fft::fft_direction::forward);
+     ...
    }
 
 which is rewritten to:
@@ -94,8 +96,16 @@ which is rewritten to:
      dpct::device_ext &dev_ct1 = dpct::get_current_device();
      sycl::queue &q_ct1 = dev_ct1.in_order_queue();
      size_t worksize;
+     void *workspace;
+     if (dev_ct1.is_gpu())
+       plan->use_internal_workspace(0);
      plan->commit(&q_ct1, 7, dpct::fft::fft_type::complex_float_to_complex_float,
                   2, &worksize);
+     if (dev_ct1.is_gpu()) {
+       workspace = (void *)sycl::malloc_device(worksize, q_ct1);
+       plan->set_workspace(workspace);
+     }
      plan->compute<sycl::float2, sycl::float2>(idata, odata,
                                                dpct::fft::fft_direction::forward);
+     ...
    }

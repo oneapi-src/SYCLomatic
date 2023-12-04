@@ -35,8 +35,9 @@ For example, this original CUDA\* code:
   
      // User does not set CU_TRSF_READ_AS_INTEGER here.
      cuTexRefSetFlags(tex, CU_TRSF_NORMALIZED_COORDINATES);
+     cuTexRefSetFormat(tex, CU_AD_FORMAT_UNSIGNED_INT16, 1);
      ...
-     result = tex2D(tex, 0.5f, 0.5f);
+     result = tex2D<float>(tex, 0.5f, 0.5f);
 
 results in the following migrated SYCL code:
 
@@ -49,6 +50,8 @@ results in the following migrated SYCL code:
      could not be normalized as specified in the original code.
      */
      tex->set(sycl::coordinate_normalization_mode::normalized);
+     tex->set_channel_type(sycl::image_channel_type::unsigned_int16);
+     tex->set_channel_num(1);
      ...
      result = tex.read(0.5f, 0.5f); // data normalization does not match original code
 
@@ -58,5 +61,7 @@ which is manually adjusted to:
    :linenos:
   
      tex->set(sycl::coordinate_normalization_mode::normalized);
+     tex->set_channel_type(sycl::image_channel_type::unsigned_int16);
+     tex->set_channel_num(1);
      ...
-     result = normalization(tex.read(0.5f, 0.5f)); // Implement the function "normalization" to normalize the result data as required.
+     result = tex.read(0.5f, 0.5f) / 65535.f;

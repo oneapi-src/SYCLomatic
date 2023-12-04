@@ -53,6 +53,8 @@ which is manually adjusted to:
    :linenos:
 
    int main(int argc, char **argv) {
+     // User can check device list by command `sycl-ls` and filter the device by using
+     // environment variable `ONEAPI_DEVICE_SELECTOR`.
      dpct::select_device(0);
      foo(argc, argv);
      ...
