@@ -245,45 +245,7 @@ void foo3(){
   cusparseZcsrmm2(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 4, 2, 5, 9, alpha_z, descrA, val_a_z, row_ptr_a, col_ind_a, val_b_z, 5, beta_z, val_c_z, 4);
 }
 
-void foo4(){
-  int c_nnz;
-  cusparseMatDescr_t descrB;
-  cusparseMatDescr_t descrC;
-
-  const float* val_a_s;
-  const double* val_a_d;
-  const float2* val_a_c;
-  const double2* val_a_z;
-  const int* row_ptr_a;
-  const int* col_ind_a;
-
-  const float* val_b_s;
-  const double* val_b_d;
-  const float2* val_b_c;
-  const double2* val_b_z;
-  const int* row_ptr_b;
-  const int* col_ind_b;
-
-  float* val_c_s;
-  double* val_c_d;
-  float2* val_c_c;
-  double2* val_c_z;
-  int* row_ptr_c;
-  int* col_ind_c;
-
-  // CHECK: dpct::sparse::csrgemm_nnz_estimate(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, 4, row_ptr_a, col_ind_a, descrB, 5, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
-  // CHECK-NEXT: dpct::sparse::csrgemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, val_a_s, row_ptr_a, col_ind_a, descrB, val_b_s, row_ptr_b, col_ind_b, descrC, val_c_s, row_ptr_c, col_ind_c);
-  // CHECK-NEXT: dpct::sparse::csrgemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, val_a_d, row_ptr_a, col_ind_a, descrB, val_b_d, row_ptr_b, col_ind_b, descrC, val_c_d, row_ptr_c, col_ind_c);
-  // CHECK-NEXT: dpct::sparse::csrgemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, val_a_c, row_ptr_a, col_ind_a, descrB, val_b_c, row_ptr_b, col_ind_b, descrC, val_c_c, row_ptr_c, col_ind_c);
-  // CHECK-NEXT: dpct::sparse::csrgemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 3, 4, descrA, val_a_z, row_ptr_a, col_ind_a, descrB, val_b_z, row_ptr_b, col_ind_b, descrC, val_c_z, row_ptr_c, col_ind_c);
-  cusparseXcsrgemmNnz(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 3, 4, descrA, 4, row_ptr_a,col_ind_a, descrB, 5, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
-  cusparseScsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 3, 4, descrA, 4, val_a_s, row_ptr_a, col_ind_a, descrB, 5, val_b_s, row_ptr_b, col_ind_b, descrC, val_c_s, row_ptr_c, col_ind_c);
-  cusparseDcsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 3, 4, descrA, 4, val_a_d, row_ptr_a, col_ind_a, descrB, 5, val_b_d, row_ptr_b, col_ind_b, descrC, val_c_d, row_ptr_c, col_ind_c);
-  cusparseCcsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 3, 4, descrA, 4, val_a_c, row_ptr_a, col_ind_a, descrB, 5, val_b_c, row_ptr_b, col_ind_b, descrC, val_c_c, row_ptr_c, col_ind_c);
-  cusparseZcsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 3, 4, descrA, 4, val_a_z, row_ptr_a, col_ind_a, descrB, 5, val_b_z, row_ptr_b, col_ind_b, descrC, val_c_z, row_ptr_c, col_ind_c);
-}
-
-void foo5() {
+void foo4() {
   cusparseHandle_t handle;
   cusparseMatDescr_t descrA;
 
@@ -388,7 +350,7 @@ void foo5() {
   cusparseDestroyCsrsv2Info(info2);
 }
 
-void foo6() {
+void foo5() {
   cusparseHandle_t handle;
   cusparseMatDescr_t descrA;
   cusparseSolveAnalysisInfo_t info;

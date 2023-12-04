@@ -3715,8 +3715,6 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         /*level 3*/
         "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
         "cusparseScsrmm2", "cusparseDcsrmm2", "cusparseCcsrmm2", "cusparseZcsrmm2",
-        "cusparseScsrgemm", "cusparseDcsrgemm", "cusparseCcsrgemm", "cusparseZcsrgemm",
-        "cusparseXcsrgemmNnz",
         /*Generic*/
         "cusparseCreateCsr", "cusparseDestroySpMat", "cusparseCsrGet",
         "cusparseSpMatGetFormat", "cusparseSpMatGetIndexBase",
