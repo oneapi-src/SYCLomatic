@@ -261,9 +261,10 @@ bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles) {
   for (const auto &FilePath : SourceFiles) {
     if (!llvm::sys::path::has_extension(FilePath) ||
         llvm::sys::path::filename(FilePath).ends_with(".cmake") ||
-        llvm::sys::path::filename(FilePath).ends_with(".txt"))
+        llvm::sys::path::filename(FilePath).ends_with(".txt")) {
       IsCmakeScript = true;
-    break;
+      break;
+    }
   }
   return IsCmakeScript;
 }
@@ -274,7 +275,7 @@ void collectCmakeScriptsSpecified(
     const clang::tooling::UnifiedPath &OutRoot) {
   auto CmakeScriptLists = OptParser->getSourcePathList();
   if (!CmakeScriptLists.empty()) {
-    for (auto FilePath : CmakeScriptLists) {
+    for (auto &FilePath : CmakeScriptLists) {
       if (fs::is_directory(FilePath)) {
 
         collectCmakeScripts(FilePath, OutRoot);
@@ -540,7 +541,7 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString) {
 
   const auto Lines = split(InputString, '\n');
   std::vector<std::string> Output;
-  for (auto Line : Lines) {
+  for (auto &Line : Lines) {
 
     int Size = Line.size();
     int Index = 0;
