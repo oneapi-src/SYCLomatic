@@ -84,35 +84,16 @@ public:
   struct PatternRewriter {
     std::string In;
     std::string Out;
-    RuleMatchMode MatchMode;
+    RuleMatchMode MatchMode = RuleMatchMode::Partial;
     std::string RuleId;
     std::map<std::string, PatternRewriter> Subrules;
     PatternRewriter(){};
 
-    PatternRewriter &operator=(const PatternRewriter &PR) {
-
-      RuleId = PR.RuleId;
-      In = PR.In;
-      Out = PR.Out;
-      MatchMode = PR.MatchMode;
-      Subrules = PR.Subrules;
-
-      return *this;
-    }
-
-    PatternRewriter(const PatternRewriter &PR) {
-      RuleId = PR.RuleId;
-      In = PR.In;
-      Out = PR.Out;
-      MatchMode = PR.MatchMode;
-
-      Subrules = PR.Subrules;
-    }
-
+    PatternRewriter &operator=(const PatternRewriter &PR);
+    PatternRewriter(const PatternRewriter &PR);
     PatternRewriter(const std::string &I, const std::string &O,
                     const std::map<std::string, PatternRewriter> &S,
-                    RuleMatchMode MatchMode, std::string RuleId)
-        : In(I), Out(O), MatchMode(MatchMode), RuleId(RuleId), Subrules(S) {}
+                    RuleMatchMode MatchMode, std::string RuleId);
   };
 
   static std::vector<clang::tooling::UnifiedPath> RuleFiles;
@@ -253,6 +234,8 @@ struct llvm::yaml::MappingTraits<MetaRuleObject::PatternRewriter> {
     Io.mapRequired("In", Doc.In);
     Io.mapRequired("Out", Doc.Out);
     Io.mapOptional("Subrules", Doc.Subrules);
+    Io.mapOptional("MatchMode", Doc.MatchMode);
+    Io.mapOptional("RuleId", Doc.RuleId);
   }
 };
 
