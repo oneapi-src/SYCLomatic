@@ -57,3 +57,31 @@
   Priority: Takeover
   In: set (CMAKE_CXX_COMPILER ${version})
   Out: set (CMAKE_CXX_COMPILER icpx)
+
+- Rule: rule_set_property_cxx_standard
+  Kind: PatternRewriter
+  MatchMode: Partial
+  Priority: Takeover
+  In: set_target_properties (${targets} PROPERTIES CXX_STANDARD ${version})
+  Out: set_target_properties (${targets} PROPERTIES CXX_STANDARD 17)
+
+- Rule: rule_set_property_cxx_standard
+  Kind: PatternRewriter
+  MatchMode: Partial
+  Priority: Takeover
+  In: set_target_properties (${targets} PROPERTIES CXX_STANDARD ${version})
+  Out: set_target_properties (${targets} PROPERTIES CXX_STANDARD 17)
+
+- Rule: rule_set_property_cuda_seprarable
+  Kind: PatternRewriter
+  MatchMode: Partial
+  Priority: Takeover
+  In: set_target_properties (${targets} PROPERTIES CUDA_SEPARABLE_COMPILATION ${state} ${other_properties})
+  Out: set_target_properties (${targets} PROPERTIES ${other_properties})
+
+- Rule: rule_set_property_cuda_architechtures
+  Kind: PatternRewriter
+  MatchMode: Partial
+  Priority: Takeover
+  In: set_target_properties (${targets} PROPERTIES CUDA_ARCHITECHTURES ${state} ${other_properties})
+  Out: set_target_properties (${targets} PROPERTIES ${other_properties})
