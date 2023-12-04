@@ -231,6 +231,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
       dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
       dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
+
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
   oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
@@ -240,6 +241,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
   oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, sparse_rows,
                                     sparse_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
+
   auto data_b = dpct::detail::get_memory<Ty>(b);
   auto data_c = dpct::detail::get_memory<Ty>(c);
   switch (info->get_matrix_type()) {
@@ -1530,7 +1532,6 @@ void csrgemm(sycl::queue queue, oneapi::mkl::transpose trans_a,
                           nullptr, false);
 }
 #endif
-
 } // namespace sparse
 } // namespace dpct
 
