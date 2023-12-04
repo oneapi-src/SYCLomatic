@@ -301,3 +301,28 @@ void foo4() {
   cusparseCsrsv_analysisEx(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 6, descrA, a_s_val, CUDA_R_32F, a_row_ptr, a_col_ind, info, CUDA_R_32F);
   cusparseCsrsv_solveEx(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, &alpha_s, CUDA_R_32F, descrA, a_s_val, CUDA_R_32F, a_row_ptr, a_col_ind, info, f_s, CUDA_R_32F, x_s, CUDA_R_32F, CUDA_R_32F);
 }
+
+void foo5() {
+  cusparseHandle_t handle;
+  float* a_s_val;
+  double* a_d_val;
+  float2* a_c_val;
+  double2* a_z_val;
+  int* a_row_ptr;
+  int* a_col_ind;
+  float* b_s_val;
+  double* b_d_val;
+  float2* b_c_val;
+  double2* b_z_val;
+  int* b_col_ptr;
+  int* b_row_ind;
+
+  //CHECK:dpct::sparse::csr2csc(*handle, 3, 4, 7, a_s_val, a_row_ptr, a_col_ind, b_s_val, b_col_ptr, b_row_ind, dpct::sparse::conversion_scope::index_and_value, oneapi::mkl::index_base::zero);
+  //CHECK-NEXT:dpct::sparse::csr2csc(*handle, 3, 4, 7, a_d_val, a_row_ptr, a_col_ind, b_d_val, b_col_ptr, b_row_ind, dpct::sparse::conversion_scope::index_and_value, oneapi::mkl::index_base::zero);
+  //CHECK-NEXT:dpct::sparse::csr2csc(*handle, 3, 4, 7, a_c_val, a_row_ptr, a_col_ind, b_c_val, b_col_ptr, b_row_ind, dpct::sparse::conversion_scope::index_and_value, oneapi::mkl::index_base::zero);
+  //CHECK-NEXT:dpct::sparse::csr2csc(*handle, 3, 4, 7, a_z_val, a_row_ptr, a_col_ind, b_z_val, b_col_ptr, b_row_ind, dpct::sparse::conversion_scope::index_and_value, oneapi::mkl::index_base::zero);
+  cusparseScsr2csc(handle, 3, 4, 7, a_s_val, a_row_ptr, a_col_ind, b_s_val, b_col_ptr, b_row_ind, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO);
+  cusparseDcsr2csc(handle, 3, 4, 7, a_d_val, a_row_ptr, a_col_ind, b_d_val, b_col_ptr, b_row_ind, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO);
+  cusparseCcsr2csc(handle, 3, 4, 7, a_c_val, a_row_ptr, a_col_ind, b_c_val, b_col_ptr, b_row_ind, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO);
+  cusparseZcsr2csc(handle, 3, 4, 7, a_z_val, a_row_ptr, a_col_ind, b_z_val, b_col_ptr, b_row_ind, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO);
+}
