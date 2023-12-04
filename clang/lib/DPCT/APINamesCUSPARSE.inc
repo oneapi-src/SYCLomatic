@@ -360,6 +360,14 @@ REMOVE_API_FACTORY_ENTRY("cusparseSpSV_destroyDescr")
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSpSV_bufferSize", DEREF(9),
                                         LITERAL("0")))
 
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCsr2cscEx2_bufferSize",
+                                        DEREF(14), LITERAL("0")))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseCsr2cscEx2",
+    CALL(MapNames::getDpctNamespace() + "sparse::csr2csc", DEREF(0), ARG(1),
+         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
+         ARG(10), ARG(11), ARG(12))))
+
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cusparseSpSV_analysis",
                                       CALL(MapNames::getDpctNamespace() +
                                                "sparse::spsv_optimize",
