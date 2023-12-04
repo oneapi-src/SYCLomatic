@@ -244,11 +244,16 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans_a,
 
   auto data_b = dpct::detail::get_memory<Ty>(b);
   auto data_c = dpct::detail::get_memory<Ty>(c);
+  sycl::event gemm_event;
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
-    oneapi::mkl::sparse::gemm(queue, oneapi::mkl::layout::col_major, trans_a,
-                              trans_b, alpha_value, *sparse_matrix_handle,
-                              data_b, dense_cols, ldb, beta_value, data_c, ldc);
+#ifndef DPCT_USM_LEVEL_NONE
+    gemm_event =
+#endif
+        oneapi::mkl::sparse::gemm(queue, oneapi::mkl::layout::col_major,
+                                  trans_a, trans_b, alpha_value,
+                                  *sparse_matrix_handle, data_b, dense_cols,
+                                  ldb, beta_value, data_c, ldc);
     break;
   }
   default:
@@ -256,9 +261,11 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans_a,
         "the csrmm does not support matrix_info::matrix_type::sy, "
         "matrix_info::matrix_type::tr and matrix_info::matrix_type::he");
   }
+#ifdef DPCT_USM_LEVEL_NONE
   queue.wait();
-  sycl::event e =
-      oneapi::mkl::sparse::release_matrix_handle(queue, sparse_matrix_handle);
+#endif
+  sycl::event e = oneapi::mkl::sparse::release_matrix_handle(
+      queue, sparse_matrix_handle, {gemm_event});
   queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
     cgh.host_task([=] { delete sparse_matrix_handle; });
@@ -1273,7 +1280,6 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
                                          trans_a, alpha, a, x, y);
 }
 #endif
-
 } // namespace sparse
 } // namespace dpct
 
