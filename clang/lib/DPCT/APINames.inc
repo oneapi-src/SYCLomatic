@@ -357,6 +357,10 @@ ENTRY(cudaGetSurfaceReference, cudaGetSurfaceReference, false, NO_FLAG, P4, "com
 
 // low level texture object management functions of runtime API
 ENTRY(cudaCreateChannelDesc, cudaCreateChannelDesc, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaCreateChannelDescHalf, cudaCreateChannelDescHalf, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaCreateChannelDescHalf1, cudaCreateChannelDescHalf1, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaCreateChannelDescHalf2, cudaCreateChannelDescHalf2, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaCreateChannelDescHalf4, cudaCreateChannelDescHalf4, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaCreateTextureObject, cudaCreateTextureObject, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaDestroyTextureObject, cudaDestroyTextureObject, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaGetChannelDesc, cudaGetChannelDesc, true, NO_FLAG, P0, "Successful")
@@ -709,6 +713,7 @@ ENTRY(__ushort2half_rn, __ushort2half_rn, true, NO_FLAG, P4, "Successful")
 ENTRY(__ushort2half_ru, __ushort2half_ru, true, NO_FLAG, P4, "Successful")
 ENTRY(__ushort2half_rz, __ushort2half_rz, true, NO_FLAG, P4, "Successful")
 ENTRY(__ushort_as_half, __ushort_as_half, true, NO_FLAG, P4, "Successful")
+ENTRY(make_half2, make_half2, true, NO_FLAG, P4, "Successful")
 
 // Half Math Functions
 ENTRY(hceil, hceil, true, NO_FLAG, P4, "Successful")
@@ -1813,7 +1818,7 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, group_index, group_index, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, thread_index, thread_index, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, dim_threads, dim_threads, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, num_threads, num_threads, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, num_threads, num_threads, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, size, size, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, group_dim, group_dim, false, NO_FLAG, P4, "Comment")
 
@@ -1856,7 +1861,7 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::multi_grid_group, cooperative_groups::
 ENTRY_MEMBER_FUNCTION(cooperative_groups::multi_grid_group, cooperative_groups::__v1::multi_grid_group, size, size, false, NO_FLAG, P4, "Comment")
 
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, sync, sync, true, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, num_threads, num_threads, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, num_threads, num_threads, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, thread_rank, thread_rank, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, meta_group_size, meta_group_size, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, meta_group_rank, meta_group_rank, true, NO_FLAG, P4, "Comment")

@@ -29,22 +29,22 @@ static bool isMaterializing(Value val) {
 }
 
 /// Makes target array's elements sorted according to the `order` array.
-static void sortArrayBasedOnOrder(std::vector<LoopId> &target,
+static void sortArrayBasedOnOrder(std::vector<LoopCoeffPair> &target,
                                   ArrayRef<LoopId> order) {
-  std::sort(target.begin(), target.end(), [&order](LoopId l, LoopId r) {
-    assert(l != r);
-    int idxL = -1, idxR = -1;
-    for (int i = 0, e = order.size(); i < e; i++) {
-      if (order[i] == l)
-        idxL = i;
-      if (order[i] == r)
-        idxR = i;
-    }
-    assert(idxL >= 0 && idxR >= 0);
-    return idxL < idxR;
-  });
+  std::sort(target.begin(), target.end(),
+            [&order](const LoopCoeffPair &l, const LoopCoeffPair &r) {
+              assert(std::addressof(l) == std::addressof(r) || l != r);
+              int idxL = -1, idxR = -1;
+              for (int i = 0, e = order.size(); i < e; i++) {
+                if (order[i] == l.first)
+                  idxL = i;
+                if (order[i] == r.first)
+                  idxR = i;
+              }
+              assert(idxL >= 0 && idxR >= 0);
+              return idxL < idxR;
+            });
 }
-
 //===----------------------------------------------------------------------===//
 // Code generation environment constructor and general methods
 //===----------------------------------------------------------------------===//
@@ -104,13 +104,17 @@ void CodegenEnv::startEmit() {
       /*isSparseOut=*/sparseOut != nullptr, topSort,
       // TODO: compute the map and pass it to loop emitter directly instead of
       // passing in a callback.
-      [this](TensorId t, Level lvl) -> std::vector<std::pair<TensorId, Level>> {
-        // Translates from a list of loop index to a list of [tid, dim] pair.
-        std::vector<LoopId> rLoops = this->merger().getDependentLoops(t, lvl);
-        std::vector<std::pair<TensorId, Level>> ret;
+      /*dependentLvlGetter=*/
+      [this](TensorId t,
+             Level lvl) -> std::vector<std::pair<TensorLevel, unsigned>> {
+        // Translates from a list of loop indices to a list of [tid, lvl] pair.
+        std::vector<LoopCoeffPair> &rLoops = merger().getDependentLoops(t, lvl);
+        std::vector<std::pair<TensorLevel, unsigned>> ret;
         ret.reserve(rLoops.size());
-        for (LoopId l : rLoops)
-          ret.emplace_back(this->merger().getLoopDefiningLvl(l));
+        for (auto [loop, coeff] : rLoops) {
+          TensorLevel tl = makeTensorLevel(merger().getLoopDefiningLvl(loop));
+          ret.emplace_back(tl, coeff);
+        };
         return ret;
       });
 }
@@ -133,9 +137,6 @@ std::optional<Operation *> CodegenEnv::genLoopBoundary(
   auto r = callback(params); // may update parameters
   unsigned i = 0;
   if (isReduc()) {
-    // FIXME: This requires `updateExprValue` to perform updates without
-    // checking for a previous value; but it's not clear whether that's
-    // by design or might be a potential source for bugs.
     updateReduc(params[i++]);
     if (redValidLexInsert)
       setValidLexInsert(params[i++]);
@@ -279,16 +280,15 @@ void CodegenEnv::endExpand() {
 void CodegenEnv::startReduc(ExprId exp, Value val) {
   assert(!isReduc() && exp != detail::kInvalidId);
   redExp = exp;
-  updateReduc(val);
+  redVal = val;
+  latticeMerger.setExprValue(exp, val);
 }
 
 void CodegenEnv::updateReduc(Value val) {
   assert(isReduc());
   redVal = val;
-  // NOTE: `genLoopBoundary` requires that this performs a unilateral
-  // update without checking for a previous value first.  (It's not
-  // clear whether any other callsites also require that.)
-  latticeMerger.updateExprValue(redExp, val);
+  latticeMerger.clearExprValue(redExp);
+  latticeMerger.setExprValue(redExp, val);
 }
 
 Value CodegenEnv::endReduc() {

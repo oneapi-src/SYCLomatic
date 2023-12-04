@@ -1,4 +1,3 @@
-// REQUIRES: level_zero, gpu
 // RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 // Extra run to check for leaks in Level Zero using ZE_DEBUG
@@ -12,7 +11,11 @@
 #include "../graph_common.hpp"
 
 int main() {
-  queue Queue;
+  queue Queue{{sycl::ext::intel::property::queue::no_immediate_command_list{}}};
+
+  if (!are_graphs_supported(Queue)) {
+    return 0;
+  }
 
   using T = int;
 
@@ -54,6 +57,7 @@ int main() {
       CGH.depends_on(Event);
       CGH.ext_oneapi_graph(GraphExec);
     });
+    Event.wait();
   }
   Queue.wait_and_throw();
 
@@ -66,9 +70,11 @@ int main() {
   free(PtrB, Queue);
   free(PtrC, Queue);
 
-  assert(ReferenceA == DataA);
-  assert(ReferenceB == DataB);
-  assert(ReferenceC == DataC);
+  for (size_t i = 0; i < Size; i++) {
+    assert(check_value(i, ReferenceA[i], DataA[i], "DataA"));
+    assert(check_value(i, ReferenceB[i], DataB[i], "DataB"));
+    assert(check_value(i, ReferenceC[i], DataC[i], "DataC"));
+  }
 
   return 0;
 }

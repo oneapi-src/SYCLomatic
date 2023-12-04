@@ -1385,70 +1385,6 @@ inline void mark_segments(Policy &&policy, OffsetIteratorT begin_offsets,
   }
 }
 
-template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
-inline void segmented_sort_keys_by_two_pair_sorts(
-    Policy &&policy, Iter1 keys_in, Iter2 keys_out, ::std::int64_t n,
-    ::std::int64_t nsegments, Iter3 begin_offsets, Iter3 end_offsets,
-    bool descending = false, int begin_bit = 0,
-    int end_bit = sizeof(typename ::std::iterator_traits<Iter1>::value_type) *
-                  8) {
-  sycl::buffer<::std::size_t, 1> segments{sycl::range<1>(n)};
-  sycl::buffer<::std::size_t, 1> segments_sorted{sycl::range<1>(n)};
-
-  using key_t_value_t = typename ::std::iterator_traits<Iter1>::value_type;
-  sycl::buffer<key_t_value_t, 1> keys_temp{sycl::range<1>(n)};
-
-  mark_segments(policy, begin_offsets, end_offsets, n, nsegments, segments);
-
-  // Part 1: Sort by keys keeping track of which segment were in
-  dpct::sort_pairs(policy, keys_in, oneapi::dpl::begin(keys_temp),
-                   oneapi::dpl::begin(segments),
-                   oneapi::dpl::begin(segments_sorted), n, descending);
-
-  // Part 2: Sort the segments with a stable sort to get back sorted segments.
-  dpct::sort_pairs(::std::forward<Policy>(policy),
-                   oneapi::dpl::begin(segments_sorted),
-                   oneapi::dpl::begin(segments), oneapi::dpl::begin(keys_temp),
-                   keys_out, n, false);
-}
-
-template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
-          typename Iter4, typename Iter5>
-inline void segmented_sort_pairs_by_two_pair_sorts(
-    Policy &&policy, Iter1 keys_in, Iter2 keys_out, Iter4 values_in,
-    Iter3 values_out, ::std::int64_t n, ::std::int64_t nsegments,
-    Iter5 begin_offsets, Iter5 end_offsets, bool descending = false,
-    int begin_bit = 0,
-    int end_bit = sizeof(typename ::std::iterator_traits<Iter1>::value_type) *
-                  8) {
-  sycl::buffer<::std::size_t, 1> segments{sycl::range<1>(n)};
-  sycl::buffer<::std::size_t, 1> segments_sorted{sycl::range<1>(n)};
-
-  using key_t_value_t = typename ::std::iterator_traits<Iter1>::value_type;
-  sycl::buffer<key_t_value_t, 1> keys_temp{sycl::range<1>(n)};
-
-  using value_t_value_t = typename ::std::iterator_traits<Iter3>::value_type;
-  sycl::buffer<value_t_value_t, 1> values_temp{sycl::range<1>(n)};
-
-  mark_segments(policy, begin_offsets, end_offsets, n, nsegments, segments);
-
-  auto zip_seg_vals =
-      oneapi::dpl::make_zip_iterator(oneapi::dpl::begin(segments), values_in);
-  auto zip_seg_vals_out = oneapi::dpl::make_zip_iterator(
-      oneapi::dpl::begin(segments_sorted), oneapi::dpl::begin(values_temp));
-  // Part 1: Sort by keys keeping track of which segment were in
-  dpct::sort_pairs(policy, keys_in, oneapi::dpl::begin(keys_temp), zip_seg_vals,
-                   zip_seg_vals_out, n, descending);
-
-  auto zip_keys_vals = oneapi::dpl::make_zip_iterator(
-      oneapi::dpl::begin(keys_temp), oneapi::dpl::begin(values_temp));
-  auto zip_keys_vals_out = oneapi::dpl::make_zip_iterator(keys_out, values_out);
-  // Part 2: Sort the segments with a stable sort to get back sorted segments.
-  dpct::sort_pairs(
-      ::std::forward<Policy>(policy), oneapi::dpl::begin(segments_sorted),
-      oneapi::dpl::begin(segments), zip_keys_vals, zip_keys_vals_out, n, false);
-}
-
 // The dpl_histogram namespace contains a temporary preview of an upcoming
 // oneDPL histogram API.  This namespace will be removed and replaced with
 // corresponding calls to oneapi::dpl::histogram()
@@ -2212,15 +2148,9 @@ segmented_sort_keys(
     dpct::internal::segmented_sort_keys_by_parallel_for_of_sorts(
         ::std::forward<Policy>(policy), keys_in, keys_out, n, nsegments,
         begin_offsets, end_offsets, descending, begin_bit, end_bit);
-  } else if (nsegments < 512) // for loop of parallel sorts when we have a small
-                              // number of total sorts to limit total overhead
+  } else
   {
     dpct::internal::segmented_sort_keys_by_parallel_sorts(
-        ::std::forward<Policy>(policy), keys_in, keys_out, n, nsegments,
-        begin_offsets, end_offsets, descending, begin_bit, end_bit);
-  } else // decent catch all using 2 full sorts
-  {
-    dpct::internal::segmented_sort_keys_by_two_pair_sorts(
         ::std::forward<Policy>(policy), keys_in, keys_out, n, nsegments,
         begin_offsets, end_offsets, descending, begin_bit, end_bit);
   }
@@ -2272,16 +2202,9 @@ segmented_sort_pairs(
         ::std::forward<Policy>(policy), keys_in, keys_out, values_in,
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
         begin_bit, end_bit);
-  } else if (nsegments < 512) // for loop of parallel sorts when we have a small
-                              // number of total sorts to limit total overhead
+  } else
   {
     dpct::internal::segmented_sort_pairs_by_parallel_sorts(
-        ::std::forward<Policy>(policy), keys_in, keys_out, values_in,
-        values_out, n, nsegments, begin_offsets, end_offsets, descending,
-        begin_bit, end_bit);
-  } else // decent catch all using 2 full sorts
-  {
-    dpct::internal::segmented_sort_pairs_by_two_pair_sorts(
         ::std::forward<Policy>(policy), keys_in, keys_out, values_in,
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
         begin_bit, end_bit);

@@ -8,6 +8,7 @@
 
 #include "llvm/CodeGen/CalcSpillWeights.h"
 #include "llvm/ADT/SmallPtrSet.h"
+#include "llvm/ADT/SmallSet.h"
 #include "llvm/CodeGen/LiveInterval.h"
 #include "llvm/CodeGen/LiveIntervals.h"
 #include "llvm/CodeGen/MachineFunction.h"
@@ -143,6 +144,17 @@ void VirtRegAuxInfo::calculateSpillWeightAndHint(LiveInterval &LI) {
   if (Weight < 0)
     return;
   LI.setWeight(Weight);
+}
+
+static bool canMemFoldInlineAsm(LiveInterval &LI,
+                                const MachineRegisterInfo &MRI) {
+  for (const MachineOperand &MO : MRI.reg_operands(LI.reg())) {
+    const MachineInstr *MI = MO.getParent();
+    if (MI->isInlineAsm() && MI->mayFoldInlineAsmRegOp(MI->getOperandNo(&MO)))
+      return true;
+  }
+
+  return false;
 }
 
 float VirtRegAuxInfo::weightCalcHelper(LiveInterval &LI, SlotIndex *Start,
@@ -314,7 +326,7 @@ float VirtRegAuxInfo::weightCalcHelper(LiveInterval &LI, SlotIndex *Start,
   // into instruction itself makes perfect sense.
   if (ShouldUpdateLI && LI.isZeroLength(LIS.getSlotIndexes()) &&
       !LI.isLiveAtIndexes(LIS.getRegMaskSlots()) &&
-      !isLiveAtStatepointVarArg(LI)) {
+      !isLiveAtStatepointVarArg(LI) && !canMemFoldInlineAsm(LI, MRI)) {
     LI.markNotSpillable();
     return -1.0;
   }

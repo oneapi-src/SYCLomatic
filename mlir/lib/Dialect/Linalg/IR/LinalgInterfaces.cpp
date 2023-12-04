@@ -32,6 +32,7 @@ using namespace mlir::linalg;
 //===----------------------------------------------------------------------===//
 // Interface utility functions
 //===----------------------------------------------------------------------===//
+
 bool linalg::detail::canOpOperandsBeDroppedImpl(
     linalg::LinalgOp linalgOp, ArrayRef<OpOperand *> droppedOperands) {
   SmallVector<AffineMap> indexingMaps;
@@ -46,6 +47,27 @@ bool linalg::detail::canOpOperandsBeDroppedImpl(
     return linalgOp.getNumLoops() == 0;
   }
   return inversePermutation(concatAffineMaps(indexingMaps)) != AffineMap();
+}
+
+//===----------------------------------------------------------------------===//
+// CopyOpInterface implementation
+//===----------------------------------------------------------------------===//
+
+bool linalg::isaCopyOpInterface(LinalgOp linalgOp) {
+  // Structural.
+  if (linalgOp.getNumParallelLoops() != linalgOp.getNumLoops())
+    return false;
+
+  // Operands and maps.
+  if (linalgOp.getNumDpsInputs() != 1 || linalgOp.getNumDpsInits() != 1)
+    return false;
+  auto mapRange = linalgOp.getIndexingMapsArray();
+  if (mapRange.size() != 2 || !mapRange.front().isIdentity() ||
+      !mapRange.back().isIdentity()) {
+    return false;
+  }
+  // Region.
+  return llvm::hasSingleElement(linalgOp.getBlock()->getOperations());
 }
 
 //===----------------------------------------------------------------------===//
@@ -226,9 +248,6 @@ mlir::linalg::inferContractionDims(LinalgOp linalgOp) {
   llvm::SmallDenseSet<int64_t> rb = findPermutationsIndexingOperand(
       linalgOp, linalgOp.getDpsInputOperand(1), red);
   llvm::set_intersect(ra, rb);
-
-  if (ac.empty() || bc.empty() || ra.empty())
-    return failure();
 
   // Return each set in sorted order.
   ContractionDimensions dimensions{
@@ -904,8 +923,8 @@ getResultsPositionInLoopsToShapeMap(LinalgOp &op) {
   int64_t outputRankSum = 0;
   for (OpOperand *input : op.getDpsInputOperands())
     inputRankSum += op.getRank(input);
-  for (OpOperand *output : op.getDpsInitOperands())
-    outputRankSum += op.getRank(output);
+  for (OpOperand &output : op.getDpsInitsMutable())
+    outputRankSum += op.getRank(&output);
   return {inputRankSum, inputRankSum + outputRankSum};
 }
 
@@ -948,19 +967,18 @@ LinalgOp::reifyResultShapes(OpBuilder &b,
           createFlatListOfOperandDims(b, loc));
   int64_t pos = 0;
   ArrayRef<AffineExpr> shapeExprs = resultShapesFromInputShapesMap.getResults();
-  for (OpOperand *opOperand : getDpsInitOperands()) {
+  for (OpOperand &opOperand : getDpsInitsMutable()) {
     SmallVector<OpFoldResult> shapes;
-    for (int64_t dim : llvm::seq<int64_t>(0, getRank(opOperand))) {
-      auto shapedType = llvm::cast<ShapedType>(opOperand->get().getType());
+    for (int64_t dim : llvm::seq<int64_t>(0, getRank(&opOperand))) {
+      auto shapedType = llvm::cast<ShapedType>(opOperand.get().getType());
       if (!shapedType.isDynamicDim(dim)) {
         // Static dim: Return IntegerAttr.
         shapes.push_back(b.getIndexAttr(shapedType.getDimSize(dim)));
       } else {
         // Dynamic dim: Return Value.
-        OpFoldResult ofr =
-            checkDimExpr.visit(shapeExprs[pos])
-                ? createOrFoldDimOp(b, loc, opOperand->get(), dim)
-                : allResultDimValues[pos];
+        OpFoldResult ofr = checkDimExpr.visit(shapeExprs[pos])
+                               ? createOrFoldDimOp(b, loc, opOperand.get(), dim)
+                               : allResultDimValues[pos];
         shapes.push_back(getValueOrCreateConstantIndexOp(b, loc, ofr));
       }
       pos++;
@@ -977,7 +995,7 @@ int64_t LinalgOp::getIndexingMapIndex(OpOperand *opOperand) {
   auto dpsIface = cast<DestinationStyleOpInterface>(*this->getOperation());
   if (!dpsIface.isDpsInput(opOperand))
     return operandNumber;
-  auto [start, end] = dpsIface.getDpsInitsPositionRange();
+  unsigned start = dpsIface.getDpsInits().getBeginOperandIndex();
   assert(!dpsIface.isDpsInit(opOperand));
   // Account for potential inputs that are not DPS and may not appear in
   // `indexingMaps`.
@@ -1112,7 +1130,9 @@ LogicalResult mlir::linalg::detail::verifyStructuredOpInterface(Operation *op) {
                            "arguments as the number of input/output operands");
 
   for (OpOperand *opOperand : linalgOp.getOpOperandsMatchingBBargs()) {
-    Type elementType = getElementTypeOrSelf(opOperand->get());
+    Type elementType = opOperand->get().getType();
+    if (isa<MemRefType, RankedTensorType>(elementType))
+      elementType = getElementTypeOrSelf(opOperand->get().getType());
     Type argType = block.getArgument(opOperand->getOperandNumber()).getType();
     if (elementType != argType)
       return op->emitOpError("expected type of bb argument #")

@@ -192,21 +192,6 @@ set(CLANG_SPAWN_CC1 OFF CACHE BOOL
 # and many distros, e.g. RedHat has no-pie by default for GCC.
 option(CLANG_DEFAULT_PIE_ON_LINUX "Default to -fPIE and -pie on linux-gnu" OFF)
 
-# Manually handle default so we can change the meaning of a cached default.
-set(CLANG_ENABLE_OPAQUE_POINTERS "DEFAULT" CACHE STRING
-    "Enable opaque pointers by default")
-if(CLANG_ENABLE_OPAQUE_POINTERS STREQUAL "DEFAULT")
-  if(DPCPP_ENABLE_OPAQUE_POINTERS)
-    set(CLANG_ENABLE_OPAQUE_POINTERS_INTERNAL ON)
-  else()
-    set(CLANG_ENABLE_OPAQUE_POINTERS_INTERNAL OFF)
-  endif()
-elseif(CLANG_ENABLE_OPAQUE_POINTERS)
-  set(CLANG_ENABLE_OPAQUE_POINTERS_INTERNAL ON)
-else()
-  set(CLANG_ENABLE_OPAQUE_POINTERS_INTERNAL OFF)
-endif()
-
 set(CLANG_DEFAULT_LINKER "" CACHE STRING
   "Default linker to use (linker name or absolute path, empty for platform default)")
 
@@ -930,6 +915,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-clang-resource-headers
       install-dpct-binary
       install-dpct-opt-rules
+      install-dpct-cmake-rules
       )
   else()
     list(APPEND DPCT_RUN
@@ -939,7 +925,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-clang-resource-headers
       install-dpct-binary
       install-dpct-autocomplete
-      install-dpct-opt-rules
+      install-dpct-cmake-rules
       )
   endif()
 endif()

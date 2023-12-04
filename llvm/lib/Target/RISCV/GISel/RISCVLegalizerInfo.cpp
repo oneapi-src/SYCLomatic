@@ -12,62 +12,58 @@
 
 #include "RISCVLegalizerInfo.h"
 #include "RISCVSubtarget.h"
+#include "llvm/CodeGen/GlobalISel/LegalizerHelper.h"
 #include "llvm/CodeGen/TargetOpcodes.h"
 #include "llvm/CodeGen/ValueTypes.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Type.h"
 
 using namespace llvm;
+using namespace LegalityPredicates;
 
 RISCVLegalizerInfo::RISCVLegalizerInfo(const RISCVSubtarget &ST) {
   const unsigned XLen = ST.getXLen();
-  const LLT XLenLLT = LLT::scalar(XLen);
+  const LLT sXLen = LLT::scalar(XLen);
+  const LLT sDoubleXLen = LLT::scalar(2 * XLen);
+  const LLT p0 = LLT::pointer(0, XLen);
+  const LLT s8 = LLT::scalar(8);
+  const LLT s16 = LLT::scalar(16);
+  const LLT s32 = LLT::scalar(32);
+  const LLT s64 = LLT::scalar(64);
 
   using namespace TargetOpcode;
 
   getActionDefinitionsBuilder({G_ADD, G_SUB, G_AND, G_OR, G_XOR})
-      .legalFor({XLenLLT})
+      .legalFor({s32, sXLen})
       .widenScalarToNextPow2(0)
-      .clampScalar(0, XLenLLT, XLenLLT);
+      .clampScalar(0, s32, sXLen);
 
   getActionDefinitionsBuilder(
-      {G_UADDE, G_UADDO, G_USUBE, G_USUBO, G_SADDE, G_SADDO, G_SSUBE, G_SSUBO})
-      .legalFor({{XLenLLT, XLenLLT}})
-      .clampScalar(0, XLenLLT, XLenLLT)
-      .clampScalar(1, XLenLLT, XLenLLT)
-      .widenScalarToNextPow2(0);
+      {G_UADDE, G_UADDO, G_USUBE, G_USUBO}).lower();
+
+  getActionDefinitionsBuilder({G_SADDO, G_SSUBO}).minScalar(0, sXLen).lower();
 
   getActionDefinitionsBuilder({G_ASHR, G_LSHR, G_SHL})
-      .legalFor({{XLenLLT, XLenLLT}})
+      .legalFor({{s32, s32}, {sXLen, sXLen}})
       .widenScalarToNextPow2(0)
-      .clampScalar(1, XLenLLT, XLenLLT)
-      .clampScalar(0, XLenLLT, XLenLLT);
+      .clampScalar(1, s32, sXLen)
+      .clampScalar(0, s32, sXLen)
+      .minScalarSameAs(1, 0);
 
-  // Extensions
-  auto ExtLegalFunc = [=](const LegalityQuery &Query) {
-    unsigned DstSize = Query.Types[0].getSizeInBits();
+  if (ST.is64Bit()) {
+    getActionDefinitionsBuilder({G_ZEXT, G_SEXT, G_ANYEXT})
+        .legalFor({{sXLen, s32}})
+        .maxScalar(0, sXLen);
 
-    // Make sure that we have something that will fit in a register, and
-    // make sure it's a power of 2.
-    if (DstSize < 8 || DstSize > XLen || !isPowerOf2_32(DstSize))
-      return false;
+    getActionDefinitionsBuilder(G_SEXT_INREG)
+        .customFor({sXLen})
+        .maxScalar(0, sXLen)
+        .lower();
+  } else {
+    getActionDefinitionsBuilder({G_ZEXT, G_SEXT, G_ANYEXT}).maxScalar(0, sXLen);
 
-    const LLT SrcTy = Query.Types[1];
-
-    // Make sure we fit in a register otherwise. Don't bother checking that
-    // the source type is below 2 * XLen bits. We shouldn't be allowing anything
-    // through which is wider than the destination in the first place.
-    unsigned SrcSize = SrcTy.getSizeInBits();
-    if (SrcSize < 8 || !isPowerOf2_32(SrcSize))
-      return false;
-
-    return true;
-  };
-  getActionDefinitionsBuilder({G_ZEXT, G_SEXT, G_ANYEXT})
-      .legalIf(ExtLegalFunc)
-      .clampScalar(0, XLenLLT, XLenLLT);
-
-  getActionDefinitionsBuilder(G_SEXT_INREG).legalFor({XLenLLT}).lower();
+    getActionDefinitionsBuilder(G_SEXT_INREG).maxScalar(0, sXLen).lower();
+  }
 
   // Merge/Unmerge
   for (unsigned Op : {G_MERGE_VALUES, G_UNMERGE_VALUES}) {
@@ -76,26 +72,190 @@ RISCVLegalizerInfo::RISCVLegalizerInfo(const RISCVSubtarget &ST) {
     getActionDefinitionsBuilder(Op)
         .widenScalarToNextPow2(LitTyIdx, XLen)
         .widenScalarToNextPow2(BigTyIdx, XLen)
-        .clampScalar(LitTyIdx, XLenLLT, XLenLLT)
-        .clampScalar(BigTyIdx, XLenLLT, XLenLLT);
+        .clampScalar(LitTyIdx, sXLen, sXLen)
+        .clampScalar(BigTyIdx, sXLen, sXLen);
   }
 
+  getActionDefinitionsBuilder(G_BSWAP).maxScalar(0, sXLen).lower();
+
   getActionDefinitionsBuilder({G_CONSTANT, G_IMPLICIT_DEF})
-      .legalFor({XLenLLT})
+      .legalFor({s32, sXLen, p0})
       .widenScalarToNextPow2(0)
-      .clampScalar(0, XLenLLT, XLenLLT);
+      .clampScalar(0, s32, sXLen);
 
   getActionDefinitionsBuilder(G_ICMP)
-      .legalFor({{XLenLLT, XLenLLT}})
+      .legalFor({{sXLen, sXLen}, {sXLen, p0}})
       .widenScalarToNextPow2(1)
-      .clampScalar(1, XLenLLT, XLenLLT)
-      .clampScalar(0, XLenLLT, XLenLLT);
+      .clampScalar(1, sXLen, sXLen)
+      .clampScalar(0, sXLen, sXLen);
 
   getActionDefinitionsBuilder(G_SELECT)
-      .legalFor({{XLenLLT, XLenLLT}})
+      .legalFor({{sXLen, sXLen}, {p0, sXLen}})
       .widenScalarToNextPow2(0)
-      .clampScalar(0, XLenLLT, XLenLLT)
-      .clampScalar(1, XLenLLT, XLenLLT);
+      .clampScalar(0, sXLen, sXLen)
+      .clampScalar(1, sXLen, sXLen);
+
+  auto &LoadStoreActions =
+      getActionDefinitionsBuilder({G_LOAD, G_STORE})
+          .legalForTypesWithMemDesc({{s32, p0, s8, 8},
+                                     {s32, p0, s16, 16},
+                                     {s32, p0, s32, 32},
+                                     {p0, p0, sXLen, XLen}});
+  auto &ExtLoadActions =
+      getActionDefinitionsBuilder({G_SEXTLOAD, G_ZEXTLOAD})
+          .legalForTypesWithMemDesc({{s32, p0, s8, 8}, {s32, p0, s16, 16}});
+  if (XLen == 64) {
+    LoadStoreActions.legalForTypesWithMemDesc({{s64, p0, s8, 8},
+                                               {s64, p0, s16, 16},
+                                               {s64, p0, s32, 32},
+                                               {s64, p0, s64, 64}});
+    ExtLoadActions.legalForTypesWithMemDesc(
+        {{s64, p0, s8, 8}, {s64, p0, s16, 16}, {s64, p0, s32, 32}});
+  } else if (ST.hasStdExtD()) {
+    LoadStoreActions.legalForTypesWithMemDesc({{s64, p0, s64, 64}});
+  }
+  LoadStoreActions.clampScalar(0, s32, sXLen).lower();
+  ExtLoadActions.widenScalarToNextPow2(0).clampScalar(0, s32, sXLen).lower();
+
+  getActionDefinitionsBuilder(G_PTR_ADD).legalFor({{p0, sXLen}});
+
+  getActionDefinitionsBuilder(G_PTRTOINT)
+      .legalFor({{sXLen, p0}})
+      .clampScalar(0, sXLen, sXLen);
+
+  getActionDefinitionsBuilder(G_INTTOPTR)
+      .legalFor({{p0, sXLen}})
+      .clampScalar(1, sXLen, sXLen);
+
+  getActionDefinitionsBuilder(G_BRCOND).legalFor({sXLen}).minScalar(0, sXLen);
+
+  getActionDefinitionsBuilder(G_PHI)
+      .legalFor({p0, sXLen})
+      .widenScalarToNextPow2(0)
+      .clampScalar(0, sXLen, sXLen);
+
+  getActionDefinitionsBuilder(G_GLOBAL_VALUE)
+      .legalFor({p0});
+
+  if (ST.hasStdExtM() || ST.hasStdExtZmmul()) {
+    getActionDefinitionsBuilder(G_MUL)
+        .legalFor({s32, sXLen})
+        .widenScalarToNextPow2(0)
+        .clampScalar(0, s32, sXLen);
+
+    // clang-format off
+    getActionDefinitionsBuilder({G_SMULH, G_UMULH})
+        .legalFor({sXLen})
+        .lower();
+    // clang-format on
+
+    getActionDefinitionsBuilder({G_SMULO, G_UMULO}).minScalar(0, sXLen).lower();
+  } else {
+    getActionDefinitionsBuilder(G_MUL)
+        .libcallFor({sXLen, sDoubleXLen})
+        .widenScalarToNextPow2(0)
+        .clampScalar(0, sXLen, sDoubleXLen);
+
+    getActionDefinitionsBuilder({G_SMULH, G_UMULH}).lowerFor({sXLen});
+
+    getActionDefinitionsBuilder({G_SMULO, G_UMULO})
+        .minScalar(0, sXLen)
+        // Widen sXLen to sDoubleXLen so we can use a single libcall to get
+        // the low bits for the mul result and high bits to do the overflow
+        // check.
+        .widenScalarIf(
+            [=](const LegalityQuery &Query) { return Query.Types[0] == sXLen; },
+            [=](const LegalityQuery &Query) {
+              return std::make_pair(0, sDoubleXLen);
+            })
+        .lower();
+  }
+
+  if (ST.hasStdExtM()) {
+    getActionDefinitionsBuilder({G_UDIV, G_SDIV, G_UREM, G_SREM})
+        .legalFor({s32, sXLen})
+        .libcallFor({sDoubleXLen})
+        .clampScalar(0, s32, sDoubleXLen)
+        .widenScalarToNextPow2(0);
+  } else {
+    getActionDefinitionsBuilder({G_UDIV, G_SDIV, G_UREM, G_SREM})
+        .libcallFor({sXLen, sDoubleXLen})
+        .clampScalar(0, sXLen, sDoubleXLen)
+        .widenScalarToNextPow2(0);
+  }
+
+  getActionDefinitionsBuilder(G_ABS).lower();
+  getActionDefinitionsBuilder({G_UMAX, G_UMIN, G_SMAX, G_SMIN}).lower();
+
+  getActionDefinitionsBuilder(G_FRAME_INDEX).legalFor({p0});
+
+  getActionDefinitionsBuilder({G_MEMCPY, G_MEMMOVE, G_MEMSET}).libcall();
+
+  getActionDefinitionsBuilder(G_DYN_STACKALLOC).lower();
+
+  // FP Operations
+
+  getActionDefinitionsBuilder({G_FADD, G_FSUB, G_FMUL, G_FDIV, G_FMA, G_FNEG,
+                               G_FABS, G_FSQRT, G_FMAXNUM, G_FMINNUM})
+      .legalIf([=, &ST](const LegalityQuery &Query) -> bool {
+        return (ST.hasStdExtF() && typeIs(0, s32)(Query)) ||
+               (ST.hasStdExtD() && typeIs(0, s64)(Query));
+      });
+
+  getActionDefinitionsBuilder(G_FPTRUNC).legalIf(
+      [=, &ST](const LegalityQuery &Query) -> bool {
+        return (ST.hasStdExtD() && typeIs(0, s32)(Query) &&
+                typeIs(1, s64)(Query));
+      });
+  getActionDefinitionsBuilder(G_FPEXT).legalIf(
+      [=, &ST](const LegalityQuery &Query) -> bool {
+        return (ST.hasStdExtD() && typeIs(0, s64)(Query) &&
+                typeIs(1, s32)(Query));
+      });
+
+  getActionDefinitionsBuilder(G_FCONSTANT)
+      .legalIf([=, &ST](const LegalityQuery &Query) -> bool {
+        return (ST.hasStdExtF() && typeIs(0, s32)(Query)) ||
+               (ST.hasStdExtD() && typeIs(0, s64)(Query));
+      });
+
+  getActionDefinitionsBuilder({G_FPTOSI, G_FPTOUI})
+      .legalIf([=, &ST](const LegalityQuery &Query) -> bool {
+        return typeInSet(0, {s32, sXLen})(Query) &&
+               ((ST.hasStdExtF() && typeIs(1, s32)(Query)) ||
+                (ST.hasStdExtD() && typeIs(1, s64)(Query)));
+      })
+      .widenScalarToNextPow2(0)
+      .clampScalar(0, s32, sXLen);
+
+  getActionDefinitionsBuilder({G_SITOFP, G_UITOFP})
+      .legalIf([=, &ST](const LegalityQuery &Query) -> bool {
+        return ((ST.hasStdExtF() && typeIs(0, s32)(Query)) ||
+                (ST.hasStdExtD() && typeIs(0, s64)(Query))) &&
+               typeInSet(1, {s32, sXLen})(Query);
+      })
+      .widenScalarToNextPow2(1)
+      .clampScalar(1, s32, sXLen);
 
   getLegacyLegalizerInfo().computeTables();
+}
+
+bool RISCVLegalizerInfo::legalizeCustom(LegalizerHelper &Helper,
+                                        MachineInstr &MI) const {
+  switch (MI.getOpcode()) {
+  default:
+    // No idea what to do.
+    return false;
+  case TargetOpcode::G_SEXT_INREG: {
+    // Source size of 32 is sext.w.
+    int64_t SizeInBits = MI.getOperand(2).getImm();
+    if (SizeInBits == 32)
+      return true;
+
+    return Helper.lower(MI, 0, /* Unused hint type */ LLT()) ==
+           LegalizerHelper::Legalized;
+  }
+  }
+
+  llvm_unreachable("expected switch to return");
 }

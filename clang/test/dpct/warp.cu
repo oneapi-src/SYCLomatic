@@ -314,6 +314,28 @@ __global__ void kernel33() {
   __shfl_xor_sync(mask, val, laneMask, WS);
 }
 
+__global__ void kernel34() {
+  int val;
+  int laneMask;
+  int WS;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked-sub-group-operation" to use the experimental helper function to migrate __shfl_xor_sync.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, WS);
+  __shfl_xor_sync(0x7FFFFFFF, val, laneMask, WS);
+}
+
+__global__ void kernel35() {
+  // CHECK: int val;
+  // CHECK-NEXT: int laneMask;
+  // CHECK-NEXT: int WS;
+  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, WS);
+  int val;
+  int laneMask;
+  int WS;
+  __shfl_xor_sync(0xFFFFFFFF, val, laneMask, WS);
+}
+
 int main() {
 
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
@@ -552,4 +574,18 @@ int main() {
   // CHECK-NEXT:     kernel33(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   kernel33<<<1,32>>>();
+
+    // CHECK: q_ct1.parallel_for(
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:     kernel34(item_{{[0-9a-z]+}});
+  // CHECK-NEXT:   });
+  kernel34<<<1,32>>>();
+
+  // CHECK: q_ct1.parallel_for(
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:     kernel35(item_{{[0-9a-z]+}});
+  // CHECK-NEXT:   });
+  kernel35<<<1,32>>>();
 }

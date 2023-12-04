@@ -49,8 +49,8 @@ std::vector<std::string> ExtraIncPaths;
 int SDKVersionMajor=0;
 int SDKVersionMinor=0;
 
-bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath, CudaVersion& CV) {
-  CV = CudaVersion::UNKNOWN;
+bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath) {
+  Version = CudaVersion::UNKNOWN;
   std::ifstream CudaFile(FilePath, std::ios::in);
   if (!CudaFile.is_open()) {
     return false;
@@ -73,57 +73,57 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
   int DefineVersion = std::stoi(Res);
   int Major = DefineVersion / 1000;
   int Minor = (DefineVersion % 100) / 10;
-
   SDKVersionMajor = Major;
   SDKVersionMinor = Minor;
   if (Major < 8) {
-    CV = CudaVersion::CUDA_80;
+    Version = CudaVersion::CUDA_80;
   }
   if (Major == 8 && Minor == 0) {
-    CV = CudaVersion::CUDA_80;
+    Version = CudaVersion::CUDA_80;
   } else if (Major == 9 && Minor == 0) {
-    CV = CudaVersion::CUDA_90;
+    Version = CudaVersion::CUDA_90;
   } else if (Major == 9 && Minor == 1) {
-    CV = CudaVersion::CUDA_91;
+    Version = CudaVersion::CUDA_91;
   } else if (Major == 9 && Minor == 2) {
-    CV = CudaVersion::CUDA_92;
+    Version = CudaVersion::CUDA_92;
   } else if (Major == 10 && Minor == 0) {
-    CV = CudaVersion::CUDA_100;
+    Version = CudaVersion::CUDA_100;
   } else if (Major == 10 && Minor == 1) {
-    CV = CudaVersion::CUDA_101;
+    Version = CudaVersion::CUDA_101;
   } else if (Major == 10 && Minor == 2) {
-    CV = CudaVersion::CUDA_102;
+    Version = CudaVersion::CUDA_102;
   } else if (Major == 11 && Minor == 0) {
-    CV = CudaVersion::CUDA_110;
+    Version = CudaVersion::CUDA_110;
   } else if (Major == 11 && Minor == 1) {
-    CV = CudaVersion::CUDA_111;
+    Version = CudaVersion::CUDA_111;
   } else if (Major == 11 && Minor == 2) {
-    CV = CudaVersion::CUDA_112;
+    Version = CudaVersion::CUDA_112;
   } else if (Major == 11 && Minor == 3) {
-    CV = CudaVersion::CUDA_113;
+    Version = CudaVersion::CUDA_113;
   } else if (Major == 11 && Minor == 4) {
-    CV = CudaVersion::CUDA_114;
+    Version = CudaVersion::CUDA_114;
   } else if (Major == 11 && Minor == 5) {
-    CV = CudaVersion::CUDA_115;
+    Version = CudaVersion::CUDA_115;
   } else if (Major == 11 && Minor == 6) {
-    CV = CudaVersion::CUDA_116;
+    Version = CudaVersion::CUDA_116;
   } else if (Major == 11 && Minor == 7) {
-    CV = CudaVersion::CUDA_117;
+    Version = CudaVersion::CUDA_117;
   } else if (Major == 11 && Minor == 8) {
-    CV = CudaVersion::CUDA_118;
+    Version = CudaVersion::CUDA_118;
   } else if (Major == 12 && Minor == 0) {
-    CV = CudaVersion::CUDA_120;
+    Version = CudaVersion::CUDA_120;
   } else if (Major == 12 && Minor == 1) {
-    CV = CudaVersion::CUDA_121;
+    Version = CudaVersion::CUDA_121;
   } else if (Major == 12 && Minor == 2) {
-    CV = CudaVersion::CUDA_122;
+    Version = CudaVersion::CUDA_122;
   }
 
-  if (CV != CudaVersion::UNKNOWN) {
+  if (Version != CudaVersion::UNKNOWN) {
     IsVersionSupported = true;
     return true;
   } else if (Major >= 12) {
-    CV = CudaVersion::NEW;
+    Version = CudaVersion::NEW;
+    IsVersionPartSupported = true;
     return true;
   }
   return false;
@@ -229,13 +229,12 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
         FS.exists(FilePath + "/cuda.h")))
     return false;
   IsIncludePathValid = true;
-  bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h", Version);
+  IncludePath = FilePath;
+  bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h");
   if (!IsFound)
     return false;
   IsValid = true;
   InstallPath = FilePath;
-  IncludePath = FilePath;
-
   return true;
 }
 #endif // SYCLomatic_CUSTOMIZATION
@@ -652,11 +651,15 @@ void NVPTX::Assembler::ConstructJob(Compilation &C, const JobAction &JA,
     Relocatable = Args.hasFlag(options::OPT_fopenmp_relocatable_target,
                                options::OPT_fnoopenmp_relocatable_target,
                                /*Default=*/true);
-  else if (JA.isOffloading(Action::OFK_Cuda) ||
-           JA.isOffloading(Action::OFK_SYCL))
+  else if (JA.isOffloading(Action::OFK_Cuda))
     // In CUDA we generate relocatable code by default.
     Relocatable = Args.hasFlag(options::OPT_fgpu_rdc, options::OPT_fno_gpu_rdc,
                                /*Default=*/false);
+  else if (JA.isOffloading(Action::OFK_SYCL))
+    // In SYCL we control [no-]rdc linking at bitcode stage with 'llvm-link'.
+    // This allows for link-time optimisations and for now we do no support a
+    // non-LTO path, which means we cannot generate relocatable device code.
+    Relocatable = false;
   else
     // Otherwise, we are compiling directly and should create linkable output.
     Relocatable = true;
@@ -809,8 +812,7 @@ void NVPTX::OpenMPLinker::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   AddStaticDeviceLibsLinking(C, *this, JA, Inputs, Args, CmdArgs, "nvptx",
-                             GPUArch, /*isBitCodeSDL=*/false,
-                             /*postClangLink=*/false);
+                             GPUArch, /*isBitCodeSDL=*/false);
 
   // Find nvlink and pass it as "--nvlink-path=" argument of
   // clang-nvlink-wrapper.
@@ -833,14 +835,14 @@ void NVPTX::Linker::ConstructJob(Compilation &C, const JobAction &JA,
                                  const char *LinkingOutput) const {
   const auto &TC =
       static_cast<const toolchains::NVPTXToolChain &>(getToolChain());
+  ArgStringList CmdArgs;
+
   assert(TC.getTriple().isNVPTX() && "Wrong platform");
 
-  ArgStringList CmdArgs;
+  assert((Output.isFilename() || Output.isNothing()) && "Invalid output.");
   if (Output.isFilename()) {
     CmdArgs.push_back("-o");
     CmdArgs.push_back(Output.getFilename());
-  } else {
-    assert(Output.isNothing() && "Invalid output.");
   }
 
   if (mustEmitDebugInfo(Args) == EmitSameDebugInfoAsHost)
@@ -890,8 +892,7 @@ void NVPTX::Linker::ConstructJob(Compilation &C, const JobAction &JA,
         const char *CubinF =
             Args.MakeArgString(getToolChain().getDriver().GetTemporaryPath(
                 llvm::sys::path::stem(InputFile), "cubin"));
-        if (std::error_code EC =
-                llvm::sys::fs::copy_file(InputFile, C.addTempFile(CubinF)))
+        if (llvm::sys::fs::copy_file(InputFile, C.addTempFile(CubinF)))
           continue;
 
         CmdArgs.push_back(CubinF);

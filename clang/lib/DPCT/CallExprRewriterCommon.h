@@ -26,7 +26,7 @@
 #include "clang/Driver/Options.h"
 #include <cstdarg>
 
-extern std::string DpctInstallPath; // Installation directory for this tool
+extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
 
 using namespace clang::ast_matchers;
 namespace clang {
@@ -808,6 +808,35 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
   };
 }
 
+inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
+  return [=](const CallExpr *C) -> std::string {
+    std::string TemplateArgStr = "";
+    if (auto *Callee = dyn_cast<DeclRefExpr>(C->getCallee()->IgnoreParenImpCasts())) {
+      auto TAL = Callee->template_arguments();
+      if (TAL.size() <= Idx) {
+        return TemplateArgStr;
+      }
+      const TemplateArgument &TA = TAL[Idx].getArgument();
+      TemplateArgumentInfo TAI;
+      switch (TA.getKind()) {
+      case TemplateArgument::Integral:
+        TAI.setAsNonType(TA.getAsIntegral());
+        break;
+      case TemplateArgument::Expression:
+        TAI.setAsNonType(TA.getAsExpr());
+        break;
+      case TemplateArgument::Type:
+        TAI.setAsType(TA.getAsType());
+        break;
+      default:
+        break;
+      }
+      TemplateArgStr = TAI.getString();
+    }
+    return TemplateArgStr;
+  };
+}
+
 // Can only be used if CheckCanUseTemplateMalloc is true.
 inline std::function<std::string(const CallExpr *C)> getDoubleDerefedType(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
@@ -1004,6 +1033,7 @@ template <UnaryOperatorKind UO, class ArgValue>
 inline std::shared_ptr<CallExprRewriterFactoryBase> createUnaryOpRewriterFactory(
     const std::string &SourceName,
     std::function<ArgValue(const CallExpr *)> &&ArgValueCreator) {
+  DpctGlobalInfo::setNeedParenAPI(SourceName);
   return std::make_shared<
       CallExprRewriterFactory<UnaryOpRewriter<UO, ArgValue>,
                               std::function<ArgValue(const CallExpr *)>>>(
@@ -1020,6 +1050,7 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createBinaryOpRewriterFactor
     const std::string &SourceName,
     std::function<LValue(const CallExpr *)> &&LValueCreator,
     std::function<RValue(const CallExpr *)> &&RValueCreator) {
+  DpctGlobalInfo::setNeedParenAPI(SourceName);
   return std::make_shared<
       CallExprRewriterFactory<BinaryOpRewriter<BO, LValue, RValue>,
                               std::function<LValue(const CallExpr *)>,
@@ -1723,6 +1754,25 @@ public:
     if (!Arg->isValueDependent() &&
         Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
         Result.Val.getInt().getSExtValue() == value) {
+      return true;
+    }
+    return false;
+  }
+};
+
+class CheckArgIsConstantIntWithUnsignedValue {
+  unsigned int value;
+  int index;
+
+public:
+  CheckArgIsConstantIntWithUnsignedValue(int idx, unsigned int val)
+      : value(val), index(idx) {}
+  bool operator()(const CallExpr *C) {
+    auto Arg = C->getArg(index);
+    Expr::EvalResult Result;
+    if (!Arg->isValueDependent() &&
+        Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
+        Result.Val.getInt().getZExtValue() == value) {
       return true;
     }
     return false;

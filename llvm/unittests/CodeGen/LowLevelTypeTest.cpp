@@ -159,7 +159,7 @@ TEST(LowLevelTypeTest, ChangeElementType) {
   EXPECT_EQ(V2P1, V2P0.changeElementType(P1));
   EXPECT_EQ(V2S32, V2P0.changeElementType(S32));
 
-  // Similar tests for for scalable vectors.
+  // Similar tests for scalable vectors.
   const LLT NXV2S32 = LLT::scalable_vector(2, 32);
   const LLT NXV2S64 = LLT::scalable_vector(2, 64);
 
@@ -382,8 +382,8 @@ static_assert(CEV2P1.isVector());
 static_assert(CEV2P1.getElementCount() == ElementCount::getFixed(2));
 static_assert(CEV2P1.getElementCount() != ElementCount::getFixed(1));
 static_assert(CEV2S32.getElementCount() == ElementCount::getFixed(2));
-static_assert(CEV2S32.getSizeInBits() == TypeSize::getFixed(64));
-static_assert(CEV2P1.getSizeInBits() == TypeSize::getFixed(128));
+static_assert(CEV2S32.getSizeInBits() == TypeSize::Fixed(64));
+static_assert(CEV2P1.getSizeInBits() == TypeSize::Fixed(128));
 static_assert(CEV2P1.getScalarType() == LLT::pointer(1, 64));
 static_assert(CES32.getScalarType() == CES32);
 static_assert(CEV2S32.getScalarType() == CES32);

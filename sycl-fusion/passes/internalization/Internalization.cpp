@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include <llvm/ADT/BitVector.h>
+#include <llvm/ADT/TypeSwitch.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/WithColor.h>
 #include <llvm/Transforms/Utils/Cloning.h>
@@ -58,10 +59,10 @@ struct SYCLInternalizerImpl {
   ///   - Promote the function and call the new function instead,
   ///   keeping the original function.
   /// - The value appears in a load/store operation: Do nothing
-  void promoteValue(Value *Val, std::size_t LocalSize) const;
+  void promoteValue(Value *Val, std::size_t LocalSize, bool InAggregate) const;
 
   void promoteGEPI(GetElementPtrInst *GEPI, const Value *Val,
-                   std::size_t LocalSize) const;
+                   std::size_t LocalSize, bool InAggregate) const;
 
   void promoteCall(CallBase *C, const Value *Val, std::size_t LocalSize) const;
 
@@ -81,23 +82,26 @@ struct SYCLInternalizerImpl {
   ///
   /// Check that an value can be promoted.
   /// For GEP and Call instructions, delegate to the specific implementations.
+  /// \p InAggregate indicates that at least one GEP instruction addressing into
+  /// an aggregate object was encountered, hence \p Val no longer represents a
+  /// pure offset computation on the original candidate argument.
   /// For address-space casts, pointer-to-int conversions and unknown users,
   /// return an error.
-  Error canPromoteValue(Value *Val, size_t LocalSize) const;
+  Error canPromoteValue(Value *Val, size_t LocalSize, bool InAggregate) const;
 
   ///
-  /// Check that the operand of a GEP can be promoted.
-  /// If the GEP uses more than one index, return an error.
-  /// Otherwise, check if the GEP itself can be promoted in its users.
+  /// Check that the operand of a GEP can be promoted to its users, and
+  /// propagate whether it represents a pointer into an aggregate object.
   Error canPromoteGEP(GetElementPtrInst *GEPI, const Value *Val,
-                      size_t LocalSize) const;
+                      size_t LocalSize, bool InAggregate) const;
 
   ///
   /// Check if operand to a function call can be promoted.
-  /// If the function returns a pointer, return an error.
-  /// Otherwise, check if the corresponding formal parameter can be promoted in
-  /// the function body.
-  Error canPromoteCall(CallBase *C, const Value *Val, size_t LocalSize) const;
+  /// If the function returns a pointer, or the operand points into an aggregate
+  /// object, return an error. Otherwise, check if the corresponding formal
+  /// parameter can be promoted in the function body.
+  Error canPromoteCall(CallBase *C, const Value *Val, size_t LocalSize,
+                       bool InAggregate) const;
 
   Error checkArgsPromotable(Function *F,
                             SmallVectorImpl<size_t> &PromoteArgSizes) const;
@@ -161,44 +165,66 @@ static void updateInternalizationMD(Function *F, StringRef Kind,
 }
 
 ///
-/// Function to get the all the indices of a GEP instruction.
-static SmallVector<Value *> getIndices(IRBuilderBase &Builder,
-                                       GetElementPtrInst *GEPI) {
-  SmallVector<Value *> Indices;
-  const auto GetPtrOp = [](GetElementPtrInst *Inst) {
-    return Inst ? dyn_cast<GetElementPtrInst>(Inst->getPointerOperand())
-                : nullptr;
-  };
-  for (GetElementPtrInst *Val = GEPI, *Ptr = GetPtrOp(Val); Val;
-       Val = Ptr, Ptr = GetPtrOp(Val)) {
-    assert((!Ptr /*Val is the getelementptr instruction we inserted at the
-                    beginning of the function*/
-            || Val == GEPI /*Val is the instruction we are promoting*/ ||
-            Val->getNumIndices() == 1) &&
-           "Only one index expected in source of promotable GEP instruction "
-           "pointer argument");
-    Indices.emplace_back(Val->idx_begin()->get());
-  }
-  return Indices;
-}
-
-///
 /// When performing internalization, GEP instructions must be remapped, as the
-/// address space has changed from N to N / LocalSize. As a result, each GEP (p
-/// + off) must be remapped to (p + off % LocalSize).
-static void remapIndices(GetElementPtrInst *GEPI, std::size_t LocalSize) {
+/// address space has changed from N to N / LocalSize.
+static void remap(GetElementPtrInst *GEPI, std::size_t LocalSize) {
   IRBuilder<> Builder{GEPI};
-  auto *NewIndex = [&]() -> Value * {
-    if (LocalSize == 1) {
-      return Builder.getInt64(0);
-    }
-    SmallVector<Value *> OldIndexValue = getIndices(Builder, GEPI);
-    auto *OldIndexSum = std::accumulate(
-        std::next(OldIndexValue.begin()), OldIndexValue.end(), OldIndexValue[0],
-        [&](Value *Lhs, Value *Rhs) { return Builder.CreateAdd(Lhs, Rhs); });
-    return Builder.CreateURem(OldIndexSum, Builder.getInt64(LocalSize));
-  }();
-  GEPI->idx_begin()->set(NewIndex);
+  Value *C0 = Builder.getInt64(0);
+
+  auto NIdx = GEPI->getNumIndices();
+  if (NIdx > 1) {
+    // `GEPI` indexes into an aggregate. If the first index is 0, the base
+    // pointer is used as-is and we do not need to perform remapping. This is
+    // the common case.
+    // TODO: Support non-zero pointer offset, too. If the pointer operand is
+    //       a GEP as well, we must check if the source element types match.
+    assert(GEPI->idx_begin()->get() == C0);
+    return;
+  }
+
+  if (LocalSize == 1) {
+    // Squash the index and let instcombine clean-up afterwards.
+    GEPI->idx_begin()->set(C0);
+    return;
+  }
+
+  // An individual `GEP(ptr, offset)` is rewritten as
+  // `GEP(ptr, offset % LocalSize)`.
+  //
+  // However, we often encounter chains of single-index GEPs:
+  // ```
+  // a = GEP ptr, off_1
+  // b = GEP a, off_2
+  // c = GEP b, off_3
+  // ```
+  //
+  // These must be rewritten as:
+  // ```
+  // a = GEP ptr, off_1 % LocalSize
+  // b = GEP ptr, (off_1 + off_2) % LocalSize
+  // c = GEP ptr, (off_1 + off_2 + off_3) % LocalSize
+  // ```
+  //
+  // This method is called during a def-use-traversal, i.e. `GEPI`'s pointer
+  // operand has already been visited. Modular arithmetic satisfies the
+  // following equation:
+  // ```
+  // ((x mod n) + y) mod n = (x + y) mod n
+  // ```
+  // Together, this means we can propagate the predecessor GEP's pointer
+  // operand, and take its already wrapped offset, add `GEPI`'s offset, and wrap
+  // the result again around LocalSize.
+  //
+  // If the predecessor is not a GEP, then we just rewrap `GEPI`'s index.
+  Value *Dividend =
+      TypeSwitch<Value *, Value *>(GEPI->getPointerOperand())
+          .Case<GetElementPtrInst>([&](auto Pred) {
+            GEPI->op_begin()->set(Pred->getPointerOperand());
+            return Builder.CreateAdd(*Pred->idx_begin(), *GEPI->idx_begin());
+          })
+          .Default(GEPI->idx_begin()->get());
+  Value *Remainder = Builder.CreateURem(Dividend, Builder.getInt64(LocalSize));
+  GEPI->idx_begin()->set(Remainder);
 }
 
 ///
@@ -212,7 +238,8 @@ getUsagesInternalization(const User *U, const Value *V, std::size_t LocalSize) {
 }
 
 Error SYCLInternalizerImpl::canPromoteCall(CallBase *C, const Value *Val,
-                                           size_t LocalSize) const {
+                                           size_t LocalSize,
+                                           bool InAggregate) const {
   if (isa<PointerType>(C->getType())) {
     // With opaque pointers, we do not have the necessary information to compare
     // the element-type of the pointer returned by the function and the element
@@ -221,6 +248,12 @@ Error SYCLInternalizerImpl::canPromoteCall(CallBase *C, const Value *Val,
     return createStringError(
         inconvertibleErrorCode(),
         "It is not safe to promote a called function which returns a pointer.");
+  }
+  if (InAggregate) {
+    return createStringError(
+        inconvertibleErrorCode(),
+        "Promotion of a pointer into an aggregate object to a called function "
+        "is currently not supported.");
   }
 
   SmallVector<size_t> InternInfo = getUsagesInternalization(C, Val, LocalSize);
@@ -232,27 +265,23 @@ Error SYCLInternalizerImpl::canPromoteCall(CallBase *C, const Value *Val,
 }
 
 Error SYCLInternalizerImpl::canPromoteGEP(GetElementPtrInst *GEPI,
-                                          const Value *Val,
-                                          size_t LocalSize) const {
+                                          const Value *Val, size_t LocalSize,
+                                          bool InAggregate) const {
   if (cast<PointerType>(GEPI->getType())->getAddressSpace() == AS) {
     // If the GEPI is already using the correct address-space, no change is
     // required.
     return Error::success();
   }
-  if (GEPI->getNumIndices() != 1 &&
-      std::any_of(GEPI->user_begin(), GEPI->user_end(), [](const auto *User) {
-        return isa<GetElementPtrInst>(User);
-      })) {
-    return createStringError(inconvertibleErrorCode(),
-                             "Only one index expected in source of "
-                             "promotable GEP instruction pointer argument");
-  }
-  // Recurse to check all users of the GEP.
-  return canPromoteValue(GEPI, LocalSize);
+  // Recurse to check all users of the GEP. We are either already in
+  // `InAggregate` mode, or inspect the current instruction. Recall that a GEP's
+  // first index is used to step through the base pointer, whereas any
+  // additional indices represent addressing into an aggregrate type.
+  return canPromoteValue(GEPI, LocalSize,
+                         InAggregate || GEPI->getNumIndices() >= 2);
 }
 
-Error SYCLInternalizerImpl::canPromoteValue(Value *Val,
-                                            size_t LocalSize) const {
+Error SYCLInternalizerImpl::canPromoteValue(Value *Val, size_t LocalSize,
+                                            bool InAggregate) const {
   for (auto *U : Val->users()) {
     auto *I = dyn_cast<Instruction>(U);
     if (!I) {
@@ -272,13 +301,14 @@ Error SYCLInternalizerImpl::canPromoteValue(Value *Val,
     case Instruction::Call:
     case Instruction::Invoke:
     case Instruction::CallBr:
-      if (auto Err = canPromoteCall(cast<CallBase>(I), Val, LocalSize)) {
+      if (auto Err =
+              canPromoteCall(cast<CallBase>(I), Val, LocalSize, InAggregate)) {
         return Err;
       }
       break;
     case Instruction::GetElementPtr:
-      if (auto Err =
-              canPromoteGEP(cast<GetElementPtrInst>(I), Val, LocalSize)) {
+      if (auto Err = canPromoteGEP(cast<GetElementPtrInst>(I), Val, LocalSize,
+                                   InAggregate)) {
         return Err;
       }
       break;
@@ -316,7 +346,7 @@ Error SYCLInternalizerImpl::checkArgsPromotable(
       PromoteArgSizes[Index] = 0;
       continue;
     }
-    if (auto Err = canPromoteValue(Arg, LocalSize)) {
+    if (auto Err = canPromoteValue(Arg, LocalSize, /*InAggregate=*/false)) {
       // Set the local size to 0 to indicate that this argument should not be
       // promoted.
       PromoteArgSizes[Index] = 0;
@@ -360,30 +390,40 @@ void SYCLInternalizerImpl::promoteCall(CallBase *C, const Value *Val,
 }
 
 void SYCLInternalizerImpl::promoteGEPI(GetElementPtrInst *GEPI,
-                                       const Value *Val,
-                                       std::size_t LocalSize) const {
+                                       const Value *Val, std::size_t LocalSize,
+                                       bool InAggregate) const {
   // Not PointerType is unreachable. Other case is catched in caller.
   if (cast<PointerType>(GEPI->getType())->getAddressSpace() != AS) {
-    remapIndices(GEPI, LocalSize);
+    if (!InAggregate)
+      remap(GEPI, LocalSize);
     auto *ValTy = cast<PointerType>(Val->getType());
     GEPI->mutateType(PointerType::getWithSamePointeeType(
         cast<PointerType>(GEPI->getType()), ValTy->getAddressSpace()));
-    return promoteValue(GEPI, LocalSize);
+    // Recurse to promote to all users of the GEP. We are either already in
+    // `InAggregate` mode, or inspect the current instruction. Recall that a
+    // GEP's first index is used to step through the base pointer, whereas any
+    // additional indices represent addressing into an aggregrate type.
+    return promoteValue(GEPI, LocalSize,
+                        InAggregate || GEPI->getNumIndices() >= 2);
   }
 }
 
-void SYCLInternalizerImpl::promoteValue(Value *Val,
-                                        std::size_t LocalSize) const {
-  for (auto *U : Val->users()) {
+void SYCLInternalizerImpl::promoteValue(Value *Val, std::size_t LocalSize,
+                                        bool InAggregate) const {
+  // Freeze the current list of users, as promoteGEPI re-links the elements in a
+  // GEP chain, and hence may introduce new users to `Val`.
+  SmallVector<User *> CurrentUsers{Val->users()};
+  for (auto *U : CurrentUsers) {
     auto *I = cast<Instruction>(U);
     switch (I->getOpcode()) {
     case Instruction::Call:
     case Instruction::Invoke:
     case Instruction::CallBr:
+      assert(!InAggregate);
       promoteCall(cast<CallBase>(I), Val, LocalSize);
       break;
     case Instruction::GetElementPtr:
-      promoteGEPI(cast<GetElementPtrInst>(I), Val, LocalSize);
+      promoteGEPI(cast<GetElementPtrInst>(I), Val, LocalSize, InAggregate);
       break;
     case Instruction::Load:
     case Instruction::Store:
@@ -535,7 +575,7 @@ Function *SYCLInternalizerImpl::promoteFunctionArgs(
     if (CreateAllocas) {
       Arg = replaceByNewAlloca(cast<Argument>(Arg), AS, LocalSize);
     }
-    promoteValue(Arg, LocalSize);
+    promoteValue(Arg, LocalSize, /*InAggregate=*/false);
   }
 
   TargetInfo.updateAddressSpaceMetadata(NewF, PromoteToLocal, AS);

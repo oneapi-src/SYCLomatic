@@ -177,8 +177,7 @@ void CFGuard::insertCFGuardCheck(CallBase *CB) {
   // Create new call instruction. The CFGuard check should always be a call,
   // even if the original CallBase is an Invoke or CallBr instruction.
   CallInst *GuardCheck =
-      B.CreateCall(GuardFnType, GuardCheckLoad,
-                   {B.CreateBitCast(CalledOperand, B.getInt8PtrTy())}, Bundles);
+      B.CreateCall(GuardFnType, GuardCheckLoad, {CalledOperand}, Bundles);
 
   // Ensure that the first argument is passed in the correct register
   // (e.g. ECX on 32-bit X86 targets).
@@ -236,8 +235,9 @@ bool CFGuard::doInitialization(Module &M) {
     return false;
 
   // Set up prototypes for the guard check and dispatch functions.
-  GuardFnType = FunctionType::get(Type::getVoidTy(M.getContext()),
-                                  {Type::getInt8PtrTy(M.getContext())}, false);
+  GuardFnType =
+      FunctionType::get(Type::getVoidTy(M.getContext()),
+                        {PointerType::getUnqual(M.getContext())}, false);
   GuardFnPtrType = PointerType::get(GuardFnType, 0);
 
   // Get or insert the guard check or dispatch global symbols.

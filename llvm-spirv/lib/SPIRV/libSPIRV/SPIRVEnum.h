@@ -416,6 +416,11 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
   ADD_VEC_INIT(DecorationBankBitsINTEL, {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationForcePow2DepthINTEL,
                {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationStridesizeINTEL,
+               {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationWordsizeINTEL, {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationTrueDualPortINTEL,
+               {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationReferencedIndirectlyINTEL,
                {CapabilityIndirectReferencesINTEL});
   ADD_VEC_INIT(DecorationIOPipeStorageINTEL, {CapabilityIOPipesINTEL});
@@ -475,6 +480,10 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {internal::CapabilityGlobalVariableDecorationsINTEL});
   ADD_VEC_INIT(internal::DecorationArgumentAttributeINTEL,
                {CapabilityFunctionPointersINTEL});
+  ADD_VEC_INIT(internal::DecorationCacheControlLoadINTEL,
+               {internal::CapabilityCacheControlsINTEL});
+  ADD_VEC_INIT(internal::DecorationCacheControlStoreINTEL,
+               {internal::CapabilityCacheControlsINTEL});
   ADD_VEC_INIT(DecorationConduitKernelArgumentINTEL,
                {CapabilityFPGAArgumentInterfacesINTEL});
   ADD_VEC_INIT(DecorationRegisterMapKernelArgumentINTEL,
@@ -497,6 +506,8 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {CapabilityFPGALatencyControlINTEL});
   ADD_VEC_INIT(DecorationLatencyControlConstraintINTEL,
                {CapabilityFPGALatencyControlINTEL});
+  ADD_VEC_INIT(DecorationFPMaxErrorDecorationINTEL,
+               {CapabilityFPMaxErrorINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {

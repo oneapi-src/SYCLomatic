@@ -16,33 +16,50 @@ using namespace mlir::sparse_tensor::ir_detail;
 // `DimLvlExpr` implementation.
 //===----------------------------------------------------------------------===//
 
+Var DimLvlExpr::castAnyVar() const {
+  assert(expr && "uninitialized DimLvlExpr");
+  const auto var = dyn_castAnyVar();
+  assert(var && "expected DimLvlExpr to be a Var");
+  return *var;
+}
+
+std::optional<Var> DimLvlExpr::dyn_castAnyVar() const {
+  if (const auto s = expr.dyn_cast_or_null<AffineSymbolExpr>())
+    return SymVar(s);
+  if (const auto x = expr.dyn_cast_or_null<AffineDimExpr>())
+    return Var(getAllowedVarKind(), x);
+  return std::nullopt;
+}
+
 SymVar DimLvlExpr::castSymVar() const {
   return SymVar(expr.cast<AffineSymbolExpr>());
+}
+
+std::optional<SymVar> DimLvlExpr::dyn_castSymVar() const {
+  if (const auto s = expr.dyn_cast_or_null<AffineSymbolExpr>())
+    return SymVar(s);
+  return std::nullopt;
 }
 
 Var DimLvlExpr::castDimLvlVar() const {
   return Var(getAllowedVarKind(), expr.cast<AffineDimExpr>());
 }
 
+std::optional<Var> DimLvlExpr::dyn_castDimLvlVar() const {
+  if (const auto x = expr.dyn_cast_or_null<AffineDimExpr>())
+    return Var(getAllowedVarKind(), x);
+  return std::nullopt;
+}
+
 int64_t DimLvlExpr::castConstantValue() const {
   return expr.cast<AffineConstantExpr>().getValue();
 }
 
-std::optional<int64_t> DimLvlExpr::tryGetConstantValue() const {
+std::optional<int64_t> DimLvlExpr::dyn_castConstantValue() const {
   const auto k = expr.dyn_cast_or_null<AffineConstantExpr>();
   return k ? std::make_optional(k.getValue()) : std::nullopt;
 }
 
-// This helper method is akin to `AffineExpr::operator==(int64_t)`
-// except it uses a different implementation, namely the implementation
-// used within `AsmPrinter::Impl::printAffineExprInternal`.
-//
-// wrengr guesses that `AsmPrinter::Impl::printAffineExprInternal` uses
-// this implementation because it avoids constructing the intermediate
-// `AffineConstantExpr(val)` and thus should in theory be a bit faster.
-// However, if it is indeed faster, then the `AffineExpr::operator==`
-// method should be updated to do this instead.  And if it isn't any
-// faster, then we should be using `AffineExpr::operator==` instead.
 bool DimLvlExpr::hasConstantValue(int64_t val) const {
   const auto k = expr.dyn_cast_or_null<AffineConstantExpr>();
   return k && k.getValue() == val;
@@ -71,6 +88,12 @@ void DimLvlExpr::dump() const {
   print(llvm::errs());
   llvm::errs() << "\n";
 }
+std::string DimLvlExpr::str() const {
+  std::string str;
+  llvm::raw_string_ostream os(str);
+  print(os);
+  return os.str();
+}
 void DimLvlExpr::print(AsmPrinter &printer) const {
   print(printer.getStream());
 }
@@ -98,7 +121,7 @@ static std::optional<MatchNeg> matchNeg(DimLvlExpr expr) {
       return MatchNeg{DimLvlExpr{expr.getExprKind(), AffineExpr()}, val};
   }
   if (op == AffineExprKind::Mul)
-    if (const auto rval = rhs.tryGetConstantValue(); rval && *rval < 0)
+    if (const auto rval = rhs.dyn_castConstantValue(); rval && *rval < 0)
       return MatchNeg{lhs, *rval};
   return std::nullopt;
 }
@@ -183,15 +206,15 @@ bool DimSpec::isValid(Ranks const &ranks) const {
   return ranks.isValid(var) && (!expr || ranks.isValid(expr));
 }
 
-bool DimSpec::isFunctionOf(VarSet const &vars) const {
-  return vars.occursIn(expr);
-}
-
-void DimSpec::getFreeVars(VarSet &vars) const { vars.add(expr); }
-
 void DimSpec::dump() const {
   print(llvm::errs(), /*wantElision=*/false);
   llvm::errs() << "\n";
+}
+std::string DimSpec::str(bool wantElision) const {
+  std::string str;
+  llvm::raw_string_ostream os(str);
+  print(os, wantElision);
+  return os.str();
 }
 void DimSpec::print(AsmPrinter &printer, bool wantElision) const {
   print(printer.getStream(), wantElision);
@@ -223,15 +246,15 @@ bool LvlSpec::isValid(Ranks const &ranks) const {
   return ranks.isValid(var) && ranks.isValid(expr);
 }
 
-bool LvlSpec::isFunctionOf(VarSet const &vars) const {
-  return vars.occursIn(expr);
-}
-
-void LvlSpec::getFreeVars(VarSet &vars) const { vars.add(expr); }
-
 void LvlSpec::dump() const {
   print(llvm::errs(), /*wantElision=*/false);
   llvm::errs() << "\n";
+}
+std::string LvlSpec::str(bool wantElision) const {
+  std::string str;
+  llvm::raw_string_ostream os(str);
+  print(os, wantElision);
+  return os.str();
 }
 void LvlSpec::print(AsmPrinter &printer, bool wantElision) const {
   print(printer.getStream(), wantElision);
@@ -256,19 +279,6 @@ DimLvlMap::DimLvlMap(unsigned symRank, ArrayRef<DimSpec> dimSpecs,
   // below cannot cause OOB errors.
   assert(isWF());
 
-  // TODO: Second, we need to infer/validate the `lvlToDim` mapping.
-  // Along the way we should set every `DimSpec::elideExpr` according
-  // to whether the given expression is inferable or not.  Notably, this
-  // needs to happen before the code for setting every `LvlSpec::elideVar`,
-  // since if the LvlVar is only used in elided DimExpr, then the
-  // LvlVar should also be elided.
-  // NOTE: Be sure to use `DimLvlMap::setDimExpr` for setting the new exprs,
-  // to ensure that we maintain the invariant established by `isWF` above.
-
-  // Third, we set every `LvlSpec::elideVar` according to whether that
-  // LvlVar occurs in a non-elided DimExpr (TODO: or CountingExpr).
-  // NOTE: The invariant established by `isWF` ensures that the following
-  // calls to `VarSet::add` cannot raise OOB errors.
   VarSet usedVars(getRanks());
   for (const auto &dimSpec : dimSpecs)
     if (!dimSpec.canElideExpr())
@@ -303,20 +313,36 @@ AffineMap DimLvlMap::getDimToLvlMap(MLIRContext *context) const {
   lvlAffines.reserve(getLvlRank());
   for (const auto &lvlSpec : lvlSpecs)
     lvlAffines.push_back(lvlSpec.getExpr().getAffineExpr());
-  return AffineMap::get(getDimRank(), getSymRank(), lvlAffines, context);
+  auto map = AffineMap::get(getDimRank(), getSymRank(), lvlAffines, context);
+  return map;
 }
 
 AffineMap DimLvlMap::getLvlToDimMap(MLIRContext *context) const {
   SmallVector<AffineExpr> dimAffines;
   dimAffines.reserve(getDimRank());
-  for (const auto &dimSpec : dimSpecs)
-    dimAffines.push_back(dimSpec.getExpr().getAffineExpr());
-  return AffineMap::get(getLvlRank(), getSymRank(), dimAffines, context);
+  for (const auto &dimSpec : dimSpecs) {
+    auto expr = dimSpec.getExpr().getAffineExpr();
+    if (expr) {
+      dimAffines.push_back(expr);
+    }
+  }
+  auto map = AffineMap::get(getLvlRank(), getSymRank(), dimAffines, context);
+  // If no lvlToDim map was passed in, returns a null AffineMap and infers it
+  // in SparseTensorEncodingAttr::parse.
+  if (dimAffines.empty())
+    return AffineMap();
+  return map;
 }
 
 void DimLvlMap::dump() const {
   print(llvm::errs(), /*wantElision=*/false);
   llvm::errs() << "\n";
+}
+std::string DimLvlMap::str(bool wantElision) const {
+  std::string str;
+  llvm::raw_string_ostream os(str);
+  print(os, wantElision);
+  return os.str();
 }
 void DimLvlMap::print(AsmPrinter &printer, bool wantElision) const {
   print(printer.getStream(), wantElision);
@@ -340,7 +366,7 @@ void DimLvlMap::print(llvm::raw_ostream &os, bool wantElision) const {
     os << '{';
     llvm::interleaveComma(
         lvlSpecs, os, [&](LvlSpec const &spec) { os << spec.getBoundVar(); });
-    os << '}';
+    os << "} ";
   }
 
   // Dimension specifiers.

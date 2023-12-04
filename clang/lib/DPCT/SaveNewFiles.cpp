@@ -12,12 +12,9 @@
 #include "Diagnostics.h"
 #include "ExternalReplacement.h"
 #include "GenMakefile.h"
+#include "PatternRewriter.h"
 #include "Statics.h"
-
-#include "llvm/ADT/StringRef.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/Path.h"
-#include <algorithm>
+#include "Utility.h"
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
@@ -25,13 +22,15 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/Tooling/Refactoring.h"
 
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_os_ostream.h"
 
-#include "Utility.h"
-#include "PatternRewriter.h"
-#include "llvm/Support/raw_os_ostream.h"
+#include <algorithm>
 #include <cassert>
 #include <fstream>
+
 using namespace clang::dpct;
 using namespace llvm;
 namespace path = llvm::sys::path;
@@ -39,17 +38,17 @@ namespace fs = llvm::sys::fs;
 
 namespace clang {
 namespace tooling {
-std::string getFormatSearchPath();
+UnifiedPath getFormatSearchPath();
 }
 } // namespace clang
 
 extern std::map<std::string, uint64_t> ErrorCnt;
 
-static bool formatFile(StringRef FileName,
+static bool formatFile(const clang::tooling::UnifiedPath& FileName,
                        const std::vector<clang::tooling::Range> &Ranges,
                        clang::tooling::Replacements &FormatChanges) {
   ErrorOr<std::unique_ptr<MemoryBuffer>> ErrorOrMemoryBuffer =
-      MemoryBuffer::getFileAsStream(FileName);
+      MemoryBuffer::getFileAsStream(FileName.getCanonicalPath());
   if (std::error_code EC = ErrorOrMemoryBuffer.getError()) {
     return false;
   }
@@ -97,11 +96,11 @@ static bool formatFile(StringRef FileName,
     AllLineRanges.push_back(clang::tooling::Range(
         /*Offest*/ 0, /*Length*/ FileBuffer.get()->getBufferSize()));
     FormatChanges = reformat(Style, FileBuffer->getBuffer(), AllLineRanges,
-                             FileName, &Status);
+                             FileName.getCanonicalPath(), &Status);
   } else {
     // only format migrated lines
     FormatChanges =
-        reformat(Style, FileBuffer->getBuffer(), Ranges, FileName, &Status);
+        reformat(Style, FileBuffer->getBuffer(), Ranges, FileName.getCanonicalPath(), &Status);
   }
 
   clang::tooling::applyAllReplacements(FormatChanges, Rewrite);
@@ -110,66 +109,31 @@ static bool formatFile(StringRef FileName,
 }
 
 // TODO: it's global variable, refine in future
-std::map<std::string, bool> IncludeFileMap;
+std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 
-bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
-                const StringRef OutRoot) {
-  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
-  assert(isCanonical(FilePath) && "FilePath must be a canonical path.");
-
-  SmallString<512> InRootAbs;
-  SmallString<512> OutRootAbs;
-  SmallString<512> FilePathAbs;
-  std::error_code EC;
-  bool InRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(InRoot, InRootAbs, true);
-  if ((bool)EC) {
-    InRootAbsValid = false;
-  }
-  bool OutRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(OutRoot, OutRootAbs, true);
-  if ((bool)EC) {
-    OutRootAbsValid = false;
-  }
-  bool FilePathAbsValid = true;
-  EC = llvm::sys::fs::real_path(FilePath, FilePathAbs, true);
-  if ((bool)EC) {
-    FilePathAbsValid = false;
-  }
-
+bool rewriteDir(clang::tooling::UnifiedPath &FilePath, const clang::tooling::UnifiedPath& InRoot,
+                const clang::tooling::UnifiedPath& OutRoot) {
 #if defined(_WIN64)
-  std::string Filename = sys::path::filename(FilePath).str();
-  std::string LocalFilePath = StringRef(FilePath).lower();
-  std::string LocalInRoot =
-      InRootAbsValid ? InRootAbs.str().lower() : InRoot.lower();
-  std::string LocalOutRoot =
-      OutRootAbsValid ? OutRootAbs.str().lower() : OutRoot.lower();
-#elif defined(__linux__)
-  std::string LocalFilePath =
-      FilePathAbsValid ? FilePathAbs.c_str() : StringRef(FilePath).str();
-  std::string LocalInRoot = InRootAbsValid ? InRootAbs.c_str() : InRoot.str();
-  std::string LocalOutRoot =
-      OutRootAbsValid ? OutRootAbs.c_str() : OutRoot.str();
-#else
-#error Only support windows and Linux.
+  std::string Filename = sys::path::filename(FilePath.getPath()).str();
 #endif
 
-  if (!isChildPath(LocalInRoot, LocalFilePath, false) ||
-      DpctGlobalInfo::isExcluded(LocalFilePath, false)) {
-    // Skip rewriting file path if LocalFilePath is not child of LocalInRoot
+  if (!isChildPath(InRoot, FilePath) ||
+      DpctGlobalInfo::isExcluded(FilePath)) {
+    // Skip rewriting file path if FilePath is not child of InRoot
     // E.g,
-    //  LocalFilePath : /path/to/inc/util.cuh
-    //    LocalInRoot : /path/to/inroot
-    //   LocalOutRoot : /path/to/outroot
+    //  FilePath : /path/to/inc/util.cuh
+    //    InRoot : /path/to/inroot
+    //   OutRoot : /path/to/outroot
     //  AnalysisScope : /path/to
     return false;
   }
-  auto PathDiff =
-      std::mismatch(path::begin(LocalFilePath), path::end(LocalFilePath),
-                    path::begin(LocalInRoot));
-  SmallString<512> NewFilePath = StringRef(LocalOutRoot);
-  path::append(NewFilePath, PathDiff.first, path::end(LocalFilePath));
-
+  auto PathDiff = std::mismatch(path::begin(FilePath.getCanonicalPath()),
+                                path::end(FilePath.getCanonicalPath()),
+                                path::begin(InRoot.getCanonicalPath()));
+  SmallString<512> NewFilePath =
+      SmallString<512>(OutRoot.getCanonicalPath());
+  path::append(NewFilePath, PathDiff.first,
+               path::end(FilePath.getCanonicalPath()));
 #if defined(_WIN64)
   sys::path::remove_filename(NewFilePath);
   sys::path::append(NewFilePath, Filename);
@@ -179,57 +143,57 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   return true;
 }
 
-void rewriteFileName(SmallString<512> &FileName) {
+void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
   rewriteFileName(FileName, FileName);
 }
 
-void rewriteFileName(llvm::SmallString<512> &FileName,
-                     llvm::StringRef FullPathName) {
-  const auto Extension = path::extension(FileName);
+void rewriteFileName(clang::tooling::UnifiedPath &FileName,
+                     const clang::tooling::UnifiedPath &FullPathName) {
+  SmallString<512> CanonicalPathStr(StringRef(FileName.getCanonicalPath()));
+  const auto Extension = path::extension(CanonicalPathStr);
   SourceProcessType FileType = GetSourceFileType(FullPathName);
   // If user does not specify which extension need be changed, we change all the
   // SPT_CudaSource, SPT_CppSource and SPT_CudaHeader files.
   if (DpctGlobalInfo::getChangeExtensions().empty() ||
       DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
     if (FileType & SPT_CudaSource)
-      path::replace_extension(FileName, "dp.cpp");
+      path::replace_extension(CanonicalPathStr, "dp.cpp");
     else if (FileType & SPT_CppSource)
-      path::replace_extension(FileName, Extension + ".dp.cpp");
+      path::replace_extension(CanonicalPathStr, Extension + ".dp.cpp");
     else if (FileType & SPT_CudaHeader)
-      path::replace_extension(FileName, "dp.hpp");
+      path::replace_extension(CanonicalPathStr, "dp.hpp");
   }
+  FileName = CanonicalPathStr;
 }
 
 static std::vector<std::string> FilesNotInCompilationDB;
 
-void processallOptionAction(StringRef InRoot, StringRef OutRoot) {
-
+void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
+                            clang::tooling::UnifiedPath &OutRoot) {
   for (const auto &File : FilesNotInCompilationDB) {
-
     if (IncludeFileMap.find(File) != IncludeFileMap.end()) {
       // Skip the files parsed by dpct parser.
       continue;
     }
 
     std::ifstream In(File);
-    SmallString<512> OutputFile = llvm::StringRef(File);
+    clang::tooling::UnifiedPath OutputFile = File;
     if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
-    auto Parent = path::parent_path(OutputFile);
+    auto Parent = path::parent_path(OutputFile.getCanonicalPath());
     std::error_code EC;
     EC = fs::create_directories(Parent);
     if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Create Directory : " + std::string(Parent.str()) +
-          " fail: " + EC.message() + "\n";
+      std::string ErrMsg = "[ERROR] Create Directory : " + Parent.str() +
+                           " fail: " + EC.message() + "\n";
       PrintMsg(ErrMsg);
     }
 
-    std::ofstream Out(OutputFile.c_str());
+    std::ofstream Out(OutputFile.getCanonicalPath().str());
     if (Out.fail()) {
       std::string ErrMsg =
-          "[ERROR] Create file : " + std::string(OutputFile.c_str()) +
+          "[ERROR] Create file : " + OutputFile.getCanonicalPath().str() +
           " failure!\n";
       PrintMsg(ErrMsg);
     }
@@ -273,7 +237,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
     }
 
     if (Iter->type() == fs::file_type::regular_file) {
-      SmallString<512> OutputFile = llvm::StringRef(FilePath);
+      clang::tooling::UnifiedPath OutputFile = FilePath;
       if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
         continue;
       }
@@ -282,7 +246,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
         // calling processFiles() in Tooling.cpp::ClangTool::run().
         continue;
       } else {
-        if (DpctGlobalInfo::isExcluded(FilePath, false)) {
+        if (DpctGlobalInfo::isExcluded(FilePath)) {
           continue;
         }
         if (GetSourceFileType(FilePath) & SPT_CudaSource) {
@@ -297,20 +261,20 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
 
     } else if (Iter->type() == fs::file_type::directory_file) {
       const auto Path = Iter->path();
-      SmallString<512> OutDirectory = llvm::StringRef(Path);
+      clang::tooling::UnifiedPath OutDirectory = Path;
       if (!rewriteDir(OutDirectory, InRoot, OutRoot)) {
         continue;
       }
 
-      if (fs::exists(OutDirectory))
+      if (fs::exists(OutDirectory.getCanonicalPath()))
         continue;
 
       std::error_code EC;
-      EC = fs::create_directories(OutDirectory);
+      EC = fs::create_directories(OutDirectory.getCanonicalPath());
       if ((bool)EC) {
-        std::string ErrMsg =
-            "[ERROR] Create Directory : " + std::string(OutDirectory.str()) +
-            " fail: " + EC.message() + "\n";
+        std::string ErrMsg = "[ERROR] Create Directory : " +
+                             OutDirectory.getCanonicalPath().str() +
+                             " fail: " + EC.message() + "\n";
         PrintMsg(ErrMsg);
       }
     }
@@ -328,7 +292,7 @@ static void getMainSrcFilesRepls(
       MainSrcFilesRepls.push_back(Repl);
 }
 static void getMainSrcFilesDigest(
-    std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest) {
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest) {
   auto &DigestMap = DpctGlobalInfo::getDigestMap();
   for (const auto &Entry : DigestMap)
     MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
@@ -336,8 +300,8 @@ static void getMainSrcFilesDigest(
 
 static void saveUpdatedMigrationDataIntoYAML(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
-    std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest,
-    std::string YamlFile, std::string SrcFile,
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest,
+    clang::tooling::UnifiedPath YamlFile, clang::tooling::UnifiedPath SrcFile,
     std::unordered_map<std::string, bool> &MainSrcFileMap) {
   // Save history repls to yaml file.
   auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
@@ -369,6 +333,7 @@ void applyPatternRewriter(const std::string &InputString,
   std::string LineEndingString;
   // pattern_rewriter require the input file to be LF
   bool IsCRLF = fixLineEndings(InputString, LineEndingString);
+
   for (const auto &PR : MapNames::PatternRewriters) {
     LineEndingString = applyPatternRewriter(PR, LineEndingString);
   }
@@ -390,9 +355,9 @@ void applyPatternRewriter(const std::string &InputString,
 ///
 /// \returns 0 upon success. Non-zero upon failure.
 /// Prerequisite: InRoot and OutRoot are both absolute paths
-int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
-                 StringRef OutRoot) {
-  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
+int saveNewFiles(clang::tooling::RefactoringTool &Tool,
+                 clang::tooling::UnifiedPath InRoot,
+                 clang::tooling::UnifiedPath OutRoot) {
   using namespace clang;
   volatile ProcessStatus status = MigrationSucceeded;
   // Set up Rewriter.
@@ -405,15 +370,14 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   SourceManager Sources(Diagnostics, Tool.getFiles());
   Rewriter Rewrite(Sources, DefaultLangOptions);
   extern bool ProcessAllFlag;
-  SmallString<512> OutPath;
 
   // The variable defined here assists to merge history records.
   std::unordered_map<std::string /*FileName*/,
                      bool /*false:Not processed in current migration*/>
       MainSrcFileMap;
 
-  std::string YamlFile =
-      OutRoot.str() + "/" + DpctGlobalInfo::getYamlFileName();
+  std::string YamlFile = appendPath(OutRoot.getCanonicalPath().str(),
+                                    DpctGlobalInfo::getYamlFileName());
   std::string SrcFile = "MainSrcFiles_placehold";
 
   if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
@@ -436,8 +400,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   }
 
   std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
-  std::vector<std::pair<std::string, std::string>> MainSrcFilesDigest;
-
+  std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> MainSrcFilesDigest;
+  clang::tooling::UnifiedPath OutPath;
   if (Tool.getReplacements().empty()) {
     // There are no rules applying on the *.cpp files,
     // dpct just do nothing with them.
@@ -446,9 +410,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     getMainSrcFilesRepls(MainSrcFilesRepls);
     getMainSrcFilesDigest(MainSrcFilesDigest);
   } else {
-    std::unordered_map<std::string, std::vector<clang::tooling::Range>>
+    std::unordered_map<clang::tooling::UnifiedPath, std::vector<clang::tooling::Range>>
         FileRangesMap;
-    std::unordered_map<std::string, std::vector<clang::tooling::Range>>
+    std::unordered_map<clang::tooling::UnifiedPath, std::vector<clang::tooling::Range>>
         FileBlockLevelFormatRangesMap;
     // There are matching rules for *.cpp files, *.cu files, also header files
     // included, migrate these files into *.dp.cpp files.
@@ -457,7 +421,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     for (auto &Entry : GroupResult) {
       OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
           Rewrite.getSourceMgr().getFileManager(), Entry.first));
-      makeCanonical(OutPath);
       bool HasRealReplacements = true;
       auto Repls = Entry.second;
 
@@ -466,24 +429,21 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         if (Repl.getLength() == 0 && Repl.getReplacementText().empty())
           HasRealReplacements = false;
       }
-      auto Find = IncludeFileMap.find(OutPath.c_str());
+      auto Find = IncludeFileMap.find(OutPath);
       if (HasRealReplacements && Find != IncludeFileMap.end()) {
-        IncludeFileMap[OutPath.c_str()] = true;
+        IncludeFileMap[OutPath] = true;
       }
 
-      // This operation won't fail; it already succeeded once during argument
-      // validation.
-      makeCanonical(OutPath);
       rewriteFileName(OutPath);
       if (!rewriteDir(OutPath, InRoot, OutRoot)) {
         continue;
       }
 
       std::error_code EC;
-      EC = fs::create_directories(path::parent_path(OutPath));
+      EC = fs::create_directories(path::parent_path(OutPath.getCanonicalPath()));
       if ((bool)EC) {
         std::string ErrMsg =
-            "[ERROR] Create file : " + std::string(OutPath.str()) +
+            "[ERROR] Create file : " + OutPath.getCanonicalPath().str() +
             " fail: " + EC.message() + "\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
@@ -491,11 +451,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
-      std::ofstream File(OutPath.str().str(), std::ios::binary);
+      std::ofstream File(OutPath.getCanonicalPath().str(), std::ios::binary);
       llvm::raw_os_ostream Stream(File);
       if (!File) {
         std::string ErrMsg =
-            "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
+            "[ERROR] Create file: " + OutPath.getCanonicalPath().str() +
+            " fail.\n";
         PrintMsg(ErrMsg);
         status = MigrationSaveOutFail;
         return status;
@@ -508,7 +469,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       // command.
       SourceProcessType FileType = GetSourceFileType(Entry.first);
       if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
-        mergeExternalReps(Entry.first, OutPath.str().str(), Entry.second);
+        mergeExternalReps(Entry.first, OutPath, Entry.second);
       } else {
 
         auto Hash = llvm::sys::fs::md5_contents(Entry.first);
@@ -543,29 +504,34 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
       std::vector<clang::tooling::Range> Ranges;
       Ranges = calculateRangesWithFormatFlag(Entry.second);
-      FileRangesMap.insert(std::make_pair(OutPath.str().str(), Ranges));
+      FileRangesMap.insert(std::make_pair(OutPath, Ranges));
 
       std::vector<clang::tooling::Range> BlockLevelFormatRanges;
       BlockLevelFormatRanges =
           calculateRangesWithBlockLevelFormatFlag(Entry.second);
       FileBlockLevelFormatRangesMap.insert(
-          std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
+          std::make_pair(OutPath, BlockLevelFormatRanges));
 
       tooling::applyAllReplacements(Entry.second, Rewrite);
+
+      llvm::Expected<FileEntryRef> Result =
+          Tool.getFiles().getFileRef(Entry.first);
+
+      if (auto E = Result.takeError()) {
+        continue;
+      }
 
       if (MapNames::PatternRewriters.empty()) {
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }
@@ -579,8 +545,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       ProcessedFileNumber = GroupResult.size();
     }
     std::string ReportMsg = "Processed " + std::to_string(ProcessedFileNumber) +
-                            " file(s) in -in-root folder \"" + InRoot.str() +
-                            "\"";
+                            " file(s) in -in-root folder \"" +
+                            InRoot.getCanonicalPath().str() + "\"";
     std::string ErrorFileMsg;
     int ErrNum = 0;
     for (const auto &KV : ErrorCnt) {
@@ -660,26 +626,27 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   // The necessary header files which have no replacements will be copied to
   // "-out-root" directory.
   for (const auto &Entry : IncludeFileMap) {
-    SmallString<512> FilePath = StringRef(Entry.first);
+    clang::tooling::UnifiedPath FilePath = Entry.first;
     if (!Entry.second) {
-      makeCanonical(FilePath);
-      bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath.str().str(), false);
+      bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
       if (IsExcluded) {
         continue;
       }
       // Always migrate *.cuh files to *.dp.hpp files,
       // Always migrate *.cu files to *.dp.cpp files.
-      SourceProcessType FileType = GetSourceFileType(FilePath.str());
+      SourceProcessType FileType = GetSourceFileType(FilePath);
+      SmallString<512> TempFilePath(FilePath.getCanonicalPath());
       if (FileType & SPT_CudaHeader) {
-        path::replace_extension(FilePath, "dp.hpp");
+        path::replace_extension(TempFilePath, "dp.hpp");
       } else if (FileType & SPT_CudaSource) {
-        path::replace_extension(FilePath, "dp.cpp");
+        path::replace_extension(TempFilePath, "dp.cpp");
       }
+      FilePath = TempFilePath;
 
       if (!rewriteDir(FilePath, InRoot, OutRoot)) {
         continue;
       }
-      if (fs::exists(FilePath)) {
+      if (fs::exists(FilePath.getCanonicalPath())) {
         // A header file with this name already exists.
         llvm::errs() << "File '" << FilePath
                      << "' already exists; skipping it.\n";
@@ -687,10 +654,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       }
 
       std::error_code EC;
-      EC = fs::create_directories(path::parent_path(FilePath));
+      EC = fs::create_directories(path::parent_path(FilePath.getCanonicalPath()));
       if ((bool)EC) {
         std::string ErrMsg =
-            "[ERROR] Create file: " + std::string(FilePath.str()) +
+            "[ERROR] Create file: " + FilePath.getCanonicalPath().str() +
             " fail: " + EC.message() + "\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
@@ -698,11 +665,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
-      std::ofstream File(FilePath.str().str(), std::ios::binary);
+      std::ofstream File(FilePath.getCanonicalPath().str(), std::ios::binary);
 
       if (!File) {
         std::string ErrMsg =
-            "[ERROR] Create file: " + std::string(FilePath.str()) +
+            "[ERROR] Create file: " + FilePath.getCanonicalPath().str() +
             " failed.\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
@@ -711,19 +678,22 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       llvm::raw_os_ostream Stream(File);
       std::string OutputString;
       llvm::raw_string_ostream RSW(OutputString);
+      llvm::Expected<FileEntryRef> Result =
+          Tool.getFiles().getFileRef(Entry.first.getCanonicalPath());
+      if (auto E = Result.takeError()) {
+        continue;
+      }
       if (MapNames::PatternRewriters.empty()) {
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }
@@ -744,23 +714,17 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   return status;
 }
 
-void loadYAMLIntoFileInfo(std::string Path) {
-  SmallString<512> SourceFilePath(Path);
-
-  SourceFilePath = StringRef(
-      DpctGlobalInfo::removeSymlinks(DpctGlobalInfo::getFileManager(), Path));
-  makeCanonical(SourceFilePath);
-
-  std::string OriginPath = SourceFilePath.str().str();
-  rewriteFileName(SourceFilePath);
-  if (!rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),
+void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path) {
+  clang::tooling::UnifiedPath OriginPath = Path;
+  rewriteFileName(Path);
+  if (!rewriteDir(Path, DpctGlobalInfo::getInRoot(),
                   DpctGlobalInfo::getOutRoot())) {
     return;
   }
 
-  std::string YamlFilePath = SourceFilePath.str().str() + ".yaml";
+  clang::tooling::UnifiedPath YamlFilePath = Path.getCanonicalPath() + ".yaml";
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
-  if (fs::exists(YamlFilePath)) {
+  if (fs::exists(YamlFilePath.getCanonicalPath())) {
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
         DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(

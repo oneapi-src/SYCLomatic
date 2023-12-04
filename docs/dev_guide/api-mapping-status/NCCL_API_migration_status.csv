@@ -5,7 +5,7 @@ ncclCommInitRank,YES,
 ncclCommInitAll,NO,
 ncclCommDestroy,YES,
 ncclCommAbort,NO,
-ncclCommGetAsyncError,NO,
+ncclCommGetAsyncError,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 ncclCommCount,YES,
 ncclCommCuDevice,YES,
 ncclCommUserRank,YES,
@@ -18,7 +18,8 @@ ncclGroupStart,NO,
 ncclGroupEnd,NO,
 ncclSend,YES,
 ncclRecv,YES,
-ncclGetLastError,NO,
+ncclGetLastError,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 ncclRedOpCreatePreMulSum,NO,
 ncclRedOpDestroy,NO,
 ncclBcast,YES,
+ncclGetErrorString,YES,:ref:`DPCT1009`

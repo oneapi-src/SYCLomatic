@@ -17,6 +17,7 @@
 #include "mlir/Support/LLVM.h"
 #include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/ADT/Hashing.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/Casting.h"
 #include <functional>
 #include <type_traits>
@@ -250,6 +251,8 @@ inline AffineExpr operator-(int64_t val, AffineExpr expr) {
 AffineExpr getAffineDimExpr(unsigned position, MLIRContext *context);
 AffineExpr getAffineSymbolExpr(unsigned position, MLIRContext *context);
 AffineExpr getAffineConstantExpr(int64_t constant, MLIRContext *context);
+SmallVector<AffineExpr> getAffineConstantExprs(ArrayRef<int64_t> constants,
+                                               MLIRContext *context);
 AffineExpr getAffineBinaryOpExpr(AffineExprKind kind, AffineExpr lhs,
                                  AffineExpr rhs);
 
@@ -349,6 +352,20 @@ void bindSymbolsList(MLIRContext *ctx, MutableArrayRef<AffineExprTy> exprs) {
   for (AffineExprTy &e : exprs)
     e = getAffineSymbolExpr(idx++, ctx);
 }
+
+/// Get a lower or upper (depending on `isUpper`) bound for `expr` while using
+/// the constant lower and upper bounds for its inputs provided in
+/// `constLowerBounds` and `constUpperBounds`. Return std::nullopt if such a
+/// bound can't be computed. This method only handles simple sum of product
+/// expressions (w.r.t constant coefficients) so as to not depend on anything
+/// heavyweight in `Analysis`. Expressions of the form: c0*d0 + c1*d1 + c2*s0 +
+/// ... + c_n are handled. Expressions involving floordiv, ceildiv, mod or
+/// semi-affine ones will lead a none being returned.
+std::optional<int64_t>
+getBoundForAffineExpr(AffineExpr expr, unsigned numDims, unsigned numSymbols,
+                      ArrayRef<std::optional<int64_t>> constLowerBounds,
+                      ArrayRef<std::optional<int64_t>> constUpperBounds,
+                      bool isUpper);
 
 } // namespace mlir
 

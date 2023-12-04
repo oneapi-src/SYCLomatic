@@ -292,7 +292,7 @@ private:
 };
 
 template <typename IDTy, typename... Ts>
-bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
+bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals);
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
@@ -380,21 +380,19 @@ private:
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
-bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
+bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals) {
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    return true;
+  }
   // Do not emit diagnostic message for source location outside --in-root
   if (!DpctGlobalInfo::isInRoot(FileAbsPath))
     return false;
   std::shared_ptr<DpctFileInfo> Fileinfo =
       dpct::DpctGlobalInfo::getInstance().insertFile(FileAbsPath);
 
-  SmallString<4096> NativeFormPath(FileAbsPath);
-  // Convert path to the native form.
-  // E.g, on Windows all '/' are converted to '\'.
-  llvm::sys::path::native(NativeFormPath);
-
   std::string FileAndLine = clang::dpct::buildString(
-      NativeFormPath, ":", Fileinfo->getLineNumber(Offset));
+      FileAbsPath.getCanonicalPath(), ":", Fileinfo->getLineNumber(Offset));
   std::string WarningIDAndMsg = clang::dpct::buildString(
       std::to_string(static_cast<int>(MsgID)), ":", Vals...);
 
@@ -402,8 +400,12 @@ bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
     return false;
 
   SourceManager &SM = SourceManagerForWarning::getSM();
-  FileID FID = SM.getOrCreateFileID(
-      SM.getFileManager().getFile(NativeFormPath).get(), SrcMgr::C_User);
+
+  llvm::Expected<FileEntryRef> Result =
+      SM.getFileManager().getFileRef(FileAbsPath.getCanonicalPath());
+  if (auto E = Result.takeError())
+    return false;
+  FileID FID = SM.getOrCreateFileID(*Result, SrcMgr::C_User);
 
   unsigned int LineNum = Fileinfo->getLineNumber(Offset);
   unsigned int ColNum = Offset - Fileinfo->getLineInfo(LineNum).Offset + 1;
@@ -421,7 +423,7 @@ bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
   if (IsInsertWarningIntoCode) {
     auto StartLoc = getStartOfLine(SL, SM, LangOptions(), UseTextBegin);
     std::shared_ptr<ExtReplacement> R = std::make_shared<ExtReplacement>(
-        NativeFormPath.str().str(), SM.getDecomposedLoc(StartLoc).second, 0,
+        FileAbsPath.getCanonicalPath(), SM.getDecomposedLoc(StartLoc).second, 0,
         getCommentToInsert(StartLoc, SM, MsgID, UseTextBegin,
                            std::forward<Ts>(Vals)...),
         nullptr);

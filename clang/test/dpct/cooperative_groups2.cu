@@ -112,6 +112,37 @@ __device__ void foo() {
   catile1.meta_group_rank();
   // CHECK: atile1.get_group_linear_id();
   atile1.meta_group_rank();
+
+  // CHECK: item_ct1.get_group().get_local_linear_range();
+  cg::thread_block::size();
+  // CHECK: item_ct1.get_group().get_local_linear_range();
+  cg::thread_block::num_threads();
+
+  // X.num_threads()
+  // CHECK-COUNT-5: item_ct1.get_group().get_local_linear_range();
+  cg::this_thread_block().num_threads();
+  block.num_threads();
+  cblock.num_threads();
+  (*&block).num_threads();
+  (*&cblock).num_threads();
+
+  // CHECK-COUNT-5: item_ct1.get_sub_group().get_local_linear_range();
+  cg::tiled_partition<32>(block).num_threads();
+  catile32.num_threads();
+  atile32.num_threads();
+  ctile32.num_threads();
+  tile32.num_threads();
+
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16).get_local_linear_range();
+  cg::tiled_partition<16>(block).num_threads();
+  // CHECK: catile16.get_local_linear_range();
+  catile16.num_threads();
+  // CHECK: atile16.get_local_linear_range();
+  atile16.num_threads();
+  // CHECK: ctile16.get_local_linear_range();
+  ctile16.num_threads();
+  // CHECK: tile16.get_local_linear_range();
+  tile16.num_threads();
 }
 
 __global__ void test_const_ref() {

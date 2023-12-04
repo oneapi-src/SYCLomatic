@@ -9,9 +9,9 @@ class TestObject{
 public:
   // CHECK: static void run(int *in, int *out, const sycl::nd_item<3> &item_ct1) {
   // CHECK-NEXT:    /*
-  // CHECK-NEXT:    DPCT1115:{{[0-9]+}}: The sycl::ext::oneapi::group_local_memory is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.
+  // CHECK-NEXT:    DPCT1115:{{[0-9]+}}: The sycl::ext::oneapi::group_local_memory_for_overwrite is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.
   // CHECK-NEXT:    */
-  // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory<int>(item_ct1.get_group()); // the size of s is static
+  // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory_for_overwrite<int>(item_ct1.get_group()); // the size of s is static
   // CHECK-NEXT:  a0 = item_ct1.get_local_id(2);
   __device__ static void run(int *in, int *out) {
     __shared__ int a0; // the size of s is static
@@ -21,7 +21,7 @@ public:
 };
 
 // CHECK: void memberAcc(const sycl::nd_item<3> &item_ct1) {
-// CHECK-NEXT: auto &s = *sycl::ext::oneapi::group_local_memory<TestObject>(item_ct1.get_group()); // the size of s is static
+// CHECK-NEXT: auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TestObject>(item_ct1.get_group()); // the size of s is static
 // CHECK-NEXT: s.test();
 // CHECK-NEXT: }
 __global__ void memberAcc() {
@@ -30,7 +30,7 @@ __global__ void memberAcc() {
 }
 
 // CHECK: void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
-// CHECK-NEXT:  auto &s = *sycl::ext::oneapi::group_local_memory<sycl::int2[2*ArraySize*ArraySize]>(item_ct1.get_group()); // the size of s is dependent on parameter
+// CHECK-NEXT:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<sycl::int2[2*ArraySize*ArraySize]>(item_ct1.get_group()); // the size of s is dependent on parameter
 template <int ArraySize>
 __global__ void nonTypeTemplateReverse(int *d, int n) {
   __shared__ int2 s[2*ArraySize*ArraySize]; // the size of s is dependent on parameter
@@ -43,7 +43,7 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
 // CHECK: void staticReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
 __global__ void staticReverse(int *d, int n) {
   const int size = 64;
-  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory<int[size]>(item_ct1.get_group()); // the size of s is static
+  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<int[size]>(item_ct1.get_group()); // the size of s is static
   __shared__ int s[size]; // the size of s is static
   int t = threadIdx.x;
   if (t < 64) {
@@ -58,8 +58,8 @@ __global__ void staticReverse(int *d, int n) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
   const int size = 32;
-  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory<TData[size * 2][size * 4]>(item_ct1.get_group()); // the size of s is static
-  // CHECK-NEXT:  auto &s3 = *sycl::ext::oneapi::group_local_memory<TData[size * 2][size * 4][size]>(item_ct1.get_group()); // the size of s is static
+  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TData[size * 2][size * 4]>(item_ct1.get_group()); // the size of s is static
+  // CHECK-NEXT:  auto &s3 = *sycl::ext::oneapi::group_local_memory_for_overwrite<TData[size * 2][size * 4][size]>(item_ct1.get_group()); // the size of s is static
   __shared__ TData s[size * 2][size * 4]; // the size of s is static
   __shared__ TData s3[size * 2][size * 4][size]; // the size of s is static
   int t = threadIdx.x;

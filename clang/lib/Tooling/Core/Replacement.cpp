@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/Tooling/Core/Replacement.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/DiagnosticIDs.h"
 #include "clang/Basic/DiagnosticOptions.h"
@@ -44,10 +45,19 @@ static const char * const InvalidLocation = "";
 
 Replacement::Replacement() : FilePath(InvalidLocation) {}
 
+#ifdef SYCLomatic_CUSTOMIZATION
+Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
+                         StringRef ReplacementText)
+    : ReplacementRange(Offset, Length),
+      ReplacementText(std::string(ReplacementText)) {
+  this->FilePath = clang::tooling::UnifiedPath(FilePath).getCanonicalPath();
+}
+#else
 Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
                          StringRef ReplacementText)
     : FilePath(std::string(FilePath)), ReplacementRange(Offset, Length),
       ReplacementText(std::string(ReplacementText)) {}
+#endif // SYCLomatic_CUSTOMIZATION
 
 Replacement::Replacement(const SourceManager &Sources, SourceLocation Start,
                          unsigned Length, StringRef ReplacementText) {
@@ -67,7 +77,7 @@ bool Replacement::isApplicable() const {
 
 bool Replacement::apply(Rewriter &Rewrite) const {
   SourceManager &SM = Rewrite.getSourceMgr();
-  auto Entry = SM.getFileManager().getFile(FilePath);
+  auto Entry = SM.getFileManager().getOptionalFileRef(FilePath);
   if (!Entry)
     return false;
 
@@ -122,23 +132,19 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
                                         StringRef ReplacementText) {
   const std::pair<FileID, unsigned> DecomposedLocation =
       Sources.getDecomposedLoc(Start);
-  const FileEntry *Entry = Sources.getFileEntryForID(DecomposedLocation.first);
+  OptionalFileEntryRef Entry =
+      Sources.getFileEntryRefForID(DecomposedLocation.first);
 #ifdef SYCLomatic_CUSTOMIZATION
-  if (Entry) {
+  if (Entry.has_value()) {
+    const auto &FileEntry = Entry->getFileEntry();
     // To avoid potential path inconsist issue,
     // using tryGetRealPathName while applicable.
-    if (!Entry->tryGetRealPathName().empty()) {
-      this->FilePath = Entry->tryGetRealPathName().str();
-    }
-    else {
-      llvm::SmallString<512> FilePathAbs(Entry->getName());
+    if (!FileEntry.tryGetRealPathName().empty()) {
+      this->FilePath = clang::tooling::UnifiedPath(FileEntry.tryGetRealPathName()).getCanonicalPath();
+    } else {
+      llvm::SmallString<512> FilePathAbs(FileEntry.getName());
       Sources.getFileManager().makeAbsolutePath(FilePathAbs);
-      llvm::sys::path::native(FilePathAbs);
-      // Need to remove dot to keep the file path
-      // added by ASTMatcher and added by
-      // AnalysisInfo::getLocInfo() consistent.
-      llvm::sys::path::remove_dots(FilePathAbs, true);
-      this->FilePath = std::string(FilePathAbs.str());
+      this->FilePath = clang::tooling::UnifiedPath(FilePathAbs).getCanonicalPath();
     }
   } else {
     this->FilePath = std::string(InvalidLocation);

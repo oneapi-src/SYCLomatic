@@ -916,13 +916,7 @@ void foo20() {
   CMC_PROFILING_END(__LINE__);
 }
 
-//CHECK: /*
-//CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for
-//CHECK-NEXT: dpct::select_from_sub_group. You can specify
-//CHECK-NEXT: "--use-experimental-features=masked-sub-group-operation" to use the experimental
-//CHECK-NEXT: helper function to migrate __shfl_sync.
-//CHECK-NEXT: */
-//CHECK-NEXT: #define CALLSHFLSYNC(x)                                                        \
+//CHECK: #define CALLSHFLSYNC(x)                                                        \
 //CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), x, 3 ^ 1);
 #define CALLSHFLSYNC(x) __shfl_sync(0xffffffff, x, 3 ^ 1);
 //CHECK: #define CALLANYSYNC(x)                                                         \

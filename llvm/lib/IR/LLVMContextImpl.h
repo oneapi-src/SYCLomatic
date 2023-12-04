@@ -57,6 +57,7 @@ class AttributeListImpl;
 class AttributeSetNode;
 class BasicBlock;
 struct DiagnosticHandler;
+class DPMarker;
 class ElementCount;
 class Function;
 class GlobalObject;
@@ -1634,16 +1635,35 @@ public:
   /// LLVMContext is used by compilation.
   void setOptPassGate(OptPassGate &);
 
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-  // TODO: clean up the following after we no longer support non-opaque pointer
-  // types.
-  bool getOpaquePointers();
-  bool hasOpaquePointersValue();
-  void setOpaquePointers(bool OP);
+  /// Mapping of blocks to collections of "trailing" DPValues. As part of the
+  /// "RemoveDIs" project, debug-info variable location records are going to
+  /// cease being instructions... which raises the problem of where should they
+  /// be recorded when we remove the terminator of a blocks, such as:
+  ///
+  ///    %foo = add i32 0, 0
+  ///    br label %bar
+  ///
+  /// If the branch is removed, a legitimate transient state while editing a
+  /// block, any debug-records between those two instructions will not have a
+  /// location. Each block thus records any DPValue records that "trail" in
+  /// such a way. These are stored in LLVMContext because typically LLVM only
+  /// edits a small number of blocks at a time, so there's no need to bloat
+  /// BasicBlock with such a data structure.
+  SmallDenseMap<BasicBlock *, DPMarker *> TrailingDPValues;
 
-private:
-  std::optional<bool> OpaquePointers;
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
+  // Set, get and delete operations for TrailingDPValues.
+  void setTrailingDPValues(BasicBlock *B, DPMarker *M) {
+    assert(!TrailingDPValues.count(B));
+    TrailingDPValues[B] = M;
+  }
+
+  DPMarker *getTrailingDPValues(BasicBlock *B) {
+    return TrailingDPValues.lookup(B);
+  }
+
+  void deleteTrailingDPValues(BasicBlock *B) {
+    TrailingDPValues.erase(B);
+  }
 };
 
 } // end namespace llvm

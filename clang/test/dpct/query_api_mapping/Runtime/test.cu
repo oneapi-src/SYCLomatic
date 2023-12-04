@@ -128,12 +128,6 @@
 // CUDASTREAMATTACHMEMASYNC-NEXT: The API is Removed.
 // CUDASTREAMATTACHMEMASYNC-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamBeginCapture | FileCheck %s -check-prefix=CUDASTREAMBEGINCAPTURE
-// CUDASTREAMBEGINCAPTURE: CUDA API:
-// CUDASTREAMBEGINCAPTURE-NEXT:   cudaStreamBeginCapture(s /*cudaStream_t*/, sc /*cudaStreamCaptureMode*/);
-// CUDASTREAMBEGINCAPTURE-NEXT: The API is Removed.
-// CUDASTREAMBEGINCAPTURE-EMPTY:
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamCreate | FileCheck %s -check-prefix=CUDASTREAMCREATE
 // CUDASTREAMCREATE: CUDA API:
 // CUDASTREAMCREATE-NEXT:   cudaStreamCreate(ps /*cudaStream_t **/);
@@ -159,12 +153,6 @@
 // CUDASTREAMDESTROY-NEXT: Is migrated to:
 // CUDASTREAMDESTROY-NEXT:   dpct::get_current_device().destroy_queue(s);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamEndCapture | FileCheck %s -check-prefix=CUDASTREAMENDCAPTURE
-// CUDASTREAMENDCAPTURE: CUDA API:
-// CUDASTREAMENDCAPTURE-NEXT:   cudaStreamEndCapture(s /*cudaStream_t*/, pg /*cudaGraph_t **/);
-// CUDASTREAMENDCAPTURE-NEXT: The API is Removed.
-// CUDASTREAMENDCAPTURE-EMPTY:
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamGetFlags | FileCheck %s -check-prefix=CUDASTREAMGETFLAGS
 // CUDASTREAMGETFLAGS: CUDA API:
 // CUDASTREAMGETFLAGS-NEXT:   cudaStreamGetFlags(s /*cudaStream_t*/, f /*unsigned int **/);
@@ -176,13 +164,6 @@
 // CUDASTREAMGETPRIORITY-NEXT:   cudaStreamGetPriority(s /*cudaStream_t*/, pi /*int **/);
 // CUDASTREAMGETPRIORITY-NEXT: Is migrated to:
 // CUDASTREAMGETPRIORITY-NEXT:   *(pi) = 0;
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamIsCapturing | FileCheck %s -check-prefix=CUDASTREAMISCAPTURING
-// CUDASTREAMISCAPTURING: CUDA API:
-// CUDASTREAMISCAPTURING-NEXT:   cudaStreamIsCapturing(s /*cudaStream_t*/,
-// CUDASTREAMISCAPTURING-NEXT:                         ps /* enum cudaStreamCaptureStatus **/);
-// CUDASTREAMISCAPTURING-NEXT: The API is Removed.
-// CUDASTREAMISCAPTURING-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamQuery | FileCheck %s -check-prefix=CUDASTREAMQUERY
 // CUDASTREAMQUERY: CUDA API:

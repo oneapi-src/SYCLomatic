@@ -90,12 +90,12 @@ cusparseScsrmv,YES,:ref:`DPCT1045`
 cusparseDcsrmv,YES,:ref:`DPCT1045`
 cusparseCcsrmv,YES,:ref:`DPCT1045`
 cusparseZcsrmv,YES,:ref:`DPCT1045`
-cusparseScsrmv_mp,NO,
-cusparseDcsrmv_mp,NO,
-cusparseCcsrmv_mp,NO,
-cusparseZcsrmv_mp,NO,
-cusparseCsrmvEx,NO,
-cusparseCsrmvEx_bufferSize,NO,
+cusparseScsrmv_mp,YES,:ref:`DPCT1045`
+cusparseDcsrmv_mp,YES,:ref:`DPCT1045`
+cusparseCcsrmv_mp,YES,:ref:`DPCT1045`
+cusparseZcsrmv_mp,YES,:ref:`DPCT1045`
+cusparseCsrmvEx,YES,:ref:`DPCT1045`
+cusparseCsrmvEx_bufferSize,YES,:ref:`DPCT1045`
 cusparseScsrsv_analysis,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cusparseDcsrsv_analysis,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cusparseCcsrsv_analysis,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -601,15 +601,15 @@ cusparseSgebsr2gebsc_bufferSizeExt,NO,
 cusparseSgebsr2gebsr_bufferSizeExt,NO,
 cusparseSparseToDense,NO,
 cusparseSparseToDense_bufferSize,NO,
-cusparseSpGEMM_compute,NO,
-cusparseSpGEMM_copy,NO,
-cusparseSpGEMM_createDescr,NO,
-cusparseSpGEMM_destroyDescr,NO,
+cusparseSpGEMM_compute,YES,
+cusparseSpGEMM_copy,YES,
+cusparseSpGEMM_createDescr,YES,
+cusparseSpGEMM_destroyDescr,YES,
 cusparseSpGEMMreuse_compute,NO,
 cusparseSpGEMMreuse_copy,NO,
 cusparseSpGEMMreuse_nnz,NO,
 cusparseSpGEMMreuse_workEstimation,NO,
-cusparseSpGEMM_workEstimation,NO,
+cusparseSpGEMM_workEstimation,YES,
 cusparseSpMatGetAttribute,YES,
 cusparseSpMatGetNumBatches,NO,
 cusparseSpMatGetSize,YES,
@@ -624,11 +624,11 @@ cusparseSpSM_bufferSize,NO,
 cusparseSpSM_createDescr,NO,
 cusparseSpSM_destroyDescr,NO,
 cusparseSpSM_solve,NO,
-cusparseSpSV_analysis,NO,
-cusparseSpSV_bufferSize,NO,
-cusparseSpSV_createDescr,NO,
-cusparseSpSV_destroyDescr,NO,
-cusparseSpSV_solve,NO,
+cusparseSpSV_analysis,YES,
+cusparseSpSV_bufferSize,YES,
+cusparseSpSV_createDescr,YES,
+cusparseSpSV_destroyDescr,YES,
+cusparseSpSV_solve,YES,
 cusparseXgebsr2csr,NO,
 cusparseZbsric02_bufferSizeExt,NO,
 cusparseZbsrilu02_bufferSizeExt,NO,

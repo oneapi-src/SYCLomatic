@@ -11,11 +11,11 @@
 // CHECK:INCLUDE_CL   := $(ROOT_DIR)/../include/sycl
 // CHECK:TARGET_0_SRC_0 = ./source/foo.dp.cpp
 // CHECK:TARGET_0_OBJ_0 = ./source/foo.dp.o
-// CHECK:TARGET_0_FLAG_0 = -std=c++20 ${FLAGS}
+// CHECK:TARGET_0_FLAG_0 = -std=c++20 -I. ${FLAGS}
 // CHECK:TARGET_0_SRC_1 = ./source/bar.cpp.dp.cpp
 // CHECK:TARGET_0_OBJ_1 = ./source/bar.cpp.dp.o
 // CHECK:TARGET_0_FLAG_1 = -std=c++17 -I $(INCLUDE_SYCL) -I $(INCLUDE_CL) ${FLAGS}
-// CHECK:TARGET_0 := app
+// CHECK:TARGET_0 := ./build/app
 // CHECK:TARGET :=  ${TARGET_0}
 // CHECK:.PHONY:all clean
 // CHECK:OBJS_0 :=  ${TARGET_0_OBJ_0} ${TARGET_0_OBJ_1}

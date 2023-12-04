@@ -1348,6 +1348,10 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "library_data_t::real_int64"},
       {"CUSPARSE_ORDER_COL", "oneapi::mkl::layout::col_major"},
       {"CUSPARSE_ORDER_ROW", "oneapi::mkl::layout::row_major"},
+      {"CUSPARSE_ACTION_SYMBOLIC",
+       getDpctNamespace() + "sparse::conversion_scope::index"},
+      {"CUSPARSE_ACTION_NUMERIC",
+       getDpctNamespace() + "sparse::conversion_scope::index_and_value"},
   };
 
   ClassFieldMap = {};
@@ -1659,16 +1663,6 @@ void MapNames::setExplicitNamespaceMap() {
                                  getClNamespace() + "half"},
         std::vector<int>{1, 2}, -1, -1, -1,
         "oneapi::mkl::blas::column_major::gemm"}},
-      {"cublasSgemm_v2",
-       {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-        std::vector<std::string>{"float", "float", "float"},
-        std::vector<int>{1, 2}, -1, -1, -1,
-        "oneapi::mkl::blas::column_major::gemm"}},
-      {"cublasDgemm_v2",
-       {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{1, 2}, -1, -1, -1,
-        "oneapi::mkl::blas::column_major::gemm"}},
       {"cublasHgemmStridedBatched",
        {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
         std::vector<std::string>{getClNamespace() + "half",
@@ -1772,6 +1766,10 @@ void MapNames::setExplicitNamespaceMap() {
   };
 
   BLASAPIWithRewriter = {
+      {"cublasSgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasDgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasCgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasZgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasNrm2Ex", getDpctNamespace() + "nrm2_ex"},
       {"cublasDotEx", getDpctNamespace() + "dot_ex"},
       {"cublasDotcEx", getDpctNamespace() + "dotc_ex"},
@@ -1821,7 +1819,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
       {"cublasZrot_v2", getDpctNamespace() + "rot"},
-      {"cublasGetStatusString", ""}};
+      {"cublasGetStatusString", ""},
+      {"cublasSgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasDgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasCgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasZgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"}};
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
                            "cusolverDnSetStream",
@@ -2004,11 +2006,37 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpGEMM_createDescr",
                            "cusparseSpGEMM_destroyDescr",
                            "cusparseSpGEMM_workEstimation",
+                           "cusparseCsr2cscEx2_bufferSize",
+                           "cusparseCsr2cscEx2",
                            "cusparseSpSV_createDescr",
                            "cusparseSpSV_destroyDescr",
                            "cusparseSpSV_solve",
                            "cusparseSpSV_bufferSize",
-                           "cusparseSpSV_analysis"};
+                           "cusparseSpSV_analysis",
+                           "cusparseScsrsv_solve", 
+                           "cusparseDcsrsv_solve", 
+                           "cusparseCcsrsv_solve", 
+                           "cusparseZcsrsv_solve", 
+                           "cusparseScsrsv2_bufferSize", 
+                           "cusparseDcsrsv2_bufferSize", 
+                           "cusparseCcsrsv2_bufferSize", 
+                           "cusparseZcsrsv2_bufferSize", 
+                           "cusparseScsrsv2_analysis", 
+                           "cusparseDcsrsv2_analysis", 
+                           "cusparseCcsrsv2_analysis", 
+                           "cusparseZcsrsv2_analysis", 
+                           "cusparseScsrsv2_solve", 
+                           "cusparseDcsrsv2_solve", 
+                           "cusparseCcsrsv2_solve", 
+                           "cusparseZcsrsv2_solve", 
+                           "cusparseCcsrsv2_bufferSizeExt", 
+                           "cusparseDcsrsv2_bufferSizeExt", 
+                           "cusparseScsrsv2_bufferSizeExt", 
+                           "cusparseZcsrsv2_bufferSizeExt", 
+                           "cusparseCsrsv_analysisEx", 
+                           "cusparseCsrsv_solveEx",
+                           "cusparseCreateCsrsv2Info",
+                           "cusparseDestroyCsrsv2Info"};
 }
 // clang-format on
 
@@ -2514,23 +2542,6 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"std::complex<double>"}, std::vector<int>{},
           1, -1, -1, "oneapi::mkl::blas::column_major::hpr2"}},
         /*BLAS level 3*/
-        {"cublasCgemm_v2",
-         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<int>{1, 2}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::gemm"}},
-        {"cublasZgemm_v2",
-         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<int>{1, 2}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::gemm"}},
         {"cublasCgemm3m",
          {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
@@ -4354,6 +4365,10 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
      MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__align__", "__dpct_align__",
                         HelperFeatureEnum::device_ext)},
+    {"__CUDA_ALIGN__",
+     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                        "__CUDA_ALIGN__", "__dpct_align__",
+                        HelperFeatureEnum::device_ext)},
     {"__noinline__",
      MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__noinline__", "__dpct_noinline__",
@@ -4507,7 +4522,7 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
     return Search->second;
   } else {
 #ifdef DPCT_DEBUG_BUILD
-    llvm::errs() << "[NOTE] Find new API\"" << APIName
+    llvm::errs() << "[NOTE] Find new API \"" << APIName
                  << "\" , please update migrated API database.\n";
     ShowStatus(MigrationError);
     dpctExit(MigrationError);
@@ -4601,6 +4616,7 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "size",
     "shfl_down",
     "reduce",
+    "num_threads",
     "shfl_up",
     "shfl_xor",
     "meta_group_rank",

@@ -169,3 +169,14 @@ void foo7() {
   //CHECK: my_min(b, b);
   my_max(a, b);
 }
+
+template<class T1, class T2>
+void foo8(int a) {
+  T1 a;
+  T2 b;
+}
+
+void foo9(){
+  //CHECK: foo8<float, int>(0);
+  foo8<int, float>(0);
+}

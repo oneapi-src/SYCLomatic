@@ -118,7 +118,7 @@ struct InstRegexOp : public SetTheory::Operator {
       // The generic opcodes are unsorted, handle them manually.
       for (auto *Inst : Generics) {
         StringRef InstName = Inst->TheDef->getName();
-        if (InstName.startswith(Prefix) &&
+        if (InstName.starts_with(Prefix) &&
             (!Regexpr || Regexpr->match(InstName.substr(Prefix.size())))) {
           Elts.insert(Inst->TheDef);
           NumMatches++;
@@ -134,7 +134,7 @@ struct InstRegexOp : public SetTheory::Operator {
         }
         bool operator()(StringRef LHS, const CodeGenInstruction *RHS) {
           return LHS < RHS->TheDef->getName() &&
-                 !RHS->TheDef->getName().startswith(LHS);
+                 !RHS->TheDef->getName().starts_with(LHS);
         }
       };
       auto Range1 =
@@ -369,19 +369,20 @@ processSTIPredicate(STIPredicateFunction &Fn,
                const std::pair<APInt, APInt> &LhsMasks = OpcodeMasks[LhsIdx];
                const std::pair<APInt, APInt> &RhsMasks = OpcodeMasks[RhsIdx];
 
-               auto LessThan = [](const APInt &Lhs, const APInt &Rhs) {
-                 unsigned LhsCountPopulation = Lhs.popcount();
-                 unsigned RhsCountPopulation = Rhs.popcount();
-                 return ((LhsCountPopulation < RhsCountPopulation) ||
-                         ((LhsCountPopulation == RhsCountPopulation) &&
-                          (Lhs.countl_zero() > Rhs.countl_zero())));
+               auto PopulationCountAndLeftBit =
+                   [](const APInt &Other) -> std::pair<int, int> {
+                 return std::pair<int, int>(Other.popcount(),
+                                            -Other.countl_zero());
                };
+               auto lhsmask_first = PopulationCountAndLeftBit(LhsMasks.first);
+               auto rhsmask_first = PopulationCountAndLeftBit(RhsMasks.first);
+               if (lhsmask_first != rhsmask_first)
+                 return lhsmask_first < rhsmask_first;
 
-               if (LhsMasks.first != RhsMasks.first)
-                 return LessThan(LhsMasks.first, RhsMasks.first);
-
-               if (LhsMasks.second != RhsMasks.second)
-                 return LessThan(LhsMasks.second, RhsMasks.second);
+               auto lhsmask_second = PopulationCountAndLeftBit(LhsMasks.second);
+               auto rhsmask_second = PopulationCountAndLeftBit(RhsMasks.second);
+               if (lhsmask_second != rhsmask_second)
+                 return lhsmask_second < rhsmask_second;
 
                return LhsIdx < RhsIdx;
              });

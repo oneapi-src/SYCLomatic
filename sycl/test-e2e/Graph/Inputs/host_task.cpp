@@ -3,7 +3,11 @@
 #include "../graph_common.hpp"
 
 int main() {
-  queue Queue;
+  queue Queue{{sycl::ext::intel::property::queue::no_immediate_command_list{}}};
+
+  if (!are_graphs_supported(Queue)) {
+    return 0;
+  }
 
   using T = int;
 
@@ -82,7 +86,9 @@ int main() {
   free(PtrB, Queue);
   free(PtrC, Queue);
 
-  assert(Reference == DataC);
+  for (size_t i = 0; i < Size; i++) {
+    assert(check_value(i, ReferenceC[i], DataC[i], "DataC"));
+  }
 
   return 0;
 }

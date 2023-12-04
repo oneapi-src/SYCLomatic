@@ -78,6 +78,7 @@ RewriterMap createDeviceRadixSortRewriterMap();
 RewriterMap createDeviceSegmentedRadixSortRewriterMap();
 RewriterMap createDeviceSegmentedSortRewriterMap();
 RewriterMap createDeviceHistgramRewriterMap();
+RewriterMap createDeviceMergeSortRewriterMap();
 RewriterMap createClassMethodsRewriterMap();
 RewriterMap createUtilityFunctionsRewriterMap();
 } // namespace clang::dpct

@@ -888,8 +888,7 @@ auto IsPureHost = [](const CallExpr *C) -> bool {
   SourceLocation DeclLoc =
       dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
           FD->getLocation());
-  std::string DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
-  makeCanonical(DeclLocFilePath);
+  clang::tooling::UnifiedPath DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
 
   if (FD->getAttr<CUDADeviceAttr>()->isImplicit() &&
       FD->isConstexprSpecified() &&

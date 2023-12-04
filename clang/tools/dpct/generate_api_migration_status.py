@@ -13,13 +13,19 @@ keep_file = True
 
 pattern_re = re.compile("DPCT\d{4}")
 
+Partial_re = re.compile("Partial", re.I)
+
 def diag_DPCT_link(DPCT_diag:str):
     return "https://www.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top/diagnostics-reference/"+DPCT_diag.lower()+".html"
 
 def format_diagnostic_info_md(DPCT_diag_number:list, is_supported:bool):
+    if not DPCT_diag_number:
+        return ""
     return " / ".join(("["+diag_number+"]("+diag_DPCT_link(diag_number)+")" for diag_number in DPCT_diag_number if is_supported and diag_number != "DPCT1007"))
 
 def format_diagnostic_info_csv(DPCT_diag_number:list, is_supported:bool):
+    if not DPCT_diag_number:
+        return ""
     return " / ".join((":ref:`"+diag_number+"`" for diag_number in DPCT_diag_number if is_supported and diag_number != "DPCT1007"))
 
 format_diagnostic_info = {"md":format_diagnostic_info_md, "csv":format_diagnostic_info_csv}
@@ -92,13 +98,15 @@ def parse_macro_entry(line: str):
             "internal error: can not tell whether API is supported or not.")
         API_list.append("UNKNOW")
     DPCT_dia_msg = []
+    Partial_msg = []
     for i in line_list[4 + isMemberAPI::] :
         DPCT_dia_msg += pattern_re.findall(i)
+        Partial_msg +=  Partial_re.findall(i)
     if("DPCT1030" in DPCT_dia_msg):
         API_list[-1] = "NO"
         is_supported = False
-    if(DPCT_dia_msg):
-        API_list.append(format_diagnostic_info[output_file_suffix](DPCT_dia_msg, is_supported))
+    if(DPCT_dia_msg or Partial_msg):
+        API_list.append(format_diagnostic_info[output_file_suffix](DPCT_dia_msg, is_supported)+(" Partial" if Partial_msg else ""))
     else:
         API_list.append('')
     return API_list

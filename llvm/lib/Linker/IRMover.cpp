@@ -936,11 +936,7 @@ IRLinker::linkAppendingVarProto(GlobalVariable *DstGV,
     else
       IsOldStructor = true;
   }
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-  PointerType *VoidPtrTy = Type::getInt8Ty(SrcGV->getContext())->getPointerTo();
-#else
   PointerType *VoidPtrTy = PointerType::get(SrcGV->getContext(), 0);
-#endif
   if (IsOldStructor) {
     auto &ST = *cast<StructType>(EltTy);
     Type *Tys[3] = {ST.getElementType(0), ST.getElementType(1), VoidPtrTy};
@@ -1138,6 +1134,7 @@ Error IRLinker::linkFunctionBody(Function &Dst, Function &Src) {
     Dst.setPrologueData(Src.getPrologueData());
   if (Src.hasPersonalityFn())
     Dst.setPersonalityFn(Src.getPersonalityFn());
+  assert(Src.IsNewDbgInfoFormat == Dst.IsNewDbgInfoFormat);
 
   // Copy over the metadata attachments without remapping.
   Dst.copyMetadata(&Src, 0);
@@ -1547,6 +1544,8 @@ Error IRLinker::run() {
   if (SrcM->getMaterializer())
     if (Error Err = SrcM->getMaterializer()->materializeMetadata())
       return Err;
+
+  DstM.IsNewDbgInfoFormat = SrcM->IsNewDbgInfoFormat;
 
   // Inherit the target data from the source module if the destination module
   // doesn't have one already.

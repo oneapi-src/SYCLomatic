@@ -31,6 +31,14 @@
   In: foo3
   Out: goo($1)
   Includes: []
+- Rule: rule_foo8
+  Kind: API
+  Priority: Takeover
+  In: foo8
+  Out: foo8<$template_arg($2), $template_arg($1)>($1)
+  Includes: []
+  Attributes:
+    HasExplicitTemplateArgs: true
 - Rule: rule_call_macro
   Kind: Macro
   Priority: Takeover

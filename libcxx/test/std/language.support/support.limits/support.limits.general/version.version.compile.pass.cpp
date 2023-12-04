@@ -189,6 +189,7 @@
     __cpp_lib_to_address                             201711L [C++20]
     __cpp_lib_to_array                               201907L [C++20]
     __cpp_lib_to_chars                               201611L [C++17]
+                                                     202306L [C++26]
     __cpp_lib_to_string                              202306L [C++23]
     __cpp_lib_to_underlying                          202102L [C++23]
     __cpp_lib_transformation_trait_aliases           201304L [C++14]
@@ -1544,7 +1545,7 @@
 #   error "__cpp_lib_shared_ptr_weak_type should not be defined before c++17"
 # endif
 
-# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_shared_timed_mutex
 #     error "__cpp_lib_shared_timed_mutex should be defined in c++14"
 #   endif
@@ -1553,7 +1554,7 @@
 #   endif
 # else
 #   ifdef __cpp_lib_shared_timed_mutex
-#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)' is not met!"
+#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS)' is not met!"
 #   endif
 # endif
 
@@ -2470,7 +2471,7 @@
 #   error "__cpp_lib_semaphore should not be defined before c++20"
 # endif
 
-# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_shared_mutex
 #     error "__cpp_lib_shared_mutex should be defined in c++17"
 #   endif
@@ -2479,7 +2480,7 @@
 #   endif
 # else
 #   ifdef __cpp_lib_shared_mutex
-#     error "__cpp_lib_shared_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)' is not met!"
+#     error "__cpp_lib_shared_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS)' is not met!"
 #   endif
 # endif
 
@@ -2497,7 +2498,7 @@
 #   error "__cpp_lib_shared_ptr_weak_type should have the value 201606L in c++17"
 # endif
 
-# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_shared_timed_mutex
 #     error "__cpp_lib_shared_timed_mutex should be defined in c++17"
 #   endif
@@ -2506,7 +2507,7 @@
 #   endif
 # else
 #   ifdef __cpp_lib_shared_timed_mutex
-#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)' is not met!"
+#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS)' is not met!"
 #   endif
 # endif
 
@@ -3368,16 +3369,16 @@
 #   error "__cpp_lib_is_swappable should have the value 201603L in c++20"
 # endif
 
-# if !defined(_LIBCPP_VERSION)
+# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_HAS_NO_EXPERIMENTAL_STOP_TOKEN) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SYNC)
 #   ifndef __cpp_lib_jthread
 #     error "__cpp_lib_jthread should be defined in c++20"
 #   endif
 #   if __cpp_lib_jthread != 201911L
 #     error "__cpp_lib_jthread should have the value 201911L in c++20"
 #   endif
-# else // _LIBCPP_VERSION
+# else
 #   ifdef __cpp_lib_jthread
-#     error "__cpp_lib_jthread should not be defined because it is unimplemented in libc++!"
+#     error "__cpp_lib_jthread should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_HAS_NO_EXPERIMENTAL_STOP_TOKEN) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SYNC)' is not met!"
 #   endif
 # endif
 
@@ -3681,7 +3682,7 @@
 #   endif
 # endif
 
-# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_shared_mutex
 #     error "__cpp_lib_shared_mutex should be defined in c++20"
 #   endif
@@ -3690,7 +3691,7 @@
 #   endif
 # else
 #   ifdef __cpp_lib_shared_mutex
-#     error "__cpp_lib_shared_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)' is not met!"
+#     error "__cpp_lib_shared_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS)' is not met!"
 #   endif
 # endif
 
@@ -3708,7 +3709,7 @@
 #   error "__cpp_lib_shared_ptr_weak_type should have the value 201606L in c++20"
 # endif
 
-# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_shared_timed_mutex
 #     error "__cpp_lib_shared_timed_mutex should be defined in c++20"
 #   endif
@@ -3717,7 +3718,7 @@
 #   endif
 # else
 #   ifdef __cpp_lib_shared_timed_mutex
-#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)' is not met!"
+#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS)' is not met!"
 #   endif
 # endif
 
@@ -3821,16 +3822,16 @@
 #   error "__cpp_lib_submdspan should not be defined before c++26"
 # endif
 
-# if !defined(_LIBCPP_VERSION)
+# if !defined(_LIBCPP_HAS_NO_EXPERIMENTAL_SYNCSTREAM)
 #   ifndef __cpp_lib_syncbuf
 #     error "__cpp_lib_syncbuf should be defined in c++20"
 #   endif
 #   if __cpp_lib_syncbuf != 201803L
 #     error "__cpp_lib_syncbuf should have the value 201803L in c++20"
 #   endif
-# else // _LIBCPP_VERSION
+# else
 #   ifdef __cpp_lib_syncbuf
-#     error "__cpp_lib_syncbuf should not be defined because it is unimplemented in libc++!"
+#     error "__cpp_lib_syncbuf should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_EXPERIMENTAL_SYNCSTREAM)' is not met!"
 #   endif
 # endif
 
@@ -4708,16 +4709,16 @@
 #   error "__cpp_lib_is_swappable should have the value 201603L in c++23"
 # endif
 
-# if !defined(_LIBCPP_VERSION)
+# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_HAS_NO_EXPERIMENTAL_STOP_TOKEN) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SYNC)
 #   ifndef __cpp_lib_jthread
 #     error "__cpp_lib_jthread should be defined in c++23"
 #   endif
 #   if __cpp_lib_jthread != 201911L
 #     error "__cpp_lib_jthread should have the value 201911L in c++23"
 #   endif
-# else // _LIBCPP_VERSION
+# else
 #   ifdef __cpp_lib_jthread
-#     error "__cpp_lib_jthread should not be defined because it is unimplemented in libc++!"
+#     error "__cpp_lib_jthread should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_HAS_NO_EXPERIMENTAL_STOP_TOKEN) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SYNC)' is not met!"
 #   endif
 # endif
 
@@ -4803,17 +4804,11 @@
 #   endif
 # endif
 
-# if !defined(_LIBCPP_VERSION)
-#   ifndef __cpp_lib_mdspan
-#     error "__cpp_lib_mdspan should be defined in c++23"
-#   endif
-#   if __cpp_lib_mdspan != 202207L
-#     error "__cpp_lib_mdspan should have the value 202207L in c++23"
-#   endif
-# else // _LIBCPP_VERSION
-#   ifdef __cpp_lib_mdspan
-#     error "__cpp_lib_mdspan should not be defined because it is unimplemented in libc++!"
-#   endif
+# ifndef __cpp_lib_mdspan
+#   error "__cpp_lib_mdspan should be defined in c++23"
+# endif
+# if __cpp_lib_mdspan != 202207L
+#   error "__cpp_lib_mdspan should have the value 202207L in c++23"
 # endif
 
 # if !defined(_LIBCPP_AVAILABILITY_HAS_NO_PMR)
@@ -4970,17 +4965,11 @@
 #   endif
 # endif
 
-# if !defined(_LIBCPP_VERSION)
-#   ifndef __cpp_lib_ranges_chunk_by
-#     error "__cpp_lib_ranges_chunk_by should be defined in c++23"
-#   endif
-#   if __cpp_lib_ranges_chunk_by != 202202L
-#     error "__cpp_lib_ranges_chunk_by should have the value 202202L in c++23"
-#   endif
-# else // _LIBCPP_VERSION
-#   ifdef __cpp_lib_ranges_chunk_by
-#     error "__cpp_lib_ranges_chunk_by should not be defined because it is unimplemented in libc++!"
-#   endif
+# ifndef __cpp_lib_ranges_chunk_by
+#   error "__cpp_lib_ranges_chunk_by should be defined in c++23"
+# endif
+# if __cpp_lib_ranges_chunk_by != 202202L
+#   error "__cpp_lib_ranges_chunk_by should have the value 202202L in c++23"
 # endif
 
 # if !defined(_LIBCPP_VERSION)
@@ -5138,7 +5127,7 @@
 #   endif
 # endif
 
-# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_shared_mutex
 #     error "__cpp_lib_shared_mutex should be defined in c++23"
 #   endif
@@ -5147,7 +5136,7 @@
 #   endif
 # else
 #   ifdef __cpp_lib_shared_mutex
-#     error "__cpp_lib_shared_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)' is not met!"
+#     error "__cpp_lib_shared_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS)' is not met!"
 #   endif
 # endif
 
@@ -5165,7 +5154,7 @@
 #   error "__cpp_lib_shared_ptr_weak_type should have the value 201606L in c++23"
 # endif
 
-# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_shared_timed_mutex
 #     error "__cpp_lib_shared_timed_mutex should be defined in c++23"
 #   endif
@@ -5174,7 +5163,7 @@
 #   endif
 # else
 #   ifdef __cpp_lib_shared_timed_mutex
-#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)' is not met!"
+#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS)' is not met!"
 #   endif
 # endif
 
@@ -5305,16 +5294,16 @@
 #   error "__cpp_lib_submdspan should not be defined before c++26"
 # endif
 
-# if !defined(_LIBCPP_VERSION)
+# if !defined(_LIBCPP_HAS_NO_EXPERIMENTAL_SYNCSTREAM)
 #   ifndef __cpp_lib_syncbuf
 #     error "__cpp_lib_syncbuf should be defined in c++23"
 #   endif
 #   if __cpp_lib_syncbuf != 201803L
 #     error "__cpp_lib_syncbuf should have the value 201803L in c++23"
 #   endif
-# else // _LIBCPP_VERSION
+# else
 #   ifdef __cpp_lib_syncbuf
-#     error "__cpp_lib_syncbuf should not be defined because it is unimplemented in libc++!"
+#     error "__cpp_lib_syncbuf should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_EXPERIMENTAL_SYNCSTREAM)' is not met!"
 #   endif
 # endif
 
@@ -5688,17 +5677,11 @@
 #   error "__cpp_lib_bitops should have the value 201907L in c++26"
 # endif
 
-# if !defined(_LIBCPP_VERSION)
-#   ifndef __cpp_lib_bitset
-#     error "__cpp_lib_bitset should be defined in c++26"
-#   endif
-#   if __cpp_lib_bitset != 202306L
-#     error "__cpp_lib_bitset should have the value 202306L in c++26"
-#   endif
-# else // _LIBCPP_VERSION
-#   ifdef __cpp_lib_bitset
-#     error "__cpp_lib_bitset should not be defined because it is unimplemented in libc++!"
-#   endif
+# ifndef __cpp_lib_bitset
+#   error "__cpp_lib_bitset should be defined in c++26"
+# endif
+# if __cpp_lib_bitset != 202306L
+#   error "__cpp_lib_bitset should have the value 202306L in c++26"
 # endif
 
 # ifndef __cpp_lib_bool_constant
@@ -6261,16 +6244,16 @@
 #   error "__cpp_lib_is_swappable should have the value 201603L in c++26"
 # endif
 
-# if !defined(_LIBCPP_VERSION)
+# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_HAS_NO_EXPERIMENTAL_STOP_TOKEN) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SYNC)
 #   ifndef __cpp_lib_jthread
 #     error "__cpp_lib_jthread should be defined in c++26"
 #   endif
 #   if __cpp_lib_jthread != 201911L
 #     error "__cpp_lib_jthread should have the value 201911L in c++26"
 #   endif
-# else // _LIBCPP_VERSION
+# else
 #   ifdef __cpp_lib_jthread
-#     error "__cpp_lib_jthread should not be defined because it is unimplemented in libc++!"
+#     error "__cpp_lib_jthread should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_HAS_NO_EXPERIMENTAL_STOP_TOKEN) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SYNC)' is not met!"
 #   endif
 # endif
 
@@ -6356,17 +6339,11 @@
 #   endif
 # endif
 
-# if !defined(_LIBCPP_VERSION)
-#   ifndef __cpp_lib_mdspan
-#     error "__cpp_lib_mdspan should be defined in c++26"
-#   endif
-#   if __cpp_lib_mdspan != 202207L
-#     error "__cpp_lib_mdspan should have the value 202207L in c++26"
-#   endif
-# else // _LIBCPP_VERSION
-#   ifdef __cpp_lib_mdspan
-#     error "__cpp_lib_mdspan should not be defined because it is unimplemented in libc++!"
-#   endif
+# ifndef __cpp_lib_mdspan
+#   error "__cpp_lib_mdspan should be defined in c++26"
+# endif
+# if __cpp_lib_mdspan != 202207L
+#   error "__cpp_lib_mdspan should have the value 202207L in c++26"
 # endif
 
 # if !defined(_LIBCPP_AVAILABILITY_HAS_NO_PMR)
@@ -6523,17 +6500,11 @@
 #   endif
 # endif
 
-# if !defined(_LIBCPP_VERSION)
-#   ifndef __cpp_lib_ranges_chunk_by
-#     error "__cpp_lib_ranges_chunk_by should be defined in c++26"
-#   endif
-#   if __cpp_lib_ranges_chunk_by != 202202L
-#     error "__cpp_lib_ranges_chunk_by should have the value 202202L in c++26"
-#   endif
-# else // _LIBCPP_VERSION
-#   ifdef __cpp_lib_ranges_chunk_by
-#     error "__cpp_lib_ranges_chunk_by should not be defined because it is unimplemented in libc++!"
-#   endif
+# ifndef __cpp_lib_ranges_chunk_by
+#   error "__cpp_lib_ranges_chunk_by should be defined in c++26"
+# endif
+# if __cpp_lib_ranges_chunk_by != 202202L
+#   error "__cpp_lib_ranges_chunk_by should have the value 202202L in c++26"
 # endif
 
 # if !defined(_LIBCPP_VERSION)
@@ -6703,7 +6674,7 @@
 #   endif
 # endif
 
-# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_shared_mutex
 #     error "__cpp_lib_shared_mutex should be defined in c++26"
 #   endif
@@ -6712,7 +6683,7 @@
 #   endif
 # else
 #   ifdef __cpp_lib_shared_mutex
-#     error "__cpp_lib_shared_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)' is not met!"
+#     error "__cpp_lib_shared_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS)' is not met!"
 #   endif
 # endif
 
@@ -6730,7 +6701,7 @@
 #   error "__cpp_lib_shared_ptr_weak_type should have the value 201606L in c++26"
 # endif
 
-# if !defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_shared_timed_mutex
 #     error "__cpp_lib_shared_timed_mutex should be defined in c++26"
 #   endif
@@ -6739,7 +6710,7 @@
 #   endif
 # else
 #   ifdef __cpp_lib_shared_timed_mutex
-#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS) && !defined(_LIBCPP_AVAILABILITY_HAS_NO_SHARED_MUTEX)' is not met!"
+#     error "__cpp_lib_shared_timed_mutex should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_THREADS)' is not met!"
 #   endif
 # endif
 
@@ -6897,16 +6868,16 @@
 #   endif
 # endif
 
-# if !defined(_LIBCPP_VERSION)
+# if !defined(_LIBCPP_HAS_NO_EXPERIMENTAL_SYNCSTREAM)
 #   ifndef __cpp_lib_syncbuf
 #     error "__cpp_lib_syncbuf should be defined in c++26"
 #   endif
 #   if __cpp_lib_syncbuf != 201803L
 #     error "__cpp_lib_syncbuf should have the value 201803L in c++26"
 #   endif
-# else // _LIBCPP_VERSION
+# else
 #   ifdef __cpp_lib_syncbuf
-#     error "__cpp_lib_syncbuf should not be defined because it is unimplemented in libc++!"
+#     error "__cpp_lib_syncbuf should not be defined when the requirement '!defined(_LIBCPP_HAS_NO_EXPERIMENTAL_SYNCSTREAM)' is not met!"
 #   endif
 # endif
 
@@ -6954,8 +6925,8 @@
 #   ifndef __cpp_lib_to_chars
 #     error "__cpp_lib_to_chars should be defined in c++26"
 #   endif
-#   if __cpp_lib_to_chars != 201611L
-#     error "__cpp_lib_to_chars should have the value 201611L in c++26"
+#   if __cpp_lib_to_chars != 202306L
+#     error "__cpp_lib_to_chars should have the value 202306L in c++26"
 #   endif
 # else // _LIBCPP_VERSION
 #   ifdef __cpp_lib_to_chars

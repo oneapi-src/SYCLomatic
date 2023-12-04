@@ -28,55 +28,55 @@ using namespace llvm;
 // Used to identify compilation commands without target
 const std::string EmptyTarget = "NoLinker";
 
-std::map<std::string /*migrated file name*/, clang::tooling::CompilationInfo>
+std::map<clang::tooling::UnifiedPath /*migrated file name*/, clang::tooling::CompilationInfo>
     CompileCmdsMap;
 
-std::map<std::string /*target*/, std::vector<clang::tooling::CompilationInfo>>
+std::map<clang::tooling::UnifiedPath /*target*/, std::vector<clang::tooling::CompilationInfo>>
     CompileCmdsPerTarget;
 
-std::vector<std::pair<std::string /*original file name or linker entry*/,
+std::vector<std::pair<clang::tooling::UnifiedPath /*original file name or linker entry*/,
                       std::vector<std::string> /*original compile command*/>>
     CompileTargetsMap;
 
 static void fillCompileCmds(
-    std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
+    std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
         &CompileCmds,
-    clang::tooling::CompilationInfo &CmpInfo, std::string TargetName) {
+    clang::tooling::CompilationInfo &CmpInfo, clang::tooling::UnifiedPath TargetName) {
   CompileCmds[TargetName].push_back(CmpInfo);
 }
 
 // To get customized basename from the file path.
 // E.g: /path/to/foo.cc.cpp --> foo.cc
-static std::string getCustomBaseName(const std::string &Path) {
-  std::string Filename = llvm::sys::path::filename(Path).str();
+static clang::tooling::UnifiedPath getCustomBaseName(const clang::tooling::UnifiedPath &Path) {
+  std::string Filename = llvm::sys::path::filename(Path.getCanonicalPath()).str();
   std::size_t Pos = Filename.find_last_of('.');
   if (Pos != std::string::npos) {
     std::string BaseName = Filename.substr(0, Pos);
-    return BaseName;
+    return clang::tooling::UnifiedPath(BaseName);
   } else
-    return Filename;
+    return clang::tooling::UnifiedPath(Filename);
 }
 
-extern std::map<std::string, bool> IncludeFileMap;
+extern std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 
 static void getCompileInfo(
-    StringRef InRoot, StringRef OutRoot,
-    std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
+    const clang::tooling::UnifiedPath& InRoot, const clang::tooling::UnifiedPath& OutRoot,
+    std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
         &CompileCmds,
-    std::unordered_map<std::string, std::string> &ToolPerTarget) {
+    std::unordered_map<clang::tooling::UnifiedPath, std::string> &ToolPerTarget) {
 
-  std::unordered_map<std::string, std::vector<std::string>>
+  std::unordered_map<clang::tooling::UnifiedPath, std::vector<std::string>>
       ObjsInLinkerCmdPerTarget;
 
-  std::map<std::string, clang::tooling::CompilationInfo> CmdsMap;
+  std::map<clang::tooling::UnifiedPath, clang::tooling::CompilationInfo> CmdsMap;
 
   for (const auto &Entry : CompileTargetsMap) {
-    std::string FileName = Entry.first;
+    clang::tooling::UnifiedPath FileName = Entry.first;
 
     // Get value of key "directory" from compilation database
-    const std::string Directory = Entry.second[0];
+    const clang::tooling::UnifiedPath Directory = Entry.second[0];
 
-    if (llvm::StringRef(FileName).startswith("LinkerEntry")) {
+    if (path::filename(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
       // Parse linker cmd to get target name and objfile names
       std::vector<std::string> ObjsInLKOrARCmd;
 
@@ -84,7 +84,6 @@ static void getCompileInfo(
       bool IsArCommand = false;
       bool SkipArOptions = false;
 
-      std::string ObjName;
       std::string TargetName;
       std::string Tool;
 
@@ -97,17 +96,15 @@ static void getCompileInfo(
           // Set the target name
           TargetName = Obj;
           IsTargetName = false;
-          Tool = "$(CC) -fsycl -o"; // use 'icpx -fsycl' to link the target file in the
-                             // generated Makefile.
+          Tool = "$(CC) -fsycl -o"; // use 'icpx -fsycl' to link the target file
+                                    // in the generated Makefile.
         } else if (llvm::StringRef(Obj).endswith(".o")) {
-          llvm::SmallString<512> FilePathAbs(Obj);
+          clang::tooling::UnifiedPath FilePathAbs(Obj);
 
           if (!llvm::sys::path::is_absolute(Obj))
-            FilePathAbs = Directory + "/" + Obj;
+            FilePathAbs = dpct::appendPath(Directory.getCanonicalPath().str(), Obj);
 
-          makeCanonical(FilePathAbs);
-          ObjsInLKOrARCmd.push_back(std::string(FilePathAbs.str()));
-          ObjName = std::string(FilePathAbs.str());
+          ObjsInLKOrARCmd.push_back(std::string(FilePathAbs.getCanonicalPath()));
         } else if (Obj == "ar") {
           IsArCommand = true;
         } else if (IsArCommand) {
@@ -127,23 +124,29 @@ static void getCompileInfo(
         continue;
       }
 
+      clang::tooling::UnifiedPath OutDirectory = dpct::appendPath(
+          Directory.getCanonicalPath().str(), TargetName);
+      // Use relative path to out-root directory.
+      SmallString<512> OutDirectoryStr(OutDirectory.getCanonicalPath());
+      llvm::sys::path::replace_path_prefix(OutDirectoryStr, InRoot.getCanonicalPath(), ".");
+      TargetName = OutDirectoryStr.str().str();
+
       for (auto &Obj : ObjsInLKOrARCmd) {
         ObjsInLinkerCmdPerTarget[TargetName].push_back(Obj);
       }
       ToolPerTarget[TargetName] = Tool;
-
     } else {
       continue;
     }
   }
 
-  std::unordered_map<std::string /*origname*/, std::string /*objname*/>
+  std::unordered_map<clang::tooling::UnifiedPath /*origname*/, clang::tooling::UnifiedPath /*objname*/>
       Orig2ObjMap;
 
   for (const auto &Entry : CompileTargetsMap) {
-    std::string FileName = Entry.first;
+    clang::tooling::UnifiedPath FileName = Entry.first;
 
-    if (llvm::StringRef(FileName).startswith("LinkerEntry")) {
+    if (llvm::StringRef(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
       continue;
     }
 
@@ -157,16 +160,10 @@ static void getCompileInfo(
     // To parse option "-I <space> <path>"
     bool IsIncludeWithWhitespace = false;
 
-    const std::string Directory = Entry.second[0];
+    const clang::tooling::UnifiedPath Directory = Entry.second[0];
 
-    llvm::SmallString<512> RealPath;
-    llvm::sys::fs::real_path(FileName, RealPath, true);
-    if (!llvm::sys::path::is_absolute(FileName))
-      RealPath = Directory + "/" + FileName;
-    makeCanonical(RealPath);
     bool HasCudaSemantics = false;
-    if (IncludeFileMap.count(std::string(RealPath.str())) &&
-        IncludeFileMap.at(std::string(RealPath.str()))) {
+    if (IncludeFileMap.count(FileName) && IncludeFileMap.at(FileName)) {
       HasCudaSemantics = true;
     }
 
@@ -175,17 +172,12 @@ static void getCompileInfo(
 
       if (IsSystemInclude) {
         IsSystemInclude = false;
-        std::string IncPath = Option;
-
-        SmallString<512> OutDirectory = llvm::StringRef(IncPath);
-        llvm::sys::fs::make_absolute(OutDirectory);
-        llvm::sys::path::remove_dots(OutDirectory, /*remove_dot_dot=*/true);
-        makeCanonical(OutDirectory);
-
-        rewriteDir(OutDirectory, InRoot, OutRoot);
+        clang::tooling::UnifiedPath IncPath = Option;
+        rewriteDir(IncPath, InRoot, OutRoot);
 
         NewOptions += "-isystem ";
-        llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot, ".");
+        SmallString<512> OutDirectory(IncPath.getCanonicalPath());
+        llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot.getCanonicalPath(), ".");
         NewOptions += OutDirectory.c_str();
         NewOptions += " ";
         continue;
@@ -207,28 +199,25 @@ static void getCompileInfo(
         }
 
         IsIncludeWithWhitespace = false;
-
         if (!llvm::sys::fs::exists(IncPath)) {
           // Skip including path that does not exist.
           continue;
         }
 
-        SmallString<512> OutDirectory = llvm::StringRef(IncPath);
-        llvm::sys::fs::make_absolute(OutDirectory);
-        llvm::sys::path::remove_dots(OutDirectory, /*remove_dot_dot=*/true);
-        makeCanonical(OutDirectory);
-
-        if (!isChildPath(InRoot.str(), std::string(OutDirectory.c_str()),
-                         false)) {
+        clang::tooling::UnifiedPath OutDirectory = IncPath;
+        if (!isChildOrSamePath(InRoot, OutDirectory)) {
           // Skip include path that is not in inRoot directory
           continue;
         }
 
-        rewriteDir(OutDirectory, InRoot, OutRoot);
-
         NewOptions += "-I";
-        llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot, ".");
-        NewOptions += OutDirectory.c_str();
+
+        // Use relative path to out-root directory as the including directory.
+        SmallString<512> OutDirectoryStr(OutDirectory.getCanonicalPath());
+        llvm::sys::path::replace_path_prefix(OutDirectoryStr,
+                                             InRoot.getCanonicalPath(), ".");
+
+        NewOptions += OutDirectoryStr.c_str();
         NewOptions += " ";
 
       } else if (llvm::StringRef(Option).startswith("-isystem")) {
@@ -274,13 +263,8 @@ static void getCompileInfo(
         IsObjName = true;
         IsObjSpecified = true;
       } else if (IsObjName) {
-        llvm::SmallString<512> FilePathAbs(Option);
-
-        if (!llvm::sys::path::is_absolute(Option))
-          FilePathAbs = Directory + "/" + Option;
-
-        makeCanonical(FilePathAbs);
-        Orig2ObjMap[FileName] = std::string(FilePathAbs.str());
+        clang::tooling::UnifiedPath FilePathAbs(Option);
+        Orig2ObjMap[FileName] = FilePathAbs;
         IsObjName = false;
       } else if (llvm::StringRef(Option).startswith("-O")) {
         // Keep optimization level same as original compile command.
@@ -294,14 +278,16 @@ static void getCompileInfo(
       // For the case that "-o" is not specified in the compile command, the
       // default obj file is generated in the directory where the compile
       // command runs.
-      Orig2ObjMap[FileName] =
-          Directory + "/" + getCustomBaseName(FileName) + ".o";
+      Orig2ObjMap[FileName] = dpct::appendPath(
+          Directory.getCanonicalPath().str(),
+          getCustomBaseName(FileName).getCanonicalPath().str() + ".o");
     }
 
     // if option "--use-custom-helper=<value>" is used to customize the helper
     // header files for migrated code, the path of the helper header files
     // should be included.
-    if (llvm::sys::fs::exists(OutRoot.str() + "/include")) {
+    if (llvm::sys::fs::exists(
+            dpct::appendPath(OutRoot.getCanonicalPath().str(), "include"))) {
       NewOptions += "-I ./include ";
     }
 
@@ -314,26 +300,26 @@ static void getCompileInfo(
       NewOptions += "-I $(INCLUDE_CL) ";
     }
 
-    SmallString<512> OutDirectory = llvm::StringRef(FileName);
-    makeCanonical(OutDirectory);
-    rewriteDir(OutDirectory, InRoot, OutRoot);
-    auto OrigFileName = OutDirectory;
-    rewriteFileName(OutDirectory);
+    auto OrigFileName = FileName;
+    rewriteDir(FileName, InRoot, OutRoot);
+    rewriteFileName(FileName);
 
-    if (llvm::sys::fs::exists(OutDirectory)) {
-      llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot, ".");
+    if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
+      SmallString<512> OutDirectory(FileName.getCanonicalPath());
+      llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot.getCanonicalPath(), ".");
       clang::tooling::CompilationInfo CmpInfo;
       CmpInfo.MigratedFileName = OutDirectory.c_str();
       CmpInfo.CompileOptions = NewOptions;
       CmpInfo.Compiler = Entry.second[1];
-      CmdsMap[Orig2ObjMap[FileName]] = CmpInfo;
+      CmdsMap[Orig2ObjMap[OrigFileName]] = CmpInfo;
     } else {
-      llvm::sys::path::replace_path_prefix(OrigFileName, OutRoot, ".");
+      SmallString<512> OutDirectory(OrigFileName.getCanonicalPath());
+      llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot.getCanonicalPath(), ".");
       clang::tooling::CompilationInfo CmpInfo;
-      CmpInfo.MigratedFileName = OrigFileName.c_str();
+      CmpInfo.MigratedFileName = OutDirectory.c_str();
       CmpInfo.CompileOptions = NewOptions;
       CmpInfo.Compiler = Entry.second[1];
-      CmdsMap[Orig2ObjMap[FileName]] = CmpInfo;
+      CmdsMap[Orig2ObjMap[OrigFileName]] = CmpInfo;
     }
   }
 
@@ -357,14 +343,14 @@ static void getCompileInfo(
 }
 
 static void
-genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
+genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath OutRoot,
             const std::string &BuildScriptName,
-            std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
+            std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
                 &CmdsPerTarget,
-            std::unordered_map<std::string, std::string> &ToolPerTarget) {
+            std::unordered_map<clang::tooling::UnifiedPath, std::string> &ToolPerTarget) {
   std::string Buf;
   llvm::raw_string_ostream OS(Buf);
-  std::string TargetName;
+  clang::tooling::UnifiedPath TargetName;
 
   OS << "CC := icpx\n\n";
   OS << "LD := $(CC)\n\n";
@@ -382,14 +368,12 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
   OS << buildString("INCLUDE_SYCL := $(ROOT_DIR)/../include\n");
   OS << buildString("INCLUDE_CL   := $(ROOT_DIR)/../include/sycl\n\n");
 
-  std::map<std::string, std::string> ObjsPerTarget;
+  std::map<clang::tooling::UnifiedPath, std::string> ObjsPerTarget;
 
   int TargetIdx = 0;
   for (const auto &Entry : CmdsPerTarget) {
     TargetName = Entry.first;
-    SmallString<512> TargetFilePath =
-        llvm::StringRef(OutRoot.str() + "/" + TargetName);
-    auto Parent = path::parent_path(TargetFilePath);
+    auto Parent = path::parent_path(TargetName.getCanonicalPath());
 
     if (!llvm::sys::fs::exists(Parent)) {
       std::error_code EC;
@@ -405,7 +389,14 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
     auto CmpInfos = Entry.second;
     int Count = 0;
     for (const auto &CmpInfo : CmpInfos) {
-      const auto &MigratedName = CmpInfo.MigratedFileName;
+      std::string MigratedFileName = CmpInfo.MigratedFileName;
+      SmallString<512> MigratedName(MigratedFileName);
+
+      if (path::is_absolute(MigratedName)) {
+        SmallString<512> CWD;
+        llvm::sys::fs::current_path(CWD);
+        path::replace_path_prefix(MigratedName, CWD, ".");
+      }
 
       std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) + "_SRC_" +
                                std::to_string(Count);
@@ -440,7 +431,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
     const std::string VarTarget =
         buildString("TARGET_", std::to_string(TargetIdx));
 
-    OS << buildString(VarTarget, " := ", Entry.first, "\n");
+    OS << buildString(VarTarget, " := ", Entry.first.getPath(), "\n");
     ToolPerTargetVariable[VarTarget] = ToolPerTarget[Entry.first];
     Target += " " + buildString("${TARGET_", std::to_string(TargetIdx), "}");
     TargetIdx++;
@@ -503,7 +494,11 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
           "TARGET_", std::to_string(TargetIdx))];
       // Use to tool "ld" or "ar" that generates the original target in the
       // compilation database.
-      OS << buildString("\t", Tool, " $@ $^ $(LIB) ", MKLOption, "\n\n");
+      if (Tool == "ar -r") { // "-qmkl" is not needed for "ar" target
+        OS << buildString("\t", Tool, " $@ $^ $(LIB)\n\n");
+      } else {
+        OS << buildString("\t", Tool, " $@ $^ $(LIB) ", MKLOption, "\n\n");
+      }
 
       for (unsigned Idx = 0; Idx < Entry.second.size(); Idx++) {
         std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) +
@@ -532,7 +527,8 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
   else
     OS << buildString("\trm -f ", AllObjs, "\n");
 
-  std::string FileOut = OutRoot.str() + "/" + BuildScriptName;
+  std::string FileOut =
+      dpct::appendPath(OutRoot.getCanonicalPath().str(), BuildScriptName);
   std::ofstream File;
   File.open(FileOut, std::ios::binary);
   if (File) {
@@ -541,21 +537,22 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
   }
 }
 
-void genBuildScript(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
-                    StringRef OutRoot, const std::string &BuildScriptName) {
-
-  std::map<std::string /*traget name*/,
+void genBuildScript(clang::tooling::RefactoringTool &Tool,
+                    clang::tooling::UnifiedPath &InRoot,
+                    clang::tooling::UnifiedPath &OutRoot,
+                    const std::string &BuildScriptName) {
+  std::map<clang::tooling::UnifiedPath /*traget name*/,
            std::vector<clang::tooling::CompilationInfo>>
       NewCompileCmdsMap;
-
-  std::unordered_map<std::string /*target*/, std::string /*ar or ld*/>
+  std::unordered_map<clang::tooling::UnifiedPath /*target*/,
+                     std::string /*ar or ld*/>
       ToolPerTarget;
 
   getCompileInfo(InRoot, OutRoot, NewCompileCmdsMap, ToolPerTarget);
 
   bool NeedMergetYaml = false;
 
-  const std::string Target = EmptyTarget;
+  const clang::tooling::UnifiedPath Target = EmptyTarget;
 
   // Increment compilation support only if input file(s) only specified in
   // command line
@@ -569,10 +566,11 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
   std::map<std::string, bool> DuplicateFilter;
   for (const auto &Entry : CompileCmdsPerTarget) {
-    std::string FileName = Entry.first;
+    clang::tooling::UnifiedPath FileName = Entry.first;
     for (const auto &Option : Entry.second) {
-      std::string Key = Entry.first + Option.MigratedFileName +
-                        Option.CompileOptions + Option.Compiler;
+      std::string Key = Entry.first.getCanonicalPath().str() +
+                        Option.MigratedFileName + Option.CompileOptions +
+                        Option.Compiler;
       DuplicateFilter[Key] = true;
     }
   }
@@ -580,8 +578,9 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   if (NeedMergetYaml) {
     for (const auto &Entry : NewCompileCmdsMap) {
       for (const auto &Option : Entry.second) {
-        std::string Key = Entry.first + Option.MigratedFileName +
-                          Option.CompileOptions + Option.Compiler;
+        std::string Key = Entry.first.getCanonicalPath().str() +
+                          Option.MigratedFileName + Option.CompileOptions +
+                          Option.Compiler;
         auto Iter = DuplicateFilter.find(Key);
         if (Iter == DuplicateFilter.end()) {
           CompileCmdsPerTarget[Entry.first].push_back(Option);

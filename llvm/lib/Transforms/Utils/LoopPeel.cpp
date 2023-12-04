@@ -624,7 +624,7 @@ struct WeightInfo {
 /// F/(F+E) is a probability to go to loop and E/(F+E) is a probability to
 /// go to exit.
 /// Then, Estimated ExitCount = F / E.
-/// For I-th (counting from 0) peeled off iteration we set the the weights for
+/// For I-th (counting from 0) peeled off iteration we set the weights for
 /// the peeled exit as (EC - I, 1). It gives us reasonable distribution,
 /// The probability to go to exit 1/(EC-I) increases. At the same time
 /// the estimated exit count in the remainder loop reduces by I.
@@ -636,9 +636,14 @@ static void updateBranchWeights(Instruction *Term, WeightInfo &Info) {
                     MDB.createBranchWeights(Info.Weights));
   for (auto [Idx, SubWeight] : enumerate(Info.SubWeights))
     if (SubWeight != 0)
-      Info.Weights[Idx] = Info.Weights[Idx] > SubWeight
-                              ? Info.Weights[Idx] - SubWeight
-                              : 1;
+      // Don't set the probability of taking the edge from latch to loop header
+      // to less than 1:1 ratio (meaning Weight should not be lower than
+      // SubWeight), as this could significantly reduce the loop's hotness,
+      // which would be incorrect in the case of underestimating the trip count.
+      Info.Weights[Idx] =
+          Info.Weights[Idx] > SubWeight
+              ? std::max(Info.Weights[Idx] - SubWeight, SubWeight)
+              : SubWeight;
 }
 
 /// Initialize the weights for all exiting blocks.

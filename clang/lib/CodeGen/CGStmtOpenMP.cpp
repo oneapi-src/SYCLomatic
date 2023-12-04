@@ -485,7 +485,7 @@ static llvm::Function *emitOutlinedFunctionPrologue(
     if (CapVar && (CapVar->getTLSKind() != clang::VarDecl::TLS_None)) {
       Arg = ImplicitParamDecl::Create(Ctx, /*DC=*/nullptr, FD->getLocation(),
                                       II, ArgType,
-                                      ImplicitParamDecl::ThreadPrivateVar);
+                                      ImplicitParamKind::ThreadPrivateVar);
     } else if (DebugFunctionDecl && (CapVar || I->capturesThis())) {
       Arg = ParmVarDecl::Create(
           Ctx, DebugFunctionDecl,
@@ -494,7 +494,7 @@ static llvm::Function *emitOutlinedFunctionPrologue(
           /*TInfo=*/nullptr, SC_None, /*DefArg=*/nullptr);
     } else {
       Arg = ImplicitParamDecl::Create(Ctx, /*DC=*/nullptr, FD->getLocation(),
-                                      II, ArgType, ImplicitParamDecl::Other);
+                                      II, ArgType, ImplicitParamKind::Other);
     }
     Args.emplace_back(Arg);
     // Do not cast arguments if we emit function with non-original types.
@@ -704,11 +704,7 @@ void CodeGenFunction::EmitOMPAggregateAssign(
   // Drill down to the base element type on both arrays.
   const ArrayType *ArrayTy = OriginalType->getAsArrayTypeUnsafe();
   llvm::Value *NumElements = emitArrayLength(ArrayTy, ElementTy, DestAddr);
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
   SrcAddr = SrcAddr.withElementType(DestAddr.getElementType());
-#else
-  SrcAddr = Builder.CreateElementBitCast(SrcAddr, DestAddr.getElementType());
-#endif //INTEL_SYCL_OPAQUEPOINTER_READY
 
   llvm::Value *SrcBegin = SrcAddr.getPointer();
   llvm::Value *DestBegin = DestAddr.getPointer();
@@ -1270,16 +1266,9 @@ void CodeGenFunction::EmitOMPReductionClauseInit(
       // implicit variable.
       PrivateScope.addPrivate(LHSVD,
                               RedCG.getSharedLValue(Count).getAddress(*this));
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
       PrivateScope.addPrivate(RHSVD,
                               GetAddrOfLocalVar(PrivateVD).withElementType(
                                   ConvertTypeForMem(RHSVD->getType())));
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-      PrivateScope.addPrivate(RHSVD, Builder.CreateElementBitCast(
-                                         GetAddrOfLocalVar(PrivateVD),
-                                         ConvertTypeForMem(RHSVD->getType()),
-                                         "rhs.begin"));
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
     } else {
       QualType Type = PrivateVD->getType();
       bool IsArray = getContext().getAsArrayType(Type) != nullptr;
@@ -1287,25 +1276,13 @@ void CodeGenFunction::EmitOMPReductionClauseInit(
       // Store the address of the original variable associated with the LHS
       // implicit variable.
       if (IsArray) {
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
         OriginalAddr =
             OriginalAddr.withElementType(ConvertTypeForMem(LHSVD->getType()));
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-        OriginalAddr = Builder.CreateElementBitCast(
-            OriginalAddr, ConvertTypeForMem(LHSVD->getType()), "lhs.begin");
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
       }
       PrivateScope.addPrivate(LHSVD, OriginalAddr);
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
       PrivateScope.addPrivate(
           RHSVD, IsArray ? GetAddrOfLocalVar(PrivateVD).withElementType(
                                ConvertTypeForMem(RHSVD->getType()))
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-      PrivateScope.addPrivate(
-          RHSVD, IsArray ? Builder.CreateElementBitCast(
-                               GetAddrOfLocalVar(PrivateVD),
-                               ConvertTypeForMem(RHSVD->getType()), "rhs.begin")
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
                          : GetAddrOfLocalVar(PrivateVD));
     }
     ++ILHS;
@@ -5014,18 +4991,18 @@ createImplicitFirstprivateForType(ASTContext &C, OMPTaskDataTy &Data,
                                   QualType Ty, CapturedDecl *CD,
                                   SourceLocation Loc) {
   auto *OrigVD = ImplicitParamDecl::Create(C, CD, Loc, /*Id=*/nullptr, Ty,
-                                           ImplicitParamDecl::Other);
+                                           ImplicitParamKind::Other);
   auto *OrigRef = DeclRefExpr::Create(
       C, NestedNameSpecifierLoc(), SourceLocation(), OrigVD,
       /*RefersToEnclosingVariableOrCapture=*/false, Loc, Ty, VK_LValue);
   auto *PrivateVD = ImplicitParamDecl::Create(C, CD, Loc, /*Id=*/nullptr, Ty,
-                                              ImplicitParamDecl::Other);
+                                              ImplicitParamKind::Other);
   auto *PrivateRef = DeclRefExpr::Create(
       C, NestedNameSpecifierLoc(), SourceLocation(), PrivateVD,
       /*RefersToEnclosingVariableOrCapture=*/false, Loc, Ty, VK_LValue);
   QualType ElemType = C.getBaseElementType(Ty);
   auto *InitVD = ImplicitParamDecl::Create(C, CD, Loc, /*Id=*/nullptr, ElemType,
-                                           ImplicitParamDecl::Other);
+                                           ImplicitParamKind::Other);
   auto *InitRef = DeclRefExpr::Create(
       C, NestedNameSpecifierLoc(), SourceLocation(), InitVD,
       /*RefersToEnclosingVariableOrCapture=*/false, Loc, ElemType, VK_LValue);
@@ -5085,7 +5062,7 @@ void CodeGenFunction::EmitOMPTargetTaskBasedDirective(
         getContext(), getContext().getTranslationUnitDecl(), /*NumParams=*/0);
     llvm::APInt ArrSize(/*numBits=*/32, InputInfo.NumberOfTargetItems);
     QualType BaseAndPointerAndMapperType = getContext().getConstantArrayType(
-        getContext().VoidPtrTy, ArrSize, nullptr, ArrayType::Normal,
+        getContext().VoidPtrTy, ArrSize, nullptr, ArraySizeModifier::Normal,
         /*IndexTypeQuals=*/0);
     BPVD = createImplicitFirstprivateForType(
         getContext(), Data, BaseAndPointerAndMapperType, CD, S.getBeginLoc());
@@ -5093,7 +5070,7 @@ void CodeGenFunction::EmitOMPTargetTaskBasedDirective(
         getContext(), Data, BaseAndPointerAndMapperType, CD, S.getBeginLoc());
     QualType SizesType = getContext().getConstantArrayType(
         getContext().getIntTypeForBitwidth(/*DestWidth=*/64, /*Signed=*/1),
-        ArrSize, nullptr, ArrayType::Normal,
+        ArrSize, nullptr, ArraySizeModifier::Normal,
         /*IndexTypeQuals=*/0);
     SVD = createImplicitFirstprivateForType(getContext(), Data, SizesType, CD,
                                             S.getBeginLoc());
@@ -5166,6 +5143,15 @@ void CodeGenFunction::EmitOMPTargetTaskBasedDirective(
 
     Action.Enter(CGF);
     OMPLexicalScope LexScope(CGF, S, OMPD_task, /*EmitPreInitStmt=*/false);
+    auto *TL = S.getSingleClause<OMPThreadLimitClause>();
+    if (CGF.CGM.getLangOpts().OpenMP >= 51 &&
+        needsTaskBasedThreadLimit(S.getDirectiveKind()) && TL) {
+      // Emit __kmpc_set_thread_limit() to set the thread_limit for the task
+      // enclosing this target region. This will indirectly set the thread_limit
+      // for every applicable construct within target region.
+      CGF.CGM.getOpenMPRuntime().emitThreadLimitClause(
+          CGF, TL->getThreadLimit(), S.getBeginLoc());
+    }
     BodyGen(CGF);
   };
   llvm::Function *OutlinedFn = CGM.getOpenMPRuntime().emitTaskOutlinedFunction(
@@ -7288,17 +7274,11 @@ void CodeGenFunction::EmitOMPUseDeviceAddrClause(
     // correct mapping, since the pointer to the data was passed to the runtime.
     if (isa<DeclRefExpr>(Ref->IgnoreParenImpCasts()) ||
         MatchingVD->getType()->isArrayType()) {
-      QualType PtrTy = getContext().getPointerType(
-          OrigVD->getType().getNonReferenceType());
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
+      QualType PtrTy =
+          getContext().getPointerType(OrigVD->getType().getNonReferenceType());
       PrivAddr =
           EmitLoadOfPointer(PrivAddr.withElementType(ConvertTypeForMem(PtrTy)),
                             PtrTy->castAs<PointerType>());
-#else
-      PrivAddr = EmitLoadOfPointer(
-          Builder.CreateElementBitCast(PrivAddr, ConvertTypeForMem(PtrTy)),
-          PtrTy->castAs<PointerType>());
-#endif //INTEL_SYCL_OPAQUEPOINTER_READY
     }
 
     (void)PrivateScope.addPrivate(OrigVD, PrivAddr);
@@ -8084,7 +8064,8 @@ void CodeGenFunction::EmitSimpleOMPExecutableDirective(
       D.getDirectiveKind() == OMPD_critical ||
       D.getDirectiveKind() == OMPD_section ||
       D.getDirectiveKind() == OMPD_master ||
-      D.getDirectiveKind() == OMPD_masked) {
+      D.getDirectiveKind() == OMPD_masked ||
+      D.getDirectiveKind() == OMPD_unroll) {
     EmitStmt(D.getAssociatedStmt());
   } else {
     auto LPCRegion =

@@ -1,4 +1,3 @@
-// REQUIRES: level_zero, gpu
 // RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 // Extra run to check for leaks in Level Zero using ZE_DEBUG
@@ -6,16 +5,17 @@
 //
 // CHECK-NOT: LEAK
 
-// Expected Fail as exception not implemented yet
-// XFAIL: *
-
 // Tests attempting to add a node to a command_graph while it is being
 // recorded to by a queue is an error.
 
 #include "../graph_common.hpp"
 
 int main() {
-  queue Queue;
+  queue Queue{{sycl::ext::intel::property::queue::no_immediate_command_list{}}};
+
+  if (!are_graphs_supported(Queue)) {
+    return 0;
+  }
 
   bool Success = false;
 
@@ -30,8 +30,17 @@ int main() {
       Success = true;
     }
   }
+  assert(Success);
+
+  Success = false;
+  try {
+    Graph.add({});
+  } catch (sycl::exception &E) {
+    auto StdErrc = E.code().value();
+    Success = (StdErrc == static_cast<int>(errc::invalid));
+  }
+  assert(Success);
 
   Graph.end_recording();
-  assert(Success);
   return 0;
 }

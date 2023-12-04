@@ -37,6 +37,9 @@ struct MatchResult {
   std::unordered_map<std::string, std::string> Bindings;
 };
 
+extern llvm::cl::opt<bool> MigrateCmakeScriptOnly;
+extern llvm::cl::opt<bool> MigrateCmakeScript;
+
 static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
 }
@@ -97,7 +100,11 @@ static std::string indent(const std::string &Input, int Indentation) {
     const bool ContainsNonWhitespace = (trim(Line).size() > 0);
     Output.push_back(ContainsNonWhitespace ? (Indent + Line) : "");
   }
-  return trim(join(Output, "\n"));
+  std::string Str = trim(join(Output, "\n"));
+  if (isWhitespace(Input[0])) {
+    Str = " " + Str;
+  }
+  return Str;
 }
 
 static std::string dedent(const std::string &Input, int Indentation) {
@@ -338,6 +345,53 @@ static int parseCodeElement(const MatchPattern &Suffix,
   return Suffix.size() == 0 ? Index : -1;
 }
 
+static bool isIdentifiedChar(char Char) {
+
+  if ((Char >= 'a' && Char <= 'z') || (Char >= 'A' && Char <= 'Z') ||
+      (Char >= '0' && Char <= '9') || (Char == '_')) {
+    return true;
+  }
+
+  return false;
+}
+
+static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
+                                                const std::string &Input,
+                                                const int Start) {
+  MatchResult Result;
+
+  int Index = Start;
+  int PatternIndex = 0;
+  const int PatternSize = Pattern.size();
+  const int Size = Input.size();
+
+  while (PatternIndex < PatternSize && Index < Size) {
+    const auto &Element = Pattern[PatternIndex];
+
+    if (std::holds_alternative<LiteralElement>(Element)) {
+      const auto &Literal = std::get<LiteralElement>(Element);
+      if (Input[Index] != Literal.Value) {
+        return {};
+      }
+
+      Index++;
+      PatternIndex++;
+      continue;
+    }
+
+    throw std::runtime_error("Internal error: invalid pattern element");
+  }
+
+  if (!isIdentifiedChar(Input[Start - 1]) && !isIdentifiedChar(Input[Index])) {
+    Result.Start = Start;
+    Result.End = Index;
+  } else {
+    return {};
+  }
+
+  return Result;
+}
+
 static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
                                             const std::string &Input,
                                             const int Start) {
@@ -474,14 +528,36 @@ bool fixLineEndings(const std::string &Input, std::string &Output) {
   return isCRLF;
 }
 
+int skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
+                      int Index) {
+  const int Size = Input.size();
+  if (Input[Index] == '#') {
+    for (; Index < Size && Input[Index] != '\n'; Index++) {
+      OutputStream << Input[Index];
+    }
+  }
+  return Index;
+}
+
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input) {
   std::stringstream OutputStream;
   const auto Pattern = parseMatchPattern(PP.In);
+
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
-    auto Result = findMatch(Pattern, Input, Index);
+
+    if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
+      Index = skipCmakeComments(OutputStream, Input, Index);
+    }
+
+    std::optional<MatchResult> Result;
+    if (PP.MatchMode) {
+      Result = findFullMatch(Pattern, Input, Index);
+    } else {
+      Result = findMatch(Pattern, Input, Index);
+    }
 
     if (Result.has_value()) {
       auto &Match = Result.value();
@@ -494,8 +570,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       }
 
       const int Indentation = detectIndentation(Input, Index);
-      instantiateTemplate(PP.Out, Match.Bindings, Indentation,
-                                            OutputStream);
+      instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
       continue;
     }
@@ -503,6 +578,5 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
     OutputStream << Input[Index];
     Index++;
   }
-
   return OutputStream.str();
 }

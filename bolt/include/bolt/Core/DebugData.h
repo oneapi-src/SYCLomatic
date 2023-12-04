@@ -18,6 +18,7 @@
 #include "llvm/CodeGen/DIE.h"
 #include "llvm/DebugInfo/DWARF/DWARFContext.h"
 #include "llvm/MC/MCDwarf.h"
+#include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/SMLoc.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cstdint>
@@ -95,6 +96,12 @@ static inline bool operator<(const DebugAddressRange &LHS,
   return std::tie(LHS.LowPC, LHS.HighPC) < std::tie(RHS.LowPC, RHS.HighPC);
 }
 
+inline raw_ostream &operator<<(raw_ostream &OS,
+                               const DebugAddressRange &Range) {
+  OS << formatv("[{0:x}, {1:x})", Range.LowPC, Range.HighPC);
+  return OS;
+}
+
 /// DebugAddressRangesVector - represents a set of absolute address ranges.
 using DebugAddressRangesVector = SmallVector<DebugAddressRange, 2>;
 
@@ -105,6 +112,18 @@ struct DebugLocationEntry {
   uint64_t HighPC;
   SmallVector<uint8_t, 4> Expr;
 };
+
+inline raw_ostream &operator<<(raw_ostream &OS,
+                               const DebugLocationEntry &Entry) {
+  OS << formatv("[{0:x}, {1:x}) : [", Entry.LowPC, Entry.HighPC);
+  const char *Sep = "";
+  for (unsigned Byte : Entry.Expr) {
+    OS << Sep << Byte;
+    Sep = ", ";
+  }
+  OS << "]";
+  return OS;
+}
 
 using DebugLocationsVector = SmallVector<DebugLocationEntry, 4>;
 
@@ -312,9 +331,6 @@ public:
   /// Given an address returns an index in .debug_addr.
   /// Adds Address to map.
   uint32_t getIndexFromAddress(uint64_t Address, DWARFUnit &CU);
-
-  /// Adds {\p Address, \p Index} to \p CU.
-  void addIndexAddress(uint64_t Address, uint32_t Index, DWARFUnit &CU);
 
   /// Write out entries in to .debug_addr section for CUs.
   virtual void update(DIEBuilder &DIEBlder, DWARFUnit &CUs);
