@@ -139,13 +139,13 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, std::int64_t to_ld,
 /// \param [in] queue The queue where the routine should be executed.
 /// \param [in] async If this argument is true, the return of the function
 /// does NOT guarantee the copy is completed.
-[[deprecated("Use the 64-bit version dpct::matrix_mem_copy<T> instead.")]]
 template <typename T>
-inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
-                            int from_ld, int rows, int cols,
-                            memcpy_direction direction = automatic,
-                            sycl::queue &queue = dpct::get_default_queue(),
-                            bool async = false) {
+[[deprecated(
+    "Use the 64-bit version dpct::matrix_mem_copy<T> instead.")]] inline void
+matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld, int from_ld, int rows,
+                int cols, memcpy_direction direction = automatic,
+                sycl::queue &queue = dpct::get_default_queue(),
+                bool async = false) {
   using Ty = typename DataType<T>::T2;
   matrix_mem_copy((void *)to_ptr, (void *)from_ptr, to_ld, from_ld, rows, cols,
                   sizeof(Ty), direction, queue, async);

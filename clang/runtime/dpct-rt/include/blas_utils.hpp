@@ -1709,12 +1709,12 @@ inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
 /// \param [in] beta Scaling factor for the rank-k update.
 /// \param [in, out] c Input/Output matrix C.
 /// \param [in] ldc Leading dimension of C.
+template <class T>
 [[deprecated(
-    "Use the 64-bit version dpct::blas::syrk<T, Tbeta> instead.")]] template <class T>
-inline void syrk(sycl::queue &q, oneapi::mkl::uplo uplo,
-                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
-                 const T *a, int lda, const T *b, int ldb, const T *beta, T *c,
-                 int ldc) {
+    "Use the 64-bit version dpct::blas::syrk<T> instead.")]] inline void
+syrk(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::transpose trans,
+     int n, int k, const T *alpha, const T *a, int lda, const T *b, int ldb,
+     const T *beta, T *c, int ldc) {
   detail::rk_impl<false, T, T>(q, uplo, trans, n, k, alpha, a, lda, b, ldb,
                                beta, c, ldc);
 }
@@ -1734,12 +1734,12 @@ inline void syrk(sycl::queue &q, oneapi::mkl::uplo uplo,
 /// \param [in] beta Scaling factor for the rank-k update.
 /// \param [in, out] c Input/Output matrix C.
 /// \param [in] ldc Leading dimension of C.
-[[deprecated("Use the 64-bit version dpct::blas::syrk<T, Tbeta> "
-             "instead.")]] template <class T, class Tbeta>
-inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
-                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
-                 const T *a, int lda, const T *b, int ldb, const Tbeta *beta,
-                 T *c, int ldc) {
+template <class T, class Tbeta>
+[[deprecated("Use the 64-bit version dpct::blas::herk<T, Tbeta> "
+             "instead.")]] inline void
+herk(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::transpose trans,
+     int n, int k, const T *alpha, const T *a, int lda, const T *b, int ldb,
+     const Tbeta *beta, T *c, int ldc) {
   detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b, ldb,
                                   beta, c, ldc);
 }
@@ -1867,12 +1867,13 @@ inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
 /// \param [in] ldb Leading dimension of the matrices B.
 /// \param [out] c Output matrices C.
 /// \param [in] ldc Leading dimension of the matrices C.
+template <class T>
 [[deprecated(
-    "Use the 64-bit version dpct::blas::trmm<T> instead.")]] template <class T>
-inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
-                 oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
-                 oneapi::mkl::diag unit_diag, int m, int n, const T *alpha,
-                 const T *a, int lda, const T *b, int ldb, T *c, int ldc) {
+    "Use the 64-bit version dpct::blas::trmm<T> instead.")]] inline void
+trmm(sycl::queue &q, oneapi::mkl::side left_right,
+     oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
+     oneapi::mkl::diag unit_diag, int m, int n, const T *alpha, const T *a,
+     int lda, const T *b, int ldb, T *c, int ldc) {
   blas::trmm<T>(q, left_right, upper_lower, trans, unit_diag, (std::int64_t)m,
                 (std::int64_t)n, alpha, a, (std::int64_t)lda, b,
                 (std::int64_t)ldb, c, (std::int64_t)ldc);
