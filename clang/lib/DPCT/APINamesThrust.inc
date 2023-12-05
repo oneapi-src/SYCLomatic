@@ -1167,4 +1167,4 @@ CALL_FACTORY_ENTRY("thrust::tie", CALL("std::tie",ARG(0), ARG(1)))
 CALL_FACTORY_ENTRY("thrust::make_tuple", CALL("std::make_tuple",ARG(0), ARG(1)))
 
 // thrust::return_temporary_buffer
-CALL_FACTORY_ENTRY("thrust::return_temporary_buffer", CALL(MapNames::getDpctNamespace() + "release_temporary_allocation",ARG(0), ARG(1), ARG(2)))
+CALL_FACTORY_ENTRY("thrust::return_temporary_buffer", CALL(MapNames::getDpctNamespace() + "release_temporary_allocation",ARG(0), ARG(1)))

@@ -40,7 +40,7 @@ void foo() {
     thrust::device_system_tag device_sys;
 
     // CHECK:     ptr_and_size_t ptr_and_size = dpct::get_temporary_allocation<int>(device_sys, N);
-    // CHECK-NEXT: dpct::release_temporary_allocation(device_sys, ptr_and_size.first, ptr_and_size.second);
+    // CHECK-NEXT: dpct::release_temporary_allocation(device_sys, ptr_and_size.first);
     ptr_and_size_t ptr_and_size = thrust::get_temporary_buffer<int>(device_sys, N);
     thrust::return_temporary_buffer(device_sys, ptr_and_size.first, ptr_and_size.second);
   }
@@ -67,3 +67,4 @@ void foo() {
     thrust::free(device_sys, void_ptr);
   }
 }
+
