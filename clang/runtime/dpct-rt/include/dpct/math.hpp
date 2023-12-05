@@ -242,6 +242,27 @@ inline unsigned unordered_compare_mask(const sycl::marray<T, 2> a,
       .as<sycl::vec<unsigned, 1>>();
 }
 
+template <typename T>
+inline T bfe(T source, uint32_t bit_start, uint32_t num_bits) {
+  if (!num_bits)
+    return 0;
+  bit_start = (uint8_t)bit_start;
+  num_bits = (uint8_t)num_bits;
+  const T mask = (T{1} << num_bits) - 1;
+  return (source >> bit_start) & mask;
+}
+
+template <typename T>
+inline T bfi(T x, T y, uint32_t bit_start, uint32_t num_bits) {
+  constexpr unsigned msb = std::numeric_limits<T>::digits;
+  bit_start = (uint8_t)bit_start;
+  num_bits = (uint8_t)num_bits;
+  if (bit_start > msb || num_bits == 0)
+    return y;
+  T mask = (~(T{}) >> (msb - num_bits)) << bit_start;
+  return y & ~mask | ((x << bit_start) & mask);
+}
+
 /// Determine whether 2 element value is NaN.
 /// \param [in] a The input value
 /// \returns the comparison result
