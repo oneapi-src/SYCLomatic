@@ -4309,7 +4309,7 @@ private:
 
         OuterStmts.OthersList.emplace_back(buildString(
             MapNames::getDpctNamespace(), "dpct_memset(d_",
-            DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));\n"));
+            DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));"));
 
         requestFeature(HelperFeatureEnum::device_ext);
       } else {
