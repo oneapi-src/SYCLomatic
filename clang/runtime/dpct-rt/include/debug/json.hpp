@@ -9,6 +9,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <string.h>
 #include <sys/types.h>
 #include <type_traits>
 #include <utility>

@@ -154,9 +154,9 @@ int main(void) {
   int blocksPerGrid = (numElements + threadsPerBlock - 1) / threadsPerBlock;
   printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid,
          threadsPerBlock);
-  dpct::experimental::gen_prolog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long)d_A, 0, TYPE_SHCEMA_006, (long)d_B, 0, TYPE_SHCEMA_007, (long)d_C, 0, TYPE_SHCEMA_008, (long)numElements, 0);
+  dpct::experimental::gen_prolog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long)d_A, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006, (long)d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006), TYPE_SHCEMA_007, (long)d_C, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008, (long)numElements, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
   vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
-  dpct::experimental::gen_epilog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long)d_A, 0, TYPE_SHCEMA_006, (long)d_B, 0, TYPE_SHCEMA_007, (long)d_C, 0, TYPE_SHCEMA_008, (long)numElements, 0);
+  dpct::experimental::gen_epilog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long)d_A, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006, (long)d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006), TYPE_SHCEMA_007, (long)d_C, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008, (long)numElements, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
 
   err = cudaGetLastError();
 

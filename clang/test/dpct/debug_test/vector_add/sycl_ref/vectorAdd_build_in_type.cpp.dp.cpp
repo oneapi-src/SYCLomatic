@@ -134,10 +134,16 @@ int main(void) try {
   int blocksPerGrid = (numElements + threadsPerBlock - 1) / threadsPerBlock;
   printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid,
          threadsPerBlock);
+
   dpct::experimental::gen_prolog_API_CP(
-      "vectorAdd:vecotr.cu:[221]:", &q_ct1, TYPE_SHCEMA_005, (long)d_A, 0,
-      TYPE_SHCEMA_006, (long)d_B, 0, TYPE_SHCEMA_007, (long)d_C, 0,
-      TYPE_SHCEMA_008, (long)numElements, 0);
+      "vectorAdd:vecotr.cu:[221]:", &q_ct1, TYPE_SHCEMA_005, (long)d_A,
+      dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006,
+      (long)d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006),
+      TYPE_SHCEMA_007, (long)d_C,
+      dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008,
+      (long)numElements,
+      dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
+
   /*
   DPCT1049:0: The work-group size passed to the SYCL kernel may exceed the
   limit. To get the device limit, query info::device::max_work_group_size.
@@ -150,10 +156,15 @@ int main(void) try {
       [=](sycl::nd_item<3> item_ct1) {
         vectorAdd(d_A, d_B, d_C, numElements, item_ct1);
       });
+
   dpct::experimental::gen_epilog_API_CP(
-      "vectorAdd:vecotr.cu:[221]:", &q_ct1, TYPE_SHCEMA_005, (long)d_A, 0,
-      TYPE_SHCEMA_006, (long)d_B, 0, TYPE_SHCEMA_007, (long)d_C, 0,
-      TYPE_SHCEMA_008, (long)numElements, 0);
+      "vectorAdd:vecotr.cu:[221]:", &q_ct1, TYPE_SHCEMA_005, (long)d_A,
+      dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006,
+      (long)d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006),
+      TYPE_SHCEMA_007, (long)d_C,
+      dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008,
+      (long)numElements,
+      dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
 
   /*
   DPCT1010:6: SYCL uses exceptions to report errors and does not use the error
