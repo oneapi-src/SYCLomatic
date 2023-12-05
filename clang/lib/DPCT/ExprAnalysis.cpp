@@ -26,7 +26,7 @@
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
 
-extern std::string DpctInstallPath;
+extern clang::tooling::UnifiedPath DpctInstallPath;
 namespace clang {
 namespace dpct {
 
@@ -1099,7 +1099,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     auto QualifierLoc = ETL.getQualifierLoc();
     TL = ETL.getNamedTypeLoc();
     TyName = getNestedNameSpecifierString(QualifierLoc);
-    if (ETL.getTypePtr()->getKeyword() == ETK_Typename) {
+    if (ETL.getTypePtr()->getKeyword() == ElaboratedTypeKeyword::Typename) {
       if (QualifierLoc)
         SR.setBegin(QualifierLoc.getBeginLoc());
       else
@@ -1669,7 +1669,7 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     }
   }
 
-  // The VarDecl in MemVarInfo are matched in MemVarRule, which only matches
+  // The VarDecl in MemVarInfo are matched in MemVarAnalysisRule, which only matches
   // variables on device. They are migrated to objects, so need add get_ptr() by
   // setting IsDefinedOnDevice flag.
   if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {

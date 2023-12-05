@@ -86,7 +86,7 @@ struct EventSyncTypeInfo {
                     bool IsAssigned)
       : Length(Length), ReplText(ReplText), NeedReport(NeedReport),
         IsAssigned(IsAssigned) {}
-  void buildInfo(std::string FilePath, unsigned int Offset);
+  void buildInfo(clang::tooling::UnifiedPath FilePath, unsigned int Offset);
 
   unsigned int Length;
   std::string ReplText;
@@ -99,7 +99,7 @@ struct TimeStubTypeInfo {
                    std::string StrWithoutSB)
       : Length(Length), StrWithSB(StrWithSB), StrWithoutSB(StrWithoutSB) {}
 
-  void buildInfo(std::string FilePath, unsigned int Offset,
+  void buildInfo(clang::tooling::UnifiedPath FilePath, unsigned int Offset,
                  bool isReplTxtWithSB);
 
   unsigned int Length;
@@ -111,7 +111,7 @@ struct BuiltinVarInfo {
   BuiltinVarInfo(unsigned int Len, std::string Repl,
                  std::shared_ptr<DeviceFunctionInfo> DFI)
       : Len(Len), Repl(Repl), DFI(DFI) {}
-  void buildInfo(std::string FilePath, unsigned int Offset, unsigned int Dim);
+  void buildInfo(clang::tooling::UnifiedPath FilePath, unsigned int Offset, unsigned int Dim);
 
   unsigned int Len = 0;
   std::string Repl;
@@ -132,7 +132,7 @@ struct FormatInfo {
 enum HDFuncInfoType{HDFI_Def, HDFI_Decl, HDFI_Call};
 
 struct HostDeviceFuncLocInfo {
-  std::string FilePath;
+  clang::tooling::UnifiedPath FilePath;
   std::string FuncContentCache;
   unsigned FuncStartOffset = 0;
   unsigned FuncEndOffset = 0;
@@ -184,7 +184,7 @@ struct MemcpyOrderAnalysisInfo {
 };
 
 struct RnnBackwardFuncInfo {
-  std::string FilePath;
+  clang::tooling::UnifiedPath FilePath;
   unsigned int Offset;
   unsigned int Length;
   bool isAssigned;
@@ -199,7 +199,7 @@ using HDFuncInfoMap =
     std::unordered_map<std::string, HostDeviceFuncInfo>;
 // <file path, <Offset, Info>>
 using CudaArchPPMap =
-    std::unordered_map<std::string,
+    std::unordered_map<clang::tooling::UnifiedPath,
                        std::unordered_map<unsigned int, CudaArchPPInfo>>;
 using CudaArchDefMap =
     std::unordered_map<std::string,
@@ -346,7 +346,7 @@ enum UsingType {
 // replacements and so on) of each file
 class DpctFileInfo {
 public:
-  DpctFileInfo(const std::string &FilePathIn)
+  DpctFileInfo(const clang::tooling::UnifiedPath &FilePathIn)
       : Repls(std::make_shared<ExtReplacements>(FilePathIn)),
         FilePath(FilePathIn) {
     buildLinesInfo();
@@ -368,7 +368,7 @@ public:
                                   std::shared_ptr<Obj> Object) {
     return getMap<Obj>().insert(std::make_pair(Offset, Object)).first->second;
   }
-  inline const std::string &getFilePath() { return FilePath; }
+  inline const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
 
   // Build kernel and device function declaration replacements and store them.
   void buildReplacements();
@@ -381,7 +381,8 @@ public:
   void postProcess();
 
   // Emplace stored replacements into replacement set.
-  void emplaceReplacements(ReplTy &ReplSet /*out*/);
+  void emplaceReplacements(std::map<clang::tooling::UnifiedPath,
+                                    tooling::Replacements> &ReplSet /*out*/);
 
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
@@ -641,7 +642,7 @@ private:
   size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
 
-  std::string FilePath;
+  clang::tooling::UnifiedPath FilePath;
   std::string FileContentCache;
 
   unsigned FirstIncludeOffset = 0;
@@ -681,7 +682,7 @@ public:
 
   class MacroDefRecord {
   public:
-    std::string FilePath;
+    clang::tooling::UnifiedPath FilePath;
     unsigned Offset;
     bool IsInAnalysisScope;
     MacroDefRecord(SourceLocation NTL, bool IIAS) : IsInAnalysisScope(IIAS) {
@@ -695,7 +696,7 @@ public:
   public:
     std::string Name;
     int NumTokens;
-    std::string FilePath;
+    clang::tooling::UnifiedPath FilePath;
     unsigned ReplaceTokenBeginOffset;
     unsigned ReplaceTokenEndOffset;
     SourceRange Range;
@@ -721,12 +722,12 @@ public:
   };
 
   struct HelperFuncReplInfo {
-    HelperFuncReplInfo(const std::string DeclLocFile = "",
+    HelperFuncReplInfo(const clang::tooling::UnifiedPath DeclLocFile = clang::tooling::UnifiedPath(),
                        unsigned int DeclLocOffset = 0,
                        bool IsLocationValid = false)
         : DeclLocFile(DeclLocFile), DeclLocOffset(DeclLocOffset),
           IsLocationValid(IsLocationValid) {}
-    std::string DeclLocFile;
+    clang::tooling::UnifiedPath DeclLocFile;
     unsigned int DeclLocOffset = 0;
     bool IsLocationValid = false;
   };
@@ -763,54 +764,39 @@ public:
   inline static bool isInRoot(SourceLocation SL) {
     return isInRoot(DpctGlobalInfo::getLocInfo(SL).first);
   }
-  static bool isInRoot(const std::string &FilePath,
-                       bool IsChildRelative = true) {
-    if (IsChildRelative) {
-      std::string Path(FilePath);
-      makeCanonical(Path);
-      if (isChildPath(InRoot, Path)) {
-        return !isExcluded(Path);
-      } else {
-        return false;
-      }
+  static bool isInRoot(clang::tooling::UnifiedPath FilePath) {
+    if (isChildPath(InRoot, FilePath)) {
+      return !isExcluded(FilePath);
     } else {
-      if (isChildPath(InRoot, FilePath, IsChildRelative)) {
-        return !isExcluded(FilePath, IsChildRelative);
-      } else {
-        return false;
-      }
+      return false;
     }
   }
   inline static bool isInAnalysisScope(SourceLocation SL) {
     return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
   }
-  // Input Arg needs to be an absolute file path
-  static bool isInAnalysisScope(const std::string &AbsFilePath,
-                                bool IsChildRelative = true) {
-    return isChildPath(AnalysisScope, AbsFilePath, IsChildRelative);
+
+  static bool isInAnalysisScope(clang::tooling::UnifiedPath FilePath) {
+    return isChildPath(AnalysisScope, FilePath);
   }
 
-  static bool isExcluded(const std::string &FilePath, bool IsRelative = true) {
+  static bool isExcluded(const clang::tooling::UnifiedPath &FilePath) {
     static std::map<std::string, bool> Cache;
-    if (FilePath.empty() || DpctGlobalInfo::getExcludePath().empty()) {
+    if (FilePath.getPath().empty() || DpctGlobalInfo::getExcludePath().empty()) {
       return false;
     }
-    std::string CanonicalPath = FilePath;
-    if (IsRelative) {
-      if (!makeCanonical(CanonicalPath)) {
-        return false;
-      }
+    if (FilePath.getCanonicalPath().empty()) {
+      return false;
     }
-    if (Cache.count(CanonicalPath)) {
-      return Cache[CanonicalPath];
+    if (Cache.count(FilePath.getCanonicalPath().str())) {
+      return Cache[FilePath.getCanonicalPath().str()];
     }
     for (auto &Path : DpctGlobalInfo::getExcludePath()) {
-      if (isChildOrSamePath(Path.first, CanonicalPath)) {
-        Cache[CanonicalPath] = true;
+      if (isChildOrSamePath(Path.first, FilePath)) {
+        Cache[FilePath.getCanonicalPath().str()] = true;
         return true;
       }
     }
-    Cache[CanonicalPath] = false;
+    Cache[FilePath.getCanonicalPath().str()] = false;
     return false;
   }
   // TODO: implement one of this for each source language.
@@ -820,29 +806,23 @@ public:
                             .str());
   }
   // TODO: implement one of this for each source language.
-  static bool isInCudaPath(const std::string &FilePath) {
-    std::string Path = FilePath;
-    makeCanonical(Path);
-    return isChildPath(CudaPath, Path);
+  static bool isInCudaPath(clang::tooling::UnifiedPath FilePath) {
+    return isChildPath(CudaPath, FilePath);
   }
-  static void setInRoot(const std::string &InRootPath) { InRoot = InRootPath; }
-  static const std::string &getInRoot() {
-    assert(!InRoot.empty());
+  static void setInRoot(const clang::tooling::UnifiedPath &InRootPath) { InRoot = InRootPath; }
+  static const clang::tooling::UnifiedPath &getInRoot() {
     return InRoot;
   }
-  static void setOutRoot(const std::string &OutRootPath) {
+  static void setOutRoot(const clang::tooling::UnifiedPath &OutRootPath) {
     OutRoot = OutRootPath;
   }
-  static const std::string &getOutRoot() {
-    assert(!OutRoot.empty());
+  static const clang::tooling::UnifiedPath &getOutRoot() {
     return OutRoot;
   }
-  static void setAnalysisScope(const std::string &InputAnalysisScope) {
-    assert(!InputAnalysisScope.empty());
+  static void setAnalysisScope(const clang::tooling::UnifiedPath &InputAnalysisScope) {
     AnalysisScope = InputAnalysisScope;
   }
-  static const std::string &getAnalysisScope() {
-    assert(!AnalysisScope.empty());
+  static const clang::tooling::UnifiedPath &getAnalysisScope() {
     return AnalysisScope;
   }
   static inline void addChangeExtensions(const std::string &Extension) {
@@ -853,12 +833,11 @@ public:
     return ChangeExtensions;
   }
   // TODO: implement one of this for each source language.
-  static void setCudaPath(const std::string &InputCudaPath) {
+  static void setCudaPath(const clang::tooling::UnifiedPath &InputCudaPath) {
     CudaPath = InputCudaPath;
   }
   // TODO: implement one of this for each source language.
-  static const std::string &getCudaPath() {
-    assert(!CudaPath.empty());
+  static const clang::tooling::UnifiedPath &getCudaPath() {
     return CudaPath;
   }
 
@@ -1022,9 +1001,9 @@ public:
       if ((*Itr).empty()) {
         continue;
       }
-      std::string PathBuf = *Itr;
-      if (!makeCanonical(*Itr)) {
-        clang::dpct::PrintMsg("Note: Path " + PathBuf +
+      clang::tooling::UnifiedPath PathBuf = *Itr;
+      if (PathBuf.getCanonicalPath().empty()) {
+        clang::dpct::PrintMsg("Note: Path " + PathBuf.getPath().str() +
                               " is invalid and will be ignored by option "
                               "--in-root-exclude.\n");
         continue;
@@ -1038,7 +1017,8 @@ public:
           llvm::sys::fs::is_regular_file(*Itr) ||
           llvm::sys::fs::is_symlink_file(*Itr)) {
         if (!isChildOrSamePath(InRoot, *Itr)) {
-          clang::dpct::PrintMsg("Note: Path " + PathBuf +
+          clang::dpct::PrintMsg("Note: Path " +
+                                PathBuf.getCanonicalPath().str() +
                                 " is not in --in-root directory and will be "
                                 "ignored by --in-root-exclude.\n");
         } else {
@@ -1064,7 +1044,7 @@ public:
           }
         }
       } else {
-        clang::dpct::PrintMsg("Note: Path " + PathBuf +
+        clang::dpct::PrintMsg("Note: Path " + PathBuf.getCanonicalPath().str() +
                               " is invalid and will be ignored by option "
                               "--in-root-exclude.\n");
       }
@@ -1111,6 +1091,18 @@ public:
   inline static bool isGenBuildScript() { return GenBuildScript; }
   inline static void setGenBuildScriptEnabled(bool Enable = true) {
     GenBuildScript = Enable;
+  }
+  inline static bool IsMigrateCmakeScriptEnabled() {
+    return MigrateCmakeScript;
+  }
+  inline static void setMigrateCmakeScriptEnabled(bool Enable = true) {
+    MigrateCmakeScript = Enable;
+  }
+  inline static bool IsMigrateCmakeScriptOnlyEnabled() {
+    return MigrateCmakeScriptOnly;
+  }
+  inline static void setMigrateCmakeScriptOnlyEnabled(bool Enable = true) {
+    MigrateCmakeScriptOnly = Enable;
   }
   inline static bool isCommentsEnabled() { return EnableComments; }
   inline static void setCommentsEnabled(bool Enable = true) {
@@ -1279,22 +1271,22 @@ public:
     return printCtadClass(OS, std::forward<Args>(Arguments)...).str();
   }
   template <class T>
-  static inline std::pair<std::string, unsigned>
+  static inline std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(const T *N, bool *IsInvalid = nullptr /* out */) {
     return getLocInfo(getLocation(N), IsInvalid);
   }
 
-  static std::pair<std::string, unsigned>
+  static std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(const TypeLoc &TL, bool *IsInvalid = nullptr /*out*/) {
     return getLocInfo(TL.getBeginLoc(), IsInvalid);
   }
 
   // Return the absolute path of \p ID
-  static std::optional<std::string> getAbsolutePath(FileID ID);
+  static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(FileID ID);
   // Return the absolute path of \p File
-  static std::optional<std::string> getAbsolutePath(const FileEntry &File);
+  static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(const FileEntry &File);
 
-  static inline std::pair<std::string, unsigned>
+  static inline std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
     if (SM->isMacroArgExpansion(Loc)) {
       Loc = SM->getImmediateSpellingLoc(Loc);
@@ -1305,16 +1297,16 @@ public:
       return std::make_pair(AbsPath.value(), LocInfo.second);
     if (IsInvalid)
       *IsInvalid = true;
-    return std::make_pair("", 0);
+    return std::make_pair(clang::tooling::UnifiedPath(), 0);
   }
 
   static inline std::string getTypeName(QualType QT,
                                         const ASTContext &Context) {
     if (auto ET = QT->getAs<ElaboratedType>()) {
       if (ET->getQualifier())
-        QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
-                              ET->getNamedType(),
-                              ET->getOwnedTagDecl());
+        QT = Context.getElaboratedType(ElaboratedTypeKeyword::None,
+                                       ET->getQualifier(), ET->getNamedType(),
+                                       ET->getOwnedTagDecl());
       else
         QT = ET->getNamedType();
     }
@@ -1444,16 +1436,13 @@ public:
   }
 
   void buildReplacements();
-  std::set<std::string> &getProcessedFile() {
-    return ProcessedFile;
-  }
   void processCudaArchMacro();
   void generateHostCode(
       std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
           &ProcessedReplList,
       HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess();
-  void cacheFileRepl(std::string FilePath,
+  void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
                      std::shared_ptr<ExtReplacements> Repl) {
     FileReplCache[FilePath] = Repl;
   }
@@ -1462,7 +1451,8 @@ public:
     if (DpctGlobalInfo::isNeedRunAgain())
       return;
     for (auto &FileRepl : FileReplCache) {
-      FileRepl.second->emplaceIntoReplSet(ReplSets[FileRepl.first]);
+      FileRepl.second->emplaceIntoReplSet(
+          ReplSets[FileRepl.first.getCanonicalPath().str()]);
     }
   }
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
@@ -1483,14 +1473,14 @@ public:
   CudaArchDefMap &getCudaArchDefinedMap() { return CudaArchDefinedMap; }
 
   void insertReplInfoFromYAMLToFileInfo(
-      std::string FilePath,
+      const clang::tooling::UnifiedPath& FilePath,
       std::shared_ptr<tooling::TranslationUnitReplacements> TUR) {
     auto FileInfo = insertFile(FilePath);
     if (FileInfo->PreviousTUReplFromYAML == nullptr)
       FileInfo->PreviousTUReplFromYAML = TUR;
   }
   std::shared_ptr<tooling::TranslationUnitReplacements>
-  getReplInfoFromYAMLSavedInFileInfo(std::string FilePath) {
+  getReplInfoFromYAMLSavedInFileInfo(clang::tooling::UnifiedPath FilePath) {
     auto FileInfo = findObject(FileMap, FilePath);
     if (FileInfo)
       return FileInfo->PreviousTUReplFromYAML;
@@ -1681,7 +1671,7 @@ public:
     return EndifLocationOfIfdef;
   }
 
-  static std::vector<std::pair<std::string, size_t>> &
+  static std::vector<std::pair<clang::tooling::UnifiedPath, size_t>> &
   getConditionalCompilationLoc() {
     return ConditionalCompilationLoc;
   }
@@ -1693,7 +1683,7 @@ public:
     return EndOfEmptyMacros;
   }
   static std::map<std::string, bool> &getMacroDefines() { return MacroDefines; }
-  static std::set<std::string> &getIncludingFileSet() {
+  static std::set<clang::tooling::UnifiedPath> &getIncludingFileSet() {
     return IncludingFileSet;
   }
   static std::set<std::string> &getFileSetInCompiationDB() {
@@ -1792,7 +1782,7 @@ public:
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16);
   }
 
-  inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
+  inline std::shared_ptr<DpctFileInfo> insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
   }
 
@@ -1804,8 +1794,8 @@ public:
     MainFile = Main;
   }
 
-  inline void recordIncludingRelationship(const std::string &CurrentFileName,
-                                          const std::string &IncludedFileName) {
+  inline void recordIncludingRelationship(const clang::tooling::UnifiedPath &CurrentFileName,
+                                          const clang::tooling::UnifiedPath &IncludedFileName) {
     auto CurrentFileInfo = this->insertFile(CurrentFileName);
     auto IncludedFileInfo = this->insertFile(IncludedFileName);
     CurrentFileInfo->insertIncludedFilesInfo(IncludedFileInfo);
@@ -1829,7 +1819,7 @@ public:
     return nullptr;
   }
 
-  static std::set<std::string> &getModuleFiles() { return ModuleFiles; }
+  static std::set<clang::tooling::UnifiedPath> &getModuleFiles() { return ModuleFiles; }
 
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
@@ -1838,7 +1828,7 @@ public:
   static unsigned int getRunRound() { return RunRound; }
   static void setNeedRunAgain(bool NRA) { NeedRunAgain = NRA; }
   static bool isNeedRunAgain() { return NeedRunAgain; }
-  static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>> &
+  static std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacements>> &
   getFileReplCache() {
     return FileReplCache;
   }
@@ -1933,11 +1923,11 @@ public:
     return MainSourceYamlTUR;
   }
   static inline std::unordered_map<
-      std::string, std::unordered_map<std::string, std::vector<unsigned>>> &
+      std::string, std::unordered_map<clang::tooling::UnifiedPath, std::vector<unsigned>>> &
   getRnnInputMap() {
     return RnnInputMap;
   }
-  static inline std::unordered_map<std::string, std::vector<std::string>> &
+  static inline std::unordered_map<clang::tooling::UnifiedPath, std::vector<clang::tooling::UnifiedPath>> &
   getMainSourceFileMap(){
     return MainSourceFileMap;
   };
@@ -1945,6 +1935,20 @@ public:
   getMallocHostInfoMap(){
     return MallocHostInfoMap;
   };
+  static inline std::map<std::shared_ptr<TextModification>, bool> &
+  getConstantReplProcessedFlagMap() {
+    return ConstantReplProcessedFlagMap;
+  }
+  static inline std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
+    return VarUsedByRuntimeSymbolAPISet;
+  }
+  static inline void setNeedParenAPI(const std::string &Name) {
+    NeedParenAPISet.insert(Name);
+  };
+  static inline bool isNeedParenAPI(const std::string &Name) {
+    return NeedParenAPISet.count(Name);
+  };
+
 private:
   DpctGlobalInfo();
 
@@ -2012,15 +2016,15 @@ private:
     return getTheLastCompleteImmediateRange(CKC->getBeginLoc(), CKC->getEndLoc()).first;
   }
   std::shared_ptr<DpctFileInfo> MainFile = nullptr;
-  std::unordered_map<std::string, std::shared_ptr<DpctFileInfo>> FileMap;
+  std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<DpctFileInfo>> FileMap;
   static std::shared_ptr<clang::tooling::TranslationUnitReplacements>
       MainSourceYamlTUR;
-  static std::string InRoot;
-  static std::string OutRoot;
-  static std::string AnalysisScope;
+  static clang::tooling::UnifiedPath InRoot;
+  static clang::tooling::UnifiedPath OutRoot;
+  static clang::tooling::UnifiedPath AnalysisScope;
   static std::unordered_set<std::string> ChangeExtensions;
   // TODO: implement one of this for each source language.
-  static std::string CudaPath;
+  static clang::tooling::UnifiedPath CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
   static clang::CudaVersion SDKVersion;
@@ -2034,6 +2038,8 @@ private:
   static bool EnableCtad;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
+  static bool MigrateCmakeScript;
+  static bool MigrateCmakeScriptOnly;
   static bool EnableComments;
   static std::string ClNamespace;
   static std::set<ExplicitNamespace> ExplicitNamespaceSet;
@@ -2058,7 +2064,7 @@ private:
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
   static std::map<std::string, SourceLocation> EndifLocationOfIfdef;
-  static std::vector<std::pair<std::string, size_t>> ConditionalCompilationLoc;
+  static std::vector<std::pair<clang::tooling::UnifiedPath, size_t>> ConditionalCompilationLoc;
   static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
       MacroTokenToMacroDefineLoc;
   static std::map<std::string, std::string> FunctionCallInMacroMigrateRecord;
@@ -2077,7 +2083,7 @@ private:
   static std::map<std::string, bool> MacroDefines;
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
-  static std::set<std::string> IncludingFileSet;
+  static std::set<clang::tooling::UnifiedPath> IncludingFileSet;
   static std::set<std::string> FileSetInCompiationDB;
   static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;
@@ -2097,13 +2103,12 @@ private:
   static CudaArchDefMap CudaArchDefinedMap;
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
       CudaArchMacroRepl;
-  static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
+  static std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacements>>
       FileReplCache;
-  static std::set<std::string> ReProcessFile;
-  static std::set<std::string> ProcessedFile;
+  static std::set<clang::tooling::UnifiedPath> ReProcessFile;
   static bool NeedRunAgain;
   static unsigned int RunRound;
-  static std::set<std::string> ModuleFiles;
+  static std::set<clang::tooling::UnifiedPath> ModuleFiles;
   static std::unordered_map<
       std::string, std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>>
       SpellingLocToDFIsMapForAssumeNDRange;
@@ -2123,11 +2128,17 @@ private:
   static std::unordered_map<std::string, bool> ExcludePath;
   static std::map<std::string, clang::tooling::OptionInfo> CurrentOptMap;
   static std::unordered_map<
-      std::string, std::unordered_map<std::string, std::vector<unsigned>>>
+      std::string, std::unordered_map<clang::tooling::UnifiedPath, std::vector<unsigned>>>
       RnnInputMap;
-  static std::unordered_map<std::string, std::vector<std::string>>
+  static std::unordered_map<clang::tooling::UnifiedPath, std::vector<clang::tooling::UnifiedPath>>
       MainSourceFileMap;
   static std::unordered_map<std::string, bool> MallocHostInfoMap;
+  /// The key of this map is repl for specifier "__const__" and the value
+  /// "true" means this repl has been processed.
+  static std::map<std::shared_ptr<TextModification>, bool>
+      ConstantReplProcessedFlagMap;
+  static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
+  static std::unordered_set<std::string> NeedParenAPISet;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -2311,12 +2322,12 @@ private:
 // variable info includes name, type and location.
 class VarInfo {
 public:
-  VarInfo(unsigned Offset, const std::string &FilePathIn,
+  VarInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
           const VarDecl *Var, bool NeedFoldSize = false)
       : FilePath(FilePathIn), Offset(Offset), Name(Var->getName()),
         Ty(std::make_shared<CtTypeInfo>(Var, NeedFoldSize)) {}
 
-  inline const std::string &getFilePath() { return FilePath; }
+  inline const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }
   inline const std::string &getName() { return Name; }
   inline const std::string getNameAppendSuffix() { return Name + "_ct1"; }
@@ -2330,7 +2341,7 @@ public:
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TAList) {
     Ty = Ty->applyTemplateArguments(TAList);
   }
-  inline void requestFeatureForSet(const std::string &Path) {
+  inline void requestFeatureForSet(const clang::tooling::UnifiedPath &Path) {
     if (Ty) {
       for (const auto &Item : Ty->getHelperFeatureSet()) {
         requestFeature(Item);
@@ -2339,7 +2350,7 @@ public:
   }
 
 private:
-  const std::string FilePath;
+  const clang::tooling::UnifiedPath FilePath;
   unsigned Offset;
   std::string Name;
   std::shared_ptr<CtTypeInfo> Ty;
@@ -2364,7 +2375,7 @@ public:
     return Host;
   }
 
-  MemVarInfo(unsigned Offset, const std::string &FilePath, const VarDecl *Var);
+  MemVarInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath, const VarDecl *Var);
 
   VarAttrKind getAttr() { return Attr; }
   VarScope getScope() { return Scope; }
@@ -2518,6 +2529,10 @@ public:
     }
     return Ret;
   }
+  void setUseHelperFuncFlag(bool Flag) {
+    UseHelperFuncFlag = Flag;
+  };
+  bool isUseHelperFunc() { return UseHelperFuncFlag; }
 
 private:
   bool isTreatPointerAsArray() {
@@ -2537,20 +2552,9 @@ private:
 
   std::string getMemoryType();
   inline std::string getMemoryType(const std::string &MemoryType,
-                                   std::shared_ptr<CtTypeInfo> VarType) {
-    return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
-                       VarType->getDimension(), ">");
-  }
+                                   std::shared_ptr<CtTypeInfo> VarType);
   std::string getInitArguments(const std::string &MemSize,
-                               bool MustArguments = false) {
-    if (InitList.empty())
-      return getType()->getRangeArgument(MemSize, MustArguments);
-    if (getType()->getDimension())
-      return buildString("(", getRangeClass(),
-                         getType()->getRangeArgument(MemSize, true),
-                         ", " + InitList, ")");
-    return buildString("(", InitList, ")");
-  }
+                               bool MustArguments = false);
   const std::string &getMemoryAttr();
   std::string getSyclAccessorType();
   std::string getDpctAccessorType() {
@@ -2613,6 +2617,7 @@ private:
   std::string LocalTypeName = "";
 
   static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  bool UseHelperFuncFlag = true;
 };
 
 class TextureTypeInfo {
@@ -2654,7 +2659,7 @@ public:
 
 class TextureInfo {
 protected:
-  const std::string FilePath;
+  const clang::tooling::UnifiedPath FilePath;
   const unsigned Offset;
   std::string Name; // original expression str
   std::string NewVarName; // name of new variable which tool
@@ -2662,7 +2667,7 @@ protected:
   std::shared_ptr<TextureTypeInfo> Type;
 
 protected:
-  TextureInfo(unsigned Offset, const std::string &FilePath, StringRef Name)
+  TextureInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath, StringRef Name)
       : FilePath(FilePath), Offset(Offset), Name(Name) {
     NewVarName = Name.str();
     for (auto &C : NewVarName) {
@@ -2680,8 +2685,8 @@ protected:
       : TextureInfo(DpctGlobalInfo::getLocInfo(
                         VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
                     VD->getName().str() + "[" + Subscript + "]") {}
-  TextureInfo(std::pair<StringRef, unsigned> LocInfo, StringRef Name)
-      : TextureInfo(LocInfo.second, LocInfo.first.str(), Name) {}
+  TextureInfo(std::pair<clang::tooling::UnifiedPath, unsigned> LocInfo, StringRef Name)
+      : TextureInfo(LocInfo.second, LocInfo.first.getCanonicalPath(), Name) {}
 
   ParameterStream &getDecl(ParameterStream &PS,
                            const std::string &TemplateDeclName) {
@@ -2697,7 +2702,7 @@ protected:
   }
 
 public:
-  TextureInfo(unsigned Offset, const std::string &FilePath, const VarDecl *VD)
+  TextureInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath, const VarDecl *VD)
       : TextureInfo(Offset, FilePath, VD->getName()) {
     if (auto D = dyn_cast_or_null<ClassTemplateSpecializationDecl>(
             VD->getType()->getAsCXXRecordDecl())) {
@@ -2785,7 +2790,8 @@ public:
   inline const std::string &getName() { return Name; }
 
   inline unsigned getOffset() { return Offset; }
-  inline std::string getFilePath() { return FilePath; }
+  inline clang::tooling::UnifiedPath getFilePath() { return FilePath; }
+  inline bool isUseHelperFunc() { return true; }
 };
 
 // texture handle info
@@ -2802,7 +2808,7 @@ class TextureObjectInfo : public TextureInfo {
       : TextureInfo(VD, Subscript), ParamIdx(ParamIdx) {}
 
 protected:
-  TextureObjectInfo(unsigned Offset, const std::string &FilePath,
+  TextureObjectInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
                     StringRef Name)
       : TextureInfo(Offset, FilePath, Name), ParamIdx(0) {}
 
@@ -2901,7 +2907,7 @@ class MemberTextureObjectInfo : public TextureObjectInfo {
     ~NewVarNameRAII() { Member->Name = std::move(OldName); }
   };
 
-  MemberTextureObjectInfo(unsigned Offset, const std::string& FilePath,
+  MemberTextureObjectInfo(unsigned Offset, const clang::tooling::UnifiedPath& FilePath,
     StringRef Name)
     : TextureObjectInfo(Offset, FilePath, Name) {}
 
@@ -2929,7 +2935,7 @@ class StructureTextureObjectInfo : public TextureObjectInfo {
   bool ContainsVirtualPointer;
   bool IsBase = false;
 
-  StructureTextureObjectInfo(unsigned Offset, const std::string &FilePath,
+  StructureTextureObjectInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
                              StringRef Name)
       : TextureObjectInfo(Offset, FilePath, Name) {}
 
@@ -3143,7 +3149,7 @@ public:
     return Size;
   }
   std::string getExtraCallArguments(bool HasPreParam, bool HasPostParam) const;
-  void requestFeatureForAllVarMaps(const std::string &Path) const {
+  void requestFeatureForAllVarMaps(const clang::tooling::UnifiedPath &Path) const {
     for (const auto &Item : LocalVarMap) {
       Item.second->requestFeatureForSet(Path);
     }
@@ -3162,7 +3168,7 @@ public:
   getExtraDeclParam(bool HasPreParam, bool HasPostParam,
                     FormatInfo FormatInformation = FormatInfo()) const;
   std::string getKernelArguments(bool HasPreParam, bool HasPostParam,
-                                 const std::string &Path) const;
+                                 const clang::tooling::UnifiedPath &Path) const;
 
   const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const {
     return const_cast<MemVarMap *>(this)->getMap(Scope);
@@ -3304,6 +3310,9 @@ private:
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap) {
     for (const auto &VI : VarMap) {
+      if (!VI.second->isUseHelperFunc()) {
+        continue;
+      }
       if (PS.FormatInformation.EnableFormat) {
         ParameterStream TPS;
         GetArgOrParam<T, COD>()(TPS, VI.second);
@@ -3459,7 +3468,7 @@ MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
 class CallFunctionExpr {
 public:
   template <class T>
-  CallFunctionExpr(unsigned Offset, const std::string &FilePathIn, const T &C)
+  CallFunctionExpr(unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn, const T &C)
       : FilePath(FilePathIn), BeginLoc(Offset) {}
 
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
@@ -3523,7 +3532,7 @@ protected:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;
   inline unsigned getBegin() { return BeginLoc; }
-  inline const std::string &getFilePath() { return FilePath; }
+  inline const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
   void buildCalleeInfo(const Expr *Callee);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
@@ -3575,7 +3584,7 @@ private:
   }
   void mergeTextureObjectInfo();
 
-  const std::string FilePath;
+  const clang::tooling::UnifiedPath FilePath;
   unsigned BeginLoc = 0;
   unsigned ExtraArgLoc = 0;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
@@ -3594,9 +3603,9 @@ private:
 // DeviceFunctionInfo
 class DeviceFunctionDecl {
 public:
-  DeviceFunctionDecl(unsigned Offset, const std::string &FilePathIn,
+  DeviceFunctionDecl(unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
                      const FunctionDecl *FD);
-  DeviceFunctionDecl(unsigned Offset, const std::string &FilePathIn,
+  DeviceFunctionDecl(unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
                      const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
                      const FunctionDecl *Specialization);
   inline static std::shared_ptr<DeviceFunctionInfo>
@@ -3695,7 +3704,7 @@ protected:
   virtual std::string getExtraParameters();
 
   unsigned Offset;
-  const std::string FilePath;
+  const clang::tooling::UnifiedPath FilePath;
   unsigned ParamsNum;
   unsigned ReplaceOffset;
   unsigned ReplaceLength;
@@ -3717,7 +3726,7 @@ class ExplicitInstantiationDecl : public DeviceFunctionDecl {
   std::vector<TemplateArgumentInfo> InstantiationArgs;
 
 public:
-  ExplicitInstantiationDecl(unsigned Offset, const std::string &FilePathIn,
+  ExplicitInstantiationDecl(unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
                             const FunctionTypeLoc &FTL,
                             const ParsedAttributes &Attrs,
                             const FunctionDecl *Specialization,
@@ -3749,7 +3758,7 @@ class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
   }
 
 public:
-  DeviceFunctionDeclInModule(unsigned Offset, const std::string &FilePathIn,
+  DeviceFunctionDeclInModule(unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
                              const FunctionTypeLoc &FTL,
                              const ParsedAttributes &Attrs,
                              const FunctionDecl *FD)
@@ -3758,7 +3767,7 @@ public:
     buildWrapperInfo(FD);
     buildCallInfo(FD);
   }
-  DeviceFunctionDeclInModule(unsigned Offset, const std::string &FilePathIn,
+  DeviceFunctionDeclInModule(unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
                              const FunctionDecl *FD)
       : DeviceFunctionDecl(Offset, FilePathIn, FD) {
     buildParameterInfo(FD);
@@ -3852,7 +3861,7 @@ public:
   inline void setKernelInvoked() { IsKernelInvoked = true; }
 
   inline std::string
-  getExtraParameters(const std::string &Path,
+  getExtraParameters(const clang::tooling::UnifiedPath &Path,
                      FormatInfo FormatInformation = FormatInfo()) {
     buildInfo();
     VarMap.requestFeatureForAllVarMaps(Path);
@@ -3860,7 +3869,7 @@ public:
         NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
   }
   std::string
-  getExtraParameters(const std::string &Path,
+  getExtraParameters(const clang::tooling::UnifiedPath &Path,
                      const std::vector<TemplateArgumentInfo> &TAList,
                      FormatInfo FormatInformation = FormatInfo()) {
     MemVarMap TmpVarMap;
@@ -3871,10 +3880,10 @@ public:
         NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
   }
 
-  void setDefinitionFilePath(const std::string &Path) {
+  void setDefinitionFilePath(const clang::tooling::UnifiedPath &Path) {
     DefinitionFilePath = Path;
   }
-  const std::string &getDefinitionFilePath() { return DefinitionFilePath; }
+  const clang::tooling::UnifiedPath &getDefinitionFilePath() { return DefinitionFilePath; }
   void setNeedSyclExternMacro() { NeedSyclExternMacro = true; }
   bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
   void setAlwaysInlineDevFunc() { AlwaysInlineDevFunc = true; }
@@ -3893,7 +3902,7 @@ public:
     RequiredSubGroupSize.push_back(
         std::make_tuple(Size, LocInfo.first, LocInfo.second, APIName, VarName));
   }
-  std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string,
+  std::vector<std::tuple<unsigned int, clang::tooling::UnifiedPath, unsigned int, std::string,
                          std::string>> &
   getSubGroupSize() {
     return RequiredSubGroupSize;
@@ -3920,12 +3929,12 @@ private:
       const std::vector<std::shared_ptr<TextureObjectInfo>> &Other);
 
   bool IsBuilt;
-  std::string DefinitionFilePath;
+  clang::tooling::UnifiedPath DefinitionFilePath;
   bool NeedSyclExternMacro = false;
   bool AlwaysInlineDevFunc = false;
   bool ForceInlineDevFunc = false;
   // subgroup size, filepath, offset, API name, var name
-  std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string,
+  std::vector<std::tuple<unsigned int, clang::tooling::UnifiedPath, unsigned int, std::string,
                          std::string>>
       RequiredSubGroupSize;
   GlobalMap<CallFunctionExpr> CallExprMap;
@@ -4168,7 +4177,7 @@ private:
   template <class T> void printStreamBase(T &Printer);
 
 public:
-  KernelCallExpr(unsigned Offset, const std::string &FilePath,
+  KernelCallExpr(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
                  const CUDAKernelCallExpr *KernelCall)
       : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
     setIsInMacroDefine(KernelCall);
@@ -4206,17 +4215,17 @@ public:
   inline bool isSync() { return IsSync; }
 
   static std::shared_ptr<KernelCallExpr>
-  buildFromCudaLaunchKernel(const std::pair<std::string, unsigned> &LocInfo,
+  buildFromCudaLaunchKernel(const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
                             const CallExpr *);
   static std::shared_ptr<KernelCallExpr>
-  buildForWrapper(std::string, const FunctionDecl *,
+  buildForWrapper(clang::tooling::UnifiedPath, const FunctionDecl *,
                   std::shared_ptr<DeviceFunctionInfo>);
   unsigned int GridDim = 3;
   unsigned int BlockDim = 3;
   void setEmitSizeofWarningFlag(bool Flag) { EmitSizeofWarning = Flag; }
 
 private:
-  KernelCallExpr(unsigned Offset, const std::string &FilePath)
+  KernelCallExpr(unsigned Offset, const clang::tooling::UnifiedPath &FilePath)
       : CallFunctionExpr(Offset, FilePath, nullptr), IsSync(false) {}
   void buildArgsInfoFromArgsArray(const FunctionDecl *FD,
                                   const Expr *ArgsArray) {}
@@ -4412,7 +4421,7 @@ private:
 
 class CudaMallocInfo {
 public:
-  CudaMallocInfo(unsigned Offset, const std::string &FilePath,
+  CudaMallocInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
                  const VarDecl *VD)
       : Name(VD->getName().str()) {}
 
@@ -4516,7 +4525,8 @@ template <typename T> int getPlaceholderIdx(const T *S) {
   Loc = SM.getExpansionLoc(Loc);
 
   auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
-  std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
+  std::string Key = LocInfo.first.getCanonicalPath().str() + ":" +
+                    std::to_string(LocInfo.second);
   auto Iter = DpctGlobalInfo::getTempVariableHandledMap().find(Key);
   if (Iter != DpctGlobalInfo::getTempVariableHandledMap().end()) {
     return Iter->second;
@@ -4531,7 +4541,8 @@ template <typename T> bool UpdatePlaceholderIdxMap(const T *S, int Index) {
   auto Range = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
   SourceLocation Loc = Range.getBegin();
   auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
-  std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
+  std::string Key = LocInfo.first.getCanonicalPath().str() + ":" +
+                    std::to_string(LocInfo.second);
   auto Iter = DpctGlobalInfo::getTempVariableHandledMap().find(Key);
   if (Iter != DpctGlobalInfo::getTempVariableHandledMap().end()) {
     return true;
@@ -4585,8 +4596,8 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
 
   DpctGlobalInfo::getHelperFuncReplInfoMap().insert(
       std::make_pair(Index, HFInfo));
-  std::string KeyForDeclCounter =
-      HFInfo.DeclLocFile + ":" + std::to_string(HFInfo.DeclLocOffset);
+  std::string KeyForDeclCounter = HFInfo.DeclLocFile.getCanonicalPath().str() +
+                                  ":" + std::to_string(HFInfo.DeclLocOffset);
 
   if (DpctGlobalInfo::getTempVariableDeclCounterMap().count(
           KeyForDeclCounter) == 0) {

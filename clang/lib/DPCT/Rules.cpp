@@ -15,7 +15,7 @@
 #include "llvm/Support/YAMLTraits.h"
 #include "NCCLAPIMigration.h"
 
-std::vector<std::string> MetaRuleObject::RuleFiles;
+std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
 template <class Functor>
@@ -225,16 +225,39 @@ void deregisterAPIRule(MetaRuleObject &R) {
 }
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
-  MapNames::PatternRewriters.emplace_back(
-      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules));
+  MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
+      R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId));
 }
 
-void importRules(llvm::cl::list<std::string> &RuleFiles) {
+MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
+    const MetaRuleObject::PatternRewriter &PR) {
+  RuleId = PR.RuleId;
+  In = PR.In;
+  Out = PR.Out;
+  MatchMode = PR.MatchMode;
+  Subrules = PR.Subrules;
+
+  return *this;
+}
+
+MetaRuleObject::PatternRewriter::PatternRewriter(
+    const MetaRuleObject::PatternRewriter &PR)
+    : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), RuleId(PR.RuleId),
+      Subrules(PR.Subrules) {}
+
+MetaRuleObject::PatternRewriter::PatternRewriter(
+    const std::string &I, const std::string &O,
+    const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
+    std::string RuleId)
+    : In(I), Out(O), MatchMode(MatchMode), RuleId(RuleId) {
+  Subrules = S;
+}
+
+void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
-    makeCanonical(RuleFile);
     // open the yaml file
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
-        llvm::MemoryBuffer::getFile(RuleFile);
+        llvm::MemoryBuffer::getFile(RuleFile.getCanonicalPath());
     if (!Buffer) {
       llvm::errs() << "Error: failed to read " << RuleFile << ": "
                    << Buffer.getError().message() << "\n";

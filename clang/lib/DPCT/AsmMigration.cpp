@@ -1377,6 +1377,95 @@ protected:
   bool handle_vmin(const InlineAsmInstruction *I) override {
     return HandleOneElementAddSubMinMax(I, "dpct::extend_min");
   }
+
+  // Handle the 2 element video instructions.
+  bool handleTwoElementAddSubMinMax(const InlineAsmInstruction *Inst,
+                                    StringRef Fn) {
+    if (Inst->getNumInputOperands() < 3 || Inst->getNumTypes() != 3)
+      return SYCLGenError();
+
+    // The type of operands must be one of s32/u32.
+    for (const auto *T : Inst->types()) {
+      if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(T)) {
+        if (BI->getKind() == InlineAsmBuiltinType::TK_s32 ||
+            BI->getKind() == InlineAsmBuiltinType::TK_u32)
+          continue;
+      }
+      return SYCLGenError();
+    }
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    OS() << " = " << Fn;
+    if (Inst->hasAttr(InstAttr::sat))
+      OS() << "_sat";
+    if (Inst->hasAttr(InstAttr::add))
+      OS() << "_add";
+    OS() << "<";
+    if (emitType(Inst->getType(0)))
+      return SYCLGenError();
+    OS() << ", ";
+    if (emitType(Inst->getType(1)))
+      return SYCLGenError();
+    OS() << ", ";
+    if (emitType(Inst->getType(2)))
+      return SYCLGenError();
+    OS() << ">(";
+
+    std::string Op[3];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+
+    OS() << llvm::join(ArrayRef(Op, Inst->getNumInputOperands()), ", ");
+
+    OS() << ")";
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
+  bool handle_vadd2(const InlineAsmInstruction *I) override {
+    return handleTwoElementAddSubMinMax(I, "dpct::extend_vadd2");
+  }
+  bool handle_vsub2(const InlineAsmInstruction *I) override {
+    return handleTwoElementAddSubMinMax(I, "dpct::extend_vsub2");
+  }
+  bool handle_vabsdiff2(const InlineAsmInstruction *I) override {
+    return handleTwoElementAddSubMinMax(I, "dpct::extend_vabsdiff2");
+  }
+  bool handle_vmin2(const InlineAsmInstruction *I) override {
+    return handleTwoElementAddSubMinMax(I, "dpct::extend_vmin2");
+  }
+  bool handle_vmax2(const InlineAsmInstruction *I) override {
+    return handleTwoElementAddSubMinMax(I, "dpct::extend_vmax2");
+  }
+
+  bool handle_brev(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type || (Type->getKind() != InlineAsmBuiltinType::TK_b32 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_b64))
+      return SYCLGenError();
+    
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "reverse_bits<"
+         << TypeStr << ">(";
+    if (emitStmt(Inst->getInputOperand(0)))
+      return SYCLGenError();
+    OS() << ")";
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Dpct);
+    return SYCLGenSuccess();
+  }
 };
 } // namespace
 

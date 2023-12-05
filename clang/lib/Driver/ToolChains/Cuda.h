@@ -32,6 +32,7 @@ private:
 #ifdef SYCLomatic_CUSTOMIZATION
   bool IsIncludePathValid = false;
   bool IsVersionSupported = false;
+  bool IsVersionPartSupported = false;
 #endif // SYCLomatic_CUSTOMIZATION
   CudaVersion Version = CudaVersion::UNKNOWN;
   std::string InstallPath;
@@ -64,6 +65,8 @@ public:
   bool isIncludePathValid() const { return IsIncludePathValid; }
   /// Check whether version of CUDA header files is supported.
   bool isVersionSupported() const { return IsVersionSupported; }
+  /// Check whether CUDA header files is a new version and partially supported.
+  bool isVersionPartSupported() const { return IsVersionPartSupported; }
   /// validate whether FilePath is the directory of CUDA header files
   bool validateCudaHeaderDirectory(const std::string &FilePath,
                                    const Driver &D);
@@ -92,7 +95,7 @@ public:
 
 #ifdef SYCLomatic_CUSTOMIZATION
 private:
-  bool ParseCudaVersionFile(const std::string &FilePath, CudaVersion &CV);
+  bool ParseCudaVersionFile(const std::string &FilePath);
 #endif // SYCLomatic_CUSTOMIZATION
 };
 
@@ -100,7 +103,7 @@ namespace tools {
 namespace NVPTX {
 
 // Run ptxas, the NVPTX assembler.
-class LLVM_LIBRARY_VISIBILITY Assembler : public Tool {
+class LLVM_LIBRARY_VISIBILITY Assembler final : public Tool {
 public:
   Assembler(const ToolChain &TC) : Tool("NVPTX::Assembler", "ptxas", TC) {}
 
@@ -127,7 +130,7 @@ public:
 };
 
 // Runs nvlink, which links GPU object files ("cubin" files) into a single file.
-class LLVM_LIBRARY_VISIBILITY Linker : public Tool {
+class LLVM_LIBRARY_VISIBILITY Linker final : public Tool {
 public:
   Linker(const ToolChain &TC) : Tool("NVPTX::Linker", "nvlink", TC) {}
 
