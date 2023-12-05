@@ -541,7 +541,7 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString) {
 
   const auto Lines = split(InputString, '\n');
   std::vector<std::string> Output;
-  for (auto &Line : Lines) {
+  for (auto Line : Lines) {
 
     int Size = Line.size();
     int Index = 0;
