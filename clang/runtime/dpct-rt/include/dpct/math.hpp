@@ -772,10 +772,14 @@ template <typename T> sycl::vec<T, 2> extract_and_sign_or_zero_extend2(T val) {
 /// result.
 template <typename T1, typename T2>
 inline auto dp2a_lo(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+  c = __dp2a_lo(a, b, c);
+#else
   auto va = ::dpct::detail::extract_and_sign_or_zero_extend2(a);
   auto vb = ::dpct::detail::extract_and_sign_or_zero_extend4(b);
   c += va[0] * vb[0];
   c += va[1] * vb[1];
+#endif
   return c;
 }
 
@@ -790,10 +794,14 @@ inline auto dp2a_lo(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
 /// result.
 template <typename T1, typename T2>
 inline auto dp2a_hi(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+  c = __dp2a_hi(a, b, c);
+#else
   auto va = ::dpct::detail::extract_and_sign_or_zero_extend2(a);
   auto vb = ::dpct::detail::extract_and_sign_or_zero_extend4(b);
   c += va[0] * vb[2];
   c += va[1] * vb[3];
+#endif
   return c;
 }
 
@@ -807,12 +815,16 @@ inline auto dp2a_hi(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
 /// \return Four-way byte dot product which is accumulated in 32-bit result.
 template <typename T1, typename T2>
 inline auto dp4a(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+  c = __dp4a(a, b, c);
+#else
   auto va = ::dpct::detail::extract_and_sign_or_zero_extend4(a);
   auto vb = ::dpct::detail::extract_and_sign_or_zero_extend4(b);
   c += va[0] * vb[0];
   c += va[1] * vb[1];
   c += va[2] * vb[2];
   c += va[3] * vb[3];
+#endif
   return c;
 }
 
