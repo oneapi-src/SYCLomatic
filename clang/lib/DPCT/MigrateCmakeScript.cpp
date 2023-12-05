@@ -128,9 +128,6 @@ static std::map<std::string /*cmake syntax*/,
                 MetaRuleObject::PatternRewriter /*cmake migraiton rule*/>
     CmakeBuildInRules;
 
-static const std::vector<std::string> ImplicitMigrationRules = {
-    "cmake_minimum_required"};
-
 void cmakeSyntaxProcessed(std::string &Input);
 
 static std::string readFile(const clang::tooling::UnifiedPath &Name) {
@@ -670,7 +667,12 @@ static void storeBufferToFile() {
   }
 }
 
-static void registerImplicitMigrationRule() {
+// cmake systaxes need to be processed by implicit migration rules, as they are
+// difficult to be described with yaml based rule syntax.
+static const std::vector<std::string> ImplicitMigrationRules = {
+    "cmake_minimum_required"};
+
+static void reserveImplicitMigrationRules() {
   for (const auto &Rule : ImplicitMigrationRules) {
     MetaRuleObject::PatternRewriter PrePR;
     PrePR.CmakeSyntax = Rule;
@@ -682,30 +684,7 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot) {
   loadBufferFromFile(InRoot, OutRoot);
   unifyInputFileFormat();
-
-  registerImplicitMigrationRule();
-
-#if 1
-  printf("#### doCmakeScriptMigration ###\n");
-  for (const auto &Entry : CmakeBuildInRules) {
-    auto PR = Entry.second;
-    printf("PR.MatchMode: [%d]\n", PR.MatchMode);
-    printf("PR.CmakeSyntax: [%s]\n", PR.CmakeSyntax.c_str());
-    printf("PR.RuleId: [%s]\n", PR.RuleId.c_str());
-    printf("PR.In: [%s]\n", PR.In.c_str());
-    printf("PR.Out: [%s]\n", PR.Out.c_str());
-
-    for (auto SubPR : PR.Subrules) {
-      printf("\tSubPR.first: [%s]\n", SubPR.first.c_str());
-      printf("\tSubPR.second.MatchMode: [%d]\n", SubPR.second.MatchMode);
-      printf("\tSubPR.second.In: [%s]\n", SubPR.second.In.c_str());
-      printf("\tSubPR.second.Out: [%s]\n", SubPR.second.Out.c_str());
-    }
-    printf("\n");
-  }
-  printf("#### doCmakeScriptMigration ###\n");
-#endif
-
+  reserveImplicitMigrationRules();
   doCmakeScriptAnalysis();
   applyCmakeMigrationRules();
   storeBufferToFile();

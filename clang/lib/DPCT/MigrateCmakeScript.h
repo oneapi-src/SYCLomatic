@@ -29,5 +29,5 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot);
 bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
 
-void registerCmakeMigrationRule(MetaRuleObject &R) ;
+void registerCmakeMigrationRule(MetaRuleObject &R);
 #endif

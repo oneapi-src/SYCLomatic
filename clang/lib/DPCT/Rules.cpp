@@ -230,12 +230,6 @@ void registerPatternRewriterRule(MetaRuleObject &R) {
       R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId, R.CmakeSyntax, R.Priority));
 }
 
-
-
-
-
-
-
 MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     const MetaRuleObject::PatternRewriter &PR) {
   RuleId = PR.RuleId;

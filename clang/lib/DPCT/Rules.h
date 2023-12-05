@@ -14,8 +14,18 @@
 #include <string>
 #include <vector>
 
-
-enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum, DisableAPIMigration, PatternRewriter, CMakeRule};
+enum RuleKind {
+  API,
+  DataType,
+  Macro,
+  Header,
+  TypeRule,
+  Class,
+  Enum,
+  DisableAPIMigration,
+  PatternRewriter,
+  CMakeRule
+};
 
 enum RulePriority { Takeover, Default, Fallback };
 enum RuleMatchMode { Partial , Full };
@@ -28,14 +38,13 @@ struct TypeNameRule {
   std::string CmakeSyntax;
   std::vector<std::string> Includes;
   TypeNameRule(std::string Name)
-      : NewName(Name),
-        RequestFeature(clang::dpct::HelperFeatureEnum::none),
-        Priority(RulePriority::Fallback),
-        MatchMode(RuleMatchMode::Partial) {}
+      : NewName(Name), RequestFeature(clang::dpct::HelperFeatureEnum::none),
+        Priority(RulePriority::Fallback), MatchMode(RuleMatchMode::Partial) {}
   TypeNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
                RulePriority Priority = RulePriority::Fallback,
                RuleMatchMode MatchMode = RuleMatchMode::Partial)
-      : NewName(Name), RequestFeature(Feature), Priority(Priority), MatchMode(MatchMode) {}
+      : NewName(Name), RequestFeature(Feature), Priority(Priority),
+        MatchMode(MatchMode) {}
 };
 
 struct ClassFieldRule : public TypeNameRule {
@@ -198,8 +207,8 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapRequired("Kind", Doc->Kind);
     Io.mapRequired("Priority", Doc->Priority);
     Io.mapOptional("CmakeSyntax", Doc->CmakeSyntax);
-    Io.mapOptional("In", Doc->In);
-    Io.mapOptional("Out", Doc->Out);
+    Io.mapRequired("In", Doc->In);
+    Io.mapRequired("Out", Doc->Out);
     Io.mapOptional("Includes", Doc->Includes);
     Io.mapOptional("Fields", Doc->Fields);
     Io.mapOptional("Methods", Doc->Methods);
