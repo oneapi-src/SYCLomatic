@@ -1,28 +1,42 @@
 // RUN: dpct --format-range=none --use-experimental-features=bindless_images -out-root %T/texture/texture_object_bindless_image %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp --match-full-lines %s
 
+// CHECK: void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex) {
 __global__ void kernel(cudaTextureObject_t tex) {
   int i;
   float j, k;
   // CHECK: sycl::ext::oneapi::experimental::read_image<sycl::short2>(tex, (float)i);
   tex1Dfetch<short2>(tex, i);
+  // CHECK: sycl::ext::oneapi::experimental::read_image<sycl::short2>(tex, (float)i);
+  tex1D<short2>(tex, i);
+  // CHECK: i = sycl::ext::oneapi::experimental::read_image<int>(tex, (float)i);
+  tex1D(&i, tex, i);
   // CHECK: sycl::ext::oneapi::experimental::read_image<sycl::short2>(tex, sycl::float2(j, k));
   tex2D<short2>(tex, j, k);
+  // CHECK: i = sycl::ext::oneapi::experimental::read_image<int>(tex, sycl::float2(j, k));
+  tex2D(&i, tex, j, k);
 }
 
 int main() {
   void *input;
-  size_t w, h, sizeInBytes;
-  // CHECK: sycl::ext::oneapi::experimental::image_mem* pArr;
-  cudaArray_t pArr;
+  size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_desc;
+  // CHECK: sycl::ext::oneapi::experimental::image_mem* pArr, pArr_src;
+  cudaArray_t pArr, pArr_src;
   // TODO: need support.
   // cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
   cudaChannelFormatDesc desc;
   // CHECK: pArr = new sycl::ext::oneapi::experimental::image_mem(sycl::ext::oneapi::experimental::image_descriptor({w, h}, desc.get_channel_order(), desc.get_channel_type()), q_ct1);
   cudaMallocArray(&pArr, &desc, w, h);
-  // CHECK: q_ct1.ext_oneapi_copy(input, sycl::range<3>(0, 0, 0), sycl::range<3>(0, 0, 0), pArr->get_handle(), sycl::range<3>(0, 0, 0), pArr->get_descriptor(), sycl::range<3>(4 * w / dpct::getEleSize(pArr->get_descriptor()), h, 0));
-  cudaMemcpy2DToArray(pArr, 0, 0, input, 4 * w, 4 * w, h,
+  // CHECK: dpct::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, pArr, w_offest_dest, h_offest_desc, w * h, q_ct1);
+  cudaMemcpyArrayToArray(pArr, w_offest_dest, h_offest_desc, pArr_src,
+                         w_offest_src, h_offest_src, w * h,
+                         cudaMemcpyHostToDevice);
+  // CHECK: dpct::dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w, w, h, q_ct1);
+  cudaMemcpy2DFromArray(input, w, pArr, w_offest_src, h_offest_src, w, h,
+                        cudaMemcpyHostToDevice);
+  // CHECK: dpct::dpct_memcpy(input, pArr, w_offest_dest, h_offest_desc, w, w, h, q_ct1);
+  cudaMemcpy2DToArray(pArr, w_offest_dest, h_offest_desc, input, w, w, h,
                       cudaMemcpyHostToDevice);
 
   // CHECK: dpct::image_data resDesc;
@@ -79,6 +93,10 @@ int main() {
   cudaTextureObject_t tex;
   // CHECK: tex = dpct::create_bindless_image(resDesc, texDesc1);
   cudaCreateTextureObject(&tex, &resDesc, &texDesc1, NULL);
+  // CHECK: resDesc = dpct::get_data(tex);
+  cudaGetTextureObjectResourceDesc(&resDesc, tex);
+  // CHECK: texDesc1 = dpct::get_sampling_info(tex);
+  cudaGetTextureObjectTextureDesc(&texDesc1, tex);
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT: sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT: [=](sycl::nd_item<3> item_ct1) {

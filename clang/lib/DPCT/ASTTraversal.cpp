@@ -10261,32 +10261,44 @@ void MemoryMigrationRule::arrayMigration(
     aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
   } else if (NameRef == "cudaMemcpy2DFromArray") {
-    aggregatePitchedData(C, 0, 1, SM);
-    insertZeroOffset(C, 2);
-    insertToPitchedData(C, 2);
-    aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
-    aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << MapNames::getDpctNamespace() << "dpct_memcpy("
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(5)) << ", "
+         << ExprAnalysis::ref(C->getArg(6)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      aggregatePitchedData(C, 0, 1, SM);
+      insertZeroOffset(C, 2);
+      insertToPitchedData(C, 2);
+      aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
+      aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+    }
   } else if (NameRef == "cudaMemcpy2DToArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
       std::string Replacement;
       llvm::raw_string_ostream OS(Replacement);
+      OS << MapNames::getDpctNamespace() << "dpct_memcpy("
+         << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", "
+         << ExprAnalysis::ref(C->getArg(5)) << ", "
+         << ExprAnalysis::ref(C->getArg(6)) << ", ";
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.ext_oneapi_copy("
-         << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << MapNames::getClNamespace() << "range<3>(0, 0, 0), "
-         << MapNames::getClNamespace() << "range<3>(0, 0, 0), "
-         << ExprAnalysis::ref(C->getArg(0)) << "->get_handle(), "
-         << MapNames::getClNamespace() << "range<3>("
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", 0), "
-         << ExprAnalysis::ref(C->getArg(0)) << "->get_descriptor(), "
-         << MapNames::getClNamespace() << "range<3>("
-         << ExprAnalysis::ref(C->getArg(5)) << " / "
-         << MapNames::getDpctNamespace() << "getEleSize("
-         << ExprAnalysis::ref(C->getArg(0)) << "->get_descriptor()), "
-         << ExprAnalysis::ref(C->getArg(6)) << ", 0))";
-      return emplaceTransformation(new ReplaceStmt(C, Replacement));
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
     } else {
       insertToPitchedData(C, 0);
       aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
@@ -10295,11 +10307,28 @@ void MemoryMigrationRule::arrayMigration(
       aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
     }
   } else if (NameRef == "cudaMemcpyArrayToArray") {
-    insertToPitchedData(C, 0);
-    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
-    insertToPitchedData(C, 3);
-    aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
-    aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << MapNames::getDpctNamespace() << "dpct_memcpy("
+         << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", "
+         << ExprAnalysis::ref(C->getArg(5)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(6)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      insertToPitchedData(C, 0);
+      aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+      insertToPitchedData(C, 3);
+      aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
+      aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
+    }
   } else if (NameRef == "cudaMemcpyFromArray") {
     aggregatePitchedData(C, 0, 4, SM, true);
     insertZeroOffset(C, 1);
@@ -13177,7 +13206,7 @@ bool TextureRule::processTexVarDeclInDevice(const VarDecl *VD) {
       auto Tex = DpctGlobalInfo::getInstance().insertTextureInfo(VD);
 
       auto DataType = Tex->getType()->getDataType();
-      if (DataType.back() != '4') {
+      if (DataType.back() != '4' && !DpctGlobalInfo::useExtBindlessImages()) {
         report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
       }
 
@@ -13249,7 +13278,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
 
     auto DataType = Tex->getType()->getDataType();
-    if (DataType.back() != '4') {
+    if (DataType.back() != '4' && !DpctGlobalInfo::useExtBindlessImages()) {
       report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
     }
     emplaceTransformation(new ReplaceVarDecl(VD, Tex->getHostDeclString()));
@@ -13357,14 +13386,16 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
                              .getAsType()
                              .getCanonicalType()
                              .getAsString();
-          if (ChnType.back() != '4') {
+          if (ChnType.back() != '4' &&
+              !DpctGlobalInfo::useExtBindlessImages()) {
             report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
                    true);
           }
-        } else if (getStmtSpelling(CE->getArg(0)) == "0" ||
-                   getStmtSpelling(CE->getArg(1)) == "0" ||
-                   getStmtSpelling(CE->getArg(2)) == "0" ||
-                   getStmtSpelling(CE->getArg(3)) == "0") {
+        } else if ((getStmtSpelling(CE->getArg(0)) == "0" ||
+                    getStmtSpelling(CE->getArg(1)) == "0" ||
+                    getStmtSpelling(CE->getArg(2)) == "0" ||
+                    getStmtSpelling(CE->getArg(3)) == "0") &&
+                   !DpctGlobalInfo::useExtBindlessImages()) {
           report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
                  true);
         }

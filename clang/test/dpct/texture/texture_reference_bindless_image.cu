@@ -3,18 +3,34 @@
 // RUN: dpct --format-range=none --use-experimental-features=bindless_images -out-root %T/texture/texture_reference_bindless_image %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.cpp --match-full-lines %s
 
+// CHECK: dpct::bindless_image_wrapper<sycl::short2, 1> tex0;
+static texture<short2, 1> tex0;
 // CHECK: dpct::bindless_image_wrapper<sycl::float4, 2> tex;
 static texture<float4, 2> tex;
 
-// CHECK: void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex) {
+// CHECK: void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex0,
+// CHECK-NEXT:             sycl::ext::oneapi::experimental::sampled_image_handle tex) {
 __global__ void kernel() {
+  // CHECK: sycl::ext::oneapi::experimental::read_image<sycl::short2>(tex0, (float)1);
+  tex1D(tex0, 1);
   // CHECK: sycl::float4 f42 = sycl::ext::oneapi::experimental::read_image<sycl::float4>(tex, sycl::float2(1.0f, 1.0f));
   float4 f42 = tex2D(tex, 1.0f, 1.0f);
 }
 
 int main() {
+  int i;
   // CHECK: tex.set(sycl::addressing_mode::repeat);
   tex.addressMode[0] = cudaAddressModeWrap;
+  // CHECK: tex.set_channel_size(1, i);
+  tex.channelDesc.x = i;
+  // CHECK: tex.set_channel_size(2, i);
+  tex.channelDesc.y = i;
+  // CHECK: tex.set_channel_size(3, i);
+  tex.channelDesc.z = i;
+  // CHECK: tex.set_channel_size(4, i);
+  tex.channelDesc.w = i;
+  // CHECK: tex.set_channel_data_type(dpct::image_channel_data_type::fp);
+  tex.channelDesc.f = cudaChannelFormatKindFloat;
   // CHECK: tex.set_channel(dpct::image_channel::create<sycl::float4>());
   tex.channelDesc = cudaCreateChannelDesc<float4>();
   // CHECK: tex.set(sycl::filtering_mode::nearest);
@@ -23,17 +39,32 @@ int main() {
   tex.normalized = 0;
 
   void *dataPtr;
-  size_t w, h, pitch;
+  const size_t w = 4;
+  const size_t h = 2;
+  size_t pitch = sizeof(float4) * 4;
+  float4 expect[h * w] = {
+      {1, 2, 3, 4},
+      {5, 6, 7, 8},
+  };
+  cudaMalloc(&dataPtr, sizeof(expect));
+  cudaMemcpy(dataPtr, &expect, sizeof(expect), cudaMemcpyHostToDevice);
+  // CHECK: tex.attach(dataPtr, pitch * h);
+  cudaBindTexture(0, tex, dataPtr, pitch * h);
   // CHECK: tex.attach(dataPtr, w, h, pitch);
   cudaBindTexture2D(0, tex, dataPtr, w, h, pitch);
-  // CHECK: dpct::get_in_order_queue().submit(
+  // CHECK: sycl::ext::oneapi::experimental::image_mem* pArr;
+  cudaArray_t pArr;
+  // CHECK: tex.attach(pArr);
+  cudaBindTextureToArray(tex, pArr);
+  // CHECK: q_ct1.submit(
   // CHECK-NEXT: [&](sycl::handler &cgh) {
-  // CHECK-NEXT:   auto tex_handle = tex.img;
+  // CHECK-NEXT:   auto tex0_handle = tex0.get_handle();
+  // CHECK-NEXT:   auto tex_handle = tex.get_handle();
   // CHECK-EMPTY:
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:       kernel(tex_handle);
+  // CHECK-NEXT:       kernel(tex0_handle, tex_handle);
   // CHECK-NEXT:     });
   // CHECK-NEXT: });
   kernel<<<1, 1>>>();

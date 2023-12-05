@@ -58,17 +58,34 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                  "ext::oneapi::experimental::destroy_image_handle",
              ARG(0), QUEUESTR)),
     DELETER_FACTORY_ENTRY("cudaDestroyTextureObject", ARG(0))))
-ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuTexObjectDestroy", ARG(0)))
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY(
+        "cuTexObjectDestroy",
+        CALL(MapNames::getClNamespace() +
+                 "ext::oneapi::experimental::destroy_image_handle",
+             ARG(0), QUEUESTR)),
+    DELETER_FACTORY_ENTRY("cuTexObjectDestroy", ARG(0))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                            "cudaGetTextureObjectResourceDesc", DEREF(0),
-                            MEMBER_CALL(ARG(1), true, "get_data"))))
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(
-        ASSIGN_FACTORY_ENTRY("cudaGetTextureObjectTextureDesc", DEREF(0),
-                             MEMBER_CALL(ARG(1), true, "get_sampling_info"))))
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGetTextureObjectResourceDesc", DEREF(0),
+        CALL(MapNames::getDpctNamespace() + "get_data", ARG(1)))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                "cudaGetTextureObjectResourceDesc", DEREF(0),
+                                MEMBER_CALL(ARG(1), true, "get_data")))))
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGetTextureObjectTextureDesc", DEREF(0),
+        CALL(MapNames::getDpctNamespace() + "get_sampling_info", ARG(1)))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                "cudaGetTextureObjectTextureDesc", DEREF(0),
+                                MEMBER_CALL(ARG(1), true,
+                                            "get_sampling_info")))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cuTexObjectGetResourceDesc", DEREF(0),
@@ -79,22 +96,61 @@ FEATURE_REQUEST_FACTORY(
         ASSIGN_FACTORY_ENTRY("cuTexObjectGetTextureDesc", DEREF(0),
                              MEMBER_CALL(ARG(1), true, "get_sampling_info"))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        ENTRY_TEXTURE("tex1D", 0x01, 1))
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     CONDITIONAL_FACTORY_ENTRY(
         [](const CallExpr *C) -> bool {
           return getTemplateArgsList(C).empty();
         },
-        CALL_FACTORY_ENTRY("tex2D",
-                           CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                    MapNames::getClNamespace() +
-                                        "ext::oneapi::experimental::read_image",
-                                    getArgTemplate(0, 0)),
-                                ARG(0),
-                                CALL(MapNames::getClNamespace() + "float2",
-                                     ARG(1), ARG(2)))),
+        CONDITIONAL_FACTORY_ENTRY(
+            [](const CallExpr *C) -> bool { return C->getNumArgs() == 3; },
+            ASSIGN_FACTORY_ENTRY(
+                "tex1D", DEREF(0),
+                CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                         MapNames::getClNamespace() +
+                             "ext::oneapi::experimental::read_image",
+                         getDerefedType(0)),
+                     ARG(1), CAST_IF_NOT_SAME(LITERAL("float"), ARG(2)))),
+            CALL_FACTORY_ENTRY(
+                "tex1D",
+                CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                         MapNames::getClNamespace() +
+                             "ext::oneapi::experimental::read_image",
+                         getArgTemplate(0, 0)),
+                     ARG(0), CAST_IF_NOT_SAME(LITERAL("float"), ARG(1))))),
+        CALL_FACTORY_ENTRY(
+            "tex1D",
+            CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
+                                      "ext::oneapi::experimental::read_image",
+                                  0),
+                 ARG(0), CAST_IF_NOT_SAME(LITERAL("float"), ARG(1))))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ENTRY_TEXTURE("tex1D", 0x01, 1)))
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CONDITIONAL_FACTORY_ENTRY(
+        [](const CallExpr *C) -> bool {
+          return getTemplateArgsList(C).empty();
+        },
+        CONDITIONAL_FACTORY_ENTRY(
+            [](const CallExpr *C) -> bool { return C->getNumArgs() == 4; },
+            ASSIGN_FACTORY_ENTRY(
+                "tex2D", DEREF(0),
+                CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                         MapNames::getClNamespace() +
+                             "ext::oneapi::experimental::read_image",
+                         getDerefedType(0)),
+                     ARG(1),
+                     CALL(MapNames::getClNamespace() + "float2", ARG(2),
+                          ARG(3)))),
+            CALL_FACTORY_ENTRY(
+                "tex2D", CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                  MapNames::getClNamespace() +
+                                      "ext::oneapi::experimental::read_image",
+                                  getArgTemplate(0, 0)),
+                              ARG(0),
+                              CALL(MapNames::getClNamespace() + "float2",
+                                   ARG(1), ARG(2))))),
         CALL_FACTORY_ENTRY(
             "tex2D",
             CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +

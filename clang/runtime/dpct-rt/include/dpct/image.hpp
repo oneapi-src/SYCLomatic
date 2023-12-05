@@ -841,9 +841,13 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 }
 
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
-/// TODO: ???
+namespace detail {
+static std::unordered_map<
+    const sycl::ext::oneapi::experimental::sampled_image_handle *,
+    std::pair<image_data, sampling_info>>
+    img_info_map;
 static inline size_t
-getEleSize(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
+get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
   size_t channel_num, channel_size;
   switch (decs.channel_order) {
   case sycl::image_channel_order::r:
@@ -859,7 +863,7 @@ getEleSize(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
     channel_num = 4;
     break;
   default:
-    throw std::runtime_error("Unsupported channel_order in getEleSize!");
+    throw std::runtime_error("Unsupported channel_order in get_ele_size!");
     break;
   }
   switch (decs.channel_type) {
@@ -878,11 +882,12 @@ getEleSize(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
     channel_size = 4;
     break;
   default:
-    throw std::runtime_error("Unsupported channel_type in getEleSize!");
+    throw std::runtime_error("Unsupported channel_type in get_ele_size!");
     break;
   }
   return channel_num * channel_size;
 }
+} // namespace detail
 
 /// Create bindless image according to image data and sampling info.
 /// \param data Image data used to create bindless image.
@@ -910,6 +915,7 @@ create_bindless_image(image_data data, sampling_info info,
         sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
     q.ext_oneapi_copy(data.get_data_ptr(), mem->get_handle(), desc);
     q.wait_and_throw();
+    detail::img_info_map.insert({&img, {data, info}});
     return img;
   }
   case image_data_type::pitch: {
@@ -918,70 +924,102 @@ create_bindless_image(image_data data, sampling_info info,
     desc.channel_order = data.get_channel().get_channel_order();
     desc.channel_type = data.get_channel_type();
     desc.num_levels = 1;
-    return sycl::ext::oneapi::experimental::create_image(
+    auto img = sycl::ext::oneapi::experimental::create_image(
         data.get_data_ptr(), data.get_pitch(), samp, desc, q);
+    detail::img_info_map.insert({&img, {data, info}});
+    return img;
   }
   case image_data_type::matrix: {
     const auto mem = static_cast<sycl::ext::oneapi::experimental::image_mem *>(
         data.get_data_ptr());
-    return sycl::ext::oneapi::experimental::create_image(
+    auto img = sycl::ext::oneapi::experimental::create_image(
         *mem, samp, mem->get_descriptor(), q);
+    detail::img_info_map.insert({&img, {data, info}});
+    return img;
   }
   default:
     throw std::runtime_error(
         "Unsupported image_data_type in create_bindless_image!");
     break;
   }
-  return sycl::ext::oneapi::experimental::sampled_image_handle();
+  // Must not reach here.
+  return sycl::ext::oneapi::experimental::create_image(data.get_data_ptr(), 0,
+                                                       samp, desc, q);
+}
+
+/// TODO: ???
+static inline image_data
+get_data(const sycl::ext::oneapi::experimental::sampled_image_handle &img) {
+  return detail::img_info_map[&img].first;
+}
+
+/// TODO: ???
+static inline sampling_info get_sampling_info(
+    const sycl::ext::oneapi::experimental::sampled_image_handle &img) {
+  return detail::img_info_map[&img].second;
 }
 
 /// TODO: ???
 template <class T, int dimensions> class bindless_image_wrapper {
 public:
-  bindless_image_wrapper() : channelDesc(image_channel::create<T>()) {}
+  bindless_image_wrapper() : _channel(image_channel::create<T>()) {}
+  ~bindless_image_wrapper() { destroy_image_handle(_img, get_default_queue()); }
   void attach(void *data, const image_channel &channel, size_t size = UINT_MAX,
               sycl::queue &q = get_default_queue()) {
+    detach(q);
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
         {size}, channel.get_channel_order(), channel.get_channel_type());
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
-    img = sycl::ext::oneapi::experimental::create_image(data, 0, samp, desc, q);
+    // TODO: Use pointer to create image when bindless image support.
+    auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
+    _img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
+    q.ext_oneapi_copy(data, mem->get_handle(), desc);
+    q.wait_and_throw();
   }
   void attach(void *data, size_t size = UINT_MAX,
               sycl::queue &q = get_default_queue()) {
-    attach(data, channelDesc, size, q);
+    attach(data, _channel, size, q);
   }
   void attach(void *data, const image_channel &channel, size_t width,
               size_t height, size_t pitch,
               sycl::queue &q = get_default_queue()) {
+    detach(q);
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
         {width, height}, channel.get_channel_order(),
         channel.get_channel_type());
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
-    img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp, desc,
-                                                        q);
+    _img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp,
+                                                         desc, q);
   }
   void attach(void *data, size_t width, size_t height, size_t pitch,
               sycl::queue &q = get_default_queue()) {
-    attach(data, channelDesc, width, height, pitch, q);
+    attach(data, _channel, width, height, pitch, q);
   }
   void attach(sycl::ext::oneapi::experimental::image_mem *mem,
               const image_channel &channel,
               sycl::queue &q = get_default_queue()) {
+    detach(q);
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
-    img = sycl::ext::oneapi::experimental::create_image(
+    _img = sycl::ext::oneapi::experimental::create_image(
         *mem, samp, mem->get_descriptor(), q);
   }
   void attach(sycl::ext::oneapi::experimental::image_mem *mem,
               sycl::queue &q = get_default_queue()) {
-    attach(mem, channelDesc, q);
+    attach(mem, _channel, q);
   }
   void detach(sycl::queue &q = get_default_queue()) {
-    destroy_image_handle(img, q);
+    destroy_image_handle(_img, q);
   }
-  void set_channel(image_channel channel) { channelDesc = channel; }
+  void set_channel(image_channel channel) { _channel = channel; }
+  void set_channel_size(unsigned channel_num, unsigned channel_size) {
+    return _channel.set_channel_size(channel_num, channel_size);
+  }
+  void set_channel_data_type(image_channel_data_type type) {
+    _channel.set_channel_data_type(type);
+  }
   void set(sycl::addressing_mode addressing_mode) {
     _addressing_mode = addressing_mode;
   }
@@ -991,15 +1029,61 @@ public:
   void set(sycl::filtering_mode filtering_mode) {
     _filtering_mode = filtering_mode;
   }
+  inline sycl::ext::oneapi::experimental::sampled_image_handle get_handle() {
+    return _img;
+  }
 
 private:
-  image_channel channelDesc;
+  image_channel _channel;
   sycl::addressing_mode _addressing_mode = sycl::addressing_mode::clamp_to_edge;
   sycl::coordinate_normalization_mode _coordinate_normalization_mode =
       sycl::coordinate_normalization_mode::unnormalized;
   sycl::filtering_mode _filtering_mode = sycl::filtering_mode::nearest;
-  sycl::ext::oneapi::experimental::sampled_image_handle img;
+  sycl::ext::oneapi::experimental::sampled_image_handle _img;
 };
+
+/// TODO: ???
+static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
+                               size_t w_offset_src, size_t h_offset_src,
+                               void *dest, size_t p, size_t w, size_t h,
+                               sycl::queue &q = get_default_queue()) {
+  auto src_offset = sycl::range<3>(w_offset_src, h_offset_src, 0);
+  auto dest_offset = sycl::range<3>(0, 0, 0);
+  auto dest_extend = sycl::range<3>(0, 0, 0);
+  auto copy_extend =
+      sycl::range<3>(p / detail::get_ele_size(src->get_descriptor()), h, 0);
+  q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_descriptor(), dest,
+                    dest_offset, dest_extend, copy_extend);
+}
+
+/// TODO: ???
+static inline void dpct_memcpy(void *src,
+                               sycl::ext::oneapi::experimental::image_mem *dest,
+                               size_t w_offset_dest, size_t h_offset_dest,
+                               size_t p, size_t w, size_t h,
+                               sycl::queue &q = get_default_queue()) {
+  auto src_offset = sycl::range<3>(0, 0, 0);
+  auto src_extend = sycl::range<3>(0, 0, 0);
+  auto dest_offset = sycl::range<3>(w_offset_dest, h_offset_dest, 0);
+  auto copy_extend =
+      sycl::range<3>(p / detail::get_ele_size(dest->get_descriptor()), h, 0);
+  q.ext_oneapi_copy(src, src_offset, src_extend, dest->get_handle(),
+                    dest_offset, dest->get_descriptor(), copy_extend);
+}
+
+/// TODO: ???
+static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
+                               size_t w_offset_src, size_t h_offset_src,
+                               sycl::ext::oneapi::experimental::image_mem *dest,
+                               size_t w_offset_dest, size_t h_offset_dest,
+                               size_t s, sycl::queue &q = get_default_queue()) {
+  auto temp = (void *)sycl::malloc_host(s, q);
+  auto w =
+      src->get_descriptor().width * detail::get_ele_size(src->get_descriptor());
+  auto h = s / w;
+  dpct_memcpy(src, w_offset_src, h_offset_src, temp, w, w, h, q);
+  dpct_memcpy(temp, dest, w_offset_dest, h_offset_dest, w, w, h, q);
+}
 #endif
 
 namespace detail {

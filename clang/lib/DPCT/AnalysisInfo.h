@@ -2795,7 +2795,7 @@ public:
   virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList, const std::string&QueueStr) {
     if (DpctGlobalInfo::useExtBindlessImages()) {
       AccessorList.emplace_back("auto " + NewVarName + "_handle = " + Name +
-                                ".img;");
+                                ".get_handle();");
       return;
     }
     AccessorList.emplace_back(getAccessorDecl(QueueStr));

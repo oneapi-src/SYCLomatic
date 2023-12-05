@@ -843,11 +843,9 @@ getArgTemplate(size_t Idx, size_t SubIdx) {
     if (Idx >= C->getNumArgs())
       return "";
     auto Type = C->getArg(Idx)->getType();
-    Type->dump();
     std::string TemplateArgStr = "";
     while (const auto *ET = dyn_cast<ElaboratedType>(Type)) {
       Type = ET->getNamedType();
-      Type->dump();
       if (const auto *TST = dyn_cast<TemplateSpecializationType>(Type)) {
         auto TAL = TST->template_arguments();
         if (SubIdx >= TAL.size())
