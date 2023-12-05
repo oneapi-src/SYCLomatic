@@ -48,7 +48,7 @@ void foo() {
   cudaDeviceDisablePeerAccess(peerDevice);
 
   // CHECK:      /*
-  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: Memory accessing across peer devices is a implementation-specific
+  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: Memory accessing across peer devices is an implementation-specific
   // CHECK-NEXT: feature which may not be supported by some SYCL backends and compilers. The
   // CHECK-NEXT: output parameter(s) are set to 0.
   // CHECK-NEXT: */
