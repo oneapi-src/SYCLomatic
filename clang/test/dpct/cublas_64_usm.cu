@@ -107,4 +107,36 @@ void foo() {
   // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::her2k(*handle, uplo, transa, n, k, dpct::get_value(alpha_z, *handle), (std::complex<double>*)A_z, lda, (std::complex<double>*)B_z, ldb, dpct::get_value(beta_d, *handle), (std::complex<double>*)C_z, ldc));
   status = cublasCher2k_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc);
   status = cublasZher2k_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc);
+
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, uplo, transa, n, k, alpha_s, A_s, lda, B_s, ldb, beta_s, C_s, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, uplo, transa, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc));
+  status = cublasSsyrkx_64(handle, uplo, transa, n, k, alpha_s, A_s, lda, B_s, ldb, beta_s, C_s, ldc);
+  status = cublasDsyrkx_64(handle, uplo, transa, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc);
+  status = cublasCsyrkx_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
+  status = cublasZsyrkx_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
+
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::herk(*handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::herk(*handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc));
+  status = cublasCherkx_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc);
+  status = cublasZherkx_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc);
+
+  //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::omatadd(*handle, transa, transb, m, n, dpct::get_value(alpha_s, *handle), A_s, lda, dpct::get_value(beta_s, *handle), B_s, ldb, C_s, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::omatadd(*handle, transa, transb, m, n, dpct::get_value(alpha_d, *handle), A_d, lda, dpct::get_value(beta_d, *handle), B_d, ldb, C_d, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::omatadd(*handle, transa, transb, m, n, dpct::get_value(alpha_c, *handle), (std::complex<float>*)A_c, lda, dpct::get_value(beta_c, *handle), (std::complex<float>*)B_c, ldb, (std::complex<float>*)C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::omatadd(*handle, transa, transb, m, n, dpct::get_value(alpha_z, *handle), (std::complex<double>*)A_z, lda, dpct::get_value(beta_z, *handle), (std::complex<double>*)B_z, ldb, (std::complex<double>*)C_z, ldc));
+  status = cublasSgeam_64(handle, transa, transb, m, n, alpha_s, A_s, lda, beta_s, B_s, ldb, C_s, ldc);
+  status = cublasDgeam_64(handle, transa, transb, m, n, alpha_d, A_d, lda, beta_d, B_d, ldb, C_d, ldc);
+  status = cublasCgeam_64(handle, transa, transb, m, n, alpha_c, A_c, lda, beta_c, B_c, ldb, C_c, ldc);
+  status = cublasZgeam_64(handle, transa, transb, m, n, alpha_z, A_z, lda, beta_z, B_z, ldb, C_z, ldc);
+
+  //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dgmm(*handle, side, m, n, A_s, lda, B_s, ldb, C_s, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dgmm(*handle, side, m, n, A_d, lda, B_d, ldb, C_d, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dgmm(*handle, side, m, n, (std::complex<float>*)A_c, lda, (std::complex<float>*)B_c, ldb, (std::complex<float>*)C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dgmm(*handle, side, m, n, (std::complex<double>*)A_z, lda, (std::complex<double>*)B_z, ldb, (std::complex<double>*)C_z, ldc));
+  status = cublasSdgmm_64(handle, side, m, n, A_s, lda, B_s, ldb, C_s, ldc);
+  status = cublasDdgmm_64(handle, side, m, n, A_d, lda, B_d, ldb, C_d, ldc);
+  status = cublasCdgmm_64(handle, side, m, n, A_c, lda, B_c, ldb, C_c, ldc);
+  status = cublasZdgmm_64(handle, side, m, n, A_z, lda, B_z, ldb, C_z, ldc);
 }
