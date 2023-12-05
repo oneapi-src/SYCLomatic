@@ -603,7 +603,8 @@ static void unifyInputFileFormat() {
 
 static void applyCmakeMigrationRules() {
 
-  std::map<std::string, void (*)(std::string &, size_t &, size_t &)>
+  static const std::map<std::string,
+                        void (*)(std::string &, size_t &, size_t &)>
       DispatchTable = {
           {"cmake_minimum_required", processCmakeMinimumRequired},
       };
@@ -620,7 +621,7 @@ static void applyCmakeMigrationRules() {
         // of cmake_minimum_required() is implemented by implicit migration
         // rule.
         applyImplicitMigrationRule(Buffer, PR.CmakeSyntax,
-                                   DispatchTable[PR.CmakeSyntax]);
+                                   DispatchTable.at(PR.CmakeSyntax));
 
       } else {
         Buffer = applyPatternRewriter(PR, Buffer);
@@ -699,7 +700,7 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
   if (Iter != CmakeBuildInRules.end()) {
     if (PR.Priority == RulePriority::Takeover) {
       assert(Iter->second.Priority < PR.Priority &&
-             "Two same cmake synaxes have \'Takeover\' priority.\n ");
+             "Two same cmake syntaxes have \'Takeover\' priority.\n ");
       CmakeBuildInRules[PR.CmakeSyntax] = PR;
     }
   } else {
