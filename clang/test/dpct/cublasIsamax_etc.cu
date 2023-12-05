@@ -1211,20 +1211,10 @@ int main() {
   // CHECK: oneapi::mkl::blas::column_major::trsm(*handle, (oneapi::mkl::side)foo(), foo() == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(foo()), (oneapi::mkl::diag)foo(), m, n, dpct::get_value(&alpha_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_D)), ldc);
   cublasDtrsm(handle, (cublasSideMode_t)foo(), (cublasFillMode_t)foo(), (cublasOperation_t)foo(), (cublasDiagType_t)foo(), m, n, &alpha_D, A_D, lda, C_D, ldc);
 
-  // CHECK: {
-  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
-  // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
-  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::omatadd(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::trans, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, beta_S, B_S_buf_ct{{[0-9]+}}, ldb, C_S_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: oneapi::mkl::blas::column_major::omatadd(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::trans, m, n, dpct::get_value(&alpha_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_S)), lda, dpct::get_value(&beta_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(B_S)), ldb, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(C_S)), ldc);
   cublasSgeam(handle, CUBLAS_OP_C, CUBLAS_OP_T, m, n, &alpha_S, A_S, lda, &beta_S, B_S, ldb, C_S, ldc);
 
-  // CHECK: {
-  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
-  // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
-  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::omatadd(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::trans, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, beta_D, B_D_buf_ct{{[0-9]+}}, ldb, C_D_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: oneapi::mkl::blas::column_major::omatadd(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::trans, m, n, dpct::get_value(&alpha_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_D)), lda, dpct::get_value(&beta_D, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(B_D)), ldb, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_D)), ldc);
   cublasDgeam(handle, CUBLAS_OP_C, CUBLAS_OP_T, m, n, &alpha_D, A_D, lda, &beta_D, B_D, ldb, C_D, ldc);
   return 0;
 }
