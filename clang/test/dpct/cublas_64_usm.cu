@@ -66,10 +66,10 @@ void foo() {
   status = cublasZsymm_64(handle, side, uplo, m, n, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
 
   cublasDiagType_t diag;
-  //      CHECK: status = DPCT_CHECK_ERROR(dpct::trmm(*handle, side, uplo, transa, diag, m, n, alpha_s, A_s, lda, B_s, ldb, C_s, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::trmm(*handle, side, uplo, transa, diag, m, n, alpha_d, A_d, lda, B_d, ldb, C_d, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::trmm(*handle, side, uplo, transa, diag, m, n, alpha_c, A_c, lda, B_c, ldb, C_c, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::trmm(*handle, side, uplo, transa, diag, m, n, alpha_z, A_z, lda, B_z, ldb, C_z, ldc));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, side, uplo, transa, diag, m, n, alpha_s, A_s, lda, B_s, ldb, C_s, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, side, uplo, transa, diag, m, n, alpha_d, A_d, lda, B_d, ldb, C_d, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, side, uplo, transa, diag, m, n, alpha_c, A_c, lda, B_c, ldb, C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, side, uplo, transa, diag, m, n, alpha_z, A_z, lda, B_z, ldb, C_z, ldc));
   status = cublasStrmm_64(handle, side, uplo, transa, diag, m, n, alpha_s, A_s, lda, B_s, ldb, C_s, ldc);
   status = cublasDtrmm_64(handle, side, uplo, transa, diag, m, n, alpha_d, A_d, lda, B_d, ldb, C_d, ldc);
   status = cublasCtrmm_64(handle, side, uplo, transa, diag, m, n, alpha_c, A_c, lda, B_c, ldb, C_c, ldc);
@@ -108,17 +108,17 @@ void foo() {
   status = cublasCher2k_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc);
   status = cublasZher2k_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc);
 
-  //      CHECK: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, uplo, transa, n, k, alpha_s, A_s, lda, B_s, ldb, beta_s, C_s, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, uplo, transa, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::syrk(*handle, uplo, transa, n, k, alpha_s, A_s, lda, B_s, ldb, beta_s, C_s, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::syrk(*handle, uplo, transa, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::syrk(*handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::syrk(*handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc));
   status = cublasSsyrkx_64(handle, uplo, transa, n, k, alpha_s, A_s, lda, B_s, ldb, beta_s, C_s, ldc);
   status = cublasDsyrkx_64(handle, uplo, transa, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc);
   status = cublasCsyrkx_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
   status = cublasZsyrkx_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
 
-  //      CHECK: status = DPCT_CHECK_ERROR(dpct::herk(*handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc));
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::herk(*handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::herk(*handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::herk(*handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc));
   status = cublasCherkx_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc);
   status = cublasZherkx_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc);
 

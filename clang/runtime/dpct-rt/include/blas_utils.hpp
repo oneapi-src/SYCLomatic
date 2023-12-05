@@ -331,23 +331,30 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 
 template <bool is_hermitian, class T, class Tbeta>
 inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
-                          oneapi::mkl::transpose trans, int n, int k,
-                          const T *alpha, const T *a, int lda, const T *b,
-                          int ldb, const Tbeta *beta, T *c, int ldc) {
-  // For symmetric matrix, this function performs: C = alpha*OP(A)*(OP(B))^T + beta*C
-  // For Hermitian matrix, this function performs: C = alpha*OP(A)*(OP(B))^H + beta*C
-  // The gemmt() function performs: C = alpha*OPA(A)*OPB(B) + beta*C
+                    oneapi::mkl::transpose trans, std::int64_t n,
+                    std::int64_t k, const T *alpha, const T *a,
+                    std::int64_t lda, const T *b, std::int64_t ldb,
+                    const Tbeta *beta, T *c, std::int64_t ldc) {
+  // For symmetric matrix, this function performs:
+  // C = alpha*OP(A)*(OP(B))^T + beta*C
+  // For Hermitian matrix, this function performs:
+  // C = alpha*OP(A)*(OP(B))^H + beta*C
+  // The gemmt() function performs:
+  // C = alpha*OPA(A)*OPB(B) + beta*C
   // So the OPB need be updated before we call gemmt().
   using Ty = typename dpct::DataType<T>::T2;
   using Ts = typename dpct::DataType<Tbeta>::T2;
   Ty alpha_value = dpct::get_value(reinterpret_cast<const Ty *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   oneapi::mkl::transpose trans_A = trans, trans_B = trans;
-  int origin_b_rows = trans == oneapi::mkl::transpose::nontrans ? n : k;
-  int origin_b_cols = trans == oneapi::mkl::transpose::nontrans ? k : n;
+  std::int64_t origin_b_rows =
+      trans == oneapi::mkl::transpose::nontrans ? n : k;
+  std::int64_t origin_b_cols =
+      trans == oneapi::mkl::transpose::nontrans ? k : n;
 
   if ((is_hermitian && trans == oneapi::mkl::transpose::trans) ||
-      (!is_hermitian && !std::is_floating_point_v<Ty> && trans == oneapi::mkl::transpose::conjtrans)) {
+      (!is_hermitian && !std::is_floating_point_v<Ty> &&
+       trans == oneapi::mkl::transpose::conjtrans)) {
     // In this case, OPB need be a conjugate operation,
     // but only notrans, conjtrans and trans are available.
     // So we need do a conjtrans operation first, then do a trans operation.
@@ -355,15 +362,16 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
     auto data_a = get_memory<const Ty>(a);
     auto data_c = get_memory<Ty>(c);
 #ifdef DPCT_USM_LEVEL_NONE
-    auto new_B_buffer = sycl::buffer<Ty, 1>(sycl::range<1>(origin_b_rows * origin_b_cols));
+    auto new_B_buffer =
+        sycl::buffer<Ty, 1>(sycl::range<1>(origin_b_rows * origin_b_cols));
     auto from_buffer = dpct::get_buffer<Ty>(b);
     oneapi::mkl::blas::column_major::omatcopy_batch(
-          q, oneapi::mkl::transpose::conjtrans, origin_b_rows, origin_b_cols,
-          Ts(1.0), from_buffer, ldb, origin_b_rows * ldb, new_B_buffer,
-          origin_b_cols, origin_b_rows * origin_b_cols, 1);
+        q, oneapi::mkl::transpose::conjtrans, origin_b_rows, origin_b_cols,
+        Ts(1.0), from_buffer, ldb, origin_b_rows * ldb, new_B_buffer,
+        origin_b_cols, origin_b_rows * origin_b_cols, 1);
     oneapi::mkl::blas::column_major::gemmt(
-        q, uplo, trans_A, trans_B, n, k, alpha_value,
-        data_a, lda, new_B_buffer, origin_b_cols, beta_value, data_c, ldc);
+        q, uplo, trans_A, trans_B, n, k, alpha_value, data_a, lda, new_B_buffer,
+        origin_b_cols, beta_value, data_c, ldc);
 #else
     working_memory<T> new_B(origin_b_rows * origin_b_cols * sizeof(T), q);
     oneapi::mkl::blas::column_major::omatcopy_batch(
@@ -372,27 +380,27 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
         reinterpret_cast<Ty *>(new_B.get_ptr()), origin_b_cols,
         origin_b_rows * origin_b_cols, 1);
     sycl::event e = oneapi::mkl::blas::column_major::gemmt(
-        q, uplo, trans_A, trans_B, n, k, alpha_value,
-        data_a, lda, reinterpret_cast<Ty *>(new_B.get_ptr()), origin_b_cols,
-        beta_value, data_c, ldc);
+        q, uplo, trans_A, trans_B, n, k, alpha_value, data_a, lda,
+        reinterpret_cast<Ty *>(new_B.get_ptr()), origin_b_cols, beta_value,
+        data_c, ldc);
     new_B.set_event(e);
 #endif
   } else {
     if constexpr (is_hermitian) {
       trans_B = trans == oneapi::mkl::transpose::nontrans
-                  ? oneapi::mkl::transpose::conjtrans
-                  : oneapi::mkl::transpose::nontrans;
+                    ? oneapi::mkl::transpose::conjtrans
+                    : oneapi::mkl::transpose::nontrans;
     } else {
       trans_B = trans == oneapi::mkl::transpose::nontrans
-                  ? oneapi::mkl::transpose::trans
-                  : oneapi::mkl::transpose::nontrans;
+                    ? oneapi::mkl::transpose::trans
+                    : oneapi::mkl::transpose::nontrans;
     }
     auto data_a = get_memory<const Ty>(a);
     auto data_b = get_memory<const Ty>(b);
     auto data_c = get_memory<Ty>(c);
-    oneapi::mkl::blas::column_major::gemmt(
-        q, uplo, trans_A, trans_B, n, k, alpha_value,
-        data_a, lda, data_b, ldb, beta_value, data_c, ldc);
+    oneapi::mkl::blas::column_major::gemmt(q, uplo, trans_A, trans_B, n, k,
+                                           alpha_value, data_a, lda, data_b,
+                                           ldb, beta_value, data_c, ldc);
   }
 }
 
@@ -1636,6 +1644,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
   }
 }
 
+namespace blas {
 /// This routines perform a special rank-k update of a symmetric matrix C by
 /// general matrices A and B.
 /// \param [in] q The queue where the routine should be executed.
@@ -1653,11 +1662,11 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
 /// \param [in] ldc Leading dimension of C.
 template <class T>
 inline void syrk(sycl::queue &q, oneapi::mkl::uplo uplo,
-                  oneapi::mkl::transpose trans, int n, int k, const T *alpha,
-                  const T *a, int lda, const T *b, int ldb, const T *beta, T *c,
-                  int ldc) {
-  detail::rk_impl<false, T, T>(q, uplo, trans, n, k, alpha, a, lda, b,
-                                     ldb, beta, c, ldc);
+                 oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k,
+                 const T *alpha, const T *a, std::int64_t lda, const T *b,
+                 std::int64_t ldb, const T *beta, T *c, std::int64_t ldc) {
+  detail::rk_impl<false, T, T>(q, uplo, trans, n, k, alpha, a, lda, b, ldb,
+                               beta, c, ldc);
 }
 
 /// This routines perform a special rank-k update of a Hermitian matrix C by
@@ -1677,11 +1686,62 @@ inline void syrk(sycl::queue &q, oneapi::mkl::uplo uplo,
 /// \param [in] ldc Leading dimension of C.
 template <class T, class Tbeta>
 inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
+                 oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k,
+                 const T *alpha, const T *a, std::int64_t lda, const T *b,
+                 std::int64_t ldb, const Tbeta *beta, T *c, std::int64_t ldc) {
+  detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b, ldb,
+                                  beta, c, ldc);
+}
+} // namespace blas
+
+/// This routines perform a special rank-k update of a symmetric matrix C by
+/// general matrices A and B.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] uplo Specifies whether C's data is stored in its upper or lower triangle.
+/// \param [in] trans Specifies the operation to apply.
+/// \param [in] n The number of rows and columns in C.
+/// \param [in] k The inner dimension of matrix multiplications.
+/// \param [in] alpha Scaling factor for the rank-k update.
+/// \param [in] a Input matrix A.
+/// \param [in] lda Leading dimension of A.
+/// \param [in] b Input matrix B.
+/// \param [in] ldb Leading dimension of B.
+/// \param [in] beta Scaling factor for the rank-k update.
+/// \param [in, out] c Input/Output matrix C.
+/// \param [in] ldc Leading dimension of C.
+[[deprecated(
+    "Use the 64-bit version dpct::blas::syrk<T, Tbeta> instead.")]] template <class T>
+inline void syrk(sycl::queue &q, oneapi::mkl::uplo uplo,
+                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
+                 const T *a, int lda, const T *b, int ldb, const T *beta, T *c,
+                 int ldc) {
+  detail::rk_impl<false, T, T>(q, uplo, trans, n, k, alpha, a, lda, b, ldb,
+                               beta, c, ldc);
+}
+
+/// This routines perform a special rank-k update of a Hermitian matrix C by
+/// general matrices A and B.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] uplo Specifies whether C's data is stored in its upper or lower triangle.
+/// \param [in] trans Specifies the operation to apply.
+/// \param [in] n The number of rows and columns in C.
+/// \param [in] k The inner dimension of matrix multiplications.
+/// \param [in] alpha Scaling factor for the rank-k update.
+/// \param [in] a Input matrix A.
+/// \param [in] lda Leading dimension of A.
+/// \param [in] b Input matrix B.
+/// \param [in] ldb Leading dimension of B.
+/// \param [in] beta Scaling factor for the rank-k update.
+/// \param [in, out] c Input/Output matrix C.
+/// \param [in] ldc Leading dimension of C.
+[[deprecated("Use the 64-bit version dpct::blas::syrk<T, Tbeta> "
+             "instead.")]] template <class T, class Tbeta>
+inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
                  oneapi::mkl::transpose trans, int n, int k, const T *alpha,
                  const T *a, int lda, const T *b, int ldb, const Tbeta *beta,
                  T *c, int ldc) {
-  detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b,
-                                        ldb, beta, c, ldc);
+  detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b, ldb,
+                                  beta, c, ldc);
 }
 
 /// This routine performs a group of trsm operations. Each trsm solves an
@@ -1755,6 +1815,7 @@ inline void trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
 #endif
 }
 
+namespace blas {
 /// Computes a triangular matrix-general matrix product.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] left_right Specifies A is on the left or right side of the
@@ -1774,8 +1835,9 @@ inline void trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
 template <class T>
 inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
                  oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
-                 oneapi::mkl::diag unit_diag, int m, int n, const T *alpha,
-                 const T *a, int lda, const T *b, int ldb, T *c, int ldc) {
+                 oneapi::mkl::diag unit_diag, std::int64_t m, std::int64_t n,
+                 const T *alpha, const T *a, std::int64_t lda, const T *b,
+                 std::int64_t ldb, T *c, std::int64_t ldc) {
   using Ty = typename DataType<T>::T2;
   auto alpha_val = dpct::get_value(alpha, q);
   if (b != c) {
@@ -1786,6 +1848,34 @@ inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
   oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
                                         unit_diag, m, n, alpha_val, data_a, lda,
                                         data_c, ldc);
+}
+} // namespace blas
+
+/// Computes a triangular matrix-general matrix product.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] left_right Specifies A is on the left or right side of the
+/// multiplication.
+/// \param [in] upper_lower Specifies A is upper or lower triangular.
+/// \param [in] trans Specifies the operation applied to A.
+/// \param [in] unit_diag Specifies whether A is unit triangular.
+/// \param [in] m Number of rows of B.
+/// \param [in] n Number of columns of B.
+/// \param [in] alpha Scaling factor for the matrix-matrix product.
+/// \param [in] a Input matrices A.
+/// \param [in] lda Leading dimension of the matrices A.
+/// \param [in] b Input matrices B.
+/// \param [in] ldb Leading dimension of the matrices B.
+/// \param [out] c Output matrices C.
+/// \param [in] ldc Leading dimension of the matrices C.
+[[deprecated(
+    "Use the 64-bit version dpct::blas::trmm<T> instead.")]] template <class T>
+inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
+                 oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
+                 oneapi::mkl::diag unit_diag, int m, int n, const T *alpha,
+                 const T *a, int lda, const T *b, int ldb, T *c, int ldc) {
+  blas::trmm<T>(q, left_right, upper_lower, trans, unit_diag, (std::int64_t)m,
+                (std::int64_t)n, alpha, a, (std::int64_t)lda, b,
+                (std::int64_t)ldb, c, (std::int64_t)ldc);
 }
 
 } // namespace dpct

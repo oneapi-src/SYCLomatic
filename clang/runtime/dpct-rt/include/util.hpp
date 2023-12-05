@@ -61,8 +61,10 @@ template <typename T> struct DataType<sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
 
-inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
-                            int from_ld, int rows, int cols, int elem_size,
+inline void matrix_mem_copy(void *to_ptr, const void *from_ptr,
+                            std::int64_t to_ld, std::int64_t from_ld,
+                            std::int64_t rows, std::int64_t cols,
+                            std::int64_t elem_size,
                             memcpy_direction direction = automatic,
                             sycl::queue &queue = dpct::get_default_queue(),
                             bool async = false) {
@@ -73,11 +75,12 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
   if (to_ld == from_ld) {
     size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
     if (async)
-      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                          copy_size, direction);
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction);
     else
-      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                          copy_size, direction).wait();
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction)
+          .wait();
   } else {
     if (async)
       detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
@@ -88,6 +91,18 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
           queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
           elem_size * rows, cols, direction));
   }
+}
+
+[[deprecated(
+    "Use the 64-bit version dpct::matrix_mem_copy instead.")]] inline void
+matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld, int from_ld,
+                int rows, int cols, int elem_size,
+                memcpy_direction direction = automatic,
+                sycl::queue &queue = dpct::get_default_queue(),
+                bool async = false) {
+  matrix_mem_copy(to_ptr, from_ptr, (std::int64_t)to_ld, (std::int64_t)from_ld,
+                  (std::int64_t)rows, (std::int64_t)cols,
+                  (std::int64_t)elem_size, direction, queue, async);
 }
 
 /// Copy matrix data. The default leading dimension is column.
@@ -101,6 +116,30 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
 /// \param [in] queue The queue where the routine should be executed.
 /// \param [in] async If this argument is true, the return of the function
 /// does NOT guarantee the copy is completed.
+template <typename T>
+inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, std::int64_t to_ld,
+                            std::int64_t from_ld, std::int64_t rows,
+                            std::int64_t cols,
+                            memcpy_direction direction = automatic,
+                            sycl::queue &queue = dpct::get_default_queue(),
+                            bool async = false) {
+  using Ty = typename DataType<T>::T2;
+  matrix_mem_copy((void *)to_ptr, (void *)from_ptr, to_ld, from_ld, rows, cols,
+                  (std::int64_t)sizeof(Ty), direction, queue, async);
+}
+
+/// Copy matrix data. The default leading dimension is column.
+/// \param [out] to_ptr A pointer points to the destination location.
+/// \param [in] from_ptr A pointer points to the source location.
+/// \param [in] to_ld The leading dimension the destination matrix.
+/// \param [in] from_ld The leading dimension the source matrix.
+/// \param [in] rows The number of rows of the source matrix.
+/// \param [in] cols The number of columns of the source matrix.
+/// \param [in] direction The direction of the data copy.
+/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] async If this argument is true, the return of the function
+/// does NOT guarantee the copy is completed.
+[[deprecated("Use the 64-bit version dpct::matrix_mem_copy<T> instead.")]]
 template <typename T>
 inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
                             int from_ld, int rows, int cols,

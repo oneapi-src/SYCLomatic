@@ -185,7 +185,7 @@
 // cublasDtrmm-NEXT:               alpha /*const double **/, a /*const double **/, lda /*int*/,
 // cublasDtrmm-NEXT:               b /*const double **/, ldb /*int*/, c /*double **/, ldc /*int*/);
 // cublasDtrmm-NEXT: Is migrated to:
-// cublasDtrmm-NEXT:   dpct::trmm(*handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
+// cublasDtrmm-NEXT:   dpct::blas::trmm(*handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZher | FileCheck %s -check-prefix=cublasZher
 // cublasZher: CUDA API:
@@ -223,7 +223,7 @@
 // cublasCsyrkx-NEXT:                lda /*int*/, b /*const cuComplex **/, ldb /*int*/,
 // cublasCsyrkx-NEXT:                beta /*const cuComplex **/, c /*cuComplex **/, ldc /*int*/);
 // cublasCsyrkx-NEXT: Is migrated to:
-// cublasCsyrkx-NEXT:   dpct::syrk(*handle, upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasCsyrkx-NEXT:   dpct::blas::syrk(*handle, upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetPointerMode | FileCheck %s -check-prefix=cublasSetPointerMode
 // cublasSetPointerMode: CUDA API:

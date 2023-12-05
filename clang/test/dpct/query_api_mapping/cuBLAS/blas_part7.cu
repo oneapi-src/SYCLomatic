@@ -146,7 +146,7 @@
 // cublasCherkx-NEXT:                lda /*int*/, b /*const cuComplex **/, ldb /*int*/,
 // cublasCherkx-NEXT:                beta /*const float **/, c /*cuComplex **/, ldc /*int*/);
 // cublasCherkx-NEXT: Is migrated to:
-// cublasCherkx-NEXT:   dpct::herk(*handle, upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasCherkx-NEXT:   dpct::blas::herk(*handle, upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgeam | FileCheck %s -check-prefix=cublasCgeam
 // cublasCgeam: CUDA API:
@@ -293,7 +293,7 @@
 // cublasCtrmm-NEXT:               b /*const cuComplex **/, ldb /*int*/, c /*cuComplex **/,
 // cublasCtrmm-NEXT:               ldc /*int*/);
 // cublasCtrmm-NEXT: Is migrated to:
-// cublasCtrmm-NEXT:   dpct::trmm(*handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
+// cublasCtrmm-NEXT:   dpct::blas::trmm(*handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgbmv | FileCheck %s -check-prefix=cublasCgbmv
 // cublasCgbmv: CUDA API:
