@@ -26,9 +26,19 @@ namespace dpct {
 namespace experimental {
 
 class Schema;
-// Key is name of schema,
-static std::map<std::string, std::shared_ptr<Schema>> schema_map;
 
+static std::map<std::string, std::shared_ptr<Schema>> schema_map;
+static std::map<std::string, size_t> schema_size;
+size_t get_size_of_schema(const std::string &schema) {
+  if (schema_size.find(schema) == schema_size.end()) {
+    schema_size[schema] = 0; // '0' indicates that the size will match the type
+                             // size specified in the schema string
+  }
+  return schema_size[schema];
+}
+void set_size_of_schema(const std::string &schema, size_t size) {
+  schema_size[schema] = size;
+}
 enum class ValType { SCALAR, POINTER, ARRAY, POINTERTOPOINTER };
 enum class MemLoc { NONE, HOST, DEVICE };
 enum class schema_type {
@@ -315,9 +325,6 @@ inline bool is_device_point(void *p) {
 inline void get_val_from_addr(std::string &value, std::shared_ptr<Schema> schema, void *addr,
                                      size_t size) {
   void *h_addr = addr;
-  if (size == 0) {
-    size = schema->get_type_size();
-  }
   if (is_device_point(addr)) {
     h_addr = malloc(size);
     copy_mem_to_device(h_addr, addr, size);
@@ -361,6 +368,10 @@ void process_var(std::string &log, const std::string &schema_str, long value, si
   if (schema == nullptr) {
     error_exit("Cannot parse the variable schema, please double check.\n");
   }
+  if (size == 0) {
+    size = schema->get_type_size();
+  }
+  set_size_of_schema(schema_str, size);
   switch (schema->get_val_type()) {
   case ValType::SCALAR:
     get_val_from_addr(log, schema, (void *)&value, size);
