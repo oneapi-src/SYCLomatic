@@ -3732,10 +3732,11 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseSpMM_preprocess", "cusparseSpGEMM_compute",
         "cusparseSpGEMM_copy", "cusparseSpGEMM_createDescr",
         "cusparseSpGEMM_destroyDescr", "cusparseSpGEMM_workEstimation",
-        "cusparseCsr2cscEx2_bufferSize", "cusparseCsr2cscEx2",
-        "cusparseSpSV_createDescr", "cusparseSpSV_destroyDescr",
-        "cusparseSpSV_solve", "cusparseSpSV_bufferSize",
-        "cusparseSpSV_analysis");
+        "cusparseScsr2csc", "cusparseDcsr2csc", "cusparseCcsr2csc",
+        "cusparseZcsr2csc", "cusparseCsr2cscEx2_bufferSize",
+        "cusparseCsr2cscEx2", "cusparseSpSV_createDescr",
+        "cusparseSpSV_destroyDescr", "cusparseSpSV_solve",
+        "cusparseSpSV_bufferSize", "cusparseSpSV_analysis");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
