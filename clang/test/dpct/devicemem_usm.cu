@@ -82,51 +82,58 @@ int main() {
   cudaMalloc((void **)&d_out, array_size);
 
   const int threads_per_block = NUM_ELEMENTS;
-  // CHECK:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       t1.init();
+  //      CHECK:   {
+  // CHECK-NEXT:     t1.init();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto t1_ptr_ct1 = t1.get_ptr();
+  // CHECK-NEXT:     q_ct1.submit(
+  // CHECK-NEXT:       [&](sycl::handler &cgh) {
+  // CHECK-NEXT:         auto t1_ptr_ct1 = t1.get_ptr();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           member_acc(*t1_ptr_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
+  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
+  // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:             member_acc(*t1_ptr_ct1);
+  // CHECK-NEXT:           });
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   }
   member_acc<<<1, threads_per_block>>>();
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       in.init();
+  //      CHECK:   {
+  // CHECK-NEXT:     in.init();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto in_ptr_ct1 = in.get_ptr();
+  // CHECK-NEXT:     q_ct1.submit(
+  // CHECK-NEXT:       [&](sycl::handler &cgh) {
+  // CHECK-NEXT:         auto in_ptr_ct1 = in.get_ptr();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel1(d_out, item_ct1, in_ptr_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
+  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
+  // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:             kernel1(d_out, item_ct1, in_ptr_ct1);
+  // CHECK-NEXT:           });
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   }
   kernel1<<<1, threads_per_block>>>(d_out);
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       al.init();
-  // CHECK-NEXT:       fx.init();
-  // CHECK-NEXT:       fy.init();
-  // CHECK-NEXT:       tmp.init();
+  //      CHECK:   {
+  // CHECK-NEXT:     al.init();
+  // CHECK-NEXT:     fx.init();
+  // CHECK-NEXT:     fy.init();
+  // CHECK-NEXT:     tmp.init();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto al_ptr_ct1 = al.get_ptr();
-  // CHECK-NEXT:       auto fx_ptr_ct1 = fx.get_ptr();
-  // CHECK-NEXT:       auto tmp_ptr_ct1 = tmp.get_ptr();
+  // CHECK-NEXT:     q_ct1.submit(
+  // CHECK-NEXT:       [&](sycl::handler &cgh) {
+  // CHECK-NEXT:         auto al_ptr_ct1 = al.get_ptr();
+  // CHECK-NEXT:         auto fx_ptr_ct1 = fx.get_ptr();
+  // CHECK-NEXT:         auto tmp_ptr_ct1 = tmp.get_ptr();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto fy_acc_ct1 = fy.get_access(cgh);
+  // CHECK-NEXT:         auto fy_acc_ct1 = fy.get_access(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel2(d_out, item_ct1, *al_ptr_ct1, fx_ptr_ct1, fy_acc_ct1, tmp_ptr_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
+  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
+  // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:             kernel2(d_out, item_ct1, *al_ptr_ct1, fx_ptr_ct1, fy_acc_ct1, tmp_ptr_ct1);
+  // CHECK-NEXT:           });
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   }
   kernel2<<<1, threads_per_block>>>(d_out);
 
   cudaMemcpy(h_out, d_out, array_size, cudaMemcpyDeviceToHost);

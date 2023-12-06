@@ -124,6 +124,10 @@ static std::map<clang::tooling::UnifiedPath /*file name*/, bool /*is crlf*/>
 static std::map<std::string /*variable name*/, std::string /*value*/>
     CmakeVarMap;
 
+static std::map<std::string /*cmake syntax*/,
+                MetaRuleObject::PatternRewriter /*cmake migraiton rule*/>
+    CmakeBuildInRules;
+
 void cmakeSyntaxProcessed(std::string &Input);
 
 static std::string readFile(const clang::tooling::UnifiedPath &Name) {
@@ -499,7 +503,10 @@ void processCmakeMinimumRequired(std::string &Input, size_t &Size,
 // Implicit migration rule is used when the migration logic is difficult to be
 // described with yaml based rule syntax. Currently only migration of
 // cmake_minimum_required() is implemented by implicit migration rule.
-void applyImplicitMigrationRules(std::string &Input) {
+void applyImplicitMigrationRule(std::string &Input,
+                                const std::string &CmakeSyntax,
+                                void (*Func)(std::string &, size_t &,
+                                             size_t &)) {
 
   size_t Size = Input.size();
   size_t Index = 0;
@@ -523,8 +530,9 @@ void applyImplicitMigrationRules(std::string &Input) {
     if (Index < Size && Input[Index] == '(') {
       std::string Command = Input.substr(Begin, End - Begin);
 
-      if (Command == "cmake_minimum_required") {
-        processCmakeMinimumRequired(Input, Size, Index);
+      // Process implict cmake syntax
+      if (Command == CmakeSyntax) {
+        (*Func)(Input, Size, Index);
       }
 
       // Go the ')' of cmake command
@@ -594,26 +602,30 @@ static void unifyInputFileFormat() {
 }
 
 static void applyCmakeMigrationRules() {
+
+  static const std::map<std::string,
+                        void (*)(std::string &, size_t &, size_t &)>
+      DispatchTable = {
+          {"cmake_minimum_required", processCmakeMinimumRequired},
+      };
+
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &Buffer = Entry.second;
 
-    // Apply implicit migration rules
-    applyImplicitMigrationRules(Buffer);
-
     // Apply user define migration rules
-    for (const auto &PR : MapNames::PatternRewriters) {
+    for (const auto &CmakeSyntaxEntry : CmakeBuildInRules) {
+      const auto &PR = CmakeSyntaxEntry.second;
+      if (PR.In.empty() && PR.Out.empty()) {
+        // Implicit migration rule is used when the migration logic is difficult
+        // to be described with yaml based rule syntax. Currently only migration
+        // of cmake_minimum_required() is implemented by implicit migration
+        // rule.
+        applyImplicitMigrationRule(Buffer, PR.CmakeSyntax,
+                                   DispatchTable.at(PR.CmakeSyntax));
 
-      // Once implicit migration rule for some cmake syntax is implemented, the
-      // yaml based rule for the same cmake syntax will be skipped and a msg is
-      // emitted to notify the user. Currently, only migration of
-      // cmake_minimum_required() is implemented by implicit migration rule.
-      if (PR.RuleId.find("cmake_minimum_required") != std::string::npos) {
-        llvm::outs() << "Migration for cmake_minimum_required has been "
-                        "implemented as implicit rule, so migration rule \'"
-                     << PR.RuleId << "\' is skipped.\n ";
-        continue;
+      } else {
+        Buffer = applyPatternRewriter(PR, Buffer);
       }
-      Buffer = applyPatternRewriter(PR, Buffer);
     }
   }
 }
@@ -656,11 +668,42 @@ static void storeBufferToFile() {
   }
 }
 
+// cmake systaxes need to be processed by implicit migration rules, as they are
+// difficult to be described with yaml based rule syntax.
+static const std::vector<std::string> ImplicitMigrationRules = {
+    "cmake_minimum_required"};
+
+static void reserveImplicitMigrationRules() {
+  for (const auto &Rule : ImplicitMigrationRules) {
+    MetaRuleObject::PatternRewriter PrePR;
+    PrePR.CmakeSyntax = Rule;
+    CmakeBuildInRules[PrePR.CmakeSyntax] = PrePR;
+  }
+}
+
 void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot) {
   loadBufferFromFile(InRoot, OutRoot);
   unifyInputFileFormat();
+  reserveImplicitMigrationRules();
   doCmakeScriptAnalysis();
   applyCmakeMigrationRules();
   storeBufferToFile();
+}
+
+void registerCmakeMigrationRule(MetaRuleObject &R) {
+  auto PR =
+      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
+                                      R.RuleId, R.CmakeSyntax, R.Priority);
+
+  auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
+  if (Iter != CmakeBuildInRules.end()) {
+    if (PR.Priority == RulePriority::Takeover) {
+      assert(Iter->second.Priority < PR.Priority &&
+             "Two same cmake syntaxes have \'Takeover\' priority.\n ");
+      CmakeBuildInRules[PR.CmakeSyntax] = PR;
+    }
+  } else {
+    CmakeBuildInRules[PR.CmakeSyntax] = PR;
+  }
 }

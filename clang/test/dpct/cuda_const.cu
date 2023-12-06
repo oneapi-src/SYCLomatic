@@ -130,34 +130,38 @@ int main(int argc, char **argv) {
   // CHECK:  dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
 
-  // CHECK:   q_ct1.submit(
+  //      CHECK:   {
+  // CHECK-NEXT:     t1.init();
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     q_ct1.submit(
+  // CHECK-NEXT:       [&](sycl::handler &cgh) {
+  // CHECK-NEXT:         auto t1_acc_ct1 = t1.get_access(cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:             member_acc(t1_acc_ct1);
+  // CHECK-NEXT:           });
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   }
+  member_acc<<<1, 1>>>();
+  //      CHECK: {
+  // CHECK-NEXT:   const_angle.init();
+  // CHECK-NEXT:   const_ptr.init();
+  // CHECK-EMPTY:
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       t1.init();
+  // CHECK-NEXT:       auto const_angle_acc_ct1 = const_angle.get_access(cgh);
+  // CHECK-NEXT:       auto const_ptr_acc_ct1 = const_ptr.get_access(cgh);
+  // CHECK-NEXT:       auto d_array_acc_ct0 = dpct::get_access(d_array, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto t1_acc_ct1 = t1.get_access(cgh);
-  // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           member_acc(t1_acc_ct1);
+  // CHECK-NEXT:           simple_kernel((float *)(&d_array_acc_ct0[0]), item_ct1, const_angle_acc_ct1.get_pointer(), const_ptr_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  member_acc<<<1, 1>>>();
-  // CHECK: q_ct1.submit(
-  // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     const_angle.init();
-  // CHECK-NEXT:     const_ptr.init();
-  // CHECK-EMPTY:
-  // CHECK-NEXT:     auto const_angle_acc_ct1 = const_angle.get_access(cgh);
-  // CHECK-NEXT:     auto const_ptr_acc_ct1 = const_ptr.get_access(cgh);
-  // CHECK-NEXT:     auto d_array_acc_ct0 = dpct::get_access(d_array, cgh);
-  // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
-  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         simple_kernel((float *)(&d_array_acc_ct0[0]), item_ct1, const_angle_acc_ct1.get_pointer(), const_ptr_acc_ct1.get_pointer());
-  // CHECK-NEXT:       });
-  // CHECK-NEXT:   });
+  // CHECK-NEXT: }
   simple_kernel<<<size / 64, 64>>>(d_array);
 
   float hangle_h[360];
@@ -174,21 +178,23 @@ int main(int argc, char **argv) {
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
   cudaStream_t stream;
-  // CHECK:  stream->submit(
-  // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     const_float.init(*stream);
-  // CHECK-NEXT:     const_one.init(*stream);
+  //      CHECK:  {
+  // CHECK-NEXT:    const_float.init(*stream);
+  // CHECK-NEXT:    const_one.init(*stream);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     auto const_float_acc_ct1 = const_float.get_access(cgh);
-  // CHECK-NEXT:     auto const_one_acc_ct1 = const_one.get_access(cgh);
-  // CHECK-NEXT:     auto d_array_acc_ct0 = dpct::get_access(d_array, cgh);
+  // CHECK-NEXT:    stream->submit(
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto const_float_acc_ct1 = const_float.get_access(cgh);
+  // CHECK-NEXT:       auto const_one_acc_ct1 = const_one.get_access(cgh);
+  // CHECK-NEXT:       auto d_array_acc_ct0 = dpct::get_access(d_array, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
-  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         simple_kernel_one((float *)(&d_array_acc_ct0[0]), item_ct1, const_float_acc_ct1, const_one_acc_ct1);
-  // CHECK-NEXT:        });
-  // CHECK-NEXT:   });
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           simple_kernel_one((float *)(&d_array_acc_ct0[0]), item_ct1, const_float_acc_ct1, const_one_acc_ct1);
+  // CHECK-NEXT:          });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT:  }
   simple_kernel_one<<<size / 64, 64, 0, stream>>>(d_array);
 
   // CHECK:  dpct::dpct_memcpy(hangle_h, d_array, 360 * sizeof(float), dpct::device_to_host);
@@ -247,10 +253,10 @@ __device__ void foo() {
 //CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
 //CHECK-NEXT:}
 //CHECK-NEXT:void foo1() {
+//CHECK-NEXT:  aaa.init();
+//CHECK-EMPTY:
 //CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      aaa.init();
-//CHECK-EMPTY:
 //CHECK-NEXT:      auto aaa_acc_ct1 = aaa.get_access(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
