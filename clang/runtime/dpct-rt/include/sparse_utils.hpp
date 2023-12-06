@@ -246,7 +246,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
   auto data_c = dpct::detail::get_memory<Ty>(c);
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
-    oneapi::mkl::sparse::gemm(queue, oneapi::mkl::layout::row_major, trans,
+    oneapi::mkl::sparse::gemm(queue, oneapi::mkl::layout::col_major, trans,
                               oneapi::mkl::transpose::nontrans, alpha_value,
                               *sparse_matrix_handle, data_b, dense_cols, ldb,
                               beta_value, data_c, ldc);

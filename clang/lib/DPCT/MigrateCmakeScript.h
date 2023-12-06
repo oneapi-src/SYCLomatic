@@ -8,6 +8,7 @@
 
 #ifndef DPCT_MIGRATE_CMAKE_SCRIPT_H
 #define DPCT_MIGRATE_CMAKE_SCRIPT_H
+#include "Rules.h"
 
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Core/UnifiedPath.h"
@@ -27,4 +28,6 @@ void collectCmakeScriptsSpecified(
 void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot);
 bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
+
+void registerCmakeMigrationRule(MetaRuleObject &R);
 #endif

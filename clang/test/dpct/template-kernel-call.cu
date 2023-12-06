@@ -251,6 +251,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:  T b;
 // CHECK-NEXT:  {
 // CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_out_of_order_queue().get_device(), {sycl::aspect::fp64});
+// CHECK-EMPTY:
 // CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      sycl::local_accessor<int, 1> aaa_acc_ct1(sycl::range<1>(0), cgh);
