@@ -392,10 +392,11 @@ FEATURE_REQUEST_FACTORY(
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cudnnDeriveBNTensorDescriptor",
-                       CALL(MapNames::getDpctNamespace() +
-                                "dnnl::derive_batch_normalization_memory_desc",
-                            ARG_WC(0), ARG_WC(1), ARG_WC(2))))
+    CALL_FACTORY_ENTRY(
+        "cudnnDeriveBNTensorDescriptor",
+        CALL(MapNames::getDpctNamespace() +
+                 "dnnl::engine_ext::derive_batch_normalization_memory_desc",
+             ARG_WC(0), ARG_WC(1), ARG_WC(2))))
 
 ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cudnnGetBatchNormalizationBackwardExWorkspaceSize",
@@ -416,10 +417,11 @@ FEATURE_REQUEST_FACTORY(
 // Normalization Layer
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cudnnDeriveNormTensorDescriptor",
-                       CALL(MapNames::getDpctNamespace() +
-                                "dnnl::derive_batch_normalization_memory_desc",
-                            ARG_WC(0), ARG_WC(1), ARG_WC(2), ARG_WC(3))))
+    CALL_FACTORY_ENTRY(
+        "cudnnDeriveNormTensorDescriptor",
+        CALL(MapNames::getDpctNamespace() +
+                 "dnnl::engine_ext::derive_batch_normalization_memory_desc",
+             ARG_WC(0), ARG_WC(1), ARG_WC(2), ARG_WC(3))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetNormalizationForwardTrainingWorkspaceSize",
