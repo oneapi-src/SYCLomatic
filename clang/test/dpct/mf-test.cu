@@ -26,20 +26,22 @@ void test() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
 
-  // CHECK:     q_ct1.submit(
-  // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         extern dpct::global_memory<volatile int, 0> g_mutex;
+  //      CHECK:     {
+  // CHECK-NEXT:       g_mutex.init();
   // CHECK-EMPTY:
-  // CHECK-NEXT:         g_mutex.init();
+  // CHECK-NEXT:       q_ct1.submit(
+  // CHECK-NEXT:         [&](sycl::handler &cgh) {
+  // CHECK-NEXT:           extern dpct::global_memory<volatile int, 0> g_mutex;
   // CHECK-EMPTY:
-  // CHECK-NEXT:         auto g_mutex_acc_ct1 = g_mutex.get_access(cgh);
+  // CHECK-NEXT:           auto g_mutex_acc_ct1 = g_mutex.get_access(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class Reset_kernel_parameters_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:             Reset_kernel_parameters(g_mutex_acc_ct1);
-  // CHECK-NEXT:           });
-  // CHECK-NEXT:       });
+  // CHECK-NEXT:           cgh.parallel_for<dpct_kernel_name<class Reset_kernel_parameters_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:               Reset_kernel_parameters(g_mutex_acc_ct1);
+  // CHECK-NEXT:             });
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     }
   Reset_kernel_parameters<<<1,1>>>();
   // CHECK: q_ct1.parallel_for<dpct_kernel_name<class cuda_hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
@@ -60,12 +62,15 @@ void test() {
   // CHECK-NEXT:       });
   kernel_extern<<<1,1>>>();
 
-  // CHECK:   dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64, sycl::aspect::fp16});
-  // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class test_fp_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
-  // CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:       test_fp();
-  // CHECK-NEXT:     });
+  //      CHECK:   {
+  // CHECK-NEXT:     dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64, sycl::aspect::fp16});
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     q_ct1.parallel_for<dpct_kernel_name<class test_fp_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         test_fp();
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   }
   test_fp<<<1, 1>>>();
 }
 
