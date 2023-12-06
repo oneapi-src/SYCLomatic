@@ -629,6 +629,34 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetConvolutionForwardAlgorithm", DEREF(ARG_WC(7)),
     ARG("dnnl::algorithm::convolution_auto")))
 
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    MULTI_STMTS_FACTORY_ENTRY(
+        "cudnnGetConvolutionBackwardFilterAlgorithm_v7", true, false, true,
+        true,
+        BO(BinaryOperatorKind::BO_Assign,
+           MEMBER_EXPR(DEREF(ARG_WC(7)), false, LITERAL("algo")),
+           ARG("dnnl::algorithm::convolution_auto")),
+        BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(6)), ARG("1"))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    MULTI_STMTS_FACTORY_ENTRY(
+        "cudnnGetConvolutionBackwardDataAlgorithm_v7", true, false, true, true,
+        BO(BinaryOperatorKind::BO_Assign,
+           MEMBER_EXPR(DEREF(ARG_WC(7)), false, LITERAL("algo")),
+           ARG("dnnl::algorithm::convolution_auto")),
+        BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(6)), ARG("1"))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    MULTI_STMTS_FACTORY_ENTRY(
+        "cudnnGetConvolutionForwardAlgorithm_v7", true, false, true, true,
+        BO(BinaryOperatorKind::BO_Assign,
+           MEMBER_EXPR(DEREF(ARG_WC(7)), false, LITERAL("algo")),
+           ARG("dnnl::algorithm::convolution_auto")),
+        BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(6)), ARG("1"))))
+
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetConvolutionMathType", ARG_WC(0), false,
@@ -638,6 +666,24 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     MULTI_STMTS_FACTORY_ENTRY(
         "cudnnFindConvolutionForwardAlgorithm", true, false, true, true,
+        BO(BinaryOperatorKind::BO_Assign,
+           MEMBER_EXPR(DEREF(ARG_WC(7)), false, LITERAL("algo")),
+           ARG("dnnl::algorithm::convolution_auto")),
+        BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(6)), ARG("1"))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    MULTI_STMTS_FACTORY_ENTRY(
+        "cudnnFindConvolutionBackwardDataAlgorithm", true, false, true, true,
+        BO(BinaryOperatorKind::BO_Assign,
+           MEMBER_EXPR(DEREF(ARG_WC(7)), false, LITERAL("algo")),
+           ARG("dnnl::algorithm::convolution_auto")),
+        BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(6)), ARG("1"))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    MULTI_STMTS_FACTORY_ENTRY(
+        "cudnnFindConvolutionBackwardFilterAlgorithm", true, false, true, true,
         BO(BinaryOperatorKind::BO_Assign,
            MEMBER_EXPR(DEREF(ARG_WC(7)), false, LITERAL("algo")),
            ARG("dnnl::algorithm::convolution_auto")),
