@@ -179,6 +179,9 @@ The end to end test executes the migration, build and run steps. Follow instruct
 * [CUDA\* to SYCL\* Catalog](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/migrate-cuda-to-sycl-library.html): a list of successful SYCL migrated applications
 * [Awesome oneAPI](https://github.com/oneapi-community/awesome-oneapi): an awesome list of oneAPI projects
 * More information on oneAPI and DPC++ is available at [https://www.oneapi.com/](https://www.oneapi.com/)
+* [Migrate from CUDA* to C++ with SYCL\*](https://developer.intel.com/cuda2sycl)
+* [oneAPI Ecosystem Support](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ecosystem-support.html)
+* [oneAPI Centers of Excellence](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/academic-program/centers-of-excellence.html)
 
 ## License
 

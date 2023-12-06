@@ -24,6 +24,7 @@
 #include "NCCLAPIMigration.h"
 #include "OptimizeMigration.h"
 #include "SaveNewFiles.h"
+#include "SpBLASAPIMigration.h"
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
@@ -3601,14 +3602,15 @@ REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUSPARSE_STATUS.*)|(CUSPARSE_POINTER_MODE.*)|"
-                                "(CUSPARSE_ALG.*)"))))
+                                "(CUSPARSE_ALG.*)|(CUSPARSE_SOLVE_POLICY.*)"))))
                     .bind("SPBLASStatusConstants"),
                 this);
   MF.addMatcher(
-      declRefExpr(to(enumConstantDecl(matchesName(
-                      "(CUSPARSE_OPERATION_.*)|(CUSPARSE_FILL_MODE_.*)|("
-                      "CUSPARSE_DIAG_TYPE_.*)|(CUSPARSE_INDEX_.*)|(CUSPARSE_"
-                      "MATRIX_TYPE_.*)|(CUSPARSE_ORDER_.*)"))))
+      declRefExpr(
+          to(enumConstantDecl(matchesName(
+              "(CUSPARSE_OPERATION_.*)|(CUSPARSE_FILL_MODE_.*)|("
+              "CUSPARSE_DIAG_TYPE_.*)|(CUSPARSE_INDEX_.*)|(CUSPARSE_"
+              "MATRIX_TYPE_.*)|(CUSPARSE_ORDER_.*)|(CUSPARSE_ACTION_.*)"))))
           .bind("SPBLASNamedValueConstants"),
       this);
 }
@@ -3692,13 +3694,25 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseGetMatIndexBase", "cusparseSetMatDiagType",
         "cusparseGetMatDiagType", "cusparseSetMatFillMode",
         "cusparseGetMatFillMode", "cusparseCreateSolveAnalysisInfo",
-        "cusparseDestroySolveAnalysisInfo",
+        "cusparseDestroySolveAnalysisInfo", "cusparseCreateCsrsv2Info",
+        "cusparseDestroyCsrsv2Info",
         /*level 2*/
         "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv", "cusparseZcsrmv",
         "cusparseScsrmv_mp", "cusparseDcsrmv_mp", "cusparseCcsrmv_mp",
         "cusparseZcsrmv_mp", "cusparseCsrmvEx", "cusparseCsrmvEx_bufferSize",
         "cusparseScsrsv_analysis", "cusparseDcsrsv_analysis",
         "cusparseCcsrsv_analysis", "cusparseZcsrsv_analysis",
+        "cusparseScsrsv_solve", "cusparseDcsrsv_solve", "cusparseCcsrsv_solve",
+        "cusparseZcsrsv_solve", "cusparseScsrsv2_bufferSize",
+        "cusparseDcsrsv2_bufferSize", "cusparseCcsrsv2_bufferSize",
+        "cusparseZcsrsv2_bufferSize", "cusparseScsrsv2_analysis",
+        "cusparseDcsrsv2_analysis", "cusparseCcsrsv2_analysis",
+        "cusparseZcsrsv2_analysis", "cusparseScsrsv2_solve",
+        "cusparseDcsrsv2_solve", "cusparseCcsrsv2_solve",
+        "cusparseZcsrsv2_solve", "cusparseCcsrsv2_bufferSizeExt",
+        "cusparseDcsrsv2_bufferSizeExt", "cusparseScsrsv2_bufferSizeExt",
+        "cusparseZcsrsv2_bufferSizeExt", "cusparseCsrsv_analysisEx",
+        "cusparseCsrsv_solveEx",
         /*level 3*/
         "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
         /*Generic*/
@@ -3717,6 +3731,7 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseSpMM_preprocess", "cusparseSpGEMM_compute",
         "cusparseSpGEMM_copy", "cusparseSpGEMM_createDescr",
         "cusparseSpGEMM_destroyDescr", "cusparseSpGEMM_workEstimation",
+        "cusparseCsr2cscEx2_bufferSize", "cusparseCsr2cscEx2",
         "cusparseSpSV_createDescr", "cusparseSpSV_destroyDescr",
         "cusparseSpSV_solve", "cusparseSpSV_bufferSize",
         "cusparseSpSV_analysis");
@@ -14546,6 +14561,8 @@ REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
 REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
+
+REGISTER_RULE(SpBLASTypeLocRule, PassKind::PK_Migration)
 
 REGISTER_RULE(DeviceConstantVarOptimizeAnalysisRule, PassKind::PK_Analysis)
 

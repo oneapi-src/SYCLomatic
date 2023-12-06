@@ -1,0 +1,42 @@
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+
+# This file will be installed to folder:
+# {dpct_install_folder}/extensions/opt_rules.
+# The rule specified in this file can be imported with commandline option:
+# --rule-file={dpct_install_folder}/extensions/opt_rules/cmake_rules/cmake_script_migration_rule.yaml
+
+- Rule: rule_project
+  Kind: CMakeRule
+  MatchMode: Partial
+  Priority: Fallback
+  CmakeSyntax: project
+  In: project(${arg0} ${argN})
+  Out: project(${arg0} ${argN})
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
+  Subrules:
+    argN:
+      In: CUDA
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_cuda"
+
+- Rule: rule_find_package
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package
+  In: find_package(${arg0} REQUIRED)
+  Out: find_package(IntelSYCL REQUIRED)
+
+- Rule: rule_set
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set
+  In: set(${value})
+  Out: set(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+

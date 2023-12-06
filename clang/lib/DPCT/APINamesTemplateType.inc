@@ -221,6 +221,12 @@ TYPE_REWRITE_ENTRY("thrust::identity",
 
 TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "null_type")))
 
+TYPE_REWRITE_ENTRY("thrust::device_system_tag", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "device_sys_tag")))
+
+TYPE_REWRITE_ENTRY("thrust::pointer", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "tagged_pointer"),
+                   TEMPLATE_ARG(0),
+                   TEMPLATE_ARG(1)))
+
 TYPE_REWRITE_ENTRY("cooperative_groups::__v1::plus",
                    TYPE_FACTORY(STR(MapNames::getClNamespace() + "plus"),
                                 TEMPLATE_ARG(0)))
@@ -313,3 +319,12 @@ TYPE_REWRITE_ENTRY("nvcuda::wmma::fragment",
                                  TEMPLATE_ARG(2),TEMPLATE_ARG(3),TEMPLATE_ARG(5)))),
         WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
 // clang-format on
+
+TYPE_REWRITE_ENTRY("csrsv2Info_t",
+                   TYPE_FACTORY(STR("std::shared_ptr<" +
+                                    MapNames::getDpctNamespace() +
+                                    "sparse::optimize_info>")))
+TYPE_REWRITE_ENTRY("cusparseSolvePolicy_t", TYPE_FACTORY(STR("int")))
+TYPE_REWRITE_ENTRY("cusparseAction_t",
+                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                    "sparse::conversion_scope")))
