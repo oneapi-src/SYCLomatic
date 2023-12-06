@@ -47,14 +47,14 @@ static void fillCompileCmds(
 
 // To get customized basename from the file path.
 // E.g: /path/to/foo.cc.cpp --> foo.cc
-static clang::tooling::UnifiedPath getCustomBaseName(const clang::tooling::UnifiedPath &Path) {
+static std::string getCustomBaseName(const clang::tooling::UnifiedPath &Path) {
   std::string Filename = llvm::sys::path::filename(Path.getCanonicalPath()).str();
   std::size_t Pos = Filename.find_last_of('.');
   if (Pos != std::string::npos) {
     std::string BaseName = Filename.substr(0, Pos);
-    return clang::tooling::UnifiedPath(BaseName);
-  } else
-    return clang::tooling::UnifiedPath(Filename);
+    return BaseName;
+  } 
+  return Filename;
 }
 
 extern std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
@@ -69,6 +69,18 @@ static void getCompileInfo(
       ObjsInLinkerCmdPerTarget;
 
   std::map<clang::tooling::UnifiedPath, clang::tooling::CompilationInfo> CmdsMap;
+
+  printf("666666666666666666666666666666666666666\n");
+  for (const auto &Entry : CompileTargetsMap) {
+    printf("FilePath [%s]\n", Entry.first.getCanonicalPath().str().c_str());
+    printf("FilePath  getPath [%s]\n", Entry.first.getPath().str().c_str());
+    for(auto &cmd: Entry.second) {
+      printf("\t-->[%s]\n", cmd.c_str());
+    }
+    printf("\n");
+  }
+  printf("666666666666666666666666666666666666666\n");
+
 
   for (const auto &Entry : CompileTargetsMap) {
     clang::tooling::UnifiedPath FileName = Entry.first;
@@ -140,15 +152,25 @@ static void getCompileInfo(
     }
   }
 
+  printf("\n\n\n-----------------------------------------------\n");
+  for (const auto &Entry : ToolPerTarget) {
+     printf("target[%s] ---> tool[%s]\n", Entry.first.getCanonicalPath().str().c_str(), Entry.second.c_str());
+  }
+  printf("-----------------------------------------------------\n\n");
+
+
+
   std::unordered_map<clang::tooling::UnifiedPath /*origname*/, clang::tooling::UnifiedPath /*objname*/>
       Orig2ObjMap;
 
   for (const auto &Entry : CompileTargetsMap) {
     clang::tooling::UnifiedPath FileName = Entry.first;
 
-    if (llvm::StringRef(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
+    if (path::filename(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
       continue;
     }
+
+    printf("######CompileTargetsMap filepath ########## [%s]\n", FileName.getCanonicalPath().str().c_str());
 
     std::string NewOptions;
     bool IsObjName = false;
@@ -265,6 +287,7 @@ static void getCompileInfo(
       } else if (IsObjName) {
         clang::tooling::UnifiedPath FilePathAbs(Option);
         Orig2ObjMap[FileName] = FilePathAbs;
+        printf("11111 [%s]\n", Orig2ObjMap[FileName].getCanonicalPath().str().c_str());
         IsObjName = false;
       } else if (llvm::StringRef(Option).startswith("-O")) {
         // Keep optimization level same as original compile command.
@@ -280,7 +303,10 @@ static void getCompileInfo(
       // command runs.
       Orig2ObjMap[FileName] = dpct::appendPath(
           Directory.getCanonicalPath().str(),
-          getCustomBaseName(FileName).getCanonicalPath().str() + ".o");
+          getCustomBaseName(FileName) + ".o");
+      printf("FileName [%s]\n", FileName.getCanonicalPath().str().c_str());
+      printf("FilePath [%s]\n", FileName.getPath().str().c_str());
+      printf("00000000000000 [%s]\n", Orig2ObjMap[FileName].getCanonicalPath().str().c_str());
     }
 
     // if option "--use-custom-helper=<value>" is used to customize the helper
@@ -324,7 +350,9 @@ static void getCompileInfo(
   }
 
   for (const auto &Entry : ObjsInLinkerCmdPerTarget) {
+    printf(" 00000 Target: [%s]\n", Entry.first.getCanonicalPath().str().c_str());
     for (const auto &Obj : Entry.second) {
+      printf("\t-->[%s]\n", Obj.c_str());
 
       auto Iter = CmdsMap.find(Obj);
       if (Iter != CmdsMap.end()) {
@@ -332,6 +360,17 @@ static void getCompileInfo(
         fillCompileCmds(CompileCmds, CmpInfo, Entry.first);
       }
     }
+    printf("\n");
+  }
+
+  for (const auto &Entry : CmdsMap) {
+    printf(" 00000 Src File: [%s]\n",
+           Entry.first.getCanonicalPath().str().c_str());
+
+    printf("  ->MigratedFileName:%s\n", Entry.second.MigratedFileName.c_str());
+    printf("  ->CompileOptions:%s\n", Entry.second.CompileOptions.c_str());
+    printf("  ->Compiler:%s\n", Entry.second.Compiler.c_str());
+    printf("\n");
   }
 
   if (ObjsInLinkerCmdPerTarget.empty()) {
@@ -373,14 +412,24 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
   int TargetIdx = 0;
   for (const auto &Entry : CmdsPerTarget) {
     TargetName = Entry.first;
-    auto Parent = path::parent_path(TargetName.getCanonicalPath());
+    
 
-    if (!llvm::sys::fs::exists(Parent)) {
+    printf("############ target [%s]\n", TargetName.getPath().str().c_str());
+    // Target is a relative path, relative to out-root directory
+    // auto Parent = path::parent_path(TargetName.getPath());
+
+    auto Parent = dpct::appendPath(OutRoot.getCanonicalPath().str(), path::parent_path(TargetName.getPath()).str());
+
+     printf("############ target parent [%s]\n", Parent.c_str());
+
+
+    if (!llvm::sys::fs::exists(
+            dpct::appendPath(OutRoot.getCanonicalPath().str(), Parent) )) {
       std::error_code EC;
       EC = llvm::sys::fs::create_directories(Parent);
       if ((bool)EC) {
         std::string ErrMsg =
-            "[ERROR] Create Directory : " + std::string(Parent.str()) +
+            "[ERROR] Create Directory : " + std::string(Parent) +
             " fail: " + EC.message() + "\n";
         PrintMsg(ErrMsg);
       }
@@ -591,6 +640,35 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool,
 
   if (!NeedMergetYaml)
     CompileCmdsPerTarget = NewCompileCmdsMap;
+
+
+  printf("\n\n\n-----------------------------------------------\n");
+  for (const auto &Entry : ToolPerTarget) {
+     printf("target[%s] ---> tool[%s]\n", Entry.first.getCanonicalPath().str().c_str(), Entry.second.c_str());
+  }
+  printf("-----------------------------------------------------\n\n");
+
+
+
+
+  printf("\n\n\n***********************************************\n");
+  for (const auto &Entry : NewCompileCmdsMap) {
+    std::string FileName = Entry.first.getCanonicalPath().str();
+    printf("NewCompileCmdsMap target: %s\n", FileName.c_str());
+    for (const auto &Option : Entry.second) {
+      printf("  ->MigratedFileName:%s\n", Option.MigratedFileName.c_str());
+      printf("  ->CompileOptions:%s\n", Option.CompileOptions.c_str());
+      printf("  ->Compiler:%s\n", Option.Compiler.c_str());
+    }
+    printf("\n");
+  }
+  printf("***************************************************\n\n");
+
+
+
+
+
+
 
   genMakefile(Tool, OutRoot, BuildScriptName, CompileCmdsPerTarget,
               ToolPerTarget);
