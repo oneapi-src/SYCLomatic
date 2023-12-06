@@ -359,7 +359,7 @@ public:
         Data(nullptr), DataEnd(nullptr), CountersStart(nullptr),
         CountersEnd(nullptr), NamesStart(nullptr), NamesEnd(nullptr),
         ValueDataStart(nullptr), ValueKindLast(0), CurValueDataSize(0),
-        BinaryIdsStart(nullptr), Warn(Warn) {}
+        BinaryIds({}), Warn(Warn) {}
 #else
   RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
                      const InstrProfCorrelator *Correlator,
