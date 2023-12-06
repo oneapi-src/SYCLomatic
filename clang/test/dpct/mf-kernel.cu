@@ -32,7 +32,7 @@ __global__ void local_foo_2() { }
 
 __device__ void device_fp() {
   double a = 0;
-  half b = 0;
+  half b = __float2half(0);
 }
 __global__ void test_fp() { device_fp(); }
 
@@ -69,19 +69,21 @@ __global__ void constAdd(float *C) {
 
 // CHECK: void call_constAdd(float *h_C, int size) {
 // CHECK-NEXT:  float *d_C = NULL;
-// CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
-// CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      A_ct.init();
+// CHECK-NEXT:  {
+// CHECK-NEXT:    A_ct.init();
 // CHECK-EMPTY:
-// CHECK-NEXT:      auto A_acc_ct1 = A_ct.get_access(cgh);
-// CHECK-NEXT:      dpct::access_wrapper<float *> d_C_acc_ct0(d_C, cgh);
+// CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
+// CHECK-NEXT:      [&](sycl::handler &cgh) {
+// CHECK-NEXT:        auto A_acc_ct1 = A_ct.get_access(cgh);
+// CHECK-NEXT:        dpct::access_wrapper<float *> d_C_acc_ct0(d_C, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class constAdd_{{[a-f0-9]+}}>>(
-// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 3)),
-// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          constAdd(d_C_acc_ct0.get_raw_pointer(), item_ct1, A_acc_ct1.get_pointer());
-// CHECK-NEXT:        });
-// CHECK-NEXT:    });
+// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class constAdd_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 3)),
+// CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:            constAdd(d_C_acc_ct0.get_raw_pointer(), item_ct1, A_acc_ct1.get_pointer());
+// CHECK-NEXT:          });
+// CHECK-NEXT:      });
+// CHECK-NEXT:  }
 // CHECK-NEXT:}
 void call_constAdd(float *h_C, int size) {
   float *d_C = NULL;

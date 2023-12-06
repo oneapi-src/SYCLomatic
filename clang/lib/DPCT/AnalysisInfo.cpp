@@ -1454,7 +1454,7 @@ void KernelCallExpr::addDevCapCheckStmt() {
       OS << ", " << AspectList[i];
     }
     OS << "});";
-    OuterStmts.emplace_back(OS.str());
+    OuterStmts.OthersList.emplace_back(OS.str());
   }
 }
 
@@ -1496,7 +1496,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   }
   if (!VI->isShared()) {
     requestFeature(HelperFeatureEnum::device_ext);
-    SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
+    OuterStmts.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
     if (VI->isLocal()) {
       SubmitStmtsList.MemoryList.emplace_back(
           VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
@@ -1622,8 +1622,7 @@ void KernelCallExpr::print(KernelPrinter &Printer) {
       Block = std::move(Printer.block(true));
     else
       Block = std::move(Printer.block(false));
-    for (auto &S : OuterStmts)
-      Printer.line(S.StmtStr);
+    OuterStmts.print(Printer);
   }
   if (NeedLambda) {
     Block = std::move(Printer.block(true));
@@ -3835,6 +3834,18 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   case clang::dpct::MemVarInfo::Global: {
     if (isShared())
       return "";
+    if ((getAttr() == MemVarInfo::VarAttrKind::Constant) &&
+        !isUseHelperFunc()) {
+      std::string Dims;
+      const static std::string NullString;
+      for (auto &Dim : getType()->getRange()) {
+        Dims = Dims + "[" + Dim.getSize() + "]";
+      }
+      return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
+                         getConstVarName() + Dims,
+                         PointerAsArray ? "" : getInitArguments(NullString),
+                         ";");
+    }
     return getMemoryDecl();
   }
   }
