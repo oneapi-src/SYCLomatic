@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: system-windows
-// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2
-// UNSUPPORTED: v12.0, v12.1, v12.2
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
+// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call-cuda12.0-not-support %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call-cuda12.0-not-support/template-kernel-call-cuda12.0-not-support.dp.cpp --match-full-lines %s
 
