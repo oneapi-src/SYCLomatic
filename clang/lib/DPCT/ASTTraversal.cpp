@@ -4081,6 +4081,7 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseCsrsv_solveEx",
         /*level 3*/
         "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
+        "cusparseScsrmm2", "cusparseDcsrmm2", "cusparseCcsrmm2", "cusparseZcsrmm2",
         /*Generic*/
         "cusparseCreateCsr", "cusparseDestroySpMat", "cusparseCsrGet",
         "cusparseSpMatGetFormat", "cusparseSpMatGetIndexBase",
@@ -4097,10 +4098,11 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseSpMM_preprocess", "cusparseSpGEMM_compute",
         "cusparseSpGEMM_copy", "cusparseSpGEMM_createDescr",
         "cusparseSpGEMM_destroyDescr", "cusparseSpGEMM_workEstimation",
-        "cusparseCsr2cscEx2_bufferSize", "cusparseCsr2cscEx2",
-        "cusparseSpSV_createDescr", "cusparseSpSV_destroyDescr",
-        "cusparseSpSV_solve", "cusparseSpSV_bufferSize",
-        "cusparseSpSV_analysis");
+        "cusparseScsr2csc", "cusparseDcsr2csc", "cusparseCcsr2csc",
+        "cusparseZcsr2csc", "cusparseCsr2cscEx2_bufferSize",
+        "cusparseCsr2cscEx2", "cusparseSpSV_createDescr",
+        "cusparseSpSV_destroyDescr", "cusparseSpSV_solve",
+        "cusparseSpSV_bufferSize", "cusparseSpSV_analysis");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -4130,7 +4132,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
         Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
         "general/symmetric/triangular");
-  } else if (FuncNameRef.endswith("csrmm")) {
+  } else if (FuncNameRef.endswith("csrmm") || FuncNameRef.endswith("csrmm2")) {
     report(
         DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
         Diagnostics::UNSUPPORT_MATRIX_TYPE, true, "general");

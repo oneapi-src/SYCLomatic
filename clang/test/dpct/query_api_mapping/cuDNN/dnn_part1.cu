@@ -341,7 +341,7 @@
 // cudnnDeriveBNTensorDescriptor-NEXT:                                 src_d /*cudnnTensorDescriptor_t*/,
 // cudnnDeriveBNTensorDescriptor-NEXT:                                 m /*cudnnBatchNormMode_t*/);
 // cudnnDeriveBNTensorDescriptor-NEXT: Is migrated to:
-// cudnnDeriveBNTensorDescriptor-NEXT:   dpct::dnnl::derive_batch_normalization_memory_desc(derived_desc, src_d, m);
+// cudnnDeriveBNTensorDescriptor-NEXT:   dpct::dnnl::engine_ext::derive_batch_normalization_memory_desc(derived_desc, src_d, m);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDeriveNormTensorDescriptor | FileCheck %s -check-prefix=cudnnDeriveNormTensorDescriptor
 // cudnnDeriveNormTensorDescriptor: CUDA API:
@@ -350,7 +350,7 @@
 // cudnnDeriveNormTensorDescriptor-NEXT:                                   src_d /*cudnnTensorDescriptor_t*/,
 // cudnnDeriveNormTensorDescriptor-NEXT:                                   m /*cudnnNormMode_t*/, group_count /*int*/);
 // cudnnDeriveNormTensorDescriptor-NEXT: Is migrated to:
-// cudnnDeriveNormTensorDescriptor-NEXT:   dpct::dnnl::derive_batch_normalization_memory_desc(derived_p1_desc, derived_p2_desc, src_d, m);
+// cudnnDeriveNormTensorDescriptor-NEXT:   dpct::dnnl::engine_ext::derive_batch_normalization_memory_desc(derived_p1_desc, derived_p2_desc, src_d, m);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDestroyActivationDescriptor | FileCheck %s -check-prefix=cudnnDestroyActivationDescriptor
 // cudnnDestroyActivationDescriptor: CUDA API:
