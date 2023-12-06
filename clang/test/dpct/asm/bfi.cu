@@ -4,6 +4,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/bfi/bfi.dp.cpp
 
 // clang-format off
+// CHECK: #include <dpct/math.hpp>
 #include <cuda_runtime.h>
 #include <cstdint>
 

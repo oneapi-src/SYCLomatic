@@ -1478,7 +1478,7 @@ protected:
     OS() << MapNames::getDpctNamespace() << "bfe<" << TypeStr << ">(" << Op[0]
          << ", " << Op[1] << ", " << Op[2] << ')';
     endstmt();
-    insertHeader(HeaderType::HT_DPCT_DPL_Utils);
+    insertHeader(HeaderType::HT_DPCT_Math);
     return SYCLGenSuccess();
   }
 
@@ -1501,7 +1501,7 @@ protected:
     OS() << MapNames::getDpctNamespace() << "bfi<" << TypeStr << ">(" << Op[0]
          << ", " << Op[1] << ", " << Op[2] << ", " << Op[3] << ')';
     endstmt();
-    insertHeader(HeaderType::HT_DPCT_DPL_Utils);
+    insertHeader(HeaderType::HT_DPCT_Math);
     return SYCLGenSuccess();
   }
 
