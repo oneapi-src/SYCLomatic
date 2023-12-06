@@ -2,7 +2,14 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping - | FileCheck %s
 
-// CHECK: __bfloat1622float2
+// CHECK: __activemask
+// CHECK-NEXT: __all
+// CHECK-NEXT: __all_sync
+// CHECK-NEXT: __any
+// CHECK-NEXT: __any_sync
+// CHECK-NEXT: __ballot
+// CHECK-NEXT: __ballot_sync
+// CHECK-NEXT: __bfloat1622float2
 // CHECK-NEXT: __bfloat162bfloat162
 // CHECK-NEXT: __bfloat162float
 // CHECK-NEXT: __bfloat162int_rd
@@ -282,15 +289,31 @@
 // CHECK-NEXT: __low2bfloat162
 // CHECK-NEXT: __low2float
 // CHECK-NEXT: __lows2bfloat162
+// CHECK-NEXT: __match_all_sync
+// CHECK-NEXT: __match_any_sync
 // CHECK-NEXT: __mul24
 // CHECK-NEXT: __mul64hi
 // CHECK-NEXT: __mulhi
 // CHECK-NEXT: __popc
 // CHECK-NEXT: __popcll
 // CHECK-NEXT: __powf
+// CHECK-NEXT: __reduce_add_sync
+// CHECK-NEXT: __reduce_and_sync
+// CHECK-NEXT: __reduce_max_sync
+// CHECK-NEXT: __reduce_min_sync
+// CHECK-NEXT: __reduce_or_sync
+// CHECK-NEXT: __reduce_xor_sync
 // CHECK-NEXT: __rhadd
 // CHECK-NEXT: __sad
 // CHECK-NEXT: __saturatef
+// CHECK-NEXT: __shfl
+// CHECK-NEXT: __shfl_down
+// CHECK-NEXT: __shfl_down_sync
+// CHECK-NEXT: __shfl_sync
+// CHECK-NEXT: __shfl_up
+// CHECK-NEXT: __shfl_up_sync
+// CHECK-NEXT: __shfl_xor
+// CHECK-NEXT: __shfl_xor_sync
 // CHECK-NEXT: __short2bfloat16_rd
 // CHECK-NEXT: __short2bfloat16_rn
 // CHECK-NEXT: __short2bfloat16_ru
