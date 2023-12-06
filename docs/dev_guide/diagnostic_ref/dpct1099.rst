@@ -73,7 +73,7 @@ results in the following migrated SYCL code:
      */
      /*
      DPCT1099:1: Verify if the default value of the direction and placement used in
-     the function "commit" is correct.
+     the function "commit" aligns with the related "compute" function call.
      */
      plan->commit(&dpct::get_in_order_queue(), 7,
                   dpct::fft::fft_type::complex_float_to_complex_float, 2,
