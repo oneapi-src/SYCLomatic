@@ -2135,6 +2135,8 @@ memory_desc_ext::to_dnnl_data_type(dpct::library_data_t dt) {
     return dnnl_dt::bf16;
   case dpct::library_data_t::real_float:
     return dnnl_dt::f32;
+  case dpct::library_data_t::real_double:
+    return dnnl_dt::f64;
   case dpct::library_data_t::real_int32:
     return dnnl_dt::s32;
   case dpct::library_data_t::real_int8:
@@ -2165,6 +2167,8 @@ memory_desc_ext::to_dpct_library_data_t(::dnnl::memory::data_type dt,
     return dpct_dt::real_bfloat16;
   case dnnl_dt::f32:
     return dpct_dt::real_float;
+  case dnnl_dt::f64:
+    return dpct_dt::real_double;
   case dnnl_dt::s32:
     return dpct_dt::real_int32;
   case dnnl_dt::s8:
