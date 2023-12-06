@@ -67,6 +67,7 @@ which is rewritten to:
      dpct::device_info properties;
      dpct::get_device_info(properties, dpct::dev_mgr::instance().get_device(0));
      
-     // You need apply code path1 or path2 depending on target hardware
+     // You need apply code path1 or path2 depending on the registers number on
+     // the target hardware.
      code path 1/2
    }
