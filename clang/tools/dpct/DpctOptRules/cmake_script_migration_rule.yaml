@@ -6,37 +6,33 @@
 # {dpct_install_folder}/extensions/opt_rules.
 # The rule specified in this file can be imported with commandline option:
 # --rule-file={dpct_install_folder}/extensions/opt_rules/cmake_rules/cmake_script_migration_rule.yaml
----
-- Rule: rule_cmake_minimum_required
-  Kind: PatternRewriter
-  MatchMode: Partial
-  Priority: Takeover
-  In: cmake_minimum_required(${name})
-  Out: cmake_minimum_required(VERSION 3.24)
 
 - Rule: rule_project
-  Kind: PatternRewriter
+  Kind: CMakeRule
   MatchMode: Partial
-  Priority: Takeover
-  In: project(${arg0} ${value})
-  Out: project(${arg0} ${value})
-   set(CMAKE_CXX_FLAGS "-fsycl")
+  Priority: Fallback
+  CmakeSyntax: project
+  In: project(${arg0} ${argN})
+  Out: project(${arg0} ${argN})
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
   Subrules:
-    value:
+    argN:
       In: CUDA
       Out: ""
       MatchMode: Full
       RuleId: "remove_cuda"
 
 - Rule: rule_find_package
-  Kind: PatternRewriter
-  Priority: Takeover
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package
   In: find_package(${arg0} REQUIRED)
   Out: find_package(IntelSYCL REQUIRED)
 
 - Rule: rule_set
-  Kind: PatternRewriter
-  Priority: Takeover
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set
   In: set(${value})
   Out: set(${value})
   Subrules:
