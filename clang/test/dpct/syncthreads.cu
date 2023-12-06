@@ -448,3 +448,16 @@ __global__ void test20() {
   recursive(10);
   __syncthreads();
 }
+
+__global__ void test21(float *ptr1, float *ptr2, int step1, int step2) {
+  int idx1 = blockDim.x * blockIdx.x + threadIdx.x;
+  int idx2 = blockDim.x * blockIdx.x + threadIdx.x;
+  for (int i = 0; i < 10; i++) {
+    ptr2[idx1] = 123;
+    idx1 += step1;
+    // CHECK: (item_ct1.get_local_range(2) < std::min(step1, step2)) ? item_ct1.barrier(sycl::access::fence_space::local_space) : item_ct1.barrier();
+    __syncthreads();
+    ptr1[idx2] = 456;
+    idx2 += step2;
+  }
+}
