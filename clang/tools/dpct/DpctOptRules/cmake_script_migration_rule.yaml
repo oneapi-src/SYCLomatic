@@ -1,3 +1,12 @@
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+
+# This file will be installed to folder:
+# {dpct_install_folder}/extensions/opt_rules.
+# The rule specified in this file can be imported with commandline option:
+# --rule-file={dpct_install_folder}/extensions/opt_rules/cmake_rules/cmake_script_migration_rule.yaml
+---
 - Rule: rule_cmake_minimum_required
   Kind: PatternRewriter
   MatchMode: Partial
@@ -7,7 +16,7 @@
 
 - Rule: rule_project
   Kind: PatternRewriter
-  MatchMode: Full
+  MatchMode: Partial
   Priority: Takeover
   In: project(${arg0} ${value})
   Out: project(${arg0} ${value})
@@ -16,6 +25,8 @@
     value:
       In: CUDA
       Out: ""
+      MatchMode: Full
+      RuleId: "remove_cuda"
 
 - Rule: rule_find_package
   Kind: PatternRewriter

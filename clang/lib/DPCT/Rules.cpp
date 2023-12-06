@@ -225,8 +225,32 @@ void deregisterAPIRule(MetaRuleObject &R) {
 }
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
-  MapNames::PatternRewriters.emplace_back(
-      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId));
+  MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
+      R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId));
+}
+
+MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
+    const MetaRuleObject::PatternRewriter &PR) {
+  RuleId = PR.RuleId;
+  In = PR.In;
+  Out = PR.Out;
+  MatchMode = PR.MatchMode;
+  Subrules = PR.Subrules;
+
+  return *this;
+}
+
+MetaRuleObject::PatternRewriter::PatternRewriter(
+    const MetaRuleObject::PatternRewriter &PR)
+    : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), RuleId(PR.RuleId),
+      Subrules(PR.Subrules) {}
+
+MetaRuleObject::PatternRewriter::PatternRewriter(
+    const std::string &I, const std::string &O,
+    const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
+    std::string RuleId)
+    : In(I), Out(O), MatchMode(MatchMode), RuleId(RuleId) {
+  Subrules = S;
 }
 
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
