@@ -14,8 +14,18 @@
 #include <string>
 #include <vector>
 
-
-enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum, DisableAPIMigration, PatternRewriter };
+enum RuleKind {
+  API,
+  DataType,
+  Macro,
+  Header,
+  TypeRule,
+  Class,
+  Enum,
+  DisableAPIMigration,
+  PatternRewriter,
+  CMakeRule
+};
 
 enum RulePriority { Takeover, Default, Fallback };
 enum RuleMatchMode { Partial , Full };
@@ -25,16 +35,16 @@ struct TypeNameRule {
   clang::dpct::HelperFeatureEnum RequestFeature;
   RulePriority Priority;
   RuleMatchMode MatchMode;
+  std::string CmakeSyntax;
   std::vector<std::string> Includes;
   TypeNameRule(std::string Name)
-      : NewName(Name),
-        RequestFeature(clang::dpct::HelperFeatureEnum::none),
-        Priority(RulePriority::Fallback),
-        MatchMode(RuleMatchMode::Partial) {}
+      : NewName(Name), RequestFeature(clang::dpct::HelperFeatureEnum::none),
+        Priority(RulePriority::Fallback), MatchMode(RuleMatchMode::Partial) {}
   TypeNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
                RulePriority Priority = RulePriority::Fallback,
                RuleMatchMode MatchMode = RuleMatchMode::Partial)
-      : NewName(Name), RequestFeature(Feature), Priority(Priority), MatchMode(MatchMode) {}
+      : NewName(Name), RequestFeature(Feature), Priority(Priority),
+        MatchMode(MatchMode) {}
 };
 
 struct ClassFieldRule : public TypeNameRule {
@@ -84,35 +94,19 @@ public:
   struct PatternRewriter {
     std::string In;
     std::string Out;
-    RuleMatchMode MatchMode;
+    RuleMatchMode MatchMode = RuleMatchMode::Partial;
+    std::string CmakeSyntax;
     std::string RuleId;
+    RulePriority Priority;
     std::map<std::string, PatternRewriter> Subrules;
     PatternRewriter(){};
 
-    PatternRewriter &operator=(const PatternRewriter &PR) {
-
-      RuleId = PR.RuleId;
-      In = PR.In;
-      Out = PR.Out;
-      MatchMode = PR.MatchMode;
-      Subrules = PR.Subrules;
-
-      return *this;
-    }
-
-    PatternRewriter(const PatternRewriter &PR) {
-      RuleId = PR.RuleId;
-      In = PR.In;
-      Out = PR.Out;
-      MatchMode = PR.MatchMode;
-
-      Subrules = PR.Subrules;
-    }
-
+    PatternRewriter &operator=(const PatternRewriter &PR);
+    PatternRewriter(const PatternRewriter &PR);
     PatternRewriter(const std::string &I, const std::string &O,
                     const std::map<std::string, PatternRewriter> &S,
-                    RuleMatchMode MatchMode, std::string RuleId)
-        : In(I), Out(O), MatchMode(MatchMode), RuleId(RuleId), Subrules(S) {}
+                    RuleMatchMode MatchMode, std::string RuleId,
+                    std::string CmakeSyntax, RulePriority Priority);
   };
 
   static std::vector<clang::tooling::UnifiedPath> RuleFiles;
@@ -120,6 +114,7 @@ public:
   std::string RuleId;
   RulePriority Priority;
   RuleMatchMode MatchMode;
+  std::string CmakeSyntax;
   RuleKind Kind;
   std::string In;
   std::string Out;
@@ -200,6 +195,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
     Io.enumCase(Value, "Enum", RuleKind::Enum);
     Io.enumCase(Value, "DisableAPIMigration", RuleKind::DisableAPIMigration);
     Io.enumCase(Value, "PatternRewriter", RuleKind::PatternRewriter);
+    Io.enumCase(Value, "CMakeRule", RuleKind::CMakeRule);
   }
 };
 
@@ -210,6 +206,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapRequired("Rule", Doc->RuleId);
     Io.mapRequired("Kind", Doc->Kind);
     Io.mapRequired("Priority", Doc->Priority);
+    Io.mapOptional("CmakeSyntax", Doc->CmakeSyntax);
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
     Io.mapOptional("Includes", Doc->Includes);
@@ -253,6 +250,8 @@ struct llvm::yaml::MappingTraits<MetaRuleObject::PatternRewriter> {
     Io.mapRequired("In", Doc.In);
     Io.mapRequired("Out", Doc.Out);
     Io.mapOptional("Subrules", Doc.Subrules);
+    Io.mapOptional("MatchMode", Doc.MatchMode);
+    Io.mapOptional("RuleId", Doc.RuleId);
   }
 };
 

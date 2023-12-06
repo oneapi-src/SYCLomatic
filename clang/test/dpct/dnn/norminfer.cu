@@ -32,7 +32,7 @@ int main() {
     cudnnSetTensor4dDescriptor(outTensor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, on, oc, oh, ow);
     cudnnSetTensor4dDescriptor(scalebiasTensor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, sbn, sbc, sbh, sbw);
 
-    // CHECK: dpct::dnnl::derive_batch_normalization_memory_desc(outTensor, outTensor, dataTensor, dpct::dnnl::batch_normalization_mode::per_activation);
+    // CHECK: dpct::dnnl::engine_ext::derive_batch_normalization_memory_desc(outTensor, outTensor, dataTensor, dpct::dnnl::batch_normalization_mode::per_activation);
     cudnnDeriveNormTensorDescriptor(outTensor, outTensor, dataTensor, CUDNN_NORM_PER_ACTIVATION, 1);
 
     int save = 1;

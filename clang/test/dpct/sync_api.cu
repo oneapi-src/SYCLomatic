@@ -107,6 +107,7 @@ int main() {
 // CHECK-NEXT:    dpct::global_memory<unsigned int, 0> d_sync_ct1(0);
 // CHECK-NEXT:    unsigned *sync_ct1 = d_sync_ct1.get_ptr(dpct::get_in_order_queue());
 // CHECK-NEXT:    dpct::get_in_order_queue().memset(sync_ct1, 0, sizeof(int)).wait();
+// CHECK-EMPTY:
 // CHECK-NEXT:    dpct::get_in_order_queue().parallel_for(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1)  {

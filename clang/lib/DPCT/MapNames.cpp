@@ -625,6 +625,14 @@ void MapNames::setExplicitNamespaceMap() {
         std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::convolution_algorithm_info",
            HelperFeatureEnum::device_ext)},
+      {"cudnnConvolutionBwdFilterAlgoPerf_t",
+        std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::convolution_algorithm_info",
+           HelperFeatureEnum::device_ext)},
+      {"cudnnConvolutionBwdDataAlgoPerf_t",
+        std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::convolution_algorithm_info",
+           HelperFeatureEnum::device_ext)},
       {"cudnnRNNMode_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_mode",
                                       HelperFeatureEnum::device_ext)},
@@ -661,6 +669,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDNN_TENSOR_NCHW_VECT_C",
        getDpctNamespace() + "dnnl::memory_format_tag::nchw_blocked"},
       {"CUDNN_DATA_FLOAT", getDpctNamespace() + "library_data_t::real_float"},
+      {"CUDNN_DATA_DOUBLE", getDpctNamespace() + "library_data_t::real_double"},
       {"CUDNN_DATA_HALF", getDpctNamespace() + "library_data_t::real_half"},
       {"CUDNN_DATA_INT8", getDpctNamespace() + "library_data_t::real_int8"},
       {"CUDNN_DATA_UINT8", getDpctNamespace() + "library_data_t::real_uint8"},
@@ -811,6 +820,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDNN_TENSOR_NCHW_VECT_C",
        HelperFeatureEnum::device_ext},
       {"CUDNN_DATA_FLOAT", HelperFeatureEnum::device_ext},
+      {"CUDNN_DATA_DOUBLE", HelperFeatureEnum::device_ext},
       {"CUDNN_DATA_HALF", HelperFeatureEnum::device_ext},
       {"CUDNN_DATA_INT8", HelperFeatureEnum::device_ext},
       {"CUDNN_DATA_UINT8", HelperFeatureEnum::device_ext},
@@ -1348,6 +1358,10 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "library_data_t::real_int64"},
       {"CUSPARSE_ORDER_COL", "oneapi::mkl::layout::col_major"},
       {"CUSPARSE_ORDER_ROW", "oneapi::mkl::layout::row_major"},
+      {"CUSPARSE_ACTION_SYMBOLIC",
+       getDpctNamespace() + "sparse::conversion_scope::index"},
+      {"CUSPARSE_ACTION_NUMERIC",
+       getDpctNamespace() + "sparse::conversion_scope::index_and_value"},
   };
 
   ClassFieldMap = {};
@@ -2002,11 +2016,37 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpGEMM_createDescr",
                            "cusparseSpGEMM_destroyDescr",
                            "cusparseSpGEMM_workEstimation",
+                           "cusparseCsr2cscEx2_bufferSize",
+                           "cusparseCsr2cscEx2",
                            "cusparseSpSV_createDescr",
                            "cusparseSpSV_destroyDescr",
                            "cusparseSpSV_solve",
                            "cusparseSpSV_bufferSize",
-                           "cusparseSpSV_analysis"};
+                           "cusparseSpSV_analysis",
+                           "cusparseScsrsv_solve", 
+                           "cusparseDcsrsv_solve", 
+                           "cusparseCcsrsv_solve", 
+                           "cusparseZcsrsv_solve", 
+                           "cusparseScsrsv2_bufferSize", 
+                           "cusparseDcsrsv2_bufferSize", 
+                           "cusparseCcsrsv2_bufferSize", 
+                           "cusparseZcsrsv2_bufferSize", 
+                           "cusparseScsrsv2_analysis", 
+                           "cusparseDcsrsv2_analysis", 
+                           "cusparseCcsrsv2_analysis", 
+                           "cusparseZcsrsv2_analysis", 
+                           "cusparseScsrsv2_solve", 
+                           "cusparseDcsrsv2_solve", 
+                           "cusparseCcsrsv2_solve", 
+                           "cusparseZcsrsv2_solve", 
+                           "cusparseCcsrsv2_bufferSizeExt", 
+                           "cusparseDcsrsv2_bufferSizeExt", 
+                           "cusparseScsrsv2_bufferSizeExt", 
+                           "cusparseZcsrsv2_bufferSizeExt", 
+                           "cusparseCsrsv_analysisEx", 
+                           "cusparseCsrsv_solveEx",
+                           "cusparseCreateCsrsv2Info",
+                           "cusparseDestroyCsrsv2Info"};
 }
 // clang-format on
 

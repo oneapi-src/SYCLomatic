@@ -181,6 +181,10 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
 
   const int Size = Pattern.size();
   int Index = 0;
+
+  if(Size == 0) {
+    return Result;
+  }
   while (Index < Size) {
     const char Character = Pattern[Index];
 
@@ -345,6 +349,53 @@ static int parseCodeElement(const MatchPattern &Suffix,
   return Suffix.size() == 0 ? Index : -1;
 }
 
+static bool isIdentifiedChar(char Char) {
+
+  if ((Char >= 'a' && Char <= 'z') || (Char >= 'A' && Char <= 'Z') ||
+      (Char >= '0' && Char <= '9') || (Char == '_')) {
+    return true;
+  }
+
+  return false;
+}
+
+static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
+                                                const std::string &Input,
+                                                const int Start) {
+  MatchResult Result;
+
+  int Index = Start;
+  int PatternIndex = 0;
+  const int PatternSize = Pattern.size();
+  const int Size = Input.size();
+
+  while (PatternIndex < PatternSize && Index < Size) {
+    const auto &Element = Pattern[PatternIndex];
+
+    if (std::holds_alternative<LiteralElement>(Element)) {
+      const auto &Literal = std::get<LiteralElement>(Element);
+      if (Input[Index] != Literal.Value) {
+        return {};
+      }
+
+      Index++;
+      PatternIndex++;
+      continue;
+    }
+
+    throw std::runtime_error("Internal error: invalid pattern element");
+  }
+
+  if (!isIdentifiedChar(Input[Start - 1]) && !isIdentifiedChar(Input[Index])) {
+    Result.Start = Start;
+    Result.End = Index;
+  } else {
+    return {};
+  }
+
+  return Result;
+}
+
 static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
                                             const std::string &Input,
                                             const int Start) {
@@ -354,7 +405,6 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
   int PatternIndex = 0;
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
-
   while (PatternIndex < PatternSize && Index < Size) {
     const auto &Element = Pattern[PatternIndex];
 
@@ -492,11 +542,16 @@ int skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
   return Index;
 }
 
-
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input) {
   std::stringstream OutputStream;
+
+  if (PP.In.size() == 0) {
+    return Input;
+  }
+
   const auto Pattern = parseMatchPattern(PP.In);
+
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
@@ -505,7 +560,12 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       Index = skipCmakeComments(OutputStream, Input, Index);
     }
 
-    auto Result = findMatch(Pattern, Input, Index);
+    std::optional<MatchResult> Result;
+    if (PP.MatchMode) {
+      Result = findFullMatch(Pattern, Input, Index);
+    } else {
+      Result = findMatch(Pattern, Input, Index);
+    }
 
     if (Result.has_value()) {
       auto &Match = Result.value();

@@ -32,9 +32,6 @@
 *    Comment:      extra comment on the migration.
 *
 ****************************************************************************/
-// cuSPARSE Library
-ENTRY_TYPE(cusparseSolvePolicy_t, false, NO_FLAG, P4, "comment")
-
 // CUDA Driver Library
 ENTRY_TYPE(CUexternalMemory, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUexternalSemaphore, false, NO_FLAG, P4, "comment")

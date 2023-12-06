@@ -114,6 +114,22 @@ const std::unordered_map<std::string /*command*/, bool /*need lower*/>
 
 };
 
+static std::vector<clang::tooling::UnifiedPath /*file path*/>
+    CmakeScriptFilesSet;
+static std::map<clang::tooling::UnifiedPath /*file path*/,
+                std::string /*content*/>
+    CmakeScriptFileBufferMap;
+static std::map<clang::tooling::UnifiedPath /*file name*/, bool /*is crlf*/>
+    ScriptFileCRLFMap;
+static std::map<std::string /*variable name*/, std::string /*value*/>
+    CmakeVarMap;
+
+static std::map<std::string /*cmake syntax*/,
+                MetaRuleObject::PatternRewriter /*cmake migraiton rule*/>
+    CmakeBuildInRules;
+
+void cmakeSyntaxProcessed(std::string &Input);
+
 static std::string readFile(const clang::tooling::UnifiedPath &Name) {
   std::ifstream Stream(Name.getCanonicalPath().str(),
                        std::ios::in | std::ios::binary);
@@ -172,10 +188,8 @@ getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
   return CmakeBuildDirectory;
 }
 
-void collectCmakeScripts(
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::vector<clang::tooling::UnifiedPath> &CmakeScriptFiles) {
+void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
+                         const clang::tooling::UnifiedPath &OutRoot) {
   std::error_code EC;
 
   clang::tooling::UnifiedPath CmakeBuildDirectory =
@@ -220,46 +234,15 @@ void collectCmakeScripts(
       llvm::StringRef Name =
           llvm::sys::path::filename(FilePath.getCanonicalPath());
       if (Name == "CMakeLists.txt" || Name.ends_with(".cmake")) {
-        CmakeScriptFiles.push_back(FilePath);
+        CmakeScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
       }
     }
   }
 }
 
-// apply patter rewrite rules to migrate cmake script file
-static void
-applyPatternRewriterToCmakeScriptFile(const std::string &InputString,
-                                      llvm::raw_os_ostream &Stream) {
-  std::string LineEndingString;
-  // pattern_rewriter require the input file to be LF
-  bool IsCRLF = fixLineEndings(InputString, LineEndingString);
-
-  // Convert cmake command to lower case in cmake script files
-  LineEndingString = convertCmakeCommandsToLower(LineEndingString);
-
-  std::map<std::string, std::string> VariablesMap;
-  parseVariable(LineEndingString, VariablesMap);
-  cmakeSyntaxProcessed(LineEndingString, VariablesMap);
-
-  for (const auto &PR : MapNames::PatternRewriters) {
-    LineEndingString = applyPatternRewriter(PR, LineEndingString);
-  }
-  // Restore line ending for the formator
-  if (IsCRLF) {
-    std::stringstream ResultStream;
-    std::vector<std::string> SplitedStr = split(LineEndingString, '\n');
-    for (auto &SS : SplitedStr) {
-      ResultStream << SS << "\r\n";
-    }
-    Stream << llvm::StringRef(ResultStream.str().c_str());
-  } else {
-    Stream << llvm::StringRef(LineEndingString.c_str());
-  }
-}
-
-bool migrateCmakeScriptFile(const clang::tooling::UnifiedPath &InRoot,
-                            const clang::tooling::UnifiedPath &OutRoot,
-                            const clang::tooling::UnifiedPath &InFileName) {
+bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
+                              const clang::tooling::UnifiedPath OutRoot,
+                              clang::tooling::UnifiedPath InFileName) {
   clang::tooling::UnifiedPath OutFileName(InFileName);
   if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
     return false;
@@ -272,19 +255,8 @@ bool migrateCmakeScriptFile(const clang::tooling::UnifiedPath &InRoot,
                          " fail: " + EC.message() + "\n";
     PrintMsg(ErrMsg);
   }
-  std::ofstream Out(OutFileName.getCanonicalPath().str(), std::ios::binary);
-  if (Out.fail()) {
-    std::string ErrMsg =
-        "[ERROR] Create file : " + OutFileName.getCanonicalPath().str() +
-        " failure!\n";
-    PrintMsg(ErrMsg);
-  }
 
-  llvm::raw_os_ostream Stream(Out);
-  applyPatternRewriterToCmakeScriptFile(readFile(InFileName), Stream);
-
-  Stream.flush();
-  Out.close();
+  CmakeScriptFileBufferMap[OutFileName] = readFile(InFileName);
   return true;
 }
 
@@ -300,7 +272,7 @@ bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles) {
   return IsCmakeScript;
 }
 
-void migrateCmakeScriptOnly(
+void collectCmakeScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot) {
@@ -308,24 +280,14 @@ void migrateCmakeScriptOnly(
   if (!CmakeScriptLists.empty()) {
     for (auto FilePath : CmakeScriptLists) {
       if (fs::is_directory(FilePath)) {
-        std::vector<clang::tooling::UnifiedPath> CmakeScriptFiles;
-        collectCmakeScripts(FilePath, OutRoot, CmakeScriptFiles);
-        for (const auto &ScriptFile : CmakeScriptFiles) {
-          if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
-            continue;
-        }
+
+        collectCmakeScripts(FilePath, OutRoot);
       } else {
-        if (!migrateCmakeScriptFile(InRoot, OutRoot, FilePath))
-          continue;
+        CmakeScriptFilesSet.push_back(FilePath);
       }
     }
   } else {
-    std::vector<clang::tooling::UnifiedPath> CmakeScriptFiles;
-    collectCmakeScripts(InRoot, OutRoot, CmakeScriptFiles);
-    for (const auto &ScriptFile : CmakeScriptFiles) {
-      if (!migrateCmakeScriptFile(InRoot, OutRoot, ScriptFile))
-        continue;
-    }
+    collectCmakeScripts(InRoot, OutRoot);
   }
 }
 
@@ -352,8 +314,42 @@ static size_t gotoEndOfCmakeCommandStmt(const std::string Input, size_t Index) {
   return Index;
 }
 
-void parseVariable(const std::string &Input,
-                   std::map<std::string, std::string> &VariablesMap) {
+static std::vector<std::string> split(const std::string &Input,
+                                      const std::string &Delimiter) {
+  std::vector<std::string> Vec;
+  if (!Input.empty()) {
+
+    size_t Index = 0;
+    size_t Pos = Input.find(Delimiter, Index);
+    while (Index < Input.size() && Pos != std::string::npos) {
+      Vec.push_back(Input.substr(Index, Pos - Index));
+
+      Index = Pos + Delimiter.size();
+      Pos = Input.find(Delimiter, Index);
+    }
+    // Append the remaining part
+    Vec.push_back(Input.substr(Index));
+  }
+  return Vec;
+}
+
+std::string getVarName(const std::string &Variable) {
+  std::string Value;
+  if (Variable[0] == '$' && Variable[1] == '{') {
+    auto Name = Variable.substr(2, Variable.size() - 3);
+
+    auto Iter = CmakeVarMap.find(Name);
+    if (CmakeVarMap.find(Name) != CmakeVarMap.end()) {
+      Value = Iter->second;
+    }
+  } else {
+    Value = Variable;
+  }
+
+  return Value;
+}
+
+static void parseVariable(const std::string &Input) {
 
   const int Size = Input.size();
   int Index = 0;
@@ -409,11 +405,13 @@ void parseVariable(const std::string &Input,
         // Get the name of the second argument
         Value = Input.substr(Begin, End - Begin);
 
-        // Only check the set commands which has two arguments
+        // Only check the set commands which has two arguments.
+        // And skip cmake reserves identifiers that begins with "CMAKE_" and
+        // "_CMAKE_".
         if (Input[Index] == ')' &&
             !llvm::StringRef(VarName).starts_with("CMAKE_") &&
             !llvm::StringRef(VarName).starts_with("_CMAKE_ ")) {
-          VariablesMap[VarName] = Value;
+          CmakeVarMap[VarName] = Value;
         }
       }
 
@@ -425,66 +423,32 @@ void parseVariable(const std::string &Input,
   }
 }
 
-static std::vector<std::string> split(const std::string &Input,
-                                      const std::string &Delimiter) {
-  std::vector<std::string> Vec;
-  if (!Input.empty()) {
-
-    size_t Index = 0;
-    size_t Pos = Input.find(Delimiter, Index);
-    while (Index < Input.size() && Pos != std::string::npos) {
-      Vec.push_back(Input.substr(Index, Pos - Index));
-
-      Index = Pos + Delimiter.size();
-      Pos = Input.find(Delimiter, Index);
-    }
-    // Append the remaining part
-    Vec.push_back(Input.substr(Index));
-  }
-  return Vec;
-}
-
-std::string getVarName(const std::string &Variable,
-                       const std::map<std::string, std::string> &VariablesMap) {
-  std::string Value;
-  if (Variable[0] == '$' && Variable[1] == '{') {
-    auto Name = Variable.substr(2, Variable.size() - 3);
-
-    auto Iter = VariablesMap.find(Name);
-    if (VariablesMap.find(Name) != VariablesMap.end()) {
-      Value = Iter->second;
-    }
-  } else {
-    Value = Variable;
-  }
-
-  return Value;
-}
-
 static std::string processArgOfCmakeVersionRequired(
     const std::string &Arg,
-    const std::map<std::string, std::string> &VariablesMap) {
+    const std::map<std::string, std::string> &CmakeVarMap) {
+  const std::string CmakeMinVerion =
+      "3.24"; // The minimal version used in SYCL compiler
   size_t Pos = Arg.find("...");
   std::string ReplArg;
   if (Pos != std::string::npos) {
     const auto StrArray = split(Arg, "...");
 
-    std::string MinVer = getVarName(StrArray[0], VariablesMap);
-    std::string MaxVer = getVarName(StrArray[1], VariablesMap);
+    std::string MinVer = getVarName(StrArray[0]);
+    std::string MaxVer = getVarName(StrArray[1]);
 
-    if (std::atof(MinVer.c_str()) >= 3.24) {
+    if (std::atof(MinVer.c_str()) >= std::atof(CmakeMinVerion.c_str())) {
       ReplArg = MinVer + "..." + MaxVer;
-    } else if (std::atof(MinVer.c_str()) < 3.24 &&
-               std::atof(MaxVer.c_str()) > 3.24) {
-      ReplArg = "3.24..." + MaxVer;
+    } else if (std::atof(MinVer.c_str()) < std::atof(CmakeMinVerion.c_str()) &&
+               std::atof(MaxVer.c_str()) > std::atof(CmakeMinVerion.c_str())) {
+      ReplArg = CmakeMinVerion + "..." + MaxVer;
     } else {
-      ReplArg = "3.24";
+      ReplArg = CmakeMinVerion;
     }
 
   } else {
-    std::string Ver = getVarName(Arg, VariablesMap);
-    if (std::atof(Ver.c_str()) < 3.24) {
-      ReplArg = "3.24";
+    std::string Ver = getVarName(Arg);
+    if (std::atof(Ver.c_str()) < std::atof(CmakeMinVerion.c_str())) {
+      ReplArg = CmakeMinVerion;
     } else {
       ReplArg = Ver;
     }
@@ -501,18 +465,57 @@ int skipCmakeComments(const std::string &Input, int Index) {
   return Index;
 }
 
-void cmakeSyntaxProcessed(
-    std::string &Input,
-    const std::map<std::string, std::string> &VariablesMap) {
+void processCmakeMinimumRequired(std::string &Input, size_t &Size,
+                                 size_t &Index) {
+  std::string VarName;
+  std::string Value;
+  size_t Begin, End;
 
-  int Size = Input.size();
-  int Index = 0;
+  // Get the begin of firt argument of cmake_minimum_required
+  Index = skipWhileSpaces(Input, Index);
+  Begin = Index;
+
+  // Get the end of the first argument of cmake_minimum_required
+  Index = gotoEndOfCmakeWord(Input, Index, ')');
+  End = Index;
+
+  // Get the name of the first argument
+  VarName = Input.substr(Begin, End - Begin);
+
+  // Get the begin of the second argument
+  Index = skipWhileSpaces(Input, End + 1);
+  Begin = Index;
+
+  // Get the end of the second argument
+  Index = gotoEndOfCmakeWord(Input, Begin + 1, ')');
+  End = Index;
+
+  // Get the name of the second argument
+  Value = Input.substr(Begin, End - Begin);
+
+  std::string ReplStr = processArgOfCmakeVersionRequired(Value, CmakeVarMap);
+
+  Input.replace(Begin, End - Begin, ReplStr);
+  Size = Input.size();            // Update string size
+  Index = Begin + ReplStr.size(); // Update index
+}
+
+// Implicit migration rule is used when the migration logic is difficult to be
+// described with yaml based rule syntax. Currently only migration of
+// cmake_minimum_required() is implemented by implicit migration rule.
+void applyImplicitMigrationRule(std::string &Input,
+                                const std::string &CmakeSyntax,
+                                void (*Func)(std::string &, size_t &,
+                                             size_t &)) {
+
+  size_t Size = Input.size();
+  size_t Index = 0;
   while (Index < Size) {
 
     // Skip comments
     skipCmakeComments(Input, Index);
 
-    int Begin, End;
+    size_t Begin, End;
     // Go the begin of cmake command
     Index = skipWhileSpaces(Input, Index);
     Begin = Index;
@@ -527,39 +530,9 @@ void cmakeSyntaxProcessed(
     if (Index < Size && Input[Index] == '(') {
       std::string Command = Input.substr(Begin, End - Begin);
 
-      if (Command == "cmake_minimum_required") {
-
-        std::string VarName;
-        std::string Value;
-
-        // Get the begin of firt argument of cmake_minimum_required
-        Index = skipWhileSpaces(Input, Index);
-        Begin = Index;
-
-        // Get the end of the first argument of cmake_minimum_required
-        Index = gotoEndOfCmakeWord(Input, Index, ')');
-        End = Index;
-
-        // Get the name of the first argument
-        VarName = Input.substr(Begin, End - Begin);
-
-        // Get the begin of the second argument
-        Index = skipWhileSpaces(Input, End + 1);
-        Begin = Index;
-
-        // Get the end of the second argument
-        Index = gotoEndOfCmakeWord(Input, Begin + 1, ')');
-        End = Index;
-
-        // Get the name of the second argument
-        Value = Input.substr(Begin, End - Begin);
-
-        std::string ReplStr =
-            processArgOfCmakeVersionRequired(Value, VariablesMap);
-
-        Input.replace(Begin, End - Begin, ReplStr);
-        Size = Input.size();            // Update string size
-        Index = Begin + ReplStr.size(); // update index
+      // Process implict cmake syntax
+      if (Command == CmakeSyntax) {
+        (*Func)(Input, Size, Index);
       }
 
       // Go the ')' of cmake command
@@ -570,7 +543,7 @@ void cmakeSyntaxProcessed(
   }
 }
 
-std::string convertCmakeCommandsToLower(const std::string &InputString) {
+static std::string convertCmakeCommandsToLower(const std::string &InputString) {
   std::stringstream OutputStream;
 
   const auto Lines = split(InputString, '\n');
@@ -603,4 +576,134 @@ std::string convertCmakeCommandsToLower(const std::string &InputString) {
   }
 
   return OutputStream.str();
+}
+
+static void doCmakeScriptAnalysis() {
+
+  for (auto &Entry : CmakeScriptFileBufferMap) {
+    auto &Buffer = Entry.second;
+
+    // Collect varible name and its value
+    parseVariable(Buffer);
+  }
+}
+
+static void unifyInputFileFormat() {
+  for (auto &Entry : CmakeScriptFileBufferMap) {
+    auto &Buffer = Entry.second;
+
+    // Convert input file to be LF
+    bool IsCRLF = fixLineEndings(Buffer, Buffer);
+    ScriptFileCRLFMap[Entry.first] = IsCRLF;
+
+    // Convert cmake command to lower case in cmake script files
+    Buffer = convertCmakeCommandsToLower(Buffer);
+  }
+}
+
+static void applyCmakeMigrationRules() {
+
+  static const std::map<std::string,
+                        void (*)(std::string &, size_t &, size_t &)>
+      DispatchTable = {
+          {"cmake_minimum_required", processCmakeMinimumRequired},
+      };
+
+  for (auto &Entry : CmakeScriptFileBufferMap) {
+    auto &Buffer = Entry.second;
+
+    // Apply user define migration rules
+    for (const auto &CmakeSyntaxEntry : CmakeBuildInRules) {
+      const auto &PR = CmakeSyntaxEntry.second;
+      if (PR.In.empty() && PR.Out.empty()) {
+        // Implicit migration rule is used when the migration logic is difficult
+        // to be described with yaml based rule syntax. Currently only migration
+        // of cmake_minimum_required() is implemented by implicit migration
+        // rule.
+        applyImplicitMigrationRule(Buffer, PR.CmakeSyntax,
+                                   DispatchTable.at(PR.CmakeSyntax));
+
+      } else {
+        Buffer = applyPatternRewriter(PR, Buffer);
+      }
+    }
+  }
+}
+
+static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
+                               const clang::tooling::UnifiedPath &OutRoot) {
+  for (const auto &ScriptFile : CmakeScriptFilesSet) {
+    if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile))
+      continue;
+  }
+}
+
+static void storeBufferToFile() {
+  for (auto &Entry : CmakeScriptFileBufferMap) {
+    auto &FileName = Entry.first;
+    auto &Buffer = Entry.second;
+    std::ofstream Out(FileName.getCanonicalPath().str(), std::ios::binary);
+    if (Out.fail()) {
+      std::string ErrMsg =
+          "[ERROR] Create file : " + std::string(FileName.getCanonicalPath()) +
+          " failure!\n";
+      PrintMsg(ErrMsg);
+    }
+
+    llvm::raw_os_ostream Stream(Out);
+
+    // Restore original endline format
+    auto IsCRLF = ScriptFileCRLFMap[FileName];
+    if (IsCRLF) {
+      std::stringstream ResultStream;
+      std::vector<std::string> SplitedStr = split(Buffer, '\n');
+      for (auto &SS : SplitedStr) {
+        ResultStream << SS << "\r\n";
+      }
+      Stream << llvm::StringRef(ResultStream.str().c_str());
+    } else {
+      Stream << llvm::StringRef(Buffer.c_str());
+    }
+    Stream.flush();
+  }
+}
+
+// cmake systaxes need to be processed by implicit migration rules, as they are
+// difficult to be described with yaml based rule syntax.
+static const std::vector<std::string> ImplicitMigrationRules = {
+    "cmake_minimum_required"};
+
+static void reserveImplicitMigrationRules() {
+  for (const auto &Rule : ImplicitMigrationRules) {
+    MetaRuleObject::PatternRewriter PrePR;
+    PrePR.CmakeSyntax = Rule;
+    CmakeBuildInRules[PrePR.CmakeSyntax] = PrePR;
+  }
+}
+
+void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
+                            const clang::tooling::UnifiedPath &OutRoot) {
+  loadBufferFromFile(InRoot, OutRoot);
+  unifyInputFileFormat();
+  reserveImplicitMigrationRules();
+  doCmakeScriptAnalysis();
+  applyCmakeMigrationRules();
+  storeBufferToFile();
+}
+
+void registerCmakeMigrationRule(MetaRuleObject &R) {
+  auto PR =
+      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
+                                      R.RuleId, R.CmakeSyntax, R.Priority);
+
+  auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
+  if (Iter != CmakeBuildInRules.end()) {
+    if (PR.Priority == RulePriority::Takeover) {
+      assert(Iter->second.Priority < PR.Priority &&
+             "Two same cmake syntaxes have \'Takeover\' priority.\n ");
+      CmakeBuildInRules[PR.CmakeSyntax] = PR;
+    }
+  } else {
+    CmakeBuildInRules[PR.CmakeSyntax] = PR;
+  }
 }
