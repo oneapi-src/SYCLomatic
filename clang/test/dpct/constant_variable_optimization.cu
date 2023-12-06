@@ -41,32 +41,38 @@ __global__ void kernel2(int *ptr){
 int main(){
   int *dp;
   cudaMallocManaged(&dp, sizeof(int));
-// CHECK:   q_ct1.submit(
-// CHECK:     [&](sycl::handler &cgh) {
-// CHECK:       dev_c.init();
-// CHECK:       auto dev_c_ptr_ct1 = dev_c.get_ptr();
-// CHECK:       cgh.parallel_for(
-// CHECK:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-// CHECK:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK:           kernel1(dp, *dev_c_ptr_ct1);
-// CHECK:         });
-// CHECK:     });
+// CHECK:   {
+// CHECK:     dev_c.init();
+// CHECK-EMPTY:
+// CHECK:     q_ct1.submit(
+// CHECK:       [&](sycl::handler &cgh) {
+// CHECK:         auto dev_c_ptr_ct1 = dev_c.get_ptr();
+// CHECK:         cgh.parallel_for(
+// CHECK:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK:           [=](sycl::nd_item<3> item_ct1) {
+// CHECK:             kernel1(dp, *dev_c_ptr_ct1);
+// CHECK:           });
+// CHECK:       });
+// CHECK:   }
   kernel1<<<1, 1>>>(dp);
   cudaDeviceSynchronize();
   std::cout << *dp << std::endl;
 
   int *dp2;
   cudaMallocManaged(&dp2, 32 * sizeof(int));
-// CHECK:   q_ct1.submit(
-// CHECK:     [&](sycl::handler &cgh) {
-// CHECK:       dev_d.init();
-// CHECK:       auto dev_d_ptr_ct1 = dev_d.get_ptr();
-// CHECK:       cgh.parallel_for(
-// CHECK:         sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-// CHECK:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK:           kernel2(dp2, item_ct1, dev_d_ptr_ct1);
-// CHECK:         });
-// CHECK:     });
+// CHECK:   {
+// CHECK:     dev_d.init();
+// CHECK-EMPTY:
+// CHECK:     q_ct1.submit(
+// CHECK:       [&](sycl::handler &cgh) {
+// CHECK:         auto dev_d_ptr_ct1 = dev_d.get_ptr();
+// CHECK:         cgh.parallel_for(
+// CHECK:           sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
+// CHECK:           [=](sycl::nd_item<3> item_ct1) {
+// CHECK:             kernel2(dp2, item_ct1, dev_d_ptr_ct1);
+// CHECK:           });
+// CHECK:       });
+// CHECK:   }
   kernel2<<<1, 32>>>(dp2);
   cudaDeviceSynchronize();
   for(int i = 0; i < 32; i++) {
