@@ -712,6 +712,25 @@ template <typename T> sycl::vec<int32_t, 2> extractAndExtend2(T a) {
   return ret;
 }
 
+template <typename T> sycl::vec<int32_t, 4> extractAndExtend4(T a) {
+  sycl::vec<int32_t, 4> ret;
+  sycl::vec<T, 1> va{a};
+  if constexpr (std::is_signed_v<T>) {
+    auto v = va.template as<sycl::vec<int8_t, 4>>();
+    ret[0] = zero_or_signed_extent(v[0], 17);
+    ret[1] = zero_or_signed_extent(v[1], 17);
+    ret[2] = zero_or_signed_extent(v[2], 17);
+    ret[3] = zero_or_signed_extent(v[3], 17);
+  } else {
+    auto v = va.template as<sycl::vec<uint8_t, 4>>();
+    ret[0] = zero_or_signed_extent(v[0], 17);
+    ret[1] = zero_or_signed_extent(v[1], 17);
+    ret[2] = zero_or_signed_extent(v[2], 17);
+    ret[3] = zero_or_signed_extent(v[3], 17);
+  }
+  return ret;
+}
+
 template <typename RetT, bool NeedSat, bool NeedAdd, typename AT, typename BT,
           typename BinaryOperation>
 inline constexpr RetT extend_vbinary2(AT a, BT b, RetT c,
@@ -738,6 +757,39 @@ inline constexpr RetT extend_vbinary2(AT a, BT b, RetT c,
     return sycl::vec<int16_t, 2>{temp[0], temp[1]}.as<sycl::vec<RetT, 1>>();
   } else {
     return sycl::vec<uint16_t, 2>{temp[0], temp[1]}.as<sycl::vec<RetT, 1>>();
+  }
+}
+
+template <typename RetT, bool NeedSat, bool NeedAdd, typename AT, typename BT,
+          typename BinaryOperation>
+inline constexpr RetT extend_vbinary4(AT a, BT b, RetT c,
+                                      BinaryOperation binary_op) {
+  sycl::vec<int32_t, 4> extend_a = extractAndExtend4(a);
+  sycl::vec<int32_t, 4> extend_b = extractAndExtend4(b);
+  sycl::vec<int32_t, 4> temp{
+      binary_op(extend_a[0], extend_b[0]), binary_op(extend_a[1], extend_b[1]),
+      binary_op(extend_a[2], extend_b[2]), binary_op(extend_a[3], extend_b[3])};
+  if constexpr (NeedSat) {
+    int32_t min_val = 0, max_val = 0;
+    if constexpr (std::is_signed_v<RetT>) {
+      min_val = std::numeric_limits<int8_t>::min();
+      max_val = std::numeric_limits<int8_t>::max();
+    } else {
+      min_val = std::numeric_limits<uint8_t>::min();
+      max_val = std::numeric_limits<uint8_t>::max();
+    }
+    temp = dpct::clamp(temp, {min_val, min_val, min_val, min_val},
+                       {max_val, max_val, max_val, max_val});
+  }
+  if constexpr (NeedAdd) {
+    return temp[0] + temp[1] + temp[2] + temp[3] + c;
+  }
+  if constexpr (std::is_signed_v<RetT>) {
+    return sycl::vec<int8_t, 4>{temp[0], temp[1], temp[2], temp[3]}
+        .as<sycl::vec<RetT, 1>>();
+  } else {
+    return sycl::vec<uint8_t, 4>{temp[0], temp[1], temp[2], temp[3]}
+        .as<sycl::vec<RetT, 1>>();
   }
 }
 
@@ -1367,6 +1419,226 @@ inline constexpr RetT extend_vmax2_add(AT a, BT b, RetT c) {
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vmax2_sat(AT a, BT b, RetT c) {
   return detail::extend_vbinary2<RetT, true, false>(a, b, c, maximum());
+}
+
+/// Compute vectorized addition of \p a and \p b, with each value treated as a
+/// 4 elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized addition of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vadd4(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, false>(a, b, c, std::plus());
+}
+
+/// Compute vectorized addition of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 17 bit. Then add each half
+/// of the result and add with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The addition of each half of extend vectorized addition of the two
+/// values and the third value
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vadd4_add(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, true>(a, b, c, std::plus());
+}
+
+/// Compute vectorized addition of \p a and \p b with saturation, with each
+/// value treated as a 4 elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized addition of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vadd4_sat(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, true, false>(a, b, c, std::plus());
+}
+
+/// Compute vectorized subtraction of \p a and \p b, with each value treated as
+/// a 4 elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized subtraction of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vsub4(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, false>(a, b, c, std::minus());
+}
+
+/// Compute vectorized subtraction of \p a and \p b, with each value treated as
+/// a 4 elements vector type and extend each element to 17 bit. Then add each
+/// half of the result and add with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The addition of each half of extend vectorized subtraction of the
+/// two values and the third value
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vsub4_add(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, true>(a, b, c, std::minus());
+}
+
+/// Compute vectorized subtraction of \p a and \p b with saturation, with each
+/// value treated as a 4 elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized subtraction of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vsub4_sat(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, true, false>(a, b, c, std::minus());
+}
+
+/// Compute vectorized abs_diff of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized abs_diff of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vabsdiff4(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, false>(a, b, c, abs_diff());
+}
+
+/// Compute vectorized abs_diff of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 17 bit. Then add each half
+/// of the result and add with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The addition of each half of extend vectorized abs_diff of the
+/// two values and the third value
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vabsdiff4_add(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, true>(a, b, c, abs_diff());
+}
+
+/// Compute vectorized abs_diff of \p a and \p b with saturation, with each
+/// value treated as a 4 elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized abs_diff of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vabsdiff4_sat(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, true, false>(a, b, c, abs_diff());
+}
+
+/// Compute vectorized minimum of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized minimum of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vmin4(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, false>(a, b, c, minimum());
+}
+
+/// Compute vectorized minimum of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 17 bit. Then add each half
+/// of the result and add with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The addition of each half of extend vectorized minimum of the
+/// two values and the third value
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vmin4_add(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, true>(a, b, c, minimum());
+}
+
+/// Compute vectorized minimum of \p a and \p b with saturation, with each value
+/// treated as a 4 elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized minimum of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vmin4_sat(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, true, false>(a, b, c, minimum());
+}
+
+/// Compute vectorized maximum of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized maximum of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vmax4(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, false>(a, b, c, maximum());
+}
+
+/// Compute vectorized maximum of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 17 bit. Then add each half
+/// of the result and add with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The addition of each half of extend vectorized maximum of the
+/// two values and the third value
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vmax4_add(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, true>(a, b, c, maximum());
+}
+
+/// Compute vectorized maximum of \p a and \p b with saturation, with each value
+/// treated as a 4 elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized maximum of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vmax4_sat(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, true, false>(a, b, c, maximum());
 }
 } // namespace dpct
 
