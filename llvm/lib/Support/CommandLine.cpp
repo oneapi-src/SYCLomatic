@@ -1540,9 +1540,10 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 
 #ifdef SYCLomatic_CUSTOMIZATION
 #ifndef _WIN32
-  if (argc >= 2 && (std::string(argv[FirstArg]) == "--intercept-build" ||
-                    std::string(argv[FirstArg]) == "-intercept-build" ||
-                    std::string(argv[FirstArg]) == "intercept-build")) {
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]) == "--intercept-build" ||
+       std::string(argv[FirstArg]) == "-intercept-build" ||
+       std::string(argv[FirstArg]) == "intercept-build")) {
     const static std::string InterceptBuildCommand = "intercept-build";
     StringRef ArgName(InterceptBuildCommand);
     StringRef Value;
