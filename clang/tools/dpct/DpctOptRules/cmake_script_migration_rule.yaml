@@ -62,26 +62,40 @@
   Kind: PatternRewriter
   MatchMode: Partial
   Priority: Takeover
-  In: set_target_properties (${targets} PROPERTIES CXX_STANDARD ${version})
-  Out: set_target_properties (${targets} PROPERTIES CXX_STANDARD 17)
+  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
+  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
 
-- Rule: rule_set_property_cxx_standard
+- Rule: rule_set_property_cuda_seprarable_only
   Kind: PatternRewriter
   MatchMode: Partial
   Priority: Takeover
-  In: set_target_properties (${targets} PROPERTIES CXX_STANDARD ${version})
-  Out: set_target_properties (${targets} PROPERTIES CXX_STANDARD 17)
+  In: set_target_properties(${target_property} CUDA_SEPARABLE_COMPILATION ${state})
+  Out: ""
 
 - Rule: rule_set_property_cuda_seprarable
   Kind: PatternRewriter
   MatchMode: Partial
   Priority: Takeover
-  In: set_target_properties (${targets} PROPERTIES CUDA_SEPARABLE_COMPILATION ${state} ${other_properties})
-  Out: set_target_properties (${targets} PROPERTIES ${other_properties})
+  In: set_target_properties(${target_property} CUDA_SEPARABLE_COMPILATION ${state} ${other_properties})
+  Out: set_target_properties(${target_property} ${other_properties})
 
 - Rule: rule_set_property_cuda_architechtures
   Kind: PatternRewriter
   MatchMode: Partial
   Priority: Takeover
-  In: set_target_properties (${targets} PROPERTIES CUDA_ARCHITECHTURES ${state} ${other_properties})
-  Out: set_target_properties (${targets} PROPERTIES ${other_properties})
+  In: set_target_properties(${targets} PROPERTIES CUDA_ARCHITECHTURES ${state} ${other_properties})
+  Out: set_target_properties(${targets} PROPERTIES ${other_properties})
+
+- Rule: rule_set_property_cuda_architechtures_only
+  Kind: PatternRewriter
+  MatchMode: Partial
+  Priority: Takeover
+  In: set_target_properties(${target_property} CUDA_ARCHITECHTURES ${state})
+  Out: ""
+
+- Rule: rule_set_property_cuda_architechtures
+  Kind: PatternRewriter
+  MatchMode: Partial
+  Priority: Takeover
+  In: set_target_properties(${target_property} CUDA_ARCHITECHTURES ${state} ${other_properties})
+  Out: set_target_properties(${target_property} ${other_properties})
