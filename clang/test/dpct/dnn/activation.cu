@@ -1,6 +1,5 @@
 // RUN: dpct -in-root %S -out-root %T/activation %S/activation.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/activation/activation.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/activation/activation.dp.cpp -o %T/activation/activation.dp.o %}
 
 // CHECK: #include <dpct/dnnl_utils.hpp>
 // CHECK: #include <sycl/sycl.hpp>

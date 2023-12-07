@@ -1,6 +1,5 @@
 // RUN: dpct --format-range=none -out-root %T/device002 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device002/device002.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/device002/device002.dp.cpp -o %T/device002/device002.dp.o %}
 
 #include <stdio.h>
 

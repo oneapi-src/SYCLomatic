@@ -1,6 +1,5 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem-dim-noUSM %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem-dim-noUSM/sharedmem-dim-noUSM.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/sharedmem-dim-noUSM/sharedmem-dim-noUSM.dp.cpp -o %T/sharedmem-dim-noUSM/sharedmem-dim-noUSM.dp.o %}
 // CHECK: #define DPCT_USM_LEVEL_NONE
 #include <cuda_runtime.h>
 

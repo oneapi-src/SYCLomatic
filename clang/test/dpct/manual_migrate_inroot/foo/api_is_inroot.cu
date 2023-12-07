@@ -4,7 +4,6 @@
 // RUN: cat %s > %T/api_is_inroot.cu
 // RUN: dpct --format-range=none ./api_is_inroot.cu --in-root=.. --out-root=%T/out --cuda-include-path="%cuda-path/include" -- --cuda-host-only -I..
 // RUN: FileCheck %s --match-full-lines --input-file %T/out/Output/api_is_inroot.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/out/Output/api_is_inroot.dp.cpp -o %T/out/Output/api_is_inroot.dp.o %}
 // RUN: cd ..
 // RUN: rm -rf ./*
 

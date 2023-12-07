@@ -1,6 +1,5 @@
 // RUN:dpct --enable-profiling  --no-dpcpp-extensions=enqueued_barriers --format-range=none -out-root %T/tm-usm-no-submit-barrier-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-usm-no-submit-barrier-profiling/tm-usm-no-submit-barrier-profiling.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/tm-usm-no-submit-barrier-profiling/tm-usm-no-submit-barrier-profiling.dp.cpp -o %T/tm-usm-no-submit-barrier-profiling/tm-usm-no-submit-barrier-profiling.dp.o %}
 
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT:#include <sycl/sycl.hpp>

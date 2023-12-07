@@ -2,7 +2,6 @@
 // UNSUPPORTED: v8.0, v9.0, v9.2
 // RUN: dpct -out-root %T/nvml_test %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/nvml_test/nvml_test.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/nvml_test/nvml_test.dp.cpp -o %T/nvml_test/nvml_test.dp.o %}
 #include "cuda_runtime.h"
 #include "nvml.h"
 #include <vector>

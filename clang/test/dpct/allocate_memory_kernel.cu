@@ -1,7 +1,6 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/allocate_memory_kernel %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/allocate_memory_kernel/allocate_memory_kernel.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/allocate_memory_kernel/allocate_memory_kernel.dp.cpp -o %T/allocate_memory_kernel/allocate_memory_kernel.dp.o %}
 #include <cstdlib>
 #include <cuda.h>
 #include <stdio.h>

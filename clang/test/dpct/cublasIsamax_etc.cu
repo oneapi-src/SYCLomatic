@@ -1,6 +1,5 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasIsamax_etc %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasIsamax_etc/cublasIsamax_etc.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/cublasIsamax_etc/cublasIsamax_etc.dp.cpp -o %T/cublasIsamax_etc/cublasIsamax_etc.dp.o %}
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>

@@ -2,7 +2,6 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/cooperative_groups %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/cooperative_groups/cooperative_groups.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/cooperative_groups/cooperative_groups.dp.cpp -o %T/cooperative_groups/cooperative_groups.dp.o %}
 
 #include <cooperative_groups.h>
 

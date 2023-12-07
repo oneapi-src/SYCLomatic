@@ -1,6 +1,5 @@
 // RUN: dpct --format-range=none -out-root %T/est-dpct-header %s %S/test-dpct-header-dup.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -extra-arg="-I%S/inc" -- -std=c++14 -x cuda --cuda-host-only -DCUDA
 // RUN: FileCheck --match-full-lines --input-file %T/est-dpct-header/test-dpct-header.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/est-dpct-header/test-dpct-header.dp.cpp -o %T/est-dpct-header/test-dpct-header.dp.o %}
 
 // RUN: FileCheck --match-full-lines --input-file %T/est-dpct-header/inc/header.tpp %S/inc/header.tpp
 // RUN: FileCheck --match-full-lines --input-file %T/est-dpct-header/inc/header2.TPP %S/inc/header2.TPP

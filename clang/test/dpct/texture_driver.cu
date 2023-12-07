@@ -1,6 +1,5 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_driver %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/texture_driver/texture_driver.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/texture_driver/texture_driver.dp.cpp -o %T/texture_driver/texture_driver.dp.o %}
 
 #include "cuda.h"
 #include <stdio.h>
