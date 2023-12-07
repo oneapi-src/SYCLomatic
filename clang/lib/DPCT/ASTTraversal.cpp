@@ -4197,7 +4197,17 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasChemm", "cublasZhemm", "cublasStrsm", "cublasDtrsm",
         "cublasCtrsm", "cublasZtrsm", "cublasStrmm", "cublasDtrmm",
         "cublasCtrmm", "cublasZtrmm", "cublasSgemm_v2_64", "cublasDgemm_v2_64",
-        "cublasCgemm_v2_64", "cublasZgemm_v2_64");
+        "cublasCgemm_v2_64", "cublasZgemm_v2_64", "cublasCgemm_v2_64",
+        "cublasZgemm_v2_64", "cublasSsyrk_v2_64", "cublasDsyrk_v2_64",
+        "cublasCsyrk_v2_64", "cublasZsyrk_v2_64", "cublasSsymm_v2_64",
+        "cublasDsymm_v2_64", "cublasCsymm_v2_64", "cublasZsymm_v2_64",
+        "cublasStrsm_v2_64", "cublasDtrsm_v2_64", "cublasCtrsm_v2_64",
+        "cublasZtrsm_v2_64", "cublasChemm_v2_64", "cublasZhemm_v2_64",
+        "cublasCherk_v2_64", "cublasZherk_v2_64", "cublasSsyr2k_v2_64",
+        "cublasDsyr2k_v2_64", "cublasCsyr2k_v2_64", "cublasZsyr2k_v2_64",
+        "cublasCher2k_v2_64", "cublasZher2k_v2_64", "cublasSgeam_64",
+        "cublasDgeam_64", "cublasCgeam_64", "cublasZgeam_64", "cublasSdgmm_64",
+        "cublasDdgmm_64", "cublasCdgmm_64", "cublasZdgmm_64");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -4382,105 +4392,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (FuncName == "cublasSdgmm" || FuncName == "cublasDdgmm" ||
-             FuncName == "cublasCdgmm" || FuncName == "cublasZdgmm") {
-    std::string Replacement = "oneapi::mkl::blas::column_major::dgmm_batch";
-    if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), Replacement);
-      return;
-    }
-    BLASEnumInfo EnumInfo({}, -1, 1, -1);
-    std::string BufferType;
-    if (FuncName == "cublasSdgmm") {
-      BufferType = "float";
-    } else if (FuncName == "cublasDdgmm") {
-      BufferType = "double";
-    } else if (FuncName == "cublasCdgmm") {
-      BufferType = "std::complex<float>";
-    } else {
-      BufferType = "std::complex<double>";
-    }
-
-    // initialize the replacement of each argument
-    int ArgNum = CE->getNumArgs();
-    for (int i = 0; i < ArgNum; ++i) {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(i));
-      CallExprArguReplVec.push_back(EA.getReplacedString());
-    }
-
-    std::string LdcTimesN =
-        (needExtraParens(CE->getArg(9)) ? ("(" + CallExprArguReplVec[9] + ")")
-                                        : CallExprArguReplVec[9]) +
-        " * " +
-        (needExtraParens(CE->getArg(3)) ? ("(" + CallExprArguReplVec[3] + ")")
-                                        : CallExprArguReplVec[3]);
-
-    // update the replacement of four enmu arguments
-    if (const CStyleCastExpr *CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
-      std::string CurrentArgumentRepl;
-      processParamIntCastToBLASEnum(CE->getArg(1), CSCE, 1, IndentStr, EnumInfo,
-                                    PrefixInsertStr, CurrentArgumentRepl);
-      CallExprArguReplVec[1] = CurrentArgumentRepl;
-    }
-
-    // update the replacement of three buffers
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      requestFeature(HelperFeatureEnum::device_ext);
-      std::string BufferDecl;
-      CallExprArguReplVec[4] = getBufferNameAndDeclStr(
-          CE->getArg(4), BufferType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[6] = getBufferNameAndDeclStr(
-          CE->getArg(6), BufferType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[8] = getBufferNameAndDeclStr(
-          CE->getArg(8), BufferType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-    } else {
-      if (FuncName == "cublasCdgmm") {
-        CallExprArguReplVec[4] =
-            getArgWithTypeCast(CE->getArg(4), "std::complex<float>*");
-        CallExprArguReplVec[6] =
-            getArgWithTypeCast(CE->getArg(6), "std::complex<float>*");
-        CallExprArguReplVec[8] =
-            getArgWithTypeCast(CE->getArg(8), "std::complex<float>*");
-      } else if (FuncName == "cublasZdgmm") {
-        CallExprArguReplVec[4] =
-            getArgWithTypeCast(CE->getArg(4), "std::complex<double>*");
-        CallExprArguReplVec[6] =
-            getArgWithTypeCast(CE->getArg(6), "std::complex<double>*");
-        CallExprArguReplVec[8] =
-            getArgWithTypeCast(CE->getArg(8), "std::complex<double>*");
-      }
-    }
-
-    // Insert some arguments since we are now using batch API
-    // If we have new dedicated API for migrating dgmm in the future,
-    // then we can remove the argument insertion.
-    CallExprArguReplVec.push_back(LdcTimesN); // stride_c
-    CallExprArguReplVec.push_back("1"); // batch_size
-    auto Iter = CallExprArguReplVec.begin();
-    std::advance(Iter, 8);
-    CallExprArguReplVec.insert(Iter, "0"); // stride_b
-    Iter = CallExprArguReplVec.begin();
-    std::advance(Iter, 6);
-    CallExprArguReplVec.insert(Iter, "0"); // stride_a
-
-    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
-
-    if (NeedUseLambda) {
-      if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
-        NeedUseLambda = false;
-      }
-    }
-
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
-                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
-                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
-                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
-                       PrefixInsertStr, SuffixInsertStr);
   } else if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
              MapNames::BLASFuncReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
