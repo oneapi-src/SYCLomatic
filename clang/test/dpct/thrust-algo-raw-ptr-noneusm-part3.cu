@@ -9,8 +9,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/logical.h>
 #include <thrust/partition.h>
-#include <thrust/sort.h>
+#include <thrust/reverse.h>
 #include <thrust/set_operations.h>
+#include <thrust/sort.h>
 
 void all_of() {
 
@@ -133,4 +134,13 @@ void set_intersection() {
   thrust::set_intersection(A1, A1 + 6, A2, A2 + 7, result);
   thrust::set_intersection(thrust::host, A1, A1 + 6, A2, A2 + 7, result, thrust::greater<int>());
   thrust::set_intersection(A1, A1 + 6, A2, A2 + 7, result, thrust::greater<int>());
+}
+
+void reverse_copy() {
+  const int N = 6;
+  int data[N] = {0, 1, 2, 3, 4, 5};
+  int result[N];
+
+  thrust::reverse_copy(thrust::host, data, data + N, result);
+  thrust::reverse_copy(data, data + N, result);
 }
