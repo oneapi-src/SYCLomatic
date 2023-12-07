@@ -141,6 +141,16 @@ void reverse_copy() {
   int data[N] = {0, 1, 2, 3, 4, 5};
   int result[N];
 
+  // CHECK:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::reverse_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(result));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::reverse_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(result));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
+  // CHECK-NEXT:  };
   thrust::reverse_copy(thrust::host, data, data + N, result);
   thrust::reverse_copy(data, data + N, result);
 }
