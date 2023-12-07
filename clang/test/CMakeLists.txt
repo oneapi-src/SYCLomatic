@@ -82,9 +82,11 @@ list(APPEND CLANG_TEST_DEPS
   dpct-binary
   )
 
+# SYCLomatic_CUSTOMIZATION begin
 if(BUILD_LIT)
   set(BUILD_LIT "TRUE")
 endif()
+# SYCLomatic_CUSTOMIZATION end
 
 if(CLANG_ENABLE_STATIC_ANALYZER)
   list(APPEND CLANG_TEST_DEPS

@@ -340,8 +340,10 @@ if config.clang_vendor_uti:
 if config.have_llvm_driver:
     config.available_features.add("llvm-driver")
 
+#SYCLomatic Code
 if config.is_enbale_build_lit == 'TRUE':
     config.available_features.add("build_lit")
+#End SYCLomatic
 
 def exclude_unsupported_files_for_aix(dirname):
     for filename in os.listdir(dirname):
