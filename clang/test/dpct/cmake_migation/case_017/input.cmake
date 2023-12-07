@@ -1,16 +1,26 @@
-# In the following cases check for changes after running the pattern-rewritter
-set (CMAKE_CXX_STANDARD g++)
-set (CMAKE_CXX_STANDARD clang++)
-set (CMAKE_CXX_STANDARD /usr/bin/clang++)
-set (CMAKE_CXX_STANDARD no_a_cpp_compiler)
-# Using magic number to be diverse
+set (GCC_COMPILER g++)
 
-# In the following cases check for NO changes after running the pattern-rewritter
-set (CMAKE_C_STANDARD icx)
-set (CMAKE_C_STANDARD /path/to/icx)
+# In the following cases check for changes after running the
+# pattern-rewritter
+set (CMAKE_CXX_COMPILER g++)
+set (CMAKE_CXX_COMPILER clang++)
+set (CMAKE_CXX_COMPILER /usr/bin/clang++)
+set (CMAKE_CXX_COMPILER no_a_cpp_compiler)
+set (CMAKE_CXX_COMPILER ${GCC_COMPILER})
 
-set (CMAKE_CXX_STANDARD icpx)
-set (CMAKE_CXX_STANDARD /path/to/icpx)
+# In the following cases check for NO changes after running the
+# pattern-rewritter
+set (CMAKE_C_COMPILER clang)
+set (CMAKE_C_COMPILER icx)
 
-# No change to non-cmake standard
+# In the following cases check for NO changes after running the
+# pattern-rewritter
+set (CMAKE_CXX_COMPILER icpx)
+# The following example will not work due to limitation of pattern
+# rewritter
+# set (CMAKE_CXX_COMPILER /path/to/icpx)
+# set (ICPX_COMPILER icpx)
+# set (CMAKE_CXX_COMPILER ${ICPX_COMPILER})
+
+# No change to non-cmake variable
 set (Cmake_CXX_Standard clang++)
