@@ -13,8 +13,9 @@
   Priority: Fallback
   CmakeSyntax: project
   In: project(${arg0} ${argN})
-  Out: project(${arg0} ${argN})
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
+  Out: |
+   project(${arg0} ${argN})
+   set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fsycl")
   Subrules:
     argN:
       In: CUDA
@@ -40,3 +41,53 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
+- Rule: rule_set_property
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property
+  In: set_property(${value})
+  Out: set_property(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+- Rule: rule_cuda_add_executable
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_add_executable
+  In: cuda_add_executable(${value})
+  Out: add_executable(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+- Rule: rule_add_executable
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_executable
+  In: add_executable(${value})
+  Out: add_executable(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+- Rule: rule_target_link_libraries_cublas
+  Kind: CMakeRule
+  Priority: Default
+  CmakeSyntax: target_link_libraries
+  In: target_link_libraries(${NAME} ${SCOPE} ${CMakeLibraries})
+  Out: target_link_libraries(${NAME} ${SCOPE} ${CMakeLibraries})
+  Subrules:
+    CMakeLibraries:
+      In: ${Prefix}cublas${Suffix}
+      Out: ${Prefix}-L${MKLROOT}/lib/intel64 -lmkl_sycl -lmkl_intel_ilp64 -lmkl_tbb_thread -lmkl_core${Suffix}
+
+- Rule: rule_target_link_libraries_libstc++
+  Kind: CMakeRule
+  Priority: Default
+  CmakeSyntax: target_link_libraries
+  In: target_link_libraries(${NAME} ${SCOPE} -static-libstdc++ ${StaticLibraries})
+  Out: target_link_libraries(${NAME} ${SCOPE} ${StaticLibraries})
