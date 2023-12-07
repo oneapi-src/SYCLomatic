@@ -50,6 +50,11 @@ thrustFactory("thrust::reverse",
               {{3,PolicyState::HasPolicy,2,"oneapi::dpl::reverse", HelperFeatureEnum::none },
                {2,PolicyState::NoPolicy ,2,"oneapi::dpl::reverse", HelperFeatureEnum::none }}),
 
+// thrust::reverse_copy
+thrustFactory("thrust::reverse_copy",
+              {{4,PolicyState::HasPolicy,3,"oneapi::dpl::reverse_copy", HelperFeatureEnum::none },
+               {3,PolicyState::NoPolicy ,3,"oneapi::dpl::reverse_copy", HelperFeatureEnum::none }}),
+
 // thrust::find_if
 thrustFactory("thrust::find_if",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::find_if", HelperFeatureEnum::none },
