@@ -355,7 +355,8 @@ public:
   inline int get_dims() { return _dims; }
   /// Convert to pitched data.
   pitched_data to_pitched_data() {
-    return pitched_data(_host_data, _range[0], _range[0], _range[1]);
+    return pitched_data(_host_data, _range[0] * _channel.get_total_size(),
+                        _range[0], _range[1]);
   }
 
   ~image_matrix() {

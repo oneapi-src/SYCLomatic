@@ -49,8 +49,8 @@ std::vector<std::string> ExtraIncPaths;
 int SDKVersionMajor=0;
 int SDKVersionMinor=0;
 
-bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath, CudaVersion& CV) {
-  CV = CudaVersion::UNKNOWN;
+bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath) {
+  Version = CudaVersion::UNKNOWN;
   std::ifstream CudaFile(FilePath, std::ios::in);
   if (!CudaFile.is_open()) {
     return false;
@@ -73,57 +73,59 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
   int DefineVersion = std::stoi(Res);
   int Major = DefineVersion / 1000;
   int Minor = (DefineVersion % 100) / 10;
-
   SDKVersionMajor = Major;
   SDKVersionMinor = Minor;
   if (Major < 8) {
-    CV = CudaVersion::CUDA_80;
+    Version = CudaVersion::CUDA_80;
   }
   if (Major == 8 && Minor == 0) {
-    CV = CudaVersion::CUDA_80;
+    Version = CudaVersion::CUDA_80;
   } else if (Major == 9 && Minor == 0) {
-    CV = CudaVersion::CUDA_90;
+    Version = CudaVersion::CUDA_90;
   } else if (Major == 9 && Minor == 1) {
-    CV = CudaVersion::CUDA_91;
+    Version = CudaVersion::CUDA_91;
   } else if (Major == 9 && Minor == 2) {
-    CV = CudaVersion::CUDA_92;
+    Version = CudaVersion::CUDA_92;
   } else if (Major == 10 && Minor == 0) {
-    CV = CudaVersion::CUDA_100;
+    Version = CudaVersion::CUDA_100;
   } else if (Major == 10 && Minor == 1) {
-    CV = CudaVersion::CUDA_101;
+    Version = CudaVersion::CUDA_101;
   } else if (Major == 10 && Minor == 2) {
-    CV = CudaVersion::CUDA_102;
+    Version = CudaVersion::CUDA_102;
   } else if (Major == 11 && Minor == 0) {
-    CV = CudaVersion::CUDA_110;
+    Version = CudaVersion::CUDA_110;
   } else if (Major == 11 && Minor == 1) {
-    CV = CudaVersion::CUDA_111;
+    Version = CudaVersion::CUDA_111;
   } else if (Major == 11 && Minor == 2) {
-    CV = CudaVersion::CUDA_112;
+    Version = CudaVersion::CUDA_112;
   } else if (Major == 11 && Minor == 3) {
-    CV = CudaVersion::CUDA_113;
+    Version = CudaVersion::CUDA_113;
   } else if (Major == 11 && Minor == 4) {
-    CV = CudaVersion::CUDA_114;
+    Version = CudaVersion::CUDA_114;
   } else if (Major == 11 && Minor == 5) {
-    CV = CudaVersion::CUDA_115;
+    Version = CudaVersion::CUDA_115;
   } else if (Major == 11 && Minor == 6) {
-    CV = CudaVersion::CUDA_116;
+    Version = CudaVersion::CUDA_116;
   } else if (Major == 11 && Minor == 7) {
-    CV = CudaVersion::CUDA_117;
+    Version = CudaVersion::CUDA_117;
   } else if (Major == 11 && Minor == 8) {
-    CV = CudaVersion::CUDA_118;
+    Version = CudaVersion::CUDA_118;
   } else if (Major == 12 && Minor == 0) {
-    CV = CudaVersion::CUDA_120;
+    Version = CudaVersion::CUDA_120;
   } else if (Major == 12 && Minor == 1) {
-    CV = CudaVersion::CUDA_121;
+    Version = CudaVersion::CUDA_121;
   } else if (Major == 12 && Minor == 2) {
-    CV = CudaVersion::CUDA_122;
+    Version = CudaVersion::CUDA_122;
+  } else if (Major == 12 && Minor == 3) {
+    Version = CudaVersion::CUDA_123;
   }
 
-  if (CV != CudaVersion::UNKNOWN) {
+  if (Version != CudaVersion::UNKNOWN) {
     IsVersionSupported = true;
     return true;
   } else if (Major >= 12) {
-    CV = CudaVersion::NEW;
+    Version = CudaVersion::NEW;
+    IsVersionPartSupported = true;
     return true;
   }
   return false;
@@ -229,13 +231,12 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
         FS.exists(FilePath + "/cuda.h")))
     return false;
   IsIncludePathValid = true;
-  bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h", Version);
+  IncludePath = FilePath;
+  bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h");
   if (!IsFound)
     return false;
   IsValid = true;
   InstallPath = FilePath;
-  IncludePath = FilePath;
-
   return true;
 }
 #endif // SYCLomatic_CUSTOMIZATION
@@ -255,9 +256,9 @@ CudaInstallationDetector::CudaInstallationDetector(
   // In decreasing order so we prefer newer versions to older versions.
 #ifdef SYCLomatic_CUSTOMIZATION
   std::initializer_list<const char *> Versions = {
-      "12.2", "12.1", "12.0", "11.8", "11.7", "11.6", "11.5",
-      "11.4", "11.3", "11.2", "11.1", "10.2", "10.1", "10.0",
-      "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
+      "12.3", "12.2", "12.1", "12.0", "11.8", "11.7", "11.6",
+      "11.5", "11.4", "11.3", "11.2", "11.1", "10.2", "10.1",
+      "10.0", "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
 #else
   std::initializer_list<const char *> Versions = {
       "11.4", "11.3", "11.2", "11.1", "10.2", "10.1", "10.0",

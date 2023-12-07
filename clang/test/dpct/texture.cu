@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2
-// UNSUPPORTED: v12.0, v12.1, v12.2
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
+// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/texture %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/texture/texture.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/texture/texture.dp.cpp -o %T/texture/texture.dp.o %}
@@ -67,6 +67,12 @@ int main() {
 
   // CHECK: dpct::image_channel halfChn = dpct::image_channel::create<sycl::half>();
   cudaChannelFormatDesc halfChn = cudaCreateChannelDescHalf();
+  // CHECK: dpct::image_channel half1Chn = dpct::image_channel::create<sycl::half>();
+  cudaChannelFormatDesc half1Chn = cudaCreateChannelDescHalf1();
+  // CHECK: dpct::image_channel half2Chn = dpct::image_channel::create<sycl::half2>();
+  cudaChannelFormatDesc half2Chn = cudaCreateChannelDescHalf2();
+  // CHECK: dpct::image_channel half4Chn = dpct::image_channel::create<sycl::half4>();
+  cudaChannelFormatDesc half4Chn = cudaCreateChannelDescHalf4();
 
   // CHECK: dpct::image_channel float4Chn = dpct::image_channel::create<sycl::float4>();
   cudaChannelFormatDesc float4Chn = cudaCreateChannelDesc<float4>();

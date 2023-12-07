@@ -156,6 +156,7 @@ add_clang_library(DPCT
   IncrementalMigrationUtility.cpp
   Rules.cpp
   PatternRewriter.cpp
+  MigrateCmakeScript.cpp
   Homoglyph.cpp
   MisleadingBidirectional.cpp
   BarrierFenceSpaceAnalyzer.cpp
@@ -181,6 +182,7 @@ add_clang_library(DPCT
   WMMAAPIMigration.cpp
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
+  SpBLASAPIMigration.cpp
 
   DEPENDS
   ClangDriverOptions

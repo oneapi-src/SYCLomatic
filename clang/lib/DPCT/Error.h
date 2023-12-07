@@ -9,6 +9,7 @@
 #ifndef DPCT_ERROR_H
 #define DPCT_ERROR_H
 
+#include "clang/Tooling/Tooling.h"
 #include <string>
 
 /// ProcessStatus defines various statuses of dpct workflow
@@ -58,13 +59,17 @@ enum ProcessStatus {
   MigrationErrorAPIMappingNoCUDAHeader = -45,
   MigrationErrorCannotDetectCudaPath = -46,
   InterceptBuildError = -47,
+  MigrationErrorCMakeScriptPathInvalid = -48,
+  MigrateCmakeScriptOnlyNotSpecifed = -49,
+  MigarteCmakeScriptIncorrectUse = -50,
+  MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse= -51,
 };
 
 namespace clang {
 namespace dpct {
 
 void ShowStatus(int Status, std::string Message = "");
-std::string getLoadYamlFailWarning(std::string YamlPath);
+std::string getLoadYamlFailWarning(const clang::tooling::UnifiedPath& YamlPath);
 std::string getCheckVersionFailWarning();
 } // namespace dpct
 } // namespace clang

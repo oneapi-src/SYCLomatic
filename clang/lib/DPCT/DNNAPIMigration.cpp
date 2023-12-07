@@ -42,7 +42,9 @@ void CuDNNTypeRule::registerMatcher(MatchFinder &MF) {
               "cudnnRNNMode_t", "cudnnRNNBiasMode_t", "cudnnDirectionMode_t",
               "cudnnRNNDescriptor_t", "cudnnForwardMode_t", "cudnnRNNDataDescriptor_t",
               "cudnnRNNDataLayout_t", "cudnnDropoutDescriptor_t",
-              "cudnnMathType_t", "cudnnConvolutionFwdAlgoPerf_t"))))))
+              "cudnnMathType_t", "cudnnConvolutionFwdAlgoPerf_t",
+              "cudnnConvolutionBwdFilterAlgoPerf_t", "cudnnConvolutionBwdDataAlgoPerf_t"
+              ))))))
           .bind("CuDNNType"),
       this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
@@ -197,7 +199,9 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnGetConvolutionBackwardFilterAlgorithm",
         "cudnnGetConvolutionBackwardDataAlgorithm",
         "cudnnGetConvolutionForwardAlgorithm", "cudnnSetConvolutionMathType",
-        "cudnnFindConvolutionForwardAlgorithm");
+        "cudnnFindConvolutionForwardAlgorithm", "cudnnFindConvolutionBackwardDataAlgorithm",
+        "cudnnFindConvolutionBackwardFilterAlgorithm", "cudnnGetConvolutionBackwardFilterAlgorithm_v7",
+        "cudnnGetConvolutionBackwardDataAlgorithm_v7", "cudnnGetConvolutionForwardAlgorithm_v7");
   };
 
   MF.addMatcher(
@@ -251,7 +255,8 @@ void CuDNNAPIRule::runRule(
 
     if (auto CS = DpctGlobalInfo::findAncestor<CompoundStmt>(CE, Condition)) {
       auto LocInfo = Global.getLocInfo(CS->getBeginLoc());
-      FuncInfo.CompoundLoc = LocInfo.first + std::to_string(LocInfo.second);
+      FuncInfo.CompoundLoc = LocInfo.first.getCanonicalPath().str() +
+                             std::to_string(LocInfo.second);
     } else {
       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, FuncName);
       return;
@@ -277,8 +282,9 @@ void CuDNNAPIRule::runRule(
         if (auto RnnInputDecl = RnnInputDRE->getDecl()) {
           auto ArgName = RnnInputDecl->getName();
           auto DeclLocInfo = Global.getLocInfo(RnnInputDecl->getBeginLoc());
-          std::string MapKey =
-              DeclLocInfo.first + std::to_string(DeclLocInfo.second) + ArgName.str();
+          std::string MapKey = DeclLocInfo.first.getCanonicalPath().str() +
+                               std::to_string(DeclLocInfo.second) +
+                               ArgName.str();
           auto &SubMap = RnnInputMap[MapKey];
           if (SubMap.empty()) {
             std::vector<const clang::DeclRefExpr *> MatchResults;

@@ -2180,8 +2180,8 @@ Decl *TemplateDeclInstantiator::VisitClassTemplateDecl(ClassTemplateDecl *D) {
 
     if (!PrevClassTemplate && QualifierLoc) {
       SemaRef.Diag(Pattern->getLocation(), diag::err_not_tag_in_scope)
-        << D->getTemplatedDecl()->getTagKind() << Pattern->getDeclName() << DC
-        << QualifierLoc.getSourceRange();
+          << llvm::to_underlying(D->getTemplatedDecl()->getTagKind())
+          << Pattern->getDeclName() << DC << QualifierLoc.getSourceRange();
       return nullptr;
     }
   }
@@ -5624,6 +5624,10 @@ void Sema::InstantiateFunctionDefinition(SourceLocation PointOfInstantiation,
     } IR{*this, PatternRec, NewRec};
 
     TypeSourceInfo *NewSI = IR.TransformType(Function->getTypeSourceInfo());
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (!NewSI)
+      return;
+#endif // SYCLomatic_CUSTOMIZATION
     assert(NewSI && "Type Transform failed?");
     Function->setType(NewSI->getType());
     Function->setTypeSourceInfo(NewSI);
