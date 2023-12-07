@@ -5624,6 +5624,10 @@ void Sema::InstantiateFunctionDefinition(SourceLocation PointOfInstantiation,
     } IR{*this, PatternRec, NewRec};
 
     TypeSourceInfo *NewSI = IR.TransformType(Function->getTypeSourceInfo());
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (!NewSI)
+      return;
+#endif // SYCLomatic_CUSTOMIZATION
     assert(NewSI && "Type Transform failed?");
     Function->setType(NewSI->getType());
     Function->setTypeSourceInfo(NewSI);

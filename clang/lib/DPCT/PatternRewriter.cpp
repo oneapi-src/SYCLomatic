@@ -181,6 +181,10 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
 
   const int Size = Pattern.size();
   int Index = 0;
+
+  if(Size == 0) {
+    return Result;
+  }
   while (Index < Size) {
     const char Character = Pattern[Index];
 
@@ -401,7 +405,6 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
   int PatternIndex = 0;
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
-
   while (PatternIndex < PatternSize && Index < Size) {
     const auto &Element = Pattern[PatternIndex];
 
@@ -542,6 +545,11 @@ int skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input) {
   std::stringstream OutputStream;
+
+  if (PP.In.size() == 0) {
+    return Input;
+  }
+
   const auto Pattern = parseMatchPattern(PP.In);
 
   const int Size = Input.size();
