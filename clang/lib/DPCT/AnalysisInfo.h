@@ -4364,7 +4364,6 @@ private:
     StmtList SyncList;
     StmtList RangeList;
     StmtList MemoryList;
-    StmtList ExternList;
     StmtList PtrList;
     StmtList AccessorList;
     StmtList TextureList;
@@ -4375,7 +4374,6 @@ private:
     inline KernelPrinter &print(KernelPrinter &Printer) {
       printList(Printer, StreamList);
       printList(Printer, SyncList);
-      printList(Printer, ExternList);
       printList(Printer, MemoryList);
       printList(Printer, RangeList,
                 "ranges used for accessors to device memory");
@@ -4392,7 +4390,7 @@ private:
     bool empty() const noexcept {
       return CommandGroupList.empty() && NdRangeList.empty() &&
              AccessorList.empty() && PtrList.empty() &&
-             ExternList.empty() && MemoryList.empty() && RangeList.empty() &&
+             MemoryList.empty() && RangeList.empty() &&
              TextureList.empty() && SamplerList.empty() && StreamList.empty() &&
              SyncList.empty();
     }
@@ -4411,17 +4409,19 @@ private:
 
   class {
   public:
+    StmtList ExternList;
     StmtList InitList;
     StmtList OthersList;
 
     inline KernelPrinter &print(KernelPrinter &Printer) {
+      printList(Printer, ExternList);
       printList(Printer, InitList, "init global memory");
       printList(Printer, OthersList);
       return Printer;
     }
 
     bool empty() const noexcept {
-      return InitList.empty() && OthersList.empty();
+      return InitList.empty() && ExternList.empty() && OthersList.empty();
     }
 
   private:
