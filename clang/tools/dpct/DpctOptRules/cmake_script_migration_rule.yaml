@@ -138,17 +138,40 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
-- Rule: rule_add_compile_options
+- Rule: rule_set_property
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: add_compile_options
-  In: add_compile_options(${arg})
-  Out: add_compile_options(${arg})
+  CmakeSyntax: set_property
+  In: set_property(${value})
+  Out: set_property(${value})
   Subrules:
-    arg:
-      In: -std=${cxx_standard}
-      Out: -std=c++17
-      RuleId: "add_compile_options_cxx_standard"
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+- Rule: rule_cuda_add_executable
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_add_executable
+  In: cuda_add_executable(${value})
+  Out: add_executable(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+- Rule: rule_add_executable
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_executable
+  In: add_executable(${value})
+  Out: add_executable(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+
 
 - Rule: rule_target_compile_options
   Kind: CMakeRule
