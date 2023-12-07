@@ -36,6 +36,10 @@ void foo() {
   float2 *C_c;
   double2 *C_z;
   int64_t ldc;
+  cublasFillMode_t uplo;
+  cublasSideMode_t side;
+  cublasDiagType_t diag;
+
   //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_s, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(B_s)), ldb, dpct::get_value(beta_s, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(C_s)), ldc));
   // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_d, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(B_d)), ldb, dpct::get_value(beta_d, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_d)), ldc));
   // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_c, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(B_c)), ldb, dpct::get_value(beta_c, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc));
@@ -44,4 +48,27 @@ void foo() {
   status = cublasDgemm_64(handle, transa, transb, m, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc);
   status = cublasCgemm_64(handle, transa, transb, m, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
   status = cublasZgemm_64(handle, transa, transb, m, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
+
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, side, uplo, transa, diag, m, n, alpha_s, A_s, lda, B_s, ldb, C_s, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, side, uplo, transa, diag, m, n, alpha_d, A_d, lda, B_d, ldb, C_d, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, side, uplo, transa, diag, m, n, alpha_c, A_c, lda, B_c, ldb, C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, side, uplo, transa, diag, m, n, alpha_z, A_z, lda, B_z, ldb, C_z, ldc));
+  status = cublasStrmm_64(handle, side, uplo, transa, diag, m, n, alpha_s, A_s, lda, B_s, ldb, C_s, ldc);
+  status = cublasDtrmm_64(handle, side, uplo, transa, diag, m, n, alpha_d, A_d, lda, B_d, ldb, C_d, ldc);
+  status = cublasCtrmm_64(handle, side, uplo, transa, diag, m, n, alpha_c, A_c, lda, B_c, ldb, C_c, ldc);
+  status = cublasZtrmm_64(handle, side, uplo, transa, diag, m, n, alpha_z, A_z, lda, B_z, ldb, C_z, ldc);
+
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::syrk(*handle, uplo, transa, n, k, alpha_s, A_s, lda, B_s, ldb, beta_s, C_s, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::syrk(*handle, uplo, transa, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::syrk(*handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::syrk(*handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc));
+  status = cublasSsyrkx_64(handle, uplo, transa, n, k, alpha_s, A_s, lda, B_s, ldb, beta_s, C_s, ldc);
+  status = cublasDsyrkx_64(handle, uplo, transa, n, k, alpha_d, A_d, lda, B_d, ldb, beta_d, C_d, ldc);
+  status = cublasCsyrkx_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
+  status = cublasZsyrkx_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
+
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::herk(*handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::herk(*handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc));
+  status = cublasCherkx_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc);
+  status = cublasZherkx_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc);
 }

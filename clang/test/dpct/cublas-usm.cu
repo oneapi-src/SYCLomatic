@@ -682,21 +682,21 @@ int main() {
   cublasCtrsmBatched(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, trans3, CUBLAS_DIAG_UNIT, N, N, &alpha_C, d_A_C_array, N, d_C_C_array, N, 10);
   cublasZtrsmBatched(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, trans3, CUBLAS_DIAG_UNIT, N, N, &alpha_Z, d_A_Z_array, N, d_C_Z_array, N, 10);
 
-  //CHECK:a = DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N));
-  //CHECK-NEXT:dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_D, d_A_D, N, d_B_D, N, d_C_D, N);
-  //CHECK:a = DPCT_CHECK_ERROR(dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
-  //CHECK-NEXT:dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, N, N, &alpha_Z, d_A_Z, N, d_B_Z, N, d_C_Z, N);
+  //CHECK:a = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N));
+  //CHECK-NEXT:dpct::blas::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_D, d_A_D, N, d_B_D, N, d_C_D, N);
+  //CHECK:a = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
+  //CHECK-NEXT:dpct::blas::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, N, N, &alpha_Z, d_A_Z, N, d_B_Z, N, d_C_Z, N);
   a = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N);
   cublasDtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_D, d_A_D, N, d_B_D, N, d_C_D, N);
   a = cublasCtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N);
   cublasZtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, N, N, &alpha_Z, d_A_Z, N, d_B_Z, N, d_C_Z, N);
 
-  //CHECK:a = DPCT_CHECK_ERROR(dpct::syrk(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
+  //CHECK:a = DPCT_CHECK_ERROR(dpct::blas::syrk(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
   a = cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
-  //CHECK:dpct::syrk(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
+  //CHECK:dpct::blas::syrk(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
   cublasDsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
 
-  // CHECK: if(int stat = DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N))){}
+  // CHECK: if(int stat = DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N))){}
   if(int stat = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N)){}
 
   // CHECK: if(int stat = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_B_S, N, dpct::get_value(&beta_S, *handle), d_C_S, N))){}
@@ -706,7 +706,7 @@ int main() {
 }
 
 // CHECK:int foo1() try {
-// CHECK:  return DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N));
+// CHECK:  return DPCT_CHECK_ERROR(dpct::blas::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N));
 // CHECK-NEXT:}
 int foo1(){
   return cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N);
@@ -726,12 +726,12 @@ void foo3() {
   float2  *a_c, *b_c, *x_c, *c_c, *alpha_c, *beta_c;
   double2 *a_z, *b_z, *x_z, *c_z, *alpha_z, *beta_z;
 
-  //CHECK:dpct::syrk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, 2, 3, alpha_f, a_f, 3, b_f, 3, beta_f, c_f, 2);
-  //CHECK-NEXT:dpct::syrk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, 2, 3, alpha_d, a_d, 3, b_d, 3, beta_d, c_d, 2);
-  //CHECK-NEXT:dpct::syrk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, 2, 3, alpha_c, a_c, 3, b_c, 3, beta_c, c_c, 2);
-  //CHECK-NEXT:dpct::syrk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, 2, 3, alpha_z, a_z, 3, b_z, 3, beta_z, c_z, 2);
-  //CHECK-NEXT:dpct::herk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, 2, 3, alpha_c, a_c, 3, b_c, 3, beta_f, c_c, 2);
-  //CHECK-NEXT:dpct::herk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, 2, 3, alpha_z, a_z, 3, b_z, 3, beta_d, c_z, 2);
+  //CHECK:dpct::blas::syrk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, 2, 3, alpha_f, a_f, 3, b_f, 3, beta_f, c_f, 2);
+  //CHECK-NEXT:dpct::blas::syrk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, 2, 3, alpha_d, a_d, 3, b_d, 3, beta_d, c_d, 2);
+  //CHECK-NEXT:dpct::blas::syrk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, 2, 3, alpha_c, a_c, 3, b_c, 3, beta_c, c_c, 2);
+  //CHECK-NEXT:dpct::blas::syrk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, 2, 3, alpha_z, a_z, 3, b_z, 3, beta_z, c_z, 2);
+  //CHECK-NEXT:dpct::blas::herk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, 2, 3, alpha_c, a_c, 3, b_c, 3, beta_f, c_c, 2);
+  //CHECK-NEXT:dpct::blas::herk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, 2, 3, alpha_z, a_z, 3, b_z, 3, beta_d, c_z, 2);
   cublasSsyrkx(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_C, 2, 3, alpha_f, a_f, 3, b_f, 3, beta_f, c_f, 2);
   cublasDsyrkx(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_C, 2, 3, alpha_d, a_d, 3, b_d, 3, beta_d, c_d, 2);
   cublasCsyrkx(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_C, 2, 3, alpha_c, a_c, 3, b_c, 3, beta_c, c_c, 2);
