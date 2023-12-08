@@ -381,9 +381,8 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
       std::error_code EC;
       EC = llvm::sys::fs::create_directories(Parent);
       if ((bool)EC) {
-        std::string ErrMsg =
-            "[ERROR] Create Directory : " + std::string(Parent) +
-            " fail: " + EC.message() + "\n";
+        std::string ErrMsg = "[ERROR] Create Directory : " + Parent +
+                             " fail: " + EC.message() + "\n";
         PrintMsg(ErrMsg);
       }
     }
