@@ -742,7 +742,7 @@ void foo3() {
   int m, n, lda, incx, ldc;
   //CHECK:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, m, n, a_f, lda, x_f, incx, c_f, ldc);
   //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, m, n, a_d, lda, x_d, incx, c_d, ldc);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, m, n, (std::complex<float>*)(sycl::float2*)a_f, lda, (std::complex<float>*)x_c, incx, (std::complex<float>*)c_c, ldc);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, m, n, (std::complex<float>*)a_f, lda, (std::complex<float>*)x_c, incx, (std::complex<float>*)c_c, ldc);
   //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, m, n, (std::complex<double>*)a_z, lda, (std::complex<double>*)x_z, incx, (std::complex<double>*)c_z, ldc);
   cublasSdgmm(handle, CUBLAS_SIDE_LEFT, m, n, a_f, lda, x_f, incx, c_f, ldc);
   cublasDdgmm(handle, CUBLAS_SIDE_LEFT, m, n, a_d, lda, x_d, incx, c_d, ldc);
