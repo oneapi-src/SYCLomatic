@@ -1,9 +1,16 @@
-target_link_libraries(main PRIVATE cxxopts fmt::fmt -L${MKLROOT}/lib/intel64 -lmkl_sycl -lmkl_intel_ilp64 -lmkl_tbb_thread -lmkl_core)
+target_link_libraries(main PRIVATE cxxopts fmt::fmt -qmkl)
 
-target_link_libraries(tiny-cuda-nn PUBLIC fmt)
+target_link_libraries(tiny-cuda-nn PUBLIC ${TCNN_LIBRARIES} fmt)
 
+target_link_libraries(transformer_engine PUBLIC 
+   -qmkl
+
+
+
+
+   libdnn.so)
+                     
 target_link_libraries(${target} PRIVATE
-            -static-libgcc
-         )
-
+         -static-libgcc)
+                     
 target_link_libraries(${PROJECT_NAME})
