@@ -278,8 +278,9 @@ public:
       std::string Id, RulePriority Priority, RuleKind Kind, std::string In,
       std::string Out, clang::dpct::HelperFeatureEnum HelperFeature,
       const std::vector<std::string> &Includes = std::vector<std::string>())
-      : Id(Id), Priority(Priority), Kind(Kind), In(In), Out(Out),
-        HelperFeature(HelperFeature), Includes(Includes) {}
+      : Id(Id), Priority(Priority), MatchMode(RuleMatchMode::Partial),
+        Kind(Kind), In(In), Out(Out), HelperFeature(HelperFeature),
+        Includes(Includes) {}
 };
 
 class MacroMigrationRule : public RuleBase {
