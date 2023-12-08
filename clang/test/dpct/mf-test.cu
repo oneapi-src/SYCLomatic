@@ -27,12 +27,12 @@ void test() {
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
 
   //      CHECK:     {
+  // CHECK-NEXT:       extern dpct::global_memory<volatile int, 0> g_mutex;
+  // CHECK-EMPTY:
   // CHECK-NEXT:       g_mutex.init();
   // CHECK-EMPTY:
   // CHECK-NEXT:       q_ct1.submit(
   // CHECK-NEXT:         [&](sycl::handler &cgh) {
-  // CHECK-NEXT:           extern dpct::global_memory<volatile int, 0> g_mutex;
-  // CHECK-EMPTY:
   // CHECK-NEXT:           auto g_mutex_acc_ct1 = g_mutex.get_access(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:           cgh.parallel_for<dpct_kernel_name<class Reset_kernel_parameters_{{[a-f0-9]+}}>>(
