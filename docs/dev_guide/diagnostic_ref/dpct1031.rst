@@ -8,8 +8,9 @@ Message
 
 .. _msg-1031-start:
 
-SYCL currently does not support memory access across peer devices. The output
-parameter(s) are set to 0.
+Memory accessing across peer devices is an implementation-specific feature which
+may not be supported by some SYCL backends and compilers. The output parameter(s)
+are set to 0.
 
 .. _msg-1031-end:
 

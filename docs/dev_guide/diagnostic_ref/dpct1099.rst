@@ -9,7 +9,7 @@ Message
 .. _msg-1099-start:
 
 Verify if the default value of the direction and placement used in the function
-*<function name>* is correct.
+*<function name>* aligns with the related ``compute`` function call.
 
 
 .. _msg-1099-end:
