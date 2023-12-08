@@ -340,11 +340,7 @@ private:
   const uint8_t *ValueDataStart;
   uint32_t ValueKindLast;
   uint32_t CurValueDataSize;
-
-  /// Total size of binary ids.
-  uint64_t BinaryIdsSize{0};
-  /// Start address of binary id length and data pairs.
-  const uint8_t *BinaryIdsStart;
+  std::vector<llvm::object::BuildID> BinaryIds;
 
   std::function<void(Error)> Warn;
 
@@ -363,7 +359,7 @@ public:
         Data(nullptr), DataEnd(nullptr), CountersStart(nullptr),
         CountersEnd(nullptr), NamesStart(nullptr), NamesEnd(nullptr),
         ValueDataStart(nullptr), ValueKindLast(0), CurValueDataSize(0),
-        BinaryIdsStart(nullptr), Warn(Warn) {}
+        BinaryIds({}), Warn(Warn) {}
 #else
   RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
                      const InstrProfCorrelator *Correlator,
