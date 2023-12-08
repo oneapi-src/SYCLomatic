@@ -251,12 +251,9 @@ public:
       std::string OutStr,
       clang::dpct::HelperFeatureEnum Helper =
           clang::dpct::HelperFeatureEnum::none,
-      const std::vector<std::string> &Includes = std::vector<std::string>(),
-      bool replArg = false)
+      const std::vector<std::string> &Includes = std::vector<std::string>())
       : RuleBase(Id, Priority, RuleKind::Macro, InStr, OutStr, Helper,
-                 Includes),
-        replaceWithMacroArg(replArg) {}
-  bool replaceWithMacroArg;
+                 Includes) {}
 };
 
 // The parsing result of the "Out" attribute of a API rule

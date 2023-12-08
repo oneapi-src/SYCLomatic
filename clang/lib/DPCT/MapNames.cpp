@@ -4359,11 +4359,7 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
                         "CUB_RUNTIME_FUNCTION", "")},
     {"NCCL_VERSION_CODE",
      MacroMigrationRule("nccl_macro_rule", RulePriority::Fallback,
-                        "NCCL_VERSION_CODE", "DPCT_CCL_VERSION")},
-    {"NCCL_VERSION",
-     MacroMigrationRule("nccl_macro_rule", RulePriority::Fallback,
-                        "NCCL_VERSION_CODE", "0", HelperFeatureEnum::none,
-                        std::vector<std::string>(), true)},
+                        "NCCL_VERSION_CODE", "DPCT_COMPAT_CCL_VERSION")},
     //...
 };
 
