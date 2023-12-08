@@ -770,18 +770,19 @@ template <typename T> sycl::vec<T, 2> extract_and_sign_or_zero_extend2(T val) {
 /// uint32_t else has type int32_t.
 /// \return Two-way 16-bit to 8-bit dot product which is accumulated in 32-bit
 /// result.
-template <typename T1, typename T2>
-inline auto dp2a_lo(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
+template <typename T1, typename T2, typename T3>
+inline auto dp2a_lo(T1 a, T2 b, T3 c) {
+  detail::dot_product_acc_t<T1, T2> res = c;
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__) &&                     \
     defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 610
-  c = __dp2a_lo(a, b, c);
+  res = __dp2a_lo(a, b, c);
 #else
   auto va = ::dpct::detail::extract_and_sign_or_zero_extend2(a);
   auto vb = ::dpct::detail::extract_and_sign_or_zero_extend4(b);
-  c += va[0] * vb[0];
-  c += va[1] * vb[1];
+  res += va[0] * vb[0];
+  res += va[1] * vb[1];
 #endif
-  return c;
+  return res;
 }
 
 /// Two-way dot product-accumulate.
@@ -793,18 +794,19 @@ inline auto dp2a_lo(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
 /// uint32_t else has type int32_t.
 /// \return Two-way 16-bit to 8-bit dot product which is accumulated in 32-bit
 /// result.
-template <typename T1, typename T2>
-inline auto dp2a_hi(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
+template <typename T1, typename T2, typename T3>
+inline auto dp2a_hi(T1 a, T2 b, T3 c) {
+  detail::dot_product_acc_t<T1, T2> res = c;
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__) &&                     \
     defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 610
-  c = __dp2a_hi(a, b, c);
+  res = __dp2a_hi(a, b, c);
 #else
   auto va = ::dpct::detail::extract_and_sign_or_zero_extend2(a);
   auto vb = ::dpct::detail::extract_and_sign_or_zero_extend4(b);
-  c += va[0] * vb[2];
-  c += va[1] * vb[3];
+  res += va[0] * vb[2];
+  res += va[1] * vb[3];
 #endif
-  return c;
+  return res;
 }
 
 /// Four-way byte dot product-accumulate.
@@ -815,20 +817,21 @@ inline auto dp2a_hi(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
 /// \param [in] c The third value. It has type uint32_t if both T1 and T1 are
 /// uint32_t else has type int32_t.
 /// \return Four-way byte dot product which is accumulated in 32-bit result.
-template <typename T1, typename T2>
-inline auto dp4a(T1 a, T2 b, detail::dot_product_acc_t<T1, T2> c) {
+template <typename T1, typename T2, typename T3>
+inline auto dp4a(T1 a, T2 b, T3 c) {
+  detail::dot_product_acc_t<T1, T2> res = c;
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__) &&                     \
     defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 610
-  c = __dp4a(a, b, c);
+  res = __dp4a(a, b, c);
 #else
   auto va = ::dpct::detail::extract_and_sign_or_zero_extend4(a);
   auto vb = ::dpct::detail::extract_and_sign_or_zero_extend4(b);
-  c += va[0] * vb[0];
-  c += va[1] * vb[1];
-  c += va[2] * vb[2];
-  c += va[3] * vb[3];
+  res += va[0] * vb[0];
+  res += va[1] * vb[1];
+  res += va[2] * vb[2];
+  res += va[3] * vb[3];
 #endif
-  return c;
+  return res;
 }
 
 /// Extend \p a and \p b to 33 bit and add them.
