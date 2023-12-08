@@ -485,17 +485,14 @@ static void instantiateTemplate(
     // Skip variable name with escape character, like "\${var_name}"
     if (Index < (Size - 2) && Template[Index] == '\\' &&
         Template[Index + 1] == '$' && Template[Index + 2] == '{') {
-      Index += 1;
+      Index += 1; // Skip '\\'
       auto RightCurly = Template.find('}', Index);
       if (RightCurly == std::string::npos) {
         throw std::runtime_error("Invalid rewrite pattern expression");
       }
-      RightCurly += 1;
+      RightCurly += 1; // Skip '}'
       std::string Name = Template.substr(Index, RightCurly - Index);
       OutputStream << Name;
-      if (isWhitespace(Template[Index])) {
-        OutputStream << " ";
-      }
     }
 
     auto Character = Template[Index];
@@ -593,7 +590,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
               applyPatternRewriter(SubruleIterator->second, Value);
         }
       }
-      
       const int Indentation = detectIndentation(Input, Index);
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
