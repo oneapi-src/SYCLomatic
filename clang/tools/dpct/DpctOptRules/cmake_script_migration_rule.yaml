@@ -148,6 +148,8 @@
     value:
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
+      MatchMode: Partial
+      RuleId: "replace_set_property_cu_extension_with_dp_cpp"
 
 - Rule: rule_cuda_add_executable
   Kind: CMakeRule
@@ -159,6 +161,8 @@
     value:
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
+      MatchMode: Partial
+      RuleId: "replace_cuda_add_executable_cu_extension_with_dp_cpp"
 
 - Rule: rule_add_executable
   Kind: CMakeRule
@@ -170,6 +174,8 @@
     value:
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
+      MatchMode: Partial
+      RuleId: "replace_add_executable_cu_extension_with_dp_cpp"
 
 
 
