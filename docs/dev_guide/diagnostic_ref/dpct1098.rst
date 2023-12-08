@@ -56,7 +56,7 @@ which is rewritten to:
    :linenos:
 
    void device(float *f) {
-   #ifdef __NVPTX__
+   #if defined(__NVPTX__) && defined(__SYCL_DEVICE_ONLY__)
      float a = sycl::ext::oneapi::experimental::cuda::lgd(&(f[10]));
    #else
      float a = f[10];

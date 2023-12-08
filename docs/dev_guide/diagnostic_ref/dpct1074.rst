@@ -64,4 +64,4 @@ which is manually adjusted to:
      tex->set_channel_type(sycl::image_channel_type::unsigned_int16);
      tex->set_channel_num(1);
      ...
-     result = tex.read(0.5f, 0.5f) / 65535.f;
+     result = tex.read(0.5f, 0.5f) / float(std::numeric_limits<std::uint16_t>::max());

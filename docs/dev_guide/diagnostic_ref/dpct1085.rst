@@ -101,7 +101,7 @@ which is manually adjusted to:
       output2 = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input,
                                                 sycl::plus<>());
       data2[item_ct1.get_local_id(2)] = output1;
-      __syncthreads();
+      item_ct1.barrier();
       if (item_ct1.get_local_id(2) % 32 >= 16) {
         int warp_id = item_ct1.get_local_id(2) / 32;
         data2[item_ct1.get_local_id(2)] -= data2[warp_id * 32 + 15];

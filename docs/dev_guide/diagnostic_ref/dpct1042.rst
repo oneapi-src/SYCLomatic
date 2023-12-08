@@ -84,6 +84,12 @@ results in the following migrated SYCL code:
     }
     
     void test_function(int *out) {
+      device0.init();
+      device1.init();
+      device2.init();
+      ...
+      device30.init();
+      device31.init();
 
       /*
       DPCT1042:0: The size of the arguments passed to the SYCL kernel exceeds the
@@ -92,14 +98,7 @@ results in the following migrated SYCL code:
       may need to rewrite this code if the size of the arguments exceeds the
       hardware limit.
       */
-      dpct::get_out_of_order_queue().submit([&](sycl::handler &cgh) {
-        device0.init();
-        device1.init();
-        device2.init();
-        ...
-        device30.init();
-        device31.init();
-    
+      dpct::get_out_of_order_queue().submit([&](sycl::handler &cgh) {   
         auto device0_acc_ct1 = device0.get_access(cgh);
         auto device1_acc_ct1 = device1.get_access(cgh);
         auto device2_acc_ct1 = device2.get_access(cgh);
@@ -138,10 +137,9 @@ which is rewritten to:
     }
     
     void test_function(int *out) {
+      device0.init();
 
       dpct::get_out_of_order_queue().submit([&](sycl::handler &cgh) {
-        device0.init();
-    
         auto device0_acc_ct1 = device0.get_access(cgh);
         dpct::access_wrapper<int *> out_acc_ct0(out, cgh);
     
