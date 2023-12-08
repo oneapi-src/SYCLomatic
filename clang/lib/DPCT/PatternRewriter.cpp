@@ -493,8 +493,6 @@ static void instantiateTemplate(
       RightCurly += 1;
       std::string Name = Template.substr(Index, RightCurly - Index);
       OutputStream << Name;
-
-      printf("eeeeeeeeeeeeeeee[%c]\n", Template[Index]);
       if (isWhitespace(Template[Index])) {
         OutputStream << " ";
       }
@@ -510,7 +508,6 @@ static void instantiateTemplate(
         throw std::runtime_error("Invalid rewrite pattern expression");
       }
       std::string Name = Template.substr(Index, RightCurly - Index);
-      printf("###########00 ## Name [%s]\n", Name.c_str());
       Index = RightCurly + 1;
 
       const auto &BindingIterator = Bindings.find(Name);
@@ -597,13 +594,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
         }
       }
       
-
-       for (const auto &[Name, Value] : Match.Bindings) {
-        printf("Name [%s]\n", Name.c_str());
-        printf("Value [%s]\n", Value.c_str());
-       }
-       printf("PP.Out: [%s]\n", PP.Out.c_str());
-
       const int Indentation = detectIndentation(Input, Index);
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
