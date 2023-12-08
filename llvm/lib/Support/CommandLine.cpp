@@ -1540,10 +1540,12 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 
 #ifdef SYCLomatic_CUSTOMIZATION
 #ifndef _WIN32
-  if (std::string(argv[FirstArg]) == "--intercept-build" ||
-      std::string(argv[FirstArg]) == "-intercept-build" ||
-      std::string(argv[FirstArg]) == "intercept-build") {
-    StringRef ArgName = "intercept-build";
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]) == "--intercept-build" ||
+       std::string(argv[FirstArg]) == "-intercept-build" ||
+       std::string(argv[FirstArg]) == "intercept-build")) {
+    const static std::string InterceptBuildCommand = "intercept-build";
+    StringRef ArgName(InterceptBuildCommand);
     StringRef Value;
     Option *Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
                                        LongOptionsUseDoubleDash, false);
