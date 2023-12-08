@@ -1507,7 +1507,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
       // Global variable definition and global variable reference are not in the
       // same file, and are not a share variable, insert extern variable
       // declaration.
-      SubmitStmtsList.ExternList.emplace_back(VI->getExternGlobalVarDecl());
+      OuterStmts.ExternList.emplace_back(VI->getExternGlobalVarDecl());
     }
   }
   VI->appendAccessorOrPointerDecl(

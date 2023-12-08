@@ -1540,10 +1540,12 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 
 #ifdef SYCLomatic_CUSTOMIZATION
 #ifndef _WIN32
-  if (std::string(argv[FirstArg]) == "--intercept-build" ||
-      std::string(argv[FirstArg]) == "-intercept-build" ||
-      std::string(argv[FirstArg]) == "intercept-build") {
-    StringRef ArgName = "intercept-build";
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]) == "--intercept-build" ||
+       std::string(argv[FirstArg]) == "-intercept-build" ||
+       std::string(argv[FirstArg]) == "intercept-build")) {
+    const static std::string InterceptBuildCommand = "intercept-build";
+    StringRef ArgName(InterceptBuildCommand);
     StringRef Value;
     Option *Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
                                        LongOptionsUseDoubleDash, false);
@@ -1685,6 +1687,13 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 
       Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
                                  LongOptionsUseDoubleDash, HaveDoubleDash);
+
+      // If Handler is not found in a specialized subcommand, look up handler
+      // in the top-level subcommand.
+      // cl::opt without cl::sub belongs to top-level subcommand.
+      if (!Handler && ChosenSubCommand != &SubCommand::getTopLevel())
+        Handler = LookupLongOption(SubCommand::getTopLevel(), ArgName, Value,
+                                   LongOptionsUseDoubleDash, HaveDoubleDash);
 
       // Check to see if this "option" is really a prefixed or grouped argument.
       if (!Handler && !(LongOptionsUseDoubleDash && HaveDoubleDash))
