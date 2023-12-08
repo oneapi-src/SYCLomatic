@@ -65,7 +65,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
       if (!IsTheFirstIteration) {
         auto DFI = DeviceFunctionDecl::LinkRedecls(Parent);
         // How to find caller?
-        DFI->getCallExprMap
+        DFI->getParentSet();
       }
       SyncCallInfo SCI;
       SCI.Predecessors.push_back(

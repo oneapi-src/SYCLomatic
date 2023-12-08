@@ -42,6 +42,17 @@ void setGetReplacedNamePtr(
 
 namespace clang {
 namespace dpct {
+class DeviceFunctionInfo;
+} // namespace dpct
+} // namespace clang
+
+namespace std {
+bool operator<(const std::weak_ptr<clang::dpct::DeviceFunctionInfo> LHS,
+               const std::weak_ptr<clang::dpct::DeviceFunctionInfo> RHS);
+} // namespace std
+
+namespace clang {
+namespace dpct {
 enum class HelperFuncType : int {
   HFT_InitValue = 0,
   HFT_DefaultQueue = 1,
@@ -72,7 +83,6 @@ struct PriorityReplInfo {
 class CudaMallocInfo;
 class TextureInfo;
 class KernelCallExpr;
-class DeviceFunctionInfo;
 class CallFunctionExpr;
 class DeviceFunctionDecl;
 class DeviceFunctionDeclInModule;
@@ -3779,7 +3789,7 @@ public:
 
 // device function info includes parameters num, memory variable and call
 // expression in the function.
-class DeviceFunctionInfo {
+class DeviceFunctionInfo : public std::enable_shared_from_this<DeviceFunctionInfo> {
   struct ParameterProps {
     bool IsReferenced = false;
   };
@@ -3803,10 +3813,24 @@ public:
   }
   template <class CallT>
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
+    // Update CallExprMap
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
     auto Call =
         insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, C);
     Call->buildCallExprInfo(C);
+
+    // Update CallersSet
+    const FunctionDecl* Decl = nullptr;
+    if constexpr (std::is_same<CallT, CXXConstructExpr>::value) {
+      Decl = C->getConstructor();
+    } else {
+      Decl = C->getDirectCallee();
+    }
+    if (Decl) {
+      auto ChildDFI = DeviceFunctionDecl::LinkRedecls(Decl);
+      ChildDFI->getParentSet().insert(weak_from_this());
+    }
+
     return Call;
   }
   inline void addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
@@ -3895,6 +3919,9 @@ public:
   size_t ParamsNum;
   size_t NonDefaultParamNum;
   GlobalMap<CallFunctionExpr> &getCallExprMap() { return CallExprMap; }
+  std::set<std::weak_ptr<DeviceFunctionInfo>> &getParentSet() {
+    return ParentSet;
+  }
   void addSubGroupSizeRequest(unsigned int Size, SourceLocation Loc,
                               std::string APIName, std::string VarName = "") {
     if (Size == 0 || Loc.isInvalid())
@@ -3939,6 +3966,7 @@ private:
                          std::string>>
       RequiredSubGroupSize;
   GlobalMap<CallFunctionExpr> CallExprMap;
+  std::set<std::weak_ptr<DeviceFunctionInfo>> ParentSet;
   MemVarMap VarMap;
 
   std::shared_ptr<StructureTextureObjectInfo> BaseObjectTexture;

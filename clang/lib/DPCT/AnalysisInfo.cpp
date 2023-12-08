@@ -21,6 +21,13 @@
 #include <fstream>
 #include <optional>
 
+namespace std {
+bool operator<(const std::weak_ptr<clang::dpct::DeviceFunctionInfo> LHS,
+               const std::weak_ptr<clang::dpct::DeviceFunctionInfo> RHS) {
+  return LHS.lock() < RHS.lock();
+}
+} // namespace std
+
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
