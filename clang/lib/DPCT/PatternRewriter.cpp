@@ -385,8 +385,9 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
 
     throw std::runtime_error("Internal error: invalid pattern element");
   }
-
-  if (!isIdentifiedChar(Input[Start - 1]) && !isIdentifiedChar(Input[Index])) {
+  
+  if ((Start == 0 || !isIdentifiedChar(Input[Start - 1])) &&
+      !isIdentifiedChar(Input[Index])) {
     Result.Start = Start;
     Result.End = Index;
   } else {
@@ -480,8 +481,26 @@ static void instantiateTemplate(
   }
 
   while (Index <= End) {
-    const auto Character = Template[Index];
 
+    // Skip variable name with escape character, like "\${var_name}"
+    if (Index < (Size - 2) && Template[Index] == '\\' &&
+        Template[Index + 1] == '$' && Template[Index + 2] == '{') {
+      Index += 1;
+      auto RightCurly = Template.find('}', Index);
+      if (RightCurly == std::string::npos) {
+        throw std::runtime_error("Invalid rewrite pattern expression");
+      }
+      RightCurly += 1;
+      std::string Name = Template.substr(Index, RightCurly - Index);
+      OutputStream << Name;
+
+      printf("eeeeeeeeeeeeeeee[%c]\n", Template[Index]);
+      if (isWhitespace(Template[Index])) {
+        OutputStream << " ";
+      }
+    }
+
+    auto Character = Template[Index];
     if (Index < (Size - 1) && Character == '$' && Template[Index + 1] == '{') {
       const int BindingStart = Index;
       Index += 2;
@@ -491,6 +510,7 @@ static void instantiateTemplate(
         throw std::runtime_error("Invalid rewrite pattern expression");
       }
       std::string Name = Template.substr(Index, RightCurly - Index);
+      printf("###########00 ## Name [%s]\n", Name.c_str());
       Index = RightCurly + 1;
 
       const auto &BindingIterator = Bindings.find(Name);
@@ -576,6 +596,13 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
               applyPatternRewriter(SubruleIterator->second, Value);
         }
       }
+      
+
+       for (const auto &[Name, Value] : Match.Bindings) {
+        printf("Name [%s]\n", Name.c_str());
+        printf("Value [%s]\n", Value.c_str());
+       }
+       printf("PP.Out: [%s]\n", PP.Out.c_str());
 
       const int Indentation = detectIndentation(Input, Index);
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
