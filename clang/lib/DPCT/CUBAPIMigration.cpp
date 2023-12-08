@@ -1153,10 +1153,10 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
             ->isLValueReferenceType()) {
       GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
       if (FuncName == "Sort") {
-        NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort";
+        NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort.sort";
       } else if (FuncName == "SortDescending") {
         NewFuncName =
-            MapNames::getDpctNamespace() + "group::radix_sort<DESCENDING=true>";
+            MapNames::getDpctNamespace() + "group::radix_sort<DESCENDING=true>.sort";
       }
       requestFeature(HelperFeatureEnum::device_ext);
       DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
