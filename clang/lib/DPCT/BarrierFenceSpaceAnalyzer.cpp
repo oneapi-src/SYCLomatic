@@ -9,7 +9,7 @@
 #include "BarrierFenceSpaceAnalyzer.h"
 #include "llvm/Support/Casting.h"
 #include <algorithm>
-
+#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
 using namespace llvm;
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const IfStmt *IS) {
@@ -59,16 +59,27 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
     DeviceFunctionCallArgs.insert(Arg);
 
   if (FuncName == "__syncthreads") {
-    SyncCallInfo SCI;
-    SCI.Predecessors.push_back(
-        SourceRange(FD->getBody()->getBeginLoc(), CE->getBeginLoc()));
-    SCI.Successors.push_back(
-        SourceRange(CE->getEndLoc(), FD->getBody()->getEndLoc()));
-    if (!LoopRange.empty()) {
-      SCI.Predecessors.push_back(LoopRange.front());
-      SCI.Successors.push_back(LoopRange.front());
-    }
-    SyncCallsVec.push_back(std::make_pair(CE, SCI));
+    const FunctionDecl *Parent = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
+    bool IsTheFirstIteration = true;
+    do {
+      if (!IsTheFirstIteration) {
+        auto DFI = DeviceFunctionDecl::LinkRedecls(Parent);
+        // How to find caller?
+        DFI->getCallExprMap
+      }
+      SyncCallInfo SCI;
+      SCI.Predecessors.push_back(
+          SourceRange(Parent->getBody()->getBeginLoc(), CE->getBeginLoc()));
+      SCI.Successors.push_back(
+          SourceRange(CE->getEndLoc(), Parent->getBody()->getEndLoc()));
+      if (!LoopRange.empty()) {
+        SCI.Predecessors.push_back(LoopRange.front());
+        SCI.Successors.push_back(LoopRange.front());
+      }
+      SyncCallsVec.push_back(std::make_pair(CE, SCI));
+      IsTheFirstIteration = false;
+    } while (!Parent->hasAttr<CUDAGlobalAttr>());
+    return true;
   }
   return true;
 }
@@ -488,13 +499,13 @@ bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
 #endif
     return false;
   }
-  if (!FD->hasAttr<CUDAGlobalAttr>()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case H: !FD->hasAttr<CUDAGlobalAttr>()"
-              << std::endl;
-#endif
-    return false;
-  }
+//  if (!FD->hasAttr<CUDAGlobalAttr>()) {
+//#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+//    std::cout << "Return False case H: !FD->hasAttr<CUDAGlobalAttr>()"
+//              << std::endl;
+//#endif
+//    return false;
+//  }
   std::unordered_set<const DeviceFunctionInfo *> Visited{};
   auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
   if (!DFI) {
