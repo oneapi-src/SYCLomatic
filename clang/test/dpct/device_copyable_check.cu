@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/device_copyable_check %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device_copyable_check/device_copyable_check.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/device_copyable_check/device_copyable_check.dp.cpp -o %T/device_copyable_check/device_copyable_check.dp.o %}
 
 class CudaImage {
 public:

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_call_no_arg %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel_call_no_arg/kernel_call_no_arg.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel_call_no_arg/kernel_call_no_arg.dp.cpp -o %T/kernel_call_no_arg/kernel_call_no_arg.dp.o %}
 
 #include <cuda_runtime.h>
 

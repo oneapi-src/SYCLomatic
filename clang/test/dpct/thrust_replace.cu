@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust_replace %s --cuda-include-path="%cuda-path/include" --usm-level=none
 // RUN: FileCheck --input-file %T/thrust_replace/thrust_replace.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_replace/thrust_replace.dp.cpp -o %T/thrust_replace/thrust_replace.dp.o %}
 
 #include <thrust/replace.h>
 #include <thrust/device_vector.h>

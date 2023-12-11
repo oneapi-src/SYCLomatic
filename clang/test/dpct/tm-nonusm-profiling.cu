@@ -1,5 +1,6 @@
 // RUN: dpct --enable-profiling  --format-range=none -usm-level=none -out-root %T/tm-nonusm-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-nonusm-profiling/tm-nonusm-profiling.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/tm-nonusm-profiling/tm-nonusm-profiling.dp.cpp -o %T/tm-nonusm-profiling/tm-nonusm-profiling.dp.o %}
 
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT:#define DPCT_USM_LEVEL_NONE

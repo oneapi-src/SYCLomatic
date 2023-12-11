@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct -out-root %T/cuda_atomic %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_atomic/cuda_atomic.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda_atomic/cuda_atomic.dp.cpp -o %T/cuda_atomic/cuda_atomic.dp.o %}
 
 #include <cuda/atomic>
 

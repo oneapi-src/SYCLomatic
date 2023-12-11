@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -usm-level=none -out-root %T/memory_data_types %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/memory_data_types/memory_data_types.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/memory_data_types/memory_data_types.dp.cpp -o %T/memory_data_types/memory_data_types.dp.o %}
 
 void foo(int *data, int x, int y) {
   // CHECK: dpct::pitched_data p1 = dpct::pitched_data(data, x, x, y);

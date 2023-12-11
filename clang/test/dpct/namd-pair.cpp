@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/namd-pair %s --cuda-include-path="%cuda-path/include" -- -std=c++14
 // RUN: FileCheck --input-file %T/namd-pair/namd-pair.cpp.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/namd-pair/namd-pair.cpp.dp.cpp -o %T/namd-pair/namd-pair.o.dp.o %}
 
 
 #include<cuda_runtime.h>

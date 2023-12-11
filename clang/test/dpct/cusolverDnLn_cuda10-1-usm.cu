@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/cusolverDnLn_cuda10-1-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolverDnLn_cuda10-1-usm/cusolverDnLn_cuda10-1-usm.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusolverDnLn_cuda10-1-usm/cusolverDnLn_cuda10-1-usm.dp.cpp -o %T/cusolverDnLn_cuda10-1-usm/cusolverDnLn_cuda10-1-usm.dp.o %}
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cusolverDn.h>

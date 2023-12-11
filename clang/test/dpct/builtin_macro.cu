@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/builtin_macro %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/builtin_macro/builtin_macro.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/builtin_macro/builtin_macro.dp.cpp -o %T/builtin_macro/builtin_macro.dp.o %}
 
 #define MACRO(ID, CMP, S) \
   {                       \

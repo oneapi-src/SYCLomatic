@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/atomic_functions_system_wide %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/atomic_functions_system_wide/atomic_functions_system_wide.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/atomic_functions_system_wide/atomic_functions_system_wide.dp.cpp -o %T/atomic_functions_system_wide/atomic_functions_system_wide.dp.o %}
 
 #include <cuda_runtime.h>
 

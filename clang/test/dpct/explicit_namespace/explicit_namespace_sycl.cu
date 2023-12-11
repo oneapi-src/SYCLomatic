@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/explicit_namespace_sycl %S/explicit_namespace_sycl.cu --cuda-include-path="%cuda-path/include" --use-explicit-namespace=sycl --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/explicit_namespace_sycl/explicit_namespace_sycl.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/explicit_namespace_sycl/explicit_namespace_sycl.dp.cpp -o %T/explicit_namespace_sycl/explicit_namespace_sycl.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>

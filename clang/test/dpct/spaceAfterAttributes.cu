@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/spaceAfterAttributes %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/spaceAfterAttributes/spaceAfterAttributes.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/spaceAfterAttributes/spaceAfterAttributes.dp.cpp -o %T/spaceAfterAttributes/spaceAfterAttributes.dp.o %}
 
 #include <cuda_runtime.h>
 

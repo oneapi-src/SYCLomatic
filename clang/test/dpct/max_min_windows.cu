@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/max_min_windows %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/max_min_windows/max_min_windows.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/max_min_windows/max_min_windows.dp.cpp -o %T/max_min_windows/max_min_windows.dp.o %}
 
 #if defined(_WIN32) || defined(WIN32)
 #include <Windows.h>

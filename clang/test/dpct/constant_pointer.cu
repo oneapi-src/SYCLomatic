@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/constant_pointer %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer/constant_pointer.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/constant_pointer/constant_pointer.dp.cpp -o %T/constant_pointer/constant_pointer.dp.o %}
 
 // CHECK: static dpct::global_memory<int, 1> schsfirst;
 static __constant__ const int *schsfirst;
