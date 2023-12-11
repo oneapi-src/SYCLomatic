@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/array_memory_management %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/array_memory_management/array_memory_management.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/array_memory_management/array_memory_management.dp.cpp -o %T/array_memory_management/array_memory_management.dp.o %}
 
 #include <cuda_runtime.h>
 

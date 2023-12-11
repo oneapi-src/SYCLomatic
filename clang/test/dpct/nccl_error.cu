@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/nccl_error %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/nccl_error/nccl_error.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/nccl_error/nccl_error.dp.cpp -o %T/nccl_error/nccl_error.dp.o %}
 // CHECK: #include <dpct/ccl_utils.hpp>
 #include "nccl.h"
 

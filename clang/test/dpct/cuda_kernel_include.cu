@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_kernel_include %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -I ./
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_kernel_include/cuda_kernel_include.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda_kernel_include/cuda_kernel_include.dp.cpp -o %T/cuda_kernel_include/cuda_kernel_include.dp.o %}
 
 // CHECK:#include <sycl/sycl.hpp>
 // CHECK-NEXT:#include <dpct/dpct.hpp>

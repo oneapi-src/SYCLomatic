@@ -2,6 +2,7 @@
 // UNSUPPORTED: cuda-7.0, cuda-7.5, cuda-8.0, cuda-9.0, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1
 // RUN: dpct --format-range=none -in-root %S -out-root %T/Libcu %S/libcu_tuple.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/Libcu/libcu_tuple.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/Libcu/libcu_tuple.dp.cpp -o %T/Libcu/libcu_tuple.dp.o %}
 
 // CHECK: #include <tuple>
 #include <cuda/std/tuple>

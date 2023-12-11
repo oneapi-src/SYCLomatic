@@ -1,5 +1,6 @@
 // RUN: dpct --no-dpcpp-extensions=enqueued_barriers --format-range=none -usm-level=none -out-root %T/tm-nonusm-no-submit-barrier %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-nonusm-no-submit-barrier/tm-nonusm-no-submit-barrier.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/tm-nonusm-no-submit-barrier/tm-nonusm-no-submit-barrier.dp.cpp -o %T/tm-nonusm-no-submit-barrier/tm-nonusm-no-submit-barrier.dp.o %}
 #include <stdio.h>
 
 #define N 1000

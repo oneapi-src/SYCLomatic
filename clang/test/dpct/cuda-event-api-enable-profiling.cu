@@ -1,5 +1,6 @@
 // RUN: dpct --enable-profiling --format-range=none --usm-level=none -out-root %T/cuda-event-api-enable-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.cpp -o %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.o %}
 
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT: #define DPCT_USM_LEVEL_NONE

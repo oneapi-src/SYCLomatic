@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none --out-root %T/cusparse-type102 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusparse-type102/cusparse-type102.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusparse-type102/cusparse-type102.dp.cpp -o %T/cusparse-type102/cusparse-type102.dp.o %}
 #include <cstdio>
 #include <cuda_runtime.h>
 #include <cusparse_v2.h>

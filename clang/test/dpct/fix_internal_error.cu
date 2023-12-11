@@ -2,6 +2,7 @@
 // RUN: grep "dpct internal error" %T/fix_internal_error_output.txt | wc -l > %T/fix_internal_error_wc_output.txt || true
 // RUN: FileCheck %S/check_no_internal_error.txt --match-full-lines --input-file %T/fix_internal_error_wc_output.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/fix_internal_error/fix_internal_error.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/fix_internal_error/fix_internal_error.dp.cpp -o %T/fix_internal_error/fix_internal_error.dp.o %}
 
 // Test description:
 // This test is to cover un-instantiate member call.

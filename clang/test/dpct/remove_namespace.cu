@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/remove_namespace %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/remove_namespace/remove_namespace.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/remove_namespace/remove_namespace.dp.cpp -o %T/remove_namespace/remove_namespace.dp.o %}
 
 #include "cuda_runtime.h"
 #include <algorithm>

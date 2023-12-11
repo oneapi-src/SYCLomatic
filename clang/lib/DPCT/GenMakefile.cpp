@@ -47,14 +47,14 @@ static void fillCompileCmds(
 
 // To get customized basename from the file path.
 // E.g: /path/to/foo.cc.cpp --> foo.cc
-static clang::tooling::UnifiedPath getCustomBaseName(const clang::tooling::UnifiedPath &Path) {
+static std::string getCustomBaseName(const clang::tooling::UnifiedPath &Path) {
   std::string Filename = llvm::sys::path::filename(Path.getCanonicalPath()).str();
   std::size_t Pos = Filename.find_last_of('.');
   if (Pos != std::string::npos) {
     std::string BaseName = Filename.substr(0, Pos);
-    return clang::tooling::UnifiedPath(BaseName);
-  } else
-    return clang::tooling::UnifiedPath(Filename);
+    return BaseName;
+  } 
+  return Filename;
 }
 
 extern std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
@@ -146,7 +146,7 @@ static void getCompileInfo(
   for (const auto &Entry : CompileTargetsMap) {
     clang::tooling::UnifiedPath FileName = Entry.first;
 
-    if (llvm::StringRef(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
+    if (path::filename(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
       continue;
     }
 
@@ -280,7 +280,7 @@ static void getCompileInfo(
       // command runs.
       Orig2ObjMap[FileName] = dpct::appendPath(
           Directory.getCanonicalPath().str(),
-          getCustomBaseName(FileName).getCanonicalPath().str() + ".o");
+          getCustomBaseName(FileName) + ".o");
     }
 
     // if option "--use-custom-helper=<value>" is used to customize the helper
@@ -325,7 +325,6 @@ static void getCompileInfo(
 
   for (const auto &Entry : ObjsInLinkerCmdPerTarget) {
     for (const auto &Obj : Entry.second) {
-
       auto Iter = CmdsMap.find(Obj);
       if (Iter != CmdsMap.end()) {
         auto CmpInfo = Iter->second;
@@ -373,15 +372,17 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
   int TargetIdx = 0;
   for (const auto &Entry : CmdsPerTarget) {
     TargetName = Entry.first;
-    auto Parent = path::parent_path(TargetName.getCanonicalPath());
+
+    auto Parent =
+        dpct::appendPath(OutRoot.getCanonicalPath().str(),
+                         path::parent_path(TargetName.getPath()).str());
 
     if (!llvm::sys::fs::exists(Parent)) {
       std::error_code EC;
       EC = llvm::sys::fs::create_directories(Parent);
       if ((bool)EC) {
-        std::string ErrMsg =
-            "[ERROR] Create Directory : " + std::string(Parent.str()) +
-            " fail: " + EC.message() + "\n";
+        std::string ErrMsg = "[ERROR] Create Directory : " + Parent +
+                             " fail: " + EC.message() + "\n";
         PrintMsg(ErrMsg);
       }
     }

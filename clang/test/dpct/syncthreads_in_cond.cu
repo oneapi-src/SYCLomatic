@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/syncthreads_in_cond %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --input-file %T/syncthreads_in_cond/syncthreads_in_cond.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/syncthreads_in_cond/syncthreads_in_cond.dp.cpp -o %T/syncthreads_in_cond/syncthreads_in_cond.dp.o %}
 
 __device__ void test1(int *a) {
   unsigned tid =

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/withoutexplicitxcuda %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/withoutexplicitxcuda/withoutexplicitxcuda.c.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/withoutexplicitxcuda/withoutexplicitxcuda.c.dp.cpp -o %T/withoutexplicitxcuda/withoutexplicitxcuda.c.dp.o %}
 
 // This file is migrated as CUDA file as default if compilation db is not used.
 

@@ -2,6 +2,7 @@
 // RUN: cd %T
 // RUN: dpct --no-cl-namespace-inline -out-root %T/formatMigratedExplicitly formatMigratedExplicitly.cu --cuda-include-path="%cuda-path/include" --format-range=migrated  -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace formatMigratedExplicitly.cu --match-full-lines --input-file %T/formatMigratedExplicitly/formatMigratedExplicitly.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/formatMigratedExplicitly/formatMigratedExplicitly.dp.cpp -o %T/formatMigratedExplicitly/formatMigratedExplicitly.dp.o %}
 
 #include <cuda_runtime.h>
 #include <cassert>

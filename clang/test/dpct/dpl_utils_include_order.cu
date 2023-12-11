@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/dpl_utils_include_order %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/dpl_utils_include_order/dpl_utils_include_order.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/dpl_utils_include_order/dpl_utils_include_order.dp.cpp -o %T/dpl_utils_include_order/dpl_utils_include_order.dp.o %}
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
