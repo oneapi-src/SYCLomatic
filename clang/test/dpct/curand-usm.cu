@@ -130,7 +130,7 @@ private:
 //CHECK-NEXT:  }
 //CHECK-NEXT:  ~B(){
 //CHECK-NEXT:    rng.reset();
-//CHECK-NEXT:    sycl::free(karg1, dpct::get_in_order_queue());
+//CHECK-NEXT:    dpct::dpct_free(karg1, dpct::get_in_order_queue());
 //CHECK-NEXT:  }
      //CHECK:private:
 //CHECK-NEXT:  dpct::rng::host_rng_ptr rng;

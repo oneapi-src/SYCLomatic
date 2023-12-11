@@ -460,7 +460,7 @@ void foo_test_3()
 
 // CHECK:    CHECK(DPCT_CHECK_ERROR(dpct::destroy_event(stop)));
 // CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(sycl::free(h_a, dpct::get_in_order_queue())));
-// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(sycl::free(d_a, dpct::get_in_order_queue())));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(dpct::dpct_free(d_a, dpct::get_in_order_queue())));
     CHECK(cudaEventDestroy(stop));
     CHECK(cudaFreeHost(h_a));
     CHECK(cudaFree(d_a));

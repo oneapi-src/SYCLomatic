@@ -49,7 +49,7 @@ __global__ void kernelFunc(float *deviceArray) {
 // CHECK:         kernelFunc(deviceArrayDouble);
 // CHECK:       });
 // CHECK:   q_ct1.memcpy(hostArrayDouble, deviceArrayDouble, bytes).wait();
-// CHECK:   sycl::free(deviceArrayDouble, q_ct1);
+// CHECK:   dpct::dpct_free(deviceArrayDouble, q_ct1);
 // CHECK: }
 void testDouble() {
   const unsigned int NUM = 1;
@@ -80,7 +80,7 @@ void testDouble() {
 // CHECK:         kernelFunc(deviceArrayFloat);
 // CHECK:       });
 // CHECK:   q_ct1.memcpy(hostArrayFloat, deviceArrayFloat, bytes).wait();
-// CHECK:   sycl::free(deviceArrayFloat, q_ct1);
+// CHECK:   dpct::dpct_free(deviceArrayFloat, q_ct1);
 // CHECK: }
 void testFloat() {
   const unsigned int NUM = 1;

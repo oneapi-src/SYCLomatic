@@ -682,6 +682,7 @@ public:
 inline void dpct_free(void *ptr,
                       const sycl::queue &q) {
   if (ptr) {
+    dpct::get_current_device().queues_wait_and_throw();
 #ifdef DPCT_USM_LEVEL_NONE
     detail::mem_mgr::instance().mem_free(ptr);
 #else

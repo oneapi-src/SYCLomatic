@@ -93,7 +93,7 @@ void f() {
 // CHECK-NEXT:   q_ct1.wait_and_throw();
 // CHECK-NEXT:   q_ct1.memcpy(h_Data, d_Data, SIZE * sizeof(int)).wait();
 // CHECK-NEXT:   free2();
-// CHECK-NEXT:   sycl::free(d_Data, q_ct1);
+// CHECK-NEXT:   dpct::dpct_free(d_Data, q_ct1);
 // CHECK-NEXT:   free(h_Data);
 // CHECK-NEXT:   printf("test pass!\n");
 // CHECK-NEXT:   return 0;

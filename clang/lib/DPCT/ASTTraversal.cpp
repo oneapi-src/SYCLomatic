@@ -10484,7 +10484,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       if (hasManagedAttr(0)(C)) {
           ArgStr = "*(" + ArgStr + ".get_ptr())";
       }
-      Repl << MapNames::getClNamespace() + "free(" << ArgStr
+      Repl << MapNames::getDpctNamespace() + "dpct_free(" << ArgStr
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
