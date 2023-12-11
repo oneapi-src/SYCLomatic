@@ -1,6 +1,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/openmp %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fopenmp
 // RUN: FileCheck %s --match-full-lines --input-file %T/openmp/openmp.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/openmp/openmp.dp.cpp -o %T/openmp/openmp.dp.o %}
 
 #include "stdio.h"
 #include "omp.h"

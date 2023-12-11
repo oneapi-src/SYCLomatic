@@ -3,7 +3,9 @@
 // RUN: dpct --format-range=none -out-root=%T -extra-arg="-D_FOO_" %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: FileCheck --input-file %T/vector_add.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/vector_add.dp.cpp -o %T/vector_add.dp.o %}
 // RUN: FileCheck --input-file %T/vector_add3.dp.cpp --match-full-lines %S/vector_add3.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/vector_add3.dp.cpp -o %T/vector_add3.dp.o %}
 
 #include <cuda.h>
 #include <stdio.h>

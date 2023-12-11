@@ -74,6 +74,15 @@ config.substitutions.append(("%target_triple", config.target_triple))
 
 config.substitutions.append(("%PATH%", config.environment["PATH"]))
 
+#SYCLomatic Code
+dpct_header_path = os.path.join(config.clang_src_dir, "runtime", "dpct-rt", "include")
+if platform.system() == "Linux":
+    llvm_config.with_system_environment(['LD_LIBRARY_PATH','LIBRARY_PATH','CPATH'])
+    llvm_config.with_environment('CPATH', dpct_header_path, append_path=True)
+elif platform.system() == "Windows":
+    llvm_config.with_system_environment(['LIB','CPATH','INCLUDE'])
+    llvm_config.with_environment('INCLUDE', dpct_header_path, append_path=True)
+#End SYCLomatic
 
 # For each occurrence of a clang tool name, replace it with the full path to
 # the build directory holding that tool.  We explicitly specify the directories
@@ -331,6 +340,10 @@ if config.clang_vendor_uti:
 if config.have_llvm_driver:
     config.available_features.add("llvm-driver")
 
+#SYCLomatic Code
+if config.is_enbale_build_lit == 'TRUE':
+    config.available_features.add("build_lit")
+#End SYCLomatic
 
 # Some tests perform deep recursion, which requires a larger pthread stack size
 # than the relatively low default of 192 KiB for 64-bit processes on AIX. The

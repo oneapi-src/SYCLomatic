@@ -178,7 +178,7 @@
 // cublasCdgmm-NEXT:               x /*const cuComplex **/, incx /*int*/, c /*cuComplex **/,
 // cublasCdgmm-NEXT:               ldc /*int*/);
 // cublasCdgmm-NEXT: Is migrated to:
-// cublasCdgmm-NEXT:   oneapi::mkl::blas::column_major::dgmm_batch(*handle, left_right, m, n, (std::complex<float>*)a, lda, 0, (std::complex<float>*)x, incx, 0, (std::complex<float>*)c, ldc, ldc * n, 1);
+// cublasCdgmm-NEXT:   oneapi::mkl::blas::column_major::dgmm(*handle, left_right, m, n, (std::complex<float>*)a, lda, (std::complex<float>*)x, incx, (std::complex<float>*)c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDcopy | FileCheck %s -check-prefix=cublasDcopy
 // cublasDcopy: CUDA API:

@@ -3,8 +3,11 @@
 // RUN: cp %S/* .
 // RUN: dpct --helper-function-preference=no-queue-device -p=%S -out-root %T --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/kernel1.dp.cpp --match-full-lines %S/kernel1.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel1.dp.cpp -o %T/kernel1.dp.o %}
 // RUN: FileCheck --input-file %T/kernel2.dp.cpp --match-full-lines %S/kernel2.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel2.dp.cpp -o %T/kernel2.dp.o %}
 // RUN: FileCheck --input-file %T/main.dp.cpp --match-full-lines %S/main.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/main.dp.cpp -o %T/main.dp.o %}
 
 // RUN: grep -x "extern sycl::device dev_ct1;" %T/*.cpp | wc -l > %T/extern_count1.txt
 // RUN: FileCheck --input-file %T/extern_count1.txt --match-full-lines extern_count.txt

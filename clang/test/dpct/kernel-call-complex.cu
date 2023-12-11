@@ -1,6 +1,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct -out-root %T/kernel-call-complex %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel-call-complex/kernel-call-complex.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel-call-complex/kernel-call-complex.dp.cpp -o %T/kernel-call-complex/kernel-call-complex.dp.o %}
 
 __global__ void k(int i) {
 }

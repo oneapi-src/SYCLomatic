@@ -1,5 +1,6 @@
 // RUN: dpct --process-all -in-root %S --format-range=none -out-root %T/user_api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/user_api/user_api.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/user_api/user_api.dp.cpp -o %T/user_api/user_api.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>

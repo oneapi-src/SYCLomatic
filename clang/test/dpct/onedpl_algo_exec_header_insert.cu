@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/onedpl_algo_exec_header_insert %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
 // RUN: FileCheck --input-file %T/onedpl_algo_exec_header_insert/onedpl_algo_exec_header_insert.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/onedpl_algo_exec_header_insert/onedpl_algo_exec_header_insert.dp.cpp -o %T/onedpl_algo_exec_header_insert/onedpl_algo_exec_header_insert.dp.o %}
 // RUN: FileCheck --input-file %T/onedpl_algo_exec_header_insert/onedpl_algo_exec_header_insert.h %S/onedpl_algo_exec_header_insert.h
 
 // CHECK: #include <oneapi/dpl/execution>

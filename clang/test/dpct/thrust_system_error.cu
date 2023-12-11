@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.2, v10.1, v10.2
 // RUN: dpct --format-range=none -out-root %T/thrust_system_error %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust_system_error/thrust_system_error.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_system_error/thrust_system_error.dp.cpp -o %T/thrust_system_error/thrust_system_error.dp.o %}
 
 #include <cuda_runtime_api.h>
 #include <thrust/system/cuda/error.h>

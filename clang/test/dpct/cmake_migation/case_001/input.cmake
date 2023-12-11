@@ -15,4 +15,5 @@ include_directorieS(
     ${CUDA_INCLUDE_DIRS}
 )
 add_executable(foo-bar ${SOURCES})
-
+project(foo CUDA)
+project(foo2 CUDA CXX)

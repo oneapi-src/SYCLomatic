@@ -232,14 +232,15 @@ void registerPatternRewriterRule(MetaRuleObject &R) {
 
 MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     const MetaRuleObject::PatternRewriter &PR) {
-  RuleId = PR.RuleId;
-  In = PR.In;
-  Out = PR.Out;
-  MatchMode = PR.MatchMode;
-  Subrules = PR.Subrules;
-  Priority = PR.Priority;
-  CmakeSyntax = PR.CmakeSyntax;
-
+  if (this != &PR) {
+    RuleId = PR.RuleId;
+    In = PR.In;
+    Out = PR.Out;
+    MatchMode = PR.MatchMode;
+    Subrules = PR.Subrules;
+    Priority = PR.Priority;
+    CmakeSyntax = PR.CmakeSyntax;
+  }
   return *this;
 }
 

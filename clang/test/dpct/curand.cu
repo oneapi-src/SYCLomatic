@@ -3,6 +3,7 @@
 // RUN: cd %T
 //RUN: dpct -out-root %T/curand curand.cu --usm-level=none --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand/curand.dp.cpp --match-full-lines curand.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/curand/curand.dp.cpp -o %T/curand/curand.dp.o %}
 //CHECK:// CHECKME
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>

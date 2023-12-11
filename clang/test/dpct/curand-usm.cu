@@ -1,5 +1,6 @@
 //RUN: dpct -out-root %T/curand-usm %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand-usm/curand-usm.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/curand-usm/curand-usm.dp.cpp -o %T/curand-usm/curand-usm.dp.o %}
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
 //CHECK:#include <dpct/rng_utils.hpp>

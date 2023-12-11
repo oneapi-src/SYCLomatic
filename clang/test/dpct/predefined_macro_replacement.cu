@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/predefined_macro_replacement %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -D__NVCC__ -D__CUDACC__
 // RUN: FileCheck --input-file %T/predefined_macro_replacement/predefined_macro_replacement.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/predefined_macro_replacement/predefined_macro_replacement.dp.cpp -o %T/predefined_macro_replacement/predefined_macro_replacement.dp.o %}
 
 //CHECK: #define DPCT_COMPAT_RT_VERSION {{[1-9][0-9]+}}
 

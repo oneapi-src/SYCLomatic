@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none --use-experimental-features=matrix -out-root %T/wmma_using_nvcuda %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/wmma_using_nvcuda/wmma_using_nvcuda.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/wmma_using_nvcuda/wmma_using_nvcuda.dp.cpp -o %T/wmma_using_nvcuda/wmma_using_nvcuda.dp.o %}
 // clang-format off
 #include <assert.h>
 #include <cuda.h>
