@@ -660,12 +660,26 @@ inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
 namespace detail {
 /// Extend the 'val' to 'bit' size, zero extend for unsigned int and signed
 /// extend for signed int.
-template <typename T>
-inline int64_t zero_or_signed_extent(T val, unsigned bit) {
+template <typename T> inline auto zero_or_signed_extent(T val, unsigned bit) {
   if constexpr (std::is_signed_v<T>) {
-    return int64_t(val) << (64 - bit) >> (64 - bit);
-  }
-  return val;
+    if constexpr (std::is_same_v<T, int32_t>) {
+      assert(bit < 64 &&
+             "When extend int32 value, bit must be smaller than 64.");
+      return int64_t(val) << (64 - bit) >> (64 - bit);
+    } else if constexpr (std::is_same_v<T, int16_t>) {
+      assert(bit < 32 &&
+             "When extend int16 value, bit must be smaller than 32.");
+      return int32_t(val) << (32 - bit) >> (32 - bit);
+    } else if constexpr (std::is_same_v<T, int8_t>) {
+      assert(bit < 16 &&
+             "When extend int8 value, bit must be smaller than 16.");
+      return int16_t(val) << (16 - bit) >> (16 - bit);
+    } else {
+      assert(bit < 64 && "Cannot extend int64 value.");
+      return val;
+    }
+  } else
+    return val;
 }
 
 template <typename RetT, bool NeedSat, typename AT, typename BT,
@@ -712,21 +726,21 @@ template <typename T> sycl::vec<int32_t, 2> extractAndExtend2(T a) {
   return ret;
 }
 
-template <typename T> sycl::vec<int32_t, 4> extractAndExtend4(T a) {
-  sycl::vec<int32_t, 4> ret;
+template <typename T> sycl::vec<int16_t, 4> extractAndExtend4(T a) {
+  sycl::vec<int16_t, 4> ret;
   sycl::vec<T, 1> va{a};
   if constexpr (std::is_signed_v<T>) {
     auto v = va.template as<sycl::vec<int8_t, 4>>();
-    ret[0] = zero_or_signed_extent(v[0], 17);
-    ret[1] = zero_or_signed_extent(v[1], 17);
-    ret[2] = zero_or_signed_extent(v[2], 17);
-    ret[3] = zero_or_signed_extent(v[3], 17);
+    ret[0] = zero_or_signed_extent(v[0], 9);
+    ret[1] = zero_or_signed_extent(v[1], 9);
+    ret[2] = zero_or_signed_extent(v[2], 9);
+    ret[3] = zero_or_signed_extent(v[3], 9);
   } else {
     auto v = va.template as<sycl::vec<uint8_t, 4>>();
-    ret[0] = zero_or_signed_extent(v[0], 17);
-    ret[1] = zero_or_signed_extent(v[1], 17);
-    ret[2] = zero_or_signed_extent(v[2], 17);
-    ret[3] = zero_or_signed_extent(v[3], 17);
+    ret[0] = zero_or_signed_extent(v[0], 9);
+    ret[1] = zero_or_signed_extent(v[1], 9);
+    ret[2] = zero_or_signed_extent(v[2], 9);
+    ret[3] = zero_or_signed_extent(v[3], 9);
   }
   return ret;
 }
@@ -764,13 +778,13 @@ template <typename RetT, bool NeedSat, bool NeedAdd, typename AT, typename BT,
           typename BinaryOperation>
 inline constexpr RetT extend_vbinary4(AT a, BT b, RetT c,
                                       BinaryOperation binary_op) {
-  sycl::vec<int32_t, 4> extend_a = extractAndExtend4(a);
-  sycl::vec<int32_t, 4> extend_b = extractAndExtend4(b);
-  sycl::vec<int32_t, 4> temp{
+  sycl::vec<int16_t, 4> extend_a = extractAndExtend4(a);
+  sycl::vec<int16_t, 4> extend_b = extractAndExtend4(b);
+  sycl::vec<int16_t, 4> temp{
       binary_op(extend_a[0], extend_b[0]), binary_op(extend_a[1], extend_b[1]),
       binary_op(extend_a[2], extend_b[2]), binary_op(extend_a[3], extend_b[3])};
   if constexpr (NeedSat) {
-    int32_t min_val = 0, max_val = 0;
+    int16_t min_val = 0, max_val = 0;
     if constexpr (std::is_signed_v<RetT>) {
       min_val = std::numeric_limits<int8_t>::min();
       max_val = std::numeric_limits<int8_t>::max();
