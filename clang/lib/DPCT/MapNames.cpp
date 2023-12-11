@@ -4636,6 +4636,7 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "reduce",
     "num_threads",
     "shfl_up",
+    "shfl",
     "shfl_xor",
     "meta_group_rank",
     "block_tile_memory",
