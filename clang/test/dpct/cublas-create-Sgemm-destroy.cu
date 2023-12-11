@@ -194,30 +194,10 @@ void foo4() {
   float2  *a_c, *b_c, *x_c, *c_c, *alpha_c, *beta_c;
   double2 *a_z, *b_z, *x_z, *c_z, *alpha_z, *beta_z;
 
-  //CHECK:{
-  //CHECK-NEXT:auto a_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(a_f);
-  //CHECK-NEXT:auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  //CHECK-NEXT:auto c_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(c_f);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_f_buf_ct{{[0-9]+}}, 2, 0, x_f_buf_ct{{[0-9]+}}, 1, 0, c_f_buf_ct{{[0-9]+}}, 2, 2 * 2, 1);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:{
-  //CHECK-NEXT:auto a_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(a_d);
-  //CHECK-NEXT:auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  //CHECK-NEXT:auto c_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(c_d);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_d_buf_ct{{[0-9]+}}, 2, 0, x_d_buf_ct{{[0-9]+}}, 1, 0, c_d_buf_ct{{[0-9]+}}, 2, 2 * 2, 1);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:{
-  //CHECK-NEXT:auto a_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(a_c);
-  //CHECK-NEXT:auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  //CHECK-NEXT:auto c_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(c_c);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_c_buf_ct{{[0-9]+}}, 2, 0, x_c_buf_ct{{[0-9]+}}, 1, 0, c_c_buf_ct{{[0-9]+}}, 2, 2 * 2, 1);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:{
-  //CHECK-NEXT:auto a_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(a_z);
-  //CHECK-NEXT:auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  //CHECK-NEXT:auto c_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(c_z);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_z_buf_ct{{[0-9]+}}, 2, 0, x_z_buf_ct{{[0-9]+}}, 1, 0, c_z_buf_ct{{[0-9]+}}, 2, 2 * 2, 1);
-  //CHECK-NEXT:}
+  //CHECK:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, 2, 2, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(a_f)), 2, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_f)), 1, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(c_f)), 2);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, 2, 2, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(a_d)), 2, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_d)), 1, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(c_d)), 2);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, 2, 2, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(a_c)), 2, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), 1, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(c_c)), 2);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, 2, 2, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(a_z)), 2, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), 1, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(c_z)), 2);
   cublasSdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_f, 2, x_f, 1, c_f, 2);
   cublasDdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_d, 2, x_d, 1, c_d, 2);
   cublasCdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_c, 2, x_c, 1, c_c, 2);
