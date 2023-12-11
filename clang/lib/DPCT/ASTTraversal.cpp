@@ -1798,8 +1798,8 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
 
   std::string RealTypeNameStr(Start, TyLen);
   const auto StartPos = RealTypeNameStr.find_last_not_of(" ");
-  // Remove spaces between type name and left angle, like "thrust::device_ptr[Spaces]
-  // <int> tmp".
+  // Remove spaces between type name and template arg, like
+  // "thrust::device_ptr[Spaces]<int> tmp".
   if (StartPos != std::string::npos)
     RealTypeNameStr = RealTypeNameStr.substr(0, StartPos + 1);
 
