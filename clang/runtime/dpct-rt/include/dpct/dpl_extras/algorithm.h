@@ -2414,6 +2414,63 @@ void nontrivial_run_length_encode(ExecutionPolicy &&policy,
   ::std::fill(policy, num_runs, num_runs + 1, ret_dist);
 }
 
+template <typename ExecutionPolicy, typename InputIterator,
+          typename OutputIterator, typename CountIterator,
+          typename UnaryPredicate>
+void partition_if(ExecutionPolicy &&policy, InputIterator input,
+                  OutputIterator output, CountIterator num_true, int num_items,
+                  UnaryPredicate pred) {
+  dpl::copy(policy, input, input + num_items, output);
+  auto beg_false =
+      dpl::stable_partition(policy, output, output + num_items, pred);
+  dpl::reverse(policy, beg_false, output + num_items);
+  auto num_true_items = ::std::distance(output, beg_false);
+  dpl::fill(policy, num_true, num_true + 1, num_true_items);
+}
+
+template <typename ExecutionPolicy, typename InputIterator,
+          typename OutputIterator1, typename OutputIterator2,
+          typename OutputIterator3, typename CountIterator,
+          typename UnaryPredicate1, typename UnaryPredicate2>
+void partition_if(ExecutionPolicy &&policy, InputIterator input,
+                  OutputIterator1 output1, OutputIterator2 output2,
+                  OutputIterator3 output3, CountIterator partition_counts,
+                  int num_items, UnaryPredicate1 pred1, UnaryPredicate2 pred2) {
+  using internal::__buffer;
+  using ValueType = typename ::std::iterator_traits<InputIterator>::value_type;
+  using CountType = typename ::std::iterator_traits<CountIterator>::value_type;
+  __buffer<ValueType> tmp(num_items);
+
+  // Partition the first set (elements that satisfy pred1) and store the
+  // remaining in temporary storage.
+  auto [output1_end, tmp_end] = dpct::stable_partition_copy(
+      policy, input, input + num_items, output1, tmp.get(), pred1);
+  // Partition the remaining two sets (elements that satisfy pred2 and
+  // unselected).
+  auto [output2_end, output3_end] = dpct::stable_partition_copy(
+      policy, tmp.get(), tmp_end, output2, output3, pred2);
+
+  ::std::vector<CountType> host_counts = { ::std::distance(output1, output1_end),
+        ::std::distance(output2, output2_end), ::std::distance(output3, output3_end) };
+  dpl::copy(policy, host_counts.begin(), host_counts.end(), partition_counts);
+  dpl::reverse(policy, output3, output3_end);
+}
+
+template <typename ExecutionPolicy, typename InputIterator,
+          typename OutputIterator, typename FlagsIterator,
+          typename CountIterator>
+void partition_flagged(ExecutionPolicy &&policy, InputIterator input,
+                       FlagsIterator flags, OutputIterator output,
+                       CountIterator num_true, int num_items) {
+  dpl::copy(policy, input, input + num_items, output);
+  auto beg_false =
+      dpct::stable_partition(policy, output, output + num_items, flags,
+                             [](auto flag) { return flag == 1; });
+  dpl::reverse(policy, beg_false, output + num_items);
+  auto num_true_items = ::std::distance(output, beg_false);
+  dpl::fill(policy, num_true, num_true + 1, num_true_items);
+}
+
 } // end namespace dpct
 
 #endif
