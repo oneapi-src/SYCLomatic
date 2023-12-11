@@ -1,5 +1,6 @@
 // RUN: dpct -in-root %S -out-root %T/bnback %S/bnback.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/bnback/bnback.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/bnback/bnback.dp.cpp -o %T/bnback/bnback.dp.o %}
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>

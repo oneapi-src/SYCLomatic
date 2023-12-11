@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/overload_unary_operator %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/overload_unary_operator/overload_unary_operator.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/overload_unary_operator/overload_unary_operator.dp.cpp -o %T/overload_unary_operator/overload_unary_operator.dp.o %}
 
 #include <cuda_runtime.h>
 

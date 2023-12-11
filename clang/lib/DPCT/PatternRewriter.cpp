@@ -385,8 +385,9 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
 
     throw std::runtime_error("Internal error: invalid pattern element");
   }
-
-  if (!isIdentifiedChar(Input[Start - 1]) && !isIdentifiedChar(Input[Index])) {
+  
+  if ((Start == 0 || !isIdentifiedChar(Input[Start - 1])) &&
+      !isIdentifiedChar(Input[Index])) {
     Result.Start = Start;
     Result.End = Index;
   } else {
@@ -480,8 +481,21 @@ static void instantiateTemplate(
   }
 
   while (Index <= End) {
-    const auto Character = Template[Index];
 
+    // Skip variable name with escape character, like "\${var_name}"
+    if (Index < (Size - 2) && Template[Index] == '\\' &&
+        Template[Index + 1] == '$' && Template[Index + 2] == '{') {
+      Index += 1; // Skip '\\'
+      auto RightCurly = Template.find('}', Index);
+      if (RightCurly == std::string::npos) {
+        throw std::runtime_error("Invalid rewrite pattern expression");
+      }
+      RightCurly += 1; // Skip '}'
+      std::string Name = Template.substr(Index, RightCurly - Index);
+      OutputStream << Name;
+    }
+
+    auto Character = Template[Index];
     if (Index < (Size - 1) && Character == '$' && Template[Index + 1] == '{') {
       const int BindingStart = Index;
       Index += 2;
@@ -576,7 +590,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
               applyPatternRewriter(SubruleIterator->second, Value);
         }
       }
-
       const int Indentation = detectIndentation(Input, Index);
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;

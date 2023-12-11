@@ -1,5 +1,6 @@
 // RUN: dpct --enable-profiling  -out-root %T/tm-complex-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-complex-profiling/tm-complex-profiling.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/tm-complex-profiling/tm-complex-profiling.dp.cpp -o %T/tm-complex-profiling/tm-complex-profiling.dp.o %}
 
 // CHECK: #define DPCT_PROFILING_ENABLED
 // CHECK-NEXT: #include <sycl/sycl.hpp>
@@ -353,6 +354,7 @@ void foo_test_4() {
   // CHECK-NEXT:  */
   // CHECK-NEXT:  {
   // CHECK-NEXT:    dpct::has_capability_or_fail(dpct::get_in_order_queue().get_device(), {sycl::aspect::fp64});
+  // CHECK-EMPTY:
   // CHECK-NEXT:    dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
   // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
@@ -373,6 +375,7 @@ void foo_test_4() {
     // CHECK-NEXT:    */
     // CHECK-NEXT:    {
     // CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_in_order_queue().get_device(), {sycl::aspect::fp64});
+    // CHECK-EMPTY:
     // CHECK-NEXT:        dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
     // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
     // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
@@ -394,6 +397,7 @@ void foo_test_4() {
     // CHECK-NEXT:    */
     // CHECK-NEXT:    {
     // CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_in_order_queue().get_device(), {sycl::aspect::fp64});
+    // CHECK-EMPTY:
     // CHECK-NEXT:        dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
     // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
     // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {

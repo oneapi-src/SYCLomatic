@@ -1,11 +1,16 @@
 // RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/mf-test %S/mf-kernel.cu %S/mf-func-included.cu %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/mf-test/mf-test.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/mf-test/mf-test.dp.cpp -o %T/mf-test/mf-test.dp.o %}
 // RUN: FileCheck %S/mf-kernel.cu --match-full-lines --input-file %T/mf-test/mf-kernel.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/mf-test/mf-kernel.dp.cpp -o %T/mf-test/mf-kernel.dp.o %}
 // RUN: FileCheck %S/mf-kernel.cuh --match-full-lines --input-file %T/mf-test/mf-kernel.dp.hpp
 // RUN: FileCheck %S/mf-extern.cuh --match-full-lines --input-file %T/mf-test/mf-extern.dp.hpp
 // RUN: FileCheck %S/mf-func-included.cu --match-full-lines --input-file %T/mf-test/mf-func-included.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/mf-test/mf-func-included.dp.cpp -o %T/mf-test/mf-func-included.dp.o %}
 // RUN: FileCheck %S/mf-func-included-angled.cu --match-full-lines --input-file %T/mf-test/mf-func-included-angled.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/mf-test/mf-func-included-angled.dp.cpp -o %T/mf-test/mf-func-included-angled.dp.o %}
 // RUN: FileCheck %S/mf-func-mid-included.cu --match-full-lines --input-file %T/mf-test/mf-func-mid-included.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/mf-test/mf-func-mid-included.dp.cpp -o %T/mf-test/mf-func-mid-included.dp.o %}
 
 // CHECK: #include "mf-kernel.dp.hpp"
 // CHECK-NEXT#include "mf-extern.dp.hpp"
@@ -26,20 +31,22 @@ void test() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
 
-  // CHECK:     q_ct1.submit(
-  // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         extern dpct::global_memory<volatile int, 0> g_mutex;
+  //      CHECK:     {
+  // CHECK-NEXT:       extern dpct::global_memory<volatile int, 0> g_mutex;
   // CHECK-EMPTY:
-  // CHECK-NEXT:         g_mutex.init();
+  // CHECK-NEXT:       g_mutex.init();
   // CHECK-EMPTY:
-  // CHECK-NEXT:         auto g_mutex_acc_ct1 = g_mutex.get_access(cgh);
+  // CHECK-NEXT:       q_ct1.submit(
+  // CHECK-NEXT:         [&](sycl::handler &cgh) {
+  // CHECK-NEXT:           auto g_mutex_acc_ct1 = g_mutex.get_access(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class Reset_kernel_parameters_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:             Reset_kernel_parameters(g_mutex_acc_ct1);
-  // CHECK-NEXT:           });
-  // CHECK-NEXT:       });
+  // CHECK-NEXT:           cgh.parallel_for<dpct_kernel_name<class Reset_kernel_parameters_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:               Reset_kernel_parameters(g_mutex_acc_ct1);
+  // CHECK-NEXT:             });
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     }
   Reset_kernel_parameters<<<1,1>>>();
   // CHECK: q_ct1.parallel_for<dpct_kernel_name<class cuda_hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
@@ -60,12 +67,15 @@ void test() {
   // CHECK-NEXT:       });
   kernel_extern<<<1,1>>>();
 
-  // CHECK:   dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64, sycl::aspect::fp16});
-  // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class test_fp_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
-  // CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:       test_fp();
-  // CHECK-NEXT:     });
+  //      CHECK:   {
+  // CHECK-NEXT:     dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64, sycl::aspect::fp16});
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     q_ct1.parallel_for<dpct_kernel_name<class test_fp_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         test_fp();
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   }
   test_fp<<<1, 1>>>();
 }
 

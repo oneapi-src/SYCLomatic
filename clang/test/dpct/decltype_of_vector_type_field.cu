@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/decltype_of_vector_type_field %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/decltype_of_vector_type_field/decltype_of_vector_type_field.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/decltype_of_vector_type_field/decltype_of_vector_type_field.dp.cpp -o %T/decltype_of_vector_type_field/decltype_of_vector_type_field.dp.o %}
 
 void f() {
   // CHECK: using dim3_x_type = size_t;

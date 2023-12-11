@@ -42,6 +42,10 @@ config.standalone_build = @CLANG_BUILT_STANDALONE@
 config.ppc_linux_default_ieeelongdouble = @PPC_LINUX_DEFAULT_IEEELONGDOUBLE@
 config.have_llvm_driver = @LLVM_TOOL_LLVM_DRIVER_BUILD@
 
+# SYCLomatic configuration
+config.is_enbale_build_lit = lit_config.params.get("is_enbale_build_lit", "@BUILD_LIT@")
+# End
+
 import lit.llvm
 lit.llvm.initialize(lit_config, config)
 

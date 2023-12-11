@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/sycl_style_int2 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/sycl_style_int2/sycl_style_int2.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/sycl_style_int2/sycl_style_int2.dp.cpp -o %T/sycl_style_int2/sycl_style_int2.dp.o %}
 
 #include <cstdint>
 

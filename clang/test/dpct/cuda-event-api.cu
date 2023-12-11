@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda-event-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-event-api/cuda-event-api.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda-event-api/cuda-event-api.dp.cpp -o %T/cuda-event-api/cuda-event-api.dp.o %}
 
 #include <stdio.h>
 

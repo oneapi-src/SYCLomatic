@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust_math %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust_math/thrust_math.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_math/thrust_math.dp.cpp -o %T/thrust_math/thrust_math.dp.o %}
 
 // CHECK: #include <complex>
 #include <thrust/complex.h>

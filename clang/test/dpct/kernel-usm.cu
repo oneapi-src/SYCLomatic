@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/kernel-usm %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel-usm/kernel-usm.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel-usm/kernel-usm.dp.cpp -o %T/kernel-usm/kernel-usm.dp.o %}
 
 #include <cuda_runtime.h>
 #include <stdio.h>

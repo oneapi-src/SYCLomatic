@@ -4294,35 +4294,35 @@ private:
           buildString(MapNames::getDpctNamespace(), "get_",
                       DpctGlobalInfo::getDeviceQueueName(), "()");
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-        OuterStmts.emplace_back(
+        OuterStmts.OthersList.emplace_back(
             buildString(MapNames::getDpctNamespace(), "global_memory<",
                         MapNames::getDpctNamespace(), "byte_t, 1> d_",
                         DpctGlobalInfo::getSyncName(), "(4);"));
 
-        OuterStmts.emplace_back(buildString("d_", DpctGlobalInfo::getSyncName(),
-                                            ".init(", DefaultQueue, ");"));
+        OuterStmts.OthersList.emplace_back(buildString(
+            "d_", DpctGlobalInfo::getSyncName(), ".init(", DefaultQueue, ");"));
 
         SubmitStmtsList.SyncList.emplace_back(
             buildString("auto ", DpctGlobalInfo::getSyncName(), " = ",
                         MapNames::getDpctNamespace(), "get_access(d_",
                         DpctGlobalInfo::getSyncName(), ".get_ptr(), cgh);"));
 
-        OuterStmts.emplace_back(buildString(
+        OuterStmts.OthersList.emplace_back(buildString(
             MapNames::getDpctNamespace(), "dpct_memset(d_",
-            DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));\n"));
+            DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));"));
 
         requestFeature(HelperFeatureEnum::device_ext);
       } else {
-        OuterStmts.emplace_back(buildString(
+        OuterStmts.OthersList.emplace_back(buildString(
             MapNames::getDpctNamespace(), "global_memory<unsigned int, 0> d_",
             DpctGlobalInfo::getSyncName(), "(0);"));
-        OuterStmts.emplace_back(buildString(
+        OuterStmts.OthersList.emplace_back(buildString(
             "unsigned *", DpctGlobalInfo::getSyncName(), " = d_",
             DpctGlobalInfo::getSyncName(), ".get_ptr(", DefaultQueue, ");"));
 
-        OuterStmts.emplace_back(buildString(DefaultQueue, ".memset(",
-                                            DpctGlobalInfo::getSyncName(),
-                                            ", 0, sizeof(int)).wait();"));
+        OuterStmts.OthersList.emplace_back(
+            buildString(DefaultQueue, ".memset(", DpctGlobalInfo::getSyncName(),
+                        ", 0, sizeof(int)).wait();"));
 
         requestFeature(HelperFeatureEnum::device_ext);
       }
@@ -4364,8 +4364,6 @@ private:
     StmtList SyncList;
     StmtList RangeList;
     StmtList MemoryList;
-    StmtList InitList;
-    StmtList ExternList;
     StmtList PtrList;
     StmtList AccessorList;
     StmtList TextureList;
@@ -4376,9 +4374,7 @@ private:
     inline KernelPrinter &print(KernelPrinter &Printer) {
       printList(Printer, StreamList);
       printList(Printer, SyncList);
-      printList(Printer, ExternList);
       printList(Printer, MemoryList);
-      printList(Printer, InitList, "init global memory");
       printList(Printer, RangeList,
                 "ranges used for accessors to device memory");
       printList(Printer, PtrList, "pointers to device memory");
@@ -4393,8 +4389,8 @@ private:
 
     bool empty() const noexcept {
       return CommandGroupList.empty() && NdRangeList.empty() &&
-             AccessorList.empty() && PtrList.empty() && InitList.empty() &&
-             ExternList.empty() && MemoryList.empty() && RangeList.empty() &&
+             AccessorList.empty() && PtrList.empty() &&
+             MemoryList.empty() && RangeList.empty() &&
              TextureList.empty() && SamplerList.empty() && StreamList.empty() &&
              SyncList.empty();
     }
@@ -4411,7 +4407,34 @@ private:
     }
   } SubmitStmtsList;
 
-  StmtList OuterStmts;
+  class {
+  public:
+    StmtList ExternList;
+    StmtList InitList;
+    StmtList OthersList;
+
+    inline KernelPrinter &print(KernelPrinter &Printer) {
+      printList(Printer, ExternList);
+      printList(Printer, InitList, "init global memory");
+      printList(Printer, OthersList);
+      return Printer;
+    }
+
+    bool empty() const noexcept {
+      return InitList.empty() && ExternList.empty() && OthersList.empty();
+    }
+
+  private:
+    KernelPrinter &printList(KernelPrinter &Printer, const StmtList &List,
+                             StringRef Comments = "") {
+      if (List.empty())
+        return Printer;
+      if (!Comments.empty() && DpctGlobalInfo::isCommentsEnabled())
+        Printer.line("// ", Comments);
+      Printer << List;
+      return Printer.newLine();
+    }
+  } OuterStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
   int TotalArgsSize = 0;

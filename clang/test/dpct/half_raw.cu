@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/half_raw %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/half_raw/half_raw.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/half_raw/half_raw.dp.cpp -o %T/half_raw/half_raw.dp.o %}
 
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
