@@ -362,7 +362,7 @@ inline void get_val_from_addr(std::string &value, std::shared_ptr<Schema> schema
 inline void process_var(std::string &log) { log = ""; }
 
 template <class... Args>
-void process_var(std::string &log, const std::string &schema_str, long value, size_t size,
+void process_var(std::string &log, const std::string &schema_str, long *value, size_t size,
                         Args... args) {
   std::shared_ptr<Schema> schema = parse_var_schema_str(schema_str);
   if (schema == nullptr) {
@@ -374,14 +374,14 @@ void process_var(std::string &log, const std::string &schema_str, long value, si
   set_size_of_schema(schema_str, size);
   switch (schema->get_val_type()) {
   case ValType::SCALAR:
-    get_val_from_addr(log, schema, (void *)&value, size);
+    get_val_from_addr(log, schema, (void *)value, size);
     break;
   case ValType::ARRAY:
   case ValType::POINTER:
-    get_val_from_addr(log, schema, (void *)value, size);
+    get_val_from_addr(log, schema, (void *)(*value), size);
     break;
   case ValType::POINTERTOPOINTER:
-    get_val_from_addr(log, schema, *(void **)value, size);
+    get_val_from_addr(log, schema, *(void **)(*value), size);
     break;
   };
   std::string ret;

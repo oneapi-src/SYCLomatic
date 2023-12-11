@@ -1,5 +1,3 @@
-#include <iostream>
-#include "../../debug_helper.hpp"
 static std::string type_schema_array=
 "[ {"
     "\"FieldNum\": 2,"
