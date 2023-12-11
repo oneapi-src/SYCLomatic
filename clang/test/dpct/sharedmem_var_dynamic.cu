@@ -2,6 +2,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem_var_dynamic %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_dynamic/sharedmem_var_dynamic.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/sharedmem_var_dynamic/sharedmem_var_dynamic.dp.cpp -o %T/sharedmem_var_dynamic/sharedmem_var_dynamic.dp.o %}
 
 #include <stdio.h>
 #define SIZE 100

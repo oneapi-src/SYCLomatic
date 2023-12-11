@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust-for-RapidCFD %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
 // RUN: FileCheck --input-file %T/thrust-for-RapidCFD/thrust-for-RapidCFD.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-for-RapidCFD/thrust-for-RapidCFD.dp.cpp -o %T/thrust-for-RapidCFD/thrust-for-RapidCFD.dp.o %}
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>

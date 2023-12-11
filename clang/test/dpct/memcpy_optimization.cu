@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --optimize-migration -out-root %T/memcpy_optimization %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/memcpy_optimization/memcpy_optimization.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/memcpy_optimization/memcpy_optimization.dp.cpp -o %T/memcpy_optimization/memcpy_optimization.dp.o %}
 #include <cuda_runtime.h>
 #include <iostream>
 

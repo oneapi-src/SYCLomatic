@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/tm-complex %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-complex/tm-complex.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/tm-complex/tm-complex.dp.cpp -o %T/tm-complex/tm-complex.dp.o %}
 #include <stdio.h>
 #include <cuda_runtime.h>
 #include <stdlib.h>
@@ -222,6 +223,7 @@ void foo_test_1() {
   CHECK_FOO(cudaEventRecord(start));
   // CHECK:  {
   // CHECK-NEXT:    dpct::has_capability_or_fail(dpct::get_in_order_queue().get_device(), {sycl::aspect::fp64});
+  // CHECK-EMPTY:
   // CHECK-NEXT:    *stop = dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class kernel_1_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
@@ -488,6 +490,7 @@ void foo_test_4() {
   // CHECK-NEXT:  */
   // CHECK-NEXT:  {
   // CHECK-NEXT:    dpct::has_capability_or_fail(dpct::get_in_order_queue().get_device(), {sycl::aspect::fp64});
+  // CHECK-EMPTY:
   // CHECK-NEXT:    dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
   // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
@@ -514,6 +517,7 @@ void foo_test_4() {
     // CHECK-NEXT:    */
     // CHECK-NEXT:    {
     // CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_in_order_queue().get_device(), {sycl::aspect::fp64});
+    // CHECK-EMPTY:
     // CHECK-NEXT:        dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
     // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
     // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
@@ -543,6 +547,7 @@ void foo_test_4() {
     // CHECK-NEXT:    */
     // CHECK-NEXT:    {
     // CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_in_order_queue().get_device(), {sycl::aspect::fp64});
+    // CHECK-EMPTY:
     // CHECK-NEXT:        dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
     // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
     // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {

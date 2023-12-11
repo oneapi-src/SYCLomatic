@@ -50,6 +50,11 @@ thrustFactory("thrust::reverse",
               {{3,PolicyState::HasPolicy,2,"oneapi::dpl::reverse", HelperFeatureEnum::none },
                {2,PolicyState::NoPolicy ,2,"oneapi::dpl::reverse", HelperFeatureEnum::none }}),
 
+// thrust::reverse_copy
+thrustFactory("thrust::reverse_copy",
+              {{4,PolicyState::HasPolicy,3,"oneapi::dpl::reverse_copy", HelperFeatureEnum::none },
+               {3,PolicyState::NoPolicy ,3,"oneapi::dpl::reverse_copy", HelperFeatureEnum::none }}),
+
 // thrust::find_if
 thrustFactory("thrust::find_if",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::find_if", HelperFeatureEnum::none },
@@ -1165,3 +1170,6 @@ CALL_FACTORY_ENTRY("thrust::tie", CALL("std::tie",ARG(0), ARG(1)))
 
 // thrust::make_tuple
 CALL_FACTORY_ENTRY("thrust::make_tuple", CALL("std::make_tuple",ARG(0), ARG(1)))
+
+// thrust::return_temporary_buffer
+CALL_FACTORY_ENTRY("thrust::return_temporary_buffer", CALL(MapNames::getDpctNamespace() + "release_temporary_allocation",ARG(0), ARG(1)))

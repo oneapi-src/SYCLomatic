@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/dup_using_namespace %s --cuda-include-path="%cuda-path/include" --use-explicit-namespace=sycl -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/dup_using_namespace/dup_using_namespace.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/dup_using_namespace/dup_using_namespace.dp.cpp -o %T/dup_using_namespace/dup_using_namespace.dp.o %}
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <sycl/sycl.hpp>

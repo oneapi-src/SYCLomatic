@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/vmax %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/vmax/vmax.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/vmax/vmax.dp.cpp -o %T/vmax/vmax.dp.o %}
 
 
 // clang-format off

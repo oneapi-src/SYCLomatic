@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cublas_curandInMacro %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublas_curandInMacro/cublas_curandInMacro.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cublas_curandInMacro/cublas_curandInMacro.dp.cpp -o %T/cublas_curandInMacro/cublas_curandInMacro.dp.o %}
 #include <cstdio>
 #include <cublas_v2.h>
 #include <curand.h>

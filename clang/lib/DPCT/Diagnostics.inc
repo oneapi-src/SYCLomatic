@@ -211,8 +211,8 @@ DEF_WARNING(PRIMITIVE_WORKSPACE, 1097, "The function \"%0\" may require the work
 DEF_COMMENT(PRIMITIVE_WORKSPACE, 1097, "The function \"{0}\" may require the workspace used to save intermediate results from function \"{1}\". By default, a workspace from engine_ext is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.")
 DEF_WARNING(MATH_EMULATION_EXPRESSION, 1098, "The %1 expression is used instead of the %0 call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.")
 DEF_COMMENT(MATH_EMULATION_EXPRESSION, 1098, "The {1} expression is used instead of the {0} call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.")
-DEF_WARNING(FFT_DIRECTION_AND_PLACEMENT, 1099, "Verify if the default value of the direction and placement used in the function \"%0\" is correct.")
-DEF_COMMENT(FFT_DIRECTION_AND_PLACEMENT, 1099, "Verify if the default value of the direction and placement used in the function \"{0}\" is correct.")
+DEF_WARNING(FFT_DIRECTION_AND_PLACEMENT, 1099, "Verify if the default value of the direction and placement used in the function \"%0\" aligns with the related \"compute\" function call.")
+DEF_COMMENT(FFT_DIRECTION_AND_PLACEMENT, 1099, "Verify if the default value of the direction and placement used in the function \"{0}\" aligns with the related \"compute\" function call.")
 DEF_WARNING(FFT_EXTERNAL_WORKSPACE, 1100, "Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.")
 DEF_COMMENT(FFT_EXTERNAL_WORKSPACE, 1100, "Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.")
 DEF_WARNING(MACRO_EXPR_REPLACED, 1101, "'%0' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.")
@@ -247,4 +247,6 @@ DEF_WARNING(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory
 DEF_COMMENT(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory_for_overwrite is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
 DEF_WARNING(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
 DEF_COMMENT(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
+DEF_WARNING(TRY_EXPERIMENTAL_FEATURE, 1119, "Migration of '%0' is not supported, please try to remigrate with option: '%1'.")
+DEF_COMMENT(TRY_EXPERIMENTAL_FEATURE, 1119, "Migration of {0} is not supported, please try to remigrate with option: {1}.")
 // clang-format on

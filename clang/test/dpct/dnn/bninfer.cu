@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/bninfer %S/bninfer.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/bninfer/bninfer.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/bninfer/bninfer.dp.cpp -o %T/bninfer/bninfer.dp.o %}
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>
@@ -27,7 +28,7 @@ int main() {
     cudnnSetTensor4dDescriptor(outTensor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, on, oc, oh, ow);
     cudnnSetTensor4dDescriptor(scalebiasTensor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, sbn, sbc, sbh, sbw);
 
-    // CHECK: dpct::dnnl::derive_batch_normalization_memory_desc(outTensor, dataTensor, dpct::dnnl::batch_normalization_mode::per_activation);
+    // CHECK: dpct::dnnl::engine_ext::derive_batch_normalization_memory_desc(outTensor, dataTensor, dpct::dnnl::batch_normalization_mode::per_activation);
     cudnnDeriveBNTensorDescriptor(outTensor, dataTensor, CUDNN_BATCHNORM_PER_ACTIVATION);
 
     int save = 1;

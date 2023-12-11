@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/error-handling-trycatch %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/error-handling-trycatch/error-handling-trycatch.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/error-handling-trycatch/error-handling-trycatch.dp.cpp -o %T/error-handling-trycatch/error-handling-trycatch.dp.o %}
 
 void test_simple() {
 }

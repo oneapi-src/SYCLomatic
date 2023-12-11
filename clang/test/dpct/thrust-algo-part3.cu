@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust-algo-part3 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust-algo-part3/thrust-algo-part3.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-algo-part3/thrust-algo-part3.dp.cpp -o %T/thrust-algo-part3/thrust-algo-part3.dp.o %}
 
 #include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>
@@ -254,4 +255,28 @@ void set_union_by_key() {
   h_result = thrust::set_union_by_key(h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
   h_result = thrust::set_union_by_key(thrust::host, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
   h_result = thrust::set_union_by_key(h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
+}
+
+
+void reverse_copy() {
+  const int N = 6;
+  int data[N] = {0, 1, 2, 3, 4, 5};
+  thrust::device_vector<int> device_data(data, data + N);
+  thrust::host_vector<int> host_data(data, data + N);
+  thrust::device_vector<int> host_result(N);
+  thrust::device_vector<int> device_result(N);
+  int result[N];
+
+  // CHECK:  oneapi::dpl::reverse_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), device_result.begin());
+  // CHECK-NEXT:  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), host_result.begin());
+  // CHECK-NEXT:  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
+  // CHECK-NEXT:  oneapi::dpl::reverse_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), device_result.begin());
+  // CHECK-NEXT:  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), host_result.begin());
+  // CHECK-NEXT:  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
+  thrust::reverse_copy(thrust::device, device_data.begin(), device_data.end(), device_result.begin());
+  thrust::reverse_copy(thrust::host, host_data.begin(), host_data.end(), host_result.begin());
+  thrust::reverse_copy(thrust::host, data, data + N, result);
+  thrust::reverse_copy(device_data.begin(), device_data.end(), device_result.begin());
+  thrust::reverse_copy(host_data.begin(), host_data.end(), host_result.begin());
+  thrust::reverse_copy(data, data + N, result);
 }

@@ -1,6 +1,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/double2_overloaded_operator %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/double2_overloaded_operator/double2_overloaded_operator.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/double2_overloaded_operator/double2_overloaded_operator.dp.cpp -o %T/double2_overloaded_operator/double2_overloaded_operator.dp.o %}
 
 #include <cuda_runtime.h>
 

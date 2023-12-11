@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/output %S/test1.cu %S/test2.cu %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/output/test3.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/output/test3.dp.cpp -o %T/output/test3.dp.o %}
 
 #include "cublas_v2.h"
 

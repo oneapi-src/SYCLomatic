@@ -7,6 +7,7 @@
 // RUN: mkdir %T/macro_test_output
 // RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/macro_test_output/macro_test.dp.cpp -o %T/macro_test_output/macro_test.dp.o %}
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
 #include "cuda.h"
 #include <math.h>
@@ -1105,6 +1106,7 @@ template<class T1, class T2, int N> __global__ void foo31();
 
 //CHECK: {
 //CHECK-NEXT:   dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+//CHECK-EMPTY:
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:     /*
 //CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'BLOCK_PAIR / SIMD_SIZE' expression was replaced with a
@@ -1273,7 +1275,6 @@ void foo35() {
 template<class T>
 class TemplateClass{};
 
-__global__
 template<class a>
 __global__ void templatefoo3(){}
 
@@ -1290,7 +1291,7 @@ __global__ void templatefoo3(){}
 
 #define CALLTEMPLATEFOO templatefoo3<TemplateClass<TemplateClass<int>>><<<1,1,0>>>()
 #define CALLTEMPLATEFOO2 templatefoo3<TemplateClass<int>><<<1,1,0>>>()
-void foo35() {
+void foo36() {
   CALLTEMPLATEFOO;
   CALLTEMPLATEFOO2;
 }
