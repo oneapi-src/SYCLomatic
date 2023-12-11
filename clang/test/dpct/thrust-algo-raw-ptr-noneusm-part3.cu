@@ -10,8 +10,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/logical.h>
 #include <thrust/partition.h>
-#include <thrust/sort.h>
+#include <thrust/reverse.h>
 #include <thrust/set_operations.h>
+#include <thrust/sort.h>
 
 void all_of() {
 
@@ -134,4 +135,23 @@ void set_intersection() {
   thrust::set_intersection(A1, A1 + 6, A2, A2 + 7, result);
   thrust::set_intersection(thrust::host, A1, A1 + 6, A2, A2 + 7, result, thrust::greater<int>());
   thrust::set_intersection(A1, A1 + 6, A2, A2 + 7, result, thrust::greater<int>());
+}
+
+void reverse_copy() {
+  const int N = 6;
+  int data[N] = {0, 1, 2, 3, 4, 5};
+  int result[N];
+
+  // CHECK:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::reverse_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(result));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::reverse_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(result));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
+  // CHECK-NEXT:  };
+  thrust::reverse_copy(thrust::host, data, data + N, result);
+  thrust::reverse_copy(data, data + N, result);
 }
