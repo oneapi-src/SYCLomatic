@@ -27,12 +27,166 @@
       MatchMode: Full
       RuleId: "remove_cuda"
 
-- Rule: rule_find_package
+- Rule: find_package-cuda_no_args
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package
-  In: find_package(CUDA${opts})
-  Out: find_package(IntelSYCL REQUIRED)
+  CmakeSyntax: find_package-cuda_no_args
+  MatchMode: Partial
+  In: find_package(CUDA)
+  Out: find_package(IntelSYCL)
+
+- Rule: find_package-cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cuda
+  MatchMode: Partial
+  In: find_package(CUDA ${args})
+  Out: dpct_helper_find_package(CUDA ${args})
+
+- Rule: find_package-mpi_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-mpi_no_args
+  MatchMode: Partial
+  In: find_package(MPI)
+  Out: "#find_package(MPI)"
+
+- Rule: find_package-mpi
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-mpi
+  MatchMode: Partial
+  In: find_package(MPI ${args})
+  Out: "#find_package(MPI ${args})"
+
+- Rule: find_package-omp_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-omp_no_args
+  MatchMode: Partial
+  In: find_package(OpenMP)
+  Out: "#find_package(OpenMP)"
+
+- Rule: find_package-omp
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-omp
+  MatchMode: Partial
+  In: find_package(OpenMP ${args})
+  Out: "#find_package(OpenMP ${args})"
+
+- Rule: find_package-cub_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cub_no_args
+  MatchMode: Partial
+  In: find_package(CUB)
+  Out: find_package(oneDPL)
+
+- Rule: find_package-cub
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cub
+  MatchMode: Partial
+  In: find_package(CUB ${args})
+  Out: dpct_helper_find_package(oneDPL ${args})
+
+- Rule: find_package-nvjpeg_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-nvjpeg_no_args
+  MatchMode: Partial
+  In: find_package(NVJPEG)
+  Out: "#find_package(NVJPEG)"
+
+- Rule: find_package-nvjpeg
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-nvjpeg
+  MatchMode: Partial
+  In: find_package(NVJPEG ${args})
+  Out: "#find_package(NVJPEG ${args})"
+
+- Rule: find_package-cudatoolkit_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cudatoolkit_no_args
+  MatchMode: Partial
+  In: find_package(oneAPIToolkit)
+  Out: dpct_helper_find_package(oneAPIToolkit)
+
+- Rule: find_package-cudatoolkit
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cudatoolkit
+  MatchMode: Partial
+  In: find_package(CUDAToolkit ${args})
+  Out: dpct_helper_find_package(oneAPIToolkit ${args})
+
+- Rule: rule_cublas_cudatoolkit_find_package
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cublas_cudatoolkit_find_package
+  MatchMode: Partial
+  In: find_package(CUDAToolkit ${args})
+  Out: dpct_helper_find_package(oneAPIToolkit ${args})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cublas
+      Out: blas
+
+- Rule: rule_curand_cudatoolkit_find_package
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: curand_cudatoolkit_find_package
+  MatchMode: Partial
+  In: find_package(CUDAToolkit ${args})
+  Out: dpct_helper_find_package(oneAPIToolkit ${args})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: curand
+      Out: rng
+
+- Rule: rule_cusparse_cudatoolkit_find_package
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cusparse_cudatoolkit_find_package
+  MatchMode: Partial
+  In: find_package(CUDAToolkit ${args})
+  Out: dpct_helper_find_package(oneAPIToolkit ${args})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cusparse
+      Out: sparse
+
+- Rule: rule_cusolver_cudatoolkit_find_package
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cusolver_cudatoolkit_find_package
+  MatchMode: Partial
+  In: find_package(CUDAToolkit ${args})
+  Out: dpct_helper_find_package(oneAPIToolkit ${args})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cusolver
+      Out: solver
+
+- Rule: rule_cufft_cudatoolkit_find_package
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cufft_cudatoolkit_find_package
+  MatchMode: Partial
+  In: find_package(CUDAToolkit ${args})
+  Out: dpct_helper_find_package(oneAPIToolkit ${args})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cufft
+      Out: fft
 
 - Rule: rule_cmake_cxx_standard
   Kind: CMakeRule

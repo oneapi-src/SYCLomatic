@@ -11,9 +11,13 @@ include(${dpct_cmake_file_path})
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+<<<<<<< HEAD
 find_package(IntelSYCL REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(IntelSYCL REQUIRED)
+=======
+dpct_helper_find_package(IntelSYCL REQUIRED)
+>>>>>>> ff3fb7d2c053 (Lit test for find_package CMake macro)
 set(SOURCES
     ${CMAKE_SOURCE_DIR}/foo/main.dp.cpp
     ${CMAKE_SOURCE_DIR}/foo/bar/util.dp.cpp
