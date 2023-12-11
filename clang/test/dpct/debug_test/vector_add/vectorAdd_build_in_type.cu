@@ -38,7 +38,7 @@
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
 
-#include "../debug_helper.hpp"
+#include "dpct/debug/debug_helper.hpp"
 #include "generated_schema.hpp"
 
 
@@ -127,9 +127,9 @@ int main(void) {
  // target API, device pointer to host, copy then wait host.
  // Kernel function: parameter (1st value of the point.) // 
  // (d_A, 1)
- dpct::experimental::gen_prolog_API_CP("cudaMemcpy:vecotr.cu:[185]:", 0, TYPE_SHCEMA_005, (long)d_A, (size_t)size, TYPE_SHCEMA_002, (long)h_A, (size_t)size);
+ dpct::experimental::gen_prolog_API_CP("cudaMemcpy:vecotr.cu:[185]:", 0, TYPE_SHCEMA_005, (long *)&d_A, (size_t)size, TYPE_SHCEMA_002, (long *)&h_A, (size_t)size);
  err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
- dpct::experimental::gen_epilog_API_CP("cudaMemcpy:vecotr.cu:[185]:", 0, TYPE_SHCEMA_005, (long)d_A, (size_t)size, TYPE_SHCEMA_002, (long)h_A, (size_t)size);
+ dpct::experimental::gen_epilog_API_CP("cudaMemcpy:vecotr.cu:[185]:", 0, TYPE_SHCEMA_005, (long *)&d_A, (size_t)size, TYPE_SHCEMA_002, (long *)&h_A, (size_t)size);
 
 
   if (err != cudaSuccess) {
@@ -138,9 +138,9 @@ int main(void) {
             cudaGetErrorString(err));
     exit(EXIT_FAILURE);
   }
-  dpct::experimental::gen_prolog_API_CP("cudaMemcpy:vecotr.cu:[196]:", 0, TYPE_SHCEMA_006, (long)d_B, (size_t)size, TYPE_SHCEMA_003, (long)h_B, (size_t)size);
+  dpct::experimental::gen_prolog_API_CP("cudaMemcpy:vecotr.cu:[196]:", 0, TYPE_SHCEMA_006, (long *)&d_B, (size_t)size, TYPE_SHCEMA_003, (long *)&h_B, (size_t)size);
   err = cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
-  dpct::experimental::gen_epilog_API_CP("cudaMemcpy:vecotr.cu:[196]:", 0, TYPE_SHCEMA_006, (long)d_B, (size_t)size, TYPE_SHCEMA_003, (long)h_B, (size_t)size);
+  dpct::experimental::gen_epilog_API_CP("cudaMemcpy:vecotr.cu:[196]:", 0, TYPE_SHCEMA_006, (long *)&d_B, (size_t)size, TYPE_SHCEMA_003, (long *)&h_B, (size_t)size);
 
   if (err != cudaSuccess) {
     fprintf(stderr,
@@ -154,9 +154,9 @@ int main(void) {
   int blocksPerGrid = (numElements + threadsPerBlock - 1) / threadsPerBlock;
   printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid,
          threadsPerBlock);
-  dpct::experimental::gen_prolog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long)d_A, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006, (long)d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006), TYPE_SHCEMA_007, (long)d_C, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008, (long)numElements, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
+  dpct::experimental::gen_prolog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long *)&d_A, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006, (long *)&d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006), TYPE_SHCEMA_007, (long *)&d_C, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008, (long *)&numElements, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
   vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
-  dpct::experimental::gen_epilog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long)d_A, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006, (long)d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006), TYPE_SHCEMA_007, (long)d_C, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008, (long)numElements, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
+  dpct::experimental::gen_epilog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long *)&d_A, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006, (long *)&d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006), TYPE_SHCEMA_007, (long *)&d_C, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008, (long *)&numElements, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
 
   err = cudaGetLastError();
 
@@ -169,9 +169,9 @@ int main(void) {
   // Copy the device result vector in device memory to the host result vector
   // in host memory.
   printf("Copy output data from the CUDA device to the host memory\n");
- dpct::experimental::gen_prolog_API_CP("cudaMemcpy:vecotr.cu:[237]:", 0, TYPE_SHCEMA_004, (long)h_C, (size_t)size, TYPE_SHCEMA_007, (long)d_C, (size_t)size);
+ dpct::experimental::gen_prolog_API_CP("cudaMemcpy:vecotr.cu:[237]:", 0, TYPE_SHCEMA_004, (long *)&h_C, (size_t)size, TYPE_SHCEMA_007, (long *)&d_C, (size_t)size);
   err = cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
- dpct::experimental::gen_epilog_API_CP("cudaMemcpy:vecotr.cu:[237]:", 0, TYPE_SHCEMA_004, (long)h_C, (size_t)size, TYPE_SHCEMA_007, (long)d_C, (size_t)size);
+ dpct::experimental::gen_epilog_API_CP("cudaMemcpy:vecotr.cu:[237]:", 0, TYPE_SHCEMA_004, (long *)&h_C, (size_t)size, TYPE_SHCEMA_007, (long *)&d_C, (size_t)size);
 
 
   if (err != cudaSuccess) {

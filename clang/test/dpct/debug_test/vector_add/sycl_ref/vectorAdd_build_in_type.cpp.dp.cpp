@@ -39,7 +39,7 @@
 
 // For the CUDA runtime routines (prefixed with "cuda_")
 
-#include "../../debug_helper.hpp"
+#include "dpct/debug/debug_helper.hpp"
 #include "generated_schema.hpp"
 #include <cmath>
 
@@ -114,20 +114,20 @@ int main(void) try {
  // Kernel function: parameter (1st value of the point.) // 
  // (d_A, 1)
  dpct::experimental::gen_prolog_API_CP(
-     "cudaMemcpy:vecotr.cu:[185]:", &q_ct1, TYPE_SHCEMA_005, (long)d_A,
-     (size_t)size, TYPE_SHCEMA_002, (long)h_A, (size_t)size);
+     "cudaMemcpy:vecotr.cu:[185]:", &q_ct1, TYPE_SHCEMA_005, (long *)&d_A,
+     (size_t)size, TYPE_SHCEMA_002, (long *)&h_A, (size_t)size);
  err = DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size).wait());
  dpct::experimental::gen_epilog_API_CP(
-     "cudaMemcpy:vecotr.cu:[185]:", &q_ct1, TYPE_SHCEMA_005, (long)d_A,
-     (size_t)size, TYPE_SHCEMA_002, (long)h_A, (size_t)size);
+     "cudaMemcpy:vecotr.cu:[185]:", &q_ct1, TYPE_SHCEMA_005, (long *)&d_A,
+     (size_t)size, TYPE_SHCEMA_002, (long *)&h_A, (size_t)size);
 
   dpct::experimental::gen_prolog_API_CP(
-      "cudaMemcpy:vecotr.cu:[196]:", &q_ct1, TYPE_SHCEMA_006, (long)d_B,
-      (size_t)size, TYPE_SHCEMA_003, (long)h_B, (size_t)size);
+      "cudaMemcpy:vecotr.cu:[196]:", &q_ct1, TYPE_SHCEMA_006, (long *)&d_B,
+      (size_t)size, TYPE_SHCEMA_003, (long *)&h_B, (size_t)size);
   err = DPCT_CHECK_ERROR(q_ct1.memcpy(d_B, h_B, size).wait());
   dpct::experimental::gen_epilog_API_CP(
-      "cudaMemcpy:vecotr.cu:[196]:", &q_ct1, TYPE_SHCEMA_006, (long)d_B,
-      (size_t)size, TYPE_SHCEMA_003, (long)h_B, (size_t)size);
+      "cudaMemcpy:vecotr.cu:[196]:", &q_ct1, TYPE_SHCEMA_006, (long *)&d_B,
+      (size_t)size, TYPE_SHCEMA_003, (long *)&h_B, (size_t)size);
 
   // Launch the Vector Add CUDA Kernel
   int threadsPerBlock = 256;
@@ -136,12 +136,12 @@ int main(void) try {
          threadsPerBlock);
 
   dpct::experimental::gen_prolog_API_CP(
-      "vectorAdd:vecotr.cu:[221]:", &q_ct1, TYPE_SHCEMA_005, (long)d_A,
+      "vectorAdd:vecotr.cu:[221]:", &q_ct1, TYPE_SHCEMA_005, (long *)&d_A,
       dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006,
-      (long)d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006),
-      TYPE_SHCEMA_007, (long)d_C,
+      (long *)&d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006),
+      TYPE_SHCEMA_007, (long *)&d_C,
       dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008,
-      (long)numElements,
+      (long *)&numElements,
       dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
 
   /*
@@ -158,12 +158,12 @@ int main(void) try {
       });
 
   dpct::experimental::gen_epilog_API_CP(
-      "vectorAdd:vecotr.cu:[221]:", &q_ct1, TYPE_SHCEMA_005, (long)d_A,
+      "vectorAdd:vecotr.cu:[221]:", &q_ct1, TYPE_SHCEMA_005, (long *)&d_A,
       dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006,
-      (long)d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006),
-      TYPE_SHCEMA_007, (long)d_C,
+      (long *)&d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006),
+      TYPE_SHCEMA_007, (long *)&d_C,
       dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008,
-      (long)numElements,
+      (long *)&numElements,
       dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
 
   /*
@@ -176,12 +176,12 @@ int main(void) try {
   // in host memory.
   printf("Copy output data from the CUDA device to the host memory\n");
  dpct::experimental::gen_prolog_API_CP(
-     "cudaMemcpy:vecotr.cu:[237]:", &q_ct1, TYPE_SHCEMA_004, (long)h_C,
-     (size_t)size, TYPE_SHCEMA_007, (long)d_C, (size_t)size);
+     "cudaMemcpy:vecotr.cu:[237]:", &q_ct1, TYPE_SHCEMA_004, (long *)&h_C,
+     (size_t)size, TYPE_SHCEMA_007, (long *)&d_C, (size_t)size);
   err = DPCT_CHECK_ERROR(q_ct1.memcpy(h_C, d_C, size).wait());
  dpct::experimental::gen_epilog_API_CP(
-     "cudaMemcpy:vecotr.cu:[237]:", &q_ct1, TYPE_SHCEMA_004, (long)h_C,
-     (size_t)size, TYPE_SHCEMA_007, (long)d_C, (size_t)size);
+     "cudaMemcpy:vecotr.cu:[237]:", &q_ct1, TYPE_SHCEMA_004, (long *)&h_C,
+     (size_t)size, TYPE_SHCEMA_007, (long *)&d_C, (size_t)size);
 
   // Verify that the result vector is correct
   for (int i = 0; i < numElements; ++i) {
