@@ -1,4 +1,3 @@
-// UNSUPPORTED: system-windows
 // RUN: rm -rf %T && mkdir -p %T
 // RUN: cd %T
 // RUN: cp %S/input.cmake ./input.cmake

@@ -9,7 +9,6 @@
 
 - Rule: rule_project
   Kind: CMakeRule
-  MatchMode: Partial
   Priority: Fallback
   CmakeSyntax: project
   In: project(${arg0} ${argN})
