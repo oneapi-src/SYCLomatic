@@ -47,6 +47,9 @@
 // __activemask: CUDA API:
 // __activemask-NEXT:   r = __activemask();
 // __activemask-NEXT: Is migrated to:
+// __activemask-NEXT:   /*
+// __activemask-NEXT:   DPCT1086:0: __activemask() is migrated to 0xffffffff. You may need to adjust the code.
+// __activemask-NEXT:   */
 // __activemask-NEXT:   r = 0xffffffff;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__all_sync | FileCheck %s -check-prefix=__all_sync
