@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --assume-nd-range-dim=1  -out-root %T/kernel_1d_range_sync_api %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_1d_range_sync_api/kernel_1d_range_sync_api.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel_1d_range_sync_api/kernel_1d_range_sync_api.dp.cpp -o %T/kernel_1d_range_sync_api/kernel_1d_range_sync_api.dp.o %}
 
 
 #include "cooperative_groups.h"

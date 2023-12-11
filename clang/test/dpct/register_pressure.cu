@@ -1,5 +1,6 @@
 // RUN: dpct --optimize-migration --format-range=none -out-root %T/register_pressure %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/register_pressure/register_pressure.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/register_pressure/register_pressure.dp.cpp -o %T/register_pressure/register_pressure.dp.o %}
 #include<cuda_runtime.h>
 
 // CHECK: /*

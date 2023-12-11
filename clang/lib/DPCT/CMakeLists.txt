@@ -4,30 +4,30 @@ set(LLVM_LINK_COMPONENTS
   )
 
 set(RUNTIME_HEADERS
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/atomic.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/device.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/image.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/math.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/memory.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/util.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/blas_utils.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dnnl_utils.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_utils.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/kernel.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/rng_utils.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/lib_common_utils.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/ccl_utils.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/sparse_utils.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/fft_utils.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/lapack_utils.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/algorithm.h
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/functional.h
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/iterators.h
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/memory.h
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/numeric.h
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/vector.h
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/dpcpp_extensions.h
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/atomic.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/device.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/image.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/math.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/memory.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/util.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/blas_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dnnl_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpct.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/kernel.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/rng_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/lib_common_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/ccl_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/sparse_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/fft_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/lapack_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/algorithm.h
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/functional.h
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/iterators.h
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/memory.h
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/numeric.h
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/vector.h
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/dpcpp_extensions.h
   )
 
 set(PROCESS_FILES_OUTPUT

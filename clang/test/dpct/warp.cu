@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/warp %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/warp/warp.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/warp/warp.dp.cpp -o %T/warp/warp.dp.o %}
 
 #include "cuda.h"
 #include "cuda_runtime.h"

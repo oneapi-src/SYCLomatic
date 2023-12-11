@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/return-types %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/return-types/return-types.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/return-types/return-types.dp.cpp -o %T/return-types/return-types.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>

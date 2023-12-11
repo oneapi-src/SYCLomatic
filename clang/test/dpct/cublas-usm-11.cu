@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -out-root %T/cublas-usm-11 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublas-usm-11/cublas-usm-11.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cublas-usm-11/cublas-usm-11.dp.cpp -o %T/cublas-usm-11/cublas-usm-11.dp.o %}
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>

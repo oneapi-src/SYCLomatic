@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust-header2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
 // RUN: FileCheck --input-file %T/thrust-header2/thrust-header2.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-header2/thrust-header2.dp.cpp -o %T/thrust-header2/thrust-header2.dp.o %}
 // RUN: FileCheck --input-file %T/thrust-header2/thrust-header2.h --match-full-lines %S/thrust-header2.h
 
 //CHECK:#include <oneapi/dpl/execution>
