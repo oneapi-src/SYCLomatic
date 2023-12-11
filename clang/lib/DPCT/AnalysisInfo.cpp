@@ -21,13 +21,6 @@
 #include <fstream>
 #include <optional>
 
-namespace std {
-bool operator<(const std::weak_ptr<clang::dpct::DeviceFunctionInfo> LHS,
-               const std::weak_ptr<clang::dpct::DeviceFunctionInfo> RHS) {
-  return LHS.lock() < RHS.lock();
-}
-} // namespace std
-
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
@@ -2976,6 +2969,7 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
     return;
   VarMap.merge(Other->getVarMap());
   dpct::merge(CallExprMap, Other->CallExprMap);
+  dpct::merge(ParentSet, Other->ParentSet);
   if (BaseObjectTexture)
     BaseObjectTexture->merge(Other->BaseObjectTexture);
   else
@@ -3214,7 +3208,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
       FuncInfo(getFuncInfo(FD)) {
   if (!FuncInfo) {
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
-        FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
+        FD->param_size(), NonDefaultParamNum, getFunctionName(FD), FD);
   }
   if (!FilePath.getCanonicalPath().empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
@@ -3523,7 +3517,7 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
     } else {
       Info = std::make_shared<DeviceFunctionInfo>(
           FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments(),
-          getFunctionName(FD));
+          getFunctionName(FD), FD);
       FuncInfo = Info;
     }
     return;

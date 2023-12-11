@@ -19,6 +19,12 @@
 #include <unordered_set>
 #include <vector>
 
+template <> struct std::hash<clang::SourceRange> {
+  std::size_t operator()(const clang::SourceRange &SR) const noexcept {
+    return llvm::hash_combine(SR.getBegin().getRawEncoding(),
+                              SR.getEnd().getRawEncoding());
+  }
+};
 namespace clang {
 namespace dpct {
 
@@ -60,9 +66,6 @@ public:
     return true;                                                               \
   }
 
-  VISIT_NODE(ForStmt)
-  VISIT_NODE(DoStmt)
-  VISIT_NODE(WhileStmt)
   VISIT_NODE(SwitchStmt)
   VISIT_NODE(IfStmt)
   VISIT_NODE(CallExpr)
@@ -86,7 +89,7 @@ private:
   isAssignedToAnotherDREOrVD(const DeclRefExpr *);
   bool isAccessingMemory(const DeclRefExpr *);
   AccessMode getAccessKind(const DeclRefExpr *);
-  using Ranges = std::vector<SourceRange>;
+  using Ranges = std::unordered_set<SourceRange>;
   struct SyncCallInfo {
     SyncCallInfo() {}
     SyncCallInfo(Ranges Predecessors, Ranges Successors)
@@ -113,8 +116,7 @@ private:
   bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
   bool hasOverlappingAccessAmongWorkItems(int KernelDim,
                                           const DeclRefExpr *DRE);
-  std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
-  std::deque<SourceRange> LoopRange;
+  std::map<const CallExpr *, SyncCallInfo> SyncCallsMap;
   int KernelDim = 3; // 3 or 1
   int KernelCallBlockDim = 3; // 3 or 1
   const FunctionDecl *FD = nullptr;
@@ -156,9 +158,8 @@ private:
     }
     return nullptr;
   }
-  bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
-  std::string
-  isSafeWriteInLoop(const std::set<const DeclRefExpr *> &WILDRESet);
+  bool isInRanges(SourceLocation SL, Ranges Ranges);
+  std::string isSafeWriteInLoop(const std::set<const DeclRefExpr *> &WILDRESet);
 
   std::set<const Expr *> DeviceFunctionCallArgs;
 

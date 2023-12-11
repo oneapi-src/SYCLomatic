@@ -27,28 +27,25 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const SwitchStmt *SS) {
   // No special process, treat as one block
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const ForStmt *FS) {
-  LoopRange.push_back(FS->getSourceRange());
-  return true;
+template <class NodeTy>
+static inline const Stmt *
+findOuterMostLoopNodeInFunction(const NodeTy *N, const FunctionDecl *Until) {
+  if (!N)
+    return nullptr;
+  const Stmt *LoopNode = nullptr;
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  clang::DynTypedNodeList Parents = Context.getParents(*N);
+  while (!Parents.empty()) {
+    auto &Cur = Parents[0];
+    if (Cur.get<FunctionDecl>() && Cur.get<FunctionDecl>() == Until)
+      return LoopNode;
+    if (Cur.get<ForStmt>() || Cur.get<DoStmt>() || Cur.get<WhileStmt>())
+      LoopNode = Cur.get<Stmt>();
+    Parents = Context.getParents(Cur);
+  }
+  return nullptr;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
-    const clang::ForStmt *FS) {
-  LoopRange.pop_back();
-}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const DoStmt *DS) {
-  LoopRange.push_back(DS->getSourceRange());
-  return true;
-}
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const DoStmt *DS) {
-  LoopRange.pop_back();
-}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const WhileStmt *WS) {
-  LoopRange.push_back(WS->getSourceRange());
-  return true;
-}
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const WhileStmt *WS) {
-  LoopRange.pop_back();
-}
+
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
   const FunctionDecl *FuncDecl = CE->getDirectCallee();
   if (!FuncDecl)
@@ -59,26 +56,41 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
     DeviceFunctionCallArgs.insert(Arg);
 
   if (FuncName == "__syncthreads") {
-    const FunctionDecl *Parent = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
-    bool IsTheFirstIteration = true;
+    std::deque<std::pair<const CallExpr *, const FunctionDecl *>> Parents;
+    Parents.emplace_back(std::pair<const CallExpr *, const FunctionDecl *>(
+        CE, DpctGlobalInfo::findAncestor<FunctionDecl>(CE)));
     do {
-      if (!IsTheFirstIteration) {
-        auto DFI = DeviceFunctionDecl::LinkRedecls(Parent);
-        // How to find caller?
-        DFI->getParentSet();
+      auto Parent = Parents.front();
+      Parents.pop_front();
+      if (Parent.first && Parent.second) {
+        SyncCallInfo SCI;
+        SCI.Predecessors.insert(
+            SourceRange(Parent.second->getBody()->getBeginLoc(),
+                        Parent.first->getBeginLoc()));
+        SCI.Successors.insert(SourceRange(
+            Parent.first->getEndLoc(), Parent.second->getBody()->getEndLoc()));
+        if (const Stmt *LoopNode =
+                findOuterMostLoopNodeInFunction(Parent.first, Parent.second)) {
+          SCI.Predecessors.insert(
+              SourceRange(LoopNode->getBeginLoc(), LoopNode->getEndLoc()));
+          SCI.Successors.insert(
+              SourceRange(LoopNode->getBeginLoc(), LoopNode->getEndLoc()));
+        }
+        if (SyncCallsMap.count(CE)) {
+          SyncCallsMap[CE].Predecessors.insert(SCI.Predecessors.begin(),
+                                               SCI.Predecessors.end());
+          SyncCallsMap[CE].Successors.insert(SCI.Successors.begin(),
+                                             SCI.Successors.end());
+        } else {
+          SyncCallsMap.insert(std::make_pair(CE, SCI));
+        }
+        if (!Parent.second->hasAttr<CUDAGlobalAttr>()) {
+          auto DFI = DeviceFunctionDecl::LinkRedecls(Parent.second);
+          Parents.insert(Parents.end(), DFI->getParentSet().begin(),
+                         DFI->getParentSet().end());
+        }
       }
-      SyncCallInfo SCI;
-      SCI.Predecessors.push_back(
-          SourceRange(Parent->getBody()->getBeginLoc(), CE->getBeginLoc()));
-      SCI.Successors.push_back(
-          SourceRange(CE->getEndLoc(), Parent->getBody()->getEndLoc()));
-      if (!LoopRange.empty()) {
-        SCI.Predecessors.push_back(LoopRange.front());
-        SCI.Successors.push_back(LoopRange.front());
-      }
-      SyncCallsVec.push_back(std::make_pair(CE, SCI));
-      IsTheFirstIteration = false;
-    } while (!Parent->hasAttr<CUDAGlobalAttr>());
+    } while (!Parents.empty());
     return true;
   }
   return true;
@@ -704,7 +716,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
 
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "===== SyncCall info contnet: =====" << std::endl;
-  for (const auto &SyncCall : SyncCallsVec) {
+  for (const auto &SyncCall : SyncCallsMap) {
     const auto &SM = DpctGlobalInfo::getSourceManager();
     std::cout << "SyncCall:" << SyncCall.first->getBeginLoc().printToString(SM)
               << std::endl;
@@ -723,7 +735,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
 #endif
 
   if (SkipCacheInAnalyzer) {
-    for (auto &SyncCall : SyncCallsVec) {
+    for (auto &SyncCall : SyncCallsMap) {
       if (CE == SyncCall.first) {
         auto Res = isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second);
         return BarrierFenceSpaceAnalyzerResult(
@@ -734,7 +746,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
     return BarrierFenceSpaceAnalyzerResult(false, false, false,
                                            GlobalFunctionName);
   }
-  for (auto &SyncCall : SyncCallsVec) {
+  for (auto &SyncCall : SyncCallsMap) {
     auto Res = isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second);
     CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
         BarrierFenceSpaceAnalyzerResult(std::get<0>(Res), std::get<1>(Res),
@@ -817,8 +829,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
   return false;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
-    SourceLocation SL, std::vector<SourceRange> Ranges) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(SourceLocation SL,
+                                                        Ranges Ranges) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   for (auto &Range : Ranges) {
     if (SM.getFileOffset(Range.getBegin()) < SM.getFileOffset(SL) &&

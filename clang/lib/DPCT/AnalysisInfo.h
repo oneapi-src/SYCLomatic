@@ -42,17 +42,6 @@ void setGetReplacedNamePtr(
 
 namespace clang {
 namespace dpct {
-class DeviceFunctionInfo;
-} // namespace dpct
-} // namespace clang
-
-namespace std {
-bool operator<(const std::weak_ptr<clang::dpct::DeviceFunctionInfo> LHS,
-               const std::weak_ptr<clang::dpct::DeviceFunctionInfo> RHS);
-} // namespace std
-
-namespace clang {
-namespace dpct {
 enum class HelperFuncType : int {
   HFT_InitValue = 0,
   HFT_DefaultQueue = 1,
@@ -3671,6 +3660,13 @@ public:
   template <class IteratorRange>
   static std::shared_ptr<DeviceFunctionInfo>
   LinkDeclRange(IteratorRange &&Range, const std::string &FunctionName) {
+    // Currently only support to analyze FunctionDecl only.
+    const FunctionDecl *FD = nullptr;
+    if constexpr (std::is_same<decltype(Range.begin()),
+                               FunctionDecl::redecl_iterator>::value) {
+      FD = *Range.begin();
+    }
+
     std::shared_ptr<DeviceFunctionInfo> Info;
     DeclList List;
     LinkDeclRange(std::move(Range), List, Info);
@@ -3678,7 +3674,7 @@ public:
       return Info;
     if (!Info)
       Info = std::make_shared<DeviceFunctionInfo>(
-          List[0]->ParamsNum, List[0]->NonDefaultParamNum, FunctionName);
+          List[0]->ParamsNum, List[0]->NonDefaultParamNum, FunctionName, FD);
     for (auto &D : List)
       D->setFuncInfo(Info);
     return Info;
@@ -3796,9 +3792,9 @@ class DeviceFunctionInfo : public std::enable_shared_from_this<DeviceFunctionInf
 
 public:
   DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum,
-                     std::string FunctionName)
+                     std::string FunctionName, const FunctionDecl *FD)
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
-        IsBuilt(false),
+        IsBuilt(false), FD(FD),
         TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
         FunctionName(FunctionName), IsLambda(false) {
     ParametersProps.resize(ParamsNum);
@@ -3812,25 +3808,23 @@ public:
     return findObject(CallExprMap, CallLocInfo.second);
   }
   template <class CallT>
-  inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
+  inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *Callee) {
     // Update CallExprMap
-    auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
-    auto Call =
-        insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, C);
-    Call->buildCallExprInfo(C);
+    auto CallLocInfo = DpctGlobalInfo::getLocInfo(Callee);
+    auto Call = insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first,
+                             Callee);
+    Call->buildCallExprInfo(Callee);
 
     // Update CallersSet
-    const FunctionDecl* Decl = nullptr;
-    if constexpr (std::is_same<CallT, CXXConstructExpr>::value) {
-      Decl = C->getConstructor();
-    } else {
-      Decl = C->getDirectCallee();
+    // Currently, only support CallExpr & FunctionDecl only
+    if constexpr (std::is_same<CallT, CallExpr>::value) {
+      if (Callee->getDirectCallee()) {
+        auto ChildDFI =
+            DeviceFunctionDecl::LinkRedecls(Callee->getDirectCallee());
+        ChildDFI->getParentSet().insert(
+            std::pair<const CallExpr *, const FunctionDecl *>(Callee, FD));
+      }
     }
-    if (Decl) {
-      auto ChildDFI = DeviceFunctionDecl::LinkRedecls(Decl);
-      ChildDFI->getParentSet().insert(weak_from_this());
-    }
-
     return Call;
   }
   inline void addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
@@ -3919,7 +3913,7 @@ public:
   size_t ParamsNum;
   size_t NonDefaultParamNum;
   GlobalMap<CallFunctionExpr> &getCallExprMap() { return CallExprMap; }
-  std::set<std::weak_ptr<DeviceFunctionInfo>> &getParentSet() {
+  std::set<std::pair<const CallExpr*, const FunctionDecl*>> &getParentSet() {
     return ParentSet;
   }
   void addSubGroupSizeRequest(unsigned int Size, SourceLocation Loc,
@@ -3966,7 +3960,8 @@ private:
                          std::string>>
       RequiredSubGroupSize;
   GlobalMap<CallFunctionExpr> CallExprMap;
-  std::set<std::weak_ptr<DeviceFunctionInfo>> ParentSet;
+  std::set<std::pair<const CallExpr*, const FunctionDecl*>> ParentSet;
+  const FunctionDecl* FD = nullptr;
   MemVarMap VarMap;
 
   std::shared_ptr<StructureTextureObjectInfo> BaseObjectTexture;
