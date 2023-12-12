@@ -305,14 +305,14 @@ llvm::Error Replacements::add(const Replacement &R) {
   // insertion.
   auto I = Replaces.lower_bound(AtEnd);
   // If `I` starts at the same offset as `R`, `R` must be an insertion.
-  if (I != Replaces.end() && R.getOffset() == I->getOffset()) {
+  if (I != Replaces.end() && R.getOffset() == I->getOffset() && R.IsForCUDADebug == I->IsForCUDADebug) {
     assert(R.getLength() == 0);
     // `I` is also an insertion, `R` and `I` conflict.
     if (I->getLength() == 0) {
       // Check if two insertions are order-independent: if inserting them in
       // either order produces the same text, they are order-independent.
       if ((R.getReplacementText() + I->getReplacementText()).str() !=
-          (I->getReplacementText() + R.getReplacementText()).str() && R.IsForCUDADebug == I->IsForCUDADebug)
+          (I->getReplacementText() + R.getReplacementText()).str())
 #ifdef SYCLomatic_CUSTOMIZATION
 #ifndef NDEBUG
         {
