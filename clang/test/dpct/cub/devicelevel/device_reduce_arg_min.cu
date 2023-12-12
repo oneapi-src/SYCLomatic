@@ -32,7 +32,7 @@ void test1() {
 // CHECK: void test1() {
 // CHECK-NOT: void *d_temp_storage = NULL;
 // CHECK-NOT: size_t temp_storage_bytes = 0;
-// CHECK: DPCT1026:{{.*}}: The call to cub::DeviceReduce::ArgMin was removed because this call is redundant in SYCL.
+// CHECK: DPCT1026:{{.*}}: The call to cub::DeviceReduce::ArgMin was removed because this functionality is redundant in SYCL.
 // CHECK: dpct::reduce_argmin(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_out, num_items);
 // CHECK-NOT: dpct::dpct_free({{.*}})
 // CHECK: }
@@ -48,7 +48,7 @@ void test2() {
 // CHECK: void test2() {
 // CHECK-NOT: void *d_temp_storage = NULL;
 // CHECK-NOT: size_t temp_storage_bytes = 0;
-// CHECK: DPCT1027:{{.*}}: The call to cub::DeviceReduce::ArgMin was replaced with 0 because this call is redundant in SYCL.
+// CHECK: DPCT1027:{{.*}}: The call to cub::DeviceReduce::ArgMin was replaced with 0 because this functionality is redundant in SYCL.
 // CHECK: auto res = 0;
 // CHECK: dpct::reduce_argmin(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_out, num_items);
 // CHECK-NOT: dpct::dpct_free({{.*}})
@@ -70,7 +70,7 @@ void test3() {
 // CHECK-NOT: size_t temp_storage_bytes = 0;
 // CHECK: dpct::queue_ptr s;
 // CHECK: s = dev_ct1.create_queue();
-// CHECK: DPCT1026:{{.*}}: The call to cub::DeviceReduce::ArgMin was removed because this call is redundant in SYCL.
+// CHECK: DPCT1026:{{.*}}: The call to cub::DeviceReduce::ArgMin was removed because this functionality is redundant in SYCL.
 // CHECK: dpct::reduce_argmin(oneapi::dpl::execution::device_policy(*s), d_in, d_out, num_items);
 // CHECK: dev_ct1.destroy_queue(s);
 // CHECK-NOT: dpct::dpct_free({{.*}})

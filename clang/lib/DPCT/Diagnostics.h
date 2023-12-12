@@ -37,7 +37,7 @@ struct DiagnosticsMessage;
 extern std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 extern std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 extern std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
-
+extern std::unordered_set<int> APIQueryNeedReportWarningIDSet;
 extern std::set<int> WarningIDs;
 
 struct DiagnosticsMessage {
@@ -299,8 +299,11 @@ bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset,
 template <typename IDTy, typename... Ts>
 inline bool report(SourceLocation SL, IDTy MsgID,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
-  if (DpctGlobalInfo::isQueryAPIMapping())
-    return true;
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    if (!APIQueryNeedReportWarningIDSet.count((int)MsgID)) {
+      return true;
+    }
+  }
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
     auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
@@ -383,7 +386,9 @@ template <typename IDTy, typename... Ts>
 bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals) {
   if (DpctGlobalInfo::isQueryAPIMapping()) {
-    return true;
+    if (!APIQueryNeedReportWarningIDSet.count((int)MsgID)) {
+      return true;
+    }
   }
   // Do not emit diagnostic message for source location outside --in-root
   if (!DpctGlobalInfo::isInRoot(FileAbsPath))

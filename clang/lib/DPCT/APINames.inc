@@ -1798,8 +1798,8 @@ ENTRY(cooperative_groups::bit_and, cooperative_groups::__v1::bit_and, true, NO_F
 ENTRY(cooperative_groups::bit_or, cooperative_groups::__v1::bit_or, true, NO_FLAG, P4, "Successful")
 ENTRY(cooperative_groups::bit_xor, cooperative_groups::__v1::bit_xor, true, NO_FLAG, P4, "Successful")
 
-ENTRY(cooperative_groups::inclusive_scan, cooperative_groups::__v1::inclusive_scan, false, NO_FLAG, P4, "comment")
-ENTRY(cooperative_groups::exclusive_scan, cooperative_groups::__v1::exclusive_scan, false, NO_FLAG, P4, "comment")
+ENTRY(cooperative_groups::inclusive_scan, cooperative_groups::__v1::inclusive_scan, true, NO_FLAG, P4, "Partial: the tool supports when group size equals to 32, else DPCT1007.")
+ENTRY(cooperative_groups::exclusive_scan, cooperative_groups::__v1::exclusive_scan, true, NO_FLAG, P4, "Partial: the tool supports when group size equals to 32, else DPCT1007.")
 ENTRY(cooperative_groups::experimental::inclusive_scan_update, cooperative_groups::__v1::experimental::inclusive_scan_update, false, NO_FLAG, P4, "comment")
 ENTRY(cooperative_groups::inclusive_scan_update, cooperative_groups::__v1::inclusive_scan_update, false, NO_FLAG, P4, "comment")
 ENTRY(cooperative_groups::experimental::exclusive_scan_update, cooperative_groups::__v1::experimental::exclusive_scan_update, false, NO_FLAG, P4, "comment")

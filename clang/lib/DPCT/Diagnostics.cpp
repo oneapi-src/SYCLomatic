@@ -57,6 +57,8 @@ std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 #undef DEF_WARNING
 #undef DEF_COMMENT
 
+std::unordered_set<int> APIQueryNeedReportWarningIDSet = {1086};
+
 std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 #define DEF_COMMENT(NAME, ID, MSG)                                             \
   DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note, MSG);

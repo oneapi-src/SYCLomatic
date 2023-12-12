@@ -40,6 +40,7 @@
 #include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/Cuda.h"
+#include "clang/Lex/MacroArgs.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/StringSet.h"
@@ -468,8 +469,61 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     }
   }
 
+  if (Name == "NCCL_VERSION") {
+    std::vector<std::string> MA(3);
+    auto calCclCompatVersion = [=](int arg1, int arg2, int arg3) {
+      return std::to_string(((arg1) <= 2 && (arg2) <= 8)
+                                ? (arg1)*1000 + (arg2)*100 + (arg3)
+                                : (arg1)*10000 + (arg2)*100 + (arg3));
+    };
+    for (unsigned int i = 0; i < Args->getNumMacroArguments(); ++i) {
+      MA[i] =
+          Lexer::getSourceText(CharSourceRange::getCharRange(
+                                   Args->getUnexpArgument(i)->getLocation(),
+                                   Lexer::getLocForEndOfToken(
+                                       Args->getUnexpArgument(i)->getLocation(),
+                                       0, SM, LangOptions())),
+                               SM, LangOptions())
+              .str();
+    }
+    auto Length = Lexer::MeasureTokenLength(
+        Range.getEnd(), SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+    Length += SM.getDecomposedLoc(Range.getEnd()).second -
+              SM.getDecomposedLoc(Range.getBegin()).second;
+    TransformSet.emplace_back(new ReplaceText(
+        Range.getBegin(), Length,
+        std::move(calCclCompatVersion(std::stoi(MA[0]), std::stoi(MA[1]),
+                                      std::stoi(MA[2])))));
+  }
+
+  if (Name == "NCCL_MAJOR" || Name == "NCCL_MINOR") {
+    TransformSet.emplace_back(new ReplaceToken(
+        Range.getBegin(),
+        std::move(Lexer::getSourceText(
+                      CharSourceRange::getCharRange(
+                          MI->getReplacementToken(0).getLocation(),
+                          Lexer::getLocForEndOfToken(
+                              MI->getReplacementToken(0).getLocation(), 0, SM,
+                              LangOptions())),
+                      SM, LangOptions())
+                      .str())));
+  }
+
   auto ItRule = MapNames::MacroRuleMap.find(Name.str());
   if (ItRule != MapNames::MacroRuleMap.end()) {
+    if (Name == "NCCL_VERSION_CODE") {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+      DpctGlobalInfo::getInstance()
+          .insertFile(LocInfo.first)
+          ->setCCLVerValue(Lexer::getSourceText(
+                               CharSourceRange::getCharRange(
+                                   MI->getReplacementToken(0).getLocation(),
+                                   Lexer::getLocForEndOfToken(
+                                       MI->getReplacementToken(0).getLocation(),
+                                       0, SM, LangOptions())),
+                               SM, LangOptions())
+                               .str());
+    }
     std::string OutStr = ItRule->second.Out;
     TransformSet.emplace_back(
         new ReplaceToken(Range.getBegin(), std::move(OutStr)));
@@ -1796,7 +1850,12 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   if (TyLen <= 0)
     return false;
 
-  const std::string RealTypeNameStr(Start, TyLen);
+  std::string RealTypeNameStr(Start, TyLen);
+  const auto StartPos = RealTypeNameStr.find_last_not_of(" ");
+  // Remove spaces between type name and template arg, like
+  // "thrust::device_ptr[Spaces]<int> tmp".
+  if (StartPos != std::string::npos)
+    RealTypeNameStr = RealTypeNameStr.substr(0, StartPos + 1);
 
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
       RealTypeNameStr.find("device_malloc_allocator") != std::string::npos) {
@@ -5153,7 +5212,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasSetAtomicsMode" ||
              FuncName == "cublasGetMathMode" ||
              FuncName == "cublasSetMathMode") {
-    std::string Msg = "this call is redundant in SYCL.";
+    std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              MapNames::ITFName.at(FuncName), Msg);
@@ -6552,12 +6611,12 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (IsAssigned) {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
                MapNames::ITFName.at(FuncName),
-               "this call is redundant in SYCL.");
+               "this functionality is redundant in SYCL.");
         emplaceTransformation(new ReplaceStmt(CE, "0"));
       } else {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
                MapNames::ITFName.at(FuncName),
-               "this call is redundant in SYCL.");
+               "this functionality is redundant in SYCL.");
         emplaceTransformation(new ReplaceStmt(CE, ""));
       }
     } else {
@@ -11861,7 +11920,8 @@ void CooperativeGroupsFunctionRule::runRule(
       FuncName == "shfl_down" || FuncName == "shfl_up" || FuncName == "shfl" ||
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
       FuncName == "reduce" || FuncName == "thread_index" ||
-      FuncName == "group_index" || FuncName == "num_threads") {
+      FuncName == "group_index" || FuncName == "num_threads" ||
+      FuncName == "inclusive_scan" || FuncName == "exclusive_scan") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function
@@ -14171,7 +14231,7 @@ void DriverContextAPIRule::runRule(
     OS << "DPCT_CHECK_ERROR(";
   }
   if (APIName == "cuInit") {
-    std::string Msg = "this call is redundant in SYCL.";
+    std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              APIName, Msg);
@@ -14206,7 +14266,7 @@ void DriverContextAPIRule::runRule(
     }
     CallEnd = CallEnd.getLocWithOffset(1);
 
-    std::string Msg = "this call is redundant in SYCL.";
+    std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              APIName, Msg);

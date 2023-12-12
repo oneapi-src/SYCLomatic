@@ -84,6 +84,49 @@ CONDITIONAL_FACTORY_ENTRY(
                                     Diagnostics::API_NOT_MIGRATED,
                                     ARG("reduce")))
 
+CASE_FACTORY_ENTRY(
+    CASE(CheckArgCount(2),
+         CONDITIONAL_FACTORY_ENTRY(
+             argHasThreadBlockTileType(0, 32),
+             CALL_FACTORY_ENTRY("inclusive_scan",
+                                CALL(MapNames::getClNamespace() +
+                                         "inclusive_scan_over_group",
+                                     SUBGROUP, ARG(1), ARG("sycl::plus<>()"))),
+             UNSUPPORT_FACTORY_ENTRY("inclusive_scan",
+                                     Diagnostics::API_NOT_MIGRATED,
+                                     ARG("inclusive_scan")))),
+    CASE(CheckArgCount(3),
+         CONDITIONAL_FACTORY_ENTRY(
+             argHasThreadBlockTileType(0, 32),
+             CALL_FACTORY_ENTRY("inclusive_scan",
+                                CALL(MapNames::getClNamespace() +
+                                         "inclusive_scan_over_group",
+                                     SUBGROUP, ARG(1), ARG(2))),
+             UNSUPPORT_FACTORY_ENTRY("inclusive_scan",
+                                     Diagnostics::API_NOT_MIGRATED,
+                                     ARG("inclusive_scan")))))
+
+CASE_FACTORY_ENTRY(
+    CASE(CheckArgCount(2),
+         CONDITIONAL_FACTORY_ENTRY(
+             argHasThreadBlockTileType(0, 32),
+             CALL_FACTORY_ENTRY("exclusive_scan",
+                                CALL(MapNames::getClNamespace() +
+                                         "exclusive_scan_over_group",
+                                     SUBGROUP, ARG(1), ARG("sycl::plus<>()"))),
+             UNSUPPORT_FACTORY_ENTRY("exclusive_scan",
+                                     Diagnostics::API_NOT_MIGRATED,
+                                     ARG("exclusive_scan")))),
+    CASE(CheckArgCount(3),
+         CONDITIONAL_FACTORY_ENTRY(
+             argHasThreadBlockTileType(0, 32),
+             CALL_FACTORY_ENTRY("exclusive_scan",
+                                CALL(MapNames::getClNamespace() +
+                                         "exclusive_scan_over_group",
+                                     SUBGROUP, ARG(1), ARG(2))),
+             UNSUPPORT_FACTORY_ENTRY("exclusive_scan",
+                                     Diagnostics::API_NOT_MIGRATED,
+                                     ARG("exclusive_scan")))))
 /*
   --- cg::thread_rank(X) ---
   cg::thread_rank(cg::thread_block)
