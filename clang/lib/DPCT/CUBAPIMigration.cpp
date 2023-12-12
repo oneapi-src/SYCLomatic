@@ -1154,15 +1154,11 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
       GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
       if (FuncName == "Sort")
         {
-          std::string NewClassName = MapNames::getDpctNamespace() + "group::radix_sort";
-          std::string NewObjName = NewClassName + "  radix_sort_obj";
-          NewFuncName = NewObjName + ".sort";
+           NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort().sort";
         }
       else if (FuncName == "SortDescending")
         {
-           std::string NewClassName = MapNames::getDpctNamespace() + "group::radix_sort<DESCENDING=true>";
-           std::string NewObjName = NewClassName + "  radix_sort_obj";
-           NewFuncName = NewObjName + ".sort";
+           NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort<DESCENDING=true>().sort";
         }
       requestFeature(HelperFeatureEnum::device_ext);
       DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
@@ -1175,7 +1171,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
       report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              "cub::" + FuncName);
       return;
-      
       }
       CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
       Repl = NewFuncName + "(" + ParamList + ")";
