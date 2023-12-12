@@ -299,7 +299,7 @@ bfi(T x, T y, uint32_t bit_start, uint32_t num_bits) {
   constexpr unsigned msb = std::numeric_limits<T>::digits;
   if (bit_start > msb || num_bits == 0)
     return y;
-  T mask = (~(T{}) >> (msb - num_bits)) << bit_start;
+  T mask = (~(T{0}) >> (msb - num_bits)) << bit_start;
   return y & ~mask | ((x << bit_start) & mask);
 }
 
