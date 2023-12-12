@@ -5153,7 +5153,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasSetAtomicsMode" ||
              FuncName == "cublasGetMathMode" ||
              FuncName == "cublasSetMathMode") {
-    std::string Msg = "this call is redundant in SYCL.";
+    std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              MapNames::ITFName.at(FuncName), Msg);
@@ -6552,12 +6552,12 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (IsAssigned) {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
                MapNames::ITFName.at(FuncName),
-               "this call is redundant in SYCL.");
+               "this functionality is redundant in SYCL.");
         emplaceTransformation(new ReplaceStmt(CE, "0"));
       } else {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
                MapNames::ITFName.at(FuncName),
-               "this call is redundant in SYCL.");
+               "this functionality is redundant in SYCL.");
         emplaceTransformation(new ReplaceStmt(CE, ""));
       }
     } else {
@@ -14171,7 +14171,7 @@ void DriverContextAPIRule::runRule(
     OS << "DPCT_CHECK_ERROR(";
   }
   if (APIName == "cuInit") {
-    std::string Msg = "this call is redundant in SYCL.";
+    std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              APIName, Msg);
@@ -14206,7 +14206,7 @@ void DriverContextAPIRule::runRule(
     }
     CallEnd = CallEnd.getLocWithOffset(1);
 
-    std::string Msg = "this call is redundant in SYCL.";
+    std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              APIName, Msg);

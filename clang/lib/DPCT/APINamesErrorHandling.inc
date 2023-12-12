@@ -36,7 +36,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "cudaGetLastError",
         TOSTRING_FACTORY_ENTRY("cudaGetLastError", LITERAL("")),
         Diagnostics::FUNC_CALL_REMOVED, std::string("cudaGetLastError"),
-        std::string("this call is redundant in SYCL.")),
+        std::string("this functionality is redundant in SYCL.")),
     WARNING_FACTORY_ENTRY(
         "cudaGetLastError",
         TOSTRING_FACTORY_ENTRY("cudaGetLastError", LITERAL("0")),
@@ -48,7 +48,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "cudaPeekAtLastError",
         TOSTRING_FACTORY_ENTRY("cudaPeekAtLastError", LITERAL("")),
         Diagnostics::FUNC_CALL_REMOVED, std::string("cudaPeekAtLastError"),
-        std::string("this call is redundant in SYCL.")),
+        std::string("this functionality is redundant in SYCL.")),
     WARNING_FACTORY_ENTRY(
         "cudaPeekAtLastError",
         TOSTRING_FACTORY_ENTRY("cudaPeekAtLastError", LITERAL("0")),
@@ -68,7 +68,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "ncclGetLastError",
         TOSTRING_FACTORY_ENTRY("ncclGetLastError", LITERAL("")),
         Diagnostics::FUNC_CALL_REMOVED, std::string("ncclGetLastError"),
-        std::string("this call is redundant in SYCL.")),
+        std::string("this functionality is redundant in SYCL.")),
     WARNING_FACTORY_ENTRY(
         "ncclGetLastError",
         TOSTRING_FACTORY_ENTRY("ncclGetLastError", LITERAL("0")),
@@ -80,7 +80,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "ncclCommGetAsyncError",
         TOSTRING_FACTORY_ENTRY("ncclCommGetAsyncError", LITERAL("")),
         Diagnostics::FUNC_CALL_REMOVED, std::string("ncclCommGetAsyncError"),
-        std::string("this call is redundant in SYCL.")),
+        std::string("this functionality is redundant in SYCL.")),
     WARNING_FACTORY_ENTRY(
         "ncclCommGetAsyncError",
         TOSTRING_FACTORY_ENTRY("ncclCommGetAsyncError", LITERAL("0")),

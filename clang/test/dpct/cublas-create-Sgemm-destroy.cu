@@ -39,10 +39,10 @@ int foo2(cudaDataType DT) {
 
   //CHECK: int Atomicsmode;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetAtomicsMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetAtomicsMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetAtomicsMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetAtomicsMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   cublasAtomicsMode_t Atomicsmode;
   cublasGetAtomicsMode(handle, &Atomicsmode);
@@ -50,10 +50,10 @@ int foo2(cudaDataType DT) {
 
   //CHECK: int mode = 0;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: dpct::library_data_t cdt;
   //CHECK-NEXT: dpct::library_data_t cbdt;
