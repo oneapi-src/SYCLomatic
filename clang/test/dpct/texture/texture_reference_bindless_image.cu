@@ -1,7 +1,8 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2
-// UNSUPPORTED: v12.0, v12.1, v12.2
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
+// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3
 // RUN: dpct --format-range=none --use-experimental-features=bindless_images -out-root %T/texture/texture_reference_bindless_image %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.cpp -o %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.o %}
 
 // CHECK: dpct::bindless_image_wrapper<sycl::short2, 1> tex0;
 static texture<short2, 1> tex0;
@@ -52,7 +53,7 @@ int main() {
   cudaBindTexture(0, tex, dataPtr, pitch * h);
   // CHECK: tex.attach(dataPtr, w, h, pitch);
   cudaBindTexture2D(0, tex, dataPtr, w, h, pitch);
-  // CHECK: sycl::ext::oneapi::experimental::image_mem* pArr;
+  // CHECK: dpct::image_mem_p pArr;
   cudaArray_t pArr;
   // CHECK: tex.attach(pArr);
   cudaBindTextureToArray(tex, pArr);

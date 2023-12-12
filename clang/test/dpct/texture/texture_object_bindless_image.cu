@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --use-experimental-features=bindless_images -out-root %T/texture/texture_object_bindless_image %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp -o %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.o %}
 
 // CHECK: void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex) {
 __global__ void kernel(cudaTextureObject_t tex) {
@@ -19,25 +20,55 @@ __global__ void kernel(cudaTextureObject_t tex) {
 
 int main() {
   void *input;
-  size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_desc;
-  // CHECK: sycl::ext::oneapi::experimental::image_mem* pArr, pArr_src;
+  size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_dest;
+  unsigned int flag;
+  cudaExtent e;
+  // CHECK: dpct::image_mem_p pArr, pArr_src;
   cudaArray_t pArr, pArr_src;
   // TODO: need support.
   // cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
   cudaChannelFormatDesc desc;
+  // CHECK: pArr = new sycl::ext::oneapi::experimental::image_mem(sycl::ext::oneapi::experimental::image_descriptor(e, desc.get_channel_order(), desc.get_channel_type()), q_ct1);
+  cudaMalloc3DArray(&pArr, &desc, e);
   // CHECK: pArr = new sycl::ext::oneapi::experimental::image_mem(sycl::ext::oneapi::experimental::image_descriptor({w, h}, desc.get_channel_order(), desc.get_channel_type()), q_ct1);
   cudaMallocArray(&pArr, &desc, w, h);
-  // CHECK: dpct::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, pArr, w_offest_dest, h_offest_desc, w * h, q_ct1);
-  cudaMemcpyArrayToArray(pArr, w_offest_dest, h_offest_desc, pArr_src,
-                         w_offest_src, h_offest_src, w * h,
-                         cudaMemcpyHostToDevice);
+  // CHECK: desc = dpct::get_channel(pArr);
+  // CHECK-NEXT: e = pArr->get_range();
+  // CHECK-NEXT: flag = 0;
+  cudaArrayGetInfo(&desc, &e, &flag, pArr);
+  // CHECK: dpct::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, pArr, w_offest_dest, h_offest_dest, w, h, q_ct1);
+  cudaMemcpy2DArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
+                           w_offest_src, h_offest_src, w, h,
+                           cudaMemcpyHostToDevice);
   // CHECK: dpct::dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w, w, h, q_ct1);
   cudaMemcpy2DFromArray(input, w, pArr, w_offest_src, h_offest_src, w, h,
                         cudaMemcpyHostToDevice);
-  // CHECK: dpct::dpct_memcpy(input, pArr, w_offest_dest, h_offest_desc, w, w, h, q_ct1);
-  cudaMemcpy2DToArray(pArr, w_offest_dest, h_offest_desc, input, w, w, h,
+  // CHECK: dpct::async_dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w, w, h, q_ct1);
+  cudaMemcpy2DFromArrayAsync(input, w, pArr, w_offest_src, h_offest_src, w, h,
+                             cudaMemcpyHostToDevice);
+  // CHECK: dpct::dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w, w, h, q_ct1);
+  cudaMemcpy2DToArray(pArr, w_offest_dest, h_offest_dest, input, w, w, h,
                       cudaMemcpyHostToDevice);
+  // CHECK: dpct::async_dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w, w, h, q_ct1);
+  cudaMemcpy2DToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w, w, h,
+                           cudaMemcpyHostToDevice);
+  // CHECK: dpct::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
+  cudaMemcpyArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
+                         w_offest_src, h_offest_src, w * h,
+                         cudaMemcpyHostToDevice);
+  // CHECK: dpct::dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w * h, q_ct1);
+  cudaMemcpyFromArray(input, pArr, w_offest_src, h_offest_src, w * h,
+                      cudaMemcpyHostToDevice);
+  // CHECK: dpct::async_dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w * h, q_ct1);
+  cudaMemcpyFromArrayAsync(input, pArr, w_offest_src, h_offest_src, w * h,
+                           cudaMemcpyHostToDevice);
+  // CHECK: dpct::dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
+  cudaMemcpyToArray(pArr, w_offest_dest, h_offest_dest, input, w * h,
+                    cudaMemcpyHostToDevice);
+  // CHECK: dpct::async_dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
+  cudaMemcpyToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w * h,
+                         cudaMemcpyHostToDevice);
 
   // CHECK: dpct::image_data resDesc;
   cudaResourceDesc resDesc;
@@ -105,6 +136,8 @@ int main() {
   kernel<<<1, 1>>>(tex);
   // CHECK: sycl::ext::oneapi::experimental::destroy_image_handle(tex, q_ct1);
   cudaDestroyTextureObject(tex);
+  // CHECK: sycl::ext::oneapi::experimental::free_image_mem(pArr->get_handle(), dpct::get_in_order_queue());
+  cudaFreeArray(pArr);
 
   return 0;
 }

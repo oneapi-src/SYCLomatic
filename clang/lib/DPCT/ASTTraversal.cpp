@@ -10023,6 +10023,24 @@ void MemoryMigrationRule::mallocMigration(
       requestFeature(HelperFeatureEnum::device_ext);
     }
   } else if (Name == "cudaMalloc3DArray") {
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      DerefExpr(C->getArg(0), C).print(OS);
+      OS << " = new " << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::image_mem("
+         << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::image_descriptor("
+         << ExprAnalysis::ref(C->getArg(2)) << ", ";
+      DerefExpr(C->getArg(1), C).print(OS);
+      OS << ".get_channel_order(), ";
+      DerefExpr(C->getArg(1), C).print(OS);
+      OS << ".get_channel_type()), ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      return emplaceTransformation(new ReplaceStmt(C, Replacement));
+    }
     mallocArrayMigration(C, Name, 3, *Result.SourceManager);
   } else if (Name == "cudaMallocArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
@@ -10255,17 +10273,33 @@ void MemoryMigrationRule::arrayMigration(
   }
 
   if (NameRef == "cudaMemcpy2DArrayToArray") {
-    insertToPitchedData(C, 0);
-    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
-    insertToPitchedData(C, 3);
-    aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
-    aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", "
+         << ExprAnalysis::ref(C->getArg(5)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(6)) << ", "
+         << ExprAnalysis::ref(C->getArg(7)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      insertToPitchedData(C, 0);
+      aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+      insertToPitchedData(C, 3);
+      aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
+      aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
+    }
   } else if (NameRef == "cudaMemcpy2DFromArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
       std::string Replacement;
       llvm::raw_string_ostream OS(Replacement);
-      OS << MapNames::getDpctNamespace() << "dpct_memcpy("
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(2)) << ", "
          << ExprAnalysis::ref(C->getArg(3)) << ", "
          << ExprAnalysis::ref(C->getArg(4)) << ", "
          << ExprAnalysis::ref(C->getArg(0)) << ", "
@@ -10287,8 +10321,7 @@ void MemoryMigrationRule::arrayMigration(
     if (DpctGlobalInfo::useExtBindlessImages()) {
       std::string Replacement;
       llvm::raw_string_ostream OS(Replacement);
-      OS << MapNames::getDpctNamespace() << "dpct_memcpy("
-         << ExprAnalysis::ref(C->getArg(3)) << ", "
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
          << ExprAnalysis::ref(C->getArg(0)) << ", "
          << ExprAnalysis::ref(C->getArg(1)) << ", "
          << ExprAnalysis::ref(C->getArg(2)) << ", "
@@ -10310,8 +10343,7 @@ void MemoryMigrationRule::arrayMigration(
     if (DpctGlobalInfo::useExtBindlessImages()) {
       std::string Replacement;
       llvm::raw_string_ostream OS(Replacement);
-      OS << MapNames::getDpctNamespace() << "dpct_memcpy("
-         << ExprAnalysis::ref(C->getArg(3)) << ", "
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
          << ExprAnalysis::ref(C->getArg(4)) << ", "
          << ExprAnalysis::ref(C->getArg(5)) << ", "
          << ExprAnalysis::ref(C->getArg(0)) << ", "
@@ -10330,17 +10362,45 @@ void MemoryMigrationRule::arrayMigration(
       aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
     }
   } else if (NameRef == "cudaMemcpyFromArray") {
-    aggregatePitchedData(C, 0, 4, SM, true);
-    insertZeroOffset(C, 1);
-    insertToPitchedData(C, 1);
-    aggregate3DVectorClassCtor(C, "id", 2, "0", SM);
-    aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      aggregatePitchedData(C, 0, 4, SM, true);
+      insertZeroOffset(C, 1);
+      insertToPitchedData(C, 1);
+      aggregate3DVectorClassCtor(C, "id", 2, "0", SM);
+      aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+    }
   } else if (NameRef == "cudaMemcpyToArray") {
-    insertToPitchedData(C, 0);
-    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
-    aggregatePitchedData(C, 3, 4, SM, true);
-    insertZeroOffset(C, 4);
-    aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      insertToPitchedData(C, 0);
+      aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+      aggregatePitchedData(C, 3, 4, SM, true);
+      insertZeroOffset(C, 4);
+      aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+    }
   }
 
   if (ULExpr) {
@@ -10569,6 +10629,14 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       emplaceTransformation(new ReplaceCalleeName(C, "free"));
     }
   } else if (Name == "cudaFreeArray") {
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      return emplaceTransformation(
+          new ReplaceStmt(C, MapNames::getClNamespace() +
+                                 "ext::oneapi::experimental::free_image_mem(" +
+                                 ExprAnalysis::ref(C->getArg(0)) +
+                                 "->get_handle(), {{NEEDREPLACEQ" +
+                                 std::to_string(Index) + "}})"));
+    }
     ExprAnalysis EA(C->getArg(0));
     EA.analyze();
     emplaceTransformation(
@@ -10851,7 +10919,12 @@ void MemoryMigrationRule::cudaArrayGetInfo(
   std::ostringstream OS;
   std::string Arg3Str = ExprAnalysis::ref(C->getArg(3));
   printDerefOp(OS, C->getArg(0));
-  OS << " = " << Arg3Str << "->get_channel();" << getNL() << IndentStr;
+  OS << " = ";
+  if (DpctGlobalInfo::useExtBindlessImages())
+    OS << MapNames::getDpctNamespace() << "get_channel(" << Arg3Str << ");";
+  else
+    OS << Arg3Str << "->get_channel();";
+  OS << getNL() << IndentStr;
   printDerefOp(OS, C->getArg(1));
   OS << " = " << Arg3Str << "->get_range();" << getNL() << IndentStr;
   printDerefOp(OS, C->getArg(2));
