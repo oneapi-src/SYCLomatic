@@ -684,7 +684,12 @@ template <typename T> inline auto zero_or_signed_extent(T val, unsigned bit) {
 
 template <typename RetT, bool NeedSat, typename AT, typename BT,
           typename BinaryOperation>
-inline constexpr RetT extend_binary(AT a, BT b, BinaryOperation binary_op) {
+inline constexpr std::enable_if_t<
+    std::is_integral_v<AT> && std::is_integral_v<BT> &&
+        std::is_integral_v<RetT> && sizeof(AT) == 4 && sizeof(BT) == 4 &&
+        sizeof(RetT) == 4,
+    RetT>
+extend_binary(AT a, BT b, BinaryOperation binary_op) {
   int64_t extend_a = zero_or_signed_extent(a, 33);
   int64_t extend_b = zero_or_signed_extent(b, 33);
   int64_t ret = binary_op(extend_a, extend_b);
@@ -696,9 +701,13 @@ inline constexpr RetT extend_binary(AT a, BT b, BinaryOperation binary_op) {
 
 template <typename RetT, bool NeedSat, typename AT, typename BT, typename CT,
           typename BinaryOperation1, typename BinaryOperation2>
-inline constexpr RetT extend_binary(AT a, BT b, CT c,
-                                    BinaryOperation1 binary_op,
-                                    BinaryOperation2 second_op) {
+inline constexpr std::enable_if_t<
+    std::is_integral_v<AT> && std::is_integral_v<BT> &&
+        std::is_integral_v<CT> && std::is_integral_v<RetT> && sizeof(AT) == 4 &&
+        sizeof(BT) == 4 && sizeof(CT) == 4 && sizeof(RetT) == 4,
+    RetT>
+extend_binary(AT a, BT b, CT c, BinaryOperation1 binary_op,
+              BinaryOperation2 second_op) {
   int64_t extend_a = zero_or_signed_extent(a, 33);
   int64_t extend_b = zero_or_signed_extent(b, 33);
   int64_t extend_temp =
@@ -747,8 +756,12 @@ template <typename T> sycl::vec<int16_t, 4> extractAndExtend4(T a) {
 
 template <typename RetT, bool NeedSat, bool NeedAdd, typename AT, typename BT,
           typename BinaryOperation>
-inline constexpr RetT extend_vbinary2(AT a, BT b, RetT c,
-                                      BinaryOperation binary_op) {
+inline constexpr std::enable_if_t<
+    std::is_integral_v<AT> && std::is_integral_v<BT> &&
+        std::is_integral_v<RetT> && sizeof(AT) == 4 && sizeof(BT) == 4 &&
+        sizeof(RetT) == 4,
+    RetT>
+extend_vbinary2(AT a, BT b, RetT c, BinaryOperation binary_op) {
   sycl::vec<int32_t, 2> extend_a = extractAndExtend2(a);
   sycl::vec<int32_t, 2> extend_b = extractAndExtend2(b);
   sycl::vec<int32_t, 2> temp{binary_op(extend_a[0], extend_b[0]),
@@ -776,8 +789,12 @@ inline constexpr RetT extend_vbinary2(AT a, BT b, RetT c,
 
 template <typename RetT, bool NeedSat, bool NeedAdd, typename AT, typename BT,
           typename BinaryOperation>
-inline constexpr RetT extend_vbinary4(AT a, BT b, RetT c,
-                                      BinaryOperation binary_op) {
+inline constexpr std::enable_if_t<
+    std::is_integral_v<AT> && std::is_integral_v<BT> &&
+        std::is_integral_v<RetT> && sizeof(AT) == 4 && sizeof(BT) == 4 &&
+        sizeof(RetT) == 4,
+    RetT>
+extend_vbinary4(AT a, BT b, RetT c, BinaryOperation binary_op) {
   sycl::vec<int16_t, 4> extend_a = extractAndExtend4(a);
   sycl::vec<int16_t, 4> extend_b = extractAndExtend4(b);
   sycl::vec<int16_t, 4> temp{
@@ -907,9 +924,9 @@ inline auto dp4a(T1 a, T2 b, T3 c) {
 }
 
 /// Extend \p a and \p b to 33 bit and add them.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The extend addition of the two values
@@ -919,10 +936,10 @@ inline constexpr RetT extend_add(AT a, BT b) {
 }
 
 /// Extend Inputs to 33 bit, add \p a, \p b, then do \p second_op with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -936,9 +953,9 @@ inline constexpr RetT extend_add(AT a, BT b, CT c, BinaryOperation second_op) {
 }
 
 /// Extend \p a and \p b to 33 bit and add them with saturation.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The extend addition of the two values with saturation
@@ -949,10 +966,10 @@ inline constexpr RetT extend_add_sat(AT a, BT b) {
 
 /// Extend Inputs to 33 bit, add \p a, \p b with saturation, then do \p
 /// second_op with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -968,9 +985,9 @@ inline constexpr RetT extend_add_sat(AT a, BT b, CT c,
 }
 
 /// Extend \p a and \p b to 33 bit and minus them.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The extend subtraction of the two values
@@ -980,10 +997,10 @@ inline constexpr RetT extend_sub(AT a, BT b) {
 }
 
 /// Extend Inputs to 33 bit, minus \p a, \p b, then do \p second_op with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -997,9 +1014,9 @@ inline constexpr RetT extend_sub(AT a, BT b, CT c, BinaryOperation second_op) {
 }
 
 /// Extend \p a and \p b to 33 bit and minus them with saturation.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The extend subtraction of the two values with saturation
@@ -1010,10 +1027,10 @@ inline constexpr RetT extend_sub_sat(AT a, BT b) {
 
 /// Extend Inputs to 33 bit, minus \p a, \p b with saturation, then do \p
 /// second_op with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -1029,9 +1046,9 @@ inline constexpr RetT extend_sub_sat(AT a, BT b, CT c,
 }
 
 /// Extend \p a and \p b to 33 bit and do abs_diff.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The extend abs_diff of the two values
@@ -1042,10 +1059,10 @@ inline constexpr RetT extend_absdiff(AT a, BT b) {
 
 /// Extend Inputs to 33 bit, abs_diff \p a, \p b, then do \p second_op with \p
 /// c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -1060,9 +1077,9 @@ inline constexpr RetT extend_absdiff(AT a, BT b, CT c,
 }
 
 /// Extend \p a and \p b to 33 bit and do abs_diff with saturation.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The extend abs_diff of the two values with saturation
@@ -1073,10 +1090,10 @@ inline constexpr RetT extend_absdiff_sat(AT a, BT b) {
 
 /// Extend Inputs to 33 bit, abs_diff \p a, \p b with saturation, then do \p
 /// second_op with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -1092,9 +1109,9 @@ inline constexpr RetT extend_absdiff_sat(AT a, BT b, CT c,
 }
 
 /// Extend \p a and \p b to 33 bit and return smaller one.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The smaller one of the two extended values
@@ -1105,10 +1122,10 @@ inline constexpr RetT extend_min(AT a, BT b) {
 
 /// Extend Inputs to 33 bit, find the smaller one in \p a, \p b, then do \p
 /// second_op with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -1122,9 +1139,9 @@ inline constexpr RetT extend_min(AT a, BT b, CT c, BinaryOperation second_op) {
 }
 
 /// Extend \p a and \p b to 33 bit and return smaller one with saturation.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The smaller one of the two extended values with saturation
@@ -1135,10 +1152,10 @@ inline constexpr RetT extend_min_sat(AT a, BT b) {
 
 /// Extend Inputs to 33 bit, find the smaller one in \p a, \p b with saturation,
 /// then do \p second_op with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -1154,9 +1171,9 @@ inline constexpr RetT extend_min_sat(AT a, BT b, CT c,
 }
 
 /// Extend \p a and \p b to 33 bit and return bigger one.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The bigger one of the two extended values
@@ -1167,10 +1184,10 @@ inline constexpr RetT extend_max(AT a, BT b) {
 
 /// Extend Inputs to 33 bit, find the bigger one in \p a, \p b, then do \p
 /// second_op with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -1184,9 +1201,9 @@ inline constexpr RetT extend_max(AT a, BT b, CT c, BinaryOperation second_op) {
 }
 
 /// Extend \p a and \p b to 33 bit and return bigger one with saturation.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The bigger one of the two extended values with saturation
@@ -1197,10 +1214,10 @@ inline constexpr RetT extend_max_sat(AT a, BT b) {
 
 /// Extend Inputs to 33 bit, find the bigger one in \p a, \p b with saturation,
 /// then do \p second_op with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
-/// \tparam [in] CT The type of the third value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] CT The type of the third value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -1217,9 +1234,9 @@ inline constexpr RetT extend_max_sat(AT a, BT b, CT c,
 
 /// Compute vectorized addition of \p a and \p b, with each value treated as a
 /// 2 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1232,9 +1249,9 @@ inline constexpr RetT extend_vadd2(AT a, BT b, RetT c) {
 /// Compute vectorized addition of \p a and \p b, with each value treated as a 2
 /// elements vector type and extend each element to 17 bit. Then add each half
 /// of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1247,9 +1264,9 @@ inline constexpr RetT extend_vadd2_add(AT a, BT b, RetT c) {
 
 /// Compute vectorized addition of \p a and \p b with saturation, with each
 /// value treated as a 2 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1261,9 +1278,9 @@ inline constexpr RetT extend_vadd2_sat(AT a, BT b, RetT c) {
 
 /// Compute vectorized subtraction of \p a and \p b, with each value treated as
 /// a 2 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1276,9 +1293,9 @@ inline constexpr RetT extend_vsub2(AT a, BT b, RetT c) {
 /// Compute vectorized subtraction of \p a and \p b, with each value treated as
 /// a 2 elements vector type and extend each element to 17 bit. Then add each
 /// half of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1291,9 +1308,9 @@ inline constexpr RetT extend_vsub2_add(AT a, BT b, RetT c) {
 
 /// Compute vectorized subtraction of \p a and \p b with saturation, with each
 /// value treated as a 2 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1305,9 +1322,9 @@ inline constexpr RetT extend_vsub2_sat(AT a, BT b, RetT c) {
 
 /// Compute vectorized abs_diff of \p a and \p b, with each value treated as a 2
 /// elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1320,9 +1337,9 @@ inline constexpr RetT extend_vabsdiff2(AT a, BT b, RetT c) {
 /// Compute vectorized abs_diff of \p a and \p b, with each value treated as a 2
 /// elements vector type and extend each element to 17 bit. Then add each half
 /// of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1335,9 +1352,9 @@ inline constexpr RetT extend_vabsdiff2_add(AT a, BT b, RetT c) {
 
 /// Compute vectorized abs_diff of \p a and \p b with saturation, with each
 /// value treated as a 2 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1349,9 +1366,9 @@ inline constexpr RetT extend_vabsdiff2_sat(AT a, BT b, RetT c) {
 
 /// Compute vectorized minimum of \p a and \p b, with each value treated as a 2
 /// elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1364,9 +1381,9 @@ inline constexpr RetT extend_vmin2(AT a, BT b, RetT c) {
 /// Compute vectorized minimum of \p a and \p b, with each value treated as a 2
 /// elements vector type and extend each element to 17 bit. Then add each half
 /// of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1379,9 +1396,9 @@ inline constexpr RetT extend_vmin2_add(AT a, BT b, RetT c) {
 
 /// Compute vectorized minimum of \p a and \p b with saturation, with each value
 /// treated as a 2 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1393,9 +1410,9 @@ inline constexpr RetT extend_vmin2_sat(AT a, BT b, RetT c) {
 
 /// Compute vectorized maximum of \p a and \p b, with each value treated as a 2
 /// elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1408,9 +1425,9 @@ inline constexpr RetT extend_vmax2(AT a, BT b, RetT c) {
 /// Compute vectorized maximum of \p a and \p b, with each value treated as a 2
 /// elements vector type and extend each element to 17 bit. Then add each half
 /// of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1423,9 +1440,9 @@ inline constexpr RetT extend_vmax2_add(AT a, BT b, RetT c) {
 
 /// Compute vectorized maximum of \p a and \p b with saturation, with each value
 /// treated as a 2 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1436,10 +1453,10 @@ inline constexpr RetT extend_vmax2_sat(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized addition of \p a and \p b, with each value treated as a
-/// 4 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// 4 elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1450,11 +1467,11 @@ inline constexpr RetT extend_vadd4(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized addition of \p a and \p b, with each value treated as a 4
-/// elements vector type and extend each element to 17 bit. Then add each half
+/// elements vector type and extend each element to 9 bit. Then add each half
 /// of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1466,10 +1483,10 @@ inline constexpr RetT extend_vadd4_add(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized addition of \p a and \p b with saturation, with each
-/// value treated as a 4 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// value treated as a 4 elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1480,10 +1497,10 @@ inline constexpr RetT extend_vadd4_sat(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized subtraction of \p a and \p b, with each value treated as
-/// a 4 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// a 4 elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1494,11 +1511,11 @@ inline constexpr RetT extend_vsub4(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized subtraction of \p a and \p b, with each value treated as
-/// a 4 elements vector type and extend each element to 17 bit. Then add each
+/// a 4 elements vector type and extend each element to 9 bit. Then add each
 /// half of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1510,10 +1527,10 @@ inline constexpr RetT extend_vsub4_add(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized subtraction of \p a and \p b with saturation, with each
-/// value treated as a 4 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// value treated as a 4 elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1524,10 +1541,10 @@ inline constexpr RetT extend_vsub4_sat(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized abs_diff of \p a and \p b, with each value treated as a 4
-/// elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1538,11 +1555,11 @@ inline constexpr RetT extend_vabsdiff4(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized abs_diff of \p a and \p b, with each value treated as a 4
-/// elements vector type and extend each element to 17 bit. Then add each half
+/// elements vector type and extend each element to 9 bit. Then add each half
 /// of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1554,10 +1571,10 @@ inline constexpr RetT extend_vabsdiff4_add(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized abs_diff of \p a and \p b with saturation, with each
-/// value treated as a 4 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// value treated as a 4 elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1568,10 +1585,10 @@ inline constexpr RetT extend_vabsdiff4_sat(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized minimum of \p a and \p b, with each value treated as a 4
-/// elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1582,11 +1599,11 @@ inline constexpr RetT extend_vmin4(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized minimum of \p a and \p b, with each value treated as a 4
-/// elements vector type and extend each element to 17 bit. Then add each half
+/// elements vector type and extend each element to 9 bit. Then add each half
 /// of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1598,10 +1615,10 @@ inline constexpr RetT extend_vmin4_add(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized minimum of \p a and \p b with saturation, with each value
-/// treated as a 4 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// treated as a 4 elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1612,10 +1629,10 @@ inline constexpr RetT extend_vmin4_sat(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized maximum of \p a and \p b, with each value treated as a 4
-/// elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1626,11 +1643,11 @@ inline constexpr RetT extend_vmax4(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized maximum of \p a and \p b, with each value treated as a 4
-/// elements vector type and extend each element to 17 bit. Then add each half
+/// elements vector type and extend each element to 9 bit. Then add each half
 /// of the result and add with \p c.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -1642,10 +1659,10 @@ inline constexpr RetT extend_vmax4_add(AT a, BT b, RetT c) {
 }
 
 /// Compute vectorized maximum of \p a and \p b with saturation, with each value
-/// treated as a 4 elements vector type and extend each element to 17 bit.
-/// \tparam [in] RetT The type of the return value
-/// \tparam [in] AT The type of the first value
-/// \tparam [in] BT The type of the second value
+/// treated as a 4 elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value

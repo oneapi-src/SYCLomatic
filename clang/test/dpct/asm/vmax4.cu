@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/asm/vmax4 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/asm/vmax4/vmax4.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/vmax4/vmax4.dp.cpp -o %T/vmax4/vmax4.dp.o %}
 
 __global__ void vmax4() {
   int a, b, c, d;
