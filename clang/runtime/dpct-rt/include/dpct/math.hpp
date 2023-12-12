@@ -10,6 +10,7 @@
 #define __DPCT_MATH_HPP__
 
 #include <limits>
+#include <climits>
 #include <sycl/sycl.hpp>
 #include <type_traits>
 
