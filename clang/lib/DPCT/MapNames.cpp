@@ -4513,7 +4513,9 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "meta_group_rank",
     "block_tile_memory",
     "thread_index",
-    "group_index"};
+    "group_index",
+    "inclusive_scan",
+    "exclusive_scan"};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::PropToGetFeatureMap = {
