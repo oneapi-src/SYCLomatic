@@ -729,14 +729,16 @@ void scatter_if() {
   int D[N] = {0, 0, 0, 0, 0, 0, 0, 0};
   is_even_scatter_if pred;
 
-  // CHECK:  /*
-  // CHECK-NEXT:  DPCT1107:0: Migration for this overload of thrust::scatter_if is not supported.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
-  // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1107:1: Migration for this overload of thrust::scatter_if is not supported.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  thrust::scatter_if(V, V + 8, M, S, D);
+  // CHECK:  if (dpct::is_device_ptr(V)) {
+  // CHECK-NEXT:    dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(V), dpct::device_pointer<int>(V + 8), dpct::device_pointer<int>(M), dpct::device_pointer<int>(S), dpct::device_pointer<int>(D));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(V)) {
+  // CHECK-NEXT:    dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(V), dpct::device_pointer<int>(V + 8), dpct::device_pointer<int>(M), dpct::device_pointer<int>(S), dpct::device_pointer<int>(D));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
+  // CHECK-NEXT:  };
   // CHECK-NEXT:  if (dpct::is_device_ptr(V)) {
   // CHECK-NEXT:    dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(V), dpct::device_pointer<int>(V + 8), dpct::device_pointer<int>(M), dpct::device_pointer<int>(S), dpct::device_pointer<int>(D), pred);
   // CHECK-NEXT:  } else {

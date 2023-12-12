@@ -1013,7 +1013,9 @@ CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNames
 // thrust::scatter_if
 thrustFactory("thrust::scatter_if",
               {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext}}),
+               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
+               {6,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext}}),
 
 // thrust::uninitialized_copy(
 thrustFactory("thrust::uninitialized_copy",
