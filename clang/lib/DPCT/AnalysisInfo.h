@@ -3819,10 +3819,11 @@ public:
     // Currently, only support CallExpr & FunctionDecl only
     if constexpr (std::is_same<CallT, CallExpr>::value) {
       if (Callee->getDirectCallee()) {
-        auto ChildDFI =
-            DeviceFunctionDecl::LinkRedecls(Callee->getDirectCallee());
-        ChildDFI->getParentSet().insert(
-            std::pair<const CallExpr *, const FunctionDecl *>(Callee, FD));
+        if (auto ChildDFI =
+                DeviceFunctionDecl::LinkRedecls(Callee->getDirectCallee())) {
+          ChildDFI->getParentSet().insert(
+              std::pair<const CallExpr *, const FunctionDecl *>(Callee, FD));
+        }
       }
     }
     return Call;
