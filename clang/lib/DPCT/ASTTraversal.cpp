@@ -1796,7 +1796,12 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   if (TyLen <= 0)
     return false;
 
-  const std::string RealTypeNameStr(Start, TyLen);
+  std::string RealTypeNameStr(Start, TyLen);
+  const auto StartPos = RealTypeNameStr.find_last_not_of(" ");
+  // Remove spaces between type name and template arg, like
+  // "thrust::device_ptr[Spaces]<int> tmp".
+  if (StartPos != std::string::npos)
+    RealTypeNameStr = RealTypeNameStr.substr(0, StartPos + 1);
 
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
       RealTypeNameStr.find("device_malloc_allocator") != std::string::npos) {
