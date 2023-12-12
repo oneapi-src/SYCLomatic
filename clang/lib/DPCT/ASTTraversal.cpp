@@ -29,6 +29,7 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
+#include "Schema.h"
 #include "WMMAAPIMigration.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
@@ -8449,10 +8450,50 @@ void KernelCallRule::runRule(
     emplaceTransformation(
         new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
     auto EpilogLocation = removeTrailingSemicolon(KCall, Result);
-    emplaceTransformation(new InsertText(KCallSpellingRange.first, "PrologCUDA\n", 0, true));
-    emplaceTransformation(new InsertText(KCallSpellingRange.first, "PrologSYCL\n", 0, false));
-    emplaceTransformation(new InsertText(EpilogLocation, "EpilogCUDA\n", 0, true));
-    emplaceTransformation(new InsertText(EpilogLocation, "EpilogSYCL\n", 0, false));
+    if (DpctGlobalInfo::isDebugEnabled()) {
+      std::string DebugArgsString = "(\"";
+      std::string DebugArgsStringSYCL = "(\"";
+      DebugArgsString += KCallSpellingRange.first.printToString(SM) + "\", ";
+      DebugArgsStringSYCL += KCallSpellingRange.first.printToString(SM) + "(SYCL)\", ";
+      std::string StramStr = "0";
+      if (auto *Config = KCall->getConfig()) {
+        if (Config->getNumArgs() > 3) {
+          auto StramStrSpell = getStmtSpelling(Config->getArg(3));
+          if (StramStrSpell.compare("")) {
+            StramStr = StramStrSpell;
+          }
+        }
+      }
+      // StramStr = StramStr.compare("")?"0":StramStr;
+      DebugArgsString += StramStr;
+      for (auto *Arg : KCall->arguments()) {
+        if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
+          DebugArgsString += ", ";
+          std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
+          DebugArgsString += SchemaStr + ", ";
+          DebugArgsString += "(long *)&" + getStmtSpelling(Arg) + ", ";
+          DebugArgsString +=
+              "dpct::experimental::get_size_of_schema(" + SchemaStr + ")";
+        }
+      }
+      DebugArgsString += ");\n";
+      emplaceTransformation(new InsertText(
+          KCallSpellingRange.first,
+          "dpct::experimental::gen_prolog_API_CP" + DebugArgsString, 0, true));
+      emplaceTransformation(new InsertText(
+          KCallSpellingRange.first,
+          "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0, false));
+      emplaceTransformation(new InsertText(
+          EpilogLocation,
+          "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0, true));
+      emplaceTransformation(new InsertText(
+          EpilogLocation,
+          "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0, false));
+      DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
+                                                 "generated_schema.hpp");
+      DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
+                                                 "generated_schema.hpp", true);
+    }
     bool Flag = true;
     unsigned int IndentLen = calculateIndentWidth(
         KCall, SM.getExpansionLoc(KCall->getBeginLoc()), Flag);

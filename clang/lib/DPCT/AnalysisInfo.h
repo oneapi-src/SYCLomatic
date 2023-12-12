@@ -27,6 +27,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/ParentMapContext.h"
@@ -443,21 +444,31 @@ public:
   // Insert one or more header inclusion directives at a specified offset
   template <typename ReplacementT>
   void insertHeader(ReplacementT &&Repl, unsigned Offset,
-                    InsertPosition InsertPos = IP_Left) {
+                    InsertPosition InsertPos = IP_Left,
+                    bool IsForCUDADebug = false) {
     auto R = std::make_shared<ExtReplacement>(
         FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
     R->setInsertPosition(InsertPos);
+    R->IsForCUDADebug = IsForCUDADebug;
     IncludeDirectiveInsertions.push_back(R);
   }
 
   template <typename ReplacementT>
-  void insertCustomizedHeader(ReplacementT &&Repl) {
+  void insertCustomizedHeader(ReplacementT &&Repl,
+                              bool IsForCUDADebug = false) {
     if (auto Type = findHeaderType(Repl))
       return insertHeader(Type.value());
-    if (std::find(InsertedHeaders.begin(), InsertedHeaders.end(), Repl) ==
-        InsertedHeaders.end()) {
-      InsertedHeaders.push_back(Repl);
+    if (IsForCUDADebug) {
+      if (std::find(InsertedHeadersCUDA.begin(), InsertedHeadersCUDA.end(),
+                    Repl) == InsertedHeadersCUDA.end()) {
+        InsertedHeadersCUDA.push_back(Repl);
+      }
+    } else {
+      if (std::find(InsertedHeaders.begin(), InsertedHeaders.end(), Repl) ==
+          InsertedHeaders.end()) {
+        InsertedHeaders.push_back(Repl);
+      }
     }
   }
 
@@ -652,6 +663,7 @@ private:
   unsigned LastIncludeOffset = 0;
   bool HasInclusionDirective = false;
   std::vector<std::string> InsertedHeaders;
+  std::vector<std::string> InsertedHeadersCUDA;
   std::bitset<32> HeaderInsertedBitMap;
   std::bitset<32> UsingInsertedBitMap;
   bool AddOneDplHeaders = false;
@@ -845,6 +857,7 @@ public:
     return CudaPath;
   }
 
+  static const std::string getVarSchema(const clang::DeclRefExpr*);
   static const std::string getCudaVersion() {
     return clang::CudaVersionToString(SDKVersion);
   }
@@ -1649,9 +1662,11 @@ public:
     insertFile(LocInfo.first)->insertHeader(Type);
   }
 
-  void insertHeader(SourceLocation Loc, std::string HeaderName) {
+  void insertHeader(SourceLocation Loc, std::string HeaderName,
+                    bool IsForCUDADebug = false) {
     auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->insertCustomizedHeader(std::move(HeaderName));
+    insertFile(LocInfo.first)
+        ->insertCustomizedHeader(std::move(HeaderName), IsForCUDADebug);
   }
 
   static std::unordered_map<std::string, SourceRange> &getExpansionRangeBeginMap() {
@@ -1955,8 +1970,8 @@ public:
     return NeedParenAPISet.count(Name);
   };
 
-  std::string SchemaFileContentCUDA = "";
-  std::string SchemaFileContentSYCL = "";
+  static std::string SchemaFileContentCUDA;
+  static std::string SchemaFileContentSYCL;
 private:
   DpctGlobalInfo();
 
@@ -2093,6 +2108,7 @@ private:
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
   static std::set<clang::tooling::UnifiedPath> IncludingFileSet;
+  static int VarSchemaIndex;
   static std::set<std::string> FileSetInCompiationDB;
   static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;

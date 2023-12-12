@@ -11,6 +11,7 @@
 #include "ExprAnalysis.h"
 #include "Statics.h"
 #include "Utility.h"
+#include "Schema.h"
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
@@ -20,6 +21,7 @@
 #include <deque>
 #include <fstream>
 #include <optional>
+#include <string>
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
@@ -98,6 +100,8 @@ std::unordered_map<std::string, std::vector<clang::tooling::Replacement>>
     DpctGlobalInfo::FileRelpsMap;
 std::unordered_map<std::string, std::string> DpctGlobalInfo::DigestMap;
 const std::string DpctGlobalInfo::YamlFileName = "MainSourceFiles.yaml";
+std::string DpctGlobalInfo::SchemaFileContentCUDA = "";
+std::string DpctGlobalInfo::SchemaFileContentSYCL = "";
 std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
 std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
@@ -108,6 +112,7 @@ std::map<unsigned int, unsigned int> DpctGlobalInfo::KCIndentWidthMap;
 std::unordered_map<std::string, int> DpctGlobalInfo::LocationInitIndexMap;
 int DpctGlobalInfo::CurrentMaxIndex = 0;
 int DpctGlobalInfo::CurrentIndexInRule = 0;
+int DpctGlobalInfo::VarSchemaIndex = 0;
 clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
 bool DpctGlobalInfo::HasFoundDeviceChanged = false;
 std::unordered_map<int, DpctGlobalInfo::HelperFuncReplInfo>
@@ -1069,6 +1074,21 @@ void DpctFileInfo::buildReplacements() {
   }
   HeaderOS.flush();
   insertHeader(std::move(InsertHeaderStr), LastIncludeOffset);
+
+  std::string InsertHeaderStrCUDA;
+  llvm::raw_string_ostream HeaderOSCUDA(InsertHeaderStrCUDA);
+  //if (!InsertedHeadersCUDA.empty()) {
+    //HeaderOSCUDA << getNL();
+  //}
+  for (auto &HeaderStr : InsertedHeadersCUDA) {
+    if (HeaderStr[0] != '<' && HeaderStr[0] != '"') {
+      HeaderStr = "\"" + HeaderStr + "\"";
+    }
+    HeaderOSCUDA << "#include " << HeaderStr << getNL();
+  }
+  HeaderOSCUDA.flush();
+  insertHeader(std::move(InsertHeaderStrCUDA), LastIncludeOffset, IP_Left,
+               true);
 
   FreeQueriesInfo::buildInfo();
 
@@ -4446,6 +4466,23 @@ std::string FreeQueriesInfo::getReplaceString(FreeQueriesKind K) {
     return buildStringFromPrinter(printFreeQueriesFunctionName, K, Dimension);
   else
     return getNames(K).ExtraVariableName;
+}
+
+const std::string DpctGlobalInfo::getVarSchema(const clang::DeclRefExpr *DRE) {
+  std::string MacroName =
+      "VAR_SCHEMA_" + std::to_string(DpctGlobalInfo::VarSchemaIndex);
+  DpctGlobalInfo::SchemaFileContentCUDA +=
+      "#define " + MacroName + " \"" +
+      jsonToString(serializeVarSchemaToJson(dpct::constructVarSchema(DRE))) +
+      "\"" + getNL();
+  DpctGlobalInfo::SchemaFileContentSYCL +=
+      "#define " + MacroName + " \"" +
+      jsonToString(serializeVarSchemaToJson(
+          constructSyclVarSchema(constructVarSchema(DRE)))) +
+      "\"" + getNL();
+
+  DpctGlobalInfo::VarSchemaIndex += 1;
+  return MacroName;
 }
 
 void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,

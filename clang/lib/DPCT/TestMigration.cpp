@@ -78,9 +78,9 @@ void clang::dpct::TESTRule::runRule(
         dpct::DpctGlobalInfo::getContext().getLangOpts());
     Length += SM.getDecomposedLoc(DefRange.getEnd()).second -
               SM.getDecomposedLoc(DefRange.getBegin()).second;
-    std::string Replacement = "AAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-    emplaceTransformation(
-        new ReplaceText(DefRange.getBegin(), Length, std::move(Replacement), false, true));
+    // std::string Replacement = "AAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    // emplaceTransformation(
+    //     new ReplaceText(DefRange.getBegin(), Length, std::move(Replacement), false, true));
   }
   return;
 }
