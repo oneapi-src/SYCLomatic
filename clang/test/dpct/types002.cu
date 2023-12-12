@@ -28,6 +28,9 @@ int main(int argc, char **argv) {
   a = sizeof(device_p);
   a = sizeof device_p;
 
+  //CHECK: dpct::device_pointer<unsigned int> ttt;
+  thrust::device_ptr <unsigned int> ttt;
+
   //CHECK:dpct::device_reference<int> device_ref = device_vec[0];
   //CHECK-NEXT:a = sizeof(dpct::device_reference<int>);
   //CHECK-NEXT:a = sizeof(device_ref);
