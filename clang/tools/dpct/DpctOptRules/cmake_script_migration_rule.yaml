@@ -67,7 +67,9 @@
   Priority: Fallback
   CmakeSyntax: set_property_cuda_seprarable_only
   In: set_target_properties(${target_property} CUDA_SEPARABLE_COMPILATION ${state})
-  Out: ""
+  Out: |
+    #[[
+    set_target_properties(${target_property} CUDA_SEPARABLE_COMPILATION ${state})]]
 
 - Rule: rule_set_property_cuda_seprarable
   Kind: CMakeRule
@@ -88,4 +90,6 @@
   Priority: Fallback
   CmakeSyntax: set_property_cuda_architechtures_only
   In: set_target_properties(${target_property} CUDA_ARCHITECHTURES ${state})
-  Out: ""
+  Out: |
+    #[[
+    set_target_properties(${target_property} CUDA_ARCHITECHTURES ${state})]]

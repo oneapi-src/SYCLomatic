@@ -14,13 +14,13 @@ set (CMAKE_CXX_STANDARD CPP_VER_14)
 # Using magic number to be diverse
 set (CMAKE_CXX_STANDARD 14)
 
-# In the following cases check for NO changes after running the
-# pattern-rewritter. These test will fail due to limitation in
-# pattern-rewritter.
-# set (CMAKE_CXX_STANDARD CPP_VER_17)
-# set (CMAKE_CXX_STANDARD CPP_VER_20)
-# set (CMAKE_CXX_STANDARD CPP_VER_23)
-# set (CMAKE_CXX_STANDARD CPP_VER_26)
+# In the following cases no change is expected but due to limitations of
+# pattern-rewriter the C++ standard is updated to C++17. This will be fixed in
+# future.
+set (CMAKE_CXX_STANDARD CPP_VER_17)
+set (CMAKE_CXX_STANDARD CPP_VER_20)
+set (CMAKE_CXX_STANDARD CPP_VER_23)
+set (CMAKE_CXX_STANDARD CPP_VER_26)
 
 set (CMake_CXX_Standard CPP_VER_11)
 
