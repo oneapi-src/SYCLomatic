@@ -384,7 +384,7 @@ public:
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
       int offset = ranks[i];
-      if (INSERT_PADDING)
+      if constexpr (INSERT_PADDING)
         offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
       buffer[offset] = keys[i];
     }
@@ -394,7 +394,7 @@ public:
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
       int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
-      if (INSERT_PADDING)
+      if constexpr (INSERT_PADDING)
         offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
       keys[i] = buffer[offset];
     }
@@ -410,7 +410,7 @@ public:
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
       int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
-      if (INSERT_PADDING)
+      if constexpr (INSERT_PADDING)
         offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
       buffer[offset] = keys[i];
     }
@@ -422,7 +422,7 @@ public:
       int offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
                        item.get_local_range(0)) +
                    item.get_local_id(0);
-      if (INSERT_PADDING)
+      if constexpr (INSERT_PADDING)
         offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
       keys[i] = buffer[offset];
     }
