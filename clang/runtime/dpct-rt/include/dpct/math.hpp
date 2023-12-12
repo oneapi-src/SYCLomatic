@@ -761,7 +761,9 @@ template <typename T> sycl::vec<T, 2> extract_and_sign_or_zero_extend2(T val) {
 }
 } // namespace detail
 
-/// Two-way dot product-accumulate.
+/// Two-way dot product-accumulate. Calculate and return interger_vector2(
+/// \param a) dot product interger_vector2(low16_bit( \param b))  + \param c
+///
 /// \tparam [in] T1 The type of first value.
 /// \tparam [in] T2 The type of second value.
 /// \param [in] a The first value.
@@ -778,14 +780,15 @@ inline auto dp2a_lo(T1 a, T2 b, T3 c) {
   res = __dp2a_lo(a, b, c);
 #else
   auto va = ::dpct::detail::extract_and_sign_or_zero_extend2(a);
-  auto vb = ::dpct::detail::extract_and_sign_or_zero_extend4(b);
   res += va[0] * vb[0];
   res += va[1] * vb[1];
 #endif
   return res;
 }
 
-/// Two-way dot product-accumulate.
+/// Two-way dot product-accumulate. Calculate and return interger_vector2(
+/// \param a) dot product interger_vector2(high_16bit( \param b)) + \param c
+///
 /// \tparam [in] T1 The type of first value.
 /// \tparam [in] T2 The type of second value.
 /// \param [in] a The first value.
@@ -809,7 +812,9 @@ inline auto dp2a_hi(T1 a, T2 b, T3 c) {
   return res;
 }
 
-/// Four-way byte dot product-accumulate.
+/// Four-way byte dot product-accumulate. Calculate and return interger_vector4(
+/// \param a) dot product interger_vector4( \param b)  + \param c
+///
 /// \tparam [in] T1 The type of first value.
 /// \tparam [in] T2 The type of second value.
 /// \param [in] a The first value.
