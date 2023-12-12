@@ -780,6 +780,7 @@ inline auto dp2a_lo(T1 a, T2 b, T3 c) {
   res = __dp2a_lo(a, b, c);
 #else
   auto va = ::dpct::detail::extract_and_sign_or_zero_extend2(a);
+  auto vb = ::dpct::detail::extract_and_sign_or_zero_extend4(b);
   res += va[0] * vb[0];
   res += va[1] * vb[1];
 #endif
