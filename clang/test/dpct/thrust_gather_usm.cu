@@ -67,18 +67,10 @@ int main(void) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: thrust::gather_if(AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin());
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: thrust::gather_if(AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin());
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: thrust::gather_if(h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin());
+
+// CHECK:  dpct::gather_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin());
+// CHECK-NEXT:  dpct::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin());
+// CHECK-NEXT:  dpct::gather_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin());
   // VERSION                        first       last      stencil     input       result
   thrust::gather_if(                AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin());
   thrust::gather_if(                AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin());
@@ -88,22 +80,10 @@ int main(void) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: thrust::gather_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin());
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: thrust::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin());
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: thrust::gather_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin());
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: thrust::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_ptr, d_ptr + 4, SD.begin(), BD.begin(), RD.begin());
+// CHECK:  dpct::gather_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin());
+// CHECK-NEXT:  dpct::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin());
+// CHECK-NEXT:  dpct::gather_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin());
+// CHECK-NEXT:  dpct::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_ptr, d_ptr + 4, SD.begin(), BD.begin(), RD.begin());
   // VERSION        exec            first       last      stencil     input       result
   thrust::gather_if(thrust::host,   AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin());
   thrust::gather_if(thrust::device, AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin());

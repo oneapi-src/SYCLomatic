@@ -88,7 +88,7 @@ struct UserMin
 //CHECK:    }
 //CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with different value for specific hardware for better performance.
 //CHECK-DPCT1091:    DPCT1091:{{[0-9]+}}: The function dpct::segmented_reduce only supports DPC++ native binary operation. Replace "dpct_placeholder" with a DPC++ native binary operation.
-//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was removed because this call is redundant in SYCL.
+//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was removed because this functionality is redundant in SYCL.
 //CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, dpct_placeholder, initial_value);
 //CHECK:    dev_ct1.queues_wait_and_throw();
 //CHECK:    if(!verify_data(device_out, expect, num_segments)) {
@@ -317,7 +317,7 @@ bool test_arg_min() {
   cub::KeyValuePair<int, int> *out = init_data<cub::KeyValuePair<int, int>>({{}, {}, {}});
   cub::KeyValuePair<int, int> expected[] = {{1, 6}, {1, INT_MAX}, {2, 0}};
 
-  // CHECK-DPCT1026 DPCT1026:{{.*}}: The call to cub::DeviceSegmentedReduce::ArgMin was removed because this call is redundant in SYCL.
+  // CHECK-DPCT1026 DPCT1026:{{.*}}: The call to cub::DeviceSegmentedReduce::ArgMin was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::segmented_reduce_argmin(oneapi::dpl::execution::device_policy(q_ct1), in, out, num_segs, offset, offset + 1);
   void *tmp_storage = nullptr;
   size_t tmp_storage_size = 0;
@@ -351,7 +351,7 @@ bool test_arg_max() {
   cub::KeyValuePair<int, int> *out = init_data<cub::KeyValuePair<int, int>>({{}, {}, {}});
   cub::KeyValuePair<int, int> expected[] = {{0, 8}, {1, INT_MIN}, {3, 9}};
 
-  // CHECK-DPCT1026 DPCT1026:{{.*}}: The call to cub::DeviceSegmentedReduce::ArgMax was removed because this call is redundant in SYCL.
+  // CHECK-DPCT1026 DPCT1026:{{.*}}: The call to cub::DeviceSegmentedReduce::ArgMax was removed because this functionality is redundant in SYCL.
   // CHECK: dpct::segmented_reduce_argmax(oneapi::dpl::execution::device_policy(q_ct1), in, out, num_segs, offset, offset + 1);
   void *tmp_storage = nullptr;
   size_t tmp_storage_size = 0;
@@ -395,7 +395,7 @@ bool test_arg_max() {
 //CHECK:      for(int i = 0; i < num_segments + 1; i++) {
 //CHECK:        device_offsets[i] = i * 10;
 //CHECK:      }
-//CHECK-DPCT1026:      DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Sum was removed because this call is redundant in SYCL.
+//CHECK-DPCT1026:      DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Sum was removed because this functionality is redundant in SYCL.
 //CHECK-DPCT1092:      DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with different value for specific hardware for better performance.
 //CHECK:      dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::plus<>(), typename std::iterator_traits<decltype(device_out)>::value_type{});
 
@@ -467,7 +467,7 @@ bool test_sum_1(){
 //CHECK:    }
 //CHECK:    device_offsets[1] = 20;
 
-//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Sum was removed because this call is redundant in SYCL.
+//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Sum was removed because this functionality is redundant in SYCL.
 //CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with different value for specific hardware for better performance.
 //CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::plus<>(), typename std::iterator_traits<decltype(device_out)>::value_type{});
 
@@ -538,7 +538,7 @@ bool test_sum_2(){
 //CHECK:      device_offsets[i] = i * 10;
 //CHECK:    }
 
-//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Min was removed because this call is redundant in SYCL.
+//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Min was removed because this functionality is redundant in SYCL.
 //CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with different value for specific hardware for better performance.
 //CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), std::numeric_limits<typename std::iterator_traits<decltype(device_out)>::value_type>::max());
 
@@ -609,7 +609,7 @@ bool test_min(){
 //CHECK:      device_offsets[i] = i * 10;
 //CHECK:    }
 
-//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Max was removed because this call is redundant in SYCL.
+//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Max was removed because this functionality is redundant in SYCL.
 //CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with different value for specific hardware for better performance.
 //CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::maximum<>(), std::numeric_limits<typename std::iterator_traits<decltype(device_out)>::value_type>::lowest());
 

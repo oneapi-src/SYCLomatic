@@ -33,13 +33,13 @@ int main()
   stream_attribute.accessPolicyWindow.hitProp = cudaAccessPropertyPersisting;
   stream_attribute.accessPolicyWindow.missProp = cudaAccessPropertyStreaming;
   // end for check remove stream_attribute.accessPolicyWindow
-  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaStreamSetAttribute was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaStreamSetAttribute was removed because this functionality is redundant in SYCL.
   cudaStreamSetAttribute(
       stream, cudaLaunchAttributeIgnore, &stream_attribute);
   // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaStreamSetAttribute was removed because SYCL currently does not support setting cache config on devices.
   cudaStreamSetAttribute(
       stream, cudaStreamAttributeAccessPolicyWindow, &stream_attribute);
-  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaStreamGetAttribute was removed because this call is redundant in SYCL.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaStreamGetAttribute was removed because this functionality is redundant in SYCL.
   cudaStreamGetAttribute(
       stream, cudaLaunchAttributeIgnore, &stream_attribute);
   // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaStreamGetAttribute was removed because SYCL currently does not support setting cache config on devices.
