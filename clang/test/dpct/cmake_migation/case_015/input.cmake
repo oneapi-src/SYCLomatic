@@ -7,12 +7,12 @@ set_target_properties(target_one
                       PROPERTIES
                       CXX_STANDARD 99)
 
-# Test C++ 99 standard
+# Test C++ 11 standard
 set_target_properties(target_one
                       PROPERTIES
                       CXX_STANDARD 11)
 
-# Test C++ 99 standard
+# Test C++ 14 standard
 set_target_properties(target_one
                       PROPERTIES
                       CXX_STANDARD 14)
