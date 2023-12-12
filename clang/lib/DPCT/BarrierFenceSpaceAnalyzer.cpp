@@ -57,8 +57,11 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
 
   if (FuncName == "__syncthreads") {
     std::deque<std::pair<const CallExpr *, const FunctionDecl *>> Parents;
-    Parents.emplace_back(std::pair<const CallExpr *, const FunctionDecl *>(
-        CE, DpctGlobalInfo::findAncestor<FunctionDecl>(CE)));
+    Parents.emplace_back(
+        std::pair(CE, DpctGlobalInfo::findAncestor<FunctionDecl>(CE)));
+    std::set<std::pair<const CallExpr *, const FunctionDecl *>> Visited;
+    Visited.insert(
+        std::pair(CE, DpctGlobalInfo::findAncestor<FunctionDecl>(CE)));
     do {
       auto Parent = Parents.front();
       Parents.pop_front();
@@ -86,8 +89,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
         }
         if (!Parent.second->hasAttr<CUDAGlobalAttr>()) {
           auto DFI = DeviceFunctionDecl::LinkRedecls(Parent.second);
-          Parents.insert(Parents.end(), DFI->getParentSet().begin(),
-                         DFI->getParentSet().end());
+          for (const auto &P : DFI->getParentSet()) {
+            if (Visited.count(P))
+              continue;
+            Parents.push_back(P);
+            Visited.insert(P);
+          }
         }
       }
     } while (!Parents.empty());
@@ -518,7 +525,6 @@ bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
 //#endif
 //    return false;
 //  }
-  std::unordered_set<const DeviceFunctionInfo *> Visited{};
   auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
   if (!DFI) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
