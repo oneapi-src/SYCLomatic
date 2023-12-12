@@ -293,7 +293,8 @@ bfe(T source, uint32_t bit_start, uint32_t num_bits) {
 /// \param bit_start The position to start insertion.
 /// \param num_bits The number of bits to insertion.
 template <typename T>
-inline T bfi(T x, T y, uint32_t bit_start, uint32_t num_bits) {
+inline std::enable_if_t<std::is_unsigned_v<T>, T>
+bfi(T x, T y, uint32_t bit_start, uint32_t num_bits) {
   constexpr unsigned msb = std::numeric_limits<T>::digits;
   if (bit_start > msb || num_bits == 0)
     return y;
