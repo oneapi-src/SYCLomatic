@@ -84,6 +84,7 @@ which is rewritten to:
 
    void test() {
      dpct::kernel_library module;
+     // "library.so" is compiled from the migrated code of "module.ptx"
      const void *image = loadFile("library.so");
      module = dpct::load_kernel_library_mem(image);
    }

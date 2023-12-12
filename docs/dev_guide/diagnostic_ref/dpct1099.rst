@@ -89,10 +89,18 @@ which is rewritten to:
 
    void foo(dpct::fft::fft_engine_ptr plan, sycl::float2 *idata,
             sycl::float2 *odata) {
+     // idata and odata are different memory
      size_t worksize;
-     plan->commit(&dpct::get_in_order_queue(), 7,
-                  dpct::fft::fft_type::complex_float_to_complex_float, 2,
-                  &worksize, std::make_pair(dpct::fft::fft_direction::backward, false));
+     plan->commit(
+         &dpct::get_in_order_queue(), 7,
+         dpct::fft::fft_type::complex_float_to_complex_float, 2, &worksize,
+         std::make_pair(
+             dpct::fft::fft_direction::backward /*In the next compute() function,
+                the direction is backward. So no need to change here.*/
+             ,
+             false /*is_inplace. In the next compute() function, idata and
+                      odata are different memory, so set false here*/
+             ));
      plan->compute<sycl::float2, sycl::float2>(idata, odata,
                                                dpct::fft::fft_direction::backward);
    }

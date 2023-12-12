@@ -33,7 +33,7 @@ For example, this original CUDA\* code:
    :linenos:
 
    __device__ void device(float *f) {
-     float a = __ldg(&(f[10]));
+     float a = __ldg(f);
    }
 
 results in the following migrated SYCL code:
@@ -47,7 +47,7 @@ results in the following migrated SYCL code:
      expressions do not provide the exact same functionality. Check the generated
      code for potential precision and/or performance issues.
      */
-     float a = f[10];
+     float a = *f;
    }
 
 which is rewritten to:
@@ -57,8 +57,8 @@ which is rewritten to:
 
    void device(float *f) {
    #if defined(__NVPTX__) && defined(__SYCL_DEVICE_ONLY__)
-     float a = sycl::ext::oneapi::experimental::cuda::lgd(&(f[10]));
+     float a = sycl::ext::oneapi::experimental::cuda::lgd(f);
    #else
-     float a = f[10];
+     float a = *f;
    #endif
    }

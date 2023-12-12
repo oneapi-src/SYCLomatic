@@ -77,7 +77,7 @@ which is rewritten to:
      if (lane_id == 0) {
        result = 10;
      }
-     // Don't use experimental feature masked sub-group function
+     // If not use experimental feature masked sub-group function
      int foo_tmp = dpct::select_from_sub_group(item_ct1.get_sub_group(), result, 0);
      if (lane_id & mask) {
        foo = foo_tmp;
