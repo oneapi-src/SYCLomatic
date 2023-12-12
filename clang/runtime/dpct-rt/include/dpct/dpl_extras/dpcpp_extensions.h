@@ -361,6 +361,7 @@ __dpct_inline__ uint32_t shr_add(uint32_t x, uint32_t shift, uint32_t addend) {
 ///
 /// \tparam T type of the data elements exchanges
 /// \tparam VALUES_PER_THREAD number of data elements assigned to a thread
+/// Implements blocked to striped exchange pattern
 template <typename T, int VALUES_PER_THREAD> class exchange {
 public:
   static size_t get_local_memory_size(size_t group_threads) {
@@ -393,6 +394,34 @@ public:
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
       int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      if (INSERT_PADDING)
+        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
+      keys[i] = buffer[offset];
+    }
+  }
+
+  /// Rearrange elements from blocked order to striped order
+  template <typename Item>
+  __dpct_inline__ void blocked_to_striped(Item item,
+                                          T (&keys)[VALUES_PER_THREAD],
+                                          int (&ranks)[VALUES_PER_THREAD]) {
+    T *buffer = reinterpret_cast<T *>(_local_memory);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      if (INSERT_PADDING)
+        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
+      buffer[offset] = keys[i];
+    }
+
+    item.barrier(sycl::access::fence_space::local_space);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      int offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
+                       item.get_local_range(0)) +
+                   item.get_local_id(0);
       if (INSERT_PADDING)
         offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
       keys[i] = buffer[offset];
