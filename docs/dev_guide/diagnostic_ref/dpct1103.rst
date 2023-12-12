@@ -82,7 +82,8 @@ which is rewritten to:
 
    void test() {
      dpct::kernel_library module;
-     // "library.so" is compiled from the migrated code of "module.ptx"
+     // "library.so" is compiled from the SYCL code which is migrated from CUDA code
+     // used to build "module.ptx"
      std::string libraryFile("library.so");
      module = dpct::load_kernel_library(libraryFile);
    }
