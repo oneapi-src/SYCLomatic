@@ -1,7 +1,5 @@
 target_link_libraries(main PRIVATE cxxopts fmt::fmt -lcublas)
 
-target_link_libraries(tiny-cuda-nn PUBLIC ${CUDA_LIBRARIES} ${TCNN_LIBRARIES} fmt)
-
 target_link_libraries(transformer_engine PUBLIC 
    CUDA::cublas
    CUDA::cuda_driver
