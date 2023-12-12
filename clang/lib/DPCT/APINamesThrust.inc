@@ -92,7 +92,9 @@ thrustFactory("thrust::mismatch",
 // thrust::gather_if
 thrustFactory("thrust::gather_if",
               {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy ,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext}}),
+               {6,PolicyState::NoPolicy ,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext},
+               {6,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy ,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext}}),
 
 // thrust::merge_by_key
 thrustFactory("thrust::merge_by_key",
