@@ -5,10 +5,10 @@ cuda_add_library(target_one MODULE nosrc1.cu)
 # Test C++ 99 standard
 set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
 
-# Test C++ 99 standard
+# Test C++ 11 standard
 set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
 
-# Test C++ 99 standard
+# Test C++ 14 standard
 set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
 
 # No change unless property matches exactly
