@@ -1667,7 +1667,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
               "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t",
-              "cusparseSpSVAlg_t", "cudaFuncAttributes"))))))
+              "cusparseSpSVAlg_t", "cudaFuncAttributes", "cudaLaunchAttributeValue"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -14738,10 +14738,6 @@ void CudaUuidRule::runRule(
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
 
 void TypeRemoveRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(typedefDecl(
-                            hasAnyName("cudaLaunchAttributeValue"))))))
-                    .bind("TypeWarning"),
-                this);
   MF.addMatcher(
       binaryOperator(allOf(isAssignmentOperator(),
                            hasLHS(hasDescendant(memberExpr(hasType(namedDecl(
@@ -14752,11 +14748,6 @@ void TypeRemoveRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void TypeRemoveRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeWarning")) {
-    report(getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin(),
-           Diagnostics::API_NOT_MIGRATED, false,
-           getStmtSpelling(TL->getSourceRange()));
-  }
   if (auto BO = getNodeAsType<BinaryOperator>(Result, "AssignStmtRemove"))
     emplaceTransformation(new ReplaceStmt(BO, ""));
   return;
