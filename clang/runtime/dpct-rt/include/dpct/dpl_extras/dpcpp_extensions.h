@@ -376,25 +376,54 @@ public:
 
   
   template <typename Item>
-  __dpct_inline__ void blocked_exchange_helpers(Item item,
+  __dpct_inline__ void blocked_exchange_helpers_sb(Item item,
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
     T *buffer = reinterpret_cast<T *>(_local_memory);
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      pre_offset = ranks[i]
       if constexpr (INSERT_PADDING)
-        offset = detail::shr_add(pre_offset, LOG_LOCAL_MEMORY_BANKS, offset);
-      buffer[offset] = keys[i];
+        offset = detail::shr_add(pre_offset, LOG_LOCAL_MEMORY_BANKS, pre_offset);
+      buffer[pre_offset] = keys[i];
     }
 
     item.barrier(sycl::access::fence_space::local_space);
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      post_offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
       if constexpr (INSERT_PADDING)
-        offset = detail::shr_add(post_offset, LOG_LOCAL_MEMORY_BANKS, offset);
-      keys[i] = buffer[offset];
+        offset = detail::shr_add(post_offset, LOG_LOCAL_MEMORY_BANKS, post_offset);
+      keys[i] = buffer[post_offset];
+    }
+  }
+
+template <typename Item>
+  __dpct_inline__ void blocked_exchange_helpers_bs(Item item,
+                                          T (&keys)[VALUES_PER_THREAD],
+                                          int (&ranks)[VALUES_PER_THREAD]) {
+    T *buffer = reinterpret_cast<T *>(_local_memory);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      pre_offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      if constexpr (INSERT_PADDING)
+        offset = detail::shr_add(pre_offset, LOG_LOCAL_MEMORY_BANKS, pre_offset);
+      buffer[pre_offset] = keys[i];
+    }
+
+    item.barrier(sycl::access::fence_space::local_space);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      post_offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
+                       item.get_local_range(0)) +
+                   item.get_local_id(0);
+      if constexpr (INSERT_PADDING)
+        offset = detail::shr_add(post_offset, LOG_LOCAL_MEMORY_BANKS, post_offset);
+      keys[i] = buffer[post_offset];
     }
   }
 
@@ -404,9 +433,7 @@ public:
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
                                           
-    pre_offset = ranks[i];
-    post_offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
-    blocked_exchange_headers(item, keys, ranks);
+    blocked_exchange_headers_sb(item, keys, ranks);
     
   }
 
@@ -416,11 +443,8 @@ public:
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
                                           
-    pre_offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
-    post_offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
-                       item.get_local_range(0)) +
-                   item.get_local_id(0);
-    blocked_exchange_headers(item, keys, ranks);
+    blocked_exchange_headers_bs(item, keys, ranks);
+    
   }
 
 private:
