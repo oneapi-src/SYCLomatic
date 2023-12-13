@@ -259,22 +259,21 @@ inline unsigned unordered_compare_mask(const sycl::marray<T, 2> a,
 /// \param num_bits The number of bits to extracting.
 template <typename T>
 inline std::enable_if_t<std::is_integral_v<T>, T>
-bfe(T source, uint32_t bit_start, uint32_t num_bits) {
-  unsigned max_bits_num = CHAR_BIT * sizeof(T);
-  unsigned pos = std::min(bit_start, max_bits_num);
-  unsigned len = std::min(pos + num_bits, max_bits_num) - pos;
-  T mask = (T{1} << len) - 1;
+bfe(const T source, const uint32_t bit_start, const uint32_t num_bits) {
+  const uint32_t bit_width = CHAR_BIT * sizeof(T);
+  const uint32_t pos = std::min(bit_start, bit_width);
+  const uint32_t len = std::min(pos + num_bits, bit_width) - pos;
+  const T mask = (T{1} << len) - 1;
   if constexpr (std::is_signed_v<T>) {
     // Find the sign-bit, the result is padded with the sign bit of the
     // extracted field.
     //
     // sign_bit = len == 0 ? 0 : source[min(pos + len - 1, max_bits_num - 1)]
-    unsigned sign_bit_pos = std::min((uint8_t)bit_start + (uint8_t)num_bits - 1,
-                                     (uint8_t)max_bits_num - 1);
-    T sign_bit = len != 0 && ((source >> sign_bit_pos) & 1);
-    return ((source >> pos) & mask) | (-sign_bit & ~mask);
-    //                              ^^^^^^^^^^^^^^^^^^^^^
-    //                              pad result with sign-bit.
+    const uint32_t sign_bit_pos = std::min(
+        (uint8_t)bit_start + (uint8_t)num_bits - 1, (uint8_t)bit_width - 1);
+    const T sign_bit = len != 0 && ((source >> sign_bit_pos) & 1);
+    const T sign_bit_padding = (-sign_bit & ~mask);
+    return ((source >> pos) & mask) | sign_bit_padding;
   } else {
     // Is T is an unsigned integer type, the sign-bit does not need to be
     // padded.
@@ -295,12 +294,17 @@ bfe(T source, uint32_t bit_start, uint32_t num_bits) {
 /// \param num_bits The number of bits to insertion.
 template <typename T>
 inline std::enable_if_t<std::is_unsigned_v<T>, T>
-bfi(T x, T y, uint32_t bit_start, uint32_t num_bits) {
-  constexpr unsigned msb = std::numeric_limits<T>::digits;
-  if (bit_start > msb || num_bits == 0)
-    return y;
-  T mask = (~(T{0}) >> (msb - num_bits)) << bit_start;
-  return y & ~mask | ((x << bit_start) & mask);
+bfi(const T x, const T y, const uint32_t bit_start, const uint32_t num_bits) {
+  constexpr unsigned bit_width = CHAR_BIT * sizeof(T);
+  const uint32_t pos = std::min(bit_start, bit_width);
+  const uint32_t len = std::min(pos + num_bits, bit_width) - pos;
+
+  // if bit_start > bit_width || len == 0, should return y.
+  const uint32_t ignore_bfi = bit_start > bit_width || len == 0;
+  T extract_bitfield_mask = (~(T{0}) >> (bit_width - len)) << pos;
+  T clean_bitfield_mask = ~extract_bitfield_mask;
+  return (y & (-ignore_bfi | clean_bitfield_mask)) |
+         (~-ignore_bfi & ((x << pos) & extract_bitfield_mask));
 }
 
 /// Determine whether 2 element value is NaN.
