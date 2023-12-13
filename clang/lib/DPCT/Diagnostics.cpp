@@ -48,7 +48,25 @@ std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 #undef DEF_WARNING
 #undef DEF_COMMENT
 
-std::unordered_set<int> APIQueryNeedReportWarningIDSet = {1086};
+std::unordered_set<int> APIQueryNeedReportWarningIDSet = {
+    1007, // API_NOT_MIGRATED
+    1008, // API_NOT_MIGRATED_SYCL_UNDEF
+    1023, // MASK_UNSUPPORTED
+    1028, // NOT_SUPPORTED_PARAMETER
+    1029, // DEVICE_LIMIT_NOT_SUPPORTED
+    1030, // IPC_NOT_SUPPORTED
+    1031, // EXPLICIT_PEER_ACCESS
+    1037, // MANUAL_MIGRATION_LIBRARY
+    1051, // UNCOMPATIBLE_DEVICE_PROP
+    1053, // DEVICE_ASM
+    1067, // UNSUPPORTED_PARAM
+    1069, // VIRTUAL_POINTER
+    1076, // UNPROCESSED_DEVICE_ATTRIBUTE
+    1082, // KNOWN_UNSUPPORTED_TYPE
+    1086, // ACTIVE_MASK
+    1090, // UNMIGRATED_DEVICE_PROP
+    1107, // OVERLOAD_UNSUPPORTED
+};
 
 std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 #define DEF_COMMENT(NAME, ID, MSG)                                             \

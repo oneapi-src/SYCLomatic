@@ -63,6 +63,9 @@
 // cudnnSetActivationDescriptor-NEXT:                              p /*cudnnNanPropagation_t*/, c /*double*/);
 // cudnnSetActivationDescriptor-NEXT: Is migrated to:
 // cudnnSetActivationDescriptor-NEXT:   dpct::dnnl::activation_desc d;
+// cudnnSetActivationDescriptor-NEXT:   /*
+// cudnnSetActivationDescriptor-NEXT:   DPCT1007:1: Migration of Nan numbers propagation option is not supported.
+// cudnnSetActivationDescriptor-NEXT:   */
 // cudnnSetActivationDescriptor-NEXT:   d.set(m, c);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetStream | FileCheck %s -check-prefix=cudnnSetStream

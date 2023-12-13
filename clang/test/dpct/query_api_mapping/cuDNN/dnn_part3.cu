@@ -204,6 +204,9 @@
 // cudnnReduceTensor-NEXT: Is migrated to:
 // cudnnReduceTensor-NEXT:   dpct::dnnl::engine_ext h;
 // cudnnReduceTensor-NEXT:   h.create_engine();
+// cudnnReduceTensor-NEXT:   /*
+// cudnnReduceTensor-NEXT:   DPCT1007:0: Migration of reduction index is not supported.
+// cudnnReduceTensor-NEXT:   */
 // cudnnReduceTensor-NEXT:   h.async_reduction(d, *alpha, src_d, src, *beta, dst_d, dst);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnRestoreDropoutDescriptor | FileCheck %s -check-prefix=cudnnRestoreDropoutDescriptor
@@ -315,6 +318,9 @@
 // cudnnSetConvolution2dDescriptor-NEXT:       dilation_w /*int*/, m /*cudnnConvolutionMode_t*/, t /*cudnnDataType_t*/);
 // cudnnSetConvolution2dDescriptor-NEXT: Is migrated to:
 // cudnnSetConvolution2dDescriptor-NEXT:   dpct::dnnl::convolution_desc d;
+// cudnnSetConvolution2dDescriptor-NEXT:   /*
+// cudnnSetConvolution2dDescriptor-NEXT:   DPCT1007:1: Migration of convolution mode and computation datatype option is not supported.
+// cudnnSetConvolution2dDescriptor-NEXT:   */
 // cudnnSetConvolution2dDescriptor-NEXT:   d.set(padding_h, padding_w, stride_h, stride_w, dilation_h, dilation_w);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetConvolutionGroupCount | FileCheck %s -check-prefix=cudnnSetConvolutionGroupCount
@@ -344,6 +350,9 @@
 // cudnnSetConvolutionNdDescriptor-NEXT:       t /*cudnnDataType_t*/);
 // cudnnSetConvolutionNdDescriptor-NEXT: Is migrated to:
 // cudnnSetConvolutionNdDescriptor-NEXT:   dpct::dnnl::convolution_desc d;
+// cudnnSetConvolutionNdDescriptor-NEXT:   /*
+// cudnnSetConvolutionNdDescriptor-NEXT:   DPCT1007:1: Migration of convolution mode and computation datatype option is not supported.
+// cudnnSetConvolutionNdDescriptor-NEXT:   */
 // cudnnSetConvolutionNdDescriptor-NEXT:   d.set(n, paddinga, stridea, dilationa);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetDropoutDescriptor | FileCheck %s -check-prefix=cudnnSetDropoutDescriptor
@@ -393,6 +402,9 @@
 // cudnnSetOpTensorDescriptor-NEXT:                              p /*cudnnNanPropagation_t*/);
 // cudnnSetOpTensorDescriptor-NEXT: Is migrated to:
 // cudnnSetOpTensorDescriptor-NEXT:   dpct::dnnl::binary_op d;
+// cudnnSetOpTensorDescriptor-NEXT:   /*
+// cudnnSetOpTensorDescriptor-NEXT:   DPCT1007:1: Migration of computation datatype, Nan numbers propagation option is not supported.
+// cudnnSetOpTensorDescriptor-NEXT:   */
 // cudnnSetOpTensorDescriptor-NEXT:   d = op;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetPooling2dDescriptor | FileCheck %s -check-prefix=cudnnSetPooling2dDescriptor
@@ -404,6 +416,9 @@
 // cudnnSetPooling2dDescriptor-NEXT:                               vp /*int*/, hp /*int*/, vs /*int*/, hs /*int*/);
 // cudnnSetPooling2dDescriptor-NEXT: Is migrated to:
 // cudnnSetPooling2dDescriptor-NEXT:   dpct::dnnl::pooling_desc d;
+// cudnnSetPooling2dDescriptor-NEXT:   /*
+// cudnnSetPooling2dDescriptor-NEXT:   DPCT1007:1: Migration of Nan numbers propagation option is not supported.
+// cudnnSetPooling2dDescriptor-NEXT:   */
 // cudnnSetPooling2dDescriptor-NEXT:   d.set(m, h, w, vp, hp, vs, hs);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetPoolingNdDescriptor | FileCheck %s -check-prefix=cudnnSetPoolingNdDescriptor
@@ -415,6 +430,9 @@
 // cudnnSetPoolingNdDescriptor-NEXT:                               da /*int[]*/, pa /*int[]*/, sa /*int[]*/);
 // cudnnSetPoolingNdDescriptor-NEXT: Is migrated to:
 // cudnnSetPoolingNdDescriptor-NEXT:   dpct::dnnl::pooling_desc d;
+// cudnnSetPoolingNdDescriptor-NEXT:   /*
+// cudnnSetPoolingNdDescriptor-NEXT:   DPCT1007:1: Migration of Nan numbers propagation option is not supported.
+// cudnnSetPoolingNdDescriptor-NEXT:   */
 // cudnnSetPoolingNdDescriptor-NEXT:   d.set(m, nd, da, pa, sa);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetReduceTensorDescriptor | FileCheck %s -check-prefix=cudnnSetReduceTensorDescriptor
@@ -426,6 +444,9 @@
 // cudnnSetReduceTensorDescriptor-NEXT:       i /*cudnnReduceTensorIndices_t*/, it /*cudnnIndicesType_t*/);
 // cudnnSetReduceTensorDescriptor-NEXT: Is migrated to:
 // cudnnSetReduceTensorDescriptor-NEXT:   dpct::dnnl::reduction_op d;
+// cudnnSetReduceTensorDescriptor-NEXT:   /*
+// cudnnSetReduceTensorDescriptor-NEXT:   DPCT1007:3: Migration of computation datatype, Nan numbers propagation and reduction index option is not supported.
+// cudnnSetReduceTensorDescriptor-NEXT:   */
 // cudnnSetReduceTensorDescriptor-NEXT:   d = o;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetRNNDataDescriptor | FileCheck %s -check-prefix=cudnnSetRNNDataDescriptor
@@ -437,6 +458,9 @@
 // cudnnSetRNNDataDescriptor-NEXT:                             p /*void **/);
 // cudnnSetRNNDataDescriptor-NEXT: Is migrated to:
 // cudnnSetRNNDataDescriptor-NEXT:   dpct::dnnl::memory_desc_ext d;
+// cudnnSetRNNDataDescriptor-NEXT:   /*
+// cudnnSetRNNDataDescriptor-NEXT:   DPCT1007:0: Migration of unpacked data layout is not supported.
+// cudnnSetRNNDataDescriptor-NEXT:   */
 // cudnnSetRNNDataDescriptor-NEXT:   d.set(l, t, len, b, v);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetRNNDescriptor_v8 | FileCheck %s -check-prefix=cudnnSetRNNDescriptor_v8
@@ -450,6 +474,9 @@
 // cudnnSetRNNDescriptor_v8-NEXT:       l /*int32_t[]*/, dropout /*cudnnDropoutDescriptor_t*/, f /*uint32_t*/);
 // cudnnSetRNNDescriptor_v8-NEXT: Is migrated to:
 // cudnnSetRNNDescriptor_v8-NEXT:   dpct::dnnl::rnn_desc d;
+// cudnnSetRNNDescriptor_v8-NEXT:   /*
+// cudnnSetRNNDescriptor_v8-NEXT:   DPCT1007:0: Migration of persist algorithm, input mode and dropout operation between physical layers is not supported.
+// cudnnSetRNNDescriptor_v8-NEXT:   */
 // cudnnSetRNNDescriptor_v8-NEXT:   d.set(m, bm, dm, t, is, hs, ps, l);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnSetTensor | FileCheck %s -check-prefix=cudnnSetTensor
