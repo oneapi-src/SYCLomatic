@@ -179,8 +179,8 @@ static void removeTrailingSpacingElement(MatchPattern &Pattern) {
 static MatchPattern parseMatchPattern(std::string Pattern) {
   MatchPattern Result;
 
-  const int Size = Pattern.size();
-  int Index = 0;
+  const size_t Size = Pattern.size();
+  size_t Index = 0;
 
   if(Size == 0) {
     return Result;
@@ -193,6 +193,24 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
         Result.push_back(SpacingElement{});
       }
       while (Index < Size && isWhitespace(Pattern[Index])) {
+        Index++;
+      }
+      continue;
+    }
+
+    // Treat variable name with escape character(like "\${var_name}") as a
+    // normal string
+    if (Index < (Size - 2) && Pattern[Index] == '\\' &&
+        Pattern[Index + 1] == '$' && Pattern[Index + 2] == '{') {
+      Index += 1; // Skip '\\'
+      auto RightCurly = Pattern.find('}', Index);
+      if (RightCurly == std::string::npos) {
+        throw std::runtime_error("Invalid rewrite pattern expression");
+      }
+      RightCurly += 1; // Skip '}'
+
+      while (Index < RightCurly) {
+        Result.push_back(LiteralElement{Pattern[Index]});
         Index++;
       }
       continue;
