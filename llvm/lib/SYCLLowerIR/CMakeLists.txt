@@ -30,10 +30,10 @@ endif()
 if (NOT TARGET LLVMGenXIntrinsics)
   if (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
     set(LLVMGenXIntrinsics_GIT_REPO https://github.com/intel/vc-intrinsics.git)
-    # Author: Gregory Fine <gregory.fine@intel.com>
-    # Date:   Wed Nov 29 14:55:24 2023 PST
+    # Author: Artur Gainullin <artur.gainullin@intel.com>
+    # Date:   Thu Nov 9 00:37:24 2023 +0000
 
-    # Fixed build failure related to upstream changes
+    # Replace old kernel with rewritten kernel in metadata only since LLVM 17
     set(LLVMGenXIntrinsics_GIT_TAG b16218b8a00c5c1d4db32085dfab4d5eb9a03ad7)
 
     if (INTEL_CUSTOMIZATION)
@@ -45,10 +45,11 @@ if (NOT TARGET LLVMGenXIntrinsics)
       # default repo path for public xmain builds, not using ICS
       set(LLVMGenXIntrinsics_GIT_REPO_PATH https://github.com/intel)
       set(LLVMGenXIntrinsics_GIT_REPO_NAME vc-intrinsics.git)
-      # Author: Igor Gorban <igor.gorban@intel.com>
-      # Date:   Wed Aug 2 21:22:15 2023 +0000
-      # Fixed warning from statical code analizer
-      set(LLVMGenXIntrinsics_GIT_TAG bccb1ae99ca821983bd0c16e642590da3935652e)
+      # Author: Artur Gainullin <artur.gainullin@intel.com>
+      # Date:   Thu Nov 9 00:37:24 2023 +0000
+
+      # Replace old kernel with rewritten kernel in metadata only since LLVM 17
+      set(LLVMGenXIntrinsics_GIT_TAG b16218b8a00c5c1d4db32085dfab4d5eb9a03ad7)
 
       # Determine if the build is embargo and provide specific settings.
       set(IS_INTERNAL_ESIMD_BUILD FALSE)

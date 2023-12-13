@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/thrust-policy-2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/thrust-policy-2/thrust-policy-2.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-policy-2/thrust-policy-2.dp.cpp -o %T/thrust-policy-2/thrust-policy-2.dp.o %}
 
 #include <thrust/execution_policy.h>
 #include <thrust/device_ptr.h>

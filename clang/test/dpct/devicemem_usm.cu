@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/devicemem_usm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/devicemem_usm/devicemem_usm.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicemem_usm/devicemem_usm.dp.cpp -o %T/devicemem_usm/devicemem_usm.dp.o %}
 
 #include <cuda_runtime.h>
 

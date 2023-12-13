@@ -30,7 +30,7 @@ public:
       if (DataType == "std::complex<float>" ||
           DataType == "std::complex<double>")
         Stream << "(" << DataType << "*)";
-      clang::dpct::print(Stream, E);
+      clang::dpct::print(Stream, E->IgnoreCasts());
     }
   }
 

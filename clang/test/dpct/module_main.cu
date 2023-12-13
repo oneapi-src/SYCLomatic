@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/module_main %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/module_main/module_main.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/module_main/module_main.dp.cpp -o %T/module_main/module_main.dp.o %}
 
 //CHECK: #include <dpct/dpct.hpp>
 

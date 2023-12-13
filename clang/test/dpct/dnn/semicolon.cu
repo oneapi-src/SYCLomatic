@@ -1,5 +1,6 @@
 // RUN: dpct %s --out-root %T/semicolon --cuda-include-path="%cuda-path/include" --format-range=none 
 // RUN: FileCheck %s --match-full-lines --input-file %T/semicolon/semicolon.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/semicolon/semicolon.dp.cpp -o %T/semicolon/semicolon.dp.o %}
 #include <cudnn.h>
 
 int main() {

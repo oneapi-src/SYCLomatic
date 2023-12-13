@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/extern_c %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/extern_c/extern_c.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/extern_c/extern_c.dp.cpp -o %T/extern_c/extern_c.dp.o %}
 
 //     CHECK:#ifdef __cplusplus
 //CHECK-NEXT:#define DPCT_USM_LEVEL_NONE

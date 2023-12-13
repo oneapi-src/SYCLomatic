@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/disable-DRY2 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/disable-DRY2/disable-DRY2.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/disable-DRY2/disable-DRY2.dp.cpp -o %T/disable-DRY2/disable-DRY2.dp.o %}
 
 
 #include "cuda.h"

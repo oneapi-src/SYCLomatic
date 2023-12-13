@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/vmin %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/vmin/vmin.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/vmin/vmin.dp.cpp -o %T/vmin/vmin.dp.o %}
 
 
 // clang-format off

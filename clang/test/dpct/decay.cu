@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/decay %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/decay/decay.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/decay/decay.dp.cpp -o %T/decay/decay.dp.o %}
 #include <cuda_runtime.h>
 
 template<typename T>

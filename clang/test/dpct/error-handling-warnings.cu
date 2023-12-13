@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/error-handling-warnings %s --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/error-handling-warnings/error-handling-warnings.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/error-handling-warnings/error-handling-warnings.dp.cpp -o %T/error-handling-warnings/error-handling-warnings.dp.o %}
 
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);

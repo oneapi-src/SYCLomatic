@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust_sort_by_key_usm %s --cuda-include-path="%cuda-path/include" --usm-level=restricted
 // RUN: FileCheck --input-file %T/thrust_sort_by_key_usm/thrust_sort_by_key_usm.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_sort_by_key_usm/thrust_sort_by_key_usm.dp.cpp -o %T/thrust_sort_by_key_usm/thrust_sort_by_key_usm.dp.o %}
 
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>

@@ -1,5 +1,6 @@
 // RUN: dpct --usm-level=none -out-root %T/insert-header-using %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/insert-header-using/insert-header-using.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/insert-header-using/insert-header-using.dp.cpp -o %T/insert-header-using/insert-header-using.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
