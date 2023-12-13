@@ -71,10 +71,10 @@ int main() {
 
   //CHECK: int mode = 1;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   cublasPointerMode_t mode = CUBLAS_POINTER_MODE_DEVICE;
   cublasGetPointerMode(handle, &mode);

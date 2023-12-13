@@ -592,6 +592,9 @@ public:
   void setRTVersionValue(std::string Value) { RTVersionValue = Value; }
   std::string getRTVersionValue() { return RTVersionValue; }
 
+  void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
+  std::string getCCLVerValue() { return CCLVerValue; }
+
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
 
@@ -656,6 +659,7 @@ private:
   std::vector<std::pair<unsigned int, unsigned int>> ExternCRanges;
   std::vector<RnnBackwardFuncInfo> RBFuncInfo;
   std::string RTVersionValue = "";
+  std::string CCLVerValue = "";
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
