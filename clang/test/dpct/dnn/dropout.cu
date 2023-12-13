@@ -80,7 +80,7 @@ int main(){
     cudaDeviceSynchronize();
 
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnDestroyDropoutDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnDestroyDropoutDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     cudnnDestroyDropoutDescriptor(desc);
     for(int i = 0; i < ele_num; i++){
