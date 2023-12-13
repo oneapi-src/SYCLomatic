@@ -374,18 +374,17 @@ public:
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-  /// Rearrange elements from rank order to blocked order
+  
   template <typename Item>
-  __dpct_inline__ void
-  scatter_to_blocked(Item item, T (&keys)[VALUES_PER_THREAD],
-                     int (&ranks)[VALUES_PER_THREAD]) {
+  __dpct_inline__ void blocked_exchange_helpers(Item item,
+                                          T (&keys)[VALUES_PER_THREAD],
+                                          int (&ranks)[VALUES_PER_THREAD]) {
     T *buffer = reinterpret_cast<T *>(_local_memory);
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = ranks[i];
       if constexpr (INSERT_PADDING)
-        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
+        offset = detail::shr_add(pre_offset, LOG_LOCAL_MEMORY_BANKS, offset);
       buffer[offset] = keys[i];
     }
 
@@ -393,11 +392,22 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
       if constexpr (INSERT_PADDING)
-        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
+        offset = detail::shr_add(post_offset, LOG_LOCAL_MEMORY_BANKS, offset);
       keys[i] = buffer[offset];
     }
+  }
+
+  /// Rearrange elements from rank order to blocked order
+  template <typename Item>
+  __dpct_inline__ void scatter_to_blocked(Item item,
+                                          T (&keys)[VALUES_PER_THREAD],
+                                          int (&ranks)[VALUES_PER_THREAD]) {
+                                          
+    pre_offset = ranks[i];
+    post_offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
+    blocked_exchange_headers(item, keys, ranks);
+    
   }
 
   /// Rearrange elements from blocked order to striped order
@@ -405,27 +415,12 @@ public:
   __dpct_inline__ void blocked_to_striped(Item item,
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
-    T *buffer = reinterpret_cast<T *>(_local_memory);
-
-#pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
-      if constexpr (INSERT_PADDING)
-        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
-      buffer[offset] = keys[i];
-    }
-
-    item.barrier(sycl::access::fence_space::local_space);
-
-#pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
+                                          
+    pre_offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
+    post_offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
                        item.get_local_range(0)) +
                    item.get_local_id(0);
-      if constexpr (INSERT_PADDING)
-        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
-      keys[i] = buffer[offset];
-    }
+    blocked_exchange_headers(item, keys, ranks);
   }
 
 private:
@@ -433,7 +428,8 @@ private:
   static constexpr bool INSERT_PADDING =
       (VALUES_PER_THREAD > 4) &&
       (detail::power_of_two<VALUES_PER_THREAD>::VALUE);
-
+  int pre_offset = 0;
+  int post_offset = 0;
   uint8_t *_local_memory;
 };
 
