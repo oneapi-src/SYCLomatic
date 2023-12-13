@@ -4295,7 +4295,10 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
                         "CUB_RUNTIME_FUNCTION", "")},
     {"cudaStreamAttrValue",
      MacroMigrationRule("cudaStreamAttrValue_macro_rule",
-                        RulePriority::Fallback, "cudaStreamAttrValue", "int")}
+                        RulePriority::Fallback, "cudaStreamAttrValue", "int")},
+    {"NCCL_VERSION_CODE",
+     MacroMigrationRule("nccl_macro_rule", RulePriority::Fallback,
+                        "NCCL_VERSION_CODE", "DPCT_COMPAT_CCL_VERSION")},
     //...
 };
 
