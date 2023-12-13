@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/sync_api_noneusm %s --cuda-include-path="%cuda-path/include" --usm-level=none --use-experimental-features=nd_range_barrier -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sync_api_noneusm/sync_api_noneusm.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/sync_api_noneusm/sync_api_noneusm.dp.cpp -o %T/sync_api_noneusm/sync_api_noneusm.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>

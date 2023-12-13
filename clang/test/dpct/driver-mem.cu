@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/driver-mem %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-mem/driver-mem.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/driver-mem/driver-mem.dp.cpp -o %T/driver-mem/driver-mem.dp.o %}
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>

@@ -1,5 +1,6 @@
 // RUN: dpct -in-root %S -out-root %T/binary %S/binary.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/binary/binary.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/binary/binary.dp.cpp -o %T/binary/binary.dp.o %}
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>

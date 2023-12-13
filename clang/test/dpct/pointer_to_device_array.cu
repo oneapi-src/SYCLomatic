@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/pointer_to_device_array %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/pointer_to_device_array/pointer_to_device_array.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/pointer_to_device_array/pointer_to_device_array.dp.cpp -o %T/pointer_to_device_array/pointer_to_device_array.dp.o %}
 
 // CHECK: dpct::global_memory<int, 2> arr(sycl::range<2>(200, 4), {0});
 __device__ int arr[200][4] = {0};

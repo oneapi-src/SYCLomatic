@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1
 // RUN: dpct --format-range=none -out-root %T/cublasHgemmBatched %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasHgemmBatched/cublasHgemmBatched.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cublasHgemmBatched/cublasHgemmBatched.dp.cpp -o %T/cublasHgemmBatched/cublasHgemmBatched.dp.o %}
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/builtin_warpSize %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/builtin_warpSize/builtin_warpSize.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/builtin_warpSize/builtin_warpSize.dp.cpp -o %T/builtin_warpSize/builtin_warpSize.dp.o %}
 
 #include <cuda.h>
 #include <cuda_runtime.h>

@@ -213,7 +213,7 @@
 // cublasSdgmm-NEXT:               m /*int*/, n /*int*/, a /*const float **/, lda /*int*/,
 // cublasSdgmm-NEXT:               x /*const float **/, incx /*int*/, c /*float **/, ldc /*int*/);
 // cublasSdgmm-NEXT: Is migrated to:
-// cublasSdgmm-NEXT:   oneapi::mkl::blas::column_major::dgmm_batch(*handle, left_right, m, n, a, lda, 0, x, incx, 0, c, ldc, ldc * n, 1);
+// cublasSdgmm-NEXT:   oneapi::mkl::blas::column_major::dgmm(*handle, left_right, m, n, a, lda, x, incx, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCsyrkx | FileCheck %s -check-prefix=cublasCsyrkx
 // cublasCsyrkx: CUDA API:

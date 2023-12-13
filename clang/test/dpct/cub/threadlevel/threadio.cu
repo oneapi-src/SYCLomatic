@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct -in-root %S -out-root %T/threadlevel/threadio %S/threadio.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/threadlevel/threadio/threadio.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/threadlevel/threadio/threadio.dp.cpp -o %T/threadlevel/threadio/threadio.dp.o %}
 
 #include <iostream>
 #include <vector>

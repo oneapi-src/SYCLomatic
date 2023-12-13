@@ -2142,6 +2142,9 @@ __global__ void testIntegerFunctions() {
   // CHECK-NEXT: i = sycl::mul_hi(i, i);
   // CHECK-NEXT: i = sycl::popcount(u);
   // CHECK-NEXT: i = sycl::popcount(ull);
+  // CHECK-NEXT: i = dpct::dp2a_lo(i, i, 3);
+  // CHECK-NEXT: i = dpct::dp2a_hi(i, i, 3);
+  // CHECK-NEXT: i = dpct::dp4a(i, i, 3);
   i = __clz(i);
   i = __clzll(ll);
   i = __hadd(i, i);
@@ -2149,6 +2152,9 @@ __global__ void testIntegerFunctions() {
   i = __mulhi(i, i);
   i = __popc(u);
   i = __popcll(ull);
+  i = __dp2a_lo(i, i, 3);
+  i = __dp2a_hi(i, i, 3);
+  i = __dp4a(i, i, 3);
 
   // CHECK: sycl::clz((int)u);
   // CHECK-NEXT: sycl::clz((long long)ull);

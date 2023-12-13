@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/types002 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck %s --match-full-lines --input-file %T/types002/types002.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/types002/types002.dp.cpp -o %T/types002/types002.dp.o %}
 
 #include <thrust/device_ptr.h>
 #include <thrust/host_vector.h>
@@ -26,6 +27,9 @@ int main(int argc, char **argv) {
   a = sizeof(thrust::device_ptr<int>);
   a = sizeof(device_p);
   a = sizeof device_p;
+
+  //CHECK: dpct::device_pointer<unsigned int> ttt;
+  thrust::device_ptr <unsigned int> ttt;
 
   //CHECK:dpct::device_reference<int> device_ref = device_vec[0];
   //CHECK-NEXT:a = sizeof(dpct::device_reference<int>);

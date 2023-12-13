@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/multi-files-main %s %S/multi-files-device.cuh --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/multi-files-main/multi-files-main.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/multi-files-main/multi-files-main.dp.cpp -o %T/multi-files-main/multi-files-main.dp.o %}
 // RUN: FileCheck %S/multi-files-device.cuh --match-full-lines --input-file %T/multi-files-main/multi-files-device.dp.hpp
 
 #include "multi-files-kernel.cuh"

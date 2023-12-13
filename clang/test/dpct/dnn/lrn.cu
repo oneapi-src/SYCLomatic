@@ -112,7 +112,7 @@ void test1() {
     float lrn_k = 1.f;
     // CHECK: dpct::dnnl::lrn_desc desc;
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateLRNDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateLRNDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     // CHECK: desc.set(local_size, lrn_alpha, lrn_beta, lrn_k);
 

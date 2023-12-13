@@ -1,6 +1,7 @@
 // FIXME
 // RUN: dpct --usm-level=none -out-root %T/ctad %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --format-range=none --enable-ctad -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/ctad/ctad.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/ctad/ctad.dp.cpp -o %T/ctad/ctad.dp.o %}
 
 #include <cstdio>
 #include <algorithm>
