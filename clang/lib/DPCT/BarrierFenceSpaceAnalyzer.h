@@ -38,13 +38,50 @@ struct BarrierFenceSpaceAnalyzerResult {
       : CanUseLocalBarrier(CanUseLocalBarrier),
         CanUseLocalBarrierWithCondition(CanUseLocalBarrierWithCondition),
         MayDependOn1DKernel(MayDependOn1DKernel),
-        GlobalFunctionName(GlobalFunctionName),
-        Condition(Condition) {}
+        GlobalFunctionName(GlobalFunctionName), Condition(Condition) {
+    IsDefaultValue = false;
+  }
+  void merge(const BarrierFenceSpaceAnalyzerResult &Another) {
+    if (IsDefaultValue)
+      *this = Another;
+    if (Another.IsDefaultValue)
+      return;
+    if (CanUseLocalBarrier && Another.CanUseLocalBarrier) {
+      MayDependOn1DKernel = MayDependOn1DKernel || Another.MayDependOn1DKernel;
+      GlobalFunctionName =
+          GlobalFunctionName + "/" + Another.GlobalFunctionName;
+      Condition = "";
+    }
+    if (CanUseLocalBarrierWithCondition &&
+        Another.CanUseLocalBarrierWithCondition &&
+        Condition == Another.Condition) {
+      MayDependOn1DKernel = MayDependOn1DKernel || Another.MayDependOn1DKernel;
+      GlobalFunctionName =
+          GlobalFunctionName + "/" + Another.GlobalFunctionName;
+      Condition = "";
+    }
+    CanUseLocalBarrier = false;
+    CanUseLocalBarrierWithCondition = false;
+    MayDependOn1DKernel = false;
+    GlobalFunctionName = "";
+    Condition = "";
+  }
+
   bool CanUseLocalBarrier = false;
   bool CanUseLocalBarrierWithCondition = false;
   bool MayDependOn1DKernel = false;
   std::string GlobalFunctionName;
   std::string Condition;
+private:
+  bool IsDefaultValue = true;
+};
+
+class BarrierFenceSpaceAnalyzerInterface {
+  std::set<const FunctionDecl *> TopLevelGlobalFunctions;
+
+public:
+  BarrierFenceSpaceAnalyzerResult analyze(const CallExpr *CE,
+                                          bool SkipCacheInAnalyzer = false);
 };
 
 class BarrierFenceSpaceAnalyzer
@@ -78,8 +115,9 @@ public:
 #undef VISIT_NODE
 
 public:
-  BarrierFenceSpaceAnalyzerResult analyze(const CallExpr *CE,
-                                          bool SkipCacheInAnalyzer = false);
+  BarrierFenceSpaceAnalyzerResult
+  analyze_internal(const CallExpr *CE, const FunctionDecl *FD,
+                   bool SkipCacheInAnalyzer = false);
 
 private:
   enum class AccessMode : int { Read = 0, Write, ReadWrite };
@@ -87,6 +125,8 @@ private:
                                             const Stmt *Range);
   std::pair<std::set<const DeclRefExpr *>, std::set<const VarDecl *>>
   isAssignedToAnotherDREOrVD(const DeclRefExpr *);
+  std::pair<const ParmVarDecl *, const FunctionDecl *>
+  isPassedToAnotherFunction(const DeclRefExpr *);
   bool isAccessingMemory(const DeclRefExpr *);
   AccessMode getAccessKind(const DeclRefExpr *);
   using Ranges = std::unordered_set<SourceRange>;
@@ -174,6 +214,8 @@ private:
   //   ...
   // }
   std::map<const DeclRefExpr*, std::string> DREIncStepMap;
+  std::unordered_set<const FunctionDecl *> TraversedSet;
+  bool VisitingGlobalFunction = true;
 
   class TypeAnalyzer {
   public:
