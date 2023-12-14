@@ -2,6 +2,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8
 // RUN: dpct --format-range=none --out-root %T/cusparse_generic_12 %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/cusparse_generic_12/cusparse_generic_12.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusparse_generic_12/cusparse_generic_12.dp.cpp -o %T/cusparse_generic_12/cusparse_generic_12.dp.o %}
 
 #include "cusparse.h"
 

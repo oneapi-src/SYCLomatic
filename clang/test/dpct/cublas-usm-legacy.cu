@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cublas-usm-legacy %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublas-usm-legacy/cublas-usm-legacy.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cublas-usm-legacy/cublas-usm-legacy.dp.cpp -o %T/cublas-usm-legacy/cublas-usm-legacy.dp.o %}
 #include <cstdio>
 #include <cublas.h>
 #include <cuda_runtime.h>

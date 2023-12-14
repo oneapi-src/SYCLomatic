@@ -2,6 +2,7 @@
 // RUN: cd %T
 // RUN: dpct -out-root %T/formatIndent formatIndent.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace formatIndent.cu --match-full-lines --input-file %T/formatIndent/formatIndent.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/formatIndent/formatIndent.dp.cpp -o %T/formatIndent/formatIndent.dp.o %}
 
 #include <cuda_runtime.h>
 

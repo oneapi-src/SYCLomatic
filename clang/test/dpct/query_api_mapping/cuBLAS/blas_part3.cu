@@ -146,7 +146,7 @@
 // cublasDdgmm-NEXT:               m /*int*/, n /*int*/, a /*const double **/, lda /*int*/,
 // cublasDdgmm-NEXT:               x /*const double **/, incx /*int*/, c /*double **/, ldc /*int*/);
 // cublasDdgmm-NEXT: Is migrated to:
-// cublasDdgmm-NEXT:   oneapi::mkl::blas::column_major::dgmm_batch(handle->get_queue(), left_right, m, n, a, lda, 0, x, incx, 0, c, ldc, ldc * n, 1);
+// cublasDdgmm-NEXT:   oneapi::mkl::blas::column_major::dgmm(handle->get_queue(), left_right, m, n, a, lda, x, incx, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasStrmv | FileCheck %s -check-prefix=cublasStrmv
 // cublasStrmv: CUDA API:
@@ -169,7 +169,7 @@
 // cublasCreate: CUDA API:
 // cublasCreate-NEXT:   cublasCreate(handle /*cublasHandle_t **/);
 // cublasCreate-NEXT: Is migrated to:
-// cublasCreate-NEXT:   *handle = std::make_shared<dpct::blas::descriptor>();
+// cublasCreate-NEXT:   handle->get_queue() = std::make_shared<dpct::blas::descriptor>();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasChpmv | FileCheck %s -check-prefix=cublasChpmv
 // cublasChpmv: CUDA API:

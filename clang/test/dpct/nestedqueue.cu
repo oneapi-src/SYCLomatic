@@ -2,6 +2,7 @@
 // UNSUPPORTED: v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8, v11.9, v12.0, v12.1, v12.2, v12.3
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/nestedqueue %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/nestedqueue/nestedqueue.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/nestedqueue/nestedqueue.dp.cpp -o %T/nestedqueue/nestedqueue.dp.o %}
 
 #include <cstdio>
 #include <cublas_v2.h>

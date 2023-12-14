@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/test-attributes %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/test-attributes/test-attributes.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/test-attributes/test-attributes.dp.cpp -o %T/test-attributes/test-attributes.dp.o %}
 #include "cuda.h"
 
 // CHECK:  void hd() {

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/datatypes_test_part2 %s --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++14" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/datatypes_test_part2/datatypes_test_part2.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/datatypes_test_part2/datatypes_test_part2.dp.cpp -o %T/datatypes_test_part2/datatypes_test_part2.dp.o %}
 
 #include <iostream>
 #include <cuda.h>

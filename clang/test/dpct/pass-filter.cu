@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/pass-filter %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter/pass-filter.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/pass-filter/pass-filter.dp.cpp -o %T/pass-filter/pass-filter.dp.o %}
 
 // Test that only IterationSpaceBuiltinRule is being run
 // CHECK: void test_00(const sycl::nd_item<3> &item_ct1) {

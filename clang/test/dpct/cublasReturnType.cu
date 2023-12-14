@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cublasReturnType %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasReturnType/cublasReturnType.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cublasReturnType/cublasReturnType.dp.cpp -o %T/cublasReturnType/cublasReturnType.dp.o %}
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <stdio.h>

@@ -56,6 +56,10 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
           "cub::CurrentDevice",
           CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
           "current_device_id")
-
-  };
+      // cub::PtxVersion
+      ASSIGN_FACTORY_ENTRY("cub::PtxVersion", ARG(0),
+                           LITERAL("DPCT_COMPATIBILITY_TEMP"))
+      // cub::PtxVersionUncached
+      ASSIGN_FACTORY_ENTRY("cub::PtxVersionUncached", ARG(0),
+                           LITERAL("DPCT_COMPATIBILITY_TEMP"))};
 }

@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct -in-root %S -out-root %T/blocklevel/blockscan %S/blockscan.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/blocklevel/blockscan/blockscan.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/blocklevel/blockscan/blockscan.dp.cpp -o %T/blocklevel/blockscan/blockscan.dp.o %}
 
 #include <iostream>
 #include <vector>

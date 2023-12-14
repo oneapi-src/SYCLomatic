@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/device_select_if %S/device_select_if.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/devicelevel/device_select_if/device_select_if.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/device_select_if/device_select_if.dp.cpp -o %T/devicelevel/device_select_if/device_select_if.dp.o %}
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK: #include <oneapi/dpl/algorithm>
@@ -41,7 +42,7 @@ void test1() {
 // CHECK: void test1() {
 // CHECK-NOT: void *d_temp_storage = NULL;
 // CHECK-NOT: size_t temp_storage_bytes = 0;
-// CHECK: DPCT1026:{{.*}}: The call to cub::DeviceSelect::If was removed because this call is redundant in SYCL.
+// CHECK: DPCT1026:{{.*}}: The call to cub::DeviceSelect::If was removed because this functionality is redundant in SYCL.
 // CHECK: q_ct1.fill(d_num_selected_out, std::distance(d_out, oneapi::dpl::copy_if(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + num_items, d_out, select_op)), 1).wait();
 // CHECK-NOT: sycl::free(d_temp_storage, q_ct1);
 // CHECK: }
@@ -57,7 +58,7 @@ void test2() {
 // CHECK: void test2() {
 // CHECK-NOT: void *d_temp_storage = NULL;
 // CHECK-NOT: size_t temp_storage_bytes = 0;
-// CHECK: DPCT1027:{{.*}}: The call to cub::DeviceSelect::If was replaced with 0 because this call is redundant in SYCL.
+// CHECK: DPCT1027:{{.*}}: The call to cub::DeviceSelect::If was replaced with 0 because this functionality is redundant in SYCL.
 // CHECK: auto res = 0;
 // CHECK: q_ct1.fill(d_num_selected_out, std::distance(d_out, oneapi::dpl::copy_if(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + num_items, d_out, select_op)), 1).wait();
 // CHECK-NOT: sycl::free(d_temp_storage, q_ct1);
@@ -77,7 +78,7 @@ void test3() {
 // CHECK: void test3() {
 // CHECK-NOT: void *d_temp_storage = NULL;
 // CHECK-NOT: size_t temp_storage_bytes = 0;
-// CHECK; DPCT1026:{{.*}}: The call to cub::DeviceSelect::If was removed because this call is redundant in SYCL.
+// CHECK; DPCT1026:{{.*}}: The call to cub::DeviceSelect::If was removed because this functionality is redundant in SYCL.
 // CHECK: s->fill(d_num_selected_out, std::distance(d_out, oneapi::dpl::copy_if(oneapi::dpl::execution::device_policy(*s), d_in, d_in + num_items, d_out, select_op)), 1).wait();
 // CHECK: }
 
@@ -95,7 +96,7 @@ void test4() {
 // CHECK: void test4() {
 // CHECK-NOT: void *d_temp_storage = NULL;
 // CHECK-NOT: size_t temp_storage_bytes = 0;
-// CHECK; DPCT1027:{{.*}}: The call to cub::DeviceSelect::If was replaced with 0 because this call is redundant in SYCL.
+// CHECK; DPCT1027:{{.*}}: The call to cub::DeviceSelect::If was replaced with 0 because this functionality is redundant in SYCL.
 // CHECK: auto res = 0;
 // CHECK: s->fill(d_num_selected_out, std::distance(d_out, oneapi::dpl::copy_if(oneapi::dpl::execution::device_policy(*s), d_in, d_in + num_items, d_out, select_op)), 1).wait();
 // CHECK: }

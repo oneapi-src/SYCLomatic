@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/module_kernel %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -ptx
 // RUN: FileCheck %s --match-full-lines --input-file %T/module_kernel/module_kernel.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/module_kernel/module_kernel.dp.cpp -o %T/module_kernel/module_kernel.dp.o %}
 
 #include "cuda.h"
 //CHECK: dpct::image_wrapper_base_p tex;

@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust-algo %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust-algo/thrust-algo.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-algo/thrust-algo.dp.cpp -o %T/thrust-algo/thrust-algo.dp.o %}
 #include <vector>
 
 #include <thrust/binary_search.h>
@@ -1117,34 +1118,16 @@ void scatter_if() {
   thrust::host_vector<int> h_S(S, S + N);
   thrust::host_vector<int> h_D(N);
 
-  // CHECK:  /*
-  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
-  // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  thrust::scatter_if(V, V + 8, M, S, D);
+  // CHECK:  dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
   // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
   // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
-  // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
-  // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
   // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
   // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
-  // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
-  // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(),  h_D.begin());
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
   // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
   // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
   thrust::scatter_if(thrust::host, V, V + 8, M, S, D);

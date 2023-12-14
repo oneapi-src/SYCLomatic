@@ -53,10 +53,18 @@
 // RUN: dpct -process-all -in-root=%S -out-root=%T -p=%T --cuda-include-path="%cuda-path/include"
 
 // RUN: FileCheck %S/t.cpp --match-full-lines --input-file %T/t.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/t.cpp -o %T/t.o %}
 // RUN: FileCheck %S/t2.cpp --match-full-lines --input-file %T/t2.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/t2.cpp -o %T/t2.o %}
 // RUN: FileCheck %S/t3.cpp --match-full-lines --input-file %T/t3.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/t3.cpp -o %T/t3.o %}
 // RUN: FileCheck %S/t4.cpp --match-full-lines --input-file %T/t4.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/t4.cpp -o %T/t4.o %}
 // RUN: FileCheck %S/t.cu --match-full-lines --input-file %T/t.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/t.dp.cpp -o %T/t.dp.o %}
 // RUN: FileCheck %S/t2.cu --match-full-lines --input-file %T/t2.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/t2.dp.cpp -o %T/t2.dp.o %}
 // RUN: FileCheck %S/t3.cu --match-full-lines --input-file %T/t3.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/t3.dp.cpp -o %T/t3.dp.o %}
 // RUN: FileCheck %S/t4.cu --match-full-lines --input-file %T/t4.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/t4.dp.cpp -o %T/t4.dp.o %}
