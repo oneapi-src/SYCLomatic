@@ -119,6 +119,14 @@ inline sycl::marray<T, 2> clamp(sycl::marray<T, 2> val,
           clamp(val[1], min_val[1], max_val[1])};
 }
 
+/// Flush denormal floating-point to zero.
+/// \param [in] val The floating-point value.
+template <typename T>
+inline std::enable_if_t<std::is_floating_point_v<T>, T>
+flush_denormal_to_zero(T val) {
+  return sycl::isnormal(val) ? val : T{0};
+}
+
 /// Performs comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value

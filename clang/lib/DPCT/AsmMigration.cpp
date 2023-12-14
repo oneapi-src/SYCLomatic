@@ -1311,6 +1311,159 @@ protected:
     return HandleNot(Inst);
   }
 
+  bool HandleFloatingRoundingMode(const InlineAsmInstruction *Inst, StringRef Val) {
+    std::string TypeString;
+    if (tryEmitType(TypeString, Inst->getType(0)))
+      return SYCLGenError();
+
+    std::string ReplaceString;
+    auto VecConvert = [&](StringRef RM) {
+      llvm::raw_string_ostream TempOS(ReplaceString);
+      TempOS << MapNames::getClNamespace() << "vec<" << TypeString << ", 1>("
+             << Val << ").convert<" << TypeString << ", "
+             << MapNames::getClNamespace() << "rounding_mode::" << RM << ">()[0]";
+    };
+    if (Inst->hasAttr(InstAttr::rn))
+      VecConvert("rte");
+    else if (Inst->hasAttr(InstAttr::rz))
+      VecConvert("rtz");
+    else if (Inst->hasAttr(InstAttr::rm))
+      VecConvert("rtn");
+    else if (Inst->hasAttr(InstAttr::rp))
+      VecConvert("rtp");
+
+    if (ReplaceString.empty())
+      ReplaceString = Val.str();
+    if (Inst->hasAttr(InstAttr::ftz))
+      OS() << MapNames::getDpctNamespace() << "flush_denormal_to_zero("
+           << ReplaceString << ')';
+    else
+      OS() << ReplaceString;
+    return SYCLGenSuccess();
+  }
+
+  bool HandleSinCosTanhSqrtLg2Ex2(const InlineAsmInstruction *Inst,
+                            StringRef MathFn) {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+
+    std::string TypeString;
+    if (tryEmitType(TypeString, Inst->getType(0)))
+      return SYCLGenError();
+
+    std::string ReplaceString =
+        MapNames::getClNamespace() + MathFn.str() + "<" + TypeString + ">(";
+    if (Inst->getOpcode() == asmtok::op_ex2)
+      ReplaceString += "2, ";
+    ReplaceString += Op + ")";
+    if (Inst->hasAttr(InstAttr::ftz, InstAttr::rn, InstAttr::rz, InstAttr::rm,
+                      InstAttr::rp)) {
+      if (HandleFloatingRoundingMode(Inst, ReplaceString))
+        return SYCLGenError();
+    } else {
+      OS() << ReplaceString;
+    }
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_cos(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "cos");
+  }
+
+  bool handle_sin(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "sin");
+  }
+
+  bool handle_tanh(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "tanh");
+  }
+
+  bool handle_sqrt(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "sqrt");
+  }
+
+  bool handle_rsqrt(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "rsqrt");
+  }
+
+  bool handle_lg2(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "log2");
+  }
+
+  bool handle_ex2(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "pow");
+  }
+
+  bool handle_sad(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 && Inst->getNumTypes() != 0)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op[3], TypeString;
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    if (tryEmitType(TypeString, Inst->getType(0)))
+      return SYCLGenError();
+
+    OS() << MapNames::getClNamespace() << "abs_diff<" << TypeString << ">("
+         << Op[0] << ", " << Op[1] << ") + " << Op[2];
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_testp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    if (Inst->hasAttr(InstAttr::finite))
+      OS() << "!" << MapNames::getClNamespace() << "isinf(";
+    else if (Inst->hasAttr(InstAttr::infinite))
+      OS() << MapNames::getClNamespace() << "isinf(";
+    else if (Inst->hasAttr(InstAttr::number))
+      OS() << "!" << MapNames::getClNamespace() << "isnan(";
+    else if (Inst->hasAttr(InstAttr::notanumber))
+      OS() << MapNames::getClNamespace() << "isnan(";
+    else if (Inst->hasAttr(InstAttr::normal))
+      OS() << MapNames::getClNamespace() << "isnormal(";
+    else if (Inst->hasAttr(InstAttr::subnormal))
+      OS() << "!" << MapNames::getClNamespace() << "isnormal(";
+    else
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getInputOperand(0)))
+      return SYCLGenError();
+    OS() << ')';
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_selp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op[3];
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    OS() << Op[2] << " == 1 ? " << Op[0] << " : " << Op[1];
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
   // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
   bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst,
                                     StringRef Fn) {
