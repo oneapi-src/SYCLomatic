@@ -143,6 +143,8 @@ template <typename T> struct device_reference {
     *this = (input);
     input = (tmp);
   }
+  operator T &() { return value; }
+  operator const T &() const { return value; }
   T &value;
 };
 
