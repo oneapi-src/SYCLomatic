@@ -1,5 +1,3 @@
-find_package(IntelSYCL REQUIRED)
-
 macro(GET_SOURCES _sources)
   set( ${_sources} )
   foreach(arg ${ARGN})
