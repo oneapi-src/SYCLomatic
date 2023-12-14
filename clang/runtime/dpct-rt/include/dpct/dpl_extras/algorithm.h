@@ -2467,7 +2467,7 @@ void partition_flagged(ExecutionPolicy &&policy, InputIterator input,
   dpl::copy(policy, input, input + num_items, output);
   auto beg_false =
       dpct::stable_partition(policy, output, output + num_items, flags,
-                             [](auto flag) { return flag == 1; });
+                             [](auto flag) { return flag != 0; });
   dpl::reverse(policy, beg_false, output + num_items);
   auto num_true_items = ::std::distance(output, beg_false);
   dpl::fill(policy, num_true, num_true + 1, num_true_items);
