@@ -42,3 +42,18 @@ if(UNIX)
 endif()
 
 add_subdirectory(DpctOptRules)
+
+set(dpct_cmake_helper_file
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/cmake/sycl_helper.cmake
+)
+
+install(
+  FILES ${dpct_cmake_helper_file}
+  COMPONENT dpct-cmake-helper-file
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  DESTINATION ./cmake)
+
+if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
+  add_llvm_install_targets(install-cmake-helper-file
+                           COMPONENT dpct-cmake-helper-file)
+endif()
