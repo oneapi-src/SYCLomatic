@@ -93,3 +93,17 @@
   Out: |
     #[[
     set_target_properties(${target_property} CUDA_ARCHITECHTURES ${state})]]
+
+- Rule: rule_target_link_libraries_CUDA_LIBRARIES
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
+  In: target_link_libraries(${CULibraries})
+  Out: target_link_libraries(${CULibraries})
+  Subrules:
+    CULibraries:
+      In: |
+        \${CUDA_LIBRARIES}
+      Out: ""
+      MatchMode: Full
+      RuleId: "replace_cuda_reserved_variable_CUDA_LIBRARIES"

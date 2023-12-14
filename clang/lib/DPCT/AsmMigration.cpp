@@ -1466,6 +1466,77 @@ protected:
     insertHeader(HeaderType::HT_DPCT_Dpct);
     return SYCLGenSuccess();
   }
+
+  bool CheckDotProductAccType(const InlineAsmType *Type) {
+    const auto *BIType = dyn_cast<const InlineAsmBuiltinType>(Type);
+    if (!BIType || (BIType->getKind() != InlineAsmBuiltinType::TK_s32 &&
+                    BIType->getKind() != InlineAsmBuiltinType::TK_u32))
+      return SYCLGenError();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_dp4a(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 2)
+      return SYCLGenError();
+
+    if (CheckDotProductAccType(Inst->getType(0)) ||
+        CheckDotProductAccType(Inst->getType(1)))
+      return SYCLGenError();
+
+    std::string TypeStr[2];
+    for (int i = 0; i < 2; ++i)
+      if (tryEmitType(TypeStr[i], Inst->getType(i)))
+        return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "dp4a<" << TypeStr[0] << ", "
+         << TypeStr[1] << ">(";
+    std::string Op[3];
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    OS() << Op[0] << ", " << Op[1] << ", " << Op[2] << ")";
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
+  bool handle_dp2a(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 2)
+      return SYCLGenError();
+
+    if (CheckDotProductAccType(Inst->getType(0)) ||
+        CheckDotProductAccType(Inst->getType(1)))
+      return SYCLGenError();
+
+    bool lo = Inst->hasAttr(InstAttr::lo);
+    bool hi = Inst->hasAttr(InstAttr::hi);
+    if (!(lo ^ hi))
+      return SYCLGenError();
+
+    std::string TypeStr[2];
+    for (int i = 0; i < 2; ++i)
+      if (tryEmitType(TypeStr[i], Inst->getType(i)))
+        return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "dp2a_";
+    if (lo)
+      OS() << "lo";
+    else
+      OS() << "hi";
+    OS() << "<" << TypeStr[0] << ", " << TypeStr[1] << ">(";
+    std::string Op[3];
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    OS() << Op[0] << ", " << Op[1] << ", " << Op[2] << ")";
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
 };
 } // namespace
 

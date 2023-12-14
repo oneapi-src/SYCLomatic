@@ -4291,7 +4291,10 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
                                    "CUB_MIN", "std::min")},
     {"CUB_RUNTIME_FUNCTION",
      MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
-                        "CUB_RUNTIME_FUNCTION", "")}
+                        "CUB_RUNTIME_FUNCTION", "")},
+    {"NCCL_VERSION_CODE",
+     MacroMigrationRule("nccl_macro_rule", RulePriority::Fallback,
+                        "NCCL_VERSION_CODE", "DPCT_COMPAT_CCL_VERSION")},
     //...
 };
 
