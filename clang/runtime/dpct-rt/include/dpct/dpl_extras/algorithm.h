@@ -2450,8 +2450,10 @@ void partition_if(ExecutionPolicy &&policy, InputIterator input,
   auto [output2_end, output3_end] = dpct::stable_partition_copy(
       policy, tmp.get(), tmp_end, output2, output3, pred2);
 
-  ::std::vector<CountType> host_counts = { ::std::distance(output1, output1_end),
-        ::std::distance(output2, output2_end), ::std::distance(output3, output3_end) };
+  ::std::vector<CountType> host_counts = {
+      static_cast<CountType>(::std::distance(output1, output1_end)),
+      static_cast<CountType>(::std::distance(output2, output2_end)),
+      static_cast<CountType>(::std::distance(output3, output3_end))};
   dpl::copy(policy, host_counts.begin(), host_counts.end(), partition_counts);
   dpl::reverse(policy, output3, output3_end);
 }
