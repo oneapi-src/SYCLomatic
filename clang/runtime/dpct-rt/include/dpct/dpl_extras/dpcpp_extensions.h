@@ -375,15 +375,24 @@ public:
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
   template <typename Item>
-  int get_offset = [&](Item item,
-                        T (&keys)[VALUES_PER_THREAD],
-                        int (&ranks)[VALUES_PER_THREAD],
-                        int offset,
-                        int i) {
-        if constexpr (INSERT_PADDING)
+  __dpct_inline__ int get_offset(Item item,
+               T (&keys)[VALUES_PER_THREAD],
+               int (&ranks)[VALUES_PER_THREAD],
+               int offset,
+               int i) {
+      int offset_helper = [&](Item item,
+                      T (&keys)[VALUES_PER_THREAD],
+                      int (&ranks)[VALUES_PER_THREAD],
+                      int offset,
+                      int i) -> int {
+        if constexpr (INSERT_PADDING) {
             offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
-            return offset;
-     };
+        }
+        return offset;
+    };
+
+    return offset_helper(item, keys, ranks, offset, i);
+  }
   
   /// Rearrange elements from rank order to blocked order
   template <typename Item>
