@@ -443,6 +443,12 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
       if (Input[Index] != Literal.Value) {
         return {};
       }
+
+      if (isIdentifiedChar(Input[Index + 1]) &&
+          PatternIndex + 1 == PatternSize && Literal.Value != '(') {
+        return {};
+      }
+
       Index++;
       PatternIndex++;
       continue;
@@ -458,26 +464,14 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
       if (Next == -1) {
         return {};
       }
-      printf("###input#####\n[%s]\n#########\n\n", Input.c_str());
-      printf("#### Index[%d]\n", Index);
       const int Indentation = detectIndentation(Input, Index);
-      printf("#### Indentation[%d]\n\n", Indentation);
-
-      if(Input[Index] == '\n') {
-        Index ++;
-      }
-
-
       std::string ElementContents =
           dedent(Input.substr(Index, Next - Index), Indentation);
-      
-      printf("ElementContents [%s]\n", ElementContents.c_str());
       if (Result.Bindings.count(Code.Name)) {
         if (Result.Bindings[Code.Name] != ElementContents) {
           return {};
         }
       } else {
-        printf("\t[%s]-->[%s]\n", Code.Name.c_str(), ElementContents.c_str());
         Result.Bindings[Code.Name] = std::move(ElementContents);
       }
       Index = Next;
@@ -543,7 +537,6 @@ static void instantiateTemplate(
             detectIndentation(Template, BindingStart) + Indentation;
         const std::string Contents =
             indent(BindingIterator->second, BindingIndentation);
-        printf("#######00##### [%s]\n", Contents.c_str());
         OutputStream << Contents;
       }
       continue;
@@ -596,30 +589,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   }
 
   const auto Pattern = parseMatchPattern(PP.In);
-
-#if 1 // use for debug print
-  int Count = 0;
-  printf("Pattern start:\n");
-  for(auto Element: Pattern) {
-    if (std::holds_alternative<CodeElement>(Element)) {
-      auto &Code = std::get<CodeElement>(Element);
-      printf("\t[%d]->[%s]:[%d]\n", Count, Code.Name.c_str(), Code.SuffixLength);
-    }
-    if (std::holds_alternative<LiteralElement>(Element)) {
-      const auto &Literal = std::get<LiteralElement>(Element);
-      printf("\t[%d]->[%c]\n", Count, Literal.Value);
-    }
-    if (std::holds_alternative<SpacingElement>(Element)) {
-      printf("\t[%d]->[%s]\n", Count, "space");
-    }
-    Count++;
-  }
-  printf("Pattern end.\n\n");
-  #endif
-
-
-
-
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
@@ -638,7 +607,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
     if (Result.has_value()) {
       auto &Match = Result.value();
       for (const auto &[Name, Value] : Match.Bindings) {
-        printf("\t[%s]->[%s]\n", Name.c_str(), Value.c_str());
         const auto &SubruleIterator = PP.Subrules.find(Name);
         if (SubruleIterator != PP.Subrules.end()) {
           Match.Bindings[Name] =
@@ -647,11 +615,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       }
       const int Indentation = detectIndentation(Input, Index);
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
-      printf("###########################[%s]\n", OutputStream.str().c_str());
       Index = Match.End;
-      printf("#####Found Match Index [%d]\n", Index);
-      printf("#####Found Match Value [%c]\n", Input[Index]);
-      printf("\n\n");
       while (Input[Index] == '\n') {
         OutputStream << Input[Index];
         Index++;
