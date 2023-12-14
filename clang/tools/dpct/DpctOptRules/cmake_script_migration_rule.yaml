@@ -54,3 +54,14 @@
       Out: ""
       MatchMode: Full
       RuleId: "replace_cuda_reserved_variable_CUDA_LIBRARIES"
+
+- Rule: rule_cuda_compile_ptx
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: secuda_compile_ptxt
+  In: cuda_compile_ptx(${device} ${value})
+  Out: sycl_compile_device(${device} ${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
