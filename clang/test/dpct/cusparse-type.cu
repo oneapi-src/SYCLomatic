@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --out-root %T/cusparse-type %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusparse-type/cusparse-type.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusparse-type/cusparse-type.dp.cpp -o %T/cusparse-type/cusparse-type.dp.o %}
 #include <cstdio>
 #include <cusparse_v2.h>
 #include <cuda_runtime.h>

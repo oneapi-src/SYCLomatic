@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cudaPos %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cudaPos/cudaPos.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cudaPos/cudaPos.dp.cpp -o %T/cudaPos/cudaPos.dp.o %}
 
 #include <cuda_runtime.h>
 

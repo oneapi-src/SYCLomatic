@@ -3,6 +3,7 @@
 // RUN: echo "" > %T/.clang-format
 // RUN: dpct empty_format_file_explicit_custom.cu --out-root=%T --cuda-include-path="%cuda-path/include" -- --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/empty_format_file_explicit_custom.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/empty_format_file_explicit_custom.dp.cpp -o %T/empty_format_file_explicit_custom.dp.o %}
 #include "cuda.h"
 
 void bar();

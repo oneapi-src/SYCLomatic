@@ -2,6 +2,7 @@
 // UNSUPPORTED: v9.0, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -out-root %T/types003 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/types003/types003.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/types003/types003.dp.cpp -o %T/types003/types003.dp.o %}
 
 
 // __half  and __half2 has different definition between SDK 8.0 and >=9.2.

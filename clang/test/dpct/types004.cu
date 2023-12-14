@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/types004 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/types004/types004.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/types004/types004.dp.cpp -o %T/types004/types004.dp.o %}
 
 #include "cuda_fp16.h"
 

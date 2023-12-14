@@ -1,6 +1,7 @@
 // UNSUPPORTED: system-linux
 // RUN: dpct --format-range=none -out-root %T/queue_ctn_windows %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/queue_ctn_windows/queue_ctn_windows.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/queue_ctn_windows/queue_ctn_windows.dp.cpp -o %T/queue_ctn_windows/queue_ctn_windows.dp.o %}
 
 
 #include "cuda.h"

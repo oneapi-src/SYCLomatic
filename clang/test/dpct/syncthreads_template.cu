@@ -1,6 +1,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/syncthreads_template %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads_template/syncthreads_template.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/syncthreads_template/syncthreads_template.dp.cpp -o %T/syncthreads_template/syncthreads_template.dp.o %}
 
 // Unsupport template kernel function
 template<class T>

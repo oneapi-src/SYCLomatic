@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/match_intrinsic %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/match_intrinsic/match_intrinsic.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/match_intrinsic/match_intrinsic.dp.cpp -o %T/match_intrinsic/match_intrinsic.dp.o %}
 
 #include "cuda.h"
 #include "cuda_runtime.h"

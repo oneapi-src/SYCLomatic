@@ -2,7 +2,9 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/device_seg_user_def_reduce %S/device_seg_user_def_reduce.cu --use-experimental-features=user-defined-reductions --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1092
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp -o %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.o %}
 // RUN: FileCheck --input-file %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1026
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp -o %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.o %}
 // RUN: rm -rf %T/devicelevel/device_seg_user_def_reduce/
 
 #include <iostream>
@@ -75,7 +77,7 @@ struct UserMin
 //CHECK:      device_offsets[i] = i * 10;
 //CHECK:    }
 //CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with different value for specific hardware for better performance.
-//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was removed because this call is redundant in SYCL.
+//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was removed because this functionality is redundant in SYCL.
 //CHECK:    dpct::device::experimental::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, min_op, initial_value);
 //CHECK:    dev_ct1.queues_wait_and_throw();
 //CHECK:    if(!verify_data(device_out, expect, num_segments)) {

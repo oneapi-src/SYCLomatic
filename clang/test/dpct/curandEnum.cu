@@ -1,5 +1,6 @@
 //RUN: dpct --out-root %T/curandEnum --format-range=none --cuda-include-path="%cuda-path/include" %s -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curandEnum/curandEnum.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/curandEnum/curandEnum.dp.cpp -o %T/curandEnum/curandEnum.dp.o %}
 
 #include <cuda.h>
 #include <stdio.h>

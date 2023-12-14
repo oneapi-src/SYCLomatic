@@ -15,7 +15,7 @@
   In: project(${arg0} ${argN})
   Out: |
    project(${arg0} ${argN})
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
+   set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fsycl")
   Subrules:
     argN:
       In: CUDA
@@ -41,3 +41,16 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
+- Rule: rule_target_link_libraries_CUDA_LIBRARIES
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
+  In: target_link_libraries(${CULibraries})
+  Out: target_link_libraries(${CULibraries})
+  Subrules:
+    CULibraries:
+      In: |
+        \${CUDA_LIBRARIES}
+      Out: ""
+      MatchMode: Full
+      RuleId: "replace_cuda_reserved_variable_CUDA_LIBRARIES"

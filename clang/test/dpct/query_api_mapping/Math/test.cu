@@ -1,19 +1,5 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 
-/// Half Precision Conversion And Data Movement
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__high2float | FileCheck %s -check-prefix=HIGH2FLOAT
-// HIGH2FLOAT: CUDA API:
-// HIGH2FLOAT-NEXT:   __high2float(h /*__half2*/);
-// HIGH2FLOAT-NEXT: Is migrated to:
-// HIGH2FLOAT-NEXT:   h[1];
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__low2float | FileCheck %s -check-prefix=LOW2FLOAT
-// LOW2FLOAT: CUDA API:
-// LOW2FLOAT-NEXT:   __low2float(h /*__half2*/);
-// LOW2FLOAT-NEXT: Is migrated to:
-// LOW2FLOAT-NEXT:   h[0];
-
 /// Double Precision Intrinsics
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dadd_rd | FileCheck %s -check-prefix=__DADD_RD

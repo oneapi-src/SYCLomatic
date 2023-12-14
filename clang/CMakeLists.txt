@@ -925,6 +925,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-clang-resource-headers
       install-dpct-binary
       install-dpct-autocomplete
+      install-dpct-opt-rules
       install-dpct-cmake-rules
       )
   endif()

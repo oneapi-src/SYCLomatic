@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/complex %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/complex/complex.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/complex/complex.dp.cpp -o %T/complex/complex.dp.o %}
 
 #include <cuda_runtime.h>
 #include <cuComplex.h>

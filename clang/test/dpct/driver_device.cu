@@ -11,7 +11,7 @@
 
 void test() {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuInit was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuInit was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   cuInit(0);
   CUdevice device;

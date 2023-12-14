@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust-transform-if %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++17 -fsized-deallocation -ferror-limit=50
 // RUN: FileCheck --input-file %T/thrust-transform-if/thrust-transform-if.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-transform-if/thrust-transform-if.dp.cpp -o %T/thrust-transform-if/thrust-transform-if.dp.o %}
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 #include <thrust/functional.h>
