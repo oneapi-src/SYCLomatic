@@ -52,19 +52,16 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    CALL_FACTORY_ENTRY(
-        "cudaDestroyTextureObject",
-        CALL(MapNames::getClNamespace() +
-                 "ext::oneapi::experimental::destroy_image_handle",
-             ARG(0), QUEUESTR)),
+    CALL_FACTORY_ENTRY("cudaDestroyTextureObject",
+                       CALL(MapNames::getDpctNamespace() +
+                                "destroy_bindless_image",
+                            ARG(0), QUEUESTR)),
     DELETER_FACTORY_ENTRY("cudaDestroyTextureObject", ARG(0))))
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    CALL_FACTORY_ENTRY(
-        "cuTexObjectDestroy",
-        CALL(MapNames::getClNamespace() +
-                 "ext::oneapi::experimental::destroy_image_handle",
-             ARG(0), QUEUESTR)),
+    CALL_FACTORY_ENTRY("cuTexObjectDestroy", CALL(MapNames::getDpctNamespace() +
+                                                      "destroy_bindless_image",
+                                                  ARG(0), QUEUESTR)),
     DELETER_FACTORY_ENTRY("cuTexObjectDestroy", ARG(0))))
 
 CONDITIONAL_FACTORY_ENTRY(
