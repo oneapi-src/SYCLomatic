@@ -374,7 +374,7 @@ public:
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-  
+  template <typename Item>
   int get_offset = [&](Item item,
                         T (&keys)[VALUES_PER_THREAD],
                         int (&ranks)[VALUES_PER_THREAD],
