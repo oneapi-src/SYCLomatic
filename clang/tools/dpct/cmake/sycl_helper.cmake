@@ -13,6 +13,13 @@ macro(INNER_SRS_WRAPPER sycl_target generated_files)
 
   set(_counter 1) # use to unique the generated obj file name
   set(_sycl_target "${sycl_target}")
+  set(options)
+  if (UNIX)
+    set(options -fPIC -shared)
+  else()
+    set(options -shared)
+  endif()
+
   # Iterate each macro arguments and create custom command for each cpp file
   foreach(file ${_argn_list})
     if(${file} MATCHES "\\.cpp")
@@ -30,7 +37,7 @@ macro(INNER_SRS_WRAPPER sycl_target generated_files)
 
         add_custom_command(
           OUTPUT ${generated_file}
-          COMMAND icpx -fsycl  -o ${generated_file} -c ${source_file}
+          COMMAND icpx -fsycl  ${options} -o ${generated_file} ${source_file}
           DEPENDS ${file}
         )
 
