@@ -12,6 +12,35 @@
 //#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
 using namespace llvm;
 
+void clang::dpct::BarrierFenceSpaceAnalyzerResult::merge(
+    const BarrierFenceSpaceAnalyzerResult &Another) {
+  if (IsDefaultValue) {
+    *this = Another;
+    return;
+  }
+  if (Another.IsDefaultValue)
+    return;
+  if (CanUseLocalBarrier && Another.CanUseLocalBarrier) {
+    MayDependOn1DKernel = MayDependOn1DKernel || Another.MayDependOn1DKernel;
+    GlobalFunctionName = GlobalFunctionName + "/" + Another.GlobalFunctionName;
+    Condition = "";
+    return;
+  }
+  if (CanUseLocalBarrierWithCondition &&
+      Another.CanUseLocalBarrierWithCondition &&
+      Condition == Another.Condition) {
+    MayDependOn1DKernel = MayDependOn1DKernel || Another.MayDependOn1DKernel;
+    GlobalFunctionName = GlobalFunctionName + "/" + Another.GlobalFunctionName;
+    Condition = "";
+    return;
+  }
+  CanUseLocalBarrier = false;
+  CanUseLocalBarrierWithCondition = false;
+  MayDependOn1DKernel = false;
+  GlobalFunctionName = "";
+  Condition = "";
+}
+
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const IfStmt *IS) {
   // No special process, treat as one block
   return true;
@@ -47,6 +76,7 @@ findOuterMostLoopNodeInFunction(const NodeTy *N, const FunctionDecl *Until) {
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
+  std::cout << "!!!!!!!!!0000000000" << std::endl;
   const FunctionDecl *FuncDecl = CE->getDirectCallee();
   if (!FuncDecl)
     return true;
@@ -56,6 +86,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
     DeviceFunctionCallArgs.insert(Arg);
 
   if (FuncName == "__syncthreads") {
+    std::cout << "!!!!!!!!!" << std::endl;
     std::deque<std::pair<const CallExpr *, const FunctionDecl *>> Parents;
     Parents.emplace_back(
         std::pair(CE, DpctGlobalInfo::findAncestor<FunctionDecl>(CE)));
@@ -100,6 +131,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
     } while (!Parents.empty());
     return true;
   } else if (isUserDefinedDecl(FuncDecl)) {
+    std::cout << "!!!!!!!!!2222222222" << std::endl;
     if (!TraversedSet.count(FuncDecl)) {
       TraversedSet.insert(FuncDecl);
       VisitingGlobalFunction = false;
@@ -714,11 +746,32 @@ clang::dpct::BarrierFenceSpaceAnalyzerInterface::analyze(const CallExpr *CE,
     } while (!Parents.empty());
   }
 
+  std::cout << "TopLevelGlobalFunctions.size():" <<  TopLevelGlobalFunctions.size() << std::endl;
+
   BarrierFenceSpaceAnalyzerResult Result;
   for (const auto &FD : TopLevelGlobalFunctions) {
     BarrierFenceSpaceAnalyzer BFSAI;
-    Result.merge(BFSAI.analyze_internal(CE, FD, SkipCacheInAnalyzer));
+    BarrierFenceSpaceAnalyzerResult TempRes = BFSAI.analyze_internal(CE, FD, SkipCacheInAnalyzer);
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    const auto &SM = DpctGlobalInfo::getSourceManager();
+    std::cout << "For global function: " << FD->getBeginLoc().printToString(SM) << std::endl;
+    std::cout << "the analysis result TempRes:" << std::endl;
+    std::cout << "    CanUseLocalBarrier:" << TempRes.CanUseLocalBarrier << std::endl;
+    std::cout << "    CanUseLocalBarrierWithCondition:" << TempRes.CanUseLocalBarrierWithCondition << std::endl;
+    std::cout << "    MayDependOn1DKernel:" << TempRes.MayDependOn1DKernel << std::endl;
+    std::cout << "    GlobalFunctionName:" << TempRes.GlobalFunctionName << std::endl;
+    std::cout << "    Condition:" << TempRes.Condition << std::endl;
+#endif
+    Result.merge(TempRes);
   }
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Final result:" << std::endl;
+    std::cout << "    CanUseLocalBarrier:" << Result.CanUseLocalBarrier << std::endl;
+    std::cout << "    CanUseLocalBarrierWithCondition:" << Result.CanUseLocalBarrierWithCondition << std::endl;
+    std::cout << "    MayDependOn1DKernel:" << Result.MayDependOn1DKernel << std::endl;
+    std::cout << "    GlobalFunctionName:" << Result.GlobalFunctionName << std::endl;
+    std::cout << "    Condition:" << Result.Condition << std::endl;
+#endif
   return Result;
 }
 
@@ -763,6 +816,8 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze_internal(
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "Before traversing current __global__ function" << std::endl;
 #endif
+  
+  FD->dump();
 
   if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
     if (!SkipCacheInAnalyzer) {
@@ -801,11 +856,17 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze_internal(
     for (auto &SyncCall : SyncCallsMap) {
       if (CE == SyncCall.first) {
         auto Res = isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second);
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "===== SkipCacheInAnalyzer return 1 =====" << std::endl;
+#endif
         return BarrierFenceSpaceAnalyzerResult(
             std::get<0>(Res), std::get<1>(Res), MayDependOn1DKernel,
             GlobalFunctionName, std::get<2>(Res));
       }
     }
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "===== SkipCacheInAnalyzer return 2 =====" << std::endl;
+#endif
     return BarrierFenceSpaceAnalyzerResult(false, false, false,
                                            GlobalFunctionName);
   }
@@ -822,12 +883,21 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze_internal(
   if (FDIter != CachedResults.end()) {
     auto CEIter = FDIter->second.find(CELoc);
     if (CEIter != FDIter->second.end()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "===== CachedResults return 1 =====" << std::endl;
+#endif
       return CEIter->second;
     } else {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "===== CachedResults return 2 =====" << std::endl;
+#endif
       return BarrierFenceSpaceAnalyzerResult(false, false, false,
                                              GlobalFunctionName);
     }
   }
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "===== CachedResults return 3 =====" << std::endl;
+#endif
   return BarrierFenceSpaceAnalyzerResult(false, false, false,
                                          GlobalFunctionName);
 }

@@ -41,31 +41,7 @@ struct BarrierFenceSpaceAnalyzerResult {
         GlobalFunctionName(GlobalFunctionName), Condition(Condition) {
     IsDefaultValue = false;
   }
-  void merge(const BarrierFenceSpaceAnalyzerResult &Another) {
-    if (IsDefaultValue)
-      *this = Another;
-    if (Another.IsDefaultValue)
-      return;
-    if (CanUseLocalBarrier && Another.CanUseLocalBarrier) {
-      MayDependOn1DKernel = MayDependOn1DKernel || Another.MayDependOn1DKernel;
-      GlobalFunctionName =
-          GlobalFunctionName + "/" + Another.GlobalFunctionName;
-      Condition = "";
-    }
-    if (CanUseLocalBarrierWithCondition &&
-        Another.CanUseLocalBarrierWithCondition &&
-        Condition == Another.Condition) {
-      MayDependOn1DKernel = MayDependOn1DKernel || Another.MayDependOn1DKernel;
-      GlobalFunctionName =
-          GlobalFunctionName + "/" + Another.GlobalFunctionName;
-      Condition = "";
-    }
-    CanUseLocalBarrier = false;
-    CanUseLocalBarrierWithCondition = false;
-    MayDependOn1DKernel = false;
-    GlobalFunctionName = "";
-    Condition = "";
-  }
+  void merge(const BarrierFenceSpaceAnalyzerResult &Another);
 
   bool CanUseLocalBarrier = false;
   bool CanUseLocalBarrierWithCondition = false;
