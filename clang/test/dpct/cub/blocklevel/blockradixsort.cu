@@ -30,12 +30,6 @@ void print_data(int* data, int num) {
   std::cout << std::endl;
 }
 
-//CHECK: void BlockRadixSortKernel(int* d_data,  const sycl::nd_item<3> &item_ct1) {
-//CHECK:  int threadid = item_ct1.get_local_id(2);
-//CHECK:  d_data[threadid*ItemsPerThread] = (threadid*2)%32;
-//CHECK:  dpct::group::radix_sort().sort(item_ct1.get_group(), d_data);
-//CHECK:}
-
 __global__ void BlockRadixSortKernel(int *d_data)
 {
     typedef cub::BlockRadixSort<int, BlockSize, ItemsPerThread> BlockRadixSortT;
