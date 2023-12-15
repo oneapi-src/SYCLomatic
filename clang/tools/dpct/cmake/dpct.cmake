@@ -1,4 +1,12 @@
-macro(GET_SOURCES _sources)
+#==---- dpct.cmake --------------------------------- cmake script file ----==//
+#
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+#
+#===----------------------------------------------------------------------===//
+
+macro(DPCT_GET_SOURCES _sources)
   set( ${_sources} )
   foreach(arg ${ARGN})
     # Assume arg is a source file
@@ -6,7 +14,7 @@ macro(GET_SOURCES _sources)
   endforeach()
 endmacro()
 
-macro(INNER_SRS_WRAPPER sycl_target generated_files)
+macro(DPCT_CREATE_BUILD_COMMAND sycl_target generated_files)
   set(_argn_list "${ARGN}")
   set(_generated_files "")
   set(generated_extension ${CMAKE_CXX_OUTPUT_EXTENSION})
@@ -52,18 +60,17 @@ macro(INNER_SRS_WRAPPER sycl_target generated_files)
   set(${generated_files} ${_generated_files})
 endmacro()
 
-macro(SYCL_COMPILE_BASE sycl_target generated_files)
-
+macro(DPCT_COMPILE_SYCL_CODE_IMP sycl_target generated_files)
   set(_sycl_target "${sycl_target}")
-  GET_SOURCES(_sources ${ARGN})
+  DPCT_GET_SOURCES(_sources ${ARGN})
 
-  
   # Create custom command for each cpp source file
-  INNER_SRS_WRAPPER( ${_sycl_target} _generated_files ${_sources})
+  DPCT_CREATE_BUILD_COMMAND( ${_sycl_target} _generated_files ${_sources})
 
   set( ${generated_files} ${_generated_files})
 endmacro()
 
+# Return generated device code files from input SYCL source files
 macro(SYCL_COMPILE_DEVICE generated_files)
-  SYCL_COMPILE_BASE(sycl_device ${generated_files} ${ARGN})
+  DPCT_COMPILE_SYCL_CODE_IMP(sycl_device ${generated_files} ${ARGN})
 endmacro()

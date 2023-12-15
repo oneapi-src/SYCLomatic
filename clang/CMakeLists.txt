@@ -916,7 +916,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-binary
       install-dpct-opt-rules
       install-dpct-cmake-rules
-      install-cmake-helper-file
+      install-cmake-file
       )
   else()
     list(APPEND DPCT_RUN
@@ -928,7 +928,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-autocomplete
       install-dpct-opt-rules
       install-dpct-cmake-rules
-      install-cmake-helper-file
+      install-cmake-file
       )
   endif()
 endif()

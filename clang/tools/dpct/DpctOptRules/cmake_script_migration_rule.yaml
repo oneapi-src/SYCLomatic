@@ -17,9 +17,9 @@
    project(${arg0} ${argN})
    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fsycl")
    find_program(dpct_bin_path NAMES dpct PATHS)
-   get_filename_component(dpct_path \${dpct_bin_path} DIRECTORY)
-   set(cmake_helper_file_path "\${dpct_path}/../cmake/sycl_helper.cmake")
-   include(\${cmake_helper_file_path})
+   get_filename_component(bin_path_of_dpct \${dpct_bin_path} DIRECTORY)
+   set(dpct_cmake_file_path "\${bin_path_of_dpct}/../cmake/dpct.cmake")
+   include(\${dpct_cmake_file_path})
   Subrules:
     argN:
       In: CUDA
