@@ -76,73 +76,96 @@ findOuterMostLoopNodeInFunction(const NodeTy *N, const FunctionDecl *Until) {
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
-  std::cout << "!!!!!!!!!0000000000" << std::endl;
-  const FunctionDecl *FuncDecl = CE->getDirectCallee();
-  if (!FuncDecl)
-    return true;
-  std::string FuncName = FuncDecl->getNameInfo().getName().getAsString();
+  if (const FunctionDecl *FuncDecl = CE->getDirectCallee()) {
+    std::string FuncName = FuncDecl->getNameInfo().getName().getAsString();
 
-  for (const auto &Arg : CE->arguments())
-    DeviceFunctionCallArgs.insert(Arg);
+    for (const auto &Arg : CE->arguments())
+      DeviceFunctionCallArgs.insert(Arg);
 
-  if (FuncName == "__syncthreads") {
-    std::cout << "!!!!!!!!!" << std::endl;
-    std::deque<std::pair<const CallExpr *, const FunctionDecl *>> Parents;
-    Parents.emplace_back(
-        std::pair(CE, DpctGlobalInfo::findAncestor<FunctionDecl>(CE)));
-    std::set<std::pair<const CallExpr *, const FunctionDecl *>> Visited;
-    Visited.insert(
-        std::pair(CE, DpctGlobalInfo::findAncestor<FunctionDecl>(CE)));
-    do {
-      auto Parent = Parents.front();
-      Parents.pop_front();
-      if (Parent.first && Parent.second) {
-        SyncCallInfo SCI;
-        SCI.Predecessors.insert(
-            SourceRange(Parent.second->getBody()->getBeginLoc(),
-                        Parent.first->getBeginLoc()));
-        SCI.Successors.insert(SourceRange(
-            Parent.first->getEndLoc(), Parent.second->getBody()->getEndLoc()));
-        if (const Stmt *LoopNode =
-                findOuterMostLoopNodeInFunction(Parent.first, Parent.second)) {
+    if (FuncName == "__syncthreads") {
+      std::deque<std::pair<const CallExpr *, const FunctionDecl *>> Parents;
+      Parents.emplace_back(
+          std::pair(CE, DpctGlobalInfo::findAncestor<FunctionDecl>(CE)));
+      std::set<std::pair<const CallExpr *, const FunctionDecl *>> Visited;
+      Visited.insert(
+          std::pair(CE, DpctGlobalInfo::findAncestor<FunctionDecl>(CE)));
+      do {
+        auto Parent = Parents.front();
+        Parents.pop_front();
+        if (Parent.first && Parent.second) {
+          SyncCallInfo SCI;
           SCI.Predecessors.insert(
-              SourceRange(LoopNode->getBeginLoc(), LoopNode->getEndLoc()));
+              SourceRange(Parent.second->getBody()->getBeginLoc(),
+                          Parent.first->getBeginLoc()));
           SCI.Successors.insert(
-              SourceRange(LoopNode->getBeginLoc(), LoopNode->getEndLoc()));
-        }
-        if (SyncCallsMap.count(CE)) {
-          SyncCallsMap[CE].Predecessors.insert(SCI.Predecessors.begin(),
-                                               SCI.Predecessors.end());
-          SyncCallsMap[CE].Successors.insert(SCI.Successors.begin(),
-                                             SCI.Successors.end());
-        } else {
-          SyncCallsMap.insert(std::make_pair(CE, SCI));
-        }
-        if (!Parent.second->hasAttr<CUDAGlobalAttr>()) {
-          auto DFI = DeviceFunctionDecl::LinkRedecls(Parent.second);
-          for (const auto &P : DFI->getParentSet()) {
-            if (Visited.count(P))
-              continue;
-            Parents.push_back(P);
-            Visited.insert(P);
+              SourceRange(Parent.first->getEndLoc(),
+                          Parent.second->getBody()->getEndLoc()));
+          if (const Stmt *LoopNode = findOuterMostLoopNodeInFunction(
+                  Parent.first, Parent.second)) {
+            SCI.Predecessors.insert(
+                SourceRange(LoopNode->getBeginLoc(), LoopNode->getEndLoc()));
+            SCI.Successors.insert(
+                SourceRange(LoopNode->getBeginLoc(), LoopNode->getEndLoc()));
+          }
+          if (SyncCallsMap.count(CE)) {
+            SyncCallsMap[CE].Predecessors.insert(SCI.Predecessors.begin(),
+                                                 SCI.Predecessors.end());
+            SyncCallsMap[CE].Successors.insert(SCI.Successors.begin(),
+                                               SCI.Successors.end());
+          } else {
+            SyncCallsMap.insert(std::make_pair(CE, SCI));
+          }
+          if (!Parent.second->hasAttr<CUDAGlobalAttr>()) {
+            auto DFI = DeviceFunctionDecl::LinkRedecls(Parent.second);
+            for (const auto &P : DFI->getParentSet()) {
+              if (Visited.count(P))
+                continue;
+              Parents.push_back(P);
+              Visited.insert(P);
+            }
           }
         }
+      } while (!Parents.empty());
+      return true;
+    } else if (isUserDefinedDecl(FuncDecl)) {
+      if (!TraversedSet.count(FuncDecl)) {
+        TraversedSet.insert(FuncDecl);
+
+        bool VisitingGlobalFunctionOld = VisitingGlobalFunction;
+        VisitingGlobalFunction = false;
+        bool Ret = this->TraverseDecl(const_cast<FunctionDecl *>(FuncDecl));
+        VisitingGlobalFunction = VisitingGlobalFunctionOld;
+        if (!Ret)
+          return false;
       }
-    } while (!Parents.empty());
-    return true;
-  } else if (isUserDefinedDecl(FuncDecl)) {
-    std::cout << "!!!!!!!!!2222222222" << std::endl;
-    if (!TraversedSet.count(FuncDecl)) {
-      TraversedSet.insert(FuncDecl);
+    }
+  } else if (const UnresolvedLookupExpr *ULE =
+                 dyn_cast<UnresolvedLookupExpr>(CE->getCallee())) {
+    for (const auto &D : ULE->decls()) {
+      bool VisitingGlobalFunctionOld = VisitingGlobalFunction;
       VisitingGlobalFunction = false;
-      bool Ret = this->TraverseDecl(const_cast<FunctionDecl *>(FuncDecl));
-      VisitingGlobalFunction = true;
-      return Ret;
+      bool Ret = this->TraverseDecl(const_cast<NamedDecl *>(D));
+      VisitingGlobalFunction = VisitingGlobalFunctionOld;
+      if (!Ret)
+        return false;
     }
   }
   return true;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const CallExpr *) {}
+
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+    const FunctionTemplateDecl *FTD) {
+  if (FTD->getAsFunction()) {
+    bool Ret =
+        this->TraverseDecl(const_cast<FunctionDecl *>(FTD->getAsFunction()));
+    if (!Ret)
+      return false;
+  }
+  return true;
+}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const FunctionTemplateDecl *) {}
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const DeclRefExpr *DRE) {
   // Collect all DREs and its Decl
@@ -344,10 +367,16 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isPassedToAnotherFunction(
       });
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   const auto &SM = DpctGlobalInfo::getSourceManager();
-  std::cout << "Result.first:" << Result.first->getBeginLoc().printToString(SM)
-            << std::endl;
-  std::cout << "Result.second:"
-            << Result.second->getBeginLoc().printToString(SM) << std::endl;
+  if (Result.first)
+    std::cout << "Result.first:"
+              << Result.first->getBeginLoc().printToString(SM) << std::endl;
+  else
+    std::cout << "Result.first:nullptr" << std::endl;
+  if (Result.second)
+    std::cout << "Result.second:"
+              << Result.second->getBeginLoc().printToString(SM) << std::endl;
+  else
+    std::cout << "Result.second:nullptr" << std::endl;
 #endif
   return Result;
 }
@@ -746,8 +775,6 @@ clang::dpct::BarrierFenceSpaceAnalyzerInterface::analyze(const CallExpr *CE,
     } while (!Parents.empty());
   }
 
-  std::cout << "TopLevelGlobalFunctions.size():" <<  TopLevelGlobalFunctions.size() << std::endl;
-
   BarrierFenceSpaceAnalyzerResult Result;
   for (const auto &FD : TopLevelGlobalFunctions) {
     BarrierFenceSpaceAnalyzer BFSAI;
@@ -816,8 +843,6 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze_internal(
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "Before traversing current __global__ function" << std::endl;
 #endif
-  
-  FD->dump();
 
   if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
     if (!SkipCacheInAnalyzer) {
@@ -854,7 +879,11 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze_internal(
 
   if (SkipCacheInAnalyzer) {
     for (auto &SyncCall : SyncCallsMap) {
-      if (CE == SyncCall.first) {
+      // The pointer of CE maybe different because in AST there may be more than
+      // one template instances containing the "same" CE.
+      // So compare the source location here.
+      if (getHashStrFromLoc(CE->getBeginLoc()) ==
+          getHashStrFromLoc(SyncCall.first->getBeginLoc())) {
         auto Res = isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second);
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "===== SkipCacheInAnalyzer return 1 =====" << std::endl;

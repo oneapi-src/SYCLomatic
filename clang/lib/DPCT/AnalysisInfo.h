@@ -3659,26 +3659,7 @@ public:
 
   template <class IteratorRange>
   static std::shared_ptr<DeviceFunctionInfo>
-  LinkDeclRange(IteratorRange &&Range, const std::string &FunctionName) {
-    // Currently only support to analyze FunctionDecl only.
-    const FunctionDecl *FD = nullptr;
-    if constexpr (std::is_same<decltype(Range.begin()),
-                               FunctionDecl::redecl_iterator>::value) {
-      FD = *Range.begin();
-    }
-
-    std::shared_ptr<DeviceFunctionInfo> Info;
-    DeclList List;
-    LinkDeclRange(std::move(Range), List, Info);
-    if (List.empty())
-      return Info;
-    if (!Info)
-      Info = std::make_shared<DeviceFunctionInfo>(
-          List[0]->ParamsNum, List[0]->NonDefaultParamNum, FunctionName, FD);
-    for (auto &D : List)
-      D->setFuncInfo(Info);
-    return Info;
-  }
+  LinkDeclRange(IteratorRange &&Range, const std::string &FunctionName);
 
   template <class IteratorRange>
   static void LinkDeclRange(IteratorRange &&Range, DeclList &List,
@@ -3792,9 +3773,9 @@ class DeviceFunctionInfo : public std::enable_shared_from_this<DeviceFunctionInf
 
 public:
   DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum,
-                     std::string FunctionName, const FunctionDecl *FD)
+                     std::string FunctionName)
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
-        IsBuilt(false), FD(FD),
+        IsBuilt(false),
         TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
         FunctionName(FunctionName), IsLambda(false) {
     ParametersProps.resize(ParamsNum);
@@ -3917,6 +3898,10 @@ public:
   std::set<std::pair<const CallExpr*, const FunctionDecl*>> &getParentSet() {
     return ParentSet;
   }
+  void setFD(const FunctionDecl *InputFD) {
+    if (InputFD->hasBody())
+      FD = InputFD;
+  }
   void addSubGroupSizeRequest(unsigned int Size, SourceLocation Loc,
                               std::string APIName, std::string VarName = "") {
     if (Size == 0 || Loc.isInvalid())
@@ -3976,6 +3961,33 @@ private:
   bool CallGroupFunctionInControlFlow = false;
   bool HasCheckedCallGroupFunctionInControlFlow = false;
 };
+
+template <class IteratorRange>
+std::shared_ptr<DeviceFunctionInfo>
+DeviceFunctionDecl::LinkDeclRange(IteratorRange &&Range, const std::string &FunctionName) {
+  // Currently only support to analyze FunctionDecl only.
+  const FunctionDecl *FD = nullptr;
+  if constexpr (std::is_same<decltype(Range.begin()),
+                             FunctionDecl::redecl_iterator>::value) {
+    for (const auto D : Range) {
+      if (D->hasBody())
+        FD = D;
+    }
+  }
+  std::shared_ptr<DeviceFunctionInfo> Info;
+  DeclList List;
+  LinkDeclRange(std::move(Range), List, Info);
+  if (List.empty())
+    return Info;
+  if (!Info) {
+    Info = std::make_shared<DeviceFunctionInfo>(
+        List[0]->ParamsNum, List[0]->NonDefaultParamNum, FunctionName);
+    Info->setFD(FD);
+  }
+  for (auto &D : List)
+    D->setFuncInfo(Info);
+  return Info;
+}
 
 class KernelPrinter {
   const std::string NL;

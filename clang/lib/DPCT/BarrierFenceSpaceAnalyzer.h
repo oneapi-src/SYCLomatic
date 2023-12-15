@@ -88,6 +88,7 @@ public:
   VISIT_NODE(MemberExpr)
   VISIT_NODE(CXXDependentScopeMemberExpr)
   VISIT_NODE(CXXConstructExpr)
+  VISIT_NODE(FunctionTemplateDecl)
 #undef VISIT_NODE
 
 public:

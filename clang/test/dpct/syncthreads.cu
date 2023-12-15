@@ -337,10 +337,7 @@ __global__ void test13(uint8_t *pout) {
   int idx = 456;
   idx = bar13(idx);
   //CHECK:  pout[idx] = 456;
-  //CHECK-NEXT:  /*
-  //CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-  //CHECK-NEXT:  */
-  //CHECK-NEXT:  item_ct1.barrier();
+  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
   //CHECK-NEXT:  uint8_t a = 4;
   pout[idx] = 456;
   __syncthreads();

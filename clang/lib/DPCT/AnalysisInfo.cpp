@@ -3208,8 +3208,9 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
       FuncInfo(getFuncInfo(FD)) {
   if (!FuncInfo) {
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
-        FD->param_size(), NonDefaultParamNum, getFunctionName(FD), FD);
+        FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
   }
+  FuncInfo->setFD(FD);
   if (!FilePath.getCanonicalPath().empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
     if (!(FileType & SPT_CudaHeader) && !(FileType & SPT_CppHeader) &&
@@ -3517,7 +3518,8 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
     } else {
       Info = std::make_shared<DeviceFunctionInfo>(
           FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments(),
-          getFunctionName(FD), FD);
+          getFunctionName(FD));
+      Info->setFD(FD);
       FuncInfo = Info;
     }
     return;
