@@ -3576,7 +3576,8 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 
   if (MemberName == "sharedMemPerBlock" ||
-      MemberName == "sharedMemPerMultiprocessor") {
+      MemberName == "sharedMemPerMultiprocessor" ||
+      MemberName == "sharedMemPerBlockOptin") {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false, MemberName);
   } else if (MemberName == "maxGridSize") {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE, false);
