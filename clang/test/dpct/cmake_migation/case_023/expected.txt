@@ -1,1 +1,1 @@
-sycl_compile_device(cuda_ptx_file kernel.dp.cpp)
+dpct_compile_sycl_code(cuda_ptx_file kernel.dp.cpp)

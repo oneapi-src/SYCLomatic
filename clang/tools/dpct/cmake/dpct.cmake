@@ -71,6 +71,6 @@ macro(DPCT_COMPILE_SYCL_CODE_IMP sycl_target generated_files)
 endmacro()
 
 # Return generated device code files from input SYCL source files
-macro(SYCL_COMPILE_DEVICE generated_files)
+macro(DPCT_COMPILE_SYCL_CODE generated_files)
   DPCT_COMPILE_SYCL_CODE_IMP(sycl_device ${generated_files} ${ARGN})
 endmacro()
