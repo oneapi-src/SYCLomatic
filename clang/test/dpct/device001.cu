@@ -132,6 +132,11 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:size_t share_mem_size = deviceProp.get_local_mem_size();
   size_t share_mem_size = deviceProp.sharedMemPerBlock;
   // CHECK:/*
+  // CHECK-NEXT:DPCT1019:{{[0-9]+}}: local_mem_size in SYCL is not a complete equivalent of sharedMemPerBlockOptin in CUDA. You may need to adjust the code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:size_t share_mem_size_optin = deviceProp.get_local_mem_size();
+  size_t share_mem_size_optin = deviceProp.sharedMemPerBlockOptin;
+  // CHECK:/*
   // CHECK-NEXT:DPCT1019:{{[0-9]+}}: local_mem_size in SYCL is not a complete equivalent of sharedMemPerMultiprocessor in CUDA. You may need to adjust the code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:size_t share_multi_proc_mem_size = deviceProp.get_local_mem_size();
