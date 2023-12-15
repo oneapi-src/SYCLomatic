@@ -10836,7 +10836,12 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
   } else if (Name == "cudaGetChannelDesc") {
     std::ostringstream OS;
     printDerefOp(OS, C->getArg(0));
-    OS << " = " << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
+    OS << " = ";
+    if (DpctGlobalInfo::useExtBindlessImages())
+      OS << MapNames::getDpctNamespace() << "get_channel("
+         << ExprAnalysis::ref(C->getArg(1)) << ")";
+    else
+      OS << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
     requestFeature(HelperFeatureEnum::device_ext);
   } else if (Name == "cuMemGetInfo_v2" || Name == "cudaMemGetInfo") {
@@ -12588,19 +12593,6 @@ REGISTER_RULE(RecognizeTypeRule, PassKind::PK_Migration)
 void TextureMemberSetRule::registerMatcher(MatchFinder &MF) {
   auto ObjectType =
       hasObjectExpression(hasType(namedDecl(hasAnyName("cudaResourceDesc"))));
-  if (DpctGlobalInfo::useExtBindlessImages()) {
-    // myres.resType = cudaResourceTypeLinear;
-    MF.addMatcher(binaryOperator(
-                      allOf(isAssignmentOperator(),
-                            hasLHS(memberExpr(allOf(ObjectType,
-                                                    member(hasName("resType"))))
-                                       .bind("ResTypeMemberExpr")),
-                            hasRHS(declRefExpr(hasDeclaration(enumConstantDecl(
-                                hasName("cudaResourceTypeLinear")))))))
-                      .bind("LinearSet"),
-                  this);
-    return;
-  }
   // myres.res.array.array = a;
   auto AssignResArrayArray = binaryOperator(
       allOf(isAssignmentOperator(),
@@ -12741,15 +12733,6 @@ void TextureMemberSetRule::removeRange(SourceRange R) {
 void TextureMemberSetRule::runRule(const MatchFinder::MatchResult &Result) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto &LO = DpctGlobalInfo::getContext().getLangOpts();
-  if (DpctGlobalInfo::useExtBindlessImages()) {
-    if (const auto *BO = getNodeAsType<BinaryOperator>(Result, "LinearSet")) {
-      const auto *ResTypeMemberExpr =
-          getNodeAsType<MemberExpr>(Result, "ResTypeMemberExpr");
-      emplaceTransformation(
-          ReplaceMemberAssignAsSetMethod(BO, ResTypeMemberExpr, "data_type"));
-    }
-    return;
-  }
   if (auto BO = getNodeAsType<BinaryOperator>(Result, "Pitch2DSetCompound")) {
     auto AssignPtrExpr =
         getNodeAsType<BinaryOperator>(Result, "AssignRes2DPtr");
@@ -13464,11 +13447,10 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
             report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
                    true);
           }
-        } else if ((getStmtSpelling(CE->getArg(0)) == "0" ||
-                    getStmtSpelling(CE->getArg(1)) == "0" ||
-                    getStmtSpelling(CE->getArg(2)) == "0" ||
-                    getStmtSpelling(CE->getArg(3)) == "0") &&
-                   !DpctGlobalInfo::useExtBindlessImages()) {
+        } else if (getStmtSpelling(CE->getArg(0)) == "0" ||
+                   getStmtSpelling(CE->getArg(1)) == "0" ||
+                   getStmtSpelling(CE->getArg(2)) == "0" ||
+                   getStmtSpelling(CE->getArg(3)) == "0") {
           report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
                  true);
         }

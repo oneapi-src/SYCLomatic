@@ -70,36 +70,26 @@ int main() {
   cudaMemcpyToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w * h,
                          cudaMemcpyHostToDevice);
 
-  // CHECK: dpct::image_data resDesc;
-  cudaResourceDesc resDesc;
-  // CHECK: resDesc.set_data_type(dpct::image_data_type::matrix);
-  resDesc.resType = cudaResourceTypeArray;
+  // CHECK: dpct::image_data resDesc1, resDesc2, resDesc3, resDesc4;
+  cudaResourceDesc resDesc1, resDesc2, resDesc3, resDesc4;
+  // CHECK: resDesc1.set_data(pArr);
+  resDesc1.resType = cudaResourceTypeArray;
+  resDesc1.res.array.array = pArr;
   // TODO: need support.
-  // resDesc.resType = cudaResourceTypeMipmappedArray;
-  // CHECK: resDesc.set_data_type(dpct::image_data_type::linear);
-  resDesc.resType = cudaResourceTypeLinear;
-  // CHECK: resDesc.set_data_type(dpct::image_data_type::pitch);
-  resDesc.resType = cudaResourceTypePitch2D;
-  // CHECK: resDesc.set_data_ptr(pArr);
-  resDesc.res.array.array = pArr;
-  // TODO: need support.
-  // resDesc.res.mipmap.mipmap = pMipMapArr;
-  // CHECK: resDesc.set_data_ptr(input);
-  resDesc.res.linear.devPtr = input;
-  // CHECK: resDesc.set_channel(desc);
-  resDesc.res.linear.desc = desc;
-  // CHECK: resDesc.set_x(sizeInBytes);
-  resDesc.res.linear.sizeInBytes = sizeInBytes;
-  // CHECK: resDesc.set_data_ptr(input);
-  resDesc.res.pitch2D.devPtr = input;
-  // CHECK: resDesc.set_channel(desc);
-  resDesc.res.pitch2D.desc = desc;
-  // CHECK: resDesc.set_x(sizeInBytes);
-  resDesc.res.pitch2D.width = sizeInBytes;
-  // CHECK: resDesc.set_y(sizeInBytes);
-  resDesc.res.pitch2D.height = sizeInBytes;
-  // CHECK: resDesc.set_pitch(sizeInBytes);
-  resDesc.res.pitch2D.pitchInBytes = sizeInBytes;
+  // resDesc2.resType = cudaResourceTypeMipmappedArray;
+  // resDesc2.res.mipmap.mipmap = pMipMapArr;
+  // CHECK: resDesc3.set_data(input, sizeInBytes, desc);
+  resDesc3.resType = cudaResourceTypeLinear;
+  resDesc3.res.linear.devPtr = input;
+  resDesc3.res.linear.desc = desc;
+  resDesc3.res.linear.sizeInBytes = sizeInBytes;
+  // CHECK: resDesc4.set_data(input, w, h, sizeInBytes, desc);
+  resDesc4.resType = cudaResourceTypePitch2D;
+  resDesc4.res.pitch2D.devPtr = input;
+  resDesc4.res.pitch2D.desc = desc;
+  resDesc4.res.pitch2D.width = w;
+  resDesc4.res.pitch2D.height = h;
+  resDesc4.res.pitch2D.pitchInBytes = sizeInBytes;
 
   // CHECK: dpct::sampling_info texDesc1, texDesc2, texDesc3, texDesc4;
   cudaTextureDesc texDesc1, texDesc2, texDesc3, texDesc4;
@@ -122,10 +112,12 @@ int main() {
 
   // CHECK: sycl::ext::oneapi::experimental::sampled_image_handle tex;
   cudaTextureObject_t tex;
-  // CHECK: tex = dpct::create_bindless_image(resDesc, texDesc1);
-  cudaCreateTextureObject(&tex, &resDesc, &texDesc1, NULL);
-  // CHECK: resDesc = dpct::get_data(tex);
-  cudaGetTextureObjectResourceDesc(&resDesc, tex);
+  // CHECK: tex = dpct::create_bindless_image(resDesc1, texDesc1);
+  cudaCreateTextureObject(&tex, &resDesc1, &texDesc1, NULL);
+  // CHECK: desc = dpct::get_channel(pArr);
+  cudaGetChannelDesc(&desc, pArr);
+  // CHECK: resDesc1 = dpct::get_data(tex);
+  cudaGetTextureObjectResourceDesc(&resDesc1, tex);
   // CHECK: texDesc1 = dpct::get_sampling_info(tex);
   cudaGetTextureObjectTextureDesc(&texDesc1, tex);
   // CHECK: q_ct1.parallel_for(

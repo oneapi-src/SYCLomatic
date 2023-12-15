@@ -3155,7 +3155,6 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
         continue;
       }
       if (!Obj->getType()) {
-        if (DpctGlobalInfo::useExtBindlessImages()) {}
         // Type dpct_placeholder
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);
         DiagnosticsUtils::report(Obj->getFilePath(), Obj->getOffset(),

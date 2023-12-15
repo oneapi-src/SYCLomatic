@@ -845,22 +845,29 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 using image_mem_p = sycl::ext::oneapi::experimental::image_mem *;
 
 namespace detail {
+struct sampled_image_handle_compare {
+  bool
+  operator()(sycl::ext::oneapi::experimental::sampled_image_handle L,
+             sycl::ext::oneapi::experimental::sampled_image_handle R) const {
+    return L.raw_handle < R.raw_handle;
+  }
+};
+
 inline std::pair<image_data, sampling_info> &get_img_info_map(
     const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
-  static std::map<sycl::ext::oneapi::experimental::sampled_image_handle::
-                      raw_image_handle_type,
-                  std::pair<image_data, sampling_info>>
+  static std::map<sycl::ext::oneapi::experimental::sampled_image_handle,
+                  std::pair<image_data, sampling_info>,
+                  sampled_image_handle_compare>
       img_info_map;
-  return img_info_map[handle.raw_handle];
+  return img_info_map[handle];
 }
 
-inline sycl::ext::oneapi::experimental::image_mem *&get_img_mem_map(
+inline image_mem_p &get_img_mem_map(
     const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
-  static std::map<sycl::ext::oneapi::experimental::sampled_image_handle::
-                      raw_image_handle_type,
-                  sycl::ext::oneapi::experimental::image_mem *>
+  static std::map<sycl::ext::oneapi::experimental::sampled_image_handle,
+                  image_mem_p, sampled_image_handle_compare>
       img_mem_map;
-  return img_mem_map[handle.raw_handle];
+  return img_mem_map[handle];
 }
 
 static inline size_t
@@ -1000,9 +1007,10 @@ dpct_memcpy(void *src, image_mem_p dest, size_t w_offset_dest,
 } // namespace detail
 
 /// Create bindless image according to image data and sampling info.
-/// \param data Image data used to create bindless image.
-/// \param info Image sampling info used to create bindless image.
-/// \returns Sampled image handle of created bindless image.
+/// \param [in] data The image data used to create bindless image.
+/// \param [in] info The image sampling info used to create bindless image.
+/// \param [in] q The queue where the image creation be executed.
+/// \returns The sampled image handle of created bindless image.
 static inline sycl::ext::oneapi::experimental::sampled_image_handle
 create_bindless_image(image_data data, sampling_info info,
                       sycl::queue &q = get_default_queue()) {
@@ -1077,30 +1085,40 @@ create_bindless_image(image_data data, sampling_info info,
                                                        samp, desc, q);
 }
 
+/// Destroy bindless image.
+/// \param [in] handle The bindless image should be destroyed.
+/// \param [in] q The queue where the image destruction be executed.
 static inline void destroy_bindless_image(
     sycl::ext::oneapi::experimental::sampled_image_handle handle,
     sycl::queue &q = get_default_queue()) {
   auto &mem = detail::get_img_mem_map(handle);
   if (mem) {
-    sycl::ext::oneapi::experimental::free_image_mem(mem->get_handle(), q);
+    sycl::ext::oneapi::experimental::free_image_mem(
+        mem->get_handle(), q.get_device(), q.get_context());
     mem = 0;
   }
   sycl::ext::oneapi::experimental::destroy_image_handle(handle, q);
 }
 
-/// TODO: ???
+/// Get the image data according to sampled image handle.
+/// \param [in] handle The bindless image handle.
+/// \returns The image data of sampled image.
 static inline image_data
-get_data(const sycl::ext::oneapi::experimental::sampled_image_handle img) {
-  return detail::get_img_info_map(img).first;
+get_data(const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
+  return detail::get_img_info_map(handle).first;
 }
 
-/// TODO: ???
+/// Get the sampling info according to sampled image handle.
+/// \param [in] handle The bindless image handle.
+/// \returns The sampling info of sampled image.
 static inline sampling_info get_sampling_info(
-    const sycl::ext::oneapi::experimental::sampled_image_handle img) {
-  return detail::get_img_info_map(img).second;
+    const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
+  return detail::get_img_info_map(handle).second;
 }
 
-/// TODO: ???
+/// Get the image channel according to image memory.
+/// \param [in] mem The image memory pointer.
+/// \returns The image channel of image memory.
 static inline image_channel get_channel(const image_mem_p mem) {
   image_channel channel;
   channel.set_channel_num(mem->get_num_channels());
@@ -1108,11 +1126,22 @@ static inline image_channel get_channel(const image_mem_p mem) {
   return channel;
 }
 
-/// TODO: ???
+/// The wrapper class of bindless image.
 template <class T, int dimensions> class bindless_image_wrapper {
 public:
+  /// Create bindless image wrapper according to template argument \p T.
   bindless_image_wrapper() : _channel(image_channel::create<T>()) {}
-  ~bindless_image_wrapper() { destroy_image_handle(_img, get_default_queue()); }
+
+  /// Destroy bindless image wrapper.
+  ~bindless_image_wrapper() {
+    destroy_bindless_image(*_img, get_default_queue());
+  }
+
+  /// Attach linear data to bindless image.
+  /// \param [in] data The linear data used to create bindless image.
+  /// \param [in] channel The image channel used to create bindless image.
+  /// \param [in] size The size of linear data used to create bindless image.
+  /// \param [in] q The queue where the image creation be executed.
   void attach(void *data, const image_channel &channel, size_t size = UINT_MAX,
               sycl::queue &q = get_default_queue()) {
     detach(q);
@@ -1122,8 +1151,8 @@ public:
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
     // TODO: Use pointer to create image when bindless image support.
     auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    _img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
-    detail::get_img_mem_map(_img) = mem;
+    *_img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
+    detail::get_img_mem_map(*_img) = mem;
     auto ptr = data;
 #ifdef DPCT_USM_LEVEL_NONE
     ptr = get_buffer(data)
@@ -1133,10 +1162,23 @@ public:
     q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
     q.wait_and_throw();
   }
+
+  /// Attach linear data to bindless image.
+  /// \param [in] data The linear data used to create bindless image.
+  /// \param [in] size The size of linear data used to create bindless image.
+  /// \param [in] q The queue where the image creation be executed.
   void attach(void *data, size_t size = UINT_MAX,
               sycl::queue &q = get_default_queue()) {
     attach(data, _channel, size, q);
   }
+
+  /// Attach 2D data to bindless image.
+  /// \param [in] data The 2D data used to create bindless image.
+  /// \param [in] channel The image channel used to create bindless image.
+  /// \param [in] width The width of 2D data used to create bindless image.
+  /// \param [in] height The height of 2D data used to create bindless image.
+  /// \param [in] pitch The pitch of 2D data used to create bindless image.
+  /// \param [in] q The queue where the image creation be executed.
   void attach(void *data, const image_channel &channel, size_t width,
               size_t height, size_t pitch,
               sycl::queue &q = get_default_queue()) {
@@ -1148,56 +1190,121 @@ public:
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
 #ifdef DPCT_USM_LEVEL_NONE
     auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    _img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
-    detail::get_img_mem_map(_img) = mem;
+    *_img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
+    detail::get_img_mem_map(*_img) = mem;
     auto ptr = get_buffer(data)
                    .template get_access<sycl::access_mode::read_write>()
                    .get_pointer();
     q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
     q.wait_and_throw();
 #else
-    _img = sycl::ext::oneapi::experimental::create_image(
-        data, pitch, samp, desc, q);
-    detail::get_img_mem_map(_img) = 0;
+    *_img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp,
+                                                          desc, q);
+    detail::get_img_mem_map(*_img) = 0;
 #endif
   }
+
+  /// Attach 2D data to bindless image.
+  /// \param [in] data The 2D data used to create bindless image.
+  /// \param [in] width The width of 2D data used to create bindless image.
+  /// \param [in] height The height of 2D data used to create bindless image.
+  /// \param [in] pitch The pitch of 2D data used to create bindless image.
+  /// \param [in] q The queue where the image creation be executed.
   void attach(void *data, size_t width, size_t height, size_t pitch,
               sycl::queue &q = get_default_queue()) {
     attach(data, _channel, width, height, pitch, q);
   }
+
+  /// Attach image memory to bindless image.
+  /// \param [in] mem The image memory used to create bindless image.
+  /// \param [in] channel The image channel used to create bindless image.
+  /// \param [in] q The queue where the image creation be executed.
   void attach(image_mem_p mem, const image_channel &channel,
               sycl::queue &q = get_default_queue()) {
     detach(q);
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
-    _img = sycl::ext::oneapi::experimental::create_image(
+    *_img = sycl::ext::oneapi::experimental::create_image(
         *mem, samp, mem->get_descriptor(), q);
-    detail::get_img_mem_map(_img) = 0;
+    detail::get_img_mem_map(*_img) = 0;
   }
+
+  /// Attach image memory to bindless image.
+  /// \param [in] mem The image memory used to create bindless image.
+  /// \param [in] q The queue where the image creation be executed.
   void attach(image_mem_p mem, sycl::queue &q = get_default_queue()) {
     attach(mem, _channel, q);
   }
+
+  /// Detach bindless image data.
+  /// \param [in] q The queue where the image destruction be executed.
   void detach(sycl::queue &q = get_default_queue()) {
-    destroy_image_handle(_img, q);
+    destroy_bindless_image(*_img, q);
   }
+
+  /// Set image channel of bindless image.
+  /// \param [in] channel The image channel used to set.
   void set_channel(image_channel channel) { _channel = channel; }
+  /// Get image channel of bindless image.
+  /// \returns The image channel of bindless image.
+  image_channel get_channel() { return _channel; }
+
+  /// Set channel size of image channel.
+  /// \param [in] channel_num The channels number to set.
+  /// \param [in] channel_size The size for each channel in bits.
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
     return _channel.set_channel_size(channel_num, channel_size);
   }
+  /// Get channel size of image channel.
+  /// \returns The size for each channel in bits.
+  unsigned get_channel_size() { return _channel.get_channel_size(); }
+
+  /// Set image channel data type of image channel.
+  /// \param [in] type The image channel data type to set.
   void set_channel_data_type(image_channel_data_type type) {
     _channel.set_channel_data_type(type);
   }
+  /// Get image channel data type of image channel.
+  /// \returns The image channel data type of image channel.
+  image_channel_data_type get_channel_data_type() {
+    return _channel.get_channel_data_type();
+  }
+
+  /// Set addressing mode of bindless image.
+  /// \param [in] addressing_mode The addressing mode used to set.
   void set(sycl::addressing_mode addressing_mode) {
     _addressing_mode = addressing_mode;
   }
-  void set(sycl::coordinate_normalization_mode addressing_mode) {
-    _coordinate_normalization_mode = addressing_mode;
+  /// Get addressing mode of bindless image.
+  /// \returns The addressing mode of bindless image.
+  sycl::addressing_mode get_addressing_mode() { return _addressing_mode; }
+
+  /// Set coordinate normalization mode of bindless image.
+  /// \param [in] coordinate_normalization_mode The coordinate normalization
+  /// mode used to set.
+  void set(sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+    _coordinate_normalization_mode = coordinate_normalization_mode;
   }
+  /// Get coordinate normalization mode of bindless image.
+  /// \returns The coordinate normalization mode of bindless image.
+  bool is_coordinate_normalized() {
+    return _coordinate_normalization_mode ==
+           sycl::coordinate_normalization_mode::normalized;
+  }
+
+  /// Set filtering mode of bindless image.
+  /// \param [in] filtering_mode The filtering mode used to set.
   void set(sycl::filtering_mode filtering_mode) {
     _filtering_mode = filtering_mode;
   }
+  /// Get filtering mode of bindless image.
+  /// \returns The filtering mode of bindless image.
+  sycl::filtering_mode get_filtering_mode() { return _filtering_mode; }
+
+  /// Get bindless image handle.
+  /// \returns The sampled image handle of created bindless image.
   inline sycl::ext::oneapi::experimental::sampled_image_handle get_handle() {
-    return _img;
+    return *_img;
   }
 
 private:
@@ -1206,10 +1313,20 @@ private:
   sycl::coordinate_normalization_mode _coordinate_normalization_mode =
       sycl::coordinate_normalization_mode::unnormalized;
   sycl::filtering_mode _filtering_mode = sycl::filtering_mode::nearest;
-  sycl::ext::oneapi::experimental::sampled_image_handle _img;
+  sycl::ext::oneapi::experimental::sampled_image_handle *_img;
 };
 
-/// TODO: ???
+/// Asynchronously copies from the image memory to memory specified by a
+/// pointer, The return of the function does NOT guarantee the copy is
+/// completed.
+/// \param [in] src The source image memory.
+/// \param [in] w_offset_src The x offset of source image memory.
+/// \param [in] h_offset_src The y offset of source image memory.
+/// \param [in] dest The destination memory address.
+/// \param [in] p The pitch of destination memory.
+/// \param [in] w The width of matrix to be copied.
+/// \param [in] h The height of matrix to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void async_dpct_memcpy(image_mem_p src, size_t w_offset_src,
                                      size_t h_offset_src, void *dest, size_t p,
                                      size_t w, size_t h,
@@ -1217,7 +1334,16 @@ static inline void async_dpct_memcpy(image_mem_p src, size_t w_offset_src,
   detail::dpct_memcpy(src, w_offset_src, h_offset_src, dest, p, w, h, q);
 }
 
-/// TODO: ???
+/// Synchronously copies from the image memory to memory specified by a
+/// pointer, The function will return after the copy is completed.
+/// \param [in] src The source image memory.
+/// \param [in] w_offset_src The x offset of source image memory.
+/// \param [in] h_offset_src The y offset of source image memory.
+/// \param [in] dest The destination memory address.
+/// \param [in] p The pitch of destination memory.
+/// \param [in] w The width of matrix to be copied.
+/// \param [in] h The height of matrix to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void dpct_memcpy(image_mem_p src, size_t w_offset_src,
                                size_t h_offset_src, void *dest, size_t p,
                                size_t w, size_t h,
@@ -1225,14 +1351,29 @@ static inline void dpct_memcpy(image_mem_p src, size_t w_offset_src,
   detail::dpct_memcpy(src, w_offset_src, h_offset_src, dest, p, w, h, q).wait();
 }
 
-/// TODO: ???
+/// Asynchronously copies from the image memory to memory specified by a
+/// pointer, The return of the function does NOT guarantee the copy is
+/// completed.
+/// \param [in] src The source image memory.
+/// \param [in] w_offset_src The x offset of source image memory.
+/// \param [in] h_offset_src The y offset of source image memory.
+/// \param [in] dest The destination memory address.
+/// \param [in] s The size to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void async_dpct_memcpy(image_mem_p src, size_t w_offset_src,
                                      size_t h_offset_src, void *dest, size_t s,
                                      sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(src, w_offset_src, h_offset_src, dest, s, q);
 }
 
-/// TODO: ???
+/// Synchronously copies from the image memory to memory specified by a
+/// pointer, The function will return after the copy is completed.
+/// \param [in] src The source image memory.
+/// \param [in] w_offset_src The x offset of source image memory.
+/// \param [in] h_offset_src The y offset of source image memory.
+/// \param [in] dest The destination memory address.
+/// \param [in] s The size to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void dpct_memcpy(image_mem_p src, size_t w_offset_src,
                                size_t h_offset_src, void *dest, size_t s,
                                sycl::queue &q = get_default_queue()) {
@@ -1240,7 +1381,16 @@ static inline void dpct_memcpy(image_mem_p src, size_t w_offset_src,
       detail::dpct_memcpy(src, w_offset_src, h_offset_src, dest, s, q));
 }
 
-/// TODO: ???
+/// Asynchronously copies from memory specified by a pointer to the image
+/// memory, The return of the function does NOT guarantee the copy is completed.
+/// \param [in] src The source memory address.
+/// \param [in] dest The destination image memory.
+/// \param [in] w_offset_dest The x offset of destination image memory.
+/// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] p The pitch of source memory.
+/// \param [in] w The width of matrix to be copied.
+/// \param [in] h The height of matrix to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void async_dpct_memcpy(void *src, image_mem_p dest,
                                      size_t w_offset_dest, size_t h_offset_dest,
                                      size_t p, size_t w, size_t h,
@@ -1248,7 +1398,16 @@ static inline void async_dpct_memcpy(void *src, image_mem_p dest,
   detail::dpct_memcpy(src, dest, w_offset_dest, h_offset_dest, p, w, h, q);
 }
 
-/// TODO: ???
+/// Synchronously copies from memory specified by a pointer to the image
+/// memory, The function will return after the copy is completed.
+/// \param [in] src The source memory address.
+/// \param [in] dest The destination image memory.
+/// \param [in] w_offset_dest The x offset of destination image memory.
+/// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] p The pitch of source memory.
+/// \param [in] w The width of matrix to be copied.
+/// \param [in] h The height of matrix to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void dpct_memcpy(void *src, image_mem_p dest,
                                size_t w_offset_dest, size_t h_offset_dest,
                                size_t p, size_t w, size_t h,
@@ -1257,7 +1416,14 @@ static inline void dpct_memcpy(void *src, image_mem_p dest,
       .wait();
 }
 
-/// TODO: ???
+/// Asynchronously copies from memory specified by a pointer to the image
+/// memory, The return of the function does NOT guarantee the copy is completed.
+/// \param [in] src The source memory address.
+/// \param [in] dest The destination image memory.
+/// \param [in] w_offset_dest The x offset of destination image memory.
+/// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] s The size to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void async_dpct_memcpy(void *src, image_mem_p dest,
                                      size_t w_offset_dest, size_t h_offset_dest,
                                      size_t s,
@@ -1265,7 +1431,14 @@ static inline void async_dpct_memcpy(void *src, image_mem_p dest,
   detail::dpct_memcpy(src, dest, w_offset_dest, h_offset_dest, s, q);
 }
 
-/// TODO: ???
+/// Synchronously copies from memory specified by a pointer to the image
+/// memory, The function will return after the copy is completed.
+/// \param [in] src The source memory address.
+/// \param [in] dest The destination image memory.
+/// \param [in] w_offset_dest The x offset of destination image memory.
+/// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] s The size to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void dpct_memcpy(void *src, image_mem_p dest,
                                size_t w_offset_dest, size_t h_offset_dest,
                                size_t s, sycl::queue &q = get_default_queue()) {
@@ -1273,7 +1446,17 @@ static inline void dpct_memcpy(void *src, image_mem_p dest,
       detail::dpct_memcpy(src, dest, w_offset_dest, h_offset_dest, s, q));
 }
 
-/// TODO: ???
+/// Synchronously copies from image memory to the image memory, The function
+/// will return after the copy is completed.
+/// \param [in] src The source image memory.
+/// \param [in] w_offset_src The x offset of source image memory.
+/// \param [in] h_offset_src The y offset of source image memory.
+/// \param [in] dest The destination image memory.
+/// \param [in] w_offset_dest The x offset of destination image memory.
+/// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] w The width of matrix to be copied.
+/// \param [in] h The height of matrix to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void dpct_memcpy(image_mem_p src, size_t w_offset_src,
                                size_t h_offset_src, image_mem_p dest,
                                size_t w_offset_dest, size_t h_offset_dest,
@@ -1286,7 +1469,16 @@ static inline void dpct_memcpy(image_mem_p src, size_t w_offset_src,
   sycl::free(temp, q);
 }
 
-/// TODO: ???
+/// Synchronously copies from image memory to the image memory, The function
+/// will return after the copy is completed.
+/// \param [in] src The source image memory.
+/// \param [in] w_offset_src The x offset of source image memory.
+/// \param [in] h_offset_src The y offset of source image memory.
+/// \param [in] dest The destination image memory.
+/// \param [in] w_offset_dest The x offset of destination image memory.
+/// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] s The size to be copied.
+/// \param [in] q The queue to execute the copy task.
 static inline void dpct_memcpy(image_mem_p src, size_t w_offset_src,
                                size_t h_offset_src, image_mem_p dest,
                                size_t w_offset_dest, size_t h_offset_dest,
