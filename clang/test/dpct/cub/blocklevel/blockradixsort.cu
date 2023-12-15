@@ -31,10 +31,9 @@ void print_data(int* data, int num) {
 }
 
 //CHECK: void BlockRadixSortKernel(int* d_data,  const sycl::nd_item<3> &item_ct1) {
-//CHECK:  dpct::group::radix_sort radixsort_obj;
 //CHECK:  int threadid = item_ct1.get_local_id(2);
 //CHECK:  d_data[threadid*ItemsPerThread] = (threadid*2)%32;
-//CHECK:  radixsort_obj.sort(item_ct1.get_group(), d_data);
+//CHECK:  dpct::group::radix_sort().sort(item_ct1.get_group(), d_data);
 //CHECK:}
 
 __global__ void BlockRadixSortKernel(int *d_data)
