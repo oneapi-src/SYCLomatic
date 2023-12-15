@@ -702,6 +702,31 @@ struct sub_sat {
   }
 };
 
+// x << offset
+struct shift_left {
+  template <typename T>
+  auto operator()(const T x, const uint32_t offset) const {
+    return x << offset;
+  }
+}
+
+/// x >> offset
+struct shift_right {
+  template <typename T>
+  auto operator()(const T x, const uint32_t offset) const {
+    return x >> offset;
+  }
+}
+
+/// x + y >= 0: (x + y + 1) >> 1
+/// x + y < 0 : (x + y) >> 1
+struct average {
+  template <typename T>
+  auto operator()(const T x, const T y) const {
+    return (x + y + (x + y >= 0)) >> 1;
+  }
+}
+
 /// Compute vectorized binary operation value for two values, with each value
 /// treated as a vector type \p VecT.
 /// \tparam [in] VecT The type of the vector
@@ -1378,6 +1403,186 @@ inline constexpr RetT extend_max_sat(AT a, BT b, CT c,
   return detail::extend_binary<RetT, true>(a, b, c, maximum(), second_op);
 }
 
+/// Extend \p a and \p b to 33 bit and return a << clamp(b, 0, 32)
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns a << clamp(b, 0, 32)
+template <typename RetT, typename T>
+inline constexpr RetT extend_shl_clamp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, false>(a, sycl::clamp(b, 0u, 32u),
+                                            shift_left());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(a << clamp(b, 0, 32), c)
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(a << clamp(b, 0, 32), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shl_clamp(T a, uint32_t b, uint32_t c,
+                                       BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, sycl::clamp(b, 0u, 32u), c,
+                                            shift_left(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return sat(a << clamp(b, 0, 32)).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns sat(a << clamp(b, 0, 32))
+template <typename RetT, typename T>
+inline constexpr RetT extend_shl_sat_clamp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, true>(a, sycl::clamp(b, 0u, 32u),
+                                           shift_left());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(sat(a << clamp(b, 0, 32)), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(sat(a << clamp(b, 0, 32)), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shl_sat_clamp(T a, uint32_t b, uint32_t c,
+                                           BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, sycl::clamp(b, 0u, 32u), c,
+                                           shift_left(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return a << (b & 0x1F)
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns a << (b & 0x1F)
+template <typename RetT, typename T>
+inline constexpr RetT extend_shl_warp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, false>(a, b & 0x1F, shift_left());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(a << (b & 0x1F), c)
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(a << (b & 0x1F), c)
+template <typename RetT, typename T, uint32_ttypename BinaryOperation>
+inline constexpr RetT extend_shl_warp(T a, uint32_t b, uint32_t c,
+                                      BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b & 0x1F, c, shift_left(),
+                                            second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return sat(a << (b & 0x1F)).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns sat(a << (b & 0x1F))
+template <typename RetT, typename T>
+inline constexpr RetT extend_shl_sat_warp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, true>(a, b & 0x1F, shift_left());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(sat(a << (b & 0x1F)), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(sat(a << (b & 0x1F)), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shl_sat_warp(T a, uint32_t b, uint32_t c,
+                                          BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b & 0x1F, c, shift_left(),
+                                           second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return a >> clamp(b, 0, 32)
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns a >> clamp(b, 0, 32)
+template <typename RetT, typename T>
+inline constexpr RetT extend_shr_clamp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, false>(a, sycl::clamp(b, 0u, 32u),
+                                            shift_right());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(a >> clamp(b, 0, 32), c)
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(a >> clamp(b, 0, 32), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shr_clamp(T a, uint32_t b, uint32_t c,
+                                       BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, sycl::clamp(b, 0u, 32u), c,
+                                            shift_right(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return sat(a >> clamp(b, 0, 32)).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns sat(a >> clamp(b, 0, 32))
+template <typename RetT, typename T>
+inline constexpr RetT extend_shr_sat_clamp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, true>(a, sycl::clamp(b, 0u, 32u),
+                                           shift_right());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(sat(a >> clamp(b, 0, 32)), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(sat(a >> clamp(b, 0, 32)), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shr_sat_clamp(T a, uint32_t b, uint32_t c,
+                                           BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, sycl::clamp(b, 0u, 32u), c,
+                                           shift_right(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return a >> (b & 0x1F)
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns a << (b & 0x1F)
+template <typename RetT, typename T>
+inline constexpr RetT extend_shr_warp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, false>(a, b & 0x1F, shift_right());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(a >> (b & 0x1F), c)
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(a << (b & 0x1F), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shr_warp(T a, uint32_t b, uint32_t c,
+                                      BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b & 0x1F, c, shift_right(),
+                                            second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return sat(a >> (b & 0x1F)).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns sat(a << (b & 0x1F))
+template <typename RetT, typename T>
+inline constexpr RetT extend_shr_sat_warp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, true>(a, b & 0x1F, shift_right());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(sat(a >> (b & 0x1F)), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(sat(a << (b & 0x1F)), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shr_sat_warp(T a, uint32_t b, uint32_t c,
+                                          BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b & 0x1F, c, shift_right(),
+                                           second_op);
+}
+
 /// Compute vectorized addition of \p a and \p b, with each value treated as a
 /// 2 elements vector type and extend each element to 17 bit.
 /// \tparam [in] RetT The type of the return value, can only be 32 bit integer
@@ -1598,6 +1803,50 @@ inline constexpr RetT extend_vmax2_sat(AT a, BT b, RetT c) {
   return detail::extend_vbinary2<RetT, true, false>(a, b, c, maximum());
 }
 
+/// Compute vectorized average of \p a and \p b, with each value treated as a 2
+/// elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized average of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg2(AT a, BT b, RetT c) {
+  return detail::extend_vbinary2<RetT, false, false>(a, b, c, average());
+}
+
+/// Compute vectorized average of \p a and \p b, with each value treated as a 2
+/// elements vector type and extend each element to 17 bit. Then add each half
+/// of the result and add with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The addition of each half of extend average maximum of the
+/// two values and the third value
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg2_add(AT a, BT b, RetT c) {
+  return detail::extend_vbinary2<RetT, false, true>(a, b, c, average());
+}
+
+/// Compute vectorized average of \p a and \p b with saturation, with each value
+/// treated as a 2 elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized average of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg2_sat(AT a, BT b, RetT c) {
+  return detail::extend_vbinary2<RetT, true, false>(a, b, c, average());
+}
+
 /// Compute vectorized addition of \p a and \p b, with each value treated as a
 /// 4 elements vector type and extend each element to 9 bit.
 /// \tparam [in] RetT The type of the return value, can only be 32 bit integer
@@ -1816,6 +2065,50 @@ inline constexpr RetT extend_vmax4_add(AT a, BT b, RetT c) {
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vmax4_sat(AT a, BT b, RetT c) {
   return detail::extend_vbinary4<RetT, true, false>(a, b, c, maximum());
+}
+
+/// Compute vectorized average of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized average of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg4(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, false>(a, b, c, average());
+}
+
+/// Compute vectorized average of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 9 bit. Then add each half
+/// of the result and add with \p c.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The addition of each half of extend vectorized average of the
+/// two values and the third value
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg4_add(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, true>(a, b, c, average());
+}
+
+/// Compute vectorized average of \p a and \p b with saturation, with each value
+/// treated as a 4 elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized average of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg4_sat(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, true, false>(a, b, c, average());
 }
 } // namespace dpct
 

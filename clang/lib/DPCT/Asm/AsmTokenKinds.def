@@ -317,6 +317,8 @@ ROUND_MOD(approx, ".approx")
 SAT_MOD(sat, ".sat")
 SAT_MOD(satfinite, ".satfinite")
 SAT_MOD(relu, ".relu")
+SAT_MOD(clamp, ".clamp")
+SAT_MOD(warp, ".warp")
 
 MUL_MOD(wide, ".wide")
 

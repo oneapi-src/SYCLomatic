@@ -1492,6 +1492,8 @@ protected:
     OS() << " = " << Fn;
     if (Inst->hasAttr(InstAttr::sat))
       OS() << "_sat";
+    if (Inst->is(asmtok::op_vshl, asmtok::op_vshr))
+      OS() << (Inst->hasAttr(InstAttr::clamp) ? "_clamp" : "_warp");
     OS() << "<";
     if (emitType(Inst->getType(0)))
       return SYCLGenError();
@@ -1518,23 +1520,38 @@ protected:
   }
 
   bool handle_vadd(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_add");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_add");
   }
 
   bool handle_vsub(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_sub");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_sub");
   }
 
   bool handle_vabsdiff(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_absdiff");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_absdiff");
   }
 
   bool handle_vmax(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_max");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_max");
   }
 
   bool handle_vmin(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_min");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_min");
+  }
+
+  bool handle_vshl(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_shl");
+  }
+
+  bool handle_vshr(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_shr");
   }
 
   // Handle the 2/4 element video instructions.
@@ -1586,34 +1603,52 @@ protected:
   }
 
   bool handle_vadd2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vadd2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vadd2");
   }
   bool handle_vsub2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vsub2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vsub2");
   }
   bool handle_vabsdiff2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vabsdiff2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vabsdiff2");
   }
   bool handle_vmin2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmin2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vmin2");
   }
   bool handle_vmax2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vmax2");
+  }
+  bool handle_vavrg2(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vavrg2");
   }
   bool handle_vadd4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vadd4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vadd4");
   }
   bool handle_vsub4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vsub4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vsub4");
   }
   bool handle_vabsdiff4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vabsdiff4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vabsdiff4");
   }
   bool handle_vmin4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmin4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vmin4");
   }
   bool handle_vmax4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vmax4");
+  }
+  bool handle_vavrg4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vavrg4");
   }
 
   bool handle_bfe(const InlineAsmInstruction *Inst) override {
