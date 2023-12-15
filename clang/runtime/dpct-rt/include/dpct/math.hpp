@@ -708,7 +708,7 @@ struct shift_left {
   auto operator()(const T x, const uint32_t offset) const {
     return x << offset;
   }
-}
+};
 
 /// x >> offset
 struct shift_right {
@@ -716,7 +716,7 @@ struct shift_right {
   auto operator()(const T x, const uint32_t offset) const {
     return x >> offset;
   }
-}
+};
 
 /// x + y >= 0: (x + y + 1) >> 1
 /// x + y < 0 : (x + y) >> 1
@@ -725,7 +725,7 @@ struct average {
   auto operator()(const T x, const T y) const {
     return (x + y + (x + y >= 0)) >> 1;
   }
-}
+};
 
 /// Compute vectorized binary operation value for two values, with each value
 /// treated as a vector type \p VecT.
@@ -1464,7 +1464,7 @@ inline constexpr RetT extend_shl_warp(T a, uint32_t b) {
 /// \param [in] c The value to merge
 /// \param [in] second_op The operation to do with the third value
 /// \returns second_op(a << (b & 0x1F), c)
-template <typename RetT, typename T, uint32_ttypename BinaryOperation>
+template <typename RetT, typename T, typename BinaryOperation>
 inline constexpr RetT extend_shl_warp(T a, uint32_t b, uint32_t c,
                                       BinaryOperation second_op) {
   return detail::extend_binary<RetT, false>(a, b & 0x1F, c, shift_left(),
