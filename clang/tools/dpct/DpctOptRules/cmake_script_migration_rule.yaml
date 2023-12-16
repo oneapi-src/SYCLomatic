@@ -42,6 +42,7 @@
   Out: set(${value})
   Subrules:
     value:
+      MatchMode: Full
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
@@ -67,5 +68,6 @@
   Out: dpct_compile_sycl_code(${device} ${value})
   Subrules:
     value:
+      MatchMode: Full
       In: ${arg}.cu
       Out: ${arg}.dp.cpp

@@ -35,3 +35,5 @@ set(dpct_cmake_file_path "${bin_path_of_dpct}/../cmake/dpct.cmake")
 include(${dpct_cmake_file_path})
 
 target_link_libraries(foo3 PUBLIC  ${TCNN_LIBRARIES} fmt)
+
+set(SOURCES a.dp.cpp b.cuh)

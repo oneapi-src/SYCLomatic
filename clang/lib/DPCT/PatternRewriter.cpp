@@ -182,7 +182,7 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
   const size_t Size = Pattern.size();
   size_t Index = 0;
 
-  if(Size == 0) {
+  if (Size == 0) {
     return Result;
   }
   while (Index < Size) {
@@ -243,11 +243,17 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
                                             const std::string &Input,
                                             const int Start);
 
+static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
+                                                const std::string &Input,
+                                                const int Start);
+
 static int parseCodeElement(const MatchPattern &Suffix,
-                            const std::string &Input, const int Start);
+                            const std::string &Input, const int Start,
+                            bool PartialMatch = true);
 
 static int parseBlock(char LeftDelimiter, char RightDelimiter,
-                      const std::string &Input, const int Start) {
+                      const std::string &Input, const int Start,
+                      bool PartialMatch) {
   const int Size = Input.size();
   int Index = Start;
 
@@ -256,7 +262,7 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
   }
   Index++;
 
-  Index = parseCodeElement({}, Input, Index);
+  Index = parseCodeElement({}, Input, Index, PartialMatch);
   if (Index == -1) {
     return -1;
   }
@@ -269,14 +275,22 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
 }
 
 static int parseCodeElement(const MatchPattern &Suffix,
-                            const std::string &Input, const int Start) {
+                            const std::string &Input, const int Start,
+                            bool PartialMatch) {
   int Index = Start;
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
     const auto Character = Input[Index];
 
     if (Suffix.size() > 0) {
-      const auto SuffixMatch = findMatch(Suffix, Input, Index);
+      std::optional<MatchResult> SuffixMatch;
+
+      if (PartialMatch) {
+        SuffixMatch = findMatch(Suffix, Input, Index);
+      } else {
+        SuffixMatch = findFullMatch(Suffix, Input, Index);
+      }
+
       if (SuffixMatch.has_value()) {
         return Index;
       }
@@ -287,17 +301,17 @@ static int parseCodeElement(const MatchPattern &Suffix,
     }
 
     if (Character == '{') {
-      Index = parseBlock('{', '}', Input, Index);
+      Index = parseBlock('{', '}', Input, Index, PartialMatch);
       continue;
     }
 
     if (Character == '[') {
-      Index = parseBlock('[', ']', Input, Index);
+      Index = parseBlock('[', ']', Input, Index, PartialMatch);
       continue;
     }
 
     if (Character == '(') {
-      Index = parseBlock('(', ')', Input, Index);
+      Index = parseBlock('(', ')', Input, Index, PartialMatch);
       continue;
     }
 
@@ -390,9 +404,25 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
   while (PatternIndex < PatternSize && Index < Size) {
     const auto &Element = Pattern[PatternIndex];
 
+    if (std::holds_alternative<SpacingElement>(Element)) {
+      if (!isWhitespace(Input[Index])) {
+        return {};
+      }
+      while (Index < Size && isWhitespace(Input[Index])) {
+        Index++;
+      }
+      PatternIndex++;
+      continue;
+    }
+
     if (std::holds_alternative<LiteralElement>(Element)) {
       const auto &Literal = std::get<LiteralElement>(Element);
       if (Input[Index] != Literal.Value) {
+        return {};
+      }
+
+      if (isIdentifiedChar(Input[Index + 1]) &&
+          PatternIndex + 1 == PatternSize && Literal.Value != '(') {
         return {};
       }
 
@@ -401,17 +431,36 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       continue;
     }
 
+    if (std::holds_alternative<CodeElement>(Element)) {
+      const auto &Code = std::get<CodeElement>(Element);
+      MatchPattern Suffix(Pattern.begin() + PatternIndex + 1,
+                          Pattern.begin() + PatternIndex + 1 +
+                              Code.SuffixLength);
+
+      int Next = parseCodeElement(Suffix, Input, Index, false);
+      if (Next == -1) {
+        return {};
+      }
+      const int Indentation = detectIndentation(Input, Index);
+      std::string ElementContents =
+          dedent(Input.substr(Index, Next - Index), Indentation);
+      if (Result.Bindings.count(Code.Name)) {
+        if (Result.Bindings[Code.Name] != ElementContents) {
+          return {};
+        }
+      } else {
+        Result.Bindings[Code.Name] = std::move(ElementContents);
+      }
+      Index = Next;
+      PatternIndex++;
+      continue;
+    }
+
     throw std::runtime_error("Internal error: invalid pattern element");
   }
-  
-  if ((Start == 0 || !isIdentifiedChar(Input[Start - 1])) &&
-      !isIdentifiedChar(Input[Index])) {
-    Result.Start = Start;
-    Result.End = Index;
-  } else {
-    return {};
-  }
 
+  Result.Start = Start;
+  Result.End = Index;
   return Result;
 }
 
@@ -441,11 +490,6 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
     if (std::holds_alternative<LiteralElement>(Element)) {
       const auto &Literal = std::get<LiteralElement>(Element);
       if (Input[Index] != Literal.Value) {
-        return {};
-      }
-
-      if (isIdentifiedChar(Input[Index + 1]) &&
-          PatternIndex + 1 == PatternSize && Literal.Value != '(') {
         return {};
       }
 
