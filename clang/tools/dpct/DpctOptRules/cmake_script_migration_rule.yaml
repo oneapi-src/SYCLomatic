@@ -71,3 +71,17 @@
       MatchMode: Full
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
+
+- Rule: rule_user_defined_function
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_files_in_user_defined_function
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+

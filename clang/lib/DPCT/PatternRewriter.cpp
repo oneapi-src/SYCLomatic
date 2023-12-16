@@ -98,12 +98,9 @@ static std::string indent(const std::string &Input, int Indentation) {
   const auto Lines = split(Input, '\n');
   for (const auto &Line : Lines) {
     const bool ContainsNonWhitespace = (trim(Line).size() > 0);
-    Output.push_back(ContainsNonWhitespace ? (Indent + Line) : "");
+    Output.push_back(ContainsNonWhitespace ? (Indent + trim(Line)) : "");
   }
   std::string Str = trim(join(Output, "\n"));
-  if (isWhitespace(Input[0])) {
-    Str = " " + Str;
-  }
   return Str;
 }
 
@@ -249,11 +246,11 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
 
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start,
-                            bool PartialMatch = true);
+                            bool IsPartialMatch = true);
 
 static int parseBlock(char LeftDelimiter, char RightDelimiter,
                       const std::string &Input, const int Start,
-                      bool PartialMatch) {
+                      bool IsPartialMatch) {
   const int Size = Input.size();
   int Index = Start;
 
@@ -262,7 +259,7 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
   }
   Index++;
 
-  Index = parseCodeElement({}, Input, Index, PartialMatch);
+  Index = parseCodeElement({}, Input, Index, IsPartialMatch);
   if (Index == -1) {
     return -1;
   }
@@ -276,7 +273,7 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
 
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start,
-                            bool PartialMatch) {
+                            bool IsPartialMatch) {
   int Index = Start;
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
@@ -285,7 +282,7 @@ static int parseCodeElement(const MatchPattern &Suffix,
     if (Suffix.size() > 0) {
       std::optional<MatchResult> SuffixMatch;
 
-      if (PartialMatch) {
+      if (IsPartialMatch) {
         SuffixMatch = findMatch(Suffix, Input, Index);
       } else {
         SuffixMatch = findFullMatch(Suffix, Input, Index);
@@ -301,17 +298,17 @@ static int parseCodeElement(const MatchPattern &Suffix,
     }
 
     if (Character == '{') {
-      Index = parseBlock('{', '}', Input, Index, PartialMatch);
+      Index = parseBlock('{', '}', Input, Index, IsPartialMatch);
       continue;
     }
 
     if (Character == '[') {
-      Index = parseBlock('[', ']', Input, Index, PartialMatch);
+      Index = parseBlock('[', ']', Input, Index, IsPartialMatch);
       continue;
     }
 
     if (Character == '(') {
-      Index = parseBlock('(', ')', Input, Index, PartialMatch);
+      Index = parseBlock('(', ')', Input, Index, IsPartialMatch);
       continue;
     }
 
@@ -394,6 +391,7 @@ static bool isIdentifiedChar(char Char) {
 static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
                                                 const std::string &Input,
                                                 const int Start) {
+
   MatchResult Result;
 
   int Index = Start;
@@ -421,7 +419,9 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      if (isIdentifiedChar(Input[Index + 1]) &&
+      // To make sure first character behind the matched word is a not
+      // indentified character or sufix match '('.
+      if (Index < Size - 1 && isIdentifiedChar(Input[Index + 1]) &&
           PatternIndex + 1 == PatternSize && Literal.Value != '(') {
         return {};
       }
@@ -565,7 +565,6 @@ static void instantiateTemplate(
 
     auto Character = Template[Index];
     if (Index < (Size - 1) && Character == '$' && Template[Index + 1] == '{') {
-      const int BindingStart = Index;
       Index += 2;
 
       const auto RightCurly = Template.find('}', Index);
@@ -577,10 +576,7 @@ static void instantiateTemplate(
 
       const auto &BindingIterator = Bindings.find(Name);
       if (BindingIterator != Bindings.end()) {
-        const int BindingIndentation =
-            detectIndentation(Template, BindingStart) + Indentation;
-        const std::string Contents =
-            indent(BindingIterator->second, BindingIndentation);
+        const std::string Contents = BindingIterator->second;
         OutputStream << Contents;
       }
       continue;
@@ -613,15 +609,19 @@ bool fixLineEndings(const std::string &Input, std::string &Output) {
   return isCRLF;
 }
 
-int skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
-                      int Index) {
+bool skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
+                       int &Index) {
   const int Size = Input.size();
+  bool CommentFound = false;
   if (Input[Index] == '#') {
+    CommentFound = true;
     for (; Index < Size && Input[Index] != '\n'; Index++) {
       OutputStream << Input[Index];
     }
+    OutputStream << "\n";
+    Index++;
   }
-  return Index;
+  return CommentFound;
 }
 
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
@@ -638,7 +638,9 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   while (Index < Size) {
 
     if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
-      Index = skipCmakeComments(OutputStream, Input, Index);
+      if (skipCmakeComments(OutputStream, Input, Index)) {
+        continue;
+      }
     }
 
     std::optional<MatchResult> Result;
@@ -658,6 +660,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
         }
       }
       const int Indentation = detectIndentation(Input, Index);
+
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
       while (Input[Index] == '\n') {
