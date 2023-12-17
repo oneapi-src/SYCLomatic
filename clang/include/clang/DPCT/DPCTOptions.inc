@@ -422,6 +422,16 @@ DPCT_NON_ENUM_OPTION(
         "Limit extension change to .cu and .cuh files only. Default: off."),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
+DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<SYCLFileExtensionEnum>), SYCLFileExtension, "sycl_file_extension",
+           DPCT_OPTION_VALUES(
+             DPCT_OPT_ENUM("sycl_cpp", int(SYCLFileExtensionEnum::SYCL_CPP), "Use extension .sycl.cpp and .sycl.hpp", false),
+             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension .cpp and .hpp", false),
+             DPCT_OPT_ENUM("dp_cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension .dp.cpp and .dp.hpp", false)
+           ),
+           llvm::cl::desc("File extension of migrated source files\n"),
+           llvm::cl::init(SYCLFileExtensionEnum::DP_CPP), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
+           llvm::cl::Optional)
+
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunction, "gen-helper-function",
         llvm::cl::desc("Generate helper function files in the --out-root directory. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
