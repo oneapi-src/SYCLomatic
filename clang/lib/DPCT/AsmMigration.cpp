@@ -1464,6 +1464,22 @@ protected:
     return SYCLGenSuccess();
   }
 
+  bool handle_copysign(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 2)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op[2];
+    for (int i = 0; i < 2; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    OS() << "std::copysign(" << Op[1] << ", " << Op[0] << ')';
+    endstmt();
+    insertHeader(HeaderType::HT_Math);
+    return SYCLGenSuccess();
+  }
+
   // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
   bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst,
                                     StringRef Fn) {
@@ -1941,7 +1957,8 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
     AA.setCallSpelling(SM.getSpellingLoc(GAS->getBeginLoc()),
                        SM.getSpellingLoc(GAS->getEndLoc()));
     AA.analyze(E);
-    if (needExtraParens(E))
+    if (needExtraParens(E) && !isa<UnaryOperator>(E) &&
+        !isa<UnaryExprOrTypeTraitExpr>(E))
       return "(" + AA.getRewriteString() + ")";
     return AA.getRewriteString();
   };
