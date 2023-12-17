@@ -11,7 +11,7 @@
 __global__ void testp() {
   int val;
 
-  // CHECK: val = !sycl::isinf(1.0f);
+  // CHECK: val = sycl::isfinite(1.0f);
   asm("testp.finite.f32 %0, %1;" : "=r"(val) : "f"(1.0f));
 
   // CHECK: val = sycl::isinf(1.0f);
@@ -29,7 +29,7 @@ __global__ void testp() {
   // CHECK: val = !sycl::isnormal(1.0f);
   asm("testp.subnormal.f32 %0, %1;" : "=r"(val) : "f"(1.0f));
 
-  // CHECK: val = !sycl::isinf(1.0);
+  // CHECK: val = sycl::isfinite(1.0);
   asm("testp.finite.f64 %0, %1;" : "=r"(val) : "d"(1.0));
 
   // CHECK: val = sycl::isinf(1.0);

@@ -1428,7 +1428,7 @@ protected:
     OS() << " = ";
 
     if (Inst->hasAttr(InstAttr::finite))
-      OS() << "!" << MapNames::getClNamespace() << "isinf(";
+      OS() << MapNames::getClNamespace() << "isfinite(";
     else if (Inst->hasAttr(InstAttr::infinite))
       OS() << MapNames::getClNamespace() << "isinf(";
     else if (Inst->hasAttr(InstAttr::number))
