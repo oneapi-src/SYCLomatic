@@ -157,11 +157,11 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName,
   if (DpctGlobalInfo::getChangeExtensions().empty() ||
       DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
     if (FileType & SPT_CudaSource)
-      path::replace_extension(CanonicalPathStr, "dp.cpp");
+      path::replace_extension(CanonicalPathStr, DpctGlobalInfo::getSYCLSourceExtension());
     else if (FileType & SPT_CppSource)
-      path::replace_extension(CanonicalPathStr, Extension + ".dp.cpp");
+      path::replace_extension(CanonicalPathStr, Extension + DpctGlobalInfo::getSYCLSourceExtension());
     else if (FileType & SPT_CudaHeader)
-      path::replace_extension(CanonicalPathStr, "dp.hpp");
+      path::replace_extension(CanonicalPathStr, DpctGlobalInfo::getSYCLHeaderExtension());
   }
   FileName = CanonicalPathStr;
 }
