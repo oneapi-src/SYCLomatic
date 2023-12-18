@@ -119,7 +119,7 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation Loc) {
   }
 
   return std::pair<SourceLocation, size_t>(
-    Loc, TokenLen);
+      Loc, TokenLen);
 }
 
 std::pair<SourceLocation, size_t>
@@ -764,7 +764,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     std::string ReplacementStr = MapNames::findReplacedName(DeviceInfoVarRule::PropNamesMap, MemberName);
     if (!ReplacementStr.empty()) {
       std::string TmplArg = "";
-      if (MemberName == "maxGridSize" ||  
+      if (MemberName == "maxGridSize" ||
           MemberName == "maxThreadsDim") {
         // Similar code in ASTTraversal.cpp
         TmplArg = "<int *>";
@@ -1786,7 +1786,7 @@ void FunctorAnalysis::addConstQuailfier(const CXXRecordDecl *CRD) {
   for (const auto &D : CRD->decls()) {
     const CXXMethodDecl *Method = dyn_cast<CXXMethodDecl>(D);
     if (!Method) {
-       if (const FunctionTemplateDecl *FTD =
+      if (const FunctionTemplateDecl *FTD =
               dyn_cast<FunctionTemplateDecl>(D)) {
         if (const CXXMethodDecl *CMD =
                 dyn_cast_or_null<CXXMethodDecl>(FTD->getAsFunction())) {
