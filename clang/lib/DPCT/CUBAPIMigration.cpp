@@ -1146,35 +1146,34 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
     Repl = NewFuncName + "(" + ParamList + ")";
     emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
-  } else if (FuncName == "Sort" || FuncName == "SortDescending") {
+  }else if (FuncName == "Sort" || FuncName == "SortDescending") {
     if (BlockMC->getMethodDecl()
             ->getParamDecl(0)
             ->getType()
             ->isLValueReferenceType()) {
       GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
-      if (FuncName == "Sort")
-        {
-           NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort().sort";
-        }
-      else if (FuncName == "SortDescending")
-        {
-           NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort<DESCENDING=true>().sort";
-        }
+      if (FuncName == "Sort") {
+        NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort().sort";
+      } else if (FuncName == "SortDescending") {
+        NewFuncName = MapNames::getDpctNamespace() +
+                      "group::radix_sort<DESCENDING=true>().sort";
+      }
       requestFeature(HelperFeatureEnum::device_ext);
       DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                  HT_DPCT_DPL_Utils);
       const Expr *InData = FuncArgs[0];
       ExprAnalysis InEA(InData);
       OpRepl = getOpRepl(nullptr);
-      //Func Signature : sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0, int end_bit = 8 * sizeof(T)) 
-      if ((FuncName ==  "Sort" || FuncName == "SortDescending") && NumArgs < 2){
-      report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             "cub::" + FuncName);
-      return;
+      // Func Signature : sort(const Item &item, T (&keys)[VALUES_PER_THREAD],
+      // int begin_bit = 0, int end_bit = 8 * sizeof(T))
+      if ((FuncName == "Sort" || FuncName == "SortDescending") && NumArgs < 2) {
+        report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               "cub::" + FuncName);
+        return;
       }
       CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
       Repl = NewFuncName + "(" + ParamList + ")";
-      emplaceTransformation(new ReplaceStmt(BlockMC, Repl)); 
+      emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
     }
   }
 }
