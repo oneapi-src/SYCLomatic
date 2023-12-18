@@ -79,7 +79,6 @@ template <typename T> struct device_reference {
     return *this;
   };
   pointer operator&() const { return pointer(&value); };
-  operator value_type() const { return T(value); }
   device_reference &operator++() {
     ++value;
     return *this;
