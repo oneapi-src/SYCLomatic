@@ -1924,7 +1924,7 @@ ENTRY(cuDestroyExternalMemory, cuDestroyExternalMemory, false, NO_FLAG, P4, "com
 ENTRY(cuDestroyExternalSemaphore, cuDestroyExternalSemaphore, false, NO_FLAG, P4, "comment")
 ENTRY(cuDeviceGetLuid, cuDeviceGetLuid, false, NO_FLAG, P4, "comment")
 ENTRY(cuDeviceGetNvSciSyncAttributes, cuDeviceGetNvSciSyncAttributes, false, NO_FLAG, P4, "comment")
-ENTRY(cuDeviceGetUuid, cuDeviceGetUuid_v2, false, NO_FLAG, P4, "comment")
+ENTRY(cuDeviceGetUuid, cuDeviceGetUuid_v2, true, NO_FLAG, P4, "comment")
 ENTRY(cuExternalMemoryGetMappedBuffer, cuExternalMemoryGetMappedBuffer, false, NO_FLAG, P4, "comment")
 ENTRY(cuExternalMemoryGetMappedMipmappedArray, cuExternalMemoryGetMappedMipmappedArray, false, NO_FLAG, P4, "comment")
 ENTRY(cuGraphAddChildGraphNode, cuGraphAddChildGraphNode, false, NO_FLAG, P4, "comment")

@@ -443,6 +443,8 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
       {"cudaUUID_t",
        std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
+      {"CUuuid",
+       std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
       {"cusparseIndexType_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t")},
       {"cusparseFormat_t", std::make_shared<TypeNameRule>(
