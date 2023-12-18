@@ -36,6 +36,7 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SmallString.h"
@@ -1022,6 +1023,23 @@ int runDPCT(int argc, const char **argv) {
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   clang::dpct::initHeaderSpellings();
+
+  if (MigrateCmakeScriptOnly || MigrateCmakeScriptOnly) {
+    printf("#### DpctInstallPath: [%s]\n",
+           DpctInstallPath.getCanonicalPath().str().c_str());
+    SmallString<128> CmakeRuleFilePath(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(CmakeRuleFilePath,
+                            Twine("extensions/opt_rules/cmake_rules/"
+                                  "cmake_script_migration_rule.yaml"));
+    printf("#### CmakeRuleFilePath: [%s]\n",
+           CmakeRuleFilePath.str().str().c_str());
+    if (llvm::sys::fs::exists(CmakeRuleFilePath)) {
+      std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{CmakeRuleFilePath};
+      printf("Read file from %s\n", CmakeRuleFilePath.str().str().c_str());
+      importRules(CmakeRuleFiles);
+    }
+  }
+
   if (!RuleFile.empty()) {
     importRules(RuleFile);
   }
