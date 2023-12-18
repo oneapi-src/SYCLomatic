@@ -447,6 +447,33 @@ public:
     }
   }
 
+  /// Rearrange elements from striped order to blocked order
+  template <typename Item>
+  __dpct_inline__ void striped_to_blocked(Item item,
+                                          T (&keys)[VALUES_PER_THREAD],
+                                          int (&ranks)[VALUES_PER_THREAD]) {
+                                          
+    T *buffer = reinterpret_cast<T *>(_local_memory);
+    
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
+                       item.get_local_range(0)) +
+                   item.get_local_id(0);
+      offset = get_offset(item, keys, ranks, offset, i);
+      buffer[offset] = keys[i];
+    }
+
+    item.barrier(sycl::access::fence_space::local_space);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      offset = get_offset(item, keys, ranks, offset, i);
+      keys[i] = buffer[offset];
+    }
+  }
+
 private:
   static constexpr int LOG_LOCAL_MEMORY_BANKS = 5;
   static constexpr bool INSERT_PADDING =
