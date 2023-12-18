@@ -272,12 +272,12 @@ UnifiedPath getInstallPath(const char *invokeCommand) {
 
 // To validate the root path of the project to be migrated.
 void ValidateInputDirectory(UnifiedPath InRoot) {
-  if (isChildOrSamePath(CudaPath, InRoot)) {
+  if (!MigrateCmakeScriptOnly && isChildOrSamePath(CudaPath, InRoot)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
     dpctExit(MigrationErrorRunFromSDKFolder);
   }
 
-  if (isChildOrSamePath(InRoot, CudaPath)) {
+  if (!MigrateCmakeScriptOnly && isChildOrSamePath(InRoot, CudaPath)) {
     ShowStatus(MigrationErrorInputDirContainSDKFolder);
     dpctExit(MigrationErrorInputDirContainSDKFolder);
   }
@@ -806,9 +806,12 @@ int runDPCT(int argc, const char **argv) {
 
   ExtraIncPaths = OptParser->getExtraIncPathList();
 
-  // TODO: implement one of this for each source language.
-  CudaPath = getCudaInstallPath(OriginalArgc, argv);
-  DpctDiags() << "Cuda Include Path found: " << CudaPath.getCanonicalPath() << "\n";
+  if (!MigrateCmakeScriptOnly) {
+    // TODO: implement one of this for each source language.
+    CudaPath = getCudaInstallPath(OriginalArgc, argv);
+    DpctDiags() << "Cuda Include Path found: " << CudaPath.getCanonicalPath()
+                << "\n";
+  }
 
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
