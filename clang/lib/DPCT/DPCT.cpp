@@ -1025,17 +1025,13 @@ int runDPCT(int argc, const char **argv) {
   clang::dpct::initHeaderSpellings();
 
   if (MigrateCmakeScriptOnly || MigrateCmakeScriptOnly) {
-    printf("#### DpctInstallPath: [%s]\n",
-           DpctInstallPath.getCanonicalPath().str().c_str());
     SmallString<128> CmakeRuleFilePath(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(CmakeRuleFilePath,
                             Twine("extensions/opt_rules/cmake_rules/"
                                   "cmake_script_migration_rule.yaml"));
-    printf("#### CmakeRuleFilePath: [%s]\n",
-           CmakeRuleFilePath.str().str().c_str());
     if (llvm::sys::fs::exists(CmakeRuleFilePath)) {
-      std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{CmakeRuleFilePath};
-      printf("Read file from %s\n", CmakeRuleFilePath.str().str().c_str());
+      std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{
+          CmakeRuleFilePath};
       importRules(CmakeRuleFiles);
     }
   }
