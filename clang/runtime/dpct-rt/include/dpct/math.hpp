@@ -279,8 +279,9 @@ template <typename T> inline T cbrt(T val) { return sycl::cbrt((T)val); }
 
 // min function overloads.
 // For floating-point types, `float` or `double` arguments are acceptable.
-// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
-// `std::int64_t` type arguments are acceptable.
+// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t`,
+// `std::int64_t`, long long or unsigned long long type arguments are
+// acceptable.
 inline double min(const double a, const float b) {
   return sycl::fmin(a, static_cast<double>(b));
 }
@@ -325,10 +326,30 @@ inline std::uint64_t min(const std::uint64_t a, const std::uint32_t b) {
 inline std::uint64_t min(const std::uint32_t a, const std::uint64_t b) {
   return sycl::min(static_cast<std::uint64_t>(a), b);
 }
+inline std::enable_if<!std::is_same_v<std::int64_t, long long>, long long>::type
+min(const long long a, const long long b) {
+  return sycl::min(a, b);
+}
+inline std::enable_if<!std::is_same_v<std::int64_t, long long>,
+                      unsigned long long>::type
+min(const unsigned long long a, const unsigned long long b) {
+  return sycl::min(a, b);
+}
+inline std::enable_if<!std::is_same_v<std::int64_t, long long>,
+                      unsigned long long>::type
+min(const long long a, const unsigned long long b) {
+  return sycl::min(static_cast<unsigned long long>(a), b);
+}
+inline std::enable_if<!std::is_same_v<std::int64_t, long long>,
+                      unsigned long long>::type
+min(const unsigned long long a, const long long b) {
+  return sycl::min(a, static_cast<unsigned long long>(b));
+}
 // max function overloads.
 // For floating-point types, `float` or `double` arguments are acceptable.
-// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
-// `std::int64_t` type arguments are acceptable.
+// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t`,
+// `std::int64_t`, long long or unsigned long long type arguments are
+// acceptable.
 inline double max(const double a, const float b) {
   return sycl::fmax(a, static_cast<double>(b));
 }
@@ -372,6 +393,25 @@ inline std::uint64_t max(const std::uint64_t a, const std::uint32_t b) {
 }
 inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
   return sycl::max(static_cast<std::uint64_t>(a), b);
+}
+inline std::enable_if<!std::is_same_v<std::int64_t, long long>, long long>::type
+max(const long long a, const long long b) {
+  return sycl::max(a, b);
+}
+inline std::enable_if<!std::is_same_v<std::int64_t, long long>,
+                      unsigned long long>::type
+max(const unsigned long long a, const unsigned long long b) {
+  return sycl::max(a, b);
+}
+inline std::enable_if<!std::is_same_v<std::int64_t, long long>,
+                      unsigned long long>::type
+max(const long long a, const unsigned long long b) {
+  return sycl::max(static_cast<unsigned long long>(a), b);
+}
+inline std::enable_if<!std::is_same_v<std::int64_t, long long>,
+                      unsigned long long>::type
+max(const unsigned long long a, const long long b) {
+  return sycl::max(a, static_cast<unsigned long long>(b));
 }
 
 // pow functions overload.

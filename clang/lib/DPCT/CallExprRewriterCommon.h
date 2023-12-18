@@ -154,6 +154,7 @@ public:
   }
 };
 
+
 class CastIfSpecialExpr {
   const Expr *Arg;
   const CallExpr *CE;
@@ -609,8 +610,17 @@ makeArgWithAddressSpaceCast(int ArgIdx, std::string Type) {
         MapNames::getClNamespace() + "address_space_cast<" +
         MapNames::getClNamespace() +
         "access::address_space::" + getAddressSpace(C, ArgIdx) + ", " +
-        MapNames::getClNamespace() + "access::decorated::yes" + ", " +
-        Type + ">(" + EA.getReplacedString() + ")";
+        MapNames::getClNamespace() + "access::decorated::yes" + ", " + Type +
+        ">(";
+
+    const Expr *InputArg = E->IgnoreImpCasts();
+    clang::QualType ArgType = InputArg->getType().getCanonicalType();
+    ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
+    if (ArgType->getPointeeType().getAsString() != Type) {
+      Result = Result + "(" + Type + " *)";
+    }
+    Result = Result + EA.getReplacedString() + ")";
+
     return Result;
   };
 }

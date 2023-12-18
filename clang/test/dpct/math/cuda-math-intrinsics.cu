@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/math/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp -o %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.o %}
 
 #include <cmath>
 #include <iomanip>
@@ -1873,6 +1874,7 @@ __global__ void testUnsupported() {
   half2 h2;
   bool b;
 
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i0f is not supported.
   // CHECK-NEXT: */
@@ -1885,8 +1887,10 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfcinvf is not supported.
   // CHECK-NEXT: */
   f = erfcinvf(f);
+#endif
   // CHECK: f = sycl::exp(f*f)*sycl::erfc(f);
   f = erfcxf(f);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinvf is not supported.
   // CHECK-NEXT: */
@@ -1903,6 +1907,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jnf is not supported.
   // CHECK-NEXT: */
   f = jnf(i, f);
+#endif
 
   // CHECK: f = sycl::length(sycl::float3(f, f, f));
   f = norm3df(f, f, f);
@@ -1910,10 +1915,12 @@ __global__ void testUnsupported() {
   f = norm4df(f, f, f, f);
   // CHECK: f = sycl::erfc(f / -sycl::sqrt(2.0)) / 2;
   f = normcdff(f);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinvf is not supported.
   // CHECK-NEXT: */
   f = normcdfinvf(f);
+#endif
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the normf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
@@ -1937,6 +1944,7 @@ __global__ void testUnsupported() {
   f = scalblnf(f, l);
   // CHECK: f = f*(2<<i);
   f = scalbnf(f, i);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0f is not supported.
   // CHECK-NEXT: */
@@ -1962,8 +1970,10 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfcinv is not supported.
   // CHECK-NEXT: */
   d = erfcinv(d);
+#endif
   // CHECK: d = sycl::exp(d*d)*sycl::erfc(d);
   d = erfcx(d);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinv is not supported.
   // CHECK-NEXT: */
@@ -1980,6 +1990,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jn is not supported.
   // CHECK-NEXT: */
   d = jn(i, d);
+#endif
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
@@ -1991,10 +2002,12 @@ __global__ void testUnsupported() {
   d = norm4d(d, d, d, d);
   // CHECK:  d = sycl::erfc(d / -sycl::sqrt(2.0)) / 2;
   d = normcdf(d);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported.
   // CHECK-NEXT: */
   d = normcdfinv(d);
+#endif
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
@@ -2013,6 +2026,7 @@ __global__ void testUnsupported() {
   d = scalbln(d, l);
   // CHECK: d = d*(2<<i);
   d = scalbn(d, i);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0 is not supported.
   // CHECK-NEXT: */
@@ -2025,6 +2039,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of yn is not supported.
   // CHECK-NEXT: */
   d = yn(i, d);
+#endif
 
   // CHECK: f = sycl::clamp<float>(f, 0.0f, 1.0f);
   f = __saturatef(f);
@@ -2174,12 +2189,12 @@ __global__ void testIntegerFunctions() {
   l = labs(l);
   ll = llabs(ll);
 
-  // CHECK: ll = dpct::max(ll, ll);
-  // CHECK-NEXT: ll = dpct::min(ll, (long long)l);
-  // CHECK-NEXT: ull = dpct::max((unsigned long long)ll, ull);
-  // CHECK-NEXT: ull = dpct::min((unsigned long long)ll, (unsigned long long)ll);
-  // CHECK-NEXT: u = dpct::max(u, u);
-  // CHECK-NEXT: u = dpct::min(u, u);
+  // CHECK: ll = sycl::max(ll, ll);
+  // CHECK-NEXT: ll = sycl::min(ll, (long long)l);
+  // CHECK-NEXT: ull = sycl::max((unsigned long long)ll, ull);
+  // CHECK-NEXT: ull = sycl::min((unsigned long long)ll, (unsigned long long)ll);
+  // CHECK-NEXT: u = sycl::max(u, u);
+  // CHECK-NEXT: u = sycl::min(u, u);
   ll = llmax(ll, ll);
   ll = llmin(ll, l);
   ull = ullmax(ll, ull);
@@ -2612,7 +2627,7 @@ int max(int i, int j) {
   return i > j ? i : j;
 }
 }
-void do_migration5() {
+void do_migration8() {
   int i, j;
   // CHECK: std::max(i, j);
   max(i, j);
@@ -2627,7 +2642,7 @@ void no_migration3() {
   // CHECK: std::max(i, j);
   std::max(i, j);
 }
-__host__ void do_migration6() {
+__host__ void do_migration9() {
   int i, j;
   // CHECK: std::max(i, j);
   max(i, j);
@@ -2704,10 +2719,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
+  //CHECK-NEXT: std::modf(f, &f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2760,10 +2772,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
+  //CHECK-NEXT: std::modf(f, &f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2815,10 +2824,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
+  //CHECK-NEXT: std::modf(f, &f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */

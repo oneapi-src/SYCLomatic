@@ -253,7 +253,7 @@ ENTRY_RENAMED_NO_REWRITE("__umul64hi", MapNames::getClNamespace(false, true) + "
 
 // Single Precision Mathematical Functions
 ENTRY_EMULATED("frexpf", MapNames::getClNamespace(false, true) + "frexp")
-ENTRY_EMULATED("modff", MapNames::getClNamespace(false, true) + "modf")
+ENTRY_REWRITE("modff")
 ENTRY_EMULATED("nanf", MapNames::getClNamespace(false, true) + "nan")
 ENTRY_EMULATED("nearbyintf", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_EMULATED("remquof", MapNames::getClNamespace(false, true) + "remquo")
@@ -266,7 +266,7 @@ ENTRY_EMULATED("__powf", MapNames::getDpctNamespace() + "pow")
 
 // Double Precision Mathematical Functions
 ENTRY_EMULATED("frexp", MapNames::getClNamespace(false, true) + "frexp")
-ENTRY_EMULATED("modf", MapNames::getClNamespace(false, true) + "modf")
+ENTRY_REWRITE("modf")
 ENTRY_EMULATED("nan", MapNames::getClNamespace(false, true) + "nan")
 ENTRY_EMULATED("nearbyint", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_EMULATED("remquo", MapNames::getClNamespace(false, true) + "remquo")

@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/cublas-lambda.cu
 // RUN: cd %T
-// RUN: dpct --no-cl-namespace-inline --usm-level=none -out-root %T/cublas-lambda cublas-lambda.cu --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T/cublas-lambda cublas-lambda.cu --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublas-lambda/cublas-lambda.dp.cpp --match-full-lines cublas-lambda.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/cublas-lambda/cublas-lambda.dp.cpp -o %T/cublas-lambda/cublas-lambda.dp.o %}
 // CHECK: #include <sycl/sycl.hpp>
@@ -27,9 +27,9 @@ int main() {
   cublasCreate(&handle);
 
   // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
   // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
   // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
@@ -47,9 +47,9 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: else if ([&]() {
-  // CHECK-NEXT:            auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-  // CHECK-NEXT:            auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-  // CHECK-NEXT:            auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+  // CHECK-NEXT:            auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+  // CHECK-NEXT:            auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+  // CHECK-NEXT:            auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
   // CHECK-NEXT:            oneapi::mkl::blas::column_major::gemm(
   // CHECK-NEXT:                *handle, oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:                oneapi::mkl::transpose::nontrans, N, N, N, alpha_H,
@@ -64,9 +64,9 @@ int main() {
 
 
   // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
   // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
   // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
@@ -84,9 +84,9 @@ int main() {
 
 
   // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
   // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
   // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
@@ -107,9 +107,9 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: for (; [&]() {
-  // CHECK-NEXT: auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-  // CHECK-NEXT: auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-  // CHECK-NEXT: auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+  // CHECK-NEXT: auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+  // CHECK-NEXT: auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+  // CHECK-NEXT: auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(
   // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}},
@@ -125,9 +125,9 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: while ([&]() {
-  // CHECK-NEXT: auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-  // CHECK-NEXT: auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-  // CHECK-NEXT: auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+  // CHECK-NEXT: auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+  // CHECK-NEXT: auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+  // CHECK-NEXT: auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(
   // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
@@ -146,9 +146,9 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: } while ([&]() {
-  // CHECK-NEXT: auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-  // CHECK-NEXT: auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-  // CHECK-NEXT: auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+  // CHECK-NEXT: auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+  // CHECK-NEXT: auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+  // CHECK-NEXT: auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(
   // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
@@ -160,9 +160,9 @@ int main() {
 
 
   // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
   // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
   // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
@@ -183,9 +183,9 @@ int main() {
 }
 
 // CHECK:int foo() try {
-// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
 // CHECK-NEXT:  oneapi::mkl::blas::column_major::gemm(
 // CHECK-NEXT:      *handle, oneapi::mkl::transpose::nontrans,
 // CHECK-NEXT:      oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
@@ -202,9 +202,9 @@ int foo() {
 }
 
 // CHECK:void foo2() {
-// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_A_H);
-// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_B_H);
-// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<cl::sycl::half>(d_C_H);
+// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
+// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
+// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
 // CHECK-NEXT:  oneapi::mkl::blas::column_major::gemm(
 // CHECK-NEXT:      *handle, oneapi::mkl::transpose::nontrans,
 // CHECK-NEXT:      oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
