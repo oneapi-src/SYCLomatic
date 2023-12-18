@@ -3210,7 +3210,8 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 
   if (MemberName == "sharedMemPerBlock" ||
-      MemberName == "sharedMemPerMultiprocessor") {
+      MemberName == "sharedMemPerMultiprocessor" ||
+      MemberName == "sharedMemPerBlockOptin") {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false, MemberName);
   } else if (MemberName == "maxGridSize") {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE, false);
@@ -9302,6 +9303,9 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
 
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
+      if(!FileInfo)
+        return false;
+
       if (!FileInfo->getRepls())
         return false;
       auto &M = FileInfo->getRepls()->getReplMap();

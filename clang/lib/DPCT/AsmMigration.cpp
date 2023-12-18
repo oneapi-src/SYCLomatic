@@ -1378,9 +1378,9 @@ protected:
     return HandleOneElementAddSubMinMax(I, "dpct::extend_min");
   }
 
-  // Handle the 2 element video instructions.
-  bool handleTwoElementAddSubMinMax(const InlineAsmInstruction *Inst,
-                                    StringRef Fn) {
+  // Handle the 2/4 element video instructions.
+  bool handleMultiElementAddSubMinMax(const InlineAsmInstruction *Inst,
+                                      StringRef Fn) {
     if (Inst->getNumInputOperands() < 3 || Inst->getNumTypes() != 3)
       return SYCLGenError();
 
@@ -1427,19 +1427,34 @@ protected:
   }
 
   bool handle_vadd2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vadd2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vadd2");
   }
   bool handle_vsub2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vsub2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vsub2");
   }
   bool handle_vabsdiff2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vabsdiff2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vabsdiff2");
   }
   bool handle_vmin2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vmin2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmin2");
   }
   bool handle_vmax2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vmax2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax2");
+  }
+  bool handle_vadd4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vadd4");
+  }
+  bool handle_vsub4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vsub4");
+  }
+  bool handle_vabsdiff4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vabsdiff4");
+  }
+  bool handle_vmin4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmin4");
+  }
+  bool handle_vmax4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax4");
   }
 
   bool handle_brev(const InlineAsmInstruction *Inst) override {

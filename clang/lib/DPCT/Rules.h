@@ -92,12 +92,12 @@ public:
   };
 
   struct PatternRewriter {
-    std::string In;
-    std::string Out;
+    std::string In = "";
+    std::string Out = "";
     RuleMatchMode MatchMode = RuleMatchMode::Partial;
-    std::string CmakeSyntax;
-    std::string RuleId;
-    RulePriority Priority;
+    std::string CmakeSyntax = "";
+    std::string RuleId = "";
+    RulePriority Priority = RulePriority::Default;
     std::map<std::string, PatternRewriter> Subrules;
     PatternRewriter(){};
 
