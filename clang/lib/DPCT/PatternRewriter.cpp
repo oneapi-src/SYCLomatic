@@ -419,8 +419,8 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      // To make sure first character behind the matched word is a not
-      // indentified character or sufix match '('.
+      // To make sure first character after the matched word isn't an
+      // identified character or suffix match '('.
       if (Index < Size - 1 && isIdentifiedChar(Input[Index + 1]) &&
           PatternIndex + 1 == PatternSize && Literal.Value != '(') {
         return {};
