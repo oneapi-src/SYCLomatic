@@ -530,15 +530,11 @@ public:
   PatternSet(ArrayRef<std::string> Names) {
     Patterns.reserve(Names.size());
     for (StringRef Name : Names)
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
-      Patterns.push_back({Name, Name.startswith("::"), true});
+      Patterns.push_back({Name, Name.starts_with("::"), true});
 #else
-      Patterns.push_back({Name, Name.startswith("::")});
-#endif // SYCLomatic_CUSTOMIZATION
-=======
       Patterns.push_back({Name, Name.starts_with("::")});
->>>>>>> upstream/sycl
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
   /// Consumes the name suffix from each pattern in the set and removes the ones

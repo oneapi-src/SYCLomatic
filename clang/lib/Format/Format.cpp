@@ -3976,17 +3976,12 @@ llvm::Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
                                      StringRef FallbackStyleName,
                                      StringRef Code, llvm::vfs::FileSystem *FS,
                                      bool AllowUnknownOptions) {
-<<<<<<< HEAD
-  if (!FS)
-    FS = llvm::vfs::getRealFileSystem().get();
 #ifdef SYCLomatic_CUSTOMIZATION
   FormatStyle Style = getLLVMStyle(FormatStyle::LanguageKind::LK_Cpp);
   FormatStyle FallbackStyle = getNoStyle();
   // Default fallback style is LLVM
   getPredefinedStyle(DefaultFallbackStyle, Style.Language, &FallbackStyle);
 #else
-=======
->>>>>>> upstream/sycl
   FormatStyle Style = getLLVMStyle(guessLanguage(FileName, Code));
   FormatStyle FallbackStyle = getNoStyle();
   if (!getPredefinedStyle(FallbackStyleName, Style.Language, &FallbackStyle))

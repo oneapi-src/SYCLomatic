@@ -43,25 +43,11 @@ enum class CudaVersion {
   CUDA_118,
   CUDA_120,
   CUDA_121,
-<<<<<<< HEAD
-#ifdef SYCLomatic_CUSTOMIZATION
   CUDA_122,
   CUDA_123,
   FULLY_SUPPORTED = CUDA_123,
   PARTIALLY_SUPPORTED =
       CUDA_123, // Partially supported. Proceed with a warning.
-#else
-  FULLY_SUPPORTED = CUDA_115,
-  PARTIALLY_SUPPORTED =
-      CUDA_121, // Partially supported. Proceed with a warning.
-#endif // SYCLomatic_CUSTOMIZATION
-=======
-  CUDA_122,
-  CUDA_123,
-  FULLY_SUPPORTED = CUDA_123,
-  PARTIALLY_SUPPORTED =
-      CUDA_123, // Partially supported. Proceed with a warning.
->>>>>>> upstream/sycl
   NEW = 10000,  // Too new. Issue a warning, but allow using it.
 };
 const char *CudaVersionToString(CudaVersion V);
