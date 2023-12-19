@@ -380,18 +380,10 @@ public:
                int (&ranks)[VALUES_PER_THREAD],
                int offset,
                int i) {
-      int offset_helper = [&](Item item,
-                      T (&keys)[VALUES_PER_THREAD],
-                      int (&ranks)[VALUES_PER_THREAD],
-                      int offset,
-                      int i) -> int {
-        if constexpr (INSERT_PADDING) {
-            offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
-        }
-        return offset;
-    };
-
-    return offset_helper(item, keys, ranks, offset, i);
+    if constexpr (INSERT_PADDING) {
+        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
+    }
+    return offset;
   }
   
   /// Rearrange elements from rank order to blocked order
@@ -404,7 +396,7 @@ public:
     
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      offset = ranks[i];
+      int offset = ranks[i];
       offset = get_offset(item, keys, ranks, offset, i);
       buffer[offset] = keys[i];
     }
@@ -413,7 +405,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
       offset = get_offset(item, keys, ranks, offset, i);
       keys[i] = buffer[offset];
     }
@@ -430,7 +422,7 @@ public:
     
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
       offset = get_offset(item, keys, ranks, offset, i);
       buffer[offset] = keys[i];
     }
@@ -439,7 +431,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
+      int offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
                        item.get_local_range(0)) +
                    item.get_local_id(0);
       offset = get_offset(item, keys, ranks, offset, i);
@@ -457,7 +449,7 @@ public:
     
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
+      int offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
                        item.get_local_range(0)) +
                    item.get_local_id(0);
       offset = get_offset(item, keys, ranks, offset, i);
@@ -468,7 +460,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
       offset = get_offset(item, keys, ranks, offset, i);
       keys[i] = buffer[offset];
     }
@@ -479,7 +471,6 @@ private:
   static constexpr bool INSERT_PADDING =
       (VALUES_PER_THREAD > 4) &&
       (detail::power_of_two<VALUES_PER_THREAD>::VALUE);
-  int offset = 0;
   uint8_t *_local_memory;
 };
 
