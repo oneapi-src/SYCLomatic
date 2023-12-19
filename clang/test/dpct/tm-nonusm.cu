@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -usm-level=none -out-root %T/tm-nonusm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-nonusm/tm-nonusm.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/tm-nonusm/tm-nonusm.dp.cpp -o %T/tm-nonusm/tm-nonusm.dp.o %}
 #include "cuda.h"
 #include <stdio.h>
 

@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/lop3 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/lop3/lop3.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/lop3/lop3.dp.cpp -o %T/lop3/lop3.dp.o %}
 // clang-format off
 #include <cstdint>
 

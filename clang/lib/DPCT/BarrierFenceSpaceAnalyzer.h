@@ -176,7 +176,8 @@ private:
     return nullptr;
   }
   bool isInRanges(SourceLocation SL, Ranges Ranges);
-  std::string isSafeWriteInLoop(const std::set<const DeclRefExpr *> &WILDRESet);
+  std::string isAnalyzableWriteInLoop(
+      const std::set<const DeclRefExpr *> &WriteInLoopDRESet);
 
   std::set<const Expr *> DeviceFunctionCallArgs;
 

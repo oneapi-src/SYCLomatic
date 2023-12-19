@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_without_name %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_without_name/kernel_without_name.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel_without_name/kernel_without_name.dp.cpp -o %T/kernel_without_name/kernel_without_name.dp.o %}
 
 __global__ void testKernel(int L, int M, int N);
 

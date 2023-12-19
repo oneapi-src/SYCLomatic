@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cufft-others %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/cufft-others/cufft-others.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cufft-others/cufft-others.dp.cpp -o %T/cufft-others/cufft-others.dp.o %}
 #include <cstdio>
 #include <cufft.h>
 #include <cuda_runtime.h>

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cublas-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublas-usm/cublas-usm.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cublas-usm/cublas-usm.dp.cpp -o %T/cublas-usm/cublas-usm.dp.o %}
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
@@ -70,10 +71,10 @@ int main() {
 
   //CHECK: int mode = 1;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   cublasPointerMode_t mode = CUBLAS_POINTER_MODE_DEVICE;
   cublasGetPointerMode(handle, &mode);
@@ -740,10 +741,10 @@ void foo3() {
   cublasZherkx(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_T, 2, 3, alpha_z, a_z, 3, b_z, 3, beta_d, c_z, 2);
 
   int m, n, lda, incx, ldc;
-  //CHECK:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, m, n, a_f, lda, 0, x_f, incx, 0, c_f, ldc, ldc * n, 1);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, m, n, a_d, lda, 0, x_d, incx, 0, c_d, ldc, ldc * n, 1);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, m, n, (std::complex<float>*)a_f, lda, 0, (std::complex<float>*)x_c, incx, 0, (std::complex<float>*)c_c, ldc, ldc * n, 1);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, m, n, (std::complex<double>*)a_z, lda, 0, (std::complex<double>*)x_z, incx, 0, (std::complex<double>*)c_z, ldc, ldc * n, 1);
+  //CHECK:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, m, n, a_f, lda, x_f, incx, c_f, ldc);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, m, n, a_d, lda, x_d, incx, c_d, ldc);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, m, n, (std::complex<float>*)a_f, lda, (std::complex<float>*)x_c, incx, (std::complex<float>*)c_c, ldc);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm(*handle, oneapi::mkl::side::left, m, n, (std::complex<double>*)a_z, lda, (std::complex<double>*)x_z, incx, (std::complex<double>*)c_z, ldc);
   cublasSdgmm(handle, CUBLAS_SIDE_LEFT, m, n, a_f, lda, x_f, incx, c_f, ldc);
   cublasDdgmm(handle, CUBLAS_SIDE_LEFT, m, n, a_d, lda, x_d, incx, c_d, ldc);
   cublasCdgmm(handle, CUBLAS_SIDE_LEFT, m, n, (float2*)a_f, lda, x_c, incx, c_c, ldc);

@@ -34,28 +34,21 @@ bool checkDuplicated(const std::string &FileAndLine,
 std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 
-#define DEF_NOTE(NAME, ID, MSG)                                                \
-  DiagnosticsMessage eg_##NAME(DiagnosticIDTable, ID,                          \
-                               clang::DiagnosticIDs::Note, MSG);
 
-#define DEF_ERROR(NAME, ID, MSG)                                               \
-  DiagnosticsMessage eg_##NAME(DiagnosticIDTable, ID,                          \
-                               clang::DiagnosticIDs::Error, MSG);
-
-#define DEF_WARNING(NAME, ID, MSG)                                             \
+#define DEF_WARNING(NAME, ID, LEVEL, MSG)                                             \
   DiagnosticsMessage wg_##NAME(DiagnosticIDTable, ID,                          \
                                clang::DiagnosticIDs::Warning, MSG);
 
-#define DEF_COMMENT(NAME, ID, MSG)                                             \
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG)                                             \
   DiagnosticsMessage cg_##NAME(CommentIDTable, ID, clang::DiagnosticIDs::Note, \
                                MSG);
 
 #include "Diagnostics.inc"
 
-#undef DEF_NOTE
-#undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
+
+std::unordered_set<int> APIQueryNeedReportWarningIDSet = {1086};
 
 std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 #define DEF_COMMENT(NAME, ID, MSG)                                             \

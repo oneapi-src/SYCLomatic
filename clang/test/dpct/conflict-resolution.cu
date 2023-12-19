@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/conflict-resolution %s -passes "ErrorHandlingIfStmtRule,ErrorConstantsRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/conflict-resolution/conflict-resolution.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/conflict-resolution/conflict-resolution.dp.cpp -o %T/conflict-resolution/conflict-resolution.dp.o %}
 
 int printf(const char *format, ...);
 

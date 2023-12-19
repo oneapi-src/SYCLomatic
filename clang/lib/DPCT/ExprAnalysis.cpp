@@ -758,6 +758,53 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         ME->getOperatorLoc(), ME->getMemberLoc(),
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
                                    ME->getMemberNameInfo().getAsString()));
+   
+    auto needAddTypecast = [](const Expr *E) -> bool {
+      auto &Context = DpctGlobalInfo::getContext();
+      clang::DynTypedNodeList Parents = Context.getParents(*E);
+      bool hasCast = false;
+      while (!Parents.empty()) {
+        auto &Cur = Parents[0];
+        if (const auto ICE = Cur.get<ImplicitCastExpr>()) {
+          CastKind CK = ICE->getCastKind();
+          if (CK == CastKind::CK_FloatingCast ||
+              CK == CastKind::CK_IntegralCast) {
+            hasCast = true;
+            Parents = Context.getParents(Cur);
+            continue;
+          }
+        } else if (Cur.get<CXXStaticCastExpr>() || Cur.get<CStyleCastExpr>() ||
+                   Cur.get<CXXFunctionalCastExpr>()) {
+          hasCast = true;
+          Parents = Context.getParents(Cur);
+          continue;
+        } else if (const auto CE = Cur.get<CallExpr>()) {
+          if (hasCast)
+            return false;
+          auto *Callee =
+              dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreParenImpCasts());
+          if (!Callee)
+            return false;
+          if (!Callee->getQualifier())
+            return false;
+          if (Callee->getQualifier()->getKind() !=
+              NestedNameSpecifier::SpecifierKind::Namespace)
+            return false;
+          if (Callee->getQualifier()->getAsNamespace()->getNameAsString() !=
+              "std")
+            return false;
+          if (Callee->getNameInfo().getAsString() == "max" ||
+              Callee->getNameInfo().getAsString() == "min")
+            return true;
+          return false;
+        }
+        Parents = Context.getParents(Cur);
+      }
+      return false;
+    };
+    if (needAddTypecast(ME)) {
+      addReplacement(ME->getBeginLoc(), 0, "(unsigned int)");
+    }
   } else if (BaseType == "cudaDeviceProp") {
     auto MemberName = ME->getMemberNameInfo().getAsString();
 

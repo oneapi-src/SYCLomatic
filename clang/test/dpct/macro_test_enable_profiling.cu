@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --enable-profiling   -out-root %T/macro_test_enable_profiling %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_enable_profiling/macro_test_enable_profiling.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/macro_test_enable_profiling/macro_test_enable_profiling.dp.cpp -o %T/macro_test_enable_profiling/macro_test_enable_profiling.dp.o %}
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
