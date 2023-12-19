@@ -326,6 +326,7 @@ inline std::uint64_t min(const std::uint64_t a, const std::uint32_t b) {
 inline std::uint64_t min(const std::uint32_t a, const std::uint64_t b) {
   return sycl::min(static_cast<std::uint64_t>(a), b);
 }
+#ifndef _MSC_VER
 inline std::enable_if<!std::is_same_v<std::int64_t, long long>, long long>::type
 min(const long long a, const long long b) {
   return sycl::min(a, b);
@@ -345,6 +346,7 @@ inline std::enable_if<!std::is_same_v<std::int64_t, long long>,
 min(const unsigned long long a, const long long b) {
   return sycl::min(a, static_cast<unsigned long long>(b));
 }
+#endif
 // max function overloads.
 // For floating-point types, `float` or `double` arguments are acceptable.
 // For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t`,
@@ -394,6 +396,7 @@ inline std::uint64_t max(const std::uint64_t a, const std::uint32_t b) {
 inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
   return sycl::max(static_cast<std::uint64_t>(a), b);
 }
+#ifndef _MSC_VER
 inline std::enable_if<!std::is_same_v<std::int64_t, long long>, long long>::type
 max(const long long a, const long long b) {
   return sycl::max(a, b);
@@ -413,6 +416,7 @@ inline std::enable_if<!std::is_same_v<std::int64_t, long long>,
 max(const unsigned long long a, const long long b) {
   return sycl::max(a, static_cast<unsigned long long>(b));
 }
+#endif
 
 // pow functions overload.
 inline float pow(const float a, const int b) { return sycl::pown(a, b); }
