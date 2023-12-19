@@ -818,27 +818,28 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
   return false;
 }
 
-// This function recognizes pattern like below and check if it is safe to treat
-// the write operation as a non-global access.
+// This function recognizes pattern like below:
+// (1) Only 1 access in each iteration for each memory variable
+// (2) The step of the `idx` has been identified in previous step.
 // for () {
 //   ...
 //   mem[idx] = var;
 //   ... 
 // }
-std::string clang::dpct::BarrierFenceSpaceAnalyzer::isSafeWriteInLoop(
-    const std::set<const DeclRefExpr *> &WILDRESet) {
-  if (WILDRESet.size() > 1) {
+std::string clang::dpct::BarrierFenceSpaceAnalyzer::isAnalyzableWriteInLoop(
+    const std::set<const DeclRefExpr *> &WriteInLoopDRESet) {
+  if (WriteInLoopDRESet.size() > 1) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isSafeWriteInLoop False case 1" << std::endl;
+    std::cout << "isAnalyzableWriteInLoop False case 1" << std::endl;
 #endif
     return "";
   }
 
-  const DeclRefExpr *DRE = *WILDRESet.begin();
+  const DeclRefExpr *DRE = *WriteInLoopDRESet.begin();
   auto Iter = DREIncStepMap.find(DRE);
   if (Iter == DREIncStepMap.end()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isSafeWriteInLoop False case 2" << std::endl;
+    std::cout << "isAnalyzableWriteInLoop False case 2" << std::endl;
 #endif
     return "";
   }
@@ -903,7 +904,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
       }
     }
     if (!WriteAfterWriteDRE.empty()) {
-      auto StepStr = isSafeWriteInLoop(WriteAfterWriteDRE);
+      auto StepStr = isAnalyzableWriteInLoop(WriteAfterWriteDRE);
       if (StepStr.empty()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;
@@ -918,6 +919,20 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "isSafeToUseLocalBarrier True with condition" << std::endl;
 #endif
+    // local_range(2) loop0     loop1    loop2    ... loopn
+    //      0         mem[0]    mem[s]   mem[2s]      mem[ns]
+    //      1         mem[1+0]  mem[1+s] mem[1+2s]    mem[1+ns]
+    //      2         mem[2+0]  mem[2+s] mem[2+2s]    mem[2+ns]
+    //     ...
+    //      m         mem[m+0]  mem[m+s] mem[m+2s]    mem[m+ns]
+    //
+    // We can make sure that there is no overlap in the same iteration since idx
+    // should equal to `local_id(2) + C`.
+    // Next, we need to make sure there is no overlap among iterations.
+    // The memory range in an iteration is `local_range(2)`, then if
+    // `s > local_range(2)`, the next iteration start point is larger than previous
+    // end, so there is no overlap.
+
     std::string RHS;
     if (ConditionSet.size() == 1) {
       RHS = *ConditionSet.begin();
