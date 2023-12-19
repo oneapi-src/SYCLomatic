@@ -245,10 +245,6 @@ ExtReplacements::mergeReplsAtSameOffset() {
   std::shared_ptr<ExtReplacement> Insert, InsertLeft, InsertRight, Replace;
   unsigned Offset = ReplMap.begin()->first;
   for (auto &R : ReplMap) {
-    if(R.second->IsForCUDADebug){
-      ReplsList.emplace_back(R.second);
-      continue;
-    }
     if (R.first != Offset) {
       Offset = R.first;
       ReplsList.emplace_back(mergeAtSameOffset(

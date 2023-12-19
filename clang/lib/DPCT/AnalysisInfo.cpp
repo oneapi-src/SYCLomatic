@@ -138,7 +138,8 @@ HDFuncInfoMap DpctGlobalInfo::HostDeviceFuncInfoMap;
 CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
 std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
     DpctGlobalInfo::CudaArchMacroRepl;
-std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacements>>
+std::unordered_map<clang::tooling::UnifiedPath, std::pair<std::shared_ptr<ExtReplacements>,
+                                          std::shared_ptr<ExtReplacements>>>
     DpctGlobalInfo::FileReplCache;
 std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::ReProcessFile;
 std::unordered_map<std::string,
@@ -682,6 +683,7 @@ void DpctGlobalInfo::postProcess() {
     }
     File.second->postProcess();
   }
+
   if (!isFirstPass) {
     for (auto &Element : HostDeviceFuncInfoMap) {
       auto &Info = Element.second;
@@ -692,7 +694,7 @@ void DpctGlobalInfo::postProcess() {
             continue;
           }
           auto &ReplLists =
-              FileMap[LocInfo.FilePath]->getRepls()->getReplMap();
+              FileMap[LocInfo.FilePath]->getReplsSYCL()->getReplMap();
           generateHostCode(ReplLists, LocInfo, Info.PostFixId);
         }
       }
@@ -733,7 +735,7 @@ void DpctGlobalInfo::generateHostCode(
 
   for (auto &R : ExtraRepl) {
     auto &FileReplCache = DpctGlobalInfo::getFileReplCache();
-    FileReplCache[R->getFilePath().str()]->addReplacement(R);
+    FileReplCache[R->getFilePath().str()].second->addReplacement(R);
   }
   return;
 }
@@ -818,10 +820,12 @@ void DpctFileInfo::postProcess() {
     return;
   for (auto &D : FuncMap)
     D.second->emplaceReplacement();
-  if (!Repls->empty()) {
-    Repls->postProcess();
+  if (!ReplsSYCL->empty()) {
+    ReplsSYCL->postProcess();
     if (DpctGlobalInfo::getRunRound() == 0) {
-      DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
+      auto &CacheEntry = DpctGlobalInfo::getInstance().getFileReplCache()[FilePath];
+      CacheEntry.first = ReplsCUDA;
+      CacheEntry.second = ReplsSYCL;
     }
   }
 }
@@ -1077,9 +1081,9 @@ void DpctFileInfo::buildReplacements() {
 
   std::string InsertHeaderStrCUDA;
   llvm::raw_string_ostream HeaderOSCUDA(InsertHeaderStrCUDA);
-  //if (!InsertedHeadersCUDA.empty()) {
-    //HeaderOSCUDA << getNL();
-  //}
+  if (!InsertedHeadersCUDA.empty()) {
+    HeaderOSCUDA << getNL();
+  }
   for (auto &HeaderStr : InsertedHeadersCUDA) {
     if (HeaderStr[0] != '<' && HeaderStr[0] != '"') {
       HeaderStr = "\"" + HeaderStr + "\"";
@@ -1133,8 +1137,8 @@ bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
 
 void DpctFileInfo::emplaceReplacements(
     std::map<clang::tooling::UnifiedPath, tooling::Replacements> &ReplSet) {
-  if (!Repls->empty())
-    Repls->emplaceIntoReplSet(ReplSet[FilePath]);
+  if (!ReplsSYCL->empty())
+    ReplsSYCL->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
 std::vector<std::pair<HeaderType, std::string>> HeaderSpellings;
