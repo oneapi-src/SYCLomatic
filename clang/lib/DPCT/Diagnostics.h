@@ -44,18 +44,16 @@ struct DiagnosticsMessage {
   int ID;
   int Category;
   const char *Msg;
-#define DEF_NOTE(NAME, ID, MSG)
-#define DEF_ERROR(NAME, ID, MSG)
-#define DEF_WARNING(NAME, ID, MSG) ID,
-#define DEF_COMMENT(NAME, ID, MSG)
+
+#define DEF_WARNING(NAME, ID, LEVEL, MSG) ID,
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
   constexpr static size_t MinID = std::min({
 #include "Diagnostics.inc"
   });
+#define DEF_WARNING(NAME, ID, LEVEL, MSG) ID,
   constexpr static size_t MaxID = std::max({
 #include "Diagnostics.inc"
   });
-#undef DEF_NOTE
-#undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
   DiagnosticsMessage() = default;
@@ -69,38 +67,26 @@ struct DiagnosticsMessage {
   }
 };
 
-#define DEF_NOTE(NAME, ID, MSG) NAME = ID,
-#define DEF_ERROR(NAME, ID, MSG) NAME = ID,
-#define DEF_WARNING(NAME, ID, MSG) NAME = ID,
-#define DEF_COMMENT(NAME, ID, MSG)
+#define DEF_WARNING(NAME, ID, LEVEL, MSG) NAME = ID,
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
 enum class Diagnostics {
 #include "Diagnostics.inc"
-#undef DEF_NOTE
-#undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
 };
 
-#define DEF_NOTE(NAME, ID, MSG)
-#define DEF_ERROR(NAME, ID, MSG)
-#define DEF_WARNING(NAME, ID, MSG)
-#define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
+#define DEF_WARNING(NAME, ID, LEVEL, MSG)
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG) NAME = ID,
 enum class Comments {
 #include "Diagnostics.inc"
-#undef DEF_NOTE
-#undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
 };
 
-#define DEF_NOTE(NAME, ID, MSG)
-#define DEF_ERROR(NAME, ID, MSG)
-#define DEF_WARNING(NAME, ID, MSG) NAME = ID,
-#define DEF_COMMENT(NAME, ID, MSG)
+#define DEF_WARNING(NAME, ID, LEVEL, MSG) NAME = ID,
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
 enum class Warnings {
 #include "Diagnostics.inc"
-#undef DEF_NOTE
-#undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
 };
