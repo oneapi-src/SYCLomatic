@@ -9303,6 +9303,9 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
 
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
+      if(!FileInfo)
+        return false;
+
       if (!FileInfo->getRepls())
         return false;
       auto &M = FileInfo->getRepls()->getReplMap();
