@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(AProject)
-cuda_add_library(target_one MODULE nosrc1.cu)
+cuda_add_library(target_one MODULE nosrc1.dp.cpp)
 
 # Test C++ 99 standard
 set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
@@ -43,7 +43,7 @@ set_target_properties(target_one
                       PROPERTIES
                       cuda_architechtures All)
 
-cuda_add_library(target_two MODULE nosrc2.cu)
+cuda_add_library(target_two MODULE nosrc2.dp.cpp)
 
 # Test two target specs
 #[[
