@@ -14,7 +14,7 @@ __global__ void cos() {
   // CHECK: f32 = sycl::cos<float>(1.0f);
   asm("cos.approx.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
-  // CHECK: f32 = dpct::flush_denormal_to_zero(sycl::cos<float>(1.0f));
+  // CHECK: f32 = sycl::cos<float>(1.0f);
   asm("cos.approx.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 }
 

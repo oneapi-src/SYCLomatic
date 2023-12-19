@@ -14,7 +14,7 @@ __global__ void sqrt() {
   // CHECK: f32 = sycl::sqrt<float>(1.0f);
   asm("sqrt.approx.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 
-  // CHECK: f32 = dpct::flush_denormal_to_zero(sycl::sqrt<float>(1.0f));
+  // CHECK: f32 = sycl::sqrt<float>(1.0f);
   asm("sqrt.approx.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
   // CHECK: f32 = sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rte>()[0];
@@ -29,16 +29,16 @@ __global__ void sqrt() {
   // CHECK: f32 = sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rtp>()[0];
   asm("sqrt.rp.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
-  // CHECK: f32 = dpct::flush_denormal_to_zero(sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rte>()[0]);
+  // CHECK: f32 = sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rte>()[0];
   asm("sqrt.rn.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
-  // CHECK: f32 = dpct::flush_denormal_to_zero(sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rtz>()[0]);
+  // CHECK: f32 = sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rtz>()[0];
   asm("sqrt.rz.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
-  // CHECK: f32 = dpct::flush_denormal_to_zero(sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rtn>()[0]);
+  // CHECK: f32 = sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rtn>()[0];
   asm("sqrt.rm.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
-  // CHECK: f32 = dpct::flush_denormal_to_zero(sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rtp>()[0]);
+  // CHECK: f32 = sycl::vec<float, 1>(sycl::sqrt<float>(1.0f)).convert<float, sycl::rounding_mode::rtp>()[0];
   asm("sqrt.rp.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
   // CHECK: f64 = sycl::vec<double, 1>(sycl::sqrt<double>(1.0)).convert<double, sycl::rounding_mode::rte>()[0];

@@ -1331,14 +1331,7 @@ protected:
       VecConvert("rtn");
     else if (Inst->hasAttr(InstAttr::rp))
       VecConvert("rtp");
-
-    if (ReplaceString.empty())
-      ReplaceString = Val.str();
-    if (Inst->hasAttr(InstAttr::ftz))
-      OS() << MapNames::getDpctNamespace() << "flush_denormal_to_zero("
-           << ReplaceString << ')';
-    else
-      OS() << ReplaceString;
+    OS() << ReplaceString;
     return SYCLGenSuccess();
   }
 
@@ -1362,7 +1355,7 @@ protected:
     if (Inst->getOpcode() == asmtok::op_ex2)
       ReplaceString += "2, ";
     ReplaceString += Op + ")";
-    if (Inst->hasAttr(InstAttr::ftz, InstAttr::rn, InstAttr::rz, InstAttr::rm,
+    if (Inst->hasAttr(InstAttr::rn, InstAttr::rz, InstAttr::rm,
                       InstAttr::rp)) {
       if (HandleFloatingRoundingMode(Inst, ReplaceString))
         return SYCLGenError();

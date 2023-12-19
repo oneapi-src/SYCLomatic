@@ -13,7 +13,7 @@ __global__ void ex2() {
   // CHECK: f32 = sycl::pow<float>(2, 1.0f);
   asm("ex2.approx.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
-  // CHECK: f32 = dpct::flush_denormal_to_zero(sycl::pow<float>(2, 1.0f));
+  // CHECK: f32 = sycl::pow<float>(2, 1.0f);
   asm("ex2.approx.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 }
 

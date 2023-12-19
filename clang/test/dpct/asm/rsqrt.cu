@@ -15,7 +15,7 @@ __global__ void rsqrt() {
   // CHECK: f32 = sycl::rsqrt<float>(1.0f);
   asm("rsqrt.approx.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 
-  // CHECK: f32 = dpct::flush_denormal_to_zero(sycl::rsqrt<float>(1.0f));
+  // CHECK: f32 = sycl::rsqrt<float>(1.0f);
   asm("rsqrt.approx.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 
   // CHECK: f64 = sycl::rsqrt<double>(1.0);
