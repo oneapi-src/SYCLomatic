@@ -14145,6 +14145,11 @@ void DriverDeviceAPIRule::runRule(
     }
     emplaceTransformation(new ReplaceStmt(CE, OS.str()));
   } else if (APIName == "cuDeviceGetUuid" || APIName == "cuDeviceGetUuid_v2") {
+    if (!DpctGlobalInfo::useDeviceInfo()) {
+      report(CE->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
+             APIName);
+      return;
+    }
     if (IsAssigned)
       OS << "DPCT_CHECK_ERROR(";
     auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
