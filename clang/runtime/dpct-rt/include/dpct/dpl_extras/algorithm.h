@@ -2419,13 +2419,14 @@ template <typename ExecutionPolicy, typename InputIterator,
           typename UnaryPredicate>
 void partition_if(ExecutionPolicy &&policy, InputIterator input,
                   OutputIterator output, CountIterator num_true, int num_items,
-                  UnaryPredicate pred) {
+                  UnaryPredicate pred, bool reverse_last = true) {
   dpl::copy(policy, input, input + num_items, output);
   auto beg_false =
       dpl::stable_partition(policy, output, output + num_items, pred);
-  dpl::reverse(policy, beg_false, output + num_items);
   auto num_true_items = ::std::distance(output, beg_false);
   dpl::fill(policy, num_true, num_true + 1, num_true_items);
+  if (reverse_last)
+    dpl::reverse(policy, beg_false, output + num_items);
 }
 
 template <typename ExecutionPolicy, typename InputIterator,
@@ -2435,7 +2436,8 @@ template <typename ExecutionPolicy, typename InputIterator,
 void partition_if(ExecutionPolicy &&policy, InputIterator input,
                   OutputIterator1 output1, OutputIterator2 output2,
                   OutputIterator3 output3, CountIterator partition_counts,
-                  int num_items, UnaryPredicate1 pred1, UnaryPredicate2 pred2) {
+                  int num_items, UnaryPredicate1 pred1, UnaryPredicate2 pred2,
+                  bool reverse_last = true) {
   using internal::__buffer;
   using ValueType = typename ::std::iterator_traits<InputIterator>::value_type;
   using CountType = typename ::std::iterator_traits<CountIterator>::value_type;
@@ -2455,7 +2457,8 @@ void partition_if(ExecutionPolicy &&policy, InputIterator input,
       static_cast<CountType>(::std::distance(output2, output2_end)),
       static_cast<CountType>(::std::distance(output3, output3_end))};
   dpl::copy(policy, host_counts.begin(), host_counts.end(), partition_counts);
-  dpl::reverse(policy, output3, output3_end);
+  if (reverse_last)
+    dpl::reverse(policy, output3, output3_end);
 }
 
 template <typename ExecutionPolicy, typename InputIterator,
@@ -2463,14 +2466,16 @@ template <typename ExecutionPolicy, typename InputIterator,
           typename CountIterator>
 void partition_flagged(ExecutionPolicy &&policy, InputIterator input,
                        FlagsIterator flags, OutputIterator output,
-                       CountIterator num_true, int num_items) {
+                       CountIterator num_true, int num_items,
+                       bool reverse_last = true) {
   dpl::copy(policy, input, input + num_items, output);
   auto beg_false =
       dpct::stable_partition(policy, output, output + num_items, flags,
                              [](auto flag) { return flag != 0; });
-  dpl::reverse(policy, beg_false, output + num_items);
   auto num_true_items = ::std::distance(output, beg_false);
   dpl::fill(policy, num_true, num_true + 1, num_true_items);
+  if (reverse_last)
+    dpl::reverse(policy, beg_false, output + num_items);
 }
 
 } // end namespace dpct
