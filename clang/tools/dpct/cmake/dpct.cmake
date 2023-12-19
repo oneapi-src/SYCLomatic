@@ -74,3 +74,28 @@ endmacro()
 macro(DPCT_COMPILE_SYCL_CODE generated_files)
   DPCT_COMPILE_SYCL_CODE_IMP(sycl_device ${generated_files} ${ARGN})
 endmacro()
+
+# TODO:
+#   * handle source files mentioned as variables
+#   * what happens if cuda_compile is written across multiple line?
+# Note: covers cuda_compile(libname <srcs>... STATIC|... OPTIONS [opts]...)
+macro(DPCT_COMPILE object_name)
+  set(_sources "")
+  # segregate source files
+  foreach(arg ${ARGN})
+    if(${arg} MATCHES "\\.dp\\.cpp$")
+      string(APPEND _sources " ${arg}")
+    endif()
+  endforeach()
+
+  # fetch compile options
+  string(REPLACE ";" " " _space_sep_argn "${ARGN}")
+  string(REGEX MATCH "OPTIONS (.*)" _ ${_space_sep_argn})
+  set(_options ${CMAKE_MATCH_1})
+
+  # replace cuda_compile
+  add_library(${object_name} OBJECT ${_sources})
+  # add options from cuda_compile to the target object/s
+  # TODO: should this be always PRIVATE?
+  target_compile_options(${object_name} PRIVATE ${_options})
+endmacro()

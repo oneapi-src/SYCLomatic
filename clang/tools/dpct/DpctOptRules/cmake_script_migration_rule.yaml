@@ -138,3 +138,16 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
+- Rule: rule_cuda_compile
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: rule_cuda_compile
+  In: cuda_compile(${libname} ${value})
+  Out: dpct_compile(${libname} ${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
