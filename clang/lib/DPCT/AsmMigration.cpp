@@ -1475,7 +1475,7 @@ protected:
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
-    OS() << MapNames::getDpctNamespace() << "bfe<" << TypeStr << ">(" << Op[0]
+    OS() << MapNames::getDpctNamespace() << "bfe_safe<" << TypeStr << ">(" << Op[0]
          << ", " << Op[1] << ", " << Op[2] << ')';
     endstmt();
     insertHeader(HeaderType::HT_DPCT_Math);

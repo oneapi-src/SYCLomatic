@@ -245,6 +245,19 @@ inline unsigned unordered_compare_mask(const sycl::marray<T, 2> a,
 
 /// Bitfield-extract.
 ///
+/// \tparam T The type of \param source value, must be an integer.
+/// \param source The source value to extracting.
+/// \param bit_start The position to start extracting.
+/// \param num_bits The number of bits to extracting.
+template <typename T>
+inline std::enable_if_t<std::is_unsigned_v<T>, T>
+bfe(const T source, const uint32_t bit_start, const uint32_t num_bits) {
+  const T mask = (T{1} << num_bits) - 1;
+  return (source >> bit_start) & mask;
+}
+
+/// Bitfield-extract with boundary checking.
+///
 /// Extract bit field from \param source and return the zero or sign-extended
 /// result. Source \param bit_start gives the bit field starting bit position,
 /// and source \param num_bits gives the bit field length in bits.
@@ -259,32 +272,22 @@ inline unsigned unordered_compare_mask(const sycl::marray<T, 2> a,
 /// \param num_bits The number of bits to extracting.
 template <typename T>
 inline std::enable_if_t<std::is_integral_v<T>, T>
-bfe(const T source, const uint32_t bit_start, const uint32_t num_bits) {
+bfe_safe(const T source, const uint32_t bit_start, const uint32_t num_bits) {
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
-  if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t>) {
+  if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t> ||
+                std::is_same_v<T, int32_t>) {
     int32_t res{};
     asm volatile("bfe.s32 %0, %1, %2, %3;"
                  : "=r"(res)
                  : "r"((int32_t)source), "r"(bit_start), "r"(num_bits));
     return res;
   } else if constexpr (std::is_same_v<T, uint8_t> ||
-                       std::is_same_v<T, uint16_t>) {
+                       std::is_same_v<T, uint16_t> ||
+                       std::is_same_v<T, uint32_t>) {
     uint32_t res{};
     asm volatile("bfe.u32 %0, %1, %2, %3;"
                  : "=r"(res)
                  : "r"((uint32_t)source), "r"(bit_start), "r"(num_bits));
-    return res;
-  } else if constexpr (std::is_same_v<T, int32_t>) {
-    T res{};
-    asm volatile("bfe.s32 %0, %1, %2, %3;"
-                 : "=r"(res)
-                 : "r"(source), "r"(bit_start), "r"(num_bits));
-    return res;
-  } else if constexpr (std::is_same_v<T, uint32_t>) {
-    T res{};
-    asm volatile("bfe.u32 %0, %1, %2, %3;"
-                 : "=r"(res)
-                 : "r"(source), "r"(bit_start), "r"(num_bits));
     return res;
   } else if constexpr (std::is_same_v<T, int64_t>) {
     T res{};
@@ -298,29 +301,25 @@ bfe(const T source, const uint32_t bit_start, const uint32_t num_bits) {
                  : "=l"(res)
                  : "l"(source), "r"(bit_start), "r"(num_bits));
     return res;
-  } else {
-#endif
-    const uint32_t bit_width = CHAR_BIT * sizeof(T);
-    const uint32_t pos = std::min(bit_start, bit_width);
-    const uint32_t len = std::min(pos + num_bits, bit_width) - pos;
-    const T mask = (T{1} << len) - 1;
-    if constexpr (std::is_signed_v<T>) {
-      // Find the sign-bit, the result is padded with the sign bit of the
-      // extracted field.
-      //
-      // sign_bit = len == 0 ? 0 : source[min(pos + len - 1, bit_width - 1)]
-      const uint32_t sign_bit_pos = std::min(pos + len - 1, bit_width - 1);
-      const T sign_bit = len != 0 && ((source >> sign_bit_pos) & 1);
-      const T sign_bit_padding = (-sign_bit & ~mask);
-      return ((source >> pos) & mask) | sign_bit_padding;
-    } else {
-      // Is T is an unsigned integer type, the sign-bit does not need to be
-      // padded.
-      return (source >> pos) & mask;
-    }
-#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
   }
 #endif
+  const uint32_t bit_width = CHAR_BIT * sizeof(T);
+  const uint32_t pos = std::min(bit_start, bit_width);
+  const uint32_t len = std::min(pos + num_bits, bit_width) - pos;
+  if constexpr (std::is_signed_v<T>) {
+    const T mask = (T{1} << len) - 1;
+
+    // Find the sign-bit, the result is padded with the sign bit of the
+    // extracted field.
+    //
+    // sign_bit = len == 0 ? 0 : source[min(pos + len - 1, bit_width - 1)]
+    const uint32_t sign_bit_pos = std::min(pos + len - 1, bit_width - 1);
+    const T sign_bit = len != 0 && ((source >> sign_bit_pos) & 1);
+    const T sign_bit_padding = (-sign_bit & ~mask);
+    return ((source >> pos) & mask) | sign_bit_padding;
+  } else {
+    return dpct::bfe(source, pos, len);
+  }
 }
 
 /// Bitfield-insert.
@@ -338,41 +337,32 @@ template <typename T>
 inline std::enable_if_t<std::is_unsigned_v<T>, T>
 bfi(const T x, const T y, const uint32_t bit_start, const uint32_t num_bits) {
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
-  if constexpr (std::is_same_v<T, uint8_t> ||
-                       std::is_same_v<T, uint16_t>) {
+  if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> ||
+                std::is_same_v<T, uint32_t>) {
     uint32_t res{};
     asm volatile("bfi.b32 %0, %1, %2, %3, %4;"
                  : "=r"(res)
                  : "r"((uint32_t)x), "r"((uint32_t)y), "r"(bit_start),
                    "r"(num_bits));
     return res;
-  } else if constexpr (std::is_same_v<T, uint32_t>) {
-    T res{};
-    asm volatile("bfi.b32 %0, %1, %2, %3, %4;"
-                 : "=r"(res)
-                 : "r"(x), "r"(y), "r"(bit_start), "r"(num_bits));
-    return res;
   } else if constexpr (std::is_same_v<T, uint64_t>) {
-    T res{};
+    uint64_t res{};
     asm volatile("bfi.b64 %0, %1, %2, %3, %4;"
                  : "=l"(res)
                  : "l"(x), "l"(y), "r"(bit_start), "r"(num_bits));
     return res;
-  } else {
-#endif
-    constexpr unsigned bit_width = CHAR_BIT * sizeof(T);
-    const uint32_t pos = std::min(bit_start, bit_width);
-    const uint32_t len = std::min(pos + num_bits, bit_width) - pos;
-
-    // if bit_start > bit_width || len == 0, should return y.
-    const uint32_t ignore_bfi = bit_start > bit_width || len == 0;
-    T extract_bitfield_mask = (~(T{0}) >> (bit_width - len)) << pos;
-    T clean_bitfield_mask = ~extract_bitfield_mask;
-    return (y & (-ignore_bfi | clean_bitfield_mask)) |
-           (~-ignore_bfi & ((x << pos) & extract_bitfield_mask));
-#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
   }
 #endif
+  constexpr unsigned bit_width = CHAR_BIT * sizeof(T);
+  const uint32_t pos = std::min(bit_start, bit_width);
+  const uint32_t len = std::min(pos + num_bits, bit_width) - pos;
+
+  // if bit_start > bit_width || len == 0, should return y.
+  const uint32_t ignore_bfi = bit_start > bit_width || len == 0;
+  T extract_bitfield_mask = (~(T{0}) >> (bit_width - len)) << pos;
+  T clean_bitfield_mask = ~extract_bitfield_mask;
+  return (y & (-ignore_bfi | clean_bitfield_mask)) |
+         (~-ignore_bfi & ((x << pos) & extract_bitfield_mask));
 }
 
 /// Determine whether 2 element value is NaN.

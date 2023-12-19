@@ -14,16 +14,16 @@ __global__ void bfe() {
   int64_t i64;
   uint64_t u64;
 
-  // CHECK: i32 = dpct::bfe<int32_t>(10, 1, 8);
+  // CHECK: i32 = dpct::bfe_safe<int32_t>(10, 1, 8);
   asm("bfe.s32 %0, %1, %2, %3;" : "=r"(i32) : "r"(10), "r"(1), "r"(8));
   
-  // CHECK: u32 = dpct::bfe<uint32_t>(10, 1, 8);
+  // CHECK: u32 = dpct::bfe_safe<uint32_t>(10, 1, 8);
   asm("bfe.u32 %0, %1, %2, %3;" : "=r"(u32) : "r"(10), "r"(1), "r"(8));
   
-  // CHECK: i64 = dpct::bfe<int64_t>(10, 1, 8);
+  // CHECK: i64 = dpct::bfe_safe<int64_t>(10, 1, 8);
   asm("bfe.s64 %0, %1, %2, %3;" : "=r"(i64) : "r"(10), "r"(1), "r"(8));
   
-  // CHECK: u64 = dpct::bfe<uint64_t>(10, 1, 8);
+  // CHECK: u64 = dpct::bfe_safe<uint64_t>(10, 1, 8);
   asm("bfe.u64 %0, %1, %2, %3;" : "=r"(u64) : "r"(10), "r"(1), "r"(8));
 }
 
