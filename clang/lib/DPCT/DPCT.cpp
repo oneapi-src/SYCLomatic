@@ -1159,7 +1159,7 @@ int runDPCT(int argc, const char **argv) {
     doCmakeScriptMigration(InRoot, OutRoot);
     return MigrationSucceeded;
   }
-
+  ReplTy ReplCUDA, ReplSYCL;
   volatile int RunCount = 0;
   do {
     if (RunCount == 1) {
@@ -1173,7 +1173,7 @@ int runDPCT(int argc, const char **argv) {
                                   !DpctGlobalInfo::isQueryAPIMapping()
                               ? llvm::errs()
                               : DpctTerm(),
-                          Tool.getReplacements(), Passes,
+                          ReplCUDA, ReplSYCL, Passes,
                           {PassKind::PK_Analysis, PassKind::PK_Migration},
                           Tool.getFiles().getVirtualFileSystemPtr());
 
@@ -1298,7 +1298,8 @@ int runDPCT(int argc, const char **argv) {
   }
 
   // if run was successful
-  int Status = saveNewFiles(Tool, InRoot, OutRoot);
+  std::cout<<"before save "<<ReplCUDA.begin()->second.size()<<" "<<ReplSYCL.begin()->second.size()<<std::endl;
+  int Status = saveNewFiles(Tool, InRoot, OutRoot, ReplCUDA, ReplSYCL);
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {

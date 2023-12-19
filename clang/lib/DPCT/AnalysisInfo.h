@@ -274,8 +274,6 @@ using StmtList = std::vector<StmtWithWarning>;
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
-using ReplTy = std::map<std::string, tooling::Replacements>;
-
 template <class T> inline void merge(T &Master, const T &Branch) {
   Master.insert(Branch.begin(), Branch.end());
 }
@@ -348,7 +346,8 @@ enum UsingType {
 class DpctFileInfo {
 public:
   DpctFileInfo(const clang::tooling::UnifiedPath &FilePathIn)
-      : Repls(std::make_shared<ExtReplacements>(FilePathIn)),
+      : ReplsSYCL(std::make_shared<ExtReplacements>(FilePathIn)),
+        ReplsCUDA(std::make_shared<ExtReplacements>(FilePathIn)),
         FilePath(FilePathIn) {
     buildLinesInfo();
   }
@@ -388,10 +387,14 @@ public:
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
       return;
-    Repls->addReplacement(Repl);
+    if(Repl->IsForCUDADebug)
+      ReplsCUDA->addReplacement(Repl);
+    else
+      ReplsSYCL->addReplacement(Repl);
   }
   bool isInAnalysisScope();
-  std::shared_ptr<ExtReplacements> getRepls() { return Repls; }
+  std::shared_ptr<ExtReplacements> getReplsSYCL() { return ReplsSYCL; }
+  std::shared_ptr<ExtReplacements> getReplsCUDA() { return ReplsCUDA; }
 
   size_t getFileSize() const { return FileSize; }
 
@@ -652,7 +655,8 @@ private:
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
       AtomicMap;
-  std::shared_ptr<ExtReplacements> Repls;
+  std::shared_ptr<ExtReplacements> ReplsSYCL;
+  std::shared_ptr<ExtReplacements> ReplsCUDA;
   size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
 
@@ -1491,16 +1495,19 @@ public:
       HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
-                     std::shared_ptr<ExtReplacements> Repl) {
+                     std::pair<std::shared_ptr<ExtReplacements>,
+                               std::shared_ptr<ExtReplacements>>
+                         Repl) {
     FileReplCache[FilePath] = Repl;
   }
   // Emplace stored replacements into replacement set.
-  void emplaceReplacements(ReplTy &ReplSets /*out*/) {
+  void emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
+                           ReplTy &ReplSetsSYCL /*out*/) {
     if (DpctGlobalInfo::isNeedRunAgain())
       return;
     for (auto &FileRepl : FileReplCache) {
-      FileRepl.second->emplaceIntoReplSet(
-          ReplSets[FileRepl.first.getCanonicalPath().str()]);
+      FileRepl.second.first->emplaceIntoReplSet(ReplSetsCUDA[FileRepl.first.getCanonicalPath().str()]);
+      FileRepl.second.second->emplaceIntoReplSet(ReplSetsSYCL[FileRepl.first.getCanonicalPath().str()]);
     }
   }
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
@@ -1509,7 +1516,10 @@ public:
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
+    std::cout<<Repl->toString()<<std::endl;
     insertFile(Repl->getFilePath().str())->addReplacement(Repl);
+    std::cout<<"BBB "<<insertFile(Repl->getFilePath().str())->getReplsCUDA()->getReplMap().size()<<std::endl;
+    std::cout<<"CCC "<<insertFile(Repl->getFilePath().str())->getReplsSYCL()->getReplMap().size()<<std::endl;
   }
 
   CudaArchPPMap &getCudaArchPPInfoMap() { return CAPPInfoMap; }
@@ -1889,7 +1899,9 @@ public:
   static unsigned int getRunRound() { return RunRound; }
   static void setNeedRunAgain(bool NRA) { NeedRunAgain = NRA; }
   static bool isNeedRunAgain() { return NeedRunAgain; }
-  static std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacements>> &
+  static std::unordered_map<std::string,
+                            std::pair<std::shared_ptr<ExtReplacements>,
+                                      std::shared_ptr<ExtReplacements>>> &
   getFileReplCache() {
     return FileReplCache;
   }
@@ -2176,7 +2188,9 @@ private:
   static CudaArchDefMap CudaArchDefinedMap;
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
       CudaArchMacroRepl;
-  static std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacements>>
+  static std::unordered_map<std::string,
+                            std::pair<std::shared_ptr<ExtReplacements>,
+                                      std::shared_ptr<ExtReplacements>>>
       FileReplCache;
   static std::set<clang::tooling::UnifiedPath> ReProcessFile;
   static bool NeedRunAgain;

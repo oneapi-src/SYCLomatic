@@ -8472,6 +8472,8 @@ void KernelCallRule::runRule(
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
                                                  "generated_schema.hpp");
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
+                                                 "debug_helper.hpp", true);
+      DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
                                                  "generated_schema.hpp", true);
     }
     bool Flag = true;
@@ -9214,9 +9216,9 @@ bool ConstantMemVarMigrationRule::currentIsDevice(
       // R(dcpt::constant_memery):
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
-      if (!FileInfo->getRepls())
+      if (!FileInfo->getReplsSYCL())
         return false;
-      auto &M = FileInfo->getRepls()->getReplMap();
+      auto &M = FileInfo->getReplsSYCL()->getReplMap();
       bool RemoveWarning = false;
       for (auto &R : M) {
         if ((R.second->getConstantFlag() == dpct::ConstantFlagType::Host ||
@@ -9344,9 +9346,9 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
 
-      if (!FileInfo->getRepls())
+      if (!FileInfo->getReplsSYCL())
         return false;
-      auto &M = FileInfo->getRepls()->getReplMap();
+      auto &M = FileInfo->getReplsSYCL()->getReplMap();
       for (auto &R : M) {
         if ((R.second->getConstantFlag() == dpct::ConstantFlagType::Device ||
              R.second->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
