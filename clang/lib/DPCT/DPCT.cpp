@@ -272,19 +272,24 @@ UnifiedPath getInstallPath(const char *invokeCommand) {
 
 // To validate the root path of the project to be migrated.
 void ValidateInputDirectory(UnifiedPath InRoot) {
-  if (!MigrateCmakeScriptOnly && isChildOrSamePath(CudaPath, InRoot)) {
+  if (isChildOrSamePath(InRoot, DpctInstallPath)) {
+    ShowStatus(MigrationErrorInputDirContainCTTool);
+    dpctExit(MigrationErrorInputDirContainCTTool);
+  }
+
+  // To skip to check the following cuda path when option
+  // "--migrate-cmake-script-only" is specified to migrate cmake script
+  if (MigrateCmakeScriptOnly)
+    return;
+
+  if (isChildOrSamePath(CudaPath, InRoot)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
     dpctExit(MigrationErrorRunFromSDKFolder);
   }
 
-  if (!MigrateCmakeScriptOnly && isChildOrSamePath(InRoot, CudaPath)) {
+  if (isChildOrSamePath(InRoot, CudaPath)) {
     ShowStatus(MigrationErrorInputDirContainSDKFolder);
     dpctExit(MigrationErrorInputDirContainSDKFolder);
-  }
-
-  if (isChildOrSamePath(InRoot, DpctInstallPath)) {
-    ShowStatus(MigrationErrorInputDirContainCTTool);
-    dpctExit(MigrationErrorInputDirContainCTTool);
   }
 }
 
@@ -1027,7 +1032,7 @@ int runDPCT(int argc, const char **argv) {
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   clang::dpct::initHeaderSpellings();
 
-  if (MigrateCmakeScriptOnly || MigrateCmakeScriptOnly) {
+  if (MigrateCmakeScriptOnly || MigrateCmakeScript) {
     SmallString<128> CmakeRuleFilePath(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(CmakeRuleFilePath,
                             Twine("extensions/opt_rules/cmake_rules/"
