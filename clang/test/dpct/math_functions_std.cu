@@ -62,3 +62,12 @@ void h() {
   ll = std::abs(ll2);
 }
 
+void foo1() {
+  int n;
+  //CHECK: sycl::range<3> abc(1, 1, 1);
+  //CHECK-NEXT: abc[1] = std::min(std::max(512 / (unsigned int)abc[2], 1u), (unsigned int) n);
+  //CHECK-NEXT: abc[0] = std::min(std::max(512 / ((unsigned int)abc[2] * (unsigned int)abc[1]), 1u), (unsigned int)n);
+  dim3 abc;
+  abc.y = std::min(std::max(512 / abc.x, 1u), (unsigned int) n);
+  abc.z = std::min(std::max(512 / (abc.x * abc.y), 1u), (unsigned int)n);
+}
