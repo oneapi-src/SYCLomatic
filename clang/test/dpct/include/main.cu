@@ -39,6 +39,7 @@
 
 // RUN: dpct -in-root=%S -p=%T --out-root=%T --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/main.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/main.dp.cpp -o %T/main.dp.o %}
 
 // case 1: cu file in database.
 // CHECK: #include "test1.dp.cpp"

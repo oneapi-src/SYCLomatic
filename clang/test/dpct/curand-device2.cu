@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none --out-root %T/curand-device2 %s  --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++14"
 // RUN: FileCheck --input-file %T/curand-device2/curand-device2.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/curand-device2/curand-device2.dp.cpp -o %T/curand-device2/curand-device2.dp.o %}
 
 #include "curand_kernel.h"
 

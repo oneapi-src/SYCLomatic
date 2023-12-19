@@ -7,6 +7,7 @@
 // RUN: mkdir %T/replace_callee_name_only_output
 // RUN: dpct --format-range=none -out-root %T/replace_callee_name_only_output replace_callee_name_only.cu --cuda-include-path="%cuda-path/include" --usm-level=none --rule-file=replace_callee_name_only.yaml -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/replace_callee_name_only_output/replace_callee_name_only.dp.cpp --match-full-lines replace_callee_name_only.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/replace_callee_name_only_output/replace_callee_name_only.dp.cpp -o %T/replace_callee_name_only_output/replace_callee_name_only.dp.o %}
 
 #include <cub/cub.cuh>
 #include <stddef.h>

@@ -37,25 +37,23 @@ struct DiagnosticsMessage;
 extern std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 extern std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 extern std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
-
+extern std::unordered_set<int> APIQueryNeedReportWarningIDSet;
 extern std::set<int> WarningIDs;
 
 struct DiagnosticsMessage {
   int ID;
   int Category;
   const char *Msg;
-#define DEF_NOTE(NAME, ID, MSG)
-#define DEF_ERROR(NAME, ID, MSG)
-#define DEF_WARNING(NAME, ID, MSG) ID,
-#define DEF_COMMENT(NAME, ID, MSG)
+
+#define DEF_WARNING(NAME, ID, LEVEL, MSG) ID,
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
   constexpr static size_t MinID = std::min({
 #include "Diagnostics.inc"
   });
+#define DEF_WARNING(NAME, ID, LEVEL, MSG) ID,
   constexpr static size_t MaxID = std::max({
 #include "Diagnostics.inc"
   });
-#undef DEF_NOTE
-#undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
   DiagnosticsMessage() = default;
@@ -69,38 +67,26 @@ struct DiagnosticsMessage {
   }
 };
 
-#define DEF_NOTE(NAME, ID, MSG) NAME = ID,
-#define DEF_ERROR(NAME, ID, MSG) NAME = ID,
-#define DEF_WARNING(NAME, ID, MSG) NAME = ID,
-#define DEF_COMMENT(NAME, ID, MSG)
+#define DEF_WARNING(NAME, ID, LEVEL, MSG) NAME = ID,
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
 enum class Diagnostics {
 #include "Diagnostics.inc"
-#undef DEF_NOTE
-#undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
 };
 
-#define DEF_NOTE(NAME, ID, MSG)
-#define DEF_ERROR(NAME, ID, MSG)
-#define DEF_WARNING(NAME, ID, MSG)
-#define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
+#define DEF_WARNING(NAME, ID, LEVEL, MSG)
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG) NAME = ID,
 enum class Comments {
 #include "Diagnostics.inc"
-#undef DEF_NOTE
-#undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
 };
 
-#define DEF_NOTE(NAME, ID, MSG)
-#define DEF_ERROR(NAME, ID, MSG)
-#define DEF_WARNING(NAME, ID, MSG) NAME = ID,
-#define DEF_COMMENT(NAME, ID, MSG)
+#define DEF_WARNING(NAME, ID, LEVEL, MSG) NAME = ID,
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
 enum class Warnings {
 #include "Diagnostics.inc"
-#undef DEF_NOTE
-#undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
 };
@@ -299,8 +285,11 @@ bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset,
 template <typename IDTy, typename... Ts>
 inline bool report(SourceLocation SL, IDTy MsgID,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
-  if (DpctGlobalInfo::isQueryAPIMapping())
-    return true;
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    if (!APIQueryNeedReportWarningIDSet.count((int)MsgID)) {
+      return true;
+    }
+  }
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
     auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
@@ -383,7 +372,9 @@ template <typename IDTy, typename... Ts>
 bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals) {
   if (DpctGlobalInfo::isQueryAPIMapping()) {
-    return true;
+    if (!APIQueryNeedReportWarningIDSet.count((int)MsgID)) {
+      return true;
+    }
   }
   // Do not emit diagnostic message for source location outside --in-root
   if (!DpctGlobalInfo::isInRoot(FileAbsPath))

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/syncthreads %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads/syncthreads.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/syncthreads/syncthreads.dp.cpp -o %T/syncthreads/syncthreads.dp.o %}
 
 #include "cuda_fp16.h"
 

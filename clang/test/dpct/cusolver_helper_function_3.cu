@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0
 // RUN: dpct --format-range=none -out-root %T/cusolver_helper_function_3 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolver_helper_function_3/cusolver_helper_function_3.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusolver_helper_function_3/cusolver_helper_function_3.dp.cpp -o %T/cusolver_helper_function_3/cusolver_helper_function_3.dp.o %}
 
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>
@@ -20,7 +21,7 @@ void foo1() {
   int64_t* tau_c;
   int64_t* tau_z;
 
-  //CHECK:sycl::queue* handle;
+  //CHECK:dpct::queue_ptr handle;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
@@ -36,7 +37,7 @@ void foo1() {
 
   //CHECK:int params;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   cusolverDnParams_t params;
@@ -72,7 +73,7 @@ void foo1() {
   status = cusolverDnXgeqrf(handle, params, 2, 2, CUDA_C_64F, a_z, 2, CUDA_C_64F, tau_z, CUDA_C_64F, device_ws_z, device_ws_size_z, host_ws_z, host_ws_size_z, info);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
@@ -92,7 +93,7 @@ void foo2() {
   int64_t* tau_c;
   int64_t* tau_z;
 
-  //CHECK:sycl::queue* handle;
+  //CHECK:dpct::queue_ptr handle;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
@@ -108,7 +109,7 @@ void foo2() {
 
   //CHECK:int params;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   cusolverDnParams_t params;
@@ -144,7 +145,7 @@ void foo2() {
   status = cusolverDnGeqrf(handle, params, 2, 2, CUDA_C_64F, a_z, 2, CUDA_C_64F, tau_z, CUDA_C_64F, device_ws_z, device_ws_size_z, info);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
@@ -164,7 +165,7 @@ void foo3() {
   int64_t* ipiv_c;
   int64_t* ipiv_z;
 
-  //CHECK:sycl::queue* handle;
+  //CHECK:dpct::queue_ptr handle;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
@@ -180,7 +181,7 @@ void foo3() {
 
   //CHECK:int params;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   cusolverDnParams_t params;
@@ -228,7 +229,7 @@ void foo3() {
   status = cusolverDnXgetrf(handle, params, 2, 2, CUDA_C_64F, a_z, 2, ipiv_z, CUDA_C_64F, device_ws_z, device_ws_size_z, host_ws_z, host_ws_size_z, info);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
@@ -248,7 +249,7 @@ void foo4() {
   int64_t* ipiv_c;
   int64_t* ipiv_z;
 
-  //CHECK:sycl::queue* handle;
+  //CHECK:dpct::queue_ptr handle;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
@@ -260,7 +261,7 @@ void foo4() {
 
   //CHECK:int params;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   cusolverDnParams_t params;
@@ -308,7 +309,7 @@ void foo4() {
   status = cusolverDnGetrf(handle, params, 2, 2, CUDA_C_64F, a_z, 2, ipiv_z, CUDA_C_64F, device_ws_z, device_ws_size_z, info);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
@@ -332,14 +333,14 @@ void foo5() {
   float2* b_c;
   double2* b_z;
 
-  //CHECK:sycl::queue* handle;
+  //CHECK:dpct::queue_ptr handle;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
   //CHECK:int params;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   cusolverDnParams_t params;
@@ -357,7 +358,7 @@ void foo5() {
   status = cusolverDnXgetrs(handle, params, CUBLAS_OP_N, 2, 3, CUDA_C_64F, a_z, 2, ipiv_z, CUDA_C_64F, b_z, 2, info);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
@@ -381,14 +382,14 @@ void foo6() {
   float2* b_c;
   double2* b_z;
 
-  //CHECK:sycl::queue* handle;
+  //CHECK:dpct::queue_ptr handle;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
   //CHECK:int params;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnCreateParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   cusolverDnParams_t params;
@@ -406,7 +407,7 @@ void foo6() {
   status = cusolverDnGetrs(handle, params, CUBLAS_OP_N, 2, 3, CUDA_C_64F, a_z, 2, ipiv_z, CUDA_C_64F, b_z, 2, info);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
   //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
@@ -821,7 +822,7 @@ void foo17() {
   //CHECK-NEXT:int b = 1;
   //CHECK-NEXT:int p;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnSetAdvOptions was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnSetAdvOptions was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   cusolverDnFunction_t a = CUSOLVERDN_GETRF;
   cusolverAlgMode_t b = CUSOLVER_ALG_1;

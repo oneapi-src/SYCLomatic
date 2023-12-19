@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/elminate_duplicated_comments %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/elminate_duplicated_comments/elminate_duplicated_comments.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/elminate_duplicated_comments/elminate_duplicated_comments.dp.cpp -o %T/elminate_duplicated_comments/elminate_duplicated_comments.dp.o %}
 
 int main() {
 

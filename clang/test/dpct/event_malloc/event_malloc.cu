@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/event_malloc.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/event_malloc.dp.cpp -o %T/event_malloc.dp.o %}
 // RUN: FileCheck --input-file %T/event_malloc.h --match-full-lines %S/event_malloc.h
 
 

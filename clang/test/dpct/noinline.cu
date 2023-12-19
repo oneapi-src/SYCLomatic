@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/noinline %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/noinline/noinline.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/noinline/noinline.dp.cpp -o %T/noinline/noinline.dp.o %}
 #include <cuda_runtime.h>
 
 #define NUM_ELEMENTS 16

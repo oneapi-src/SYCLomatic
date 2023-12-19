@@ -66,7 +66,7 @@ void test1() {
     cudnnSetStream(handle, stream1);
     // CHECK: dpct::dnnl::pooling_desc desc;
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreatePoolingDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreatePoolingDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     // CHECK: /*
     // CHECK: DPCT1007:{{[0-9]+}}: Migration of Nan numbers propagation option is not supported.

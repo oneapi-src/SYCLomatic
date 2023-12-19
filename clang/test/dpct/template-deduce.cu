@@ -1,6 +1,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/template-deduce %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce/template-deduce.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/template-deduce/template-deduce.dp.cpp -o %T/template-deduce/template-deduce.dp.o %}
 
 #include <complex>
 

@@ -1378,9 +1378,9 @@ protected:
     return HandleOneElementAddSubMinMax(I, "dpct::extend_min");
   }
 
-  // Handle the 2 element video instructions.
-  bool handleTwoElementAddSubMinMax(const InlineAsmInstruction *Inst,
-                                    StringRef Fn) {
+  // Handle the 2/4 element video instructions.
+  bool handleMultiElementAddSubMinMax(const InlineAsmInstruction *Inst,
+                                      StringRef Fn) {
     if (Inst->getNumInputOperands() < 3 || Inst->getNumTypes() != 3)
       return SYCLGenError();
 
@@ -1427,19 +1427,34 @@ protected:
   }
 
   bool handle_vadd2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vadd2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vadd2");
   }
   bool handle_vsub2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vsub2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vsub2");
   }
   bool handle_vabsdiff2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vabsdiff2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vabsdiff2");
   }
   bool handle_vmin2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vmin2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmin2");
   }
   bool handle_vmax2(const InlineAsmInstruction *I) override {
-    return handleTwoElementAddSubMinMax(I, "dpct::extend_vmax2");
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax2");
+  }
+  bool handle_vadd4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vadd4");
+  }
+  bool handle_vsub4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vsub4");
+  }
+  bool handle_vabsdiff4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vabsdiff4");
+  }
+  bool handle_vmin4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmin4");
+  }
+  bool handle_vmax4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax4");
   }
 
   bool handle_brev(const InlineAsmInstruction *Inst) override {
@@ -1464,6 +1479,77 @@ protected:
     OS() << ")";
     endstmt();
     insertHeader(HeaderType::HT_DPCT_Dpct);
+    return SYCLGenSuccess();
+  }
+
+  bool CheckDotProductAccType(const InlineAsmType *Type) {
+    const auto *BIType = dyn_cast<const InlineAsmBuiltinType>(Type);
+    if (!BIType || (BIType->getKind() != InlineAsmBuiltinType::TK_s32 &&
+                    BIType->getKind() != InlineAsmBuiltinType::TK_u32))
+      return SYCLGenError();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_dp4a(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 2)
+      return SYCLGenError();
+
+    if (CheckDotProductAccType(Inst->getType(0)) ||
+        CheckDotProductAccType(Inst->getType(1)))
+      return SYCLGenError();
+
+    std::string TypeStr[2];
+    for (int i = 0; i < 2; ++i)
+      if (tryEmitType(TypeStr[i], Inst->getType(i)))
+        return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "dp4a<" << TypeStr[0] << ", "
+         << TypeStr[1] << ">(";
+    std::string Op[3];
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    OS() << Op[0] << ", " << Op[1] << ", " << Op[2] << ")";
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
+  bool handle_dp2a(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 2)
+      return SYCLGenError();
+
+    if (CheckDotProductAccType(Inst->getType(0)) ||
+        CheckDotProductAccType(Inst->getType(1)))
+      return SYCLGenError();
+
+    bool lo = Inst->hasAttr(InstAttr::lo);
+    bool hi = Inst->hasAttr(InstAttr::hi);
+    if (!(lo ^ hi))
+      return SYCLGenError();
+
+    std::string TypeStr[2];
+    for (int i = 0; i < 2; ++i)
+      if (tryEmitType(TypeStr[i], Inst->getType(i)))
+        return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "dp2a_";
+    if (lo)
+      OS() << "lo";
+    else
+      OS() << "hi";
+    OS() << "<" << TypeStr[0] << ", " << TypeStr[1] << ">(";
+    std::string Op[3];
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    OS() << Op[0] << ", " << Op[1] << ", " << Op[2] << ")";
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Math);
     return SYCLGenSuccess();
   }
 };
