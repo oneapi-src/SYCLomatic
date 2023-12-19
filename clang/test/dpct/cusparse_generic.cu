@@ -83,7 +83,7 @@ int main() {
   cusparseDnVecDescr_t dnVecDescr;
   int64_t size;
 
-  //CHECK:sycl::queue* handle;
+  //CHECK:dpct::queue_ptr handle;
   //CHECK-NEXT:const void *alpha;
   //CHECK-NEXT:const void *beta;
   //CHECK-NEXT:dpct::sparse::sparse_matrix_desc_t matA;
