@@ -1298,7 +1298,6 @@ int runDPCT(int argc, const char **argv) {
   }
 
   // if run was successful
-  std::cout<<"before save "<<ReplCUDA.begin()->second.size()<<" "<<ReplSYCL.begin()->second.size()<<std::endl;
   int Status = saveNewFiles(Tool, InRoot, OutRoot, ReplCUDA, ReplSYCL);
   ShowStatus(Status);
 
