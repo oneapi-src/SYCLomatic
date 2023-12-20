@@ -149,3 +149,15 @@
       In: -std=${cxx_standard}
       Out: -std=c++17
       RuleId: "add_compile_options_cxx_standard"
+
+- Rule: rule_target_compile_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_compile_options
+  In: target_compile_options(${arg})
+  Out: target_compile_options(${arg})
+  Subrules:
+    arg:
+      In: $<$<COMPILE_LANGUAGE:CUDA>:\${CUDA_NVCC_FLAGS}>
+      Out: ""
+      RuleId: "target_compile_options_cuda_arg"
