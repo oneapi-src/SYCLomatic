@@ -1234,7 +1234,7 @@ int runDPCT(int argc, const char **argv) {
     LangOptions DefaultLangOptions;
     Rewriter Rewrite(Sources, DefaultLangOptions);
     // Must be only 1 file.
-    tooling::applyAllReplacements(Tool.getReplacements().begin()->second,
+    tooling::applyAllReplacements(ReplSYCL.begin()->second,
                                   Rewrite);
     const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
     static const std::string StartStr{"// Start"};

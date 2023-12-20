@@ -1899,7 +1899,7 @@ public:
   static unsigned int getRunRound() { return RunRound; }
   static void setNeedRunAgain(bool NRA) { NeedRunAgain = NRA; }
   static bool isNeedRunAgain() { return NeedRunAgain; }
-  static std::unordered_map<std::string,
+  static std::unordered_map<clang::tooling::UnifiedPath,
                             std::pair<std::shared_ptr<ExtReplacements>,
                                       std::shared_ptr<ExtReplacements>>> &
   getFileReplCache() {
@@ -2188,7 +2188,7 @@ private:
   static CudaArchDefMap CudaArchDefinedMap;
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
       CudaArchMacroRepl;
-  static std::unordered_map<std::string,
+  static std::unordered_map<clang::tooling::UnifiedPath,
                             std::pair<std::shared_ptr<ExtReplacements>,
                                       std::shared_ptr<ExtReplacements>>>
       FileReplCache;
