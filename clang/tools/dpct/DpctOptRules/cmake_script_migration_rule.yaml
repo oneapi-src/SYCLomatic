@@ -161,3 +161,16 @@
       In: $<$<COMPILE_LANGUAGE:CUDA>:\${CUDA_NVCC_FLAGS}>
       Out: ""
       RuleId: "target_compile_options_cuda_arg"
+
+- Rule: rule_CUDA_HAS_FP16
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_HAS_FP16
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HAS_FP16
+      Out: SYCL_HAS_FP16

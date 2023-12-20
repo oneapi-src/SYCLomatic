@@ -74,3 +74,6 @@ endmacro()
 macro(DPCT_COMPILE_SYCL_CODE generated_files)
   DPCT_COMPILE_SYCL_CODE_IMP(sycl_device ${generated_files} ${ARGN})
 endmacro()
+
+# Always set SYCL_HAS_FP16 to true to assume SYCL device to support float16
+set(SYCL_HAS_FP16 TRUE)
