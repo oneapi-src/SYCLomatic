@@ -2258,20 +2258,31 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
         // If the begin/end loc are at the same location
         // and the loc is another macro expand,
         // recursively search for a more precise range.
-        auto MacroDefBegin = It->second.getBegin();
-        auto MacroDefEnd = It->second.getEnd();
+        auto IterSecondBeginFileID = SM.translateFile(
+            dpct::DpctGlobalInfo::getFileManager()
+                .getFile(It->second.first.first.getCanonicalPath())
+                .get());
+        auto IterSecondEndFileID = SM.translateFile(
+            dpct::DpctGlobalInfo::getFileManager()
+                .getFile(It->second.second.first.getCanonicalPath())
+                .get());
+        auto IterSecondBegin =
+            SM.getComposedLoc(IterSecondBeginFileID, It->second.first.second);
+        auto IterSecondEnd =
+            SM.getComposedLoc(IterSecondEndFileID, It->second.second.second);
+
+        auto MacroDefBegin = IterSecondBegin;
+        auto MacroDefEnd = IterSecondEnd;
         auto MacroDefEndTokenLength =
             Lexer::MeasureTokenLength(MacroDefEnd, SM, Context.getLangOpts());
         MacroDefEnd = MacroDefEnd.getLocWithOffset(MacroDefEndTokenLength);
         auto InnerResult = getRangeInRange(Range, MacroDefBegin, MacroDefEnd, false);
         // If the new range covers the entire macro, use the original range,
         // otherwise, use the inner range.
-        if (isInRange(It->second.getBegin(), It->second.getEnd(),
-                      InnerResult.first) &&
-            isInRange(It->second.getBegin(), It->second.getEnd(),
-                      InnerResult.second) &&
-            (!isSameLocation(It->second.getBegin(), InnerResult.first) ||
-             !isSameLocation(It->second.getEnd(), InnerResult.second))) {
+        if (isInRange(IterSecondBegin, IterSecondEnd, InnerResult.first) &&
+            isInRange(IterSecondBegin, IterSecondEnd, InnerResult.second) &&
+            (!isSameLocation(IterSecondBegin, InnerResult.first) ||
+             !isSameLocation(IterSecondEnd, InnerResult.second))) {
           ResultBegin = InnerResult.first;
           ResultEnd = InnerResult.second;
         }
