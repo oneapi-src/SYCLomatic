@@ -12121,6 +12121,14 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
       Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                     MapNames::getClNamespace() +
                     "access::fence_space::local_space)";
+    } else if (Res.CanUseLocalBarrierWithCondition) {
+      report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER, true,
+             Res.GlobalFunctionName);
+      Replacement =
+          "(" + Res.Condition + ") ? " + DpctGlobalInfo::getItem(CE) +
+          ".barrier(" + MapNames::getClNamespace() +
+          "access::fence_space::local_space) : " + DpctGlobalInfo::getItem(CE) +
+          ".barrier()";
     } else {
       report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
              "nd_item");
