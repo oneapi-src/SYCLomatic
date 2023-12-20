@@ -33,9 +33,9 @@ class StringRef;
 ///
 /// \returns 0 upon success. Non-zero upon failure.
 /// Prerequisite: InRoot and OutRoot are both absolute paths
-int saveNewFiles(clang::tooling::RefactoringTool &Tool, llvm::StringRef InRoot,
-                 llvm::StringRef OutRoot,
-                 ReplTy &ReplCUDA,
+int saveNewFiles(clang::tooling::RefactoringTool &Tool,
+                 clang::tooling::UnifiedPath InRoot,
+                 clang::tooling::UnifiedPath OutRoot, ReplTy &ReplCUDA,
                  ReplTy &ReplSYCL);
 
 void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);

@@ -117,8 +117,9 @@ static bool formatFile(const clang::tooling::UnifiedPath& FileName,
 // TODO: it's global variable, refine in future
 std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 
-bool rewriteDir(clang::tooling::UnifiedPath &FilePath, const clang::tooling::UnifiedPath& InRoot,
-                const clang::tooling::UnifiedPath& OutRoot) {
+bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
+                const clang::tooling::UnifiedPath &InRoot,
+                const clang::tooling::UnifiedPath &OutRoot) {
 #if defined(_WIN64)
   std::string Filename = sys::path::filename(FilePath.getPath()).str();
 #endif
@@ -361,16 +362,9 @@ void applyPatternRewriter(const std::string &InputString,
 ///
 /// \returns 0 upon success. Non-zero upon failure.
 /// Prerequisite: InRoot and OutRoot are both absolute paths
-<<<<<<< HEAD
-int saveNewFiles(clang::tooling::RefactoringTool &Tool,
-                 clang::tooling::UnifiedPath InRoot,
-                 clang::tooling::UnifiedPath OutRoot) {
-=======
-int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
-                 StringRef OutRoot, ReplTy &ReplCUDA,
+int saveNewFiles(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath InRoot,
+                 clang::tooling::UnifiedPath OutRoot, ReplTy &ReplCUDA,
                  ReplTy &ReplSYCL) {
-  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
->>>>>>> Split CUDA and SYCL replacements
   using namespace clang;
   volatile ProcessStatus status = MigrationSucceeded;
   // Set up Rewriter.
@@ -385,7 +379,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   Rewriter DebugCUDARewrite(Sources, DefaultLangOptions);
   extern bool ProcessAllFlag;
 
-  SmallString<512> OutPath;
+  clang::tooling::UnifiedPath OutPath;
   
   // The variable defined here assists to merge history records.
   std::unordered_map<std::string /*FileName*/,
@@ -395,7 +389,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   std::string YamlFile = appendPath(OutRoot.getCanonicalPath().str(),
                                     DpctGlobalInfo::getYamlFileName());
   std::string SrcFile = "MainSrcFiles_placehold";
-  std::string DebugCUDAFolder = OutRoot.str() + "_debug";
+  std::string DebugCUDAFolder = OutRoot.getCanonicalPath().str() + "_debug";
   if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
     auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
     for (const auto &Repl : PreTU->Replacements) {
@@ -416,20 +410,14 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   }
 
   std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
-<<<<<<< HEAD
   std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> MainSrcFilesDigest;
-  clang::tooling::UnifiedPath OutPath;
-  if (Tool.getReplacements().empty()) {
-=======
-  std::vector<std::pair<std::string, std::string>> MainSrcFilesDigest;
 
   int ReplCount = 0;
   for(auto &FileRepl : ReplSYCL){
     ReplCount += FileRepl.second.size();
   }
-  std::cout<<ReplCount<<std::endl;
+
   if (!ReplCount) {
->>>>>>> Split CUDA and SYCL replacements
     // There are no rules applying on the *.cpp files,
     // dpct just do nothing with them.
     status = MigrationNoCodeChangeHappen;
@@ -463,7 +451,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
       // This operation won't fail; it already succeeded once during argument
       // validation.
-      makeCanonical(OutPath);
       rewriteFileName(OutPath);
       if (!rewriteDir(OutPath, InRoot, OutRoot)) {
         continue;
@@ -540,16 +527,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       BlockLevelFormatRanges =
           calculateRangesWithBlockLevelFormatFlag(Entry.second);
       FileBlockLevelFormatRangesMap.insert(
-<<<<<<< HEAD
           std::make_pair(OutPath, BlockLevelFormatRanges));
 
-      tooling::applyAllReplacements(Entry.second, Rewrite, false);
-      if (dpct::DpctGlobalInfo::isDebugEnabled())
-        tooling::applyAllReplacements(Entry.second, DebugCUDARewrite, true);
-=======
-          std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
       tooling::applyAllReplacements(ReplSYCL[Entry.first], Rewrite, false);
->>>>>>> Split CUDA and SYCL replacements
 
       llvm::Expected<FileEntryRef> Result =
           Tool.getFiles().getFileRef(Entry.first);
@@ -577,7 +557,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       for (auto &Entry : ReplCUDA) {
         OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
             Rewrite.getSourceMgr().getFileManager(), Entry.first));
-        makeCanonical(OutPath);
         bool HasRealReplacements = true;
         auto Repls = Entry.second;
 
@@ -586,38 +565,38 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           if (Repl.getLength() == 0 && Repl.getReplacementText().empty())
             HasRealReplacements = false;
         }
-        auto Find = IncludeFileMap.find(OutPath.c_str());
+        auto Find = IncludeFileMap.find(OutPath.getCanonicalPath().str());
         if (HasRealReplacements && Find != IncludeFileMap.end()) {
-          IncludeFileMap[OutPath.c_str()] = true;
+          IncludeFileMap[OutPath.getCanonicalPath().str()] = true;
         }
 
         // This operation won't fail; it already succeeded once during argument
         // validation.
-        makeCanonical(OutPath);
-        std::string OriginalPathStr = OutPath.str().str();
-        SmallString<512> DebugCUDAPath = SmallString<512>(OriginalPathStr);
+        std::string OriginalPathStr = OutPath.getCanonicalPath().str();
+        clang::tooling::UnifiedPath DebugCUDAPath =
+            clang::tooling::UnifiedPath(OriginalPathStr);
         if (!rewriteDir(DebugCUDAPath, InRoot, DebugCUDAFolder)) {
           continue;
         }
 
         std::error_code EC;
 
-        EC = fs::create_directories(path::parent_path(DebugCUDAPath));
+        EC = fs::create_directories(path::parent_path(DebugCUDAPath.getCanonicalPath().str()));
         if ((bool)EC) {
           std::string ErrMsg =
-              "[ERROR] Create file : " + std::string(DebugCUDAPath.str()) +
+              "[ERROR] Create file : " + std::string(DebugCUDAPath.getCanonicalPath().str()) +
               " fail: " + EC.message() + "\n";
           status = MigrationSaveOutFail;
           PrintMsg(ErrMsg);
           return status;
         }
 
-        std::ofstream DebugCUDAFile(DebugCUDAPath.str().str(),
+        std::ofstream DebugCUDAFile(DebugCUDAPath.getCanonicalPath().str(),
                                     std::ios::binary);
         llvm::raw_os_ostream DebugCUDAStream(DebugCUDAFile);
         if (dpct::DpctGlobalInfo::isDebugEnabled() && !DebugCUDAFile) {
           std::string ErrMsg =
-              "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
+              "[ERROR] Create file: " + DebugCUDAPath.getCanonicalPath().str() + " fail.\n";
           PrintMsg(ErrMsg);
           status = MigrationSaveOutFail;
           return status;
@@ -630,7 +609,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         // command.
         SourceProcessType FileType = GetSourceFileType(Entry.first);
         if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
-          mergeExternalReps(Entry.first, OutPath.str().str(), Entry.second);
+          mergeExternalReps(Entry.first, DebugCUDAPath.getCanonicalPath().str(), Entry.second);
         } else {
 
           auto Hash = llvm::sys::fs::md5_contents(Entry.first);
@@ -665,13 +644,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
         std::vector<clang::tooling::Range> Ranges;
         Ranges = calculateRangesWithFormatFlag(Entry.second);
-        FileRangesMap.insert(std::make_pair(OutPath.str().str(), Ranges));
+        FileRangesMap.insert(std::make_pair(DebugCUDAPath.getCanonicalPath().str(), Ranges));
 
         std::vector<clang::tooling::Range> BlockLevelFormatRanges;
         BlockLevelFormatRanges =
             calculateRangesWithBlockLevelFormatFlag(Entry.second);
         FileBlockLevelFormatRangesMap.insert(
-            std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
+            std::make_pair(DebugCUDAPath.getCanonicalPath().str(), BlockLevelFormatRanges));
         tooling::applyAllReplacements(ReplCUDA[Entry.first], DebugCUDARewrite,
                                       true);
 
@@ -863,7 +842,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
                                    YamlFile, SrcFile, MainSrcFileMap);
   if (dpct::DpctGlobalInfo::isDebugEnabled()) {
     std::string SchemaPathCUDA = DebugCUDAFolder + "/generated_schema.hpp";
-    std::string SchemaPathSYCL = OutRoot.str() + "/generated_schema.hpp";
+    std::string SchemaPathSYCL =
+        OutRoot.getCanonicalPath().str() + "/generated_schema.hpp";
     std::error_code EC;
     EC = fs::create_directories(path::parent_path(SchemaPathCUDA));
     if ((bool)EC) {

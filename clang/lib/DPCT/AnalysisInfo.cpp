@@ -138,8 +138,9 @@ HDFuncInfoMap DpctGlobalInfo::HostDeviceFuncInfoMap;
 CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
 std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
     DpctGlobalInfo::CudaArchMacroRepl;
-std::unordered_map<clang::tooling::UnifiedPath, std::pair<std::shared_ptr<ExtReplacements>,
-                                          std::shared_ptr<ExtReplacements>>>
+std::unordered_map<clang::tooling::UnifiedPath,
+                   std::pair<std::shared_ptr<ExtReplacements>,
+                             std::shared_ptr<ExtReplacements>>>
     DpctGlobalInfo::FileReplCache;
 std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::ReProcessFile;
 std::unordered_map<std::string,
