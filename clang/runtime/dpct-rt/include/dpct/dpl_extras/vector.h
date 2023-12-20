@@ -73,7 +73,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static
       typename ::std::enable_if_t<__has_construct<_Allocator, T *>::value, void>
       uninitialized_value_construct_n(_Allocator alloc, T *p, Size n) {
-    assert( p != nullptr && "value constructing null data");
+    assert(p != nullptr && "value constructing null data");
     for (Size i = 0; i < n; i++) {
       ::std::allocator_traits<_Allocator>::construct(alloc, p + i);
     }
@@ -83,7 +83,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static typename ::std::enable_if_t<!__has_construct<_Allocator, T *>::value,
                                      void>
   uninitialized_value_construct_n(_Allocator alloc, T *p, Size n) {
-    assert( p != nullptr && "value constructing null data");
+    assert(p != nullptr && "value constructing null data");
     ::std::uninitialized_value_construct_n(
         oneapi::dpl::execution::make_device_policy(get_default_queue()), p, n);
   }
@@ -92,7 +92,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static typename ::std::enable_if_t<
       __has_construct<_Allocator, T *, const Value &>::value, void>
   uninitialized_fill_n(_Allocator alloc, T *first, Size n, const Value &value) {
-    assert( first != nullptr && "filling null data");
+    assert(first != nullptr && "filling null data");
     for (Size i = 0; i < n; i++) {
       ::std::allocator_traits<_Allocator>::construct(alloc, first + i, value);
     }
@@ -102,7 +102,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static typename ::std::enable_if_t<
       !__has_construct<_Allocator, T *, const Value &>::value, void>
   uninitialized_fill_n(_Allocator alloc, T *first, Size n, const Value &value) {
-    assert( first != nullptr && "filling null data");
+    assert(first != nullptr && "filling null data");
     ::std::uninitialized_fill_n(
         oneapi::dpl::execution::make_device_policy(get_default_queue()), first,
         n, value);
@@ -111,7 +111,7 @@ template <typename _Allocator> struct device_allocator_traits {
   template <typename Iter1, typename Size, typename T>
   static void uninitialized_custom_copy_n(_Allocator alloc, Iter1 first, Size n,
                                           T *d_first) {
-    assert( d_first != nullptr && "copying into null data");
+    assert(d_first != nullptr && "copying into null data");
     for (Size i = 0; i < n; i++) {
       ::std::allocator_traits<_Allocator>::construct(alloc, d_first + i,
                                                      *(first + i));
@@ -126,7 +126,7 @@ template <typename _Allocator> struct device_allocator_traits {
       void>
   uninitialized_device_copy_n(_Allocator alloc, Iter1 first, Size n,
                               T *d_first) {
-    assert( d_first != nullptr && "copying into null data");
+    assert(d_first != nullptr && "copying into null data");
     uninitialized_custom_copy_n(alloc, first, n, d_first);
   }
 
@@ -138,7 +138,7 @@ template <typename _Allocator> struct device_allocator_traits {
       void>
   uninitialized_device_copy_n(_Allocator alloc, Iter1 first, Size n,
                               T *d_first) {
-    assert( d_first != nullptr && "copying into null data");
+    assert(d_first != nullptr && "copying into null data");
     ::std::uninitialized_copy_n(
         oneapi::dpl::execution::make_device_policy(get_default_queue()), first,
         n, d_first);
@@ -151,7 +151,7 @@ template <typename _Allocator> struct device_allocator_traits {
           typename ::std::iterator_traits<Iter1>::value_type>::value,
       void>
   uninitialized_host_copy_n(_Allocator alloc, Iter1 first, Size n, T *d_first) {
-    assert( d_first != nullptr && "copying into null data");
+    assert(d_first != nullptr && "copying into null data");
     uninitialized_custom_copy_n(alloc, first, n, d_first);
   }
 
@@ -162,7 +162,7 @@ template <typename _Allocator> struct device_allocator_traits {
           typename ::std::iterator_traits<Iter1>::value_type>::value,
       void>
   uninitialized_host_copy_n(_Allocator alloc, Iter1 first, Size n, T *d_first) {
-    assert( d_first != nullptr && "copying into null data");
+    assert(d_first != nullptr && "copying into null data");
     ::std::uninitialized_copy_n(first, n, d_first);
   }
 
@@ -170,7 +170,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static
       typename ::std::enable_if_t<__has_destroy<_Allocator, T *>::value, void>
       destroy_n(_Allocator alloc, T *p, Size n) {
-    assert( p != nullptr && "destroying null data");
+    assert(p != nullptr && "destroying null data");
     for (Size i = 0; i < n; i++) {
       ::std::allocator_traits<_Allocator>::destroy(alloc, p + i);
     }
@@ -180,7 +180,7 @@ template <typename _Allocator> struct device_allocator_traits {
   static
       typename ::std::enable_if_t<!__has_destroy<_Allocator, T *>::value, void>
       destroy_n(_Allocator alloc, T *p, Size n) {
-    assert( p != nullptr && "destroying null data");
+    assert(p != nullptr && "destroying null data");
     ::std::destroy_n(
         oneapi::dpl::execution::make_device_policy(get_default_queue()), p, n);
   }
@@ -231,20 +231,18 @@ private:
   }
 
   template <typename Iter>
-  void _construct(Iter first, Iter last, size_type start_idx = 0) {
-    size_type num_eles = ::std::distance(first, last);
-    if (num_eles > 0) {
+  void _construct_iter(Iter first, size_type n, size_type start_idx = 0) {
+    if (n > 0) {
       device_allocator_traits<Allocator>::uninitialized_device_copy_n(
-          _alloc, first, num_eles, _storage + start_idx);
+          _alloc, first, n, _storage + start_idx);
     }
   }
 
   template <typename Iter>
-  void _construct_host(Iter first, Iter last, size_type start_idx = 0) {
-    size_type num_eles = ::std::distance(first, last);
-    if (num_eles > 0) {
+  void _construct_iter_host(Iter first, size_type n, size_type start_idx = 0) {
+    if (n > 0) {
       device_allocator_traits<Allocator>::uninitialized_host_copy_n(
-          _alloc, first, num_eles, _storage + start_idx);
+          _alloc, first, n, _storage + start_idx);
     }
   }
 
@@ -252,6 +250,38 @@ private:
     if (n > 0) {
       device_allocator_traits<Allocator>::destroy_n(_alloc,
                                                     _storage + start_idx, n);
+    }
+  }
+
+  void _assign_elements(const device_vector &other) {
+    if (other.size() <= _size) {
+      // if incoming elements fit within existing elements, copy then destroy
+      // excess
+      ::std::copy(
+          oneapi::dpl::execution::make_device_policy(get_default_queue()),
+          other.begin(), other.end(), begin());
+      resize(other.size());
+    } else if (other.size() < _capacity) {
+      // if incoming elements don't fit within existing elements but do fit
+      // within total capacity
+      // copy elements that fit, then use uninitialized copy to ge the rest and
+      // adjust size
+      std::copy_n(
+          oneapi::dpl::execution::make_device_policy(get_default_queue()),
+          other.begin(), _size, begin());
+      device_allocator_traits<Allocator>::uninitialized_device_copy_n(
+          _alloc, other.begin() + _size, other.size() - _size,
+          _storage + _size);
+      _size = other.size();
+    } else {
+      // If incoming elements exceed current capacity, destroy all existing
+      // elements, then allocate incoming vectors capacity, then use
+      // uninitialized copy
+      clear();
+      reserve(other.capacity());
+      device_allocator_traits<Allocator>::uninitialized_device_copy_n(
+          _alloc, other.begin(), other.size(), _storage);
+      _size = other.size();
     }
   }
 
@@ -299,7 +329,7 @@ public:
   device_vector(device_vector &&other, const Allocator &alloc)
       : _alloc(alloc), _size(other.size()), _capacity(other.capacity()) {
     _storage = alloc_traits::allocate(_alloc, _capacity);
-    _construct(other.begin(), other.end()); // ok to parallelize
+    _construct_iter(other.begin(), _size); // ok to parallelize
     other._size = 0;
     other._capacity = 0;
     other._storage = nullptr;
@@ -317,7 +347,7 @@ public:
     _set_capacity_and_alloc();
     // unsafe to parallelize on device as we dont know if InputIterator is valid
     // oneDPL input type
-    _construct_host(first, last);
+    _construct_iter_host(first, _size);
   }
 
   device_vector(const device_vector &other, const Allocator &alloc)
@@ -325,7 +355,7 @@ public:
     _size = other.size();
     _capacity = other.capacity();
     _storage = alloc_traits::allocate(_alloc, _capacity);
-    _construct(other.begin(), other.end());
+    _construct_iter(other.begin(), _size);
   }
 
   device_vector(const device_vector &other)
@@ -341,7 +371,7 @@ public:
     _size = other.size();
     _capacity = other.capacity();
     _storage = alloc_traits::allocate(_alloc, _capacity);
-    _construct(other.begin(), other.end());
+    _construct_iter(other.begin(), _size);
   }
 
   template <typename OtherAllocator>
@@ -369,10 +399,7 @@ public:
       _capacity = 0;
       _alloc = other._alloc;
     }
-    reserve(other.capacity());
-    resize(other.size());
-    ::std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                other.begin(), other.end(), begin());
+    _assign_elements(other);
     return *this;
   }
   device_vector &operator=(device_vector &&other) {
@@ -385,11 +412,8 @@ public:
       _capacity = ::std::move(other._capacity);
       _size = ::std::move(other._size);
     } else {
-      reserve(other.capacity());
-      resize(other.size());
-      ::std::copy(
-          oneapi::dpl::execution::make_device_policy(get_default_queue()),
-          other.begin(), other.end(), begin());
+      _assign_elements(other);
+      // destroy and deallocate other vector
       other.clear();
       alloc_traits::deallocate(other._alloc, other._storage, other._capacity);
     }
@@ -419,24 +443,25 @@ public:
     } else {
       // swap all elements up to the minimum size between the two vectors
       size_type min_size = ::std::min(size(), v.size());
-      for (size_type i = 0; i < min_size; i++) {
-        ::std::swap(_storage[i], v._storage[i]);
-      }
+      auto zip = oneapi::dpl::make_zip_iterator(begin(), v.begin());
+      ::std::for_each(
+          oneapi::dpl::execution::make_device_policy(get_default_queue()), zip,
+          zip + min_size, [](auto zip_ele) {
+            std::swap(::std::get<0>(zip_ele), ::std::get<1>(zip_ele));
+          });
       // then copy the elements beyond the end of the smaller list, and resize
       if (size() > v.size()) {
-        size_type tmp_v_size = v.size();
-        v.resize(size());
-        ::std::copy(
-            oneapi::dpl::execution::make_device_policy(get_default_queue()),
-            begin() + tmp_v_size, end(), v.begin() + tmp_v_size);
-        resize(tmp_v_size);
-      } else {
-        size_type tmp_size = v.size();
-        resize(v.size());
-        ::std::copy(
-            oneapi::dpl::execution::make_device_policy(get_default_queue()),
-            v.begin() + tmp_size, v.end(), begin() + tmp_size);
-        v.resize(tmp_size);
+        v.reserve(capacity());
+        device_allocator_traits<Allocator>::uninitialized_device_copy_n(
+            _alloc, begin() + min_size, begin() + size(), size() - min_size,
+            v.begin() + min_size);
+        v._size = size();
+      } else if (size() < v.size()) {
+        reserve(v.capacity());
+        device_allocator_traits<Allocator>::uninitialized_device_copy_n(
+            _alloc, v.begin() + min_size, v.begin() + v.size(),
+            v.size() - min_size, begin() + min_size);
+        _size = v.size();
       }
     }
   }
@@ -559,10 +584,10 @@ public:
   }
   void insert(iterator position, size_type n, const T &x) {
     if (position == end()) {
-      resize(size() + n);
-      ::std::fill(
-          oneapi::dpl::execution::make_device_policy(get_default_queue()),
-          end() - n, end(), x);
+      reserve(size() + n);
+      device_allocator_traits<Allocator>::uninitialized_fill_n(
+          _alloc, _storage + size(), n, x);
+      _size += n;
     } else {
       auto i_n = ::std::distance(begin(), position);
       // allocate temporary storage
