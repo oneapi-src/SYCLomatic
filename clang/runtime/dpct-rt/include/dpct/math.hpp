@@ -1804,7 +1804,7 @@ inline constexpr RetT extend_vmax2_sat(AT a, BT b, RetT c) {
 /// \returns The extend vectorized average of the two values
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vavrg2(AT a, BT b, RetT c) {
-  return detail::extend_vbinary2<RetT, false, false>(a, b, c, average());
+  return detail::extend_vbinary2<RetT, false, false>(a, b, c, detail::average());
 }
 
 /// Compute vectorized average of \p a and \p b, with each value treated as a 2
@@ -1820,7 +1820,7 @@ inline constexpr RetT extend_vavrg2(AT a, BT b, RetT c) {
 /// two values and the third value
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vavrg2_add(AT a, BT b, RetT c) {
-  return detail::extend_vbinary2<RetT, false, true>(a, b, c, average());
+  return detail::extend_vbinary2<RetT, false, true>(a, b, c, detail::average());
 }
 
 /// Compute vectorized average of \p a and \p b with saturation, with each value
@@ -1834,7 +1834,7 @@ inline constexpr RetT extend_vavrg2_add(AT a, BT b, RetT c) {
 /// \returns The extend vectorized average of the two values with saturation
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vavrg2_sat(AT a, BT b, RetT c) {
-  return detail::extend_vbinary2<RetT, true, false>(a, b, c, average());
+  return detail::extend_vbinary2<RetT, true, false>(a, b, c, detail::average());
 }
 
 /// Compute vectorized addition of \p a and \p b, with each value treated as a
@@ -2068,7 +2068,7 @@ inline constexpr RetT extend_vmax4_sat(AT a, BT b, RetT c) {
 /// \returns The extend vectorized average of the two values
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vavrg4(AT a, BT b, RetT c) {
-  return detail::extend_vbinary4<RetT, false, false>(a, b, c, average());
+  return detail::extend_vbinary4<RetT, false, false>(a, b, c, detail::average());
 }
 
 /// Compute vectorized average of \p a and \p b, with each value treated as a 4
@@ -2084,7 +2084,7 @@ inline constexpr RetT extend_vavrg4(AT a, BT b, RetT c) {
 /// two values and the third value
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vavrg4_add(AT a, BT b, RetT c) {
-  return detail::extend_vbinary4<RetT, false, true>(a, b, c, average());
+  return detail::extend_vbinary4<RetT, false, true>(a, b, c, detail::average());
 }
 
 /// Compute vectorized average of \p a and \p b with saturation, with each value
@@ -2098,7 +2098,7 @@ inline constexpr RetT extend_vavrg4_add(AT a, BT b, RetT c) {
 /// \returns The extend vectorized average of the two values with saturation
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vavrg4_sat(AT a, BT b, RetT c) {
-  return detail::extend_vbinary4<RetT, true, false>(a, b, c, average());
+  return detail::extend_vbinary4<RetT, true, false>(a, b, c, detail::average());
 }
 } // namespace dpct
 
