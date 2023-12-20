@@ -1721,7 +1721,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
               "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t", "CUuuid",
-              "cusparseSpSVAlg_t", "cudaFuncAttributes"))))))
+              "cusparseSpSVAlg_t", "cudaFuncAttributes", "cudaLaunchAttributeValue"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3210,7 +3210,8 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 
   if (MemberName == "sharedMemPerBlock" ||
-      MemberName == "sharedMemPerMultiprocessor") {
+      MemberName == "sharedMemPerMultiprocessor" ||
+      MemberName == "sharedMemPerBlockOptin") {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false, MemberName);
   } else if (MemberName == "maxGridSize") {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE, false);
@@ -6522,21 +6523,22 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            "cudaDeviceGetPCIBusId");
   } else if (FuncName == "cudaGetDevice") {
-    std::string ResultVarName = getDrefName(CE->getArg(0));
-    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
+    std::string ReplStr = getDrefName(CE->getArg(0)) + " = ";
     if (DpctGlobalInfo::useNoQueueDevice()) {
-      emplaceTransformation(new ReplaceStmt(CE, "0"));
+      ReplStr += "0";
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
              "cudaGetDevice",
              "it is redundant if it is migrated with option "
              "--helper-function-preference=no-queue-device "
              "which declares a global SYCL device and queue.");
     } else {
-      emplaceTransformation(
-          new ReplaceStmt(CE, MapNames::getDpctNamespace() +
-                                  "dev_mgr::instance().current_device_id()"));
+      ReplStr += MapNames::getDpctNamespace() +
+                 "dev_mgr::instance().current_device_id()";
       requestFeature(HelperFeatureEnum::device_ext);
     }
+    if (IsAssigned)
+      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+    emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
     if (isPlaceholderIdxDuplicated(CE))
@@ -9302,6 +9304,9 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
 
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
+      if(!FileInfo)
+        return false;
+
       if (!FileInfo->getRepls())
         return false;
       auto &M = FileInfo->getRepls()->getReplMap();
@@ -14813,10 +14818,6 @@ void CudaUuidRule::runRule(
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
 
 void TypeRemoveRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(typedefDecl(
-                            hasAnyName("cudaLaunchAttributeValue"))))))
-                    .bind("TypeWarning"),
-                this);
   MF.addMatcher(
       binaryOperator(allOf(isAssignmentOperator(),
                            hasLHS(hasDescendant(memberExpr(hasType(namedDecl(
@@ -14827,11 +14828,6 @@ void TypeRemoveRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void TypeRemoveRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeWarning")) {
-    report(getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin(),
-           Diagnostics::API_NOT_MIGRATED, false,
-           getStmtSpelling(TL->getSourceRange()));
-  }
   if (auto BO = getNodeAsType<BinaryOperator>(Result, "AssignStmtRemove"))
     emplaceTransformation(new ReplaceStmt(BO, ""));
   return;

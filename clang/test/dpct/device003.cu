@@ -25,7 +25,7 @@ int deviceCount = 0;
 checkErrors(cudaGetDeviceCount(&deviceCount));
 
 int dev_id;
-// CHECK: checkErrors(dev_id = dpct::dev_mgr::instance().current_device_id());
+// CHECK: checkErrors(DPCT_CHECK_ERROR(dev_id = dpct::dev_mgr::instance().current_device_id()));
 checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
