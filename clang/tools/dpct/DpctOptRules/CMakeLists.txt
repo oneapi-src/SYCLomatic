@@ -19,6 +19,12 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ./extensions/opt_rules/cmake_rules)
 
+install(
+  FILES ${dpct_cmake_rule_files}
+  COMPONENT dpct-cmake-rules
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  DESTINATION ${CMAKE_BINARY_DIR}/extensions/opt_rules/cmake_rules)
+
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-opt-rules
                            COMPONENT dpct-opt-rules)

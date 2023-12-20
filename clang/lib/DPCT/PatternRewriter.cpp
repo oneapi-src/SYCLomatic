@@ -419,6 +419,12 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
+      // If input value has been matched to the end but match pattern still has
+      // value, it is considered not matched case.
+      if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
+        return {};
+      }
+
       // To make sure first character after the matched word isn't an
       // identified character or suffix match '('.
       if (Index < Size - 1 && isIdentifiedChar(Input[Index + 1]) &&

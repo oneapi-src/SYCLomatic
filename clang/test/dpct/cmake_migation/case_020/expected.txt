@@ -1,0 +1,2 @@
+set(SOURCES foo.dp.cpp ${CMAKE_SOURCE_DIR}/foo/bar.dp.cpp)
+list(APPEND SOURCES foo.dp.cpp)
