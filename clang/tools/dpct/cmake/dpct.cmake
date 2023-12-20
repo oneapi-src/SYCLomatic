@@ -76,4 +76,5 @@ macro(DPCT_COMPILE_SYCL_CODE generated_files)
 endmacro()
 
 # Always set SYCL_HAS_FP16 to true to assume SYCL device to support float16
+message("dpct.cmake: SYCL_HAS_FP16 is set true by default.")
 set(SYCL_HAS_FP16 TRUE)
