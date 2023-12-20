@@ -12,7 +12,6 @@ add_mlir_dialect_library(MLIRAffineUtils
   MLIRAffineAnalysis
   MLIRAnalysis
   MLIRArithUtils
-  MLIRFuncDialect
   MLIRMemRefDialect
   MLIRTransformUtils
   MLIRViewLikeInterface

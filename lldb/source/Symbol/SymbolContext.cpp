@@ -8,7 +8,6 @@
 
 #include "lldb/Symbol/SymbolContext.h"
 
-#include "lldb/Core/Address.h"
 #include "lldb/Core/Debugger.h"
 #include "lldb/Core/Module.h"
 #include "lldb/Core/ModuleSpec.h"
@@ -72,8 +71,7 @@ bool SymbolContext::DumpStopContext(Stream *s, ExecutionContextScope *exe_scope,
                                     const Address &addr, bool show_fullpaths,
                                     bool show_module, bool show_inlined_frames,
                                     bool show_function_arguments,
-                                    bool show_function_name,
-                                    llvm::StringRef pattern) const {
+                                    bool show_function_name) const {
   bool dumped_something = false;
   if (show_module && module_sp) {
     if (show_fullpaths)
@@ -83,6 +81,7 @@ bool SymbolContext::DumpStopContext(Stream *s, ExecutionContextScope *exe_scope,
     s->PutChar('`');
     dumped_something = true;
   }
+
   if (function != nullptr) {
     SymbolContext inline_parent_sc;
     Address inline_parent_addr;
@@ -95,16 +94,8 @@ bool SymbolContext::DumpStopContext(Stream *s, ExecutionContextScope *exe_scope,
         name = function->GetNameNoArguments();
       if (!name)
         name = function->GetName();
-      if (name) {
-        llvm::StringRef ansi_prefix;
-        llvm::StringRef ansi_suffix;
-        if (target_sp) {
-          ansi_prefix = target_sp->GetDebugger().GetRegexMatchAnsiPrefix();
-          ansi_suffix = target_sp->GetDebugger().GetRegexMatchAnsiSuffix();
-        }
-        s->PutCStringColorHighlighted(name.GetStringRef(), pattern, ansi_prefix,
-                                      ansi_suffix);
-      }
+      if (name)
+        name.Dump(s);
     }
 
     if (addr.IsValid()) {
@@ -172,14 +163,7 @@ bool SymbolContext::DumpStopContext(Stream *s, ExecutionContextScope *exe_scope,
       dumped_something = true;
       if (symbol->GetType() == eSymbolTypeTrampoline)
         s->PutCString("symbol stub for: ");
-      llvm::StringRef ansi_prefix;
-      llvm::StringRef ansi_suffix;
-      if (target_sp) {
-        ansi_prefix = target_sp->GetDebugger().GetRegexMatchAnsiPrefix();
-        ansi_suffix = target_sp->GetDebugger().GetRegexMatchAnsiSuffix();
-      }
-      s->PutCStringColorHighlighted(symbol->GetName().GetStringRef(), pattern,
-                                    ansi_prefix, ansi_suffix);
+      symbol->GetName().Dump(s);
     }
 
     if (addr.IsValid() && symbol->ValueIsAddress()) {
@@ -202,8 +186,7 @@ bool SymbolContext::DumpStopContext(Stream *s, ExecutionContextScope *exe_scope,
 }
 
 void SymbolContext::GetDescription(Stream *s, lldb::DescriptionLevel level,
-                                   Target *target,
-                                   llvm::StringRef pattern) const {
+                                   Target *target) const {
   if (module_sp) {
     s->Indent("     Module: file = \"");
     module_sp->GetFileSpec().Dump(s->AsRawOstream());
@@ -263,7 +246,7 @@ void SymbolContext::GetDescription(Stream *s, lldb::DescriptionLevel level,
 
   if (symbol != nullptr) {
     s->Indent("     Symbol: ");
-    symbol->GetDescription(s, level, target, pattern);
+    symbol->GetDescription(s, level, target);
     s->EOL();
   }
 

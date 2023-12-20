@@ -880,11 +880,8 @@ bool MemCpyOptPass::performCallSlotOptzn(Instruction *cpyLoad,
     return false;
 
   const DataLayout &DL = cpyLoad->getModule()->getDataLayout();
-  TypeSize SrcAllocaSize = DL.getTypeAllocSize(srcAlloca->getAllocatedType());
-  // We can't optimize scalable types.
-  if (SrcAllocaSize.isScalable())
-    return false;
-  uint64_t srcSize = SrcAllocaSize * srcArraySize->getZExtValue();
+  uint64_t srcSize = DL.getTypeAllocSize(srcAlloca->getAllocatedType()) *
+                     srcArraySize->getZExtValue();
 
   if (cpySize < srcSize)
     return false;

@@ -39,8 +39,6 @@ void TestExpandMathPass::runOnOperation() {
   populateExpandCtlzPattern(patterns);
   populateExpandExp2FPattern(patterns);
   populateExpandTanPattern(patterns);
-  populateExpandSinhPattern(patterns);
-  populateExpandCoshPattern(patterns);
   populateExpandTanhPattern(patterns);
   populateExpandFmaFPattern(patterns);
   populateExpandFloorFPattern(patterns);

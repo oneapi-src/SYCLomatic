@@ -305,12 +305,10 @@ if len(config.sycl_devices) == 1 and config.sycl_devices[0] == 'all':
 if len(config.sycl_devices) > 1:
     lit_config.note('Running on multiple devices, XFAIL-marked tests will be skipped on corresponding devices')
 
-config.sycl_devices = [x.replace('ext_oneapi_', '') for x in config.sycl_devices]
-
 available_devices = {'opencl': ('cpu', 'gpu', 'acc'),
-                     'cuda':('gpu'),
-                     'level_zero':('gpu'),
-                     'hip':('gpu'),
+                     'ext_oneapi_cuda':('gpu'),
+                     'ext_oneapi_level_zero':('gpu'),
+                     'ext_oneapi_hip':('gpu'),
                      'native_cpu':('cpu')}
 for d in config.sycl_devices:
      be, dev = d.split(':')
@@ -325,11 +323,11 @@ if config.hip_platform not in supported_hip_platforms:
     lit_config.error("Unknown HIP platform '" + config.hip_platform + "' supported platforms are " + ', '.join(supported_hip_platforms))
 
 # FIXME: This needs to be made per-device as well, possibly with a helper.
-if "hip:gpu" in config.sycl_devices and config.hip_platform == "AMD":
+if "ext_oneapi_hip:gpu" in config.sycl_devices and config.hip_platform == "AMD":
     llvm_config.with_system_environment('ROCM_PATH')
     config.available_features.add('hip_amd')
     arch_flag = '-Xsycl-target-backend=amdgcn-amd-amdhsa --offload-arch=' + config.amd_arch
-elif "hip:gpu" in config.sycl_devices and config.hip_platform == "NVIDIA":
+elif "ext_oneapi_hip:gpu" in config.sycl_devices and config.hip_platform == "NVIDIA":
     config.available_features.add('hip_nvidia')
     arch_flag = ""
 else:
@@ -428,7 +426,8 @@ for sycl_device in config.sycl_devices:
     be, dev = sycl_device.split(':')
     config.available_features.add('any-device-is-' + dev)
     # Use short names for LIT rules.
-    config.available_features.add('any-device-is-' + be)
+    config.available_features.add(
+        'any-device-is-' + be.replace('ext_intel_', '').replace('ext_oneapi_', ''))
 
 # That has to be executed last so that all device-independent features have been
 # discovered already.
@@ -439,7 +438,7 @@ config.intel_driver_ver = {}
 for sycl_device in config.sycl_devices:
     env = copy.copy(llvm_config.config.environment)
     env['ONEAPI_DEVICE_SELECTOR'] = sycl_device
-    if sycl_device.startswith('cuda:'):
+    if sycl_device.startswith('ext_oneapi_cuda:'):
         env['SYCL_PI_CUDA_ENABLE_IMAGE_SUPPORT'] = '1'
     # When using the ONEAPI_DEVICE_SELECTOR environment variable, sycl-ls
     # prints warnings that might derail a user thinking something is wrong
@@ -510,7 +509,7 @@ for sycl_device in config.sycl_devices:
     be, dev = sycl_device.split(':')
     features.add(dev.replace('acc', 'accelerator'))
     # Use short names for LIT rules.
-    features.add(be)
+    features.add(be.replace('ext_intel_', '').replace('ext_oneapi_', ''))
 
     config.sycl_dev_features[sycl_device] = features.union(config.available_features)
     if is_intel_driver:

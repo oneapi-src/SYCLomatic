@@ -3,8 +3,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none --use-experimental-features=matrix -out-root %T/wmma %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/wmma/wmma.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/wmma/wmma.dp.cpp -o %T/wmma/wmma.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl %T/wmma/wmma.dp.cpp -o %T/wmma/wmma.dp.o %}
 #include <assert.h>
 #include <cuda.h>
 #include <iostream>
@@ -193,4 +192,3 @@ int main() {
   return 0;
 }
 // clang-format on
-#endif

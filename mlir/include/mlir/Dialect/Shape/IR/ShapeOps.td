@@ -566,6 +566,7 @@ def Shape_ShapeOfOp : Shape_Op<"shape_of",
   let assemblyFormat = "$arg attr-dict `:` type($arg) `->` type($result)";
 
   let hasCanonicalizer = 1;
+  let hasFolder = 1;
   let hasVerifier = 1;
 }
 

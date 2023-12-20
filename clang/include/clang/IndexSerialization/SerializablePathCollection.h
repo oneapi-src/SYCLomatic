@@ -110,7 +110,7 @@ public:
 
   /// Stores path to \p FE if it hasn't been stored yet.
   /// \returns index to array exposed by getPathsBuffer().
-  size_t tryStoreFilePath(FileEntryRef FE);
+  size_t tryStoreFilePath(const clang::FileEntry &FE);
 
 private:
   /// Stores \p Path if it is non-empty.

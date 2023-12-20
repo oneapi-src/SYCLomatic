@@ -427,11 +427,6 @@ public:
     return TTI::TCC_Free;
   }
 
-  bool preferToKeepConstantsAttached(const Instruction &Inst,
-                                     const Function &Fn) const {
-    return false;
-  }
-
   unsigned getNumberOfRegisters(unsigned ClassID) const { return 8; }
 
   unsigned getRegisterClassForType(bool Vector, Type *Ty = nullptr) const {
@@ -714,7 +709,6 @@ public:
     case Intrinsic::coro_subfn_addr:
     case Intrinsic::threadlocal_address:
     case Intrinsic::experimental_widenable_condition:
-    case Intrinsic::ssa_copy:
       // These intrinsics don't actually represent code after lowering.
       return 0;
     }

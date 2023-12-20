@@ -102,8 +102,7 @@ private:
   void canonicalizeOperands(Instruction *I);
   void ReassociateExpression(BinaryOperator *I);
   void RewriteExprTree(BinaryOperator *I,
-                       SmallVectorImpl<reassociate::ValueEntry> &Ops,
-                       bool HasNUW);
+                       SmallVectorImpl<reassociate::ValueEntry> &Ops);
   Value *OptimizeExpression(BinaryOperator *I,
                             SmallVectorImpl<reassociate::ValueEntry> &Ops);
   Value *OptimizeAdd(Instruction *I,

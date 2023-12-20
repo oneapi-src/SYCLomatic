@@ -329,7 +329,8 @@ ModuleSanitizerCoverage::CreateSecStartEnd(Module &M, const char *Section,
 
   // Account for the fact that on windows-msvc __start_* symbols actually
   // point to a uint64_t before the start of the array.
-  auto GEP = IRB.CreateGEP(Int8Ty, SecStart,
+  auto SecStartI8Ptr = IRB.CreatePointerCast(SecStart, PtrTy);
+  auto GEP = IRB.CreateGEP(Int8Ty, SecStartI8Ptr,
                            ConstantInt::get(IntptrTy, sizeof(uint64_t)));
   return std::make_pair(GEP, SecEnd);
 }
@@ -828,7 +829,8 @@ void ModuleSanitizerCoverage::InjectTraceForSwitch(
           *CurModule, ArrayOfInt64Ty, false, GlobalVariable::InternalLinkage,
           ConstantArray::get(ArrayOfInt64Ty, Initializers),
           "__sancov_gen_cov_switch_values");
-      IRB.CreateCall(SanCovTraceSwitchFunction, {Cond, GV});
+      IRB.CreateCall(SanCovTraceSwitchFunction,
+                     {Cond, IRB.CreatePointerCast(GV, PtrTy)});
     }
   }
 }

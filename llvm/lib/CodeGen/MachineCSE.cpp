@@ -44,6 +44,7 @@
 #include <cassert>
 #include <iterator>
 #include <utility>
+#include <vector>
 
 using namespace llvm;
 

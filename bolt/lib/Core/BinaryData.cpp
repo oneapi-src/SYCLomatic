@@ -65,7 +65,7 @@ bool BinaryData::hasNameRegex(StringRef NameRegex) const {
 
 bool BinaryData::nameStartsWith(StringRef Prefix) const {
   for (const MCSymbol *Symbol : Symbols)
-    if (Symbol->getName().starts_with(Prefix))
+    if (Symbol->getName().startswith(Prefix))
       return true;
   return false;
 }

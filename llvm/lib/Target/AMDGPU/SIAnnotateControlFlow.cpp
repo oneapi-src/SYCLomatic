@@ -19,7 +19,6 @@
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Dominators.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/IntrinsicsAMDGPU.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Target/TargetMachine.h"
@@ -207,12 +206,9 @@ bool SIAnnotateControlFlow::openIf(BranchInst *Term) {
   if (isUniform(Term))
     return false;
 
-  IRBuilder<> IRB(Term);
-  Value *IfCall = IRB.CreateCall(If, {Term->getCondition()});
-  Value *Cond = IRB.CreateExtractValue(IfCall, {0});
-  Value *Mask = IRB.CreateExtractValue(IfCall, {1});
-  Term->setCondition(Cond);
-  push(Term->getSuccessor(1), Mask);
+  Value *Ret = CallInst::Create(If, Term->getCondition(), "", Term);
+  Term->setCondition(ExtractValueInst::Create(Ret, 0, "", Term));
+  push(Term->getSuccessor(1), ExtractValueInst::Create(Ret, 1, "", Term));
   return true;
 }
 
@@ -221,24 +217,15 @@ bool SIAnnotateControlFlow::insertElse(BranchInst *Term) {
   if (isUniform(Term)) {
     return false;
   }
-
-  IRBuilder<> IRB(Term);
-  Value *ElseCall = IRB.CreateCall(Else, {popSaved()});
-  Value *Cond = IRB.CreateExtractValue(ElseCall, {0});
-  Value *Mask = IRB.CreateExtractValue(ElseCall, {1});
-  Term->setCondition(Cond);
-  push(Term->getSuccessor(1), Mask);
+  Value *Ret = CallInst::Create(Else, popSaved(), "", Term);
+  Term->setCondition(ExtractValueInst::Create(Ret, 0, "", Term));
+  push(Term->getSuccessor(1), ExtractValueInst::Create(Ret, 1, "", Term));
   return true;
 }
 
 /// Recursively handle the condition leading to a loop
 Value *SIAnnotateControlFlow::handleLoopCondition(
     Value *Cond, PHINode *Broken, llvm::Loop *L, BranchInst *Term) {
-
-  auto CreateBreak = [this, Cond, Broken](Instruction *I) -> CallInst * {
-    return IRBuilder<>(I).CreateCall(IfBreak, {Cond, Broken});
-  };
-
   if (Instruction *Inst = dyn_cast<Instruction>(Cond)) {
     BasicBlock *Parent = Inst->getParent();
     Instruction *Insert;
@@ -248,7 +235,8 @@ Value *SIAnnotateControlFlow::handleLoopCondition(
       Insert = L->getHeader()->getFirstNonPHIOrDbgOrLifetime();
     }
 
-    return CreateBreak(Insert);
+    Value *Args[] = { Cond, Broken };
+    return CallInst::Create(IfBreak, Args, "", Insert);
   }
 
   // Insert IfBreak in the loop header TERM for constant COND other than true.
@@ -256,12 +244,14 @@ Value *SIAnnotateControlFlow::handleLoopCondition(
     Instruction *Insert = Cond == BoolTrue ?
       Term : L->getHeader()->getTerminator();
 
-    return CreateBreak(Insert);
+    Value *Args[] = { Cond, Broken };
+    return CallInst::Create(IfBreak, Args, "", Insert);
   }
 
   if (isa<Argument>(Cond)) {
     Instruction *Insert = L->getHeader()->getFirstNonPHIOrDbgOrLifetime();
-    return CreateBreak(Insert);
+    Value *Args[] = { Cond, Broken };
+    return CallInst::Create(IfBreak, Args, "", Insert);
   }
 
   llvm_unreachable("Unhandled loop condition!");
@@ -297,8 +287,7 @@ bool SIAnnotateControlFlow::handleLoop(BranchInst *Term) {
     Broken->addIncoming(PHIValue, Pred);
   }
 
-  CallInst *LoopCall = IRBuilder<>(Term).CreateCall(Loop, {Arg});
-  Term->setCondition(LoopCall);
+  Term->setCondition(CallInst::Create(Loop, Arg, "", Term));
 
   push(Term->getSuccessor(0), Arg);
 
@@ -337,7 +326,7 @@ bool SIAnnotateControlFlow::closeControlFlow(BasicBlock *BB) {
       // Split edge to make Def dominate Use
       FirstInsertionPt = &*SplitEdge(DefBB, BB, DT, LI)->getFirstInsertionPt();
     }
-    IRBuilder<>(FirstInsertionPt).CreateCall(EndCf, {Exec});
+    CallInst::Create(EndCf, Exec, "", FirstInsertionPt);
   }
 
   return true;

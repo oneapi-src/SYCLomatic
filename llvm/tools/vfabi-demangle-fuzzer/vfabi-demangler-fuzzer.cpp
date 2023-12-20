@@ -31,7 +31,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   if (!MangledName.empty() && MangledName.find_first_of(0) == StringRef::npos) {
     FunctionType *FTy =
         FunctionType::get(Type::getVoidTy(M->getContext()), false);
-    const auto Info = VFABI::tryDemangleForVFABI(MangledName, FTy);
+    FunctionCallee F = M->getOrInsertFunction(MangledName, FTy);
+    // Fake the arguments to the CallInst.
+    SmallVector<Value *> Args;
+    for (Type *ParamTy : FTy->params()) {
+      Args.push_back(Constant::getNullValue(ParamTy));
+    }
+    std::unique_ptr<CallInst> CI(CallInst::Create(F, Args));
+    const auto Info = VFABI::tryDemangleForVFABI(MangledName, *(CI.get()));
 
     // Do not optimize away the return value. Inspired by
     // https://github.com/google/benchmark/blob/main/include/benchmark/benchmark.h#L307-L345

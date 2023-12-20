@@ -55,9 +55,8 @@ __SYCL_EXPORT context make_context(const std::vector<device> &DeviceList,
       NativeHandle, DeviceHandles.size(), DeviceHandles.data(), !KeepOwnership,
       &PiContext);
   // Construct the SYCL context from PI context.
-  return detail::createSyclObjFromImpl<context>(
-      std::make_shared<context_impl>(PiContext, detail::defaultAsyncHandler,
-                                     Plugin, DeviceList, !KeepOwnership));
+  return detail::createSyclObjFromImpl<context>(std::make_shared<context_impl>(
+      PiContext, detail::defaultAsyncHandler, Plugin, !KeepOwnership));
 }
 
 //----------------------------------------------------------------------------

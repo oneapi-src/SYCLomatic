@@ -17,9 +17,11 @@
 
 #include "ReducerWorkItem.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/ScopeExit.h"
 #include "llvm/Support/raw_ostream.h"
 #include <functional>
 #include <utility>
+#include <vector>
 
 namespace llvm {
 

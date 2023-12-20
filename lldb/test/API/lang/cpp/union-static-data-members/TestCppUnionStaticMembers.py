@@ -42,7 +42,7 @@ class CppUnionStaticMembersTestCase(TestBase):
                 name="val", value="42"
             )])
 
-    @expectedFailureWindows
+    @expectedFailureAll
     def test_union_in_anon_namespace(self):
         """Tests that frame variable and expr work
            for union static data members in anonymous

@@ -276,7 +276,6 @@ private:
   bool transformConstExprCastCall(CallBase &Call);
   Instruction *transformCallThroughTrampoline(CallBase &Call,
                                               IntrinsicInst &Tramp);
-  Instruction *foldCommutativeIntrinsicOverSelects(IntrinsicInst &II);
 
   Value *simplifyMaskedLoad(IntrinsicInst &II);
   Instruction *simplifyMaskedStore(IntrinsicInst &II);
@@ -460,7 +459,6 @@ public:
     // use counts.
     SmallVector<Value *> Ops(I.operands());
     Worklist.remove(&I);
-    DC.removeValue(&I);
     I.eraseFromParent();
     for (Value *Op : Ops)
       Worklist.handleUseCountDecrement(Op);
@@ -550,7 +548,7 @@ public:
   bool SimplifyDemandedInstructionBits(Instruction &Inst, KnownBits &Known);
 
   Value *SimplifyDemandedVectorElts(Value *V, APInt DemandedElts,
-                                    APInt &PoisonElts, unsigned Depth = 0,
+                                    APInt &UndefElts, unsigned Depth = 0,
                                     bool AllowMultipleUsers = false) override;
 
   /// Canonicalize the position of binops relative to shufflevector.
@@ -741,11 +739,13 @@ class Negator final {
   using BuilderTy = IRBuilder<TargetFolder, IRBuilderCallbackInserter>;
   BuilderTy Builder;
 
+  const SimplifyQuery &SQ;
+
   const bool IsTrulyNegation;
 
   SmallDenseMap<Value *, Value *> NegationsCache;
 
-  Negator(LLVMContext &C, const DataLayout &DL, bool IsTrulyNegation);
+  Negator(LLVMContext &C, const SimplifyQuery &SQ, bool IsTrulyNegation);
 
 #if LLVM_ENABLE_STATS
   unsigned NumValuesVisitedInThisNegator = 0;

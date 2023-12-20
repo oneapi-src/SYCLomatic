@@ -1238,7 +1238,7 @@ CodeGenAction::loadModule(MemoryBufferRef MBRef) {
 
   // Strip off a leading diagnostic code if there is one.
   StringRef Msg = Err.getMessage();
-  if (Msg.starts_with("error: "))
+  if (Msg.startswith("error: "))
     Msg = Msg.substr(7);
 
   unsigned DiagID =

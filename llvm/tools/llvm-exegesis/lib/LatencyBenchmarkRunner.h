@@ -24,8 +24,7 @@ public:
   LatencyBenchmarkRunner(const LLVMState &State, Benchmark::ModeE Mode,
                          BenchmarkPhaseSelectorE BenchmarkPhaseSelector,
                          Benchmark::ResultAggregationModeE ResultAggMode,
-                         ExecutionModeE ExecutionMode,
-                         unsigned BenchmarkRepeatCount);
+                         ExecutionModeE ExecutionMode);
   ~LatencyBenchmarkRunner() override;
 
 private:
@@ -33,7 +32,6 @@ private:
   runMeasurements(const FunctionExecutor &Executor) const override;
 
   Benchmark::ResultAggregationModeE ResultAggMode;
-  unsigned NumMeasurements;
 };
 } // namespace exegesis
 } // namespace llvm

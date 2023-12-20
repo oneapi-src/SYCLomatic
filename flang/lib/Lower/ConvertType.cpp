@@ -140,8 +140,7 @@ namespace {
 struct TypeBuilderImpl {
 
   TypeBuilderImpl(Fortran::lower::AbstractConverter &converter)
-      : derivedTypeInConstruction{converter.getTypeConstructionStack()},
-        converter{converter}, context{&converter.getMLIRContext()} {}
+      : converter{converter}, context{&converter.getMLIRContext()} {}
 
   template <typename A>
   mlir::Type genExprType(const A &expr) {
@@ -399,6 +398,8 @@ struct TypeBuilderImpl {
         assert(scopeIter != derivedScope.cend() &&
                "failed to find derived type component symbol");
         const Fortran::semantics::Symbol &component = scopeIter->second.get();
+        if (IsProcedure(component))
+          TODO(converter.genLocation(component.name()), "procedure components");
         mlir::Type ty = genSymbolType(component);
         cs.emplace_back(converter.getRecordTypeFieldName(component), ty);
       }
@@ -567,7 +568,8 @@ struct TypeBuilderImpl {
   /// Stack derived type being processed to avoid infinite loops in case of
   /// recursive derived types. The depth of derived types is expected to be
   /// shallow (<10), so a SmallVector is sufficient.
-  Fortran::lower::TypeConstructionStack &derivedTypeInConstruction;
+  llvm::SmallVector<std::pair<const Fortran::lower::SymbolRef, mlir::Type>>
+      derivedTypeInConstruction;
   Fortran::lower::AbstractConverter &converter;
   mlir::MLIRContext *context;
 };

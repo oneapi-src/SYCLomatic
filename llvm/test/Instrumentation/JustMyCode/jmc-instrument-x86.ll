@@ -1,5 +1,4 @@
-; RUN: opt -jmc-instrumenter -S < %s | FileCheck %s
-; RUN: opt -passes=jmc-instrumenter -S < %s | FileCheck %s
+; RUN: opt -jmc-instrument -S < %s | FileCheck %s
 
 ; CHECK: $_JustMyCode_Default = comdat any
 

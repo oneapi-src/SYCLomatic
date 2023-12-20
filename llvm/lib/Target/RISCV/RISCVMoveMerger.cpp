@@ -22,7 +22,9 @@ namespace {
 struct RISCVMoveMerge : public MachineFunctionPass {
   static char ID;
 
-  RISCVMoveMerge() : MachineFunctionPass(ID) {}
+  RISCVMoveMerge() : MachineFunctionPass(ID) {
+    initializeRISCVMoveMergePass(*PassRegistry::getPassRegistry());
+  }
 
   const RISCVInstrInfo *TII;
   const TargetRegisterInfo *TRI;

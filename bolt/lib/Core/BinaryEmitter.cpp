@@ -287,10 +287,7 @@ void BinaryEmitter::emitFunctions() {
 
   // Mark the end of hot text.
   if (opts::HotText) {
-    if (BC.HasWarmSection)
-      Streamer.switchSection(BC.getCodeSection(BC.getWarmCodeSectionName()));
-    else
-      Streamer.switchSection(BC.getTextSection());
+    Streamer.switchSection(BC.getTextSection());
     Streamer.emitLabel(BC.getHotTextEndSymbol());
   }
 }

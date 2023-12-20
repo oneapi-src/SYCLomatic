@@ -95,7 +95,7 @@ CINDEX_LINKAGE void clang_free(void *buffer);
 CINDEX_LINKAGE void clang_VirtualFileOverlay_dispose(CXVirtualFileOverlay);
 
 /**
- * Object encapsulating information about a module.modulemap file.
+ * Object encapsulating information about a module.map file.
  */
 typedef struct CXModuleMapDescriptorImpl *CXModuleMapDescriptor;
 
@@ -109,7 +109,7 @@ CINDEX_LINKAGE CXModuleMapDescriptor
 clang_ModuleMapDescriptor_create(unsigned options);
 
 /**
- * Sets the framework module name that the module.modulemap describes.
+ * Sets the framework module name that the module.map describes.
  * \returns 0 for success, non-zero to indicate an error.
  */
 CINDEX_LINKAGE enum CXErrorCode
@@ -117,7 +117,7 @@ clang_ModuleMapDescriptor_setFrameworkModuleName(CXModuleMapDescriptor,
                                                  const char *name);
 
 /**
- * Sets the umbrella header name that the module.modulemap describes.
+ * Sets the umbrella header name that the module.map describes.
  * \returns 0 for success, non-zero to indicate an error.
  */
 CINDEX_LINKAGE enum CXErrorCode

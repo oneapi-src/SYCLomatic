@@ -104,7 +104,7 @@ public:
     return File;
   }
 
-  OptionalFileEntryRef getFile() const {
+  OptionalFileEntryRefDegradesToFileEntryPtr getFile() const {
     if (auto *P = Val.getPointer())
       return FileEntryRef(*P);
     return std::nullopt;
@@ -123,8 +123,8 @@ public:
 /// other modules.
 class ModuleFile {
 public:
-  ModuleFile(ModuleKind Kind, FileEntryRef File, unsigned Generation)
-      : Kind(Kind), File(File), Generation(Generation) {}
+  ModuleFile(ModuleKind Kind, unsigned Generation)
+      : Kind(Kind), Generation(Generation) {}
   ~ModuleFile();
 
   // === General information ===
@@ -176,7 +176,7 @@ public:
   bool DidReadTopLevelSubmodule = false;
 
   /// The file entry for the module file.
-  FileEntryRef File;
+  OptionalFileEntryRefDegradesToFileEntryPtr File;
 
   /// The signature of the module file, which may be used instead of the size
   /// and modification time to identify this particular file.

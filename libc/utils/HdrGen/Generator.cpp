@@ -57,7 +57,7 @@ void Generator::parseCommandArgs(llvm::StringRef ArgStr, ArgVector &Args) {
   ArgStr.split(Args, ",");
   for (llvm::StringRef &A : Args) {
     A = A.trim(' ');
-    if (A.starts_with(ParamNamePrefix) && A.ends_with(ParamNameSuffix)) {
+    if (A.startswith(ParamNamePrefix) && A.endswith(ParamNameSuffix)) {
       A = A.drop_front(ParamNamePrefixSize).drop_back(ParamNameSuffixSize);
       A = ArgMap[std::string(A)];
     }
@@ -80,7 +80,7 @@ void Generator::generate(llvm::raw_ostream &OS, llvm::RecordKeeper &Records) {
     Content = P.second;
 
     llvm::StringRef Line = P.first.trim(' ');
-    if (Line.starts_with(CommandPrefix)) {
+    if (Line.startswith(CommandPrefix)) {
       Line = Line.drop_front(CommandPrefixSize);
 
       P = Line.split("(");
@@ -107,7 +107,7 @@ void Generator::generate(llvm::raw_ostream &OS, llvm::RecordKeeper &Records) {
       Command::ErrorReporter Reporter(
           llvm::SMLoc::getFromPointer(CommandName.data()), SrcMgr);
       Cmd->run(OS, Args, StdHeader, Records, Reporter);
-    } else if (!Line.starts_with(CommentPrefix)) {
+    } else if (!Line.startswith(CommentPrefix)) {
       // There is no comment or command on this line so we just write it as is.
       OS << P.first << "\n";
     }

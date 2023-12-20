@@ -26,6 +26,7 @@
 #include "llvm/Support/WithColor.h"
 #include "llvm/Support/raw_ostream.h"
 #include <system_error>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -157,7 +158,7 @@ int main(int Argc, char **Argv) {
   if (InputLanguage != InputLanguages::None) {
     if (InputLanguage == InputLanguages::MIR)
       ReduceModeMIR = true;
-  } else if (StringRef(InputFilename).ends_with(".mir")) {
+  } else if (StringRef(InputFilename).endswith(".mir")) {
     ReduceModeMIR = true;
   }
 

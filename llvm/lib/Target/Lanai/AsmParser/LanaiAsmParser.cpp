@@ -1048,15 +1048,15 @@ StringRef LanaiAsmParser::splitMnemonic(StringRef Name, SMLoc NameLoc,
   StringRef Mnemonic = Name;
 
   bool IsBRR = false;
-  if (Name.ends_with(".r")) {
+  if (Name.endswith(".r")) {
     Mnemonic = Name.substr(0, Name.size() - 2);
     IsBRR = true;
   }
 
   // Match b?? and s?? (BR, BRR, and SCC instruction classes).
   if (Mnemonic[0] == 'b' ||
-      (Mnemonic[0] == 's' && !Mnemonic.starts_with("sel") &&
-       !Mnemonic.starts_with("st"))) {
+      (Mnemonic[0] == 's' && !Mnemonic.startswith("sel") &&
+       !Mnemonic.startswith("st"))) {
     // Parse instructions with a conditional code. For example, 'bne' is
     // converted into two operands 'b' and 'ne'.
     LPCC::CondCode CondCode =
@@ -1077,8 +1077,8 @@ StringRef LanaiAsmParser::splitMnemonic(StringRef Name, SMLoc NameLoc,
   // We ignore .f here and assume they are flag-setting operations, not
   // conditional codes (except for select instructions where flag-setting
   // variants are not yet implemented).
-  if (Mnemonic.starts_with("sel") ||
-      (!Mnemonic.ends_with(".f") && !Mnemonic.starts_with("st"))) {
+  if (Mnemonic.startswith("sel") ||
+      (!Mnemonic.endswith(".f") && !Mnemonic.startswith("st"))) {
     LPCC::CondCode CondCode = LPCC::suffixToLanaiCondCode(Mnemonic);
     if (CondCode != LPCC::UNKNOWN) {
       size_t Next = Mnemonic.rfind('.', Name.size());
@@ -1087,7 +1087,7 @@ StringRef LanaiAsmParser::splitMnemonic(StringRef Name, SMLoc NameLoc,
       // expected by the generated matcher). If the mnemonic starts with 'sel'
       // then include the period as part of the mnemonic, else don't include it
       // as part of the mnemonic.
-      if (Mnemonic.starts_with("sel")) {
+      if (Mnemonic.startswith("sel")) {
         Mnemonic = Mnemonic.substr(0, Next + 1);
       } else {
         Mnemonic = Mnemonic.substr(0, Next);
@@ -1194,7 +1194,7 @@ bool LanaiAsmParser::ParseInstruction(ParseInstructionInfo & /*Info*/,
   // If the instruction is a bt instruction with 1 operand (in assembly) then it
   // is an unconditional branch instruction and the first two elements of
   // operands need to be merged.
-  if (Lexer.is(AsmToken::EndOfStatement) && Name.starts_with("bt") &&
+  if (Lexer.is(AsmToken::EndOfStatement) && Name.startswith("bt") &&
       Operands.size() == 3) {
     Operands.erase(Operands.begin(), Operands.begin() + 2);
     Operands.insert(Operands.begin(), LanaiOperand::CreateToken("bt", NameLoc));

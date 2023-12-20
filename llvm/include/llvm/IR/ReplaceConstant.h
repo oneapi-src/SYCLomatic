@@ -14,6 +14,9 @@
 #ifndef LLVM_IR_REPLACECONSTANT_H
 #define LLVM_IR_REPLACECONSTANT_H
 
+#include <map>
+#include <vector>
+
 namespace llvm {
 
 template <typename T> class ArrayRef;

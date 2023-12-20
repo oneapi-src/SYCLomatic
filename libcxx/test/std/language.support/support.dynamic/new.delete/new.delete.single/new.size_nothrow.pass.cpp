@@ -50,9 +50,8 @@ int main(int, char**) {
         assert(x != nullptr);
         assert(info.address_constructed == x);
 
-        const auto old_x = x;
         delete x;
-        assert(info.address_destroyed == old_x);
+        assert(info.address_destroyed == x);
     }
 
     return 0;

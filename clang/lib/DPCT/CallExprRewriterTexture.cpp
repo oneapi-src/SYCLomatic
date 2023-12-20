@@ -26,10 +26,6 @@ namespace dpct {
   REWRITER_FACTORY_ENTRY(FuncName,                                             \
       UnsupportFunctionRewriterFactory<std::string>, MsgID, FuncName)
 
-inline auto UseExtBindlessImages = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::useExtBindlessImages();
-};
-
 void CallExprRewriterFactoryBase::initRewriterMapTexture() {
   RewriterMap->merge(
       std::unordered_map<std::string,

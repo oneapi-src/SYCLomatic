@@ -92,7 +92,8 @@ void printLine(llvm::raw_ostream &OS, const UnwrappedLine &Line,
       OS << Prefix;
       NewLine = false;
     }
-    OS << I->Tok->Tok.getName() << "[" << "T=" << (unsigned)I->Tok->getType()
+    OS << I->Tok->Tok.getName() << "["
+       << "T=" << (unsigned)I->Tok->getType()
        << ", OC=" << I->Tok->OriginalColumn << ", \"" << I->Tok->TokenText
        << "\"] ";
     for (SmallVectorImpl<UnwrappedLine>::const_iterator
@@ -547,7 +548,7 @@ void UnwrappedLineParser::calculateBraceTypes(bool ExpectClassBody) {
     do {
       NextTok = Tokens->getNextToken();
     } while (NextTok->is(tok::comment));
-    while (NextTok->is(tok::hash) && !Line->InMacroBody) {
+    while (NextTok->is(tok::hash)) {
       NextTok = Tokens->getNextToken();
       do {
         NextTok = Tokens->getNextToken();
@@ -1393,7 +1394,7 @@ bool UnwrappedLineParser::parseModuleImport() {
         // Mark tokens up to the trailing line comments as implicit string
         // literals.
         if (FormatTok->isNot(tok::comment) &&
-            !FormatTok->TokenText.starts_with("//")) {
+            !FormatTok->TokenText.startswith("//")) {
           FormatTok->setFinalizedType(TT_ImplicitStringLiteral);
         }
         nextToken();
@@ -1431,7 +1432,7 @@ void UnwrappedLineParser::readTokenWithJavaScriptASI() {
 
   bool PreviousMustBeValue = mustBeJSIdentOrValue(Keywords, Previous);
   bool PreviousStartsTemplateExpr =
-      Previous->is(TT_TemplateString) && Previous->TokenText.ends_with("${");
+      Previous->is(TT_TemplateString) && Previous->TokenText.endswith("${");
   if (PreviousMustBeValue || Previous->is(tok::r_paren)) {
     // If the line contains an '@' sign, the previous token might be an
     // annotation, which can precede another identifier/value.
@@ -1452,7 +1453,7 @@ void UnwrappedLineParser::readTokenWithJavaScriptASI() {
 #endif // SYCLomatic_CUSTOMIZATION
   bool NextMustBeValue = mustBeJSIdentOrValue(Keywords, Next);
   bool NextEndsTemplateExpr =
-      Next->is(TT_TemplateString) && Next->TokenText.starts_with("}");
+      Next->is(TT_TemplateString) && Next->TokenText.startswith("}");
   if (NextMustBeValue && !NextEndsTemplateExpr && !PreviousStartsTemplateExpr &&
       (PreviousMustBeValue ||
        Previous->isOneOf(tok::r_square, tok::r_paren, tok::plusplus,
@@ -4619,8 +4620,8 @@ continuesLineCommentSection(const FormatToken &FormatTok,
     return false;
 
   StringRef IndentContent = FormatTok.TokenText;
-  if (FormatTok.TokenText.starts_with("//") ||
-      FormatTok.TokenText.starts_with("/*")) {
+  if (FormatTok.TokenText.startswith("//") ||
+      FormatTok.TokenText.startswith("/*")) {
     IndentContent = FormatTok.TokenText.substr(2);
   }
   if (CommentPragmasRegex.match(IndentContent))

@@ -181,34 +181,32 @@ static Attribute minMaxValueForUnsignedInt(Type type, bool min) {
 
 /// Creates an OpenMP reduction declaration and inserts it into the provided
 /// symbol table. The declaration has a constant initializer with the neutral
-/// value `initValue`, and the `reductionIndex`-th reduction combiner carried
-/// over from `reduce`.
-static omp::ReductionDeclareOp
-createDecl(PatternRewriter &builder, SymbolTable &symbolTable,
-           scf::ReduceOp reduce, int64_t reductionIndex, Attribute initValue) {
+/// value `initValue`, and the reduction combiner carried over from `reduce`.
+static omp::ReductionDeclareOp createDecl(PatternRewriter &builder,
+                                          SymbolTable &symbolTable,
+                                          scf::ReduceOp reduce,
+                                          Attribute initValue) {
   OpBuilder::InsertionGuard guard(builder);
-  Type type = reduce.getOperands()[reductionIndex].getType();
-  auto decl = builder.create<omp::ReductionDeclareOp>(reduce.getLoc(),
-                                                      "__scf_reduction", type);
+  auto decl = builder.create<omp::ReductionDeclareOp>(
+      reduce.getLoc(), "__scf_reduction", reduce.getOperand().getType());
   symbolTable.insert(decl);
 
+  Type type = reduce.getOperand().getType();
   builder.createBlock(&decl.getInitializerRegion(),
                       decl.getInitializerRegion().end(), {type},
-                      {reduce.getOperands()[reductionIndex].getLoc()});
+                      {reduce.getOperand().getLoc()});
   builder.setInsertionPointToEnd(&decl.getInitializerRegion().back());
   Value init =
       builder.create<LLVM::ConstantOp>(reduce.getLoc(), type, initValue);
   builder.create<omp::YieldOp>(reduce.getLoc(), init);
 
-  Operation *terminator =
-      &reduce.getReductions()[reductionIndex].front().back();
+  Operation *terminator = &reduce.getRegion().front().back();
   assert(isa<scf::ReduceReturnOp>(terminator) &&
          "expected reduce op to be terminated by redure return");
   builder.setInsertionPoint(terminator);
   builder.replaceOpWithNewOp<omp::YieldOp>(terminator,
                                            terminator->getOperands());
-  builder.inlineRegionBefore(reduce.getReductions()[reductionIndex],
-                             decl.getReductionRegion(),
+  builder.inlineRegionBefore(reduce.getRegion(), decl.getReductionRegion(),
                              decl.getReductionRegion().end());
   return decl;
 }
@@ -218,11 +216,10 @@ createDecl(PatternRewriter &builder, SymbolTable &symbolTable,
 static omp::ReductionDeclareOp addAtomicRMW(OpBuilder &builder,
                                             LLVM::AtomicBinOp atomicKind,
                                             omp::ReductionDeclareOp decl,
-                                            scf::ReduceOp reduce,
-                                            int64_t reductionIndex) {
+                                            scf::ReduceOp reduce) {
   OpBuilder::InsertionGuard guard(builder);
   auto ptrType = LLVM::LLVMPointerType::get(builder.getContext());
-  Location reduceOperandLoc = reduce.getOperands()[reductionIndex].getLoc();
+  Location reduceOperandLoc = reduce.getOperand().getLoc();
   builder.createBlock(&decl.getAtomicReductionRegion(),
                       decl.getAtomicReductionRegion().end(), {ptrType, ptrType},
                       {reduceOperandLoc, reduceOperandLoc});
@@ -242,8 +239,7 @@ static omp::ReductionDeclareOp addAtomicRMW(OpBuilder &builder,
 /// the neutral value, necessary for the OpenMP declaration. If the reduction
 /// cannot be recognized, returns null.
 static omp::ReductionDeclareOp declareReduction(PatternRewriter &builder,
-                                                scf::ReduceOp reduce,
-                                                int64_t reductionIndex) {
+                                                scf::ReduceOp reduce) {
   Operation *container = SymbolTable::getNearestSymbolTable(reduce);
   SymbolTable symbolTable(container);
 
@@ -255,58 +251,49 @@ static omp::ReductionDeclareOp declareReduction(PatternRewriter &builder,
   OpBuilder::InsertionGuard guard(builder);
   builder.setInsertionPoint(insertionPoint);
 
-  assert(llvm::hasSingleElement(reduce.getReductions()[reductionIndex]) &&
+  assert(llvm::hasSingleElement(reduce.getRegion()) &&
          "expected reduction region to have a single element");
 
   // Match simple binary reductions that can be expressed with atomicrmw.
-  Type type = reduce.getOperands()[reductionIndex].getType();
-  Block &reduction = reduce.getReductions()[reductionIndex].front();
+  Type type = reduce.getOperand().getType();
+  Block &reduction = reduce.getRegion().front();
   if (matchSimpleReduction<arith::AddFOp, LLVM::FAddOp>(reduction)) {
-    omp::ReductionDeclareOp decl =
-        createDecl(builder, symbolTable, reduce, reductionIndex,
-                   builder.getFloatAttr(type, 0.0));
-    return addAtomicRMW(builder, LLVM::AtomicBinOp::fadd, decl, reduce,
-                        reductionIndex);
+    omp::ReductionDeclareOp decl = createDecl(builder, symbolTable, reduce,
+                                              builder.getFloatAttr(type, 0.0));
+    return addAtomicRMW(builder, LLVM::AtomicBinOp::fadd, decl, reduce);
   }
   if (matchSimpleReduction<arith::AddIOp, LLVM::AddOp>(reduction)) {
-    omp::ReductionDeclareOp decl =
-        createDecl(builder, symbolTable, reduce, reductionIndex,
-                   builder.getIntegerAttr(type, 0));
-    return addAtomicRMW(builder, LLVM::AtomicBinOp::add, decl, reduce,
-                        reductionIndex);
+    omp::ReductionDeclareOp decl = createDecl(builder, symbolTable, reduce,
+                                              builder.getIntegerAttr(type, 0));
+    return addAtomicRMW(builder, LLVM::AtomicBinOp::add, decl, reduce);
   }
   if (matchSimpleReduction<arith::OrIOp, LLVM::OrOp>(reduction)) {
-    omp::ReductionDeclareOp decl =
-        createDecl(builder, symbolTable, reduce, reductionIndex,
-                   builder.getIntegerAttr(type, 0));
-    return addAtomicRMW(builder, LLVM::AtomicBinOp::_or, decl, reduce,
-                        reductionIndex);
+    omp::ReductionDeclareOp decl = createDecl(builder, symbolTable, reduce,
+                                              builder.getIntegerAttr(type, 0));
+    return addAtomicRMW(builder, LLVM::AtomicBinOp::_or, decl, reduce);
   }
   if (matchSimpleReduction<arith::XOrIOp, LLVM::XOrOp>(reduction)) {
-    omp::ReductionDeclareOp decl =
-        createDecl(builder, symbolTable, reduce, reductionIndex,
-                   builder.getIntegerAttr(type, 0));
-    return addAtomicRMW(builder, LLVM::AtomicBinOp::_xor, decl, reduce,
-                        reductionIndex);
+    omp::ReductionDeclareOp decl = createDecl(builder, symbolTable, reduce,
+                                              builder.getIntegerAttr(type, 0));
+    return addAtomicRMW(builder, LLVM::AtomicBinOp::_xor, decl, reduce);
   }
   if (matchSimpleReduction<arith::AndIOp, LLVM::AndOp>(reduction)) {
     omp::ReductionDeclareOp decl = createDecl(
-        builder, symbolTable, reduce, reductionIndex,
+        builder, symbolTable, reduce,
         builder.getIntegerAttr(
             type, llvm::APInt::getAllOnes(type.getIntOrFloatBitWidth())));
-    return addAtomicRMW(builder, LLVM::AtomicBinOp::_and, decl, reduce,
-                        reductionIndex);
+    return addAtomicRMW(builder, LLVM::AtomicBinOp::_and, decl, reduce);
   }
 
   // Match simple binary reductions that cannot be expressed with atomicrmw.
   // TODO: add atomic region using cmpxchg (which needs atomic load to be
   // available as an op).
   if (matchSimpleReduction<arith::MulFOp, LLVM::FMulOp>(reduction)) {
-    return createDecl(builder, symbolTable, reduce, reductionIndex,
+    return createDecl(builder, symbolTable, reduce,
                       builder.getFloatAttr(type, 1.0));
   }
   if (matchSimpleReduction<arith::MulIOp, LLVM::MulOp>(reduction)) {
-    return createDecl(builder, symbolTable, reduce, reductionIndex,
+    return createDecl(builder, symbolTable, reduce,
                       builder.getIntegerAttr(type, 1));
   }
 
@@ -318,7 +305,7 @@ static omp::ReductionDeclareOp declareReduction(PatternRewriter &builder,
       matchSelectReduction<LLVM::FCmpOp, LLVM::SelectOp>(
           reduction, {LLVM::FCmpPredicate::olt, LLVM::FCmpPredicate::ole},
           {LLVM::FCmpPredicate::ogt, LLVM::FCmpPredicate::oge}, isMin)) {
-    return createDecl(builder, symbolTable, reduce, reductionIndex,
+    return createDecl(builder, symbolTable, reduce,
                       minMaxValueForFloat(type, !isMin));
   }
   if (matchSelectReduction<arith::CmpIOp, arith::SelectOp>(
@@ -327,12 +314,11 @@ static omp::ReductionDeclareOp declareReduction(PatternRewriter &builder,
       matchSelectReduction<LLVM::ICmpOp, LLVM::SelectOp>(
           reduction, {LLVM::ICmpPredicate::slt, LLVM::ICmpPredicate::sle},
           {LLVM::ICmpPredicate::sgt, LLVM::ICmpPredicate::sge}, isMin)) {
-    omp::ReductionDeclareOp decl =
-        createDecl(builder, symbolTable, reduce, reductionIndex,
-                   minMaxValueForSignedInt(type, !isMin));
+    omp::ReductionDeclareOp decl = createDecl(
+        builder, symbolTable, reduce, minMaxValueForSignedInt(type, !isMin));
     return addAtomicRMW(builder,
                         isMin ? LLVM::AtomicBinOp::min : LLVM::AtomicBinOp::max,
-                        decl, reduce, reductionIndex);
+                        decl, reduce);
   }
   if (matchSelectReduction<arith::CmpIOp, arith::SelectOp>(
           reduction, {arith::CmpIPredicate::ult, arith::CmpIPredicate::ule},
@@ -340,12 +326,11 @@ static omp::ReductionDeclareOp declareReduction(PatternRewriter &builder,
       matchSelectReduction<LLVM::ICmpOp, LLVM::SelectOp>(
           reduction, {LLVM::ICmpPredicate::ugt, LLVM::ICmpPredicate::ule},
           {LLVM::ICmpPredicate::ugt, LLVM::ICmpPredicate::uge}, isMin)) {
-    omp::ReductionDeclareOp decl =
-        createDecl(builder, symbolTable, reduce, reductionIndex,
-                   minMaxValueForUnsignedInt(type, !isMin));
+    omp::ReductionDeclareOp decl = createDecl(
+        builder, symbolTable, reduce, minMaxValueForUnsignedInt(type, !isMin));
     return addAtomicRMW(
         builder, isMin ? LLVM::AtomicBinOp::umin : LLVM::AtomicBinOp::umax,
-        decl, reduce, reductionIndex);
+        decl, reduce);
   }
 
   return nullptr;
@@ -354,12 +339,9 @@ static omp::ReductionDeclareOp declareReduction(PatternRewriter &builder,
 namespace {
 
 struct ParallelOpLowering : public OpRewritePattern<scf::ParallelOp> {
-  static constexpr unsigned kUseOpenMPDefaultNumThreads = 0;
-  unsigned numThreads;
 
-  ParallelOpLowering(MLIRContext *context,
-                     unsigned numThreads = kUseOpenMPDefaultNumThreads)
-      : OpRewritePattern<scf::ParallelOp>(context), numThreads(numThreads) {}
+  ParallelOpLowering(MLIRContext *context)
+      : OpRewritePattern<scf::ParallelOp>(context) {}
 
   LogicalResult matchAndRewrite(scf::ParallelOp parallelOp,
                                 PatternRewriter &rewriter) const override {
@@ -367,9 +349,8 @@ struct ParallelOpLowering : public OpRewritePattern<scf::ParallelOp> {
     // TODO: consider checking it here is already a compatible reduction
     // declaration and use it instead of redeclaring.
     SmallVector<Attribute> reductionDeclSymbols;
-    auto reduce = cast<scf::ReduceOp>(parallelOp.getBody()->getTerminator());
-    for (int64_t i = 0, e = parallelOp.getNumReductions(); i < e; ++i) {
-      omp::ReductionDeclareOp decl = declareReduction(rewriter, reduce, i);
+    for (auto reduce : parallelOp.getOps<scf::ReduceOp>()) {
+      omp::ReductionDeclareOp decl = declareReduction(rewriter, reduce);
       if (!decl)
         return failure();
       reductionDeclSymbols.push_back(
@@ -398,29 +379,17 @@ struct ParallelOpLowering : public OpRewritePattern<scf::ParallelOp> {
     // Replace the reduction operations contained in this loop. Must be done
     // here rather than in a separate pattern to have access to the list of
     // reduction variables.
-    for (auto [x, y] :
-         llvm::zip_equal(reductionVariables, reduce.getOperands())) {
+    for (auto pair :
+         llvm::zip(parallelOp.getOps<scf::ReduceOp>(), reductionVariables)) {
       OpBuilder::InsertionGuard guard(rewriter);
-      rewriter.setInsertionPoint(reduce);
-      rewriter.create<omp::ReductionOp>(reduce.getLoc(), y, x);
+      scf::ReduceOp reduceOp = std::get<0>(pair);
+      rewriter.setInsertionPoint(reduceOp);
+      rewriter.replaceOpWithNewOp<omp::ReductionOp>(
+          reduceOp, reduceOp.getOperand(), std::get<1>(pair));
     }
-    rewriter.eraseOp(reduce);
 
-    Value numThreadsVar;
-    if (numThreads > 0) {
-      numThreadsVar = rewriter.create<LLVM::ConstantOp>(
-          loc, rewriter.getI32IntegerAttr(numThreads));
-    }
     // Create the parallel wrapper.
-    auto ompParallel = rewriter.create<omp::ParallelOp>(
-        loc,
-        /* if_expr_var = */ Value{},
-        /* num_threads_var = */ numThreadsVar,
-        /* allocate_vars = */ llvm::SmallVector<Value>{},
-        /* allocators_vars = */ llvm::SmallVector<Value>{},
-        /* reduction_vars = */ llvm::SmallVector<Value>{},
-        /* reductions = */ ArrayAttr{},
-        /* proc_bind_val = */ omp::ClauseProcBindKindAttr{});
+    auto ompParallel = rewriter.create<omp::ParallelOp>(loc);
     {
 
       OpBuilder::InsertionGuard guard(rewriter);
@@ -447,8 +416,10 @@ struct ParallelOpLowering : public OpRewritePattern<scf::ParallelOp> {
         rewriter.create<omp::YieldOp>(loc, ValueRange());
         Block *scopeBlock = rewriter.createBlock(&scope.getBodyRegion());
         rewriter.mergeBlocks(ops, scopeBlock);
+        auto oldYield = cast<scf::YieldOp>(scopeBlock->getTerminator());
         rewriter.setInsertionPointToEnd(&*scope.getBodyRegion().begin());
-        rewriter.create<memref::AllocaScopeReturnOp>(loc, ValueRange());
+        rewriter.replaceOpWithNewOp<memref::AllocaScopeReturnOp>(
+            oldYield, oldYield->getOperands());
         if (!reductionVariables.empty()) {
           loop.setReductionsAttr(
               ArrayAttr::get(rewriter.getContext(), reductionDeclSymbols));
@@ -472,14 +443,14 @@ struct ParallelOpLowering : public OpRewritePattern<scf::ParallelOp> {
 };
 
 /// Applies the conversion patterns in the given function.
-static LogicalResult applyPatterns(ModuleOp module, unsigned numThreads) {
+static LogicalResult applyPatterns(ModuleOp module) {
   ConversionTarget target(*module.getContext());
   target.addIllegalOp<scf::ReduceOp, scf::ReduceReturnOp, scf::ParallelOp>();
   target.addLegalDialect<omp::OpenMPDialect, LLVM::LLVMDialect,
                          memref::MemRefDialect>();
 
   RewritePatternSet patterns(module.getContext());
-  patterns.add<ParallelOpLowering>(module.getContext(), numThreads);
+  patterns.add<ParallelOpLowering>(module.getContext());
   FrozenRewritePatternSet frozen(std::move(patterns));
   return applyPartialConversion(module, target, frozen);
 }
@@ -492,7 +463,7 @@ struct SCFToOpenMPPass
 
   /// Pass entry point.
   void runOnOperation() override {
-    if (failed(applyPatterns(getOperation(), numThreads)))
+    if (failed(applyPatterns(getOperation())))
       signalPassFailure();
   }
 };

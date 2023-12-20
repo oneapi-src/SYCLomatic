@@ -334,12 +334,11 @@ namespace std {
     constexpr const mapping_type& mapping() const noexcept { return map_; }
     constexpr const accessor_type& accessor() const noexcept { return acc_; }
 
-    // per LWG-4021 "mdspan::is_always_meow() should be noexcept"
-    static constexpr bool is_always_unique() noexcept
+    static constexpr bool is_always_unique()
       { return mapping_type::is_always_unique(); }
-    static constexpr bool is_always_exhaustive() noexcept
+    static constexpr bool is_always_exhaustive()
       { return mapping_type::is_always_exhaustive(); }
-    static constexpr bool is_always_strided() noexcept
+    static constexpr bool is_always_strided()
       { return mapping_type::is_always_strided(); }
 
     constexpr bool is_unique() const

@@ -48,7 +48,7 @@ struct TestEmulateWideIntPass
     }
 
     func::FuncOp op = getOperation();
-    if (!op.getSymName().starts_with(testFunctionPrefix))
+    if (!op.getSymName().startswith(testFunctionPrefix))
       return;
 
     MLIRContext *ctx = op.getContext();

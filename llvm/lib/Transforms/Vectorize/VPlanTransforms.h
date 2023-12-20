@@ -22,9 +22,11 @@ class InductionDescriptor;
 class Instruction;
 class PHINode;
 class ScalarEvolution;
+class Loop;
 class PredicatedScalarEvolution;
 class TargetLibraryInfo;
 class VPBuilder;
+class VPRecipeBuilder;
 
 struct VPlanTransforms {
   /// Replaces the VPInstructions in \p Plan with corresponding
@@ -76,13 +78,6 @@ struct VPlanTransforms {
   static void addActiveLaneMask(VPlan &Plan,
                                 bool UseActiveLaneMaskForControlFlow,
                                 bool DataAndControlFlowWithoutRuntimeCheck);
-
-  /// Insert truncates and extends for any truncated recipe. Redundant casts
-  /// will be folded later.
-  static void
-  truncateToMinimalBitwidths(VPlan &Plan,
-                             const MapVector<Instruction *, uint64_t> &MinBWs,
-                             LLVMContext &Ctx);
 
 private:
   /// Remove redundant VPBasicBlocks by merging them into their predecessor if

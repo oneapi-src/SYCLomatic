@@ -487,8 +487,8 @@ PlatformDarwinKernel::GetKernelsAndKextsInDirectoryHelper(
 
   llvm::StringRef filename = file_spec.GetFilename().GetStringRef();
   bool is_kernel_filename =
-      filename.starts_with("kernel") || filename.starts_with("mach");
-  bool is_dsym_yaa = filename.ends_with(".dSYM.yaa");
+      filename.startswith("kernel") || filename.startswith("mach");
+  bool is_dsym_yaa = filename.endswith(".dSYM.yaa");
 
   if (ft == llvm::sys::fs::file_type::regular_file ||
       ft == llvm::sys::fs::file_type::symlink_file) {

@@ -388,7 +388,7 @@ static APInt findDemandedEltsByAllUsers(Value *V) {
 /// arbitrarily pick 64 bit as our canonical type.  The actual bitwidth doesn't
 /// matter, we just want a consistent type to simplify CSE.
 static ConstantInt *getPreferredVectorIndex(ConstantInt *IndexC) {
-  const unsigned IndexBW = IndexC->getBitWidth();
+  const unsigned IndexBW = IndexC->getType()->getBitWidth();
   if (IndexBW == 64 || IndexC->getValue().getActiveBits() > 64)
     return nullptr;
   return ConstantInt::get(IndexC->getContext(),
@@ -581,20 +581,20 @@ Instruction *InstCombinerImpl::visitExtractElementInst(ExtractElementInst &EI) {
       // If the input vector has a single use, simplify it based on this use
       // property.
       if (SrcVec->hasOneUse()) {
-        APInt PoisonElts(NumElts, 0);
+        APInt UndefElts(NumElts, 0);
         APInt DemandedElts(NumElts, 0);
         DemandedElts.setBit(IndexC->getZExtValue());
         if (Value *V =
-                SimplifyDemandedVectorElts(SrcVec, DemandedElts, PoisonElts))
+                SimplifyDemandedVectorElts(SrcVec, DemandedElts, UndefElts))
           return replaceOperand(EI, 0, V);
       } else {
         // If the input vector has multiple uses, simplify it based on a union
         // of all elements used.
         APInt DemandedElts = findDemandedEltsByAllUsers(SrcVec);
         if (!DemandedElts.isAllOnes()) {
-          APInt PoisonElts(NumElts, 0);
+          APInt UndefElts(NumElts, 0);
           if (Value *V = SimplifyDemandedVectorElts(
-                  SrcVec, DemandedElts, PoisonElts, 0 /* Depth */,
+                  SrcVec, DemandedElts, UndefElts, 0 /* Depth */,
                   true /* AllowMultipleUsers */)) {
             if (V != SrcVec) {
               Worklist.addValue(SrcVec);
@@ -777,10 +777,10 @@ static ShuffleOps collectShuffleElements(Value *V, SmallVectorImpl<int> &Mask,
   assert(V->getType()->isVectorTy() && "Invalid shuffle!");
   unsigned NumElts = cast<FixedVectorType>(V->getType())->getNumElements();
 
-  if (match(V, m_Poison())) {
+  if (match(V, m_Undef())) {
     Mask.assign(NumElts, -1);
     return std::make_pair(
-        PermittedRHS ? PoisonValue::get(PermittedRHS->getType()) : V, nullptr);
+        PermittedRHS ? UndefValue::get(PermittedRHS->getType()) : V, nullptr);
   }
 
   if (isa<ConstantAggregateZero>(V)) {
@@ -1633,8 +1633,7 @@ Instruction *InstCombinerImpl::visitInsertElementInst(InsertElementInst &IE) {
     //   bitcast (inselt undef, ScalarSrc, IdxOp)
     Type *ScalarTy = ScalarSrc->getType();
     Type *VecTy = VectorType::get(ScalarTy, IE.getType()->getElementCount());
-    Constant *NewUndef = isa<PoisonValue>(VecOp) ? PoisonValue::get(VecTy)
-                                                 : UndefValue::get(VecTy);
+    UndefValue *NewUndef = UndefValue::get(VecTy);
     Value *NewInsElt = Builder.CreateInsertElement(NewUndef, ScalarSrc, IdxOp);
     return new BitCastInst(NewInsElt, IE.getType());
   }
@@ -1714,10 +1713,9 @@ Instruction *InstCombinerImpl::visitInsertElementInst(InsertElementInst &IE) {
 
   if (auto VecTy = dyn_cast<FixedVectorType>(VecOp->getType())) {
     unsigned VWidth = VecTy->getNumElements();
-    APInt PoisonElts(VWidth, 0);
+    APInt UndefElts(VWidth, 0);
     APInt AllOnesEltMask(APInt::getAllOnes(VWidth));
-    if (Value *V = SimplifyDemandedVectorElts(&IE, AllOnesEltMask,
-                                              PoisonElts)) {
+    if (Value *V = SimplifyDemandedVectorElts(&IE, AllOnesEltMask, UndefElts)) {
       if (V != &IE)
         return replaceInstUsesWith(IE, V);
       return &IE;
@@ -1920,10 +1918,6 @@ static Value *evaluateInDifferentElementOrder(Value *V, ArrayRef<int> Mask,
 
   assert(V->getType()->isVectorTy() && "can't reorder non-vector elements");
   Type *EltTy = V->getType()->getScalarType();
-
-  if (isa<PoisonValue>(V))
-    return PoisonValue::get(FixedVectorType::get(EltTy, Mask.size()));
-
   if (match(V, m_Undef()))
     return UndefValue::get(FixedVectorType::get(EltTy, Mask.size()));
 
@@ -2645,7 +2639,7 @@ static Instruction *foldShuffleWithInsert(ShuffleVectorInst &Shuf,
     assert(NewInsIndex != -1 && "Did not fold shuffle with unused operand?");
 
     // Index is updated to the potentially translated insertion lane.
-    IndexC = ConstantInt::get(IndexC->getIntegerType(), NewInsIndex);
+    IndexC = ConstantInt::get(IndexC->getType(), NewInsIndex);
     return true;
   };
 
@@ -2775,11 +2769,6 @@ Instruction *InstCombinerImpl::visitShuffleVectorInst(ShuffleVectorInst &SVI) {
   if (Instruction *I = simplifyBinOpSplats(SVI))
     return I;
 
-  // Canonicalize splat shuffle to use poison RHS. Handle this explicitly in
-  // order to support scalable vectors.
-  if (match(SVI.getShuffleMask(), m_ZeroMask()) && !isa<PoisonValue>(RHS))
-    return replaceOperand(SVI, 1, PoisonValue::get(RHS->getType()));
-
   if (isa<ScalableVectorType>(LHS->getType()))
     return nullptr;
 
@@ -2866,9 +2855,9 @@ Instruction *InstCombinerImpl::visitShuffleVectorInst(ShuffleVectorInst &SVI) {
   if (Instruction *I = foldCastShuffle(SVI, Builder))
     return I;
 
-  APInt PoisonElts(VWidth, 0);
+  APInt UndefElts(VWidth, 0);
   APInt AllOnesEltMask(APInt::getAllOnes(VWidth));
-  if (Value *V = SimplifyDemandedVectorElts(&SVI, AllOnesEltMask, PoisonElts)) {
+  if (Value *V = SimplifyDemandedVectorElts(&SVI, AllOnesEltMask, UndefElts)) {
     if (V != &SVI)
       return replaceInstUsesWith(SVI, V);
     return &SVI;
@@ -3023,11 +3012,10 @@ Instruction *InstCombinerImpl::visitShuffleVectorInst(ShuffleVectorInst &SVI) {
   ShuffleVectorInst* LHSShuffle = dyn_cast<ShuffleVectorInst>(LHS);
   ShuffleVectorInst* RHSShuffle = dyn_cast<ShuffleVectorInst>(RHS);
   if (LHSShuffle)
-    if (!match(LHSShuffle->getOperand(1), m_Poison()) &&
-        !match(RHS, m_Poison()))
+    if (!match(LHSShuffle->getOperand(1), m_Undef()) && !match(RHS, m_Undef()))
       LHSShuffle = nullptr;
   if (RHSShuffle)
-    if (!match(RHSShuffle->getOperand(1), m_Poison()))
+    if (!match(RHSShuffle->getOperand(1), m_Undef()))
       RHSShuffle = nullptr;
   if (!LHSShuffle && !RHSShuffle)
     return MadeChange ? &SVI : nullptr;
@@ -3050,7 +3038,7 @@ Instruction *InstCombinerImpl::visitShuffleVectorInst(ShuffleVectorInst &SVI) {
   Value* newRHS = RHS;
   if (LHSShuffle) {
     // case 1
-    if (match(RHS, m_Poison())) {
+    if (match(RHS, m_Undef())) {
       newLHS = LHSOp0;
       newRHS = LHSOp1;
     }

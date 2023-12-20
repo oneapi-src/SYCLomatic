@@ -150,7 +150,7 @@ createReplacementsForHeaders(llvm::StringRef FilePath, llvm::StringRef Code,
   for (const auto &Change : Changes) {
     for (llvm::StringRef Header : Change.getInsertedHeaders()) {
       std::string EscapedHeader =
-          Header.starts_with("<") || Header.starts_with("\"")
+          Header.startswith("<") || Header.startswith("\"")
               ? Header.str()
               : ("\"" + Header + "\"").str();
       std::string ReplacementText = "#include " + EscapedHeader;

@@ -21,13 +21,17 @@
 
 namespace sycl {
 inline namespace _V1 {
-
 namespace detail {
 class Builder;
 template <typename TransformedArgType, int Dims, typename KernelType>
 class RoundedRangeKernel;
 template <typename TransformedArgType, int Dims, typename KernelType>
 class RoundedRangeKernelWithKH;
+
+namespace reduction {
+template <int Dims>
+item<Dims, false> getDelinearizedItem(range<Dims> Range, id<Dims> Id);
+} // namespace reduction
 } // namespace detail
 
 /// Identifies an instance of the function object executing at each point
@@ -129,6 +133,10 @@ protected:
   friend class detail::Builder;
 
 private:
+  template <int Dims>
+  friend item<Dims, false>
+  detail::reduction::getDelinearizedItem(range<Dims> Range, id<Dims> Id);
+
   detail::ItemBase<Dimensions, with_offset> MImpl;
 };
 

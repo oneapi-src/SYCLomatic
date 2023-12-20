@@ -21,6 +21,7 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/Module.h"
+#include "llvm/Target/TargetMachine.h"
 #include <memory>
 
 namespace Fortran::frontend {
@@ -203,6 +204,8 @@ class CodeGenAction : public FrontendAction {
   void executeAction() override;
   /// Runs prescan, parsing, sema and lowers to MLIR.
   bool beginSourceFileAction() override;
+  /// Sets up LLVM's TargetMachine.
+  bool setUpTargetMachine();
   /// Runs the optimization (aka middle-end) pipeline on the LLVM module
   /// associated with this action.
   void runOptimizationPipeline(llvm::raw_pwrite_stream &os);
@@ -231,6 +234,7 @@ protected:
 
   BackendActionTy action;
 
+  std::unique_ptr<llvm::TargetMachine> tm;
   /// }
 public:
   ~CodeGenAction() override;

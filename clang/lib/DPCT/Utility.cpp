@@ -2060,7 +2060,7 @@ bool needExtraParens(const Expr *E) {
   }
   case Stmt::CXXOperatorCallExprClass:
     return static_cast<const CXXOperatorCallExpr *>(E)->getOperator() !=
-           clang::OO_Subscript;  
+           clang::OO_Subscript;
   default:
     return true;
   }
@@ -2254,46 +2254,27 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
     if (isSameLocation(ResultBegin, ResultEnd)) {
       auto It = dpct::DpctGlobalInfo::getExpansionRangeBeginMap().find(
           getCombinedStrFromLoc(ResultBegin));
-      if (It != dpct::DpctGlobalInfo::getExpansionRangeBeginMap().end()) {
+      if(It != dpct::DpctGlobalInfo::getExpansionRangeBeginMap().end()){
         // If the begin/end loc are at the same location
         // and the loc is another macro expand,
         // recursively search for a more precise range.
-        do {
-          auto IterSecondBeginFileEntry =
-              dpct::DpctGlobalInfo::getFileManager().getFile(
-                  It->second.first.first.getCanonicalPath());
-          auto IterSecondEndFileEntry =
-              dpct::DpctGlobalInfo::getFileManager().getFile(
-                  It->second.second.first.getCanonicalPath());
-          if (!IterSecondBeginFileEntry || !IterSecondEndFileEntry)
-            break;
-
-          auto IterSecondBeginFileID =
-              SM.translateFile(IterSecondBeginFileEntry.get());
-          auto IterSecondEndFileID =
-              SM.translateFile(IterSecondEndFileEntry.get());
-          auto IterSecondBegin =
-              SM.getComposedLoc(IterSecondBeginFileID, It->second.first.second);
-          auto IterSecondEnd =
-              SM.getComposedLoc(IterSecondEndFileID, It->second.second.second);
-
-          auto MacroDefBegin = IterSecondBegin;
-          auto MacroDefEnd = IterSecondEnd;
-          auto MacroDefEndTokenLength =
-              Lexer::MeasureTokenLength(MacroDefEnd, SM, Context.getLangOpts());
-          MacroDefEnd = MacroDefEnd.getLocWithOffset(MacroDefEndTokenLength);
-          auto InnerResult =
-              getRangeInRange(Range, MacroDefBegin, MacroDefEnd, false);
-          // If the new range covers the entire macro, use the original range,
-          // otherwise, use the inner range.
-          if (isInRange(IterSecondBegin, IterSecondEnd, InnerResult.first) &&
-              isInRange(IterSecondBegin, IterSecondEnd, InnerResult.second) &&
-              (!isSameLocation(IterSecondBegin, InnerResult.first) ||
-               !isSameLocation(IterSecondEnd, InnerResult.second))) {
-            ResultBegin = InnerResult.first;
-            ResultEnd = InnerResult.second;
-          }
-        } while (0);
+        auto MacroDefBegin = It->second.getBegin();
+        auto MacroDefEnd = It->second.getEnd();
+        auto MacroDefEndTokenLength =
+            Lexer::MeasureTokenLength(MacroDefEnd, SM, Context.getLangOpts());
+        MacroDefEnd = MacroDefEnd.getLocWithOffset(MacroDefEndTokenLength);
+        auto InnerResult = getRangeInRange(Range, MacroDefBegin, MacroDefEnd, false);
+        // If the new range covers the entire macro, use the original range,
+        // otherwise, use the inner range.
+        if (isInRange(It->second.getBegin(), It->second.getEnd(),
+                      InnerResult.first) &&
+            isInRange(It->second.getBegin(), It->second.getEnd(),
+                      InnerResult.second) &&
+            (!isSameLocation(It->second.getBegin(), InnerResult.first) ||
+             !isSameLocation(It->second.getEnd(), InnerResult.second))) {
+          ResultBegin = InnerResult.first;
+          ResultEnd = InnerResult.second;
+        }
       }
     }
     ResultBegin = SM.getExpansionLoc(ResultBegin);

@@ -60,7 +60,7 @@ bool StandardTildeExpressionResolver::ResolvePartial(StringRef Expr,
 
   while ((user_entry = getpwent()) != nullptr) {
     StringRef ThisName(user_entry->pw_name);
-    if (!ThisName.starts_with(Expr))
+    if (!ThisName.startswith(Expr))
       continue;
 
     Buffer.resize(1);
@@ -75,7 +75,7 @@ bool StandardTildeExpressionResolver::ResolvePartial(StringRef Expr,
 
 bool TildeExpressionResolver::ResolveFullPath(
     StringRef Expr, llvm::SmallVectorImpl<char> &Output) {
-  if (!Expr.starts_with("~")) {
+  if (!Expr.startswith("~")) {
     Output.assign(Expr.begin(), Expr.end());
     return false;
   }

@@ -185,7 +185,7 @@ static bool sameName(StringRef InComment, StringRef InDecl, bool StrictMode) {
 static bool looksLikeExpectMethod(const CXXMethodDecl *Expect) {
   return Expect != nullptr && Expect->getLocation().isMacroID() &&
          Expect->getNameInfo().getName().isIdentifier() &&
-         Expect->getName().starts_with("gmock_");
+         Expect->getName().startswith("gmock_");
 }
 static bool areMockAndExpectMethods(const CXXMethodDecl *Mock,
                                     const CXXMethodDecl *Expect) {

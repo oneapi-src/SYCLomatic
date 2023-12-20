@@ -1632,22 +1632,28 @@ const llvm::fltSemantics &ASTContext::getFloatTypeSemantics(QualType T) const {
 CharUnits ASTContext::getDeclAlign(const Decl *D, bool ForAlignof) const {
   unsigned Align = Target->getCharWidth();
 
-  const unsigned AlignFromAttr = D->getMaxAlignment();
-  if (AlignFromAttr)
+  bool UseAlignAttrOnly = false;
+  if (unsigned AlignFromAttr = D->getMaxAlignment()) {
     Align = AlignFromAttr;
 
-  // __attribute__((aligned)) can increase or decrease alignment
-  // *except* on a struct or struct member, where it only increases
-  // alignment unless 'packed' is also specified.
-  //
-  // It is an error for alignas to decrease alignment, so we can
-  // ignore that possibility;  Sema should diagnose it.
-  bool UseAlignAttrOnly;
-  if (const FieldDecl *FD = dyn_cast<FieldDecl>(D))
-    UseAlignAttrOnly =
-        FD->hasAttr<PackedAttr>() || FD->getParent()->hasAttr<PackedAttr>();
-  else
-    UseAlignAttrOnly = AlignFromAttr != 0;
+    // __attribute__((aligned)) can increase or decrease alignment
+    // *except* on a struct or struct member, where it only increases
+    // alignment unless 'packed' is also specified.
+    //
+    // It is an error for alignas to decrease alignment, so we can
+    // ignore that possibility;  Sema should diagnose it.
+    if (isa<FieldDecl>(D)) {
+      UseAlignAttrOnly = D->hasAttr<PackedAttr>() ||
+        cast<FieldDecl>(D)->getParent()->hasAttr<PackedAttr>();
+    } else {
+      UseAlignAttrOnly = true;
+    }
+  }
+  else if (isa<FieldDecl>(D))
+      UseAlignAttrOnly =
+        D->hasAttr<PackedAttr>() ||
+        cast<FieldDecl>(D)->getParent()->hasAttr<PackedAttr>();
+
   // If we're using the align attribute only, just ignore everything
   // else about the declaration and its type.
   if (UseAlignAttrOnly) {
@@ -8246,7 +8252,7 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
       // Another legacy compatibility encoding. Some ObjC qualifier and type
       // combinations need to be rearranged.
       // Rewrite "in const" from "nr" to "rn"
-      if (StringRef(S).ends_with("nr"))
+      if (StringRef(S).endswith("nr"))
         S.replace(S.end()-2, S.end(), "rn");
     }
 
@@ -13560,7 +13566,7 @@ void ASTContext::getFunctionFeatureMap(llvm::StringMap<bool> &FeatureMap,
                       Target->getTargetOpts().FeaturesAsWritten.begin(),
                       Target->getTargetOpts().FeaturesAsWritten.end());
     } else {
-      if (VersionStr.starts_with("arch="))
+      if (VersionStr.startswith("arch="))
         TargetCPU = VersionStr.drop_front(sizeof("arch=") - 1);
       else if (VersionStr != "default")
         Features.push_back((StringRef{"+"} + VersionStr).str());

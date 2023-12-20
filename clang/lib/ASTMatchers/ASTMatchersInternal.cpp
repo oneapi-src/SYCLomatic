@@ -480,11 +480,11 @@ HasNameMatcher::HasNameMatcher(std::vector<std::string> N)
 
 static bool consumeNameSuffix(StringRef &FullName, StringRef Suffix) {
   StringRef Name = FullName;
-  if (!Name.ends_with(Suffix))
+  if (!Name.endswith(Suffix))
     return false;
   Name = Name.drop_back(Suffix.size());
   if (!Name.empty()) {
-    if (!Name.ends_with("::"))
+    if (!Name.endswith("::"))
       return false;
     Name = Name.drop_back(2);
   }
@@ -531,9 +531,9 @@ public:
     Patterns.reserve(Names.size());
     for (StringRef Name : Names)
 #ifdef SYCLomatic_CUSTOMIZATION
-      Patterns.push_back({Name, Name.starts_with("::"), true});
+      Patterns.push_back({Name, Name.startswith("::"), true});
 #else
-      Patterns.push_back({Name, Name.starts_with("::")});
+      Patterns.push_back({Name, Name.startswith("::")});
 #endif // SYCLomatic_CUSTOMIZATION
   }
 
@@ -693,11 +693,11 @@ bool HasNameMatcher::matchesNodeFullSlow(const NamedDecl &Node) const {
     const StringRef FullName = OS.str();
 
     for (const StringRef Pattern : Names) {
-      if (Pattern.starts_with("::")) {
+      if (Pattern.startswith("::")) {
         if (FullName == Pattern)
           return true;
-      } else if (FullName.ends_with(Pattern) &&
-                 FullName.drop_back(Pattern.size()).ends_with("::")) {
+      } else if (FullName.endswith(Pattern) &&
+                 FullName.drop_back(Pattern.size()).endswith("::")) {
         return true;
       }
     }

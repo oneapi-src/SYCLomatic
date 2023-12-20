@@ -20,7 +20,6 @@ class SYCLInternalizer : public PassInfoMixin<SYCLInternalizer> {
 public:
   constexpr static StringLiteral Key{"sycl.kernel.promote"};
   constexpr static StringLiteral LocalSizeKey{"sycl.kernel.promote.localsize"};
-  constexpr static StringLiteral ElemSizeKey{"sycl.kernel.promote.elemsize"};
 
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
 };

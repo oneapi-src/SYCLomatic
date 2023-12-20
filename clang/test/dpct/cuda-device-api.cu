@@ -35,17 +35,25 @@ void foo() {
   // CHECK-NEXT: */
   cudaSetDeviceFlags(flags);
 
-  // CHECK:  dpct::get_current_device().ext_oneapi_enable_peer_access(
-  // CHECK-NEXT:    dpct::dev_mgr::instance().get_device(peerDevice));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed because SYCL
+  // CHECK-NEXT: currently does not support memory access across peer devices.
+  // CHECK-NEXT: */
   cudaDeviceEnablePeerAccess(peerDevice, flags);
 
-  // CHECK:  dpct::get_current_device().ext_oneapi_disable_peer_access(
-  // CHECK-NEXT:    dpct::dev_mgr::instance().get_device(peerDevice));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed because SYCL
+  // CHECK-NEXT: currently does not support memory access across peer devices.
+  // CHECK-NEXT: */
   cudaDeviceDisablePeerAccess(peerDevice);
 
-  // CHECK:  *canAccessPeer =
-  // CHECK-NEXT:      dpct::dev_mgr::instance().get_device(device).ext_oneapi_can_access_peer(
-  // CHECK-NEXT:          dpct::dev_mgr::instance().get_device(peerDevice));
+  // CHECK:      /*
+  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: Memory accessing across peer devices is an implementation-specific
+  // CHECK-NEXT: feature which may not be supported by some SYCL backends and compilers. The
+  // CHECK-NEXT: output parameter(s) are set to 0.
+  // CHECK-NEXT: */
+
+  // CHECK-NEXT: *canAccessPeer = 0;
   cudaDeviceCanAccessPeer(canAccessPeer, device, peerDevice);
 
   // CHECK: /*

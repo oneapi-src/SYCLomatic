@@ -21,7 +21,6 @@
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
-#include "mlir/Dialect/Vector/IR/VectorOps.h"
 #include "mlir/Dialect/Vector/Transforms/LoweringPatterns.h"
 #include "mlir/Dialect/Vector/Transforms/VectorTransforms.h"
 #include "mlir/IR/Builders.h"
@@ -726,14 +725,12 @@ struct DecomposePrintOpConversion : public VectorToSCFPattern<vector::PrintOp> {
       auto targetVectorType = vectorType.cloneWith({}, legalIntTy);
       value = rewriter.create<vector::BitCastOp>(loc, signlessSourceVectorType,
                                                  value);
-      if (value.getType() != signlessTargetVectorType) {
-        if (width == 1 || intTy.isUnsigned())
-          value = rewriter.create<arith::ExtUIOp>(loc, signlessTargetVectorType,
-                                                  value);
-        else
-          value = rewriter.create<arith::ExtSIOp>(loc, signlessTargetVectorType,
-                                                  value);
-      }
+      if (width == 1 || intTy.isUnsigned())
+        value = rewriter.create<arith::ExtUIOp>(loc, signlessTargetVectorType,
+                                                value);
+      else
+        value = rewriter.create<arith::ExtSIOp>(loc, signlessTargetVectorType,
+                                                value);
       value = rewriter.create<vector::BitCastOp>(loc, targetVectorType, value);
       vectorType = targetVectorType;
     }
@@ -1210,25 +1207,23 @@ struct UnrollTransferWriteConversion
   /// accesses, and broadcasts and transposes in permutation maps.
   LogicalResult matchAndRewrite(TransferWriteOp xferOp,
                                 PatternRewriter &rewriter) const override {
-    VectorType inputVectorTy = xferOp.getVectorType();
-
-    if (inputVectorTy.getRank() <= options.targetRank)
+    if (xferOp.getVectorType().getRank() <= options.targetRank)
       return failure();
-
     if (isTensorOp(xferOp) && !options.lowerTensors)
       return failure();
     // Transfer ops that modify the element type are not supported atm.
-    if (inputVectorTy.getElementType() !=
+    if (xferOp.getVectorType().getElementType() !=
         xferOp.getShapedType().getElementType())
       return failure();
 
     auto vec = getDataVector(xferOp);
-    if (inputVectorTy.getScalableDims()[0]) {
+    auto xferVecType = xferOp.getVectorType();
+    if (xferVecType.getScalableDims()[0]) {
       // Cannot unroll a scalable dimension at compile time.
       return failure();
     }
 
-    int64_t dimSize = inputVectorTy.getShape()[0];
+    int64_t dimSize = xferVecType.getShape()[0];
     Value source = xferOp.getSource(); // memref or tensor to be written to.
     auto sourceType = isTensorOp(xferOp) ? xferOp.getShapedType() : Type();
 
@@ -1254,18 +1249,8 @@ struct UnrollTransferWriteConversion
             auto extracted =
                 b.create<vector::ExtractOp>(loc, vec, extractionIndices);
             auto inBoundsAttr = dropFirstElem(b, xferOp.getInBoundsAttr());
-            Value xferVec;
-            if (inputVectorTy.getRank() == 1) {
-              // When target-rank=0, unrolling would causes the vector input
-              // argument into `transfer_write` to become a scalar. We solve
-              // this by broadcasting the scalar to a 0D vector.
-              xferVec = b.create<vector::BroadcastOp>(
-                  loc, VectorType::get({}, extracted.getType()), extracted);
-            } else {
-              xferVec = extracted;
-            }
             auto newXferOp = b.create<vector::TransferWriteOp>(
-                loc, sourceType, xferVec, source, xferIndices,
+                loc, sourceType, extracted, source, xferIndices,
                 AffineMapAttr::get(unpackedPermutationMap(b, xferOp)), Value(),
                 inBoundsAttr);
 

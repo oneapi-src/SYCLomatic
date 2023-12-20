@@ -166,14 +166,6 @@ declare_mlir_dialect_python_bindings(
     "../../include/mlir/Dialect/Transform/IR/TransformAttrs.td"
 )
 
-declare_mlir_python_sources(
-  MLIRPythonSources.Dialects.transform.extras
-  ADD_TO_PARENT MLIRPythonSources.Dialects
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/mlir"
-  GEN_ENUM_BINDINGS
-  SOURCES
-    extras/dialects/transform/__init__.py)
-
 declare_mlir_dialect_extension_python_bindings(
   ADD_TO_PARENT MLIRPythonSources.Dialects
   ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/mlir"
@@ -343,8 +335,7 @@ declare_mlir_dialect_python_bindings(
   TD_FILE dialects/OpenMPOps.td
   SOURCES
     dialects/openmp.py
-  DIALECT_NAME omp
-  DEPENDS omp_common_td)
+  DIALECT_NAME omp)
 
 declare_mlir_dialect_python_bindings(
   ADD_TO_PARENT MLIRPythonSources.Dialects

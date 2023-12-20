@@ -14,7 +14,6 @@
 #include "flang/Optimizer/CodeGen/CodeGen.h"
 #include "flang/Optimizer/Dialect/Support/FIRContext.h"
 #include "flang/Optimizer/Dialect/Support/KindMapping.h"
-#include "flang/Optimizer/Support/DataLayout.h"
 #include "flang/Optimizer/Support/InitFIR.h"
 #include "flang/Optimizer/Support/InternalNames.h"
 #include "flang/Optimizer/Transforms/Passes.h"
@@ -62,8 +61,9 @@ static cl::opt<bool> codeGenLLVM(
 
 #include "flang/Tools/CLOptions.inc"
 
-static void printModule(mlir::ModuleOp mod, raw_ostream &output) {
-  output << mod << '\n';
+static void printModuleBody(mlir::ModuleOp mod, raw_ostream &output) {
+  for (auto &op : *mod.getBody())
+    output << op << '\n';
 }
 
 // compile a .fir file
@@ -104,10 +104,6 @@ compileFIR(const mlir::PassPipelineCLParser &passPipeline) {
   fir::KindMapping kindMap{&context};
   fir::setTargetTriple(*owningRef, targetTriple);
   fir::setKindMapping(*owningRef, kindMap);
-  // tco is a testing tool, so it will happily use the target independent
-  // data layout if none is on the module.
-  fir::support::setMLIRDataLayoutFromAttributes(*owningRef,
-                                                /*allowDefaultLayout=*/true);
   mlir::PassManager pm((*owningRef)->getName(),
                        mlir::OpPassManager::Nesting::Implicit);
   pm.enableVerifier(/*verifyPasses=*/true);
@@ -124,7 +120,6 @@ compileFIR(const mlir::PassPipelineCLParser &passPipeline) {
       return mlir::failure();
   } else {
     MLIRToLLVMPassPipelineConfig config(llvm::OptimizationLevel::O2);
-    config.AliasAnalysis = true; // enabled when optimizing for speed
     if (codeGenLLVM) {
       // Run only CodeGen passes.
       fir::createDefaultFIRCodeGenPassPipeline(pm, config);
@@ -139,13 +134,13 @@ compileFIR(const mlir::PassPipelineCLParser &passPipeline) {
   if (mlir::succeeded(pm.run(*owningRef))) {
     // passes ran successfully, so keep the output
     if ((emitFir || passPipeline.hasAnyOccurrences()) && !codeGenLLVM)
-      printModule(*owningRef, out.os());
+      printModuleBody(*owningRef, out.os());
     out.keep();
     return mlir::success();
   }
 
   // pass manager failed
-  printModule(*owningRef, errs());
+  printModuleBody(*owningRef, errs());
   errs() << "\n\nFAILED: " << inputFilename << '\n';
   return mlir::failure();
 }

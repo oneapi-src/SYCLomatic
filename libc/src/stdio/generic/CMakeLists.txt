@@ -319,9 +319,9 @@ add_entrypoint_object(
 add_entrypoint_object(
   getchar_unlocked
   SRCS
-    getchar_unlocked.cpp
+    getc_unlocked.cpp
   HDRS
-    ../getchar_unlocked.h
+    ../getc_unlocked.h
   DEPENDS
     libc.src.errno.errno
     libc.include.stdio

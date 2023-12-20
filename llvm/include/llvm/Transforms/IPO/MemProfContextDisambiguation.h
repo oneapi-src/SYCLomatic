@@ -15,6 +15,7 @@
 #ifndef LLVM_TRANSFORMS_IPO_MEMPROF_CONTEXT_DISAMBIGUATION_H
 #define LLVM_TRANSFORMS_IPO_MEMPROF_CONTEXT_DISAMBIGUATION_H
 
+#include "llvm/ADT/StringSet.h"
 #include "llvm/IR/GlobalValue.h"
 #include "llvm/IR/ModuleSummaryIndex.h"
 #include "llvm/IR/PassManager.h"

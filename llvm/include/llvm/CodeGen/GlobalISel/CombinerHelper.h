@@ -28,9 +28,11 @@
 namespace llvm {
 
 class GISelChangeObserver;
+class APFloat;
 class APInt;
 class ConstantFP;
 class GPtrAdd;
+class GStore;
 class GZExtLoad;
 class MachineIRBuilder;
 class MachineInstrBuilder;
@@ -193,10 +195,6 @@ public:
 
   /// Match (and (load x), mask) -> zextload x
   bool matchCombineLoadWithAndMask(MachineInstr &MI, BuildFnTy &MatchInfo);
-
-  /// Combine a G_EXTRACT_VECTOR_ELT of a load into a narrowed
-  /// load.
-  bool matchCombineExtractedVectorLoad(MachineInstr &MI, BuildFnTy &MatchInfo);
 
   bool matchCombineIndexedLoadStore(MachineInstr &MI, IndexedLoadStoreMatchInfo &MatchInfo);
   void applyCombineIndexedLoadStore(MachineInstr &MI, IndexedLoadStoreMatchInfo &MatchInfo);

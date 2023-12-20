@@ -18,7 +18,6 @@
 #include "test_macros.h"
 #include "test_allocator.h"
 #include "min_allocator.h"
-#include "asan_testing.h"
 
 template <class Alloc, class CharT>
 TEST_CONSTEXPR_CXX20 void test(const CharT* s, unsigned n) {
@@ -30,7 +29,6 @@ TEST_CONSTEXPR_CXX20 void test(const CharT* s, unsigned n) {
   assert(T::compare(s2.data(), s, n) == 0);
   assert(s2.get_allocator() == Alloc());
   assert(s2.capacity() >= s2.size());
-  LIBCPP_ASSERT(is_string_asan_correct(s2));
 }
 
 template <class Alloc, class CharT>
@@ -43,7 +41,6 @@ TEST_CONSTEXPR_CXX20 void test(const CharT* s, unsigned n, const Alloc& a) {
   assert(T::compare(s2.data(), s, n) == 0);
   assert(s2.get_allocator() == a);
   assert(s2.capacity() >= s2.size());
-  LIBCPP_ASSERT(is_string_asan_correct(s2));
 }
 
 template <class Alloc>
@@ -67,7 +64,6 @@ TEST_CONSTEXPR_CXX20 bool test() {
   test(test_allocator<char>(2));
 #if TEST_STD_VER >= 11
   test(min_allocator<char>());
-  test(safe_allocator<char>());
 #endif
 
 #if TEST_STD_VER >= 11

@@ -13,6 +13,7 @@
 #include "llvm/Analysis/TensorSpec.h"
 
 #include <array>
+#include <string>
 #include <vector>
 
 namespace llvm {

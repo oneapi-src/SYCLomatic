@@ -112,12 +112,6 @@ fir::ExtendedValue convertToValue(mlir::Location loc,
                                   hlfir::Entity entity,
                                   Fortran::lower::StatementContext &);
 
-fir::ExtendedValue convertDataRefToValue(mlir::Location loc,
-                                         Fortran::lower::AbstractConverter &,
-                                         const Fortran::evaluate::DataRef &,
-                                         Fortran::lower::SymMap &,
-                                         Fortran::lower::StatementContext &);
-
 /// Lower an evaluate::Expr to a fir::MutableBoxValue value.
 /// This can only be called if the Expr is a POINTER or ALLOCATABLE,
 /// otherwise, this will crash.

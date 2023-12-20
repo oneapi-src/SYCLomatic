@@ -10,6 +10,8 @@
 // RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 
+// XFAIL: gpu
+
 #include "common.hpp"
 
 constexpr size_t SG_SZ = 16;

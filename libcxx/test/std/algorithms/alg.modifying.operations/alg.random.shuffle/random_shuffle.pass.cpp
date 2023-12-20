@@ -17,7 +17,6 @@
 // ADDITIONAL_COMPILE_FLAGS: -D_LIBCPP_DISABLE_DEPRECATION_WARNINGS
 
 #include <algorithm>
-#include <array>
 #include <cassert>
 
 #include "test_macros.h"
@@ -27,18 +26,18 @@ template <class Iter>
 void
 test_with_iterator()
 {
-  std::array<int, 0> empty = {};
-  std::random_shuffle(Iter(empty.data()), Iter(empty.data()));
+    int empty[] = {};
+    std::random_shuffle(Iter(empty), Iter(empty));
 
-  const int all_elements[] = {1, 2, 3, 4};
-  int shuffled[]           = {1, 2, 3, 4};
-  const unsigned size      = sizeof(all_elements) / sizeof(all_elements[0]);
+    const int all_elements[] = {1, 2, 3, 4};
+    int           shuffled[] = {1, 2, 3, 4};
+    const unsigned size = sizeof(all_elements)/sizeof(all_elements[0]);
 
-  std::random_shuffle(Iter(shuffled), Iter(shuffled + size));
-  assert(std::is_permutation(shuffled, shuffled + size, all_elements));
+    std::random_shuffle(Iter(shuffled), Iter(shuffled+size));
+    assert(std::is_permutation(shuffled, shuffled+size, all_elements));
 
-  std::random_shuffle(Iter(shuffled), Iter(shuffled + size));
-  assert(std::is_permutation(shuffled, shuffled + size, all_elements));
+    std::random_shuffle(Iter(shuffled), Iter(shuffled+size));
+    assert(std::is_permutation(shuffled, shuffled+size, all_elements));
 }
 
 

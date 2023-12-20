@@ -355,7 +355,7 @@ public:
     auto RTPlugin =
         std::make_shared<sycl::detail::pi::PiPlugin>(sycl::detail::pi::PiPlugin{
             "pi.ver.mock", "plugin.ver.mock", /*Targets=*/nullptr,
-            getProxyMockedFunctionPointers(), _PI_SANITIZE_TYPE_NONE});
+            getProxyMockedFunctionPointers()});
 
     MMockPluginPtr = std::make_shared<detail::plugin>(RTPlugin, Backend,
                                                       /*Library=*/nullptr);

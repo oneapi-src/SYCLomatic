@@ -11,9 +11,7 @@
 // UNSUPPORTED: c++03, c++11
 
 // ignore deprecated volatile return types
-// ADDITIONAL_COMPILE_FLAGS(gcc-style-warnings): -Wno-deprecated-volatile
-// MSVC warning C5216: 'volatile int' a volatile qualified return type is deprecated in C++20
-// ADDITIONAL_COMPILE_FLAGS(cl-style-warnings): /wd5216
+// ADDITIONAL_COMPILE_FLAGS: -Wno-deprecated-volatile
 
 #include <type_traits>
 #include <utility>

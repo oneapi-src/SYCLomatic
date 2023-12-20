@@ -963,18 +963,12 @@ static void cacheDIVar(FrameDataInfo &FrameData,
     if (DIVarCache.contains(V))
       continue;
 
-    SmallVector<DbgDeclareInst *, 1> DDIs;
-    SmallVector<DPValue *, 1> DPVs;
-    findDbgDeclares(DDIs, V, &DPVs);
-    auto CacheIt = [&DIVarCache, V](auto &Container) {
-      auto *I = llvm::find_if(Container, [](auto *DDI) {
-        return DDI->getExpression()->getNumElements() == 0;
-      });
-      if (I != Container.end())
-        DIVarCache.insert({V, (*I)->getVariable()});
-    };
-    CacheIt(DDIs);
-    CacheIt(DPVs);
+    auto DDIs = FindDbgDeclareUses(V);
+    auto *I = llvm::find_if(DDIs, [](DbgDeclareInst *DDI) {
+      return DDI->getExpression()->getNumElements() == 0;
+    });
+    if (I != DDIs.end())
+      DIVarCache.insert({V, (*I)->getVariable()});
   }
 }
 
@@ -1125,26 +1119,15 @@ static void buildFrameDebugInfo(Function &F, coro::Shape &Shape,
   assert(PromiseAlloca &&
          "Coroutine with switch ABI should own Promise alloca");
 
-  SmallVector<DbgDeclareInst *, 1> DIs;
-  SmallVector<DPValue *, 1> DPVs;
-  findDbgDeclares(DIs, PromiseAlloca, &DPVs);
-
-  DILocalVariable *PromiseDIVariable = nullptr;
-  DILocation *DILoc = nullptr;
-  if (!DIs.empty()) {
-    DbgDeclareInst *PromiseDDI = DIs.front();
-    PromiseDIVariable = PromiseDDI->getVariable();
-    DILoc = PromiseDDI->getDebugLoc().get();
-  } else if (!DPVs.empty()) {
-    DPValue *PromiseDPV = DPVs.front();
-    PromiseDIVariable = PromiseDPV->getVariable();
-    DILoc = PromiseDPV->getDebugLoc().get();
-  } else {
+  TinyPtrVector<DbgDeclareInst *> DIs = FindDbgDeclareUses(PromiseAlloca);
+  if (DIs.empty())
     return;
-  }
 
+  DbgDeclareInst *PromiseDDI = DIs.front();
+  DILocalVariable *PromiseDIVariable = PromiseDDI->getVariable();
   DILocalScope *PromiseDIScope = PromiseDIVariable->getScope();
   DIFile *DFile = PromiseDIScope->getFile();
+  DILocation *DILoc = PromiseDDI->getDebugLoc().get();
   unsigned LineNum = PromiseDIVariable->getLine();
 
   DICompositeType *FrameDITy = DBuilder.createStructType(
@@ -1258,7 +1241,7 @@ static void buildFrameDebugInfo(Function &F, coro::Shape &Shape,
   auto *FrameDIVar = DBuilder.createAutoVariable(PromiseDIScope, "__coro_frame",
                                                  DFile, LineNum, FrameDITy,
                                                  true, DINode::FlagArtificial);
-  assert(FrameDIVar->isValidLocationForIntrinsic(DILoc));
+  assert(FrameDIVar->isValidLocationForIntrinsic(PromiseDDI->getDebugLoc()));
 
   // Subprogram would have ContainedNodes field which records the debug
   // variables it contained. So we need to add __coro_frame to the
@@ -1276,17 +1259,9 @@ static void buildFrameDebugInfo(Function &F, coro::Shape &Shape,
         7, (MDTuple::get(F.getContext(), RetainedNodesVec)));
   }
 
-  if (UseNewDbgInfoFormat) {
-    DPValue *NewDPV = new DPValue(ValueAsMetadata::get(Shape.FramePtr),
-                                  FrameDIVar, DBuilder.createExpression(),
-                                  DILoc, DPValue::LocationType::Declare);
-    BasicBlock::iterator It = Shape.getInsertPtAfterFramePtr();
-    It->getParent()->insertDPValueBefore(NewDPV, It);
-  } else {
-    DBuilder.insertDeclare(Shape.FramePtr, FrameDIVar,
-                           DBuilder.createExpression(), DILoc,
-                           &*Shape.getInsertPtAfterFramePtr());
-  }
+  DBuilder.insertDeclare(Shape.FramePtr, FrameDIVar,
+                         DBuilder.createExpression(), DILoc,
+                         Shape.getInsertPtAfterFramePtr());
 }
 
 // Build a struct that will keep state for an active coroutine.
@@ -1794,7 +1769,7 @@ static void insertSpills(const FrameDataInfo &FrameData, coro::Shape &Shape) {
     if (auto *Arg = dyn_cast<Argument>(Def)) {
       // For arguments, we will place the store instruction right after
       // the coroutine frame pointer instruction, i.e. coro.begin.
-      InsertPt = Shape.getInsertPtAfterFramePtr();
+      InsertPt = Shape.getInsertPtAfterFramePtr()->getIterator();
 
       // If we're spilling an Argument, make sure we clear 'nocapture'
       // from the coroutine function.
@@ -1811,7 +1786,7 @@ static void insertSpills(const FrameDataInfo &FrameData, coro::Shape &Shape) {
       if (!DT.dominates(CB, I)) {
         // If it is not dominated by CoroBegin, then spill should be
         // inserted immediately after CoroFrame is computed.
-        InsertPt = Shape.getInsertPtAfterFramePtr();
+        InsertPt = Shape.getInsertPtAfterFramePtr()->getIterator();
       } else if (auto *II = dyn_cast<InvokeInst>(I)) {
         // If we are spilling the result of the invoke instruction, split
         // the normal edge and insert the spill in the new block.
@@ -1865,9 +1840,7 @@ static void insertSpills(const FrameDataInfo &FrameData, coro::Shape &Shape) {
               FrameTy->getElementType(FrameData.getFieldIndex(E.first)), GEP,
               SpillAlignment, E.first->getName() + Twine(".reload"));
 
-        SmallVector<DbgDeclareInst *, 1> DIs;
-        SmallVector<DPValue *, 1> DPVs;
-        findDbgDeclares(DIs, Def, &DPVs);
+        TinyPtrVector<DbgDeclareInst *> DIs = FindDbgDeclareUses(Def);
         // Try best to find dbg.declare. If the spill is a temp, there may not
         // be a direct dbg.declare. Walk up the load chain to find one from an
         // alias.
@@ -1881,37 +1854,24 @@ static void insertSpills(const FrameDataInfo &FrameData, coro::Shape &Shape) {
             CurDef = LdInst->getPointerOperand();
             if (!isa<AllocaInst, LoadInst>(CurDef))
               break;
-            DIs.clear();
-            DPVs.clear();
-            findDbgDeclares(DIs, CurDef, &DPVs);
+            DIs = FindDbgDeclareUses(CurDef);
           }
         }
 
-        auto SalvageOne = [&](auto *DDI) {
+        for (DbgDeclareInst *DDI : DIs) {
           bool AllowUnresolved = false;
           // This dbg.declare is preserved for all coro-split function
           // fragments. It will be unreachable in the main function, and
           // processed by coro::salvageDebugInfo() by CoroCloner.
-          if (UseNewDbgInfoFormat) {
-            DPValue *NewDPV =
-                new DPValue(ValueAsMetadata::get(CurrentReload),
-                            DDI->getVariable(), DDI->getExpression(),
-                            DDI->getDebugLoc(), DPValue::LocationType::Declare);
-            Builder.GetInsertPoint()->getParent()->insertDPValueBefore(
-                NewDPV, Builder.GetInsertPoint());
-          } else {
-            DIBuilder(*CurrentBlock->getParent()->getParent(), AllowUnresolved)
-                .insertDeclare(CurrentReload, DDI->getVariable(),
-                               DDI->getExpression(), DDI->getDebugLoc(),
-                               &*Builder.GetInsertPoint());
-          }
+          DIBuilder(*CurrentBlock->getParent()->getParent(), AllowUnresolved)
+              .insertDeclare(CurrentReload, DDI->getVariable(),
+                             DDI->getExpression(), DDI->getDebugLoc(),
+                             &*Builder.GetInsertPoint());
           // This dbg.declare is for the main function entry point.  It
           // will be deleted in all coro-split functions.
-          coro::salvageDebugInfo(ArgToAllocaMap, *DDI, Shape.OptimizeFrame,
+          coro::salvageDebugInfo(ArgToAllocaMap, DDI, Shape.OptimizeFrame,
                                  false /*UseEntryValue*/);
-        };
-        for_each(DIs, SalvageOne);
-        for_each(DPVs, SalvageOne);
+        }
       }
 
       // If we have a single edge PHINode, remove it and replace it with a
@@ -1929,10 +1889,6 @@ static void insertSpills(const FrameDataInfo &FrameData, coro::Shape &Shape) {
       // Replace all uses of CurrentValue in the current instruction with
       // reload.
       U->replaceUsesOfWith(Def, CurrentReload);
-      // Instructions are added to Def's user list if the attached
-      // debug records use Def. Update those now.
-      for (auto &DPV : U->getDbgValueRange())
-        DPV.replaceVariableLocationOp(Def, CurrentReload, true);
     }
   }
 
@@ -1983,12 +1939,9 @@ static void insertSpills(const FrameDataInfo &FrameData, coro::Shape &Shape) {
     G->setName(Alloca->getName() + Twine(".reload.addr"));
 
     SmallVector<DbgVariableIntrinsic *, 4> DIs;
-    SmallVector<DPValue *> DPValues;
-    findDbgUsers(DIs, Alloca, &DPValues);
+    findDbgUsers(DIs, Alloca);
     for (auto *DVI : DIs)
       DVI->replaceUsesOfWith(Alloca, G);
-    for (auto *DPV : DPValues)
-      DPV->replaceVariableLocationOp(Alloca, G);
 
     for (Instruction *I : UsersToUpdate) {
       // It is meaningless to retain the lifetime intrinsics refer for the
@@ -2002,7 +1955,7 @@ static void insertSpills(const FrameDataInfo &FrameData, coro::Shape &Shape) {
       I->replaceUsesOfWith(Alloca, G);
     }
   }
-  Builder.SetInsertPoint(&*Shape.getInsertPtAfterFramePtr());
+  Builder.SetInsertPoint(Shape.getInsertPtAfterFramePtr());
   for (const auto &A : FrameData.Allocas) {
     AllocaInst *Alloca = A.Alloca;
     if (A.MayWriteBeforeCoroBegin) {
@@ -2063,7 +2016,7 @@ static void insertSpills(const FrameDataInfo &FrameData, coro::Shape &Shape) {
              isa<BitCastInst>(Inst);
     });
     if (HasAccessingPromiseBeforeCB) {
-      Builder.SetInsertPoint(&*Shape.getInsertPtAfterFramePtr());
+      Builder.SetInsertPoint(Shape.getInsertPtAfterFramePtr());
       auto *G = GetFramePointer(PA);
       auto *Value = Builder.CreateLoad(PA->getAllocatedType(), PA);
       Builder.CreateStore(Value, G);
@@ -2845,16 +2798,21 @@ static void collectFrameAlloca(AllocaInst *AI, coro::Shape &Shape,
                        Visitor.getMayWriteBeforeCoroBegin());
 }
 
-static std::optional<std::pair<Value &, DIExpression &>>
-salvageDebugInfoImpl(SmallDenseMap<Argument *, AllocaInst *, 4> &ArgToAllocaMap,
-                     bool OptimizeFrame, bool UseEntryValue, Function *F,
-                     Value *Storage, DIExpression *Expr,
-                     bool SkipOutermostLoad) {
+void coro::salvageDebugInfo(
+    SmallDenseMap<Argument *, AllocaInst *, 4> &ArgToAllocaMap,
+    DbgVariableIntrinsic *DVI, bool OptimizeFrame, bool UseEntryValue) {
+  Function *F = DVI->getFunction();
   IRBuilder<> Builder(F->getContext());
   auto InsertPt = F->getEntryBlock().getFirstInsertionPt();
   while (isa<IntrinsicInst>(InsertPt))
     ++InsertPt;
   Builder.SetInsertPoint(&F->getEntryBlock(), InsertPt);
+  DIExpression *Expr = DVI->getExpression();
+  // Follow the pointer arithmetic all the way to the incoming
+  // function argument and convert into a DIExpression.
+  bool SkipOutermostLoad = !isa<DbgValueInst>(DVI);
+  Value *Storage = DVI->getVariableLocationOp(0);
+  Value *OriginalStorage = Storage;
 
   while (auto *Inst = dyn_cast_or_null<Instruction>(Storage)) {
     if (auto *LdInst = dyn_cast<LoadInst>(Inst)) {
@@ -2886,7 +2844,7 @@ salvageDebugInfoImpl(SmallDenseMap<Argument *, AllocaInst *, 4> &ArgToAllocaMap,
     SkipOutermostLoad = false;
   }
   if (!Storage)
-    return std::nullopt;
+    return;
 
   auto *StorageAsArg = dyn_cast<Argument>(Storage);
   const bool IsSwiftAsyncArg =
@@ -2922,78 +2880,19 @@ salvageDebugInfoImpl(SmallDenseMap<Argument *, AllocaInst *, 4> &ArgToAllocaMap,
     Expr = DIExpression::prepend(Expr, DIExpression::DerefBefore);
   }
 
-  return {{*Storage, *Expr}};
-}
-
-void coro::salvageDebugInfo(
-    SmallDenseMap<Argument *, AllocaInst *, 4> &ArgToAllocaMap,
-    DbgVariableIntrinsic &DVI, bool OptimizeFrame, bool UseEntryValue) {
-
-  Function *F = DVI.getFunction();
-  // Follow the pointer arithmetic all the way to the incoming
-  // function argument and convert into a DIExpression.
-  bool SkipOutermostLoad = !isa<DbgValueInst>(DVI);
-  Value *OriginalStorage = DVI.getVariableLocationOp(0);
-
-  auto SalvagedInfo = ::salvageDebugInfoImpl(
-      ArgToAllocaMap, OptimizeFrame, UseEntryValue, F, OriginalStorage,
-      DVI.getExpression(), SkipOutermostLoad);
-  if (!SalvagedInfo)
-    return;
-
-  Value *Storage = &SalvagedInfo->first;
-  DIExpression *Expr = &SalvagedInfo->second;
-
-  DVI.replaceVariableLocationOp(OriginalStorage, Storage);
-  DVI.setExpression(Expr);
+  DVI->replaceVariableLocationOp(OriginalStorage, Storage);
+  DVI->setExpression(Expr);
   // We only hoist dbg.declare today since it doesn't make sense to hoist
   // dbg.value since it does not have the same function wide guarantees that
   // dbg.declare does.
   if (isa<DbgDeclareInst>(DVI)) {
-    std::optional<BasicBlock::iterator> InsertPt;
+    Instruction *InsertPt = nullptr;
     if (auto *I = dyn_cast<Instruction>(Storage))
       InsertPt = I->getInsertionPointAfterDef();
     else if (isa<Argument>(Storage))
-      InsertPt = F->getEntryBlock().begin();
+      InsertPt = &*F->getEntryBlock().begin();
     if (InsertPt)
-      DVI.moveBefore(*(*InsertPt)->getParent(), *InsertPt);
-  }
-}
-
-void coro::salvageDebugInfo(
-    SmallDenseMap<Argument *, AllocaInst *, 4> &ArgToAllocaMap, DPValue &DPV,
-    bool OptimizeFrame, bool UseEntryValue) {
-
-  Function *F = DPV.getFunction();
-  // Follow the pointer arithmetic all the way to the incoming
-  // function argument and convert into a DIExpression.
-  bool SkipOutermostLoad = DPV.getType() == DPValue::LocationType::Declare;
-  Value *OriginalStorage = DPV.getVariableLocationOp(0);
-
-  auto SalvagedInfo = ::salvageDebugInfoImpl(
-      ArgToAllocaMap, OptimizeFrame, UseEntryValue, F, OriginalStorage,
-      DPV.getExpression(), SkipOutermostLoad);
-  if (!SalvagedInfo)
-    return;
-
-  Value *Storage = &SalvagedInfo->first;
-  DIExpression *Expr = &SalvagedInfo->second;
-
-  DPV.replaceVariableLocationOp(OriginalStorage, Storage);
-  DPV.setExpression(Expr);
-  // We only hoist dbg.declare today since it doesn't make sense to hoist
-  // dbg.value since it does not have the same function wide guarantees that
-  // dbg.declare does.
-  if (DPV.getType() == DPValue::LocationType::Declare) {
-    std::optional<BasicBlock::iterator> InsertPt;
-    if (auto *I = dyn_cast<Instruction>(Storage))
-      InsertPt = I->getInsertionPointAfterDef();
-    else if (isa<Argument>(Storage))
-      InsertPt = F->getEntryBlock().begin();
-    if (InsertPt) {
-      DPV.removeFromParent();
-      (*InsertPt)->getParent()->insertDPValueBefore(&DPV, *InsertPt);
-    }
+      DVI->moveBefore(InsertPt);
   }
 }
 
@@ -3184,15 +3083,10 @@ void coro::buildCoroutineFrame(
   for (auto &Iter : FrameData.Spills) {
     auto *V = Iter.first;
     SmallVector<DbgValueInst *, 16> DVIs;
-    SmallVector<DPValue *, 16> DPVs;
-    findDbgValues(DVIs, V, &DPVs);
+    findDbgValues(DVIs, V);
     for (DbgValueInst *DVI : DVIs)
       if (Checker.isDefinitionAcrossSuspend(*V, DVI))
         FrameData.Spills[V].push_back(DVI);
-    // Add the instructions which carry debug info that is in the frame.
-    for (DPValue *DPV : DPVs)
-      if (Checker.isDefinitionAcrossSuspend(*V, DPV->Marker->MarkedInstr))
-        FrameData.Spills[V].push_back(DPV->Marker->MarkedInstr);
   }
 
   LLVM_DEBUG(dumpSpills("Spills", FrameData.Spills));

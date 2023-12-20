@@ -32,7 +32,6 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/TargetParser/Triple.h"
-#include <bitset>
 #include <memory>
 #include <string>
 
@@ -72,7 +71,6 @@ protected:
     CortexA9,
     CortexM3,
     CortexM7,
-    CortexM52,
     CortexR4,
     CortexR4F,
     CortexR5,

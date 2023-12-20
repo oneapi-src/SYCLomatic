@@ -547,22 +547,24 @@ class ConstexprIterator {
 
 #endif // TEST_STD_VER > 17
 
-template <class T, std::size_t StorageSize = 32>
+template <class T, std::size_t N = 32>
 class Input {
+  using Array = std::array<T, N>;
+
   std::size_t size_ = 0;
-  T values_[StorageSize] = {};
+  Array values_ = {};
 
 public:
-  template <std::size_t N>
-  TEST_CONSTEXPR_CXX20 Input(std::array<T, N> from) {
-    static_assert(N <= StorageSize, "");
+  template <std::size_t N2>
+  TEST_CONSTEXPR_CXX20 Input(std::array<T, N2> from) {
+    static_assert(N2 <= N, "");
 
     std::copy(from.begin(), from.end(), begin());
-    size_ = N;
+    size_ = N2;
   }
 
-  TEST_CONSTEXPR_CXX20 T* begin() { return values_; }
-  TEST_CONSTEXPR_CXX20 T* end() { return values_ + size_; }
+  TEST_CONSTEXPR_CXX20 typename Array::iterator begin() { return values_.begin(); }
+  TEST_CONSTEXPR_CXX20 typename Array::iterator end() { return values_.begin() + size_; }
   TEST_CONSTEXPR_CXX20 std::size_t size() const { return size_; }
 };
 

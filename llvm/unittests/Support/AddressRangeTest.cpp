@@ -11,6 +11,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include <string>
 
 using namespace llvm;
 

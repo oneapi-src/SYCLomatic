@@ -12,6 +12,7 @@
 #include "llvm/ProfileData/SampleProf.h"
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace llvm {
 namespace sampleprof {

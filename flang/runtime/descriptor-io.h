@@ -268,33 +268,7 @@ static bool DefaultComponentIO(IoStatementState &io,
 }
 
 template <Direction DIR>
-static bool DefaultComponentwiseFormattedIO(IoStatementState &io,
-    const Descriptor &descriptor, const typeInfo::DerivedType &type,
-    const NonTbpDefinedIoTable *table, const SubscriptValue subscripts[]) {
-  IoErrorHandler &handler{io.GetIoErrorHandler()};
-  const Descriptor &compArray{type.component()};
-  RUNTIME_CHECK(handler, compArray.rank() == 1);
-  std::size_t numComponents{compArray.Elements()};
-  SubscriptValue at[maxRank];
-  compArray.GetLowerBounds(at);
-  for (std::size_t k{0}; k < numComponents;
-       ++k, compArray.IncrementSubscripts(at)) {
-    const typeInfo::Component &component{
-        *compArray.Element<typeInfo::Component>(at)};
-    if (!DefaultComponentIO<DIR>(
-            io, component, descriptor, subscripts, handler, table)) {
-      // Return true for NAMELIST input if any component appeared.
-      auto *listInput{
-          io.get_if<ListDirectedStatementState<Direction::Input>>()};
-      return DIR == Direction::Input && k > 0 && listInput &&
-          listInput->inNamelistSequence();
-    }
-  }
-  return true;
-}
-
-template <Direction DIR>
-static bool DefaultComponentwiseUnformattedIO(IoStatementState &io,
+static bool DefaultComponentwiseIO(IoStatementState &io,
     const Descriptor &descriptor, const typeInfo::DerivedType &type,
     const NonTbpDefinedIoTable *table) {
   IoErrorHandler &handler{io.GetIoErrorHandler()};
@@ -314,7 +288,11 @@ static bool DefaultComponentwiseUnformattedIO(IoStatementState &io,
           *compArray.Element<typeInfo::Component>(at)};
       if (!DefaultComponentIO<DIR>(
               io, component, descriptor, subscripts, handler, table)) {
-        return false;
+        // Truncated nonempty namelist input sequence?
+        auto *listInput{
+            io.get_if<ListDirectedStatementState<Direction::Input>>()};
+        return DIR == Direction::Input && (j > 0 || k > 0) && listInput &&
+            listInput->inNamelistSequence();
       }
     }
   }
@@ -322,8 +300,7 @@ static bool DefaultComponentwiseUnformattedIO(IoStatementState &io,
 }
 
 std::optional<bool> DefinedFormattedIo(IoStatementState &, const Descriptor &,
-    const typeInfo::DerivedType &, const typeInfo::SpecialBinding &,
-    const SubscriptValue[]);
+    const typeInfo::DerivedType &, const typeInfo::SpecialBinding &);
 
 template <Direction DIR>
 static bool FormattedDerivedTypeIO(IoStatementState &io,
@@ -334,54 +311,37 @@ static bool FormattedDerivedTypeIO(IoStatementState &io,
   RUNTIME_CHECK(handler, addendum != nullptr);
   const typeInfo::DerivedType *type{addendum->derivedType()};
   RUNTIME_CHECK(handler, type != nullptr);
-  std::optional<typeInfo::SpecialBinding> nonTbpSpecial;
-  const typeInfo::SpecialBinding *special{nullptr};
   if (table) {
     if (const auto *definedIo{table->Find(*type,
             DIR == Direction::Input ? common::DefinedIo::ReadFormatted
                                     : common::DefinedIo::WriteFormatted)}) {
       if (definedIo->subroutine) {
-        nonTbpSpecial.emplace(DIR == Direction::Input
+        typeInfo::SpecialBinding special{DIR == Direction::Input
                 ? typeInfo::SpecialBinding::Which::ReadFormatted
                 : typeInfo::SpecialBinding::Which::WriteFormatted,
             definedIo->subroutine, definedIo->isDtvArgPolymorphic, false,
-            false);
-        special = &*nonTbpSpecial;
+            false};
+        if (std::optional<bool> wasDefined{
+                DefinedFormattedIo(io, descriptor, *type, special)}) {
+          return *wasDefined;
+        }
+      } else {
+        return DefaultComponentwiseIO<DIR>(io, descriptor, *type, table);
       }
     }
   }
-  if (!special) {
-    if (const typeInfo::SpecialBinding *
-        binding{type->FindSpecialBinding(DIR == Direction::Input
-                ? typeInfo::SpecialBinding::Which::ReadFormatted
-                : typeInfo::SpecialBinding::Which::WriteFormatted)}) {
-      if (!table || !table->ignoreNonTbpEntries || binding->isTypeBound()) {
-        special = binding;
+  if (const typeInfo::SpecialBinding *
+      special{type->FindSpecialBinding(DIR == Direction::Input
+              ? typeInfo::SpecialBinding::Which::ReadFormatted
+              : typeInfo::SpecialBinding::Which::WriteFormatted)}) {
+    if (!table || !table->ignoreNonTbpEntries || special->isTypeBound()) {
+      if (std::optional<bool> wasDefined{
+              DefinedFormattedIo(io, descriptor, *type, *special)}) {
+        return *wasDefined; // defined I/O was applied
       }
     }
   }
-  SubscriptValue subscripts[maxRank];
-  descriptor.GetLowerBounds(subscripts);
-  std::size_t numElements{descriptor.Elements()};
-  for (std::size_t j{0}; j < numElements;
-       ++j, descriptor.IncrementSubscripts(subscripts)) {
-    std::optional<bool> result;
-    if (special) {
-      result = DefinedFormattedIo(io, descriptor, *type, *special, subscripts);
-    }
-    if (!result) {
-      result = DefaultComponentwiseFormattedIO<DIR>(
-          io, descriptor, *type, table, subscripts);
-    }
-    if (!result.value()) {
-      // Return true for NAMELIST input if we got anything.
-      auto *listInput{
-          io.get_if<ListDirectedStatementState<Direction::Input>>()};
-      return DIR == Direction::Input && j > 0 && listInput &&
-          listInput->inNamelistSequence();
-    }
-  }
-  return true;
+  return DefaultComponentwiseIO<DIR>(io, descriptor, *type, table);
 }
 
 bool DefinedUnformattedIo(IoStatementState &, const Descriptor &,
@@ -411,8 +371,7 @@ static bool UnformattedDescriptorIO(IoStatementState &io,
             return *wasDefined;
           }
         } else {
-          return DefaultComponentwiseUnformattedIO<DIR>(
-              io, descriptor, *type, table);
+          return DefaultComponentwiseIO<DIR>(io, descriptor, *type, table);
         }
       }
     }
@@ -429,7 +388,7 @@ static bool UnformattedDescriptorIO(IoStatementState &io,
     // TODO: If no component at any level has defined READ or WRITE
     // (as appropriate), the elements are contiguous, and no byte swapping
     // is active, do a block transfer via the code below.
-    return DefaultComponentwiseUnformattedIO<DIR>(io, descriptor, *type, table);
+    return DefaultComponentwiseIO<DIR>(io, descriptor, *type, table);
   } else {
     // intrinsic type unformatted I/O
     auto *externalUnf{io.get_if<ExternalUnformattedIoStatementState<DIR>>()};

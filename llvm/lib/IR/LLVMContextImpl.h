@@ -73,7 +73,9 @@ class StringRef;
 class TypedPointerType;
 class ValueHandleBase;
 
-template <> struct DenseMapInfo<APFloat> {
+using DenseMapAPIntKeyInfo = DenseMapInfo<APInt>;
+
+struct DenseMapAPFloatKeyInfo {
   static inline APFloat getEmptyKey() { return APFloat(APFloat::Bogus(), 1); }
   static inline APFloat getTombstoneKey() {
     return APFloat(APFloat::Bogus(), 2);
@@ -1487,9 +1489,11 @@ public:
 
   DenseMap<unsigned, std::unique_ptr<ConstantInt>> IntZeroConstants;
   DenseMap<unsigned, std::unique_ptr<ConstantInt>> IntOneConstants;
-  DenseMap<APInt, std::unique_ptr<ConstantInt>> IntConstants;
+  DenseMap<APInt, std::unique_ptr<ConstantInt>, DenseMapAPIntKeyInfo>
+      IntConstants;
 
-  DenseMap<APFloat, std::unique_ptr<ConstantFP>> FPConstants;
+  DenseMap<APFloat, std::unique_ptr<ConstantFP>, DenseMapAPFloatKeyInfo>
+      FPConstants;
 
   FoldingSet<AttributeImpl> AttrsSet;
   FoldingSet<AttributeListImpl> AttrsLists;

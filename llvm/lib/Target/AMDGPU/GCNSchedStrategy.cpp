@@ -853,9 +853,7 @@ bool GCNSchedStage::initGCNRegion() {
       StageID != GCNSchedStageID::UnclusteredHighRPReschedule) {
     SavedMutations.clear();
     SavedMutations.swap(DAG.Mutations);
-    bool IsInitialStage = StageID == GCNSchedStageID::OccInitialSchedule ||
-                          StageID == GCNSchedStageID::ILPInitialSchedule;
-    DAG.addMutation(createIGroupLPDAGMutation(/*IsReentry=*/!IsInitialStage));
+    DAG.addMutation(createIGroupLPDAGMutation(/*IsPostRA=*/false));
   }
 
   return true;
@@ -1569,7 +1567,7 @@ void GCNPostScheduleDAGMILive::schedule() {
   if (HasIGLPInstrs) {
     SavedMutations.clear();
     SavedMutations.swap(Mutations);
-    addMutation(createIGroupLPDAGMutation(/*IsReentry=*/true));
+    addMutation(createIGroupLPDAGMutation(/*IsPostRA=*/true));
   }
 
   ScheduleDAGMI::schedule();

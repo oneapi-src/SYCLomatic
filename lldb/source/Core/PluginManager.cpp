@@ -821,7 +821,7 @@ PluginManager::GetPlatformCreateCallbackForPluginName(llvm::StringRef name) {
 void PluginManager::AutoCompletePlatformName(llvm::StringRef name,
                                              CompletionRequest &request) {
   for (const auto &instance : GetPlatformInstances().GetInstances()) {
-    if (instance.name.starts_with(name))
+    if (instance.name.startswith(name))
       request.AddCompletion(instance.name);
   }
 }
@@ -869,7 +869,7 @@ PluginManager::GetProcessCreateCallbackForPluginName(llvm::StringRef name) {
 void PluginManager::AutoCompleteProcessName(llvm::StringRef name,
                                             CompletionRequest &request) {
   for (const auto &instance : GetProcessInstances().GetInstances()) {
-    if (instance.name.starts_with(name))
+    if (instance.name.startswith(name))
       request.AddCompletion(instance.name, instance.description);
   }
 }
@@ -1091,10 +1091,9 @@ struct SymbolLocatorInstance
       SymbolLocatorLocateExecutableObjectFile locate_executable_object_file,
       SymbolLocatorLocateExecutableSymbolFile locate_executable_symbol_file,
       SymbolLocatorDownloadObjectAndSymbolFile download_object_symbol_file,
-      SymbolLocatorFindSymbolFileInBundle find_symbol_file_in_bundle,
-      DebuggerInitializeCallback debugger_init_callback)
-      : PluginInstance<SymbolLocatorCreateInstance>(
-            name, description, create_callback, debugger_init_callback),
+      SymbolLocatorFindSymbolFileInBundle find_symbol_file_in_bundle)
+      : PluginInstance<SymbolLocatorCreateInstance>(name, description,
+                                                    create_callback),
         locate_executable_object_file(locate_executable_object_file),
         locate_executable_symbol_file(locate_executable_symbol_file),
         download_object_symbol_file(download_object_symbol_file),
@@ -1118,12 +1117,11 @@ bool PluginManager::RegisterPlugin(
     SymbolLocatorLocateExecutableObjectFile locate_executable_object_file,
     SymbolLocatorLocateExecutableSymbolFile locate_executable_symbol_file,
     SymbolLocatorDownloadObjectAndSymbolFile download_object_symbol_file,
-    SymbolLocatorFindSymbolFileInBundle find_symbol_file_in_bundle,
-    DebuggerInitializeCallback debugger_init_callback) {
+    SymbolLocatorFindSymbolFileInBundle find_symbol_file_in_bundle) {
   return GetSymbolLocatorInstances().RegisterPlugin(
       name, description, create_callback, locate_executable_object_file,
       locate_executable_symbol_file, download_object_symbol_file,
-      find_symbol_file_in_bundle, debugger_init_callback);
+      find_symbol_file_in_bundle);
 }
 
 bool PluginManager::UnregisterPlugin(
@@ -1535,7 +1533,6 @@ void PluginManager::DebuggerInitialize(Debugger &debugger) {
   GetPlatformInstances().PerformDebuggerCallback(debugger);
   GetProcessInstances().PerformDebuggerCallback(debugger);
   GetSymbolFileInstances().PerformDebuggerCallback(debugger);
-  GetSymbolLocatorInstances().PerformDebuggerCallback(debugger);
   GetOperatingSystemInstances().PerformDebuggerCallback(debugger);
   GetStructuredDataPluginInstances().PerformDebuggerCallback(debugger);
   GetTracePluginInstances().PerformDebuggerCallback(debugger);
@@ -1663,7 +1660,6 @@ static constexpr llvm::StringLiteral kProcessPluginName("process");
 static constexpr llvm::StringLiteral kTracePluginName("trace");
 static constexpr llvm::StringLiteral kObjectFilePluginName("object-file");
 static constexpr llvm::StringLiteral kSymbolFilePluginName("symbol-file");
-static constexpr llvm::StringLiteral kSymbolLocatorPluginName("symbol-locator");
 static constexpr llvm::StringLiteral kJITLoaderPluginName("jit-loader");
 static constexpr llvm::StringLiteral
     kStructuredDataPluginName("structured-data");
@@ -1710,20 +1706,6 @@ bool PluginManager::CreateSettingForProcessPlugin(
   return CreateSettingForPlugin(debugger, kProcessPluginName,
                                 "Settings for process plug-ins", properties_sp,
                                 description, is_global_property);
-}
-
-lldb::OptionValuePropertiesSP
-PluginManager::GetSettingForSymbolLocatorPlugin(Debugger &debugger,
-                                                llvm::StringRef setting_name) {
-  return GetSettingForPlugin(debugger, setting_name, kSymbolLocatorPluginName);
-}
-
-bool PluginManager::CreateSettingForSymbolLocatorPlugin(
-    Debugger &debugger, const lldb::OptionValuePropertiesSP &properties_sp,
-    llvm::StringRef description, bool is_global_property) {
-  return CreateSettingForPlugin(debugger, kSymbolLocatorPluginName,
-                                "Settings for symbol locator plug-ins",
-                                properties_sp, description, is_global_property);
 }
 
 bool PluginManager::CreateSettingForTracePlugin(

@@ -22,6 +22,7 @@
 namespace llvm {
 
 class Constant;
+class DIBuilder;
 class DPValue;
 class Function;
 class GlobalVariable;

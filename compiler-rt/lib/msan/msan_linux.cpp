@@ -14,25 +14,23 @@
 #include "sanitizer_common/sanitizer_platform.h"
 #if SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD
 
-#  include <elf.h>
-#  include <link.h>
-#  include <pthread.h>
-#  include <signal.h>
-#  include <stdio.h>
-#  include <stdlib.h>
-#  include <sys/resource.h>
-#  include <sys/time.h>
-#  include <unistd.h>
-#  include <unwind.h>
+#include "msan.h"
+#include "msan_report.h"
+#include "msan_thread.h"
 
-#  include "msan.h"
-#  include "msan_allocator.h"
-#  include "msan_chained_origin_depot.h"
-#  include "msan_report.h"
-#  include "msan_thread.h"
-#  include "sanitizer_common/sanitizer_common.h"
-#  include "sanitizer_common/sanitizer_procmaps.h"
-#  include "sanitizer_common/sanitizer_stackdepot.h"
+#include <elf.h>
+#include <link.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
+#include <unwind.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+
+#include "sanitizer_common/sanitizer_common.h"
+#include "sanitizer_common/sanitizer_procmaps.h"
 
 namespace __msan {
 
@@ -257,22 +255,6 @@ void MsanTSDDtor(void *tsd) {
   MsanThread::TSDDtor(tsd);
 }
 #endif
-
-void InstallAtForkHandler() {
-  auto before = []() {
-    // Usually we lock ThreadRegistry, but msan does not have one.
-    LockAllocator();
-    StackDepotLockAll();
-    ChainedOriginDepotLockAll();
-  };
-  auto after = []() {
-    ChainedOriginDepotUnlockAll();
-    StackDepotUnlockAll();
-    UnlockAllocator();
-    // Usually we unlock ThreadRegistry, but msan does not have one.
-  };
-  pthread_atfork(before, after, after);
-}
 
 } // namespace __msan
 

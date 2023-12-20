@@ -75,11 +75,12 @@ std::error_code ModularizeUtilities::loadAllHeaderListsAndDependencies() {
   for (auto I = InputFilePaths.begin(), E = InputFilePaths.end(); I != E; ++I) {
     llvm::StringRef InputPath = *I;
     // If it's a module map.
-    if (InputPath.ends_with(".modulemap")) {
+    if (InputPath.endswith(".modulemap")) {
       // Load the module map.
       if (std::error_code EC = loadModuleMap(InputPath))
         return EC;
-    } else {
+    }
+    else {
       // Else we assume it's a header list and load it.
       if (std::error_code EC = loadSingleHeaderListsAndDependencies(InputPath)) {
         errs() << "modularize: error: Unable to get header list '" << InputPath
@@ -102,10 +103,10 @@ std::error_code ModularizeUtilities::loadAllHeaderListsAndDependencies() {
 
 // Do coverage checks.
 // For each loaded module map, do header coverage check.
-// Starting from the directory of the module.modulemap file,
+// Starting from the directory of the module.map file,
 // Find all header files, optionally looking only at files
 // covered by the include path options, and compare against
-// the headers referenced by the module.modulemap file.
+// the headers referenced by the module.map file.
 // Display warnings for unaccounted-for header files.
 // Returns 0 if there were no errors or warnings, 1 if there
 // were warnings, 2 if any other problem, such as a bad
@@ -275,7 +276,7 @@ std::error_code ModularizeUtilities::loadModuleMap(
   StringRef DirName(Dir.getName());
   if (llvm::sys::path::filename(DirName) == "Modules") {
     DirName = llvm::sys::path::parent_path(DirName);
-    if (DirName.ends_with(".framework")) {
+    if (DirName.endswith(".framework")) {
       auto FrameworkDirOrErr = FileMgr->getDirectoryRef(DirName);
       if (!FrameworkDirOrErr) {
         // This can happen if there's a race between the above check and the
@@ -443,7 +444,7 @@ static std::string replaceDotDot(StringRef Path) {
       llvm::sys::path::append(Buffer, *B);
     ++B;
   }
-  if (Path.ends_with("/") || Path.ends_with("\\"))
+  if (Path.endswith("/") || Path.endswith("\\"))
     Buffer.append(1, Path.back());
   return Buffer.c_str();
 }
@@ -456,7 +457,7 @@ std::string ModularizeUtilities::getCanonicalPath(StringRef FilePath) {
   std::string Tmp(replaceDotDot(FilePath));
   std::replace(Tmp.begin(), Tmp.end(), '\\', '/');
   StringRef Tmp2(Tmp);
-  if (Tmp2.starts_with("./"))
+  if (Tmp2.startswith("./"))
     Tmp = std::string(Tmp2.substr(2));
   return Tmp;
 }

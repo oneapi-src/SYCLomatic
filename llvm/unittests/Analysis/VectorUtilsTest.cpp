@@ -17,6 +17,7 @@
 #include "llvm/IR/NoFolder.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/KnownBits.h"
 #include "gtest/gtest.h"
 
 using namespace llvm;
@@ -579,7 +580,7 @@ protected:
   SmallVector<VFParameter, 8> &ExpectedParams = Expected.Parameters;
 
   void buildShape(ElementCount VF, bool HasGlobalPred) {
-    Shape = VFShape::get(CI->getFunctionType(), VF, HasGlobalPred);
+    Shape = VFShape::get(*CI, VF, HasGlobalPred);
   }
 
   bool validParams(ArrayRef<VFParameter> Parameters) {
@@ -618,11 +619,11 @@ TEST_F(VFShapeAPITest, API_buildVFShape) {
 
 TEST_F(VFShapeAPITest, API_getScalarShape) {
   buildShape(/*VF*/ ElementCount::getFixed(1), /*HasGlobalPred*/ false);
-  EXPECT_EQ(VFShape::getScalarShape(CI->getFunctionType()), Shape);
+  EXPECT_EQ(VFShape::getScalarShape(*CI), Shape);
 }
 
 TEST_F(VFShapeAPITest, API_getVectorizedFunction) {
-  VFShape ScalarShape = VFShape::getScalarShape(CI->getFunctionType());
+  VFShape ScalarShape = VFShape::getScalarShape(*CI);
   EXPECT_EQ(VFDatabase(*CI).getVectorizedFunction(ScalarShape),
             M->getFunction("g"));
 

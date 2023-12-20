@@ -16,7 +16,6 @@
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
 #include "flang/Optimizer/Dialect/FIRType.h"
-#include "flang/Optimizer/Support/DataLayout.h"
 #include "flang/Optimizer/Support/InternalNames.h"
 #include "flang/Optimizer/Support/TypeCode.h"
 #include "flang/Optimizer/Support/Utils.h"
@@ -35,7 +34,6 @@
 #include "mlir/Conversion/ReconcileUnrealizedCasts/ReconcileUnrealizedCasts.h"
 #include "mlir/Conversion/VectorToLLVM/ConvertVectorToLLVM.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
-#include "mlir/Dialect/DLTI/DLTI.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/LLVMIR/Transforms/AddComdats.h"
 #include "mlir/Dialect/OpenACC/OpenACC.h"
@@ -842,18 +840,16 @@ struct CmpcOpConversion : public FIROpConversion<fir::CmpcOp> {
     mlir::ValueRange operands = adaptor.getOperands();
     mlir::Type resTy = convertType(cmp.getType());
     mlir::Location loc = cmp.getLoc();
-    mlir::LLVM::FastmathFlags fmf =
-        mlir::arith::convertArithFastMathFlagsToLLVM(cmp.getFastmath());
-    mlir::LLVM::FCmpPredicate pred =
-        static_cast<mlir::LLVM::FCmpPredicate>(cmp.getPredicate());
-    auto rcp = rewriter.create<mlir::LLVM::FCmpOp>(
-        loc, resTy, pred,
+    llvm::SmallVector<mlir::Value, 2> rp = {
         rewriter.create<mlir::LLVM::ExtractValueOp>(loc, operands[0], 0),
-        rewriter.create<mlir::LLVM::ExtractValueOp>(loc, operands[1], 0), fmf);
-    auto icp = rewriter.create<mlir::LLVM::FCmpOp>(
-        loc, resTy, pred,
+        rewriter.create<mlir::LLVM::ExtractValueOp>(loc, operands[1], 0)};
+    auto rcp =
+        rewriter.create<mlir::LLVM::FCmpOp>(loc, resTy, rp, cmp->getAttrs());
+    llvm::SmallVector<mlir::Value, 2> ip = {
         rewriter.create<mlir::LLVM::ExtractValueOp>(loc, operands[0], 1),
-        rewriter.create<mlir::LLVM::ExtractValueOp>(loc, operands[1], 1), fmf);
+        rewriter.create<mlir::LLVM::ExtractValueOp>(loc, operands[1], 1)};
+    auto icp =
+        rewriter.create<mlir::LLVM::FCmpOp>(loc, resTy, ip, cmp->getAttrs());
     llvm::SmallVector<mlir::Value, 2> cp = {rcp, icp};
     switch (cmp.getPredicate()) {
     case mlir::arith::CmpFPredicate::OEQ: // .EQ.
@@ -2389,9 +2385,6 @@ struct XArrayCoorOpConversion
     const bool baseIsBoxed = coor.getMemref().getType().isa<fir::BaseBoxType>();
     TypePair baseBoxTyPair =
         baseIsBoxed ? getBoxTypePair(coor.getMemref().getType()) : TypePair{};
-    mlir::LLVM::IntegerOverflowFlagsAttr nsw =
-        mlir::LLVM::IntegerOverflowFlagsAttr::get(
-            rewriter.getContext(), mlir::LLVM::IntegerOverflowFlags::nsw);
 
     // For each dimension of the array, generate the offset calculation.
     for (unsigned i = 0; i < rank; ++i, ++indexOffset, ++shapeOffset,
@@ -2412,15 +2405,14 @@ struct XArrayCoorOpConversion
         if (normalSlice)
           step = integerCast(loc, rewriter, idxTy, operands[sliceOffset + 2]);
       }
-      auto idx = rewriter.create<mlir::LLVM::SubOp>(loc, idxTy, index, lb, nsw);
+      auto idx = rewriter.create<mlir::LLVM::SubOp>(loc, idxTy, index, lb);
       mlir::Value diff =
-          rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, idx, step, nsw);
+          rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, idx, step);
       if (normalSlice) {
         mlir::Value sliceLb =
             integerCast(loc, rewriter, idxTy, operands[sliceOffset]);
-        auto adj =
-            rewriter.create<mlir::LLVM::SubOp>(loc, idxTy, sliceLb, lb, nsw);
-        diff = rewriter.create<mlir::LLVM::AddOp>(loc, idxTy, diff, adj, nsw);
+        auto adj = rewriter.create<mlir::LLVM::SubOp>(loc, idxTy, sliceLb, lb);
+        diff = rewriter.create<mlir::LLVM::AddOp>(loc, idxTy, diff, adj);
       }
       // Update the offset given the stride and the zero based index `diff`
       // that was just computed.
@@ -2428,21 +2420,17 @@ struct XArrayCoorOpConversion
         // Use stride in bytes from the descriptor.
         mlir::Value stride =
             getStrideFromBox(loc, baseBoxTyPair, operands[0], i, rewriter);
-        auto sc =
-            rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, diff, stride, nsw);
-        offset =
-            rewriter.create<mlir::LLVM::AddOp>(loc, idxTy, sc, offset, nsw);
+        auto sc = rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, diff, stride);
+        offset = rewriter.create<mlir::LLVM::AddOp>(loc, idxTy, sc, offset);
       } else {
         // Use stride computed at last iteration.
-        auto sc =
-            rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, diff, prevExt, nsw);
-        offset =
-            rewriter.create<mlir::LLVM::AddOp>(loc, idxTy, sc, offset, nsw);
+        auto sc = rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, diff, prevExt);
+        offset = rewriter.create<mlir::LLVM::AddOp>(loc, idxTy, sc, offset);
         // Compute next stride assuming contiguity of the base array
         // (in element number).
         auto nextExt = integerCast(loc, rewriter, idxTy, operands[shapeOffset]);
-        prevExt = rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, prevExt,
-                                                     nextExt, nsw);
+        prevExt =
+            rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, prevExt, nextExt);
       }
     }
 
@@ -2501,8 +2489,8 @@ struct XArrayCoorOpConversion
           assert(coor.getLenParams().size() == 1);
           auto length = integerCast(loc, rewriter, idxTy,
                                     operands[coor.lenParamsOffset()]);
-          offset = rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, offset,
-                                                      length, nsw);
+          offset =
+              rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, offset, length);
         } else {
           TODO(loc, "compute size of derived type with type parameters");
         }
@@ -2675,9 +2663,6 @@ private:
     auto cpnTy = fir::dyn_cast_ptrOrBoxEleTy(boxObjTy);
     mlir::Type llvmPtrTy = ::getLlvmPtrType(coor.getContext());
     mlir::Type byteTy = ::getI8Type(coor.getContext());
-    mlir::LLVM::IntegerOverflowFlagsAttr nsw =
-        mlir::LLVM::IntegerOverflowFlagsAttr::get(
-            rewriter.getContext(), mlir::LLVM::IntegerOverflowFlags::nsw);
 
     for (unsigned i = 1, last = operands.size(); i < last; ++i) {
       if (auto arrTy = cpnTy.dyn_cast<fir::SequenceType>()) {
@@ -2693,9 +2678,9 @@ private:
              index < lastIndex; ++index) {
           mlir::Value stride = getStrideFromBox(loc, boxTyPair, operands[0],
                                                 index - i, rewriter);
-          auto sc = rewriter.create<mlir::LLVM::MulOp>(
-              loc, idxTy, operands[index], stride, nsw);
-          off = rewriter.create<mlir::LLVM::AddOp>(loc, idxTy, sc, off, nsw);
+          auto sc = rewriter.create<mlir::LLVM::MulOp>(loc, idxTy,
+                                                       operands[index], stride);
+          off = rewriter.create<mlir::LLVM::AddOp>(loc, idxTy, sc, off);
         }
         resultAddr = rewriter.create<mlir::LLVM::GEPOp>(
             loc, llvmPtrTy, byteTy, resultAddr,
@@ -3833,20 +3818,10 @@ public:
     if (mlir::failed(runPipeline(mathConvertionPM, mod)))
       return signalPassFailure();
 
-    std::optional<mlir::DataLayout> dl =
-        fir::support::getOrSetDataLayout(mod, /*allowDefaultLayout=*/true);
-    if (!dl) {
-      mlir::emitError(mod.getLoc(),
-                      "module operation must carry a data layout attribute "
-                      "to generate llvm IR from FIR");
-      signalPassFailure();
-      return;
-    }
-
     auto *context = getModule().getContext();
     fir::LLVMTypeConverter typeConverter{getModule(),
                                          options.applyTBAA || applyTBAA,
-                                         options.forceUnifiedTBAATree, *dl};
+                                         options.forceUnifiedTBAATree};
     mlir::RewritePatternSet pattern(context);
     pattern.insert<
         AbsentOpConversion, AddcOpConversion, AddrOfOpConversion,

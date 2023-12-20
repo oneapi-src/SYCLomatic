@@ -713,7 +713,7 @@ TEST(InstructionsTest, CloneCall) {
   Type *Int32Ty = Type::getInt32Ty(C);
   Type *ArgTys[] = {Int32Ty, Int32Ty, Int32Ty};
   FunctionType *FnTy = FunctionType::get(Int32Ty, ArgTys, /*isVarArg=*/false);
-  Value *Callee = Constant::getNullValue(PointerType::getUnqual(C));
+  Value *Callee = Constant::getNullValue(FnTy->getPointerTo());
   Value *Args[] = {
     ConstantInt::get(Int32Ty, 1),
     ConstantInt::get(Int32Ty, 2),
@@ -747,7 +747,7 @@ TEST(InstructionsTest, AlterCallBundles) {
   LLVMContext C;
   Type *Int32Ty = Type::getInt32Ty(C);
   FunctionType *FnTy = FunctionType::get(Int32Ty, Int32Ty, /*isVarArg=*/false);
-  Value *Callee = Constant::getNullValue(PointerType::getUnqual(C));
+  Value *Callee = Constant::getNullValue(FnTy->getPointerTo());
   Value *Args[] = {ConstantInt::get(Int32Ty, 42)};
   OperandBundleDef OldBundle("before", UndefValue::get(Int32Ty));
   std::unique_ptr<CallInst> Call(
@@ -774,7 +774,7 @@ TEST(InstructionsTest, AlterInvokeBundles) {
   LLVMContext C;
   Type *Int32Ty = Type::getInt32Ty(C);
   FunctionType *FnTy = FunctionType::get(Int32Ty, Int32Ty, /*isVarArg=*/false);
-  Value *Callee = Constant::getNullValue(PointerType::getUnqual(C));
+  Value *Callee = Constant::getNullValue(FnTy->getPointerTo());
   Value *Args[] = {ConstantInt::get(Int32Ty, 42)};
   std::unique_ptr<BasicBlock> NormalDest(BasicBlock::Create(C));
   std::unique_ptr<BasicBlock> UnwindDest(BasicBlock::Create(C));
@@ -1500,51 +1500,50 @@ TEST(InstructionsTest, FPCallIsFPMathOperator) {
 
   Type *ITy = Type::getInt32Ty(C);
   FunctionType *IFnTy = FunctionType::get(ITy, {});
-  PointerType *PtrTy = PointerType::getUnqual(C);
-  Value *ICallee = Constant::getNullValue(PtrTy);
+  Value *ICallee = Constant::getNullValue(IFnTy->getPointerTo());
   std::unique_ptr<CallInst> ICall(CallInst::Create(IFnTy, ICallee, {}, ""));
   EXPECT_FALSE(isa<FPMathOperator>(ICall));
 
   Type *VITy = FixedVectorType::get(ITy, 2);
   FunctionType *VIFnTy = FunctionType::get(VITy, {});
-  Value *VICallee = Constant::getNullValue(PtrTy);
+  Value *VICallee = Constant::getNullValue(VIFnTy->getPointerTo());
   std::unique_ptr<CallInst> VICall(CallInst::Create(VIFnTy, VICallee, {}, ""));
   EXPECT_FALSE(isa<FPMathOperator>(VICall));
 
   Type *AITy = ArrayType::get(ITy, 2);
   FunctionType *AIFnTy = FunctionType::get(AITy, {});
-  Value *AICallee = Constant::getNullValue(PtrTy);
+  Value *AICallee = Constant::getNullValue(AIFnTy->getPointerTo());
   std::unique_ptr<CallInst> AICall(CallInst::Create(AIFnTy, AICallee, {}, ""));
   EXPECT_FALSE(isa<FPMathOperator>(AICall));
 
   Type *FTy = Type::getFloatTy(C);
   FunctionType *FFnTy = FunctionType::get(FTy, {});
-  Value *FCallee = Constant::getNullValue(PtrTy);
+  Value *FCallee = Constant::getNullValue(FFnTy->getPointerTo());
   std::unique_ptr<CallInst> FCall(CallInst::Create(FFnTy, FCallee, {}, ""));
   EXPECT_TRUE(isa<FPMathOperator>(FCall));
 
   Type *VFTy = FixedVectorType::get(FTy, 2);
   FunctionType *VFFnTy = FunctionType::get(VFTy, {});
-  Value *VFCallee = Constant::getNullValue(PtrTy);
+  Value *VFCallee = Constant::getNullValue(VFFnTy->getPointerTo());
   std::unique_ptr<CallInst> VFCall(CallInst::Create(VFFnTy, VFCallee, {}, ""));
   EXPECT_TRUE(isa<FPMathOperator>(VFCall));
 
   Type *AFTy = ArrayType::get(FTy, 2);
   FunctionType *AFFnTy = FunctionType::get(AFTy, {});
-  Value *AFCallee = Constant::getNullValue(PtrTy);
+  Value *AFCallee = Constant::getNullValue(AFFnTy->getPointerTo());
   std::unique_ptr<CallInst> AFCall(CallInst::Create(AFFnTy, AFCallee, {}, ""));
   EXPECT_TRUE(isa<FPMathOperator>(AFCall));
 
   Type *AVFTy = ArrayType::get(VFTy, 2);
   FunctionType *AVFFnTy = FunctionType::get(AVFTy, {});
-  Value *AVFCallee = Constant::getNullValue(PtrTy);
+  Value *AVFCallee = Constant::getNullValue(AVFFnTy->getPointerTo());
   std::unique_ptr<CallInst> AVFCall(
       CallInst::Create(AVFFnTy, AVFCallee, {}, ""));
   EXPECT_TRUE(isa<FPMathOperator>(AVFCall));
 
   Type *AAVFTy = ArrayType::get(AVFTy, 2);
   FunctionType *AAVFFnTy = FunctionType::get(AAVFTy, {});
-  Value *AAVFCallee = Constant::getNullValue(PtrTy);
+  Value *AAVFCallee = Constant::getNullValue(AAVFFnTy->getPointerTo());
   std::unique_ptr<CallInst> AAVFCall(
       CallInst::Create(AAVFFnTy, AAVFCallee, {}, ""));
   EXPECT_TRUE(isa<FPMathOperator>(AAVFCall));

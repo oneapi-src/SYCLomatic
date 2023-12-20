@@ -316,15 +316,13 @@ public:
   unsigned getNumMicroOps(const InstrItineraryData *ItinData,
                           const MachineInstr &MI) const override;
 
-  std::optional<unsigned> getOperandLatency(const InstrItineraryData *ItinData,
-                                            const MachineInstr &DefMI,
-                                            unsigned DefIdx,
-                                            const MachineInstr &UseMI,
-                                            unsigned UseIdx) const override;
-  std::optional<unsigned> getOperandLatency(const InstrItineraryData *ItinData,
-                                            SDNode *DefNode, unsigned DefIdx,
-                                            SDNode *UseNode,
-                                            unsigned UseIdx) const override;
+  int getOperandLatency(const InstrItineraryData *ItinData,
+                        const MachineInstr &DefMI, unsigned DefIdx,
+                        const MachineInstr &UseMI,
+                        unsigned UseIdx) const override;
+  int getOperandLatency(const InstrItineraryData *ItinData,
+                        SDNode *DefNode, unsigned DefIdx,
+                        SDNode *UseNode, unsigned UseIdx) const override;
 
   /// VFP/NEON execution domains.
   std::pair<uint16_t, uint16_t>
@@ -423,34 +421,34 @@ private:
 
   unsigned getInstBundleLength(const MachineInstr &MI) const;
 
-  std::optional<unsigned> getVLDMDefCycle(const InstrItineraryData *ItinData,
-                                          const MCInstrDesc &DefMCID,
-                                          unsigned DefClass, unsigned DefIdx,
-                                          unsigned DefAlign) const;
-  std::optional<unsigned> getLDMDefCycle(const InstrItineraryData *ItinData,
-                                         const MCInstrDesc &DefMCID,
-                                         unsigned DefClass, unsigned DefIdx,
-                                         unsigned DefAlign) const;
-  std::optional<unsigned> getVSTMUseCycle(const InstrItineraryData *ItinData,
-                                          const MCInstrDesc &UseMCID,
-                                          unsigned UseClass, unsigned UseIdx,
-                                          unsigned UseAlign) const;
-  std::optional<unsigned> getSTMUseCycle(const InstrItineraryData *ItinData,
-                                         const MCInstrDesc &UseMCID,
-                                         unsigned UseClass, unsigned UseIdx,
-                                         unsigned UseAlign) const;
-  std::optional<unsigned> getOperandLatency(const InstrItineraryData *ItinData,
-                                            const MCInstrDesc &DefMCID,
-                                            unsigned DefIdx, unsigned DefAlign,
-                                            const MCInstrDesc &UseMCID,
-                                            unsigned UseIdx,
-                                            unsigned UseAlign) const;
+  int getVLDMDefCycle(const InstrItineraryData *ItinData,
+                      const MCInstrDesc &DefMCID,
+                      unsigned DefClass,
+                      unsigned DefIdx, unsigned DefAlign) const;
+  int getLDMDefCycle(const InstrItineraryData *ItinData,
+                     const MCInstrDesc &DefMCID,
+                     unsigned DefClass,
+                     unsigned DefIdx, unsigned DefAlign) const;
+  int getVSTMUseCycle(const InstrItineraryData *ItinData,
+                      const MCInstrDesc &UseMCID,
+                      unsigned UseClass,
+                      unsigned UseIdx, unsigned UseAlign) const;
+  int getSTMUseCycle(const InstrItineraryData *ItinData,
+                     const MCInstrDesc &UseMCID,
+                     unsigned UseClass,
+                     unsigned UseIdx, unsigned UseAlign) const;
+  int getOperandLatency(const InstrItineraryData *ItinData,
+                        const MCInstrDesc &DefMCID,
+                        unsigned DefIdx, unsigned DefAlign,
+                        const MCInstrDesc &UseMCID,
+                        unsigned UseIdx, unsigned UseAlign) const;
 
-  std::optional<unsigned> getOperandLatencyImpl(
-      const InstrItineraryData *ItinData, const MachineInstr &DefMI,
-      unsigned DefIdx, const MCInstrDesc &DefMCID, unsigned DefAdj,
-      const MachineOperand &DefMO, unsigned Reg, const MachineInstr &UseMI,
-      unsigned UseIdx, const MCInstrDesc &UseMCID, unsigned UseAdj) const;
+  int getOperandLatencyImpl(const InstrItineraryData *ItinData,
+                            const MachineInstr &DefMI, unsigned DefIdx,
+                            const MCInstrDesc &DefMCID, unsigned DefAdj,
+                            const MachineOperand &DefMO, unsigned Reg,
+                            const MachineInstr &UseMI, unsigned UseIdx,
+                            const MCInstrDesc &UseMCID, unsigned UseAdj) const;
 
   unsigned getPredicationCost(const MachineInstr &MI) const override;
 
@@ -458,8 +456,8 @@ private:
                            const MachineInstr &MI,
                            unsigned *PredCost = nullptr) const override;
 
-  unsigned getInstrLatency(const InstrItineraryData *ItinData,
-                           SDNode *Node) const override;
+  int getInstrLatency(const InstrItineraryData *ItinData,
+                      SDNode *Node) const override;
 
   bool hasHighOperandLatency(const TargetSchedModel &SchedModel,
                              const MachineRegisterInfo *MRI,

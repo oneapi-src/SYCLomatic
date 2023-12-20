@@ -89,7 +89,6 @@ void VeneerElimination::runOnFunctions(BinaryContext &BC) {
   LLVM_DEBUG(
       dbgs() << "BOLT-INFO: number of linker-inserted veneers call sites: "
              << VeneerCallers << "\n");
-  (void)VeneerCallers;
 }
 
 } // namespace bolt

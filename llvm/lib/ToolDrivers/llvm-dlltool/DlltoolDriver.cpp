@@ -171,7 +171,7 @@ int llvm::dlltoolDriverMain(llvm::ArrayRef<const char *> ArgsArr) {
 
   if (!Def) {
     llvm::errs() << "error parsing definition\n"
-                 << errorToErrorCode(Def.takeError()).message() << "\n";
+                 << errorToErrorCode(Def.takeError()).message();
     return 1;
   }
 

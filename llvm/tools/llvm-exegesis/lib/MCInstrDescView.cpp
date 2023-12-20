@@ -9,6 +9,7 @@
 #include "MCInstrDescView.h"
 
 #include <iterator>
+#include <map>
 #include <tuple>
 
 #include "llvm/ADT/STLExtras.h"

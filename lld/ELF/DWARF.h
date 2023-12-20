@@ -13,7 +13,6 @@
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/DebugInfo/DWARF/DWARFContext.h"
 #include "llvm/Object/ELF.h"
-#include <optional>
 
 namespace lld::elf {
 

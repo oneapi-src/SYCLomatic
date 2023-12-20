@@ -32,8 +32,7 @@ public:
   using LLVMTranslationDialectInterface::LLVMTranslationDialectInterface;
 
   LogicalResult
-  amendOperation(Operation *op, ArrayRef<llvm::Instruction *> instructions,
-                 NamedAttribute attribute,
+  amendOperation(Operation *op, NamedAttribute attribute,
                  LLVM::ModuleTranslation &moduleTranslation) const final;
 
   LogicalResult
@@ -44,8 +43,7 @@ public:
 } // namespace
 
 LogicalResult TestDialectLLVMIRTranslationInterface::amendOperation(
-    Operation *op, ArrayRef<llvm::Instruction *> instructions,
-    NamedAttribute attribute,
+    Operation *op, NamedAttribute attribute,
     LLVM::ModuleTranslation &moduleTranslation) const {
   return llvm::StringSwitch<llvm::function_ref<LogicalResult(Attribute)>>(
              attribute.getName())
@@ -72,18 +70,6 @@ LogicalResult TestDialectLLVMIRTranslationInterface::amendOperation(
                     /*sym_visibility=*/nullptr);
               }
 
-              return success();
-            })
-      .Case("test.add_annotation",
-            [&](Attribute attr) {
-              for (llvm::Instruction *instruction : instructions) {
-                if (auto strAttr = dyn_cast<StringAttr>(attr)) {
-                  instruction->addAnnotationMetadata("annotation_from_test: " +
-                                                     strAttr.getValue().str());
-                } else {
-                  instruction->addAnnotationMetadata("annotation_from_test");
-                }
-              }
               return success();
             })
       .Default([](Attribute) {

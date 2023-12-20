@@ -51,7 +51,8 @@ public:
                          bool skip_prologue);
 
   static lldb::BreakpointResolverSP
-  CreateFromStructuredData(const StructuredData::Dictionary &data_dict,
+  CreateFromStructuredData(const lldb::BreakpointSP &bkpt,
+                           const StructuredData::Dictionary &data_dict,
                            Status &error);
 
   StructuredData::ObjectSP SerializeToStructuredData() override;

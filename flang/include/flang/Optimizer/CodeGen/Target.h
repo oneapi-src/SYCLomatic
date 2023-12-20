@@ -13,17 +13,12 @@
 #ifndef FORTRAN_OPTMIZER_CODEGEN_TARGET_H
 #define FORTRAN_OPTMIZER_CODEGEN_TARGET_H
 
-#include "flang/Optimizer/Dialect/FIRType.h"
 #include "flang/Optimizer/Dialect/Support/KindMapping.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "llvm/TargetParser/Triple.h"
 #include <memory>
 #include <tuple>
 #include <vector>
-
-namespace mlir {
-class DataLayout;
-}
 
 namespace fir {
 
@@ -67,20 +62,14 @@ private:
 class CodeGenSpecifics {
 public:
   using Attributes = details::Attributes;
-  using TypeAndAttr = std::tuple<mlir::Type, Attributes>;
-  using Marshalling = std::vector<TypeAndAttr>;
+  using Marshalling = std::vector<std::tuple<mlir::Type, Attributes>>;
 
-  static std::unique_ptr<CodeGenSpecifics> get(mlir::MLIRContext *ctx,
-                                               llvm::Triple &&trp,
-                                               KindMapping &&kindMap,
-                                               const mlir::DataLayout &dl);
-
-  static TypeAndAttr getTypeAndAttr(mlir::Type t) { return TypeAndAttr{t, {}}; }
+  static std::unique_ptr<CodeGenSpecifics>
+  get(mlir::MLIRContext *ctx, llvm::Triple &&trp, KindMapping &&kindMap);
 
   CodeGenSpecifics(mlir::MLIRContext *ctx, llvm::Triple &&trp,
-                   KindMapping &&kindMap, const mlir::DataLayout &dl)
-      : context{*ctx}, triple{std::move(trp)}, kindMap{std::move(kindMap)},
-        dataLayout{&dl} {}
+                   KindMapping &&kindMap)
+      : context{*ctx}, triple{std::move(trp)}, kindMap{std::move(kindMap)} {}
   CodeGenSpecifics() = delete;
   virtual ~CodeGenSpecifics() {}
 
@@ -100,13 +89,6 @@ public:
 
   /// Type presentation of a `boxchar<n>` type value in memory.
   virtual mlir::Type boxcharMemoryType(mlir::Type eleTy) const = 0;
-
-  /// Type representation of a `fir.type<T>` type argument when passed by
-  /// value. It may have to be split into several arguments, or be passed
-  /// as a byval reference argument (on the stack).
-  virtual Marshalling
-  structArgumentType(mlir::Location loc, fir::RecordType recTy,
-                     const Marshalling &previousArguments) const = 0;
 
   /// Type representation of a `boxchar<n>` type argument when passed by value.
   /// An argument value may need to be passed as a (safe) reference argument.
@@ -161,16 +143,10 @@ public:
   // Returns width in bits of C/C++ 'int' type size.
   virtual unsigned char getCIntTypeWidth() const = 0;
 
-  const mlir::DataLayout &getDataLayout() const {
-    assert(dataLayout && "dataLayout must be set");
-    return *dataLayout;
-  }
-
 protected:
   mlir::MLIRContext &context;
   llvm::Triple triple;
   KindMapping kindMap;
-  const mlir::DataLayout *dataLayout = nullptr;
 };
 
 } // namespace fir

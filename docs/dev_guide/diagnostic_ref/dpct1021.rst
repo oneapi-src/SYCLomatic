@@ -16,7 +16,7 @@ not supported. You may need to redesign the code.
 Detailed Help
 -------------
 
-The ``cublasHandle_t`` is migrated to the ``cl::sycl::queue``. Because SYCL\* 2020
+The ``cublasHandle_t`` is migrated to the ``cl::sycl::queue``. Because SYCL\* 1.2.1
 does not support device-side enqueue of the kernel, the usage of the ``cl::sycl::queue``
 is not possible in SYCL kernels.
 

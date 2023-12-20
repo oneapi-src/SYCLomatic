@@ -64,15 +64,10 @@ static bool EditBOZInput(
   }
   // Count significant digits after any leading white space & zeroes
   int digits{0};
-  int significantBits{0};
   for (; next; next = io.NextInField(remaining, edit)) {
     char32_t ch{*next};
     if (ch == ' ' || ch == '\t') {
-      if (edit.modes.editingFlags & blankZero) {
-        ch = '0'; // BZ mode - treat blank as if it were zero
-      } else {
-        continue;
-      }
+      continue;
     }
     if (ch >= '0' && ch <= '1') {
     } else if (LOG2_BASE >= 3 && ch >= '2' && ch <= '7') {
@@ -84,22 +79,9 @@ static bool EditBOZInput(
           "Bad character '%lc' in B/O/Z input field", ch);
       return false;
     }
-    if (digits++ == 0) {
-      significantBits = 4;
-      if (ch >= '0' && ch <= '1') {
-        significantBits = 1;
-      } else if (ch >= '2' && ch <= '3') {
-        significantBits = 2;
-      } else if (ch >= '4' && ch <= '7') {
-        significantBits = 3;
-      } else {
-        significantBits = 4;
-      }
-    } else {
-      significantBits += LOG2_BASE;
-    }
+    ++digits;
   }
-  auto significantBytes{static_cast<std::size_t>(significantBits + 7) / 8};
+  auto significantBytes{static_cast<std::size_t>(digits * LOG2_BASE + 7) / 8};
   if (significantBytes > bytes) {
     io.GetIoErrorHandler().SignalError(IostatBOZInputOverflow,
         "B/O/Z input of %d digits overflows %zd-byte variable", digits, bytes);
@@ -114,17 +96,12 @@ static bool EditBOZInput(
   auto *data{reinterpret_cast<unsigned char *>(n) +
       (isHostLittleEndian ? significantBytes - 1 : 0)};
   int shift{((digits - 1) * LOG2_BASE) & 7};
+  if (shift + LOG2_BASE > 8) {
+    shift -= 8; // misaligned octal
+  }
   while (digits > 0) {
     char32_t ch{*io.NextInField(remaining, edit)};
     int digit{0};
-    if (ch == ' ' || ch == '\t') {
-      if (edit.modes.editingFlags & blankZero) {
-        ch = '0'; // BZ mode - treat blank as if it were zero
-      } else {
-        continue;
-      }
-    }
-    --digits;
     if (ch >= '0' && ch <= '9') {
       digit = ch - '0';
     } else if (ch >= 'A' && ch <= 'F') {
@@ -134,11 +111,12 @@ static bool EditBOZInput(
     } else {
       continue;
     }
+    --digits;
     if (shift < 0) {
-      if (shift + LOG2_BASE > 0) { // misaligned octal
-        *data |= digit >> -shift;
-      }
       shift += 8;
+      if (shift + LOG2_BASE > 8) { // misaligned octal
+        *data |= digit >> (8 - shift);
+      }
       data += increment;
     }
     *data |= digit << shift;
@@ -916,20 +894,20 @@ static bool EditListDirectedCharacterInput(
 }
 
 template <typename CHAR>
-bool EditCharacterInput(IoStatementState &io, const DataEdit &edit, CHAR *x,
-    std::size_t lengthChars) {
+bool EditCharacterInput(
+    IoStatementState &io, const DataEdit &edit, CHAR *x, std::size_t length) {
   switch (edit.descriptor) {
   case DataEdit::ListDirected:
-    return EditListDirectedCharacterInput(io, x, lengthChars, edit);
+    return EditListDirectedCharacterInput(io, x, length, edit);
   case 'A':
   case 'G':
     break;
   case 'B':
-    return EditBOZInput<1>(io, edit, x, lengthChars * sizeof *x);
+    return EditBOZInput<1>(io, edit, x, length * sizeof *x);
   case 'O':
-    return EditBOZInput<3>(io, edit, x, lengthChars * sizeof *x);
+    return EditBOZInput<3>(io, edit, x, length * sizeof *x);
   case 'Z':
-    return EditBOZInput<4>(io, edit, x, lengthChars * sizeof *x);
+    return EditBOZInput<4>(io, edit, x, length * sizeof *x);
   default:
     io.GetIoErrorHandler().SignalError(IostatErrorInFormat,
         "Data edit descriptor '%c' may not be used with a CHARACTER data item",
@@ -937,31 +915,27 @@ bool EditCharacterInput(IoStatementState &io, const DataEdit &edit, CHAR *x,
     return false;
   }
   const ConnectionState &connection{io.GetConnectionState()};
-  std::size_t remainingChars{lengthChars};
-  // Skip leading characters.
-  // Their bytes don't count towards INQUIRE(IOLENGTH=).
-  std::size_t skipChars{0};
+  std::size_t remaining{length};
   if (edit.width && *edit.width > 0) {
-    remainingChars = *edit.width;
-    if (remainingChars > lengthChars) {
-      skipChars = remainingChars - lengthChars;
-    }
+    remaining = *edit.width;
   }
   // When the field is wider than the variable, we drop the leading
   // characters.  When the variable is wider than the field, there can be
   // trailing padding or an EOR condition.
   const char *input{nullptr};
-  std::size_t readyBytes{0};
+  std::size_t ready{0};
+  // Skip leading bytes.
+  // These bytes don't count towards INQUIRE(IOLENGTH=).
+  std::size_t skip{remaining > length ? remaining - length : 0};
   // Transfer payload bytes; these do count.
-  while (remainingChars > 0) {
-    if (readyBytes == 0) {
-      readyBytes = io.GetNextInputBytes(input);
-      if (readyBytes == 0 ||
-          (readyBytes < remainingChars && edit.modes.nonAdvancing)) {
-        if (io.CheckForEndOfRecord(readyBytes)) {
-          if (readyBytes == 0) {
+  while (remaining > 0) {
+    if (ready == 0) {
+      ready = io.GetNextInputBytes(input);
+      if (ready == 0 || (ready < remaining && edit.modes.nonAdvancing)) {
+        if (io.CheckForEndOfRecord(ready)) {
+          if (ready == 0) {
             // PAD='YES' and no more data
-            std::fill_n(x, lengthChars, ' ');
+            std::fill_n(x, length, ' ');
             return !io.GetIoErrorHandler().InError();
           } else {
             // Do partial read(s) then pad on last iteration
@@ -971,64 +945,63 @@ bool EditCharacterInput(IoStatementState &io, const DataEdit &edit, CHAR *x,
         }
       }
     }
-    std::size_t chunkBytes;
-    std::size_t chunkChars{1};
-    bool skipping{skipChars > 0};
+    std::size_t chunk;
+    bool skipping{skip > 0};
     if (connection.isUTF8) {
-      chunkBytes = MeasureUTF8Bytes(*input);
+      chunk = MeasureUTF8Bytes(*input);
       if (skipping) {
-        --skipChars;
+        --skip;
       } else if (auto ucs{DecodeUTF8(input)}) {
         *x++ = *ucs;
-        --lengthChars;
-      } else if (chunkBytes == 0) {
+        --length;
+      } else if (chunk == 0) {
         // error recovery: skip bad encoding
-        chunkBytes = 1;
+        chunk = 1;
       }
+      --remaining;
     } else if (connection.internalIoCharKind > 1) {
       // Reading from non-default character internal unit
-      chunkBytes = connection.internalIoCharKind;
+      chunk = connection.internalIoCharKind;
       if (skipping) {
-        --skipChars;
+        --skip;
       } else {
         char32_t buffer{0};
-        std::memcpy(&buffer, input, chunkBytes);
+        std::memcpy(&buffer, input, chunk);
         *x++ = buffer;
-        --lengthChars;
+        --length;
       }
+      --remaining;
     } else if constexpr (sizeof *x > 1) {
       // Read single byte with expansion into multi-byte CHARACTER
-      chunkBytes = 1;
+      chunk = 1;
       if (skipping) {
-        --skipChars;
+        --skip;
       } else {
         *x++ = static_cast<unsigned char>(*input);
-        --lengthChars;
+        --length;
       }
+      --remaining;
     } else { // single bytes -> default CHARACTER
       if (skipping) {
-        chunkBytes = std::min<std::size_t>(skipChars, readyBytes);
-        chunkChars = chunkBytes;
-        skipChars -= chunkChars;
+        chunk = std::min<std::size_t>(skip, ready);
+        skip -= chunk;
       } else {
-        chunkBytes = std::min<std::size_t>(remainingChars, readyBytes);
-        chunkBytes = std::min<std::size_t>(lengthChars, chunkBytes);
-        chunkChars = chunkBytes;
-        std::memcpy(x, input, chunkBytes);
-        x += chunkBytes;
-        lengthChars -= chunkChars;
+        chunk = std::min<std::size_t>(remaining, ready);
+        std::memcpy(x, input, chunk);
+        x += chunk;
+        length -= chunk;
       }
+      remaining -= chunk;
     }
-    input += chunkBytes;
-    remainingChars -= chunkChars;
+    input += chunk;
     if (!skipping) {
-      io.GotChar(chunkBytes);
+      io.GotChar(chunk);
     }
-    io.HandleRelativePosition(chunkBytes);
-    readyBytes -= chunkBytes;
+    io.HandleRelativePosition(chunk);
+    ready -= chunk;
   }
   // Pad the remainder of the input variable, if any.
-  std::fill_n(x, lengthChars, ' ');
+  std::fill_n(x, length, ' ');
   return CheckCompleteListDirectedField(io, edit);
 }
 

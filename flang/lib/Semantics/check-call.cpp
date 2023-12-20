@@ -529,18 +529,17 @@ static void CheckExplicitDataArg(const characteristics::DummyDataObject &dummy,
               dummyName);
         }
         if (actualIsArrayElement && actualLastSymbol &&
-            !evaluate::IsContiguous(*actualLastSymbol, foldingContext)) {
-          if (IsPointer(*actualLastSymbol)) {
-            basicError = true;
-            messages.Say(
-                "Element of pointer array may not be associated with a %s array"_err_en_US,
-                dummyName);
-          } else if (IsAssumedShape(*actualLastSymbol)) {
-            basicError = true;
-            messages.Say(
-                "Element of assumed-shape array may not be associated with a %s array"_err_en_US,
-                dummyName);
-          }
+            IsPointer(*actualLastSymbol)) {
+          basicError = true;
+          messages.Say(
+              "Element of pointer array may not be associated with a %s array"_err_en_US,
+              dummyName);
+        }
+        if (actualLastSymbol && IsAssumedShape(*actualLastSymbol)) {
+          basicError = true;
+          messages.Say(
+              "Element of assumed-shape array may not be associated with a %s array"_err_en_US,
+              dummyName);
         }
       }
     }
@@ -857,12 +856,9 @@ static void CheckExplicitDataArg(const characteristics::DummyDataObject &dummy,
     }
   }
 
-  // CUDA specific checks
-  // TODO: These are disabled in OpenACC constructs, which may not be
-  // correct when the target is not a GPU.
+  // CUDA
   if (!intrinsic &&
-      !dummy.attrs.test(characteristics::DummyDataObject::Attr::Value) &&
-      !FindOpenACCConstructContaining(scope)) {
+      !dummy.attrs.test(characteristics::DummyDataObject::Attr::Value)) {
     std::optional<common::CUDADataAttr> actualDataAttr, dummyDataAttr;
     if (const auto *actualObject{actualLastSymbol
                 ? actualLastSymbol->detailsIf<ObjectEntityDetails>()
@@ -972,9 +968,7 @@ static void CheckProcedureArg(evaluate::ActualArgument &arg,
           }
           if (interface.HasExplicitInterface()) {
             std::string whyNot;
-            std::optional<std::string> warning;
-            if (!interface.IsCompatibleWith(argInterface, &whyNot,
-                    /*specificIntrinsic=*/nullptr, &warning)) {
+            if (!interface.IsCompatibleWith(argInterface, &whyNot)) {
               // 15.5.2.9(1): Explicit interfaces must match
               if (argInterface.HasExplicitInterface()) {
                 messages.Say(
@@ -991,11 +985,6 @@ static void CheckProcedureArg(evaluate::ActualArgument &arg,
                     "Actual procedure argument has an implicit interface which is not known to be compatible with %s which has an explicit interface"_warn_en_US,
                     dummyName);
               }
-            } else if (warning &&
-                context.ShouldWarn(common::UsageWarning::ProcDummyArgShapes)) {
-              messages.Say(
-                  "Actual procedure argument has possible interface incompatibility with %s: %s"_warn_en_US,
-                  dummyName, std::move(*warning));
             }
           } else { // 15.5.2.9(2,3)
             if (interface.IsSubroutine() && argInterface.IsFunction()) {
@@ -1170,7 +1159,7 @@ static void CheckExplicitInterfaceArg(evaluate::ActualArgument &arg,
                   messages.Say(
                       "Assumed-type '%s' may be associated only with an assumed-type %s"_err_en_US,
                       assumed.name(), dummyName);
-                } else if (object.type.attrs().test(characteristics::
+                } else if (object.type.attrs().test(evaluate::characteristics::
                                    TypeAndShape::Attr::AssumedRank) &&
                     !IsAssumedShape(assumed) &&
                     !evaluate::IsAssumedRank(assumed)) {
@@ -1359,7 +1348,6 @@ static void CheckAssociated(evaluate::ActualArguments &arguments,
                         *targetExpr, foldingContext)}) {
                   bool isCall{!!UnwrapProcedureRef(*targetExpr)};
                   std::string whyNot;
-                  std::optional<std::string> warning;
                   const auto *targetProcDesignator{
                       evaluate::UnwrapExpr<evaluate::ProcedureDesignator>(
                           *targetExpr)};
@@ -1367,17 +1355,9 @@ static void CheckAssociated(evaluate::ActualArguments &arguments,
                       targetProcDesignator
                           ? targetProcDesignator->GetSpecificIntrinsic()
                           : nullptr};
-                  std::optional<parser::MessageFixedText> msg{
-                      CheckProcCompatibility(isCall, pointerProc, &*targetProc,
-                          specificIntrinsic, whyNot, warning)};
-                  if (!msg && warning &&
-                      semanticsContext.ShouldWarn(
-                          common::UsageWarning::ProcDummyArgShapes)) {
-                    msg =
-                        "Procedures '%s' and '%s' may not be completely compatible: %s"_warn_en_US;
-                    whyNot = std::move(*warning);
-                  }
-                  if (msg) {
+                  if (std::optional<parser::MessageFixedText> msg{
+                          CheckProcCompatibility(isCall, pointerProc,
+                              &*targetProc, specificIntrinsic, whyNot)}) {
                     msg->set_severity(parser::Severity::Warning);
                     messages.Say(std::move(*msg),
                         "pointer '" + pointerExpr->AsFortran() + "'",
@@ -1428,142 +1408,6 @@ static void CheckAssociated(evaluate::ActualArguments &arguments,
   if (!ok) {
     messages.Say(
         "Arguments of ASSOCIATED() must be a pointer and an optional valid target"_err_en_US);
-  }
-}
-
-// REDUCE (F'2023 16.9.173)
-static void CheckReduce(
-    evaluate::ActualArguments &arguments, evaluate::FoldingContext &context) {
-  std::optional<evaluate::DynamicType> arrayType;
-  parser::ContextualMessages &messages{context.messages()};
-  if (const auto &array{arguments[0]}) {
-    arrayType = array->GetType();
-    if (!arguments[/*identity=*/4]) {
-      if (const auto *expr{array->UnwrapExpr()}) {
-        if (auto shape{
-                evaluate::GetShape(context, *expr, /*invariantOnly=*/false)}) {
-          if (const auto &dim{arguments[2]}; dim && array->Rank() > 1) {
-            // Partial reduction
-            auto dimVal{evaluate::ToInt64(dim->UnwrapExpr())};
-            std::int64_t j{0};
-            int zeroDims{0};
-            bool isSelectedDimEmpty{false};
-            for (const auto &extent : *shape) {
-              ++j;
-              if (evaluate::ToInt64(extent) == 0) {
-                ++zeroDims;
-                isSelectedDimEmpty |= dimVal && j == *dimVal;
-              }
-            }
-            if (isSelectedDimEmpty && zeroDims == 1) {
-              messages.Say(
-                  "IDENTITY= must be present when DIM=%d and the array has zero extent on that dimension"_err_en_US,
-                  static_cast<int>(dimVal.value()));
-            }
-          } else { // no DIM= or DIM=1 on a vector: total reduction
-            for (const auto &extent : *shape) {
-              if (evaluate::ToInt64(extent) == 0) {
-                messages.Say(
-                    "IDENTITY= must be present when the array is empty and the result is scalar"_err_en_US);
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  std::optional<characteristics::Procedure> procChars;
-  if (const auto &operation{arguments[1]}) {
-    if (const auto *expr{operation->UnwrapExpr()}) {
-      if (const auto *designator{
-              std::get_if<evaluate::ProcedureDesignator>(&expr->u)}) {
-        procChars =
-            characteristics::Procedure::Characterize(*designator, context);
-      } else if (const auto *ref{
-                     std::get_if<evaluate::ProcedureRef>(&expr->u)}) {
-        procChars = characteristics::Procedure::Characterize(*ref, context);
-      }
-    }
-  }
-  const auto *result{
-      procChars ? procChars->functionResult->GetTypeAndShape() : nullptr};
-  if (!procChars || !procChars->IsPure() ||
-      procChars->dummyArguments.size() != 2 || !procChars->functionResult) {
-    messages.Say(
-        "OPERATION= argument of REDUCE() must be a pure function of two data arguments"_err_en_US);
-  } else if (!result || result->Rank() != 0) {
-    messages.Say(
-        "OPERATION= argument of REDUCE() must be a scalar function"_err_en_US);
-  } else if (result->type().IsPolymorphic() ||
-      (arrayType && !arrayType->IsTkLenCompatibleWith(result->type()))) {
-    messages.Say(
-        "OPERATION= argument of REDUCE() must have the same type as ARRAY="_err_en_US);
-  } else {
-    const characteristics::DummyDataObject *data[2]{};
-    for (int j{0}; j < 2; ++j) {
-      const auto &dummy{procChars->dummyArguments.at(j)};
-      data[j] = std::get_if<characteristics::DummyDataObject>(&dummy.u);
-    }
-    if (!data[0] || !data[1]) {
-      messages.Say(
-          "OPERATION= argument of REDUCE() may not have dummy procedure arguments"_err_en_US);
-    } else {
-      for (int j{0}; j < 2; ++j) {
-        if (data[j]->attrs.test(
-                characteristics::DummyDataObject::Attr::Optional) ||
-            data[j]->attrs.test(
-                characteristics::DummyDataObject::Attr::Allocatable) ||
-            data[j]->attrs.test(
-                characteristics::DummyDataObject::Attr::Pointer) ||
-            data[j]->type.Rank() != 0 || data[j]->type.type().IsPolymorphic() ||
-            (arrayType &&
-                !data[j]->type.type().IsTkCompatibleWith(*arrayType))) {
-          messages.Say(
-              "Arguments of OPERATION= procedure of REDUCE() must be both scalar of the same type as ARRAY=, and neither allocatable, pointer, polymorphic, nor optional"_err_en_US);
-        }
-      }
-      static constexpr characteristics::DummyDataObject::Attr attrs[]{
-          characteristics::DummyDataObject::Attr::Asynchronous,
-          characteristics::DummyDataObject::Attr::Target,
-          characteristics::DummyDataObject::Attr::Value,
-      };
-      for (std::size_t j{0}; j < sizeof attrs / sizeof *attrs; ++j) {
-        if (data[0]->attrs.test(attrs[j]) != data[1]->attrs.test(attrs[j])) {
-          messages.Say(
-              "If either argument of the OPERATION= procedure of REDUCE() has the ASYNCHRONOUS, TARGET, or VALUE attribute, both must have that attribute"_err_en_US);
-          break;
-        }
-      }
-    }
-  }
-  // When the MASK= is present and has no .TRUE. element, and there is
-  // no IDENTITY=, it's an error.
-  if (const auto &mask{arguments[3]}; mask && !arguments[/*identity*/ 4]) {
-    if (const auto *expr{mask->UnwrapExpr()}) {
-      if (const auto *logical{
-              std::get_if<evaluate::Expr<evaluate::SomeLogical>>(&expr->u)}) {
-        if (common::visit(
-                [](const auto &kindExpr) {
-                  using KindExprType = std::decay_t<decltype(kindExpr)>;
-                  using KindLogical = typename KindExprType::Result;
-                  if (const auto *c{evaluate::UnwrapConstantValue<KindLogical>(
-                          kindExpr)}) {
-                    for (const auto &element : c->values()) {
-                      if (element.IsTrue()) {
-                        return false;
-                      }
-                    }
-                    return true;
-                  }
-                  return false;
-                },
-                logical->u)) {
-          messages.Say(
-              "MASK= has no .TRUE. element, so IDENTITY= must be present"_err_en_US);
-        }
-      }
-    }
   }
 }
 
@@ -1639,8 +1483,6 @@ static void CheckSpecificIntrinsic(evaluate::ActualArguments &arguments,
     const evaluate::SpecificIntrinsic &intrinsic) {
   if (intrinsic.name == "associated") {
     CheckAssociated(arguments, context, scope);
-  } else if (intrinsic.name == "reduce") {
-    CheckReduce(arguments, context.foldingContext());
   } else if (intrinsic.name == "transfer") {
     CheckTransfer(arguments, context, scope);
   }

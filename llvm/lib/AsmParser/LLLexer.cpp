@@ -571,7 +571,6 @@ lltok::Kind LLLexer::LexIdentifier() {
   KEYWORD(addrspace);
   KEYWORD(section);
   KEYWORD(partition);
-  KEYWORD(code_model);
   KEYWORD(alias);
   KEYWORD(ifunc);
   KEYWORD(module);
@@ -698,7 +697,6 @@ lltok::Kind LLLexer::LexIdentifier() {
   KEYWORD(uinc_wrap);
   KEYWORD(udec_wrap);
 
-  KEYWORD(splat);
   KEYWORD(vscale);
   KEYWORD(x);
   KEYWORD(blockaddress);
@@ -907,7 +905,7 @@ lltok::Kind LLLexer::LexIdentifier() {
 
 #define DWKEYWORD(TYPE, TOKEN)                                                 \
   do {                                                                         \
-    if (Keyword.starts_with("DW_" #TYPE "_")) {                                \
+    if (Keyword.startswith("DW_" #TYPE "_")) {                                 \
       StrVal.assign(Keyword.begin(), Keyword.end());                           \
       return lltok::TOKEN;                                                     \
     }                                                                          \
@@ -923,17 +921,17 @@ lltok::Kind LLLexer::LexIdentifier() {
 
 #undef DWKEYWORD
 
-  if (Keyword.starts_with("DIFlag")) {
+  if (Keyword.startswith("DIFlag")) {
     StrVal.assign(Keyword.begin(), Keyword.end());
     return lltok::DIFlag;
   }
 
-  if (Keyword.starts_with("DISPFlag")) {
+  if (Keyword.startswith("DISPFlag")) {
     StrVal.assign(Keyword.begin(), Keyword.end());
     return lltok::DISPFlag;
   }
 
-  if (Keyword.starts_with("CSK_")) {
+  if (Keyword.startswith("CSK_")) {
     StrVal.assign(Keyword.begin(), Keyword.end());
     return lltok::ChecksumKind;
   }

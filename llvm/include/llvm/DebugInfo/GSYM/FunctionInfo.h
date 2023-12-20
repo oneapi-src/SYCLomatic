@@ -16,6 +16,7 @@
 #include "llvm/DebugInfo/GSYM/LookupResult.h"
 #include "llvm/DebugInfo/GSYM/StringTable.h"
 #include <cstdint>
+#include <tuple>
 
 namespace llvm {
 class raw_ostream;

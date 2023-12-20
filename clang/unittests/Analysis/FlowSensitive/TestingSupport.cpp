@@ -173,8 +173,7 @@ llvm::Error test::checkDataflowWithNoopAnalysis(
         void(const llvm::StringMap<DataflowAnalysisState<NoopLattice>> &,
              ASTContext &)>
         VerifyResults,
-    DataflowAnalysisOptions Options, LangStandard::Kind Std,
-    std::function<llvm::StringMap<QualType>(QualType)> SyntheticFieldCallback) {
+    DataflowAnalysisOptions Options, LangStandard::Kind Std) {
   llvm::SmallVector<std::string, 3> ASTBuildArgs = {
       // -fnodelayed-template-parsing is the default everywhere but on Windows.
       // Set it explicitly so that tests behave the same on Windows as on other
@@ -184,10 +183,8 @@ llvm::Error test::checkDataflowWithNoopAnalysis(
           std::string(LangStandard::getLangStandardForKind(Std).getName())};
   AnalysisInputs<NoopAnalysis> AI(
       Code, TargetFuncMatcher,
-      [UseBuiltinModel = Options.BuiltinOpts.has_value(),
-       &SyntheticFieldCallback](ASTContext &C, Environment &Env) {
-        Env.getDataflowAnalysisContext().setSyntheticFieldCallback(
-            std::move(SyntheticFieldCallback));
+      [UseBuiltinModel = Options.BuiltinOpts.has_value()](ASTContext &C,
+                                                          Environment &Env) {
         return NoopAnalysis(
             C,
             DataflowAnalysisOptions{

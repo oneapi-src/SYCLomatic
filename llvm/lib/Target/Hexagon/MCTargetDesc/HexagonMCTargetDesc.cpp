@@ -253,7 +253,7 @@ public:
       if (!Duplex.second.empty()) {
         OS << Indent << Duplex.first << Separator;
         InstTxt = Duplex.second;
-      } else if (!HeadTail.first.trim().starts_with("immext")) {
+      } else if (!HeadTail.first.trim().startswith("immext")) {
         InstTxt = Duplex.first;
       }
       if (!InstTxt.empty())

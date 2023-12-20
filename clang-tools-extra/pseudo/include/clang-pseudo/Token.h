@@ -32,7 +32,6 @@
 #include "clang/Basic/LangStandard.h"
 #include "clang/Basic/TokenKinds.h"
 #include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/STLForwardCompat.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cstdint>
 #include <limits>
@@ -72,10 +71,10 @@ struct Token {
   Index OriginalIndex = Invalid;
   // Helpers to get/set Flags based on `enum class`.
   template <class T> bool flag(T Mask) const {
-    return Flags & uint8_t{llvm::to_underlying(Mask)};
+    return Flags & uint8_t{static_cast<std::underlying_type_t<T>>(Mask)};
   }
   template <class T> void setFlag(T Mask) {
-    Flags |= uint8_t{llvm::to_underlying(Mask)};
+    Flags |= uint8_t{static_cast<std::underlying_type_t<T>>(Mask)};
   }
 
   /// Returns the next token in the stream. this may not be a sentinel.

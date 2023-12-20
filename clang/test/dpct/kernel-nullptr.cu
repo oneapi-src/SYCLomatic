@@ -1,9 +1,9 @@
 // RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T/kernel-nullptr %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 
 // RUN: FileCheck --input-file %T/kernel-nullptr/kernel-nullptr.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/kernel-nullptr/kernel-nullptr.dp.cpp -o %T/kernel-nullptr/kernel-nullptr.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel-nullptr/kernel-nullptr.dp.cpp -o %T/kernel-nullptr/kernel-nullptr.dp.o %}
 
-#ifndef BUILD_TEST
+
 __global__ void kernel(int *a) {}
 
 int main() {
@@ -49,4 +49,4 @@ int main() {
     // CHECK-NEXT:         });
     kernel<<<1,1>>>((int *)NULL);
 }
-#endif
+

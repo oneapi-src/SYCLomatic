@@ -155,16 +155,20 @@ public:
 
   void getStats(ScopedString *Str) {
     ScopedLock L(Mutex);
-    uptr Integral;
-    uptr Fractional;
-    computePercentage(SuccessfulRetrieves, CallsToRetrieve, &Integral,
-                      &Fractional);
+    u32 Integral = 0;
+    u32 Fractional = 0;
+    if (CallsToRetrieve != 0) {
+      Integral = SuccessfulRetrieves * 100 / CallsToRetrieve;
+      Fractional = (((SuccessfulRetrieves * 100) % CallsToRetrieve) * 100 +
+                    CallsToRetrieve / 2) /
+                   CallsToRetrieve;
+    }
     Str->append("Stats: MapAllocatorCache: EntriesCount: %d, "
                 "MaxEntriesCount: %u, MaxEntrySize: %zu\n",
                 EntriesCount, atomic_load_relaxed(&MaxEntriesCount),
                 atomic_load_relaxed(&MaxEntrySize));
     Str->append("Stats: CacheRetrievalStats: SuccessRate: %u/%u "
-                "(%zu.%02zu%%)\n",
+                "(%u.%02u%%)\n",
                 SuccessfulRetrieves, CallsToRetrieve, Integral, Fractional);
     for (CachedBlock Entry : Entries) {
       if (!Entry.isValid())

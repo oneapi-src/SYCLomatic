@@ -14,6 +14,7 @@
 
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringSet.h"
 #include "llvm/BinaryFormat/MachO.h"
 #include "llvm/DebugInfo/DWARF/DWARFContext.h"
 #include "llvm/DebugInfo/DWARF/DWARFDebugLine.h"
@@ -34,7 +35,7 @@ class MachODebugObjectSynthesizerBase
     : public GDBJITDebugInfoRegistrationPlugin::DebugSectionSynthesizer {
 public:
   static bool isDebugSection(Section &Sec) {
-    return Sec.getName().starts_with("__DWARF,");
+    return Sec.getName().startswith("__DWARF,");
   }
 
   MachODebugObjectSynthesizerBase(LinkGraph &G, ExecutorAddr RegisterActionAddr)

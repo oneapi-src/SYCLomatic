@@ -257,9 +257,6 @@ public:
   std::optional<StringRef> getTypeBuilder() const;
 
   static bool classof(const AttrOrTypeDef *def);
-
-  /// Get the unique attribute name "dialect.attrname".
-  StringRef getAttrName() const;
 };
 
 //===----------------------------------------------------------------------===//
@@ -270,11 +267,6 @@ public:
 class TypeDef : public AttrOrTypeDef {
 public:
   using AttrOrTypeDef::AttrOrTypeDef;
-
-  static bool classof(const AttrOrTypeDef *def);
-
-  /// Get the unique type name "dialect.typename".
-  StringRef getTypeName() const;
 };
 
 } // namespace tblgen

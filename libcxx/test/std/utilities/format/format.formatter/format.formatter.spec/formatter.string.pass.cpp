@@ -53,7 +53,8 @@ void test(StringT expected, StringViewT fmt, StringT a, std::size_t offset) {
   using FormatCtxT = std::basic_format_context<decltype(out), CharT>;
 
   ArgumentT arg = a;
-  FormatCtxT format_ctx = test_format_context_create<decltype(out), CharT>(out, std::make_format_args<FormatCtxT>(arg));
+  FormatCtxT format_ctx = test_format_context_create<decltype(out), CharT>(
+      out, std::make_format_args<FormatCtxT>(std::forward<ArgumentT>(arg)));
   formatter.format(arg, format_ctx);
   assert(result == expected);
 }

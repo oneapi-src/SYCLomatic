@@ -108,8 +108,7 @@ RISCVAsmBackend::getFixupKindInfo(MCFixupKind Kind) const {
 // necessary for correctness as offsets may change during relaxation.
 bool RISCVAsmBackend::shouldForceRelocation(const MCAssembler &Asm,
                                             const MCFixup &Fixup,
-                                            const MCValue &Target,
-                                            const MCSubtargetInfo *STI) {
+                                            const MCValue &Target) {
   if (Fixup.getKind() >= FirstLiteralRelocationKind)
     return true;
   switch (Fixup.getTargetKind()) {
@@ -129,7 +128,7 @@ bool RISCVAsmBackend::shouldForceRelocation(const MCAssembler &Asm,
     return true;
   }
 
-  return STI->hasFeature(RISCV::FeatureRelax) || ForceRelocs;
+  return STI.hasFeature(RISCV::FeatureRelax) || ForceRelocs;
 }
 
 bool RISCVAsmBackend::fixupNeedsRelaxationAdvanced(const MCFixup &Fixup,
@@ -515,8 +514,8 @@ static uint64_t adjustFixupValue(const MCFixup &Fixup, uint64_t Value,
 
 bool RISCVAsmBackend::evaluateTargetFixup(
     const MCAssembler &Asm, const MCAsmLayout &Layout, const MCFixup &Fixup,
-    const MCFragment *DF, const MCValue &Target, const MCSubtargetInfo *STI,
-    uint64_t &Value, bool &WasForced) {
+    const MCFragment *DF, const MCValue &Target, uint64_t &Value,
+    bool &WasForced) {
   const MCFixup *AUIPCFixup;
   const MCFragment *AUIPCDF;
   MCValue AUIPCTarget;
@@ -566,7 +565,7 @@ bool RISCVAsmBackend::evaluateTargetFixup(
   Value = Layout.getSymbolOffset(SA) + AUIPCTarget.getConstant();
   Value -= Layout.getFragmentOffset(AUIPCDF) + AUIPCFixup->getOffset();
 
-  if (shouldForceRelocation(Asm, *AUIPCFixup, AUIPCTarget, STI)) {
+  if (shouldForceRelocation(Asm, *AUIPCFixup, AUIPCTarget)) {
     WasForced = true;
     return false;
   }

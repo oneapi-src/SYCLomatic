@@ -274,42 +274,32 @@ void GCNUpwardRPTracker::recede(const MachineInstr &MI) {
   if (MI.isDebugInstr())
     return;
 
-  // Kill all defs.
-  GCNRegPressure DefPressure, ECDefPressure;
-  bool HasECDefs = false;
-  for (const MachineOperand &MO : MI.all_defs()) {
-    if (!MO.getReg().isVirtual())
-      continue;
-
+  auto DecrementDef = [this](const MachineOperand &MO) {
     Register Reg = MO.getReg();
-    LaneBitmask DefMask = getDefRegMask(MO, *MRI);
-
-    // Treat a def as fully live at the moment of definition: keep a record.
-    if (MO.isEarlyClobber()) {
-      ECDefPressure.inc(Reg, LaneBitmask::getNone(), DefMask, *MRI);
-      HasECDefs = true;
-    } else
-      DefPressure.inc(Reg, LaneBitmask::getNone(), DefMask, *MRI);
-
     auto I = LiveRegs.find(Reg);
     if (I == LiveRegs.end())
-      continue;
+      return;
 
     LaneBitmask &LiveMask = I->second;
     LaneBitmask PrevMask = LiveMask;
-    LiveMask &= ~DefMask;
+    LiveMask &= ~getDefRegMask(MO, *MRI);
     CurPressure.inc(Reg, PrevMask, LiveMask, *MRI);
     if (LiveMask.none())
       LiveRegs.erase(I);
+  };
+
+  // Decrement non-early-clobber defs.
+  SmallVector<const MachineOperand *, 2> EarlyClobberDefs;
+  for (const MachineOperand &MO : MI.all_defs()) {
+    if (!MO.getReg().isVirtual())
+      continue;
+    if (!MO.isEarlyClobber())
+      DecrementDef(MO);
+    else
+      EarlyClobberDefs.push_back(&MO);
   }
 
-  // Update MaxPressure with defs pressure.
-  DefPressure += CurPressure;
-  if (HasECDefs)
-    DefPressure += ECDefPressure;
-  MaxPressure = max(DefPressure, MaxPressure);
-
-  // Make uses alive.
+  // Increment uses.
   SmallVector<RegisterMaskPair, 8> RegUses;
   collectVirtualRegUses(RegUses, MI, LIS, *MRI);
   for (const RegisterMaskPair &U : RegUses) {
@@ -319,9 +309,13 @@ void GCNUpwardRPTracker::recede(const MachineInstr &MI) {
     CurPressure.inc(U.RegUnit, PrevMask, LiveMask, *MRI);
   }
 
-  // Update MaxPressure with uses plus early-clobber defs pressure.
-  MaxPressure = HasECDefs ? max(CurPressure + ECDefPressure, MaxPressure)
-                          : max(CurPressure, MaxPressure);
+  // Point of maximum pressure: non-early-clobber defs are decremented and uses
+  // are incremented.
+  MaxPressure = max(CurPressure, MaxPressure);
+
+  // Now decrement early clobber defs.
+  for (const MachineOperand *MO : EarlyClobberDefs)
+    DecrementDef(*MO);
 
   assert(CurPressure == getRegPressure(*MRI, LiveRegs));
 }

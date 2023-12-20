@@ -82,30 +82,24 @@ TypeAndOrName ItaniumABILanguageRuntime::GetTypeInfo(
       lookup_name.append(class_name.data(), class_name.size());
 
       type_info.SetName(class_name);
-      ConstString const_lookup_name(lookup_name);
+      const bool exact_match = true;
       TypeList class_types;
-      ModuleSP module_sp = vtable_info.symbol->CalculateSymbolContextModule();
+
       // First look in the module that the vtable symbol came from and
       // look for a single exact match.
-      TypeResults results;
-      TypeQuery query(const_lookup_name.GetStringRef(),
-                      TypeQueryOptions::e_exact_match |
-                          TypeQueryOptions::e_find_one);
-      if (module_sp) {
-        module_sp->FindTypes(query, results);
-        TypeSP type_sp = results.GetFirstType();
-        if (type_sp)
-          class_types.Insert(type_sp);
-      }
+      llvm::DenseSet<SymbolFile *> searched_symbol_files;
+      ModuleSP module_sp = vtable_info.symbol->CalculateSymbolContextModule();
+      if (module_sp)
+        module_sp->FindTypes(ConstString(lookup_name), exact_match, 1,
+                              searched_symbol_files, class_types);
 
       // If we didn't find a symbol, then move on to the entire module
       // list in the target and get as many unique matches as possible
-      if (class_types.Empty()) {
-        query.SetFindOne(false);
-        m_process->GetTarget().GetImages().FindTypes(nullptr, query, results);
-        for (const auto &type_sp : results.GetTypeMap().Types())
-          class_types.Insert(type_sp);
-      }
+      Target &target = m_process->GetTarget();
+      if (class_types.Empty())
+        target.GetImages().FindTypes(nullptr, ConstString(lookup_name),
+                                      exact_match, UINT32_MAX,
+                                      searched_symbol_files, class_types);
 
       lldb::TypeSP type_sp;
       if (class_types.Empty()) {
@@ -274,7 +268,7 @@ llvm::Expected<LanguageRuntime::VTableInfo>
                                    "no symbol found for 0x%" PRIx64,
                                    vtable_load_addr);
   llvm::StringRef name = symbol->GetMangled().GetDemangledName().GetStringRef();
-  if (name.starts_with(vtable_demangled_prefix)) {
+  if (name.startswith(vtable_demangled_prefix)) {
     VTableInfo info = {vtable_addr, symbol};
     std::lock_guard<std::mutex> locker(m_mutex);
     auto pos = m_vtable_info_map[vtable_addr] = info;
@@ -450,7 +444,7 @@ protected:
       // on behalf of the user.   This is the moral equivalent of the -_/-n
       // options to c++filt
       auto name = entry.ref();
-      if (name.starts_with("__Z"))
+      if (name.startswith("__Z"))
         name = name.drop_front();
 
       Mangled mangled(name);
@@ -613,7 +607,7 @@ bool ItaniumABILanguageRuntime::ExceptionBreakpointsExplainStop(
     return false;
 
   uint64_t break_site_id = stop_reason->GetValue();
-  return m_process->GetBreakpointSiteList().StopPointSiteContainsBreakpoint(
+  return m_process->GetBreakpointSiteList().BreakpointSiteContainsBreakpoint(
       break_site_id, m_cxx_exception_bp_sp->GetID());
 }
 

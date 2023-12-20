@@ -72,7 +72,7 @@ getMachOObjectFileSymbolInfo(ExecutionSession &ES,
       return SymFlags.takeError();
 
     // Strip the 'exported' flag from MachO linker-private symbols.
-    if (Name->starts_with("l"))
+    if (Name->startswith("l"))
       *SymFlags &= ~JITSymbolFlags::Exported;
 
     I.SymbolFlags[ES.intern(*Name)] = std::move(*SymFlags);

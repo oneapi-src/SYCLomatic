@@ -105,8 +105,8 @@ To see which features and CPUs that LLVM knows about, we can use
       3dnowa                - Enable 3DNow! Athlon instructions.
       ...
 
-For our example, we'll use the generic CPU without any additional feature or
-target option.
+For our example, we'll use the generic CPU without any additional
+features, options or relocation model.
 
 .. code-block:: c++
 
@@ -114,7 +114,8 @@ target option.
   auto Features = "";
 
   TargetOptions opt;
-  auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, Reloc::PIC_);
+  auto RM = std::optional<Reloc::Model>();
+  auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
 
 
 Configuring the Module

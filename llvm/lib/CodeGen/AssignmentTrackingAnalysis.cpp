@@ -2269,14 +2269,14 @@ static bool
 removeRedundantDbgLocsUsingBackwardScan(const BasicBlock *BB,
                                         FunctionVarLocsBuilder &FnVarLocs) {
   bool Changed = false;
-  SmallDenseMap<DebugAggregate, BitVector> VariableDefinedBytes;
+  SmallDenseMap<DebugAggregate, BitVector> VariableDefinedBits;
   // Scan over the entire block, not just over the instructions mapped by
   // FnVarLocs, because wedges in FnVarLocs may only be seperated by debug
   // instructions.
   for (const Instruction &I : reverse(*BB)) {
     if (!isa<DbgVariableIntrinsic>(I)) {
       // Sequence of consecutive defs ended. Clear map for the next one.
-      VariableDefinedBytes.clear();
+      VariableDefinedBits.clear();
     }
 
     // Get the location defs that start just before this instruction.
@@ -2295,15 +2295,9 @@ removeRedundantDbgLocsUsingBackwardScan(const BasicBlock *BB,
       DebugAggregate Aggr =
           getAggregate(FnVarLocs.getVariable(RIt->VariableID));
       uint64_t SizeInBits = Aggr.first->getSizeInBits().value_or(0);
-      uint64_t SizeInBytes = divideCeil(SizeInBits, 8);
 
-      // Cutoff for large variables to prevent expensive bitvector operations.
-      const uint64_t MaxSizeBytes = 2048;
-
-      if (SizeInBytes == 0 || SizeInBytes > MaxSizeBytes) {
+      if (SizeInBits == 0) {
         // If the size is unknown (0) then keep this location def to be safe.
-        // Do the same for defs of large variables, which would be expensive
-        // to represent with a BitVector.
         NewDefsReversed.push_back(*RIt);
         continue;
       }
@@ -2311,24 +2305,23 @@ removeRedundantDbgLocsUsingBackwardScan(const BasicBlock *BB,
       // Only keep this location definition if it is not fully eclipsed by
       // other definitions in this wedge that come after it
 
-      // Inert the bytes the location definition defines.
+      // Inert the bits the location definition defines.
       auto InsertResult =
-          VariableDefinedBytes.try_emplace(Aggr, BitVector(SizeInBytes));
+          VariableDefinedBits.try_emplace(Aggr, BitVector(SizeInBits));
       bool FirstDefinition = InsertResult.second;
-      BitVector &DefinedBytes = InsertResult.first->second;
+      BitVector &DefinedBits = InsertResult.first->second;
 
       DIExpression::FragmentInfo Fragment =
           RIt->Expr->getFragmentInfo().value_or(
               DIExpression::FragmentInfo(SizeInBits, 0));
       bool InvalidFragment = Fragment.endInBits() > SizeInBits;
-      uint64_t StartInBytes = Fragment.startInBits() / 8;
-      uint64_t EndInBytes = divideCeil(Fragment.endInBits(), 8);
 
-      // If this defines any previously undefined bytes, keep it.
+      // If this defines any previously undefined bits, keep it.
       if (FirstDefinition || InvalidFragment ||
-          DefinedBytes.find_first_unset_in(StartInBytes, EndInBytes) != -1) {
+          DefinedBits.find_first_unset_in(Fragment.startInBits(),
+                                          Fragment.endInBits()) != -1) {
         if (!InvalidFragment)
-          DefinedBytes.set(StartInBytes, EndInBytes);
+          DefinedBits.set(Fragment.startInBits(), Fragment.endInBits());
         NewDefsReversed.push_back(*RIt);
         continue;
       }

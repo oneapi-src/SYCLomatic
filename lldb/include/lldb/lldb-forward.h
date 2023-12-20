@@ -39,6 +39,7 @@ class BreakpointOptions;
 class BreakpointPrecondition;
 class BreakpointResolver;
 class BreakpointSite;
+class BreakpointSiteList;
 class BroadcastEventSpec;
 class Broadcaster;
 class BroadcasterManager;
@@ -258,11 +259,9 @@ class TypeImpl;
 class TypeList;
 class TypeListImpl;
 class TypeMap;
-class TypeQuery;
 class TypeMemberFunctionImpl;
 class TypeMemberImpl;
 class TypeNameSpecifierImpl;
-class TypeResults;
 class TypeSummaryImpl;
 class TypeSummaryOptions;
 class TypeSystem;
@@ -290,8 +289,6 @@ class VariableList;
 class Watchpoint;
 class WatchpointList;
 class WatchpointOptions;
-class WatchpointResource;
-class WatchpointResourceCollection;
 class WatchpointSetOptions;
 struct CompilerContext;
 struct LineEntry;
@@ -472,7 +469,6 @@ typedef std::shared_ptr<lldb_private::Variable> VariableSP;
 typedef std::shared_ptr<lldb_private::VariableList> VariableListSP;
 typedef std::shared_ptr<lldb_private::ValueObjectList> ValueObjectListSP;
 typedef std::shared_ptr<lldb_private::Watchpoint> WatchpointSP;
-typedef std::shared_ptr<lldb_private::WatchpointResource> WatchpointResourceSP;
 
 } // namespace lldb
 

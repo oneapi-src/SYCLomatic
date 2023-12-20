@@ -309,7 +309,6 @@ struct VOPDInfo {
   uint16_t Opcode;
   uint16_t OpX;
   uint16_t OpY;
-  uint16_t Subtarget;
 };
 
 struct VOPTrue16Info {
@@ -444,14 +443,6 @@ bool getMAIIsGFX940XDL(unsigned Opc) {
   return Info ? Info->is_gfx940_xdl : false;
 }
 
-unsigned getVOPDEncodingFamily(const MCSubtargetInfo &ST) {
-  if (ST.hasFeature(AMDGPU::FeatureGFX12Insts))
-    return SIEncodingFamily::GFX12;
-  if (ST.hasFeature(AMDGPU::FeatureGFX11Insts))
-    return SIEncodingFamily::GFX11;
-  llvm_unreachable("Subtarget generation does not support VOPD!");
-}
-
 CanBeVOPD getCanBeVOPD(unsigned Opc) {
   const VOPDComponentInfo *Info = getVOPDComponentHelper(Opc);
   if (Info)
@@ -479,13 +470,11 @@ bool isMAC(unsigned Opc) {
          Opc == AMDGPU::V_FMAC_F64_e64_gfx90a ||
          Opc == AMDGPU::V_FMAC_F32_e64_gfx10 ||
          Opc == AMDGPU::V_FMAC_F32_e64_gfx11 ||
-         Opc == AMDGPU::V_FMAC_F32_e64_gfx12 ||
          Opc == AMDGPU::V_FMAC_F32_e64_vi ||
          Opc == AMDGPU::V_FMAC_LEGACY_F32_e64_gfx10 ||
          Opc == AMDGPU::V_FMAC_DX9_ZERO_F32_e64_gfx11 ||
          Opc == AMDGPU::V_FMAC_F16_e64_gfx10 ||
          Opc == AMDGPU::V_FMAC_F16_t16_e64_gfx11 ||
-         Opc == AMDGPU::V_FMAC_F16_t16_e64_gfx12 ||
          Opc == AMDGPU::V_DOT2C_F32_F16_e64_vi ||
          Opc == AMDGPU::V_DOT2C_I32_I16_e64_vi ||
          Opc == AMDGPU::V_DOT4C_I32_I8_e64_vi ||
@@ -496,11 +485,7 @@ bool isPermlane16(unsigned Opc) {
   return Opc == AMDGPU::V_PERMLANE16_B32_gfx10 ||
          Opc == AMDGPU::V_PERMLANEX16_B32_gfx10 ||
          Opc == AMDGPU::V_PERMLANE16_B32_e64_gfx11 ||
-         Opc == AMDGPU::V_PERMLANEX16_B32_e64_gfx11 ||
-         Opc == AMDGPU::V_PERMLANE16_B32_e64_gfx12 ||
-         Opc == AMDGPU::V_PERMLANEX16_B32_e64_gfx12 ||
-         Opc == AMDGPU::V_PERMLANE16_VAR_B32_e64_gfx12 ||
-         Opc == AMDGPU::V_PERMLANEX16_VAR_B32_e64_gfx12;
+         Opc == AMDGPU::V_PERMLANEX16_B32_e64_gfx11;
 }
 
 bool isGenericAtomic(unsigned Opc) {
@@ -547,9 +532,8 @@ int getMCOpcode(uint16_t Opcode, unsigned Gen) {
   return getMCOpcodeGen(Opcode, static_cast<Subtarget>(Gen));
 }
 
-int getVOPDFull(unsigned OpX, unsigned OpY, unsigned EncodingFamily) {
-  const VOPDInfo *Info =
-      getVOPDInfoFromComponentOpcodes(OpX, OpY, EncodingFamily);
+int getVOPDFull(unsigned OpX, unsigned OpY) {
+  const VOPDInfo *Info = getVOPDInfoFromComponentOpcodes(OpX, OpY);
   return Info ? Info->Opcode : -1;
 }
 
@@ -601,15 +585,13 @@ unsigned ComponentInfo::getIndexInParsedOperands(unsigned CompOprIdx) const {
 }
 
 std::optional<unsigned> InstInfo::getInvalidCompOperandIndex(
-    std::function<unsigned(unsigned, unsigned)> GetRegIdx, bool SkipSrc) const {
+    std::function<unsigned(unsigned, unsigned)> GetRegIdx) const {
 
   auto OpXRegs = getRegIndices(ComponentIndex::X, GetRegIdx);
   auto OpYRegs = getRegIndices(ComponentIndex::Y, GetRegIdx);
 
-  const unsigned CompOprNum =
-      SkipSrc ? Component::DST_NUM : Component::MAX_OPR_NUM;
   unsigned CompOprIdx;
-  for (CompOprIdx = 0; CompOprIdx < CompOprNum; ++CompOprIdx) {
+  for (CompOprIdx = 0; CompOprIdx < Component::MAX_OPR_NUM; ++CompOprIdx) {
     unsigned BanksMasks = VOPD_VGPR_BANK_MASKS[CompOprIdx];
     if (OpXRegs[CompOprIdx] && OpYRegs[CompOprIdx] &&
         ((OpXRegs[CompOprIdx] & BanksMasks) ==
@@ -734,9 +716,9 @@ void AMDGPUTargetID::setTargetIDFromFeaturesString(StringRef FS) {
 
 static TargetIDSetting
 getTargetIDSettingFromFeatureString(StringRef FeatureString) {
-  if (FeatureString.ends_with("-"))
+  if (FeatureString.endswith("-"))
     return TargetIDSetting::Off;
-  if (FeatureString.ends_with("+"))
+  if (FeatureString.endswith("+"))
     return TargetIDSetting::On;
 
   llvm_unreachable("Malformed feature string");
@@ -747,9 +729,9 @@ void AMDGPUTargetID::setTargetIDFromTargetIDStream(StringRef TargetID) {
   TargetID.split(TargetIDSplit, ':');
 
   for (const auto &FeatureString : TargetIDSplit) {
-    if (FeatureString.starts_with("xnack"))
+    if (FeatureString.startswith("xnack"))
       XnackSetting = getTargetIDSettingFromFeatureString(FeatureString);
-    if (FeatureString.starts_with("sramecc"))
+    if (FeatureString.startswith("sramecc"))
       SramEccSetting = getTargetIDSettingFromFeatureString(FeatureString);
   }
 }
@@ -1149,17 +1131,10 @@ amdhsa::kernel_descriptor_t getDefaultAmdhsaKernelDescriptor(
   AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
                   amdhsa::COMPUTE_PGM_RSRC1_FLOAT_DENORM_MODE_16_64,
                   amdhsa::FLOAT_DENORM_MODE_FLUSH_NONE);
-  if (Version.Major >= 12) {
-    AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
-                    amdhsa::COMPUTE_PGM_RSRC1_GFX12_PLUS_ENABLE_WG_RR_EN, 0);
-    AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
-                    amdhsa::COMPUTE_PGM_RSRC1_GFX12_PLUS_DISABLE_PERF, 0);
-  } else {
-    AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
-                    amdhsa::COMPUTE_PGM_RSRC1_GFX6_GFX11_ENABLE_DX10_CLAMP, 1);
-    AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
-                    amdhsa::COMPUTE_PGM_RSRC1_GFX6_GFX11_ENABLE_IEEE_MODE, 1);
-  }
+  AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
+                  amdhsa::COMPUTE_PGM_RSRC1_ENABLE_DX10_CLAMP, 1);
+  AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
+                  amdhsa::COMPUTE_PGM_RSRC1_ENABLE_IEEE_MODE, 1);
   AMDHSA_BITS_SET(KD.compute_pgm_rsrc2,
                   amdhsa::COMPUTE_PGM_RSRC2_ENABLE_SGPR_WORKGROUP_ID_X, 1);
   if (Version.Major >= 10) {
@@ -1603,7 +1578,7 @@ unsigned getTgtId(const StringRef Name) {
     if (Val.MaxIndex == 0 && Name == Val.Name)
       return Val.Tgt;
 
-    if (Val.MaxIndex > 0 && Name.starts_with(Val.Name)) {
+    if (Val.MaxIndex > 0 && Name.startswith(Val.Name)) {
       StringRef Suffix = Name.drop_front(Val.Name.size());
 
       unsigned Id;
@@ -1982,14 +1957,12 @@ bool hasGDS(const MCSubtargetInfo &STI) {
   return STI.hasFeature(AMDGPU::FeatureGDS);
 }
 
-unsigned getNSAMaxSize(const MCSubtargetInfo &STI, bool HasSampler) {
+unsigned getNSAMaxSize(const MCSubtargetInfo &STI) {
   auto Version = getIsaVersion(STI.getCPU());
   if (Version.Major == 10)
     return Version.Minor >= 3 ? 13 : 5;
   if (Version.Major == 11)
     return 5;
-  if (Version.Major >= 12)
-    return HasSampler ? 4 : 5;
   return 0;
 }
 
@@ -2629,9 +2602,6 @@ static bool hasSMRDSignedImmOffset(const MCSubtargetInfo &ST) {
 
 bool isLegalSMRDEncodedUnsignedOffset(const MCSubtargetInfo &ST,
                                       int64_t EncodedOffset) {
-  if (isGFX12Plus(ST))
-    return isUInt<23>(EncodedOffset);
-
   return hasSMEMByteOffset(ST) ? isUInt<20>(EncodedOffset)
                                : isUInt<8>(EncodedOffset);
 }
@@ -2639,9 +2609,6 @@ bool isLegalSMRDEncodedUnsignedOffset(const MCSubtargetInfo &ST,
 bool isLegalSMRDEncodedSignedOffset(const MCSubtargetInfo &ST,
                                     int64_t EncodedOffset,
                                     bool IsBuffer) {
-  if (isGFX12Plus(ST))
-    return isInt<24>(EncodedOffset);
-
   return !IsBuffer &&
          hasSMRDSignedImmOffset(ST) &&
          isInt<21>(EncodedOffset);
@@ -2662,10 +2629,6 @@ uint64_t convertSMRDOffsetUnits(const MCSubtargetInfo &ST,
 
 std::optional<int64_t> getSMRDEncodedOffset(const MCSubtargetInfo &ST,
                                             int64_t ByteOffset, bool IsBuffer) {
-  if (isGFX12Plus(ST)) // 24 bit signed offsets
-    return isInt<24>(ByteOffset) ? std::optional<int64_t>(ByteOffset)
-                                 : std::nullopt;
-
   // The signed version is always a byte offset.
   if (!IsBuffer && hasSMRDSignedImmOffset(ST)) {
     assert(hasSMEMByteOffset(ST));
@@ -2693,11 +2656,10 @@ std::optional<int64_t> getSMRDEncodedLiteralOffset32(const MCSubtargetInfo &ST,
 }
 
 unsigned getNumFlatOffsetBits(const MCSubtargetInfo &ST) {
+  // Address offset is 12-bit signed for GFX10, 13-bit for GFX9 and GFX11+.
   if (AMDGPU::isGFX10(ST))
     return 12;
 
-  if (AMDGPU::isGFX12(ST))
-    return 24;
   return 13;
 }
 

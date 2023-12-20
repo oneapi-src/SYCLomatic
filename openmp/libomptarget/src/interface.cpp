@@ -13,11 +13,13 @@
 
 #include "OpenMP/OMPT/Interface.h"
 #include "OpenMP/OMPT/Callback.h"
-#include "PluginManager.h"
+#include "device.h"
+#include "omptarget.h"
 #include "private.h"
+#include "rtl.h"
 
-#include "Shared/EnvironmentVar.h"
 #include "Shared/Profile.h"
+#include "Shared/Utils.h"
 
 #include "Utils/ExponentialBackoff.h"
 
@@ -25,6 +27,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <mutex>
+#include <type_traits>
 
 #ifdef OMPT_SUPPORT
 using namespace llvm::omp::target::ompt;
@@ -34,7 +38,7 @@ using namespace llvm::omp::target::ompt;
 /// adds requires flags
 EXTERN void __tgt_register_requires(int64_t Flags) {
   TIMESCOPE();
-  PM->addRequirements(Flags);
+  PM->RTLs.registerRequires(Flags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -44,18 +48,18 @@ EXTERN void __tgt_register_lib(__tgt_bin_desc *Desc) {
   if (PM->delayRegisterLib(Desc))
     return;
 
-  PM->registerLib(Desc);
+  PM->RTLs.registerLib(Desc);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Initialize all available devices without registering any image
-EXTERN void __tgt_init_all_rtls() { PM->initAllPlugins(); }
+EXTERN void __tgt_init_all_rtls() { PM->RTLs.initAllRTLs(); }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// unloads a target shared library
 EXTERN void __tgt_unregister_lib(__tgt_bin_desc *Desc) {
   TIMESCOPE();
-  PM->unregisterLib(Desc);
+  PM->RTLs.unregisterLib(Desc);
 }
 
 template <typename TargetAsyncInfoTy>
@@ -90,11 +94,8 @@ targetData(ident_t *Loc, int64_t DeviceId, int32_t ArgNum, void **ArgsBase,
   }
 #endif
 
-  auto DeviceOrErr = PM->getDevice(DeviceId);
-  if (!DeviceOrErr)
-    FATAL_MESSAGE(DeviceId, "%s", toString(DeviceOrErr.takeError()).c_str());
-
-  TargetAsyncInfoTy TargetAsyncInfo(*DeviceOrErr);
+  DeviceTy &Device = *PM->Devices[DeviceId];
+  TargetAsyncInfoTy TargetAsyncInfo(Device);
   AsyncInfoTy &AsyncInfo = TargetAsyncInfo;
 
   /// RAII to establish tool anchors before and after data begin / end / update
@@ -113,7 +114,7 @@ targetData(ident_t *Loc, int64_t DeviceId, int32_t ArgNum, void **ArgsBase,
                                              OMPT_GET_RETURN_ADDRESS(0));)
 
   int Rc = OFFLOAD_SUCCESS;
-  Rc = TargetDataFunction(Loc, *DeviceOrErr, ArgNum, ArgsBase, Args, ArgSizes,
+  Rc = TargetDataFunction(Loc, Device, ArgNum, ArgsBase, Args, ArgSizes,
                           ArgTypes, ArgNames, ArgMappers, AsyncInfo,
                           false /* FromMapper */);
 
@@ -284,11 +285,8 @@ static inline int targetKernel(ident_t *Loc, int64_t DeviceId, int32_t NumTeams,
   }
 #endif
 
-  auto DeviceOrErr = PM->getDevice(DeviceId);
-  if (!DeviceOrErr)
-    FATAL_MESSAGE(DeviceId, "%s", toString(DeviceOrErr.takeError()).c_str());
-
-  TargetAsyncInfoTy TargetAsyncInfo(*DeviceOrErr);
+  DeviceTy &Device = *PM->Devices[DeviceId];
+  TargetAsyncInfoTy TargetAsyncInfo(Device);
   AsyncInfoTy &AsyncInfo = TargetAsyncInfo;
   /// RAII to establish tool anchors before and after target region
   OMPT_IF_BUILT(InterfaceRAII TargetRAII(
@@ -296,7 +294,7 @@ static inline int targetKernel(ident_t *Loc, int64_t DeviceId, int32_t NumTeams,
                     /* CodePtr */ OMPT_GET_RETURN_ADDRESS(0));)
 
   int Rc = OFFLOAD_SUCCESS;
-  Rc = target(Loc, *DeviceOrErr, HostPtr, *KernelArgs, AsyncInfo);
+  Rc = target(Loc, Device, HostPtr, *KernelArgs, AsyncInfo);
 
   if (Rc == OFFLOAD_SUCCESS)
     Rc = AsyncInfo.synchronize();
@@ -340,12 +338,14 @@ EXTERN int __tgt_activate_record_replay(int64_t DeviceId, uint64_t MemorySize,
                                         void *VAddr, bool IsRecord,
                                         bool SaveOutput,
                                         uint64_t &ReqPtrArgOffset) {
-  auto DeviceOrErr = PM->getDevice(DeviceId);
-  if (!DeviceOrErr)
-    FATAL_MESSAGE(DeviceId, "%s", toString(DeviceOrErr.takeError()).c_str());
+  if (!deviceIsReady(DeviceId)) {
+    DP("Device %" PRId64 " is not ready\n", DeviceId);
+    return OMP_TGT_FAIL;
+  }
 
+  DeviceTy &Device = *PM->Devices[DeviceId];
   [[maybe_unused]] int Rc = target_activate_rr(
-      *DeviceOrErr, MemorySize, VAddr, IsRecord, SaveOutput, ReqPtrArgOffset);
+      Device, MemorySize, VAddr, IsRecord, SaveOutput, ReqPtrArgOffset);
   assert(Rc == OFFLOAD_SUCCESS &&
          "__tgt_activate_record_replay unexpected failure!");
   return OMP_TGT_SUCCESS;
@@ -379,19 +379,16 @@ EXTERN int __tgt_target_kernel_replay(ident_t *Loc, int64_t DeviceId,
     DP("Not offloading to device %" PRId64 "\n", DeviceId);
     return OMP_TGT_FAIL;
   }
-  auto DeviceOrErr = PM->getDevice(DeviceId);
-  if (!DeviceOrErr)
-    FATAL_MESSAGE(DeviceId, "%s", toString(DeviceOrErr.takeError()).c_str());
-
+  DeviceTy &Device = *PM->Devices[DeviceId];
   /// RAII to establish tool anchors before and after target region
   OMPT_IF_BUILT(InterfaceRAII TargetRAII(
                     RegionInterface.getCallbacks<ompt_target>(), DeviceId,
                     /* CodePtr */ OMPT_GET_RETURN_ADDRESS(0));)
 
-  AsyncInfoTy AsyncInfo(*DeviceOrErr);
-  int Rc = target_replay(Loc, *DeviceOrErr, HostPtr, DeviceMemory,
-                         DeviceMemorySize, TgtArgs, TgtOffsets, NumArgs,
-                         NumTeams, ThreadLimit, LoopTripCount, AsyncInfo);
+  AsyncInfoTy AsyncInfo(Device);
+  int Rc = target_replay(Loc, Device, HostPtr, DeviceMemory, DeviceMemorySize,
+                         TgtArgs, TgtOffsets, NumArgs, NumTeams, ThreadLimit,
+                         LoopTripCount, AsyncInfo);
   if (Rc == OFFLOAD_SUCCESS)
     Rc = AsyncInfo.synchronize();
   handleTargetOutcome(Rc == OFFLOAD_SUCCESS, Loc);
@@ -428,18 +425,21 @@ EXTERN void __tgt_push_mapper_component(void *RtMapperHandle, void *Base,
 EXTERN void __tgt_set_info_flag(uint32_t NewInfoLevel) {
   std::atomic<uint32_t> &InfoLevel = getInfoLevelInternal();
   InfoLevel.store(NewInfoLevel);
-  for (auto &R : PM->pluginAdaptors()) {
+  for (auto &R : PM->RTLs.AllRTLs) {
     if (R.set_info_flag)
       R.set_info_flag(NewInfoLevel);
   }
 }
 
 EXTERN int __tgt_print_device_info(int64_t DeviceId) {
-  auto DeviceOrErr = PM->getDevice(DeviceId);
-  if (!DeviceOrErr)
-    FATAL_MESSAGE(DeviceId, "%s", toString(DeviceOrErr.takeError()).c_str());
+  // Make sure the device is ready.
+  if (!deviceIsReady(DeviceId)) {
+    DP("Device %" PRId64 " is not ready\n", DeviceId);
+    return OMP_TGT_FAIL;
+  }
 
-  return DeviceOrErr->printDeviceInfo();
+  return PM->Devices[DeviceId]->printDeviceInfo(
+      PM->Devices[DeviceId]->RTLDeviceID);
 }
 
 EXTERN void __tgt_target_nowait_query(void **AsyncHandle) {
@@ -453,6 +453,7 @@ EXTERN void __tgt_target_nowait_query(void **AsyncHandle) {
   // for the device operations (work/spin wait on them) or block until they are
   // completed (use device side blocking mechanism). This allows the runtime to
   // adapt itself when there are a lot of long-running target regions in-flight.
+  using namespace llvm::omp::target;
   static thread_local utils::ExponentialBackoff QueryCounter(
       Int64Envar("OMPTARGET_QUERY_COUNT_MAX", 10),
       Int64Envar("OMPTARGET_QUERY_COUNT_THRESHOLD", 5),

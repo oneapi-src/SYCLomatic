@@ -41,9 +41,9 @@
 // CHECKYAML-NEXT: 'contents': [
 // CHECKYAML-NEXT:   {
 // CHECKYAML-NEXT:     'type': 'file',
-// CHECKYAML-NEXT:     'name': "module.modulemap",
+// CHECKYAML-NEXT:     'name': "module.map",
 // CHECKYAML-NOT:      'external-contents': "{{[^ ]*}}.cache
-// CHECKYAML-NEXT:     'external-contents': "/[[PATH]]/Inputs/crash-recovery/usr/include/module.modulemap"
+// CHECKYAML-NEXT:     'external-contents': "/[[PATH]]/Inputs/crash-recovery/usr/include/module.map"
 // CHECKYAML-NEXT:   },
 
 // Run the reproducer script - regular exit code is enough to test it works.

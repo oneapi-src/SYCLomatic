@@ -102,7 +102,7 @@
 - Rule: rule_cuda_compile_ptx
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: cuda_compile_ptx
+  CmakeSyntax: secuda_compile_ptxt
   In: cuda_compile_ptx(${device} ${value})
   Out: dpct_compile_sycl_code(${device} ${value})
   Subrules:
@@ -264,3 +264,10 @@
   CmakeSyntax: add_executable_opts
   In: add_executable(${value} OPTIONS ${options})
   Out: add_executable(${value})
+
+- Rule: rule_target_link_libraries_CUDA_LIBRARIES
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
+  In: target_link_libraries(${TARGET} ${CUDALibraries})
+  Out: target_link_sycl_libraries(${TARGET} ${CUDALibraries})

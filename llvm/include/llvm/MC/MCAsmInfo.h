@@ -799,8 +799,7 @@ public:
   /// frame information to unwind.
   bool usesCFIForEH() const {
     return (ExceptionsType == ExceptionHandling::DwarfCFI ||
-            ExceptionsType == ExceptionHandling::ARM ||
-            ExceptionsType == ExceptionHandling::ZOS || usesWindowsCFI());
+            ExceptionsType == ExceptionHandling::ARM || usesWindowsCFI());
   }
 
   bool usesWindowsCFI() const {

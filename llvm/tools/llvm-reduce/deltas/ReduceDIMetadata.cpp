@@ -18,6 +18,8 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/InstIterator.h"
+#include <set>
+#include <stack>
 #include <tuple>
 #include <vector>
 

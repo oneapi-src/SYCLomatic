@@ -290,8 +290,8 @@ int lldb_assert(Debugger &Dbg);
 } // namespace assert
 } // namespace opts
 
-llvm::SmallVector<CompilerContext, 4> parseCompilerContext() {
-  llvm::SmallVector<CompilerContext, 4> result;
+std::vector<CompilerContext> parseCompilerContext() {
+  std::vector<CompilerContext> result;
   if (opts::symbols::CompilerContext.empty())
     return result;
 
@@ -577,33 +577,29 @@ Error opts::symbols::findTypes(lldb_private::Module &Module) {
   Expected<CompilerDeclContext> ContextOr = getDeclContext(Symfile);
   if (!ContextOr)
     return ContextOr.takeError();
+  const CompilerDeclContext &ContextPtr =
+      ContextOr->IsValid() ? *ContextOr : CompilerDeclContext();
 
-  TypeResults results;
-  if (!Name.empty()) {
-    if (ContextOr->IsValid()) {
-      TypeQuery query(*ContextOr, ConstString(Name),
-                      TypeQueryOptions::e_module_search);
-      if (!Language.empty())
-        query.AddLanguage(Language::GetLanguageTypeFromString(Language));
-      Symfile.FindTypes(query, results);
-    } else {
-      TypeQuery query(Name);
-      if (!Language.empty())
-        query.AddLanguage(Language::GetLanguageTypeFromString(Language));
-      Symfile.FindTypes(query, results);
-    }
-  } else {
-    TypeQuery query(parseCompilerContext(), TypeQueryOptions::e_module_search);
-    if (!Language.empty())
-      query.AddLanguage(Language::GetLanguageTypeFromString(Language));
-    Symfile.FindTypes(query, results);
-  }
-  outs() << formatv("Found {0} types:\n", results.GetTypeMap().GetSize());
+  LanguageSet languages;
+  if (!Language.empty())
+    languages.Insert(Language::GetLanguageTypeFromString(Language));
+
+  DenseSet<SymbolFile *> SearchedFiles;
+  TypeMap Map;
+  if (!Name.empty())
+    Symfile.FindTypes(ConstString(Name), ContextPtr, UINT32_MAX, SearchedFiles,
+                      Map);
+  else
+    Module.FindTypes(parseCompilerContext(), languages, SearchedFiles, Map);
+
+  outs() << formatv("Found {0} types:\n", Map.GetSize());
   StreamString Stream;
   // Resolve types to force-materialize typedef types.
-  for (const auto &type_sp : results.GetTypeMap().Types())
-    type_sp->GetFullCompilerType();
-  results.GetTypeMap().Dump(&Stream, false, GetDescriptionLevel());
+  Map.ForEach([&](TypeSP &type) {
+    type->GetFullCompilerType();
+    return false;
+  });
+  Map.Dump(&Stream, false, GetDescriptionLevel());
   outs() << Stream.GetData() << "\n";
   return Error::success();
 }

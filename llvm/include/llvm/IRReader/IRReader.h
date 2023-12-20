@@ -17,6 +17,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Bitcode/BitcodeReader.h"
 #include <memory>
+#include <optional>
 
 namespace llvm {
 

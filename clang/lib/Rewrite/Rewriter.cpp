@@ -386,7 +386,7 @@ bool Rewriter::IncreaseIndentation(CharSourceRange range,
   }
   if (parentSpace.size() >= startSpace.size())
     return true;
-  if (!startSpace.starts_with(parentSpace))
+  if (!startSpace.startswith(parentSpace))
     return true;
 
   StringRef indent = startSpace.substr(parentSpace.size());
@@ -399,7 +399,7 @@ bool Rewriter::IncreaseIndentation(CharSourceRange range,
     while (isWhitespaceExceptNL(MB[i]))
       ++i;
     StringRef origIndent = MB.substr(offs, i-offs);
-    if (origIndent.starts_with(startSpace))
+    if (origIndent.startswith(startSpace))
       RB.InsertText(offs, indent, /*InsertAfter=*/false);
   }
 
@@ -412,13 +412,12 @@ bool Rewriter::overwriteChangedFiles() {
   unsigned OverwriteFailure = Diag.getCustomDiagID(
       DiagnosticsEngine::Error, "unable to overwrite file %0: %1");
   for (buffer_iterator I = buffer_begin(), E = buffer_end(); I != E; ++I) {
-    OptionalFileEntryRef Entry = getSourceMgr().getFileEntryRefForID(I->first);
-    llvm::SmallString<128> Path(Entry->getName());
-    getSourceMgr().getFileManager().makeAbsolutePath(Path);
-    if (auto Error = llvm::writeToOutput(Path, [&](llvm::raw_ostream &OS) {
-          I->second.write(OS);
-          return llvm::Error::success();
-        })) {
+    const FileEntry *Entry = getSourceMgr().getFileEntryForID(I->first);
+    if (auto Error =
+            llvm::writeToOutput(Entry->getName(), [&](llvm::raw_ostream &OS) {
+              I->second.write(OS);
+              return llvm::Error::success();
+            })) {
       Diag.Report(OverwriteFailure)
           << Entry->getName() << llvm::toString(std::move(Error));
       AllWritten = false;

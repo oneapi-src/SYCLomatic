@@ -10,7 +10,6 @@
 #define LLVM_DEBUGINFO_PDB_NATIVE_FORMATUTIL_H
 
 #include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/STLForwardCompat.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/DebugInfo/CodeView/CodeView.h"
 #include "llvm/Support/Endian.h"
@@ -35,7 +34,8 @@ namespace pdb {
     return Ret;
 
 template <typename T> std::string formatUnknownEnum(T Value) {
-  return formatv("unknown ({0})", llvm::to_underlying(Value)).str();
+  return formatv("unknown ({0})", static_cast<std::underlying_type_t<T>>(Value))
+      .str();
 }
 
 std::string formatSegmentOffset(uint16_t Segment, uint32_t Offset);

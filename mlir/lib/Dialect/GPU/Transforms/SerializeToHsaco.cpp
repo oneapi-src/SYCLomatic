@@ -201,9 +201,9 @@ SerializeToHsacoPass::translateToLLVMIR(llvm::LLVMContext &llvmContext) {
       StringRef funcName = f.getName();
       if ("printf" == funcName)
         needOpenCl = true;
-      if (funcName.starts_with("__ockl_"))
+      if (funcName.startswith("__ockl_"))
         needOckl = true;
-      if (funcName.starts_with("__ocml_"))
+      if (funcName.startswith("__ocml_"))
         needOcml = true;
     }
   }
@@ -253,7 +253,7 @@ SerializeToHsacoPass::translateToLLVMIR(llvm::LLVMContext &llvmContext) {
   if (needOcml || needOckl) {
     addControlConstant("__oclc_wavefrontsize64", 1, 8);
     StringRef chipSet = this->chip.getValue();
-    if (chipSet.starts_with("gfx"))
+    if (chipSet.startswith("gfx"))
       chipSet = chipSet.substr(3);
     uint32_t minor =
         llvm::APInt(32, chipSet.substr(chipSet.size() - 2), 16).getZExtValue();

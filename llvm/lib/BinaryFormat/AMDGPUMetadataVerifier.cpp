@@ -17,6 +17,7 @@
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/BinaryFormat/MsgPackDocument.h"
 
+#include <map>
 #include <utility>
 
 namespace llvm {

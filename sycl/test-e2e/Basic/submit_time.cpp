@@ -1,35 +1,34 @@
 // RUN: %{build} -o %t.out
-// There is an issue with reported device time for the L0 backend, works only on
-// pvc for now. No such problems for other backends.
-// RUN: %if (!level_zero || gpu-intel-pvc) %{ %{run} %t.out %}
+// RUN: %{run} %t.out
 
-// Check that submission time is calculated properly.
-
-// Test fails on hip flakily, disable temprorarily.
-// UNSUPPORTED: hip
+// Check that device_impl::isGetDeviceAndHostTimerSupported() is not spoiling
+// device_impl::MDeviceHostBaseTime values used for submit timestamp
+// calculation.
 
 #include <sycl/sycl.hpp>
 
+using namespace sycl;
+
 int main(void) {
-  sycl::queue q({sycl::property::queue::enable_profiling{}});
-  int *data = malloc_host<int>(1024, q);
+  sycl::queue queue(
+      sycl::property_list{sycl::property::queue::enable_profiling()});
+  sycl::event event = queue.submit([&](sycl::handler &cgh) {
+    cgh.parallel_for<class set_value>(sycl::range<1>{1024},
+                                      [=](sycl::id<1> idx) {});
+  });
 
-  for (int i = 0; i < 20; i++) {
-    auto event = q.submit([&](sycl::handler &cgh) {
-      cgh.parallel_for<class KernelTime>(
-          sycl::range<1>(1024), [=](sycl::id<1> idx) { data[idx] = idx; });
-    });
+  // SYCL RT internally calls device_impl::isGetDeviceAndHostTimerSupported()
+  // to decide how to calculate "submit" timestamp - either using backend API
+  // call or using fallback implementation.
+  auto submit =
+      event.get_profiling_info<sycl::info::event_profiling::command_submit>();
+  auto start =
+      event.get_profiling_info<sycl::info::event_profiling::command_start>();
+  auto end =
+      event.get_profiling_info<sycl::info::event_profiling::command_end>();
 
-    event.wait();
-    auto submit_time =
-        event.get_profiling_info<sycl::info::event_profiling::command_submit>();
-    auto start_time =
-        event.get_profiling_info<sycl::info::event_profiling::command_start>();
-    auto end_time =
-        event.get_profiling_info<sycl::info::event_profiling::command_end>();
+  if (!(submit <= start) || !(start <= end))
+    return -1;
 
-    assert((submit_time <= start_time) && (start_time <= end_time));
-  }
-  sycl::free(data, q);
   return 0;
 }

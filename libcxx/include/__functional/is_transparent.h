@@ -26,7 +26,8 @@ template <class _Tp, class, class = void>
 struct __is_transparent : false_type {};
 
 template <class _Tp, class _Up>
-struct __is_transparent<_Tp, _Up, __void_t<typename _Tp::is_transparent> > : true_type {};
+struct __is_transparent<_Tp, _Up, __void_t<typename _Tp::is_transparent> >
+   : true_type {};
 
 #endif
 

@@ -310,8 +310,10 @@ public:
   /// with the type of the handle value.
   LogicalResult mapBlockArguments(BlockArgument argument,
                                   ArrayRef<Operation *> operations) {
-    assert(argument.getParentRegion() == regionStack.back()->region &&
+#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+    assert(argument.getParentRegion() == regionStack.back() &&
            "mapping block arguments from a region other than the active one");
+#endif // LLVM_ENABLE_ABI_BREAKING_CHECKS
     return setPayloadOps(argument, operations);
   }
   LogicalResult mapBlockArgument(BlockArgument argument,
@@ -348,7 +350,9 @@ public:
           std::make_pair(&region, std::make_unique<Mappings>()));
       assert(res.second && "the region scope is already present");
       (void)res;
-      state.regionStack.push_back(this);
+#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+      state.regionStack.push_back(&region);
+#endif // LLVM_ENABLE_ABI_BREAKING_CHECKS
     }
 
     /// Back-reference to the transform state.
@@ -357,10 +361,7 @@ public:
     /// The region this scope is associated with.
     Region *region;
 
-    /// The transform op within this region that is currently being applied.
-    TransformOpInterface currentTransform;
-
-    friend class transform::TransformState;
+    friend RegionScope TransformState::make_region_scope(Region &);
   };
   friend class RegionScope;
 
@@ -783,14 +784,24 @@ private:
   /// location.
   InvalidatedHandleMap invalidatedHandles;
 
+#if LLVM_ENABLE_ABI_BREAKING_CHECKS
   /// A stack of nested regions that are being processed in the transform IR.
   /// Each region must be an ancestor of the following regions in this list.
   /// These are also the keys for "mappings".
-  SmallVector<RegionScope *> regionStack;
+  SmallVector<Region *> regionStack;
 
-  /// The top-level region scope. The first (bottom) element of `regionStack`
-  /// is the top-level region scope object.
-  std::unique_ptr<RegionScope> topLevelRegionScope;
+  /// This cache stores operation names for operations that are tracked in the
+  /// transform dialect state. It is used to detect missing memory side effects
+  /// and op tracking.
+  ///
+  /// All tracked ops are added to this cache before a transform op is applied.
+  /// After the application of the transform op, the names of all tracked ops
+  /// are compared with the names in the cache. If there is a mismatch (or a
+  /// crash), op tracking is missing somewhere. This is typically a missing
+  /// "consumesHandle" side effect or a pattern that removes an op without
+  /// notifying a TrackingListener.
+  DenseMap<Operation *, OperationName> cachedNames;
+#endif // LLVM_ENABLE_ABI_BREAKING_CHECKS
 };
 
 /// Local mapping between values defined by a specific op implementing the
@@ -927,14 +938,8 @@ TransformState::RegionScope TransformState::make_region_scope(Region &region) {
 class TrackingListener : public RewriterBase::Listener,
                          public TransformState::Extension {
 public:
-  /// A function that returns "true" for handles that do not have to be updated.
-  using SkipHandleFn = std::function<bool(Value)>;
-
   /// Create a new TrackingListener for usage in the specified transform op.
-  /// Optionally, a function can be specified to identify handles that should
-  /// do not have to be updated.
-  TrackingListener(TransformState &state, TransformOpInterface op,
-                   SkipHandleFn skipHandleFn = nullptr);
+  TrackingListener(TransformState &state, TransformOpInterface op);
 
 protected:
   /// Return a replacement payload op for the given op, which is going to be
@@ -1022,10 +1027,6 @@ private:
 
   /// The handles that are consumed by the transform op.
   DenseSet<Value> consumedHandles;
-
-  /// Handles for which this function evaluates to "true" do not have to be
-  /// updated. These are typically dead or consumed handles.
-  SkipHandleFn skipHandleFn;
 };
 
 /// A specialized listener that keeps track of cases in which no replacement

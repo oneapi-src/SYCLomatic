@@ -47,6 +47,7 @@ void PreprocessorLexer::LexIncludeFilename(Token &FilenameTok) {
 
 /// getFileEntry - Return the FileEntry corresponding to this FileID.  Like
 /// getFileID(), this only works for lexers with attached preprocessors.
-OptionalFileEntryRef PreprocessorLexer::getFileEntry() const {
+OptionalFileEntryRefDegradesToFileEntryPtr
+PreprocessorLexer::getFileEntry() const {
   return PP->getSourceManager().getFileEntryRefForID(getFileID());
 }

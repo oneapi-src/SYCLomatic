@@ -1702,8 +1702,6 @@ struct TestScopedLockable {
 
   bool getBool();
 
-  bool lock2Bool(MutexLock);
-
   void foo1() {
     MutexLock mulock(&mu1);
     a = 5;
@@ -1718,12 +1716,6 @@ struct TestScopedLockable {
 
   void temporary() {
     MutexLock{&mu1}, a = 5;
-  }
-
-  void temporary_cfg(int x) {
-    // test the case where a pair of temporary Ctor and Dtor is in different CFG blocks
-    lock2Bool(MutexLock{&mu1}) || x;
-    MutexLock{&mu1};  // no-warn
   }
 
   void lifetime_extension() {

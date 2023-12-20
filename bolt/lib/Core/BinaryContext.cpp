@@ -1086,7 +1086,7 @@ void BinaryContext::generateSymbolHashes() {
   auto isPadding = [](const BinaryData &BD) {
     StringRef Contents = BD.getSection().getContents();
     StringRef SymData = Contents.substr(BD.getOffset(), BD.getSize());
-    return (BD.getName().starts_with("HOLEat") ||
+    return (BD.getName().startswith("HOLEat") ||
             SymData.find_first_not_of(0) == StringRef::npos);
   };
 
@@ -1326,8 +1326,8 @@ void BinaryContext::postProcessSymbolTable() {
   bool Valid = true;
   for (auto &Entry : BinaryDataMap) {
     BinaryData *BD = Entry.second;
-    if ((BD->getName().starts_with("SYMBOLat") ||
-         BD->getName().starts_with("DATAat")) &&
+    if ((BD->getName().startswith("SYMBOLat") ||
+         BD->getName().startswith("DATAat")) &&
         !BD->getParent() && !BD->getSize() && !BD->isAbsolute() &&
         BD->getSection()) {
       errs() << "BOLT-WARNING: zero-sized top level symbol: " << *BD << "\n";
@@ -1410,9 +1410,9 @@ void BinaryContext::fixBinaryDataHoles() {
     auto isNotHole = [&Section](const binary_data_iterator &Itr) {
       BinaryData *BD = Itr->second;
       bool isHole = (!BD->getParent() && !BD->getSize() && BD->isObject() &&
-                     (BD->getName().starts_with("SYMBOLat0x") ||
-                      BD->getName().starts_with("DATAat0x") ||
-                      BD->getName().starts_with("ANONYMOUS")));
+                     (BD->getName().startswith("SYMBOLat0x") ||
+                      BD->getName().startswith("DATAat0x") ||
+                      BD->getName().startswith("ANONYMOUS")));
       return !isHole && BD->getSection() == Section && !BD->getParent();
     };
 
@@ -1818,14 +1818,14 @@ MarkerSymType BinaryContext::getMarkerType(const SymbolRef &Symbol) const {
   if (*TypeOrError != SymbolRef::ST_Unknown)
     return MarkerSymType::NONE;
 
-  if (*NameOrError == "$x" || NameOrError->starts_with("$x."))
+  if (*NameOrError == "$x" || NameOrError->startswith("$x."))
     return MarkerSymType::CODE;
 
   // $x<ISA>
-  if (isRISCV() && NameOrError->starts_with("$x"))
+  if (isRISCV() && NameOrError->startswith("$x"))
     return MarkerSymType::CODE;
 
-  if (*NameOrError == "$d" || NameOrError->starts_with("$d."))
+  if (*NameOrError == "$d" || NameOrError->startswith("$d."))
     return MarkerSymType::DATA;
 
   return MarkerSymType::NONE;

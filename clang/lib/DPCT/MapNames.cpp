@@ -304,30 +304,20 @@ void MapNames::setExplicitNamespaceMap() {
                                           "image_channel_data_type",
                                       HelperFeatureEnum::device_ext)},
       {"cudaArray",
-       std::make_shared<TypeNameRule>(
-           DpctGlobalInfo::useExtBindlessImages()
-               ? getClNamespace() + "ext::oneapi::experimental::image_mem"
-               : getDpctNamespace() + "image_matrix",
-           HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix",
+                                      HelperFeatureEnum::device_ext)},
       {"cudaArray_t",
-       std::make_shared<TypeNameRule>(
-           DpctGlobalInfo::useExtBindlessImages()
-               ? getDpctNamespace() + "experimental::image_mem_ptr"
-               : getDpctNamespace() + "image_matrix_p",
-           HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix_p",
+                                      HelperFeatureEnum::device_ext)},
       {"cudaTextureDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::device_ext)},
       {"cudaResourceDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_data",
                                       HelperFeatureEnum::device_ext)},
-      {"cudaTextureObject_t",
-       std::make_shared<TypeNameRule>(
-           DpctGlobalInfo::useExtBindlessImages()
-               ? getClNamespace() +
-                     "ext::oneapi::experimental::sampled_image_handle"
-               : getDpctNamespace() + "image_wrapper_base_p",
-           HelperFeatureEnum::device_ext)},
+      {"cudaTextureObject_t", std::make_shared<TypeNameRule>(
+                                  getDpctNamespace() + "image_wrapper_base_p",
+                                  HelperFeatureEnum::device_ext)},
       {"textureReference",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_wrapper_base",
                                       HelperFeatureEnum::device_ext)},

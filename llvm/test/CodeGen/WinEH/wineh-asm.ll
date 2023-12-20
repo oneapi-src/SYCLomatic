@@ -1,5 +1,4 @@
-; RUN: opt -win-eh-prepare < %s
-; RUN: opt -passes=win-eh-prepare < %s
+; RUN: opt -winehprepare < %s
 
 target triple = "x86_64-pc-windows-msvc"
 

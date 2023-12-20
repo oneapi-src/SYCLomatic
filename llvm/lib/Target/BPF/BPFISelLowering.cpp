@@ -99,10 +99,8 @@ BPFTargetLowering::BPFTargetLowering(const TargetMachine &TM,
 
     setOperationAction(ISD::SDIVREM, VT, Expand);
     setOperationAction(ISD::UDIVREM, VT, Expand);
-    if (!STI.hasSdivSmod()) {
-      setOperationAction(ISD::SDIV, VT, Custom);
-      setOperationAction(ISD::SREM, VT, Custom);
-    }
+    if (!STI.hasSdivSmod())
+      setOperationAction(ISD::SREM, VT, Expand);
     setOperationAction(ISD::MULHU, VT, Expand);
     setOperationAction(ISD::MULHS, VT, Expand);
     setOperationAction(ISD::UMUL_LOHI, VT, Expand);
@@ -309,11 +307,8 @@ SDValue BPFTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
     return LowerGlobalAddress(Op, DAG);
   case ISD::SELECT_CC:
     return LowerSELECT_CC(Op, DAG);
-  case ISD::SDIV:
-  case ISD::SREM:
-    return LowerSDIVSREM(Op, DAG);
   case ISD::DYNAMIC_STACKALLOC:
-    return LowerDYNAMIC_STACKALLOC(Op, DAG);
+    report_fatal_error("unsupported dynamic stack allocation");
   }
 }
 
@@ -620,21 +615,6 @@ static void NegateCC(SDValue &LHS, SDValue &RHS, ISD::CondCode &CC) {
     std::swap(LHS, RHS);
     break;
   }
-}
-
-SDValue BPFTargetLowering::LowerSDIVSREM(SDValue Op, SelectionDAG &DAG) const {
-  SDLoc DL(Op);
-  fail(DL, DAG,
-       "unsupported signed division, please convert to unsigned div/mod.");
-  return DAG.getUNDEF(Op->getValueType(0));
-}
-
-SDValue BPFTargetLowering::LowerDYNAMIC_STACKALLOC(SDValue Op,
-                                                   SelectionDAG &DAG) const {
-  SDLoc DL(Op);
-  fail(DL, DAG, "unsupported dynamic stack allocation");
-  auto Ops = {DAG.getConstant(0, SDLoc(), Op.getValueType()), Op.getOperand(0)};
-  return DAG.getMergeValues(Ops, SDLoc());
 }
 
 SDValue BPFTargetLowering::LowerBR_CC(SDValue Op, SelectionDAG &DAG) const {

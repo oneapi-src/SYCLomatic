@@ -63,7 +63,7 @@ public:
 ScheduleDAGSDNodes *createBURRListDAGScheduler(SelectionDAGISel *IS,
                                                CodeGenOptLevel OptLevel);
 
-/// createSourceListDAGScheduler - This creates a bottom up list scheduler that
+/// createBURRListDAGScheduler - This creates a bottom up list scheduler that
 /// schedules nodes in source code order when possible.
 ScheduleDAGSDNodes *createSourceListDAGScheduler(SelectionDAGISel *IS,
                                                  CodeGenOptLevel OptLevel);

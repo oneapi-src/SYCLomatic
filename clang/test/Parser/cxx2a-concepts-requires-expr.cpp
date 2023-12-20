@@ -160,11 +160,3 @@ template <int N>
 requires requires {
  typename BitInt<N>; // ok
 } using r44 = void;
-
-namespace GH73112 {
-void f() {
-    requires { requires(int; } // expected-error {{expected ')'}} \
-                               // expected-error {{expected expression}} \
-                               // expected-note {{to match this '('}}
-}
-}

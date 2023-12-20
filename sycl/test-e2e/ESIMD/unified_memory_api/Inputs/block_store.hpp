@@ -332,7 +332,7 @@ bool testLocalAccSLM(queue Q, uint32_t Groups,
 
   constexpr size_t Alignment = getAlignment<T, N, UseMask>(StoreProperties);
 
-  shared_vector Out(Size, shared_allocator{Q});
+  shared_vector Out(GroupSize, shared_allocator{Q});
   T OutVal = esimd_test::getRandomValue<T>();
   for (int i = 0; i < Size; i++)
     Out[i] = OutVal;
@@ -445,8 +445,7 @@ bool testLocalAccSLM(queue Q, uint32_t Groups,
   return Passed;
 }
 
-template <typename T, TestFeatures Features>
-bool test_block_store_usm(queue Q) {
+template <typename T, bool TestPVCFeatures> bool test_block_store_usm(queue Q) {
   constexpr bool CheckMask = true;
   constexpr bool CheckProperties = true;
   properties Align16Props{alignment<16>};
@@ -454,7 +453,7 @@ bool test_block_store_usm(queue Q) {
 
   bool Passed = true;
 
-  // Test block_store() that is available on Gen12, DG2 and PVC.
+  // Test block_store() that is available on Gen12 and PVC.
   Passed &= testUSM<T, 1, !CheckMask, CheckProperties>(Q, 2, 4, AlignElemProps);
   Passed &= testUSM<T, 2, !CheckMask, CheckProperties>(Q, 1, 4, AlignElemProps);
   Passed &= testUSM<T, 3, !CheckMask, CheckProperties>(Q, 2, 8, AlignElemProps);
@@ -483,34 +482,33 @@ bool test_block_store_usm(queue Q) {
   Passed &= testUSM<T, 16, !CheckMask, !CheckProperties>(Q, 2, 4, Align16Props);
   Passed &= testUSM<T, 32, !CheckMask, !CheckProperties>(Q, 2, 4, Align16Props);
 
-  if constexpr (Features == TestFeatures::PVC ||
-                Features == TestFeatures::DG2) {
-    // Using cache hints adds the requirement to run tests on DG2/PVC.
-    // Also, DG2/PVC variant currently requires a) power-or-two elements,
+  if constexpr (TestPVCFeatures) {
+    // Using cache hints adds the requirement to run tests on PVC.
+    // Also, PVC variant currently requires a) power-or-two elements,
     // b) the number of bytes stored per call must not exceed 512,
     // c) the alignment of USM ptr + offset to be 4 or 8-bytes(for 8-byte
     // element vectors).
     constexpr size_t RequiredAlignment = sizeof(T) <= 4 ? 4 : 8;
-    properties DG2OrPVCProps{cache_hint_L1<cache_hint::write_back>,
-                             cache_hint_L2<cache_hint::write_back>,
-                             alignment<RequiredAlignment>};
+    properties PVCProps{cache_hint_L1<cache_hint::write_back>,
+                        cache_hint_L2<cache_hint::write_back>,
+                        alignment<RequiredAlignment>};
     // Only d/q-words are supported now.
     // Thus we use this I32Factor for testing purposes and convenience.
     constexpr int I32Factor =
         std::max(static_cast<int>(sizeof(int) / sizeof(T)), 1);
 
-    Passed &= testUSM<T, 1 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 2, 4, DG2OrPVCProps);
-    Passed &= testUSM<T, 2 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 5, 5, DG2OrPVCProps);
-    Passed &= testUSM<T, 4 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 5, 5, DG2OrPVCProps);
-    Passed &= testUSM<T, 8 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 5, 5, DG2OrPVCProps);
-    Passed &= testUSM<T, 16 * I32Factor, CheckMask, CheckProperties>(
-        Q, 5, 5, DG2OrPVCProps);
-    Passed &= testUSM<T, 32 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 2, 4, DG2OrPVCProps);
+    Passed &= testUSM<T, 1 * I32Factor, !CheckMask, CheckProperties>(Q, 2, 4,
+                                                                     PVCProps);
+    Passed &= testUSM<T, 2 * I32Factor, !CheckMask, CheckProperties>(Q, 5, 5,
+                                                                     PVCProps);
+    Passed &= testUSM<T, 4 * I32Factor, !CheckMask, CheckProperties>(Q, 5, 5,
+                                                                     PVCProps);
+    Passed &= testUSM<T, 8 * I32Factor, !CheckMask, CheckProperties>(Q, 5, 5,
+                                                                     PVCProps);
+    Passed &= testUSM<T, 16 * I32Factor, CheckMask, CheckProperties>(Q, 5, 5,
+                                                                     PVCProps);
+    Passed &= testUSM<T, 32 * I32Factor, !CheckMask, CheckProperties>(Q, 2, 4,
+                                                                      PVCProps);
 
     // This call (potentially) and the next call (guaranteed) store the biggest
     // store-able chunk, which requires storing with 8-byte elements, which
@@ -518,21 +516,18 @@ bool test_block_store_usm(queue Q) {
     properties PVCAlign8Props{cache_hint_L1<cache_hint::write_back>,
                               cache_hint_L2<cache_hint::write_back>,
                               alignment<8>};
-    if constexpr (Features == TestFeatures::PVC) {
-      Passed &= testUSM<T, 64 * I32Factor, !CheckMask, CheckProperties>(
-          Q, 7, 1, PVCAlign8Props);
-      if constexpr (sizeof(T) <= 4)
-        Passed &= testUSM<T, 128 * I32Factor, CheckMask, CheckProperties>(
-            Q, 1, 4, PVCAlign8Props);
-    }
+    Passed &= testUSM<T, 64 * I32Factor, !CheckMask, CheckProperties>(
+        Q, 7, 1, PVCAlign8Props);
+    if constexpr (sizeof(T) <= 4)
+      Passed &= testUSM<T, 128 * I32Factor, CheckMask, CheckProperties>(
+          Q, 1, 4, PVCAlign8Props);
 
   } // TestPVCFeatures
 
   return Passed;
 }
 
-template <typename T, TestFeatures Features>
-bool test_block_store_acc(queue Q) {
+template <typename T, bool TestPVCFeatures> bool test_block_store_acc(queue Q) {
   constexpr bool CheckMask = true;
   constexpr bool CheckProperties = true;
   properties Align16Props{alignment<16>};
@@ -540,7 +535,7 @@ bool test_block_store_acc(queue Q) {
 
   bool Passed = true;
 
-  // Test block_store() that is available on Gen12, DG2 and PVC.
+  // Test block_store() that is available on Gen12 and PVC.
 
   if constexpr (sizeof(T) >= 4)
     Passed &= testACC<T, 4, !CheckMask, CheckProperties>(Q, 2, 4, Align16Props);
@@ -562,34 +557,33 @@ bool test_block_store_acc(queue Q) {
     Passed &=
         testACC<T, 32, !CheckMask, !CheckProperties>(Q, 2, 4, Align16Props);
 
-  if constexpr (Features == TestFeatures::PVC ||
-                Features == TestFeatures::DG2) {
-    // Using cache hints adds the requirement to run tests on DG2/PVC.
-    // Also, DG2/PVC variant currently requires a) power-or-two elements,
+  if constexpr (TestPVCFeatures) {
+    // Using cache hints adds the requirement to run tests on PVC.
+    // Also, PVC variant currently requires a) power-or-two elements,
     // b) the number of bytes stored per call must not exceed 512,
     // c) the alignment of USM ptr + offset to be 4 or 8-bytes(for 8-byte
     // element vectors).
     constexpr size_t RequiredAlignment = sizeof(T) <= 4 ? 4 : 8;
-    properties DG2OrPVCProps{cache_hint_L1<cache_hint::write_back>,
-                             cache_hint_L2<cache_hint::write_back>,
-                             alignment<RequiredAlignment>};
+    properties PVCProps{cache_hint_L1<cache_hint::write_back>,
+                        cache_hint_L2<cache_hint::write_back>,
+                        alignment<RequiredAlignment>};
     // Only d/q-words are supported now.
     // Thus we use this I32Factor for testing purposes and convenience.
     constexpr int I32Factor =
         std::max(static_cast<int>(sizeof(int) / sizeof(T)), 1);
 
-    Passed &= testACC<T, 1 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 2, 4, DG2OrPVCProps);
-    Passed &= testACC<T, 2 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 5, 5, DG2OrPVCProps);
-    Passed &= testACC<T, 4 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 5, 5, DG2OrPVCProps);
-    Passed &= testACC<T, 8 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 5, 5, DG2OrPVCProps);
-    Passed &= testACC<T, 16 * I32Factor, CheckMask, CheckProperties>(
-        Q, 5, 5, DG2OrPVCProps);
-    Passed &= testACC<T, 32 * I32Factor, !CheckMask, CheckProperties>(
-        Q, 2, 4, DG2OrPVCProps);
+    Passed &= testACC<T, 1 * I32Factor, !CheckMask, CheckProperties>(Q, 2, 4,
+                                                                     PVCProps);
+    Passed &= testACC<T, 2 * I32Factor, !CheckMask, CheckProperties>(Q, 5, 5,
+                                                                     PVCProps);
+    Passed &= testACC<T, 4 * I32Factor, !CheckMask, CheckProperties>(Q, 5, 5,
+                                                                     PVCProps);
+    Passed &= testACC<T, 8 * I32Factor, !CheckMask, CheckProperties>(Q, 5, 5,
+                                                                     PVCProps);
+    Passed &= testACC<T, 16 * I32Factor, CheckMask, CheckProperties>(Q, 5, 5,
+                                                                     PVCProps);
+    Passed &= testACC<T, 32 * I32Factor, !CheckMask, CheckProperties>(Q, 2, 4,
+                                                                      PVCProps);
 
     // This call (potentially) and the next call (guaranteed) store the biggest
     // store-able chunk, which requires storing with 8-byte elements, which
@@ -597,17 +591,15 @@ bool test_block_store_acc(queue Q) {
     properties PVCAlign8Props{cache_hint_L1<cache_hint::write_back>,
                               cache_hint_L2<cache_hint::write_back>,
                               alignment<8>};
-    if constexpr (Features == TestFeatures::PVC)
-      Passed &= testACC<T, 64 * I32Factor, !CheckMask, CheckProperties>(
-          Q, 7, 1, PVCAlign8Props);
+    Passed &= testACC<T, 64 * I32Factor, !CheckMask, CheckProperties>(
+        Q, 7, 1, PVCAlign8Props);
 
   } // TestPVCFeatures
 
   return Passed;
 }
 
-template <typename T, TestFeatures Features>
-bool test_block_store_slm(queue Q) {
+template <typename T, bool TestPVCFeatures> bool test_block_store_slm(queue Q) {
   constexpr bool CheckMerge = true;
   constexpr bool CheckMask = true;
   constexpr bool CheckProperties = true;
@@ -647,44 +639,42 @@ bool test_block_store_slm(queue Q) {
         testSLM<T, 113, !CheckMask, CheckProperties>(Q, 2, AlignElemProps);
   }
 
-  if constexpr (Features == TestFeatures::PVC ||
-                Features == TestFeatures::DG2) {
-    // Using the mask adds the requirement to run tests on DG2/PVC.
-    // Also, DG2/PVC variant currently requires power-or-two elements and
+  if constexpr (TestPVCFeatures) {
+    // Using the mask adds the requirement to run tests on PVC.
+    // Also, PVC variant currently requires power-or-two elements and
     // the number of bytes stored per call must not exceed 512.
 
     constexpr int I32Factor =
         std::max(static_cast<int>(sizeof(int) / sizeof(T)), 1);
     constexpr size_t RequiredAlignment = sizeof(T) <= 4 ? 4 : 8;
-    properties DG2OrPVCProps{alignment<RequiredAlignment>,
-                             cache_hint_L1<cache_hint::write_back>,
-                             cache_hint_L2<cache_hint::write_back>};
+    properties PVCProps{alignment<RequiredAlignment>,
+                        cache_hint_L1<cache_hint::write_back>,
+                        cache_hint_L2<cache_hint::write_back>};
 
     // Test block_store() that is available on PVC:
     // 1, 2, 3, 4, 8, ... N elements (up to 512-bytes).
-    Passed &= testSLM<T, 1 * I32Factor, CheckMask, CheckProperties>(
-        Q, 2, DG2OrPVCProps);
-    Passed &= testSLM<T, 2 * I32Factor, CheckMask, CheckProperties>(
-        Q, 1, DG2OrPVCProps);
-    Passed &= testSLM<T, 3 * I32Factor, CheckMask, CheckProperties>(
-        Q, 2, DG2OrPVCProps);
-    Passed &= testSLM<T, 4 * I32Factor, CheckMask, CheckProperties>(
-        Q, 2, DG2OrPVCProps);
-    Passed &= testSLM<T, 8 * I32Factor, CheckMask, CheckProperties>(
-        Q, 1, DG2OrPVCProps);
-    Passed &= testSLM<T, 16 * I32Factor, CheckMask, CheckProperties>(
-        Q, 8, DG2OrPVCProps);
-    Passed &= testSLM<T, 32 * I32Factor, CheckMask, CheckProperties>(
-        Q, 2, DG2OrPVCProps);
-    if constexpr (Features == TestFeatures::PVC)
-      Passed &= testSLM<T, 64 * I32Factor, CheckMask, !CheckProperties>(
-          Q, 2, DG2OrPVCProps);
+    Passed &=
+        testSLM<T, 1 * I32Factor, CheckMask, CheckProperties>(Q, 2, PVCProps);
+    Passed &=
+        testSLM<T, 2 * I32Factor, CheckMask, CheckProperties>(Q, 1, PVCProps);
+    Passed &=
+        testSLM<T, 3 * I32Factor, CheckMask, CheckProperties>(Q, 2, PVCProps);
+    Passed &=
+        testSLM<T, 4 * I32Factor, CheckMask, CheckProperties>(Q, 2, PVCProps);
+    Passed &=
+        testSLM<T, 8 * I32Factor, CheckMask, CheckProperties>(Q, 1, PVCProps);
+    Passed &=
+        testSLM<T, 16 * I32Factor, CheckMask, CheckProperties>(Q, 8, PVCProps);
+    Passed &=
+        testSLM<T, 32 * I32Factor, CheckMask, CheckProperties>(Q, 2, PVCProps);
+    Passed &=
+        testSLM<T, 64 * I32Factor, CheckMask, !CheckProperties>(Q, 2, PVCProps);
   } // TestPVCFeatures
 
   return Passed;
 }
 
-template <typename T, TestFeatures Features>
+template <typename T, bool TestPVCFeatures>
 bool test_block_store_local_acc_slm(queue Q) {
   constexpr bool CheckMerge = true;
   constexpr bool CheckMask = true;
@@ -741,38 +731,36 @@ bool test_block_store_local_acc_slm(queue Q) {
         Q, 2, AlignElemProps);
   }
 
-  if constexpr (Features == TestFeatures::PVC ||
-                Features == TestFeatures::DG2) {
-    // Using the mask adds the requirement to run tests on DG2/PVC.
-    // Also, DG2/PVC variant currently requires power-or-two elements and
+  if constexpr (TestPVCFeatures) {
+    // Using the mask adds the requirement to run tests on PVC.
+    // Also, PVC variant currently requires power-or-two elements and
     // the number of bytes stored per call must not exceed 512.
 
     constexpr int I32Factor =
         std::max(static_cast<int>(sizeof(int) / sizeof(T)), 1);
     constexpr size_t ReqiredAlignment = sizeof(T) <= 4 ? 4 : 8;
-    properties DG2OrPVCProps{alignment<ReqiredAlignment>,
-                             cache_hint_L1<cache_hint::write_back>,
-                             cache_hint_L2<cache_hint::write_back>};
+    properties PVCProps{alignment<ReqiredAlignment>,
+                        cache_hint_L1<cache_hint::write_back>,
+                        cache_hint_L2<cache_hint::write_back>};
 
     // Test block_store() that is available on PVC:
     // 1, 2, 3, 4, 8, ... N elements (up to 512-bytes).
     Passed &= testLocalAccSLM<T, 1 * I32Factor, CheckMask, CheckProperties>(
-        Q, 2, DG2OrPVCProps);
+        Q, 2, PVCProps);
     Passed &= testLocalAccSLM<T, 2 * I32Factor, CheckMask, CheckProperties>(
-        Q, 1, DG2OrPVCProps);
+        Q, 1, PVCProps);
     Passed &= testLocalAccSLM<T, 3 * I32Factor, CheckMask, CheckProperties>(
-        Q, 2, DG2OrPVCProps);
+        Q, 2, PVCProps);
     Passed &= testLocalAccSLM<T, 4 * I32Factor, CheckMask, CheckProperties>(
-        Q, 2, DG2OrPVCProps);
+        Q, 2, PVCProps);
     Passed &= testLocalAccSLM<T, 8 * I32Factor, CheckMask, CheckProperties>(
-        Q, 1, DG2OrPVCProps);
+        Q, 1, PVCProps);
     Passed &= testLocalAccSLM<T, 16 * I32Factor, CheckMask, CheckProperties>(
-        Q, 8, DG2OrPVCProps);
+        Q, 8, PVCProps);
     Passed &= testLocalAccSLM<T, 32 * I32Factor, CheckMask, CheckProperties>(
-        Q, 2, DG2OrPVCProps);
-    if constexpr (Features == TestFeatures::PVC)
-      Passed &= testLocalAccSLM<T, 64 * I32Factor, CheckMask, !CheckProperties>(
-          Q, 2, DG2OrPVCProps);
+        Q, 2, PVCProps);
+    Passed &= testLocalAccSLM<T, 64 * I32Factor, CheckMask, !CheckProperties>(
+        Q, 2, PVCProps);
   } // TestPVCFeatures
 
   return Passed;

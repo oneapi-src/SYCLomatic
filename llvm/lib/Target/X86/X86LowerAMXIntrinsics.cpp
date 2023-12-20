@@ -184,7 +184,9 @@ Value *X86LowerAMXIntrinsics::createTileLoadStoreLoops(
   Value *CurrentColZExt = B.CreateZExt(CurrentCol, Stride->getType());
   Value *Offset =
       B.CreateAdd(B.CreateMul(CurrentRowZExt, Stride), CurrentColZExt);
-  Value *EltPtr = B.CreateGEP(EltTy, Ptr, Offset);
+  unsigned AS = cast<PointerType>(Ptr->getType())->getAddressSpace();
+  Value *EltBasePtr = B.CreatePointerCast(Ptr, PointerType::get(EltTy, AS));
+  Value *EltPtr = B.CreateGEP(EltTy, EltBasePtr, Offset);
   Value *Idx = B.CreateAdd(B.CreateMul(CurrentRow, B.getInt16(16)), CurrentCol);
   if (IsTileLoad) {
     // tileload.scalarize.rows.header:

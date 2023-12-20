@@ -12,7 +12,6 @@ add_clang_library(clangFormat
   MacroCallReconstructor.cpp
   MacroExpander.cpp
   NamespaceEndCommentsFixer.cpp
-  ObjCPropertyAttributeOrderFixer.cpp
   QualifierAlignmentFixer.cpp
   SortJavaScriptImports.cpp
   TokenAnalyzer.cpp

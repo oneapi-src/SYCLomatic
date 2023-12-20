@@ -13,6 +13,10 @@
 #ifndef LLVM_TABLEGEN_PARSER_H
 #define LLVM_TABLEGEN_PARSER_H
 
+#include "llvm/ADT/STLExtras.h"
+#include <string>
+#include <vector>
+
 namespace llvm {
 class RecordKeeper;
 class SourceMgr;

@@ -933,15 +933,9 @@ void MCObjectFileInfo::initXCOFFMCObjectFileInfo(const Triple &T) {
   // the ABI or object file format, but various tools rely on the section
   // name being empty (considering named symbols to be "user symbol names").
   TextSection = Ctx->getXCOFFSection(
-      "..text..", // Use a non-null name to work around an AIX assembler bug...
-      SectionKind::getText(),
+      "", SectionKind::getText(),
       XCOFF::CsectProperties(XCOFF::StorageMappingClass::XMC_PR, XCOFF::XTY_SD),
       /* MultiSymbolsAllowed*/ true);
-
-  // ... but use a null name when generating the symbol table.
-  MCSectionXCOFF *TS = static_cast<MCSectionXCOFF *>(TextSection);
-  TS->getQualNameSymbol()->setSymbolTableName("");
-  TS->setSymbolTableName("");
 
   DataSection = Ctx->getXCOFFSection(
       ".data", SectionKind::getData(),

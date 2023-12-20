@@ -28,6 +28,7 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
+#include "llvm/TargetParser/Host.h"
 #include <iterator>
 #include <optional>
 #include <string>
@@ -186,6 +187,12 @@ static std::string resolveDriver(llvm::StringRef Driver, bool FollowSymlink,
 
 } // namespace
 
+CommandMangler::CommandMangler() {
+  Tokenizer = llvm::Triple(llvm::sys::getProcessTriple()).isOSWindows()
+                  ? llvm::cl::TokenizeWindowsCommandLine
+                  : llvm::cl::TokenizeGNUCommandLine;
+}
+
 CommandMangler CommandMangler::detect() {
   CommandMangler Result;
   Result.ClangPath = detectClangPath();
@@ -205,6 +212,14 @@ void CommandMangler::operator()(tooling::CompileCommand &Command,
   // a Cmd missing the driver is probably rare enough in practice and erroneous.
   if (Cmd.empty())
     return;
+
+  // FS used for expanding response files.
+  // FIXME: ExpandResponseFiles appears not to provide the usual
+  // thread-safety guarantees, as the access to FS is not locked!
+  // For now, use the real FS, which is known to be threadsafe (if we don't
+  // use/change working directory, which ExpandResponseFiles doesn't).
+  auto FS = llvm::vfs::getRealFileSystem();
+  tooling::addExpandedResponseFiles(Cmd, Command.Directory, Tokenizer, *FS);
 
   auto &OptTable = clang::driver::getDriverOptTable();
   // OriginalArgs needs to outlive ArgList.
@@ -323,7 +338,7 @@ void CommandMangler::operator()(tooling::CompileCommand &Command,
   };
 
   llvm::erase_if(Cmd, [](llvm::StringRef Elem) {
-    return Elem.starts_with("--save-temps") || Elem.starts_with("-save-temps");
+    return Elem.startswith("--save-temps") || Elem.startswith("-save-temps");
   });
 
   std::vector<std::string> ToAppend;
@@ -572,7 +587,7 @@ const ArgStripper::Rule *ArgStripper::matchingRule(llvm::StringRef Arg,
       continue; // not applicable to current driver mode
     if (BestRule && BestRule->Priority < R.Priority)
       continue; // lower-priority than best candidate.
-    if (!Arg.starts_with(R.Text))
+    if (!Arg.startswith(R.Text))
       continue; // current arg doesn't match the prefix string
     bool PrefixMatch = Arg.size() > R.Text.size();
     // Can rule apply as an exact/prefix match?

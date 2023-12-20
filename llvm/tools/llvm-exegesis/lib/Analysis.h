@@ -23,6 +23,9 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/raw_ostream.h"
 #include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
 
 namespace llvm {
 namespace exegesis {

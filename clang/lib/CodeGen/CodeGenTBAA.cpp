@@ -196,14 +196,11 @@ llvm::MDNode *CodeGenTBAA::getTypeInfoHelper(const Type *Ty) {
   // Enum types are distinct types. In C++ they have "underlying types",
   // however they aren't related for TBAA.
   if (const EnumType *ETy = dyn_cast<EnumType>(Ty)) {
-    if (!Features.CPlusPlus)
-      return getTypeInfo(ETy->getDecl()->getIntegerType());
-
     // In C++ mode, types have linkage, so we can rely on the ODR and
     // on their mangled names, if they're external.
     // TODO: Is there a way to get a program-wide unique name for a
     // decl with local linkage or no linkage?
-    if (!ETy->getDecl()->isExternallyVisible())
+    if (!Features.CPlusPlus || !ETy->getDecl()->isExternallyVisible())
       return getChar();
 
     SmallString<256> OutName;
@@ -345,7 +342,7 @@ llvm::MDNode *CodeGenTBAA::getBaseTypeInfoHelper(const Type *Ty) {
       // field. Virtual bases are more complex and omitted, but avoid an
       // incomplete view for NewStructPathTBAA.
       if (CodeGenOpts.NewStructPathTBAA && CXXRD->getNumVBases() != 0)
-        return nullptr;
+        return BaseTypeMetadataCache[Ty] = nullptr;
       for (const CXXBaseSpecifier &B : CXXRD->bases()) {
         if (B.isVirtual())
           continue;
@@ -357,7 +354,7 @@ llvm::MDNode *CodeGenTBAA::getBaseTypeInfoHelper(const Type *Ty) {
                                      ? getBaseTypeInfo(BaseQTy)
                                      : getTypeInfo(BaseQTy);
         if (!TypeNode)
-          return nullptr;
+          return BaseTypeMetadataCache[Ty] = nullptr;
         uint64_t Offset = Layout.getBaseClassOffset(BaseRD).getQuantity();
         uint64_t Size =
             Context.getASTRecordLayout(BaseRD).getDataSize().getQuantity();
@@ -381,7 +378,7 @@ llvm::MDNode *CodeGenTBAA::getBaseTypeInfoHelper(const Type *Ty) {
       llvm::MDNode *TypeNode = isValidBaseType(FieldQTy) ?
           getBaseTypeInfo(FieldQTy) : getTypeInfo(FieldQTy);
       if (!TypeNode)
-        return nullptr;
+        return BaseTypeMetadataCache[Ty] = nullptr;
 
       uint64_t BitOffset = Layout.getFieldOffset(Field->getFieldIndex());
       uint64_t Offset = Context.toCharUnitsFromBits(BitOffset).getQuantity();
@@ -421,20 +418,14 @@ llvm::MDNode *CodeGenTBAA::getBaseTypeInfo(QualType QTy) {
     return nullptr;
 
   const Type *Ty = Context.getCanonicalType(QTy).getTypePtr();
+  if (llvm::MDNode *N = BaseTypeMetadataCache[Ty])
+    return N;
 
-  // nullptr is a valid value in the cache, so use find rather than []
-  auto I = BaseTypeMetadataCache.find(Ty);
-  if (I != BaseTypeMetadataCache.end())
-    return I->second;
-
-  // First calculate the metadata, before recomputing the insertion point, as
-  // the helper can recursively call us.
+  // Note that the following helper call is allowed to add new nodes to the
+  // cache, which invalidates all its previously obtained iterators. So we
+  // first generate the node for the type and then add that node to the cache.
   llvm::MDNode *TypeNode = getBaseTypeInfoHelper(Ty);
-  LLVM_ATTRIBUTE_UNUSED auto inserted =
-      BaseTypeMetadataCache.insert({Ty, TypeNode});
-  assert(inserted.second && "BaseType metadata was already inserted");
-
-  return TypeNode;
+  return BaseTypeMetadataCache[Ty] = TypeNode;
 }
 
 llvm::MDNode *CodeGenTBAA::getAccessTagInfo(TBAAAccessInfo Info) {

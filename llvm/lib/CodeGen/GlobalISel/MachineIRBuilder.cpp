@@ -314,10 +314,7 @@ MachineInstrBuilder MachineIRBuilder::buildConstant(const DstOp &Res,
   assert(EltTy.getScalarSizeInBits() == Val.getBitWidth() &&
          "creating constant with the wrong size");
 
-  assert(!Ty.isScalableVector() &&
-         "unexpected scalable vector in buildConstant");
-
-  if (Ty.isFixedVector()) {
+  if (Ty.isVector()) {
     auto Const = buildInstr(TargetOpcode::G_CONSTANT)
     .addDef(getMRI()->createGenericVirtualRegister(EltTy))
     .addCImm(&Val);
@@ -350,10 +347,7 @@ MachineInstrBuilder MachineIRBuilder::buildFConstant(const DstOp &Res,
 
   assert(!Ty.isPointer() && "invalid operand type");
 
-  assert(!Ty.isScalableVector() &&
-         "unexpected scalable vector in buildFConstant");
-
-  if (Ty.isFixedVector()) {
+  if (Ty.isVector()) {
     auto Const = buildInstr(TargetOpcode::G_FCONSTANT)
     .addDef(getMRI()->createGenericVirtualRegister(EltTy))
     .addFPImm(&Val);
@@ -1055,18 +1049,6 @@ MachineIRBuilder::buildFence(unsigned Ordering, unsigned Scope) {
   return buildInstr(TargetOpcode::G_FENCE)
     .addImm(Ordering)
     .addImm(Scope);
-}
-
-MachineInstrBuilder MachineIRBuilder::buildPrefetch(const SrcOp &Addr,
-                                                    unsigned RW,
-                                                    unsigned Locality,
-                                                    unsigned CacheType,
-                                                    MachineMemOperand &MMO) {
-  auto MIB = buildInstr(TargetOpcode::G_PREFETCH);
-  Addr.addSrcToMIB(MIB);
-  MIB.addImm(RW).addImm(Locality).addImm(CacheType);
-  MIB.addMemOperand(&MMO);
-  return MIB;
 }
 
 MachineInstrBuilder

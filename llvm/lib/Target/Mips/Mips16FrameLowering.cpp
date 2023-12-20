@@ -30,6 +30,7 @@
 #include "llvm/MC/MachineLocation.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/CodeGen/TargetFrameLowering.h"
+#include <cassert>
 #include <cstdint>
 #include <vector>
 

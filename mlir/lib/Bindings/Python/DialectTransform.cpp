@@ -27,8 +27,7 @@ void populateDialectTransformSubmodule(const pybind11::module &m) {
   //===-------------------------------------------------------------------===//
 
   auto anyOpType =
-      mlir_type_subclass(m, "AnyOpType", mlirTypeIsATransformAnyOpType,
-                         mlirTransformAnyOpTypeGetTypeID);
+      mlir_type_subclass(m, "AnyOpType", mlirTypeIsATransformAnyOpType);
   anyOpType.def_classmethod(
       "get",
       [](py::object cls, MlirContext ctx) {
@@ -42,8 +41,7 @@ void populateDialectTransformSubmodule(const pybind11::module &m) {
   //===-------------------------------------------------------------------===//
 
   auto anyParamType =
-      mlir_type_subclass(m, "AnyParamType", mlirTypeIsATransformAnyParamType,
-                         mlirTransformAnyParamTypeGetTypeID);
+      mlir_type_subclass(m, "AnyParamType", mlirTypeIsATransformAnyParamType);
   anyParamType.def_classmethod(
       "get",
       [](py::object cls, MlirContext ctx) {
@@ -57,8 +55,7 @@ void populateDialectTransformSubmodule(const pybind11::module &m) {
   //===-------------------------------------------------------------------===//
 
   auto anyValueType =
-      mlir_type_subclass(m, "AnyValueType", mlirTypeIsATransformAnyValueType,
-                         mlirTransformAnyValueTypeGetTypeID);
+      mlir_type_subclass(m, "AnyValueType", mlirTypeIsATransformAnyValueType);
   anyValueType.def_classmethod(
       "get",
       [](py::object cls, MlirContext ctx) {
@@ -99,8 +96,7 @@ void populateDialectTransformSubmodule(const pybind11::module &m) {
   //===-------------------------------------------------------------------===//
 
   auto paramType =
-      mlir_type_subclass(m, "ParamType", mlirTypeIsATransformParamType,
-                         mlirTransformParamTypeGetTypeID);
+      mlir_type_subclass(m, "ParamType", mlirTypeIsATransformParamType);
   paramType.def_classmethod(
       "get",
       [](py::object cls, MlirType type, MlirContext ctx) {

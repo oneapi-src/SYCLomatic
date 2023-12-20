@@ -31,7 +31,7 @@ namespace detail {
 bool CurrentCodeLocationValid();
 void emitInstrumentationGeneral(uint32_t StreamID, uint64_t InstanceID,
                                 xpti_td *TraceEvent, uint16_t Type,
-                                const void *Addr);
+                                const char *Txt);
 #endif
 
 class queue_impl;

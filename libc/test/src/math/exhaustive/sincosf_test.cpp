@@ -15,14 +15,13 @@ namespace mpfr = LIBC_NAMESPACE::testing::mpfr;
 struct SincosfChecker : public virtual LIBC_NAMESPACE::testing::Test {
   using FloatType = float;
   using FPBits = LIBC_NAMESPACE::fputil::FPBits<float>;
-  using StorageType = uint32_t;
+  using UIntType = uint32_t;
 
-  uint64_t check(StorageType start, StorageType stop,
-                 mpfr::RoundingMode rounding) {
+  uint64_t check(UIntType start, UIntType stop, mpfr::RoundingMode rounding) {
     mpfr::ForceRoundingMode r(rounding);
     if (!r.success)
       return (stop > start);
-    StorageType bits = start;
+    UIntType bits = start;
     uint64_t failed = 0;
     do {
       FPBits xbits(bits);

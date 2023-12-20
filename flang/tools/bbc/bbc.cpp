@@ -16,7 +16,6 @@
 
 #include "flang/Common/Fortran-features.h"
 #include "flang/Common/OpenMP-features.h"
-#include "flang/Common/Version.h"
 #include "flang/Common/default-kinds.h"
 #include "flang/Lower/Bridge.h"
 #include "flang/Lower/PFTBuilder.h"
@@ -40,7 +39,6 @@
 #include "flang/Semantics/semantics.h"
 #include "flang/Semantics/unparse-with-symbols.h"
 #include "flang/Tools/CrossToolHelpers.h"
-#include "flang/Tools/TargetSetup.h"
 #include "flang/Version.inc"
 #include "mlir/Dialect/OpenMP/OpenMPDialect.h"
 #include "mlir/IR/AsmState.h"
@@ -52,7 +50,6 @@
 #include "mlir/Pass/PassRegistry.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "mlir/Transforms/Passes.h"
-#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Passes/OptimizationLevel.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ErrorOr.h"
@@ -66,7 +63,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/TargetParser/Host.h"
 #include "llvm/TargetParser/Triple.h"
-#include <memory>
 
 //===----------------------------------------------------------------------===//
 // Some basic command-line options
@@ -206,10 +202,6 @@ static llvm::cl::opt<bool> enableCUDA("fcuda",
 static llvm::cl::opt<bool> fixedForm("ffixed-form",
                                      llvm::cl::desc("enable fixed form"),
                                      llvm::cl::init(false));
-static llvm::cl::opt<std::string>
-    targetTripleOverride("target",
-                         llvm::cl::desc("Override host target triple"),
-                         llvm::cl::init(""));
 
 #define FLANG_EXCLUDE_CODEGEN
 #include "flang/Tools/CLOptions.inc"
@@ -229,27 +221,6 @@ static void registerAllPasses() {
   fir::registerOptTransformPasses();
 }
 
-/// Create a target machine that is at least sufficient to get data-layout
-/// information required by flang semantics and lowering. Note that it may not
-/// contain all the CPU feature information to get optimized assembly generation
-/// from LLVM IR. Drivers that needs to generate assembly from LLVM IR should
-/// create a target machine according to their specific options.
-static std::unique_ptr<llvm::TargetMachine>
-createTargetMachine(llvm::StringRef targetTriple, std::string &error) {
-  std::string triple{targetTriple};
-  if (triple.empty())
-    triple = llvm::sys::getDefaultTargetTriple();
-
-  const llvm::Target *theTarget =
-      llvm::TargetRegistry::lookupTarget(triple, error);
-  if (!theTarget)
-    return nullptr;
-  return std::unique_ptr<llvm::TargetMachine>{
-      theTarget->createTargetMachine(triple, /*CPU=*/"",
-                                     /*Features=*/"", llvm::TargetOptions(),
-                                     /*Reloc::Model=*/std::nullopt)};
-}
-
 //===----------------------------------------------------------------------===//
 // Translate Fortran input to FIR, a dialect of MLIR.
 //===----------------------------------------------------------------------===//
@@ -258,8 +229,7 @@ static mlir::LogicalResult convertFortranSourceToMLIR(
     std::string path, Fortran::parser::Options options,
     const ProgramName &programPrefix,
     Fortran::semantics::SemanticsContext &semanticsContext,
-    const mlir::PassPipelineCLParser &passPipeline,
-    const llvm::TargetMachine &targetMachine) {
+    const mlir::PassPipelineCLParser &passPipeline) {
 
   // prep for prescan and parse
   Fortran::parser::Parsing parsing{semanticsContext.allCookedSources()};
@@ -325,8 +295,6 @@ static mlir::LogicalResult convertFortranSourceToMLIR(
   auto &defKinds = semanticsContext.defaultKinds();
   fir::KindMapping kindMap(
       &ctx, llvm::ArrayRef<fir::KindTy>{fir::fromDefaultKinds(defKinds)});
-  const llvm::DataLayout &dataLayout = targetMachine.createDataLayout();
-  std::string targetTriple = targetMachine.getTargetTriple().normalize();
   // Use default lowering options for bbc.
   Fortran::lower::LoweringOptions loweringOptions{};
   loweringOptions.setPolymorphicTypeImpl(enablePolymorphic);
@@ -334,9 +302,8 @@ static mlir::LogicalResult convertFortranSourceToMLIR(
   loweringOptions.setLowerToHighLevelFIR(useHLFIR || emitHLFIR);
   auto burnside = Fortran::lower::LoweringBridge::create(
       ctx, semanticsContext, defKinds, semanticsContext.intrinsics(),
-      semanticsContext.targetCharacteristics(), parsing.allCooked(),
-      targetTriple, kindMap, loweringOptions, {},
-      semanticsContext.languageFeatures(), &dataLayout);
+      semanticsContext.targetCharacteristics(), parsing.allCooked(), "",
+      kindMap, loweringOptions, {}, semanticsContext.languageFeatures());
   burnside.lower(parseTree, semanticsContext);
   mlir::ModuleOp mlirModule = burnside.getModule();
   if (enableOpenMP) {
@@ -421,8 +388,6 @@ static mlir::LogicalResult convertFortranSourceToMLIR(
 
 int main(int argc, char **argv) {
   [[maybe_unused]] llvm::InitLLVM y(argc, argv);
-  llvm::InitializeAllTargets();
-  llvm::InitializeAllTargetMCs();
   registerAllPasses();
 
   mlir::registerMLIRContextCLOptions();
@@ -488,21 +453,17 @@ int main(int argc, char **argv) {
       .set_warnOnNonstandardUsage(warnStdViolation)
       .set_warningsAreErrors(warnIsError);
 
-  std::string error;
-  // Create host target machine.
-  std::unique_ptr<llvm::TargetMachine> targetMachine =
-      createTargetMachine(targetTripleOverride, error);
-  if (!targetMachine) {
-    llvm::errs() << "failed to create target machine: " << error << "\n";
-    return mlir::failed(mlir::failure());
+  llvm::Triple targetTriple{llvm::Triple(
+      llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()))};
+  // FIXME: Handle real(3) ?
+  if (targetTriple.getArch() != llvm::Triple::ArchType::x86 &&
+      targetTriple.getArch() != llvm::Triple::ArchType::x86_64) {
+    semanticsContext.targetCharacteristics().DisableType(
+        Fortran::common::TypeCategory::Real, /*kind=*/10);
   }
-  std::string compilerVersion = Fortran::common::getFlangToolFullVersion("bbc");
-  std::string compilerOptions = "";
-  Fortran::tools::setUpTargetCharacteristics(
-      semanticsContext.targetCharacteristics(), *targetMachine, compilerVersion,
-      compilerOptions);
+  if (targetTriple.isPPC())
+    semanticsContext.targetCharacteristics().set_isPPC(true);
 
-  return mlir::failed(
-      convertFortranSourceToMLIR(inputFilename, options, programPrefix,
-                                 semanticsContext, passPipe, *targetMachine));
+  return mlir::failed(convertFortranSourceToMLIR(
+      inputFilename, options, programPrefix, semanticsContext, passPipe));
 }

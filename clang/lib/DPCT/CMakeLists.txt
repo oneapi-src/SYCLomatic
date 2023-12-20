@@ -5,7 +5,6 @@ set(LLVM_LINK_COMPONENTS
 
 set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/atomic.hpp
-  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/bindless_images.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/device.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/image.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/math.hpp
@@ -40,7 +39,6 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/numeric.h.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/vector.h.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/atomic.hpp.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/bindless_images.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dnnl_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.hpp.inc

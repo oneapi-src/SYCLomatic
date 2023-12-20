@@ -4295,9 +4295,11 @@ unsigned HexagonInstrInfo::getInstrTimingClassLatency(
 ///
 /// This is a raw interface to the itinerary that may be directly overriden by
 /// a target. Use computeOperandLatency to get the best estimate of latency.
-std::optional<unsigned> HexagonInstrInfo::getOperandLatency(
-    const InstrItineraryData *ItinData, const MachineInstr &DefMI,
-    unsigned DefIdx, const MachineInstr &UseMI, unsigned UseIdx) const {
+int HexagonInstrInfo::getOperandLatency(const InstrItineraryData *ItinData,
+                                        const MachineInstr &DefMI,
+                                        unsigned DefIdx,
+                                        const MachineInstr &UseMI,
+                                        unsigned UseIdx) const {
   const HexagonRegisterInfo &HRI = *Subtarget.getRegisterInfo();
 
   // Get DefIdx and UseIdx for super registers.
@@ -4326,9 +4328,9 @@ std::optional<unsigned> HexagonInstrInfo::getOperandLatency(
     }
   }
 
-  std::optional<unsigned> Latency = TargetInstrInfo::getOperandLatency(
-      ItinData, DefMI, DefIdx, UseMI, UseIdx);
-  if (Latency == 0)
+  int Latency = TargetInstrInfo::getOperandLatency(ItinData, DefMI, DefIdx,
+                                                   UseMI, UseIdx);
+  if (!Latency)
     // We should never have 0 cycle latency between two instructions unless
     // they can be packetized together. However, this decision can't be made
     // here.

@@ -177,7 +177,7 @@ std::string getLinkStringForBuiltIn(SPIRV::BuiltIn::BuiltIn BuiltInValue) {
 bool getSpirvBuiltInIdByName(llvm::StringRef Name,
                              SPIRV::BuiltIn::BuiltIn &BI) {
   const std::string Prefix = "__spirv_BuiltIn";
-  if (!Name.starts_with(Prefix))
+  if (!Name.startswith(Prefix))
     return false;
 
   const SPIRV::SymbolicOperand *Lookup =

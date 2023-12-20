@@ -147,8 +147,7 @@ public:
             Files.makeAbsolutePath(FixAbsoluteFilePath);
             tooling::Replacement R(FixAbsoluteFilePath, Repl.getOffset(),
                                    Repl.getLength(), Repl.getReplacementText());
-            auto &Entry = FileReplacements[R.getFilePath()];
-            Replacements &Replacements = Entry.Replaces;
+            Replacements &Replacements = FileReplacements[R.getFilePath()];
             llvm::Error Err = Replacements.add(R);
             if (Err) {
               // FIXME: Implement better conflict handling.
@@ -175,7 +174,6 @@ public:
             }
             FixLoc = getLocation(FixAbsoluteFilePath, Repl.getOffset());
             FixLocations.push_back(std::make_pair(FixLoc, CanBeApplied));
-            Entry.BuildDir = Error.BuildDirectory;
           }
         }
       }
@@ -191,14 +189,9 @@ public:
 
   void finish() {
     if (TotalFixes > 0) {
-      auto &VFS = Files.getVirtualFileSystem();
-      auto OriginalCWD = VFS.getCurrentWorkingDirectory();
-      bool AnyNotWritten = false;
-
+      Rewriter Rewrite(SourceMgr, LangOpts);
       for (const auto &FileAndReplacements : FileReplacements) {
-        Rewriter Rewrite(SourceMgr, LangOpts);
         StringRef File = FileAndReplacements.first();
-        VFS.setCurrentWorkingDirectory(FileAndReplacements.second.BuildDir);
         llvm::ErrorOr<std::unique_ptr<MemoryBuffer>> Buffer =
             SourceMgr.getFileManager().getBufferForFile(File);
         if (!Buffer) {
@@ -215,8 +208,8 @@ public:
           continue;
         }
         llvm::Expected<tooling::Replacements> Replacements =
-            format::cleanupAroundReplacements(
-                Code, FileAndReplacements.second.Replaces, *Style);
+            format::cleanupAroundReplacements(Code, FileAndReplacements.second,
+                                              *Style);
         if (!Replacements) {
           llvm::errs() << llvm::toString(Replacements.takeError()) << "\n";
           continue;
@@ -233,18 +226,13 @@ public:
         if (!tooling::applyAllReplacements(Replacements.get(), Rewrite)) {
           llvm::errs() << "Can't apply replacements for file " << File << "\n";
         }
-        AnyNotWritten &= Rewrite.overwriteChangedFiles();
       }
-
-      if (AnyNotWritten) {
+      if (Rewrite.overwriteChangedFiles()) {
         llvm::errs() << "clang-tidy failed to apply suggested fixes.\n";
       } else {
         llvm::errs() << "clang-tidy applied " << AppliedFixes << " of "
                      << TotalFixes << " suggested fixes.\n";
       }
-
-      if (OriginalCWD)
-        VFS.setCurrentWorkingDirectory(*OriginalCWD);
     }
   }
 
@@ -301,18 +289,13 @@ private:
     return CharSourceRange::getCharRange(BeginLoc, EndLoc);
   }
 
-  struct ReplacementsWithBuildDir {
-    StringRef BuildDir;
-    Replacements Replaces;
-  };
-
   FileManager Files;
   LangOptions LangOpts; // FIXME: use langopts from each original file
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts;
   DiagnosticConsumer *DiagPrinter;
   DiagnosticsEngine Diags;
   SourceManager SourceMgr;
-  llvm::StringMap<ReplacementsWithBuildDir> FileReplacements;
+  llvm::StringMap<Replacements> FileReplacements;
   ClangTidyContext &Context;
   FixBehaviour ApplyFixes;
   unsigned TotalFixes = 0U;
@@ -390,7 +373,7 @@ static CheckersList getAnalyzerCheckersAndPackages(ClangTidyContext &Context,
   for (StringRef CheckName : RegisteredCheckers) {
     std::string ClangTidyCheckName((AnalyzerCheckNamePrefix + CheckName).str());
 
-    if (CheckName.starts_with("core") ||
+    if (CheckName.startswith("core") ||
         Context.isCheckEnabled(ClangTidyCheckName)) {
       List.emplace_back(std::string(CheckName), true);
     }
@@ -541,7 +524,7 @@ runClangTidy(clang::tidy::ClangTidyContext &Context,
         CommandLineArguments AdjustedArgs = Args;
         if (Opts.ExtraArgsBefore) {
           auto I = AdjustedArgs.begin();
-          if (I != AdjustedArgs.end() && !StringRef(*I).starts_with("-"))
+          if (I != AdjustedArgs.end() && !StringRef(*I).startswith("-"))
             ++I; // Skip compiler binary name, if it is there.
           AdjustedArgs.insert(I, Opts.ExtraArgsBefore->begin(),
                               Opts.ExtraArgsBefore->end());

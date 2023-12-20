@@ -390,6 +390,7 @@ struct MCSchedModel {
                                            unsigned WriteResourceIdx = 0);
 
   /// Returns the default initialized model.
+  static const MCSchedModel &GetDefaultSchedModel() { return Default; }
   static const MCSchedModel Default;
 };
 

@@ -28,7 +28,7 @@ concept __boolean_testable_impl = convertible_to<_Tp, bool>;
 
 template <class _Tp>
 concept __boolean_testable = __boolean_testable_impl<_Tp> && requires(_Tp&& __t) {
-  { !std::forward<_Tp>(__t) } -> __boolean_testable_impl;
+  { !_VSTD::forward<_Tp>(__t) } -> __boolean_testable_impl;
 };
 
 #endif // _LIBCPP_STD_VER >= 20

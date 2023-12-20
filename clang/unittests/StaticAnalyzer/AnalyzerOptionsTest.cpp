@@ -15,10 +15,10 @@ namespace ento {
 
 TEST(StaticAnalyzerOptions, getRegisteredCheckers) {
   auto IsDebugChecker = [](StringRef CheckerName) {
-    return CheckerName.starts_with("debug");
+    return CheckerName.startswith("debug");
   };
   auto IsAlphaChecker = [](StringRef CheckerName) {
-    return CheckerName.starts_with("alpha");
+    return CheckerName.startswith("alpha");
   };
   const auto &AllCheckers =
       AnalyzerOptions::getRegisteredCheckers(/*IncludeExperimental=*/true);

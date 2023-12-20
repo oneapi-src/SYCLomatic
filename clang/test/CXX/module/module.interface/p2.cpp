@@ -78,6 +78,7 @@ void use() {
   A::h();                   // expected-error {{declaration of 'h' must be imported from module 'p2' before it is required}}
                             // expected-note@* {{declaration here is not visible}}
   using namespace A::inner; // expected-error {{declaration of 'inner' must be imported from module 'p2' before it is required}}
+                            // expected-note@* {{declaration here is not visible}}
 
   // namespace B and B::inner are explicitly exported
   using namespace B;
@@ -89,6 +90,7 @@ void use() {
 
   // namespace C is not exported
   using namespace C; // expected-error {{declaration of 'C' must be imported from module 'p2' before it is required}}
+                     // expected-note@* {{declaration here is not visible}}
 
   // namespace D is exported, but D::f is not
   D::f(); // expected-error {{declaration of 'f' must be imported from module 'p2' before it is required}}

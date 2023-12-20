@@ -1,4 +1,5 @@
 ; ModuleID = 'argc_sub1.c'
+target triple = "x86_64-unknown-unknown-elf"
 
 define i32 @sub1(i32) !dbg !8 {
   call void @llvm.dbg.value(metadata i32 %0, metadata !13, metadata !DIExpression()), !dbg !14

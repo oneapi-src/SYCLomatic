@@ -35,12 +35,7 @@ class NVPTXSubtarget : public NVPTXGenSubtargetInfo {
   // PTX version x.y is represented as 10*x+y, e.g. 3.1 == 31
   unsigned PTXVersion;
 
-  // Full SM version x.y is represented as 100*x+10*y+feature, e.g. 3.1 == 310
-  // sm_90a == 901
-  unsigned int FullSmVersion;
-
-  // SM version x.y is represented as 10*x+y, e.g. 3.1 == 31. Derived from
-  // FullSmVersion.
+  // SM version x.y is represented as 10*x+y, e.g. 3.1 == 31
   unsigned int SmVersion;
 
   const NVPTXTargetMachine &TM;
@@ -86,15 +81,7 @@ public:
   bool allowFP16Math() const;
   bool hasMaskOperator() const { return PTXVersion >= 71; }
   bool hasNoReturn() const { return SmVersion >= 30 && PTXVersion >= 64; }
-  unsigned int getFullSmVersion() const { return FullSmVersion; }
-  unsigned int getSmVersion() const { return getFullSmVersion() / 10; }
-  // GPUs with "a" suffix have include architecture-accelerated features that
-  // are supported on the specified architecture only, hence such targets do not
-  // follow the onion layer model. hasAAFeatures() allows distinguishing such
-  // GPU variants from the base GPU architecture.
-  // - 0 represents base GPU model,
-  // - non-zero value identifies particular architecture-accelerated variant.
-  bool hasAAFeatures() const { return getFullSmVersion() % 10; }
+  unsigned int getSmVersion() const { return SmVersion; }
   std::string getTargetName() const { return TargetName; }
 
   // Get maximum value of required alignments among the supported data types.

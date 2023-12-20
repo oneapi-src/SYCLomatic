@@ -16,8 +16,10 @@
 #include "Delta.h"
 #include "Utils.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SetVector.h"
 #include "llvm/Transforms/Utils/ModuleUtils.h"
 #include <iterator>
+#include <vector>
 
 using namespace llvm;
 

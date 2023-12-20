@@ -716,16 +716,11 @@ struct FoldInsertPadIntoFill : public OpRewritePattern<tensor::InsertSliceOp> {
           rewriter, loc, addMap, {std::get<0>(p), std::get<1>(p)}));
     }
 
-    RankedTensorType srcPadType = srcPadOp.getSourceType();
     SmallVector<OpFoldResult, 4> newSizes;
-    for (int i = 0, e = srcPadType.getRank(); i < e; ++i) {
-      if (srcPadType.isDynamicDim(i)) {
-        newSizes.push_back(
-            rewriter.create<tensor::DimOp>(loc, srcPadOp.getSource(), i)
-                .getResult());
-      } else {
-        newSizes.push_back(rewriter.getIndexAttr(srcPadType.getDimSize(i)));
-      }
+    for (int i = 0, e = srcPadOp.getSourceType().getRank(); i < e; ++i) {
+      newSizes.push_back(
+          rewriter.create<tensor::DimOp>(loc, srcPadOp.getSource(), i)
+              .getResult());
     }
 
     rewriter.replaceOpWithNewOp<tensor::InsertSliceOp>(
@@ -770,12 +765,26 @@ static FailureOr<FillOp> foldFillPackIntoFillOp(RewriterBase &rewriter,
     if (!isEqualConstantIntOrValue(paddingValue, fillOp.value()))
       return failure();
 
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPoint(fillOp);
+
   Value packOpDest = packOp.getDest();
   if (!packOpDest.hasOneUse())
     return failure();
+  if (auto emptyOp = packOpDest.getDefiningOp<tensor::EmptyOp>()) {
+    packOpDest = tensor::PackOp::createDestinationTensor(
+        rewriter, fillOp.getLoc(), fillOp.getDpsInitOperand(0)->get(),
+        packOp.getMixedTiles(), packOp.getInnerDimsPos(),
+        packOp.getOuterDimsPerm());
+  } else {
+    DominanceInfo dom(fillOp);
+    if (!dom.properlyDominates(packOpDest, fillOp))
+      return failure();
+  }
 
-  return rewriter.create<linalg::FillOp>(packOp.getLoc(), fillOp.getInputs(),
-                                         packOp.getDest());
+  Value fillDest = packOpDest;
+  return clone(rewriter, fillOp, packOpDest.getType(),
+               {fillOp.value(), fillDest});
 }
 
 /// Wrapper pattern that applies foldFillPackIntoFillOp method.

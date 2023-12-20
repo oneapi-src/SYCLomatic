@@ -17,6 +17,7 @@ namespace llvm {
 
 class LPMUpdater;
 class Loop;
+class Pass;
 class StringRef;
 class raw_ostream;
 

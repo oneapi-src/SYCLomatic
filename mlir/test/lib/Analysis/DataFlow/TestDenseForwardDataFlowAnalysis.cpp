@@ -49,9 +49,7 @@ public:
 class LastModifiedAnalysis
     : public DenseForwardDataFlowAnalysis<LastModification> {
 public:
-  explicit LastModifiedAnalysis(DataFlowSolver &solver, bool assumeFuncWrites)
-      : DenseForwardDataFlowAnalysis(solver),
-        assumeFuncWrites(assumeFuncWrites) {}
+  using DenseForwardDataFlowAnalysis::DenseForwardDataFlowAnalysis;
 
   /// Visit an operation. If the operation has no memory effects, then the state
   /// is propagated with no change. If the operation allocates a resource, then
@@ -76,9 +74,6 @@ public:
   void setToEntryState(LastModification *lattice) override {
     propagateIfChanged(lattice, lattice->reset());
   }
-
-private:
-  const bool assumeFuncWrites;
 };
 } // end anonymous namespace
 
@@ -94,12 +89,7 @@ void LastModifiedAnalysis::visitOperation(Operation *op,
   SmallVector<MemoryEffects::EffectInstance> effects;
   memory.getEffects(effects);
 
-  // First, check if all underlying values are already known. Otherwise, avoid
-  // propagating and stay in the "undefined" state to avoid incorrectly
-  // propagating values that may be overwritten later on as that could be
-  // problematic for convergence based on monotonicity of lattice updates.
-  SmallVector<Value> underlyingValues;
-  underlyingValues.reserve(effects.size());
+  ChangeResult result = after->join(before);
   for (const auto &effect : effects) {
     Value value = effect.getValue();
 
@@ -110,23 +100,10 @@ void LastModifiedAnalysis::visitOperation(Operation *op,
 
     // If we cannot find the underlying value, we shouldn't just propagate the
     // effects through, return the pessimistic state.
-    std::optional<Value> underlyingValue =
-        UnderlyingValueAnalysis::getMostUnderlyingValue(
-            value, [&](Value value) {
-              return getOrCreateFor<UnderlyingValueLattice>(op, value);
-            });
-
-    // If the underlying value is not yet known, don't propagate yet.
-    if (!underlyingValue)
-      return;
-
-    underlyingValues.push_back(*underlyingValue);
-  }
-
-  // Update the state when all underlying values are known.
-  ChangeResult result = after->join(before);
-  for (const auto &[effect, value] : llvm::zip(effects, underlyingValues)) {
-    // If the underlying value is known to be unknown, set to fixpoint state.
+    value = UnderlyingValueAnalysis::getMostUnderlyingValue(
+        value, [&](Value value) {
+          return getOrCreateFor<UnderlyingValueLattice>(op, value);
+        });
     if (!value)
       return setToEntryState(after);
 
@@ -142,26 +119,6 @@ void LastModifiedAnalysis::visitOperation(Operation *op,
 void LastModifiedAnalysis::visitCallControlFlowTransfer(
     CallOpInterface call, CallControlFlowAction action,
     const LastModification &before, LastModification *after) {
-  if (action == CallControlFlowAction::ExternalCallee && assumeFuncWrites) {
-    SmallVector<Value> underlyingValues;
-    underlyingValues.reserve(call->getNumOperands());
-    for (Value operand : call.getArgOperands()) {
-      std::optional<Value> underlyingValue =
-          UnderlyingValueAnalysis::getMostUnderlyingValue(
-              operand, [&](Value value) {
-                return getOrCreateFor<UnderlyingValueLattice>(
-                    call.getOperation(), value);
-              });
-      if (!underlyingValue)
-        return;
-      underlyingValues.push_back(*underlyingValue);
-    }
-
-    ChangeResult result = after->join(before);
-    for (Value operand : underlyingValues)
-      result |= after->set(operand, call);
-    return propagateIfChanged(after, result);
-  }
   auto testCallAndStore =
       dyn_cast<::test::TestCallAndStoreOp>(call.getOperation());
   if (testCallAndStore && ((action == CallControlFlowAction::EnterCallee &&
@@ -198,37 +155,21 @@ struct TestLastModifiedPass
     : public PassWrapper<TestLastModifiedPass, OperationPass<>> {
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(TestLastModifiedPass)
 
-  TestLastModifiedPass() = default;
-  TestLastModifiedPass(const TestLastModifiedPass &other) : PassWrapper(other) {
-    interprocedural = other.interprocedural;
-    assumeFuncWrites = other.assumeFuncWrites;
-  }
-
   StringRef getArgument() const override { return "test-last-modified"; }
-
-  Option<bool> interprocedural{
-      *this, "interprocedural", llvm::cl::init(true),
-      llvm::cl::desc("perform interprocedural analysis")};
-  Option<bool> assumeFuncWrites{
-      *this, "assume-func-writes", llvm::cl::init(false),
-      llvm::cl::desc(
-          "assume external functions have write effect on all arguments")};
 
   void runOnOperation() override {
     Operation *op = getOperation();
 
-    DataFlowSolver solver(DataFlowConfig().setInterprocedural(interprocedural));
+    DataFlowSolver solver;
     solver.load<DeadCodeAnalysis>();
     solver.load<SparseConstantPropagation>();
-    solver.load<LastModifiedAnalysis>(assumeFuncWrites);
+    solver.load<LastModifiedAnalysis>();
     solver.load<UnderlyingValueAnalysis>();
     if (failed(solver.initializeAndRun(op)))
       return signalPassFailure();
 
     raw_ostream &os = llvm::errs();
 
-    // Note that if the underlying value could not be computed or is unknown, we
-    // conservatively treat the result also unknown.
     op->walk([&](Operation *op) {
       auto tag = op->getAttrOfType<StringAttr>("tag");
       if (!tag)
@@ -239,29 +180,19 @@ struct TestLastModifiedPass
       assert(lastMods && "expected a dense lattice");
       for (auto [index, operand] : llvm::enumerate(op->getOperands())) {
         os << " operand #" << index << "\n";
-        std::optional<Value> underlyingValue =
-            UnderlyingValueAnalysis::getMostUnderlyingValue(
-                operand, [&](Value value) {
-                  return solver.lookupState<UnderlyingValueLattice>(value);
-                });
-        if (!underlyingValue) {
-          os << " - <unknown>\n";
-          continue;
-        }
-        Value value = *underlyingValue;
+        Value value = UnderlyingValueAnalysis::getMostUnderlyingValue(
+            operand, [&](Value value) {
+              return solver.lookupState<UnderlyingValueLattice>(value);
+            });
         assert(value && "expected an underlying value");
-        if (const AdjacentAccess *lastMod =
+        if (std::optional<ArrayRef<Operation *>> lastMod =
                 lastMods->getAdjacentAccess(value)) {
-          if (!lastMod->isKnown()) {
-            os << " - <unknown>\n";
-          } else {
-            for (Operation *lastModifier : lastMod->get()) {
-              if (auto tagName =
-                      lastModifier->getAttrOfType<StringAttr>("tag_name")) {
-                os << "  - " << tagName.getValue() << "\n";
-              } else {
-                os << "  - " << lastModifier->getName() << "\n";
-              }
+          for (Operation *lastModifier : *lastMod) {
+            if (auto tagName =
+                    lastModifier->getAttrOfType<StringAttr>("tag_name")) {
+              os << "  - " << tagName.getValue() << "\n";
+            } else {
+              os << "  - " << lastModifier->getName() << "\n";
             }
           }
         } else {

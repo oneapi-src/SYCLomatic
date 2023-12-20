@@ -507,10 +507,8 @@ struct SimplifyClones : public OpRewritePattern<CloneOp> {
         return failure();
     }
 
-    if (source.getType() != cloneOp.getType())
-      source = rewriter.create<memref::CastOp>(cloneOp.getLoc(),
-                                               cloneOp.getType(), source);
-    rewriter.replaceOp(cloneOp, source);
+    rewriter.replaceOpWithNewOp<memref::CastOp>(cloneOp, cloneOp.getType(),
+                                                source);
     rewriter.eraseOp(redundantDealloc);
     return success();
   }

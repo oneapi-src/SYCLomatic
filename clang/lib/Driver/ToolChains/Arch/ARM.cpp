@@ -67,9 +67,9 @@ void arm::getARMArchCPUFromArgs(const ArgList &Args, llvm::StringRef &Arch,
     // Use getValues because -Wa can have multiple arguments
     // e.g. -Wa,-mcpu=foo,-mcpu=bar
     for (StringRef Value : A->getValues()) {
-      if (Value.starts_with("-mcpu="))
+      if (Value.startswith("-mcpu="))
         CPU = Value.substr(6);
-      if (Value.starts_with("-march="))
+      if (Value.startswith("-march="))
         Arch = Value.substr(7);
     }
   }
@@ -285,9 +285,9 @@ void arm::setArchNameInTriple(const Driver &D, const ArgList &Args,
         // There is no assembler equivalent of -mno-thumb, -marm, or -mno-arm.
         if (Value == "-mthumb")
           IsThumb = true;
-        else if (Value.starts_with("-march="))
+        else if (Value.startswith("-march="))
           WaMArch = Value.substr(7);
-        else if (Value.starts_with("-mcpu="))
+        else if (Value.startswith("-mcpu="))
           WaMCPU = Value.substr(6);
       }
     }
@@ -528,13 +528,13 @@ llvm::ARM::FPUKind arm::getARMTargetFeatures(const Driver &D,
       // We use getValues here because you can have many options per -Wa
       // We will keep the last one we find for each of these
       for (StringRef Value : A->getValues()) {
-        if (Value.starts_with("-mfpu=")) {
+        if (Value.startswith("-mfpu=")) {
           WaFPU = std::make_pair(A, Value.substr(6));
-        } else if (Value.starts_with("-mcpu=")) {
+        } else if (Value.startswith("-mcpu=")) {
           WaCPU = std::make_pair(A, Value.substr(6));
-        } else if (Value.starts_with("-mhwdiv=")) {
+        } else if (Value.startswith("-mhwdiv=")) {
           WaHDiv = std::make_pair(A, Value.substr(8));
-        } else if (Value.starts_with("-march=")) {
+        } else if (Value.startswith("-march=")) {
           WaArch = std::make_pair(A, Value.substr(7));
         }
       }
@@ -796,7 +796,7 @@ fp16_fml_fallthrough:
   // Propagate frame-chain model selection
   if (Arg *A = Args.getLastArg(options::OPT_mframe_chain)) {
     StringRef FrameChainOption = A->getValue();
-    if (FrameChainOption.starts_with("aapcs"))
+    if (FrameChainOption.startswith("aapcs"))
       Features.push_back("+aapcs-frame-chain");
     if (FrameChainOption == "aapcs+leaf")
       Features.push_back("+aapcs-frame-chain-leaf");

@@ -231,7 +231,9 @@ static LogicalResult fillShardingOption(Operation *op,
       continue;
 
     for (int32_t axis : meshAxes) {
-      if (llvm::is_contained(shardingOption.shardingArray[i], axis)) {
+      if (std::find(shardingOption.shardingArray[i].begin(),
+                    shardingOption.shardingArray[i].end(),
+                    axis) != shardingOption.shardingArray[i].end()) {
         LLVM_DEBUG(DBGS() << "sharding option conflicts because mesh axes "
                           << axis << " duplicate");
         return failure();

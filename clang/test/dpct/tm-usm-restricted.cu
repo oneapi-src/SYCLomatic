@@ -1,7 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/tm-usm-restricted %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-usm-restricted/tm-usm-restricted.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/tm-usm-restricted/tm-usm-restricted.dp.cpp -o %T/tm-usm-restricted/tm-usm-restricted.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl %T/tm-usm-restricted/tm-usm-restricted.dp.cpp -o %T/tm-usm-restricted/tm-usm-restricted.dp.o %}
 #include "cuda.h"
 #include <stdio.h>
 
@@ -548,4 +547,3 @@ void EventRecord( cudaEvent_t hEvent, cudaStream_t hStream) {
    CUresult result = cuEventRecord( hEvent, hStream);
    cuEventRecord(hEvent, hStream);
 }
-#endif

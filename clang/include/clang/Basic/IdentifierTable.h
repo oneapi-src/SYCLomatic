@@ -511,7 +511,7 @@ public:
   ///   function(<#int x#>);
   /// \endcode
   bool isEditorPlaceholder() const {
-    return getName().starts_with("<#") && getName().ends_with("#>");
+    return getName().startswith("<#") && getName().endswith("#>");
   }
 
   /// Determine whether \p this is a name reserved for the implementation (C99

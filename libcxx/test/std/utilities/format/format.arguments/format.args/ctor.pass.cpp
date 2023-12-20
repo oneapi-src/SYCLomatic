@@ -20,9 +20,6 @@
 
 template <class CharT>
 void test() {
-  int i         = 1;
-  char c        = 'c';
-  nullptr_t p   = nullptr;
   using Context = std::basic_format_context<CharT*, CharT>;
   {
     ASSERT_NOEXCEPT(std::basic_format_args<Context>{});
@@ -31,14 +28,14 @@ void test() {
     assert(!format_args.get(0));
   }
   {
-    auto store = std::make_format_args<Context>(i);
+    auto store = std::make_format_args<Context>(1);
     ASSERT_NOEXCEPT(std::basic_format_args<Context>{store});
     std::basic_format_args<Context> format_args{store};
     assert(format_args.get(0));
     assert(!format_args.get(1));
   }
   {
-    auto store = std::make_format_args<Context>(i, c);
+    auto store = std::make_format_args<Context>(1, 'c');
     ASSERT_NOEXCEPT(std::basic_format_args<Context>{store});
     std::basic_format_args<Context> format_args{store};
     assert(format_args.get(0));
@@ -46,7 +43,7 @@ void test() {
     assert(!format_args.get(2));
   }
   {
-    auto store = std::make_format_args<Context>(i, c, p);
+    auto store = std::make_format_args<Context>(1, 'c', nullptr);
     ASSERT_NOEXCEPT(std::basic_format_args<Context>{store});
     std::basic_format_args<Context> format_args{store};
     assert(format_args.get(0));

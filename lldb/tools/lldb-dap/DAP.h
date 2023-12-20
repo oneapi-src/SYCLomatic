@@ -158,7 +158,6 @@ struct DAP {
   std::vector<ExceptionBreakpoint> exception_breakpoints;
   std::vector<std::string> init_commands;
   std::vector<std::string> pre_run_commands;
-  std::vector<std::string> post_run_commands;
   std::vector<std::string> exit_commands;
   std::vector<std::string> stop_commands;
   std::vector<std::string> terminate_commands;
@@ -228,17 +227,11 @@ struct DAP {
   ExpressionContext DetectExpressionContext(lldb::SBFrame &frame,
                                             std::string &text);
 
-  /// \return
-  ///   \b false if a fatal error was found while executing these commands,
-  ///   according to the rules of \a LLDBUtils::RunLLDBCommands.
-  bool RunLLDBCommands(llvm::StringRef prefix,
-                       llvm::ArrayRef<std::string> commands);
+  void RunLLDBCommands(llvm::StringRef prefix,
+                       const std::vector<std::string> &commands);
 
-  llvm::Error RunAttachCommands(llvm::ArrayRef<std::string> attach_commands);
-  llvm::Error RunLaunchCommands(llvm::ArrayRef<std::string> launch_commands);
-  llvm::Error RunInitCommands();
-  llvm::Error RunPreRunCommands();
-  void RunPostRunCommands();
+  void RunInitCommands();
+  void RunPreRunCommands();
   void RunStopCommands();
   void RunExitCommands();
   void RunTerminateCommands();

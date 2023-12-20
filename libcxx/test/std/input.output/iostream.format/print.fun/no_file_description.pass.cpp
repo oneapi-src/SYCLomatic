@@ -69,8 +69,7 @@ static void test_vprint_unicode() {
   FILE* file = fmemopen(buffer.data(), buffer.size(), "wb");
   assert(file);
 
-  char c = '!';
-  std::vprint_unicode(file, "hello world{}", std::make_format_args(c));
+  std::vprint_unicode(file, "hello world{}", std::make_format_args('!'));
   long pos = std::ftell(file);
   std::fclose(file);
 
@@ -84,8 +83,7 @@ static void test_vprint_nonunicode() {
   FILE* file = fmemopen(buffer.data(), buffer.size(), "wb");
   assert(file);
 
-  char c = '!';
-  std::vprint_nonunicode(file, "hello world{}", std::make_format_args(c));
+  std::vprint_nonunicode(file, "hello world{}", std::make_format_args('!'));
   long pos = std::ftell(file);
   std::fclose(file);
 

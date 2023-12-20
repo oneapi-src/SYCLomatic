@@ -16,7 +16,7 @@ namespace clang::tidy {
 // from the GlobList.
 static bool consumeNegativeIndicator(StringRef &GlobList) {
   GlobList = GlobList.trim();
-  if (GlobList.starts_with("-")) {
+  if (GlobList.startswith("-")) {
     GlobList = GlobList.substr(1);
     return true;
   }

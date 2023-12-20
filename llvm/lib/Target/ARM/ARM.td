@@ -1519,17 +1519,6 @@ def : ProcessorModel<"cortex-m85", CortexM85Model,      [ARMv81mMainline,
                                                          FeatureUseMISched,
                                                          HasMVEFloatOps]>;
 
-def : ProcessorModel<"cortex-m52", CortexM55Model,      [ARMv81mMainline,
-                                                         FeatureDSP,
-                                                         FeatureFPARMv8_D16,
-                                                         FeatureHasNoBranchPredictor,
-                                                         FeaturePACBTI,
-                                                         FeatureUseMISched,
-                                                         FeaturePrefLoopAlign32,
-                                                         FeatureHasSlowFPVMLx,
-                                                         FeatureMVEVectorCostFactor1,
-                                                         HasMVEFloatOps]>;
-
 def : ProcNoItin<"cortex-a32",                           [ARMv8a,
                                                          FeatureHWDivThumb,
                                                          FeatureHWDivARM,
@@ -1662,7 +1651,7 @@ def : ProcNoItin<"neoverse-n1",                         [ARMv82a,
                                                          FeatureCRC,
                                                          FeatureDotProd]>;
 
-def : ProcNoItin<"neoverse-n2",                         [ARMv9a,
+def : ProcNoItin<"neoverse-n2",                         [ARMv85a,
                                                          FeatureBF16,
                                                          FeatureMatMulInt8]>;
 

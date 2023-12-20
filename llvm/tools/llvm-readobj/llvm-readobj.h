@@ -16,6 +16,7 @@
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorOr.h"
+#include <string>
 
 namespace llvm {
   namespace object {

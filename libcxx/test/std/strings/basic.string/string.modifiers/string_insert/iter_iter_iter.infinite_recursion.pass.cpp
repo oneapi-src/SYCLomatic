@@ -16,7 +16,6 @@
 #include <string>
 
 #include "test_macros.h"
-#include "asan_testing.h"
 
 struct char_ascii {
   char char_;
@@ -96,6 +95,5 @@ int main(int, char**) {
   str.insert(str.begin(), &ch, &ch + 1);
   assert(str.size() == 1);
   assert(str[0].char_ == 'A');
-  LIBCPP_ASSERT(is_string_asan_correct(str));
   return 0;
 }

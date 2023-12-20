@@ -98,7 +98,6 @@ struct KernArgPreloadDescriptor : public ArgDescriptor {
 };
 
 struct AMDGPUFunctionArgInfo {
-  // clang-format off
   enum PreloadedValue {
     // SGPRS:
     PRIVATE_SEGMENT_BUFFER = 0,
@@ -121,7 +120,6 @@ struct AMDGPUFunctionArgInfo {
     WORKITEM_ID_Z       = 19,
     FIRST_VGPR_VALUE    = WORKITEM_ID_X
   };
-  // clang-format on
 
   // Kernel input registers setup for the HSA ABI in allocation order.
 

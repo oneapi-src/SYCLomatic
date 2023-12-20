@@ -2,9 +2,8 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust_replace %s --cuda-include-path="%cuda-path/include" --usm-level=none
 // RUN: FileCheck --input-file %T/thrust_replace/thrust_replace.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust_replace/thrust_replace.dp.cpp -o %T/thrust_replace/thrust_replace.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_replace/thrust_replace.dp.cpp -o %T/thrust_replace/thrust_replace.dp.o %}
 
-#ifndef BUILD_TEST
 #include <thrust/replace.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
@@ -196,4 +195,3 @@ int main(void) {
 
   return 0;
 }
-#endif

@@ -234,7 +234,7 @@ bool LLVMToSPIRVBase::isBuiltinTransToExtInst(
   LLVM_DEBUG(dbgs() << "[oclIsBuiltinTransToExtInst] CallInst: demangled name: "
                     << DemangledName << '\n');
   StringRef S = DemangledName;
-  if (!S.starts_with(kSPIRVName::Prefix))
+  if (!S.startswith(kSPIRVName::Prefix))
     return false;
   S = S.drop_front(strlen(kSPIRVName::Prefix));
   auto Loc = S.find(kSPIRVPostfix::Divider);
@@ -304,31 +304,6 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
   };
 
   return Run(Ty);
-}
-
-// Add decoration if needed
-void addFPBuiltinDecoration(SPIRVModule *BM, Instruction *Inst,
-                            SPIRVInstruction *I) {
-  if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error))
-    return;
-  auto *II = dyn_cast_or_null<IntrinsicInst>(Inst);
-  if (II && II->getCalledFunction()->getName().starts_with("llvm.fpbuiltin")) {
-    // Add a new decoration for llvm.builtin intrinsics, if needed
-    if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
-      double F = 0.0;
-      II->getAttributes()
-          .getFnAttr("fpbuiltin-max-error")
-          .getValueAsString()
-          .getAsDouble(F);
-      I->addDecorate(DecorationFPMaxErrorDecorationINTEL,
-                     convertFloatToSPIRVWord(F));
-    }
-  } else if (auto *MD = Inst->getMetadata("fpmath")) {
-    auto *MDVal = mdconst::dyn_extract<ConstantFP>(MD->getOperand(0));
-    double ValAsDouble = MDVal->getValue().convertToFloat();
-    I->addDecorate(DecorationFPMaxErrorDecorationINTEL,
-                   convertFloatToSPIRVWord(ValAsDouble));
-  }
 }
 
 SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
@@ -435,9 +410,9 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   if (T->isStructTy() && !T->isSized()) {
     auto *ST = dyn_cast<StructType>(T);
     (void)ST; // Silence warning
-    assert(!ST->getName().starts_with(kSPR2TypeName::PipeRO));
-    assert(!ST->getName().starts_with(kSPR2TypeName::PipeWO));
-    assert(!ST->getName().starts_with(kSPR2TypeName::ImagePrefix));
+    assert(!ST->getName().startswith(kSPR2TypeName::PipeRO));
+    assert(!ST->getName().startswith(kSPR2TypeName::PipeWO));
+    assert(!ST->getName().startswith(kSPR2TypeName::ImagePrefix));
     return mapType(T, BM->addOpaqueType(T->getStructName().str()));
   }
 
@@ -632,15 +607,15 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
       return MappedTy;
     };
 
-    if (STName.starts_with(kSPR2TypeName::PipeRO) ||
-        STName.starts_with(kSPR2TypeName::PipeWO)) {
+    if (STName.startswith(kSPR2TypeName::PipeRO) ||
+        STName.startswith(kSPR2TypeName::PipeWO)) {
       auto *PipeT = BM->addPipeType();
-      PipeT->setPipeAcessQualifier(STName.starts_with(kSPR2TypeName::PipeRO)
+      PipeT->setPipeAcessQualifier(STName.startswith(kSPR2TypeName::PipeRO)
                                        ? AccessQualifierReadOnly
                                        : AccessQualifierWriteOnly);
       return SaveType(PipeT);
     }
-    if (STName.starts_with(kSPR2TypeName::ImagePrefix)) {
+    if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
       assert(AddrSpc == SPIRAS_Global);
       Type *ImageTy =
           adjustImageType(TypedPointerType::get(ST, AddrSpc),
@@ -649,10 +624,10 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
     }
     if (STName == kSPR2TypeName::Sampler)
       return SaveType(transType(getSPIRVType(OpTypeSampler)));
-    if (STName.starts_with(kSPIRVTypeName::PrefixAndDelim))
+    if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
       return transSPIRVOpaqueType(STName, AddrSpc);
 
-    if (STName.starts_with(kOCLSubgroupsAVCIntel::TypePrefix))
+    if (STName.startswith(kOCLSubgroupsAVCIntel::TypePrefix))
       return SaveType(BM->addSubgroupAvcINTELType(
           OCLSubgroupINTELTypeOpCodeMap::map(ST->getName().str())));
 
@@ -661,7 +636,7 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
       return SaveType(transType(RealType));
     }
     if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute)) {
-      if (STName.starts_with(kVCType::VCBufferSurface)) {
+      if (STName.startswith(kVCType::VCBufferSurface)) {
         // VCBufferSurface always have Access Qualifier
         auto Access = getAccessQualifier(STName);
         return SaveType(BM->addBufferSurfaceINTELType(Access));
@@ -716,7 +691,7 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(StringRef STName,
   };
   StructType *ST = StructType::getTypeByName(M->getContext(), STName);
 
-  assert(STName.starts_with(kSPIRVTypeName::PrefixAndDelim) &&
+  assert(STName.startswith(kSPIRVTypeName::PrefixAndDelim) &&
          "Invalid SPIR-V opaque type name");
   SmallVector<std::string, 8> Postfixes;
   auto TN = decodeSPIRVTypeName(STName, Postfixes);
@@ -1240,7 +1215,7 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
   }
 
   if (auto *ConstI = dyn_cast<ConstantInt>(V)) {
-    unsigned BitWidth = ConstI->getIntegerType()->getBitWidth();
+    unsigned BitWidth = ConstI->getType()->getBitWidth();
     if (BitWidth > 64) {
       BM->getErrorLog().checkError(
           BM->isAllowedToUseExtension(
@@ -1951,14 +1926,6 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
               ExtensionID::SPV_INTEL_usm_storage_classes))
         AddressSpace = SPIRAS_Global;
       StorageClass = SPIRSPIRVAddrSpaceMap::map(AddressSpace);
-      if (StorageClass == StorageClassFunction) {
-        std::stringstream SS;
-        SS << "Global variable can not have Function storage class. "
-           << "Consider setting a proper address space.\n "
-           << "Original LLVM value:\n"
-           << toString(GV);
-        getErrorLog().checkError(false, SPIRVEC_InvalidInstruction, SS.str());
-      }
     }
 
     SPIRVType *TranslatedTy = transType(Ty);
@@ -2142,13 +2109,6 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   }
 
   if (CmpInst *Cmp = dyn_cast<CmpInst>(V)) {
-    if (Cmp->getPredicate() == CmpInst::Predicate::FCMP_FALSE) {
-      auto *CmpTy = Cmp->getType();
-      SPIRVValue *FalseValue = CmpTy->isVectorTy()
-                                   ? BM->addNullConstant(transType(CmpTy))
-                                   : BM->addConstant(BM->addBoolType(), 0);
-      return mapValue(V, FalseValue);
-    }
     SPIRVInstruction *BI = transCmpInst(Cmp, BB);
     return mapValue(V, BI);
   }
@@ -2919,8 +2879,6 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
       transMemAliasingINTELDecorations(Inst, BV);
     if (auto *IDecoMD = Inst->getMetadata(SPIRV_MD_DECORATIONS))
       transMetadataDecorations(IDecoMD, BV);
-    if (BV->isInst())
-      addFPBuiltinDecoration(BM, Inst, static_cast<SPIRVInstruction *>(BV));
   }
 
   if (auto *CI = dyn_cast<CallInst>(V)) {
@@ -3284,28 +3242,6 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
                        internal::DecorationCacheControlLoadINTEL) {
           Decorates.CacheControlVec.emplace_back(
               static_cast<Decoration>(DecorationKind), std::move(DecValues));
-        } else if (DecorationKind == DecorationMemoryINTEL) {
-          // SPIRV doesn't allow the same Decoration to be applied multiple
-          // times on a single SPIRVEntry, unless explicitly allowed by the
-          // language spec. Filter out the less specific MemoryINTEL
-          // decorations, if applied multiple times
-          auto CanFilterOut = [](auto &Val) {
-            if (!Val.second.empty())
-              return (Val.second[0] == "DEFAULT");
-            return false;
-          };
-          auto It = std::find_if(DecorationsVec.begin(), DecorationsVec.end(),
-                                 CanFilterOut);
-
-          if (It != DecorationsVec.end()) {
-            // replace the less specific decoration
-            *It = {static_cast<Decoration>(DecorationKind),
-                   std::move(DecValues)};
-          } else {
-            // add new decoration
-            DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
-                                        std::move(DecValues));
-          }
         } else {
           DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
                                       std::move(DecValues));
@@ -3717,6 +3653,26 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   }
 }
 
+// Add decoration if needed
+SPIRVInstruction *addFPBuiltinDecoration(SPIRVModule *BM, IntrinsicInst *II,
+                                         SPIRVInstruction *I) {
+  const bool AllowFPMaxError =
+      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error);
+  assert(II->getCalledFunction()->getName().startswith("llvm.fpbuiltin"));
+  // Add a new decoration for llvm.builtin intrinsics, if needed
+  if (AllowFPMaxError)
+    if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
+      double F = 0.0;
+      II->getAttributes()
+          .getFnAttr("fpbuiltin-max-error")
+          .getValueAsString()
+          .getAsDouble(F);
+      I->addDecorate(DecorationFPMaxErrorDecorationINTEL,
+                     convertFloatToSPIRVWord(F));
+    }
+  return I;
+}
+
 // Performs mapping of LLVM IR rounding mode to SPIR-V rounding mode
 // Value *V is metadata <rounding mode> argument of
 // llvm.experimental.constrained.* intrinsics
@@ -3724,13 +3680,13 @@ SPIRVInstruction *
 LLVMToSPIRVBase::applyRoundingModeConstraint(Value *V, SPIRVInstruction *I) {
   StringRef RMode =
       cast<MDString>(cast<MetadataAsValue>(V)->getMetadata())->getString();
-  if (RMode.ends_with("tonearest"))
+  if (RMode.endswith("tonearest"))
     I->addFPRoundingMode(FPRoundingModeRTE);
-  else if (RMode.ends_with("towardzero"))
+  else if (RMode.endswith("towardzero"))
     I->addFPRoundingMode(FPRoundingModeRTZ);
-  else if (RMode.ends_with("upward"))
+  else if (RMode.endswith("upward"))
     I->addFPRoundingMode(FPRoundingModeRTP);
-  else if (RMode.ends_with("downward"))
+  else if (RMode.endswith("downward"))
     I->addFPRoundingMode(FPRoundingModeRTN);
   return I;
 }
@@ -4829,9 +4785,10 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("fdiv", OpFDiv)
                      .Case("frem", OpFRem)
                      .Default(OpUndef);
-    return BM->addBinaryInst(BinOp, transType(II->getType()),
-                             transValue(II->getArgOperand(0), BB),
-                             transValue(II->getArgOperand(1), BB), BB);
+    auto *BI = BM->addBinaryInst(BinOp, transType(II->getType()),
+                                 transValue(II->getArgOperand(0), BB),
+                                 transValue(II->getArgOperand(1), BB), BB);
+    return addFPBuiltinDecoration(BM, II, BI);
   }
   case FPBuiltinType::EXT_1OPS: {
     if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
@@ -4865,8 +4822,9 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("erfc", OpenCLLIB::Erfc)
                      .Default(SPIRVWORD_MAX);
     assert(ExtOp != SPIRVWORD_MAX);
-    return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
-                          BB);
+    auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+                              Ops, BB);
+    return addFPBuiltinDecoration(BM, II, BI);
   }
   case FPBuiltinType::EXT_2OPS: {
     if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
@@ -4881,8 +4839,9 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("ldexp", OpenCLLIB::Ldexp)
                      .Default(SPIRVWORD_MAX);
     assert(ExtOp != SPIRVWORD_MAX);
-    return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
-                          BB);
+    auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+                              Ops, BB);
+    return addFPBuiltinDecoration(BM, II, BI);
   }
   case FPBuiltinType::EXT_3OPS: {
     if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
@@ -4895,8 +4854,9 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("sincos", OpenCLLIB::Sincos)
                      .Default(SPIRVWORD_MAX);
     assert(ExtOp != SPIRVWORD_MAX);
-    return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
-                          BB);
+    auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+                              Ops, BB);
+    return addFPBuiltinDecoration(BM, II, BI);
   }
   default:
     return nullptr;
@@ -4974,7 +4934,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
   auto MangledName = F->getName();
   StringRef DemangledName;
 
-  if (MangledName.starts_with(SPCV_CAST) || MangledName == SAMPLER_INIT)
+  if (MangledName.startswith(SPCV_CAST) || MangledName == SAMPLER_INIT)
     return oclTransSpvcCastSampler(CI, BB);
 
   if (oclIsBuiltin(MangledName, DemangledName) ||
@@ -5535,9 +5495,9 @@ bool LLVMToSPIRVBase::translate() {
   std::vector<Function *> Decls, Defs;
   for (auto &F : *M) {
     if (isBuiltinTransToInst(&F) || isBuiltinTransToExtInst(&F) ||
-        F.getName().starts_with(SPCV_CAST) ||
-        F.getName().starts_with(LLVM_MEMCPY) ||
-        F.getName().starts_with(SAMPLER_INIT))
+        F.getName().startswith(SPCV_CAST) ||
+        F.getName().startswith(LLVM_MEMCPY) ||
+        F.getName().startswith(SAMPLER_INIT))
       continue;
     if (F.isDeclaration())
       Decls.push_back(&F);
@@ -5746,8 +5706,8 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           break;
         unsigned NBarrierCnt = 0;
         N.get(NBarrierCnt);
-        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-            BF, static_cast<ExecutionMode>(EMode), NBarrierCnt)));
+        BF->addExecutionMode(new SPIRVExecutionMode(
+            BF, static_cast<ExecutionMode>(EMode), NBarrierCnt));
         BM->addExtension(ExtensionID::SPV_INTEL_vector_compute);
         BM->addCapability(CapabilityVectorComputeINTEL);
       } break;

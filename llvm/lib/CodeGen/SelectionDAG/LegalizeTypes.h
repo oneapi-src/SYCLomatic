@@ -738,7 +738,6 @@ private:
   SDValue SoftPromoteHalfRes_FCOPYSIGN(SDNode *N);
   SDValue SoftPromoteHalfRes_FMAD(SDNode *N);
   SDValue SoftPromoteHalfRes_ExpOp(SDNode *N);
-  SDValue SoftPromoteHalfRes_FFREXP(SDNode *N);
   SDValue SoftPromoteHalfRes_FP_ROUND(SDNode *N);
   SDValue SoftPromoteHalfRes_LOAD(SDNode *N);
   SDValue SoftPromoteHalfRes_SELECT(SDNode *N);

@@ -23,8 +23,7 @@ namespace {
 class PyPassManager {
 public:
   PyPassManager(MlirPassManager passManager) : passManager(passManager) {}
-  PyPassManager(PyPassManager &&other) noexcept
-      : passManager(other.passManager) {
+  PyPassManager(PyPassManager &&other) : passManager(other.passManager) {
     other.passManager.ptr = nullptr;
   }
   ~PyPassManager() {

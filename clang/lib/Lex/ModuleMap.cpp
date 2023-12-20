@@ -235,7 +235,7 @@ OptionalFileEntryRef ModuleMap::findHeader(
   llvm::sys::path::append(FullPathName, RelativePathName);
   auto NormalHdrFile = GetFile(FullPathName);
 
-  if (!NormalHdrFile && Directory->getName().ends_with(".framework")) {
+  if (!NormalHdrFile && Directory->getName().endswith(".framework")) {
     // The lack of 'framework' keyword in a module declaration it's a simple
     // mistake we can diagnose when the header exists within the proper
     // framework style path.
@@ -1034,7 +1034,7 @@ Module *ModuleMap::inferFrameworkModule(DirectoryEntryRef FrameworkDir,
         if (inferred == InferredDirectories.end()) {
           // We haven't looked here before. Load a module map, if there is
           // one.
-          bool IsFrameworkDir = Parent.ends_with(".framework");
+          bool IsFrameworkDir = Parent.endswith(".framework");
           if (OptionalFileEntryRef ModMapFile =
                   HeaderInfo.lookupModuleMapFile(*ParentDir, IsFrameworkDir)) {
             parseModuleMapFile(*ModMapFile, Attrs.IsSystem, *ParentDir);
@@ -1067,7 +1067,9 @@ Module *ModuleMap::inferFrameworkModule(DirectoryEntryRef FrameworkDir,
     if (!canInfer)
       return nullptr;
   } else {
-    ModuleMapFile = getModuleMapFileForUniquing(Parent);
+    OptionalFileEntryRefDegradesToFileEntryPtr ModuleMapRef =
+        getModuleMapFileForUniquing(Parent);
+    ModuleMapFile = ModuleMapRef;
   }
 
   // Look for an umbrella header.
@@ -1125,7 +1127,7 @@ Module *ModuleMap::inferFrameworkModule(DirectoryEntryRef FrameworkDir,
            Dir = FS.dir_begin(SubframeworksDirName, EC),
            DirEnd;
        Dir != DirEnd && !EC; Dir.increment(EC)) {
-    if (!StringRef(Dir->path()).ends_with(".framework"))
+    if (!StringRef(Dir->path()).endswith(".framework"))
       continue;
 
     if (auto SubframeworkDir = FileMgr.getOptionalDirectoryRef(Dir->path())) {
@@ -1337,7 +1339,7 @@ ModuleMap::canonicalizeModuleMapPath(SmallVectorImpl<char> &Path) {
   // Modules/ not Versions/A/Modules.
   if (llvm::sys::path::filename(Dir) == "Modules") {
     StringRef Parent = llvm::sys::path::parent_path(Dir);
-    if (Parent.ends_with(".framework"))
+    if (Parent.endswith(".framework"))
       Dir = Parent;
   }
 
@@ -1864,7 +1866,7 @@ void ModuleMapParser::diagnosePrivateModules(SourceLocation ExplicitLoc,
       continue;
 
     SmallString<128> FullName(ActiveModule->getFullModuleName());
-    if (!FullName.starts_with(M->Name) && !FullName.ends_with("Private"))
+    if (!FullName.startswith(M->Name) && !FullName.endswith("Private"))
       continue;
     SmallString<128> FixedPrivModDecl;
     SmallString<128> Canonical(M->Name);
@@ -2119,8 +2121,8 @@ void ModuleMapParser::parseModuleDecl() {
   ActiveModule->Directory = Directory;
 
   StringRef MapFileName(ModuleMapFile.getName());
-  if (MapFileName.ends_with("module.private.modulemap") ||
-      MapFileName.ends_with("module_private.map")) {
+  if (MapFileName.endswith("module.private.modulemap") ||
+      MapFileName.endswith("module_private.map")) {
     ActiveModule->ModuleMapIsPrivate = true;
   }
 

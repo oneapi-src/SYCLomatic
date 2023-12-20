@@ -34,10 +34,7 @@ void test() {
   // The type of the object is an exposition only type. The temporary is needed
   // to extend the lifetime of the object since args stores a pointer to the
   // data in this object.
-  int a                       = 42;
-  bool b                      = true;
-  CharT c                     = CharT('a');
-  auto format_arg_store       = std::make_format_args<std::basic_format_context<OutIt, CharT>>(b, c, a, string);
+  auto format_arg_store = std::make_format_args<std::basic_format_context<OutIt, CharT>>(true, CharT('a'), 42, string);
   std::basic_format_args args = format_arg_store;
 
   {

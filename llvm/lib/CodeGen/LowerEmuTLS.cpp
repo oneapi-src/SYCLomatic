@@ -13,11 +13,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/CodeGen/LowerEmuTLS.h"
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/Analysis/GlobalsModRef.h"
-#include "llvm/Analysis/ModuleSummaryAnalysis.h"
-#include "llvm/Analysis/StackSafetyAnalysis.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/IR/Constants.h"
@@ -28,7 +24,7 @@
 
 using namespace llvm;
 
-#define DEBUG_TYPE "lower-emutls"
+#define DEBUG_TYPE "loweremutls"
 
 namespace {
 
@@ -40,39 +36,20 @@ public:
   }
 
   bool runOnModule(Module &M) override;
+private:
+  bool addEmuTlsVar(Module &M, const GlobalVariable *GV);
+  static void copyLinkageVisibility(Module &M,
+                                    const GlobalVariable *from,
+                                    GlobalVariable *to) {
+    to->setLinkage(from->getLinkage());
+    to->setVisibility(from->getVisibility());
+    to->setDSOLocal(from->isDSOLocal());
+    if (from->hasComdat()) {
+      to->setComdat(M.getOrInsertComdat(to->getName()));
+      to->getComdat()->setSelectionKind(from->getComdat()->getSelectionKind());
+    }
+  }
 };
-}
-
-static bool addEmuTlsVar(Module &M, const GlobalVariable *GV);
-
-static void copyLinkageVisibility(Module &M, const GlobalVariable *from,
-                                  GlobalVariable *to) {
-  to->setLinkage(from->getLinkage());
-  to->setVisibility(from->getVisibility());
-  to->setDSOLocal(from->isDSOLocal());
-  if (from->hasComdat()) {
-    to->setComdat(M.getOrInsertComdat(to->getName()));
-    to->getComdat()->setSelectionKind(from->getComdat()->getSelectionKind());
-  }
-}
-
-PreservedAnalyses LowerEmuTLSPass::run(Module &M, ModuleAnalysisManager &MAM) {
-  bool Changed = false;
-  SmallVector<const GlobalVariable *, 8> TlsVars;
-  for (const auto &G : M.globals()) {
-    if (G.isThreadLocal())
-      TlsVars.push_back(&G);
-  }
-  for (const auto *G : TlsVars)
-    Changed |= addEmuTlsVar(M, G);
-
-  if (!Changed)
-    return PreservedAnalyses::all();
-  PreservedAnalyses PA = PreservedAnalyses::all();
-  PA.abandon<GlobalsAA>();
-  PA.abandon<ModuleSummaryIndexAnalysis>();
-  PA.abandon<StackSafetyGlobalAnalysis>();
-  return PA;
 }
 
 char LowerEmuTLS::ID = 0;
@@ -106,7 +83,7 @@ bool LowerEmuTLS::runOnModule(Module &M) {
   return Changed;
 }
 
-bool addEmuTlsVar(Module &M, const GlobalVariable *GV) {
+bool LowerEmuTLS::addEmuTlsVar(Module &M, const GlobalVariable *GV) {
   LLVMContext &C = M.getContext();
   PointerType *VoidPtrType = PointerType::getUnqual(C);
 

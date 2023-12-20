@@ -17,6 +17,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg(ptr addrspace(1) %out, i32 %
 ; GFX11-NEXT:    v_mov_b32_e32 v0, v10
 ; GFX11-NEXT:    s_not_b32 exec_lo, exec_lo
 ; GFX11-NEXT:    global_store_b32 v[8:9], v0, off
+; GFX11-NEXT:    s_nop 0
+; GFX11-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GFX11-NEXT:    s_endpgm
 ;
 ; GFX10-LABEL: set_inactive_chain_arg:
@@ -37,6 +39,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg(ptr addrspace(1) %out, i32 %
 ; GFX11_W64-NEXT:    v_mov_b32_e32 v0, v10
 ; GFX11_W64-NEXT:    s_not_b64 exec, exec
 ; GFX11_W64-NEXT:    global_store_b32 v[8:9], v0, off
+; GFX11_W64-NEXT:    s_nop 0
+; GFX11_W64-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GFX11_W64-NEXT:    s_endpgm
 ;
 ; GFX10_W64-LABEL: set_inactive_chain_arg:
@@ -64,6 +68,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_64(ptr addrspace(1) %out, i6
 ; GFX11-NEXT:    v_mov_b32_e32 v1, v11
 ; GFX11-NEXT:    s_not_b32 exec_lo, exec_lo
 ; GFX11-NEXT:    global_store_b64 v[8:9], v[0:1], off
+; GFX11-NEXT:    s_nop 0
+; GFX11-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GFX11-NEXT:    s_endpgm
 ;
 ; GFX10-LABEL: set_inactive_chain_arg_64:
@@ -88,6 +94,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_64(ptr addrspace(1) %out, i6
 ; GFX11_W64-NEXT:    v_mov_b32_e32 v1, v11
 ; GFX11_W64-NEXT:    s_not_b64 exec, exec
 ; GFX11_W64-NEXT:    global_store_b64 v[8:9], v[0:1], off
+; GFX11_W64-NEXT:    s_nop 0
+; GFX11_W64-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GFX11_W64-NEXT:    s_endpgm
 ;
 ; GFX10_W64-LABEL: set_inactive_chain_arg_64:
@@ -125,6 +133,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_dpp(ptr addrspace(1) %out, i
 ; GFX11-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; GFX11-NEXT:    v_mov_b32_e32 v2, v1
 ; GFX11-NEXT:    global_store_b32 v[8:9], v2, off
+; GFX11-NEXT:    s_nop 0
+; GFX11-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GFX11-NEXT:    s_endpgm
 ;
 ; GFX10-LABEL: set_inactive_chain_arg_dpp:
@@ -164,6 +174,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_dpp(ptr addrspace(1) %out, i
 ; GFX11_W64-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; GFX11_W64-NEXT:    v_mov_b32_e32 v2, v1
 ; GFX11_W64-NEXT:    global_store_b32 v[8:9], v2, off
+; GFX11_W64-NEXT:    s_nop 0
+; GFX11_W64-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GFX11_W64-NEXT:    s_endpgm
 ;
 ; GFX10_W64-LABEL: set_inactive_chain_arg_dpp:
@@ -221,6 +233,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_call(ptr addrspace(1) %out, 
 ; GISEL11-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; GISEL11-NEXT:    v_mov_b32_e32 v0, v12
 ; GISEL11-NEXT:    global_store_b32 v[41:42], v0, off
+; GISEL11-NEXT:    s_nop 0
+; GISEL11-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GISEL11-NEXT:    s_endpgm
 ;
 ; DAGISEL11-LABEL: set_inactive_chain_arg_call:
@@ -251,6 +265,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_call(ptr addrspace(1) %out, 
 ; DAGISEL11-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; DAGISEL11-NEXT:    v_mov_b32_e32 v0, v12
 ; DAGISEL11-NEXT:    global_store_b32 v[41:42], v0, off
+; DAGISEL11-NEXT:    s_nop 0
+; DAGISEL11-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; DAGISEL11-NEXT:    s_endpgm
 ;
 ; GISEL10-LABEL: set_inactive_chain_arg_call:
@@ -364,6 +380,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_call(ptr addrspace(1) %out, 
 ; GISEL11_W64-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; GISEL11_W64-NEXT:    v_mov_b32_e32 v0, v12
 ; GISEL11_W64-NEXT:    global_store_b32 v[41:42], v0, off
+; GISEL11_W64-NEXT:    s_nop 0
+; GISEL11_W64-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GISEL11_W64-NEXT:    s_endpgm
 ;
 ; DAGISEL11_W64-LABEL: set_inactive_chain_arg_call:
@@ -401,6 +419,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_call(ptr addrspace(1) %out, 
 ; DAGISEL11_W64-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; DAGISEL11_W64-NEXT:    v_mov_b32_e32 v0, v12
 ; DAGISEL11_W64-NEXT:    global_store_b32 v[41:42], v0, off
+; DAGISEL11_W64-NEXT:    s_nop 0
+; DAGISEL11_W64-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; DAGISEL11_W64-NEXT:    s_endpgm
 ;
 ; GISEL10_W64-LABEL: set_inactive_chain_arg_call:
@@ -518,6 +538,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_last_vgpr(ptr addrspace(1) %
 ; GISEL11-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; GISEL11-NEXT:    v_mov_b32_e32 v0, v12
 ; GISEL11-NEXT:    global_store_b32 v[41:42], v0, off
+; GISEL11-NEXT:    s_nop 0
+; GISEL11-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GISEL11-NEXT:    s_endpgm
 ;
 ; DAGISEL11-LABEL: set_inactive_chain_arg_last_vgpr:
@@ -548,6 +570,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_last_vgpr(ptr addrspace(1) %
 ; DAGISEL11-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; DAGISEL11-NEXT:    v_mov_b32_e32 v0, v12
 ; DAGISEL11-NEXT:    global_store_b32 v[41:42], v0, off
+; DAGISEL11-NEXT:    s_nop 0
+; DAGISEL11-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; DAGISEL11-NEXT:    s_endpgm
 ;
 ; GISEL10-LABEL: set_inactive_chain_arg_last_vgpr:
@@ -661,6 +685,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_last_vgpr(ptr addrspace(1) %
 ; GISEL11_W64-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; GISEL11_W64-NEXT:    v_mov_b32_e32 v0, v12
 ; GISEL11_W64-NEXT:    global_store_b32 v[41:42], v0, off
+; GISEL11_W64-NEXT:    s_nop 0
+; GISEL11_W64-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; GISEL11_W64-NEXT:    s_endpgm
 ;
 ; DAGISEL11_W64-LABEL: set_inactive_chain_arg_last_vgpr:
@@ -698,6 +724,8 @@ define amdgpu_cs_chain void @set_inactive_chain_arg_last_vgpr(ptr addrspace(1) %
 ; DAGISEL11_W64-NEXT:    s_delay_alu instid0(VALU_DEP_1)
 ; DAGISEL11_W64-NEXT:    v_mov_b32_e32 v0, v12
 ; DAGISEL11_W64-NEXT:    global_store_b32 v[41:42], v0, off
+; DAGISEL11_W64-NEXT:    s_nop 0
+; DAGISEL11_W64-NEXT:    s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)
 ; DAGISEL11_W64-NEXT:    s_endpgm
 ;
 ; GISEL10_W64-LABEL: set_inactive_chain_arg_last_vgpr:

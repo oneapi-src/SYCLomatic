@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "ValueList.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/Argument.h"
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Constants.h"

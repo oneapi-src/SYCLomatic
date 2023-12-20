@@ -272,8 +272,7 @@ namespace {
     }
 
     bool shouldForceRelocation(const MCAssembler &Asm, const MCFixup &Fixup,
-                               const MCValue &Target,
-                               const MCSubtargetInfo *STI) override {
+                               const MCValue &Target) override {
       if (Fixup.getKind() >= FirstLiteralRelocationKind)
         return true;
       switch ((Sparc::Fixups)Fixup.getKind()) {

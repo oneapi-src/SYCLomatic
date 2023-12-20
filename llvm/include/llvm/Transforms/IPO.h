@@ -14,6 +14,10 @@
 #ifndef LLVM_TRANSFORMS_IPO_H
 #define LLVM_TRANSFORMS_IPO_H
 
+#include "llvm/ADT/SmallVector.h"
+#include <functional>
+#include <vector>
+
 namespace llvm {
 
 class ModulePass;

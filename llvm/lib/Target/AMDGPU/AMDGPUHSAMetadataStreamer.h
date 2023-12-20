@@ -30,6 +30,7 @@ class MDNode;
 class Module;
 struct SIProgramInfo;
 class Type;
+class GCNSubtarget;
 
 namespace AMDGPU {
 

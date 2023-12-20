@@ -359,17 +359,11 @@ bool PointerAssignmentChecker::Check(parser::CharBlock rhsName, bool isCall,
     const Procedure *rhsProcedure,
     const evaluate::SpecificIntrinsic *specific) {
   std::string whyNot;
-  std::optional<std::string> warning;
   CharacterizeProcedure();
   if (std::optional<MessageFixedText> msg{evaluate::CheckProcCompatibility(
-          isCall, procedure_, rhsProcedure, specific, whyNot, warning)}) {
+          isCall, procedure_, rhsProcedure, specific, whyNot)}) {
     Say(std::move(*msg), description_, rhsName, whyNot);
     return false;
-  }
-  if (context_.ShouldWarn(common::UsageWarning::ProcDummyArgShapes) &&
-      warning) {
-    Say("%s and %s may not be completely compatible procedures: %s"_warn_en_US,
-        description_, rhsName, std::move(*warning));
   }
   return true;
 }

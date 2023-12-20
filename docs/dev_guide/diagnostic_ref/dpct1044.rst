@@ -27,39 +27,22 @@ Suggestions to Fix
 If any of the typedef identifiers are referenced in the class definition, they
 should be replaced with the original template arguments.
 
-For example, this original CUDA\* code:
+For example, the following code:
 
 .. code-block:: cpp
    :linenos:
 
-    class C : thrust::unary_function<int, float> {
-      argument_type arg_data;
-      result_type result_data;
-    };
+     class C : thrust::unary_function<int, float> {
+       argument_type arg_data;
+       result_type result_data;
+     };
 
-results in the following migrated SYCL\* code:
-
-.. code-block:: cpp
-   :linenos:
-
-    /*
-    DPCT1044:0: thrust::unary_function was removed because std::unary_function has
-    been deprecated in C++11. You may need to remove references to typedefs from
-    thrust::unary_function in the class definition.
-    */
-    class C {
-      argument_type arg_data;
-      result_type result_data;
-    };
-
-which is rewritten to:
+is rewritten as:
 
 .. code-block:: cpp
    :linenos:
-   
-    class C {
-      argument_type arg_data;
-      result_type result_data;
-    };
 
-
+     class C {
+       int arg_data;
+       float result_data;
+     };

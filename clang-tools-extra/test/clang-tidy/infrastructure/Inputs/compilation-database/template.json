@@ -20,14 +20,9 @@
   "file": "test_dir/b/c.cpp"
 },
 {
-  "directory": "test_dir/",
-  "command": "clang++ -o test.o ./b/d.cpp",
-  "file": "test_dir/b/d.cpp"
-},
-{
   "directory": "test_dir/b",
-  "command": "clang++ -I../include -o test.o ../include.cpp",
-  "file": "test_dir/include.cpp"
+  "command": "clang++ -I../include -o test.o ../b/d.cpp",
+  "file": "test_dir/b/d.cpp"
 },
 {
   "directory": "test_dir/",

@@ -1,8 +1,7 @@
 // RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include" --in-root %S --extra-arg="-I %S/../header2 ,-I %S/../header "
 // RUN: FileCheck --input-file %T/test.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/test.dp.cpp -o %T/test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/test.dp.cpp -o %T/test.dp.o %}
 
-#ifndef BUILD_TEST
 #include "../header/in_header.h"
 #include "../header2/out_header.h"
 int main() {
@@ -24,4 +23,3 @@ int main() {
 
   return 0;
 }
-#endif

@@ -501,14 +501,6 @@ runTypeErasedDataflowAnalysis(
         PostVisitCFG) {
   PrettyStackTraceAnalysis CrashInfo(CFCtx, "runTypeErasedDataflowAnalysis");
 
-  std::optional<Environment> MaybeStartingEnv;
-  if (InitEnv.callStackSize() == 1) {
-    MaybeStartingEnv = InitEnv.fork();
-    MaybeStartingEnv->initialize();
-  }
-  const Environment &StartingEnv =
-      MaybeStartingEnv ? *MaybeStartingEnv : InitEnv;
-
   const clang::CFG &CFG = CFCtx.getCFG();
   PostOrderCFGView POV(&CFG);
   ForwardDataflowWorklist Worklist(CFG, &POV);
@@ -519,10 +511,10 @@ runTypeErasedDataflowAnalysis(
   // The entry basic block doesn't contain statements so it can be skipped.
   const CFGBlock &Entry = CFG.getEntry();
   BlockStates[Entry.getBlockID()] = {Analysis.typeErasedInitialElement(),
-                                     StartingEnv.fork()};
+                                     InitEnv.fork()};
   Worklist.enqueueSuccessors(&Entry);
 
-  AnalysisContext AC(CFCtx, Analysis, StartingEnv, BlockStates);
+  AnalysisContext AC(CFCtx, Analysis, InitEnv, BlockStates);
 
   // Bugs in lattices and transfer functions can prevent the analysis from
   // converging. To limit the damage (infinite loops) that these bugs can cause,

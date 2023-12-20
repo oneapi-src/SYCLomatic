@@ -667,7 +667,7 @@ public:
   /// Returns whether \p Tok is ([{ or an opening < of a template or in
   /// protos.
   bool opensScope() const {
-    if (is(TT_TemplateString) && TokenText.ends_with("${"))
+    if (is(TT_TemplateString) && TokenText.endswith("${"))
       return true;
     if (is(TT_DictLiteral) && is(tok::less))
       return true;
@@ -677,7 +677,7 @@ public:
   /// Returns whether \p Tok is )]} or a closing > of a template or in
   /// protos.
   bool closesScope() const {
-    if (is(TT_TemplateString) && TokenText.starts_with("}"))
+    if (is(TT_TemplateString) && TokenText.startswith("}"))
       return true;
     if (is(TT_DictLiteral) && is(tok::greater))
       return true;
@@ -743,9 +743,9 @@ public:
     if (isNot(tok::string_literal))
       return false;
     StringRef Content = TokenText;
-    if (Content.starts_with("\"") || Content.starts_with("'"))
+    if (Content.startswith("\"") || Content.startswith("'"))
       Content = Content.drop_front(1);
-    if (Content.ends_with("\"") || Content.ends_with("'"))
+    if (Content.endswith("\"") || Content.endswith("'"))
       Content = Content.drop_back(1);
     Content = Content.trim();
     return Content.size() > 1 &&
@@ -1823,7 +1823,7 @@ private:
 };
 
 inline bool isLineComment(const FormatToken &FormatTok) {
-  return FormatTok.is(tok::comment) && !FormatTok.TokenText.starts_with("/*");
+  return FormatTok.is(tok::comment) && !FormatTok.TokenText.startswith("/*");
 }
 
 // Checks if \p FormatTok is a line comment that continues the line comment

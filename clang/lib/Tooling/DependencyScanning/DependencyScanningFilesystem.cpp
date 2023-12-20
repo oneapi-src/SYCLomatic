@@ -290,7 +290,7 @@ DependencyScanningWorkerFilesystem::status(const Twine &Path) {
   SmallString<256> OwnedFilename;
   StringRef Filename = Path.toStringRef(OwnedFilename);
 
-  if (Filename.ends_with(".pcm"))
+  if (Filename.endswith(".pcm"))
     return getUnderlyingFS().status(Path);
 
   llvm::ErrorOr<EntryRef> Result = getOrCreateFileSystemEntry(Filename);
@@ -350,7 +350,7 @@ DependencyScanningWorkerFilesystem::openFileForRead(const Twine &Path) {
   SmallString<256> OwnedFilename;
   StringRef Filename = Path.toStringRef(OwnedFilename);
 
-  if (Filename.ends_with(".pcm"))
+  if (Filename.endswith(".pcm"))
     return getUnderlyingFS().openFileForRead(Path);
 
   llvm::ErrorOr<EntryRef> Result = getOrCreateFileSystemEntry(Filename);

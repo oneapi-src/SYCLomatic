@@ -55,8 +55,6 @@ public:
 
   /// Prints this attribute.
   void print(AsmPrinter &os) const;
-
-  static constexpr StringLiteral name = "builtin.data_layout_entry";
 };
 
 //===----------------------------------------------------------------------===//
@@ -111,8 +109,6 @@ public:
 
   /// Prints this attribute.
   void print(AsmPrinter &os) const;
-
-  static constexpr StringLiteral name = "builtin.data_layout_spec";
 };
 
 } // namespace mlir

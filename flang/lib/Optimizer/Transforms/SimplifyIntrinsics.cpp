@@ -99,8 +99,8 @@ private:
   void simplifyLogicalDim1Reduction(fir::CallOp call,
                                     const fir::KindMapping &kindMap,
                                     GenReductionBodyTy genBodyFunc);
-  void simplifyMinMaxlocReduction(fir::CallOp call,
-                                  const fir::KindMapping &kindMap, bool isMax);
+  void simplifyMinlocReduction(fir::CallOp call,
+                               const fir::KindMapping &kindMap);
   void simplifyReductionBody(fir::CallOp call, const fir::KindMapping &kindMap,
                              GenReductionBodyTy genBodyFunc,
                              fir::FirOpBuilder &builder,
@@ -353,15 +353,16 @@ genReductionLoop(fir::FirOpBuilder &builder, mlir::func::FuncOp &funcOp,
   // Return the reduction value from the function.
   builder.create<mlir::func::ReturnOp>(loc, results[resultIndex]);
 }
-using MinMaxlocBodyOpGeneratorTy = llvm::function_ref<mlir::Value(
+using MinlocBodyOpGeneratorTy = llvm::function_ref<mlir::Value(
     fir::FirOpBuilder &, mlir::Location, const mlir::Type &, mlir::Value,
     mlir::Value, llvm::SmallVector<mlir::Value, Fortran::common::maxRank> &)>;
 
-static void genMinMaxlocReductionLoop(
-    fir::FirOpBuilder &builder, mlir::func::FuncOp &funcOp,
-    InitValGeneratorTy initVal, MinMaxlocBodyOpGeneratorTy genBody,
-    unsigned rank, mlir::Type elementType, mlir::Location loc, bool hasMask,
-    mlir::Type maskElemType, mlir::Value resultArr) {
+static void
+genMinlocReductionLoop(fir::FirOpBuilder &builder, mlir::func::FuncOp &funcOp,
+                       InitValGeneratorTy initVal,
+                       MinlocBodyOpGeneratorTy genBody, unsigned rank,
+                       mlir::Type elementType, mlir::Location loc, bool hasMask,
+                       mlir::Type maskElemType, mlir::Value resultArr) {
 
   mlir::IndexType idxTy = builder.getIndexType();
 
@@ -750,24 +751,21 @@ static mlir::FunctionType genRuntimeMinlocType(fir::FirOpBuilder &builder,
                                  {boxRefType, boxType, boxType}, {});
 }
 
-static void genRuntimeMinMaxlocBody(fir::FirOpBuilder &builder,
-                                    mlir::func::FuncOp &funcOp, bool isMax,
-                                    unsigned rank, int maskRank,
-                                    mlir::Type elementType,
-                                    mlir::Type maskElemType,
-                                    mlir::Type resultElemTy) {
-  auto init = [isMax](fir::FirOpBuilder builder, mlir::Location loc,
-                      mlir::Type elementType) {
+static void genRuntimeMinlocBody(fir::FirOpBuilder &builder,
+                                 mlir::func::FuncOp &funcOp, unsigned rank,
+                                 int maskRank, mlir::Type elementType,
+                                 mlir::Type maskElemType,
+                                 mlir::Type resultElemTy) {
+  auto init = [](fir::FirOpBuilder builder, mlir::Location loc,
+                 mlir::Type elementType) {
     if (auto ty = elementType.dyn_cast<mlir::FloatType>()) {
       const llvm::fltSemantics &sem = ty.getFloatSemantics();
       return builder.createRealConstant(
-          loc, elementType, llvm::APFloat::getLargest(sem, /*Negative=*/isMax));
+          loc, elementType, llvm::APFloat::getLargest(sem, /*Negative=*/false));
     }
     unsigned bits = elementType.getIntOrFloatBitWidth();
-    int64_t initValue = (isMax ? llvm::APInt::getSignedMinValue(bits)
-                               : llvm::APInt::getSignedMaxValue(bits))
-                            .getSExtValue();
-    return builder.createIntegerConstant(loc, elementType, initValue);
+    int64_t maxInt = llvm::APInt::getSignedMaxValue(bits).getSExtValue();
+    return builder.createIntegerConstant(loc, elementType, maxInt);
   };
 
   mlir::Location loc = mlir::UnknownLoc::get(builder.getContext());
@@ -799,24 +797,18 @@ static void genRuntimeMinMaxlocBody(fir::FirOpBuilder &builder,
   }
 
   auto genBodyOp =
-      [&rank, &resultArr,
-       isMax](fir::FirOpBuilder builder, mlir::Location loc,
-              mlir::Type elementType, mlir::Value elem1, mlir::Value elem2,
-              llvm::SmallVector<mlir::Value, Fortran::common::maxRank> indices)
+      [&rank, &resultArr](
+          fir::FirOpBuilder builder, mlir::Location loc, mlir::Type elementType,
+          mlir::Value elem1, mlir::Value elem2,
+          llvm::SmallVector<mlir::Value, Fortran::common::maxRank> indices)
       -> mlir::Value {
     mlir::Value cmp;
     if (elementType.isa<mlir::FloatType>()) {
       cmp = builder.create<mlir::arith::CmpFOp>(
-          loc,
-          isMax ? mlir::arith::CmpFPredicate::OGT
-                : mlir::arith::CmpFPredicate::OLT,
-          elem1, elem2);
+          loc, mlir::arith::CmpFPredicate::OLT, elem1, elem2);
     } else if (elementType.isa<mlir::IntegerType>()) {
       cmp = builder.create<mlir::arith::CmpIOp>(
-          loc,
-          isMax ? mlir::arith::CmpIPredicate::sgt
-                : mlir::arith::CmpIPredicate::slt,
-          elem1, elem2);
+          loc, mlir::arith::CmpIPredicate::slt, elem1, elem2);
     } else {
       llvm_unreachable("unsupported type");
     }
@@ -883,8 +875,9 @@ static void genRuntimeMinMaxlocBody(fir::FirOpBuilder &builder,
   // bit of a hack - maskRank is set to -1 for absent mask arg, so don't
   // generate high level mask or element by element mask.
   bool hasMask = maskRank > 0;
-  genMinMaxlocReductionLoop(builder, funcOp, init, genBodyOp, rank, elementType,
-                            loc, hasMask, maskElemType, resultArr);
+
+  genMinlocReductionLoop(builder, funcOp, init, genBodyOp, rank, elementType,
+                         loc, hasMask, maskElemType, resultArr);
 }
 
 /// Generate function type for the simplified version of RTNAME(DotProduct)
@@ -1157,19 +1150,16 @@ void SimplifyIntrinsicsPass::simplifyLogicalDim1Reduction(
                         intElementType);
 }
 
-void SimplifyIntrinsicsPass::simplifyMinMaxlocReduction(
-    fir::CallOp call, const fir::KindMapping &kindMap, bool isMax) {
+void SimplifyIntrinsicsPass::simplifyMinlocReduction(
+    fir::CallOp call, const fir::KindMapping &kindMap) {
 
   mlir::Operation::operand_range args = call.getArgs();
 
-  mlir::SymbolRefAttr callee = call.getCalleeAttr();
-  mlir::StringRef funcNameBase = callee.getLeafReference().getValue();
-  bool isDim = funcNameBase.ends_with("Dim");
-  mlir::Value back = args[isDim ? 7 : 6];
+  mlir::Value back = args[6];
   if (isTrueOrNotConstant(back))
     return;
 
-  mlir::Value mask = args[isDim ? 6 : 5];
+  mlir::Value mask = args[5];
   mlir::Value maskDef = findMaskDef(mask);
 
   // maskDef is set to NULL when the defining op is not one we accept.
@@ -1178,8 +1168,10 @@ void SimplifyIntrinsicsPass::simplifyMinMaxlocReduction(
   if (maskDef == NULL)
     return;
 
+  mlir::SymbolRefAttr callee = call.getCalleeAttr();
+  mlir::StringRef funcNameBase = callee.getLeafReference().getValue();
   unsigned rank = getDimCount(args[1]);
-  if ((isDim && rank != 1) || !(rank > 0))
+  if (funcNameBase.ends_with("Dim") || !(rank > 0))
     return;
 
   fir::FirOpBuilder builder{getSimplificationBuilder(call, kindMap)};
@@ -1225,17 +1217,17 @@ void SimplifyIntrinsicsPass::simplifyMinMaxlocReduction(
   auto typeGenerator = [rank](fir::FirOpBuilder &builder) {
     return genRuntimeMinlocType(builder, rank);
   };
-  auto bodyGenerator = [rank, maskRank, inputType, logicalElemType, outType,
-                        isMax](fir::FirOpBuilder &builder,
-                               mlir::func::FuncOp &funcOp) {
-    genRuntimeMinMaxlocBody(builder, funcOp, isMax, rank, maskRank, inputType,
-                            logicalElemType, outType);
+  auto bodyGenerator = [rank, maskRank, inputType, logicalElemType,
+                        outType](fir::FirOpBuilder &builder,
+                                 mlir::func::FuncOp &funcOp) {
+    genRuntimeMinlocBody(builder, funcOp, rank, maskRank, inputType,
+                         logicalElemType, outType);
   };
 
   mlir::func::FuncOp newFunc =
       getOrCreateFunction(builder, funcName, typeGenerator, bodyGenerator);
   builder.create<fir::CallOp>(loc, newFunc,
-                              mlir::ValueRange{args[0], args[1], mask});
+                              mlir::ValueRange{args[0], args[1], args[5]});
   call->dropAllReferences();
   call->erase();
 }
@@ -1287,11 +1279,11 @@ void SimplifyIntrinsicsPass::runOnOperation() {
         // RTNAME(Sum<T>)(const Descriptor &x, const char *source, int line,
         //                int dim, const Descriptor *mask)
         //
-        if (funcName.starts_with(RTNAME_STRING(Sum))) {
+        if (funcName.startswith(RTNAME_STRING(Sum))) {
           simplifyIntOrFloatReduction(call, kindMap, genRuntimeSumBody);
           return;
         }
-        if (funcName.starts_with(RTNAME_STRING(DotProduct))) {
+        if (funcName.startswith(RTNAME_STRING(DotProduct))) {
           LLVM_DEBUG(llvm::dbgs() << "Handling " << funcName << "\n");
           LLVM_DEBUG(llvm::dbgs() << "Call operation:\n"; op->dump();
                      llvm::dbgs() << "\n");
@@ -1358,28 +1350,24 @@ void SimplifyIntrinsicsPass::runOnOperation() {
                      llvm::dbgs() << "\n");
           return;
         }
-        if (funcName.starts_with(RTNAME_STRING(Maxval))) {
+        if (funcName.startswith(RTNAME_STRING(Maxval))) {
           simplifyIntOrFloatReduction(call, kindMap, genRuntimeMaxvalBody);
           return;
         }
-        if (funcName.starts_with(RTNAME_STRING(Count))) {
+        if (funcName.startswith(RTNAME_STRING(Count))) {
           simplifyLogicalDim0Reduction(call, kindMap, genRuntimeCountBody);
           return;
         }
-        if (funcName.starts_with(RTNAME_STRING(Any))) {
+        if (funcName.startswith(RTNAME_STRING(Any))) {
           simplifyLogicalDim1Reduction(call, kindMap, genRuntimeAnyBody);
           return;
         }
-        if (funcName.ends_with(RTNAME_STRING(All))) {
+        if (funcName.endswith(RTNAME_STRING(All))) {
           simplifyLogicalDim1Reduction(call, kindMap, genRuntimeAllBody);
           return;
         }
-        if (funcName.starts_with(RTNAME_STRING(Minloc))) {
-          simplifyMinMaxlocReduction(call, kindMap, false);
-          return;
-        }
-        if (funcName.starts_with(RTNAME_STRING(Maxloc))) {
-          simplifyMinMaxlocReduction(call, kindMap, true);
+        if (funcName.startswith(RTNAME_STRING(Minloc))) {
+          simplifyMinlocReduction(call, kindMap);
           return;
         }
       }

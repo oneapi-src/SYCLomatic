@@ -15,7 +15,6 @@ add_header_library(
   HDRS
     bit.h
   DEPENDS
-    .limits
     .type_traits
     libc.src.__support.macros.attributes
     libc.src.__support.macros.config
@@ -46,8 +45,6 @@ add_header_library(
   limits
   HDRS
     limits.h
-  DEPENDS
-    .type_traits
 )
 
 add_header_library(

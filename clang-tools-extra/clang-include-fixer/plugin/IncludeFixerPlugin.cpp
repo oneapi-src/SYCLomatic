@@ -54,9 +54,9 @@ public:
     // Parse the extra command line args.
     // FIXME: This is very limited at the moment.
     for (StringRef Arg : Args) {
-      if (Arg.starts_with("-db="))
+      if (Arg.startswith("-db="))
         DB = Arg.substr(strlen("-db="));
-      else if (Arg.starts_with("-input="))
+      else if (Arg.startswith("-input="))
         Input = Arg.substr(strlen("-input="));
     }
 

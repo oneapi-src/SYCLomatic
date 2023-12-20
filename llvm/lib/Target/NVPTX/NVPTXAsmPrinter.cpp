@@ -1016,8 +1016,8 @@ void NVPTXAsmPrinter::printModuleLevelGV(const GlobalVariable *GVar,
   }
 
   // Skip LLVM intrinsic global variables
-  if (GVar->getName().starts_with("llvm.") ||
-      GVar->getName().starts_with("nvvm."))
+  if (GVar->getName().startswith("llvm.") ||
+      GVar->getName().startswith("nvvm."))
     return;
 
   const DataLayout &DL = getDataLayout();

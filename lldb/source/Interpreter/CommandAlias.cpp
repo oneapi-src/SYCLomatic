@@ -182,7 +182,7 @@ bool CommandAlias::IsDashDashCommand() {
   for (const auto &opt_entry : *GetOptionArguments()) {
     std::tie(opt, std::ignore, value) = opt_entry;
     if (opt == CommandInterpreter::g_argument && !value.empty() &&
-        llvm::StringRef(value).ends_with("--")) {
+        llvm::StringRef(value).endswith("--")) {
       m_is_dashdash_alias = eLazyBoolYes;
       break;
     }

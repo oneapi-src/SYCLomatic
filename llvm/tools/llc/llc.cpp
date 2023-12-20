@@ -249,9 +249,9 @@ static std::unique_ptr<ToolOutputFile> GetOutputStream(const char *TargetName,
     else {
       // If InputFilename ends in .bc or .ll, remove it.
       StringRef IFN = InputFilename;
-      if (IFN.ends_with(".bc") || IFN.ends_with(".ll"))
+      if (IFN.endswith(".bc") || IFN.endswith(".ll"))
         OutputFilename = std::string(IFN.drop_back(3));
-      else if (IFN.ends_with(".mir"))
+      else if (IFN.endswith(".mir"))
         OutputFilename = std::string(IFN.drop_back(4));
       else
         OutputFilename = std::string(IFN);
@@ -307,11 +307,15 @@ static std::unique_ptr<ToolOutputFile> GetOutputStream(const char *TargetName,
 }
 
 struct LLCDiagnosticHandler : public DiagnosticHandler {
+  bool *HasError;
+  LLCDiagnosticHandler(bool *HasErrorPtr) : HasError(HasErrorPtr) {}
   bool handleDiagnostics(const DiagnosticInfo &DI) override {
-    DiagnosticHandler::handleDiagnostics(DI);
     if (DI.getKind() == llvm::DK_SrcMgr) {
       const auto &DISM = cast<DiagnosticInfoSrcMgr>(DI);
       const SMDiagnostic &SMD = DISM.getSMDiag();
+
+      if (SMD.getKind() == SourceMgr::DK_Error)
+        *HasError = true;
 
       SMD.print(nullptr, errs());
 
@@ -321,6 +325,9 @@ struct LLCDiagnosticHandler : public DiagnosticHandler {
 
       return true;
     }
+
+    if (DI.getSeverity() == DS_Error)
+      *HasError = true;
 
     if (auto *Remark = dyn_cast<DiagnosticInfoOptimizationBase>(&DI))
       if (!Remark->isEnabled())
@@ -406,7 +413,9 @@ int main(int argc, char **argv) {
   Context.setDiscardValueNames(DiscardValueNames);
 
   // Set a diagnostic handler that doesn't exit on the first error
-  Context.setDiagnosticHandler(std::make_unique<LLCDiagnosticHandler>());
+  bool HasError = false;
+  Context.setDiagnosticHandler(
+      std::make_unique<LLCDiagnosticHandler>(&HasError));
 
   Expected<std::unique_ptr<ToolOutputFile>> RemarksFileOrErr =
       setupLLVMOptimizationRemarks(Context, RemarksFilename, RemarksPasses,
@@ -575,7 +584,7 @@ static int compileModule(char **argv, LLVMContext &Context) {
       return Target->createDataLayout().getStringRepresentation();
     };
     if (InputLanguage == "mir" ||
-        (InputLanguage == "" && StringRef(InputFilename).ends_with(".mir"))) {
+        (InputLanguage == "" && StringRef(InputFilename).endswith(".mir"))) {
       MIR = createMIRParserFromFile(InputFilename, Err, Context,
                                     setMIRFunctionAttributes);
       if (MIR)
@@ -748,7 +757,9 @@ static int compileModule(char **argv, LLVMContext &Context) {
 
     PM.run(*M);
 
-    if (Context.getDiagHandlerPtr()->HasErrors)
+    auto HasError =
+        ((const LLCDiagnosticHandler *)(Context.getDiagHandlerPtr()))->HasError;
+    if (*HasError)
       return 1;
 
     // Compare the two outputs and make sure they're the same

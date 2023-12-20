@@ -102,9 +102,12 @@ class TestCase(TestBase):
         # it does not crash.
         self.expect("image lookup -t A")
 
-    # dsymutil strips the debug info for classes that only have const static
-    # data members without locations.
-    @expectedFailureAll(debug_info=["dsym"], dwarf_version=["<", "5"])
+    # For debug-info produced by older versions of clang, dsymutil strips the
+    # debug info for classes that only have const static data members without
+    # definitions.
+    @expectedFailureAll(
+        debug_info=["dsym"], compiler=["clang"], compiler_version=["<", "18.0"]
+    )
     def test_class_with_only_const_static(self):
         self.build()
         lldbutil.run_to_source_breakpoint(
@@ -120,9 +123,10 @@ class TestCase(TestBase):
         self.assertEqual(varobj.type.name, expect_type)
         self.assertEqual(varobj.value, expect_val)
 
-    @expectedFailureAll(dwarf_version=["<", "5"])
-    # On linux this passes due to the manual index
-    @expectedFailureDarwin(debug_info=no_match(["dsym"]))
+    # For debug-info produced by older versions of clang, inline static data members
+    # wouldn't get indexed into the Names accelerator table preventing LLDB from finding
+    # them.
+    @expectedFailureAll(compiler=["clang"], compiler_version=["<", "18.0"])
     def test_inline_static_members(self):
         self.build()
         lldbutil.run_to_source_breakpoint(
@@ -170,9 +174,9 @@ class TestCase(TestBase):
             "ClassWithEnumAlias::enum_alias_alias", result_value="scoped_enum_case1"
         )
 
-    @expectedFailureAll(dwarf_version=["<", "5"])
-    # On linux this passes due to the manual index
-    @expectedFailureDarwin(debug_info=no_match(["dsym"]))
+    # With older versions of Clang, LLDB fails to evaluate classes with only
+    # constexpr members when dsymutil is enabled
+    @expectedFailureAll(compiler=["clang"], compiler_version=["<", "18.0"])
     def test_shadowed_static_inline_members(self):
         """Tests that the expression evaluator and SBAPI can both
         correctly determine the requested inline static variable

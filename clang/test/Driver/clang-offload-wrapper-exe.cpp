@@ -32,8 +32,7 @@
 // RUN: %t.batch.exe > %t.batch.exe.out
 // RUN: diff -b %t.batch.exe.out %t.all
 
-#include <cassert>
-#include <cstdint>
+#include <assert.h>
 #include <cstring>
 #include <iostream>
 #include <string>

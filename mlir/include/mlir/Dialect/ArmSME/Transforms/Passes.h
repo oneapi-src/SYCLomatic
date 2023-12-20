@@ -27,10 +27,18 @@ namespace arm_sme {
 /// Pass to enable Armv9 Streaming SVE mode.
 std::unique_ptr<Pass> createEnableArmStreamingPass(
     const ArmStreamingMode = ArmStreamingMode::Streaming,
-    const ArmZaMode = ArmZaMode::Disabled, bool onlyIfRequiredByOps = false);
+    const ArmZaMode = ArmZaMode::Disabled);
 
-/// Pass that allocates tile IDs to ArmSME operations.
+/// Pass that replaces 'arm_sme.get_tile_id' ops with actual tiles.
 std::unique_ptr<Pass> createTileAllocationPass();
+
+//===----------------------------------------------------------------------===//
+// Type ArmSMETypeConverter pass.
+//===----------------------------------------------------------------------===//
+class ArmSMETypeConverter : public LLVMTypeConverter {
+public:
+  ArmSMETypeConverter(MLIRContext *ctx, const LowerToLLVMOptions &options);
+};
 
 //===----------------------------------------------------------------------===//
 // Registration

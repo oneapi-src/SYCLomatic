@@ -19,7 +19,7 @@ namespace {
 
 StringRef removeFirstSuffix(StringRef Str, ArrayRef<const char *> Suffixes) {
   for (StringRef Suffix : Suffixes) {
-    if (Str.ends_with(Suffix)) {
+    if (Str.endswith(Suffix)) {
       return Str.substr(0, Str.size() - Suffix.size());
     }
   }
@@ -73,12 +73,12 @@ determineIncludeKind(StringRef CanonicalFile, StringRef IncludeFile,
   if (IsAngled) {
     // If the system include (<foo>) ends with ".h", then it is a normal C-style
     // include. Otherwise assume it is a C++-style extensionless include.
-    return IncludeFile.ends_with(".h") ? IncludeSorter::IK_CSystemInclude
-                                       : IncludeSorter::IK_CXXSystemInclude;
+    return IncludeFile.endswith(".h") ? IncludeSorter::IK_CSystemInclude
+                                      : IncludeSorter::IK_CXXSystemInclude;
   }
   StringRef CanonicalInclude = makeCanonicalName(IncludeFile, Style);
-  if (CanonicalFile.ends_with(CanonicalInclude) ||
-      CanonicalInclude.ends_with(CanonicalFile)) {
+  if (CanonicalFile.endswith(CanonicalInclude)
+      || CanonicalInclude.endswith(CanonicalFile)) {
     return IncludeSorter::IK_MainTUInclude;
   }
   if ((Style == IncludeSorter::IS_Google) ||
@@ -95,9 +95,8 @@ determineIncludeKind(StringRef CanonicalFile, StringRef IncludeFile,
     }
   }
   if (Style == IncludeSorter::IS_Google_ObjC) {
-    if (IncludeFile.ends_with(".generated.h") ||
-        IncludeFile.ends_with(".proto.h") ||
-        IncludeFile.ends_with(".pbobjc.h")) {
+    if (IncludeFile.endswith(".generated.h") ||
+        IncludeFile.endswith(".proto.h") || IncludeFile.endswith(".pbobjc.h")) {
       return IncludeSorter::IK_GeneratedInclude;
     }
   }

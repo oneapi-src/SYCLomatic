@@ -234,22 +234,6 @@ runDataflowAnalysis(
   return std::move(BlockStates);
 }
 
-// Create an analysis class that is derived from `DataflowAnalysis`. This is an
-// SFINAE adapter that allows us to call two different variants of constructor
-// (either with or without the optional `Environment` parameter).
-// FIXME: Make all classes derived from `DataflowAnalysis` take an `Environment`
-// parameter in their constructor so that we can get rid of this abomination.
-template <typename AnalysisT>
-auto createAnalysis(ASTContext &ASTCtx, Environment &Env)
-    -> decltype(AnalysisT(ASTCtx, Env)) {
-  return AnalysisT(ASTCtx, Env);
-}
-template <typename AnalysisT>
-auto createAnalysis(ASTContext &ASTCtx, Environment &Env)
-    -> decltype(AnalysisT(ASTCtx)) {
-  return AnalysisT(ASTCtx);
-}
-
 /// Runs a dataflow analysis over the given function and then runs `Diagnoser`
 /// over the results. Returns a list of diagnostics for `FuncDecl` or an
 /// error. Currently, errors can occur (at least) because the analysis requires
@@ -278,7 +262,7 @@ llvm::Expected<llvm::SmallVector<Diagnostic>> diagnoseFunction(
   const WatchedLiteralsSolver *Solver = OwnedSolver.get();
   DataflowAnalysisContext AnalysisContext(std::move(OwnedSolver));
   Environment Env(AnalysisContext, FuncDecl);
-  AnalysisT Analysis = createAnalysis<AnalysisT>(ASTCtx, Env);
+  AnalysisT Analysis(ASTCtx);
   llvm::SmallVector<Diagnostic> Diagnostics;
   if (llvm::Error Err =
           runTypeErasedDataflowAnalysis(

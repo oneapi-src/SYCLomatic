@@ -78,3 +78,36 @@ endmacro()
 # Always set SYCL_HAS_FP16 to true to assume SYCL device to support float16
 message("dpct.cmake: SYCL_HAS_FP16 is set true by default.")
 set(SYCL_HAS_FP16 TRUE)
+
+macro (target_link_sycl_libraries target link_libraries_keyword)
+    set(SYCL_LIBS "")
+    foreach(arg ${ARGN})
+        if(${arg} STREQUAL "-lcublas")
+            list(APPEND SYCL_LIBS "-qmkl")
+        elseif(${arg} STREQUAL "CUDA::cublas")
+            list(APPEND SYCL_LIBS "-qmkl")
+        # libsycl.so is included by default as alternative to cuda_driver lib, so removing here
+        elseif(${arg} STREQUAL "CUDA::cuda_driver")
+            list(APPEND SYCL_LIBS "")
+        elseif(${arg} STREQUAL "cudnn")
+                list(APPEND SYCL_LIBS "dnnl")
+        # No mapping yet for nvrtc in SYCL, so removing here
+        elseif(${arg} STREQUAL "CUDA::nvrtc")
+            list(APPEND SYCL_LIBS "")
+        # No mapping yet for nvToolsExt in SYCL, so removing here
+        elseif(${arg} STREQUAL "CUDA::nvToolsExt")
+            list(APPEND SYCL_LIBS "")
+        # No mapping yet for libnvinfer in SYCL, so removing here
+        elseif(${arg} STREQUAL "libnvinfer.so")
+            list(APPEND SYCL_LIBS "")
+        # No mapping yet for libnvonnxparser in SYCL, so removing here
+        elseif(${arg} STREQUAL "libnvonnxparser.so")
+            list(APPEND SYCL_LIBS "")
+        # icpx: error: '-static-libstdc++' is not supported with '-fsycl', so removing here
+        elseif(${arg} STREQUAL "-static-libstdc++")
+            list(APPEND SYCL_LIBS "")
+        endif()
+    endforeach()
+    
+    target_link_libraries(${target} ${link_libraries_keyword} ${SYCL_LIBS})
+endmacro()

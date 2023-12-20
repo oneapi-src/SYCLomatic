@@ -57,19 +57,19 @@ StringRef ARM::getCanonicalArchName(StringRef Arch) {
   StringRef Error = "";
 
   // Begins with "arm" / "thumb", move past it.
-  if (A.starts_with("arm64_32"))
+  if (A.startswith("arm64_32"))
     offset = 8;
-  else if (A.starts_with("arm64e"))
+  else if (A.startswith("arm64e"))
     offset = 6;
-  else if (A.starts_with("arm64"))
+  else if (A.startswith("arm64"))
     offset = 5;
-  else if (A.starts_with("aarch64_32"))
+  else if (A.startswith("aarch64_32"))
     offset = 10;
-  else if (A.starts_with("arm"))
+  else if (A.startswith("arm"))
     offset = 3;
-  else if (A.starts_with("thumb"))
+  else if (A.startswith("thumb"))
     offset = 5;
-  else if (A.starts_with("aarch64")) {
+  else if (A.startswith("aarch64")) {
     offset = 7;
     // AArch64 uses "_be", not "eb" suffix.
     if (A.contains("eb"))
@@ -82,7 +82,7 @@ StringRef ARM::getCanonicalArchName(StringRef Arch) {
   if (offset != StringRef::npos && A.substr(offset, 2) == "eb")
     offset += 2;
   // Or, if it ends with eb ("armv7eb"), chop it off.
-  else if (A.ends_with("eb"))
+  else if (A.endswith("eb"))
     A = A.substr(0, A.size() - 2);
   // Trim the head
   if (offset != StringRef::npos)
@@ -116,18 +116,18 @@ ARM::ISAKind ARM::parseArchISA(StringRef Arch) {
 }
 
 ARM::EndianKind ARM::parseArchEndian(StringRef Arch) {
-  if (Arch.starts_with("armeb") || Arch.starts_with("thumbeb") ||
-      Arch.starts_with("aarch64_be"))
+  if (Arch.startswith("armeb") || Arch.startswith("thumbeb") ||
+      Arch.startswith("aarch64_be"))
     return EndianKind::BIG;
 
-  if (Arch.starts_with("arm") || Arch.starts_with("thumb")) {
-    if (Arch.ends_with("eb"))
+  if (Arch.startswith("arm") || Arch.startswith("thumb")) {
+    if (Arch.endswith("eb"))
       return EndianKind::BIG;
     else
       return EndianKind::LITTLE;
   }
 
-  if (Arch.starts_with("aarch64") || Arch.starts_with("aarch64_32"))
+  if (Arch.startswith("aarch64") || Arch.startswith("aarch64_32"))
     return EndianKind::LITTLE;
 
   return EndianKind::INVALID;

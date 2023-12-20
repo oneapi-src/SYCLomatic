@@ -10,7 +10,7 @@
 ! subprograms.
 
 module __CUDA_builtins
-  use __fortran_builtins, only: &
+  use __Fortran_builtins, only: &
     threadIdx => __builtin_threadIdx, &
     blockDim => __builtin_blockDim, &
     blockIdx => __builtin_blockIdx, &

@@ -17,7 +17,7 @@
 #include "ResourceVisitor.h"
 
 #include "llvm/ADT/BitVector.h"
-#include "llvm/ADT/StringMap.h"
+#include "llvm/ADT/StringSet.h"
 
 namespace llvm {
 namespace rc {

@@ -21,7 +21,7 @@ bool isIf(llvm::StringRef Line) {
   if (!Line.consume_front("#"))
     return false;
   Line = Line.ltrim();
-  return Line.starts_with("if");
+  return Line.startswith("if");
 }
 
 // Is Line an #error directive mentioning includes?
@@ -30,7 +30,7 @@ bool isErrorAboutInclude(llvm::StringRef Line) {
   if (!Line.consume_front("#"))
     return false;
   Line = Line.ltrim();
-  if (!Line.starts_with("error"))
+  if (!Line.startswith("error"))
     return false;
   return Line.contains_insensitive(
       "includ"); // Matches "include" or "including".
@@ -54,7 +54,7 @@ bool isImportLine(llvm::StringRef Line) {
   if (!Line.consume_front("#"))
     return false;
   Line = Line.ltrim();
-  return Line.starts_with("import");
+  return Line.startswith("import");
 }
 
 llvm::StringRef getFileContents(FileEntryRef FE, const SourceManager &SM) {

@@ -170,14 +170,9 @@ void DWARFDebugLine::Prologue::dump(raw_ostream &OS,
       if (ContentTypes.HasLength)
         OS << format("         length: 0x%8.8" PRIx64 "\n", FileEntry.Length);
       if (ContentTypes.HasSource) {
-        auto Source = FileEntry.Source.getAsCString();
-        if (!Source)
-          consumeError(Source.takeError());
-        else if ((*Source)[0]) {
-          OS << "         source: ";
-          FileEntry.Source.dump(OS, DumpOptions);
-          OS << '\n';
-        }
+        OS <<        "         source: ";
+        FileEntry.Source.dump(OS, DumpOptions);
+        OS << '\n';
       }
     }
   }

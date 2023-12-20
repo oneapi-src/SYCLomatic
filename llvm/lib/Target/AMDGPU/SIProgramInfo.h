@@ -21,8 +21,6 @@
 
 namespace llvm {
 
-class GCNSubtarget;
-
 /// Track resource usage for kernels / entry functions.
 struct SIProgramInfo {
     // Fields set in PGM_RSRC1 pm4 packet.
@@ -36,7 +34,6 @@ struct SIProgramInfo {
     uint32_t IEEEMode = 0;
     uint32_t WgpMode = 0; // GFX10+
     uint32_t MemOrdered = 0; // GFX10+
-    uint32_t RrWgMode = 0;   // GFX12+
     uint64_t ScratchSize = 0;
 
     // State used to calculate fields set in PGM_RSRC2 pm4 packet.
@@ -88,8 +85,8 @@ struct SIProgramInfo {
     SIProgramInfo() = default;
 
     /// Compute the value of the ComputePGMRsrc1 register.
-    uint64_t getComputePGMRSrc1(const GCNSubtarget &ST) const;
-    uint64_t getPGMRSrc1(CallingConv::ID CC, const GCNSubtarget &ST) const;
+    uint64_t getComputePGMRSrc1() const;
+    uint64_t getPGMRSrc1(CallingConv::ID CC) const;
 
     /// Compute the value of the ComputePGMRsrc2 register.
     uint64_t getComputePGMRSrc2() const;

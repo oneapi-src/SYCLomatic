@@ -317,16 +317,13 @@ added in the future:
     not be used lightly but only for specific situations such as an
     alternative to the *register pinning* performance technique often
     used when implementing functional programming languages. At the
-    moment only X86 and AArch64 support this convention. The following
-    limitations exist:
+    moment only X86 supports this convention and it has the following
+    limitations:
 
-    -  On *X86-32* only up to 4 bit type parameters are supported. No
+    -  On *X86-32* only supports up to 4 bit type parameters. No
        floating-point types are supported.
-    -  On *X86-64* only up to 10 bit type parameters and 6
-       floating-point parameters are supported.
-    -  On *AArch64* only up to 4 32-bit floating-point parameters,
-       4 64-bit floating-point parameters, and 10 bit type parameters
-       are supported.
+    -  On *X86-64* only supports up to 10 bit type parameters and 6
+       floating-point parameters.
 
     This calling convention supports `tail call
     optimization <CodeGenerator.html#tail-call-optimization>`_ but requires
@@ -365,9 +362,8 @@ added in the future:
 
     - On X86-64 the callee preserves all general purpose registers, except for
       R11 and return registers, if any. R11 can be used as a scratch register.
-      The treatment of floating-point registers (XMMs/YMMs) matches the OS's C
-      calling convention: on most platforms, they are not preserved and need to
-      be saved by the caller, but on Windows, xmm6-xmm15 are preserved.
+      Floating-point registers (XMMs/YMMs) are not preserved and need to be
+      saved by the caller.
 
     - On AArch64 the callee preserve all general purpose registers, except X0-X8
       and X16-X18.
@@ -637,12 +633,6 @@ appropriate fencing is inserted.  Since the appropriate fencing is
 implementation defined, the optimizer can't do the latter.  The former is
 challenging as many commonly expected properties, such as
 ``ptrtoint(v)-ptrtoint(v) == 0``, don't hold for non-integral types.
-Similar restrictions apply to intrinsics that might examine the pointer bits,
-such as :ref:`llvm.ptrmask<int_ptrmask>`. 
-
-The alignment information provided by the frontend for a non-integral pointer
-(typically using attributes or metadata) must be valid for every possible 
-representation of the pointer.
 
 .. _globalvars:
 
@@ -711,13 +701,6 @@ information. Attaching section information to an external declaration is an
 assertion that its definition is located in the specified section. If the
 definition is located in a different section, the behavior is undefined.
 
-LLVM allows an explicit code model to be specified for globals. If the
-target supports it, it will emit globals in the code model specified,
-overriding the code model used to compile the translation unit.
-The allowed values are "tiny", "small", "kernel", "medium", "large".
-This may be extended in the future to specify global data layout that
-doesn't cleanly fit into a specific code model.
-
 By default, global initializers are optimized by assuming that global
 variables defined within the module are not modified from their
 initial values before the start of the global initializer. This is
@@ -774,7 +757,6 @@ Syntax::
                          <global | constant> <Type> [<InitializerConstant>]
                          [, section "name"] [, partition "name"]
                          [, comdat [($name)]] [, align <Alignment>]
-                         [, code_model "model"]
                          [, no_sanitize_address] [, no_sanitize_hwaddress]
                          [, sanitize_address_dyninit] [, sanitize_memtag]
                          (, !name !N)*
@@ -791,13 +773,6 @@ The following example just declares a global variable
 .. code-block:: llvm
 
    @G = external global i32
-
-The following example defines a global variable with the
-``large`` code model:
-
-.. code-block:: llvm
-
-    @G = internal global i32 0, code_model "large"
 
 The following example defines a thread-local global with the
 ``initialexec`` TLS model:
@@ -959,11 +934,10 @@ IFuncs
 -------
 
 IFuncs, like as aliases, don't create any new data or func. They are just a new
-symbol that is resolved at runtime by calling a resolver function.
+symbol that dynamic linker resolves at runtime by calling a resolver function.
 
-On ELF platforms, IFuncs are resolved by the dynamic linker at load time. On
-Mach-O platforms, they are lowered in terms of ``.symbol_resolver`` functions,
-which lazily resolve the callee the first time they are called.
+IFuncs have a name and a resolver that is a function called by dynamic linker
+that returns address of another function associated with the name.
 
 IFunc may have an optional :ref:`linkage type <linkage>` and an optional
 :ref:`visibility style <visibility>`.
@@ -1515,7 +1489,7 @@ Currently, only the following parameter attributes are defined:
     over-alignment specification through language attributes).
 
 ``allocalign``
-    The function parameter marked with this attribute is the alignment in bytes of the
+    The function parameter marked with this attribute is is the alignment in bytes of the
     newly allocated block returned by this function. The returned value must either have
     the specified alignment or be the null pointer. The return value MAY be more aligned
     than the requested alignment, but not less aligned.  Invalid (e.g. non-power-of-2)
@@ -1576,20 +1550,6 @@ Currently, only the following parameter attributes are defined:
     The ``writable`` attribute cannot be combined with ``readnone``,
     ``readonly`` or a ``memory`` attribute that does not contain
     ``argmem: write``.
-
-``dead_on_unwind``
-    At a high level, this attribute indicates that the pointer argument is dead
-    if the call unwinds, in the sense that the caller will not depend on the
-    contents of the memory. Stores that would only be visible on the unwind
-    path can be elided.
-
-    More precisely, the behavior is as-if any memory written through the
-    pointer during the execution of the function is overwritten with a poison
-    value on unwind. This includes memory written by the implicit write implied
-    by the ``writable`` attribute. The caller is allowed to access the affected
-    memory, but all loads that are not preceded by a store will return poison.
-
-    This attribute cannot be applied to return values.
 
 .. _gc:
 
@@ -4314,11 +4274,6 @@ constants and smaller complex constants.
     "``< i32 42, i32 11, i32 74, i32 100 >``". Vector constants
     must have :ref:`vector type <t_vector>`, and the number and types of
     elements must match those specified by the type.
-
-    When creating a vector whose elements have the same constant value, the
-    preferred syntax is ``splat (<Ty> Val)``. For example: "``splat (i32 11)``".
-    These vector constants must have ::ref:`vector type <t_vector>` with an
-    element type that matches the ``splat`` operand.
 **Zero initialization**
     The string '``zeroinitializer``' can be used to zero initialize a
     value to zero of *any* type, including scalar and
@@ -22798,7 +22753,7 @@ Semantics:
 
 The '``llvm.vp.fcmp``' compares its first two operands according to the
 condition code given as the third operand. The operands are compared element by
-element on each enabled lane, where the semantics of the comparison are
+element on each enabled lane, where the the semantics of the comparison are
 defined :ref:`according to the condition code <fcmp_md_cc_sem>`. Masked-off
 lanes are ``poison``.
 
@@ -22856,7 +22811,7 @@ Semantics:
 
 The '``llvm.vp.icmp``' compares its first two operands according to the
 condition code given as the third operand. The operands are compared element by
-element on each enabled lane, where the semantics of the comparison are
+element on each enabled lane, where the the semantics of the comparison are
 defined :ref:`according to the condition code <icmp_md_cc_sem>`. Masked-off
 lanes are ``poison``.
 

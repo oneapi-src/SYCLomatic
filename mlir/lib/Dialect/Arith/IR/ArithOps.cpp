@@ -1352,11 +1352,9 @@ OpFoldResult arith::TruncIOp::fold(FoldAdaptor adaptor) {
       setOperand(src);
       return getResult();
     }
-
     // trunci(zexti(a)) -> a
     // trunci(sexti(a)) -> a
-    if (srcType == dstType)
-      return src;
+    return src;
   }
 
   // trunci(trunci(a)) -> trunci(a))

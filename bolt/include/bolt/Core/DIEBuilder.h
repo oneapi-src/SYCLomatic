@@ -33,7 +33,6 @@ namespace llvm {
 
 namespace bolt {
 class DIEStreamer;
-class DebugStrOffsetsWriter;
 
 class DIEBuilder {
   friend DIEStreamer;
@@ -267,8 +266,7 @@ public:
   ProcessingType getCurrentProcessingState() { return getState().Type; }
 
   /// Constructs IR for Type Units.
-  void buildTypeUnits(DebugStrOffsetsWriter *StrOffsetWriter = nullptr,
-                      const bool Init = true);
+  void buildTypeUnits(const bool Init = true);
   /// Constructs IR for all the CUs.
   void buildCompileUnits(const bool Init = true);
   /// Constructs IR for CUs in a vector.

@@ -88,7 +88,6 @@
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/TargetParser/Host.h"
 
 #include "../ExampleModules.h"
 #include "RemoteJITUtils.h"
@@ -174,14 +173,23 @@ int main(int argc, char *argv[]) {
     TSMs.push_back(ExitOnErr(parseExampleModuleFromFile(Path)));
   }
 
-  std::string TT;
+  StringRef TT;
   StringRef MainModuleName;
   TSMs.front().withModuleDo([&MainModuleName, &TT](Module &M) {
     MainModuleName = M.getName();
     TT = M.getTargetTriple();
-    if (TT.empty())
-      TT = sys::getProcessTriple();
   });
+
+  for (const ThreadSafeModule &TSM : TSMs)
+    ExitOnErr(TSM.withModuleDo([TT, MainModuleName](Module &M) -> Error {
+      if (M.getTargetTriple() != TT)
+        return make_error<StringError>(
+            formatv("Different target triples in input files:\n"
+                    "  '{0}' in '{1}'\n  '{2}' in '{3}'",
+                    TT, MainModuleName, M.getTargetTriple(), M.getName()),
+            inconvertibleErrorCode());
+      return Error::success();
+    }));
 
   // Create a target machine that matches the input triple.
   JITTargetMachineBuilder JTMB((Triple(TT)));

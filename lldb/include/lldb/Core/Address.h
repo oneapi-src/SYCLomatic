@@ -14,8 +14,6 @@
 #include "lldb/lldb-private-enumerations.h"
 #include "lldb/lldb-types.h"
 
-#include "llvm/ADT/StringRef.h"
-
 #include <cstddef>
 #include <cstdint>
 
@@ -239,12 +237,6 @@ public:
   ///     contains the address, otherwise dumping the range that contains the
   ///     address.
   ///
-  /// \param[in] pattern
-  ///     An optional regex pattern to match against the description. If
-  ///     specified, parts of the description matching this pattern may be
-  ///     highlighted or processed differently. If this parameter is an empty
-  ///     string or not provided, no highlighting is applied.
-  ///
   /// \return
   ///     Returns \b true if the address was able to be displayed.
   ///     File and load addresses may be unresolved and it may not be
@@ -254,8 +246,8 @@ public:
   /// \see Address::DumpStyle
   bool Dump(Stream *s, ExecutionContextScope *exe_scope, DumpStyle style,
             DumpStyle fallback_style = DumpStyleInvalid,
-            uint32_t addr_byte_size = UINT32_MAX, bool all_ranges = false,
-            llvm::StringRef pattern = "") const;
+            uint32_t addr_byte_size = UINT32_MAX,
+            bool all_ranges = false) const;
 
   AddressClass GetAddressClass() const;
 

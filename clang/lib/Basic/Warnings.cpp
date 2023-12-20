@@ -97,7 +97,7 @@ void clang::ProcessWarningOptions(DiagnosticsEngine &Diags,
       // Check to see if this warning starts with "no-", if so, this is a
       // negative form of the option.
       bool isPositive = true;
-      if (Opt.starts_with("no-")) {
+      if (Opt.startswith("no-")) {
         isPositive = false;
         Opt = Opt.substr(3);
       }
@@ -133,7 +133,7 @@ void clang::ProcessWarningOptions(DiagnosticsEngine &Diags,
       // table. It also has the "specifier" form of -Werror=foo. GCC supports
       // the deprecated -Werror-implicit-function-declaration which is used by
       // a few projects.
-      if (Opt.starts_with("error")) {
+      if (Opt.startswith("error")) {
         StringRef Specifier;
         if (Opt.size() > 5) {  // Specifier must be present.
           if (Opt[5] != '=' &&
@@ -162,7 +162,7 @@ void clang::ProcessWarningOptions(DiagnosticsEngine &Diags,
       }
 
       // -Wfatal-errors is yet another special case.
-      if (Opt.starts_with("fatal-errors")) {
+      if (Opt.startswith("fatal-errors")) {
         StringRef Specifier;
         if (Opt.size() != 12) {
           if ((Opt[12] != '=' && Opt[12] != '-') || Opt.size() == 13) {
@@ -204,7 +204,7 @@ void clang::ProcessWarningOptions(DiagnosticsEngine &Diags,
 
       // Check to see if this warning starts with "no-", if so, this is a
       // negative form of the option.
-      bool IsPositive = !Opt.starts_with("no-");
+      bool IsPositive = !Opt.startswith("no-");
       if (!IsPositive) Opt = Opt.substr(3);
 
       auto Severity = IsPositive ? diag::Severity::Remark

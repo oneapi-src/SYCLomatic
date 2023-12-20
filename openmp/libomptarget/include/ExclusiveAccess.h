@@ -11,7 +11,6 @@
 #ifndef OMPTARGET_EXCLUSIVE_ACCESS
 #define OMPTARGET_EXCLUSIVE_ACCESS
 
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <mutex>

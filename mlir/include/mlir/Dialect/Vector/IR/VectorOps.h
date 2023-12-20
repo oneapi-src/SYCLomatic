@@ -123,12 +123,10 @@ bool isDisjointTransferSet(VectorTransferOpInterface transferA,
                            VectorTransferOpInterface transferB,
                            bool testDynamicValueUsingBounds = false);
 
-/// Returns the result value of reducing two scalar/vector values with the
+/// Return the result value of reducing two scalar/vector values with the
 /// corresponding arith operation.
 Value makeArithReduction(OpBuilder &b, Location loc, CombiningKind kind,
-                         Value v1, Value acc,
-                         arith::FastMathFlagsAttr fastmath = nullptr,
-                         Value mask = nullptr);
+                         Value v1, Value acc, Value mask = Value());
 
 /// Returns true if `attr` has "parallel" iterator type semantics.
 inline bool isParallelIterator(Attribute attr) {

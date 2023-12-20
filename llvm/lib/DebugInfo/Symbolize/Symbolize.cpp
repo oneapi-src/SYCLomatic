@@ -233,8 +233,7 @@ LLVMSymbolizer::symbolizeFrame(ArrayRef<uint8_t> BuildID,
 
 template <typename T>
 Expected<std::vector<DILineInfo>>
-LLVMSymbolizer::findSymbolCommon(const T &ModuleSpecifier, StringRef Symbol,
-                                 uint64_t Offset) {
+LLVMSymbolizer::findSymbolCommon(const T &ModuleSpecifier, StringRef Symbol) {
   auto InfoOrErr = getOrCreateModuleInfo(ModuleSpecifier);
   if (!InfoOrErr)
     return InfoOrErr.takeError();
@@ -247,7 +246,7 @@ LLVMSymbolizer::findSymbolCommon(const T &ModuleSpecifier, StringRef Symbol,
   if (!Info)
     return Result;
 
-  for (object::SectionedAddress A : Info->findSymbol(Symbol, Offset)) {
+  for (object::SectionedAddress A : Info->findSymbol(Symbol)) {
     DILineInfo LineInfo = Info->symbolizeCode(
         A, DILineInfoSpecifier(Opts.PathStyle, Opts.PrintFunctions),
         Opts.UseSymbolTable);
@@ -262,21 +261,18 @@ LLVMSymbolizer::findSymbolCommon(const T &ModuleSpecifier, StringRef Symbol,
 }
 
 Expected<std::vector<DILineInfo>>
-LLVMSymbolizer::findSymbol(const ObjectFile &Obj, StringRef Symbol,
-                           uint64_t Offset) {
-  return findSymbolCommon(Obj, Symbol, Offset);
+LLVMSymbolizer::findSymbol(const ObjectFile &Obj, StringRef Symbol) {
+  return findSymbolCommon(Obj, Symbol);
 }
 
 Expected<std::vector<DILineInfo>>
-LLVMSymbolizer::findSymbol(const std::string &ModuleName, StringRef Symbol,
-                           uint64_t Offset) {
-  return findSymbolCommon(ModuleName, Symbol, Offset);
+LLVMSymbolizer::findSymbol(StringRef ModuleName, StringRef Symbol) {
+  return findSymbolCommon(ModuleName.str(), Symbol);
 }
 
 Expected<std::vector<DILineInfo>>
-LLVMSymbolizer::findSymbol(ArrayRef<uint8_t> BuildID, StringRef Symbol,
-                           uint64_t Offset) {
-  return findSymbolCommon(BuildID, Symbol, Offset);
+LLVMSymbolizer::findSymbol(ArrayRef<uint8_t> BuildID, StringRef Symbol) {
+  return findSymbolCommon(BuildID, Symbol);
 }
 
 void LLVMSymbolizer::flush() {

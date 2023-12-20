@@ -1535,7 +1535,7 @@ std::string ObjFile::sourceFile() const {
   StringRef sep = sys::path::get_separator();
   // We don't use `path::append` here because we want an empty `dir` to result
   // in an absolute path. `append` would give us a relative path for that case.
-  if (!dir.ends_with(sep))
+  if (!dir.endswith(sep))
     dir += sep;
   return (dir + unitName).str();
 }

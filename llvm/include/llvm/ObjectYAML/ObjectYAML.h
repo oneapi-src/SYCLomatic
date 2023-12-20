@@ -13,7 +13,6 @@
 #include "llvm/ObjectYAML/COFFYAML.h"
 #include "llvm/ObjectYAML/DXContainerYAML.h"
 #include "llvm/ObjectYAML/ELFYAML.h"
-#include "llvm/ObjectYAML/GOFFYAML.h"
 #include "llvm/ObjectYAML/MachOYAML.h"
 #include "llvm/ObjectYAML/MinidumpYAML.h"
 #include "llvm/ObjectYAML/OffloadYAML.h"
@@ -31,7 +30,6 @@ struct YamlObjectFile {
   std::unique_ptr<ArchYAML::Archive> Arch;
   std::unique_ptr<ELFYAML::Object> Elf;
   std::unique_ptr<COFFYAML::Object> Coff;
-  std::unique_ptr<GOFFYAML::Object> Goff;
   std::unique_ptr<MachOYAML::Object> MachO;
   std::unique_ptr<MachOYAML::UniversalBinary> FatMachO;
   std::unique_ptr<MinidumpYAML::Object> Minidump;

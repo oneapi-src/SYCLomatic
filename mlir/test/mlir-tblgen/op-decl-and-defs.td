@@ -358,9 +358,7 @@ def Test_Dialect2 : Dialect {
   let name = "test";
   let cppNamespace = "::mlir::dialect2";
 }
-def TestDialect2Type : TypeDef<Test_Dialect2, "Dialect2Type"> {
-  let typeName = "test.type";
-}
+def TestDialect2Type : TypeDef<Test_Dialect2, "Dialect2Type">;
 
 def NS_ResultWithDialectTypeOp : NS_Op<"op_with_dialect_type", []> {
   let results = (outs TestDialect2Type);

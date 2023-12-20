@@ -42,7 +42,7 @@
 
 using namespace llvm;
 
-#define DEBUG_TYPE "dwarf-eh-prepare"
+#define DEBUG_TYPE "dwarfehprepare"
 
 STATISTIC(NumResumesLowered, "Number of resume calls lowered");
 STATISTIC(NumCleanupLandingPadsUnreachable,

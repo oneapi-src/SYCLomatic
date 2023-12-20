@@ -32,7 +32,7 @@
 using namespace llvm;
 
 AsmLexer::AsmLexer(const MCAsmInfo &MAI) : MAI(MAI) {
-  AllowAtInIdentifier = !StringRef(MAI.getCommentString()).starts_with("@");
+  AllowAtInIdentifier = !StringRef(MAI.getCommentString()).startswith("@");
   LexMotorolaIntegers = MAI.shouldUseMotorolaIntegers();
 }
 
@@ -605,7 +605,7 @@ AsmToken AsmLexer::LexSingleQuote() {
   StringRef Res = StringRef(TokStart,CurPtr - TokStart);
   long long Value;
 
-  if (Res.starts_with("\'\\")) {
+  if (Res.startswith("\'\\")) {
     char theChar = Res[2];
     switch (theChar) {
       default: Value = theChar; break;

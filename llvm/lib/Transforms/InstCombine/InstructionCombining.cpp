@@ -173,14 +173,14 @@ std::optional<Value *> InstCombiner::targetSimplifyDemandedUseBitsIntrinsic(
 }
 
 std::optional<Value *> InstCombiner::targetSimplifyDemandedVectorEltsIntrinsic(
-    IntrinsicInst &II, APInt DemandedElts, APInt &PoisonElts,
-    APInt &PoisonElts2, APInt &PoisonElts3,
+    IntrinsicInst &II, APInt DemandedElts, APInt &UndefElts, APInt &UndefElts2,
+    APInt &UndefElts3,
     std::function<void(Instruction *, unsigned, APInt, APInt &)>
         SimplifyAndSetOp) {
   // Handle target specific intrinsics
   if (II.getCalledFunction()->isTargetIntrinsic()) {
     return TTI.simplifyDemandedVectorEltsIntrinsic(
-        *this, II, DemandedElts, PoisonElts, PoisonElts2, PoisonElts3,
+        *this, II, DemandedElts, UndefElts, UndefElts2, UndefElts3,
         SimplifyAndSetOp);
   }
   return std::nullopt;
@@ -356,7 +356,6 @@ static bool simplifyAssocCastAssoc(BinaryOperator *BinOp1,
 
   IC.replaceOperand(*Cast, 0, BinOp2->getOperand(0));
   IC.replaceOperand(*BinOp1, 1, FoldedC);
-  BinOp1->dropPoisonGeneratingFlags();
   Cast->dropPoisonGeneratingFlags();
   return true;
 }
@@ -610,7 +609,7 @@ static Value *getIdentityValue(Instruction::BinaryOps Opcode, Value *V) {
 /// allow more factorization opportunities.
 static Instruction::BinaryOps
 getBinOpsForFactorization(Instruction::BinaryOps TopOpcode, BinaryOperator *Op,
-                          Value *&LHS, Value *&RHS, BinaryOperator *OtherOp) {
+                          Value *&LHS, Value *&RHS) {
   assert(Op && "Expected a binary operator");
   LHS = Op->getOperand(0);
   RHS = Op->getOperand(1);
@@ -622,13 +621,6 @@ getBinOpsForFactorization(Instruction::BinaryOps TopOpcode, BinaryOperator *Op,
       return Instruction::Mul;
     }
     // TODO: We can add other conversions e.g. shr => div etc.
-  }
-  if (Instruction::isBitwiseLogicOp(TopOpcode)) {
-    if (OtherOp && OtherOp->getOpcode() == Instruction::AShr &&
-        match(Op, m_LShr(m_NonNegative(), m_Value()))) {
-      // lshr nneg C, X --> ashr nneg C, X
-      return Instruction::AShr;
-    }
   }
   return Op->getOpcode();
 }
@@ -970,9 +962,9 @@ Value *InstCombinerImpl::tryFactorizationFolds(BinaryOperator &I) {
   Instruction::BinaryOps LHSOpcode, RHSOpcode;
 
   if (Op0)
-    LHSOpcode = getBinOpsForFactorization(TopLevelOpcode, Op0, A, B, Op1);
+    LHSOpcode = getBinOpsForFactorization(TopLevelOpcode, Op0, A, B);
   if (Op1)
-    RHSOpcode = getBinOpsForFactorization(TopLevelOpcode, Op1, C, D, Op0);
+    RHSOpcode = getBinOpsForFactorization(TopLevelOpcode, Op1, C, D);
 
   // The instruction has the form "(A op' B) op (C op' D)".  Try to factorize
   // a common term.
@@ -1139,14 +1131,6 @@ Value *InstCombinerImpl::SimplifySelectsFeedingBinaryOp(BinaryOperator &I,
   };
 
   if (LHSIsSelect && RHSIsSelect && A == D) {
-    // op(select(%v, %x, %y), select(%v, %y, %x)) --> op(%x, %y)
-    if (I.isCommutative() && B == F && C == E) {
-      Value *BI = Builder.CreateBinOp(I.getOpcode(), B, E);
-      if (auto *BO = dyn_cast<BinaryOperator>(BI))
-        BO->copyIRFlags(&I);
-      return BI;
-    }
-
     // (A ? B : C) op (A ? E : F) -> A ? (B op E) : (C op F)
     Cond = A;
     True = simplifyBinOp(Opcode, B, E, FMF, Q);
@@ -1728,8 +1712,8 @@ Instruction *InstCombinerImpl::foldVectorBinop(BinaryOperator &Inst) {
 
   // If both arguments of the binary operation are shuffles that use the same
   // mask and shuffle within a single vector, move the shuffle after the binop.
-  if (match(LHS, m_Shuffle(m_Value(V1), m_Poison(), m_Mask(Mask))) &&
-      match(RHS, m_Shuffle(m_Value(V2), m_Poison(), m_SpecificMask(Mask))) &&
+  if (match(LHS, m_Shuffle(m_Value(V1), m_Undef(), m_Mask(Mask))) &&
+      match(RHS, m_Shuffle(m_Value(V2), m_Undef(), m_SpecificMask(Mask))) &&
       V1->getType() == V2->getType() &&
       (LHS->hasOneUse() || RHS->hasOneUse() || LHS == RHS)) {
     // Op(shuffle(V1, Mask), shuffle(V2, Mask)) -> shuffle(Op(V1, V2), Mask)
@@ -1770,9 +1754,9 @@ Instruction *InstCombinerImpl::foldVectorBinop(BinaryOperator &Inst) {
   Constant *C;
   auto *InstVTy = dyn_cast<FixedVectorType>(Inst.getType());
   if (InstVTy &&
-      match(&Inst, m_c_BinOp(m_OneUse(m_Shuffle(m_Value(V1), m_Poison(),
-                                                m_Mask(Mask))),
-                             m_ImmConstant(C))) &&
+      match(&Inst,
+            m_c_BinOp(m_OneUse(m_Shuffle(m_Value(V1), m_Undef(), m_Mask(Mask))),
+                      m_ImmConstant(C))) &&
       cast<FixedVectorType>(V1->getType())->getNumElements() <=
           InstVTy->getNumElements()) {
     assert(InstVTy->getScalarType() == V1->getType()->getScalarType() &&
@@ -1787,8 +1771,8 @@ Instruction *InstCombinerImpl::foldVectorBinop(BinaryOperator &Inst) {
     ArrayRef<int> ShMask = Mask;
     unsigned SrcVecNumElts =
         cast<FixedVectorType>(V1->getType())->getNumElements();
-    PoisonValue *PoisonScalar = PoisonValue::get(C->getType()->getScalarType());
-    SmallVector<Constant *, 16> NewVecC(SrcVecNumElts, PoisonScalar);
+    UndefValue *UndefScalar = UndefValue::get(C->getType()->getScalarType());
+    SmallVector<Constant *, 16> NewVecC(SrcVecNumElts, UndefScalar);
     bool MayChange = true;
     unsigned NumElts = InstVTy->getNumElements();
     for (unsigned I = 0; I < NumElts; ++I) {
@@ -1801,29 +1785,29 @@ Instruction *InstCombinerImpl::foldVectorBinop(BinaryOperator &Inst) {
         // 2. The shuffle needs an element of the constant vector that can't
         //    be mapped to a new constant vector.
         // 3. This is a widening shuffle that copies elements of V1 into the
-        //    extended elements (extending with poison is allowed).
-        if (!CElt || (!isa<PoisonValue>(NewCElt) && NewCElt != CElt) ||
+        //    extended elements (extending with undef is allowed).
+        if (!CElt || (!isa<UndefValue>(NewCElt) && NewCElt != CElt) ||
             I >= SrcVecNumElts) {
           MayChange = false;
           break;
         }
         NewVecC[ShMask[I]] = CElt;
       }
-      // If this is a widening shuffle, we must be able to extend with poison
-      // elements. If the original binop does not produce a poison in the high
+      // If this is a widening shuffle, we must be able to extend with undef
+      // elements. If the original binop does not produce an undef in the high
       // lanes, then this transform is not safe.
-      // Similarly for poison lanes due to the shuffle mask, we can only
-      // transform binops that preserve poison.
-      // TODO: We could shuffle those non-poison constant values into the
-      //       result by using a constant vector (rather than an poison vector)
+      // Similarly for undef lanes due to the shuffle mask, we can only
+      // transform binops that preserve undef.
+      // TODO: We could shuffle those non-undef constant values into the
+      //       result by using a constant vector (rather than an undef vector)
       //       as operand 1 of the new binop, but that might be too aggressive
       //       for target-independent shuffle creation.
       if (I >= SrcVecNumElts || ShMask[I] < 0) {
-        Constant *MaybePoison =
+        Constant *MaybeUndef =
             ConstOp1
-                ? ConstantFoldBinaryOpOperands(Opcode, PoisonScalar, CElt, DL)
-                : ConstantFoldBinaryOpOperands(Opcode, CElt, PoisonScalar, DL);
-        if (!MaybePoison || !isa<PoisonValue>(MaybePoison)) {
+                ? ConstantFoldBinaryOpOperands(Opcode, UndefScalar, CElt, DL)
+                : ConstantFoldBinaryOpOperands(Opcode, CElt, UndefScalar, DL);
+        if (!MaybeUndef || !match(MaybeUndef, m_Undef())) {
           MayChange = false;
           break;
         }
@@ -1831,10 +1815,9 @@ Instruction *InstCombinerImpl::foldVectorBinop(BinaryOperator &Inst) {
     }
     if (MayChange) {
       Constant *NewC = ConstantVector::get(NewVecC);
-      // It may not be safe to execute a binop on a vector with poison elements
+      // It may not be safe to execute a binop on a vector with undef elements
       // because the entire instruction can be folded to undef or create poison
       // that did not exist in the original code.
-      // TODO: The shift case should not be necessary.
       if (Inst.isIntDivRem() || (Inst.isShift() && ConstOp1))
         NewC = getSafeVectorConstantForBinop(Opcode, NewC, ConstOp1);
 
@@ -2243,10 +2226,10 @@ Instruction *InstCombinerImpl::visitGetElementPtrInst(GetElementPtrInst &GEP) {
   // compile-time.
   if (auto *GEPFVTy = dyn_cast<FixedVectorType>(GEPType)) {
     auto VWidth = GEPFVTy->getNumElements();
-    APInt PoisonElts(VWidth, 0);
+    APInt UndefElts(VWidth, 0);
     APInt AllOnesEltMask(APInt::getAllOnes(VWidth));
     if (Value *V = SimplifyDemandedVectorElts(&GEP, AllOnesEltMask,
-                                              PoisonElts)) {
+                                              UndefElts)) {
       if (V != &GEP)
         return replaceInstUsesWith(GEP, V);
       return &GEP;
@@ -2683,10 +2666,9 @@ Instruction *InstCombinerImpl::visitAllocSite(Instruction &MI) {
   // If we are removing an alloca with a dbg.declare, insert dbg.value calls
   // before each store.
   SmallVector<DbgVariableIntrinsic *, 8> DVIs;
-  SmallVector<DPValue *, 8> DPVs;
   std::unique_ptr<DIBuilder> DIB;
   if (isa<AllocaInst>(MI)) {
-    findDbgUsers(DVIs, &MI, &DPVs);
+    findDbgUsers(DVIs, &MI);
     DIB.reset(new DIBuilder(*MI.getModule(), /*AllowUnresolved=*/false));
   }
 
@@ -2726,9 +2708,6 @@ Instruction *InstCombinerImpl::visitAllocSite(Instruction &MI) {
         for (auto *DVI : DVIs)
           if (DVI->isAddressOfVariable())
             ConvertDebugDeclareToDebugValue(DVI, SI, *DIB);
-        for (auto *DPV : DPVs)
-          if (DPV->isAddressOfVariable())
-            ConvertDebugDeclareToDebugValue(DPV, SI, *DIB);
       } else {
         // Casts, GEP, or anything else: we're about to delete this instruction,
         // so it can not have any valid uses.
@@ -2767,15 +2746,9 @@ Instruction *InstCombinerImpl::visitAllocSite(Instruction &MI) {
     // If there is a dead store to `%a` in @trivially_inlinable_no_op, the
     // "arg0" dbg.value may be stale after the call. However, failing to remove
     // the DW_OP_deref dbg.value causes large gaps in location coverage.
-    //
-    // FIXME: the Assignment Tracking project has now likely made this
-    // redundant (and it's sometimes harmful).
     for (auto *DVI : DVIs)
       if (DVI->isAddressOfVariable() || DVI->getExpression()->startsWithDeref())
         DVI->eraseFromParent();
-    for (auto *DPV : DPVs)
-      if (DPV->isAddressOfVariable() || DPV->getExpression()->startsWithDeref())
-        DPV->eraseFromParent();
 
     return eraseInstFromFunction(MI);
   }
@@ -3114,7 +3087,6 @@ Instruction *InstCombinerImpl::visitBranchInst(BranchInst &BI) {
     return nullptr;
   }
 
-  DC.registerBranch(&BI);
   return nullptr;
 }
 
@@ -3852,27 +3824,19 @@ bool InstCombinerImpl::freezeOtherUses(FreezeInst &FI) {
   // *all* uses if the operand is an invoke/callbr and the use is in a phi on
   // the normal/default destination. This is why the domination check in the
   // replacement below is still necessary.
-  BasicBlock::iterator MoveBefore;
+  Instruction *MoveBefore;
   if (isa<Argument>(Op)) {
     MoveBefore =
-        FI.getFunction()->getEntryBlock().getFirstNonPHIOrDbgOrAlloca();
+        &*FI.getFunction()->getEntryBlock().getFirstNonPHIOrDbgOrAlloca();
   } else {
-    auto MoveBeforeOpt = cast<Instruction>(Op)->getInsertionPointAfterDef();
-    if (!MoveBeforeOpt)
+    MoveBefore = cast<Instruction>(Op)->getInsertionPointAfterDef();
+    if (!MoveBefore)
       return false;
-    MoveBefore = *MoveBeforeOpt;
   }
 
-  // Don't move to the position of a debug intrinsic.
-  if (isa<DbgInfoIntrinsic>(MoveBefore))
-    MoveBefore = MoveBefore->getNextNonDebugInstruction()->getIterator();
-  // Re-point iterator to come after any debug-info records, if we're
-  // running in "RemoveDIs" mode
-  MoveBefore.setHeadBit(false);
-
   bool Changed = false;
-  if (&FI != &*MoveBefore) {
-    FI.moveBefore(*MoveBefore->getParent(), MoveBefore);
+  if (&FI != MoveBefore) {
+    FI.moveBefore(*MoveBefore->getParent(), MoveBefore->getIterator());
     Changed = true;
   }
 

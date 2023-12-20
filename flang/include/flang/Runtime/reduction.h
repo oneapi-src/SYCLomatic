@@ -46,389 +46,389 @@ extern "C" {
 
 // SUM()
 
-std::int8_t RTDECL(SumInteger1)(const Descriptor &, const char *source,
+std::int8_t RTNAME(SumInteger1)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int16_t RTDECL(SumInteger2)(const Descriptor &, const char *source,
+std::int16_t RTNAME(SumInteger2)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int32_t RTDECL(SumInteger4)(const Descriptor &, const char *source,
+std::int32_t RTNAME(SumInteger4)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int64_t RTDECL(SumInteger8)(const Descriptor &, const char *source,
+std::int64_t RTNAME(SumInteger8)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #ifdef __SIZEOF_INT128__
-common::int128_t RTDECL(SumInteger16)(const Descriptor &, const char *source,
+common::int128_t RTNAME(SumInteger16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
 
 // REAL/COMPLEX(2 & 3) return 32-bit float results for the caller to downconvert
-float RTDECL(SumReal2)(const Descriptor &, const char *source, int line,
+float RTNAME(SumReal2)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-float RTDECL(SumReal3)(const Descriptor &, const char *source, int line,
+float RTNAME(SumReal3)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-float RTDECL(SumReal4)(const Descriptor &, const char *source, int line,
+float RTNAME(SumReal4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-double RTDECL(SumReal8)(const Descriptor &, const char *source, int line,
+double RTNAME(SumReal8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 #if LDBL_MANT_DIG == 64
-long double RTDECL(SumReal10)(const Descriptor &, const char *source, int line,
+long double RTNAME(SumReal10)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 #endif
 #if LDBL_MANT_DIG == 113 || HAS_FLOAT128
-CppFloat128Type RTDECL(SumReal16)(const Descriptor &, const char *source,
+CppFloat128Type RTNAME(SumReal16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
 
-void RTDECL(CppSumComplex2)(std::complex<float> &, const Descriptor &,
+void RTNAME(CppSumComplex2)(std::complex<float> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppSumComplex3)(std::complex<float> &, const Descriptor &,
+void RTNAME(CppSumComplex3)(std::complex<float> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppSumComplex4)(std::complex<float> &, const Descriptor &,
+void RTNAME(CppSumComplex4)(std::complex<float> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppSumComplex8)(std::complex<double> &, const Descriptor &,
+void RTNAME(CppSumComplex8)(std::complex<double> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppSumComplex10)(std::complex<long double> &, const Descriptor &,
+void RTNAME(CppSumComplex10)(std::complex<long double> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppSumComplex16)(std::complex<long double> &, const Descriptor &,
+void RTNAME(CppSumComplex16)(std::complex<long double> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
 
-void RTDECL(SumDim)(Descriptor &result, const Descriptor &array, int dim,
+void RTNAME(SumDim)(Descriptor &result, const Descriptor &array, int dim,
     const char *source, int line, const Descriptor *mask = nullptr);
 
 // PRODUCT()
 
-std::int8_t RTDECL(ProductInteger1)(const Descriptor &, const char *source,
+std::int8_t RTNAME(ProductInteger1)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int16_t RTDECL(ProductInteger2)(const Descriptor &, const char *source,
+std::int16_t RTNAME(ProductInteger2)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int32_t RTDECL(ProductInteger4)(const Descriptor &, const char *source,
+std::int32_t RTNAME(ProductInteger4)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int64_t RTDECL(ProductInteger8)(const Descriptor &, const char *source,
+std::int64_t RTNAME(ProductInteger8)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #ifdef __SIZEOF_INT128__
-common::int128_t RTDECL(ProductInteger16)(const Descriptor &,
+common::int128_t RTNAME(ProductInteger16)(const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
 #endif
 
 // REAL/COMPLEX(2 & 3) return 32-bit float results for the caller to downconvert
-float RTDECL(ProductReal2)(const Descriptor &, const char *source, int line,
+float RTNAME(ProductReal2)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-float RTDECL(ProductReal3)(const Descriptor &, const char *source, int line,
+float RTNAME(ProductReal3)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-float RTDECL(ProductReal4)(const Descriptor &, const char *source, int line,
+float RTNAME(ProductReal4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-double RTDECL(ProductReal8)(const Descriptor &, const char *source, int line,
+double RTNAME(ProductReal8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 #if LDBL_MANT_DIG == 64
-long double RTDECL(ProductReal10)(const Descriptor &, const char *source,
+long double RTNAME(ProductReal10)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
 #if LDBL_MANT_DIG == 113 || HAS_FLOAT128
-CppFloat128Type RTDECL(ProductReal16)(const Descriptor &, const char *source,
+CppFloat128Type RTNAME(ProductReal16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
 
-void RTDECL(CppProductComplex2)(std::complex<float> &, const Descriptor &,
+void RTNAME(CppProductComplex2)(std::complex<float> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppProductComplex3)(std::complex<float> &, const Descriptor &,
+void RTNAME(CppProductComplex3)(std::complex<float> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppProductComplex4)(std::complex<float> &, const Descriptor &,
+void RTNAME(CppProductComplex4)(std::complex<float> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppProductComplex8)(std::complex<double> &, const Descriptor &,
+void RTNAME(CppProductComplex8)(std::complex<double> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppProductComplex10)(std::complex<long double> &,
+void RTNAME(CppProductComplex10)(std::complex<long double> &,
     const Descriptor &, const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-void RTDECL(CppProductComplex16)(std::complex<long double> &,
+void RTNAME(CppProductComplex16)(std::complex<long double> &,
     const Descriptor &, const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
 
-void RTDECL(ProductDim)(Descriptor &result, const Descriptor &array, int dim,
+void RTNAME(ProductDim)(Descriptor &result, const Descriptor &array, int dim,
     const char *source, int line, const Descriptor *mask = nullptr);
 
 // IALL, IANY, IPARITY
-std::int8_t RTDECL(IAll1)(const Descriptor &, const char *source, int line,
+std::int8_t RTNAME(IAll1)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-std::int16_t RTDECL(IAll2)(const Descriptor &, const char *source, int line,
+std::int16_t RTNAME(IAll2)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-std::int32_t RTDECL(IAll4)(const Descriptor &, const char *source, int line,
+std::int32_t RTNAME(IAll4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-std::int64_t RTDECL(IAll8)(const Descriptor &, const char *source, int line,
+std::int64_t RTNAME(IAll8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 #ifdef __SIZEOF_INT128__
-common::int128_t RTDECL(IAll16)(const Descriptor &, const char *source,
+common::int128_t RTNAME(IAll16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-void RTDECL(IAllDim)(Descriptor &result, const Descriptor &array, int dim,
+void RTNAME(IAllDim)(Descriptor &result, const Descriptor &array, int dim,
     const char *source, int line, const Descriptor *mask = nullptr);
 
-std::int8_t RTDECL(IAny1)(const Descriptor &, const char *source, int line,
+std::int8_t RTNAME(IAny1)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-std::int16_t RTDECL(IAny2)(const Descriptor &, const char *source, int line,
+std::int16_t RTNAME(IAny2)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-std::int32_t RTDECL(IAny4)(const Descriptor &, const char *source, int line,
+std::int32_t RTNAME(IAny4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-std::int64_t RTDECL(IAny8)(const Descriptor &, const char *source, int line,
+std::int64_t RTNAME(IAny8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 #ifdef __SIZEOF_INT128__
-common::int128_t RTDECL(IAny16)(const Descriptor &, const char *source,
+common::int128_t RTNAME(IAny16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-void RTDECL(IAnyDim)(Descriptor &result, const Descriptor &array, int dim,
+void RTNAME(IAnyDim)(Descriptor &result, const Descriptor &array, int dim,
     const char *source, int line, const Descriptor *mask = nullptr);
 
-std::int8_t RTDECL(IParity1)(const Descriptor &, const char *source, int line,
+std::int8_t RTNAME(IParity1)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-std::int16_t RTDECL(IParity2)(const Descriptor &, const char *source, int line,
+std::int16_t RTNAME(IParity2)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-std::int32_t RTDECL(IParity4)(const Descriptor &, const char *source, int line,
+std::int32_t RTNAME(IParity4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-std::int64_t RTDECL(IParity8)(const Descriptor &, const char *source, int line,
+std::int64_t RTNAME(IParity8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 #ifdef __SIZEOF_INT128__
-common::int128_t RTDECL(IParity16)(const Descriptor &, const char *source,
+common::int128_t RTNAME(IParity16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-void RTDECL(IParityDim)(Descriptor &result, const Descriptor &array, int dim,
+void RTNAME(IParityDim)(Descriptor &result, const Descriptor &array, int dim,
     const char *source, int line, const Descriptor *mask = nullptr);
 
 // FINDLOC, MAXLOC, & MINLOC
 // These return allocated arrays in the supplied descriptor.
 // The default value for KIND= should be the default INTEGER in effect at
 // compilation time.
-void RTDECL(Findloc)(Descriptor &, const Descriptor &x,
+void RTNAME(Findloc)(Descriptor &, const Descriptor &x,
     const Descriptor &target, int kind, const char *source, int line,
     const Descriptor *mask = nullptr, bool back = false);
-void RTDECL(FindlocDim)(Descriptor &, const Descriptor &x,
+void RTNAME(FindlocDim)(Descriptor &, const Descriptor &x,
     const Descriptor &target, int kind, int dim, const char *source, int line,
     const Descriptor *mask = nullptr, bool back = false);
-void RTDECL(MaxlocCharacter)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocCharacter)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocInteger1)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocInteger1)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocInteger2)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocInteger2)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocInteger4)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocInteger4)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocInteger8)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocInteger8)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocInteger16)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocInteger16)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocReal4)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocReal4)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocReal8)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocReal8)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocReal10)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocReal10)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocReal16)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MaxlocReal16)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MaxlocDim)(Descriptor &, const Descriptor &x, int kind, int dim,
+void RTNAME(MaxlocDim)(Descriptor &, const Descriptor &x, int kind, int dim,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocCharacter)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocCharacter)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocInteger1)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocInteger1)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocInteger2)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocInteger2)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocInteger4)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocInteger4)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocInteger8)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocInteger8)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocInteger16)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocInteger16)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocReal4)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocReal4)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocReal8)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocReal8)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocReal10)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocReal10)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocReal16)(Descriptor &, const Descriptor &, int kind,
+void RTNAME(MinlocReal16)(Descriptor &, const Descriptor &, int kind,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
-void RTDECL(MinlocDim)(Descriptor &, const Descriptor &x, int kind, int dim,
+void RTNAME(MinlocDim)(Descriptor &, const Descriptor &x, int kind, int dim,
     const char *source, int line, const Descriptor *mask = nullptr,
     bool back = false);
 
 // MAXVAL and MINVAL
-std::int8_t RTDECL(MaxvalInteger1)(const Descriptor &, const char *source,
+std::int8_t RTNAME(MaxvalInteger1)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int16_t RTDECL(MaxvalInteger2)(const Descriptor &, const char *source,
+std::int16_t RTNAME(MaxvalInteger2)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int32_t RTDECL(MaxvalInteger4)(const Descriptor &, const char *source,
+std::int32_t RTNAME(MaxvalInteger4)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int64_t RTDECL(MaxvalInteger8)(const Descriptor &, const char *source,
+std::int64_t RTNAME(MaxvalInteger8)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #ifdef __SIZEOF_INT128__
-common::int128_t RTDECL(MaxvalInteger16)(const Descriptor &, const char *source,
+common::int128_t RTNAME(MaxvalInteger16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-float RTDECL(MaxvalReal2)(const Descriptor &, const char *source, int line,
+float RTNAME(MaxvalReal2)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-float RTDECL(MaxvalReal3)(const Descriptor &, const char *source, int line,
+float RTNAME(MaxvalReal3)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-float RTDECL(MaxvalReal4)(const Descriptor &, const char *source, int line,
+float RTNAME(MaxvalReal4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-double RTDECL(MaxvalReal8)(const Descriptor &, const char *source, int line,
+double RTNAME(MaxvalReal8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 #if LDBL_MANT_DIG == 64
-long double RTDECL(MaxvalReal10)(const Descriptor &, const char *source,
+long double RTNAME(MaxvalReal10)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
 #if LDBL_MANT_DIG == 113 || HAS_FLOAT128
-CppFloat128Type RTDECL(MaxvalReal16)(const Descriptor &, const char *source,
+CppFloat128Type RTNAME(MaxvalReal16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-void RTDECL(MaxvalCharacter)(Descriptor &, const Descriptor &,
+void RTNAME(MaxvalCharacter)(Descriptor &, const Descriptor &,
     const char *source, int line, const Descriptor *mask = nullptr);
 
-std::int8_t RTDECL(MinvalInteger1)(const Descriptor &, const char *source,
+std::int8_t RTNAME(MinvalInteger1)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int16_t RTDECL(MinvalInteger2)(const Descriptor &, const char *source,
+std::int16_t RTNAME(MinvalInteger2)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int32_t RTDECL(MinvalInteger4)(const Descriptor &, const char *source,
+std::int32_t RTNAME(MinvalInteger4)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
-std::int64_t RTDECL(MinvalInteger8)(const Descriptor &, const char *source,
+std::int64_t RTNAME(MinvalInteger8)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #ifdef __SIZEOF_INT128__
-common::int128_t RTDECL(MinvalInteger16)(const Descriptor &, const char *source,
+common::int128_t RTNAME(MinvalInteger16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-float RTDECL(MinvalReal2)(const Descriptor &, const char *source, int line,
+float RTNAME(MinvalReal2)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-float RTDECL(MinvalReal3)(const Descriptor &, const char *source, int line,
+float RTNAME(MinvalReal3)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-float RTDECL(MinvalReal4)(const Descriptor &, const char *source, int line,
+float RTNAME(MinvalReal4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-double RTDECL(MinvalReal8)(const Descriptor &, const char *source, int line,
+double RTNAME(MinvalReal8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 #if LDBL_MANT_DIG == 64
-long double RTDECL(MinvalReal10)(const Descriptor &, const char *source,
+long double RTNAME(MinvalReal10)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
 #if LDBL_MANT_DIG == 113 || HAS_FLOAT128
-CppFloat128Type RTDECL(MinvalReal16)(const Descriptor &, const char *source,
+CppFloat128Type RTNAME(MinvalReal16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-void RTDECL(MinvalCharacter)(Descriptor &, const Descriptor &,
+void RTNAME(MinvalCharacter)(Descriptor &, const Descriptor &,
     const char *source, int line, const Descriptor *mask = nullptr);
 
-void RTDECL(MaxvalDim)(Descriptor &, const Descriptor &, int dim,
+void RTNAME(MaxvalDim)(Descriptor &, const Descriptor &, int dim,
     const char *source, int line, const Descriptor *mask = nullptr);
-void RTDECL(MinvalDim)(Descriptor &, const Descriptor &, int dim,
+void RTNAME(MinvalDim)(Descriptor &, const Descriptor &, int dim,
     const char *source, int line, const Descriptor *mask = nullptr);
 
 // NORM2
-float RTDECL(Norm2_2)(
+float RTNAME(Norm2_2)(
     const Descriptor &, const char *source, int line, int dim = 0);
-float RTDECL(Norm2_3)(
+float RTNAME(Norm2_3)(
     const Descriptor &, const char *source, int line, int dim = 0);
-float RTDECL(Norm2_4)(
+float RTNAME(Norm2_4)(
     const Descriptor &, const char *source, int line, int dim = 0);
-double RTDECL(Norm2_8)(
+double RTNAME(Norm2_8)(
     const Descriptor &, const char *source, int line, int dim = 0);
 #if LDBL_MANT_DIG == 64
-long double RTDECL(Norm2_10)(
+long double RTNAME(Norm2_10)(
     const Descriptor &, const char *source, int line, int dim = 0);
 #elif LDBL_MANT_DIG == 113
-long double RTDECL(Norm2_16)(
+long double RTNAME(Norm2_16)(
     const Descriptor &, const char *source, int line, int dim = 0);
 #endif
-void RTDECL(Norm2Dim)(
+void RTNAME(Norm2Dim)(
     Descriptor &, const Descriptor &, int dim, const char *source, int line);
 
 // ALL, ANY, COUNT, & PARITY logical reductions
-bool RTDECL(All)(const Descriptor &, const char *source, int line, int dim = 0);
-void RTDECL(AllDim)(Descriptor &result, const Descriptor &, int dim,
+bool RTNAME(All)(const Descriptor &, const char *source, int line, int dim = 0);
+void RTNAME(AllDim)(Descriptor &result, const Descriptor &, int dim,
     const char *source, int line);
-bool RTDECL(Any)(const Descriptor &, const char *source, int line, int dim = 0);
-void RTDECL(AnyDim)(Descriptor &result, const Descriptor &, int dim,
+bool RTNAME(Any)(const Descriptor &, const char *source, int line, int dim = 0);
+void RTNAME(AnyDim)(Descriptor &result, const Descriptor &, int dim,
     const char *source, int line);
-std::int64_t RTDECL(Count)(
+std::int64_t RTNAME(Count)(
     const Descriptor &, const char *source, int line, int dim = 0);
-void RTDECL(CountDim)(Descriptor &result, const Descriptor &, int dim, int kind,
+void RTNAME(CountDim)(Descriptor &result, const Descriptor &, int dim, int kind,
     const char *source, int line);
-bool RTDECL(Parity)(
+bool RTNAME(Parity)(
     const Descriptor &, const char *source, int line, int dim = 0);
-void RTDECL(ParityDim)(Descriptor &result, const Descriptor &, int dim,
+void RTNAME(ParityDim)(Descriptor &result, const Descriptor &, int dim,
     const char *source, int line);
 
 // DOT_PRODUCT
-std::int8_t RTDECL(DotProductInteger1)(const Descriptor &, const Descriptor &,
+std::int8_t RTNAME(DotProductInteger1)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
-std::int16_t RTDECL(DotProductInteger2)(const Descriptor &, const Descriptor &,
+std::int16_t RTNAME(DotProductInteger2)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
-std::int32_t RTDECL(DotProductInteger4)(const Descriptor &, const Descriptor &,
+std::int32_t RTNAME(DotProductInteger4)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
-std::int64_t RTDECL(DotProductInteger8)(const Descriptor &, const Descriptor &,
+std::int64_t RTNAME(DotProductInteger8)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
 #ifdef __SIZEOF_INT128__
-common::int128_t RTDECL(DotProductInteger16)(const Descriptor &,
+common::int128_t RTNAME(DotProductInteger16)(const Descriptor &,
     const Descriptor &, const char *source = nullptr, int line = 0);
 #endif
-float RTDECL(DotProductReal2)(const Descriptor &, const Descriptor &,
+float RTNAME(DotProductReal2)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
-float RTDECL(DotProductReal3)(const Descriptor &, const Descriptor &,
+float RTNAME(DotProductReal3)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
-float RTDECL(DotProductReal4)(const Descriptor &, const Descriptor &,
+float RTNAME(DotProductReal4)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
-double RTDECL(DotProductReal8)(const Descriptor &, const Descriptor &,
+double RTNAME(DotProductReal8)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
 #if LDBL_MANT_DIG == 64
-long double RTDECL(DotProductReal10)(const Descriptor &, const Descriptor &,
+long double RTNAME(DotProductReal10)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
 #endif
 #if LDBL_MANT_DIG == 113 || HAS_FLOAT128
-CppFloat128Type RTDECL(DotProductReal16)(const Descriptor &, const Descriptor &,
+CppFloat128Type RTNAME(DotProductReal16)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
 #endif
-void RTDECL(CppDotProductComplex2)(std::complex<float> &, const Descriptor &,
+void RTNAME(CppDotProductComplex2)(std::complex<float> &, const Descriptor &,
     const Descriptor &, const char *source = nullptr, int line = 0);
-void RTDECL(CppDotProductComplex3)(std::complex<float> &, const Descriptor &,
+void RTNAME(CppDotProductComplex3)(std::complex<float> &, const Descriptor &,
     const Descriptor &, const char *source = nullptr, int line = 0);
-void RTDECL(CppDotProductComplex4)(std::complex<float> &, const Descriptor &,
+void RTNAME(CppDotProductComplex4)(std::complex<float> &, const Descriptor &,
     const Descriptor &, const char *source = nullptr, int line = 0);
-void RTDECL(CppDotProductComplex8)(std::complex<double> &, const Descriptor &,
+void RTNAME(CppDotProductComplex8)(std::complex<double> &, const Descriptor &,
     const Descriptor &, const char *source = nullptr, int line = 0);
 #if LDBL_MANT_DIG == 64
-void RTDECL(CppDotProductComplex10)(std::complex<long double> &,
+void RTNAME(CppDotProductComplex10)(std::complex<long double> &,
     const Descriptor &, const Descriptor &, const char *source = nullptr,
     int line = 0);
 #endif
 #if LDBL_MANT_DIG == 113 || HAS_FLOAT128
-void RTDECL(CppDotProductComplex16)(std::complex<CppFloat128Type> &,
+void RTNAME(CppDotProductComplex16)(std::complex<CppFloat128Type> &,
     const Descriptor &, const Descriptor &, const char *source = nullptr,
     int line = 0);
 #endif
-bool RTDECL(DotProductLogical)(const Descriptor &, const Descriptor &,
+bool RTNAME(DotProductLogical)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
 
 } // extern "C"

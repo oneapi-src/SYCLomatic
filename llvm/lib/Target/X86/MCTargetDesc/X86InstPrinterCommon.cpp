@@ -377,8 +377,7 @@ void X86InstPrinterCommon::printInstFlags(const MCInst *MI, raw_ostream &O,
     O << "\t{vex2}";
   else if (Flags & X86::IP_USE_VEX3)
     O << "\t{vex3}";
-  else if ((Flags & X86::IP_USE_EVEX) ||
-           (TSFlags & X86II::ExplicitOpPrefixMask) == X86II::ExplicitEVEXPrefix)
+  else if (Flags & X86::IP_USE_EVEX)
     O << "\t{evex}";
 
   if (Flags & X86::IP_USE_DISP8)

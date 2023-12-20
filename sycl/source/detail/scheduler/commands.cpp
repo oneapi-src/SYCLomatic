@@ -67,12 +67,13 @@ bool CurrentCodeLocationValid() {
 
 void emitInstrumentationGeneral(uint32_t StreamID, uint64_t InstanceID,
                                 xpti_td *TraceEvent, uint16_t Type,
-                                const void *Addr) {
+                                const char *Txt) {
   if (!(xptiCheckTraceEnabled(StreamID, Type) && TraceEvent))
     return;
   // Trace event notifier that emits a Type event
   xptiNotifySubscribers(StreamID, Type, detail::GSYCLGraphEvent,
-                        static_cast<xpti_td *>(TraceEvent), InstanceID, Addr);
+                        static_cast<xpti_td *>(TraceEvent), InstanceID,
+                        static_cast<const void *>(Txt));
 }
 #endif
 
@@ -787,18 +788,22 @@ Command *Command::addDep(EventImplPtr Event,
 
 void Command::emitEnqueuedEventSignal(sycl::detail::pi::PiEvent &PiEventAddr) {
 #ifdef XPTI_ENABLE_INSTRUMENTATION
-  emitInstrumentationGeneral(
-      MStreamID, MInstanceID, static_cast<xpti_td *>(MTraceEvent),
-      xpti::trace_signal, static_cast<const void *>(PiEventAddr));
+  constexpr uint16_t NotificationTraceType = xpti::trace_signal;
+  if (!(xptiCheckTraceEnabled(MStreamID, NotificationTraceType) &&
+        MTraceEvent && PiEventAddr))
+    return;
+  // Asynchronous call, so send a signal with the event information as
+  // user_data
+  xptiNotifySubscribers(
+      MStreamID, NotificationTraceType, detail::GSYCLGraphEvent,
+      static_cast<xpti_td *>(MTraceEvent), MInstanceID, (void *)PiEventAddr);
 #endif
-  std::ignore = PiEventAddr;
 }
 
 void Command::emitInstrumentation(uint16_t Type, const char *Txt) {
 #ifdef XPTI_ENABLE_INSTRUMENTATION
-  return emitInstrumentationGeneral(MStreamID, MInstanceID,
-                                    static_cast<xpti_td *>(MTraceEvent), Type,
-                                    static_cast<const void *>(Txt));
+  return emitInstrumentationGeneral(
+      MStreamID, MInstanceID, static_cast<xpti_td *>(MTraceEvent), Type, Txt);
 #else
   std::ignore = Type;
   std::ignore = Txt;
@@ -2483,9 +2488,8 @@ pi_int32 enqueueImpCommandBufferKernel(
   }
 
   if (Res != pi_result::PI_SUCCESS) {
-    const device_impl &DeviceImplem = *(DeviceImpl);
-    detail::enqueue_kernel_launch::handleErrorOrWarning(Res, DeviceImplem,
-                                                        PiKernel, NDRDesc);
+    throw sycl::exception(errc::invalid,
+                          "Failed to add kernel to PI command-buffer");
   }
 
   return Res;
@@ -2549,7 +2553,7 @@ pi_int32 enqueueImpKernel(
   } else {
     std::tie(Kernel, KernelMutex, EliminatedArgMask, Program) =
         detail::ProgramManager::getInstance().getOrCreateKernel(
-            ContextImpl, DeviceImpl, KernelName, NDRDesc);
+            ContextImpl, DeviceImpl, KernelName);
   }
 
   // We may need more events for the launch, so we make another reference.

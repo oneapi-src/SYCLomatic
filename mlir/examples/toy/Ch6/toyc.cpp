@@ -112,7 +112,7 @@ int loadMLIR(mlir::MLIRContext &context,
              mlir::OwningOpRef<mlir::ModuleOp> &module) {
   // Handle '.toy' input to the compiler.
   if (inputType != InputType::MLIR &&
-      !llvm::StringRef(inputFilename).ends_with(".mlir")) {
+      !llvm::StringRef(inputFilename).endswith(".mlir")) {
     auto moduleAST = parseInputFile(inputFilename);
     if (!moduleAST)
       return 6;

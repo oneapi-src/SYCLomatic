@@ -1,5 +1,4 @@
 ; RUN: opt < %s -interleaved-access -S | FileCheck %s
-; RUN: opt < %s -passes=interleaved-access -S | FileCheck %s
 
 target triple = "aarch64-linux-gnu"
 

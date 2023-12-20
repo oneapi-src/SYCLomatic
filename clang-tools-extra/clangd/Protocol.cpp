@@ -844,7 +844,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &O, const SymbolDetails &S) {
   if (!S.containerName.empty()) {
     O << S.containerName;
     llvm::StringRef ContNameRef;
-    if (!ContNameRef.ends_with("::")) {
+    if (!ContNameRef.endswith("::")) {
       O << " ";
     }
   }

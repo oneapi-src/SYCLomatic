@@ -35,8 +35,7 @@ bool isSpecialPass(StringRef PassID, const std::vector<StringRef> &Specials) {
   StringRef Prefix = PassID;
   if (Pos != StringRef::npos)
     Prefix = PassID.substr(0, Pos);
-  return any_of(Specials,
-                [Prefix](StringRef S) { return Prefix.ends_with(S); });
+  return any_of(Specials, [Prefix](StringRef S) { return Prefix.endswith(S); });
 }
 
 } // namespace llvm

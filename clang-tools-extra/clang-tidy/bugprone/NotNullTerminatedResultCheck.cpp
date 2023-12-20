@@ -385,7 +385,7 @@ static bool isDestExprFix(const MatchFinder::MatchResult &Result,
 
   std::string TempTyStr = Dest->getType().getAsString();
   StringRef TyStr = TempTyStr;
-  if (TyStr.starts_with("char") || TyStr.starts_with("wchar_t"))
+  if (TyStr.startswith("char") || TyStr.startswith("wchar_t"))
     return false;
 
   Diag << FixItHint::CreateInsertion(Dest->getBeginLoc(), "(char *)");
@@ -721,8 +721,8 @@ void NotNullTerminatedResultCheck::registerMatchers(MatchFinder *Finder) {
 
     // Try to match with 'wchar_t' based function calls.
     std::string WcharHandlerFuncName =
-        "::" + (CC.Name.starts_with("mem") ? "w" + CC.Name.str()
-                                           : "wcs" + CC.Name.substr(3).str());
+        "::" + (CC.Name.startswith("mem") ? "w" + CC.Name.str()
+                                          : "wcs" + CC.Name.substr(3).str());
 
     return allOf(callee(functionDecl(
                      hasAnyName(CharHandlerFuncName, WcharHandlerFuncName))),
@@ -820,13 +820,13 @@ void NotNullTerminatedResultCheck::check(
   }
 
   StringRef Name = FunctionExpr->getDirectCallee()->getName();
-  if (Name.starts_with("mem") || Name.starts_with("wmem"))
+  if (Name.startswith("mem") || Name.startswith("wmem"))
     memoryHandlerFunctionFix(Name, Result);
   else if (Name == "strerror_s")
     strerror_sFix(Result);
-  else if (Name.ends_with("ncmp"))
+  else if (Name.endswith("ncmp"))
     ncmpFix(Name, Result);
-  else if (Name.ends_with("xfrm"))
+  else if (Name.endswith("xfrm"))
     xfrmFix(Name, Result);
 }
 
@@ -835,7 +835,7 @@ void NotNullTerminatedResultCheck::memoryHandlerFunctionFix(
   if (isCorrectGivenLength(Result))
     return;
 
-  if (Name.ends_with("chr")) {
+  if (Name.endswith("chr")) {
     memchrFix(Name, Result);
     return;
   }
@@ -849,13 +849,13 @@ void NotNullTerminatedResultCheck::memoryHandlerFunctionFix(
            "the result from calling '%0' is not null-terminated")
       << Name;
 
-  if (Name.ends_with("cpy")) {
+  if (Name.endswith("cpy")) {
     memcpyFix(Name, Result, Diag);
-  } else if (Name.ends_with("cpy_s")) {
+  } else if (Name.endswith("cpy_s")) {
     memcpy_sFix(Name, Result, Diag);
-  } else if (Name.ends_with("move")) {
+  } else if (Name.endswith("move")) {
     memmoveFix(Name, Result, Diag);
-  } else if (Name.ends_with("move_s")) {
+  } else if (Name.endswith("move_s")) {
     isDestCapacityFix(Result, Diag);
     lengthArgHandle(LengthHandleKind::Increase, Result, Diag);
   }

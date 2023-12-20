@@ -27,9 +27,7 @@ endfunction()
 
 function(get_orc_lib_for_arch arch lib)
   if(APPLE)
-    if("osx" IN_LIST ORC_SUPPORTED_OS)
-      set(tgt_name "RTOrc.test.osx")
-    endif()
+    set(tgt_name "RTOrc.test.osx")
   else()
     set(tgt_name "RTOrc.test.${arch}")
   endif()
@@ -67,16 +65,14 @@ macro(add_orc_unittest testname)
     foreach(arch ${ORC_TEST_ARCH})
       set(TEST_OBJECTS)
       get_orc_lib_for_arch(${arch} ORC_RUNTIME_LIBS)
-      if(ORC_RUNTIME_LIBS)
-        generate_compiler_rt_tests(TEST_OBJECTS
-          OrcRTUnitTests "${testname}-${arch}-Test" "${arch}"
-          SOURCES ${TEST_SOURCES} ${COMPILER_RT_GTEST_SOURCE}
-          RUNTIME "${ORC_RUNTIME_LIBS}"
-          COMPILE_DEPS ${TEST_HEADERS} ${ORC_HEADERS}
-          DEPS llvm_gtest ${ORC_DEPS}
-          CFLAGS ${ORC_UNITTEST_CFLAGS} ${COMPILER_RT_GTEST_CFLAGS}
-          LINK_FLAGS ${ORC_UNITTEST_LINK_FLAGS})
-      endif()
+      generate_compiler_rt_tests(TEST_OBJECTS
+        OrcRTUnitTests "${testname}-${arch}-Test" "${arch}"
+        SOURCES ${TEST_SOURCES} ${COMPILER_RT_GTEST_SOURCE}
+        RUNTIME "${ORC_RUNTIME_LIBS}"
+        COMPILE_DEPS ${TEST_HEADERS} ${ORC_HEADERS}
+        DEPS llvm_gtest ${ORC_DEPS}
+        CFLAGS ${ORC_UNITTEST_CFLAGS} ${COMPILER_RT_GTEST_CFLAGS}
+        LINK_FLAGS ${ORC_UNITTEST_LINK_FLAGS})
     endforeach()
   endif()
 endmacro()
@@ -87,25 +83,21 @@ macro(add_orc_tool toolname)
     foreach(arch ${ORC_TEST_ARCH})
       set(TOOL_OBJECTS)
       get_orc_lib_for_arch(${arch} ORC_RUNTIME_LIBS)
-      if(ORC_RUNTIME_LIBS)
-        generate_compiler_rt_tests(TOOL_OBJECTS
-          OrcRTTools "${toolname}-${arch}" "${arch}"
-          SOURCES ${TOOL_SOURCES}
-          RUNTIME "${ORC_RUNTIME_LIBS}"
-          COMPILE_DEPS ${TOOL_HEADERS} ${ORC_HEADERS}
-          DEPS ${ORC_DEPS}
-          CFLAGS ${ORC_UNITTEST_CFLAGS}
-          LINK_FLAGS ${ORC_UNITTEST_LINK_FLAGS})
-      endif()
+      generate_compiler_rt_tests(TOOL_OBJECTS
+        OrcRTTools "${toolname}-${arch}" "${arch}"
+        SOURCES ${TOOL_SOURCES}
+        RUNTIME "${ORC_RUNTIME_LIBS}"
+        COMPILE_DEPS ${TOOL_HEADERS} ${ORC_HEADERS}
+        DEPS ${ORC_DEPS}
+        CFLAGS ${ORC_UNITTEST_CFLAGS}
+        LINK_FLAGS ${ORC_UNITTEST_LINK_FLAGS})
     endforeach()
   endif()
 endmacro()
 
 if (APPLE)
-  if("osx" IN_LIST ORC_SUPPORTED_OS)
-    add_orc_lib("RTOrc.test.osx"
-      $<TARGET_OBJECTS:RTOrc.osx>)
-  endif()
+  add_orc_lib("RTOrc.test.osx"
+    $<TARGET_OBJECTS:RTOrc.osx>)
 else()
   foreach(arch ${ORC_SUPPORTED_ARCH})
     add_orc_lib("RTOrc.test.${arch}"

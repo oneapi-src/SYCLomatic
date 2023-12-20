@@ -23,7 +23,6 @@
 #include "min_allocator.h"
 #include "test_allocator.h"
 #include "test_macros.h"
-#include "asan_testing.h"
 
 #define STR(string) MAKE_CSTRING(typename S::value_type, string)
 
@@ -40,8 +39,6 @@ constexpr void test_string_pos(S orig, typename S::size_type pos, S expected) {
   LIBCPP_ASSERT(orig.empty());
   LIBCPP_ASSERT(substr.__invariants());
   assert(substr == expected);
-  LIBCPP_ASSERT(is_string_asan_correct(orig));
-  LIBCPP_ASSERT(is_string_asan_correct(substr));
 }
 
 template <class S>
@@ -68,8 +65,6 @@ test_string_pos_alloc(S orig, typename S::size_type pos, const typename S::alloc
   LIBCPP_ASSERT(substr.__invariants());
   assert(substr == expected);
   assert(substr.get_allocator() == alloc);
-  LIBCPP_ASSERT(is_string_asan_correct(orig));
-  LIBCPP_ASSERT(is_string_asan_correct(substr));
 }
 
 template <class S>
@@ -100,8 +95,6 @@ constexpr void test_string_pos_n(S orig, typename S::size_type pos, typename S::
   LIBCPP_ASSERT(orig.empty());
   LIBCPP_ASSERT(substr.__invariants());
   assert(substr == expected);
-  LIBCPP_ASSERT(is_string_asan_correct(orig));
-  LIBCPP_ASSERT(is_string_asan_correct(substr));
 }
 
 template <class S>
@@ -129,8 +122,6 @@ constexpr void test_string_pos_n_alloc(
   LIBCPP_ASSERT(substr.__invariants());
   assert(substr == expected);
   assert(substr.get_allocator() == alloc);
-  LIBCPP_ASSERT(is_string_asan_correct(orig));
-  LIBCPP_ASSERT(is_string_asan_correct(substr));
 }
 
 template <class S>

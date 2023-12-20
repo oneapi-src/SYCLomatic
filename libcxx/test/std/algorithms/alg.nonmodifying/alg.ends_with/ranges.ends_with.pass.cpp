@@ -156,9 +156,9 @@ constexpr void test_iterators() {
 
  { // suffix has zero length
    int a[] = {1, 2, 3, 4, 5, 6};
-   std::array<int, 0> p = {};
+   int p[] = {};
    auto whole = std::ranges::subrange(Iter1(a), Sent1(Iter1(a + 6)));
-   auto suffix  = std::ranges::subrange(Iter2(p.data()), Sent2(Iter2(p.data())));
+   auto suffix  = std::ranges::subrange(Iter2(p), Sent2(Iter2(p)));
    {
      bool ret = std::ranges::ends_with(whole.begin(), whole.end(), suffix.begin(), suffix.end());
      assert(ret);
@@ -170,9 +170,9 @@ constexpr void test_iterators() {
  }
 
  { // range has zero length
-   std::array<int, 0> a = {};
+   int a[] = {};
    int p[] = {1, 2, 3, 4, 5, 6, 7, 8};
-   auto whole = std::ranges::subrange(Iter1(a.data()), Sent1(Iter1(a.data())));
+   auto whole = std::ranges::subrange(Iter1(a), Sent1(Iter1(a)));
    auto suffix  = std::ranges::subrange(Iter2(p), Sent2(Iter2(p + 8)));
    {
      bool ret = std::ranges::ends_with(whole.begin(), whole.end(), suffix.begin(), suffix.end());

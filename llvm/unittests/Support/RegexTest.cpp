@@ -225,10 +225,3 @@ TEST_F(RegexTest, OssFuzz3727Regression) {
 }
 
 }
-
-TEST_F(RegexTest, NullStringInput) {
-  Regex r("^$");
-  // String data points to nullptr in default constructor
-  StringRef String;
-  EXPECT_TRUE(r.match(String));
-}

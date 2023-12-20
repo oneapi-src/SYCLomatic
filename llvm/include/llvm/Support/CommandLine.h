@@ -246,15 +246,6 @@ extern ManagedStatic<SubCommand> TopLevelSubCommand;
 // A special subcommand that can be used to put an option into all subcommands.
 extern ManagedStatic<SubCommand> AllSubCommands;
 
-class SubCommandGroup {
-  SmallVector<SubCommand *, 4> Subs;
-
-public:
-  SubCommandGroup(std::initializer_list<SubCommand *> IL) : Subs(IL) {}
-
-  ArrayRef<SubCommand *> getSubCommands() const { return Subs; }
-};
-
 //===----------------------------------------------------------------------===//
 //
 class Option {
@@ -324,6 +315,10 @@ public:
 
   bool isConsumeAfter() const {
     return getNumOccurrencesFlag() == cl::ConsumeAfter;
+  }
+
+  bool isInAllSubCommands() const {
+    return Subs.contains(&SubCommand::getAll());
   }
 
   //-------------------------------------------------------------------------===
@@ -485,19 +480,11 @@ struct cat {
 
 // Specify the subcommand that this option belongs to.
 struct sub {
-  SubCommand *Sub = nullptr;
-  SubCommandGroup *Group = nullptr;
+  SubCommand &Sub;
 
-  sub(SubCommand &S) : Sub(&S) {}
-  sub(SubCommandGroup &G) : Group(&G) {}
+  sub(SubCommand &S) : Sub(S) {}
 
-  template <class Opt> void apply(Opt &O) const {
-    if (Sub)
-      O.addSubCommand(*Sub);
-    else if (Group)
-      for (SubCommand *SC : Group->getSubCommands())
-        O.addSubCommand(*SC);
-  }
+  template <class Opt> void apply(Opt &O) const { O.addSubCommand(Sub); }
 };
 
 // Specify a callback function to be called when an option is seen.

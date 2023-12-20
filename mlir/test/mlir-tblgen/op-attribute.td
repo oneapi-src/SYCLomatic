@@ -22,7 +22,6 @@ def SomeAttr : Attr<CPred<"some-condition">, "some attribute kind"> {
 }
 
 def SomeAttrDef : AttrDef<Test_Dialect, "SomeAttr"> {
-  let attrName = "test.some_attr";
 }
 
 

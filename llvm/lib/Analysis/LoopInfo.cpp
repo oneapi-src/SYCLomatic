@@ -1143,7 +1143,7 @@ MDNode *llvm::makePostTransformationMetadata(LLVMContext &Context,
         if (S)
           IsVectorMetadata =
               llvm::any_of(RemovePrefixes, [S](StringRef Prefix) -> bool {
-                return S->getString().starts_with(Prefix);
+                return S->getString().startswith(Prefix);
               });
       }
       if (!IsVectorMetadata)

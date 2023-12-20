@@ -42,7 +42,7 @@ results in the following migrated SYCL\* code:
    :linenos:
   
      /*
-     DPCT1075:0: Migration of cuFFT calls may be incorrect and requires review.
+     DPCT1075: Migration of cuFFT calls may be incorrect and requires review.
      */
      plan->commit(*s2); // wrong queue is used
      ...

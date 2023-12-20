@@ -1,7 +1,7 @@
 // RUN: dpct -out-root %T/format_issue %s --cuda-include-path="%cuda-path/include" --  -x cuda --cuda-host-only -DCOMPILATION
 // RUN: FileCheck %s --match-full-lines --input-file %T/format_issue/format_issue.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/format_issue/format_issue.dp.cpp -o %T/format_issue/format_issue.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl %T/format_issue/format_issue.dp.cpp -o %T/format_issue/format_issue.dp.o %}
+
 #ifdef COMPILATION
 float a;int
 #endif
@@ -26,4 +26,3 @@ int main(){ int2 i; }
 // CHECK-NEXT: #define FFF
 // CHECK-NEXT: foo1(){ return 1; }
 // CHECK-NEXT: int main() { sycl::int2 i; }
-#endif

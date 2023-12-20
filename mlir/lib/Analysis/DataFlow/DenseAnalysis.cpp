@@ -54,22 +54,12 @@ LogicalResult AbstractDenseForwardDataFlowAnalysis::visit(ProgramPoint point) {
 }
 
 void AbstractDenseForwardDataFlowAnalysis::visitCallOperation(
-    CallOpInterface call, const AbstractDenseLattice &before,
-    AbstractDenseLattice *after) {
-  // Allow for customizing the behavior of calls to external symbols, including
-  // when the analysis is explicitly marked as non-interprocedural.
-  auto callable =
-      dyn_cast_if_present<CallableOpInterface>(call.resolveCallable());
-  if (!getSolverConfig().isInterprocedural() ||
-      (callable && !callable.getCallableRegion())) {
-    return visitCallControlFlowTransfer(
-        call, CallControlFlowAction::ExternalCallee, before, after);
-  }
+    CallOpInterface call, AbstractDenseLattice *after) {
 
   const auto *predecessors =
       getOrCreateFor<PredecessorState>(call.getOperation(), call);
-  // Otherwise, if not all return sites are known, then conservatively assume we
-  // can't reason about the data-flow.
+  // If not all return sites are known, then conservatively assume we can't
+  // reason about the data-flow.
   if (!predecessors->allPredecessorsKnown())
     return setToEntryState(after);
 
@@ -118,7 +108,7 @@ void AbstractDenseForwardDataFlowAnalysis::processOperation(Operation *op) {
   // If this is a call operation, then join its lattices across known return
   // sites.
   if (auto call = dyn_cast<CallOpInterface>(op))
-    return visitCallOperation(call, *before, after);
+    return visitCallOperation(call, after);
 
   // Invoke the operation transfer function.
   visitOperationImpl(op, *before, after);
@@ -140,10 +130,8 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
     if (callable && callable.getCallableRegion() == block->getParent()) {
       const auto *callsites = getOrCreateFor<PredecessorState>(block, callable);
       // If not all callsites are known, conservatively mark all lattices as
-      // having reached their pessimistic fixpoints. Do the same if
-      // interprocedural analysis is not enabled.
-      if (!callsites->allPredecessorsKnown() ||
-          !getSolverConfig().isInterprocedural())
+      // having reached their pessimistic fixpoints.
+      if (!callsites->allPredecessorsKnown())
         return setToEntryState(after);
       for (Operation *callsite : callsites->getKnownPredecessors()) {
         // Get the dense lattice before the callsite.
@@ -279,20 +267,18 @@ LogicalResult AbstractDenseBackwardDataFlowAnalysis::visit(ProgramPoint point) {
 }
 
 void AbstractDenseBackwardDataFlowAnalysis::visitCallOperation(
-    CallOpInterface call, const AbstractDenseLattice &after,
-    AbstractDenseLattice *before) {
+    CallOpInterface call, AbstractDenseLattice *before) {
   // Find the callee.
   Operation *callee = call.resolveCallable(&symbolTable);
   auto callable = dyn_cast_or_null<CallableOpInterface>(callee);
   if (!callable)
     return setToExitState(before);
 
-  // No region means the callee is only declared in this module.
+  // No region means the callee is only declared in this module and we shouldn't
+  // assume anything about it.
   Region *region = callable.getCallableRegion();
-  if (!region || region->empty() || !getSolverConfig().isInterprocedural()) {
-    return visitCallControlFlowTransfer(
-        call, CallControlFlowAction::ExternalCallee, after, before);
-  }
+  if (!region || region->empty())
+    return setToExitState(before);
 
   // Call-level control flow specifies the data flow here.
   //
@@ -338,7 +324,7 @@ void AbstractDenseBackwardDataFlowAnalysis::processOperation(Operation *op) {
     return visitRegionBranchOperation(op, branch, RegionBranchPoint::parent(),
                                       before);
   if (auto call = dyn_cast<CallOpInterface>(op))
-    return visitCallOperation(call, *after, before);
+    return visitCallOperation(call, before);
 
   // Invoke the operation transfer function.
   visitOperationImpl(op, *after, before);
@@ -373,10 +359,8 @@ void AbstractDenseBackwardDataFlowAnalysis::visitBlock(Block *block) {
       const auto *callsites = getOrCreateFor<PredecessorState>(block, callable);
       // If not all call sites are known, conservative mark all lattices as
       // having reached their pessimistic fix points.
-      if (!callsites->allPredecessorsKnown() ||
-          !getSolverConfig().isInterprocedural()) {
+      if (!callsites->allPredecessorsKnown())
         return setToExitState(before);
-      }
 
       for (Operation *callsite : callsites->getKnownPredecessors()) {
         const AbstractDenseLattice *after;

@@ -433,9 +433,9 @@ template <> struct ScalarTraits<FrameIndex> {
   static StringRef input(StringRef Scalar, void *Ctx, FrameIndex &FI) {
     FI.IsFixed = false;
     StringRef Num;
-    if (Scalar.starts_with("%stack.")) {
+    if (Scalar.startswith("%stack.")) {
       Num = Scalar.substr(7);
-    } else if (Scalar.starts_with("%fixed-stack.")) {
+    } else if (Scalar.startswith("%fixed-stack.")) {
       Num = Scalar.substr(13);
       FI.IsFixed = true;
     } else {

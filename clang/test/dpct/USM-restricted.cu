@@ -2,8 +2,8 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=restricted -out-root %T/USM-restricted %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/USM-restricted/USM-restricted.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/USM-restricted/USM-restricted.dp.cpp -o %T/USM-restricted/USM-restricted.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl %T/USM-restricted/USM-restricted.dp.cpp -o %T/USM-restricted/USM-restricted.dp.o %}
+
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
@@ -1089,4 +1089,3 @@ int foo17() {
   cudaMemcpy(d_in_data_2, h_data, mem_size, cudaMemcpyHostToDevice);
   return 0;
 }
-#endif

@@ -9,7 +9,6 @@
 #include "clang/Driver/Multilib.h"
 #include "clang/Basic/LLVM.h"
 #include "clang/Basic/Version.h"
-#include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Compiler.h"
@@ -30,10 +29,9 @@ using namespace driver;
 using namespace llvm::sys;
 
 Multilib::Multilib(StringRef GCCSuffix, StringRef OSSuffix,
-                   StringRef IncludeSuffix, const flags_list &Flags,
-                   StringRef ExclusiveGroup)
+                   StringRef IncludeSuffix, const flags_list &Flags)
     : GCCSuffix(GCCSuffix), OSSuffix(OSSuffix), IncludeSuffix(IncludeSuffix),
-      Flags(Flags), ExclusiveGroup(ExclusiveGroup) {
+      Flags(Flags) {
   assert(GCCSuffix.empty() ||
          (StringRef(GCCSuffix).front() == '/' && GCCSuffix.size() > 1));
   assert(OSSuffix.empty() ||
@@ -95,40 +93,16 @@ MultilibSet &MultilibSet::FilterOut(FilterCallback F) {
 void MultilibSet::push_back(const Multilib &M) { Multilibs.push_back(M); }
 
 bool MultilibSet::select(const Multilib::flags_list &Flags,
-                         llvm::SmallVectorImpl<Multilib> &Selected) const {
+                         llvm::SmallVector<Multilib> &Selected) const {
   llvm::StringSet<> FlagSet(expandFlags(Flags));
   Selected.clear();
-
-  // Decide which multilibs we're going to select at all.
-  llvm::DenseSet<StringRef> ExclusiveGroupsSelected;
-  for (const Multilib &M : llvm::reverse(Multilibs)) {
-    // If this multilib doesn't match all our flags, don't select it.
-    if (!llvm::all_of(M.flags(), [&FlagSet](const std::string &F) {
-          return FlagSet.contains(F);
-        }))
-      continue;
-
-    const std::string &group = M.exclusiveGroup();
-    if (!group.empty()) {
-      // If this multilib has the same ExclusiveGroup as one we've already
-      // selected, skip it. We're iterating in reverse order, so the group
-      // member we've selected already is preferred.
-      //
-      // Otherwise, add the group name to the set of groups we've already
-      // selected a member of.
-      auto [It, Inserted] = ExclusiveGroupsSelected.insert(group);
-      if (!Inserted)
-        continue;
-    }
-
-    // Select this multilib.
-    Selected.push_back(M);
-  }
-
-  // We iterated in reverse order, so now put Selected back the right way
-  // round.
-  std::reverse(Selected.begin(), Selected.end());
-
+  llvm::copy_if(Multilibs, std::back_inserter(Selected),
+                [&FlagSet](const Multilib &M) {
+                  for (const std::string &F : M.flags())
+                    if (!FlagSet.contains(F))
+                      return false;
+                  return true;
+                });
   return !Selected.empty();
 }
 
@@ -164,39 +138,10 @@ static const VersionTuple MultilibVersionCurrent(1, 0);
 struct MultilibSerialization {
   std::string Dir;
   std::vector<std::string> Flags;
-  std::string Group;
-};
-
-enum class MultilibGroupType {
-  /*
-   * The only group type currently supported is 'Exclusive', which indicates a
-   * group of multilibs of which at most one may be selected.
-   */
-  Exclusive,
-
-  /*
-   * Future possibility: a second group type indicating a set of library
-   * directories that are mutually _dependent_ rather than mutually exclusive:
-   * if you include one you must include them all.
-   *
-   * It might also be useful to allow groups to be members of other groups, so
-   * that a mutually exclusive group could contain a mutually dependent set of
-   * library directories, or vice versa.
-   *
-   * These additional features would need changes in the implementation, but
-   * the YAML schema is set up so they can be added without requiring changes
-   * in existing users' multilib.yaml files.
-   */
-};
-
-struct MultilibGroupSerialization {
-  std::string Name;
-  MultilibGroupType Type;
 };
 
 struct MultilibSetSerialization {
   llvm::VersionTuple MultilibVersion;
-  std::vector<MultilibGroupSerialization> Groups;
   std::vector<MultilibSerialization> Multilibs;
   std::vector<MultilibSet::FlagMatcher> FlagMatchers;
 };
@@ -207,25 +152,11 @@ template <> struct llvm::yaml::MappingTraits<MultilibSerialization> {
   static void mapping(llvm::yaml::IO &io, MultilibSerialization &V) {
     io.mapRequired("Dir", V.Dir);
     io.mapRequired("Flags", V.Flags);
-    io.mapOptional("Group", V.Group);
   }
   static std::string validate(IO &io, MultilibSerialization &V) {
     if (StringRef(V.Dir).starts_with("/"))
       return "paths must be relative but \"" + V.Dir + "\" starts with \"/\"";
     return std::string{};
-  }
-};
-
-template <> struct llvm::yaml::ScalarEnumerationTraits<MultilibGroupType> {
-  static void enumeration(IO &io, MultilibGroupType &Val) {
-    io.enumCase(Val, "Exclusive", MultilibGroupType::Exclusive);
-  }
-};
-
-template <> struct llvm::yaml::MappingTraits<MultilibGroupSerialization> {
-  static void mapping(llvm::yaml::IO &io, MultilibGroupSerialization &V) {
-    io.mapRequired("Name", V.Name);
-    io.mapRequired("Type", V.Type);
   }
 };
 
@@ -249,7 +180,6 @@ template <> struct llvm::yaml::MappingTraits<MultilibSetSerialization> {
   static void mapping(llvm::yaml::IO &io, MultilibSetSerialization &M) {
     io.mapRequired("MultilibVersion", M.MultilibVersion);
     io.mapRequired("Variants", M.Multilibs);
-    io.mapOptional("Groups", M.Groups);
     io.mapOptional("Mappings", M.FlagMatchers);
   }
   static std::string validate(IO &io, MultilibSetSerialization &M) {
@@ -261,25 +191,11 @@ template <> struct llvm::yaml::MappingTraits<MultilibSetSerialization> {
     if (M.MultilibVersion.getMinor() > MultilibVersionCurrent.getMinor())
       return "multilib version " + M.MultilibVersion.getAsString() +
              " is unsupported";
-    for (const MultilibSerialization &Lib : M.Multilibs) {
-      if (!Lib.Group.empty()) {
-        bool Found = false;
-        for (const MultilibGroupSerialization &Group : M.Groups)
-          if (Group.Name == Lib.Group) {
-            Found = true;
-            break;
-          }
-        if (!Found)
-          return "multilib \"" + Lib.Dir +
-                 "\" specifies undefined group name \"" + Lib.Group + "\"";
-      }
-    }
     return std::string{};
   }
 };
 
 LLVM_YAML_IS_SEQUENCE_VECTOR(MultilibSerialization)
-LLVM_YAML_IS_SEQUENCE_VECTOR(MultilibGroupSerialization)
 LLVM_YAML_IS_SEQUENCE_VECTOR(MultilibSet::FlagMatcher)
 
 llvm::ErrorOr<MultilibSet>
@@ -298,11 +214,7 @@ MultilibSet::parseYaml(llvm::MemoryBufferRef Input,
     std::string Dir;
     if (M.Dir != ".")
       Dir = "/" + M.Dir;
-    // We transfer M.Group straight into the ExclusiveGroup parameter for the
-    // Multilib constructor. If we later support more than one type of group,
-    // we'll have to look up the group name in MS.Groups, check its type, and
-    // decide what to do here.
-    Multilibs.emplace_back(Dir, Dir, Dir, M.Flags, M.Group);
+    Multilibs.emplace_back(Dir, Dir, Dir, M.Flags);
   }
 
   return MultilibSet(std::move(Multilibs), std::move(MS.FlagMatchers));

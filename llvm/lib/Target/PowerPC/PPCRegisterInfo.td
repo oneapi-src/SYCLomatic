@@ -798,7 +798,6 @@ def directbrtarget : Operand<OtherVT> {
 def absdirectbrtarget : Operand<OtherVT> {
   let PrintMethod = "printAbsBranchOperand";
   let EncoderMethod = "getAbsDirectBrEncoding";
-  let DecoderMethod = "decodeDirectBrTarget";
   let ParserMatchClass = PPCDirectBrAsmOperand;
 }
 def PPCCondBrAsmOperand : AsmOperandClass {
@@ -815,7 +814,6 @@ def condbrtarget : Operand<OtherVT> {
 def abscondbrtarget : Operand<OtherVT> {
   let PrintMethod = "printAbsBranchOperand";
   let EncoderMethod = "getAbsCondBrEncoding";
-  let DecoderMethod = "decodeCondBrTarget";
   let ParserMatchClass = PPCCondBrAsmOperand;
 }
 def calltarget : Operand<iPTR> {
@@ -828,7 +826,6 @@ def calltarget : Operand<iPTR> {
 def abscalltarget : Operand<iPTR> {
   let PrintMethod = "printAbsBranchOperand";
   let EncoderMethod = "getAbsDirectBrEncoding";
-  let DecoderMethod = "decodeDirectBrTarget";
   let ParserMatchClass = PPCDirectBrAsmOperand;
 }
 def PPCCRBitMaskOperand : AsmOperandClass {

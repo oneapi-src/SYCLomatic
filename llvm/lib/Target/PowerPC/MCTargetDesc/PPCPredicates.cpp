@@ -12,6 +12,7 @@
 
 #include "PPCPredicates.h"
 #include "llvm/Support/ErrorHandling.h"
+#include <cassert>
 using namespace llvm;
 
 PPC::Predicate PPC::InvertPredicate(PPC::Predicate Opcode) {

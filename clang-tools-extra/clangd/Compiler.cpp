@@ -89,12 +89,6 @@ void disableUnsupportedOptions(CompilerInvocation &CI) {
   CI.getLangOpts().ProfileListFiles.clear();
   CI.getLangOpts().XRayAlwaysInstrumentFiles.clear();
   CI.getLangOpts().XRayNeverInstrumentFiles.clear();
-  if (CI.getLangOpts().SYCLIsDevice) {
-    CI.getLangOpts().SYCLIsDevice = false;
-    CI.getLangOpts().SYCLUnnamedLambda = false;
-    CI.getLangOpts().DeclareSPIRVBuiltins = false;
-    CI.getTargetOpts().Triple = CI.getTargetOpts().HostTriple;
-  }
 }
 
 std::unique_ptr<CompilerInvocation>

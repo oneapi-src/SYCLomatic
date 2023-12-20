@@ -948,15 +948,15 @@ int64_t ARM::getImplicitAddend(const uint8_t *buf, RelType type) const {
 }
 
 static bool isArmMapSymbol(const Symbol *b) {
-  return b->getName() == "$a" || b->getName().starts_with("$a.");
+  return b->getName() == "$a" || b->getName().startswith("$a.");
 }
 
 static bool isThumbMapSymbol(const Symbol *s) {
-  return s->getName() == "$t" || s->getName().starts_with("$t.");
+  return s->getName() == "$t" || s->getName().startswith("$t.");
 }
 
 static bool isDataMapSymbol(const Symbol *b) {
-  return b->getName() == "$d" || b->getName().starts_with("$d.");
+  return b->getName() == "$d" || b->getName().startswith("$d.");
 }
 
 void elf::sortArmMappingSymbols() {
@@ -1189,7 +1189,7 @@ void elf::processArmCmseSymbols() {
   // Only symbols with external linkage end up in symtab, so no need to do
   // linkage checks. Only check symbol type.
   for (Symbol *acleSeSym : symtab.getSymbols()) {
-    if (!acleSeSym->getName().starts_with(ACLESESYM_PREFIX))
+    if (!acleSeSym->getName().startswith(ACLESESYM_PREFIX))
       continue;
     // If input object build attributes do not support CMSE, error and disable
     // further scanning for <sym>, __acle_se_<sym> pairs.

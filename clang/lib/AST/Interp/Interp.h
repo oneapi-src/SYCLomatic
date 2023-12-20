@@ -1619,11 +1619,7 @@ bool CastFloatingIntegral(InterpState &S, CodePtr OpPC) {
       QualType Type = E->getType();
 
       S.CCEDiag(E, diag::note_constexpr_overflow) << F.getAPFloat() << Type;
-      if (S.noteUndefinedBehavior()) {
-        S.Stk.push<T>(T(Result));
-        return true;
-      }
-      return false;
+      return S.noteUndefinedBehavior();
     }
 
     S.Stk.push<T>(T(Result));
@@ -1826,12 +1822,10 @@ inline bool ArrayElemPtr(InterpState &S, CodePtr OpPC) {
 /// Just takes a pointer and checks if its' an incomplete
 /// array type.
 inline bool ArrayDecay(InterpState &S, CodePtr OpPC) {
-  const Pointer &Ptr = S.Stk.pop<Pointer>();
+  const Pointer &Ptr = S.Stk.peek<Pointer>();
 
-  if (!Ptr.isUnknownSizeArray()) {
-    S.Stk.push<Pointer>(Ptr.atIndex(0));
+  if (!Ptr.isUnknownSizeArray())
     return true;
-  }
 
   const SourceInfo &E = S.Current->getSource(OpPC);
   S.FFDiag(E, diag::note_constexpr_unsupported_unsized_array);

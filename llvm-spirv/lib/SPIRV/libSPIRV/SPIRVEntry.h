@@ -908,7 +908,7 @@ public:
   }
 
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(CapabilityLongCompositesINTEL);
+    return getVec(CapabilityLongConstantCompositeINTEL);
   }
 
   std::optional<ExtensionID> getRequiredExtension() const override {

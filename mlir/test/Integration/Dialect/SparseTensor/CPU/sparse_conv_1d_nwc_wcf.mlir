@@ -25,6 +25,7 @@
 //
 // Do the same run, but now with direct IR generation and vectorization.
 // REDEFINE: %{sparsifier_opts} = enable-runtime-library=false enable-buffer-initialization=true vl=2 reassociate-fp-reductions=true enable-index-optimizations=true
+
 // RUN: %{compile} | %{run} | FileCheck %s
 //
 // Do the same run, but now with direct IR generation and VLA vectorization.

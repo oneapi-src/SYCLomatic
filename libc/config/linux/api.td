@@ -205,12 +205,7 @@ def SysSelectAPI : PublicAPI<"sys/select.h"> {
 }
 
 def SysSocketAPI : PublicAPI<"sys/socket.h"> {
-  let Types = [
-    "sa_family_t",
-    "socklen_t",
-    "struct sockaddr",
-    "struct sockaddr_un",
-  ];
+  let Types = ["struct sockaddr", "sa_family_t"];
 }
 
 def SysResourceAPI : PublicAPI<"sys/resource.h"> {

@@ -1,22 +1,4 @@
-// RUN: mlir-opt %s --test-next-access --split-input-file |\
-// RUN:             FileCheck %s --check-prefixes=CHECK,IP
-// RUN: mlir-opt %s --test-next-access='interprocedural=false' \
-// RUN:             --split-input-file |\
-// RUN:             FileCheck %s --check-prefixes=CHECK,LOCAL
-// RUN: mlir-opt %s --test-next-access='assume-func-reads=true' \
-// RUN:             --split-input-file |\
-// RUN:             FileCheck %s --check-prefixes=CHECK,IP_AR
-// RUN: mlir-opt %s \
-// RUN:      --test-next-access='interprocedural=false assume-func-reads=true' \
-// RUN:      --split-input-file | FileCheck %s --check-prefixes=CHECK,LC_AR
-
-// Check prefixes are as follows:
-// 'check': common for all runs;
-// 'ip_ar': interpocedural runs assuming calls to external functions read
-//          all arguments;
-// 'ip': interprocedural runs not assuming function calls reading;
-// 'local': local (non-interprocedural) analysis not assuming calls reading;
-// 'lc_ar': local analysis assuming external calls reading all arguments.
+// RUN: mlir-opt %s --test-next-access --split-input-file | FileCheck %s
 
 // CHECK-LABEL: @trivial
 func.func @trivial(%arg0: memref<f32>, %arg1: f32) -> f32 {
@@ -270,10 +252,8 @@ func.func @known_conditional_cf(%arg0: memref<f32>) {
 // -----
 
 func.func private @callee1(%arg0: memref<f32>) {
-  // IP:         name = "callee1"
-  // IP-SAME:    next_access = {{\[}}["post"]]
-  // LOCAL:      name = "callee1"
-  // LOCAL-SAME: next_access = ["unknown"]
+  // CHECK:      name = "callee1"
+  // CHECK-SAME: next_access = {{\[}}["post"]]
   memref.load %arg0[] {name = "callee1"} : memref<f32>
   return
 }
@@ -287,14 +267,10 @@ func.func private @callee2(%arg0: memref<f32>) {
 
 // CHECK-LABEL: @simple_call
 func.func @simple_call(%arg0: memref<f32>) {
-  // IP:         name = "caller"
-  // IP-SAME:    next_access = {{\[}}["callee1"]]
-  // LOCAL:      name = "caller"
-  // LOCAL-SAME: next_access = ["unknown"]
-  // LC_AR:      name = "caller"
-  // LC_AR-SAME: next_access = {{\[}}["call"]]
+  // CHECK:      name = "caller"
+  // CHECK-SAME: next_access = {{\[}}["callee1"]]
   memref.load %arg0[] {name = "caller"} : memref<f32>
-  func.call @callee1(%arg0) {name = "call"} : (memref<f32>) -> ()
+  func.call @callee1(%arg0) : (memref<f32>) -> ()
   memref.load %arg0[] {name = "post"} : memref<f32>
   return
 }
@@ -303,14 +279,10 @@ func.func @simple_call(%arg0: memref<f32>) {
 
 // CHECK-LABEL: @infinite_recursive_call
 func.func @infinite_recursive_call(%arg0: memref<f32>) {
-  // IP:         name = "pre"
-  // IP-SAME:    next_access = {{\[}}["pre"]]
-  // LOCAL:      name = "pre"
-  // LOCAL-SAME: next_access = ["unknown"]
-  // LC_AR:      name = "pre"
-  // LC_AR-SAME: next_access = {{\[}}["call"]]
+  // CHECK:      name = "pre"
+  // CHECK-SAME: next_access = {{\[}}["pre"]]
   memref.load %arg0[] {name = "pre"} : memref<f32>
-  func.call @infinite_recursive_call(%arg0) {name = "call"} : (memref<f32>) -> ()
+  func.call @infinite_recursive_call(%arg0) : (memref<f32>) -> ()
   memref.load %arg0[] {name = "post"} : memref<f32>
   return
 }
@@ -319,15 +291,11 @@ func.func @infinite_recursive_call(%arg0: memref<f32>) {
 
 // CHECK-LABEL: @recursive_call
 func.func @recursive_call(%arg0: memref<f32>, %cond: i1) {
-  // IP:         name = "pre"
-  // IP-SAME:    next_access = {{\[}}["post", "pre"]]
-  // LOCAL:      name = "pre"
-  // LOCAL-SAME: next_access = ["unknown"]
-  // LC_AR:      name = "pre"
-  // LC_AR-SAME: next_access = {{\[}}["post", "call"]]
+  // CHECK:      name = "pre"
+  // CHECK-SAME: next_access = {{\[}}["post", "pre"]]
   memref.load %arg0[] {name = "pre"} : memref<f32>
   scf.if %cond {
-    func.call @recursive_call(%arg0, %cond) {name = "call"} : (memref<f32>, i1) -> ()
+    func.call @recursive_call(%arg0, %cond) : (memref<f32>, i1) -> ()
   }
   memref.load %arg0[] {name = "post"} : memref<f32>
   return
@@ -337,16 +305,12 @@ func.func @recursive_call(%arg0: memref<f32>, %cond: i1) {
 
 // CHECK-LABEL: @recursive_call_cf
 func.func @recursive_call_cf(%arg0: memref<f32>, %cond: i1) {
-  // IP:         name = "pre"
-  // IP-SAME:    next_access = {{\[}}["pre", "post"]]
-  // LOCAL:      name = "pre"
-  // LOCAL-SAME: next_access = ["unknown"]
-  // LC_AR:      name = "pre"
-  // LC_AR-SAME: next_access = {{\[}}["call", "post"]]
+  // CHECK:      name = "pre"
+  // CHECK-SAME: next_access = {{\[}}["pre", "post"]]
   %0 = memref.load %arg0[] {name = "pre"} : memref<f32>
   cf.cond_br %cond, ^bb1, ^bb2
 ^bb1:
-  call @recursive_call_cf(%arg0, %cond) {name = "call"} : (memref<f32>, i1) -> ()
+  call @recursive_call_cf(%arg0, %cond) : (memref<f32>, i1) -> ()
   cf.br ^bb2
 ^bb2:
   %2 = memref.load %arg0[] {name = "post"} : memref<f32>
@@ -356,35 +320,27 @@ func.func @recursive_call_cf(%arg0: memref<f32>, %cond: i1) {
 // -----
 
 func.func private @callee1(%arg0: memref<f32>) {
-  // IP:         name = "callee1"
-  // IP-SAME:    next_access = {{\[}}["post"]]
-  // LOCAL:      name = "callee1"
-  // LOCAL-SAME: next_access = ["unknown"]
+  // CHECK:      name = "callee1"
+  // CHECK-SAME: next_access = {{\[}}["post"]]
   memref.load %arg0[] {name = "callee1"} : memref<f32>
   return
 }
 
 func.func private @callee2(%arg0: memref<f32>) {
-  // IP:         name = "callee2"
-  // IP-SAME:    next_access = {{\[}}["post"]]
-  // LOCAL:      name = "callee2"
-  // LOCAL-SAME: next_access = ["unknown"]
+  // CHECK:      name = "callee2"
+  // CHECK-SAME: next_access = {{\[}}["post"]]
   memref.load %arg0[] {name = "callee2"} : memref<f32>
   return
 }
 
 func.func @conditonal_call(%arg0: memref<f32>, %cond: i1) {
-  // IP:         name = "pre"
-  // IP-SAME:    next_access = {{\[}}["callee1", "callee2"]]
-  // LOCAL:      name = "pre"
-  // LOCAL-SAME: next_access = ["unknown"]
-  // LC_AR:      name = "pre"
-  // LC_AR-SAME: next_access = {{\[}}["call1", "call2"]]
+  // CHECK:      name = "pre"
+  // CHECK-SAME: next_access = {{\[}}["callee1", "callee2"]]
   memref.load %arg0[] {name = "pre"} : memref<f32>
   scf.if %cond {
-    func.call @callee1(%arg0) {name = "call1"} : (memref<f32>) -> ()
+    func.call @callee1(%arg0) : (memref<f32>) -> ()
   } else {
-    func.call @callee2(%arg0) {name = "call2"} : (memref<f32>) -> ()
+    func.call @callee2(%arg0) : (memref<f32>) -> ()
   }
   memref.load %arg0[] {name = "post"} : memref<f32>
   return
@@ -398,29 +354,23 @@ func.func @conditonal_call(%arg0: memref<f32>, %cond: i1) {
 // "caller" -> "call" -> "callee" -> "post"
 
 func.func private @callee(%arg0: memref<f32>) {
-  // IP:         name = "callee"
-  // IP-SAME:    next_access = {{\[}}["post"]]
-  // LOCAL:      name = "callee"
-  // LOCAL-SAME: next_access = ["unknown"]
+  // CHECK:              name = "callee"
+  // CHECK-SAME-LITERAL: next_access = [["post"]]
   memref.load %arg0[] {name = "callee"} : memref<f32>
   return
 }
 
 // CHECK-LABEL: @call_and_store_before
 func.func @call_and_store_before(%arg0: memref<f32>) {
-  // IP:         name = "caller"
-  // IP-SAME:    next_access = {{\[}}["call"]]
-  // LOCAL:      name = "caller"
-  // LOCAL-SAME: next_access = ["unknown"]
-  // LC_AR:      name = "caller"
-  // LC_AR-SAME: next_access = {{\[}}["call"]]
+  // CHECK:              name = "caller"
+  // CHECK-SAME-LITERAL: next_access = [["call"]]
   memref.load %arg0[] {name = "caller"} : memref<f32>
   // Note that the access after the entire call is "post".
-  // CHECK:      name = "call"
-  // CHECK-SAME: next_access = {{\[}}["post"], ["post"]]
+  // CHECK:              name = "call"
+  // CHECK-SAME-LITERAL: next_access = [["post"], ["post"]]
   test.call_and_store @callee(%arg0), %arg0 {name = "call", store_before_call = true} : (memref<f32>, memref<f32>) -> ()
-  // CHECK:      name = "post"
-  // CHECK-SAME: next_access = ["unknown"]
+  // CHECK:              name = "post"
+  // CHECK-SAME-LITERAL: next_access = ["unknown"]
   memref.load %arg0[] {name = "post"} : memref<f32>
   return
 }
@@ -432,28 +382,22 @@ func.func @call_and_store_before(%arg0: memref<f32>) {
 // "caller" -> "callee" -> "call" -> "post"
 
 func.func private @callee(%arg0: memref<f32>) {
-  // IP:         name = "callee"
-  // IP-SAME:    next_access = {{\[}}["call"]]
-  // LOCAL:      name = "callee"
-  // LOCAL-SAME: next_access = ["unknown"]
+  // CHECK:              name = "callee"
+  // CHECK-SAME-LITERAL: next_access = [["call"]]
   memref.load %arg0[] {name = "callee"} : memref<f32>
   return
 }
 
 // CHECK-LABEL: @call_and_store_after
 func.func @call_and_store_after(%arg0: memref<f32>) {
-  // IP:         name = "caller"
-  // IP-SAME:    next_access = {{\[}}["callee"]]
-  // LOCAL:      name = "caller"
-  // LOCAL-SAME: next_access = ["unknown"]
-  // LC_AR:      name = "caller"
-  // LC_AR-SAME: next_access = {{\[}}["call"]]
+  // CHECK:              name = "caller"
+  // CHECK-SAME-LITERAL: next_access = [["callee"]]
   memref.load %arg0[] {name = "caller"} : memref<f32>
-  // CHECK:      name = "call"
-  // CHECK-SAME: next_access = {{\[}}["post"], ["post"]]
-  test.call_and_store @callee(%arg0), %arg0 {name = "call", store_before_call = false} : (memref<f32>, memref<f32>) -> ()
-  // CHECK:      name = "post"
-  // CHECK-SAME: next_access = ["unknown"]
+  // CHECK:              name = "call"
+  // CHECK-SAME-LITERAL: next_access = [["post"], ["post"]]
+  test.call_and_store @callee(%arg0), %arg0 {name = "call", store_before_call = true} : (memref<f32>, memref<f32>) -> ()
+  // CHECK:              name = "post"
+  // CHECK-SAME-LITERAL: next_access = ["unknown"]
   memref.load %arg0[] {name = "post"} : memref<f32>
   return
 }
@@ -466,12 +410,12 @@ func.func @call_and_store_after(%arg0: memref<f32>) {
 //   - at the entry of the block, the next access is "post".
 // CHECK-LABEL: @store_with_a_region
 func.func @store_with_a_region_before(%arg0: memref<f32>) {
-  // CHECK:      name = "pre"
-  // CHECK-SAME: next_access = {{\[}}["region"]]
+  // CHECK:              name = "pre"
+  // CHECK-SAME-LITERAL: next_access = [["region"]]
   memref.load %arg0[] {name = "pre"} : memref<f32>
   // CHECK:              name = "region"
-  // CHECK-SAME: next_access = {{\[}}["post"]]
-  // CHECK-SAME: next_at_entry_point = {{\[}}{{\[}}["post"]]]
+  // CHECK-SAME-LITERAL: next_access = [["post"]]
+  // CHECK-SAME-LITERAL: next_at_entry_point = [[["post"]]]
   test.store_with_a_region %arg0 attributes { name = "region", store_before_region = true } {
     test.store_with_a_region_terminator
   } : memref<f32>
@@ -485,12 +429,12 @@ func.func @store_with_a_region_before(%arg0: memref<f32>) {
 //   - at the entry of the block, the next access is "region".
 // CHECK-LABEL: @store_with_a_region
 func.func @store_with_a_region_after(%arg0: memref<f32>) {
-  // CHECK:      name = "pre"
-  // CHECK-SAME: next_access = {{\[}}["region"]]
+  // CHECK:              name = "pre"
+  // CHECK-SAME-LITERAL: next_access = [["region"]]
   memref.load %arg0[] {name = "pre"} : memref<f32>
-  // CHECK:      name = "region"
-  // CHECK-SAME: next_access = {{\[}}["post"]]
-  // CHECK-SAME: next_at_entry_point = {{\[}}{{\[}}["region"]]]
+  // CHECK:              name = "region"
+  // CHECK-SAME-LITERAL: next_access = [["post"]]
+  // CHECK-SAME-LITERAL: next_at_entry_point = [[["region"]]]
   test.store_with_a_region %arg0 attributes { name = "region", store_before_region = false } {
     test.store_with_a_region_terminator
   } : memref<f32>
@@ -509,20 +453,20 @@ func.func @store_with_a_region_after(%arg0: memref<f32>) {
 // That is, the order of access is: "pre" -> "region" -> "inner" -> "post".
 // CHECK-LABEL: @store_with_a_region_before_containing_a_load
 func.func @store_with_a_region_before_containing_a_load(%arg0: memref<f32>) {
-  // CHECK:      name = "pre"
-  // CHECK-SAME: next_access = {{\[}}["region"]]
+  // CHECK:              name = "pre"
+  // CHECK-SAME-LITERAL: next_access = [["region"]]
   memref.load %arg0[] {name = "pre"} : memref<f32>
-  // CHECK:      name = "region"
-  // CHECK-SAME: next_access = {{\[}}["post"]]
-  // CHECK-SAME: next_at_entry_point = {{\[}}{{\[}}["inner"]]]
+  // CHECK:              name = "region"
+  // CHECK-SAME-LITERAL: next_access = [["post"]]
+  // CHECK-SAME-LITERAL: next_at_entry_point = [[["inner"]]]
   test.store_with_a_region %arg0 attributes { name = "region", store_before_region = true } {
-    // CHECK:      name = "inner"
-    // CHECK-SAME: next_access = {{\[}}["post"]]
+    // CHECK:              name = "inner"
+    // CHECK-SAME-LITERAL: next_access = [["post"]]
     memref.load %arg0[] {name = "inner"} : memref<f32>
     test.store_with_a_region_terminator
   } : memref<f32>
-  // CHECK:      name = "post"
-  // CHECK-SAME: next_access = ["unknown"]
+  // CHECK:              name = "post"
+  // CHECK-SAME-LITERAL: next_access = ["unknown"]
   memref.load %arg0[] {name = "post"} : memref<f32>
   return
 }
@@ -538,40 +482,20 @@ func.func @store_with_a_region_before_containing_a_load(%arg0: memref<f32>) {
 // That is, the order of access is "pre" -> "inner" -> "region" -> "post".
 // CHECK-LABEL: @store_with_a_region_after_containing_a_load
 func.func @store_with_a_region_after_containing_a_load(%arg0: memref<f32>) {
-  // CHECK:      name = "pre"
-  // CHECK-SAME: next_access = {{\[}}["inner"]]
+  // CHECK:              name = "pre"
+  // CHECK-SAME-LITERAL: next_access = [["inner"]]
   memref.load %arg0[] {name = "pre"} : memref<f32>
-  // CHECK:      name = "region"
-  // CHECK-SAME: next_access = {{\[}}["post"]]
-  // CHECK-SAME: next_at_entry_point = {{\[}}{{\[}}["inner"]]]
+  // CHECK:              name = "region"
+  // CHECK-SAME-LITERAL: next_access = [["post"]]
+  // CHECK-SAME-LITERAL: next_at_entry_point = [[["inner"]]]
   test.store_with_a_region %arg0 attributes { name = "region", store_before_region = false } {
-    // CHECK:      name = "inner"
-    // CHECK-SAME: next_access = {{\[}}["region"]]
+    // CHECK:              name = "inner"
+    // CHECK-SAME-LITERAL: next_access = [["region"]]
     memref.load %arg0[] {name = "inner"} : memref<f32>
     test.store_with_a_region_terminator
   } : memref<f32>
-  // CHECK:      name = "post"
-  // CHECK-SAME: next_access = ["unknown"]
-  memref.load %arg0[] {name = "post"} : memref<f32>
-  return
-}
-
-// -----
-
-func.func private @opaque_callee(%arg0: memref<f32>)
-
-// CHECK-LABEL: @call_opaque_callee
-func.func @call_opaque_callee(%arg0: memref<f32>) {
-  // IP:         name = "pre"
-  // IP-SAME:    next_access = ["unknown"]
-  // IP_AR:      name = "pre"
-  // IP_AR-SAME: next_access = {{\[}}["call"]]
-  // LOCAL:      name = "pre"
-  // LOCAL-SAME: next_access = ["unknown"]
-  // LC_AR:      name = "pre"
-  // LC_AR-SAME: next_access = {{\[}}["call"]]
-  memref.load %arg0[] {name = "pre"} : memref<f32>
-  func.call @opaque_callee(%arg0) {name = "call"} : (memref<f32>) -> ()
+  // CHECK:              name = "post"
+  // CHECK-SAME-LITERAL: next_access = ["unknown"]
   memref.load %arg0[] {name = "post"} : memref<f32>
   return
 }

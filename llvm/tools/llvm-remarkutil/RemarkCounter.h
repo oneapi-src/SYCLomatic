@@ -14,6 +14,7 @@
 #include "RemarkUtilHelpers.h"
 #include "llvm/ADT/MapVector.h"
 #include "llvm/Support/Regex.h"
+#include <list>
 
 namespace llvm {
 namespace remarks {

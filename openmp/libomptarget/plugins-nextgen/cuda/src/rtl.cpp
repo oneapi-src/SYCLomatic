@@ -22,7 +22,6 @@
 #include "GlobalHandler.h"
 #include "OpenMP/OMPT/Callback.h"
 #include "PluginInterface.h"
-#include "Utils/ELF.h"
 
 #include "llvm/BinaryFormat/ELF.h"
 #include "llvm/Frontend/OpenMP/OMPConstants.h"
@@ -728,7 +727,7 @@ struct CUDADeviceTy : public GenericDeviceTy {
 
     // If there is already pending work on the stream it could be waiting for
     // someone to check the RPC server.
-    if (auto *RPCServer = getRPCServer()) {
+    if (auto RPCServer = getRPCServer()) {
       CUresult Res = cuStreamQuery(Stream);
       while (Res == CUDA_ERROR_NOT_READY) {
         if (auto Err = RPCServer->runServer(*this))
@@ -1056,8 +1055,11 @@ private:
     // Perform a quick check for the named kernel in the image. The kernel
     // should be created by the 'nvptx-lower-ctor-dtor' pass.
     GenericGlobalHandlerTy &Handler = Plugin.getGlobalHandler();
-    if (!Handler.isSymbolInImage(*this, Image, KernelName))
+    GlobalTy Global(KernelName, sizeof(void *));
+    if (auto Err = Handler.getGlobalMetadataFromImage(*this, Image, Global)) {
+      consumeError(std::move(Err));
       return Plugin::success();
+    }
 
     // The Nvidia backend cannot handle creating the ctor / dtor array
     // automatically so we must create it ourselves. The backend will emit
@@ -1088,7 +1090,7 @@ private:
     }
 
     // Sort the created array to be in priority order.
-    llvm::sort(Funcs, [=](auto X, auto Y) { return X.second < Y.second; });
+    llvm::sort(Funcs, [=](auto x, auto y) { return x.second < y.second; });
 
     // Allocate a buffer to store all of the known constructor / destructor
     // functions in so we can iterate them on the device.
@@ -1285,16 +1287,7 @@ struct CUDAPluginTy final : public GenericPluginTy {
   }
 
   /// Check whether the image is compatible with the available CUDA devices.
-  Expected<bool> isELFCompatible(StringRef Image) const override {
-    auto ElfOrErr =
-        ELF64LEObjectFile::create(MemoryBufferRef(Image, /*Identifier=*/""),
-                                  /*InitContent=*/false);
-    if (!ElfOrErr)
-      return ElfOrErr.takeError();
-
-    // Get the numeric value for the image's `sm_` value.
-    auto SM = ElfOrErr->getPlatformFlags() & ELF::EF_CUDA_SM;
-
+  Expected<bool> isImageCompatible(__tgt_image_info *Info) const override {
     for (int32_t DevId = 0; DevId < getNumDevices(); ++DevId) {
       CUdevice Device;
       CUresult Res = cuDeviceGet(&Device, DevId);
@@ -1312,11 +1305,16 @@ struct CUDAPluginTy final : public GenericPluginTy {
       if (auto Err = Plugin::check(Res, "Error in cuDeviceGetAttribute: %s"))
         return std::move(Err);
 
-      int32_t ImageMajor = SM / 10;
-      int32_t ImageMinor = SM % 10;
+      StringRef ArchStr(Info->Arch);
+      StringRef PrefixStr("sm_");
+      if (!ArchStr.startswith(PrefixStr))
+        return Plugin::error("Unrecognized image arch %s", ArchStr.data());
 
-      // A cubin generated for a certain compute capability is supported to
-      // run on any GPU with the same major revision and same or higher minor
+      int32_t ImageMajor = ArchStr[PrefixStr.size() + 0] - '0';
+      int32_t ImageMinor = ArchStr[PrefixStr.size() + 1] - '0';
+
+      // A cubin generated for a certain compute capability is supported to run
+      // on any GPU with the same major revision and same or higher minor
       // revision.
       if (Major != ImageMajor || Minor < ImageMinor)
         return false;

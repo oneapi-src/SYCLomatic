@@ -48,6 +48,7 @@
 #include <optional>
 #include <set>
 #include <utility>
+#include <vector>
 
 namespace llvm {
 namespace orc {

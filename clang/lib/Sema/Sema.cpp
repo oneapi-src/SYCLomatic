@@ -898,7 +898,6 @@ static void checkUndefinedButUsed(Sema &S) {
   // Collect all the still-undefined entities with internal linkage.
   SmallVector<std::pair<NamedDecl *, SourceLocation>, 16> Undefined;
   S.getUndefinedButUsed(Undefined);
-  S.UndefinedButUsed.clear();
   if (Undefined.empty()) return;
 
   for (const auto &Undef : Undefined) {
@@ -952,6 +951,8 @@ static void checkUndefinedButUsed(Sema &S) {
     if (UseLoc.isValid())
       S.Diag(UseLoc, diag::note_used_here);
   }
+
+  S.UndefinedButUsed.clear();
 }
 
 void Sema::LoadExternalWeakUndeclaredIdentifiers() {
@@ -2174,15 +2175,15 @@ void Sema::checkTypeSupport(QualType Ty, SourceLocation Loc, ValueDecl *D) {
         targetDiag(D->getLocation(), diag::note_defined_here, FD) << D;
     }
 
-    if (TI.hasRISCVVTypes() && Ty->isRVVSizelessBuiltinType())
+    if (TI.hasRISCVVTypes() && Ty->isRVVType())
       checkRVVTypeSupport(Ty, Loc, D);
 
     // Don't allow SVE types in functions without a SVE target.
     if (Ty->isSVESizelessBuiltinType() && FD && FD->hasBody()) {
       llvm::StringMap<bool> CallerFeatureMap;
       Context.getFunctionFeatureMap(CallerFeatureMap, FD);
-      if (!Builtin::evaluateRequiredTargetFeatures("sve", CallerFeatureMap) &&
-          !Builtin::evaluateRequiredTargetFeatures("sme", CallerFeatureMap))
+      if (!Builtin::evaluateRequiredTargetFeatures(
+          "sve", CallerFeatureMap))
         Diag(D->getLocation(), diag::err_sve_vector_in_non_sve_target) << Ty;
     }
   };

@@ -471,7 +471,6 @@ LogicalResult
 ParallelLowering::matchAndRewrite(ParallelOp parallelOp,
                                   PatternRewriter &rewriter) const {
   Location loc = parallelOp.getLoc();
-  auto reductionOp = cast<ReduceOp>(parallelOp.getBody()->getTerminator());
 
   // For a parallel loop, we essentially need to create an n-dimensional loop
   // nest. We do this by translating to scf.for ops and have those lowered in
@@ -507,20 +506,23 @@ ParallelLowering::matchAndRewrite(ParallelOp parallelOp,
   }
 
   // First, merge reduction blocks into the main region.
-  SmallVector<Value> yieldOperands;
+  SmallVector<Value, 4> yieldOperands;
   yieldOperands.reserve(parallelOp.getNumResults());
-  for (int64_t i = 0, e = parallelOp.getNumResults(); i < e; ++i) {
-    Block &reductionBody = reductionOp.getReductions()[i].front();
+  for (auto &op : *parallelOp.getBody()) {
+    auto reduce = dyn_cast<ReduceOp>(op);
+    if (!reduce)
+      continue;
+
+    Block &reduceBlock = reduce.getReductionOperator().front();
     Value arg = iterArgs[yieldOperands.size()];
-    yieldOperands.push_back(
-        cast<ReduceReturnOp>(reductionBody.getTerminator()).getResult());
-    rewriter.eraseOp(reductionBody.getTerminator());
-    rewriter.inlineBlockBefore(&reductionBody, reductionOp,
-                               {arg, reductionOp.getOperands()[i]});
+    yieldOperands.push_back(reduceBlock.getTerminator()->getOperand(0));
+    rewriter.eraseOp(reduceBlock.getTerminator());
+    rewriter.inlineBlockBefore(&reduceBlock, &op, {arg, reduce.getOperand()});
+    rewriter.eraseOp(reduce);
   }
-  rewriter.eraseOp(reductionOp);
 
   // Then merge the loop body without the terminator.
+  rewriter.eraseOp(parallelOp.getBody()->getTerminator());
   Block *newBody = rewriter.getInsertionBlock();
   if (newBody->empty())
     rewriter.mergeBlocks(parallelOp.getBody(), newBody, ivs);
@@ -709,7 +711,7 @@ LogicalResult ForallLowering::matchAndRewrite(ForallOp forallOp,
                               parallelOp.getRegion().begin());
   // Replace the terminator.
   rewriter.setInsertionPointToEnd(&parallelOp.getRegion().front());
-  rewriter.replaceOpWithNewOp<scf::ReduceOp>(
+  rewriter.replaceOpWithNewOp<scf::YieldOp>(
       parallelOp.getRegion().front().getTerminator());
 
   // Erase the scf.forall op.

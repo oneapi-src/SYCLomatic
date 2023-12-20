@@ -72,7 +72,7 @@ class ELFObjectWriter;
 struct ELFWriter;
 
 bool isDwoSection(const MCSectionELF &Sec) {
-  return Sec.getName().ends_with(".dwo");
+  return Sec.getName().endswith(".dwo");
 }
 
 class SymbolTableWriter {
@@ -872,7 +872,7 @@ void ELFWriter::writeSectionData(const MCAssembler &Asm, MCSection &Sec,
 
   const DebugCompressionType CompressionType = MAI->compressDebugSections();
   if (CompressionType == DebugCompressionType::None ||
-      !SectionName.starts_with(".debug_")) {
+      !SectionName.startswith(".debug_")) {
     Asm.writeSectionData(W.OS, &Section, Layout);
     return;
   }
@@ -1250,7 +1250,7 @@ void ELFObjectWriter::executePostLayoutBinding(MCAssembler &Asm,
     StringRef Prefix = AliasName.substr(0, Pos);
     StringRef Rest = AliasName.substr(Pos);
     StringRef Tail = Rest;
-    if (Rest.starts_with("@@@"))
+    if (Rest.startswith("@@@"))
       Tail = Rest.substr(Symbol.isUndefined() ? 2 : 1);
 
     auto *Alias =
@@ -1268,8 +1268,8 @@ void ELFObjectWriter::executePostLayoutBinding(MCAssembler &Asm,
     if (!Symbol.isUndefined() && S.KeepOriginalSym)
       continue;
 
-    if (Symbol.isUndefined() && Rest.starts_with("@@") &&
-        !Rest.starts_with("@@@")) {
+    if (Symbol.isUndefined() && Rest.startswith("@@") &&
+        !Rest.startswith("@@@")) {
       Asm.getContext().reportError(S.Loc, "default version symbol " +
                                               AliasName + " must be defined");
       continue;
@@ -1287,7 +1287,7 @@ void ELFObjectWriter::executePostLayoutBinding(MCAssembler &Asm,
   for (const MCSymbol *&Sym : AddrsigSyms) {
     if (const MCSymbol *R = Renames.lookup(cast<MCSymbolELF>(Sym)))
       Sym = R;
-    if (Sym->isInSection() && Sym->getName().starts_with(".L"))
+    if (Sym->isInSection() && Sym->getName().startswith(".L"))
       Sym = Sym->getSection().getBeginSymbol();
     Sym->setUsedInReloc();
   }

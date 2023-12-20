@@ -143,7 +143,7 @@ void wasm::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   // When optimizing, if wasm-opt is available, run it.
   std::string WasmOptPath;
-  if (Args.getLastArg(options::OPT_O_Group)) {
+  if (Arg *A = Args.getLastArg(options::OPT_O_Group)) {
     WasmOptPath = ToolChain.GetProgramPath("wasm-opt");
     if (WasmOptPath == "wasm-opt") {
       WasmOptPath = {};
@@ -328,7 +328,7 @@ void WebAssembly::addClangTargetOptions(const ArgList &DriverArgs,
 
   for (const Arg *A : DriverArgs.filtered(options::OPT_mllvm)) {
     StringRef Opt = A->getValue(0);
-    if (Opt.starts_with("-emscripten-cxx-exceptions-allowed")) {
+    if (Opt.startswith("-emscripten-cxx-exceptions-allowed")) {
       // '-mllvm -emscripten-cxx-exceptions-allowed' should be used with
       // '-mllvm -enable-emscripten-cxx-exceptions'
       bool EmEHArgExists = false;
@@ -355,7 +355,7 @@ void WebAssembly::addClangTargetOptions(const ArgList &DriverArgs,
       }
     }
 
-    if (Opt.starts_with("-wasm-enable-sjlj")) {
+    if (Opt.startswith("-wasm-enable-sjlj")) {
       // '-mllvm -wasm-enable-sjlj' is not compatible with
       // '-mno-exception-handling'
       if (DriverArgs.hasFlag(options::OPT_mno_exception_handing,

@@ -19,7 +19,6 @@
 
 #include "flang/Lower/Support/Utils.h"
 #include "flang/Optimizer/Dialect/FIRAttr.h"
-#include "flang/Semantics/symbol.h"
 #include "mlir/IR/Value.h"
 #include "llvm/ADT/DenseMap.h"
 
@@ -30,12 +29,7 @@ class GlobalOp;
 class FortranVariableFlagsAttr;
 } // namespace fir
 
-namespace Fortran {
-namespace semantics {
-class Scope;
-} // namespace semantics
-
-namespace lower {
+namespace Fortran ::lower {
 class AbstractConverter;
 class CallerInterface;
 class StatementContext;
@@ -71,14 +65,6 @@ void defineCommonBlocks(
     AbstractConverter &,
     const std::vector<std::pair<semantics::SymbolRef, std::size_t>>
         &commonBlocks);
-
-/// The COMMON block is a global structure. \p commonValue is the base address
-/// of the COMMON block. As the offset from the symbol \p sym, generate the
-/// COMMON block member value (commonValue + offset) for the symbol.
-mlir::Value genCommonBlockMember(AbstractConverter &converter,
-                                 mlir::Location loc,
-                                 const Fortran::semantics::Symbol &sym,
-                                 mlir::Value commonValue);
 
 /// Lower a symbol attributes given an optional storage \p and add it to the
 /// provided symbol map. If \preAlloc is not provided, a temporary storage will
@@ -120,13 +106,10 @@ fir::ExtendedValue
 genExtAddrInInitializer(Fortran::lower::AbstractConverter &converter,
                         mlir::Location loc, const SomeExpr &addr);
 
-/// Create a global variable for an intrinsic module object.
-void createIntrinsicModuleGlobal(Fortran::lower::AbstractConverter &converter,
-                                 const pft::Variable &);
-
-/// Create a global variable for a compiler generated object that describes a
-/// derived type for the runtime.
+/// Create global variable from a compiler generated object symbol that
+/// describes a derived type for the runtime.
 void createRuntimeTypeInfoGlobal(Fortran::lower::AbstractConverter &converter,
+                                 mlir::Location loc,
                                  const Fortran::semantics::Symbol &typeInfoSym);
 
 /// Translate the Fortran attributes of \p sym into the FIR variable attribute
@@ -152,6 +135,5 @@ void genDeclareSymbol(Fortran::lower::AbstractConverter &converter,
 /// Cray pointer symbol. Assert if the pointer symbol cannot be found.
 Fortran::semantics::SymbolRef getCrayPointer(Fortran::semantics::SymbolRef sym);
 
-} // namespace lower
-} // namespace Fortran
+} // namespace Fortran::lower
 #endif // FORTRAN_LOWER_CONVERT_VARIABLE_H

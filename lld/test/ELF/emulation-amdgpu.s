@@ -1,16 +1,10 @@
 # REQUIRES: amdgpu
 
-# RUN: llvm-mc -filetype=obj -triple=amdgcn-amd-amdhsa --amdhsa-code-object-version=4 %s -o %t.o
+# RUN: llvm-mc -filetype=obj -triple=amdgcn-amd-amdhsa %s -o %t.o
 # RUN: ld.lld %t.o -o %t
-# RUN: llvm-readobj --file-headers %t | FileCheck --check-prefixes=CHECK,HSA4 %s
+# RUN: llvm-readobj --file-headers %t | FileCheck %s
 # RUN: ld.lld -m elf64_amdgpu %t.o -o %t
-# RUN: llvm-readobj --file-headers %t | FileCheck --check-prefixes=CHECK,HSA4 %s
-
-# RUN: llvm-mc -filetype=obj -triple=amdgcn-amd-amdhsa --amdhsa-code-object-version=5 %s -o %t.o
-# RUN: ld.lld %t.o -o %t
-# RUN: llvm-readobj --file-headers %t | FileCheck --check-prefixes=CHECK,HSA5 %s
-# RUN: ld.lld -m elf64_amdgpu %t.o -o %t
-# RUN: llvm-readobj --file-headers %t | FileCheck --check-prefixes=CHECK,HSA5 %s
+# RUN: llvm-readobj --file-headers %t | FileCheck %s
 
 # CHECK:      ElfHeader {
 # CHECK-NEXT:   Ident {
@@ -19,9 +13,8 @@
 # CHECK-NEXT:     DataEncoding: LittleEndian (0x1)
 # CHECK-NEXT:     FileVersion: 1
 # CHECK-NEXT:     OS/ABI: AMDGPU_HSA (0x40)
-# HSA4:           ABIVersion: 2
-# HSA5:           ABIVersion: 3
-# CHECK:          Unused: (00 00 00 00 00 00 00)
+# CHECK-NEXT:     ABIVersion: 2
+# CHECK-NEXT:     Unused: (00 00 00 00 00 00 00)
 # CHECK-NEXT:   }
 # CHECK-NEXT:   Type: Executable (0x2)
 # CHECK-NEXT:   Machine: EM_AMDGPU (0xE0)

@@ -20,6 +20,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include <functional>
+#include <vector>
 
 namespace llvm {
 class CodeGenTarget;

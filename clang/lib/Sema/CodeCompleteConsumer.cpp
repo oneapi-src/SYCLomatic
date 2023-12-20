@@ -630,16 +630,15 @@ bool PrintingCodeCompleteConsumer::isResultFilteredOut(
     StringRef Filter, CodeCompletionResult Result) {
   switch (Result.Kind) {
   case CodeCompletionResult::RK_Declaration:
-    return !(
-        Result.Declaration->getIdentifier() &&
-        Result.Declaration->getIdentifier()->getName().starts_with(Filter));
+    return !(Result.Declaration->getIdentifier() &&
+             Result.Declaration->getIdentifier()->getName().startswith(Filter));
   case CodeCompletionResult::RK_Keyword:
-    return !StringRef(Result.Keyword).starts_with(Filter);
+    return !StringRef(Result.Keyword).startswith(Filter);
   case CodeCompletionResult::RK_Macro:
-    return !Result.Macro->getName().starts_with(Filter);
+    return !Result.Macro->getName().startswith(Filter);
   case CodeCompletionResult::RK_Pattern:
     return !(Result.Pattern->getTypedText() &&
-             StringRef(Result.Pattern->getTypedText()).starts_with(Filter));
+             StringRef(Result.Pattern->getTypedText()).startswith(Filter));
   }
   llvm_unreachable("Unknown code completion result Kind.");
 }

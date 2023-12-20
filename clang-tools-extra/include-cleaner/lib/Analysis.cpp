@@ -87,7 +87,7 @@ analyze(llvm::ArrayRef<Decl *> ASTRoots,
   llvm::StringSet<> Missing;
   if (!HeaderFilter)
     HeaderFilter = [](llvm::StringRef) { return false; };
-  OptionalDirectoryEntryRef ResourceDir =
+  const DirectoryEntry *ResourceDir =
       PP.getHeaderSearchInfo().getModuleMap().getBuiltinDir();
   walkUsed(ASTRoots, MacroRefs, PI, PP,
            [&](const SymbolReference &Ref, llvm::ArrayRef<Header> Providers) {
@@ -95,7 +95,7 @@ analyze(llvm::ArrayRef<Decl *> ASTRoots,
              for (const Header &H : Providers) {
                if (H.kind() == Header::Physical &&
                    (H.physical() == MainFile ||
-                    (ResourceDir && H.physical().getDir() == *ResourceDir))) {
+                    H.physical().getDir() == ResourceDir)) {
                  Satisfied = true;
                }
                for (const Include *I : Inc.match(H)) {
@@ -114,7 +114,7 @@ analyze(llvm::ArrayRef<Decl *> ASTRoots,
   for (const Include &I : Inc.all()) {
     if (Used.contains(&I) || !I.Resolved ||
         HeaderFilter(I.Resolved->getFileEntry().tryGetRealPathName()) ||
-        (ResourceDir && I.Resolved->getFileEntry().getDir() == *ResourceDir))
+        I.Resolved->getFileEntry().getDir() == ResourceDir)
       continue;
     if (PI) {
       if (PI->shouldKeep(*I.Resolved))
@@ -126,7 +126,7 @@ analyze(llvm::ArrayRef<Decl *> ASTRoots,
         // Since most private -> public mappings happen in a verbatim way, we
         // check textually here. This might go wrong in presence of symlinks or
         // header mappings. But that's not different than rest of the places.
-        if (MainFile->tryGetRealPathName().ends_with(PHeader))
+        if (MainFile->tryGetRealPathName().endswith(PHeader))
           continue;
       }
     }

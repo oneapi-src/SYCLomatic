@@ -16,7 +16,6 @@
 #include "test_macros.h"
 #include "test_allocator.h"
 #include "min_allocator.h"
-#include "asan_testing.h"
 
 template <class S>
 TEST_CONSTEXPR_CXX20 void test() {
@@ -32,7 +31,6 @@ TEST_CONSTEXPR_CXX20 void test() {
     assert(s.size() == 0);
     assert(s.capacity() >= s.size());
     assert(s.get_allocator() == typename S::allocator_type());
-    LIBCPP_ASSERT(is_string_asan_correct(s));
   }
   {
 #if TEST_STD_VER > 14
@@ -48,7 +46,6 @@ TEST_CONSTEXPR_CXX20 void test() {
     assert(s.size() == 0);
     assert(s.capacity() >= s.size());
     assert(s.get_allocator() == typename S::allocator_type(5));
-    LIBCPP_ASSERT(is_string_asan_correct(s));
   }
 }
 
@@ -68,7 +65,6 @@ TEST_CONSTEXPR_CXX20 void test2() {
     assert(s.size() == 0);
     assert(s.capacity() >= s.size());
     assert(s.get_allocator() == typename S::allocator_type());
-    LIBCPP_ASSERT(is_string_asan_correct(s));
   }
   {
 #  if TEST_STD_VER > 14
@@ -84,7 +80,6 @@ TEST_CONSTEXPR_CXX20 void test2() {
     assert(s.size() == 0);
     assert(s.capacity() >= s.size());
     assert(s.get_allocator() == typename S::allocator_type());
-    LIBCPP_ASSERT(is_string_asan_correct(s));
   }
 }
 
@@ -94,7 +89,6 @@ TEST_CONSTEXPR_CXX20 bool test() {
   test<std::basic_string<char, std::char_traits<char>, test_allocator<char> > >();
 #if TEST_STD_VER >= 11
   test2<std::basic_string<char, std::char_traits<char>, min_allocator<char> > >();
-  test2<std::basic_string<char, std::char_traits<char>, safe_allocator<char> > >();
   test2<std::basic_string<char, std::char_traits<char>, explicit_allocator<char> > >();
 #endif
 

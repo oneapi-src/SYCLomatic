@@ -1,4 +1,4 @@
-// module.modulemap
+// module.map
 
 module Level1A {
   header "Includes1/Level1A.h"

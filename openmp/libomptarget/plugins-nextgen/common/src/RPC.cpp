@@ -38,7 +38,14 @@ RPCServerTy::isDeviceUsingRPC(plugin::GenericDeviceTy &Device,
                               plugin::GenericGlobalHandlerTy &Handler,
                               plugin::DeviceImageTy &Image) {
 #ifdef LIBOMPTARGET_RPC_SUPPORT
-  return Handler.isSymbolInImage(Device, Image, rpc_client_symbol_name);
+  void *ClientPtr;
+  plugin::GlobalTy Global(rpc_client_symbol_name, sizeof(void *), &ClientPtr);
+  if (auto Err = Handler.readGlobalFromImage(Device, Image, Global)) {
+    llvm::consumeError(std::move(Err));
+    return false;
+  }
+
+  return true;
 #else
   return false;
 #endif

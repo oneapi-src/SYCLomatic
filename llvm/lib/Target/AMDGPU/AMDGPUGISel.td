@@ -105,11 +105,6 @@ def gi_global_saddr :
 def gi_mubuf_scratch_offset :
     GIComplexOperandMatcher<s32, "selectMUBUFScratchOffset">,
     GIComplexPatternEquiv<MUBUFScratchOffset>;
-
-def gi_buf_soffset :
-    GIComplexOperandMatcher<s32, "selectBUFSOffset">,
-    GIComplexPatternEquiv<BUFSOffset>;
-
 def gi_mubuf_scratch_offen :
     GIComplexOperandMatcher<s32, "selectMUBUFScratchOffen">,
     GIComplexPatternEquiv<MUBUFScratchOffen>;

@@ -425,7 +425,7 @@ CharSourceRange tooling::getAssociatedRange(const Decl &Decl,
 
     for (llvm::StringRef Prefix : {"[[", "__attribute__(("}) {
       // Handle whitespace between attribute prefix and attribute value.
-      if (BeforeAttrStripped.ends_with(Prefix)) {
+      if (BeforeAttrStripped.endswith(Prefix)) {
         // Move start to start position of prefix, which is
         // length(BeforeAttr) - length(BeforeAttrStripped) + length(Prefix)
         // positions to the left.

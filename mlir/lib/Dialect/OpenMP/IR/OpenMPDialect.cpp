@@ -882,22 +882,21 @@ static ParseResult parseCaptureType(OpAsmParser &parser,
 }
 
 static LogicalResult verifyMapClause(Operation *op, OperandRange mapOperands) {
-  llvm::DenseSet<mlir::TypedValue<mlir::omp::PointerLikeType>> updateToVars;
-  llvm::DenseSet<mlir::TypedValue<mlir::omp::PointerLikeType>> updateFromVars;
 
   for (auto mapOp : mapOperands) {
     if (!mapOp.getDefiningOp())
       emitError(op->getLoc(), "missing map operation");
 
-    if (auto mapInfoOp =
+    if (auto MapInfoOp =
             mlir::dyn_cast<mlir::omp::MapInfoOp>(mapOp.getDefiningOp())) {
-      if (!mapInfoOp.getMapType().has_value())
+
+      if (!MapInfoOp.getMapType().has_value())
         emitError(op->getLoc(), "missing map type for map operand");
 
-      if (!mapInfoOp.getMapCaptureType().has_value())
+      if (!MapInfoOp.getMapCaptureType().has_value())
         emitError(op->getLoc(), "missing map capture type for map operand");
 
-      uint64_t mapTypeBits = mapInfoOp.getMapType().value();
+      uint64_t mapTypeBits = MapInfoOp.getMapType().value();
 
       bool to = mapTypeToBitFlag(
           mapTypeBits, llvm::omp::OpenMPOffloadMappingFlags::OMP_MAP_TO);
@@ -905,13 +904,6 @@ static LogicalResult verifyMapClause(Operation *op, OperandRange mapOperands) {
           mapTypeBits, llvm::omp::OpenMPOffloadMappingFlags::OMP_MAP_FROM);
       bool del = mapTypeToBitFlag(
           mapTypeBits, llvm::omp::OpenMPOffloadMappingFlags::OMP_MAP_DELETE);
-
-      bool always = mapTypeToBitFlag(
-          mapTypeBits, llvm::omp::OpenMPOffloadMappingFlags::OMP_MAP_ALWAYS);
-      bool close = mapTypeToBitFlag(
-          mapTypeBits, llvm::omp::OpenMPOffloadMappingFlags::OMP_MAP_CLOSE);
-      bool implicit = mapTypeToBitFlag(
-          mapTypeBits, llvm::omp::OpenMPOffloadMappingFlags::OMP_MAP_IMPLICIT);
 
       if ((isa<DataOp>(op) || isa<TargetOp>(op)) && del)
         return emitError(op->getLoc(),
@@ -923,37 +915,6 @@ static LogicalResult verifyMapClause(Operation *op, OperandRange mapOperands) {
       if (isa<ExitDataOp>(op) && to)
         return emitError(op->getLoc(),
                          "from, release and delete map types are permitted");
-
-      if (isa<UpdateDataOp>(op)) {
-        if (del) {
-          return emitError(op->getLoc(),
-                           "at least one of to or from map types must be "
-                           "specified, other map types are not permitted");
-        }
-
-        if (!to && !from) {
-          return emitError(op->getLoc(),
-                           "at least one of to or from map types must be "
-                           "specified, other map types are not permitted");
-        }
-
-        auto updateVar = mapInfoOp.getVarPtr();
-
-        if ((to && from) || (to && updateFromVars.contains(updateVar)) ||
-            (from && updateToVars.contains(updateVar))) {
-          return emitError(
-              op->getLoc(),
-              "either to or from map types can be specified, not both");
-        }
-
-        if (always || close || implicit) {
-          return emitError(
-              op->getLoc(),
-              "present, mapper and iterator map type modifiers are permitted");
-        }
-
-        to ? updateToVars.insert(updateVar) : updateFromVars.insert(updateVar);
-      }
     } else {
       emitError(op->getLoc(), "map argument is not a map entry operation");
     }
@@ -977,10 +938,6 @@ LogicalResult EnterDataOp::verify() {
 
 LogicalResult ExitDataOp::verify() {
   return verifyMapClause(*this, getMapOperands());
-}
-
-LogicalResult UpdateDataOp::verify() {
-  return verifyMapClause(*this, getMotionOperands());
 }
 
 LogicalResult TargetOp::verify() {

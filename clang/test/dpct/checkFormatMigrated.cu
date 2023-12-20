@@ -2,9 +2,8 @@
 // RUN: cd %T
 // RUN: dpct --no-cl-namespace-inline -out-root %T/checkFormatMigrated checkFormatMigrated.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace checkFormatMigrated.cu --match-full-lines --input-file %T/checkFormatMigrated/checkFormatMigrated.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/checkFormatMigrated/checkFormatMigrated.dp.cpp -o %T/checkFormatMigrated/checkFormatMigrated.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/checkFormatMigrated/checkFormatMigrated.dp.cpp -o %T/checkFormatMigrated/checkFormatMigrated.dp.o %}
 
-#ifndef BUILD_TEST
 #include <cuda_runtime.h>
 #include <cassert>
 #include <cstdio>
@@ -350,4 +349,3 @@ __global__ void foo13() {
 		n.z = m.y;
 		n.w = m.x;
 }
-#endif

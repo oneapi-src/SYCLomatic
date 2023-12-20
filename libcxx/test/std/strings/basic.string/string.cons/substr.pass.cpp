@@ -26,7 +26,6 @@
 #include "test_macros.h"
 #include "test_allocator.h"
 #include "min_allocator.h"
-#include "asan_testing.h"
 
 template <class S>
 TEST_CONSTEXPR_CXX20 void test(S str, unsigned pos) {
@@ -41,7 +40,6 @@ TEST_CONSTEXPR_CXX20 void test(S str, unsigned pos) {
     assert(T::compare(s2.data(), str.data() + pos, rlen) == 0);
     assert(s2.get_allocator() == A());
     assert(s2.capacity() >= s2.size());
-    LIBCPP_ASSERT(is_string_asan_correct(s2));
   }
 #ifndef TEST_HAS_NO_EXCEPTIONS
   else if (!TEST_IS_CONSTANT_EVALUATED) {
@@ -67,7 +65,6 @@ TEST_CONSTEXPR_CXX20 void test(S str, unsigned pos, unsigned n) {
     assert(T::compare(s2.data(), str.data() + pos, rlen) == 0);
     assert(s2.get_allocator() == A());
     assert(s2.capacity() >= s2.size());
-    LIBCPP_ASSERT(is_string_asan_correct(s2));
   }
 #ifndef TEST_HAS_NO_EXCEPTIONS
   else if (!TEST_IS_CONSTANT_EVALUATED) {
@@ -93,7 +90,6 @@ TEST_CONSTEXPR_CXX20 void test(S str, unsigned pos, unsigned n, const typename S
     assert(T::compare(s2.data(), str.data() + pos, rlen) == 0);
     assert(s2.get_allocator() == a);
     assert(s2.capacity() >= s2.size());
-    LIBCPP_ASSERT(is_string_asan_correct(s2));
   }
 #ifndef TEST_HAS_NO_EXCEPTIONS
   else if (!TEST_IS_CONSTANT_EVALUATED) {
@@ -168,7 +164,6 @@ TEST_CONSTEXPR_CXX20 bool test() {
   test_string(test_allocator<char>(3), test_allocator<char>(5));
 #if TEST_STD_VER >= 11
   test_string(min_allocator<char>(), min_allocator<char>());
-  test_string(safe_allocator<char>(), safe_allocator<char>());
 #endif
 
   return true;

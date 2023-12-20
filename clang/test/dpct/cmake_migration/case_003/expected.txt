@@ -1,5 +1,0 @@
-add_executable(foo src_file.dp.cpp)
-
-add_executable(foo src_file1.dp.cpp src_file2.dp.cpp src_file3.dp.cpp)
-
-add_executable(foo ${GENERATED_CONFIG_H} ${A_FILES} ${B_FILES} src_file3.dp.cpp)

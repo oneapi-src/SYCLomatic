@@ -31,6 +31,7 @@
 #include <cassert>
 #include <optional>
 #include <utility>
+#include <vector>
 
 #define DEBUG_TYPE "hexagon-shuffle"
 

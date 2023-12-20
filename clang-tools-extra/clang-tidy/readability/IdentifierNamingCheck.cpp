@@ -889,7 +889,7 @@ bool IdentifierNamingCheck::matchesStyle(
 
   // Ensure the name doesn't have any extra underscores beyond those specified
   // in the prefix and suffix.
-  if (Name.starts_with("_") || Name.ends_with("_"))
+  if (Name.startswith("_") || Name.endswith("_"))
     return false;
 
   if (Style.Case && !Matchers[static_cast<size_t>(*Style.Case)].match(Name))

@@ -10,6 +10,7 @@
 #define LLVM_TRANSFORMS_IPO_PROFILEDCALLGRAPH_H
 
 #include "llvm/ADT/GraphTraits.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/ProfileData/SampleProf.h"
 #include "llvm/ProfileData/SampleProfReader.h"
 #include "llvm/Transforms/IPO/SampleContextTracker.h"

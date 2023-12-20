@@ -25,6 +25,8 @@
 #include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/IR/Function.h"
 
+#include <vector>
+
 namespace llvm {
 
 AVRFrameLowering::AVRFrameLowering()

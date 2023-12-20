@@ -29,24 +29,24 @@ For example, this original CUDA\* code:
 
      __constant__ int4 example_i[32];
      __constant__ float4 example_f[32];
-     
+
      struct example_int {
-       __device__ int4 foo(int idx) const { return example_i[idx]; }
+       __device__ int4 foo(int idx) const {
+         return example_i[idx];
+       }
      };
-     
+
      struct example_float {
-       __device__ float4 foo(int idx) const { return example_f[idx]; }
+       __device__ float4 foo(int idx) const {
+         return example_f[idx];
+       }
      };
-     
-     template <typename T> __global__ void example_kernel() {
+
+     template <typename T>
+     _global_ void example_kernel() {
+       ...
        T example_v;
-       int idx = blockIdx.x * blockDim.x + threadIdx.x;
        float j = example_v.foo(idx).x;
-     }
-     
-     void foo() {
-       example_kernel<example_int><<<1, 1>>>();
-       example_kernel<example_float><<<1, 1>>>();
      }
 
 results in the following migrated SYCL\* code:
@@ -54,116 +54,58 @@ results in the following migrated SYCL\* code:
 .. code-block:: cpp
    :linenos:
 
-     static dpct::constant_memory<sycl::int4, 1> example_i(32);
-     static dpct::constant_memory<sycl::float4, 1> example_f(32);
-     
+     dpct::constant_memory<sycl::int4, 1> example_i(32);
+     dpct::constant_memory<sycl::float4, 1> example_f(32);
+  
      struct example_int {
-       sycl::int4 foo(int idx, sycl::int4 const *example_i) const {
+       sycl::int4 foo()(int idx, sycl::int4 *example_i) const {
          return example_i[idx];
        }
      };
-     
+  
      struct example_float {
-       sycl::float4 foo(int idx, sycl::float4 const *example_f) const {
-         return example_f[idx];
+       sycl::float4 foo()(int idx, sycl::float4 *example_i) const {
+         return example_i[idx];
        }
      };
-     
-     template <typename T> void example_kernel(const sycl::nd_item<3> &item_ct1,
-                                               sycl::float4 const *example_f) {
+  
+     template <typename T>
+     void example_kernel(sycl::nd_item<3> item_ct1, sycl::float4 *example_f) {
+       ...
        T example_v;
-       int idx = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
-                 item_ct1.get_local_id(2);
-       /*
-       DPCT1084:0: The function call "example_int::foo" has multiple migration
-       results in different template instantiations that could not be unified. You
-       may need to adjust the code.
-       */
-       float j = example_v.foo(idx).x();
+       /* DPCT1083 */
+       float j = example_v.foo(idx, example_f).x();
      }
-     
-     void foo() {
-       dpct::device_ext &dev_ct1 = dpct::get_current_device();
-       sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-       q_ct1.submit([&](sycl::handler &cgh) {
-         example_f.init();
-     
-         auto example_f_ptr_ct1 = example_f.get_ptr();
-     
-         cgh.parallel_for(
-             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-             [=](sycl::nd_item<3> item_ct1) {
-               example_kernel<example_int>(item_ct1, example_f_ptr_ct1);
-             });
-       });
-       q_ct1.submit([&](sycl::handler &cgh) {
-         example_f.init();
-     
-         auto example_f_ptr_ct1 = example_f.get_ptr();
-     
-         cgh.parallel_for(
-             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-             [=](sycl::nd_item<3> item_ct1) {
-               example_kernel<example_float>(item_ct1, example_f_ptr_ct1);
-             });
-       });
-     }
+
 
 which is manually adjusted to:
 
 .. code-block:: cpp
    :linenos:
   
-     static dpct::constant_memory<sycl::int4, 1> example_i(32);
-     static dpct::constant_memory<sycl::float4, 1> example_f(32);
-     
+     dpct::constant_memory<sycl::int4, 1> example_i(32);
+     dpct::constant_memory<sycl::float4, 1> example_f(32);
+  
      struct example_int {
        typedef sycl::int4 data_type;
-       sycl::int4 foo(int idx, sycl::int4 const *example_i) const {
+       sycl::int4 foo()(int idx, sycl::int4 *example_i) const {
          return example_i[idx];
        }
      };
-     
+  
      struct example_float {
        typedef sycl::float4 data_type;
-       sycl::float4 foo(int idx, sycl::float4 const *example_f) const {
-         return example_f[idx];
+       sycl::float4 foo()(int idx, sycl::float4 *example_i) const {
+         return example_i[idx];
        }
      };
-     
-     template <typename T> void example_kernel(const sycl::nd_item<3> &item_ct1,
-                                               typename T::data_type const *example) {
+  
+     template <typename T>
+     void example_kernel(sycl::nd_item<3> item_ct1, typename T::data_type  *example_f) {
+       ...
        T example_v;
-       int idx = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
-                 item_ct1.get_local_id(2);
-       float j = example_v.foo(idx, example).x();
-     }
-     
-     void foo() {
-       dpct::device_ext &dev_ct1 = dpct::get_current_device();
-       sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-       q_ct1.submit([&](sycl::handler &cgh) {
-         example_i.init();
-     
-         auto example_i_ptr_ct1 = example_i.get_ptr();
-     
-         cgh.parallel_for(
-             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-             [=](sycl::nd_item<3> item_ct1) {
-               example_kernel<example_int>(item_ct1, example_i_ptr_ct1);
-             });
-       });
-       q_ct1.submit([&](sycl::handler &cgh) {
-         example_f.init();
-     
-         auto example_f_ptr_ct1 = example_f.get_ptr();
-     
-         cgh.parallel_for(
-             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-             [=](sycl::nd_item<3> item_ct1) {
-               example_kernel<example_float>(item_ct1, example_f_ptr_ct1);
-             });
-       });
+       /* DPCT1083 */
+       float j = example_v.foo(idx, example_f).x();
      }
 
 Suggestions to Fix

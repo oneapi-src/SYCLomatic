@@ -449,7 +449,6 @@ void __msan_init() {
   __sanitizer_set_report_path(common_flags()->log_path);
 
   InitializeInterceptors();
-  InstallAtForkHandler();
   CheckASLR();
   InitTlsSize();
   InstallDeadlySignalHandlers(MsanOnDeadlySignal);

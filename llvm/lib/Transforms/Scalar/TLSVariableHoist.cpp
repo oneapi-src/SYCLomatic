@@ -32,6 +32,7 @@
 #include <cassert>
 #include <cstdint>
 #include <iterator>
+#include <tuple>
 #include <utility>
 
 using namespace llvm;

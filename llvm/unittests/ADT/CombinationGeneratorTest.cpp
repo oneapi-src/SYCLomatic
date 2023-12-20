@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
+#include <tuple>
 #include <vector>
 
 using namespace llvm;

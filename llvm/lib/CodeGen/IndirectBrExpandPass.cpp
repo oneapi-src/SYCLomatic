@@ -29,7 +29,6 @@
 #include "llvm/ADT/Sequence.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Analysis/DomTreeUpdater.h"
-#include "llvm/CodeGen/IndirectBrExpand.h"
 #include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/IR/BasicBlock.h"
@@ -49,12 +48,14 @@ using namespace llvm;
 
 namespace {
 
-class IndirectBrExpandLegacyPass : public FunctionPass {
+class IndirectBrExpandPass : public FunctionPass {
+  const TargetLowering *TLI = nullptr;
+
 public:
   static char ID; // Pass identification, replacement for typeid
 
-  IndirectBrExpandLegacyPass() : FunctionPass(ID) {
-    initializeIndirectBrExpandLegacyPassPass(*PassRegistry::getPassRegistry());
+  IndirectBrExpandPass() : FunctionPass(ID) {
+    initializeIndirectBrExpandPassPass(*PassRegistry::getPassRegistry());
   }
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
@@ -66,41 +67,33 @@ public:
 
 } // end anonymous namespace
 
-static bool runImpl(Function &F, const TargetLowering *TLI,
-                    DomTreeUpdater *DTU);
+char IndirectBrExpandPass::ID = 0;
 
-PreservedAnalyses IndirectBrExpandPass::run(Function &F,
-                                            FunctionAnalysisManager &FAM) {
-  auto *STI = TM->getSubtargetImpl(F);
-  if (!STI->enableIndirectBrExpand())
-    return PreservedAnalyses::all();
-
-  auto *TLI = STI->getTargetLowering();
-  auto *DT = FAM.getCachedResult<DominatorTreeAnalysis>(F);
-  DomTreeUpdater DTU(DT, DomTreeUpdater::UpdateStrategy::Lazy);
-
-  bool Changed = runImpl(F, TLI, DT ? &DTU : nullptr);
-  if (!Changed)
-    return PreservedAnalyses::all();
-  PreservedAnalyses PA;
-  PA.preserve<DominatorTreeAnalysis>();
-  return PA;
-}
-
-char IndirectBrExpandLegacyPass::ID = 0;
-
-INITIALIZE_PASS_BEGIN(IndirectBrExpandLegacyPass, DEBUG_TYPE,
+INITIALIZE_PASS_BEGIN(IndirectBrExpandPass, DEBUG_TYPE,
                       "Expand indirectbr instructions", false, false)
 INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
-INITIALIZE_PASS_END(IndirectBrExpandLegacyPass, DEBUG_TYPE,
+INITIALIZE_PASS_END(IndirectBrExpandPass, DEBUG_TYPE,
                     "Expand indirectbr instructions", false, false)
 
 FunctionPass *llvm::createIndirectBrExpandPass() {
-  return new IndirectBrExpandLegacyPass();
+  return new IndirectBrExpandPass();
 }
 
-bool runImpl(Function &F, const TargetLowering *TLI, DomTreeUpdater *DTU) {
+bool IndirectBrExpandPass::runOnFunction(Function &F) {
   auto &DL = F.getParent()->getDataLayout();
+  auto *TPC = getAnalysisIfAvailable<TargetPassConfig>();
+  if (!TPC)
+    return false;
+
+  auto &TM = TPC->getTM<TargetMachine>();
+  auto &STI = *TM.getSubtargetImpl(F);
+  if (!STI.enableIndirectBrExpand())
+    return false;
+  TLI = STI.getTargetLowering();
+
+  std::optional<DomTreeUpdater> DTU;
+  if (auto *DTWP = getAnalysisIfAvailable<DominatorTreeWrapperPass>())
+    DTU.emplace(DTWP->getDomTree(), DomTreeUpdater::UpdateStrategy::Lazy);
 
   SmallVector<IndirectBrInst *, 1> IndirectBrs;
 
@@ -274,22 +267,4 @@ bool runImpl(Function &F, const TargetLowering *TLI, DomTreeUpdater *DTU) {
   }
 
   return true;
-}
-
-bool IndirectBrExpandLegacyPass::runOnFunction(Function &F) {
-  auto *TPC = getAnalysisIfAvailable<TargetPassConfig>();
-  if (!TPC)
-    return false;
-
-  auto &TM = TPC->getTM<TargetMachine>();
-  auto &STI = *TM.getSubtargetImpl(F);
-  if (!STI.enableIndirectBrExpand())
-    return false;
-  auto *TLI = STI.getTargetLowering();
-
-  std::optional<DomTreeUpdater> DTU;
-  if (auto *DTWP = getAnalysisIfAvailable<DominatorTreeWrapperPass>())
-    DTU.emplace(DTWP->getDomTree(), DomTreeUpdater::UpdateStrategy::Lazy);
-
-  return runImpl(F, TLI, DTU ? &*DTU : nullptr);
 }

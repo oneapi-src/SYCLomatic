@@ -12,7 +12,7 @@
 namespace Fortran::runtime {
 extern "C" {
 
-bool RTDEF(IsContiguous)(const Descriptor &descriptor) {
+bool RTNAME(IsContiguous)(const Descriptor &descriptor) {
   return descriptor.IsContiguous();
 }
 

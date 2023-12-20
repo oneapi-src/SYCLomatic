@@ -456,8 +456,7 @@ static LogicalResult processParallelLoop(
               rewriter.getAffineSymbolExpr(1));
       newIndex = rewriter.create<AffineApplyOp>(
           loc, annotation.getMap().compose(lowerAndStep),
-          ValueRange{operand, ensureLaunchIndependent(step),
-                     ensureLaunchIndependent(lowerBound)});
+          ValueRange{operand, step, lowerBound});
       // If there was also a bound, insert that, too.
       // TODO: Check that we do not assign bounds twice.
       if (annotation.getBound()) {

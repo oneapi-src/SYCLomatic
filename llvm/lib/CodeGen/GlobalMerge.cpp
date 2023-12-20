@@ -643,7 +643,8 @@ bool GlobalMerge::doInitialization(Module &M) {
     StringRef Section = GV.getSection();
 
     // Ignore all 'special' globals.
-    if (GV.getName().starts_with("llvm.") || GV.getName().starts_with(".llvm."))
+    if (GV.getName().startswith("llvm.") ||
+        GV.getName().startswith(".llvm."))
       continue;
 
     // Ignore all "required" globals:

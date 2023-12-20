@@ -6,6 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <array>
+#include <string>
+
 #include "SnippetRepetitor.h"
 #include "Target.h"
 #include "llvm/ADT/Sequence.h"

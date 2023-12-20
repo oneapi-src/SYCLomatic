@@ -250,7 +250,8 @@ public:
   /// separately to avoid any inconsistencies with an ad-hoc pipeline that tries
   /// to approximate the PerModuleDefaultPipeline from the pre-link LTO
   /// pipelines.
-  ModulePassManager buildFatLTODefaultPipeline(OptimizationLevel Level);
+  ModulePassManager buildFatLTODefaultPipeline(OptimizationLevel Level,
+                                               bool ThinLTO, bool EmitSummary);
 
   /// Build a pre-link, ThinLTO-targeting default optimization pipeline to
   /// a pass manager.
@@ -728,10 +729,10 @@ template <typename AnalysisT, typename IRUnitT, typename AnalysisManagerT,
 bool parseAnalysisUtilityPasses(
     StringRef AnalysisName, StringRef PipelineName,
     PassManager<IRUnitT, AnalysisManagerT, ExtraArgTs...> &PM) {
-  if (!PipelineName.ends_with(">"))
+  if (!PipelineName.endswith(">"))
     return false;
   // See if this is an invalidate<> pass name
-  if (PipelineName.starts_with("invalidate<")) {
+  if (PipelineName.startswith("invalidate<")) {
     PipelineName = PipelineName.substr(11, PipelineName.size() - 12);
     if (PipelineName != AnalysisName)
       return false;
@@ -740,7 +741,7 @@ bool parseAnalysisUtilityPasses(
   }
 
   // See if this is a require<> pass name
-  if (PipelineName.starts_with("require<")) {
+  if (PipelineName.startswith("require<")) {
     PipelineName = PipelineName.substr(8, PipelineName.size() - 9);
     if (PipelineName != AnalysisName)
       return false;

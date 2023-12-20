@@ -14,6 +14,7 @@
 #include "llvm/Support/AlignOf.h"
 #include "llvm/Support/Errno.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/MathExtras.h"
 #include "llvm/Support/Path.h"
 #include <atomic>
 #include <condition_variable>
@@ -24,7 +25,6 @@
 #include <vector>
 
 #include <fcntl.h>
-#include <limits.h>
 #include <optional>
 #include <sys/epoll.h>
 #include <sys/inotify.h>

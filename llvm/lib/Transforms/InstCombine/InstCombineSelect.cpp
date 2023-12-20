@@ -2440,9 +2440,9 @@ Instruction *InstCombinerImpl::foldVectorSelect(SelectInst &Sel) {
     return nullptr;
 
   unsigned NumElts = VecTy->getNumElements();
-  APInt PoisonElts(NumElts, 0);
+  APInt UndefElts(NumElts, 0);
   APInt AllOnesEltMask(APInt::getAllOnes(NumElts));
-  if (Value *V = SimplifyDemandedVectorElts(&Sel, AllOnesEltMask, PoisonElts)) {
+  if (Value *V = SimplifyDemandedVectorElts(&Sel, AllOnesEltMask, UndefElts)) {
     if (V != &Sel)
       return replaceInstUsesWith(Sel, V);
     return &Sel;

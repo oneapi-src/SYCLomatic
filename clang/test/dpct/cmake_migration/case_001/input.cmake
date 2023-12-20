@@ -20,4 +20,6 @@ project(foo CUDA)
 
 project(foo2 CUDA CXX)
 
+target_link_libraries(foo3 PUBLIC ${CUDA_LIBRARIES} ${TCNN_LIBRARIES} fmt)
+
 set(SOURCES a.cu b.cuh)

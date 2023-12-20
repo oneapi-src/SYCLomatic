@@ -24,7 +24,7 @@ public:
         std::make_unique<ArchYAML::Archive>();
 
     StringRef Magic = "!<arch>\n";
-    if (!Buffer.starts_with(Magic))
+    if (!Buffer.startswith(Magic))
       return createStringError(std::errc::not_supported,
                                "only regular archives are supported");
     Obj->Magic = Magic;

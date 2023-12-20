@@ -1,5 +1,4 @@
 ; RUN: opt < %s -indirectbr-expand -S | FileCheck %s
-; RUN: opt < %s -passes=indirectbr-expand -S | FileCheck %s
 ;
 ; REQUIRES: x86-registered-target
 

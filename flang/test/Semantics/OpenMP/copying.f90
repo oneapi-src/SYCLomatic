@@ -44,9 +44,9 @@ subroutine copyprivate()
   class(*), allocatable, save :: x
   !$omp threadprivate(x)
 
-  !$omp single
-    call sub()
   !PORTABILITY: If a polymorphic variable with allocatable attribute 'x' is in COPYPRIVATE clause, the behavior is unspecified
-  !$omp end single copyprivate(x)
+  !$omp single copyprivate(x)
+    call sub()
+  !$omp end single
 
 end

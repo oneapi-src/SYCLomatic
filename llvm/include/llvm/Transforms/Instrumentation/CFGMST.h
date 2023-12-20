@@ -100,11 +100,20 @@ template <class Edge, class BBInfo> class CFGMST {
     //   i8 0, label %await.ready
     //   i8 1, label %exit
     // ]
-    if (!E->DestBB)
+    const BasicBlock *EdgeTarget = E->DestBB;
+    if (!EdgeTarget)
       return;
     assert(E->SrcBB);
-    if (llvm::isPresplitCoroSuspendExitEdge(*E->SrcBB, *E->DestBB))
-      E->Removed = true;
+    const Function *F = EdgeTarget->getParent();
+    if (!F->isPresplitCoroutine())
+      return;
+
+    const Instruction *TI = E->SrcBB->getTerminator();
+    if (auto *SWInst = dyn_cast<SwitchInst>(TI))
+      if (auto *Intrinsic = dyn_cast<IntrinsicInst>(SWInst->getCondition()))
+        if (Intrinsic->getIntrinsicID() == Intrinsic::coro_suspend &&
+            SWInst->getDefaultDest() == EdgeTarget)
+          E->Removed = true;
   }
 
   // Traverse the CFG using a stack. Find all the edges and assign the weight.

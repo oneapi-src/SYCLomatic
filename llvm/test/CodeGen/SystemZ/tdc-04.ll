@@ -2,7 +2,6 @@
 ; signbit extraction.
 ;
 ; RUN: llc < %s -mtriple=s390x-linux-gnu | FileCheck %s
-; RUN: llc < %s -mtriple=s390x-linux-gnu -mcpu=z13 | FileCheck %s
 ;
 
 ; Extract sign bit.

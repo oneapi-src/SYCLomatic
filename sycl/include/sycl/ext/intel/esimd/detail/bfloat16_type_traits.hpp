@@ -55,7 +55,12 @@ template <int N> struct vector_conversion_traits<bfloat16, N> {
     // cast from _Float16 to int16_t:
     return sycl::bit_cast<vector_type_t<RawT, N>>(ConvVal);
 #else
-    __ESIMD_UNSUPPORTED_ON_HOST;
+    vector_type_t<RawT, N> Output = 0;
+
+    for (int i = 0; i < N; i++) {
+      Output[i] = sycl::bit_cast<RawT>(static_cast<bfloat16>(Val[i]));
+    }
+    return Output;
 #endif // __SYCL_DEVICE_ONLY__
   }
 
@@ -66,7 +71,12 @@ template <int N> struct vector_conversion_traits<bfloat16, N> {
     RawVecT Bits = sycl::bit_cast<RawVecT>(Val);
     return __esimd_bf_cvt<StdT, vc_be_bfloat16_raw_t, N>(Bits);
 #else
-    __ESIMD_UNSUPPORTED_ON_HOST;
+    vector_type_t<StdT, N> Output;
+
+    for (int i = 0; i < N; i++) {
+      Output[i] = sycl::bit_cast<bfloat16>(Val[i]);
+    }
+    return Output;
 #endif // __SYCL_DEVICE_ONLY__
   }
 };

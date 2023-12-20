@@ -502,10 +502,9 @@ static void readConfigs(opt::InputArgList &args) {
   errorHandler().verbose = args.hasArg(OPT_verbose);
   LLVM_DEBUG(errorHandler().verbose = true);
 
-  config->tableBase = args::getInteger(args, OPT_table_base, 0);
-  config->globalBase = args::getInteger(args, OPT_global_base, 0);
-  config->initialHeap = args::getInteger(args, OPT_initial_heap, 0);
   config->initialMemory = args::getInteger(args, OPT_initial_memory, 0);
+  config->globalBase = args::getInteger(args, OPT_global_base, 0);
+  config->tableBase = args::getInteger(args, OPT_table_base, 0);
   config->maxMemory = args::getInteger(args, OPT_max_memory, 0);
   config->zStackSize =
       args::getZOptionValue(args, OPT_z, "stack-size", WasmPageSize);
@@ -607,6 +606,7 @@ static void setConfigs() {
       config->memoryImport =
           std::pair<llvm::StringRef, llvm::StringRef>(defaultModule, memoryName);
     }
+    config->importUndefined = true;
   }
 
   // If neither export-memory nor import-memory is specified, default to

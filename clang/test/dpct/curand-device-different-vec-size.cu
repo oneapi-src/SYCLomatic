@@ -1,8 +1,7 @@
 // RUN: dpct --format-range=none -extra-arg-before=-std=c++14 -out-root %T/curand-device-different-vec-size %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.cpp -o %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.cpp -o %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.o %}
 
-#ifndef  BUILD_TEST
 #include <cuda.h>
 #include <curand_kernel.h>
 #include <cstdio>
@@ -54,4 +53,4 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-#endif
+

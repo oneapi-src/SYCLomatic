@@ -64,6 +64,7 @@ class LoopInfo;
 class PreservedAnalyses;
 class TargetLibraryInfo;
 class Value;
+template <typename> class SmallPtrSetImpl;
 
 /// The possible results of an alias query.
 ///

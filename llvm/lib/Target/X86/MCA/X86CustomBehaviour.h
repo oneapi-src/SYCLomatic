@@ -17,6 +17,7 @@
 #ifndef LLVM_LIB_TARGET_X86_MCA_X86CUSTOMBEHAVIOUR_H
 #define LLVM_LIB_TARGET_X86_MCA_X86CUSTOMBEHAVIOUR_H
 
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/MCA/CustomBehaviour.h"
 #include "llvm/TargetParser/TargetParser.h"
 

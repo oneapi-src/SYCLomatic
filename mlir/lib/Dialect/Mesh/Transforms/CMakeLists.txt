@@ -1,5 +1,4 @@
 add_mlir_dialect_library(MLIRMeshTransforms
-  Simplifications.cpp
   ShardingPropagation.cpp
 
   ADDITIONAL_HEADER_DIRS
@@ -10,7 +9,6 @@ add_mlir_dialect_library(MLIRMeshTransforms
   MLIRShardingInterface
 
   LINK_LIBS PUBLIC
-  MLIRArithDialect
   MLIRFuncDialect
   MLIRIR
   MLIRMeshDialect

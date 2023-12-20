@@ -66,7 +66,7 @@ protected:
                                       "#define SOME_MACRO(x) using x\n";
     std::vector<ClangTidyError> Errors;
     std::vector<std::string> Args;
-    if (!StringRef(Filename).ends_with(".cpp")) {
+    if (!StringRef(Filename).endswith(".cpp")) {
       Args.emplace_back("-xc++-header");
     }
     test::runCheckOnCode<readability::GlobalNamesInHeadersCheck>(

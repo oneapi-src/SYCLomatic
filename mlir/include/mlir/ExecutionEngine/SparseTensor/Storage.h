@@ -186,7 +186,6 @@ private:
 
 protected:
   const MapRef map; // non-owning pointers into dim2lvl/lvl2dim vectors
-  const bool allDense;
 };
 
 /// A memory-resident sparse tensor using a storage scheme based on
@@ -294,6 +293,8 @@ public:
   /// Partially specialize lexicographical insertions based on template types.
   void lexInsert(const uint64_t *lvlCoords, V val) final {
     assert(lvlCoords);
+    bool allDense = std::all_of(getLvlTypes().begin(), getLvlTypes().end(),
+                                [](LevelType lt) { return isDenseLT(lt); });
     if (allDense) {
       uint64_t lvlRank = getLvlRank();
       uint64_t valIdx = 0;
@@ -362,12 +363,10 @@ public:
 
   /// Finalizes lexicographic insertions.
   void endLexInsert() final {
-    if (!allDense) {
-      if (values.empty())
-        finalizeSegment(0);
-      else
-        endPath(0);
-    }
+    if (values.empty())
+      finalizeSegment(0);
+    else
+      endPath(0);
   }
 
   /// Allocates a new COO object and initializes it with the contents.
@@ -706,6 +705,7 @@ SparseTensorStorage<P, C, V>::SparseTensorStorage(
   // we reserve position/coordinate space based on all previous dense
   // levels, which works well up to first sparse level; but we should
   // really use nnz and dense/sparse distribution.
+  bool allDense = true;
   uint64_t sz = 1;
   for (uint64_t l = 0; l < lvlRank; l++) {
     if (isCompressedLvl(l)) {
@@ -713,19 +713,23 @@ SparseTensorStorage<P, C, V>::SparseTensorStorage(
       positions[l].push_back(0);
       coordinates[l].reserve(sz);
       sz = 1;
+      allDense = false;
     } else if (isLooseCompressedLvl(l)) {
       positions[l].reserve(2 * sz + 1); // last one unused
       positions[l].push_back(0);
       coordinates[l].reserve(sz);
       sz = 1;
+      allDense = false;
     } else if (isSingletonLvl(l)) {
       coordinates[l].reserve(sz);
       sz = 1;
+      allDense = false;
     } else if (is2OutOf4Lvl(l)) {
-      assert(l == lvlRank - 1 && "unexpected 2:4 usage");
+      assert(allDense && l == lvlRank - 1 && "unexpected 2:4 usage");
       sz = detail::checkedMul(sz, lvlSizes[l]) / 2;
       coordinates[l].reserve(sz);
       values.reserve(sz);
+      allDense = false;
     } else { // Dense level.
       assert(isDenseLvl(l));
       sz = detail::checkedMul(sz, lvlSizes[l]);

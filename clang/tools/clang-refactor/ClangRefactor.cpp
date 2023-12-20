@@ -146,7 +146,7 @@ private:
 
 std::unique_ptr<SourceSelectionArgument>
 SourceSelectionArgument::fromString(StringRef Value) {
-  if (Value.starts_with("test:")) {
+  if (Value.startswith("test:")) {
     StringRef Filename = Value.drop_front(strlen("test:"));
     std::optional<TestSelectionRangesInFile> ParsedTestSelection =
         findTestSelectionRanges(Filename);

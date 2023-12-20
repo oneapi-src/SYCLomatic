@@ -326,7 +326,7 @@ public:
       : shape(std::move(shape)), elementType(elementType), attribute(attribute),
         ranked(true) {}
   PyShapedTypeComponents(PyShapedTypeComponents &) = delete;
-  PyShapedTypeComponents(PyShapedTypeComponents &&other) noexcept
+  PyShapedTypeComponents(PyShapedTypeComponents &&other)
       : shape(other.shape), elementType(other.elementType),
         attribute(other.attribute), ranked(other.ranked) {}
 

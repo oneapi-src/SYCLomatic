@@ -31,7 +31,9 @@ class RISCVInsertReadWriteCSR : public MachineFunctionPass {
 public:
   static char ID;
 
-  RISCVInsertReadWriteCSR() : MachineFunctionPass(ID) {}
+  RISCVInsertReadWriteCSR() : MachineFunctionPass(ID) {
+    initializeRISCVInsertReadWriteCSRPass(*PassRegistry::getPassRegistry());
+  }
 
   bool runOnMachineFunction(MachineFunction &MF) override;
 

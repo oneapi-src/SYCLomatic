@@ -333,7 +333,7 @@ Error SyntheticTypeNameBuilder::addTypeName(UnitEntryPairTy InputUnitEntryPair,
 
     HasShortName = true;
     HasTemplatesInShortName =
-        Name.ends_with(">") && Name.count("<") != 0 && !Name.ends_with("<=>");
+        Name.endswith(">") && Name.count("<") != 0 && !Name.endswith("<=>");
   } else {
     // Finally check for declaration attributes.
     addDieNameFromDeclFileAndDeclLine(InputUnitEntryPair, HasDeclFileName);

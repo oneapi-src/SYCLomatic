@@ -159,7 +159,7 @@ static Error makeStringError(StringRef Msg) {
 static Error parseCommand(StringRef BinaryName, bool IsAddr2Line,
                           StringRef InputString, Command &Cmd,
                           std::string &ModuleName, object::BuildID &BuildID,
-                          StringRef &Symbol, uint64_t &Offset) {
+                          StringRef &Symbol, uint64_t &ModuleOffset) {
   ModuleName = BinaryName;
   if (InputString.consume_front("CODE ")) {
     Cmd = Command::Code;
@@ -224,51 +224,25 @@ static Error parseCommand(StringRef BinaryName, bool IsAddr2Line,
       return makeStringError("no input filename has been specified");
   }
 
-  // Parse address specification, which can be an offset in module or a
-  // symbol with optional offset.
-  InputString = InputString.trim();
+  // Parse module offset, which can be specified as a number or as a symbol.
+  InputString = InputString.ltrim();
   if (InputString.empty())
     return makeStringError("no module offset has been specified");
 
   // If input string contains a space, ignore everything after it. This behavior
   // is consistent with GNU addr2line.
-  int AddrSpecLength = InputString.find_first_of(" \n\r");
-  StringRef AddrSpec = InputString.substr(0, AddrSpecLength);
-  bool StartsWithDigit = std::isdigit(AddrSpec.front());
+  int OffsetLength = InputString.find_first_of(" \n\r");
+  StringRef Offset = InputString.substr(0, OffsetLength);
 
-  // GNU addr2line assumes the address is hexadecimal and allows a redundant
+  // GNU addr2line assumes the offset is hexadecimal and allows a redundant
   // "0x" or "0X" prefix; do the same for compatibility.
   if (IsAddr2Line)
-    AddrSpec.consume_front("0x") || AddrSpec.consume_front("0X");
+    Offset.consume_front("0x") || Offset.consume_front("0X");
 
-  // If address specification is a number, treat it as a module offset.
-  if (!AddrSpec.getAsInteger(IsAddr2Line ? 16 : 0, Offset)) {
-    // Module offset is an address.
-    Symbol = StringRef();
-    return Error::success();
-  }
-
-  // If address specification starts with a digit, but is not a number, consider
-  // it as invalid.
-  if (StartsWithDigit || AddrSpec.empty())
-    return makeStringError("expected a number as module offset");
-
-  // Otherwise it is a symbol name, potentially with an offset.
-  Symbol = AddrSpec;
-  Offset = 0;
-
-  // If the address specification contains '+', try treating it as
-  // "symbol + offset".
-  size_t Plus = AddrSpec.rfind('+');
-  if (Plus != StringRef::npos) {
-    StringRef SymbolStr = AddrSpec.take_front(Plus);
-    StringRef OffsetStr = AddrSpec.substr(Plus + 1);
-    if (!SymbolStr.empty() && !OffsetStr.empty() &&
-        !OffsetStr.getAsInteger(0, Offset)) {
-      Symbol = SymbolStr;
-      return Error::success();
-    }
-    // The found '+' is not an offset delimiter.
+  // If the input is not a number, treat it is a symbol.
+  if (Offset.getAsInteger(IsAddr2Line ? 16 : 0, ModuleOffset)) {
+    Symbol = Offset;
+    ModuleOffset = 0;
   }
 
   return Error::success();
@@ -294,7 +268,7 @@ void executeCommand(StringRef ModuleName, const T &ModuleSpec, Command Cmd,
     print(SymRequest, ResOrErr, Printer);
   } else if (!Symbol.empty()) {
     Expected<std::vector<DILineInfo>> ResOrErr =
-        Symbolizer.findSymbol(ModuleSpec, Symbol, Offset);
+        Symbolizer.findSymbol(ModuleSpec, Symbol);
     print(SymRequest, ResOrErr, Printer);
   } else if (ShouldInline) {
     Expected<DIInliningInfo> ResOrErr =
@@ -456,7 +430,7 @@ static void filterMarkup(const opt::InputArgList &Args, LLVMSymbolizer &Symboliz
   std::string InputString;
   while (std::getline(std::cin, InputString)) {
     InputString += '\n';
-    Filter.filter(std::move(InputString));
+    Filter.filter(InputString);
   }
   Filter.finish();
 }

@@ -1,8 +1,8 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/template-deduce %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce/template-deduce.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/template-deduce/template-deduce.dp.cpp -o %T/template-deduce/template-deduce.dp.o %}
-#ifndef  BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl %T/template-deduce/template-deduce.dp.cpp -o %T/template-deduce/template-deduce.dp.o %}
+
 #include <complex>
 
 template<class T1, class T2> class TemplateClass { using type = T1; };
@@ -495,4 +495,3 @@ int foo12(){
   std::tuple<int, int, float, int, float> t{1, 1, 3.0f, 2, 2.0f};
   foo11<<<1,1,0>>>(t);
 }
-#endif

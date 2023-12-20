@@ -27,22 +27,14 @@ using namespace llvm;
 /// Get profile section.
 Expected<object::SectionRef> getInstrProfSection(const object::ObjectFile &Obj,
                                                  InstrProfSectKind IPSK) {
-  // On COFF, the getInstrProfSectionName returns the section names may followed
-  // by "$M". The linker removes the dollar and everything after it in the final
-  // binary. Do the same to match.
   Triple::ObjectFormatType ObjFormat = Obj.getTripleObjectFormat();
-  auto StripSuffix = [ObjFormat](StringRef N) {
-    return ObjFormat == Triple::COFF ? N.split('$').first : N;
-  };
   std::string ExpectedSectionName =
       getInstrProfSectionName(IPSK, ObjFormat,
                               /*AddSegmentInfo=*/false);
-  ExpectedSectionName = StripSuffix(ExpectedSectionName);
-  for (auto &Section : Obj.sections()) {
+  for (auto &Section : Obj.sections())
     if (auto SectionName = Section.getName())
-      if (*SectionName == ExpectedSectionName)
+      if (SectionName.get() == ExpectedSectionName)
         return Section;
-  }
   return make_error<InstrProfError>(
       instrprof_error::unable_to_correlate_profile,
       "could not find section (" + Twine(ExpectedSectionName) + ")");
@@ -54,38 +46,14 @@ const char *InstrProfCorrelator::NumCountersAttributeName = "Num Counters";
 
 llvm::Expected<std::unique_ptr<InstrProfCorrelator::Context>>
 InstrProfCorrelator::Context::get(std::unique_ptr<MemoryBuffer> Buffer,
-                                  const object::ObjectFile &Obj,
-                                  ProfCorrelatorKind FileKind) {
-  auto C = std::make_unique<Context>();
+                                  const object::ObjectFile &Obj) {
   auto CountersSection = getInstrProfSection(Obj, IPSK_cnts);
   if (auto Err = CountersSection.takeError())
     return std::move(Err);
-  if (FileKind == InstrProfCorrelator::BINARY) {
-    auto DataSection = getInstrProfSection(Obj, IPSK_covdata);
-    if (auto Err = DataSection.takeError())
-      return std::move(Err);
-    auto DataOrErr = DataSection->getContents();
-    if (!DataOrErr)
-      return DataOrErr.takeError();
-    auto NameSection = getInstrProfSection(Obj, IPSK_covname);
-    if (auto Err = NameSection.takeError())
-      return std::move(Err);
-    auto NameOrErr = NameSection->getContents();
-    if (!NameOrErr)
-      return NameOrErr.takeError();
-    C->DataStart = DataOrErr->data();
-    C->DataEnd = DataOrErr->data() + DataOrErr->size();
-    C->NameStart = NameOrErr->data();
-    C->NameSize = NameOrErr->size();
-  }
+  auto C = std::make_unique<Context>();
   C->Buffer = std::move(Buffer);
   C->CountersSectionStart = CountersSection->getAddress();
   C->CountersSectionEnd = C->CountersSectionStart + CountersSection->getSize();
-  // In COFF object file, there's a null byte at the beginning of the counter
-  // section which doesn't exist in raw profile.
-  if (Obj.getTripleObjectFormat() == Triple::COFF)
-    ++C->CountersSectionStart;
-
   C->ShouldSwapBytes = Obj.isLittleEndian() != sys::IsLittleEndianHost;
   return Expected<std::unique_ptr<Context>>(std::move(C));
 }
@@ -112,17 +80,9 @@ InstrProfCorrelator::get(StringRef Filename, ProfCorrelatorKind FileKind) {
 
     return get(std::move(*BufferOrErr), FileKind);
   }
-  if (FileKind == BINARY) {
-    auto BufferOrErr = errorOrToExpected(MemoryBuffer::getFile(Filename));
-    if (auto Err = BufferOrErr.takeError())
-      return std::move(Err);
-
-    return get(std::move(*BufferOrErr), FileKind);
-  }
   return make_error<InstrProfError>(
       instrprof_error::unable_to_correlate_profile,
-      "unsupported correlation kind (only DWARF debug info and Binary format "
-      "(ELF/COFF) are supported)");
+      "unsupported correlation kind (only DWARF debug info is supported)");
 }
 
 llvm::Expected<std::unique_ptr<InstrProfCorrelator>>
@@ -133,7 +93,7 @@ InstrProfCorrelator::get(std::unique_ptr<MemoryBuffer> Buffer,
     return std::move(Err);
 
   if (auto *Obj = dyn_cast<object::ObjectFile>(BinOrErr->get())) {
-    auto CtxOrErr = Context::get(std::move(Buffer), *Obj, FileKind);
+    auto CtxOrErr = Context::get(std::move(Buffer), *Obj);
     if (auto Err = CtxOrErr.takeError())
       return std::move(Err);
     auto T = Obj->makeTriple();
@@ -195,11 +155,9 @@ InstrProfCorrelatorImpl<IntPtrT>::get(
         instrprof_error::unable_to_correlate_profile,
         "unsupported debug info format (only DWARF is supported)");
   }
-  if (Obj.isELF() || Obj.isCOFF())
-    return std::make_unique<BinaryInstrProfCorrelator<IntPtrT>>(std::move(Ctx));
   return make_error<InstrProfError>(
       instrprof_error::unable_to_correlate_profile,
-      "unsupported binary format (only ELF and COFF are supported)");
+      "unsupported correlation file type (only DWARF is supported)");
 }
 
 template <class IntPtrT>
@@ -254,16 +212,16 @@ Error InstrProfCorrelatorImpl<IntPtrT>::dumpYaml(int MaxWarnings,
 }
 
 template <class IntPtrT>
-void InstrProfCorrelatorImpl<IntPtrT>::addDataProbe(uint64_t NameRef,
-                                                    uint64_t CFGHash,
-                                                    IntPtrT CounterOffset,
-                                                    IntPtrT FunctionPtr,
-                                                    uint32_t NumCounters) {
+void InstrProfCorrelatorImpl<IntPtrT>::addProbe(StringRef FunctionName,
+                                                uint64_t CFGHash,
+                                                IntPtrT CounterOffset,
+                                                IntPtrT FunctionPtr,
+                                                uint32_t NumCounters) {
   // Check if a probe was already added for this counter offset.
   if (!CounterOffsets.insert(CounterOffset).second)
     return;
   Data.push_back({
-      maybeSwap<uint64_t>(NameRef),
+      maybeSwap<uint64_t>(IndexedInstrProf::ComputeHash(FunctionName)),
       maybeSwap<uint64_t>(CFGHash),
       // In this mode, CounterPtr actually stores the section relative address
       // of the counter.
@@ -278,6 +236,7 @@ void InstrProfCorrelatorImpl<IntPtrT>::addDataProbe(uint64_t NameRef,
       // TODO: MC/DC is not yet supported.
       /*NumBitmapBytes=*/maybeSwap<uint32_t>(0),
   });
+  NamesVec.push_back(FunctionName.str());
 }
 
 template <class IntPtrT>
@@ -318,7 +277,7 @@ bool DwarfInstrProfCorrelator<IntPtrT>::isDIEOfProbe(const DWARFDie &Die) {
   if (!Die.hasChildren())
     return false;
   if (const char *Name = Die.getName(DINameKind::ShortName))
-    return StringRef(Name).starts_with(getInstrProfCountersVarPrefix());
+    return StringRef(Name).startswith(getInstrProfCountersVarPrefix());
   return false;
 }
 
@@ -390,8 +349,6 @@ void DwarfInstrProfCorrelator<IntPtrT>::correlateProfileDataImpl(
                                      *FunctionName);
       LLVM_DEBUG(Die.dump(dbgs()));
     }
-    // In debug info correlation mode, the CounterPtr is an absolute address of
-    // the counter, but it's expected to be relative later when iterating Data.
     IntPtrT CounterOffset = *CounterPtr - CountersStart;
     if (Data) {
       InstrProfCorrelator::Probe P;
@@ -409,9 +366,8 @@ void DwarfInstrProfCorrelator<IntPtrT>::correlateProfileDataImpl(
         P.LineNumber = LineNumber;
       Data->Probes.push_back(P);
     } else {
-      this->addDataProbe(IndexedInstrProf::ComputeHash(*FunctionName), *CFGHash,
-                         CounterOffset, FunctionPtr.value_or(0), *NumCounters);
-      this->NamesVec.push_back(*FunctionName);
+      this->addProbe(*FunctionName, *CFGHash, CounterOffset,
+                     FunctionPtr.value_or(0), *NumCounters);
     }
   };
   for (auto &CU : DICtx->normal_units())
@@ -437,47 +393,4 @@ Error DwarfInstrProfCorrelator<IntPtrT>::correlateProfileNameImpl() {
       collectGlobalObjectNameStrings(this->NamesVec,
                                      /*doCompression=*/false, this->Names);
   return Result;
-}
-
-template <class IntPtrT>
-void BinaryInstrProfCorrelator<IntPtrT>::correlateProfileDataImpl(
-    int MaxWarnings, InstrProfCorrelator::CorrelationData *CorrelateData) {
-  using RawProfData = RawInstrProf::ProfileData<IntPtrT>;
-  bool UnlimitedWarnings = (MaxWarnings == 0);
-  // -N suppressed warnings means we can emit up to N (unsuppressed) warnings
-  int NumSuppressedWarnings = -MaxWarnings;
-
-  const RawProfData *DataStart = (const RawProfData *)this->Ctx->DataStart;
-  const RawProfData *DataEnd = (const RawProfData *)this->Ctx->DataEnd;
-  // We need to use < here because the last data record may have no padding.
-  for (const RawProfData *I = DataStart; I < DataEnd; ++I) {
-    uint64_t CounterPtr = this->template maybeSwap<IntPtrT>(I->CounterPtr);
-    uint64_t CountersStart = this->Ctx->CountersSectionStart;
-    uint64_t CountersEnd = this->Ctx->CountersSectionEnd;
-    if (CounterPtr < CountersStart || CounterPtr >= CountersEnd) {
-      if (UnlimitedWarnings || ++NumSuppressedWarnings < 1) {
-        WithColor::warning()
-            << format("CounterPtr out of range for function: Actual=0x%x "
-                      "Expected=[0x%x, 0x%x) at data offset=0x%x\n",
-                      CounterPtr, CountersStart, CountersEnd,
-                      (I - DataStart) * sizeof(RawProfData));
-      }
-    }
-    // In binary correlation mode, the CounterPtr is an absolute address of the
-    // counter, but it's expected to be relative later when iterating Data.
-    IntPtrT CounterOffset = CounterPtr - CountersStart;
-    this->addDataProbe(I->NameRef, I->FuncHash, CounterOffset,
-                       I->FunctionPointer, I->NumCounters);
-  }
-}
-
-template <class IntPtrT>
-Error BinaryInstrProfCorrelator<IntPtrT>::correlateProfileNameImpl() {
-  if (this->Ctx->NameSize == 0) {
-    return make_error<InstrProfError>(
-        instrprof_error::unable_to_correlate_profile,
-        "could not find any profile data metadata in object file");
-  }
-  this->Names.append(this->Ctx->NameStart, this->Ctx->NameSize);
-  return Error::success();
 }

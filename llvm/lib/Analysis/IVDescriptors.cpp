@@ -24,6 +24,8 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/KnownBits.h"
 
+#include <set>
+
 using namespace llvm;
 using namespace llvm::PatternMatch;
 

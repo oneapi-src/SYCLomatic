@@ -1,5 +1,4 @@
 // RUN: %clang_cc1 -fsyntax-only -verify %s
-// RUN: %clang_cc1 -fsyntax-only -verify -fexperimental-new-constant-interpreter %s
 
 __attribute__((noreturn)) extern void bar();
 

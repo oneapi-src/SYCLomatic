@@ -262,12 +262,6 @@ static cl::opt<BenchmarkRunner::ExecutionModeE> ExecutionMode(
                           "allows for the use of memory annotations")),
     cl::init(BenchmarkRunner::ExecutionModeE::InProcess));
 
-static cl::opt<unsigned> BenchmarkRepeatCount(
-    "benchmark-repeat-count",
-    cl::desc("The number of times to repeat measurements on the benchmark k "
-             "before aggregating the results"),
-    cl::cat(BenchmarkOptions), cl::init(30));
-
 static ExitOnError ExitOnErr("llvm-exegesis error: ");
 
 // Helper function that logs the error(s) and exits.
@@ -410,18 +404,8 @@ static void runBenchmarkConfigurations(
       std::optional<StringRef> DumpFile;
       if (DumpObjectToDisk.getNumOccurrences())
         DumpFile = DumpObjectToDisk;
-      auto [Err, InstrBenchmark] =
-          Runner.runConfiguration(std::move(RC), DumpFile);
-      if (Err) {
-        // Errors from executing the snippets are fine.
-        // All other errors are a framework issue and should fail.
-        if (!Err.isA<SnippetExecutionFailure>()) {
-          llvm::errs() << "llvm-exegesis error: " << toString(std::move(Err));
-          exit(1);
-        }
-        InstrBenchmark.Error = toString(std::move(Err));
-      }
-      AllResults.push_back(std::move(InstrBenchmark));
+      AllResults.emplace_back(
+          ExitOnErr(Runner.runConfiguration(std::move(RC), DumpFile)));
     }
     Benchmark &Result = AllResults.front();
 
@@ -501,7 +485,7 @@ void benchmarkMain() {
   const std::unique_ptr<BenchmarkRunner> Runner =
       ExitOnErr(State.getExegesisTarget().createBenchmarkRunner(
           BenchmarkMode, State, BenchmarkPhaseSelector, ExecutionMode,
-          BenchmarkRepeatCount, ResultAggMode));
+          ResultAggMode));
   if (!Runner) {
     ExitWithError("cannot create benchmark runner");
   }
@@ -549,10 +533,8 @@ void benchmarkMain() {
     for (const auto &Configuration : Configurations) {
       if (ExecutionMode != BenchmarkRunner::ExecutionModeE::SubProcess &&
           (Configuration.Key.MemoryMappings.size() != 0 ||
-           Configuration.Key.MemoryValues.size() != 0 ||
-           Configuration.Key.SnippetAddress != 0))
-        ExitWithError("Memory and snippet address annotations are only "
-                      "supported in subprocess "
+           Configuration.Key.MemoryValues.size() != 0))
+        ExitWithError("Memory annotations are only supported in subprocess "
                       "execution mode");
     }
   }

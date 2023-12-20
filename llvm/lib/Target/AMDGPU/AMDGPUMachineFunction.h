@@ -20,6 +20,7 @@
 namespace llvm {
 
 class AMDGPUSubtarget;
+class GCNSubtarget;
 
 class AMDGPUMachineFunction : public MachineFunctionInfo {
   /// A map to keep track of local memory objects and their offsets within the
@@ -88,11 +89,6 @@ public:
   bool isModuleEntryFunction() const { return IsModuleEntryFunction; }
 
   bool isChainFunction() const { return IsChainFunction; }
-
-  // The stack is empty upon entry to this function.
-  bool isBottomOfStack() const {
-    return isEntryFunction() || isChainFunction();
-  }
 
   bool hasNoSignedZerosFPMath() const {
     return NoSignedZerosFPMath;

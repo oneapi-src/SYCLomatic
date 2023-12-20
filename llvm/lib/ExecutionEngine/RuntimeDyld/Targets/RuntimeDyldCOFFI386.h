@@ -60,7 +60,7 @@ public:
 
     unsigned TargetSectionID = -1;
     uint64_t TargetOffset = -1;
-    if (TargetName.starts_with(getImportSymbolPrefix())) {
+    if (TargetName.startswith(getImportSymbolPrefix())) {
       TargetSectionID = SectionID;
       TargetOffset = getDLLImportOffset(SectionID, Stubs, TargetName, true);
       TargetName = StringRef();

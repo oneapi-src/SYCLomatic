@@ -84,7 +84,9 @@ struct RISCVMakeCompressibleOpt : public MachineFunctionPass {
 
   bool runOnMachineFunction(MachineFunction &Fn) override;
 
-  RISCVMakeCompressibleOpt() : MachineFunctionPass(ID) {}
+  RISCVMakeCompressibleOpt() : MachineFunctionPass(ID) {
+    initializeRISCVMakeCompressibleOptPass(*PassRegistry::getPassRegistry());
+  }
 
   StringRef getPassName() const override { return RISCV_COMPRESS_INSTRS_NAME; }
 };

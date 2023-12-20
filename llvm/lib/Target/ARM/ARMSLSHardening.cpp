@@ -210,7 +210,7 @@ ArmInsertedThunks SLSBLRThunkInserter::insertThunks(MachineModuleInfo &MMI,
 void SLSBLRThunkInserter::populateThunk(MachineFunction &MF) {
   // FIXME: How to better communicate Register number, rather than through
   // name and lookup table?
-  assert(MF.getName().starts_with(getThunkPrefix()));
+  assert(MF.getName().startswith(getThunkPrefix()));
   auto ThunkIt = llvm::find_if(
       SLSBLRThunks, [&MF](auto T) { return T.Name == MF.getName(); });
   assert(ThunkIt != std::end(SLSBLRThunks));

@@ -692,7 +692,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, const IndexFileOut &O) {
 
 llvm::Expected<IndexFileIn> readIndexFile(llvm::StringRef Data,
                                           SymbolOrigin Origin) {
-  if (Data.starts_with("RIFF")) {
+  if (Data.startswith("RIFF")) {
     return readRIFF(Data, Origin);
   }
   if (auto YAMLContents = readYAML(Data, Origin)) {

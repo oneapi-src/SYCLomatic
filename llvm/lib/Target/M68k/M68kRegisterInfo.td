@@ -125,10 +125,7 @@ let CopyCost = -1 in {
   def CCRC : MxRegClass<[i8],  16, (add CCR)>;
   def SRC  : MxRegClass<[i16], 16, (add SR)>;
 
-  // Float Point System Control Registers
-  def FPIC   : MxRegClass<[i32], 32, (add FPIAR)>;
-  def FPCSC  : MxRegClass<[i32], 32, (add FPC, FPS)>;
-  def FPSYSC : MxRegClass<[i32], 32, (add FPCSC, FPIC)>;
+  def FPCR : MxRegClass<[i32], 32, (add FPC, FPS, FPIAR)>;
 }
 
 let isAllocatable = 0 in {

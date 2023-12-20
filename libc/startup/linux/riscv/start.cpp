@@ -61,7 +61,7 @@ void init_tls(TLSDescriptor &tls_descriptor) {
       MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   // We cannot check the return value with MAP_FAILED as that is the return
   // of the mmap function and not the mmap syscall.
-  if (mmap_ret_val < 0 && static_cast<uintptr_t>(mmap_ret_val) > -app.page_size)
+  if (mmap_ret_val < 0 && static_cast<uintptr_t>(mmap_ret_val) > -app.pageSize)
     LIBC_NAMESPACE::syscall_impl<long>(SYS_exit, 1);
   uintptr_t thread_ptr = uintptr_t(reinterpret_cast<uintptr_t *>(mmap_ret_val));
   uintptr_t tls_addr = thread_ptr + size_of_pointers + padding;
@@ -115,7 +115,12 @@ static void call_fini_array_callbacks() {
 } // namespace LIBC_NAMESPACE
 
 using LIBC_NAMESPACE::app;
-using LIBC_NAMESPACE::AuxEntry;
+
+// TODO: Would be nice to use the aux entry structure from elf.h when available.
+struct AuxEntry {
+  LIBC_NAMESPACE::AuxEntryType type;
+  LIBC_NAMESPACE::AuxEntryType value;
+};
 
 #if defined(LIBC_TARGET_ARCH_IS_X86_64) ||                                     \
     defined(LIBC_TARGET_ARCH_IS_AARCH64) ||                                    \
@@ -142,7 +147,7 @@ __attribute__((noinline)) static void do_start() {
   // value. We step over it (the "+ 1" below) to get to the env values.
   LIBC_NAMESPACE::ArgVEntryType *env_ptr = app.args->argv + app.args->argc + 1;
   LIBC_NAMESPACE::ArgVEntryType *env_end_marker = env_ptr;
-  app.env_ptr = env_ptr;
+  app.envPtr = env_ptr;
   while (*env_end_marker)
     ++env_end_marker;
 
@@ -151,19 +156,19 @@ __attribute__((noinline)) static void do_start() {
 
   // After the env array, is the aux-vector. The end of the aux-vector is
   // denoted by an AT_NULL entry.
-  PgrHdrTableType *program_hdr_table = nullptr;
-  uintptr_t program_hdr_count;
-  app.auxv_ptr = reinterpret_cast<AuxEntry *>(env_end_marker + 1);
-  for (auto *aux_entry = app.auxv_ptr; aux_entry->id != AT_NULL; ++aux_entry) {
-    switch (aux_entry->id) {
+  PgrHdrTableType *programHdrTable = nullptr;
+  uintptr_t programHdrCount;
+  for (AuxEntry *aux_entry = reinterpret_cast<AuxEntry *>(env_end_marker + 1);
+       aux_entry->type != AT_NULL; ++aux_entry) {
+    switch (aux_entry->type) {
     case AT_PHDR:
-      program_hdr_table = reinterpret_cast<PgrHdrTableType *>(aux_entry->value);
+      programHdrTable = reinterpret_cast<PgrHdrTableType *>(aux_entry->value);
       break;
     case AT_PHNUM:
-      program_hdr_count = aux_entry->value;
+      programHdrCount = aux_entry->value;
       break;
     case AT_PAGESZ:
-      app.page_size = aux_entry->value;
+      app.pageSize = aux_entry->value;
       break;
     default:
       break; // TODO: Read other useful entries from the aux vector.
@@ -171,8 +176,8 @@ __attribute__((noinline)) static void do_start() {
   }
 
   app.tls.size = 0;
-  for (uintptr_t i = 0; i < program_hdr_count; ++i) {
-    PgrHdrTableType *phdr = program_hdr_table + i;
+  for (uintptr_t i = 0; i < programHdrCount; ++i) {
+    PgrHdrTableType *phdr = programHdrTable + i;
     if (phdr->p_type != PT_TLS)
       continue;
     // TODO: p_vaddr value has to be adjusted for static-pie executables.
@@ -182,9 +187,7 @@ __attribute__((noinline)) static void do_start() {
     app.tls.align = phdr->p_align;
   }
 
-  // This descriptor has to be static since its cleanup function cannot
-  // capture the context.
-  static LIBC_NAMESPACE::TLSDescriptor tls;
+  LIBC_NAMESPACE::TLSDescriptor tls;
   LIBC_NAMESPACE::init_tls(tls);
   if (tls.size != 0)
     LIBC_NAMESPACE::set_thread_ptr(tls.tp);
@@ -192,11 +195,7 @@ __attribute__((noinline)) static void do_start() {
   LIBC_NAMESPACE::self.attrib = &LIBC_NAMESPACE::main_thread_attrib;
   LIBC_NAMESPACE::main_thread_attrib.atexit_callback_mgr =
       LIBC_NAMESPACE::internal::get_thread_atexit_callback_mgr();
-  // We register the cleanup_tls function to be the last atexit callback to be
-  // invoked. It will tear down the TLS. Other callbacks may depend on TLS (such
-  // as the stack protector canary).
-  LIBC_NAMESPACE::atexit(
-      []() { LIBC_NAMESPACE::cleanup_tls(tls.tp, tls.size); });
+
   // We want the fini array callbacks to be run after other atexit
   // callbacks are run. So, we register them before running the init
   // array callbacks as they can potentially register their own atexit
@@ -212,6 +211,10 @@ __attribute__((noinline)) static void do_start() {
                     reinterpret_cast<char **>(app.args->argv),
                     reinterpret_cast<char **>(env_ptr));
 
+  // TODO: TLS cleanup should be done after all other atexit callbacks
+  // are run. So, register a cleanup callback for it with atexit before
+  // everything else.
+  LIBC_NAMESPACE::cleanup_tls(tls.addr, tls.size);
   LIBC_NAMESPACE::exit(retval);
 }
 

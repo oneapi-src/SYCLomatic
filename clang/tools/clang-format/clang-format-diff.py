@@ -25,6 +25,7 @@ from __future__ import absolute_import, division, print_function
 
 import argparse
 import difflib
+import os
 import re
 import subprocess
 import sys
@@ -36,8 +37,9 @@ else:
 
 
 def main():
+    basename = os.path.basename(sys.argv[0])
     parser = argparse.ArgumentParser(
-        description=__doc__.format(clang_format_diff="%(prog)s"),
+        description=__doc__.format(clang_format_diff=basename),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(

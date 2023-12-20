@@ -8,6 +8,8 @@
 
 #include "llvm/Testing/Support/Error.h"
 
+#include "llvm/ADT/StringRef.h"
+
 using namespace llvm;
 
 llvm::detail::ErrorHolder llvm::detail::TakeError(llvm::Error Err) {

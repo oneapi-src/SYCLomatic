@@ -20,7 +20,6 @@
 //   weak symbol.
 //===----------------------------------------------------------------------===//
 
-#include "llvm/CodeGen/JMCInstrumenter.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/CodeGen/Passes.h"
@@ -40,24 +39,18 @@
 
 using namespace llvm;
 
-#define DEBUG_TYPE "jmc-instrumenter"
+#define DEBUG_TYPE "jmc-instrument"
 
-static bool runImpl(Module &M);
 namespace {
 struct JMCInstrumenter : public ModulePass {
   static char ID;
   JMCInstrumenter() : ModulePass(ID) {
     initializeJMCInstrumenterPass(*PassRegistry::getPassRegistry());
   }
-  bool runOnModule(Module &M) override { return runImpl(M); }
+  bool runOnModule(Module &M) override;
 };
 char JMCInstrumenter::ID = 0;
 } // namespace
-
-PreservedAnalyses JMCInstrumenterPass::run(Module &M, ModuleAnalysisManager &) {
-  bool Changed = runImpl(M);
-  return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
-}
 
 INITIALIZE_PASS(
     JMCInstrumenter, DEBUG_TYPE,
@@ -150,7 +143,7 @@ Function *createDefaultCheckFunction(Module &M, bool UseX86FastCall) {
 }
 } // namespace
 
-bool runImpl(Module &M) {
+bool JMCInstrumenter::runOnModule(Module &M) {
   bool Changed = false;
   LLVMContext &Ctx = M.getContext();
   Triple ModuleTriple(M.getTargetTriple());

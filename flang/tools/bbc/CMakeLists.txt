@@ -1,8 +1,5 @@
 set(LLVM_LINK_COMPONENTS
 Passes
-AllTargetsCodeGens
-AllTargetsDescs
-AllTargetsInfos
 TargetParser
 )
 

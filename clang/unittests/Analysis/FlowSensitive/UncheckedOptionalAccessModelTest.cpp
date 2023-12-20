@@ -1319,8 +1319,8 @@ protected:
     llvm::Error Error = checkDataflow<UncheckedOptionalAccessModel>(
         AnalysisInputs<UncheckedOptionalAccessModel>(
             SourceCode, std::move(FuncMatcher),
-            [](ASTContext &Ctx, Environment &Env) {
-              return UncheckedOptionalAccessModel(Ctx, Env);
+            [](ASTContext &Ctx, Environment &) {
+              return UncheckedOptionalAccessModel(Ctx);
             })
             .withPostVisitCFG(
                 [&Diagnostics,

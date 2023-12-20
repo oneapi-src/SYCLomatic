@@ -581,6 +581,9 @@ void GreedyPatternRewriteDriver::notifyOperationReplaced(
   });
   if (config.listener)
     config.listener->notifyOperationReplaced(op, replacement);
+  for (auto result : op->getResults())
+    for (auto *user : result.getUsers())
+      addToWorklist(user);
 }
 
 LogicalResult GreedyPatternRewriteDriver::notifyMatchFailure(

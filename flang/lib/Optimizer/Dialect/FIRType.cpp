@@ -849,12 +849,6 @@ fir::RealType::verify(llvm::function_ref<mlir::InFlightDiagnostic()> emitError,
   return mlir::success();
 }
 
-mlir::Type fir::RealType::getFloatType(const fir::KindMapping &kindMap) const {
-  auto fkind = getFKind();
-  auto realTypeID = kindMap.getRealTypeID(fkind);
-  return fir::fromRealTypeID(getContext(), realTypeID, fkind);
-}
-
 //===----------------------------------------------------------------------===//
 // RecordType
 //===----------------------------------------------------------------------===//

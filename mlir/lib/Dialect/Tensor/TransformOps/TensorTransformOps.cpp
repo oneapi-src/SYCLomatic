@@ -83,11 +83,6 @@ void tensor::registerFindPayloadReplacementOpInterfaceExternalModels(
 // Apply...PatternsOp
 //===----------------------------------------------------------------------===//
 
-void transform::ApplyDecomposeTensorConcatPatternsOp::populatePatterns(
-    RewritePatternSet &patterns) {
-  tensor::populateDecomposeTensorConcatPatterns(patterns);
-}
-
 void transform::ApplyDropRedundantInsertSliceRankExpansionPatternsOp::
     populatePatterns(RewritePatternSet &patterns) {
   tensor::populateDropRedundantInsertSliceRankExpansionPatterns(patterns);

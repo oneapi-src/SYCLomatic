@@ -311,9 +311,9 @@ bool FileSpec::Match(const FileSpec &pattern, const FileSpec &file) {
 
 std::optional<FileSpec::Style>
 FileSpec::GuessPathStyle(llvm::StringRef absolute_path) {
-  if (absolute_path.starts_with("/"))
+  if (absolute_path.startswith("/"))
     return Style::posix;
-  if (absolute_path.starts_with(R"(\\)"))
+  if (absolute_path.startswith(R"(\\)"))
     return Style::windows;
   if (absolute_path.size() >= 3 && llvm::isAlpha(absolute_path[0]) &&
       (absolute_path.substr(1, 2) == R"(:\)" ||

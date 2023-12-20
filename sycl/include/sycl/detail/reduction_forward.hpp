@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include <sycl/detail/helpers.hpp>   // for Builder
 #include <sycl/detail/item_base.hpp> // for range
 #include <sycl/id.hpp>               // for id
-#include <sycl/item.hpp>             // for item
+#include <sycl/item.hpp>             // for getDelinearizedItem, item
 #include <sycl/nd_range.hpp>         // for nd_range
 #include <sycl/range.hpp>            // for range
 
@@ -52,7 +51,7 @@ template <class FunctorTy> void withAuxHandler(handler &CGH, FunctorTy Func);
 
 template <int Dims>
 item<Dims, false> getDelinearizedItem(range<Dims> Range, id<Dims> Id) {
-  return Builder::createItem<Dims, false>(Range, Id);
+  return {Range, Id};
 }
 } // namespace reduction
 

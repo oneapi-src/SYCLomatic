@@ -442,6 +442,7 @@ ParsedType Sema::getTypeName(const IdentifierInfo &II, SourceLocation NameLoc,
   UsingShadowDecl *FoundUsingShadow = nullptr;
   switch (Result.getResultKind()) {
   case LookupResult::NotFound:
+  case LookupResult::NotFoundInCurrentInstantiation:
     if (CorrectedII) {
       TypeNameValidatorCCC CCC(/*AllowInvalid=*/true, isClassName,
                                AllowDeducedTemplate);
@@ -481,19 +482,7 @@ ParsedType Sema::getTypeName(const IdentifierInfo &II, SourceLocation NameLoc,
         }
       }
     }
-    Result.suppressDiagnostics();
-    return nullptr;
-  case LookupResult::NotFoundInCurrentInstantiation:
-    if (AllowImplicitTypename == ImplicitTypenameContext::Yes) {
-      QualType T = Context.getDependentNameType(ElaboratedTypeKeyword::None,
-                                                SS->getScopeRep(), &II);
-      TypeLocBuilder TLB;
-      DependentNameTypeLoc TL = TLB.push<DependentNameTypeLoc>(T);
-      TL.setElaboratedKeywordLoc(SourceLocation());
-      TL.setQualifierLoc(SS->getWithLocInContext(Context));
-      TL.setNameLoc(NameLoc);
-      return CreateParsedType(T, TLB.getTypeSourceInfo(Context, T));
-    }
+    // If typo correction failed or was not performed, fall through
     [[fallthrough]];
   case LookupResult::FoundOverloaded:
   case LookupResult::FoundUnresolvedValue:
@@ -2005,12 +1994,12 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
   if (D->isInvalidDecl())
     return false;
 
-  if (const auto *DD = dyn_cast<DecompositionDecl>(D)) {
+  if (auto *DD = dyn_cast<DecompositionDecl>(D)) {
     // For a decomposition declaration, warn if none of the bindings are
     // referenced, instead of if the variable itself is referenced (which
     // it is, by the bindings' expressions).
     bool IsAllPlaceholders = true;
-    for (const auto *BD : DD->bindings()) {
+    for (auto *BD : DD->bindings()) {
       if (BD->isReferenced())
         return false;
       IsAllPlaceholders = IsAllPlaceholders && BD->isPlaceholderVar(LangOpts);
@@ -2054,7 +2043,7 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
   if (const VarDecl *VD = dyn_cast<VarDecl>(D)) {
 
     const Expr *Init = VD->getInit();
-    if (const auto *Cleanups = dyn_cast_if_present<ExprWithCleanups>(Init))
+    if (const auto *Cleanups = dyn_cast_or_null<ExprWithCleanups>(Init))
       Init = Cleanups->getSubExpr();
 
     const auto *Ty = VD->getType().getTypePtr();
@@ -2068,10 +2057,11 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
 
     // Warn for reference variables whose initializtion performs lifetime
     // extension.
-    if (const auto *MTE = dyn_cast_if_present<MaterializeTemporaryExpr>(Init);
-        MTE && MTE->getExtendingDecl()) {
-      Ty = VD->getType().getNonReferenceType().getTypePtr();
-      Init = MTE->getSubExpr()->IgnoreImplicitAsWritten();
+    if (const auto *MTE = dyn_cast_or_null<MaterializeTemporaryExpr>(Init)) {
+      if (MTE->getExtendingDecl()) {
+        Ty = VD->getType().getNonReferenceType().getTypePtr();
+        Init = MTE->getSubExpr()->IgnoreImplicitAsWritten();
+      }
     }
 
     // If we failed to complete the type for some reason, or if the type is
@@ -2088,14 +2078,15 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
       if (Tag->hasAttr<UnusedAttr>())
         return false;
 
-      if (const auto *RD = dyn_cast<CXXRecordDecl>(Tag)) {
+      if (const CXXRecordDecl *RD = dyn_cast<CXXRecordDecl>(Tag)) {
         if (!RD->hasTrivialDestructor() && !RD->hasAttr<WarnUnusedAttr>())
           return false;
 
         if (Init) {
-          const auto *Construct = dyn_cast<CXXConstructExpr>(Init);
+          const CXXConstructExpr *Construct =
+            dyn_cast<CXXConstructExpr>(Init);
           if (Construct && !Construct->isElidable()) {
-            const CXXConstructorDecl *CD = Construct->getConstructor();
+            CXXConstructorDecl *CD = Construct->getConstructor();
             if (!CD->isTrivial() && !RD->hasAttr<WarnUnusedAttr>() &&
                 (VD->getInit()->isValueDependent() || !VD->evaluateValue()))
               return false;
@@ -2209,9 +2200,10 @@ void Sema::DiagnoseUnusedButSetDecl(const VarDecl *VD,
       return;
     // In C++, don't warn for record types that don't have WarnUnusedAttr, to
     // mimic gcc's behavior.
-    if (const auto *RD = dyn_cast<CXXRecordDecl>(Tag);
-        RD && !RD->hasAttr<WarnUnusedAttr>())
-      return;
+    if (const CXXRecordDecl *RD = dyn_cast<CXXRecordDecl>(Tag)) {
+      if (!RD->hasAttr<WarnUnusedAttr>())
+        return;
+    }
   }
 
   // Don't warn about __block Objective-C pointer variables, as they might
@@ -6030,7 +6022,7 @@ Sema::GetNameFromUnqualifiedId(const UnqualifiedId &Name) {
            diag::err_deduction_guide_name_not_class_template)
         << (int)getTemplateNameKindForDiagnostics(TN) << TN;
       if (Template)
-        NoteTemplateLocation(*Template);
+        Diag(Template->getLocation(), diag::note_template_decl_here);
       return DeclarationNameInfo();
     }
 
@@ -9017,7 +9009,7 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
     }
   }
 
-  if (T->isRVVSizelessBuiltinType())
+  if (T->isRVVType())
     checkRVVTypeSupport(T, NewVD->getLocation(), cast<Decl>(CurContext));
 }
 
@@ -13065,7 +13057,7 @@ QualType Sema::deduceVarTypeFromInitializer(VarDecl *VDecl,
     // FIXME: Initialization should not be taking a mutable list of inits.
     SmallVector<Expr*, 8> InitsCopy(DeduceInits.begin(), DeduceInits.end());
     return DeduceTemplateSpecializationFromInitializer(TSI, Entity, Kind,
-                                                       InitsCopy);
+                                                       InitsCopy, PL);
   }
 
   if (DirectInit) {
@@ -15923,7 +15915,7 @@ Decl *Sema::ActOnSkippedFunctionBody(Decl *Decl) {
 }
 
 Decl *Sema::ActOnFinishFunctionBody(Decl *D, Stmt *BodyArg) {
-  return ActOnFinishFunctionBody(D, BodyArg, /*IsInstantiation=*/false);
+  return ActOnFinishFunctionBody(D, BodyArg, false);
 }
 
 /// RAII object that pops an ExpressionEvaluationContext when exiting a function
@@ -16128,7 +16120,7 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body,
 
             return StartTok.consume_front("const") &&
                    (StartTok.empty() || isWhitespace(StartTok[0]) ||
-                    StartTok.starts_with("/*") || StartTok.starts_with("//"));
+                    StartTok.startswith("/*") || StartTok.startswith("//"));
           };
 
           auto findBeginLoc = [&]() {
@@ -16344,9 +16336,7 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body,
         ActivePolicy = &WP;
       }
 
-      if (!IsInstantiation && FD &&
-          (FD->isConstexpr() || FD->hasAttr<MSConstexprAttr>()) &&
-          !FD->isInvalidDecl() &&
+      if (!IsInstantiation && FD && FD->isConstexpr() && !FD->isInvalidDecl() &&
           !CheckConstexprFunctionDefinition(FD, CheckConstexprKind::Diagnose))
         FD->setInvalidDecl();
 
@@ -16482,7 +16472,7 @@ NamedDecl *Sema::ImplicitlyDefineFunction(SourceLocation Loc,
 
   // Extension in C99 (defaults to error). Legal in C89, but warn about it.
   unsigned diag_id;
-  if (II.getName().starts_with("__builtin_"))
+  if (II.getName().startswith("__builtin_"))
     diag_id = diag::warn_builtin_unknown;
   // OpenCL v2.0 s6.9.u - Implicit function declaration is not supported.
   else if (getLangOpts().C99)
@@ -19642,6 +19632,20 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
       CDecl->setIvarLBraceLoc(LBrac);
       CDecl->setIvarRBraceLoc(RBrac);
     }
+  }
+
+  // Check the "counted_by" attribute to ensure that the count field exists in
+  // the struct. Make sure we're performing this check on the outer-most
+  // record.  This is a C-only feature.
+  if (!getLangOpts().CPlusPlus && Record &&
+      !isa<RecordDecl>(Record->getParent())) {
+    auto Pred = [](const Decl *D) {
+      if (const auto *FD = dyn_cast_if_present<FieldDecl>(D))
+        return FD->hasAttr<CountedByAttr>();
+      return false;
+    };
+    if (const FieldDecl *FD = Record->findFieldIf(Pred))
+      CheckCountedByAttr(S, FD);
   }
 }
 

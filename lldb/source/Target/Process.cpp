@@ -436,7 +436,7 @@ Process::Process(lldb::TargetSP target_sp, ListenerSP listener_sp,
       m_exit_status_mutex(), m_thread_mutex(), m_thread_list_real(this),
       m_thread_list(this), m_thread_plans(*this), m_extended_thread_list(this),
       m_extended_thread_stop_id(0), m_queue_list(this), m_queue_list_stop_id(0),
-      m_watchpoint_resource_list(), m_notifications(), m_image_tokens(),
+      m_notifications(), m_image_tokens(),
       m_breakpoint_site_list(), m_dynamic_checkers_up(),
       m_unix_signals_sp(unix_signals_sp), m_abi_sp(), m_process_input_reader(),
       m_stdio_communication("process.stdio"), m_stdio_communication_mutex(),
@@ -445,7 +445,7 @@ Process::Process(lldb::TargetSP target_sp, ListenerSP listener_sp,
       m_memory_cache(*this), m_allocated_memory_cache(*this),
       m_should_detach(false), m_next_event_action_up(), m_public_run_lock(),
       m_private_run_lock(), m_currently_handling_do_on_removals(false),
-      m_resume_requested(false), m_finalizing(false), m_destructing(false),
+      m_resume_requested(false), m_finalizing(false),
       m_clear_thread_plans_on_stop(false), m_force_next_event_delivery(false),
       m_last_broadcast_state(eStateInvalid), m_destroy_in_process(false),
       m_can_interpret_function_calls(false), m_run_thread_plan_lock(),
@@ -518,11 +518,9 @@ ProcessProperties &Process::GetGlobalProperties() {
   return *g_settings_ptr;
 }
 
-void Process::Finalize(bool destructing) {
+void Process::Finalize() {
   if (m_finalizing.exchange(true))
     return;
-  if (destructing)
-    m_destructing.exchange(true);
 
   // Destroy the process. This will call the virtual function DoDestroy under
   // the hood, giving our derived class a chance to do the ncessary tear down.
@@ -549,7 +547,6 @@ void Process::Finalize(bool destructing) {
   m_extended_thread_list.Destroy();
   m_queue_list.Clear();
   m_queue_list_stop_id = 0;
-  m_watchpoint_resource_list.Clear();
   std::vector<Notifications> empty_notifications;
   m_notifications.swap(empty_notifications);
   m_image_tokens.clear();
@@ -1417,13 +1414,7 @@ bool Process::StateChangedIsHijackedForSynchronousResume() {
 StateType Process::GetPrivateState() { return m_private_state.GetValue(); }
 
 void Process::SetPrivateState(StateType new_state) {
-  // Use m_destructing not m_finalizing here.  If we are finalizing a process
-  // that we haven't started tearing down, we'd like to be able to nicely
-  // detach if asked, but that requires the event system be live.  That will
-  // not be true for an in-the-middle-of-being-destructed Process, since the
-  // event system relies on Process::shared_from_this, which may have already
-  // been destroyed.
-  if (m_destructing)
+  if (m_finalizing)
     return;
 
   Log *log(GetLog(LLDBLog::State | LLDBLog::Process | LLDBLog::Unwind));
@@ -1572,12 +1563,11 @@ void Process::SetDynamicCheckers(DynamicCheckerFunctions *dynamic_checkers) {
   m_dynamic_checkers_up.reset(dynamic_checkers);
 }
 
-StopPointSiteList<BreakpointSite> &Process::GetBreakpointSiteList() {
+BreakpointSiteList &Process::GetBreakpointSiteList() {
   return m_breakpoint_site_list;
 }
 
-const StopPointSiteList<BreakpointSite> &
-Process::GetBreakpointSiteList() const {
+const BreakpointSiteList &Process::GetBreakpointSiteList() const {
   return m_breakpoint_site_list;
 }
 
@@ -1625,7 +1615,7 @@ Status Process::EnableBreakpointSiteByID(lldb::user_id_t break_id) {
 }
 
 lldb::break_id_t
-Process::CreateBreakpointSite(const BreakpointLocationSP &constituent,
+Process::CreateBreakpointSite(const BreakpointLocationSP &owner,
                               bool use_hardware) {
   addr_t load_addr = LLDB_INVALID_ADDRESS;
 
@@ -1652,10 +1642,10 @@ Process::CreateBreakpointSite(const BreakpointLocationSP &constituent,
 
   // Reset the IsIndirect flag here, in case the location changes from pointing
   // to a indirect symbol to a regular symbol.
-  constituent->SetIsIndirect(false);
+  owner->SetIsIndirect(false);
 
-  if (constituent->ShouldResolveIndirectFunctions()) {
-    Symbol *symbol = constituent->GetAddress().CalculateSymbolContextSymbol();
+  if (owner->ShouldResolveIndirectFunctions()) {
+    Symbol *symbol = owner->GetAddress().CalculateSymbolContextSymbol();
     if (symbol && symbol->IsIndirect()) {
       Status error;
       Address symbol_address = symbol->GetAddress();
@@ -1665,37 +1655,37 @@ Process::CreateBreakpointSite(const BreakpointLocationSP &constituent,
             "warning: failed to resolve indirect function at 0x%" PRIx64
             " for breakpoint %i.%i: %s\n",
             symbol->GetLoadAddress(&GetTarget()),
-            constituent->GetBreakpoint().GetID(), constituent->GetID(),
+            owner->GetBreakpoint().GetID(), owner->GetID(),
             error.AsCString() ? error.AsCString() : "unknown error");
         return LLDB_INVALID_BREAK_ID;
       }
       Address resolved_address(load_addr);
       load_addr = resolved_address.GetOpcodeLoadAddress(&GetTarget());
-      constituent->SetIsIndirect(true);
+      owner->SetIsIndirect(true);
     } else
-      load_addr = constituent->GetAddress().GetOpcodeLoadAddress(&GetTarget());
+      load_addr = owner->GetAddress().GetOpcodeLoadAddress(&GetTarget());
   } else
-    load_addr = constituent->GetAddress().GetOpcodeLoadAddress(&GetTarget());
+    load_addr = owner->GetAddress().GetOpcodeLoadAddress(&GetTarget());
 
   if (load_addr != LLDB_INVALID_ADDRESS) {
     BreakpointSiteSP bp_site_sp;
 
-    // Look up this breakpoint site.  If it exists, then add this new
-    // constituent, otherwise create a new breakpoint site and add it.
+    // Look up this breakpoint site.  If it exists, then add this new owner,
+    // otherwise create a new breakpoint site and add it.
 
     bp_site_sp = m_breakpoint_site_list.FindByAddress(load_addr);
 
     if (bp_site_sp) {
-      bp_site_sp->AddConstituent(constituent);
-      constituent->SetBreakpointSite(bp_site_sp);
+      bp_site_sp->AddOwner(owner);
+      owner->SetBreakpointSite(bp_site_sp);
       return bp_site_sp->GetID();
     } else {
-      bp_site_sp.reset(
-          new BreakpointSite(constituent, load_addr, use_hardware));
+      bp_site_sp.reset(new BreakpointSite(&m_breakpoint_site_list, owner,
+                                          load_addr, use_hardware));
       if (bp_site_sp) {
         Status error = EnableBreakpointSite(bp_site_sp.get());
         if (error.Success()) {
-          constituent->SetBreakpointSite(bp_site_sp);
+          owner->SetBreakpointSite(bp_site_sp);
           return m_breakpoint_site_list.Add(bp_site_sp);
         } else {
           if (show_error || use_hardware) {
@@ -1703,8 +1693,7 @@ Process::CreateBreakpointSite(const BreakpointLocationSP &constituent,
             GetTarget().GetDebugger().GetErrorStream().Printf(
                 "warning: failed to set breakpoint site at 0x%" PRIx64
                 " for breakpoint %i.%i: %s\n",
-                load_addr, constituent->GetBreakpoint().GetID(),
-                constituent->GetID(),
+                load_addr, owner->GetBreakpoint().GetID(), owner->GetID(),
                 error.AsCString() ? error.AsCString() : "unknown error");
           }
         }
@@ -1715,12 +1704,11 @@ Process::CreateBreakpointSite(const BreakpointLocationSP &constituent,
   return LLDB_INVALID_BREAK_ID;
 }
 
-void Process::RemoveConstituentFromBreakpointSite(
-    lldb::user_id_t constituent_id, lldb::user_id_t constituent_loc_id,
-    BreakpointSiteSP &bp_site_sp) {
-  uint32_t num_constituents =
-      bp_site_sp->RemoveConstituent(constituent_id, constituent_loc_id);
-  if (num_constituents == 0) {
+void Process::RemoveOwnerFromBreakpointSite(lldb::user_id_t owner_id,
+                                            lldb::user_id_t owner_loc_id,
+                                            BreakpointSiteSP &bp_site_sp) {
+  uint32_t num_owners = bp_site_sp->RemoveOwner(owner_id, owner_loc_id);
+  if (num_owners == 0) {
     // Don't try to disable the site if we don't have a live process anymore.
     if (IsAlive())
       DisableBreakpointSite(bp_site_sp.get());
@@ -1731,7 +1719,7 @@ void Process::RemoveConstituentFromBreakpointSite(
 size_t Process::RemoveBreakpointOpcodesFromBuffer(addr_t bp_addr, size_t size,
                                                   uint8_t *buf) const {
   size_t bytes_removed = 0;
-  StopPointSiteList<BreakpointSite> bp_sites_in_range;
+  BreakpointSiteList bp_sites_in_range;
 
   if (m_breakpoint_site_list.FindInRange(bp_addr, bp_addr + size,
                                          bp_sites_in_range)) {
@@ -2152,7 +2140,7 @@ size_t Process::WriteMemory(addr_t addr, const void *buf, size_t size,
   // (enabled software breakpoints) any software traps (breakpoints) that we
   // may have placed in our tasks memory.
 
-  StopPointSiteList<BreakpointSite> bp_sites_in_range;
+  BreakpointSiteList bp_sites_in_range;
   if (!m_breakpoint_site_list.FindInRange(addr, addr + size, bp_sites_in_range))
     return WriteMemoryPrivate(addr, buf, size, error);
 
@@ -2420,13 +2408,13 @@ bool Process::GetLoadAddressPermissions(lldb::addr_t load_addr,
   return true;
 }
 
-Status Process::EnableWatchpoint(WatchpointSP wp_sp, bool notify) {
+Status Process::EnableWatchpoint(Watchpoint *watchpoint, bool notify) {
   Status error;
   error.SetErrorString("watchpoints are not supported");
   return error;
 }
 
-Status Process::DisableWatchpoint(WatchpointSP wp_sp, bool notify) {
+Status Process::DisableWatchpoint(Watchpoint *watchpoint, bool notify) {
   Status error;
   error.SetErrorString("watchpoints are not supported");
   return error;
@@ -3168,8 +3156,8 @@ Status Process::Halt(bool clear_thread_plans, bool use_run_lock) {
     // Don't hijack and eat the eStateExited as the code that was doing the
     // attach will be waiting for this event...
     RestoreProcessEvents();
-    Destroy(false);
     SetExitStatus(SIGKILL, "Cancelled async attach.");
+    Destroy(false);
     return Status();
   }
 
@@ -3855,13 +3843,6 @@ thread_result_t Process::RunPrivateStateThread(bool is_secondary_thread) {
                   ") woke up with an interrupt while attaching - "
                   "forwarding interrupt.",
                   __FUNCTION__, static_cast<void *>(this), GetID());
-        // The server may be spinning waiting for a process to appear, in which
-        // case we should tell it to stop doing that.  Normally, we don't NEED
-        // to do that because we will next close the communication to the stub
-        // and that will get it to shut down.  But there are remote debugging
-        // cases where relying on that side-effect causes the shutdown to be 
-        // flakey, so we should send a positive signal to interrupt the wait. 
-        Status error = HaltPrivate();
         BroadcastEvent(eBroadcastBitInterrupt, nullptr);
       } else if (StateIsRunningState(m_last_broadcast_state)) {
         LLDB_LOGF(log,

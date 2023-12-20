@@ -2510,48 +2510,6 @@ static MemoryAccess::ReductionType getReductionType(const BinaryOperator *BinOp,
   }
 }
 
-///  True if @p AllAccs intersects with @p MemAccs execpt @p LoadMA and @p
-///  StoreMA
-bool hasIntersectingAccesses(isl::set AllAccs, MemoryAccess *LoadMA,
-                             MemoryAccess *StoreMA, isl::set Domain,
-                             SmallVector<MemoryAccess *, 8> &MemAccs) {
-  bool HasIntersectingAccs = false;
-  for (MemoryAccess *MA : MemAccs) {
-    if (MA == LoadMA || MA == StoreMA)
-      continue;
-
-    isl::map AccRel = MA->getAccessRelation().intersect_domain(Domain);
-    isl::set Accs = AccRel.range();
-
-    if (AllAccs.has_equal_space(Accs)) {
-      isl::set OverlapAccs = Accs.intersect(AllAccs);
-      bool DoesIntersect = !OverlapAccs.is_empty();
-      HasIntersectingAccs |= DoesIntersect;
-    }
-  }
-  return HasIntersectingAccs;
-}
-
-///  Test if the accesses of @p LoadMA and @p StoreMA can form a reduction
-bool checkCandidatePairAccesses(MemoryAccess *LoadMA, MemoryAccess *StoreMA,
-                                isl::set Domain,
-                                SmallVector<MemoryAccess *, 8> &MemAccs) {
-  isl::map LoadAccs = LoadMA->getAccessRelation();
-  isl::map StoreAccs = StoreMA->getAccessRelation();
-
-  // Skip those with obviously unequal base addresses.
-  bool Valid = LoadAccs.has_equal_space(StoreAccs);
-
-  // And check if the remaining for overlap with other memory accesses.
-  if (Valid) {
-    isl::map AllAccsRel = LoadAccs.unite(StoreAccs);
-    AllAccsRel = AllAccsRel.intersect_domain(Domain);
-    isl::set AllAccs = AllAccsRel.range();
-    Valid = !hasIntersectingAccesses(AllAccs, LoadMA, StoreMA, Domain, MemAccs);
-  }
-  return Valid;
-}
-
 void ScopBuilder::checkForReductions(ScopStmt &Stmt) {
   SmallVector<MemoryAccess *, 2> Loads;
   SmallVector<std::pair<MemoryAccess *, MemoryAccess *>, 4> Candidates;
@@ -2570,10 +2528,34 @@ void ScopBuilder::checkForReductions(ScopStmt &Stmt) {
 
   // Then check each possible candidate pair.
   for (const auto &CandidatePair : Candidates) {
-    MemoryAccess *LoadMA = CandidatePair.first;
-    MemoryAccess *StoreMA = CandidatePair.second;
-    bool Valid = checkCandidatePairAccesses(LoadMA, StoreMA, Stmt.getDomain(),
-                                            Stmt.MemAccs);
+    bool Valid = true;
+    isl::map LoadAccs = CandidatePair.first->getAccessRelation();
+    isl::map StoreAccs = CandidatePair.second->getAccessRelation();
+
+    // Skip those with obviously unequal base addresses.
+    if (!LoadAccs.has_equal_space(StoreAccs)) {
+      continue;
+    }
+
+    // And check if the remaining for overlap with other memory accesses.
+    isl::map AllAccsRel = LoadAccs.unite(StoreAccs);
+    AllAccsRel = AllAccsRel.intersect_domain(Stmt.getDomain());
+    isl::set AllAccs = AllAccsRel.range();
+
+    for (MemoryAccess *MA : Stmt) {
+      if (MA == CandidatePair.first || MA == CandidatePair.second)
+        continue;
+
+      isl::map AccRel =
+          MA->getAccessRelation().intersect_domain(Stmt.getDomain());
+      isl::set Accs = AccRel.range();
+
+      if (AllAccs.has_equal_space(Accs)) {
+        isl::set OverlapAccs = Accs.intersect(AllAccs);
+        Valid = Valid && OverlapAccs.is_empty();
+      }
+    }
+
     if (!Valid)
       continue;
 
@@ -2584,8 +2566,8 @@ void ScopBuilder::checkForReductions(ScopStmt &Stmt) {
 
     // If no overlapping access was found we mark the load and store as
     // reduction like.
-    LoadMA->markAsReductionLike(RT);
-    StoreMA->markAsReductionLike(RT);
+    CandidatePair.first->markAsReductionLike(RT);
+    CandidatePair.second->markAsReductionLike(RT);
   }
 }
 

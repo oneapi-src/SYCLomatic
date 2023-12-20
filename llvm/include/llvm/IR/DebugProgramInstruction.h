@@ -97,9 +97,6 @@ public:
   enum class LocationType {
     Declare,
     Value,
-
-    End, ///< Marks the end of the concrete types.
-    Any, ///< To indicate all LocationTypes in searches.
   };
   /// Classification of the debug-info record that this DPValue represents.
   /// Essentially, "is this a dbg.value or dbg.declare?". dbg.declares are not
@@ -116,7 +113,7 @@ public:
   /// Directly construct a new DPValue representing a dbg.value intrinsic
   /// assigning \p Location to the DV / Expr / DI variable.
   DPValue(Metadata *Location, DILocalVariable *DV, DIExpression *Expr,
-          const DILocation *DI, LocationType Type = LocationType::Value);
+          const DILocation *DI);
 
   /// Iterator for ValueAsMetadata that internally uses direct pointer iteration
   /// over either a ValueAsMetadata* or a ValueAsMetadata**, dereferencing to the
@@ -289,7 +286,6 @@ public:
   /// representation has been converted, and the ordering of DPValues is
   /// meaningful in the same was a dbg.values.
   simple_ilist<DPValue> StoredDPValues;
-  bool empty() const { return StoredDPValues.empty(); }
 
   const BasicBlock *getParent() const;
   BasicBlock *getParent();
@@ -312,11 +308,6 @@ public:
   /// Transfer any DPValues from \p Src into this DPMarker. If \p InsertAtHead
   /// is true, place them before existing DPValues, otherwise afterwards.
   void absorbDebugValues(DPMarker &Src, bool InsertAtHead);
-  /// Transfer the DPValues in \p Range from \p Src into this DPMarker. If
-  /// \p InsertAtHead is true, place them before existing DPValues, otherwise
-  // afterwards.
-  void absorbDebugValues(iterator_range<DPValue::self_iterator> Range,
-                         DPMarker &Src, bool InsertAtHead);
   /// Insert a DPValue into this DPMarker, at the end of the list. If
   /// \p InsertAtHead is true, at the start.
   void insertDPValue(DPValue *New, bool InsertAtHead);

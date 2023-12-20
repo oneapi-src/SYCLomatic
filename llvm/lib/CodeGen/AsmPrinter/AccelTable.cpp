@@ -201,11 +201,9 @@ class Dwarf5AccelTableWriter : public AccelTableWriter {
     char AugmentationString[8] = {'L', 'L', 'V', 'M', '0', '7', '0', '0'};
 
     Header(uint32_t CompUnitCount, uint32_t LocalTypeUnitCount,
-           uint32_t ForeignTypeUnitCount, uint32_t BucketCount,
-           uint32_t NameCount)
+           uint32_t BucketCount, uint32_t NameCount)
         : CompUnitCount(CompUnitCount), LocalTypeUnitCount(LocalTypeUnitCount),
-          ForeignTypeUnitCount(ForeignTypeUnitCount), BucketCount(BucketCount),
-          NameCount(NameCount) {}
+          BucketCount(BucketCount), NameCount(NameCount) {}
 
     void emit(Dwarf5AccelTableWriter &Ctx);
   };
@@ -222,8 +220,6 @@ class Dwarf5AccelTableWriter : public AccelTableWriter {
   MCSymbol *AbbrevStart = Asm->createTempSymbol("names_abbrev_start");
   MCSymbol *AbbrevEnd = Asm->createTempSymbol("names_abbrev_end");
   MCSymbol *EntryPool = Asm->createTempSymbol("names_entries");
-  // Indicates if this module is built with Split Dwarf enabled.
-  bool IsSplitDwarf = false;
 
   void populateAbbrevsMap();
 
@@ -242,8 +238,7 @@ public:
       ArrayRef<std::variant<MCSymbol *, uint64_t>> TypeUnits,
       llvm::function_ref<
           std::optional<DWARF5AccelTable::UnitIndexAndEncoding>(const DataT &)>
-          getIndexForEntry,
-      bool IsSplitDwarf);
+          getIndexForEntry);
 
   void emit();
 };
@@ -455,8 +450,6 @@ void Dwarf5AccelTableWriter<DataT>::emitTUList() const {
     Asm->OutStreamer->AddComment("Type unit " + Twine(TU.index()));
     if (std::holds_alternative<MCSymbol *>(TU.value()))
       Asm->emitDwarfSymbolReference(std::get<MCSymbol *>(TU.value()));
-    else if (IsSplitDwarf)
-      Asm->emitInt64(std::get<uint64_t>(TU.value()));
     else
       Asm->emitDwarfLengthOrOffset(std::get<uint64_t>(TU.value()));
   }
@@ -558,15 +551,12 @@ Dwarf5AccelTableWriter<DataT>::Dwarf5AccelTableWriter(
     ArrayRef<std::variant<MCSymbol *, uint64_t>> TypeUnits,
     llvm::function_ref<
         std::optional<DWARF5AccelTable::UnitIndexAndEncoding>(const DataT &)>
-        getIndexForEntry,
-    bool IsSplitDwarf)
+        getIndexForEntry)
     : AccelTableWriter(Asm, Contents, false),
-      Header(CompUnits.size(), IsSplitDwarf ? 0 : TypeUnits.size(),
-             IsSplitDwarf ? TypeUnits.size() : 0, Contents.getBucketCount(),
+      Header(CompUnits.size(), TypeUnits.size(), Contents.getBucketCount(),
              Contents.getUniqueNameCount()),
       CompUnits(CompUnits), TypeUnits(TypeUnits),
-      getIndexForEntry(std::move(getIndexForEntry)),
-      IsSplitDwarf(IsSplitDwarf) {
+      getIndexForEntry(std::move(getIndexForEntry)) {
   populateAbbrevsMap();
 }
 
@@ -618,10 +608,7 @@ void llvm::emitDWARF5AccelTable(
 
   for (const auto &TU : TUSymbols) {
     TUIndex[TU.UniqueID] = TUCount++;
-    if (DD.useSplitDwarf())
-      TypeUnits.push_back(std::get<uint64_t>(TU.LabelOrSignature));
-    else
-      TypeUnits.push_back(std::get<MCSymbol *>(TU.LabelOrSignature));
+    TypeUnits.push_back(TU.Label);
   }
 
   if (CompUnits.empty())
@@ -646,17 +633,12 @@ void llvm::emitDWARF5AccelTable(
           return {{CUIndex[Entry.getUnitID()],
                    {dwarf::DW_IDX_compile_unit, CUIndexForm}}};
         return std::nullopt;
-      },
-      DD.useSplitDwarf())
+      })
       .emit();
 }
 
 void DWARF5AccelTable::addTypeUnitSymbol(DwarfTypeUnit &U) {
-  TUSymbolsOrHashes.push_back({U.getLabelBegin(), U.getUniqueID()});
-}
-
-void DWARF5AccelTable::addTypeUnitSignature(DwarfTypeUnit &U) {
-  TUSymbolsOrHashes.push_back({U.getTypeSignature(), U.getUniqueID()});
+  TUSymbols.push_back({U.getLabelBegin(), U.getUniqueID()});
 }
 
 void llvm::emitDWARF5AccelTable(
@@ -668,7 +650,7 @@ void llvm::emitDWARF5AccelTable(
   std::vector<std::variant<MCSymbol *, uint64_t>> TypeUnits;
   Contents.finalize(Asm, "names");
   Dwarf5AccelTableWriter<DWARF5AccelTableData>(Asm, Contents, CUs, TypeUnits,
-                                               getIndexForEntry, false)
+                                               getIndexForEntry)
       .emit();
 }
 

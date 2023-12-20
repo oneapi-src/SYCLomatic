@@ -38,6 +38,7 @@
 #include <cassert>
 #include <cstdint>
 #include <iterator>
+#include <limits>
 #include <utility>
 
 using namespace llvm;
@@ -836,7 +837,6 @@ bool AArch64ExpandPseudo::expandCALL_BTI(MachineBasicBlock &MBB,
       BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(Opc)).getInstr();
   Call->addOperand(CallTarget);
   Call->setCFIType(*MBB.getParent(), MI.getCFIType());
-  Call->copyImplicitOps(*MBB.getParent(), MI);
 
   MachineInstr *BTI =
       BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(AArch64::HINT))

@@ -1962,8 +1962,7 @@ AttributeMask AttributeFuncs::typeIncompatible(Type *Ty,
           .addAttribute(Attribute::ReadOnly)
           .addAttribute(Attribute::Dereferenceable)
           .addAttribute(Attribute::DereferenceableOrNull)
-          .addAttribute(Attribute::Writable)
-          .addAttribute(Attribute::DeadOnUnwind);
+          .addAttribute(Attribute::Writable);
     if (ASK & ASK_UNSAFE_TO_DROP)
       Incompatible.addAttribute(Attribute::Nest)
           .addAttribute(Attribute::SwiftError)

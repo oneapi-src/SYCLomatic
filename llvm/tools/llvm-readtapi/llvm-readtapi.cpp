@@ -1,4 +1,4 @@
-//===-- llvm-readtapi.cpp - tapi file reader and transformer -----*- C++-*-===//
+//===-- llvm-readtapi.cpp - tapi file reader and manipulator -----*- C++-*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -10,31 +10,22 @@
 //
 //===----------------------------------------------------------------------===//
 #include "DiffEngine.h"
-#include "llvm/BinaryFormat/Magic.h"
 #include "llvm/Option/Arg.h"
 #include "llvm/Option/ArgList.h"
 #include "llvm/Option/Option.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
-#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/TextAPI/DylibReader.h"
 #include "llvm/TextAPI/TextAPIError.h"
 #include "llvm/TextAPI/TextAPIReader.h"
 #include "llvm/TextAPI/TextAPIWriter.h"
-#include "llvm/TextAPI/Utils.h"
 #include <cstdlib>
 
 using namespace llvm;
 using namespace MachO;
 using namespace object;
-
-#if !defined(PATH_MAX)
-#define PATH_MAX 1024
-#endif
 
 namespace {
 using namespace llvm::opt;
@@ -65,73 +56,45 @@ public:
   }
 };
 
-struct StubOptions {
-  bool DeleteInput = false;
-};
-
-struct Context {
-  std::vector<std::string> Inputs;
-  std::unique_ptr<llvm::raw_fd_stream> OutStream;
-  FileType WriteFT = FileType::TBD_V5;
-  StubOptions StubOpt;
-  bool Compact = false;
-  Architecture Arch = AK_unknown;
-};
-
 // Use unique exit code to differentiate failures not directly caused from
 // TextAPI operations. This is used for wrapping `compare` operations in
 // automation and scripting.
 const int NON_TAPI_EXIT_CODE = 2;
 const std::string TOOLNAME = "llvm-readtapi";
 ExitOnError ExitOnErr;
-} // anonymous namespace
 
 // Handle error reporting in cases where `ExitOnError` is not used.
-static void reportError(Twine Message, int ExitCode = EXIT_FAILURE) {
+void reportError(Twine Message, int ExitCode = EXIT_FAILURE) {
   errs() << TOOLNAME << ": error: " << Message << "\n";
   errs().flush();
   exit(ExitCode);
 }
 
-static std::unique_ptr<InterfaceFile>
-getInterfaceFile(const StringRef Filename, bool ResetBanner = true) {
+struct Context {
+  std::vector<std::string> Inputs;
+  std::unique_ptr<llvm::raw_fd_stream> OutStream;
+  FileType WriteFT = FileType::TBD_V5;
+  bool Compact = false;
+  Architecture Arch = AK_unknown;
+};
+
+std::unique_ptr<InterfaceFile> getInterfaceFile(const StringRef Filename,
+                                                bool ResetBanner = true) {
   ExitOnErr.setBanner(TOOLNAME + ": error: '" + Filename.str() + "' ");
   ErrorOr<std::unique_ptr<MemoryBuffer>> BufferOrErr =
       MemoryBuffer::getFile(Filename);
   if (BufferOrErr.getError())
     ExitOnErr(errorCodeToError(BufferOrErr.getError()));
-  auto Buffer = std::move(*BufferOrErr);
-
-  std::unique_ptr<InterfaceFile> IF;
-  switch (identify_magic(Buffer->getBuffer())) {
-  case file_magic::macho_dynamically_linked_shared_lib:
-    LLVM_FALLTHROUGH;
-  case file_magic::macho_dynamically_linked_shared_lib_stub:
-    LLVM_FALLTHROUGH;
-  case file_magic::macho_universal_binary: {
-    auto IFOrErr = DylibReader::get(Buffer->getMemBufferRef());
-    if (!IFOrErr)
-      ExitOnErr(IFOrErr.takeError());
-    IF = std::move(*IFOrErr);
-    break;
-  }
-  case file_magic::tapi_file: {
-    auto IFOrErr = TextAPIReader::get(Buffer->getMemBufferRef());
-    if (!IFOrErr)
-      ExitOnErr(IFOrErr.takeError());
-    IF = std::move(*IFOrErr);
-    break;
-  }
-  default:
-    reportError(Filename + ": unsupported file type");
-  }
-
+  Expected<std::unique_ptr<InterfaceFile>> IF =
+      TextAPIReader::get((*BufferOrErr)->getMemBufferRef());
+  if (!IF)
+    ExitOnErr(IF.takeError());
   if (ResetBanner)
     ExitOnErr.setBanner(TOOLNAME + ": error: ");
-  return IF;
+  return std::move(*IF);
 }
 
-static bool handleCompareAction(const Context &Ctx) {
+bool handleCompareAction(const Context &Ctx) {
   if (Ctx.Inputs.size() != 2)
     reportError("compare only supports two input files",
                 /*ExitCode=*/NON_TAPI_EXIT_CODE);
@@ -146,8 +109,8 @@ static bool handleCompareAction(const Context &Ctx) {
   return DiffEngine(LeftIF.get(), RightIF.get()).compareFiles(OS);
 }
 
-static bool handleWriteAction(const Context &Ctx,
-                              std::unique_ptr<InterfaceFile> Out = nullptr) {
+bool handleWriteAction(const Context &Ctx,
+                       std::unique_ptr<InterfaceFile> Out = nullptr) {
   if (!Out) {
     if (Ctx.Inputs.size() != 1)
       reportError("write only supports one input file");
@@ -158,7 +121,7 @@ static bool handleWriteAction(const Context &Ctx,
   return EXIT_SUCCESS;
 }
 
-static bool handleMergeAction(const Context &Ctx) {
+bool handleMergeAction(const Context &Ctx) {
   if (Ctx.Inputs.size() < 2)
     reportError("merge requires at least two input files");
 
@@ -178,35 +141,11 @@ static bool handleMergeAction(const Context &Ctx) {
   return handleWriteAction(Ctx, std::move(Out));
 }
 
-static bool handleStubifyAction(Context &Ctx) {
-  if (Ctx.Inputs.empty())
-    reportError("stubify requires at least one input file");
-
-  if ((Ctx.Inputs.size() > 1) && (Ctx.OutStream != nullptr))
-    reportError("cannot write multiple inputs into single output file");
-
-  for (StringRef FileName : Ctx.Inputs) {
-    auto IF = getInterfaceFile(FileName);
-    if (Ctx.StubOpt.DeleteInput) {
-      std::error_code EC;
-      SmallString<PATH_MAX> OutputLoc = FileName;
-      MachO::replace_extension(OutputLoc, ".tbd");
-      Ctx.OutStream = std::make_unique<llvm::raw_fd_stream>(OutputLoc, EC);
-      if (EC)
-        reportError("opening file '" + OutputLoc + ": " + EC.message());
-      if (auto Err = sys::fs::remove(FileName))
-        reportError("deleting file '" + FileName + ": " + EC.message());
-    }
-    handleWriteAction(Ctx, std::move(IF));
-  }
-  return EXIT_SUCCESS;
-}
-
 using IFOperation =
     std::function<llvm::Expected<std::unique_ptr<InterfaceFile>>(
         const llvm::MachO::InterfaceFile &, Architecture)>;
-static bool handleSingleFileAction(const Context &Ctx, const StringRef Action,
-                                   IFOperation act) {
+bool handleSingleFileAction(const Context &Ctx, const StringRef Action,
+                            IFOperation act) {
   if (Ctx.Inputs.size() != 1)
     reportError(Action + " only supports one input file");
   if (Ctx.Arch == AK_unknown)
@@ -220,9 +159,7 @@ static bool handleSingleFileAction(const Context &Ctx, const StringRef Action,
   return handleWriteAction(Ctx, std::move(*OutIF));
 }
 
-static void setStubOptions(opt::InputArgList &Args, StubOptions &Opt) {
-  Opt.DeleteInput = Args.hasArg(OPT_delete_input);
-}
+} // anonymous namespace
 
 int main(int Argc, char **Argv) {
   InitLLVM X(Argc, Argv);
@@ -235,19 +172,12 @@ int main(int Argc, char **Argv) {
       Argc, Argv, OPT_UNKNOWN, Saver, [&](StringRef Msg) { reportError(Msg); });
   if (Args.hasArg(OPT_help)) {
     Tbl.printHelp(outs(),
-                  "USAGE: llvm-readtapi <command> [-arch <architecture> "
-                  "<options>]* <inputs> [-o "
+                  "USAGE: llvm-readtapi [options] [-arch <arch>]* <inputs> [-o "
                   "<output>]*",
-                  "LLVM TAPI file reader and transformer");
+                  "LLVM TAPI file reader and manipulator");
     return EXIT_SUCCESS;
   }
 
-  if (Args.hasArg(OPT_version)) {
-    cl::PrintVersionMessage();
-    return EXIT_SUCCESS;
-  }
-
-  // TODO: Add support for picking up libraries from directory input.
   for (opt::Arg *A : Args.filtered(OPT_INPUT))
     Ctx.Inputs.push_back(A->getValue());
 
@@ -302,9 +232,6 @@ int main(int Argc, char **Argv) {
     return handleSingleFileAction(Ctx, "extract", &InterfaceFile::extract);
   case OPT_remove:
     return handleSingleFileAction(Ctx, "remove", &InterfaceFile::remove);
-  case OPT_stubify:
-    setStubOptions(Args, Ctx.StubOpt);
-    return handleStubifyAction(Ctx);
   }
 
   return EXIT_SUCCESS;

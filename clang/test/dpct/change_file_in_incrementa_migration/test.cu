@@ -1,7 +1,7 @@
 // RUN: cp %S/* .
 // RUN: dpct --process-all --in-root=. --out-root=%T --cuda-include-path="%cuda-path/include" -- -DAAA
 // RUN: FileCheck --input-file %T/test.dp.cpp --match-full-lines %S/migrate_ref1.txt
-// RUN: %if build_lit %{icpx -c -fsycl %T/test.dp.cpp -DAAA -o %T/test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/test.dp.cpp -o %T/test.dp.o %}
 // RUN: echo "//" >> test.cu
 // RUN: dpct --process-all --in-root=. --out-root=%T 2> %T/output1.txt --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/test.dp.cpp --match-full-lines %S/migrate_ref2.txt
@@ -10,7 +10,7 @@
 // RUN: echo "//" >> test.cuh
 // RUN: dpct --process-all --in-root=. --out-root=%T 2> %T/output2.txt --cuda-include-path="%cuda-path/include" -- -DAAA
 // RUN: FileCheck --input-file %T/test.dp.cpp --match-full-lines %S/migrate_ref3.txt
-// RUN: %if build_lit %{icpx -c -fsycl %T/test.dp.cpp -DAAA -o %T/test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/test.dp.cpp -o %T/test.dp.o %}
 // RUN: FileCheck --input-file %T/output2.txt --match-full-lines %S/output_ref2.txt
 // RUN: rm -rf %T/*
 

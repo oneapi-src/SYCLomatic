@@ -30,7 +30,8 @@ class MCSubtargetInfo;
 class MCTargetOptions;
 class Target;
 
-MCCodeEmitter *createBPFMCCodeEmitter(const MCInstrInfo &MCII, MCContext &Ctx);
+MCCodeEmitter *createBPFMCCodeEmitter(const MCInstrInfo &MCII,
+                                      MCContext &Ctx);
 MCCodeEmitter *createBPFbeMCCodeEmitter(const MCInstrInfo &MCII,
                                         MCContext &Ctx);
 
@@ -42,7 +43,7 @@ MCAsmBackend *createBPFbeAsmBackend(const Target &T, const MCSubtargetInfo &STI,
                                     const MCTargetOptions &Options);
 
 std::unique_ptr<MCObjectTargetWriter> createBPFELFObjectWriter(uint8_t OSABI);
-} // namespace llvm
+}
 
 // Defines symbolic names for BPF registers.  This defines a mapping from
 // register name to register number.

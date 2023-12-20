@@ -49,10 +49,7 @@ public:
 
 class NextAccessAnalysis : public DenseBackwardDataFlowAnalysis<NextAccess> {
 public:
-  NextAccessAnalysis(DataFlowSolver &solver, SymbolTableCollection &symbolTable,
-                     bool assumeFuncReads = false)
-      : DenseBackwardDataFlowAnalysis(solver, symbolTable),
-        assumeFuncReads(assumeFuncReads) {}
+  using DenseBackwardDataFlowAnalysis::DenseBackwardDataFlowAnalysis;
 
   void visitOperation(Operation *op, const NextAccess &after,
                       NextAccess *before) override;
@@ -72,10 +69,8 @@ public:
   // means "we don't know what the next access is" rather than "there is no next
   // access". But it's unclear how to differentiate the two cases...
   void setToExitState(NextAccess *lattice) override {
-    propagateIfChanged(lattice, lattice->setKnownToUnknown());
+    propagateIfChanged(lattice, lattice->reset());
   }
-
-  const bool assumeFuncReads;
 };
 } // namespace
 
@@ -89,13 +84,7 @@ void NextAccessAnalysis::visitOperation(Operation *op, const NextAccess &after,
 
   SmallVector<MemoryEffects::EffectInstance> effects;
   memory.getEffects(effects);
-
-  // First, check if all underlying values are already known. Otherwise, avoid
-  // propagating and stay in the "undefined" state to avoid incorrectly
-  // propagating values that may be overwritten later on as that could be
-  // problematic for convergence based on monotonicity of lattice updates.
-  SmallVector<Value> underlyingValues;
-  underlyingValues.reserve(effects.size());
+  ChangeResult result = before->meet(after);
   for (const MemoryEffects::EffectInstance &effect : effects) {
     Value value = effect.getValue();
 
@@ -106,23 +95,10 @@ void NextAccessAnalysis::visitOperation(Operation *op, const NextAccess &after,
 
     // If cannot find the most underlying value, we cannot assume anything about
     // the next accesses.
-    std::optional<Value> underlyingValue =
-        UnderlyingValueAnalysis::getMostUnderlyingValue(
-            value, [&](Value value) {
-              return getOrCreateFor<UnderlyingValueLattice>(op, value);
-            });
-
-    // If the underlying value is not known yet, don't propagate.
-    if (!underlyingValue)
-      return;
-
-    underlyingValues.push_back(*underlyingValue);
-  }
-
-  // Update the state if all underlying values are known.
-  ChangeResult result = before->meet(after);
-  for (const auto &[effect, value] : llvm::zip(effects, underlyingValues)) {
-    // If the underlying value is known to be unknown, set to fixpoint.
+    value = UnderlyingValueAnalysis::getMostUnderlyingValue(
+        value, [&](Value value) {
+          return getOrCreateFor<UnderlyingValueLattice>(op, value);
+        });
     if (!value)
       return setToExitState(before);
 
@@ -134,27 +110,6 @@ void NextAccessAnalysis::visitOperation(Operation *op, const NextAccess &after,
 void NextAccessAnalysis::visitCallControlFlowTransfer(
     CallOpInterface call, CallControlFlowAction action, const NextAccess &after,
     NextAccess *before) {
-  if (action == CallControlFlowAction::ExternalCallee && assumeFuncReads) {
-    SmallVector<Value> underlyingValues;
-    underlyingValues.reserve(call->getNumOperands());
-    for (Value operand : call.getArgOperands()) {
-      std::optional<Value> underlyingValue =
-          UnderlyingValueAnalysis::getMostUnderlyingValue(
-              operand, [&](Value value) {
-                return getOrCreateFor<UnderlyingValueLattice>(
-                    call.getOperation(), value);
-              });
-      if (!underlyingValue)
-        return;
-      underlyingValues.push_back(*underlyingValue);
-    }
-
-    ChangeResult result = before->meet(after);
-    for (Value operand : underlyingValues) {
-      result |= before->set(operand, call);
-    }
-    return propagateIfChanged(before, result);
-  }
   auto testCallAndStore =
       dyn_cast<::test::TestCallAndStoreOp>(call.getOperation());
   if (testCallAndStore && ((action == CallControlFlowAction::EnterCallee &&
@@ -188,23 +143,9 @@ void NextAccessAnalysis::visitRegionBranchControlFlowTransfer(
 namespace {
 struct TestNextAccessPass
     : public PassWrapper<TestNextAccessPass, OperationPass<>> {
-  TestNextAccessPass() = default;
-  TestNextAccessPass(const TestNextAccessPass &other) : PassWrapper(other) {
-    interprocedural = other.interprocedural;
-    assumeFuncReads = other.assumeFuncReads;
-  }
-
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(TestNextAccessPass)
 
   StringRef getArgument() const override { return "test-next-access"; }
-
-  Option<bool> interprocedural{
-      *this, "interprocedural", llvm::cl::init(true),
-      llvm::cl::desc("perform interprocedural analysis")};
-  Option<bool> assumeFuncReads{
-      *this, "assume-func-reads", llvm::cl::init(false),
-      llvm::cl::desc(
-          "assume external functions have read effect on all arguments")};
 
   static constexpr llvm::StringLiteral kTagAttrName = "name";
   static constexpr llvm::StringLiteral kNextAccessAttrName = "next_access";
@@ -217,29 +158,22 @@ struct TestNextAccessPass
     if (!nextAccess)
       return StringAttr::get(op->getContext(), "not computed");
 
-    // Note that if the underlying value could not be computed or is unknown, we
-    // conservatively treat the result also unknown.
     SmallVector<Attribute> attrs;
     for (Value operand : op->getOperands()) {
-      std::optional<Value> underlyingValue =
-          UnderlyingValueAnalysis::getMostUnderlyingValue(
-              operand, [&](Value value) {
-                return solver.lookupState<UnderlyingValueLattice>(value);
-              });
-      if (!underlyingValue) {
-        attrs.push_back(StringAttr::get(op->getContext(), "unknown"));
-        continue;
-      }
-      Value value = *underlyingValue;
-      const AdjacentAccess *nextAcc = nextAccess->getAdjacentAccess(value);
-      if (!nextAcc || !nextAcc->isKnown()) {
+      Value value = UnderlyingValueAnalysis::getMostUnderlyingValue(
+          operand, [&](Value value) {
+            return solver.lookupState<UnderlyingValueLattice>(value);
+          });
+      std::optional<ArrayRef<Operation *>> nextAcc =
+          nextAccess->getAdjacentAccess(value);
+      if (!nextAcc) {
         attrs.push_back(StringAttr::get(op->getContext(), "unknown"));
         continue;
       }
 
       SmallVector<Attribute> innerAttrs;
-      innerAttrs.reserve(nextAcc->get().size());
-      for (Operation *nextAccOp : nextAcc->get()) {
+      innerAttrs.reserve(nextAcc->size());
+      for (Operation *nextAccOp : *nextAcc) {
         if (auto nextAccTag =
                 nextAccOp->getAttrOfType<StringAttr>(kTagAttrName)) {
           innerAttrs.push_back(nextAccTag);
@@ -259,10 +193,9 @@ struct TestNextAccessPass
     Operation *op = getOperation();
     SymbolTableCollection symbolTable;
 
-    auto config = DataFlowConfig().setInterprocedural(interprocedural);
-    DataFlowSolver solver(config);
+    DataFlowSolver solver;
     solver.load<DeadCodeAnalysis>();
-    solver.load<NextAccessAnalysis>(symbolTable, assumeFuncReads);
+    solver.load<NextAccessAnalysis>(symbolTable);
     solver.load<SparseConstantPropagation>();
     solver.load<UnderlyingValueAnalysis>();
     if (failed(solver.initializeAndRun(op))) {

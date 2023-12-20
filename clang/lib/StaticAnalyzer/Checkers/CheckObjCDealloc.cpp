@@ -1045,8 +1045,8 @@ bool ObjCDeallocChecker::isReleasedByCIFilterDealloc(
   StringRef IvarName = PropImpl->getPropertyIvarDecl()->getName();
 
   const char *ReleasePrefix = "input";
-  if (!(PropName.starts_with(ReleasePrefix) ||
-        IvarName.starts_with(ReleasePrefix))) {
+  if (!(PropName.startswith(ReleasePrefix) ||
+        IvarName.startswith(ReleasePrefix))) {
     return false;
   }
 

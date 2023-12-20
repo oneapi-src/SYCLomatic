@@ -27,12 +27,11 @@
 //     constexpr const data_handle_type& data_handle() const noexcept { return ptr_; }
 //     constexpr const mapping_type& mapping() const noexcept { return map_; }
 //     constexpr const accessor_type& accessor() const noexcept { return acc_; }
-//     /* per LWG-4021 "mdspan::is_always_meow() should be noexcept" */
-//     static constexpr bool is_always_unique() noexcept
+//     static constexpr bool is_always_unique()
 //       { return mapping_type::is_always_unique(); }
-//     static constexpr bool is_always_exhaustive() noexcept
+//     static constexpr bool is_always_exhaustive()
 //       { return mapping_type::is_always_exhaustive(); }
-//     static constexpr bool is_always_strided() noexcept
+//     static constexpr bool is_always_strided()
 //       { return mapping_type::is_always_strided(); }
 //
 //     constexpr bool is_unique() const
@@ -142,16 +141,15 @@ constexpr void test_mdspan_types(const H& handle, const M& map, const A& acc) {
   ASSERT_SAME_TYPE(decltype(m.is_unique()), bool);
   ASSERT_SAME_TYPE(decltype(m.is_exhaustive()), bool);
   ASSERT_SAME_TYPE(decltype(m.is_strided()), bool);
-  // per LWG-4021 "mdspan::is_always_meow() should be noexcept"
-  static_assert(noexcept(MDS::is_always_unique()));
-  static_assert(noexcept(MDS::is_always_exhaustive()));
-  static_assert(noexcept(MDS::is_always_strided()));
-  LIBCPP_STATIC_ASSERT(!noexcept(m.is_unique()));
-  LIBCPP_STATIC_ASSERT(!noexcept(m.is_exhaustive()));
-  LIBCPP_STATIC_ASSERT(!noexcept(m.is_strided()));
-  static_assert(MDS::is_always_unique() == M::is_always_unique());
-  static_assert(MDS::is_always_exhaustive() == M::is_always_exhaustive());
-  static_assert(MDS::is_always_strided() == M::is_always_strided());
+  assert(!noexcept(MDS::is_always_unique()));
+  assert(!noexcept(MDS::is_always_exhaustive()));
+  assert(!noexcept(MDS::is_always_strided()));
+  assert(!noexcept(m.is_unique()));
+  assert(!noexcept(m.is_exhaustive()));
+  assert(!noexcept(m.is_strided()));
+  assert(MDS::is_always_unique() == M::is_always_unique());
+  assert(MDS::is_always_exhaustive() == M::is_always_exhaustive());
+  assert(MDS::is_always_strided() == M::is_always_strided());
   assert(m.is_unique() == map.is_unique());
   assert(m.is_exhaustive() == map.is_exhaustive());
   assert(m.is_strided() == map.is_strided());
@@ -161,7 +159,7 @@ constexpr void test_mdspan_types(const H& handle, const M& map, const A& acc) {
     if (m.is_strided()) {
       for (typename MDS::rank_type r = 0; r < MDS::rank(); r++) {
         ASSERT_SAME_TYPE(decltype(m.stride(r)), typename MDS::index_type);
-        LIBCPP_STATIC_ASSERT(!noexcept(m.stride(r)));
+        assert(!noexcept(m.stride(r)));
         assert(m.stride(r) == map.stride(r));
       }
     }

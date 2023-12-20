@@ -226,7 +226,7 @@ public:
     unsigned TargetSectionID = 0;
     uint64_t TargetOffset = 0;
 
-    if (TargetName.starts_with(getImportSymbolPrefix())) {
+    if (TargetName.startswith(getImportSymbolPrefix())) {
       assert(IsExtern && "DLLImport not marked extern?");
       TargetSectionID = SectionID;
       TargetOffset = getDLLImportOffset(SectionID, Stubs, TargetName);

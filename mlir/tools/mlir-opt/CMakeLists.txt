@@ -26,7 +26,6 @@ if(MLIR_INCLUDE_TESTS)
     MLIRLoopLikeInterfaceTestPasses
     MLIRMathTestPasses
     MLIRMemRefTestPasses
-    MLIRMeshTestSimplifications
     MLIRNVGPUTestPasses
     MLIRSCFTestPasses
     MLIRShapeTestPasses
@@ -67,10 +66,6 @@ set(LIBS
   MLIRTransformUtils
   MLIRSupport
   MLIRIR
-
-  # TODO: Remove when registerAllGPUToLLVMIRTranslations is no longer
-  # registered directly in mlir-opt.cpp.
-  MLIRToLLVMIRTranslationRegistration
   )
 
 # Exclude from libMLIR.so because this has static options intended for

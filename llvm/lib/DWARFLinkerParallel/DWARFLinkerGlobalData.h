@@ -13,6 +13,7 @@
 #include "llvm/DWARFLinkerParallel/DWARFLinker.h"
 #include "llvm/DWARFLinkerParallel/StringPool.h"
 #include "llvm/Support/PerThreadBumpPtrAllocator.h"
+#include <map>
 
 namespace llvm {
 

@@ -31,22 +31,21 @@ template <typename T> struct NormalFloat {
       cpp::is_floating_point_v<T>,
       "NormalFloat template parameter has to be a floating point type.");
 
-  using StorageType = typename FPBits<T>::StorageType;
-  static constexpr StorageType ONE =
-      (StorageType(1) << FPBits<T>::FRACTION_LEN);
+  using UIntType = typename FPBits<T>::UIntType;
+  static constexpr UIntType ONE = (UIntType(1) << MantissaWidth<T>::VALUE);
 
   // Unbiased exponent value.
   int32_t exponent;
 
-  StorageType mantissa;
-  // We want |StorageType| to have atleast one bit more than the actual mantissa
+  UIntType mantissa;
+  // We want |UIntType| to have atleast one bit more than the actual mantissa
   // bit width to accommodate the implicit 1 value.
-  static_assert(sizeof(StorageType) * 8 >= FPBits<T>::FRACTION_LEN + 1,
+  static_assert(sizeof(UIntType) * 8 >= MantissaWidth<T>::VALUE + 1,
                 "Bad type for mantissa in NormalFloat.");
 
   bool sign;
 
-  LIBC_INLINE NormalFloat(int32_t e, StorageType m, bool s)
+  LIBC_INLINE NormalFloat(int32_t e, UIntType m, bool s)
       : exponent(e), mantissa(m), sign(s) {
     if (mantissa >= ONE)
       return;
@@ -91,9 +90,9 @@ template <typename T> struct NormalFloat {
   }
 
   LIBC_INLINE operator T() const {
-    int biased_exponent = exponent + FPBits<T>::EXP_BIAS;
+    int biased_exponent = exponent + FPBits<T>::EXPONENT_BIAS;
     // Max exponent is of the form 0xFF...E. That is why -2 and not -1.
-    constexpr int MAX_EXPONENT_VALUE = (1 << FPBits<T>::EXP_LEN) - 2;
+    constexpr int MAX_EXPONENT_VALUE = (1 << ExponentWidth<T>::VALUE) - 2;
     if (biased_exponent > MAX_EXPONENT_VALUE) {
       return sign ? T(FPBits<T>::neg_inf()) : T(FPBits<T>::inf());
     }
@@ -101,20 +100,20 @@ template <typename T> struct NormalFloat {
     FPBits<T> result(T(0.0));
     result.set_sign(sign);
 
-    constexpr int SUBNORMAL_EXPONENT = -FPBits<T>::EXP_BIAS + 1;
+    constexpr int SUBNORMAL_EXPONENT = -FPBits<T>::EXPONENT_BIAS + 1;
     if (exponent < SUBNORMAL_EXPONENT) {
       unsigned shift = SUBNORMAL_EXPONENT - exponent;
       // Since exponent > subnormalExponent, shift is strictly greater than
       // zero.
-      if (shift <= FPBits<T>::FRACTION_LEN + 1) {
+      if (shift <= MantissaWidth<T>::VALUE + 1) {
         // Generate a subnormal number. Might lead to loss of precision.
         // We round to nearest and round halfway cases to even.
-        const StorageType shift_out_mask = (StorageType(1) << shift) - 1;
-        const StorageType shift_out_value = mantissa & shift_out_mask;
-        const StorageType halfway_value = StorageType(1) << (shift - 1);
-        result.set_biased_exponent(0);
+        const UIntType shift_out_mask = (UIntType(1) << shift) - 1;
+        const UIntType shift_out_value = mantissa & shift_out_mask;
+        const UIntType halfway_value = UIntType(1) << (shift - 1);
+        result.set_unbiased_exponent(0);
         result.set_mantissa(mantissa >> shift);
-        StorageType new_mantissa = result.get_mantissa();
+        UIntType new_mantissa = result.get_mantissa();
         if (shift_out_value > halfway_value) {
           new_mantissa += 1;
         } else if (shift_out_value == halfway_value) {
@@ -127,14 +126,14 @@ template <typename T> struct NormalFloat {
         // mantissa was all ones (0b111..11). For such a case, we will carry
         // the overflow into the exponent.
         if (new_mantissa == ONE)
-          result.set_biased_exponent(1);
+          result.set_unbiased_exponent(1);
         return T(result);
       } else {
         return T(result);
       }
     }
 
-    result.set_biased_exponent(exponent + FPBits<T>::EXP_BIAS);
+    result.set_unbiased_exponent(exponent + FPBits<T>::EXPONENT_BIAS);
     result.set_mantissa(mantissa);
     return T(result);
   }
@@ -152,26 +151,26 @@ private:
     }
 
     // Normalize subnormal numbers.
-    if (bits.get_biased_exponent() == 0) {
+    if (bits.get_unbiased_exponent() == 0) {
       unsigned shift = evaluate_normalization_shift(bits.get_mantissa());
-      mantissa = StorageType(bits.get_mantissa()) << shift;
-      exponent = 1 - FPBits<T>::EXP_BIAS - shift;
+      mantissa = UIntType(bits.get_mantissa()) << shift;
+      exponent = 1 - FPBits<T>::EXPONENT_BIAS - shift;
     } else {
-      exponent = bits.get_biased_exponent() - FPBits<T>::EXP_BIAS;
+      exponent = bits.get_unbiased_exponent() - FPBits<T>::EXPONENT_BIAS;
       mantissa = ONE | bits.get_mantissa();
     }
   }
 
-  LIBC_INLINE unsigned evaluate_normalization_shift(StorageType m) {
+  LIBC_INLINE unsigned evaluate_normalization_shift(UIntType m) {
     unsigned shift = 0;
-    for (; (ONE & m) == 0 && (shift < FPBits<T>::FRACTION_LEN);
+    for (; (ONE & m) == 0 && (shift < MantissaWidth<T>::VALUE);
          m <<= 1, ++shift)
       ;
     return shift;
   }
 };
 
-#ifdef LIBC_LONG_DOUBLE_IS_X86_FLOAT80
+#ifdef SPECIAL_X86_LONG_DOUBLE
 template <>
 LIBC_INLINE void
 NormalFloat<long double>::init_from_bits(FPBits<long double> bits) {
@@ -185,7 +184,7 @@ NormalFloat<long double>::init_from_bits(FPBits<long double> bits) {
     return;
   }
 
-  if (bits.get_biased_exponent() == 0) {
+  if (bits.get_unbiased_exponent() == 0) {
     if (bits.get_implicit_bit() == 0) {
       // Since we ignore zero value, the mantissa in this case is non-zero.
       int normalization_shift =
@@ -202,36 +201,36 @@ NormalFloat<long double>::init_from_bits(FPBits<long double> bits) {
       exponent = 0;
       mantissa = 0;
     } else {
-      exponent = bits.get_biased_exponent() - 16383;
+      exponent = bits.get_unbiased_exponent() - 16383;
       mantissa = ONE | bits.get_mantissa();
     }
   }
 }
 
 template <> LIBC_INLINE NormalFloat<long double>::operator long double() const {
-  using LDBits = FPBits<long double>;
-  int biased_exponent = exponent + LDBits::EXP_BIAS;
+  int biased_exponent = exponent + FPBits<long double>::EXPONENT_BIAS;
   // Max exponent is of the form 0xFF...E. That is why -2 and not -1.
-  constexpr int MAX_EXPONENT_VALUE = (1 << LDBits::EXP_LEN) - 2;
+  constexpr int MAX_EXPONENT_VALUE =
+      (1 << ExponentWidth<long double>::VALUE) - 2;
   if (biased_exponent > MAX_EXPONENT_VALUE) {
-    return sign ? LDBits::neg_inf() : LDBits::inf();
+    return sign ? FPBits<long double>::neg_inf() : FPBits<long double>::inf();
   }
 
   FPBits<long double> result(0.0l);
   result.set_sign(sign);
 
-  constexpr int SUBNORMAL_EXPONENT = -LDBits::EXP_BIAS + 1;
+  constexpr int SUBNORMAL_EXPONENT = -FPBits<long double>::EXPONENT_BIAS + 1;
   if (exponent < SUBNORMAL_EXPONENT) {
     unsigned shift = SUBNORMAL_EXPONENT - exponent;
-    if (shift <= LDBits::FRACTION_LEN + 1) {
+    if (shift <= MantissaWidth<long double>::VALUE + 1) {
       // Generate a subnormal number. Might lead to loss of precision.
       // We round to nearest and round halfway cases to even.
-      const StorageType shift_out_mask = (StorageType(1) << shift) - 1;
-      const StorageType shift_out_value = mantissa & shift_out_mask;
-      const StorageType halfway_value = StorageType(1) << (shift - 1);
-      result.set_biased_exponent(0);
+      const UIntType shift_out_mask = (UIntType(1) << shift) - 1;
+      const UIntType shift_out_value = mantissa & shift_out_mask;
+      const UIntType halfway_value = UIntType(1) << (shift - 1);
+      result.set_unbiased_exponent(0);
       result.set_mantissa(mantissa >> shift);
-      StorageType new_mantissa = result.get_mantissa();
+      UIntType new_mantissa = result.get_mantissa();
       if (shift_out_value > halfway_value) {
         new_mantissa += 1;
       } else if (shift_out_value == halfway_value) {
@@ -244,7 +243,7 @@ template <> LIBC_INLINE NormalFloat<long double>::operator long double() const {
       // mantissa was all ones (0b111..11). For such a case, we will carry
       // the overflow into the exponent and set the implicit bit to 1.
       if (new_mantissa == ONE) {
-        result.set_biased_exponent(1);
+        result.set_unbiased_exponent(1);
         result.set_implicit_bit(1);
       } else {
         result.set_implicit_bit(0);
@@ -255,12 +254,12 @@ template <> LIBC_INLINE NormalFloat<long double>::operator long double() const {
     }
   }
 
-  result.set_biased_exponent(biased_exponent);
+  result.set_unbiased_exponent(biased_exponent);
   result.set_mantissa(mantissa);
   result.set_implicit_bit(1);
   return static_cast<long double>(result);
 }
-#endif // LIBC_LONG_DOUBLE_IS_X86_FLOAT80
+#endif // SPECIAL_X86_LONG_DOUBLE
 
 } // namespace fputil
 } // namespace LIBC_NAMESPACE

@@ -62,7 +62,7 @@ public:
     // Parse the extra command line args.
     // FIXME: This is very limited at the moment.
     for (StringRef Arg : Args)
-      if (Arg.starts_with("-checks="))
+      if (Arg.startswith("-checks="))
         OverrideOptions.Checks = std::string(Arg.substr(strlen("-checks=")));
 
     auto Options = std::make_unique<FileOptionsProvider>(

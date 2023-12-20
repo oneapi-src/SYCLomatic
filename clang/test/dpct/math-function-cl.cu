@@ -1,8 +1,7 @@
 // RUN: dpct --format-range=none -out-root %T/math-function-cl %s --cuda-include-path="%cuda-path/include" --no-cl-namespace-inline --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math-function-cl/math-function-cl.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/math-function-cl/math-function-cl.dp.cpp -o %T/math-function-cl/math-function-cl.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/math-function-cl/math-function-cl.dp.cpp -o %T/math-function-cl/math-function-cl.dp.o %}
 
-#ifndef BUILD_TEST
 #include <cmath>
 
 #include <math_functions.h>
@@ -32,4 +31,4 @@ void foo() {
 int main() {
 
 }
-#endif
+

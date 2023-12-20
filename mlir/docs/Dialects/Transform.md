@@ -431,10 +431,6 @@ ops rather than having the methods directly act on the payload IR.
 
 [include "Dialects/GPUTransformOps.md"]
 
-## Loop (extension) Transform Operations
-
-[include "Dialects/LoopExtensionOps.md"]
-
 ## Loop (SCF) Transform Operations
 
 [include "Dialects/SCFLoopTransformOps.md"]

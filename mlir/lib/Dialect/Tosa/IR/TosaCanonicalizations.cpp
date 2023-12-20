@@ -771,8 +771,6 @@ OpFoldResult ConstOp::fold(FoldAdaptor adaptor) { return getValueAttr(); }
     ShapedType inputTy = llvm::cast<ShapedType>(getInput().getType());         \
     if (!inputTy.hasRank())                                                    \
       return {};                                                               \
-    if (inputTy != getType())                                                  \
-      return {};                                                               \
     if (inputTy.getRank() == 0 || inputTy.getDimSize(getAxis()) == 1)          \
       return getInput();                                                       \
     return {};                                                                 \

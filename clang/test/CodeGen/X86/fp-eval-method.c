@@ -1,4 +1,7 @@
-// RUN: %clang_cc1 -triple i386-unknown-netbsd -emit-llvm -o - %s \
+// RUN: %clang_cc1 -triple i386-unknown-netbsd6 -emit-llvm -o - %s \
+// RUN: | FileCheck %s -check-prefixes=CHECK
+
+// RUN: %clang_cc1 -triple i386-unknown-netbsd7 -emit-llvm -o - %s \
 // RUN: | FileCheck %s -check-prefixes=CHECK-EXT
 
 // RUN: %clang_cc1 -triple i386--linux -emit-llvm -o - %s \

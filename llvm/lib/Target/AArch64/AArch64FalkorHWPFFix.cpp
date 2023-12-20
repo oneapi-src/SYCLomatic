@@ -46,6 +46,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/DebugCounter.h"
 #include "llvm/Support/raw_ostream.h"
+#include <cassert>
 #include <iterator>
 #include <utility>
 

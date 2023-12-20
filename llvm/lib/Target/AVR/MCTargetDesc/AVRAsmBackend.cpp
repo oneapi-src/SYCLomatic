@@ -507,8 +507,7 @@ bool AVRAsmBackend::writeNopData(raw_ostream &OS, uint64_t Count,
 
 bool AVRAsmBackend::shouldForceRelocation(const MCAssembler &Asm,
                                           const MCFixup &Fixup,
-                                          const MCValue &Target,
-                                          const MCSubtargetInfo *STI) {
+                                          const MCValue &Target) {
   switch ((unsigned)Fixup.getKind()) {
   default:
     return Fixup.getKind() >= FirstLiteralRelocationKind;

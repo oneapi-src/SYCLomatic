@@ -8,12 +8,12 @@
 
 #include "src/search/hdestroy.h"
 #include "src/__support/HashTable/table.h"
+#include "src/__support/libc_assert.h"
 #include "src/search/hsearch/global.h"
 
 namespace LIBC_NAMESPACE {
 LLVM_LIBC_FUNCTION(void, hdestroy, (void)) {
-  // HashTable::deallocate will check for nullptr. It will be a no-op if
-  // global_hash_table is null.
+  LIBC_ASSERT(internal::global_hash_table != nullptr);
   internal::HashTable::deallocate(internal::global_hash_table);
   internal::global_hash_table = nullptr;
 }

@@ -567,7 +567,15 @@ template <typename T> BaseObject Designator<T>::GetBaseObject() const {
       common::visitors{
           [](SymbolRef symbol) { return BaseObject{symbol}; },
           [](const Substring &sstring) { return sstring.GetBaseObject(); },
-          [](const auto &x) { return BaseObject{x.GetFirstSymbol()}; },
+          [](const auto &x) {
+#if !__clang__ && __GNUC__ == 7 && __GNUC_MINOR__ == 2
+            if constexpr (std::is_same_v<std::decay_t<decltype(x)>,
+                              Substring>) {
+              return x.GetBaseObject();
+            } else
+#endif
+              return BaseObject{x.GetFirstSymbol()};
+          },
       },
       u);
 }
@@ -577,7 +585,15 @@ template <typename T> const Symbol *Designator<T>::GetLastSymbol() const {
       common::visitors{
           [](SymbolRef symbol) { return &*symbol; },
           [](const Substring &sstring) { return sstring.GetLastSymbol(); },
-          [](const auto &x) { return &x.GetLastSymbol(); },
+          [](const auto &x) {
+#if !__clang__ && __GNUC__ == 7 && __GNUC_MINOR__ == 2
+            if constexpr (std::is_same_v<std::decay_t<decltype(x)>,
+                              Substring>) {
+              return x.GetLastSymbol();
+            } else
+#endif
+              return &x.GetLastSymbol();
+          },
       },
       u);
 }

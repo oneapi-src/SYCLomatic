@@ -18,7 +18,6 @@
 #ifndef LLVM_TRANSFORMS_INSTCOMBINE_INSTCOMBINER_H
 #define LLVM_TRANSFORMS_INSTCOMBINE_INSTCOMBINER_H
 
-#include "llvm/Analysis/DomConditionCache.h"
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/TargetFolder.h"
 #include "llvm/Analysis/ValueTracking.h"
@@ -73,11 +72,10 @@ protected:
   TargetLibraryInfo &TLI;
   DominatorTree &DT;
   const DataLayout &DL;
-  SimplifyQuery SQ;
+  const SimplifyQuery SQ;
   OptimizationRemarkEmitter &ORE;
   BlockFrequencyInfo *BFI;
   ProfileSummaryInfo *PSI;
-  DomConditionCache DC;
 
   // Optional analyses. When non-null, these can both be used to do better
   // combining and will be updated to reflect any changes.
@@ -100,9 +98,7 @@ public:
                const DataLayout &DL, LoopInfo *LI)
       : TTI(TTI), Builder(Builder), Worklist(Worklist),
         MinimizeSize(MinimizeSize), AA(AA), AC(AC), TLI(TLI), DT(DT), DL(DL),
-        SQ(DL, &TLI, &DT, &AC, nullptr, /*UseInstrInfo*/ true,
-           /*CanUseUndef*/ true, &DC),
-        ORE(ORE), BFI(BFI), PSI(PSI), LI(LI) {}
+        SQ(DL, &TLI, &DT, &AC), ORE(ORE), BFI(BFI), PSI(PSI), LI(LI) {}
 
   virtual ~InstCombiner() = default;
 
@@ -244,18 +240,18 @@ public:
   /// dereferenceable).
   /// If the inversion will consume instructions, `DoesConsume` will be set to
   /// true. Otherwise it will be false.
-  Value *getFreelyInvertedImpl(Value *V, bool WillInvertAllUses,
+  static Value *getFreelyInvertedImpl(Value *V, bool WillInvertAllUses,
                                       BuilderTy *Builder, bool &DoesConsume,
                                       unsigned Depth);
 
-  Value *getFreelyInverted(Value *V, bool WillInvertAllUses,
+  static Value *getFreelyInverted(Value *V, bool WillInvertAllUses,
                                   BuilderTy *Builder, bool &DoesConsume) {
     DoesConsume = false;
     return getFreelyInvertedImpl(V, WillInvertAllUses, Builder, DoesConsume,
                                  /*Depth*/ 0);
   }
 
-  Value *getFreelyInverted(Value *V, bool WillInvertAllUses,
+  static Value *getFreelyInverted(Value *V, bool WillInvertAllUses,
                                   BuilderTy *Builder) {
     bool Unused;
     return getFreelyInverted(V, WillInvertAllUses, Builder, Unused);
@@ -267,13 +263,13 @@ public:
   /// uses of V and only keep uses of ~V.
   ///
   /// See also: canFreelyInvertAllUsersOf()
-  bool isFreeToInvert(Value *V, bool WillInvertAllUses,
+  static bool isFreeToInvert(Value *V, bool WillInvertAllUses,
                              bool &DoesConsume) {
     return getFreelyInverted(V, WillInvertAllUses, /*Builder*/ nullptr,
                              DoesConsume) != nullptr;
   }
 
-  bool isFreeToInvert(Value *V, bool WillInvertAllUses) {
+  static bool isFreeToInvert(Value *V, bool WillInvertAllUses) {
     bool Unused;
     return isFreeToInvert(V, WillInvertAllUses, Unused);
   }
@@ -283,7 +279,7 @@ public:
   /// NOTE: for Instructions only!
   ///
   /// See also: isFreeToInvert()
-  bool canFreelyInvertAllUsersOf(Instruction *V, Value *IgnoredUser) {
+  static bool canFreelyInvertAllUsersOf(Instruction *V, Value *IgnoredUser) {
     // Look at every user of V.
     for (Use &U : V->uses()) {
       if (U.getUser() == IgnoredUser)

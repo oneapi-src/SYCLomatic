@@ -154,10 +154,7 @@ public:
   void emitGNUAttribute(unsigned Tag, unsigned Value) override;
 
   StringRef getMnemonic(MCInst &MI) override {
-    auto [Ptr, Bits] = InstPrinter->getMnemonic(&MI);
-    assert((Bits != 0 || Ptr == nullptr) &&
-           "Invalid char pointer for instruction with no mnemonic");
-    return Ptr;
+    return InstPrinter->getMnemonic(&MI).first;
   }
 
   void emitLabel(MCSymbol *Symbol, SMLoc Loc = SMLoc()) override;
@@ -193,7 +190,7 @@ public:
   void emitXCOFFLocalCommonSymbol(MCSymbol *LabelSym, uint64_t Size,
                                   MCSymbol *CsectSym, Align Alignment) override;
   void emitXCOFFSymbolLinkageWithVisibility(MCSymbol *Symbol,
-                                            MCSymbolAttr Linkage,
+                                            MCSymbolAttr Linakge,
                                             MCSymbolAttr Visibility) override;
   void emitXCOFFRenameDirective(const MCSymbol *Name,
                                 StringRef Rename) override;
@@ -470,12 +467,12 @@ void MCAsmStreamer::addExplicitComment(const Twine &T) {
   StringRef c = T.getSingleStringRef();
   if (c.equals(StringRef(MAI->getSeparatorString())))
     return;
-  if (c.starts_with(StringRef("//"))) {
+  if (c.startswith(StringRef("//"))) {
     ExplicitCommentToEmit.append("\t");
     ExplicitCommentToEmit.append(MAI->getCommentString());
     // drop //
     ExplicitCommentToEmit.append(c.slice(2, c.size()).str());
-  } else if (c.starts_with(StringRef("/*"))) {
+  } else if (c.startswith(StringRef("/*"))) {
     size_t p = 2, len = c.size() - 2;
     // emit each line in comment as separate newline.
     do {
@@ -488,7 +485,7 @@ void MCAsmStreamer::addExplicitComment(const Twine &T) {
         ExplicitCommentToEmit.append("\n");
       p = newp + 1;
     } while (p < len);
-  } else if (c.starts_with(StringRef(MAI->getCommentString()))) {
+  } else if (c.startswith(StringRef(MAI->getCommentString()))) {
     ExplicitCommentToEmit.append("\t");
     ExplicitCommentToEmit.append(c.str());
   } else if (c.front() == '#') {

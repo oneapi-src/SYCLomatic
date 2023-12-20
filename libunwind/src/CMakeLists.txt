@@ -66,24 +66,20 @@ set(LIBUNWIND_SOURCES
     ${LIBUNWIND_ASM_SOURCES})
 
 # Generate library list.
-if (CXX_SUPPORTS_NOSTDLIBXX_FLAG)
-  add_link_flags_if_supported(-nostdlib++)
+if (LIBUNWIND_USE_COMPILER_RT)
+  add_library_flags("${LIBUNWIND_BUILTINS_LIBRARY}")
 else()
-  if (LIBUNWIND_USE_COMPILER_RT)
-    add_library_flags("${LIBUNWIND_BUILTINS_LIBRARY}")
-  else()
-    add_library_flags_if(LIBUNWIND_HAS_GCC_S_LIB gcc_s)
-    add_library_flags_if(LIBUNWIND_HAS_GCC_LIB gcc)
-  endif()
+  add_library_flags_if(LIBUNWIND_HAS_GCC_S_LIB gcc_s)
+  add_library_flags_if(LIBUNWIND_HAS_GCC_LIB gcc)
+endif()
+if (NOT APPLE) # On Apple platforms, we don't need to link explicitly against system libraries
   add_library_flags_if(LIBUNWIND_HAS_C_LIB c)
-endif()
-
-if (NOT APPLE)
   add_library_flags_if(LIBUNWIND_HAS_DL_LIB dl)
-endif()
 
-if (LIBUNWIND_ENABLE_THREADS AND NOT APPLE)
+  if (LIBUNWIND_ENABLE_THREADS)
     add_library_flags_if(LIBUNWIND_HAS_PTHREAD_LIB pthread)
+    add_compile_flags_if(LIBUNWIND_WEAK_PTHREAD_LIB -DLIBUNWIND_USE_WEAK_PTHREAD=1)
+  endif()
 endif()
 
 if (LIBUNWIND_ENABLE_THREADS)
@@ -154,7 +150,7 @@ target_link_libraries(unwind_shared_objects PUBLIC "${LIBUNWIND_ADDITIONAL_LIBRA
 set_target_properties(unwind_shared_objects
   PROPERTIES
     CXX_EXTENSIONS OFF
-    CXX_STANDARD 17
+    CXX_STANDARD 11
     CXX_STANDARD_REQUIRED ON
     COMPILE_FLAGS "${LIBUNWIND_COMPILE_FLAGS}"
 )
@@ -194,7 +190,7 @@ target_link_libraries(unwind_static_objects PUBLIC "${LIBUNWIND_ADDITIONAL_LIBRA
 set_target_properties(unwind_static_objects
   PROPERTIES
     CXX_EXTENSIONS OFF
-    CXX_STANDARD 17
+    CXX_STANDARD 11
     CXX_STANDARD_REQUIRED ON
     COMPILE_FLAGS "${LIBUNWIND_COMPILE_FLAGS}"
 )

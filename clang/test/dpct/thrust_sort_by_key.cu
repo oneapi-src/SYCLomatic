@@ -2,9 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust_sort_by_key %s --cuda-include-path="%cuda-path/include" --usm-level=none
 // RUN: FileCheck --input-file %T/thrust_sort_by_key/thrust_sort_by_key.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust_sort_by_key/thrust_sort_by_key.dp.cpp -o %T/thrust_sort_by_key/thrust_sort_by_key.dp.o %}
-
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_sort_by_key/thrust_sort_by_key.dp.cpp -o %T/thrust_sort_by_key/thrust_sort_by_key.dp.o %}
 
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
@@ -111,4 +109,3 @@ int main(void) {
 
   return 0;
 }
-#endif

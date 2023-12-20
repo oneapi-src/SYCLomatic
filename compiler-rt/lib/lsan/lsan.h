@@ -40,7 +40,6 @@ void InitializeInterceptors();
 void ReplaceSystemMalloc();
 void LsanOnDeadlySignal(int signo, void *siginfo, void *context);
 void InstallAtExitCheckLeaks();
-void InstallAtForkHandler();
 
 #define ENSURE_LSAN_INITED        \
   do {                            \

@@ -103,6 +103,7 @@
 namespace llvm {
 
 class AsmPrinter;
+class DwarfUnit;
 class DwarfDebug;
 class DwarfTypeUnit;
 class MCSymbol;
@@ -296,15 +297,15 @@ protected:
 };
 
 struct TypeUnitMetaInfo {
-  // Symbol for start of the TU section or signature if this is SplitDwarf.
-  std::variant<MCSymbol *, uint64_t> LabelOrSignature;
+  // Symbol for start of the TU section.
+  MCSymbol *Label;
   // Unique ID of Type Unit.
   unsigned UniqueID;
 };
 using TUVectorTy = SmallVector<TypeUnitMetaInfo, 1>;
 class DWARF5AccelTable : public AccelTable<DWARF5AccelTableData> {
   // Symbols to start of all the TU sections that were generated.
-  TUVectorTy TUSymbolsOrHashes;
+  TUVectorTy TUSymbols;
 
 public:
   struct UnitIndexAndEncoding {
@@ -312,11 +313,9 @@ public:
     DWARF5AccelTableData::AttributeEncoding Endoding;
   };
   /// Returns type units that were constructed.
-  const TUVectorTy &getTypeUnitsSymbols() { return TUSymbolsOrHashes; }
+  const TUVectorTy &getTypeUnitsSymbols() { return TUSymbols; }
   /// Add a type unit start symbol.
   void addTypeUnitSymbol(DwarfTypeUnit &U);
-  /// Add a type unit Signature.
-  void addTypeUnitSignature(DwarfTypeUnit &U);
   /// Convert DIE entries to explicit offset.
   /// Needs to be called after DIE offsets are computed.
   void convertDieToOffset() {

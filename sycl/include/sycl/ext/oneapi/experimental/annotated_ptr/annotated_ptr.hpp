@@ -1,4 +1,3 @@
-//
 //==----------- annotated_ptr.hpp - SYCL annotated_ptr extension -----------==//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -32,6 +31,14 @@ namespace oneapi {
 namespace experimental {
 
 namespace {
+#define PROPAGATE_OP(op)                                                       \
+  T operator op##=(T rhs) const {                                              \
+    T t = *this;                                                               \
+    t op## = rhs;                                                              \
+    *this = t;                                                                 \
+    return t;                                                                  \
+  }
+
 // compare strings on compile time
 constexpr bool compareStrs(const char *Str1, const char *Str2) {
   return std::string_view(Str1) == Str2;
@@ -59,7 +66,6 @@ struct PropertiesFilter {
       std::tuple<>>::type...>;
 };
 } // namespace
-
 template <typename T, typename PropertyListT = empty_properties_t>
 class annotated_ref {
   // This should always fail when instantiating the unspecialized version.
@@ -67,17 +73,6 @@ class annotated_ref {
       is_property_list<PropertyListT>::value;
   static_assert(is_valid_property_list, "Property list is invalid.");
 };
-
-namespace detail {
-template <class T> struct is_ann_ref_impl : std::false_type {};
-template <class T, class P>
-struct is_ann_ref_impl<annotated_ref<T, P>> : std::true_type {};
-template <class T, class P>
-struct is_ann_ref_impl<const annotated_ref<T, P>> : std::true_type {};
-template <class T>
-constexpr bool is_ann_ref_v =
-    is_ann_ref_impl<std::remove_reference_t<T>>::value;
-} // namespace detail
 
 template <typename T, typename... Props>
 class annotated_ref<T, detail::properties_t<Props...>> {
@@ -89,12 +84,11 @@ class annotated_ref<T, detail::properties_t<Props...>> {
 
 private:
   T *m_Ptr;
-  explicit annotated_ref(T *Ptr) : m_Ptr(Ptr) {}
+  annotated_ref(T *Ptr) : m_Ptr(Ptr) {}
 
 public:
   annotated_ref(const annotated_ref &) = delete;
 
-  // implicit conversion with annotaion
   operator T() const {
 #ifdef __SYCL_DEVICE_ONLY__
     return *__builtin_intel_sycl_ptr_annotation(
@@ -105,109 +99,39 @@ public:
 #endif
   }
 
-  // assignment operator with annotaion
-  template <class O, typename = std::enable_if_t<!detail::is_ann_ref_v<O>>>
-  T operator=(O &&Obj) const {
+  T operator=(T Obj) const {
 #ifdef __SYCL_DEVICE_ONLY__
-    return *__builtin_intel_sycl_ptr_annotation(
-               m_Ptr, detail::PropertyMetaInfo<Props>::name...,
-               detail::PropertyMetaInfo<Props>::value...) =
-               std::forward<O>(Obj);
+    *__builtin_intel_sycl_ptr_annotation(
+        m_Ptr, detail::PropertyMetaInfo<Props>::name...,
+        detail::PropertyMetaInfo<Props>::value...) = Obj;
 #else
-    return *m_Ptr = std::forward<O>(Obj);
+    *m_Ptr = Obj;
 #endif
+    return Obj;
   }
 
-  template <class O, class P>
-  T operator=(const annotated_ref<O, P> &Ref) const {
-    O t2 = Ref.operator O();
-    return *this = t2;
-  }
+  T operator=(const annotated_ref &Ref) const { return *this = T(Ref); }
 
-  // propagate compound operators
-#define PROPAGATE_OP(op)                                                       \
-  template <class O, typename = std::enable_if_t<!detail::is_ann_ref_v<O>>>    \
-  T operator op(O &&rhs) const {                                               \
-    T t = this->operator T();                                                  \
-    t op std::forward<O>(rhs);                                                 \
-    *this = t;                                                                 \
-    return t;                                                                  \
-  }                                                                            \
-  template <class O, class P>                                                  \
-  T operator op(const annotated_ref<O, P> &rhs) const {                        \
-    T t = this->operator T();                                                  \
-    O t2 = rhs.operator T();                                                   \
-    t op t2;                                                                   \
-    *this = t;                                                                 \
-    return t;                                                                  \
-  }
-  PROPAGATE_OP(+=)
-  PROPAGATE_OP(-=)
-  PROPAGATE_OP(*=)
-  PROPAGATE_OP(/=)
-  PROPAGATE_OP(%=)
-  PROPAGATE_OP(^=)
-  PROPAGATE_OP(&=)
-  PROPAGATE_OP(|=)
-  PROPAGATE_OP(<<=)
-  PROPAGATE_OP(>>=)
-#undef PROPAGATE_OP
-
-  // propagate binary operators
-#define PROPAGATE_OP(op)                                                       \
-  template <class O>                                                           \
-  friend auto operator op(O &&a, const annotated_ref &b)                       \
-      ->decltype(std::forward<O>(a) op std::declval<T>()) {                    \
-    return std::forward<O>(a) op b.operator T();                               \
-  }                                                                            \
-  template <class O, typename = std::enable_if_t<!detail::is_ann_ref_v<O>>>    \
-  friend auto operator op(const annotated_ref &a, O &&b)                       \
-      ->decltype(std::declval<T>() op std::forward<O>(b)) {                    \
-    return a.operator T() op std::forward<O>(b);                               \
-  }
   PROPAGATE_OP(+)
   PROPAGATE_OP(-)
   PROPAGATE_OP(*)
   PROPAGATE_OP(/)
   PROPAGATE_OP(%)
-  PROPAGATE_OP(|)
-  PROPAGATE_OP(&)
   PROPAGATE_OP(^)
+  PROPAGATE_OP(&)
+  PROPAGATE_OP(|)
   PROPAGATE_OP(<<)
   PROPAGATE_OP(>>)
-  PROPAGATE_OP(<)
-  PROPAGATE_OP(<=)
-  PROPAGATE_OP(>)
-  PROPAGATE_OP(>=)
-  PROPAGATE_OP(==)
-  PROPAGATE_OP(!=)
-  PROPAGATE_OP(&&)
-  PROPAGATE_OP(||)
-#undef PROPAGATE_OP
 
-// Propagate unary operators
-// by setting a default template we get SFINAE to kick in
-#define PROPAGATE_OP(op)                                                       \
-  template <typename O = T>                                                    \
-  auto operator op() const->decltype(op std::declval<O>()) {                   \
-    return op this->operator O();                                              \
-  }
-  PROPAGATE_OP(+)
-  PROPAGATE_OP(-)
-  PROPAGATE_OP(!)
-  PROPAGATE_OP(~)
-#undef PROPAGATE_OP
-
-  // Propagate inc/dec operators
   T operator++() const {
-    T t = this->operator T();
+    T t = *this;
     ++t;
     *this = t;
     return t;
   }
 
   T operator++(int) const {
-    T t1 = this->operator T();
+    T t1 = *this;
     T t2 = t1;
     t2++;
     *this = t2;
@@ -215,14 +139,14 @@ public:
   }
 
   T operator--() const {
-    T t = this->operator T();
+    T t = *this;
     --t;
     *this = t;
     return t;
   }
 
   T operator--(int) const {
-    T t1 = this->operator T();
+    T t1 = *this;
     T t2 = t1;
     t2--;
     *this = t2;
@@ -231,6 +155,8 @@ public:
 
   template <class T2, class P2> friend class annotated_ptr;
 };
+
+#undef PROPAGATE_OP
 
 #ifdef __cpp_deduction_guides
 template <typename T, typename... Args>

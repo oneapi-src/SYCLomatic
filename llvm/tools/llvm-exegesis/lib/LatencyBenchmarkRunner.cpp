@@ -21,13 +21,11 @@ namespace exegesis {
 LatencyBenchmarkRunner::LatencyBenchmarkRunner(
     const LLVMState &State, Benchmark::ModeE Mode,
     BenchmarkPhaseSelectorE BenchmarkPhaseSelector,
-    Benchmark::ResultAggregationModeE ResultAgg, ExecutionModeE ExecutionMode,
-    unsigned BenchmarkRepeatCount)
+    Benchmark::ResultAggregationModeE ResultAgg, ExecutionModeE ExecutionMode)
     : BenchmarkRunner(State, Mode, BenchmarkPhaseSelector, ExecutionMode) {
   assert((Mode == Benchmark::Latency || Mode == Benchmark::InverseThroughput) &&
          "invalid mode");
   ResultAggMode = ResultAgg;
-  NumMeasurements = BenchmarkRepeatCount;
 }
 
 LatencyBenchmarkRunner::~LatencyBenchmarkRunner() = default;
@@ -70,6 +68,7 @@ Expected<std::vector<BenchmarkMeasure>> LatencyBenchmarkRunner::runMeasurements(
   // Cycle measurements include some overhead from the kernel. Repeat the
   // measure several times and return the aggregated value, as specified by
   // ResultAggMode.
+  constexpr const int NumMeasurements = 30;
   llvm::SmallVector<int64_t, 4> AccumulatedValues;
   double MinVariance = std::numeric_limits<double>::infinity();
   const char *CounterName = State.getPfmCounters().CycleCounter;

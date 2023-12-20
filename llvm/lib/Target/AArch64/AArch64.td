@@ -622,9 +622,6 @@ def FeatureLdpAlignedOnly : SubtargetFeature<"ldp-aligned-only", "HasLdpAlignedO
 def FeatureStpAlignedOnly : SubtargetFeature<"stp-aligned-only", "HasStpAlignedOnly",
     "true", "In order to emit stp, first check if the store will be aligned to 2 * element_size">;
 
-def FeatureCPA : SubtargetFeature<"cpa", "HasCPA", "true",
-  "Enable ARMv9.5-A Checked Pointer Arithmetic (FEAT_CPA)">;
-
 //===----------------------------------------------------------------------===//
 // Architectures.
 //
@@ -695,7 +692,7 @@ def HasV9_4aOps : SubtargetFeature<
 
 def HasV9_5aOps : SubtargetFeature<
   "v9.5a", "HasV9_5aOps", "true", "Support ARM v9.5a instructions",
-  [HasV9_4aOps, FeatureCPA]>;
+  [HasV9_4aOps]>;
 
 def HasV8_0rOps : SubtargetFeature<
   "v8r", "HasV8_0rOps", "true", "Support ARM v8r instructions",
@@ -786,7 +783,7 @@ let F = [HasSVE2p1, HasSVE2p1_or_HasSME2, HasSVE2p1_or_HasSME2p1] in
 def SVE2p1Unsupported : AArch64Unsupported;
 
 def SVE2Unsupported : AArch64Unsupported {
-  let F = !listconcat([HasSVE2, HasSVE2orSME, HasSVE2orSME2, HasSSVE_FP8FMA, HasSMEF8F16,
+  let F = !listconcat([HasSVE2, HasSVE2orSME, HasSSVE_FP8FMA, HasSMEF8F16,
                        HasSMEF8F32, HasSVE2AES, HasSVE2SHA3, HasSVE2SM4, HasSVE2BitPerm],
                        SVE2p1Unsupported.F);
 }
@@ -800,7 +797,7 @@ let F = [HasSME2p1, HasSVE2p1_or_HasSME2p1] in
 def SME2p1Unsupported : AArch64Unsupported;
 
 def SME2Unsupported : AArch64Unsupported {
-  let F = !listconcat([HasSME2, HasSVE2orSME2, HasSVE2p1_or_HasSME2, HasSSVE_FP8FMA,
+  let F = !listconcat([HasSME2, HasSVE2p1_or_HasSME2, HasSSVE_FP8FMA,
                       HasSMEF8F16, HasSMEF8F32],
                       SME2p1Unsupported.F);
 }
@@ -1483,9 +1480,9 @@ def ProcessorFeatures {
                                        FeatureFPARMv8, FeatureFullFP16, FeatureNEON,
                                        FeatureRCPC, FeatureSPE, FeatureSSBS,
                                        FeaturePerfMon];
-  list<SubtargetFeature> NeoverseN2 = [HasV9_0aOps, FeatureBF16, FeatureETE,
+  list<SubtargetFeature> NeoverseN2 = [HasV8_5aOps, FeatureBF16, FeatureETE,
                                        FeatureMatMulInt8, FeatureMTE, FeatureSVE2,
-                                       FeatureSVE2BitPerm, FeatureTRBE,
+                                       FeatureSVE2BitPerm, FeatureTRBE, FeatureCrypto,
                                        FeaturePerfMon];
   list<SubtargetFeature> Neoverse512TVB = [HasV8_4aOps, FeatureBF16, FeatureCacheDeepPersist,
                                            FeatureCrypto, FeatureFPARMv8, FeatureFP16FML,

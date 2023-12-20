@@ -2553,18 +2553,14 @@ def fir_DivcOp : ComplexArithmeticOp<"divc",
 // Pow is a builtin call and not a primitive
 
 def fir_CmpcOp : fir_Op<"cmpc",
-    [NoMemoryEffect, SameTypeOperands, SameOperandsAndResultShape,
-    DeclareOpInterfaceMethods<ArithFastMathInterface>]> {
+    [NoMemoryEffect, SameTypeOperands, SameOperandsAndResultShape]> {
   let summary = "complex floating-point comparison operator";
 
   let description = [{
     A complex comparison to handle complex types found in FIR.
   }];
 
-  let arguments = (ins
-      fir_ComplexType:$lhs,
-      fir_ComplexType:$rhs,
-      DefaultValuedAttr<Arith_FastMathAttr, "::mlir::arith::FastMathFlags::none">:$fastmath);
+  let arguments = (ins fir_ComplexType:$lhs, fir_ComplexType:$rhs);
 
   let results = (outs AnyLogicalLike);
 

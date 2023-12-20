@@ -24,6 +24,7 @@
 namespace llvm {
 
 class Function;
+class FunctionPass;
 
 struct ScalarizerPassOptions {
   // These options correspond 1:1 to cl::opt options defined in

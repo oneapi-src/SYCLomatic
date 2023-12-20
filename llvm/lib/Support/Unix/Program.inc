@@ -20,13 +20,11 @@
 #include "Unix.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Config/config.h"
-#include "llvm/Support/AutoConvert.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/StringSaver.h"
-#include "llvm/Support/SystemZ/zOSSupport.h"
 #include "llvm/Support/raw_ostream.h"
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -468,7 +466,7 @@ ProcessInfo llvm::sys::Wait(const ProcessInfo &PI,
     std::chrono::microseconds UserT = toDuration(Info.ru_utime);
     std::chrono::microseconds KernelT = toDuration(Info.ru_stime);
     uint64_t PeakMemory = 0;
-#if !defined(__HAIKU__) && !defined(__MVS__)
+#ifndef __HAIKU__
     PeakMemory = static_cast<uint64_t>(Info.ru_maxrss);
 #endif
     *ProcStat = ProcessStatistics{UserT + KernelT, UserT, PeakMemory};
@@ -522,12 +520,8 @@ std::error_code llvm::sys::ChangeStdoutMode(fs::OpenFlags Flags) {
 }
 
 std::error_code llvm::sys::ChangeStdinToBinary() {
-#ifdef __MVS__
-  return disableAutoConversion(STDIN_FILENO);
-#else
   // Do nothing, as Unix doesn't differentiate between text and binary.
   return std::error_code();
-#endif
 }
 
 std::error_code llvm::sys::ChangeStdoutToBinary() {

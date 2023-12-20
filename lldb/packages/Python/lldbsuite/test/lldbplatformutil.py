@@ -108,8 +108,6 @@ def _get_platform_os(p):
             platform = "freebsd"
         elif platform.startswith("netbsd"):
             platform = "netbsd"
-        elif platform.startswith("openbsd"):
-            platform = "openbsd"
         return platform
 
     return ""
@@ -175,7 +173,7 @@ class _PlatformContext(object):
 def createPlatformContext():
     if platformIsDarwin():
         return _PlatformContext("DYLD_LIBRARY_PATH", ":", "lib", "dylib")
-    elif getPlatform() in ("linux", "freebsd", "netbsd", "openbsd"):
+    elif getPlatform() in ("freebsd", "linux", "netbsd"):
         return _PlatformContext("LD_LIBRARY_PATH", ":", "lib", "so")
     else:
         return _PlatformContext("PATH", ";", "", "dll")

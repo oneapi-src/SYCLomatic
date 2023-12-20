@@ -18,6 +18,7 @@
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
 #include <memory>
+#include <optional>
 #include <utility>
 
 namespace llvm {

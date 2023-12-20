@@ -130,17 +130,3 @@ namespace PR5812 {
 
   Derived<int> di;
 }
-
-namespace GH13826 {
-template <typename T> struct A {
-  typedef int type;
-  struct B;
-};
-
-template <typename T> struct A<T>::B : A<T> {
-  B::type t;
-};
-
-A<int> a;
-A<int>::B b;
-}

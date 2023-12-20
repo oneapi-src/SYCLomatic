@@ -8,11 +8,7 @@
 
 // TODO: Investigate
 // UNSUPPORTED: LIBCXX-AIX-FIXME
-
-// QEMU does not detect EOF, when reading from stdin
-// "echo -n" suppresses any characters after the output and so the test hangs.
-// https://gitlab.com/qemu-project/qemu/-/issues/1963
-// UNSUPPORTED: LIBCXX-PICOLIBC-FIXME
+// XFAIL: LIBCXX-PICOLIBC-FIXME
 
 // This test hangs on Android devices that lack shell_v2, which was added in
 // Android N (API 24).

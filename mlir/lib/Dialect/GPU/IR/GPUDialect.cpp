@@ -492,8 +492,7 @@ static LogicalResult verifyReduceOpAndType(gpu::AllReduceOperation opName,
                                            Type resType) {
   using Kind = gpu::AllReduceOperation;
   if (llvm::is_contained(
-          {Kind::MINNUMF, Kind::MAXNUMF, Kind::MINIMUMF, Kind::MAXIMUMF},
-          opName)) {
+          {Kind::MINF, Kind::MAXF, Kind::MINIMUMF, Kind::MAXIMUMF}, opName)) {
     if (!isa<FloatType>(resType))
       return failure();
   }

@@ -1378,7 +1378,7 @@ public:
   StmtResult RebuildAttributedStmt(SourceLocation AttrLoc,
                                    ArrayRef<const Attr *> Attrs,
                                    Stmt *SubStmt) {
-    if (SemaRef.CheckRebuiltStmtAttributes(Attrs))
+    if (SemaRef.CheckRebuiltCodeAlignStmtAttributes(Attrs))
       return StmtError();
     if (SemaRef.CheckRebuiltAttributedStmtAttributes(Attrs))
       return StmtError();

@@ -19,6 +19,7 @@
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/Support/Compiler.h"
+#include <cassert>
 #include <utility>
 #include <vector>
 

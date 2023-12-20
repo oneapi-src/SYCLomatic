@@ -1334,25 +1334,24 @@ LogicalResult ConvertSetDefaultDeviceOpToGpuRuntimeCallPattern::matchAndRewrite(
     gpu::SetDefaultDeviceOp op, OpAdaptor adaptor,
     ConversionPatternRewriter &rewriter) const {
   Location loc = op.getLoc();
-  auto call = setDefaultDeviceCallBuilder.create(loc, rewriter,
-                                                 {adaptor.getDevIndex()});
-  rewriter.replaceOp(op, call);
+  setDefaultDeviceCallBuilder.create(loc, rewriter, {adaptor.getDevIndex()});
+  rewriter.replaceOp(op, {});
   return success();
 }
 
 template <typename T>
-static Value genConstInt32From(OpBuilder &builder, Location loc, T tValue) {
+static Value genConstInt32From(OpBuilder &builder, Location loc, T TValue) {
   Type llvmInt32Type = builder.getIntegerType(32);
   return builder.create<LLVM::ConstantOp>(loc, llvmInt32Type,
-                                          static_cast<int32_t>(tValue));
+                                          static_cast<int32_t>(TValue));
 }
 
 template <typename T>
-static Value genConstFloat32From(OpBuilder &builder, Location loc, T tValue) {
+static Value genConstFloat32From(OpBuilder &builder, Location loc, T TValue) {
   Type llvmFloat32Type = builder.getF32Type();
   return builder.create<LLVM::ConstantOp>(
       loc, llvmFloat32Type,
-      builder.getF32FloatAttr(static_cast<float>(tValue)));
+      builder.getF32FloatAttr(static_cast<float>(TValue)));
 }
 
 LogicalResult ConvertCreateDnTensorOpToGpuRuntimeCallPattern::matchAndRewrite(
@@ -1630,7 +1629,7 @@ LogicalResult ConvertSpMMBufferSizeOpToGpuRuntimeCallPattern::matchAndRewrite(
   auto stream = adaptor.getAsyncDependencies().front();
   Value bufferSize;
   if (is2To4Sparsity(op.getSpmatA())) {
-    auto pruneFlag =
+    auto prune_flag =
         genConstInt32From(rewriter, loc, get2To4PruneFlag(op.getSpmatA()));
     auto computeType = genConstInt32From(
         rewriter, loc, getCuSparseLtDataTypeFrom(adaptor.getComputeType()));
@@ -1642,7 +1641,7 @@ LogicalResult ConvertSpMMBufferSizeOpToGpuRuntimeCallPattern::matchAndRewrite(
         .create(loc, rewriter,
                 {bufferSize, modeA, modeB, adaptor.getSpmatA(),
                  adaptor.getDnmatB(), adaptor.getDnmatC(), computeType,
-                 pruneFlag, stream})
+                 prune_flag, stream})
         .getResult();
 
     auto bufferSizePtr1 = rewriter.create<LLVM::GEPOp>(

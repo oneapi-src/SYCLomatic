@@ -522,7 +522,6 @@ if(runtimes)
         FileCheck
         count
         llvm-cov
-        llvm-lto
         llvm-nm
         llvm-objdump
         llvm-profdata
@@ -530,7 +529,6 @@ if(runtimes)
         llvm-xray
         not
         obj2yaml
-        opt
         sancov
         sanstats
         llvm_gtest_main

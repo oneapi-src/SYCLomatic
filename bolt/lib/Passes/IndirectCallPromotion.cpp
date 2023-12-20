@@ -158,7 +158,6 @@ static cl::opt<bool> ICPPeelForInline(
 
 } // namespace opts
 
-#ifndef NDEBUG
 static bool verifyProfile(std::map<uint64_t, BinaryFunction> &BFs) {
   bool IsValid = true;
   for (auto &BFI : BFs) {
@@ -183,7 +182,6 @@ static bool verifyProfile(std::map<uint64_t, BinaryFunction> &BFs) {
   }
   return IsValid;
 }
-#endif
 
 namespace llvm {
 namespace bolt {
@@ -460,7 +458,7 @@ IndirectCallPromotion::maybeGetHotJumpTableTargets(BinaryBasicBlock &BB,
 
     if (AccessInfo.MemoryObject) {
       // Deal with bad/stale data
-      if (!AccessInfo.MemoryObject->getName().starts_with(
+      if (!AccessInfo.MemoryObject->getName().startswith(
               "JUMP_TABLE/" + Function.getOneName().str()))
         return JumpTableInfoType();
       Index =
@@ -1469,6 +1467,7 @@ void IndirectCallPromotion::runOnFunctions(BinaryContext &BC) {
                                std::max<uint64_t>(TotalIndexBasedCandidates, 1))
          << "%\n";
 
+  (void)verifyProfile;
 #ifndef NDEBUG
   verifyProfile(BFs);
 #endif

@@ -33,8 +33,7 @@
 
 namespace LIBC_NAMESPACE {
 
-[[gnu::flatten]] LIBC_INLINE int inline_memcmp(const void *p1, const void *p2,
-                                               size_t count) {
+LIBC_INLINE int inline_memcmp(const void *p1, const void *p2, size_t count) {
   return static_cast<int>(LIBC_SRC_STRING_MEMORY_UTILS_MEMCMP(
       reinterpret_cast<CPtr>(p1), reinterpret_cast<CPtr>(p2), count));
 }

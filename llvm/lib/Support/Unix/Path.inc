@@ -652,7 +652,7 @@ std::error_code equivalent(const Twine &A, const Twine &B, bool &result) {
 
 static void expandTildeExpr(SmallVectorImpl<char> &Path) {
   StringRef PathStr(Path.begin(), Path.size());
-  if (PathStr.empty() || !PathStr.starts_with("~"))
+  if (PathStr.empty() || !PathStr.startswith("~"))
     return;
 
   PathStr = PathStr.drop_front();

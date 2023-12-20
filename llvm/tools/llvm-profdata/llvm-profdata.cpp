@@ -46,7 +46,6 @@
 #include <queue>
 
 using namespace llvm;
-using ProfCorrelatorKind = InstrProfCorrelator::ProfCorrelatorKind;
 
 // https://llvm.org/docs/CommandGuide/llvm-profdata.html has documentations
 // on each subcommand.
@@ -125,11 +124,6 @@ cl::opt<std::string> DebugInfoFilename(
         "the functions it found. For merge, use the provided debug info to "
         "correlate the raw profile."),
     cl::sub(ShowSubcommand), cl::sub(MergeSubcommand));
-cl::opt<std::string>
-    BinaryFilename("binary-file", cl::init(""),
-                   cl::desc("For merge, use the provided unstripped bianry to "
-                            "correlate the raw profile."),
-                   cl::sub(MergeSubcommand));
 cl::opt<std::string> FuncNameFilter(
     "function",
     cl::desc("Details for matching functions. For overlapping CSSPGO, this "
@@ -793,27 +787,14 @@ static void mergeInstrProfile(const WeightedFileVector &Inputs,
       OutputFormat != PF_Text)
     exitWithError("unknown format is specified");
 
-  // TODO: Maybe we should support correlation with mixture of different
-  // correlation modes(w/wo debug-info/object correlation).
-  if (!DebugInfoFilename.empty() && !BinaryFilename.empty())
-    exitWithError("Expected only one of -debug-info, -binary-file");
-  std::string CorrelateFilename;
-  ProfCorrelatorKind CorrelateKind = ProfCorrelatorKind::NONE;
-  if (!DebugInfoFilename.empty()) {
-    CorrelateFilename = DebugInfoFilename;
-    CorrelateKind = ProfCorrelatorKind::DEBUG_INFO;
-  } else if (!BinaryFilename.empty()) {
-    CorrelateFilename = BinaryFilename;
-    CorrelateKind = ProfCorrelatorKind::BINARY;
-  }
-
   std::unique_ptr<InstrProfCorrelator> Correlator;
-  if (CorrelateKind != InstrProfCorrelator::NONE) {
-    if (auto Err = InstrProfCorrelator::get(CorrelateFilename, CorrelateKind)
+  if (!DebugInfoFilename.empty()) {
+    if (auto Err = InstrProfCorrelator::get(DebugInfoFilename,
+                                            InstrProfCorrelator::DEBUG_INFO)
                        .moveInto(Correlator))
-      exitWithError(std::move(Err), CorrelateFilename);
+      exitWithError(std::move(Err), DebugInfoFilename);
     if (auto Err = Correlator->correlateProfileData(MaxDbgCorrelationWarnings))
-      exitWithError(std::move(Err), CorrelateFilename);
+      exitWithError(std::move(Err), DebugInfoFilename);
   }
 
   std::mutex ErrorLock;
@@ -1025,12 +1006,12 @@ adjustInstrProfile(std::unique_ptr<WriterContext> &WC,
     // If sample profile and instrumented profile do not agree on symbol
     // uniqification.
     if (SampleProfileHasFUnique != ProfileHasFUnique) {
-      // If instrumented profile uses -funique-internal-linkage-symbols,
+      // If instrumented profile uses -funique-internal-linakge-symbols,
       // we need to trim the name.
       if (ProfileHasFUnique) {
         NewName = NewName.substr(0, PostfixPos);
       } else {
-        // If sample profile uses -funique-internal-linkage-symbols,
+        // If sample profile uses -funique-internal-linakge-symbols,
         // we build the map.
         std::string NStr =
             NewName.str() + getUniqueInternalLinkagePostfix(FName);
@@ -1533,7 +1514,7 @@ static void parseInputFilenamesFile(MemoryBuffer *Buffer,
   for (const StringRef &FileWeightEntry : Entries) {
     StringRef SanitizedEntry = FileWeightEntry.trim(" \t\v\f\r");
     // Skip comments.
-    if (SanitizedEntry.starts_with("#"))
+    if (SanitizedEntry.startswith("#"))
       continue;
     // If there's no comma, it's an unweighted profile.
     else if (!SanitizedEntry.contains(','))

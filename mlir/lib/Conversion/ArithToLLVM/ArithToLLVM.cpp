@@ -13,7 +13,6 @@
 #include "mlir/Conversion/LLVMCommon/ConversionTarget.h"
 #include "mlir/Conversion/LLVMCommon/VectorPattern.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
-#include "mlir/Dialect/LLVMIR/LLVMAttrs.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/IR/TypeUtilities.h"
 #include "mlir/Pass/Pass.h"
@@ -395,15 +394,13 @@ CmpFOpLowering::matchAndRewrite(arith::CmpFOp op, OpAdaptor adaptor,
                                 ConversionPatternRewriter &rewriter) const {
   Type operandType = adaptor.getLhs().getType();
   Type resultType = op.getResult().getType();
-  LLVM::FastmathFlags fmf =
-      arith::convertArithFastMathFlagsToLLVM(op.getFastmath());
 
   // Handle the scalar and 1D vector cases.
   if (!isa<LLVM::LLVMArrayType>(operandType)) {
     rewriter.replaceOpWithNewOp<LLVM::FCmpOp>(
         op, typeConverter->convertType(resultType),
         convertCmpPredicate<LLVM::FCmpPredicate>(op.getPredicate()),
-        adaptor.getLhs(), adaptor.getRhs(), fmf);
+        adaptor.getLhs(), adaptor.getRhs());
     return success();
   }
 
@@ -417,7 +414,7 @@ CmpFOpLowering::matchAndRewrite(arith::CmpFOp op, OpAdaptor adaptor,
         return rewriter.create<LLVM::FCmpOp>(
             op.getLoc(), llvm1DVectorTy,
             convertCmpPredicate<LLVM::FCmpPredicate>(op.getPredicate()),
-            adaptor.getLhs(), adaptor.getRhs(), fmf);
+            adaptor.getLhs(), adaptor.getRhs());
       },
       rewriter);
 }

@@ -593,7 +593,7 @@ int main(int Argc, char *Argv[]) {
     break;
   }
 
-  std::string CompilerBuildLog, CompilerBuildLogMessage;
+  std::string CompilerBuildLog;
   std::tie(CompilerBuildLog, ErrorMessage, std::ignore) =
       getCompilerBuildLog(ProgramUPtr, DeviceId);
 
@@ -604,20 +604,18 @@ int main(int Argc, char *Argv[]) {
   }
 
   if (!CompilerBuildLog.empty()) {
-    // According to the return value of getCompilerBuildLog(), ErrorMessage is
-    // always empty if CompilerBuildLog is not empty.
-    CompilerBuildLogMessage = "\n" + CmdToCmdInfoMap[OptCommand].first +
-                              " log:\n" + CompilerBuildLog + '\n';
-    logs() << CompilerBuildLogMessage;
+    std::string CompilerBuildLogMessage = "\n" +
+                                          CmdToCmdInfoMap[OptCommand].first +
+                                          " log:\n" + CompilerBuildLog + '\n';
+    if (!ErrorMessage.empty())
+      std::cerr << CompilerBuildLogMessage;
+    else
+      logs() << CompilerBuildLogMessage;
   }
 
   if (clFailed(CLErr)) {
     std::string ErrMsg =
         "Failed to " + CmdToCmdInfoMap[OptCommand].first + ": ";
-    // will print CompilerBuildLogMessage when build failed in case verbose is
-    // false, in order to provide a friendlier compile error for users.
-    if (!verbose)
-      std::cerr << CompilerBuildLogMessage;
     std::cerr << formatCLError(ErrMsg, CLErr) << '\n';
     return CLErr;
   }

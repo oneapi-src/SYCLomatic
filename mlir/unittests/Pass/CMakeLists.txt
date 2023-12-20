@@ -5,6 +5,5 @@ add_mlir_unittest(MLIRPassTests
 )
 target_link_libraries(MLIRPassTests
   PRIVATE
-  MLIRDebug
   MLIRFuncDialect
   MLIRPass)

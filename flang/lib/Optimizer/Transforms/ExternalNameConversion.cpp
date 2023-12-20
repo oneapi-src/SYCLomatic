@@ -9,13 +9,11 @@
 #include "flang/Common/Fortran.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
-#include "flang/Optimizer/Dialect/FIROpsSupport.h"
 #include "flang/Optimizer/Support/InternalNames.h"
 #include "flang/Optimizer/Transforms/Passes.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/OpenACC/OpenACC.h"
 #include "mlir/Dialect/OpenMP/OpenMPDialect.h"
-#include "mlir/IR/Attributes.h"
 #include "mlir/IR/SymbolTable.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
@@ -77,8 +75,7 @@ public:
                   mlir::PatternRewriter &rewriter) const override {
     mlir::LogicalResult ret = success();
     rewriter.startRootUpdate(op);
-    llvm::StringRef oldName = op.getSymName();
-    auto result = fir::NameUniquer::deconstruct(oldName);
+    auto result = fir::NameUniquer::deconstruct(op.getSymName());
     if (fir::NameUniquer::isExternalFacingUniquedName(result)) {
       auto newSymbol =
           rewriter.getStringAttr(mangleExternalName(result, appendUnderscore));
@@ -89,9 +86,6 @@ public:
 
       op.setSymNameAttr(newSymbol);
       mlir::SymbolTable::setSymbolName(op, newSymbol);
-
-      op->setAttr(fir::getInternalFuncNameAttrName(),
-                  mlir::StringAttr::get(op->getContext(), oldName));
     }
 
     updateEarlyOutliningParentName(op, appendUnderscore);

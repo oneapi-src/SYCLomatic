@@ -93,7 +93,6 @@
 // m: uint32_t
 // n: uint64_t
 
-// [: svuint8_t
 // t: svint32_t
 // z: svuint32_t
 // g: svuint64_t
@@ -129,7 +128,6 @@
 // Z: const pointer to uint64_t
 
 // Prototype modifiers added for SVE2p1
-// {: 128b vector
 // }: svcount_t
 
 class MergeType<int val, string suffix=""> {
@@ -226,7 +224,6 @@ def IsSharedZA                : FlagType<0x8000000000>;
 def IsPreservesZA             : FlagType<0x10000000000>;
 def IsReadZA                  : FlagType<0x20000000000>;
 def IsWriteZA                 : FlagType<0x40000000000>;
-def IsReductionQV             : FlagType<0x80000000000>;
 
 // These must be kept in sync with the flags in include/clang/Basic/TargetBuiltins.h
 class ImmCheckType<int val> {

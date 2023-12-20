@@ -632,7 +632,8 @@ struct LLVMInlinerInterface : public DialectInlinerInterface {
                        bool wouldBeCloned) const final {
     if (!wouldBeCloned)
       return false;
-    if (!isa<LLVM::CallOp>(call)) {
+    auto callOp = dyn_cast<LLVM::CallOp>(call);
+    if (!callOp) {
       LLVM_DEBUG(llvm::dbgs()
                  << "Cannot inline: call is not an LLVM::CallOp\n");
       return false;
@@ -683,8 +684,40 @@ struct LLVMInlinerInterface : public DialectInlinerInterface {
     return true;
   }
 
+  /// Conservative allowlist of operations supported so far.
   bool isLegalToInline(Operation *op, Region *, bool, IRMapping &) const final {
-    return true;
+    if (isPure(op))
+      return true;
+    // clang-format off
+    if (isa<LLVM::AllocaOp,
+            LLVM::AssumeOp,
+            LLVM::AtomicRMWOp,
+            LLVM::AtomicCmpXchgOp,
+            LLVM::CallOp,
+            LLVM::CallIntrinsicOp,
+            LLVM::DbgDeclareOp,
+            LLVM::DbgLabelOp,
+            LLVM::DbgValueOp,
+            LLVM::FenceOp,
+            LLVM::InlineAsmOp,
+            LLVM::LifetimeEndOp,
+            LLVM::LifetimeStartOp,
+            LLVM::LoadOp,
+            LLVM::MemcpyOp,
+            LLVM::MemcpyInlineOp,
+            LLVM::MemmoveOp,
+            LLVM::MemsetOp,
+            LLVM::NoAliasScopeDeclOp,
+            LLVM::StackRestoreOp,
+            LLVM::StackSaveOp,
+            LLVM::StoreOp,
+            LLVM::UnreachableOp>(op))
+      return true;
+    // clang-format on
+    LLVM_DEBUG(llvm::dbgs()
+               << "Cannot inline: unhandled side effecting operation \""
+               << op->getName() << "\"\n");
+    return false;
   }
 
   /// Handle the given inlined return by replacing it with a branch. This

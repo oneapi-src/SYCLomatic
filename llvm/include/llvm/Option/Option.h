@@ -15,6 +15,7 @@
 #include "llvm/Option/OptTable.h"
 #include "llvm/Support/ErrorHandling.h"
 #include <cassert>
+#include <string>
 
 namespace llvm {
 

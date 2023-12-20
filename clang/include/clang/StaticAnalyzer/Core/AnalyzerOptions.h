@@ -409,8 +409,8 @@ AnalyzerOptions::getRegisteredCheckers(bool IncludeExperimental) {
   };
   std::vector<StringRef> Checkers;
   for (StringRef CheckerName : StaticAnalyzerCheckerNames) {
-    if (!CheckerName.starts_with("debug.") &&
-        (IncludeExperimental || !CheckerName.starts_with("alpha.")))
+    if (!CheckerName.startswith("debug.") &&
+        (IncludeExperimental || !CheckerName.startswith("alpha.")))
       Checkers.push_back(CheckerName);
   }
   return Checkers;

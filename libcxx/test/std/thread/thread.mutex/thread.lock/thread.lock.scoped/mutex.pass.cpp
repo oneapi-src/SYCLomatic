@@ -66,7 +66,6 @@ int main(int, char**)
     {
         using LG = std::scoped_lock<>;
         LG lg;
-        (void)lg;
     }
     {
         using LG = std::scoped_lock<TestMutex>;

@@ -2,9 +2,8 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust_merge_by_key %s --cuda-include-path="%cuda-path/include" --usm-level=none
 // RUN: FileCheck --input-file %T/thrust_merge_by_key/thrust_merge_by_key.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust_merge_by_key/thrust_merge_by_key.dp.cpp -o %T/thrust_merge_by_key/thrust_merge_by_key.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_merge_by_key/thrust_merge_by_key.dp.cpp -o %T/thrust_merge_by_key/thrust_merge_by_key.dp.o %}
 
-#ifndef BUILD_TEST
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/execution_policy.h>
@@ -112,4 +111,3 @@ int main(void) {
 
   return 0;
 }
-#endif

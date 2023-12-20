@@ -268,7 +268,7 @@ private:
                                 Register VirtReg);
   bool defineVirtReg(MachineInstr &MI, unsigned OpNum, Register VirtReg,
                      bool LookAtPhysRegUses = false);
-  bool useVirtReg(MachineInstr &MI, MachineOperand &MO, Register VirtReg);
+  bool useVirtReg(MachineInstr &MI, unsigned OpNum, Register VirtReg);
 
   MachineBasicBlock::iterator
   getMBBBeginInsertionPoint(MachineBasicBlock &MBB,
@@ -984,15 +984,17 @@ bool RegAllocFast::defineVirtReg(MachineInstr &MI, unsigned OpNum,
 
 /// Allocates a register for a VirtReg use.
 /// \return true if MI's MachineOperands were re-arranged/invalidated.
-bool RegAllocFast::useVirtReg(MachineInstr &MI, MachineOperand &MO,
+bool RegAllocFast::useVirtReg(MachineInstr &MI, unsigned OpNum,
                               Register VirtReg) {
   assert(VirtReg.isVirtual() && "Not a virtual register");
   if (!shouldAllocateRegister(VirtReg))
     return false;
+  MachineOperand &MO = MI.getOperand(OpNum);
   LiveRegMap::iterator LRI;
   bool New;
   std::tie(LRI, New) = LiveVirtRegs.insert(LiveReg(VirtReg));
   if (New) {
+    MachineOperand &MO = MI.getOperand(OpNum);
     if (!MO.isKill()) {
       if (mayLiveOut(VirtReg)) {
         LRI->LiveOut = true;
@@ -1222,17 +1224,6 @@ void RegAllocFast::findAndSortDefOperandIndexes(const MachineInstr &MI) {
   });
 }
 
-// Returns true if MO is tied and the operand it's tied to is not Undef (not
-// Undef is not the same thing as Def).
-static bool isTiedToNotUndef(const MachineOperand &MO) {
-  if (!MO.isTied())
-    return false;
-  const MachineInstr &MI = *MO.getParent();
-  unsigned TiedIdx = MI.findTiedOperandIdx(MI.getOperandNo(&MO));
-  const MachineOperand &TiedMO = MI.getOperand(TiedIdx);
-  return !TiedMO.isUndef();
-}
-
 void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   // The basic algorithm here is:
   // 1. Mark registers of def operands as free
@@ -1250,6 +1241,12 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   RegMasks.clear();
   BundleVirtRegsMap.clear();
 
+  auto TiedOpIsUndef = [&](const MachineOperand &MO, unsigned Idx) {
+    assert(MO.isTied());
+    unsigned TiedIdx = MI.findTiedOperandIdx(Idx);
+    const MachineOperand &TiedMO = MI.getOperand(TiedIdx);
+    return TiedMO.isUndef();
+  };
   // Scan for special cases; Apply pre-assigned register defs to state.
   bool HasPhysRegUse = false;
   bool HasRegMask = false;
@@ -1257,7 +1254,8 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   bool HasDef = false;
   bool HasEarlyClobber = false;
   bool NeedToAssignLiveThroughs = false;
-  for (MachineOperand &MO : MI.operands()) {
+  for (unsigned I = 0; I < MI.getNumOperands(); ++I) {
+    MachineOperand &MO = MI.getOperand(I);
     if (MO.isReg()) {
       Register Reg = MO.getReg();
       if (Reg.isVirtual()) {
@@ -1270,7 +1268,8 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
             HasEarlyClobber = true;
             NeedToAssignLiveThroughs = true;
           }
-          if (isTiedToNotUndef(MO) || (MO.getSubReg() != 0 && !MO.isUndef()))
+          if ((MO.isTied() && !TiedOpIsUndef(MO, I)) ||
+              (MO.getSubReg() != 0 && !MO.isUndef()))
             NeedToAssignLiveThroughs = true;
         }
       } else if (Reg.isPhysical()) {
@@ -1315,32 +1314,35 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
           for (uint16_t OpIdx : DefOperandIndexes) {
             MachineOperand &MO = MI.getOperand(OpIdx);
             LLVM_DEBUG(dbgs() << "Allocating " << MO << '\n');
-            Register Reg = MO.getReg();
-            if (MO.isEarlyClobber() || isTiedToNotUndef(MO) ||
+            unsigned Reg = MO.getReg();
+            if (MO.isEarlyClobber() ||
+                (MO.isTied() && !TiedOpIsUndef(MO, OpIdx)) ||
                 (MO.getSubReg() && !MO.isUndef())) {
               ReArrangedImplicitOps = defineLiveThroughVirtReg(MI, OpIdx, Reg);
             } else {
               ReArrangedImplicitOps = defineVirtReg(MI, OpIdx, Reg);
             }
-            // Implicit operands of MI were re-arranged,
-            // re-compute DefOperandIndexes.
-            if (ReArrangedImplicitOps)
+            if (ReArrangedImplicitOps) {
+              // Implicit operands of MI were re-arranged,
+              // re-compute DefOperandIndexes.
               break;
+            }
           }
         }
       } else {
         // Assign virtual register defs.
         while (ReArrangedImplicitOps) {
           ReArrangedImplicitOps = false;
-          for (MachineOperand &MO : MI.operands()) {
+          for (unsigned I = 0, E = MI.getNumOperands(); I < E; ++I) {
+            MachineOperand &MO = MI.getOperand(I);
             if (!MO.isReg() || !MO.isDef())
               continue;
             Register Reg = MO.getReg();
             if (Reg.isVirtual()) {
-              ReArrangedImplicitOps =
-                  defineVirtReg(MI, MI.getOperandNo(&MO), Reg);
-              if (ReArrangedImplicitOps)
+              ReArrangedImplicitOps = defineVirtReg(MI, I, Reg);
+              if (ReArrangedImplicitOps) {
                 break;
+              }
             }
           }
         }
@@ -1350,7 +1352,8 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
     // Free registers occupied by defs.
     // Iterate operands in reverse order, so we see the implicit super register
     // defs first (we added them earlier in case of <def,read-undef>).
-    for (MachineOperand &MO : reverse(MI.operands())) {
+    for (signed I = MI.getNumOperands() - 1; I >= 0; --I) {
+      MachineOperand &MO = MI.getOperand(I);
       if (!MO.isReg() || !MO.isDef())
         continue;
 
@@ -1367,7 +1370,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
              "tied def assigned to clobbered register");
 
       // Do not free tied operands and early clobbers.
-      if (isTiedToNotUndef(MO) || MO.isEarlyClobber())
+      if ((MO.isTied() && !TiedOpIsUndef(MO, I)) || MO.isEarlyClobber())
         continue;
       if (!Reg)
         continue;
@@ -1408,7 +1411,8 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
         continue;
       if (MRI->isReserved(Reg))
         continue;
-      if (!usePhysReg(MI, Reg))
+      bool displacedAny = usePhysReg(MI, Reg);
+      if (!displacedAny)
         MO.setIsKill(true);
     }
   }
@@ -1420,7 +1424,8 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   bool ReArrangedImplicitMOs = true;
   while (ReArrangedImplicitMOs) {
     ReArrangedImplicitMOs = false;
-    for (MachineOperand &MO : MI.operands()) {
+    for (unsigned I = 0; I < MI.getNumOperands(); ++I) {
+      MachineOperand &MO = MI.getOperand(I);
       if (!MO.isReg() || !MO.isUse())
         continue;
       Register Reg = MO.getReg();
@@ -1438,7 +1443,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
 
       assert(!MO.isInternalRead() && "Bundles not supported");
       assert(MO.readsReg() && "reading use");
-      ReArrangedImplicitMOs = useVirtReg(MI, MO, Reg);
+      ReArrangedImplicitMOs = useVirtReg(MI, I, Reg);
       if (ReArrangedImplicitMOs)
         break;
     }
@@ -1460,7 +1465,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
 
   // Free early clobbers.
   if (HasEarlyClobber) {
-    for (MachineOperand &MO : reverse(MI.all_defs())) {
+    for (MachineOperand &MO : llvm::reverse(MI.all_defs())) {
       if (!MO.isEarlyClobber())
         continue;
       assert(!MO.getSubReg() && "should be already handled in def processing");

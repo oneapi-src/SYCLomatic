@@ -12,6 +12,7 @@
 // on the heap.
 //===----------------------------------------------------------------------===//
 
+#include "flang/Lower/ConvertExpr.h"
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
 #include "flang/Optimizer/Builder/HLFIRTools.h"

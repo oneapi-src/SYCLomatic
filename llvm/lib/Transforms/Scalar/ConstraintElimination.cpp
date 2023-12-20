@@ -26,6 +26,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/GetElementPtrTypeIterator.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
@@ -35,6 +36,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/DebugCounter.h"
+#include "llvm/Support/KnownBits.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 #include "llvm/Transforms/Utils/ValueMapper.h"
@@ -431,7 +433,7 @@ static Decomposition decomposeGEP(GEPOperator &GEP,
     return &GEP;
 
   assert(!IsSigned && "The logic below only supports decomposition for "
-                      "unsigned predicates at the moment.");
+                      "unsinged predicates at the moment.");
   const auto &[BasePtr, ConstantOffset, VariableOffsets, AllInbounds] =
       collectOffsets(GEP, DL);
   if (!BasePtr || !AllInbounds)
@@ -542,8 +544,10 @@ static Decomposition decompose(Value *V,
   }
 
   // Decompose or as an add if there are no common bits between the operands.
-  if (match(V, m_DisjointOr(m_Value(Op0), m_ConstantInt(CI))))
+  if (match(V, m_Or(m_Value(Op0), m_ConstantInt(CI))) &&
+      haveNoCommonBitsSet(Op0, CI, DL)) {
     return MergeResults(Op0, CI, IsSigned);
+  }
 
   if (match(V, m_NUWShl(m_Value(Op1), m_ConstantInt(CI))) && canUseSExt(CI)) {
     if (CI->getSExtValue() < 0 || CI->getSExtValue() >= 64)
@@ -1109,16 +1113,6 @@ void State::addInfoFor(BasicBlock &BB) {
         CmpI->getOperand(1)));
 }
 
-#ifndef NDEBUG
-static void dumpUnpackedICmp(raw_ostream &OS, ICmpInst::Predicate Pred,
-                             Value *LHS, Value *RHS) {
-  OS << "icmp " << Pred << ' ';
-  LHS->printAsOperand(OS, /*PrintType=*/true);
-  OS << ", ";
-  RHS->printAsOperand(OS, /*PrintType=*/false);
-}
-#endif
-
 namespace {
 /// Helper to keep track of a condition and if it should be treated as negated
 /// for reproducer construction.
@@ -1251,9 +1245,10 @@ static void generateReproducer(CmpInst *Cond, Module *M,
     if (Entry.Pred == ICmpInst::BAD_ICMP_PREDICATE)
       continue;
 
-    LLVM_DEBUG(dbgs() << "  Materializing assumption ";
-               dumpUnpackedICmp(dbgs(), Entry.Pred, Entry.LHS, Entry.RHS);
-               dbgs() << "\n");
+    LLVM_DEBUG(
+        dbgs() << "  Materializing assumption icmp " << Entry.Pred << ' ';
+        Entry.LHS->printAsOperand(dbgs(), /*PrintType=*/true); dbgs() << ", ";
+        Entry.RHS->printAsOperand(dbgs(), /*PrintType=*/false); dbgs() << "\n");
     CloneInstructions({Entry.LHS, Entry.RHS}, CmpInst::isSigned(Entry.Pred));
 
     auto *Cmp = Builder.CreateICmp(Entry.Pred, Entry.LHS, Entry.RHS);
@@ -1269,12 +1264,14 @@ static void generateReproducer(CmpInst *Cond, Module *M,
   assert(!verifyFunction(*F, &dbgs()));
 }
 
-static std::optional<bool> checkCondition(CmpInst::Predicate Pred, Value *A,
-                                          Value *B, Instruction *CheckInst,
-                                          ConstraintInfo &Info, unsigned NumIn,
-                                          unsigned NumOut,
+static std::optional<bool> checkCondition(CmpInst *Cmp, ConstraintInfo &Info,
+                                          unsigned NumIn, unsigned NumOut,
                                           Instruction *ContextInst) {
-  LLVM_DEBUG(dbgs() << "Checking " << *CheckInst << "\n");
+  LLVM_DEBUG(dbgs() << "Checking " << *Cmp << "\n");
+
+  CmpInst::Predicate Pred = Cmp->getPredicate();
+  Value *A = Cmp->getOperand(0);
+  Value *B = Cmp->getOperand(1);
 
   auto R = Info.getConstraintForSolving(Pred, A, B);
   if (R.empty() || !R.isValid(Info)){
@@ -1299,10 +1296,13 @@ static std::optional<bool> checkCondition(CmpInst::Predicate Pred, Value *A,
       return std::nullopt;
 
     LLVM_DEBUG({
-      dbgs() << "Condition ";
-      dumpUnpackedICmp(
-          dbgs(), *ImpliedCondition ? Pred : CmpInst::getInversePredicate(Pred),
-          A, B);
+      if (*ImpliedCondition) {
+        dbgs() << "Condition " << *Cmp;
+      } else {
+        auto InversePred = Cmp->getInversePredicate();
+        dbgs() << "Condition " << CmpInst::getPredicateName(InversePred) << " "
+               << *A << ", " << *B;
+      }
       dbgs() << " implied by dominating constraints\n";
       CSToUse.dump();
     });
@@ -1342,9 +1342,8 @@ static bool checkAndReplaceCondition(
     return true;
   };
 
-  if (auto ImpliedCondition = checkCondition(
-          Cmp->getPredicate(), Cmp->getOperand(0), Cmp->getOperand(1), Cmp,
-          Info, NumIn, NumOut, ContextInst))
+  if (auto ImpliedCondition =
+          checkCondition(Cmp, Info, NumIn, NumOut, ContextInst))
     return ReplaceCmpWithConstant(Cmp, *ImpliedCondition);
   return false;
 }
@@ -1365,33 +1364,17 @@ removeEntryFromStack(const StackEntry &E, ConstraintInfo &Info,
     ReproducerCondStack.pop_back();
 }
 
-/// Check if either the first condition of an AND or OR is implied by the
-/// (negated in case of OR) second condition or vice versa.
-static bool checkOrAndOpImpliedByOther(
+/// Check if the first condition for an AND implies the second.
+static bool checkAndSecondOpImpliedByFirst(
     FactOrCheck &CB, ConstraintInfo &Info, Module *ReproducerModule,
     SmallVectorImpl<ReproducerEntry> &ReproducerCondStack,
     SmallVectorImpl<StackEntry> &DFSInStack) {
 
   CmpInst::Predicate Pred;
   Value *A, *B;
-  Instruction *JoinOp = CB.getContextInst();
-  CmpInst *CmpToCheck = cast<CmpInst>(CB.getInstructionToSimplify());
-  unsigned OtherOpIdx = JoinOp->getOperand(0) == CmpToCheck ? 1 : 0;
-
-  // Don't try to simplify the first condition of a select by the second, as
-  // this may make the select more poisonous than the original one.
-  // TODO: check if the first operand may be poison.
-  if (OtherOpIdx != 0 && isa<SelectInst>(JoinOp))
+  Instruction *And = CB.getContextInst();
+  if (!match(And->getOperand(0), m_ICmp(Pred, m_Value(A), m_Value(B))))
     return false;
-
-  if (!match(JoinOp->getOperand(OtherOpIdx),
-             m_ICmp(Pred, m_Value(A), m_Value(B))))
-    return false;
-
-  // For OR, check if the negated condition implies CmpToCheck.
-  bool IsOr = match(JoinOp, m_LogicalOr());
-  if (IsOr)
-    Pred = CmpInst::getInversePredicate(Pred);
 
   // Optimistically add fact from first condition.
   unsigned OldSize = DFSInStack.size();
@@ -1402,18 +1385,9 @@ static bool checkOrAndOpImpliedByOther(
   bool Changed = false;
   // Check if the second condition can be simplified now.
   if (auto ImpliedCondition =
-          checkCondition(CmpToCheck->getPredicate(), CmpToCheck->getOperand(0),
-                         CmpToCheck->getOperand(1), CmpToCheck, Info, CB.NumIn,
+          checkCondition(cast<ICmpInst>(And->getOperand(1)), Info, CB.NumIn,
                          CB.NumOut, CB.getContextInst())) {
-    if (IsOr && isa<SelectInst>(JoinOp)) {
-      JoinOp->setOperand(
-          OtherOpIdx == 0 ? 2 : 0,
-          ConstantInt::getBool(JoinOp->getType(), *ImpliedCondition));
-    } else
-      JoinOp->setOperand(
-          1 - OtherOpIdx,
-          ConstantInt::getBool(JoinOp->getType(), *ImpliedCondition));
-
+    And->setOperand(1, ConstantInt::getBool(And->getType(), *ImpliedCondition));
     Changed = true;
   }
 
@@ -1438,8 +1412,9 @@ void ConstraintInfo::addFact(CmpInst::Predicate Pred, Value *A, Value *B,
   if (!R.isValid(*this) || R.isNe())
     return;
 
-  LLVM_DEBUG(dbgs() << "Adding '"; dumpUnpackedICmp(dbgs(), Pred, A, B);
-             dbgs() << "'\n");
+  LLVM_DEBUG(dbgs() << "Adding '" << Pred << " ";
+             A->printAsOperand(dbgs(), false); dbgs() << ", ";
+             B->printAsOperand(dbgs(), false); dbgs() << "'\n");
   bool Added = false;
   auto &CSToUse = getCS(R.IsSigned);
   if (R.Coefficients.empty())
@@ -1633,11 +1608,11 @@ static bool eliminateConstraints(Function &F, DominatorTree &DT, LoopInfo &LI,
         bool Simplified = checkAndReplaceCondition(
             Cmp, Info, CB.NumIn, CB.NumOut, CB.getContextInst(),
             ReproducerModule.get(), ReproducerCondStack, S.DT, ToRemove);
-        if (!Simplified &&
-            match(CB.getContextInst(), m_LogicalOp(m_Value(), m_Value()))) {
+        if (!Simplified && match(CB.getContextInst(),
+                                 m_LogicalAnd(m_Value(), m_Specific(Inst)))) {
           Simplified =
-              checkOrAndOpImpliedByOther(CB, Info, ReproducerModule.get(),
-                                         ReproducerCondStack, DFSInStack);
+              checkAndSecondOpImpliedByFirst(CB, Info, ReproducerModule.get(),
+                                             ReproducerCondStack, DFSInStack);
         }
         Changed |= Simplified;
       }
@@ -1645,8 +1620,10 @@ static bool eliminateConstraints(Function &F, DominatorTree &DT, LoopInfo &LI,
     }
 
     auto AddFact = [&](CmpInst::Predicate Pred, Value *A, Value *B) {
-      LLVM_DEBUG(dbgs() << "fact to add to the system: ";
-                 dumpUnpackedICmp(dbgs(), Pred, A, B); dbgs() << "\n");
+      LLVM_DEBUG(dbgs() << "fact to add to the system: "
+                        << CmpInst::getPredicateName(Pred) << " ";
+                 A->printAsOperand(dbgs()); dbgs() << ", ";
+                 B->printAsOperand(dbgs(), false); dbgs() << "\n");
       if (Info.getCS(CmpInst::isSigned(Pred)).size() > MaxRows) {
         LLVM_DEBUG(
             dbgs()

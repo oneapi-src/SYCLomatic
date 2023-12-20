@@ -45,6 +45,7 @@ class DominatorTree;
 class Function;
 class Instruction;
 struct LoopStandardAnalysisResults;
+class MDNode;
 class Pass;
 template <class T, unsigned n> class SmallSetVector;
 class TargetLibraryInfo;

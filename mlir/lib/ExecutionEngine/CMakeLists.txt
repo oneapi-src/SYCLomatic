@@ -157,9 +157,6 @@ if(LLVM_ENABLE_PIC)
     RunnerUtils.cpp
 
     EXCLUDE_FROM_LIBMLIR
-
-    LINK_LIBS PUBLIC
-    mlir_float16_utils
   )
   target_compile_definitions(mlir_runner_utils PRIVATE mlir_runner_utils_EXPORTS)
 

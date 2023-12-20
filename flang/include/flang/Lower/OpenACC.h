@@ -64,10 +64,9 @@ static constexpr llvm::StringRef declarePreDeallocSuffix =
 static constexpr llvm::StringRef declarePostDeallocSuffix =
     "_acc_declare_update_desc_post_dealloc";
 
-mlir::Value genOpenACCConstruct(AbstractConverter &,
-                                Fortran::semantics::SemanticsContext &,
-                                pft::Evaluation &,
-                                const parser::OpenACCConstruct &);
+void genOpenACCConstruct(AbstractConverter &,
+                         Fortran::semantics::SemanticsContext &,
+                         pft::Evaluation &, const parser::OpenACCConstruct &);
 void genOpenACCDeclarativeConstruct(AbstractConverter &,
                                     Fortran::semantics::SemanticsContext &,
                                     StatementContext &,
@@ -112,12 +111,6 @@ void attachDeclarePostDeallocAction(AbstractConverter &, fir::FirOpBuilder &,
 
 void genOpenACCTerminator(fir::FirOpBuilder &, mlir::Operation *,
                           mlir::Location);
-
-bool isInOpenACCLoop(fir::FirOpBuilder &);
-
-void setInsertionPointAfterOpenACCLoopIfInside(fir::FirOpBuilder &);
-
-void genEarlyReturnInOpenACCLoop(fir::FirOpBuilder &, mlir::Location);
 
 } // namespace lower
 } // namespace Fortran

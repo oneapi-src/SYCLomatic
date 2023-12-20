@@ -38,16 +38,6 @@ constexpr bool test() {
     assert(ym.year() == y);
   }
 
-  { // Test year wrapping
-    year_month ym{year{2020}, month{4}};
-
-    ym += months{12};
-    assert((ym == year_month{year{2021}, month{4}}));
-
-    ym -= months{12};
-    assert((ym == year_month{year{2020}, month{4}}));
-  }
-
   return true;
 }
 

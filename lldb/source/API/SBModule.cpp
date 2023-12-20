@@ -437,25 +437,26 @@ lldb::SBType SBModule::FindFirstType(const char *name_cstr) {
   LLDB_INSTRUMENT_VA(this, name_cstr);
 
   ModuleSP module_sp(GetSP());
-  if (name_cstr && module_sp) {
-    ConstString name(name_cstr);
-    TypeQuery query(name.GetStringRef(), TypeQueryOptions::e_find_one);
-    TypeResults results;
-    module_sp->FindTypes(query, results);
-    TypeSP type_sp = results.GetFirstType();
-    if (type_sp)
-      return SBType(type_sp);
+  if (!name_cstr || !module_sp)
+    return {};
+  SymbolContext sc;
+  const bool exact_match = false;
+  ConstString name(name_cstr);
 
-    auto type_system_or_err =
-        module_sp->GetTypeSystemForLanguage(eLanguageTypeC);
-    if (auto err = type_system_or_err.takeError()) {
-      llvm::consumeError(std::move(err));
-      return {};
-    }
+  SBType sb_type = SBType(module_sp->FindFirstType(sc, name, exact_match));
 
-    if (auto ts = *type_system_or_err)
-      return SBType(ts->GetBuiltinTypeByName(name));
+  if (sb_type.IsValid())
+    return sb_type;
+
+  auto type_system_or_err = module_sp->GetTypeSystemForLanguage(eLanguageTypeC);
+  if (auto err = type_system_or_err.takeError()) {
+    llvm::consumeError(std::move(err));
+    return {};
   }
+
+  if (auto ts = *type_system_or_err)
+    return SBType(ts->GetBuiltinTypeByName(name));
+
   return {};
 }
 
@@ -470,7 +471,7 @@ lldb::SBType SBModule::GetBasicType(lldb::BasicType type) {
       llvm::consumeError(std::move(err));
     } else {
       if (auto ts = *type_system_or_err)
-        return SBType(ts->GetBasicTypeFromAST(type));
+        return SBType(ts->GetBasicTypeFromAST(type));              
     }
   }
   return SBType();
@@ -484,11 +485,13 @@ lldb::SBTypeList SBModule::FindTypes(const char *type) {
   ModuleSP module_sp(GetSP());
   if (type && module_sp) {
     TypeList type_list;
-    TypeQuery query(type);
-    TypeResults results;
-    module_sp->FindTypes(query, results);
-    if (results.GetTypeMap().Empty()) {
-      ConstString name(type);
+    const bool exact_match = false;
+    ConstString name(type);
+    llvm::DenseSet<SymbolFile *> searched_symbol_files;
+    module_sp->FindTypes(name, exact_match, UINT32_MAX, searched_symbol_files,
+                         type_list);
+
+    if (type_list.Empty()) {
       auto type_system_or_err =
           module_sp->GetTypeSystemForLanguage(eLanguageTypeC);
       if (auto err = type_system_or_err.takeError()) {
@@ -499,8 +502,11 @@ lldb::SBTypeList SBModule::FindTypes(const char *type) {
             retval.Append(SBType(compiler_type));
       }
     } else {
-      for (const TypeSP &type_sp : results.GetTypeMap().Types())
-        retval.Append(SBType(type_sp));
+      for (size_t idx = 0; idx < type_list.GetSize(); idx++) {
+        TypeSP type_sp(type_list.GetTypeAtIndex(idx));
+        if (type_sp)
+          retval.Append(SBType(type_sp));
+      }
     }
   }
   return retval;

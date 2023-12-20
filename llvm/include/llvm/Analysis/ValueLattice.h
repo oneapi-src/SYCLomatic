@@ -202,7 +202,10 @@ public:
 
   static ValueLatticeElement get(Constant *C) {
     ValueLatticeElement Res;
-    Res.markConstant(C);
+    if (isa<UndefValue>(C))
+      Res.markUndef();
+    else
+      Res.markConstant(C);
     return Res;
   }
   static ValueLatticeElement getNot(Constant *C) {

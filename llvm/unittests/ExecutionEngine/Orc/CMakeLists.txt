@@ -5,7 +5,6 @@ set(LLVM_LINK_COMPONENTS
   IRReader
   JITLink
   Object
-  OrcDebugging
   OrcJIT
   OrcShared
   OrcTargetProcess

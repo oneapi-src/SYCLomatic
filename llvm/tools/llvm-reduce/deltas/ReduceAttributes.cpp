@@ -30,6 +30,7 @@
 #include <cassert>
 #include <iterator>
 #include <utility>
+#include <vector>
 
 namespace llvm {
 class LLVMContext;

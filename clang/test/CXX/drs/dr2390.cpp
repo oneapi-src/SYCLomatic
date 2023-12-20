@@ -1,6 +1,6 @@
 // RUN: %clang_cc1 -E -P %s -o - | FileCheck %s
 
-// dr2390: 14
+// dr2390: yes
 
 namespace PR48462 {
 // Test that macro expansion of the builtin argument works.

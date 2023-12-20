@@ -14,7 +14,6 @@
 #include "test/UnitTest/ErrnoSetterMatcher.h"
 #include "test/UnitTest/Test.h"
 
-#include <sys/stat.h>
 #include <unistd.h>
 
 TEST(LlvmLibcAccessTest, CreateAndTest) {

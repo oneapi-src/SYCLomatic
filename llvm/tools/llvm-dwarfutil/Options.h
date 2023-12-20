@@ -9,8 +9,7 @@
 #ifndef LLVM_TOOLS_LLVM_DWARFUTIL_OPTIONS_H
 #define LLVM_TOOLS_LLVM_DWARFUTIL_OPTIONS_H
 
-#include <cstdint>
-#include <string>
+#include "llvm/ADT/StringRef.h"
 
 namespace llvm {
 namespace dwarfutil {

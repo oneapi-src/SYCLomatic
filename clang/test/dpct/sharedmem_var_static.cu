@@ -3,8 +3,8 @@
 
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem_var_static %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_static/sharedmem_var_static.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/sharedmem_var_static/sharedmem_var_static.dp.cpp -o %T/sharedmem_var_static/sharedmem_var_static.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl %T/sharedmem_var_static/sharedmem_var_static.dp.cpp -o %T/sharedmem_var_static/sharedmem_var_static.dp.o %}
+
 #include <stdio.h>
 #include <complex>
 #define SIZE 64
@@ -209,4 +209,3 @@ void fooh() {
   // CHECK: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(SIZE), cgh);
   fook<SZ><<<1, 1>>>();
 }
-#endif

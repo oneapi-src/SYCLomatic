@@ -1734,7 +1734,7 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
   std::string TypeStr = PDecl->getASTContext().getUnqualifiedObjCPointerType(T).
       getAsString(Policy);
   Out << ' ' << TypeStr;
-  if (!StringRef(TypeStr).ends_with("*"))
+  if (!StringRef(TypeStr).endswith("*"))
     Out << ' ';
   Out << *PDecl;
   if (Policy.PolishForDeclaration)

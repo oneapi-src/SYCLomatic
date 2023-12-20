@@ -20,6 +20,8 @@ class RewritePatternSet;
 #define GEN_PASS_DECL_CONVERTARMSMETOLLVM
 #include "mlir/Conversion/Passes.h.inc"
 
+using arm_sme::ArmSMETypeConverter;
+
 /// Create a pass to convert from the ArmSME dialect to LLVM intrinsics.
 std::unique_ptr<Pass> createConvertArmSMEToLLVMPass();
 
@@ -28,7 +30,7 @@ void configureArmSMEToLLVMConversionLegality(ConversionTarget &target);
 
 /// Populate the given list with patterns that convert from the ArmSME dialect
 /// to LLVM intrinsics.
-void populateArmSMEToLLVMConversionPatterns(LLVMTypeConverter &converter,
+void populateArmSMEToLLVMConversionPatterns(ArmSMETypeConverter &converter,
                                             RewritePatternSet &patterns);
 
 } // namespace mlir

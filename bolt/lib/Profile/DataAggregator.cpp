@@ -1915,7 +1915,7 @@ DataAggregator::parseMMapEvent() {
   //   PERF_RECORD_MMAP2 <pid>/<tid>: [<hexbase>(<hexsize>) .*]: .* <file_name>
 
   StringRef FileName = Line.rsplit(FieldSeparator).second;
-  if (FileName.starts_with("//") || FileName.starts_with("[")) {
+  if (FileName.startswith("//") || FileName.startswith("[")) {
     consumeRestOfLine();
     return std::make_pair(StringRef(), ParsedInfo);
   }
@@ -2168,7 +2168,7 @@ DataAggregator::getFileNameForBuildID(StringRef FileBuildID) {
       continue;
     }
 
-    if (IDPair->second.starts_with(FileBuildID)) {
+    if (IDPair->second.startswith(FileBuildID)) {
       FileName = sys::path::filename(IDPair->first);
       break;
     }

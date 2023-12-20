@@ -386,16 +386,15 @@ TEST_F(FormatTestComments, UnderstandsBlockComments) {
       "  /* Leading comment for bb... */ bbbbbbbbbbbbbbbbbbbbbbbbb);",
       format("f(aaaaaaaaaaaaaaaaaaaaaaaaa    ,   \n"
              "/* Leading comment for bb... */   bbbbbbbbbbbbbbbbbbbbbbbbb);"));
-
-  verifyFormat(
+  EXPECT_EQ(
       "void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa(\n"
       "    aaaaaaaaaaaaaaaaaa,\n"
-      "    aaaaaaaaaaaaaaaaaa) { /*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa*/ }",
-      "void      aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa(\n"
-      "                      aaaaaaaaaaaaaaaaaa  ,\n"
-      "    aaaaaaaaaaaaaaaaaa) {   /*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa*/\n"
-      "}");
-
+      "    aaaaaaaaaaaaaaaaaa) { /*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa*/\n"
+      "}",
+      format("void      aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa(\n"
+             "                      aaaaaaaaaaaaaaaaaa  ,\n"
+             "    aaaaaaaaaaaaaaaaaa) {   /*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa*/\n"
+             "}"));
   verifyFormat("f(/* aaaaaaaaaaaaaaaaaa = */\n"
                "  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);");
 

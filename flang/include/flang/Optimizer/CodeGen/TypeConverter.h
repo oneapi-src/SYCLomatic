@@ -39,10 +39,6 @@ static constexpr unsigned kDimLowerBoundPos = 0;
 static constexpr unsigned kDimExtentPos = 1;
 static constexpr unsigned kDimStridePos = 2;
 
-namespace mlir {
-class DataLayout;
-}
-
 namespace fir {
 
 /// FIR type converter
@@ -50,7 +46,7 @@ namespace fir {
 class LLVMTypeConverter : public mlir::LLVMTypeConverter {
 public:
   LLVMTypeConverter(mlir::ModuleOp module, bool applyTBAA,
-                    bool forceUnifiedTBAATree, const mlir::DataLayout &);
+                    bool forceUnifiedTBAATree);
 
   // i32 is used here because LLVM wants i32 constants when indexing into struct
   // types. Indexing into other aggregate types is more flexible.

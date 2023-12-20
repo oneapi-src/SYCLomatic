@@ -2,9 +2,8 @@
 // RUN: cd %T
 // RUN: dpct --usm-level=none -out-root %T/error-handling error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck error-handling.cu --match-full-lines --input-file %T/error-handling/error-handling.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/error-handling/error-handling.dp.cpp -o %T/error-handling/error-handling.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/error-handling/error-handling.dp.cpp -o %T/error-handling/error-handling.dp.o %}
 
-#ifndef BUILD_TEST
 #include "cuda.h"
 #include <stdexcept>
 #include <cublas.h>
@@ -742,4 +741,4 @@ int foo16(){
     return cudaMalloc((void**)&a,0);
     }();
 }
-#endif
+

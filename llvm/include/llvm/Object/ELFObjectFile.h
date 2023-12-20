@@ -64,7 +64,6 @@ class ELFObjectFileBase : public ObjectFile {
   SubtargetFeatures getLoongArchFeatures() const;
 
   StringRef getAMDGPUCPUName() const;
-  StringRef getNVPTXCPUName() const;
 
 protected:
   ELFObjectFileBase(unsigned int Type, MemoryBufferRef Source);
@@ -111,13 +110,9 @@ public:
 
   /// Returns a vector of all BB address maps in the object file. When
   // `TextSectionIndex` is specified, only returns the BB address maps
-  // corresponding to the section with that index. When `PGOAnalyses`is
-  // specified, the vector is cleared then filled with extra PGO data.
-  // `PGOAnalyses` will always be the same length as the return value on
-  // success, otherwise it is empty.
+  // corresponding to the section with that index.
   Expected<std::vector<BBAddrMap>>
-  readBBAddrMap(std::optional<unsigned> TextSectionIndex = std::nullopt,
-                std::vector<PGOAnalysisMap> *PGOAnalyses = nullptr) const;
+  readBBAddrMap(std::optional<unsigned> TextSectionIndex = std::nullopt) const;
 };
 
 class ELFSectionRef : public SectionRef {
@@ -747,7 +742,7 @@ Expected<uint32_t> ELFObjectFile<ELFT>::getSymbolFlags(DataRefImpl Sym) const {
   if (EF.getHeader().e_machine == ELF::EM_AARCH64) {
     if (Expected<StringRef> NameOrErr = getSymbolName(Sym)) {
       StringRef Name = *NameOrErr;
-      if (Name.starts_with("$d") || Name.starts_with("$x"))
+      if (Name.startswith("$d") || Name.startswith("$x"))
         Result |= SymbolRef::SF_FormatSpecific;
     } else {
       // TODO: Actually report errors helpfully.
@@ -757,8 +752,8 @@ Expected<uint32_t> ELFObjectFile<ELFT>::getSymbolFlags(DataRefImpl Sym) const {
     if (Expected<StringRef> NameOrErr = getSymbolName(Sym)) {
       StringRef Name = *NameOrErr;
       // TODO Investigate why empty name symbols need to be marked.
-      if (Name.empty() || Name.starts_with("$d") || Name.starts_with("$t") ||
-          Name.starts_with("$a"))
+      if (Name.empty() || Name.startswith("$d") || Name.startswith("$t") ||
+          Name.startswith("$a"))
         Result |= SymbolRef::SF_FormatSpecific;
     } else {
       // TODO: Actually report errors helpfully.
@@ -769,7 +764,7 @@ Expected<uint32_t> ELFObjectFile<ELFT>::getSymbolFlags(DataRefImpl Sym) const {
   } else if (EF.getHeader().e_machine == ELF::EM_CSKY) {
     if (Expected<StringRef> NameOrErr = getSymbolName(Sym)) {
       StringRef Name = *NameOrErr;
-      if (Name.starts_with("$d") || Name.starts_with("$t"))
+      if (Name.startswith("$d") || Name.startswith("$t"))
         Result |= SymbolRef::SF_FormatSpecific;
     } else {
       // TODO: Actually report errors helpfully.
@@ -780,7 +775,7 @@ Expected<uint32_t> ELFObjectFile<ELFT>::getSymbolFlags(DataRefImpl Sym) const {
       StringRef Name = *NameOrErr;
       // Mark empty name symbols (used for label differences) and mapping
       // symbols.
-      if (Name.empty() || Name.starts_with("$d") || Name.starts_with("$x"))
+      if (Name.empty() || Name.startswith("$d") || Name.startswith("$x"))
         Result |= SymbolRef::SF_FormatSpecific;
     } else {
       // TODO: Actually report errors helpfully.
@@ -978,8 +973,8 @@ bool ELFObjectFile<ELFT>::isDebugSection(DataRefImpl Sec) const {
     return false;
   }
   StringRef SectionName = SectionNameOrErr.get();
-  return SectionName.starts_with(".debug") ||
-         SectionName.starts_with(".zdebug") || SectionName == ".gdb_index";
+  return SectionName.startswith(".debug") ||
+         SectionName.startswith(".zdebug") || SectionName == ".gdb_index";
 }
 
 template <class ELFT>

@@ -62,6 +62,7 @@
 #include <cassert>
 #include <functional>
 #include <utility>
+#include <vector>
 
 using namespace llvm;
 

@@ -20,7 +20,6 @@
 #include "min_allocator.h"
 #include "test_allocator.h"
 #include "test_macros.h"
-#include "asan_testing.h"
 
 static_assert(!std::is_convertible<std::string_view, std::string const&>::value, "");
 static_assert(!std::is_convertible<std::string_view, std::string>::value, "");
@@ -36,7 +35,6 @@ TEST_CONSTEXPR_CXX20 void test(std::basic_string_view<CharT> sv) {
     assert(T::compare(s2.data(), sv.data(), sv.size()) == 0);
     assert(s2.get_allocator() == Alloc());
     assert(s2.capacity() >= s2.size());
-    LIBCPP_ASSERT(is_string_asan_correct(s2));
   }
   {
     S s2;
@@ -46,7 +44,6 @@ TEST_CONSTEXPR_CXX20 void test(std::basic_string_view<CharT> sv) {
     assert(T::compare(s2.data(), sv.data(), sv.size()) == 0);
     assert(s2.get_allocator() == Alloc());
     assert(s2.capacity() >= s2.size());
-    LIBCPP_ASSERT(is_string_asan_correct(s2));
   }
 }
 
@@ -61,7 +58,6 @@ TEST_CONSTEXPR_CXX20 void test(std::basic_string_view<CharT> sv, const Alloc& a)
     assert(T::compare(s2.data(), sv.data(), sv.size()) == 0);
     assert(s2.get_allocator() == a);
     assert(s2.capacity() >= s2.size());
-    LIBCPP_ASSERT(is_string_asan_correct(s2));
   }
   {
     S s2(a);
@@ -71,7 +67,6 @@ TEST_CONSTEXPR_CXX20 void test(std::basic_string_view<CharT> sv, const Alloc& a)
     assert(T::compare(s2.data(), sv.data(), sv.size()) == 0);
     assert(s2.get_allocator() == a);
     assert(s2.capacity() >= s2.size());
-    LIBCPP_ASSERT(is_string_asan_correct(s2));
   }
 }
 
@@ -98,7 +93,6 @@ TEST_CONSTEXPR_CXX20 bool test() {
   test_string(test_allocator<char>(2));
 #if TEST_STD_VER >= 11
   test_string(min_allocator<char>());
-  test_string(safe_allocator<char>());
 #endif
 
   return true;

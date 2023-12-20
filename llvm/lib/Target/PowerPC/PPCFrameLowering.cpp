@@ -2334,16 +2334,24 @@ bool PPCFrameLowering::assignCalleeSavedSpillSlots(
     // In case of SPE we only have SuperRegs and CRs
     // in our CalleSaveInfo vector.
 
+    unsigned Idx = 0;
     for (auto &CalleeSaveReg : CSI) {
-      MCPhysReg Reg = CalleeSaveReg.getReg();
-      MCPhysReg Lower = RegInfo->getSubReg(Reg, 1);
-      MCPhysReg Higher = RegInfo->getSubReg(Reg, 2);
+      const MCPhysReg &Reg = CalleeSaveReg.getReg();
+      const MCPhysReg &Lower = RegInfo->getSubReg(Reg, 1);
+      const MCPhysReg &Higher = RegInfo->getSubReg(Reg, 2);
 
-      if ( // Check only for SuperRegs.
-          Lower &&
+      // Check only for SuperRegs.
+      if (Lower) {
+        if (MRI.isPhysRegModified(Higher)) {
+          Idx++;
+          continue;
+        } else {
           // Replace Reg if only lower-32 bits modified
-          !MRI.isPhysRegModified(Higher))
-        CalleeSaveReg = CalleeSavedInfo(Lower);
+          CSI.erase(CSI.begin() + Idx);
+          CSI.insert(CSI.begin() + Idx, CalleeSavedInfo(Lower));
+        }
+      }
+      Idx++;
     }
   }
 

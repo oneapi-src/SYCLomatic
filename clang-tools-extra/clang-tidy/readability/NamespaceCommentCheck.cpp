@@ -160,7 +160,7 @@ void NamespaceCommentCheck::check(const MatchFinder::MatchResult &Result) {
       }
 
       // Otherwise we need to fix the comment.
-      NeedLineBreak = Comment.starts_with("/*");
+      NeedLineBreak = Comment.startswith("/*");
       OldCommentRange =
           SourceRange(AfterRBrace, Loc.getLocWithOffset(Tok.getLength()));
       Message =
@@ -168,7 +168,7 @@ void NamespaceCommentCheck::check(const MatchFinder::MatchResult &Result) {
                "%0 ends with a comment that refers to a wrong namespace '") +
            NamespaceNameInComment + "'")
               .str();
-    } else if (Comment.starts_with("//")) {
+    } else if (Comment.startswith("//")) {
       // Assume that this is an unrecognized form of a namespace closing line
       // comment. Replace it.
       NeedLineBreak = false;

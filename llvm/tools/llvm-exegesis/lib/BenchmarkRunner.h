@@ -65,7 +65,7 @@ public:
                            unsigned NumRepetitions, unsigned LoopUnrollFactor,
                            const SnippetRepetitor &Repetitor) const;
 
-  std::pair<Error, Benchmark>
+  Expected<Benchmark>
   runConfiguration(RunnableConfiguration &&RC,
                    const std::optional<StringRef> &DumpFile) const;
 

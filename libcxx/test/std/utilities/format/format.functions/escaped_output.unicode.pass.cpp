@@ -515,7 +515,7 @@ static void test_ill_formed_utf8() {
 }
 
 #ifndef TEST_HAS_NO_WIDE_CHARACTERS
-#  ifdef TEST_SHORT_WCHAR
+#  ifdef _LIBCPP_SHORT_WCHAR
 static void test_ill_formed_utf16() {
   using namespace std::literals;
 
@@ -543,7 +543,7 @@ static void test_ill_formed_utf16() {
               L"\xdbff"
               "a");
 }
-#  else // TEST_SHORT_WCHAR
+#  else // _LIBCPP_SHORT_WCHAR
 static void test_ill_formed_utf32() {
   using namespace std::literals;
 
@@ -552,7 +552,7 @@ static void test_ill_formed_utf32() {
   test_format(LR"("\x{ffffffff}")"sv, L"{:?}", L"\xffffffff"); // largest encoded code point
 }
 
-#  endif // TEST_SHORT_WCHAR
+#  endif // _LIBCPP_SHORT_WCHAR
 #endif   // TEST_HAS_NO_WIDE_CHARACTERS
 
 int main(int, char**) {
@@ -563,11 +563,11 @@ int main(int, char**) {
 
   test_ill_formed_utf8();
 #ifndef TEST_HAS_NO_WIDE_CHARACTERS
-#  ifdef TEST_SHORT_WCHAR
+#  ifdef _LIBCPP_SHORT_WCHAR
   test_ill_formed_utf16();
-#  else  // TEST_SHORT_WCHAR
+#  else  // _LIBCPP_SHORT_WCHAR
   test_ill_formed_utf32();
-#  endif // TEST_SHORT_WCHAR
+#  endif // _LIBCPP_SHORT_WCHAR
 #endif   // TEST_HAS_NO_WIDE_CHARACTERS
 
   return 0;

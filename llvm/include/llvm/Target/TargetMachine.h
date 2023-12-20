@@ -239,7 +239,7 @@ public:
   void setCodeModel(CodeModel::Model CM) { CMModel = CM; }
 
   void setLargeDataThreshold(uint64_t LDT) { LargeDataThreshold = LDT; }
-  bool isLargeGlobalValue(const GlobalValue *GV) const;
+  bool isLargeData(const GlobalVariable *GV) const;
 
   bool isPositionIndependent() const;
 

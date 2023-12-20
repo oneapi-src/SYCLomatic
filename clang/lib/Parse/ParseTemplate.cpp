@@ -1062,7 +1062,8 @@ Parser::ParseNonTypeTemplateParameter(unsigned Depth, unsigned Position) {
       ++CurTemplateDepthTracker;
       EnterExpressionEvaluationContext ConstantEvaluated(
           Actions, Sema::ExpressionEvaluationContext::ConstantEvaluated);
-      DefaultArg = Actions.CorrectDelayedTyposInExpr(ParseInitializer());
+      DefaultArg =
+          Actions.CorrectDelayedTyposInExpr(ParseAssignmentExpression());
       if (DefaultArg.isInvalid())
         SkipUntil(tok::comma, tok::greater, StopAtSemi | StopBeforeMatch);
     }
@@ -1581,8 +1582,6 @@ ParsedTemplateArgument Parser::ParseTemplateTemplateArgument() {
 ///         constant-expression
 ///         type-id
 ///         id-expression
-///         braced-init-list  [C++26, DR]
-///
 ParsedTemplateArgument Parser::ParseTemplateArgument() {
   // C++ [temp.arg]p2:
   //   In a template-argument, an ambiguity between a type-id and an
@@ -1620,12 +1619,8 @@ ParsedTemplateArgument Parser::ParseTemplateArgument() {
   }
 
   // Parse a non-type template argument.
-  ExprResult ExprArg;
   SourceLocation Loc = Tok.getLocation();
-  if (getLangOpts().CPlusPlus11 && Tok.is(tok::l_brace))
-    ExprArg = ParseBraceInitializer();
-  else
-    ExprArg = ParseConstantExpressionInExprEvalContext(MaybeTypeCast);
+  ExprResult ExprArg = ParseConstantExpressionInExprEvalContext(MaybeTypeCast);
   if (ExprArg.isInvalid() || !ExprArg.get()) {
     return ParsedTemplateArgument();
   }

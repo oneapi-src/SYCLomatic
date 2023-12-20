@@ -142,8 +142,7 @@ public:
 
   /// Attaches module-level metadata for functions marked as kernels.
   LogicalResult
-  amendOperation(Operation *op, ArrayRef<llvm::Instruction *> instructions,
-                 NamedAttribute attribute,
+  amendOperation(Operation *op, NamedAttribute attribute,
                  LLVM::ModuleTranslation &moduleTranslation) const final {
     auto func = dyn_cast<LLVM::LLVMFuncOp>(op);
     if (!func)

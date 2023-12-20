@@ -16,10 +16,11 @@ define i64 @f1(i64 %dummy, ptr %src, i64 %b) {
   ret i64 %res
 }
 
-; Check ANDs of 1, which are done using a register.
+; Check ANDs of 1, which are done using a register.  (We could use RISBG
+; instead, but that isn't implemented yet.)
 define i64 @f2(i64 %dummy, ptr %src) {
 ; CHECK-LABEL: f2:
-; CHECK: risbg
+; CHECK: ngr
 ; CHECK: br %r14
   %res = atomicrmw and ptr %src, i64 1 seq_cst
   ret i64 %res
@@ -55,7 +56,7 @@ define i64 @f4(i64 %dummy, ptr %src) {
 ; Check the next value up, which must use a register.
 define i64 @f5(i64 %dummy, ptr %src) {
 ; CHECK-LABEL: f5:
-; CHECK: risbg
+; CHECK: ngr
 ; CHECK: br %r14
   %res = atomicrmw and ptr %src, i64 12884901888 seq_cst
   ret i64 %res
@@ -73,7 +74,7 @@ define i64 @f6(i64 %dummy, ptr %src) {
 ; Check the next value up, which must use a register.
 define i64 @f7(i64 %dummy, ptr %src) {
 ; CHECK-LABEL: f7:
-; CHECK: risbg
+; CHECK: ngr
 ; CHECK: br %r14
   %res = atomicrmw and ptr %src, i64 281474976710656 seq_cst
   ret i64 %res

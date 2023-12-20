@@ -175,23 +175,6 @@ public:
                                StringRef Overview, raw_ostream *Errs = nullptr,
                                bool LongOptionsUseDoubleDash = false);
 
-  void forEachSubCommand(Option &Opt, function_ref<void(SubCommand &)> Action) {
-    if (Opt.Subs.empty()) {
-      Action(SubCommand::getTopLevel());
-      return;
-    }
-    if (Opt.Subs.size() == 1 && *Opt.Subs.begin() == &SubCommand::getAll()) {
-      for (auto *SC : RegisteredSubCommands)
-        Action(*SC);
-      return;
-    }
-    for (auto *SC : Opt.Subs) {
-      assert(SC != &SubCommand::getAll() &&
-             "SubCommand::getAll() should not be used with other subcommands");
-      Action(*SC);
-    }
-  }
-
   void addLiteralOption(Option &Opt, SubCommand *SC, StringRef Name) {
     if (Opt.hasArgStr())
       return;
@@ -200,11 +183,25 @@ public:
              << "' registered more than once!\n";
       report_fatal_error("inconsistency in registered CommandLine options");
     }
+
+    // If we're adding this to all sub-commands, add it to the ones that have
+    // already been registered.
+    if (SC == &SubCommand::getAll()) {
+      for (auto *Sub : RegisteredSubCommands) {
+        if (SC == Sub)
+          continue;
+        addLiteralOption(Opt, Sub, Name);
+      }
+    }
   }
 
   void addLiteralOption(Option &Opt, StringRef Name) {
-    forEachSubCommand(
-        Opt, [&](SubCommand &SC) { addLiteralOption(Opt, &SC, Name); });
+    if (Opt.Subs.empty())
+      addLiteralOption(Opt, &SubCommand::getTopLevel(), Name);
+    else {
+      for (auto *SC : Opt.Subs)
+        addLiteralOption(Opt, SC, Name);
+    }
   }
 
   void addOption(Option *O, SubCommand *SC) {
@@ -241,6 +238,16 @@ public:
     // linked LLVM distribution.
     if (HadErrors)
       report_fatal_error("inconsistency in registered CommandLine options");
+
+    // If we're adding this to all sub-commands, add it to the ones that have
+    // already been registered.
+    if (SC == &SubCommand::getAll()) {
+      for (auto *Sub : RegisteredSubCommands) {
+        if (SC == Sub)
+          continue;
+        addOption(O, Sub);
+      }
+    }
   }
 
   void addOption(Option *O, bool ProcessDefaultOption = false) {
@@ -248,7 +255,13 @@ public:
       DefaultOptions.push_back(O);
       return;
     }
-    forEachSubCommand(*O, [&](SubCommand &SC) { addOption(O, &SC); });
+
+    if (O->Subs.empty()) {
+      addOption(O, &SubCommand::getTopLevel());
+    } else {
+      for (auto *SC : O->Subs)
+        addOption(O, SC);
+    }
   }
 
   void removeOption(Option *O, SubCommand *SC) {
@@ -285,7 +298,17 @@ public:
   }
 
   void removeOption(Option *O) {
-    forEachSubCommand(*O, [&](SubCommand &SC) { removeOption(O, &SC); });
+    if (O->Subs.empty())
+      removeOption(O, &SubCommand::getTopLevel());
+    else {
+      if (O->isInAllSubCommands()) {
+        for (auto *SC : RegisteredSubCommands)
+          removeOption(O, SC);
+      } else {
+        for (auto *SC : O->Subs)
+          removeOption(O, SC);
+      }
+    }
   }
 
   bool hasOptions(const SubCommand &Sub) const {
@@ -298,13 +321,6 @@ public:
       if (hasOptions(*S))
         return true;
     }
-    return false;
-  }
-
-  bool hasNamedSubCommands() const {
-    for (const auto *S : RegisteredSubCommands)
-      if (!S->getName().empty())
-        return true;
     return false;
   }
 
@@ -321,8 +337,17 @@ public:
   }
 
   void updateArgStr(Option *O, StringRef NewName) {
-    forEachSubCommand(*O,
-                      [&](SubCommand &SC) { updateArgStr(O, NewName, &SC); });
+    if (O->Subs.empty())
+      updateArgStr(O, NewName, &SubCommand::getTopLevel());
+    else {
+      if (O->isInAllSubCommands()) {
+        for (auto *SC : RegisteredSubCommands)
+          updateArgStr(O, NewName, SC);
+      } else {
+        for (auto *SC : O->Subs)
+          updateArgStr(O, NewName, SC);
+      }
+    }
   }
 
   void printOptionValues();
@@ -400,7 +425,7 @@ private:
       return nullptr;
     return Opt;
   }
-  SubCommand *LookupSubCommand(StringRef Name, std::string &NearestString);
+  SubCommand *LookupSubCommand(StringRef Name);
 };
 
 } // namespace
@@ -525,12 +550,9 @@ Option *CommandLineParser::LookupOption(SubCommand &Sub, StringRef &Arg,
   return I->second;
 }
 
-SubCommand *CommandLineParser::LookupSubCommand(StringRef Name,
-                                                std::string &NearestString) {
+SubCommand *CommandLineParser::LookupSubCommand(StringRef Name) {
   if (Name.empty())
     return &SubCommand::getTopLevel();
-  // Find a subcommand with the edit distance == 1.
-  SubCommand *NearestMatch = nullptr;
   for (auto *S : RegisteredSubCommands) {
     if (S == &SubCommand::getAll())
       continue;
@@ -539,14 +561,7 @@ SubCommand *CommandLineParser::LookupSubCommand(StringRef Name,
 
     if (StringRef(S->getName()) == StringRef(Name))
       return S;
-
-    if (!NearestMatch && S->getName().edit_distance(Name) < 2)
-      NearestMatch = S;
   }
-
-  if (NearestMatch)
-    NearestString = NearestMatch->getName();
-
   return &SubCommand::getTopLevel();
 }
 
@@ -1512,14 +1527,10 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 
   int FirstArg = 1;
   SubCommand *ChosenSubCommand = &SubCommand::getTopLevel();
-  std::string NearestSubCommandString;
-  bool MaybeNamedSubCommand =
-      argc >= 2 && argv[FirstArg][0] != '-' && hasNamedSubCommands();
-  if (MaybeNamedSubCommand) {
+  if (argc >= 2 && argv[FirstArg][0] != '-') {
     // If the first argument specifies a valid subcommand, start processing
     // options from the second argument.
-    ChosenSubCommand =
-        LookupSubCommand(StringRef(argv[FirstArg]), NearestSubCommandString);
+    ChosenSubCommand = LookupSubCommand(StringRef(argv[FirstArg]));
     if (ChosenSubCommand != &SubCommand::getTopLevel())
       FirstArg = 2;
   }
@@ -1612,6 +1623,7 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
   bool DashDashFound = false; // Have we read '--'?
   for (int i = FirstArg; i < argc; ++i) {
     Option *Handler = nullptr;
+    Option *NearestHandler = nullptr;
     std::string NearestHandlerString;
     StringRef Value;
     StringRef ArgName = "";
@@ -1691,48 +1703,35 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
       // Otherwise, look for the closest available option to report to the user
       // in the upcoming error.
       if (!Handler && SinkOpts.empty())
-        LookupNearestOption(ArgName, OptionsMap, NearestHandlerString);
+        NearestHandler =
+            LookupNearestOption(ArgName, OptionsMap, NearestHandlerString);
     }
 
     if (!Handler) {
-      if (!SinkOpts.empty()) {
+      if (SinkOpts.empty()) {
+#ifdef SYCLomatic_CUSTOMIZATION
+        *Errs << "Unknown command line argument '" << argv[i] << "'. ";
+#else
+        *Errs << ProgramName << ": Unknown command line argument '" << argv[i]
+              << "'.  Try: '" << argv[0] << " --help'\n";
+#endif // SYCLomatic_CUSTOMIZATION
+
+        if (NearestHandler) {
+          // If we know a near match, report it as well.
+#ifdef SYCLomatic_CUSTOMIZATION
+          *Errs << "Did you mean '"
+                << PrintArg(NearestHandlerString, 0) << "'?\n";
+#else
+          *Errs << ProgramName << ": Did you mean '"
+                << PrintArg(NearestHandlerString, 0) << "'?\n";
+#endif // SYCLomatic_CUSTOMIZATION
+		}
+
+        ErrorParsing = true;
+      } else {
         for (Option *SinkOpt : SinkOpts)
           SinkOpt->addOccurrence(i, "", StringRef(argv[i]));
-        continue;
       }
-
-      auto ReportUnknownArgument = [&](bool IsArg,
-                                       StringRef NearestArgumentName) {
-#ifdef SYCLomatic_CUSTOMIZATION
-        *Errs << "Unknown " << (IsArg ? "command line argument" : "subcommand")
-              << " '" << argv[i] << "'.  Try: '" << argv[0] << " --help'\n";
-#else
-        *Errs << ProgramName << ": Unknown "
-              << (IsArg ? "command line argument" : "subcommand") << " '"
-              << argv[i] << "'.  Try: '" << argv[0] << " --help'\n";
-#endif // SYCLomatic_CUSTOMIZATION
-
-        if (NearestArgumentName.empty())
-          return;
-
-#ifdef SYCLomatic_CUSTOMIZATION
-        *Errs << "Did you mean '";
-#else
-        *Errs << ProgramName << ": Did you mean '";
-#endif // SYCLomatic_CUSTOMIZATION
-        if (IsArg)
-          *Errs << PrintArg(NearestArgumentName, 0);
-        else
-          *Errs << NearestArgumentName;
-        *Errs << "'?\n";
-      };
-
-      if (i > 1 || !MaybeNamedSubCommand)
-        ReportUnknownArgument(/*IsArg=*/true, NearestHandlerString);
-      else
-        ReportUnknownArgument(/*IsArg=*/false, NearestSubCommandString);
-
-      ErrorParsing = true;
       continue;
     }
 
@@ -2406,7 +2405,7 @@ public:
 
     if (Sub == &SubCommand::getTopLevel()) {
       outs() << "USAGE: " << GlobalParser->ProgramName;
-      if (!Subs.empty())
+      if (Subs.size() > 2)
         outs() << " [subcommand]";
       outs() << " [options]";
     } else {

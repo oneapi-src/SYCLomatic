@@ -105,11 +105,10 @@ bool CheckerContext::isCLibraryFunction(const FunctionDecl *FD,
   if (FName.equals(Name))
     return true;
 
-  if (FName.starts_with("__inline") && FName.contains(Name))
+  if (FName.startswith("__inline") && FName.contains(Name))
     return true;
 
-  if (FName.starts_with("__") && FName.ends_with("_chk") &&
-      FName.contains(Name))
+  if (FName.startswith("__") && FName.endswith("_chk") && FName.contains(Name))
     return true;
 
   return false;

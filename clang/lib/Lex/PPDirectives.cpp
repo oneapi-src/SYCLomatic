@@ -163,13 +163,13 @@ static bool isLanguageDefinedBuiltin(const SourceManager &SourceMgr,
     return false;
   // C defines macros starting with __STDC, and C++ defines macros starting with
   // __STDCPP
-  if (MacroName.starts_with("__STDC"))
+  if (MacroName.startswith("__STDC"))
     return true;
   // C++ defines the __cplusplus macro
   if (MacroName == "__cplusplus")
     return true;
   // C++ defines various feature-test macros starting with __cpp
-  if (MacroName.starts_with("__cpp"))
+  if (MacroName.startswith("__cpp"))
     return true;
   // Anything else isn't language-defined
   return false;
@@ -645,7 +645,7 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
       Directive = StringRef(DirectiveBuf, IdLen);
     }
 
-    if (Directive.starts_with("if")) {
+    if (Directive.startswith("if")) {
       StringRef Sub = Directive.substr(2);
       if (Sub.empty() ||   // "if"
           Sub == "def" ||   // "ifdef"
@@ -1857,18 +1857,11 @@ static void diagnoseAutoModuleImport(
 // path to the file, build a properly-cased replacement in the vector,
 // and return true if the replacement should be suggested.
 static bool trySimplifyPath(SmallVectorImpl<StringRef> &Components,
-                            StringRef RealPathName,
-                            llvm::sys::path::Style Separator) {
+                            StringRef RealPathName) {
   auto RealPathComponentIter = llvm::sys::path::rbegin(RealPathName);
   auto RealPathComponentEnd = llvm::sys::path::rend(RealPathName);
   int Cnt = 0;
   bool SuggestReplacement = false;
-
-  auto IsSep = [Separator](StringRef Component) {
-    return Component.size() == 1 &&
-           llvm::sys::path::is_separator(Component[0], Separator);
-  };
-
   // Below is a best-effort to handle ".." in paths. It is admittedly
   // not 100% correct in the presence of symlinks.
   for (auto &Component : llvm::reverse(Components)) {
@@ -1878,11 +1871,10 @@ static bool trySimplifyPath(SmallVectorImpl<StringRef> &Components,
     } else if (Cnt) {
       --Cnt;
     } else if (RealPathComponentIter != RealPathComponentEnd) {
-      if (!IsSep(Component) && !IsSep(*RealPathComponentIter) &&
-          Component != *RealPathComponentIter) {
-        // If these non-separator path components differ by more than just case,
-        // then we may be looking at symlinked paths. Bail on this diagnostic to
-        // avoid noisy false positives.
+      if (Component != *RealPathComponentIter) {
+        // If these path components differ by more than just case, then we
+        // may be looking at symlinked paths. Bail on this diagnostic to avoid
+        // noisy false positives.
         SuggestReplacement =
             RealPathComponentIter->equals_insensitive(Component);
         if (!SuggestReplacement)
@@ -1941,8 +1933,7 @@ Preprocessor::getIncludeNextStart(const Token &IncludeNextTok) const {
     // Start looking up in the directory *after* the one in which the current
     // file would be found, if any.
     assert(CurPPLexer && "#include_next directive in macro?");
-    if (auto FE = CurPPLexer->getFileEntry())
-      LookupFromFile = *FE;
+    LookupFromFile = CurPPLexer->getFileEntry();
     Lookup = nullptr;
   } else if (!Lookup) {
     // The current file was not found by walking the include path. Either it
@@ -2464,7 +2455,7 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
     }
 #endif
 
-    if (trySimplifyPath(Components, RealPathName, BackslashStyle)) {
+    if (trySimplifyPath(Components, RealPathName)) {
       SmallString<128> Path;
       Path.reserve(Name.size()+2);
       Path.push_back(isAngled ? '<' : '"');
@@ -2487,7 +2478,7 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
         // got copied when the C: was processed and we want to skip that entry.
         if (!(Component.size() == 1 && IsSep(Component[0])))
           Path.append(Component);
-        else if (Path.size() != 1)
+        else if (!Path.empty())
           continue;
 
         // Append the separator(s) the user used, or the close quote
@@ -2801,14 +2792,14 @@ static bool isConfigurationPattern(Token &MacroName, MacroInfo *MI,
         return false;
       StringRef ValueText = II->getName();
       StringRef TrimmedValue = ValueText;
-      if (!ValueText.starts_with("__")) {
-        if (ValueText.starts_with("_"))
+      if (!ValueText.startswith("__")) {
+        if (ValueText.startswith("_"))
           TrimmedValue = TrimmedValue.drop_front(1);
         else
           return false;
       } else {
         TrimmedValue = TrimmedValue.drop_front(2);
-        if (TrimmedValue.ends_with("__"))
+        if (TrimmedValue.endswith("__"))
           TrimmedValue = TrimmedValue.drop_back(2);
       }
       return TrimmedValue.equals(MacroText);

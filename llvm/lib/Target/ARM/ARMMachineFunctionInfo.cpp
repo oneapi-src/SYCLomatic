@@ -13,18 +13,6 @@ using namespace llvm;
 
 void ARMFunctionInfo::anchor() {}
 
-yaml::ARMFunctionInfo::ARMFunctionInfo(const llvm::ARMFunctionInfo &MFI)
-    : LRSpilled(MFI.isLRSpilled()) {}
-
-void yaml::ARMFunctionInfo::mappingImpl(yaml::IO &YamlIO) {
-  MappingTraits<ARMFunctionInfo>::mapping(YamlIO, *this);
-}
-
-void ARMFunctionInfo::initializeBaseYamlFields(
-    const yaml::ARMFunctionInfo &YamlMFI) {
-  LRSpilled = YamlMFI.LRSpilled;
-}
-
 static bool GetBranchTargetEnforcement(const Function &F,
                                        const ARMSubtarget *Subtarget) {
   if (!Subtarget->isMClass() || !Subtarget->hasV7Ops())
@@ -39,8 +27,9 @@ static bool GetBranchTargetEnforcement(const Function &F,
 
   const StringRef BTIEnable =
       F.getFnAttribute("branch-target-enforcement").getValueAsString();
-  assert(BTIEnable == "true" || BTIEnable == "false");
-  return BTIEnable == "true";
+  assert(BTIEnable.equals_insensitive("true") ||
+         BTIEnable.equals_insensitive("false"));
+  return BTIEnable.equals_insensitive("true");
 }
 
 // The pair returns values for the ARMFunctionInfo members

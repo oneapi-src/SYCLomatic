@@ -44,7 +44,7 @@ typedef void (*CompletionCallback)(CommandInterpreter &interpreter,
                                    lldb_private::SearchFilter *searcher);
 
 struct CommonCompletionElement {
-  uint64_t type;
+  uint32_t type;
   CompletionCallback callback;
 };
 
@@ -54,7 +54,6 @@ bool CommandCompletions::InvokeCommonCompletionCallbacks(
   bool handled = false;
 
   const CommonCompletionElement common_completions[] = {
-      {lldb::eNoCompletion, nullptr},
       {lldb::eSourceFileCompletion, CommandCompletions::SourceFiles},
       {lldb::eDiskFileCompletion, CommandCompletions::DiskFiles},
       {lldb::eDiskDirectoryCompletion, CommandCompletions::DiskDirectories},
@@ -84,13 +83,12 @@ bool CommandCompletions::InvokeCommonCompletionCallbacks(
        CommandCompletions::RemoteDiskDirectories},
       {lldb::eTypeCategoryNameCompletion,
        CommandCompletions::TypeCategoryNames},
-      {lldb::eThreadIDCompletion, CommandCompletions::ThreadIDs},
-      {lldb::eTerminatorCompletion,
+      {lldb::CompletionType::eNoCompletion,
        nullptr} // This one has to be last in the list.
   };
 
   for (int i = 0;; i++) {
-    if (common_completions[i].type == lldb::eTerminatorCompletion)
+    if (common_completions[i].type == lldb::eNoCompletion)
       break;
     else if ((common_completions[i].type & completion_mask) ==
                  common_completions[i].type &&
@@ -335,7 +333,7 @@ static void DiskFilesOrDirectories(const llvm::Twine &partial_name,
   llvm::StringRef SearchDir;
   llvm::StringRef PartialItem;
 
-  if (CompletionBuffer.starts_with("~")) {
+  if (CompletionBuffer.startswith("~")) {
     llvm::StringRef Buffer = CompletionBuffer;
     size_t FirstSep =
         Buffer.find_if([](char c) { return path::is_separator(c); });
@@ -424,7 +422,7 @@ static void DiskFilesOrDirectories(const llvm::Twine &partial_name,
     auto Name = path::filename(Entry.path());
 
     // Omit ".", ".."
-    if (Name == "." || Name == ".." || !Name.starts_with(PartialItem))
+    if (Name == "." || Name == ".." || !Name.startswith(PartialItem))
       continue;
 
     bool is_dir = Status->isDirectory();
@@ -608,7 +606,7 @@ void CommandCompletions::Registers(CommandInterpreter &interpreter,
                                    CompletionRequest &request,
                                    SearchFilter *searcher) {
   std::string reg_prefix;
-  if (request.GetCursorArgumentPrefix().starts_with("$"))
+  if (request.GetCursorArgumentPrefix().startswith("$"))
     reg_prefix = "$";
 
   RegisterContext *reg_ctx =
@@ -807,23 +805,6 @@ void CommandCompletions::TypeCategoryNames(CommandInterpreter &interpreter,
                                       category_sp->GetDescription());
         return true;
       });
-}
-
-void CommandCompletions::ThreadIDs(CommandInterpreter &interpreter,
-                                   CompletionRequest &request,
-                                   SearchFilter *searcher) {
-  const ExecutionContext &exe_ctx = interpreter.GetExecutionContext();
-  if (!exe_ctx.HasProcessScope())
-    return;
-
-  ThreadList &threads = exe_ctx.GetProcessPtr()->GetThreadList();
-  lldb::ThreadSP thread_sp;
-  for (uint32_t idx = 0; (thread_sp = threads.GetThreadAtIndex(idx)); ++idx) {
-    StreamString strm;
-    thread_sp->GetStatus(strm, 0, 1, 1, true);
-    request.TryCompleteCurrentArg(std::to_string(thread_sp->GetID()),
-                                  strm.GetString());
-  }
 }
 
 void CommandCompletions::CompleteModifiableCmdPathArgs(

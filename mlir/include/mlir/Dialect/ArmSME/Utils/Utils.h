@@ -15,11 +15,10 @@
 #ifndef MLIR_DIALECT_ARMSME_UTILS_UTILS_H_
 #define MLIR_DIALECT_ARMSME_UTILS_UTILS_H_
 
-#include "mlir/Dialect/ArmSME/IR/ArmSMEEnums.h"
-#include "mlir/IR/BuiltinTypes.h"
-#include <optional>
+#include "mlir/Dialect/ArmSME/IR/ArmSME.h"
 
-namespace mlir::arm_sme {
+namespace mlir {
+namespace arm_sme {
 
 constexpr unsigned MinStreamingVectorLengthInBits = 128;
 
@@ -35,13 +34,13 @@ bool isValidSMETileElementType(Type type);
 /// otherwise.
 bool isValidSMETileVectorType(VectorType vType);
 
-/// Returns the type of SME tile this vector type corresponds to, or none if the
-/// vector type does not fit within an SME tile.
-std::optional<ArmSMETileType> getSMETileType(VectorType);
+/// Extends or truncates `tile`, which should be an `arm_sme::GetTileID` or
+/// `arm_sme::CastVectorToTile` op returning an 8/16/32/64/128-bit scalar
+/// integer, to an i32 that can be passed as the `tile` parameter to the SME
+/// intrinsics. Or returns `tile` if already i32.
+Value castTileIDToI32(Value tile, Location loc, RewriterBase &rewriter);
 
-/// Verifies the tile ID (if set) on this tile operation is valid.
-LogicalResult verifyOperationHasValidTileId(Operation *);
-
-} // namespace mlir::arm_sme
+} // namespace arm_sme
+} // namespace mlir
 
 #endif // MLIR_DIALECT_ARMSME_UTILS_UTILS_H_

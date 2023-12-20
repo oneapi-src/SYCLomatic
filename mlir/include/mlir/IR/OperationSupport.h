@@ -1261,10 +1261,6 @@ struct OperationEquivalence {
   ///   value or this callback must return `success`.
   /// * `markEquivalent` is a callback to inform the caller that the analysis
   ///   determined that two values are equivalent.
-  /// * `checkCommutativeEquivalent` is an optional callback to check for
-  ///   equivalence across two ranges for a commutative operation. If not passed
-  ///   in, then equivalence is checked pairwise. This callback is needed to be
-  ///   able to query the optional equivalence classes.
   ///
   /// Note: Additional information regarding value equivalence can be injected
   /// into the analysis via `checkEquivalent`. Typically, callers may want
@@ -1275,9 +1271,7 @@ struct OperationEquivalence {
   isEquivalentTo(Operation *lhs, Operation *rhs,
                  function_ref<LogicalResult(Value, Value)> checkEquivalent,
                  function_ref<void(Value, Value)> markEquivalent = nullptr,
-                 Flags flags = Flags::None,
-                 function_ref<LogicalResult(ValueRange, ValueRange)>
-                     checkCommutativeEquivalent = nullptr);
+                 Flags flags = Flags::None);
 
   /// Compare two operations and return if they are equivalent.
   static bool isEquivalentTo(Operation *lhs, Operation *rhs, Flags flags);
@@ -1288,9 +1282,7 @@ struct OperationEquivalence {
       Region *lhs, Region *rhs,
       function_ref<LogicalResult(Value, Value)> checkEquivalent,
       function_ref<void(Value, Value)> markEquivalent,
-      OperationEquivalence::Flags flags,
-      function_ref<LogicalResult(ValueRange, ValueRange)>
-          checkCommutativeEquivalent = nullptr);
+      OperationEquivalence::Flags flags);
 
   /// Compare two regions and return if they are equivalent.
   static bool isRegionEquivalentTo(Region *lhs, Region *rhs,

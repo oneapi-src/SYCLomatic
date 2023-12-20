@@ -142,6 +142,54 @@ static bool ShouldIgnoreArtificialField(llvm::StringRef FieldName) {
          || FieldName.starts_with("_vptr.");
 }
 
+std::optional<DWARFFormValue>
+DWARFASTParserClang::FindConstantOnVariableDefinition(DWARFDIE die) {
+  assert(die.Tag() == DW_TAG_member || die.Tag() == DW_TAG_variable);
+
+  auto *dwarf = die.GetDWARF();
+  if (!dwarf)
+    return {};
+
+  ConstString name{die.GetName()};
+  if (!name)
+    return {};
+
+  auto *CU = die.GetCU();
+  if (!CU)
+    return {};
+
+  DWARFASTParser *dwarf_ast = dwarf->GetDWARFParser(*CU);
+  auto parent_decl_ctx = dwarf_ast->GetDeclContextContainingUIDFromDWARF(die);
+
+  // Make sure we populate the GetDieToVariable cache.
+  VariableList variables;
+  dwarf->FindGlobalVariables(name, parent_decl_ctx, UINT_MAX, variables);
+
+  // The cache contains the variable definition whose DW_AT_specification
+  // points to our declaration DIE. Look up that definition using our
+  // declaration.
+  auto const &die_to_var = dwarf->GetDIEToVariable();
+  auto it = die_to_var.find(die.GetDIE());
+  if (it == die_to_var.end())
+    return {};
+
+  auto var_sp = it->getSecond();
+  assert(var_sp != nullptr);
+
+  if (!var_sp->GetLocationIsConstantValueData())
+    return {};
+
+  auto def = dwarf->GetDIE(var_sp->GetID());
+  auto def_attrs = def.GetAttributes();
+  DWARFFormValue form_value;
+  if (!def_attrs.ExtractFormValueAtIndex(
+          def_attrs.FindAttributeIndex(llvm::dwarf::DW_AT_const_value),
+          form_value))
+    return {};
+
+  return form_value;
+}
+
 TypeSP DWARFASTParserClang::ParseTypeFromClangModule(const SymbolContext &sc,
                                                      const DWARFDIE &die,
                                                      Log *log) {
@@ -152,16 +200,16 @@ TypeSP DWARFASTParserClang::ParseTypeFromClangModule(const SymbolContext &sc,
   // If this type comes from a Clang module, recursively look in the
   // DWARF section of the .pcm file in the module cache. Clang
   // generates DWO skeleton units as breadcrumbs to find them.
-  std::vector<lldb_private::CompilerContext> die_context = die.GetDeclContext();
-  TypeQuery query(die_context, TypeQueryOptions::e_module_search |
-                                   TypeQueryOptions::e_find_one);
-  TypeResults results;
+  std::vector<CompilerContext> decl_context = die.GetDeclContext();
+  TypeMap pcm_types;
 
   // The type in the Clang module must have the same language as the current CU.
-  query.AddLanguage(SymbolFileDWARF::GetLanguageFamily(*die.GetCU()));
-  clang_module_sp->FindTypes(query, results);
-  TypeSP pcm_type_sp = results.GetTypeMap().FirstType();
-  if (!pcm_type_sp) {
+  LanguageSet languages;
+  languages.Insert(SymbolFileDWARF::GetLanguageFamily(*die.GetCU()));
+  llvm::DenseSet<SymbolFile *> searched_symbol_files;
+  clang_module_sp->GetSymbolFile()->FindTypes(decl_context, languages,
+                                              searched_symbol_files, pcm_types);
+  if (pcm_types.Empty()) {
     // Since this type is defined in one of the Clang modules imported
     // by this symbol file, search all of them. Instead of calling
     // sym_file->FindTypes(), which would return this again, go straight
@@ -170,20 +218,24 @@ TypeSP DWARFASTParserClang::ParseTypeFromClangModule(const SymbolContext &sc,
 
     // Well-formed clang modules never form cycles; guard against corrupted
     // ones by inserting the current file.
-    results.AlreadySearched(&sym_file);
+    searched_symbol_files.insert(&sym_file);
     sym_file.ForEachExternalModule(
-        *sc.comp_unit, results.GetSearchedSymbolFiles(), [&](Module &module) {
-          module.FindTypes(query, results);
-          pcm_type_sp = results.GetTypeMap().FirstType();
-          return (bool)pcm_type_sp;
+        *sc.comp_unit, searched_symbol_files, [&](Module &module) {
+          module.GetSymbolFile()->FindTypes(decl_context, languages,
+                                            searched_symbol_files, pcm_types);
+          return pcm_types.GetSize();
         });
   }
 
-  if (!pcm_type_sp)
+  if (!pcm_types.GetSize())
     return TypeSP();
 
   // We found a real definition for this type in the Clang module, so lets use
   // it and cache the fact that we found a complete type for this die.
+  TypeSP pcm_type_sp = pcm_types.GetTypeAtIndex(0);
+  if (!pcm_type_sp)
+    return TypeSP();
+
   lldb_private::CompilerType pcm_type = pcm_type_sp->GetForwardCompilerType();
   lldb_private::CompilerType type =
       GetClangASTImporter().CopyType(m_ast, pcm_type);
@@ -928,9 +980,8 @@ ConvertDWARFCallingConventionToClang(const ParsedDWARFTypeAttributes &attrs) {
   return clang::CC_C;
 }
 
-TypeSP
-DWARFASTParserClang::ParseSubroutine(const DWARFDIE &die,
-                                     const ParsedDWARFTypeAttributes &attrs) {
+TypeSP DWARFASTParserClang::ParseSubroutine(const DWARFDIE &die,
+                           ParsedDWARFTypeAttributes &attrs) {
   Log *log = GetLog(DWARFLog::TypeCompletion | DWARFLog::Lookups);
 
   SymbolFileDWARF *dwarf = die.GetDWARF();
@@ -1039,10 +1090,16 @@ DWARFASTParserClang::ParseSubroutine(const DWARFDIE &die,
         }
 
         if (class_opaque_type) {
+          // If accessibility isn't set to anything valid, assume public
+          // for now...
+          if (attrs.accessibility == eAccessNone)
+            attrs.accessibility = eAccessPublic;
+
           clang::ObjCMethodDecl *objc_method_decl =
               m_ast.AddMethodToObjCObjectType(
                   class_opaque_type, attrs.name.GetCString(), clang_type,
-                  attrs.is_artificial, is_variadic, attrs.is_objc_direct_call);
+                  attrs.accessibility, attrs.is_artificial, is_variadic,
+                  attrs.is_objc_direct_call);
           type_handled = objc_method_decl != nullptr;
           if (type_handled) {
             LinkDeclContextToDIE(objc_method_decl, die);
@@ -1149,15 +1206,14 @@ DWARFASTParserClang::ParseSubroutine(const DWARFDIE &die,
                   // Neither GCC 4.2 nor clang++ currently set a valid
                   // accessibility in the DWARF for C++ methods...
                   // Default to public for now...
-                  const auto accessibility = attrs.accessibility == eAccessNone
-                                                 ? eAccessPublic
-                                                 : attrs.accessibility;
+                  if (attrs.accessibility == eAccessNone)
+                    attrs.accessibility = eAccessPublic;
 
                   clang::CXXMethodDecl *cxx_method_decl =
                       m_ast.AddMethodToCXXRecordType(
                           class_opaque_type.GetOpaqueQualType(),
                           attrs.name.GetCString(), attrs.mangled_name,
-                          clang_type, accessibility, attrs.is_virtual,
+                          clang_type, attrs.accessibility, attrs.is_virtual,
                           is_static, attrs.is_inline, attrs.is_explicit,
                           is_attr_used, attrs.is_artificial);
 
@@ -2864,11 +2920,23 @@ void DWARFASTParserClang::CreateStaticMemberVariable(
 
   bool unused;
   // TODO: Support float/double static members as well.
-  if (!ct.IsIntegerOrEnumerationType(unused) || !attrs.const_value_form)
+  if (!ct.IsIntegerOrEnumerationType(unused))
     return;
 
+  auto maybe_const_form_value = attrs.const_value_form;
+
+  // Newer versions of Clang don't emit the DW_AT_const_value
+  // on the declaration of an inline static data member. Instead
+  // it's attached to the definition DIE. If that's the case,
+  // try and fetch it.
+  if (!maybe_const_form_value) {
+    maybe_const_form_value = FindConstantOnVariableDefinition(die);
+    if (!maybe_const_form_value)
+      return;
+  }
+
   llvm::Expected<llvm::APInt> const_value_or_err =
-      ExtractIntFromFormValue(ct, *attrs.const_value_form);
+      ExtractIntFromFormValue(ct, *maybe_const_form_value);
   if (!const_value_or_err) {
     LLDB_LOG_ERROR(log, const_value_or_err.takeError(),
                    "Failed to add const value to variable {1}: {0}",

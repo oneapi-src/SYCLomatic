@@ -24,7 +24,7 @@ std::string getIncludePath(const SourceManager &SM, SourceLocation Loc,
     FilePath = SM.getFilename(Loc);
     if (FilePath.empty())
       return "";
-    if (!FilePath.ends_with(".inc"))
+    if (!FilePath.endswith(".inc"))
       break;
     FileID ID = SM.getFileID(Loc);
     Loc = SM.getIncludeLoc(ID);

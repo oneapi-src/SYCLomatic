@@ -365,7 +365,7 @@ void BuiltinCallHelper::initialize(llvm::Module &M) {
     if (!Ty->isOpaque() || !Ty->hasName())
       continue;
     StringRef Name = Ty->getName();
-    if (Name.starts_with("opencl.") || Name.starts_with("spirv.")) {
+    if (Name.startswith("opencl.") || Name.startswith("spirv.")) {
       UseTargetTypes = false;
     }
   }

@@ -103,13 +103,7 @@ bool llvm::checkVOPDRegConstraints(const SIInstrInfo &TII,
     return false;
   if ((UniqueLiterals.size() + UniqueScalarRegs.size()) > 2)
     return false;
-
-  // On GFX12 if both OpX and OpY are V_MOV_B32 then OPY uses SRC2 source-cache.
-  bool SkipSrc = ST.getGeneration() >= AMDGPUSubtarget::GFX12 &&
-                 FirstMI.getOpcode() == AMDGPU::V_MOV_B32_e32 &&
-                 SecondMI.getOpcode() == AMDGPU::V_MOV_B32_e32;
-
-  if (InstInfo.hasInvalidOperand(getVRegIdx, SkipSrc))
+  if (InstInfo.hasInvalidOperand(getVRegIdx))
     return false;
 
   LLVM_DEBUG(dbgs() << "VOPD Reg Constraints Passed\n\tX: " << FirstMI
@@ -148,10 +142,10 @@ namespace {
 /// be turned into VOPD instructions
 /// Greedily pairs instruction candidates. O(n^2) algorithm.
 struct VOPDPairingMutation : ScheduleDAGMutation {
-  MacroFusionPredTy shouldScheduleAdjacent; // NOLINT: function pointer
+  ShouldSchedulePredTy shouldScheduleAdjacent; // NOLINT: function pointer
 
   VOPDPairingMutation(
-      MacroFusionPredTy shouldScheduleAdjacent) // NOLINT: function pointer
+      ShouldSchedulePredTy shouldScheduleAdjacent) // NOLINT: function pointer
       : shouldScheduleAdjacent(shouldScheduleAdjacent) {}
 
   void apply(ScheduleDAGInstrs *DAG) override {

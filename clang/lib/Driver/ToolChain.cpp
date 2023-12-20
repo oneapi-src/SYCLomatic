@@ -316,7 +316,7 @@ static const DriverSuffix *FindDriverSuffix(StringRef ProgName, size_t &Pos) {
 
   for (const auto &DS : DriverSuffixes) {
     StringRef Suffix(DS.Suffix);
-    if (ProgName.ends_with(Suffix)) {
+    if (ProgName.endswith(Suffix)) {
       Pos = ProgName.size() - Suffix.size();
       return &DS;
     }
@@ -346,7 +346,7 @@ static const DriverSuffix *parseDriverSuffix(StringRef ProgName, size_t &Pos) {
   // added via -target as implicit first argument.
   const DriverSuffix *DS = FindDriverSuffix(ProgName, Pos);
 
-  if (!DS && ProgName.ends_with(".exe")) {
+  if (!DS && ProgName.endswith(".exe")) {
     // Try again after stripping the executable suffix:
     // clang++.exe -> clang++
     ProgName = ProgName.drop_back(StringRef(".exe").size());

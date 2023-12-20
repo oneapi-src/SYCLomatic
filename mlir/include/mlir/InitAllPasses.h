@@ -23,9 +23,7 @@
 #include "mlir/Dialect/Async/Passes.h"
 #include "mlir/Dialect/Bufferization/Pipelines/Passes.h"
 #include "mlir/Dialect/Bufferization/Transforms/Passes.h"
-#include "mlir/Dialect/EmitC/Transforms/Passes.h"
 #include "mlir/Dialect/Func/Transforms/Passes.h"
-#include "mlir/Dialect/GPU/Pipelines/Passes.h"
 #include "mlir/Dialect/GPU/Transforms/Passes.h"
 #include "mlir/Dialect/LLVMIR/Transforms/Passes.h"
 #include "mlir/Dialect/Linalg/Passes.h"
@@ -88,15 +86,11 @@ inline void registerAllPasses() {
   vector::registerVectorPasses();
   arm_sme::registerArmSMEPasses();
   arm_sve::registerArmSVEPasses();
-  emitc::registerEmitCPasses();
 
   // Dialect pipelines
   bufferization::registerBufferizationPipelines();
   sparse_tensor::registerSparseTensorPipelines();
   tosa::registerTosaToLinalgPipelines();
-#if MLIR_CUDA_CONVERSIONS_ENABLED
-  gpu::registerGPUToNVVMPipeline();
-#endif
 }
 
 } // namespace mlir

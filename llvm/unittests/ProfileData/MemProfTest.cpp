@@ -54,8 +54,7 @@ public:
   virtual std::vector<DILocal> symbolizeFrame(SectionedAddress) const {
     llvm_unreachable("unused");
   }
-  virtual std::vector<SectionedAddress> findSymbol(StringRef Symbol,
-                                                   uint64_t Offset) const {
+  virtual std::vector<SectionedAddress> findSymbol(StringRef Symbol) const {
     llvm_unreachable("unused");
   }
   virtual bool isWin32Module() const { llvm_unreachable("unused"); }

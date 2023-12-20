@@ -33,6 +33,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Transforms/IPO/SampleContextTracker.h"
+#include <list>
 #include <map>
 #include <set>
 #include <sstream>

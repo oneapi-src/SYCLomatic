@@ -152,7 +152,7 @@ static bool isInput(const ArrayRef<StringLiteral> &Prefixes, StringRef Arg) {
   if (Arg == "-")
     return true;
   for (const StringRef &Prefix : Prefixes)
-    if (Arg.starts_with(Prefix))
+    if (Arg.startswith(Prefix))
       return false;
   return true;
 }
@@ -161,10 +161,10 @@ static bool isInput(const ArrayRef<StringLiteral> &Prefixes, StringRef Arg) {
 static unsigned matchOption(const OptTable::Info *I, StringRef Str,
                             bool IgnoreCase) {
   for (auto Prefix : I->Prefixes) {
-    if (Str.starts_with(Prefix)) {
+    if (Str.startswith(Prefix)) {
       StringRef Rest = Str.substr(Prefix.size());
       bool Matched = IgnoreCase ? Rest.starts_with_insensitive(I->getName())
-                                : Rest.starts_with(I->getName());
+                                : Rest.startswith(I->getName());
       if (Matched)
         return Prefix.size() + StringRef(I->getName()).size();
     }
@@ -175,7 +175,7 @@ static unsigned matchOption(const OptTable::Info *I, StringRef Str,
 // Returns true if one of the Prefixes + In.Names matches Option
 static bool optionMatches(const OptTable::Info &In, StringRef Option) {
   for (auto Prefix : In.Prefixes)
-    if (Option.ends_with(In.getName()))
+    if (Option.endswith(In.getName()))
       if (Option.slice(0, Option.size() - In.getName().size()) == Prefix)
         return true;
   return false;
@@ -197,7 +197,7 @@ OptTable::suggestValueCompletions(StringRef Option, StringRef Arg) const {
 
     std::vector<std::string> Result;
     for (StringRef Val : Candidates)
-      if (Val.starts_with(Arg) && Arg.compare(Val))
+      if (Val.startswith(Arg) && Arg.compare(Val))
         Result.push_back(std::string(Val));
     return Result;
   }
@@ -221,7 +221,7 @@ OptTable::findByPrefix(StringRef Cur, Visibility VisibilityMask,
       std::string S = (Prefix + In.getName() + "\t").str();
       if (In.HelpText)
         S += In.HelpText;
-      if (StringRef(S).starts_with(Cur) && S != std::string(Cur) + "\t")
+      if (StringRef(S).startswith(Cur) && S != std::string(Cur) + "\t")
         Ret.push_back(S);
     }
   }
@@ -664,24 +664,15 @@ static void PrintHelpOptionList(raw_ostream &OS, StringRef Title,
   const unsigned InitialPad = 2;
   for (const OptionInfo &Opt : OptionHelp) {
     const std::string &Option = Opt.Name;
-    int Pad = OptionFieldWidth + InitialPad;
-    int FirstLinePad = OptionFieldWidth - int(Option.size());
+    int Pad = OptionFieldWidth - int(Option.size());
     OS.indent(InitialPad) << Option;
 
     // Break on long option names.
-    if (FirstLinePad < 0) {
+    if (Pad < 0) {
       OS << "\n";
-      FirstLinePad = OptionFieldWidth + InitialPad;
-      Pad = FirstLinePad;
+      Pad = OptionFieldWidth + InitialPad;
     }
-
-    SmallVector<StringRef> Lines;
-    Opt.HelpText.split(Lines, '\n');
-    assert(Lines.size() && "Expected at least the first line in the help text");
-    auto *LinesIt = Lines.begin();
-    OS.indent(FirstLinePad + 1) << *LinesIt << '\n';
-    while (Lines.end() != ++LinesIt)
-      OS.indent(Pad + 1) << *LinesIt << '\n';
+    OS.indent(Pad + 1) << Opt.HelpText << '\n';
   }
 }
 

@@ -32,12 +32,11 @@ void SystemZInstPrinter::printAddress(const MCAsmInfo *MAI, MCRegister Base,
     O << '(';
     if (Index) {
       printFormattedRegName(MAI, Index, O);
-      O << ',';
+      if (Base)
+        O << ',';
     }
     if (Base)
       printFormattedRegName(MAI, Base, O);
-    else
-      O << '0';
     O << ')';
   }
 }

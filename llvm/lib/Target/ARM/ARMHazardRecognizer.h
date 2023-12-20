@@ -18,6 +18,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/CodeGen/ScheduleHazardRecognizer.h"
 #include "llvm/Support/DataTypes.h"
+#include <array>
 #include <initializer_list>
 
 namespace llvm {

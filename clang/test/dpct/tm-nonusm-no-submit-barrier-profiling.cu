@@ -1,9 +1,8 @@
 // RUN: dpct --enable-profiling  --no-dpcpp-extensions=enqueued_barriers --format-range=none -usm-level=none -out-root %T/tm-nonusm-no-submit-barrier-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.cpp -o %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.cpp -o %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.o %}
 // RUN: rm -rf %T/tm-nonusm-no-submit-barrier-profiling/
 
-#ifndef BUILD_TEST
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT:#define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT:#include <sycl/sycl.hpp>
@@ -686,4 +685,3 @@ void test_1999(void* ref_image, void* cur_image,
     cudaEventElapsedTime(sad_calc_8_ms, sad_calc_8_start, sad_calc_8_stop);
     cudaEventElapsedTime(sad_calc_16_ms, sad_calc_16_start, sad_calc_16_stop);
 }
-#endif

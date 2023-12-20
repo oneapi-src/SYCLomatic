@@ -446,7 +446,7 @@ llvm::Expected<std::string> getAbsolutePath(llvm::vfs::FileSystem &FS,
                                             StringRef File) {
   StringRef RelativePath(File);
   // FIXME: Should '.\\' be accepted on Win32?
-  if (RelativePath.starts_with("./")) {
+  if (RelativePath.startswith("./")) {
     RelativePath = RelativePath.substr(strlen("./"));
   }
 
@@ -485,9 +485,9 @@ void addTargetAndModeForProgramName(std::vector<std::string> &CommandLine,
   for (auto Token = ++CommandLine.begin(); Token != CommandLine.end();
        ++Token) {
     StringRef TokenRef(*Token);
-    ShouldAddTarget = ShouldAddTarget && !TokenRef.starts_with(TargetOPT) &&
+    ShouldAddTarget = ShouldAddTarget && !TokenRef.startswith(TargetOPT) &&
                       !TokenRef.equals(TargetOPTLegacy);
-    ShouldAddMode = ShouldAddMode && !TokenRef.starts_with(DriverModeOPT);
+    ShouldAddMode = ShouldAddMode && !TokenRef.startswith(DriverModeOPT);
   }
   if (ShouldAddMode) {
     CommandLine.insert(++CommandLine.begin(), TargetMode.DriverMode);
@@ -705,7 +705,7 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
                               void *MainAddr) {
   // Allow users to override the resource dir.
   for (StringRef Arg : Args)
-    if (Arg.starts_with("-resource-dir"))
+    if (Arg.startswith("-resource-dir"))
       return;
 
   // If there's no override in place add our resource dir.

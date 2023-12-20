@@ -68,7 +68,6 @@ struct Configuration {
   bool isStatic = false;
   bool trace;
   uint64_t globalBase;
-  uint64_t initialHeap;
   uint64_t initialMemory;
   uint64_t maxMemory;
   uint64_t zStackSize;

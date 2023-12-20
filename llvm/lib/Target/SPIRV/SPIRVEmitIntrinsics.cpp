@@ -410,10 +410,10 @@ void SPIRVEmitIntrinsics::insertAssignPtrTypeIntrs(Instruction *I) {
   Constant *EltTyConst;
   unsigned AddressSpace = 0;
   if (auto *AI = dyn_cast<AllocaInst>(I)) {
-    EltTyConst = UndefValue::get(AI->getAllocatedType());
+    EltTyConst = Constant::getNullValue(AI->getAllocatedType());
     AddressSpace = AI->getAddressSpace();
   } else if (auto *GEP = dyn_cast<GetElementPtrInst>(I)) {
-    EltTyConst = UndefValue::get(GEP->getResultElementType());
+    EltTyConst = Constant::getNullValue(GEP->getResultElementType());
     AddressSpace = GEP->getPointerAddressSpace();
   } else {
     llvm_unreachable("Unexpected instruction!");
@@ -436,7 +436,7 @@ void SPIRVEmitIntrinsics::insertAssignTypeIntrs(Instruction *I) {
         TypeToAssign = t->second->getType();
       }
     }
-    Constant *Const = UndefValue::get(TypeToAssign);
+    Constant *Const = Constant::getNullValue(TypeToAssign);
     buildIntrWithMD(Intrinsic::spv_assign_type, {Ty}, Const, I, {});
   }
   for (const auto &Op : I->operands()) {
@@ -506,7 +506,8 @@ bool SPIRVEmitIntrinsics::runOnFunction(Function &Func) {
       continue;
     Type *ElTy = SI->getValueOperand()->getType();
     PointerType *PTy = cast<PointerType>(SI->getOperand(1)->getType());
-    if (ElTy->isAggregateType() || ElTy->isVectorTy())
+    if (ElTy->isAggregateType() || ElTy->isVectorTy() ||
+        !PTy->isOpaqueOrPointeeTypeMatches(ElTy))
       AggrStores.insert(&I);
   }
 

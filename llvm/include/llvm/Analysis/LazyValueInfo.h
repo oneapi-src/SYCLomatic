@@ -32,6 +32,7 @@ namespace llvm {
     friend class LazyValueInfoWrapperPass;
     AssumptionCache *AC = nullptr;
     const DataLayout *DL = nullptr;
+    class TargetLibraryInfo *TLI = nullptr;
     LazyValueInfoImpl *PImpl = nullptr;
     LazyValueInfo(const LazyValueInfo &) = delete;
     void operator=(const LazyValueInfo &) = delete;
@@ -42,16 +43,18 @@ namespace llvm {
   public:
     ~LazyValueInfo();
     LazyValueInfo() = default;
-    LazyValueInfo(AssumptionCache *AC_, const DataLayout *DL_)
-        : AC(AC_), DL(DL_) {}
+    LazyValueInfo(AssumptionCache *AC_, const DataLayout *DL_,
+                  TargetLibraryInfo *TLI_)
+        : AC(AC_), DL(DL_), TLI(TLI_) {}
     LazyValueInfo(LazyValueInfo &&Arg)
-        : AC(Arg.AC), DL(Arg.DL), PImpl(Arg.PImpl) {
+        : AC(Arg.AC), DL(Arg.DL), TLI(Arg.TLI), PImpl(Arg.PImpl) {
       Arg.PImpl = nullptr;
     }
     LazyValueInfo &operator=(LazyValueInfo &&Arg) {
       releaseMemory();
       AC = Arg.AC;
       DL = Arg.DL;
+      TLI = Arg.TLI;
       PImpl = Arg.PImpl;
       Arg.PImpl = nullptr;
       return *this;
@@ -92,11 +95,11 @@ namespace llvm {
     /// specified value at the specified instruction. This may only be called
     /// on integer-typed Values.
     ConstantRange getConstantRange(Value *V, Instruction *CxtI,
-                                   bool UndefAllowed);
+                                   bool UndefAllowed = true);
 
     /// Return the ConstantRange constraint that is known to hold for the value
     /// at a specific use-site.
-    ConstantRange getConstantRangeAtUse(const Use &U, bool UndefAllowed);
+    ConstantRange getConstantRangeAtUse(const Use &U, bool UndefAllowed = true);
 
     /// Determine whether the specified value is known to be a
     /// constant on the specified edge.  Return null if not.

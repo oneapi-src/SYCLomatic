@@ -1,8 +1,8 @@
 // RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T/kernel-call-inner-virtual-pointer %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing  -std=c++14
 
 // RUN: FileCheck --input-file %T/kernel-call-inner-virtual-pointer/kernel-call-inner-virtual-pointer.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/kernel-call-inner-virtual-pointer/kernel-call-inner-virtual-pointer.dp.cpp -o %T/kernel-call-inner-virtual-pointer/kernel-call-inner-virtual-pointer.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel-call-inner-virtual-pointer/kernel-call-inner-virtual-pointer.dp.cpp -o %T/kernel-call-inner-virtual-pointer/kernel-call-inner-virtual-pointer.dp.o %}
+
 #include "cuda_runtime.h"
 #include <stdio.h>
 
@@ -141,4 +141,3 @@ int main() {
   //CHECK-NEXT:      });
   k5<<<1,1>>>(e);
 }
-#endif

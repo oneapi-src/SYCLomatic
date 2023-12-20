@@ -296,7 +296,7 @@ GCNTTIImpl::GCNTTIImpl(const AMDGPUTargetMachine *TM, const Function &F)
       ST(static_cast<const GCNSubtarget *>(TM->getSubtargetImpl(F))),
       TLI(ST->getTargetLowering()), CommonTTI(TM, F),
       IsGraphics(AMDGPU::isGraphics(F.getCallingConv())) {
-  SIModeRegisterDefaults Mode(F, *ST);
+  SIModeRegisterDefaults Mode(F);
   HasFP32Denormals = Mode.FP32Denormals != DenormalMode::getPreserveSign();
   HasFP64FP16Denormals =
       Mode.FP64FP16Denormals != DenormalMode::getPreserveSign();
@@ -368,8 +368,7 @@ unsigned GCNTTIImpl::getLoadStoreVecRegBitWidth(unsigned AddrSpace) const {
       AddrSpace == AMDGPUAS::CONSTANT_ADDRESS ||
       AddrSpace == AMDGPUAS::CONSTANT_ADDRESS_32BIT ||
       AddrSpace == AMDGPUAS::BUFFER_FAT_POINTER ||
-      AddrSpace == AMDGPUAS::BUFFER_RESOURCE ||
-      AddrSpace == AMDGPUAS::BUFFER_STRIDED_POINTER) {
+      AddrSpace == AMDGPUAS::BUFFER_RESOURCE) {
     return 512;
   }
 
@@ -893,7 +892,7 @@ bool GCNTTIImpl::isReadRegisterSourceOfDivergence(
     return true;
 
   // Special case scalar registers that start with 'v'.
-  if (RegName.starts_with("vcc") || RegName.empty())
+  if (RegName.startswith("vcc") || RegName.empty())
     return false;
 
   // VGPR or AGPR is divergent. There aren't any specially named vector
@@ -1027,8 +1026,6 @@ bool GCNTTIImpl::collectFlatAddressOperands(SmallVectorImpl<int> &OpIndexes,
   case Intrinsic::amdgcn_flat_atomic_fadd:
   case Intrinsic::amdgcn_flat_atomic_fmax:
   case Intrinsic::amdgcn_flat_atomic_fmin:
-  case Intrinsic::amdgcn_flat_atomic_fmax_num:
-  case Intrinsic::amdgcn_flat_atomic_fmin_num:
     OpIndexes.push_back(0);
     return true;
   default:
@@ -1103,9 +1100,7 @@ Value *GCNTTIImpl::rewriteIntrinsicWithAddressSpace(IntrinsicInst *II,
   }
   case Intrinsic::amdgcn_flat_atomic_fadd:
   case Intrinsic::amdgcn_flat_atomic_fmax:
-  case Intrinsic::amdgcn_flat_atomic_fmin:
-  case Intrinsic::amdgcn_flat_atomic_fmax_num:
-  case Intrinsic::amdgcn_flat_atomic_fmin_num: {
+  case Intrinsic::amdgcn_flat_atomic_fmin: {
     Type *DestTy = II->getType();
     Type *SrcTy = NewV->getType();
     unsigned NewAS = SrcTy->getPointerAddressSpace();
@@ -1168,8 +1163,8 @@ bool GCNTTIImpl::areInlineCompatible(const Function *Caller,
 
   // FIXME: dx10_clamp can just take the caller setting, but there seems to be
   // no way to support merge for backend defined attributes.
-  SIModeRegisterDefaults CallerMode(*Caller, *CallerST);
-  SIModeRegisterDefaults CalleeMode(*Callee, *CalleeST);
+  SIModeRegisterDefaults CallerMode(*Caller);
+  SIModeRegisterDefaults CalleeMode(*Callee);
   if (!CallerMode.isInlineCompatible(CalleeMode))
     return false;
 
@@ -1344,12 +1339,4 @@ GCNTTIImpl::getTypeLegalizationCost(Type *Ty) const {
 
   Cost.first += (Size + 255) / 256;
   return Cost;
-}
-
-unsigned GCNTTIImpl::getPrefetchDistance() const {
-  return ST->hasPrefetch() ? 128 : 0;
-}
-
-bool GCNTTIImpl::shouldPrefetchAddressSpace(unsigned AS) const {
-  return AMDGPU::isFlatGlobalAddrSpace(AS);
 }

@@ -63,7 +63,15 @@ template <int N> struct vector_conversion_traits<sycl::half, N> {
       ;
 #else
   {
-    __ESIMD_UNSUPPORTED_ON_HOST;
+    vector_type_t<half_raw_type, N> Output = 0;
+
+    for (int i = 0; i < N; i += 1) {
+      // 1. Convert Val[i] to float (x) using c++ static_cast
+      // 2. Convert x to half (using float2half)
+      // 3. Output[i] = half_of(x)
+      Output[i] = ::sycl::detail::float2Half(static_cast<float>(Val[i]));
+    }
+    return Output;
   }
 #endif // __SYCL_DEVICE_ONLY__
 
@@ -74,7 +82,15 @@ template <int N> struct vector_conversion_traits<sycl::half, N> {
       ;
 #else
   {
-    __ESIMD_UNSUPPORTED_ON_HOST;
+    vector_type_t<StdT, N> Output;
+
+    for (int i = 0; i < N; i += 1) {
+      // 1. Convert Val[i] to float y(using half2float)
+      // 2. Convert y to StdT using c++ static_cast
+      // 3. Store in Output[i]
+      Output[i] = static_cast<StdT>(::sycl::detail::half2Float(Val[i]));
+    }
+    return Output;
   }
 #endif // __SYCL_DEVICE_ONLY__
 };
@@ -95,7 +111,7 @@ public:
 
   static ESIMD_INLINE sycl::half bitcast_to_wrapper_scalar(half_raw_type Val) {
 #ifndef __SYCL_DEVICE_ONLY__
-    __ESIMD_UNSUPPORTED_ON_HOST;
+    return sycl::half(::sycl::detail::host_half_impl::half(Val));
 #else
     sycl::half Res;
     Res.Data = Val;
@@ -120,9 +136,6 @@ template <> struct scalar_conversion_traits<sycl::half> {
 template <>
 struct is_esimd_arithmetic_type<half_raw_type, void> : std::true_type {};
 #endif // __SYCL_DEVICE_ONLY__
-
-template <>
-struct is_esimd_arithmetic_type<sycl::half, void> : std::true_type {};
 
 // Misc
 inline std::ostream &operator<<(std::ostream &O, sycl::half const &rhs) {

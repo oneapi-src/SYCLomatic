@@ -28,7 +28,7 @@ public:
 
 private:
   using FPBits = LIBC_NAMESPACE::fputil::FPBits<T>;
-  using StorageType = typename FPBits::StorageType;
+  using UIntType = typename FPBits::UIntType;
 
   const T zero = T(FPBits::zero());
   const T neg_zero = T(FPBits::neg_zero());

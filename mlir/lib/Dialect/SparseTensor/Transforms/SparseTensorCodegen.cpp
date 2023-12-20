@@ -15,8 +15,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Utils/CodegenUtils.h"
-#include "Utils/SparseTensorDescriptor.h"
+#include "CodegenUtils.h"
+#include "SparseTensorDescriptor.h"
 
 #include "mlir/Dialect/Arith/Utils/Utils.h"
 #include "mlir/Dialect/Bufferization/IR/Bufferization.h"
@@ -194,7 +194,7 @@ static void createAllocFields(OpBuilder &builder, Location loc,
       valHeuristic =
           builder.create<arith::MulIOp>(loc, valHeuristic, lvlSizesValues[lvl]);
   } else if (sizeHint) {
-    if (stt.getCOOStart() == 0) {
+    if (getCOOStart(stt.getEncoding()) == 0) {
       posHeuristic = constantIndex(builder, loc, 2);
       crdHeuristic = builder.create<arith::MulIOp>(
           loc, constantIndex(builder, loc, lvlRank), sizeHint); // AOS
@@ -657,7 +657,8 @@ struct SparseReorderCOOConverter : public OpConversionPattern<ReorderCOOOp> {
 
     // Should have been verified.
     assert(dstStt.isAllOrdered() && !srcStt.isAllOrdered() &&
-           dstStt.isCOOType() && srcStt.isCOOType());
+           isUniqueCOOType(srcStt.getRankedTensorType()) &&
+           isUniqueCOOType(dstStt.getRankedTensorType()));
     assert(dstStt.hasSameDimToLvl(srcStt));
 
     // We don't need a mutable descriptor here as we perform sorting in-place.
@@ -1316,7 +1317,7 @@ struct SparseAssembleOpConverter : public OpConversionPattern<AssembleOp> {
     Value posBack = c0; // index to the last value in the position array
     Value memSize = c1; // memory size for current array
 
-    Level trailCOOStart = stt.getCOOStart();
+    Level trailCOOStart = getCOOStart(stt.getEncoding());
     Level trailCOORank = stt.getLvlRank() - trailCOOStart;
     // Sets up SparseTensorSpecifier.
     for (Level lvl = 0, lvlRank = stt.getLvlRank(); lvl < lvlRank; lvl++) {
@@ -1453,7 +1454,7 @@ struct SparseNewConverter : public OpConversionPattern<NewOp> {
     const auto dstTp = getSparseTensorType(op.getResult());
     // Creating COO with NewOp is handled by direct IR codegen. All other cases
     // are handled by rewriting.
-    if (!dstTp.hasEncoding() || dstTp.getCOOStart() != 0)
+    if (!dstTp.hasEncoding() || getCOOStart(dstTp.getEncoding()) != 0)
       return failure();
 
     // Implement as follows:

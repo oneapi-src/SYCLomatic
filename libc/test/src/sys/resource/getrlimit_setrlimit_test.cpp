@@ -17,7 +17,6 @@
 #include "test/UnitTest/Test.h"
 
 #include <sys/resource.h>
-#include <sys/stat.h>
 
 TEST(LlvmLibcResourceLimitsTest, SetNoFileLimit) {
   using LIBC_NAMESPACE::testing::ErrnoSetterMatcher::Fails;

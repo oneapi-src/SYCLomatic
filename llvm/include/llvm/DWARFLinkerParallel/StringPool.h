@@ -13,6 +13,7 @@
 #include "llvm/CodeGen/DwarfStringPoolEntry.h"
 #include "llvm/Support/Allocator.h"
 #include "llvm/Support/PerThreadBumpPtrAllocator.h"
+#include <string>
 #include <string_view>
 
 namespace llvm {

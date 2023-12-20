@@ -362,10 +362,14 @@ private:
             return false;
 
           // Check if the found line starts a record.
-          const auto *LastNonComment = Line->getLastNonComment();
-          // There must be another token (usually `{`), because we chose a
-          // non-PPDirective and non-comment line that has a smaller level.
+          const FormatToken *LastNonComment = Line->Last;
           assert(LastNonComment);
+          if (LastNonComment->is(tok::comment)) {
+            LastNonComment = LastNonComment->getPreviousNonComment();
+            // There must be another token (usually `{`), because we chose a
+            // non-PPDirective and non-comment line that has a smaller level.
+            assert(LastNonComment);
+          }
           return isRecordLBrace(*LastNonComment);
         }
       }
@@ -375,9 +379,12 @@ private:
 
     bool MergeShortFunctions = ShouldMergeShortFunctions();
 
-    const auto *FirstNonComment = TheLine->getFirstNonComment();
-    if (!FirstNonComment)
-      return 0;
+    const FormatToken *FirstNonComment = TheLine->First;
+    if (FirstNonComment->is(tok::comment)) {
+      FirstNonComment = FirstNonComment->getNextNonComment();
+      if (!FirstNonComment)
+        return 0;
+    }
     // FIXME: There are probably cases where we should use FirstNonComment
     // instead of TheLine->First.
 
@@ -427,16 +434,9 @@ private:
       }
     }
 
-    const auto *LastNonComment = TheLine->getLastNonComment();
-    assert(LastNonComment);
-    // FIXME: There are probably cases where we should use LastNonComment
-    // instead of TheLine->Last.
-
     // Try to merge a function block with left brace unwrapped.
-    if (LastNonComment->is(TT_FunctionLBrace) &&
-        TheLine->First != LastNonComment) {
+    if (TheLine->Last->is(TT_FunctionLBrace) && TheLine->First != TheLine->Last)
       return MergeShortFunctions ? tryMergeSimpleBlock(I, E, Limit) : 0;
-    }
     // Try to merge a control statement block with left brace unwrapped.
     if (TheLine->Last->is(tok::l_brace) && FirstNonComment != TheLine->Last &&
         FirstNonComment->isOneOf(tok::kw_if, tok::kw_while, tok::kw_for,
@@ -833,8 +833,7 @@ private:
       }
     }
 
-    if (const auto *LastNonComment = Line.getLastNonComment();
-        LastNonComment && LastNonComment->is(tok::l_brace)) {
+    if (Line.Last->is(tok::l_brace)) {
       if (IsSplitBlock && Line.First == Line.Last &&
           I > AnnotatedLines.begin() &&
           (I[-1]->endsWith(tok::kw_else) || IsCtrlStmt(*I[-1]))) {
@@ -850,8 +849,7 @@ private:
 
       if (ShouldMerge()) {
         // We merge empty blocks even if the line exceeds the column limit.
-        Tok->SpacesRequiredBefore =
-            (Style.SpaceInEmptyBlock || Line.Last->is(tok::comment)) ? 1 : 0;
+        Tok->SpacesRequiredBefore = Style.SpaceInEmptyBlock ? 1 : 0;
         Tok->CanBreakBefore = true;
         return 1;
       } else if (Limit != 0 && !Line.startsWithNamespace() &&

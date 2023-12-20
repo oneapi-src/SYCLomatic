@@ -9,5 +9,6 @@ add_mlir_conversion_library(MLIRArmSMEToSCF
 
   LINK_LIBS PUBLIC
   MLIRArmSMEDialect
+  MLIRArmSMEUtils
   MLIRTransforms
   )

@@ -26,6 +26,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/MC/MCInstrItineraries.h"
 #include "llvm/Support/ErrorHandling.h"
+#include <string>
 
 #define GET_SUBTARGETINFO_HEADER
 #include "MipsGenSubtargetInfo.inc"

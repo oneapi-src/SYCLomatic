@@ -262,7 +262,7 @@ public:
     if (Canonical.empty())
       return "";
     // If we had a mapping, always use it.
-    assert(Canonical.starts_with("<") || Canonical.starts_with("\""));
+    assert(Canonical.startswith("<") || Canonical.startswith("\""));
     return Canonical;
   }
 
@@ -414,7 +414,7 @@ private:
                                         PP->getHeaderSearchInfo())) {
       // A .inc or .def file is often included into a real header to define
       // symbols (e.g. LLVM tablegen files).
-      if (Filename.ends_with(".inc") || Filename.ends_with(".def"))
+      if (Filename.endswith(".inc") || Filename.endswith(".def"))
         // Don't use cache reentrantly due to iterator invalidation.
         return getIncludeHeaderUncached(SM.getFileID(SM.getIncludeLoc(FID)));
       // Conservatively refuse to insert #includes to files without guards.
@@ -826,8 +826,22 @@ void SymbolCollector::setIncludeLocation(const Symbol &S, SourceLocation DefLoc,
   // We update providers for a symbol with each occurence, as SymbolCollector
   // might run while parsing, rather than at the end of a translation unit.
   // Hence we see more and more redecls over time.
-  SymbolProviders[S.ID] =
+  auto [It, Inserted] = SymbolProviders.try_emplace(S.ID);
+  auto Headers =
       include_cleaner::headersForSymbol(Sym, SM, Opts.PragmaIncludes);
+  if (Headers.empty())
+    return;
+
+  auto *HeadersIter = Headers.begin();
+  include_cleaner::Header H = *HeadersIter;
+  while (HeadersIter != Headers.end() &&
+         H.kind() == include_cleaner::Header::Physical &&
+         !tooling::isSelfContainedHeader(H.physical(), SM,
+                                         PP->getHeaderSearchInfo())) {
+    H = *HeadersIter;
+    HeadersIter++;
+  }
+  It->second = H;
 }
 
 llvm::StringRef getStdHeader(const Symbol *S, const LangOptions &LangOpts) {
@@ -875,7 +889,7 @@ void SymbolCollector::finish() {
   llvm::DenseMap<include_cleaner::Header, std::string> HeaderSpelling;
   // Fill in IncludeHeaders.
   // We delay this until end of TU so header guards are all resolved.
-  for (const auto &[SID, Providers] : SymbolProviders) {
+  for (const auto &[SID, OptionalProvider] : SymbolProviders) {
     const Symbol *S = Symbols.find(SID);
     if (!S)
       continue;
@@ -917,27 +931,9 @@ void SymbolCollector::finish() {
       continue;
     }
 
+    assert(Directives == Symbol::Include);
     // For #include's, use the providers computed by the include-cleaner
     // library.
-    assert(Directives == Symbol::Include);
-    // Ignore providers that are not self-contained, this is especially
-    // important for symbols defined in the main-file. We want to prefer the
-    // header, if possible.
-    // TODO: Limit this to specifically ignore main file, when we're indexing a
-    // non-header file?
-    auto SelfContainedProvider =
-        [this](llvm::ArrayRef<include_cleaner::Header> Providers)
-        -> std::optional<include_cleaner::Header> {
-      for (const auto &H : Providers) {
-        if (H.kind() != include_cleaner::Header::Physical)
-          return H;
-        if (tooling::isSelfContainedHeader(H.physical(), PP->getSourceManager(),
-                                           PP->getHeaderSearchInfo()))
-          return H;
-      }
-      return std::nullopt;
-    };
-    const auto OptionalProvider = SelfContainedProvider(Providers);
     if (!OptionalProvider)
       continue;
     const auto &H = *OptionalProvider;

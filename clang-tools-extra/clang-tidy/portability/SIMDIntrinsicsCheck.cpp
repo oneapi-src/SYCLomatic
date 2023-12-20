@@ -59,17 +59,17 @@ static StringRef trySuggestX86(StringRef Name) {
     return {};
 
   // [simd.alg]
-  if (Name.starts_with("max_"))
+  if (Name.startswith("max_"))
     return "$simd::max";
-  if (Name.starts_with("min_"))
+  if (Name.startswith("min_"))
     return "$simd::min";
 
   // [simd.binary]
-  if (Name.starts_with("add_"))
+  if (Name.startswith("add_"))
     return "operator+ on $simd objects";
-  if (Name.starts_with("sub_"))
+  if (Name.startswith("sub_"))
     return "operator- on $simd objects";
-  if (Name.starts_with("mul_"))
+  if (Name.startswith("mul_"))
     return "operator* on $simd objects";
 
   return {};

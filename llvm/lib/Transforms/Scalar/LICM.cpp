@@ -193,7 +193,7 @@ static Instruction *cloneInstructionInExitBlock(
 static void eraseInstruction(Instruction &I, ICFLoopSafetyInfo &SafetyInfo,
                              MemorySSAUpdater &MSSAU);
 
-static void moveInstructionBefore(Instruction &I, BasicBlock::iterator Dest,
+static void moveInstructionBefore(Instruction &I, Instruction &Dest,
                                   ICFLoopSafetyInfo &SafetyInfo,
                                   MemorySSAUpdater &MSSAU, ScalarEvolution *SE);
 
@@ -481,12 +481,12 @@ bool LoopInvariantCodeMotion::runOnLoop(Loop *L, AAResults *AA, LoopInfo *LI,
     });
 
     if (!HasCatchSwitch) {
-      SmallVector<BasicBlock::iterator, 8> InsertPts;
+      SmallVector<Instruction *, 8> InsertPts;
       SmallVector<MemoryAccess *, 8> MSSAInsertPts;
       InsertPts.reserve(ExitBlocks.size());
       MSSAInsertPts.reserve(ExitBlocks.size());
       for (BasicBlock *ExitBlock : ExitBlocks) {
-        InsertPts.push_back(ExitBlock->getFirstInsertionPt());
+        InsertPts.push_back(&*ExitBlock->getFirstInsertionPt());
         MSSAInsertPts.push_back(nullptr);
       }
 
@@ -1011,8 +1011,7 @@ bool llvm::hoistRegion(DomTreeNode *N, AAResults *AA, LoopInfo *LI,
         LLVM_DEBUG(dbgs() << "LICM rehoisting to "
                           << HoistPoint->getParent()->getNameOrAsOperand()
                           << ": " << *I << "\n");
-        moveInstructionBefore(*I, HoistPoint->getIterator(), *SafetyInfo, MSSAU,
-                              SE);
+        moveInstructionBefore(*I, *HoistPoint, *SafetyInfo, MSSAU, SE);
         HoistPoint = I;
         Changed = true;
       }
@@ -1492,17 +1491,16 @@ static void eraseInstruction(Instruction &I, ICFLoopSafetyInfo &SafetyInfo,
   I.eraseFromParent();
 }
 
-static void moveInstructionBefore(Instruction &I, BasicBlock::iterator Dest,
+static void moveInstructionBefore(Instruction &I, Instruction &Dest,
                                   ICFLoopSafetyInfo &SafetyInfo,
                                   MemorySSAUpdater &MSSAU,
                                   ScalarEvolution *SE) {
   SafetyInfo.removeInstruction(&I);
-  SafetyInfo.insertInstructionTo(&I, Dest->getParent());
-  I.moveBefore(*Dest->getParent(), Dest);
+  SafetyInfo.insertInstructionTo(&I, Dest.getParent());
+  I.moveBefore(&Dest);
   if (MemoryUseOrDef *OldMemAcc = cast_or_null<MemoryUseOrDef>(
           MSSAU.getMemorySSA()->getMemoryAccess(&I)))
-    MSSAU.moveToPlace(OldMemAcc, Dest->getParent(),
-                      MemorySSA::BeforeTerminator);
+    MSSAU.moveToPlace(OldMemAcc, Dest.getParent(), MemorySSA::BeforeTerminator);
   if (SE)
     SE->forgetBlockAndLoopDispositions(&I);
 }
@@ -1749,11 +1747,10 @@ static void hoist(Instruction &I, const DominatorTree *DT, const Loop *CurLoop,
 
   if (isa<PHINode>(I))
     // Move the new node to the end of the phi list in the destination block.
-    moveInstructionBefore(I, Dest->getFirstNonPHIIt(), *SafetyInfo, MSSAU, SE);
+    moveInstructionBefore(I, *Dest->getFirstNonPHI(), *SafetyInfo, MSSAU, SE);
   else
     // Move the new node to the destination block, before its terminator.
-    moveInstructionBefore(I, Dest->getTerminator()->getIterator(), *SafetyInfo,
-                          MSSAU, SE);
+    moveInstructionBefore(I, *Dest->getTerminator(), *SafetyInfo, MSSAU, SE);
 
   I.updateLocationAfterHoist();
 
@@ -1797,7 +1794,7 @@ namespace {
 class LoopPromoter : public LoadAndStorePromoter {
   Value *SomePtr; // Designated pointer to store to.
   SmallVectorImpl<BasicBlock *> &LoopExitBlocks;
-  SmallVectorImpl<BasicBlock::iterator> &LoopInsertPts;
+  SmallVectorImpl<Instruction *> &LoopInsertPts;
   SmallVectorImpl<MemoryAccess *> &MSSAInsertPts;
   PredIteratorCache &PredCache;
   MemorySSAUpdater &MSSAU;
@@ -1831,7 +1828,7 @@ class LoopPromoter : public LoadAndStorePromoter {
 public:
   LoopPromoter(Value *SP, ArrayRef<const Instruction *> Insts, SSAUpdater &S,
                SmallVectorImpl<BasicBlock *> &LEB,
-               SmallVectorImpl<BasicBlock::iterator> &LIP,
+               SmallVectorImpl<Instruction *> &LIP,
                SmallVectorImpl<MemoryAccess *> &MSSAIP, PredIteratorCache &PIC,
                MemorySSAUpdater &MSSAU, LoopInfo &li, DebugLoc dl,
                Align Alignment, bool UnorderedAtomic, const AAMDNodes &AATags,
@@ -1854,7 +1851,7 @@ public:
       Value *LiveInValue = SSA.GetValueInMiddleOfBlock(ExitBlock);
       LiveInValue = maybeInsertLCSSAPHI(LiveInValue, ExitBlock);
       Value *Ptr = maybeInsertLCSSAPHI(SomePtr, ExitBlock);
-      BasicBlock::iterator InsertPos = LoopInsertPts[i];
+      Instruction *InsertPos = LoopInsertPts[i];
       StoreInst *NewSI = new StoreInst(LiveInValue, Ptr, InsertPos);
       if (UnorderedAtomic)
         NewSI->setOrdering(AtomicOrdering::Unordered);
@@ -1952,7 +1949,7 @@ bool isThreadLocalObject(const Value *Object, const Loop *L, DominatorTree *DT,
 bool llvm::promoteLoopAccessesToScalars(
     const SmallSetVector<Value *, 8> &PointerMustAliases,
     SmallVectorImpl<BasicBlock *> &ExitBlocks,
-    SmallVectorImpl<BasicBlock::iterator> &InsertPts,
+    SmallVectorImpl<Instruction *> &InsertPts,
     SmallVectorImpl<MemoryAccess *> &MSSAInsertPts, PredIteratorCache &PIC,
     LoopInfo *LI, DominatorTree *DT, AssumptionCache *AC,
     const TargetLibraryInfo *TLI, TargetTransformInfo *TTI, Loop *CurLoop,

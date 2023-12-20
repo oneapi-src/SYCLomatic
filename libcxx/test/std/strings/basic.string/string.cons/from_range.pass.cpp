@@ -19,7 +19,6 @@
 #include "../../../containers/from_range_helpers.h"
 #include "../../../containers/sequences/from_range_sequence_containers.h"
 #include "test_macros.h"
-#include "asan_testing.h"
 
 template <class Container, class Range, class Alloc>
 concept StringHasFromRangeAllocCtr =
@@ -71,7 +70,6 @@ constexpr void test_with_input(std::vector<char> input) {
     LIBCPP_ASSERT(c.__invariants());
     assert(c.size() == static_cast<std::size_t>(std::distance(c.begin(), c.end())));
     assert(std::ranges::equal(in, c));
-    LIBCPP_ASSERT(is_string_asan_correct(c));
   }
 
   { // (range, allocator)
@@ -82,7 +80,6 @@ constexpr void test_with_input(std::vector<char> input) {
     assert(c.get_allocator() == alloc);
     assert(c.size() == static_cast<std::size_t>(std::distance(c.begin(), c.end())));
     assert(std::ranges::equal(in, c));
-    LIBCPP_ASSERT(is_string_asan_correct(c));
   }
 }
 

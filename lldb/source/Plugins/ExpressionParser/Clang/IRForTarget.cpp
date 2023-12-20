@@ -154,10 +154,9 @@ clang::NamedDecl *IRForTarget::DeclForGlobal(GlobalValue *global_val) {
 /// Returns true iff the mangled symbol is for a static guard variable.
 static bool isGuardVariableSymbol(llvm::StringRef mangled_symbol,
                                   bool check_ms_abi = true) {
-  bool result =
-      mangled_symbol.starts_with("_ZGV"); // Itanium ABI guard variable
+  bool result = mangled_symbol.startswith("_ZGV"); // Itanium ABI guard variable
   if (check_ms_abi)
-    result |= mangled_symbol.ends_with("@4IA"); // Microsoft ABI
+    result |= mangled_symbol.endswith("@4IA"); // Microsoft ABI
   return result;
 }
 
@@ -721,9 +720,8 @@ bool IRForTarget::RewriteObjCConstStrings() {
 static bool IsObjCSelectorRef(Value *value) {
   GlobalVariable *global_variable = dyn_cast<GlobalVariable>(value);
 
-  return !(
-      !global_variable || !global_variable->hasName() ||
-      !global_variable->getName().starts_with("OBJC_SELECTOR_REFERENCES_"));
+  return !(!global_variable || !global_variable->hasName() ||
+           !global_variable->getName().startswith("OBJC_SELECTOR_REFERENCES_"));
 }
 
 // This function does not report errors; its callers are responsible.
@@ -942,7 +940,7 @@ bool IRForTarget::RewritePersistentAllocs(llvm::BasicBlock &basic_block) {
     if (AllocaInst *alloc = dyn_cast<AllocaInst>(&inst)) {
       llvm::StringRef alloc_name = alloc->getName();
 
-      if (alloc_name.starts_with("$") && !alloc_name.starts_with("$__lldb")) {
+      if (alloc_name.startswith("$") && !alloc_name.startswith("$__lldb")) {
         if (alloc_name.find_first_of("0123456789") == 1) {
           LLDB_LOG(log, "Rejecting a numeric persistent variable.");
 
@@ -1019,7 +1017,7 @@ bool IRForTarget::MaybeHandleVariable(Value *llvm_value_ptr) {
 
     const Type *value_type = nullptr;
 
-    if (name.starts_with("$")) {
+    if (name.startswith("$")) {
       // The $__lldb_expr_result name indicates the return value has allocated
       // as a static variable.  Per the comment at
       // ASTResultSynthesizer::SynthesizeBodyResult, accesses to this static
@@ -1225,7 +1223,7 @@ bool IRForTarget::ResolveExternals(Function &llvm_function) {
     LLDB_LOG(log, "Examining {0}, DeclForGlobalValue returns {1}", global_name,
              static_cast<void *>(DeclForGlobal(&global_var)));
 
-    if (global_name.starts_with("OBJC_IVAR")) {
+    if (global_name.startswith("OBJC_IVAR")) {
       if (!HandleSymbol(&global_var)) {
         m_error_stream.Format("Error [IRForTarget]: Couldn't find Objective-C "
                               "indirect ivar symbol {0}\n",

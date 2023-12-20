@@ -182,13 +182,17 @@ public:
   }
 
   static bool increment(IntegralAP A, IntegralAP *R) {
-    IntegralAP<Signed> One(1, A.bitWidth());
-    return add(A, One, A.bitWidth() + 1, R);
+    // FIXME: Implement.
+    assert(false);
+    *R = IntegralAP(A.V - 1);
+    return false;
   }
 
   static bool decrement(IntegralAP A, IntegralAP *R) {
-    IntegralAP<Signed> One(1, A.bitWidth());
-    return sub(A, One, A.bitWidth() + 1, R);
+    // FIXME: Implement.
+    assert(false);
+    *R = IntegralAP(A.V - 1);
+    return false;
   }
 
   static bool add(IntegralAP A, IntegralAP B, unsigned OpBits, IntegralAP *R) {

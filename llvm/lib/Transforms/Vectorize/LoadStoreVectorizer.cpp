@@ -108,6 +108,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <optional>
 #include <tuple>

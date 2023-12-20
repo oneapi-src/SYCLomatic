@@ -625,13 +625,11 @@ void fir::BoxAddrOp::build(mlir::OpBuilder &builder,
 mlir::OpFoldResult fir::BoxAddrOp::fold(FoldAdaptor adaptor) {
   if (auto *v = getVal().getDefiningOp()) {
     if (auto box = mlir::dyn_cast<fir::EmboxOp>(v)) {
-      // Fold only if not sliced
-      if (!box.getSlice() && box.getMemref().getType() == getType())
+      if (!box.getSlice()) // Fold only if not sliced
         return box.getMemref();
     }
     if (auto box = mlir::dyn_cast<fir::EmboxCharOp>(v))
-      if (box.getMemref().getType() == getType())
-        return box.getMemref();
+      return box.getMemref();
   }
   return {};
 }

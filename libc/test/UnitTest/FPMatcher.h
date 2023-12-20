@@ -9,7 +9,6 @@
 #ifndef LLVM_LIBC_UTILS_UNITTEST_FPMATCHER_H
 #define LLVM_LIBC_UTILS_UNITTEST_FPMATCHER_H
 
-#include "src/__support/CPP/type_traits.h"
 #include "src/__support/FPUtil/FEnvImpl.h"
 #include "src/__support/FPUtil/FPBits.h"
 #include "src/__support/FPUtil/fpbits_str.h"
@@ -62,9 +61,7 @@ template <TestCond C, typename T> FPMatcher<T, C> getMatcher(T expectedValue) {
 
 template <typename T> struct FPTest : public Test {
   using FPBits = LIBC_NAMESPACE::fputil::FPBits<T>;
-  using StorageType = typename FPBits::StorageType;
-  static constexpr StorageType STORAGE_MAX =
-      LIBC_NAMESPACE::cpp::numeric_limits<StorageType>::max();
+  using UIntType = typename FPBits::UIntType;
   static constexpr T zero = FPBits::zero();
   static constexpr T neg_zero = FPBits::neg_zero();
   static constexpr T aNaN = FPBits::build_quiet_nan(1);
@@ -90,9 +87,7 @@ template <typename T> struct FPTest : public Test {
 
 #define DECLARE_SPECIAL_CONSTANTS(T)                                           \
   using FPBits = LIBC_NAMESPACE::fputil::FPBits<T>;                            \
-  using StorageType = typename FPBits::StorageType;                            \
-  static constexpr StorageType STORAGE_MAX =                                   \
-      LIBC_NAMESPACE::cpp::numeric_limits<StorageType>::max();                 \
+  using UIntType = typename FPBits::UIntType;                                  \
   const T zero = FPBits::zero();                                               \
   const T neg_zero = FPBits::neg_zero();                                       \
   const T aNaN = FPBits::build_quiet_nan(1);                                   \

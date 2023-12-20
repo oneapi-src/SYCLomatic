@@ -116,27 +116,8 @@ void AbstractSparseForwardDataFlowAnalysis::visitOperation(Operation *op) {
                                  resultLattices);
   }
 
-  // Grab the lattice elements of the operands.
-  SmallVector<const AbstractSparseLattice *> operandLattices;
-  operandLattices.reserve(op->getNumOperands());
-  for (Value operand : op->getOperands()) {
-    AbstractSparseLattice *operandLattice = getLatticeElement(operand);
-    operandLattice->useDefSubscribe(this);
-    operandLattices.push_back(operandLattice);
-  }
-
+  // The results of a call operation are determined by the callgraph.
   if (auto call = dyn_cast<CallOpInterface>(op)) {
-    // If the call operation is to an external function, attempt to infer the
-    // results from the call arguments.
-    auto callable =
-        dyn_cast_if_present<CallableOpInterface>(call.resolveCallable());
-    if (!getSolverConfig().isInterprocedural() ||
-        (callable && !callable.getCallableRegion())) {
-      return visitExternalCallImpl(call, operandLattices, resultLattices);
-    }
-
-    // Otherwise, the results of a call operation are determined by the
-    // callgraph.
     const auto *predecessors = getOrCreateFor<PredecessorState>(op, call);
     // If not all return sites are known, then conservatively assume we can't
     // reason about the data-flow.
@@ -146,6 +127,15 @@ void AbstractSparseForwardDataFlowAnalysis::visitOperation(Operation *op) {
       for (auto it : llvm::zip(predecessor->getOperands(), resultLattices))
         join(std::get<1>(it), *getLatticeElementFor(op, std::get<0>(it)));
     return;
+  }
+
+  // Grab the lattice elements of the operands.
+  SmallVector<const AbstractSparseLattice *> operandLattices;
+  operandLattices.reserve(op->getNumOperands());
+  for (Value operand : op->getOperands()) {
+    AbstractSparseLattice *operandLattice = getLatticeElement(operand);
+    operandLattice->useDefSubscribe(this);
+    operandLattices.push_back(operandLattice);
   }
 
   // Invoke the operation transfer function.
@@ -178,10 +168,8 @@ void AbstractSparseForwardDataFlowAnalysis::visitBlock(Block *block) {
       const auto *callsites = getOrCreateFor<PredecessorState>(block, callable);
       // If not all callsites are known, conservatively mark all lattices as
       // having reached their pessimistic fixpoints.
-      if (!callsites->allPredecessorsKnown() ||
-          !getSolverConfig().isInterprocedural()) {
+      if (!callsites->allPredecessorsKnown())
         return setAllToEntryStates(argLattices);
-      }
       for (Operation *callsite : callsites->getKnownPredecessors()) {
         auto call = cast<CallOpInterface>(callsite);
         for (auto it : llvm::zip(call.getArgOperands(), argLattices))
@@ -445,26 +433,19 @@ void AbstractSparseBackwardDataFlowAnalysis::visitOperation(Operation *op) {
       // stored in `unaccounted`.
       BitVector unaccounted(op->getNumOperands(), true);
 
-      // If the call invokes an external function (or a function treated as
-      // external due to config), defer to the corresponding extension hook.
-      // By default, it just does `visitCallOperand` for all operands.
       OperandRange argOperands = call.getArgOperands();
       MutableArrayRef<OpOperand> argOpOperands =
           operandsToOpOperands(argOperands);
       Region *region = callable.getCallableRegion();
-      if (!region || region->empty() || !getSolverConfig().isInterprocedural())
-        return visitExternalCallImpl(call, operandLattices, resultLattices);
-
-      // Otherwise, propagate information from the entry point of the function
-      // back to operands whenever possible.
-      Block &block = region->front();
-      for (auto [blockArg, argOpOperand] :
-           llvm::zip(block.getArguments(), argOpOperands)) {
-        meet(getLatticeElement(argOpOperand.get()),
-             *getLatticeElementFor(op, blockArg));
-        unaccounted.reset(argOpOperand.getOperandNumber());
+      if (region && !region->empty()) {
+        Block &block = region->front();
+        for (auto [blockArg, argOpOperand] :
+             llvm::zip(block.getArguments(), argOpOperands)) {
+          meet(getLatticeElement(argOpOperand.get()),
+               *getLatticeElementFor(op, blockArg));
+          unaccounted.reset(argOpOperand.getOperandNumber());
+        }
       }
-
       // Handle the operands of the call op that aren't forwarded to any
       // arguments.
       for (int index : unaccounted.set_bits()) {

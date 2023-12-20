@@ -15,7 +15,6 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/LEB128.h"
-#include "llvm/Support/SystemZ/zOSSupport.h"
 
 #include <string.h> // for memcpy
 
@@ -152,7 +151,7 @@ static Error dumpDebugSection(StringRef SecName, DWARFContext &DCtx,
     dumpDebugLines(DCtx, DWARF);
     return Error::success();
   }
-  if (SecName.starts_with("__debug_pub")) {
+  if (SecName.startswith("__debug_pub")) {
     // FIXME: We should extract pub-section dumpers from this function.
     dumpDebugPubSections(DCtx, DWARF);
     return Error::success();
@@ -184,11 +183,11 @@ Expected<const char *> MachODumper::extractSections(
 
       // Copy data sections if requested.
       if ((RawSegment & ::RawSegments::data) &&
-          StringRef(S->segname).starts_with("__DATA"))
+          StringRef(S->segname).startswith("__DATA"))
         S->content =
             yaml::BinaryRef(Obj.getSectionContents(Sec.offset, Sec.size));
 
-      if (SecName.starts_with("__debug_")) {
+      if (SecName.startswith("__debug_")) {
         // If the DWARF section cannot be successfully parsed, emit raw content
         // instead of an entry in the DWARF section of the YAML.
         if (Error Err = dumpDebugSection(SecName, *DWARFCtx, Y.DWARF))

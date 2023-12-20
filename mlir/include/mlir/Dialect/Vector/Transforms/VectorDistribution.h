@@ -43,9 +43,7 @@ void populateWarpExecuteOnLane0OpToScfForPattern(
 using DistributionMapFn = std::function<AffineMap(Value)>;
 
 /// Distribute transfer_write ops based on the affine map returned by
-/// `distributionMapFn`. Writes of size more than `maxNumElementToExtract`
-/// will not be distributed (it should be less than the warp size).
-///
+/// `distributionMapFn`.
 /// Example:
 /// ```
 /// %0 = vector.warp_execute_on_lane_0(%id){
@@ -69,7 +67,7 @@ using DistributionMapFn = std::function<AffineMap(Value)>;
 /// distribute, meaning writes should propagate first.
 void populateDistributeTransferWriteOpPatterns(
     RewritePatternSet &patterns, const DistributionMapFn &distributionMapFn,
-    unsigned maxNumElementsToExtract, PatternBenefit benefit = 2);
+    PatternBenefit benefit = 2);
 
 /// Move scalar operations with no dependency on the warp op outside of the
 /// region.

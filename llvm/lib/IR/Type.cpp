@@ -141,9 +141,16 @@ bool Type::canLosslesslyBitCastTo(Type *Ty) const {
       Ty->getPrimitiveSizeInBits().getFixedValue() == 8192)
     return true;
 
-  // Conservatively assume we can't losslessly convert between pointers with
-  // different address spaces.
-  return false;
+  // At this point we have only various mismatches of the first class types
+  // remaining and ptr->ptr. Just select the lossless conversions. Everything
+  // else is not lossless. Conservatively assume we can't losslessly convert
+  // between pointers with different address spaces.
+  if (auto *PTy = dyn_cast<PointerType>(this)) {
+    if (auto *OtherPTy = dyn_cast<PointerType>(Ty))
+      return PTy->getAddressSpace() == OtherPTy->getAddressSpace();
+    return false;
+  }
+  return false;  // Other types have no identity values
 }
 
 bool Type::isEmptyTy() const {
@@ -833,9 +840,7 @@ struct TargetTypeInfo {
 static TargetTypeInfo getTargetTypeInfo(const TargetExtType *Ty) {
   LLVMContext &C = Ty->getContext();
   StringRef Name = Ty->getName();
-  if (Name.equals("spirv.Image"))
-    return TargetTypeInfo(PointerType::get(C, 0), TargetExtType::CanBeGlobal);
-  if (Name.starts_with("spirv."))
+  if (Name.startswith("spirv."))
     return TargetTypeInfo(PointerType::get(C, 0), TargetExtType::HasZeroInit,
                           TargetExtType::CanBeGlobal);
 

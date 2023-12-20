@@ -44,7 +44,6 @@
 #include "flang/Optimizer/Dialect/FIROps.h"
 #include "flang/Optimizer/Dialect/Support/FIRContext.h"
 #include "flang/Optimizer/HLFIR/HLFIROps.h"
-#include "flang/Optimizer/Support/DataLayout.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Optimizer/Support/InternalNames.h"
 #include "flang/Optimizer/Transforms/Passes.h"
@@ -83,12 +82,12 @@ struct IncrementLoopInfo {
   explicit IncrementLoopInfo(Fortran::semantics::Symbol &sym, const T &lower,
                              const T &upper, const std::optional<T> &step,
                              bool isUnordered = false)
-      : loopVariableSym{&sym}, lowerExpr{Fortran::semantics::GetExpr(lower)},
+      : loopVariableSym{sym}, lowerExpr{Fortran::semantics::GetExpr(lower)},
         upperExpr{Fortran::semantics::GetExpr(upper)},
         stepExpr{Fortran::semantics::GetExpr(step)}, isUnordered{isUnordered} {}
 
   IncrementLoopInfo(IncrementLoopInfo &&) = default;
-  IncrementLoopInfo &operator=(IncrementLoopInfo &&x) = default;
+  IncrementLoopInfo &operator=(IncrementLoopInfo &&x) { return x; }
 
   bool isStructured() const { return !headerBlock; }
 
@@ -103,7 +102,7 @@ struct IncrementLoopInfo {
   }
 
   // Data members common to both structured and unstructured loops.
-  const Fortran::semantics::Symbol *loopVariableSym;
+  const Fortran::semantics::Symbol &loopVariableSym;
   const Fortran::lower::SomeExpr *lowerExpr;
   const Fortran::lower::SomeExpr *upperExpr;
   const Fortran::lower::SomeExpr *stepExpr;
@@ -170,28 +169,32 @@ public:
     if (seen.contains(typeInfoSym))
       return;
     seen.insert(typeInfoSym);
-    currentTypeInfoStack->emplace_back(
-        TypeInfo{typeInfoSym, typeSpec, type, loc});
-    return;
+    if (!skipRegistration) {
+      registeredTypeInfo.emplace_back(
+          TypeInfo{typeInfoSym, typeSpec, type, loc});
+      return;
+    }
+    // Once the registration is closed, symbols cannot be added to the
+    // registeredTypeInfoSymbols list because it may be iterated over.
+    // However, after registration is closed, it is safe to directly generate
+    // the globals because all FuncOps whose addresses may be required by the
+    // initializers have been generated.
+    createTypeInfoOpAndGlobal(converter,
+                              TypeInfo{typeInfoSym, typeSpec, type, loc});
   }
 
   void createTypeInfo(Fortran::lower::AbstractConverter &converter) {
-    while (!registeredTypeInfoA.empty()) {
-      currentTypeInfoStack = &registeredTypeInfoB;
-      for (const TypeInfo &info : registeredTypeInfoA)
-        createTypeInfoOpAndGlobal(converter, info);
-      registeredTypeInfoA.clear();
-      currentTypeInfoStack = &registeredTypeInfoA;
-      for (const TypeInfo &info : registeredTypeInfoB)
-        createTypeInfoOpAndGlobal(converter, info);
-      registeredTypeInfoB.clear();
-    }
+    skipRegistration = true;
+    for (const TypeInfo &info : registeredTypeInfo)
+      createTypeInfoOpAndGlobal(converter, info);
+    registeredTypeInfo.clear();
   }
 
 private:
   void createTypeInfoOpAndGlobal(Fortran::lower::AbstractConverter &converter,
                                  const TypeInfo &info) {
-    Fortran::lower::createRuntimeTypeInfoGlobal(converter, info.symbol.get());
+    Fortran::lower::createRuntimeTypeInfoGlobal(converter, info.loc,
+                                                info.symbol.get());
     createTypeInfoOp(converter, info);
   }
 
@@ -246,12 +249,11 @@ private:
   }
 
   /// Store the front-end data that will be required to generate the type info
-  /// for the derived types that have been converted to fir.type<>. There are
-  /// two stacks since the type info may visit new types, so the new types must
-  /// be added to a new stack.
-  llvm::SmallVector<TypeInfo> registeredTypeInfoA;
-  llvm::SmallVector<TypeInfo> registeredTypeInfoB;
-  llvm::SmallVector<TypeInfo> *currentTypeInfoStack = &registeredTypeInfoA;
+  /// for the derived types that have been converted to fir.type<>.
+  llvm::SmallVector<TypeInfo> registeredTypeInfo;
+  /// Create derived type info immediately without storing the
+  /// symbol in registeredTypeInfo.
+  bool skipRegistration = false;
   /// Track symbols symbols processed during and after the registration
   /// to avoid infinite loops between type conversions and global variable
   /// creation.
@@ -279,15 +281,19 @@ public:
   void run(Fortran::lower::pft::Program &pft) {
     // Preliminary translation pass.
 
-    // Lower common blocks, taking into account initialization and the largest
-    // size of all instances of each common block. This is done before lowering
-    // since the global definition may differ from any one local definition.
+    // - Lower common blocks from the PFT common block list that contains a
+    // consolidated list of the common blocks (with the initialization if any in
+    // the Program, and with the common block biggest size in all its
+    // appearance). This is done before lowering any scope declarations because
+    // it is not know at the local scope level what MLIR type common blocks
+    // should have to suit all its usage in the compilation unit.
     lowerCommonBlocks(pft.getCommonBlocks());
 
-    // - Declare all functions that have definitions so that definition
-    //   signatures prevail over call site signatures.
-    // - Define module variables and OpenMP/OpenACC declarative constructs so
-    //   they are available before lowering any function that may use them.
+    //  - Declare all functions that have definitions so that definition
+    //    signatures prevail over call site signatures.
+    //  - Define module variables and OpenMP/OpenACC declarative construct so
+    //    that they are available before lowering any function that may use
+    //    them.
     bool hasMainProgram = false;
     const Fortran::semantics::Symbol *globalOmpRequiresSymbol = nullptr;
     for (Fortran::lower::pft::Program::Units &u : pft.getUnits()) {
@@ -315,10 +321,6 @@ public:
                  u);
     }
 
-    // Create definitions of intrinsic module constants.
-    createGlobalOutsideOfFunctionLowering(
-        [&]() { createIntrinsicModuleDefinitions(pft); });
-
     // Primary translation pass.
     for (Fortran::lower::pft::Program::Units &u : pft.getUnits()) {
       std::visit(
@@ -339,9 +341,10 @@ public:
           u);
     }
 
-    // Once all the code has been translated, create global runtime type info
-    // data structures for the derived types that have been processed, as well
-    // as fir.type_info operations for the dispatch tables.
+    /// Once all the code has been translated, create runtime type info
+    /// global data structure for the derived types that have been
+    /// processed as well as the fir.type_info operations with the
+    /// dispatch tables.
     createGlobalOutsideOfFunctionLowering(
         [&]() { typeInfoConverter.createTypeInfo(*this); });
 
@@ -600,11 +603,6 @@ public:
         std::nullopt);
   }
 
-  Fortran::lower::TypeConstructionStack &
-  getTypeConstructionStack() override final {
-    return typeConstructionStack;
-  }
-
   bool isPresentShallowLookup(Fortran::semantics::Symbol &sym) override final {
     return bool(shallowLookupSymbol(sym));
   }
@@ -840,11 +838,6 @@ public:
         sym.test(Fortran::semantics::Symbol::Flag::OmpLastPrivate)) {
       builder->restoreInsertionPoint(insPt);
     }
-  }
-
-  void genEval(Fortran::lower::pft::Evaluation &eval,
-               bool unstructuredContext) override final {
-    genFIR(eval, unstructuredContext);
   }
 
   //===--------------------------------------------------------------------===//
@@ -1744,7 +1737,7 @@ private:
           bounds->step);
       if (unstructuredContext) {
         maybeStartBlock(preheaderBlock);
-        info.hasRealControl = info.loopVariableSym->GetType()->IsNumeric(
+        info.hasRealControl = info.loopVariableSym.GetType()->IsNumeric(
             Fortran::common::TypeCategory::Real);
         info.headerBlock = headerBlock;
         info.bodyBlock = bodyBlock;
@@ -1834,7 +1827,7 @@ private:
     mlir::Location loc = toLocation();
     for (IncrementLoopInfo &info : incrementLoopNestInfo) {
       info.loopVariable =
-          genLoopVariableAddress(loc, *info.loopVariableSym, info.isUnordered);
+          genLoopVariableAddress(loc, info.loopVariableSym, info.isUnordered);
       mlir::Value lowerValue = genControlValue(info.lowerExpr, info);
       mlir::Value upperValue = genControlValue(info.upperExpr, info);
       bool isConst = true;
@@ -2389,25 +2382,11 @@ private:
   void genFIR(const Fortran::parser::OpenACCConstruct &acc) {
     mlir::OpBuilder::InsertPoint insertPt = builder->saveInsertionPoint();
     localSymbols.pushScope();
-    mlir::Value exitCond = genOpenACCConstruct(
-        *this, bridge.getSemanticsContext(), getEval(), acc);
+    genOpenACCConstruct(*this, bridge.getSemanticsContext(), getEval(), acc);
     for (Fortran::lower::pft::Evaluation &e : getEval().getNestedEvaluations())
       genFIR(e);
     localSymbols.popScope();
     builder->restoreInsertionPoint(insertPt);
-
-    const Fortran::parser::OpenACCLoopConstruct *accLoop =
-        std::get_if<Fortran::parser::OpenACCLoopConstruct>(&acc.u);
-    if (accLoop && exitCond) {
-      Fortran::lower::pft::FunctionLikeUnit *funit =
-          getEval().getOwningProcedure();
-      assert(funit && "not inside main program, function or subroutine");
-      mlir::Block *continueBlock =
-          builder->getBlock()->splitBlock(builder->getBlock()->end());
-      builder->create<mlir::cf::CondBranchOp>(toLocation(), exitCond,
-                                              funit->finalBlock, continueBlock);
-      builder->setInsertionPointToEnd(continueBlock);
-    }
   }
 
   void genFIR(const Fortran::parser::OpenACCDeclarativeConstruct &accDecl) {
@@ -2424,8 +2403,48 @@ private:
 
   void genFIR(const Fortran::parser::OpenMPConstruct &omp) {
     mlir::OpBuilder::InsertPoint insertPt = builder->saveInsertionPoint();
-    genOpenMPConstruct(*this, localSymbols, bridge.getSemanticsContext(),
-                       getEval(), omp);
+    localSymbols.pushScope();
+    genOpenMPConstruct(*this, bridge.getSemanticsContext(), getEval(), omp);
+
+    const Fortran::parser::OpenMPLoopConstruct *ompLoop =
+        std::get_if<Fortran::parser::OpenMPLoopConstruct>(&omp.u);
+    const Fortran::parser::OpenMPBlockConstruct *ompBlock =
+        std::get_if<Fortran::parser::OpenMPBlockConstruct>(&omp.u);
+
+    // If loop is part of an OpenMP Construct then the OpenMP dialect
+    // workshare loop operation has already been created. Only the
+    // body needs to be created here and the do_loop can be skipped.
+    // Skip the number of collapsed loops, which is 1 when there is a
+    // no collapse requested.
+
+    Fortran::lower::pft::Evaluation *curEval = &getEval();
+    const Fortran::parser::OmpClauseList *loopOpClauseList = nullptr;
+    if (ompLoop) {
+      loopOpClauseList = &std::get<Fortran::parser::OmpClauseList>(
+          std::get<Fortran::parser::OmpBeginLoopDirective>(ompLoop->t).t);
+      int64_t collapseValue =
+          Fortran::lower::getCollapseValue(*loopOpClauseList);
+
+      curEval = &curEval->getFirstNestedEvaluation();
+      for (int64_t i = 1; i < collapseValue; i++) {
+        curEval = &*std::next(curEval->getNestedEvaluations().begin());
+      }
+    }
+
+    for (Fortran::lower::pft::Evaluation &e : curEval->getNestedEvaluations())
+      genFIR(e);
+
+    if (ompLoop) {
+      genOpenMPReduction(*this, *loopOpClauseList);
+    } else if (ompBlock) {
+      const auto &blockStart =
+          std::get<Fortran::parser::OmpBeginBlockDirective>(ompBlock->t);
+      const auto &blockClauses =
+          std::get<Fortran::parser::OmpClauseList>(blockStart.t);
+      genOpenMPReduction(*this, blockClauses);
+    }
+
+    localSymbols.popScope();
     builder->restoreInsertionPoint(insertPt);
 
     // Register if a target region was found
@@ -2441,6 +2460,8 @@ private:
         ompDeviceCodeFound ||
         Fortran::lower::isOpenMPDeviceDeclareTarget(*this, getEval(), ompDecl);
     genOpenMPDeclarativeConstruct(*this, getEval(), ompDecl);
+    for (Fortran::lower::pft::Evaluation &e : getEval().getNestedEvaluations())
+      genFIR(e);
     builder->restoreInsertionPoint(insertPt);
   }
 
@@ -4070,15 +4091,10 @@ private:
     // Branch to the last block of the SUBROUTINE, which has the actual return.
     if (!funit->finalBlock) {
       mlir::OpBuilder::InsertPoint insPt = builder->saveInsertionPoint();
-      Fortran::lower::setInsertionPointAfterOpenACCLoopIfInside(*builder);
       funit->finalBlock = builder->createBlock(&builder->getRegion());
       builder->restoreInsertionPoint(insPt);
     }
-
-    if (Fortran::lower::isInOpenACCLoop(*builder))
-      Fortran::lower::genEarlyReturnInOpenACCLoop(*builder, loc);
-    else
-      builder->create<mlir::cf::BranchOp>(loc, funit->finalBlock);
+    builder->create<mlir::cf::BranchOp>(loc, funit->finalBlock);
   }
 
   void genFIR(const Fortran::parser::CycleStmt &) {
@@ -4204,65 +4220,14 @@ private:
   void instantiateVar(const Fortran::lower::pft::Variable &var,
                       Fortran::lower::AggregateStoreMap &storeMap) {
     Fortran::lower::instantiateVariable(*this, var, localSymbols, storeMap);
-    if (var.hasSymbol())
-      genOpenMPSymbolProperties(*this, var);
-  }
+    if (var.hasSymbol()) {
+      if (var.getSymbol().test(
+              Fortran::semantics::Symbol::Flag::OmpThreadprivate))
+        Fortran::lower::genThreadprivateOp(*this, var);
 
-  /// Where applicable, save the exception state and halting and rounding
-  /// modes at function entry and restore them at function exits.
-  void manageFPEnvironment(Fortran::lower::pft::FunctionLikeUnit &funit) {
-    mlir::Location loc = toLocation();
-    mlir::Location endLoc =
-        toLocation(Fortran::lower::pft::stmtSourceLoc(funit.endStmt));
-    if (funit.hasIeeeAccess) {
-      // Subject to F18 Clause 17.1p3, 17.3p3 states: If a flag is signaling
-      // on entry to a procedure [...], the processor will set it to quiet
-      // on entry and restore it to signaling on return. If a flag signals
-      // during execution of a procedure, the processor shall not set it to
-      // quiet on return.
-      mlir::func::FuncOp testExcept = fir::factory::getFetestexcept(*builder);
-      mlir::func::FuncOp clearExcept = fir::factory::getFeclearexcept(*builder);
-      mlir::func::FuncOp raiseExcept = fir::factory::getFeraiseexcept(*builder);
-      mlir::Value ones = builder->createIntegerConstant(
-          loc, testExcept.getFunctionType().getInput(0), -1);
-      mlir::Value exceptSet =
-          builder->create<fir::CallOp>(loc, testExcept, ones).getResult(0);
-      builder->create<fir::CallOp>(loc, clearExcept, exceptSet);
-      bridge.fctCtx().attachCleanup([=]() {
-        builder->create<fir::CallOp>(endLoc, raiseExcept, exceptSet);
-      });
-    }
-    if (funit.mayModifyHaltingMode) {
-      // F18 Clause 17.6p1: In a procedure [...], the processor shall not
-      // change the halting mode on entry, and on return shall ensure that
-      // the halting mode is the same as it was on entry.
-      mlir::func::FuncOp getExcept = fir::factory::getFegetexcept(*builder);
-      mlir::func::FuncOp disableExcept =
-          fir::factory::getFedisableexcept(*builder);
-      mlir::func::FuncOp enableExcept =
-          fir::factory::getFeenableexcept(*builder);
-      mlir::Value exceptSet =
-          builder->create<fir::CallOp>(loc, getExcept).getResult(0);
-      mlir::Value ones = builder->createIntegerConstant(
-          loc, disableExcept.getFunctionType().getInput(0), -1);
-      bridge.fctCtx().attachCleanup([=]() {
-        builder->create<fir::CallOp>(endLoc, disableExcept, ones);
-        builder->create<fir::CallOp>(endLoc, enableExcept, exceptSet);
-      });
-    }
-    if (funit.mayModifyRoundingMode) {
-      // F18 Clause 17.4.5: In a procedure [...], the processor shall not
-      // change the rounding modes on entry, and on return shall ensure that
-      // the rounding modes are the same as they were on entry.
-      mlir::func::FuncOp getRounding =
-          fir::factory::getLlvmGetRounding(*builder);
-      mlir::func::FuncOp setRounding =
-          fir::factory::getLlvmSetRounding(*builder);
-      mlir::Value roundingMode =
-          builder->create<fir::CallOp>(loc, getRounding).getResult(0);
-      bridge.fctCtx().attachCleanup([=]() {
-        builder->create<fir::CallOp>(endLoc, setRounding, roundingMode);
-      });
+      if (var.getSymbol().test(
+              Fortran::semantics::Symbol::Flag::OmpDeclareTarget))
+        Fortran::lower::genDeclareTargetIntGlobal(*this, var);
     }
   }
 
@@ -4285,10 +4250,18 @@ private:
     assert(blockId == 0 && "invalid blockId");
     assert(activeConstructStack.empty() && "invalid construct stack state");
 
-    // Manage floating point exception, halting mode, and rounding mode
-    // settings at function entry and exit.
-    if (!funit.isMainProgram())
-      manageFPEnvironment(funit);
+    // Get the rounding mode at function entry, and arrange for it to be
+    // restored at all function exits.
+    if (!funit.isMainProgram() && funit.mayModifyRoundingMode) {
+      mlir::func::FuncOp getRound = fir::factory::getLlvmGetRounding(*builder);
+      mlir::func::FuncOp setRound = fir::factory::getLlvmSetRounding(*builder);
+      mlir::Value roundMode =
+          builder->create<fir::CallOp>(toLocation(), getRound).getResult(0);
+      mlir::Location endLoc =
+          toLocation(Fortran::lower::pft::stmtSourceLoc(funit.endStmt));
+      bridge.fctCtx().attachCleanup(
+          [=]() { builder->create<fir::CallOp>(endLoc, setRound, roundMode); });
+    }
 
     mapDummiesAndResults(funit, callee);
 
@@ -4551,7 +4524,6 @@ private:
     builder = nullptr;
     localSymbols.clear();
   }
-
   /// Instantiate the data from a BLOCK DATA unit.
   void lowerBlockData(Fortran::lower::pft::BlockDataUnit &bdunit) {
     createGlobalOutsideOfFunctionLowering([&]() {
@@ -4570,48 +4542,6 @@ private:
   lowerCommonBlocks(const Fortran::semantics::CommonBlockList &commonBlocks) {
     createGlobalOutsideOfFunctionLowering(
         [&]() { Fortran::lower::defineCommonBlocks(*this, commonBlocks); });
-  }
-
-  /// Create intrinsic module array constant definitions.
-  void createIntrinsicModuleDefinitions(Fortran::lower::pft::Program &pft) {
-    // The intrinsic module scope, if present, is the first scope.
-    const Fortran::semantics::Scope *intrinsicModuleScope = nullptr;
-    for (Fortran::lower::pft::Program::Units &u : pft.getUnits()) {
-      std::visit(Fortran::common::visitors{
-                     [&](Fortran::lower::pft::FunctionLikeUnit &f) {
-                       intrinsicModuleScope = &f.getScope().parent();
-                     },
-                     [&](Fortran::lower::pft::ModuleLikeUnit &m) {
-                       intrinsicModuleScope = &m.getScope().parent();
-                     },
-                     [&](Fortran::lower::pft::BlockDataUnit &b) {},
-                     [&](Fortran::lower::pft::CompilerDirectiveUnit &d) {},
-                     [&](Fortran::lower::pft::OpenACCDirectiveUnit &d) {},
-                 },
-                 u);
-      if (intrinsicModuleScope) {
-        while (!intrinsicModuleScope->IsGlobal())
-          intrinsicModuleScope = &intrinsicModuleScope->parent();
-        intrinsicModuleScope = &intrinsicModuleScope->children().front();
-        break;
-      }
-    }
-    if (!intrinsicModuleScope || !intrinsicModuleScope->IsIntrinsicModules())
-      return;
-    for (const auto &scope : intrinsicModuleScope->children()) {
-      llvm::StringRef modName = toStringRef(scope.symbol()->name());
-      if (modName != "__fortran_ieee_exceptions")
-        continue;
-      for (auto &var : Fortran::lower::pft::getScopeVariableList(scope)) {
-        const Fortran::semantics::Symbol &sym = var.getSymbol();
-        if (sym.test(Fortran::semantics::Symbol::Flag::CompilerCreated))
-          continue;
-        const auto *object =
-            sym.detailsIf<Fortran::semantics::ObjectEntityDetails>();
-        if (object && object->IsArray() && object->init())
-          Fortran::lower::createIntrinsicModuleGlobal(*this, var);
-      }
-    }
   }
 
   /// Lower a procedure (nest).
@@ -5011,13 +4941,6 @@ private:
   bool ompDeviceCodeFound = false;
 
   const Fortran::lower::ExprToValueMap *exprValueOverrides{nullptr};
-
-  /// Stack of derived type under construction to avoid infinite loops when
-  /// dealing with recursive derived types. This is held in the bridge because
-  /// the state needs to be maintained between data and function type lowering
-  /// utilities to deal with procedure pointer components whose arguments have
-  /// the type of the containing derived type.
-  Fortran::lower::TypeConstructionStack typeConstructionStack;
 };
 
 } // namespace
@@ -5056,8 +4979,7 @@ Fortran::lower::LoweringBridge::LoweringBridge(
     fir::KindMapping &kindMap,
     const Fortran::lower::LoweringOptions &loweringOptions,
     const std::vector<Fortran::lower::EnvironmentDefault> &envDefaults,
-    const Fortran::common::LanguageFeatureControl &languageFeatures,
-    const llvm::DataLayout *dataLayout)
+    const Fortran::common::LanguageFeatureControl &languageFeatures)
     : semanticsContext{semanticsContext}, defaultKinds{defaultKinds},
       intrinsics{intrinsics}, targetCharacteristics{targetCharacteristics},
       cooked{&cooked}, context{context}, kindMap{kindMap},
@@ -5113,6 +5035,4 @@ Fortran::lower::LoweringBridge::LoweringBridge(
   assert(module.get() && "module was not created");
   fir::setTargetTriple(*module.get(), triple);
   fir::setKindMapping(*module.get(), kindMap);
-  if (dataLayout)
-    fir::support::setMLIRDataLayout(*module.get(), *dataLayout);
 }

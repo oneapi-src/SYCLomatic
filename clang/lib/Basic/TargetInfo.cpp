@@ -585,26 +585,26 @@ ParsedTargetAttr TargetInfo::parseTargetAttr(StringRef Features) const {
     // TODO: Support the fpmath option. It will require checking
     // overall feature validity for the function with the rest of the
     // attributes on the function.
-    if (Feature.starts_with("fpmath="))
+    if (Feature.startswith("fpmath="))
       continue;
 
-    if (Feature.starts_with("branch-protection=")) {
+    if (Feature.startswith("branch-protection=")) {
       Ret.BranchProtection = Feature.split('=').second.trim();
       continue;
     }
 
     // While we're here iterating check for a different target cpu.
-    if (Feature.starts_with("arch=")) {
+    if (Feature.startswith("arch=")) {
       if (!Ret.CPU.empty())
         Ret.Duplicate = "arch=";
       else
         Ret.CPU = Feature.split("=").second.trim();
-    } else if (Feature.starts_with("tune=")) {
+    } else if (Feature.startswith("tune=")) {
       if (!Ret.Tune.empty())
         Ret.Duplicate = "tune=";
       else
         Ret.Tune = Feature.split("=").second.trim();
-    } else if (Feature.starts_with("no-"))
+    } else if (Feature.startswith("no-"))
       Ret.Features.push_back("-" + Feature.split("-").second.str());
     else
       Ret.Features.push_back("+" + Feature.str());

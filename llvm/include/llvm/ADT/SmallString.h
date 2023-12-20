@@ -120,11 +120,15 @@ public:
   /// @name String Predicates
   /// @{
 
-  /// starts_with - Check if this string starts with the given \p Prefix.
-  bool starts_with(StringRef Prefix) const { return str().starts_with(Prefix); }
+  /// startswith - Check if this string starts with the given \p Prefix.
+  bool startswith(StringRef Prefix) const {
+    return str().startswith(Prefix);
+  }
 
-  /// ends_with - Check if this string ends with the given \p Suffix.
-  bool ends_with(StringRef Suffix) const { return str().ends_with(Suffix); }
+  /// endswith - Check if this string ends with the given \p Suffix.
+  bool endswith(StringRef Suffix) const {
+    return str().endswith(Suffix);
+  }
 
   /// @}
   /// @name String Searching

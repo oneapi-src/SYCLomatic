@@ -16,8 +16,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Utils/CodegenUtils.h"
-#include "Utils/LoopEmitter.h"
+#include "CodegenUtils.h"
+#include "LoopEmitter.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"

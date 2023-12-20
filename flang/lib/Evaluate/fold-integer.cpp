@@ -677,16 +677,10 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldIntrinsicFunction(
     auto *someChar{UnwrapExpr<Expr<SomeCharacter>>(args[0])};
     CHECK(someChar);
     if (auto len{ToInt64(someChar->LEN())}) {
-      if (len.value() < 1) {
-        context.messages().Say(
-            "Character in intrinsic function %s must have length one"_err_en_US,
-            name);
-      } else if (len.value() > 1 &&
-          context.languageFeatures().ShouldWarn(
-              common::UsageWarning::Portability)) {
+      if (len.value() != 1) {
         // Do not die, this was not checked before
         context.messages().Say(
-            "Character in intrinsic function %s should have length one"_port_en_US,
+            "Character in intrinsic function %s must have length one"_warn_en_US,
             name);
       } else {
         return common::visit(
@@ -697,8 +691,7 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldIntrinsicFunction(
                   ScalarFunc<T, Char>(
 #ifndef _MSC_VER
                       [&FromInt64](const Scalar<Char> &c) {
-                        return FromInt64(CharacterUtils<Char::kind>::ICHAR(
-                            CharacterUtils<Char::kind>::Resize(c, 1)));
+                        return FromInt64(CharacterUtils<Char::kind>::ICHAR(c));
                       }));
 #else // _MSC_VER
       // MSVC 14 get confused by the original code above and
@@ -708,8 +701,7 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldIntrinsicFunction(
       // so remove the FromInt64 error checking lambda that
       // seems to have caused the proble.
                       [](const Scalar<Char> &c) {
-                        return CharacterUtils<Char::kind>::ICHAR(
-                            CharacterUtils<Char::kind>::Resize(c, 1));
+                        return CharacterUtils<Char::kind>::ICHAR(c);
                       }));
 #endif // _MSC_VER
             },

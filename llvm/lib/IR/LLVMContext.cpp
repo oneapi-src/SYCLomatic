@@ -256,13 +256,10 @@ void LLVMContext::diagnose(const DiagnosticInfo &DI) {
       RS->emit(*OptDiagBase);
 
   // If there is a report handler, use it.
-  if (pImpl->DiagHandler) {
-    if (DI.getSeverity() == DS_Error)
-      pImpl->DiagHandler->HasErrors = true;
-    if ((!pImpl->RespectDiagnosticFilters || isDiagnosticEnabled(DI)) &&
-        pImpl->DiagHandler->handleDiagnostics(DI))
-      return;
-  }
+  if (pImpl->DiagHandler &&
+      (!pImpl->RespectDiagnosticFilters || isDiagnosticEnabled(DI)) &&
+      pImpl->DiagHandler->handleDiagnostics(DI))
+    return;
 
   if (!isDiagnosticEnabled(DI))
     return;

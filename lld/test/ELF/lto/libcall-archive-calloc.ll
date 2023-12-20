@@ -11,12 +11,12 @@
 ; RUN: llvm-dis < t.0.4.opt.bc | FileCheck %s
 ; RUN: llvm-nm t | FileCheck %s --check-prefix=NM
 
-; CHECK: define dso_local void @calloc
+; CHECK: declare noalias noundef ptr @calloc(i64 noundef, i64 noundef)
 
 ; NM-NOT:  {{.}}
 ; NM:      {{.*}} T _start
 ;; TODO: Currently the symbol is lazy, which lowers to a SHN_ABS symbol at address 0.
-; NM-NEXT: {{.*}} T calloc
+; NM-NEXT: {{.*}} A calloc
 ; NM-NEXT: {{.*}} T foo
 ; NM-NEXT: {{.*}} T malloc
 ; NM-NEXT: {{.*}} T memset

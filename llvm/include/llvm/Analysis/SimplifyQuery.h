@@ -14,7 +14,6 @@
 namespace llvm {
 
 class AssumptionCache;
-class DomConditionCache;
 class DominatorTree;
 class TargetLibraryInfo;
 
@@ -63,7 +62,6 @@ struct SimplifyQuery {
   const DominatorTree *DT = nullptr;
   AssumptionCache *AC = nullptr;
   const Instruction *CxtI = nullptr;
-  const DomConditionCache *DC = nullptr;
 
   // Wrapper to query additional information for instructions like metadata or
   // keywords like nsw, which provides conservative results if those cannot
@@ -82,8 +80,8 @@ struct SimplifyQuery {
                 const DominatorTree *DT = nullptr,
                 AssumptionCache *AC = nullptr,
                 const Instruction *CXTI = nullptr, bool UseInstrInfo = true,
-                bool CanUseUndef = true, const DomConditionCache *DC = nullptr)
-      : DL(DL), TLI(TLI), DT(DT), AC(AC), CxtI(CXTI), DC(DC), IIQ(UseInstrInfo),
+                bool CanUseUndef = true)
+      : DL(DL), TLI(TLI), DT(DT), AC(AC), CxtI(CXTI), IIQ(UseInstrInfo),
         CanUseUndef(CanUseUndef) {}
 
   SimplifyQuery(const DataLayout &DL, const DominatorTree *DT,

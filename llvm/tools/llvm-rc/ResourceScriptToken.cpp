@@ -274,7 +274,7 @@ Error Tokenizer::consumeToken(const Kind TokenKind) {
 }
 
 bool Tokenizer::willNowRead(StringRef FollowingChars) const {
-  return Data.drop_front(Pos).starts_with(FollowingChars);
+  return Data.drop_front(Pos).startswith(FollowingChars);
 }
 
 bool Tokenizer::canStartIdentifier() const {
@@ -298,12 +298,12 @@ bool Tokenizer::canStartInt() const {
 
 bool Tokenizer::canStartBlockComment() const {
   assert(!streamEof());
-  return Data.drop_front(Pos).starts_with("/*");
+  return Data.drop_front(Pos).startswith("/*");
 }
 
 bool Tokenizer::canStartLineComment() const {
   assert(!streamEof());
-  return Data.drop_front(Pos).starts_with("//");
+  return Data.drop_front(Pos).startswith("//");
 }
 
 bool Tokenizer::canContinueInt() const {

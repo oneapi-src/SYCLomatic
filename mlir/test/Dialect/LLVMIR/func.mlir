@@ -249,12 +249,6 @@ module {
     // CHECK-SAME: vscale_range(1, 2)
     llvm.return
   }
-
-  // CHECK-LABEL: @frame_pointer_roundtrip()
-  // CHECK-SAME: attributes {frame_pointer = #llvm.framePointerKind<"non-leaf">}
-  llvm.func @frame_pointer_roundtrip() attributes {frame_pointer = #llvm.framePointerKind<"non-leaf">} {
-    llvm.return
-  }
 }
 
 // -----

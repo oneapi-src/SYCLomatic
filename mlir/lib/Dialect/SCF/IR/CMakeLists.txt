@@ -11,13 +11,12 @@ add_mlir_dialect_library(MLIRSCFDialect
 
   LINK_LIBS PUBLIC
   MLIRArithDialect
+  MLIRBufferizationDialect
   MLIRControlFlowDialect
-  MLIRDialectUtils
   MLIRFunctionInterfaces
   MLIRIR
   MLIRLoopLikeInterface
   MLIRSideEffectInterfaces
-  MLIRTensorDialect
   MLIRValueBoundsOpInterface
   )
 

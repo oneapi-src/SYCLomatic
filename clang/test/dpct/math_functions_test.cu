@@ -1,9 +1,8 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/math_functions_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math_functions_test/math_functions_test.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/math_functions_test/math_functions_test.dp.cpp -o %T/math_functions_test/math_functions_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/math_functions_test/math_functions_test.dp.cpp -o %T/math_functions_test/math_functions_test.dp.o %}
 
-#ifndef BUILD_TEST
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cmath>
@@ -467,4 +466,4 @@ void foo_3(){
   unsigned long long max = foo_inner((unsigned long long) std::numeric_limits<int>::max());
   unsigned long long min = foo_inner((unsigned long long) std::numeric_limits<int>::min());
 }
-#endif
+

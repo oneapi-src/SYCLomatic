@@ -1946,7 +1946,7 @@ void COFFDumper::printCOFFResources() {
   ListScope ResourcesD(W, "Resources");
   for (const SectionRef &S : Obj->sections()) {
     StringRef Name = unwrapOrError(Obj->getFileName(), S.getName());
-    if (!Name.starts_with(".rsrc"))
+    if (!Name.startswith(".rsrc"))
       continue;
 
     StringRef Ref = unwrapOrError(Obj->getFileName(), S.getContents());

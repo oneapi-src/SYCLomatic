@@ -37,7 +37,7 @@ const GCNTargetMachine &getTM(const GCNSubtarget *STI) {
 
 SIMachineFunctionInfo::SIMachineFunctionInfo(const Function &F,
                                              const GCNSubtarget *STI)
-    : AMDGPUMachineFunction(F, *STI), Mode(F, *STI), GWSResourcePSV(getTM(STI)),
+    : AMDGPUMachineFunction(F, *STI), Mode(F), GWSResourcePSV(getTM(STI)),
       UserSGPRInfo(F, *STI), WorkGroupIDX(false), WorkGroupIDY(false),
       WorkGroupIDZ(false), WorkGroupInfo(false), LDSKernelId(false),
       PrivateSegmentWaveByteOffset(false), WorkItemIDX(false),
@@ -349,9 +349,8 @@ bool SIMachineFunctionInfo::allocatePhysicalVGPRForSGPRSpills(
       MBB.addLiveIn(LaneVGPR);
       MBB.sortUniqueLiveIns();
     }
-    SpillPhysVGPRs.push_back(LaneVGPR);
   } else {
-    LaneVGPR = SpillPhysVGPRs.back();
+    LaneVGPR = WWMReservedRegs.back();
   }
 
   SGPRSpillsToPhysicalVGPRLanes[FI].push_back(
@@ -520,7 +519,7 @@ int SIMachineFunctionInfo::getScavengeFI(MachineFrameInfo &MFI,
                                          const SIRegisterInfo &TRI) {
   if (ScavengeFI)
     return *ScavengeFI;
-  if (isBottomOfStack()) {
+  if (isEntryFunction() || isChainFunction()) {
     ScavengeFI = MFI.CreateFixedObject(
         TRI.getSpillSize(AMDGPU::SGPR_32RegClass), 0, false);
   } else {
@@ -729,7 +728,7 @@ bool SIMachineFunctionInfo::mayUseAGPRs(const Function &F) const {
         for (const auto &CI : IA->ParseConstraints()) {
           for (StringRef Code : CI.Codes) {
             Code.consume_front("{");
-            if (Code.starts_with("a"))
+            if (Code.startswith("a"))
               return true;
           }
         }

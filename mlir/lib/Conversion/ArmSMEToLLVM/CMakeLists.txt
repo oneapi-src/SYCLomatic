@@ -10,6 +10,7 @@ add_mlir_conversion_library(MLIRArmSMEToLLVM
   LINK_LIBS PUBLIC
   MLIRArmSMETransforms
   MLIRArmSMEDialect
+  MLIRArmSMEUtils
   MLIRTransforms
   MLIRLLVMCommonConversion
   MLIRLLVMDialect)

@@ -80,8 +80,6 @@ protected:
 
   SDValue lowerFEXPUnsafe(SDValue Op, const SDLoc &SL, SelectionDAG &DAG,
                           SDNodeFlags Flags) const;
-  SDValue lowerFEXP10Unsafe(SDValue Op, const SDLoc &SL, SelectionDAG &DAG,
-                            SDNodeFlags Flags) const;
   SDValue lowerFEXP(SDValue Op, SelectionDAG &DAG) const;
 
   SDValue LowerCTLZ_CTTZ(SDValue Op, SelectionDAG &DAG) const;
@@ -449,8 +447,6 @@ enum NodeType : unsigned {
   FMED3,
   SMED3,
   UMED3,
-  FMAXIMUM3,
-  FMINIMUM3,
   FDOT2,
   URECIP,
   DIV_SCALE,

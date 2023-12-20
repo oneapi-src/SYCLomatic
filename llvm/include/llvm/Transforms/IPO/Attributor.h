@@ -2161,7 +2161,7 @@ public:
     Function *F = I->getFunction();
     auto &ORE = Configuration.OREGetter(F);
 
-    if (RemarkName.starts_with("OMP"))
+    if (RemarkName.startswith("OMP"))
       ORE.emit([&]() {
         return RemarkCB(RemarkKind(Configuration.PassName, RemarkName, I))
                << " [" << RemarkName << "]";
@@ -2181,7 +2181,7 @@ public:
 
     auto &ORE = Configuration.OREGetter(F);
 
-    if (RemarkName.starts_with("OMP"))
+    if (RemarkName.startswith("OMP"))
       ORE.emit([&]() {
         return RemarkCB(RemarkKind(Configuration.PassName, RemarkName, F))
                << " [" << RemarkName << "]";

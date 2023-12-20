@@ -71,7 +71,7 @@ std::optional<Path> getSourceFile(llvm::StringRef FileName,
 // Returns std::nullopt if TargetNS is not a prefix of CurContext.
 std::optional<const DeclContext *>
 findContextForNS(llvm::StringRef TargetNS, const DeclContext *CurContext) {
-  assert(TargetNS.empty() || TargetNS.ends_with("::"));
+  assert(TargetNS.empty() || TargetNS.endswith("::"));
   // Skip any non-namespace contexts, e.g. TagDecls, functions/methods.
   CurContext = CurContext->getEnclosingNamespaceContext();
   // If TargetNS is empty, it means global ns, which is translation unit.
@@ -91,7 +91,7 @@ findContextForNS(llvm::StringRef TargetNS, const DeclContext *CurContext) {
   llvm::StringRef CurrentContextNS(TargetContextNS);
   // If TargetNS is not a prefix of CurrentContext, there's no way to reach
   // it.
-  if (!CurrentContextNS.starts_with(TargetNS))
+  if (!CurrentContextNS.startswith(TargetNS))
     return std::nullopt;
 
   while (CurrentContextNS != TargetNS) {
