@@ -1487,10 +1487,7 @@ public:
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
-    std::cout<<Repl->toString()<<std::endl;
     insertFile(Repl->getFilePath().str())->addReplacement(Repl);
-    std::cout<<"BBB "<<insertFile(Repl->getFilePath().str())->getReplsCUDA()->getReplMap().size()<<std::endl;
-    std::cout<<"CCC "<<insertFile(Repl->getFilePath().str())->getReplsSYCL()->getReplMap().size()<<std::endl;
   }
 
   CudaArchPPMap &getCudaArchPPInfoMap() { return CAPPInfoMap; }

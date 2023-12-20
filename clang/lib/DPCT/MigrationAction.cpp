@@ -226,7 +226,6 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
   MigrationRuleManager MRM(Pass, Transforms, Info.Groups);
   printFileStaging(getStagingName(Pass), Info.MainFile->getFilePath().getCanonicalPath());
   MRM.matchAST(Context, MigrationRuleNames);
-  std::cout<<"TTT "<<Transforms.size()<<std::endl;
   for (const auto &I : Transforms) {
     auto Repl = I->getReplacement(Context);
 
@@ -274,7 +273,6 @@ void DpctToolAction::runPasses() {
   for (auto Pass : Passes) {
     runPass(Pass);
   }
-  std::cout<<ReplsSYCL.size()<<std::endl;
   runWithCrashGuard(
       [&]() {
         Global.buildReplacements();
