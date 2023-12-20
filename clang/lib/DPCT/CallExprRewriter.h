@@ -636,6 +636,11 @@ void printWithParens(StreamT &Stream,
   printWithParens(Stream, AA, P);
 }
 
+template <class StreamT, class T>
+void printWithParens(StreamT &Stream, const T &Val) {
+  print(Stream, Val);
+}
+
 template <class StreamT> void printMemberOp(StreamT &Stream, bool IsArrow) {
   if (IsArrow)
     Stream << "->";
@@ -1001,7 +1006,7 @@ public:
   ArraySubscriptExprPrinter(const BaseT &base, ArgValueT &&Arg)
       : Base(base), ArgValue(std::forward<ArgValueT>(Arg)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, Base);
+    printWithParens(Stream, Base);
     Stream << "[";
     dpct::print(Stream, ArgValue);
     Stream << "]";
