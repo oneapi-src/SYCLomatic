@@ -177,63 +177,20 @@
       RuleId: "replace_add_executable_cu_extension_with_dp_cpp"
 
 
-
-- Rule: rule_target_compile_options
+- Rule: rule_add_executable_remove_opts
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: target_compile_options
-  In: target_compile_options(${arg})
-  Out: target_compile_options(${arg})
+  CmakeSyntax: add_executable_opts
+  In: add_executable(${target} ${sources} OPTIONS ${value})
+  Out: add_executable(${target} ${sources} OPTIONS ${value})
   Subrules:
-    arg:
-      In: $<$<COMPILE_LANGUAGE:CUDA>:${flags}>
+    value:
+      In: -arch=${args}
       Out: ""
-      RuleId: "target_compile_options_cuda_arg"
+      MatchMode: Partial
+      RuleId: "remove_add_executable_opts"
 
-- Rule: rule_CUDA_HAS_FP16
-  Kind: CMakeRule
-  Priority: Fallback
-  MatchMode: Partial
-  CmakeSyntax: CUDA_HAS_FP16
-  In: ${func_name}(${value})
-  Out: ${func_name}(${value})
-  Subrules:
-    value:
-      MatchMode: Full
-      In: CUDA_HAS_FP16
-      Out: SYCL_HAS_FP16
-
-# Current Yaml based rule hard-code to map "cxx_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
-- Rule: rule_cxx_target_compile_features
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cxx_target_compile_features
-  MatchMode: Partial
-  In: target_compile_features(${value})
-  Out: target_compile_features(${value})
-  Subrules:
-    value:
-      In: cxx_std_${ver}
-      Out: cxx_std_17
-      RuleId: "adjust cxx_ver"
-
-# Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
-- Rule: rule_cuda_target_compile_features
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cuda_target_compile_features
-  MatchMode: Partial
-  In: target_compile_features(${value})
-  Out: target_compile_features(${value})
-  Subrules:
-    value:
-      In: cuda_std_${ver}
-      Out: cxx_std_17
-      RuleId: "adjust cuda_ver"
-
-- Rule: rule_header_file
+- Rule: rule_target_link_libraries_CUDA_LIBRARIES
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuh_file

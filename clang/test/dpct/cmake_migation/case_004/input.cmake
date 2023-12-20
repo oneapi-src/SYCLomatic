@@ -1,3 +1,5 @@
+Project(foo-bar LANGUAGES CXX CUDA)
+
 target_link_libraries(main PRIVATE cxxopts fmt::fmt -lcublas)
 
 target_link_libraries(transformer_engine PUBLIC 
