@@ -252,6 +252,8 @@ UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
+static bool isCUDAHeaderRequired() { return !MigrateCmakeScriptOnly; }
+
 UnifiedPath getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPathStr(invokeCommand);
 
@@ -272,24 +274,18 @@ UnifiedPath getInstallPath(const char *invokeCommand) {
 
 // To validate the root path of the project to be migrated.
 void ValidateInputDirectory(UnifiedPath InRoot) {
-  if (isChildOrSamePath(InRoot, DpctInstallPath)) {
-    ShowStatus(MigrationErrorInputDirContainCTTool);
-    dpctExit(MigrationErrorInputDirContainCTTool);
-  }
-
-  // To skip to check the following cuda path when option
-  // "--migrate-cmake-script-only" is specified to migrate cmake script
-  if (MigrateCmakeScriptOnly)
-    return;
-
   if (isChildOrSamePath(CudaPath, InRoot)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
     dpctExit(MigrationErrorRunFromSDKFolder);
   }
-
   if (isChildOrSamePath(InRoot, CudaPath)) {
     ShowStatus(MigrationErrorInputDirContainSDKFolder);
     dpctExit(MigrationErrorInputDirContainSDKFolder);
+  }
+
+  if (isChildOrSamePath(InRoot, DpctInstallPath)) {
+    ShowStatus(MigrationErrorInputDirContainCTTool);
+    dpctExit(MigrationErrorInputDirContainCTTool);
   }
 }
 
@@ -811,7 +807,7 @@ int runDPCT(int argc, const char **argv) {
 
   ExtraIncPaths = OptParser->getExtraIncPathList();
 
-  if (!MigrateCmakeScriptOnly) {
+  if (isCUDAHeaderRequired()) {
     // TODO: implement one of this for each source language.
     CudaPath = getCudaInstallPath(OriginalArgc, argv);
     DpctDiags() << "Cuda Include Path found: " << CudaPath.getCanonicalPath()
@@ -927,7 +923,9 @@ int runDPCT(int argc, const char **argv) {
   UnifiedPath CompilationsDir(OptParser->getCompilationsDir());
 
   Tool.setCompilationDatabaseDir(CompilationsDir.getCanonicalPath().str());
-  ValidateInputDirectory(InRoot);
+
+  if (isCUDAHeaderRequired())
+    ValidateInputDirectory(InRoot);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
@@ -936,7 +934,9 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
-  ValidateInputDirectory(AnalysisScope);
+
+  if (isCUDAHeaderRequired())
+    ValidateInputDirectory(AnalysisScope);
 
   if (GenHelperFunction.getValue()) {
     dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
