@@ -4,7 +4,7 @@
 // RUN: FileCheck --input-file %T/cache_remove/cache_remove.dp.cpp --match-full-lines %s
 #include <cuda_runtime.h>
 
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of cudaStreamAttrValue is not supported.
+// CHECK: #define xxx int
 #define xxx cudaStreamAttrValue
 
 __global__ void kernel()
@@ -21,7 +21,7 @@ int main()
   const int res_block_mem =
       transformed_tensor_size * 2 + pre_transform_tensor_size;
   float *aptr;
-  // CHECK: DPCT1007:{{[0-9]+}}: Migration of cudaStreamAttrValue is not supported.
+  // CHECK: int stream_attribute = {};
   cudaStreamAttrValue stream_attribute = {};
   xxx stream_attribute1 = {};
   // CHECK: // begin for check remove stream_attribute.accessPolicyWindow
