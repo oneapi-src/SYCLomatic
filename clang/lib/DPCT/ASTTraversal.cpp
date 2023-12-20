@@ -1720,7 +1720,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
-              "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t",
+              "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t", "CUuuid",
               "cusparseSpSVAlg_t", "cudaFuncAttributes", "cudaLaunchAttributeValue"))))))
           .bind("cudaTypeDef"),
       this);
@@ -14026,7 +14026,8 @@ void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverDeviceAPI = [&]() {
     return hasAnyName("cuDeviceGet", "cuDeviceComputeCapability",
                       "cuDriverGetVersion", "cuDeviceGetCount",
-                      "cuDeviceGetAttribute", "cuDeviceGetName");
+                      "cuDeviceGetAttribute", "cuDeviceGetName",
+                      "cuDeviceGetUuid", "cuDeviceGetUuid_v2");
   };
 
   MF.addMatcher(
@@ -14151,6 +14152,26 @@ void DriverDeviceAPIRule::runRule(
     printDerefOp(OS, Arg);
     OS << " = "
        << MapNames::getDpctNamespace() + "dev_mgr::instance().device_count()";
+    requestFeature(HelperFeatureEnum::device_ext);
+    if (IsAssigned) {
+      OS << ")";
+    }
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  } else if (APIName == "cuDeviceGetUuid" || APIName == "cuDeviceGetUuid_v2") {
+    if (!DpctGlobalInfo::useDeviceInfo()) {
+      report(CE->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
+             APIName);
+      return;
+    }
+    if (IsAssigned)
+      OS << "DPCT_CHECK_ERROR(";
+    auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    printDerefOp(OS, Arg);
+    ExprAnalysis SecEA(CE->getArg(1));
+    OS << " = "
+       << MapNames::getDpctNamespace() + "get_device(" +
+              SecEA.getReplacedString() + ")" + ".get_device_info()" +
+              ".get_uuid()";
     requestFeature(HelperFeatureEnum::device_ext);
     if (IsAssigned) {
       OS << ")";
@@ -14786,8 +14807,8 @@ void CudaExtentRule::runRule(
 REGISTER_RULE(CudaExtentRule, PassKind::PK_Analysis)
 
 void CudaUuidRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(namedDecl(
-                               hasAnyName("CUuuid_st", "cudaUUID_t")))),
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(namedDecl(hasAnyName(
+                               "CUuuid_st", "cudaUUID_t", "CUuuid")))),
                            member(hasName("bytes")))
                     .bind("UUID_bytes"),
                 this);
