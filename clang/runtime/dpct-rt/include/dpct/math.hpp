@@ -324,6 +324,26 @@ bfe_safe(const T source, const uint32_t bit_start, const uint32_t num_bits) {
 
 /// Bitfield-insert.
 ///
+/// \tparam T The type of \param x and \param y , must be an unsigned integer.
+/// \param x The source of the bitfield.
+/// \param y The source where bitfield is inserted.
+/// \param bit_start The position to start insertion.
+/// \param num_bits The number of bits to insertion.
+template <typename T>
+inline std::enable_if_t<std::is_unsigned_v<T>, T>
+bfi(const T x, const T y, const uint32_t bit_start, const uint32_t num_bits) {
+  constexpr unsigned bit_width = CHAR_BIT * sizeof(T);
+
+  // if bit_start > bit_width || len == 0, should return y.
+  const uint32_t ignore_bfi = bit_start > bit_width || num_bits == 0;
+  T extract_bitfield_mask = (~(T{0}) >> (bit_width - num_bits)) << bit_start;
+  T clean_bitfield_mask = ~extract_bitfield_mask;
+  return (y & (-ignore_bfi | clean_bitfield_mask)) |
+         (~-ignore_bfi & ((x << bit_start) & extract_bitfield_mask));
+}
+
+/// Bitfield-insert with boundary checking.
+///
 /// Align and insert a bit field from \param x into \param y . Source \param
 /// bit_start gives the starting bit position for the insertion, and source
 /// \param num_bits gives the bit field length in bits.
@@ -335,7 +355,8 @@ bfe_safe(const T source, const uint32_t bit_start, const uint32_t num_bits) {
 /// \param num_bits The number of bits to insertion.
 template <typename T>
 inline std::enable_if_t<std::is_unsigned_v<T>, T>
-bfi(const T x, const T y, const uint32_t bit_start, const uint32_t num_bits) {
+bfi_safe(const T x, const T y, const uint32_t bit_start,
+         const uint32_t num_bits) {
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
   if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> ||
                 std::is_same_v<T, uint32_t>) {
@@ -356,13 +377,7 @@ bfi(const T x, const T y, const uint32_t bit_start, const uint32_t num_bits) {
   constexpr unsigned bit_width = CHAR_BIT * sizeof(T);
   const uint32_t pos = std::min(bit_start, bit_width);
   const uint32_t len = std::min(pos + num_bits, bit_width) - pos;
-
-  // if bit_start > bit_width || len == 0, should return y.
-  const uint32_t ignore_bfi = bit_start > bit_width || len == 0;
-  T extract_bitfield_mask = (~(T{0}) >> (bit_width - len)) << pos;
-  T clean_bitfield_mask = ~extract_bitfield_mask;
-  return (y & (-ignore_bfi | clean_bitfield_mask)) |
-         (~-ignore_bfi & ((x << pos) & extract_bitfield_mask));
+  return dpct::bfi(x, y, pos, len);
 }
 
 /// Determine whether 2 element value is NaN.

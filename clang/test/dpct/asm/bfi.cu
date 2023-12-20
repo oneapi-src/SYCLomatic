@@ -12,10 +12,10 @@ __global__ void bfi() {
   uint32_t b32;
   uint64_t b64;
 
-  // CHECK: b32 = dpct::bfi<uint32_t>(10, 10, 1, 8);
+  // CHECK: b32 = dpct::bfi_safe<uint32_t>(10, 10, 1, 8);
   asm("bfi.b32 %0, %1, %2, %3, %4;" : "=r"(b32) : "r"(10), "r"(10), "r"(1), "r"(8));
   
-  // CHECK: b64 = dpct::bfi<uint64_t>(10, 10, 1, 8);
+  // CHECK: b64 = dpct::bfi_safe<uint64_t>(10, 10, 1, 8);
   asm("bfi.b64 %0, %1, %2, %3, %4;" : "=r"(b64) : "r"(10), "r"(10), "r"(1), "r"(8));
 }
 

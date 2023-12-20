@@ -1498,8 +1498,8 @@ protected:
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
-    OS() << MapNames::getDpctNamespace() << "bfi<" << TypeStr << ">(" << Op[0]
-         << ", " << Op[1] << ", " << Op[2] << ", " << Op[3] << ')';
+    OS() << MapNames::getDpctNamespace() << "bfi_safe<" << TypeStr << ">("
+         << Op[0] << ", " << Op[1] << ", " << Op[2] << ", " << Op[3] << ')';
     endstmt();
     insertHeader(HeaderType::HT_DPCT_Math);
     return SYCLGenSuccess();
