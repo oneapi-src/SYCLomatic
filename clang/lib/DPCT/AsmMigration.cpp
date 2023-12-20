@@ -1643,7 +1643,7 @@ OptimizeMigrationForCUDABackend(const GCCAsmStmt *GAS, StringRef Replacement) {
       return nullptr;
     auto SemiTok =
         Lexer::findNextToken(ExpansionRange.getEnd(), SM, Ctx.getLangOpts());
-    // Can't find the trailling semicolon.
+    // Can't find the trailing semicolon.
     if (!SemiTok || SemiTok->isNot(tok::semi))
       return nullptr;
     const char *ExpansionEnd = getBufferData(SemiTok->getEndLoc());
@@ -1661,7 +1661,7 @@ OptimizeMigrationForCUDABackend(const GCCAsmStmt *GAS, StringRef Replacement) {
       return nullptr;
     auto SemiTok = Lexer::findNextToken(SM.getSpellingLoc(GAS->getEndLoc()), SM,
                                         Ctx.getLangOpts());
-    // Can't find the trailling semicolon.
+    // Can't find the trailing semicolon.
     if (!SemiTok || SemiTok->isNot(tok::semi))
       return nullptr;
     const char *StmtEnd = getBufferData(SemiTok->getEndLoc());
