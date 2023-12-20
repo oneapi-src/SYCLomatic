@@ -419,7 +419,7 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      // If input value has been matched to the end but match pattren still has
+      // If input value has been matched to the end but match pattern still has
       // value, it is considered not matched case.
       if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
         return {};

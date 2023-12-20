@@ -688,29 +688,6 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
   unifyInputFileFormat();
   reserveImplicitMigrationRules();
   doCmakeScriptAnalysis();
-
-#if 1 // used to debug
-  printf("#### applyPatternRewriterToCmakeScriptFile ###\n");
-  for (const auto &Entry : CmakeBuildInRules) {
-    auto &PR = Entry.second;
-    printf("PR.RuleId: [%s]\n", PR.RuleId.c_str());
-    printf("PR.CmakeSyntax: [%s]\n", PR.CmakeSyntax.c_str());
-    printf("PR.MatchMode: [%d]\n", PR.MatchMode);
-    printf("PR.In: [%s]\n", PR.In.c_str());
-    printf("PR.Out: [%s]\n", PR.Out.c_str());
-
-    for (auto SubPR : PR.Subrules) {
-      printf("\tSubPR.first: [%s]\n", SubPR.first.c_str());
-      printf("\tSubPR.second.MatchMode: [%d]\n", SubPR.second.MatchMode);
-      printf("\tSubPR.second.In: [%s]\n", SubPR.second.In.c_str());
-      printf("\tSubPR.second.Out: [%s]\n", SubPR.second.Out.c_str());
-    }
-    printf("\n");
-  }
-  printf("#### applyPatternRewriterToCmakeScriptFile ###\n");
-#endif
-
-
   applyCmakeMigrationRules();
   storeBufferToFile();
 }
