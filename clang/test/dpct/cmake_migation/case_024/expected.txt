@@ -1,0 +1,1 @@
+set(SYCL_HAS_FP16 TRUE)

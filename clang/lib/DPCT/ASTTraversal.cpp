@@ -6523,21 +6523,22 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            "cudaDeviceGetPCIBusId");
   } else if (FuncName == "cudaGetDevice") {
-    std::string ResultVarName = getDrefName(CE->getArg(0));
-    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
+    std::string ReplStr = getDrefName(CE->getArg(0)) + " = ";
     if (DpctGlobalInfo::useNoQueueDevice()) {
-      emplaceTransformation(new ReplaceStmt(CE, "0"));
+      ReplStr += "0";
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
              "cudaGetDevice",
              "it is redundant if it is migrated with option "
              "--helper-function-preference=no-queue-device "
              "which declares a global SYCL device and queue.");
     } else {
-      emplaceTransformation(
-          new ReplaceStmt(CE, MapNames::getDpctNamespace() +
-                                  "dev_mgr::instance().current_device_id()"));
+      ReplStr += MapNames::getDpctNamespace() +
+                 "dev_mgr::instance().current_device_id()";
       requestFeature(HelperFeatureEnum::device_ext);
     }
+    if (IsAssigned)
+      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+    emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
     if (isPlaceholderIdxDuplicated(CE))
@@ -12120,6 +12121,14 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
       Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                     MapNames::getClNamespace() +
                     "access::fence_space::local_space)";
+    } else if (Res.CanUseLocalBarrierWithCondition) {
+      report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER, true,
+             Res.GlobalFunctionName);
+      Replacement =
+          "(" + Res.Condition + ") ? " + DpctGlobalInfo::getItem(CE) +
+          ".barrier(" + MapNames::getClNamespace() +
+          "access::fence_space::local_space) : " + DpctGlobalInfo::getItem(CE) +
+          ".barrier()";
     } else {
       report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
              "nd_item");

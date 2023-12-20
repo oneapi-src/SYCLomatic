@@ -25,14 +25,20 @@ namespace dpct {
 struct BarrierFenceSpaceAnalyzerResult {
   BarrierFenceSpaceAnalyzerResult() {}
   BarrierFenceSpaceAnalyzerResult(bool CanUseLocalBarrier,
+                                  bool CanUseLocalBarrierWithCondition,
                                   bool MayDependOn1DKernel,
-                                  std::string GlobalFunctionName)
+                                  std::string GlobalFunctionName,
+                                  std::string Condition = "")
       : CanUseLocalBarrier(CanUseLocalBarrier),
+        CanUseLocalBarrierWithCondition(CanUseLocalBarrierWithCondition),
         MayDependOn1DKernel(MayDependOn1DKernel),
-        GlobalFunctionName(GlobalFunctionName) {}
+        GlobalFunctionName(GlobalFunctionName),
+        Condition(Condition) {}
   bool CanUseLocalBarrier = false;
+  bool CanUseLocalBarrierWithCondition = false;
   bool MayDependOn1DKernel = false;
   std::string GlobalFunctionName;
+  std::string Condition;
 };
 
 class BarrierFenceSpaceAnalyzer
@@ -88,10 +94,21 @@ private:
     Ranges Predecessors;
     Ranges Successors;
   };
-  bool isSafeToUseLocalBarrier(
-      const std::map<const ParmVarDecl *,
-                     std::set<std::pair<SourceLocation, AccessMode>>>
-          &DefLocInfoMap,
+
+  struct DREInfo {
+    DREInfo(const DeclRefExpr *DRE, SourceLocation SL, AccessMode AM)
+        : DRE(DRE), SL(SL), AM(AM) {}
+    const DeclRefExpr *DRE;
+    SourceLocation SL;
+    AccessMode AM;
+    bool operator<(const DREInfo &Other) const { return DRE < Other.DRE; }
+  };
+
+  std::tuple<bool /*CanUseLocalBarrier*/,
+             bool /*CanUseLocalBarrierWithCondition*/,
+             std::string /*Condition*/>
+  isSafeToUseLocalBarrier(
+      const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
       const SyncCallInfo &SCI);
   bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
   bool hasOverlappingAccessAmongWorkItems(int KernelDim,
@@ -99,6 +116,7 @@ private:
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<SourceRange> LoopRange;
   int KernelDim = 3; // 3 or 1
+  int KernelCallBlockDim = 3; // 3 or 1
   const FunctionDecl *FD = nullptr;
   std::string GlobalFunctionName;
 
@@ -107,9 +125,8 @@ private:
   std::string CELoc;
   std::string FDLoc;
   void constructDefUseMap();
-  void simplifyAndConvertToDefLocInfoMap(
-      std::map<const ParmVarDecl *,
-               std::set<std::pair<SourceLocation, AccessMode>>> &DefLocInfoMap);
+  void
+  simplifyMap(std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap);
 
   /// (FD location, (Call location, result))
   static std::unordered_map<
@@ -139,8 +156,23 @@ private:
     }
     return nullptr;
   }
+  bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
+  std::string isAnalyzableWriteInLoop(
+      const std::set<const DeclRefExpr *> &WriteInLoopDRESet);
 
   std::set<const Expr *> DeviceFunctionCallArgs;
+
+  bool IsDifferenceBetweenThreadIdxXAndIndexConstant = false;
+
+  // This map contains pairs meet below pattern:
+  // loop {
+  //   ...
+  //   DRE[idx] = ...;
+  //   ...
+  //   idx += step;
+  //   ...
+  // }
+  std::map<const DeclRefExpr*, std::string> DREIncStepMap;
 
   class TypeAnalyzer {
   public:
