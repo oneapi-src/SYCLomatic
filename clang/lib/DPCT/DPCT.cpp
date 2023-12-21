@@ -36,6 +36,7 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SmallString.h"
@@ -251,6 +252,8 @@ UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
+static bool isCUDAHeaderRequired() { return !MigrateCmakeScriptOnly; }
+
 UnifiedPath getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPathStr(invokeCommand);
 
@@ -275,7 +278,6 @@ void ValidateInputDirectory(UnifiedPath InRoot) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
     dpctExit(MigrationErrorRunFromSDKFolder);
   }
-
   if (isChildOrSamePath(InRoot, CudaPath)) {
     ShowStatus(MigrationErrorInputDirContainSDKFolder);
     dpctExit(MigrationErrorInputDirContainSDKFolder);
@@ -805,9 +807,12 @@ int runDPCT(int argc, const char **argv) {
 
   ExtraIncPaths = OptParser->getExtraIncPathList();
 
-  // TODO: implement one of this for each source language.
-  CudaPath = getCudaInstallPath(OriginalArgc, argv);
-  DpctDiags() << "Cuda Include Path found: " << CudaPath.getCanonicalPath() << "\n";
+  if (isCUDAHeaderRequired()) {
+    // TODO: implement one of this for each source language.
+    CudaPath = getCudaInstallPath(OriginalArgc, argv);
+    DpctDiags() << "Cuda Include Path found: " << CudaPath.getCanonicalPath()
+                << "\n";
+  }
 
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
@@ -916,7 +921,9 @@ int runDPCT(int argc, const char **argv) {
   UnifiedPath CompilationsDir(OptParser->getCompilationsDir());
 
   Tool.setCompilationDatabaseDir(CompilationsDir.getCanonicalPath().str());
-  ValidateInputDirectory(InRoot);
+
+  if (isCUDAHeaderRequired())
+    ValidateInputDirectory(InRoot);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
@@ -925,7 +932,9 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
-  ValidateInputDirectory(AnalysisScope);
+
+  if (isCUDAHeaderRequired())
+    ValidateInputDirectory(AnalysisScope);
 
   if (GenHelperFunction.getValue()) {
     dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
@@ -1020,6 +1029,19 @@ int runDPCT(int argc, const char **argv) {
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   clang::dpct::initHeaderSpellings();
+
+  if (MigrateCmakeScriptOnly || MigrateCmakeScript) {
+    SmallString<128> CmakeRuleFilePath(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(CmakeRuleFilePath,
+                            Twine("extensions/opt_rules/cmake_rules/"
+                                  "cmake_script_migration_rule.yaml"));
+    if (llvm::sys::fs::exists(CmakeRuleFilePath)) {
+      std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{
+          CmakeRuleFilePath};
+      importRules(CmakeRuleFiles);
+    }
+  }
+
   if (!RuleFile.empty()) {
     importRules(RuleFile);
   }
