@@ -70,48 +70,37 @@ template <typename _Allocator> struct device_allocator_traits {
   // end of taken from libc++
 
   template <typename T, typename Size>
-  static
-      typename ::std::enable_if_t<__has_construct<_Allocator, T *>::value, void>
-      uninitialized_value_construct_n(_Allocator alloc, T *p, Size n) {
+  static void uninitialized_value_construct_n(_Allocator alloc, T *p, Size n) {
     assert(p != nullptr && "value constructing null data");
-    for (Size i = 0; i < n; i++) {
-      ::std::allocator_traits<_Allocator>::construct(alloc, p + i);
-    }
-  }
-
-  template <typename T, typename Size>
-  static typename ::std::enable_if_t<!__has_construct<_Allocator, T *>::value,
-                                     void>
-  uninitialized_value_construct_n(_Allocator alloc, T *p, Size n) {
-    assert(p != nullptr && "value constructing null data");
-    ::std::uninitialized_value_construct_n(
-        oneapi::dpl::execution::make_device_policy(get_default_queue()), p, n);
-  }
-
-  template <typename T, typename Size, typename Value>
-  static typename ::std::enable_if_t<
-      __has_construct<_Allocator, T *, const Value &>::value, void>
-  uninitialized_fill_n(_Allocator alloc, T *first, Size n, const Value &value) {
-    assert(first != nullptr && "filling null data");
-    for (Size i = 0; i < n; i++) {
-      ::std::allocator_traits<_Allocator>::construct(alloc, first + i, value);
+    if constexpr (__has_construct<_Allocator, T *>::value) {
+      for (Size i = 0; i < n; i++) {
+        ::std::allocator_traits<_Allocator>::construct(alloc, p + i);
+      }
+    } else {
+      ::std::uninitialized_value_construct_n(
+          oneapi::dpl::execution::make_device_policy(get_default_queue()), p,
+          n);
     }
   }
 
   template <typename T, typename Size, typename Value>
-  static typename ::std::enable_if_t<
-      !__has_construct<_Allocator, T *, const Value &>::value, void>
-  uninitialized_fill_n(_Allocator alloc, T *first, Size n, const Value &value) {
+  static void uninitialized_fill_n(_Allocator alloc, T *first, Size n,
+                                   const Value &value) {
     assert(first != nullptr && "filling null data");
-    ::std::uninitialized_fill_n(
-        oneapi::dpl::execution::make_device_policy(get_default_queue()), first,
-        n, value);
+    if constexpr (__has_construct<_Allocator, T *, const Value &>::value) {
+      for (Size i = 0; i < n; i++) {
+        ::std::allocator_traits<_Allocator>::construct(alloc, first + i, value);
+      }
+    } else {
+      ::std::uninitialized_fill_n(
+          oneapi::dpl::execution::make_device_policy(get_default_queue()),
+          first, n, value);
+    }
   }
 
   template <typename Iter1, typename Size, typename T>
-  static void uninitialized_custom_copy_n(_Allocator alloc, Iter1 first, Size n,
-                                          T *d_first) {
-    assert(d_first != nullptr && "copying into null data");
+  static void __uninitialized_custom_copy_n(_Allocator alloc, Iter1 first,
+                                            Size n, T *d_first) {
     for (Size i = 0; i < n; i++) {
       ::std::allocator_traits<_Allocator>::construct(alloc, d_first + i,
                                                      *(first + i));
@@ -119,70 +108,45 @@ template <typename _Allocator> struct device_allocator_traits {
   }
 
   template <typename Iter1, typename Size, typename T>
-  static typename ::std::enable_if_t<
-      __has_construct<
-          _Allocator, T *,
-          typename ::std::iterator_traits<Iter1>::value_type>::value,
-      void>
-  uninitialized_device_copy_n(_Allocator alloc, Iter1 first, Size n,
-                              T *d_first) {
+  static void uninitialized_device_copy_n(_Allocator alloc, Iter1 first, Size n,
+                                          T *d_first) {
     assert(d_first != nullptr && "copying into null data");
-    uninitialized_custom_copy_n(alloc, first, n, d_first);
+    if constexpr (__has_construct<_Allocator, T *,
+                                  typename ::std::iterator_traits<
+                                      Iter1>::value_type>::value) {
+      __uninitialized_custom_copy_n(alloc, first, n, d_first);
+    } else {
+      ::std::uninitialized_copy_n(
+          oneapi::dpl::execution::make_device_policy(get_default_queue()),
+          first, n, d_first);
+    }
   }
 
   template <typename Iter1, typename Size, typename T>
-  static typename ::std::enable_if_t<
-      !__has_construct<
-          _Allocator, T *,
-          typename ::std::iterator_traits<Iter1>::value_type>::value,
-      void>
-  uninitialized_device_copy_n(_Allocator alloc, Iter1 first, Size n,
-                              T *d_first) {
+  static void uninitialized_host_copy_n(_Allocator alloc, Iter1 first, Size n,
+                                        T *d_first) {
     assert(d_first != nullptr && "copying into null data");
-    ::std::uninitialized_copy_n(
-        oneapi::dpl::execution::make_device_policy(get_default_queue()), first,
-        n, d_first);
-  }
-
-  template <typename Iter1, typename Size, typename T>
-  static typename ::std::enable_if_t<
-      __has_construct<
-          _Allocator, T *,
-          typename ::std::iterator_traits<Iter1>::value_type>::value,
-      void>
-  uninitialized_host_copy_n(_Allocator alloc, Iter1 first, Size n, T *d_first) {
-    assert(d_first != nullptr && "copying into null data");
-    uninitialized_custom_copy_n(alloc, first, n, d_first);
-  }
-
-  template <typename Iter1, typename Size, typename T>
-  static typename ::std::enable_if_t<
-      !__has_construct<
-          _Allocator, T *,
-          typename ::std::iterator_traits<Iter1>::value_type>::value,
-      void>
-  uninitialized_host_copy_n(_Allocator alloc, Iter1 first, Size n, T *d_first) {
-    assert(d_first != nullptr && "copying into null data");
-    ::std::uninitialized_copy_n(first, n, d_first);
-  }
-
-  template <typename T, typename Size>
-  static
-      typename ::std::enable_if_t<__has_destroy<_Allocator, T *>::value, void>
-      destroy_n(_Allocator alloc, T *p, Size n) {
-    assert(p != nullptr && "destroying null data");
-    for (Size i = 0; i < n; i++) {
-      ::std::allocator_traits<_Allocator>::destroy(alloc, p + i);
+    if constexpr (__has_construct<_Allocator, T *,
+                                  typename ::std::iterator_traits<
+                                      Iter1>::value_type>::value) {
+      __uninitialized_custom_copy_n(alloc, first, n, d_first);
+    } else {
+      ::std::uninitialized_copy_n(first, n, d_first);
     }
   }
 
   template <typename T, typename Size>
-  static
-      typename ::std::enable_if_t<!__has_destroy<_Allocator, T *>::value, void>
-      destroy_n(_Allocator alloc, T *p, Size n) {
+  static void destroy_n(_Allocator alloc, T *p, Size n) {
     assert(p != nullptr && "destroying null data");
-    ::std::destroy_n(
-        oneapi::dpl::execution::make_device_policy(get_default_queue()), p, n);
+    if constexpr (__has_destroy<_Allocator, T *>::value) {
+      for (Size i = 0; i < n; i++) {
+        ::std::allocator_traits<_Allocator>::destroy(alloc, p + i);
+      }
+    } else {
+      ::std::destroy_n(
+          oneapi::dpl::execution::make_device_policy(get_default_queue()), p,
+          n);
+    }
   }
 };
 
@@ -264,8 +228,8 @@ private:
     } else if (other.size() < _capacity) {
       // if incoming elements don't fit within existing elements but do fit
       // within total capacity
-      // copy elements that fit, then use uninitialized copy to ge the rest and
-      // adjust size
+      // copy elements that fit, then use uninitialized copy to ge the rest
+      // and adjust size
       std::copy_n(
           oneapi::dpl::execution::make_device_policy(get_default_queue()),
           other.begin(), _size, begin());
@@ -345,8 +309,8 @@ public:
       : _alloc(alloc) {
     _size = ::std::distance(first, last);
     _set_capacity_and_alloc();
-    // unsafe to parallelize on device as we dont know if InputIterator is valid
-    // oneDPL input type
+    // unsafe to parallelize on device as we dont know if InputIterator is
+    // valid oneDPL input type
     _construct_iter_host(first, _size);
   }
 
