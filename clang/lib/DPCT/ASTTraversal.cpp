@@ -8490,9 +8490,11 @@ void KernelCallRule::runRule(
           EpilogLocation,
           "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0, false));
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
-                                                 "generated_schema.hpp");
+                                                 "dpct/debug/debug_helper.hpp");
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
-                                                 "debug_helper.hpp", true);
+                                                 "generated_schema.hpp");
+      DpctGlobalInfo::getInstance().insertHeader(
+          KCall->getBeginLoc(), "dpct/debug/debug_helper.hpp", true);
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
                                                  "generated_schema.hpp", true);
     }
