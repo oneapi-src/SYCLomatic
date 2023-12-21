@@ -241,6 +241,7 @@ class ReplaceToken : public TextModification {
   SourceLocation Begin;
   SourceLocation End;
   std::string T;
+  bool IsSYCLHeaderNeeded = true;
 
 public:
   ReplaceToken(SourceLocation Loc, std::string &&S)
@@ -251,6 +252,7 @@ public:
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
+  void setSYCLHeaderNeeded(bool Flag) { IsSYCLHeaderNeeded = Flag; };
 };
 
 /// Replace a statement (w/o semicolon) with a specified string.

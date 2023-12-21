@@ -1,0 +1,12 @@
+[
+    {
+        "command": "nvcc -c main.cu",
+        "directory": ".",
+        "file": "main.cu"
+    },
+    {
+        "command": "gcc -c test.c",
+        "directory": ".",
+        "file": "test.c"
+    }
+]

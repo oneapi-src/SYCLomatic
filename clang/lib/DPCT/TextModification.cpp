@@ -367,11 +367,13 @@ ReplaceToken::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
   // Need to deal with the fact, that the type name might be a macro.
-  return std::make_shared<ExtReplacement>(
+  auto R = std::make_shared<ExtReplacement>(
       Context.getSourceManager(),
       // false means [Begin, End)
       // true means [Begin, End]
       CharSourceRange(SourceRange(Begin, End), true), T, this);
+  R->setSYCLHeaderNeeded(IsSYCLHeaderNeeded);
+  return R;
 }
 
 std::shared_ptr<ExtReplacement>

@@ -191,9 +191,13 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
       }
       return false;
     }
-    if (MacroName == "__CUDACC__" &&
-        !MacroNameTok.getIdentifierInfo()->hasMacroDefinition())
-      return false;
+    if (MacroName == "__CUDACC__"){
+      if(MacroNameTok.getIdentifierInfo()->hasMacroDefinition()) {
+        Repl->setSYCLHeaderNeeded(false);
+      } else {
+        return false;
+      }
+    }
     if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
       auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
       DpctGlobalInfo::getInstance()
@@ -11622,7 +11626,7 @@ void CMemoryAPIRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   auto FilePath = DpctGlobalInfo::getLocInfo(ICE->getBeginLoc()).first;
   auto Extension = path::extension(FilePath.getPath());
-  if ((Extension == ".c") || (Extension == ".h")) {
+  if (Extension == ".c") {
     for (auto &Entry : CompileTargetsMap) {
       if (Entry.first.equalsTo(FilePath)) {
         if (!llvm::StringRef(Entry.second[1]).endswith("nvcc")) {
