@@ -66,6 +66,17 @@ void gen_data_CP(const std::string &data_name, std::shared_ptr<Schema> schema,
             << detail << std::endl;
 }
 
+inline std::map<void *, uint32_t> &getPointerSizeMap() {
+  static std::map<void *, uint32_t> PtrSizeMap;
+  return PtrSizeMap;
+}
+
+inline uint32_t getPointerSizeInBitsFromMap(void *ptr) {
+  const std::map<void *, uint32_t> &PtrSizeMap = getPointerSizeMap();
+  const auto &it = PtrSizeMap.find(ptr);
+  return (it != PtrSizeMap.end()) ? it->second : 0;
+}
+
 } // namespace experimental
 } // namespace dpct
 #endif // End of __DEBUG_HELPER__
