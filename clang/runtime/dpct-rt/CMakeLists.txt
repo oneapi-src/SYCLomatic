@@ -28,6 +28,7 @@ set(dpct_rt_dpstd_files
   include/dpct/dpl_extras/vector.h
   include/dpct/dpl_extras/dpcpp_extensions.h
 )
+
 set(dpct_rt_debug_files
   include/debug/debug_helper.hpp
   include/debug/json.hpp

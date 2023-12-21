@@ -33,6 +33,7 @@
  * of the programming guide with some additions like error checking.
  */
 
+#include <ctime>
 #include <stdio.h>
 
 // For the CUDA runtime routines (prefixed with "cuda_")
@@ -83,7 +84,7 @@ int main(void) {
     fprintf(stderr, "Failed to allocate host vectors!\n");
     exit(EXIT_FAILURE);
   }
-
+  srand((unsigned) time(NULL));
   // Initialize the host input vectors
   for (int i = 0; i < numElements; ++i) {
     h_A[i] = rand() / (float)RAND_MAX;
@@ -154,6 +155,7 @@ int main(void) {
   int blocksPerGrid = (numElements + threadsPerBlock - 1) / threadsPerBlock;
   printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid,
          threadsPerBlock);
+  // dpct::experimental::apply_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long *)&d_A, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006, (long *)&d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006), TYPE_SHCEMA_007, (long *)&d_C, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008, (long *)&numElements, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
   dpct::experimental::gen_prolog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long *)&d_A, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006, (long *)&d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006), TYPE_SHCEMA_007, (long *)&d_C, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008, (long *)&numElements, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));
   vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
   dpct::experimental::gen_epilog_API_CP("vectorAdd:vecotr.cu:[221]:", 0, TYPE_SHCEMA_005, (long *)&d_A, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_005), TYPE_SHCEMA_006, (long *)&d_B, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_006), TYPE_SHCEMA_007, (long *)&d_C, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_007), TYPE_SHCEMA_008, (long *)&numElements, dpct::experimental::get_size_of_schema(TYPE_SHCEMA_008));

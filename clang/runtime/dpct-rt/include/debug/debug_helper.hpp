@@ -47,7 +47,7 @@ void gen_epilog_API_CP(const std::string &api_name, sycl::queue *queue,
 }
 #endif
 
-void gen_data_CP(const std::string &data_name, std::shared_ptr<Schema> schema,
+inline void gen_data_CP(const std::string &data_name, std::shared_ptr<Schema> schema,
                  long value, size_t size = 0) {
   std::string detail = "";
   switch (schema->get_val_type()) {
