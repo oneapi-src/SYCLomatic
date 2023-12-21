@@ -8464,37 +8464,52 @@ void KernelCallRule::runRule(
           }
         }
       }
-      // StramStr = StramStr.compare("")?"0":StramStr;
+      int Index = getPlaceholderIdx(KCall);
+      if (Index == 0) {
+        Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      }
+      buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
+      std::string QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
       DebugArgsString += StramStr;
+      DebugArgsStringSYCL += QueueStr;
       for (auto *Arg : KCall->arguments()) {
         if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
           DebugArgsString += ", ";
+          DebugArgsStringSYCL += ", ";
           std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
           DebugArgsString += SchemaStr + ", ";
+          DebugArgsStringSYCL += SchemaStr + ", ";
           DebugArgsString += "(long *)&" + getStmtSpelling(Arg) + ", ";
+          DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg) + ", ";
           if (Arg->getType()->isPointerType()) {
             DebugArgsString +=
+                "dpct::experimental::getPointerSizeInBitsFromMap(" +
+                getStmtSpelling(Arg) + ")";
+            DebugArgsStringSYCL +=
                 "dpct::experimental::getPointerSizeInBitsFromMap(" +
                 getStmtSpelling(Arg) + ")";
           } else {
             DebugArgsString +=
                 "dpct::experimental::get_size_of_schema(" + SchemaStr + ")";
+            DebugArgsStringSYCL +=
+                "dpct::experimental::get_size_of_schema(" + SchemaStr + ")";
           }
         }
       }
-      DebugArgsString += ");\n";
+      DebugArgsString += ");" + std::string(getNL());
+      DebugArgsStringSYCL += ");" + std::string(getNL());
       emplaceTransformation(new InsertText(
           KCallSpellingRange.first,
           "dpct::experimental::gen_prolog_API_CP" + DebugArgsString, 0, true));
       emplaceTransformation(new InsertText(
           KCallSpellingRange.first,
-          "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0, false));
+          "dpct::experimental::gen_epilog_API_CP" + DebugArgsStringSYCL, 0, false));
       emplaceTransformation(new InsertText(
           EpilogLocation,
           "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0, true));
       emplaceTransformation(new InsertText(
           EpilogLocation,
-          "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0, false));
+          "dpct::experimental::gen_epilog_API_CP" + DebugArgsStringSYCL, 0, false));
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
                                                  "dpct/debug/debug_helper.hpp");
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
