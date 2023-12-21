@@ -278,100 +278,34 @@ inline unsigned int funnelshift_rc(unsigned int low, unsigned int high,
 template <typename T> inline T cbrt(T val) { return sycl::cbrt((T)val); }
 
 // min function overloads.
-// For floating-point types, `float` or `double` arguments are acceptable.
-// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
-// `std::int64_t` type arguments are acceptable.
-inline double min(const double a, const float b) {
-  return sycl::fmin(a, static_cast<double>(b));
+template <typename T1, typename T2>
+std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
+                 decltype(T1(0) + T2(0))>
+min(T1 a, T2 b) {
+  return sycl::min(static_cast<decltype(a + b)>(a),
+                   static_cast<decltype(a + b)>(b));
 }
-inline double min(const float a, const double b) {
-  return sycl::fmin(static_cast<double>(a), b);
-}
-inline float min(const float a, const float b) { return sycl::fmin(a, b); }
-inline double min(const double a, const double b) { return sycl::fmin(a, b); }
-inline std::uint32_t min(const std::uint32_t a, const std::int32_t b) {
-  return sycl::min(a, static_cast<std::uint32_t>(b));
-}
-inline std::uint32_t min(const std::int32_t a, const std::uint32_t b) {
-  return sycl::min(static_cast<std::uint32_t>(a), b);
-}
-inline std::int32_t min(const std::int32_t a, const std::int32_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint32_t min(const std::uint32_t a, const std::uint32_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::int64_t b) {
-  return sycl::min(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t min(const std::int64_t a, const std::uint64_t b) {
-  return sycl::min(static_cast<std::uint64_t>(a), b);
-}
-inline std::int64_t min(const std::int64_t a, const std::int64_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::uint64_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::int32_t b) {
-  return sycl::min(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t min(const std::int32_t a, const std::uint64_t b) {
-  return sycl::min(static_cast<std::uint64_t>(a), b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::uint32_t b) {
-  return sycl::min(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t min(const std::uint32_t a, const std::uint64_t b) {
-  return sycl::min(static_cast<std::uint64_t>(a), b);
+template <typename T1, typename T2>
+std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
+                 decltype(T1(0) + T2(0))>
+min(T1 a, T2 b) {
+  return sycl::fmin(static_cast<decltype(a + b)>(a),
+                    static_cast<decltype(a + b)>(b));
 }
 // max function overloads.
-// For floating-point types, `float` or `double` arguments are acceptable.
-// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
-// `std::int64_t` type arguments are acceptable.
-inline double max(const double a, const float b) {
-  return sycl::fmax(a, static_cast<double>(b));
+template <typename T1, typename T2>
+std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
+                 decltype(T1(0) + T2(0))>
+max(T1 a, T2 b) {
+  return sycl::max(static_cast<decltype(a + b)>(a),
+                   static_cast<decltype(a + b)>(b));
 }
-inline double max(const float a, const double b) {
-  return sycl::fmax(static_cast<double>(a), b);
-}
-inline float max(const float a, const float b) { return sycl::fmax(a, b); }
-inline double max(const double a, const double b) { return sycl::fmax(a, b); }
-inline std::uint32_t max(const std::uint32_t a, const std::int32_t b) {
-  return sycl::max(a, static_cast<std::uint32_t>(b));
-}
-inline std::uint32_t max(const std::int32_t a, const std::uint32_t b) {
-  return sycl::max(static_cast<std::uint32_t>(a), b);
-}
-inline std::int32_t max(const std::int32_t a, const std::int32_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint32_t max(const std::uint32_t a, const std::uint32_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::int64_t b) {
-  return sycl::max(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t max(const std::int64_t a, const std::uint64_t b) {
-  return sycl::max(static_cast<std::uint64_t>(a), b);
-}
-inline std::int64_t max(const std::int64_t a, const std::int64_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::uint64_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::int32_t b) {
-  return sycl::max(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t max(const std::int32_t a, const std::uint64_t b) {
-  return sycl::max(static_cast<std::uint64_t>(a), b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::uint32_t b) {
-  return sycl::max(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
-  return sycl::max(static_cast<std::uint64_t>(a), b);
+template <typename T1, typename T2>
+std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
+                 decltype(T1(0) + T2(0))>
+max(T1 a, T2 b) {
+  return sycl::fmax(static_cast<decltype(a + b)>(a),
+                    static_cast<decltype(a + b)>(b));
 }
 
 // pow functions overload.
