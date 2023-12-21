@@ -459,3 +459,41 @@ __global__ void test21(float *ptr1, float *ptr2, int step1, int step2) {
     idx2 += step2;
   }
 }
+
+// CHECK: void test22_dev(int *i, const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT:   item_ct1.barrier(sycl::access::fence_space::local_space);
+// CHECK-NEXT: }
+__device__ void test22_dev(int *i) {
+  __syncthreads();
+}
+
+__global__ void test22_k1(int *i) {
+  i[0] = 10;
+  test22_dev(i);
+}
+
+__global__ void test22_k2(int *i) {
+  test22_dev(i);
+  i[0] = 11;
+}
+
+// CHECK: void test23_dev(int *i, const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT:   /*
+// CHECK-NEXT:   DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+// CHECK-NEXT:   */
+// CHECK-NEXT:   item_ct1.barrier();
+// CHECK-NEXT: }
+__device__ void test23_dev(int *i) {
+  __syncthreads();
+}
+
+__global__ void test23_k1(int *i) {
+  i[0] = 10;
+  test23_dev(i);
+}
+
+__global__ void test23_k2(int *i) {
+  i[0] = 10;
+  test23_dev(i);
+  i[0] = 11;
+}
