@@ -2142,35 +2142,48 @@ void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
   return ArgumentAnalysis::analyzeExpr(Ctor);
 }
 
+std::pair<const clang::Expr *, bool /*NoInit*/>
+trackInitExprOfDRE(const DeclRefExpr *DRE) {
+  using namespace ast_matchers;
+  const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return {nullptr, false};
+  // VD must be local variable
+  if (VD->getKind() != Decl::Var && VD->getKind() != Decl::ParmVar)
+    return {nullptr, false};
+  const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
+  if (!FD)
+    return {nullptr, false};
+  const Stmt *VDContext = FD->getBody();
+  // VD's DRE should be used as rvalue
+  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(VD)).bind("DRE"));
+  auto MatchedResults =
+      match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
+  if (MatchedResults.size() > 1) {
+    for (const auto &Res : MatchedResults) {
+      const DeclRefExpr *RefDRE = Res.getNodeAs<DeclRefExpr>("DRE");
+      auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(RefDRE);
+      if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue)) {
+        return {nullptr, false};
+      }
+    }
+  }
+
+  if (!VD->hasInit())
+    return {nullptr, true};
+  return {VD->getInit(), false};
+}
+
 void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (!IsDim3Config)
     return ArgumentAnalysis::analyzeExpr(DRE);
 
-  using namespace ast_matchers;
-  const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
-  if (!VD)
+  auto Res = trackInitExprOfDRE(DRE);
+  if (Res.first) {
+    dispatch(Res.first);
+  } else {
     return ArgumentAnalysis::analyzeExpr(DRE);
-
-  // VD must be local variable and must have the same context with
-  // KernelCallExpr
-  if (VD->getKind() != Decl::Var)
-    return ArgumentAnalysis::analyzeExpr(DRE);
-  const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
-  if (!FD)
-    return ArgumentAnalysis::analyzeExpr(DRE);
-  const Stmt *VDContext = FD->getBody();
-
-  // VD's DRE should be only used once (as the config arg) in VDContext
-  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(VD)).bind("DRE"));
-  auto MatchedResults =
-      match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
-  if (MatchedResults.size() != 1)
-    return ArgumentAnalysis::analyzeExpr(DRE);
-
-  if (!VD->hasInit())
-    return ArgumentAnalysis::analyzeExpr(DRE);
-
-  dispatch(VD->getInit());
+  }
 
   if (IsTryToUseOneDimension) {
     // Insert member access expr at the end of DRE
@@ -2261,6 +2274,97 @@ void SideEffectsAnalysis::dispatch(const Stmt *Expression) {
   }
   return ExprAnalysis::dispatch(Expression);
 }
+
+void IndexAnalysis::dispatch(const Stmt *Expression) {
+  switch (Expression->getStmtClass()) {
+    ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
+    ANALYZE_EXPR(ImplicitCastExpr)
+    ANALYZE_EXPR(DeclRefExpr)
+    ANALYZE_EXPR(PseudoObjectExpr)
+    ANALYZE_EXPR(ParenExpr)
+    ANALYZE_EXPR(IntegerLiteral)
+  default:
+    ContainUnknownNode = true;
+    return ExprAnalysis::dispatch(Expression);
+  }
+}
+
+void IndexAnalysis::analyzeExpr(const UnaryOperator *UO) {
+  if (UO->getOpcode() != UnaryOperatorKind::UO_Plus &&
+      UO->getOpcode() != UnaryOperatorKind::UO_Minus) {
+    ContainUnknownNode = true;
+    return;
+  }
+  dispatch(UO->getSubExpr());
+}
+void IndexAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  if (!BO->isAdditiveOp() && !BO->isMultiplicativeOp()) {
+    ContainUnknownNode = true;
+    return;
+  }
+  if (!BO->isAdditiveOp())
+    ContainNonAdditiveOp.push(true);
+  dispatch(BO->getLHS());
+  dispatch(BO->getRHS());
+  if (!BO->isAdditiveOp())
+    ContainNonAdditiveOp.pop();
+}
+void IndexAnalysis::analyzeExpr(const ImplicitCastExpr *ICE) {
+  dispatch(ICE->getSubExpr());
+}
+void IndexAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  auto Res = trackInitExprOfDRE(DRE);
+  if (Res.first) {
+    dispatch(Res.first);
+  } else if (!Res.second) {
+    ContainUnknownNode = true;
+    return;
+  }
+}
+bool isIterationSpaceBuiltinVar(const PseudoObjectExpr *Node,
+                                const std::string &BuiltinNameRef,
+                                const std::string &FieldNameRef) {
+  using namespace ast_matchers;
+  if (!Node)
+    return false;
+  auto BuiltinMatcher = findAll(
+      memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
+                     declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
+                                                       "blockIdx"))))
+                         .bind("declRefExpr")))),
+                 hasParent(implicitCastExpr(
+                     hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
+          .bind("memberExpr"));
+  auto MatchedResults =
+      match(BuiltinMatcher, *Node, DpctGlobalInfo::getContext());
+  if (MatchedResults.size() != 1)
+    return false;
+  const auto Res = MatchedResults[0];
+  auto ME = Res.getNodeAs<MemberExpr>("memberExpr");
+  auto DRE = Res.getNodeAs<DeclRefExpr>("declRefExpr");
+  if (!ME || !DRE)
+    return false;
+  StringRef BuiltinName = DRE->getDecl()->getName();
+  StringRef FieldName = ME->getMemberDecl()->getName();
+  if (BuiltinName == BuiltinNameRef && FieldName == FieldNameRef)
+    return true;
+  return false;
+}
+void IndexAnalysis::analyzeExpr(const PseudoObjectExpr *POE) {
+  if (isIterationSpaceBuiltinVar(POE, "threadIdx", "__fetch_builtin_x")) {
+    if (!ContainNonAdditiveOp.empty()) {
+      // To ensure the difference between index and threadIdx.x is only a
+      // constant, non-additive Op cannot apply to threadIdx.x
+      IsThreadIdxXUnderNonAdditiveOp = true;
+    }
+    HasThreadIdxX = true;
+  }
+}
+void IndexAnalysis::analyzeExpr(const ParenExpr *PE) {
+  dispatch(PE->getSubExpr());
+}
+void IndexAnalysis::analyzeExpr(const IntegerLiteral *IL) { return; }
 
 } // namespace dpct
 } // namespace clang

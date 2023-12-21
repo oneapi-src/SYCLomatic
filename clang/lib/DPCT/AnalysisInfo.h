@@ -3809,6 +3809,7 @@ public:
   }
 
   bool ConstructGraphVisited = false;
+  unsigned int KernelCallBlockDim = 1;
 
   std::shared_ptr<CallFunctionExpr> findCallee(const CallExpr *C) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
