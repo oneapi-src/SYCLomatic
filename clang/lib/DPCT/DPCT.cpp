@@ -988,7 +988,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
-  DpctGlobalInfo::setDebugEnabled(EnableDebug);
+  DpctGlobalInfo::setCodePinEnabled(EnableCodePin);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setMigrateCmakeScriptEnabled(MigrateCmakeScript);
   DpctGlobalInfo::setMigrateCmakeScriptOnlyEnabled(MigrateCmakeScriptOnly);
@@ -1072,8 +1072,8 @@ int runDPCT(int argc, const char **argv) {
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_DebugEnabled,
-                     DpctGlobalInfo::isDebugEnabled(),
-                     EnableDebug.getNumOccurrences());
+                     DpctGlobalInfo::isCodePinEnabled(),
+                     EnableCodePin.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitClNamespace,
                      ExplicitClNamespace,
                      NoClNamespaceInline.getNumOccurrences());

@@ -243,8 +243,8 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ProcessAll
                  "Default: off."),
            llvm::cl::cat(DPCTCat), llvm::cl::location(ProcessAllFlag))
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableDebug, "enable-debug",
-           llvm::cl::desc("Generate instrumented CUDA and SYCL code for debug purpose."),
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCodePin, "enable-codepin",
+           llvm::cl::desc("EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verification purpose."),
            llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCTAD, "enable-ctad",
