@@ -122,7 +122,7 @@ public:
 
   inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
-
+  bool IsForCUDADebug = false;
 private:
   InsertPosition InsertPos = IP_Left;
   const TextModification *TM;

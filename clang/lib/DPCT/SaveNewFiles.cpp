@@ -533,7 +533,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedP
       FileBlockLevelFormatRangesMap.insert(
           std::make_pair(OutPath, BlockLevelFormatRanges));
 
-      tooling::applyAllReplacements(ReplSYCL[Entry.first], Rewrite, false);
+      tooling::applyAllReplacements(ReplSYCL[Entry.first], Rewrite);
 
       llvm::Expected<FileEntryRef> Result =
           Tool.getFiles().getFileRef(Entry.first);
@@ -655,8 +655,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedP
             calculateRangesWithBlockLevelFormatFlag(Entry.second);
         FileBlockLevelFormatRangesMap.insert(
             std::make_pair(DebugCUDAPath.getCanonicalPath().str(), BlockLevelFormatRanges));
-        tooling::applyAllReplacements(ReplCUDA[Entry.first], DebugCUDARewrite,
-                                      true);
+        tooling::applyAllReplacements(ReplCUDA[Entry.first], DebugCUDARewrite);
 
         llvm::Expected<FileEntryRef> Result =
             Tool.getFiles().getFileRef(Entry.first);

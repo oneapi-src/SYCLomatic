@@ -9,7 +9,7 @@
 //  Implements classes to support/store refactorings.
 //
 //===----------------------------------------------------------------------===//
-#include<iostream>
+
 #include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Basic/Diagnostic.h"
@@ -305,7 +305,7 @@ llvm::Error Replacements::add(const Replacement &R) {
   // insertion.
   auto I = Replaces.lower_bound(AtEnd);
   // If `I` starts at the same offset as `R`, `R` must be an insertion.
-  if (I != Replaces.end() && R.getOffset() == I->getOffset() && R.IsForCUDADebug == I->IsForCUDADebug) {
+  if (I != Replaces.end() && R.getOffset() == I->getOffset()) {
     assert(R.getLength() == 0);
     // `I` is also an insertion, `R` and `I` conflict.
     if (I->getLength() == 0) {
@@ -315,11 +315,8 @@ llvm::Error Replacements::add(const Replacement &R) {
           (I->getReplacementText() + R.getReplacementText()).str())
 #ifdef SYCLomatic_CUSTOMIZATION
 #ifndef NDEBUG
-        {
-          std::cout<<"insert"<<R.getReplacementText().str()<<std::endl;
-          return llvm::make_error<ReplacementError>(
+        return llvm::make_error<ReplacementError>(
             replacement_error::insert_conflict, R, *I);
-        }
       // If insertions are order-independent, we can merge them.
       Replacement NewR(
           R.getFilePath(), R.getOffset(), 0,
@@ -641,51 +638,46 @@ int CheckPointStageCore=0 /*CHECKPOINT_UNKNOWN*/;
 namespace clang {
 namespace tooling {
 
+bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
 #ifdef SYCLomatic_CUSTOMIZATION
-bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite,
-                          bool IsDebugCUDA) {
   // Add declared "volatile" to remove warning "variable ‘Result’ might be
   // clobbered by ‘longjmp’ or ‘vfork’ "
   volatile bool Result = true;
+#else
+  bool Result = true;
+#endif // SYCLomatic_CUSTOMIZATION
   for (auto I = Replaces.rbegin(), E = Replaces.rend(); I != E; ++I) {
-    if (I->IsForCUDADebug != IsDebugCUDA)
-      continue;
+#ifdef SYCLomatic_CUSTOMIZATION
     CheckPointStageCore = 5 /*CHECKPOINT_WRITE_OUT*/;
-    int Ret = SETJMP(CPApplyReps);
-    if (Ret != 0) {
-      // skip the a replacement, as meet fatal error when apply the
-      // replacement.
-      continue;
+    int Ret=SETJMP(CPApplyReps);
+    if(Ret != 0) {
+       //skip the a replacement, as meet fatal error when apply the replacement.
+       continue;
     }
+#endif // SYCLomatic_CUSTOMIZATION
     if (I->isApplicable()) {
+#ifdef SYCLomatic_CUSTOMIZATION
       try {
-        Result = I->apply(Rewrite) && Result;
+#endif // SYCLomatic_CUSTOMIZATION
+      Result = I->apply(Rewrite) && Result;
+#ifdef SYCLomatic_CUSTOMIZATION
       } catch (std::exception &e) {
-        std::string FaultMsg = "Error: dpct internal error. dpct tries to "
-                               "recover and write the migration result.\n";
+        std::string FaultMsg =
+            "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
         llvm::errs() << FaultMsg;
       }
-    } else {
-      Result = false;
-    }
-  }
-  // tag the checkpoint is invalid now.
-  CheckPointStageCore = 0 /*CHECKPOINT_UNKNOWN*/;
-  return Result;
-}
-#else
-bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
-  bool Result = true;
-  for (auto I = Replaces.rbegin(), E = Replaces.rend(); I != E; ++I) {
-    if (I->isApplicable()) {
-      Result = I->apply(Rewrite) && Result;
-    } else {
-      Result = false;
-    }
-  }
-  return Result;
-}
 #endif // SYCLomatic_CUSTOMIZATION
+    } else {
+      Result = false;
+    }
+  }
+#ifdef SYCLomatic_CUSTOMIZATION
+  //tag the checkpoint is invalid now.
+  CheckPointStageCore = 0 /*CHECKPOINT_UNKNOWN*/;
+#endif // SYCLomatic_CUSTOMIZATION
+  return Result;
+}
+
 llvm::Expected<std::string> applyAllReplacements(StringRef Code,
                                                 const Replacements &Replaces) {
   if (Replaces.empty())
