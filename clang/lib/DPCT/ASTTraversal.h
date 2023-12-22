@@ -1481,6 +1481,8 @@ private:
       emplaceTransformation(new InsertBeforeStmt(C->getArg(InsertArgIndex),
                                                  std::string(InsertedText)));
   }
+  void instrumentAddressToSizeRecordForCodePin(const CallExpr *C, int PtrArgLoc,
+                                               int AllocMemSizeLoc);
 };
 
 class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {

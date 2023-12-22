@@ -9801,6 +9801,36 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
   return false;
 }
 
+void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
+    const CallExpr *C, int PtrArgLoc, int AllocMemSizeLoc) {
+  if (DpctGlobalInfo::isCodePinEnabled()) {
+    auto PtrSizeLoc = Lexer::findLocationAfterToken(
+        C->getEndLoc(), tok::semi, DpctGlobalInfo::getSourceManager(),
+        DpctGlobalInfo::getContext().getLangOpts(), false);
+    emplaceTransformation(new InsertText(
+        PtrSizeLoc,
+        std::string(getNL()) + "dpct::experimental::getPointerSizeMap()[" +
+            getDrefName(C->getArg(PtrArgLoc)) + "] = " +
+            std::string(Lexer::getSourceText(
+                CharSourceRange::getTokenRange(
+                    C->getArg(AllocMemSizeLoc)->getSourceRange()),
+                DpctGlobalInfo::getSourceManager(), LangOptions())) +
+            ";",
+        0, true));
+    emplaceTransformation(new InsertText(
+        PtrSizeLoc,
+        std::string(getNL()) + "dpct::experimental::getPointerSizeMap()[" +
+            getDrefName(C->getArg(PtrArgLoc)) +
+            "] = " + ExprAnalysis::ref(C->getArg(AllocMemSizeLoc)) + ";",
+        0, false));
+    DpctGlobalInfo::getInstance().insertHeader(
+        C->getBeginLoc(), "dpct/debug/debug_helper.hpp", true);
+    DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
+                                               "dpct/debug/debug_helper.hpp");
+  }
+  return;
+}
+
 /// Transform cudaMallocxxx() to xxx = mallocxxx();
 void MemoryMigrationRule::mallocMigrationWithTransformation(
     SourceManager &SM, const CallExpr *C, const std::string &CallName,
@@ -9950,36 +9980,6 @@ void MemoryMigrationRule::mallocMigration(
   if (isPlaceholderIdxDuplicated(C))
     return;
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-
-  auto InsertPtrSize = [&](int PtrArgNum, int ArgMemSizeInBits) {
-    if (DpctGlobalInfo::isCodePinEnabled()) {
-      auto PtrSizeLoc = Lexer::findLocationAfterToken(
-          C->getEndLoc(), tok::semi, *Result.SourceManager,
-          DpctGlobalInfo::getContext().getLangOpts(), false);
-      emplaceTransformation(new InsertText(
-          PtrSizeLoc,
-          std::string(getNL()) + "dpct::experimental::getPointerSizeMap()[" +
-              getDrefName(C->getArg(PtrArgNum)) + "] = " +
-              std::string(Lexer::getSourceText(
-                  CharSourceRange::getTokenRange(
-                      C->getArg(ArgMemSizeInBits)->getSourceRange()),
-                  *Result.SourceManager, LangOptions())) +
-              ";",
-          0, true));
-      emplaceTransformation(new InsertText(
-          PtrSizeLoc,
-          std::string(getNL()) + "dpct::experimental::getPointerSizeMap()[" +
-              getDrefName(C->getArg(PtrArgNum)) +
-              "] = " + ExprAnalysis::ref(C->getArg(ArgMemSizeInBits)) + ";",
-          0, false));
-      DpctGlobalInfo::getInstance().insertHeader(
-          C->getBeginLoc(), "dpct/debug/debug_helper.hpp", true);
-      DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
-                                                 "dpct/debug/debug_helper.hpp");
-    }
-    return;
-  };
-
   if (Name == "cudaMalloc" || Name == "cuMemAlloc_v2") {
     if (USMLevel == UsmLevel::UL_Restricted) {
       // Leverage CallExprRewritter to migrate the USM version
@@ -10013,7 +10013,7 @@ void MemoryMigrationRule::mallocMigration(
       DpctGlobalInfo::addPriorityReplInfo(
           LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     }
-    InsertPtrSize(0,1);
+    instrumentAddressToSizeRecordForCodePin(C,0,1);
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
              Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch") {

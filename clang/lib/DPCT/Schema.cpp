@@ -6,6 +6,7 @@
 //
 //===---------------------------------------------------------------------===//
 #include "Schema.h"
+#include <cstddef>
 #include <deque>
 
 using namespace clang;
@@ -64,7 +65,7 @@ FieldSchema constructFieldSchema(const clang::FieldDecl *FD) {
 uint32_t getFieldTypeAlign(const FieldSchema &FS) {
   if (FS.ValTypeOfField == ValType::Pointer ||
       FS.ValTypeOfField == ValType::PointerOfPointer) {
-    return 8;
+    return sizeof(std::ptrdiff_t);
   } else if (FS.IsBasicType) {
     return FS.TypeSize;
   } else {
@@ -301,22 +302,6 @@ llvm::json::Object dpct::serializeVarSchemaToJson(const VarSchema &VS) {
   JObj.try_emplace("FilePath", VS.FileName);
   JObj.try_emplace("Location", VS.Location);
   return JObj;
-}
-
-// For test
-//  we need remove this function
-void dpct::serializeJsonArrayToFile(llvm::json::Array &&Arr,
-                                    const std::string &FilePath) {
-  std::error_code EC;
-  llvm::raw_fd_ostream FOut(FilePath, EC);
-  if (!EC) {
-    llvm::json::OStream(FOut, 0).value(std::move(Arr));
-    // FOut << llvm::json:: ;
-    FOut.close();
-  } else {
-    llvm::errs() << "Error opening file: " << EC.message() << "\n";
-    return;
-  }
 }
 
 std::vector<TypeSchema> dpct::getRelatedTypeSchema(

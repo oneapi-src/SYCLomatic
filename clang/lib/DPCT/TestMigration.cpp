@@ -68,10 +68,6 @@ void clang::dpct::TESTRule::runRule(
         }
       }
     }
-    serializeJsonArrayToFile(serializeSchemaToJsonArray(CTypeSchemaMap),
-                             "output_all_cuda.json");
-    serializeJsonArrayToFile(serializeSchemaToJsonArray(STypeSchemaMap),
-                             "output_all_sycl.json");
     auto DefRange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
     auto Length = Lexer::MeasureTokenLength(
         DefRange.getEnd(), SM,

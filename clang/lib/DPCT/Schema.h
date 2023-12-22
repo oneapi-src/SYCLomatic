@@ -30,16 +30,13 @@ enum ValType : int {
   PointerOfPointer,
 };
 
-inline std::ostream &operator<<(std::ostream &strm, ValType tt) {
-  const std::string VTStr[] = {"Scalar", "Array", "Pointer",
-                               "PointerOfPointer"};
-  return strm << VTStr[tt];
+inline const char *getValTypeStr(ValType tt) {
+  const char *VTStr[] = {"Scalar", "Array", "Pointer", "PointerOfPointer"};
+  return VTStr[tt];
 }
 
-inline std::string getValTypeStr(ValType tt) {
-  const std::string VTStr[] = {"Scalar", "Array", "Pointer",
-                               "PointerOfPointer"};
-  return VTStr[tt];
+inline std::ostream &operator<<(std::ostream &strm, ValType tt) {
+  return strm << getValTypeStr(tt);
 }
 
 struct FieldSchema {
@@ -118,9 +115,6 @@ llvm::json::Object serializeTypeSchemaToJson(const TypeSchema &TS);
 
 llvm::json::Object serializeVarSchemaToJson(const VarSchema &VS);
 
-void serializeJsonArrayToFile(llvm::json::Array &&Arr,
-                              const std::string &FilePath);
-
 std::vector<TypeSchema>
 getRelatedTypeSchema(const std::string &TypeName,
                      const std::map<std::string, TypeSchema> &TypeSchemaMap);
@@ -131,26 +125,24 @@ inline std::string jsonToString(llvm::json::Array Arr) {
   std::string Str;
   llvm::raw_string_ostream OS(Str);
   llvm::json::OStream(OS).value(std::move(Arr));
-  std::string Result = OS.str();
-  std::size_t found = Result.rfind("\"");
+  std::size_t found = Str.rfind("\"");
   while (found != std::string::npos) {
-    Result.insert(found, "\\");
-    found = Result.rfind("\"", found);
+    Str.insert(found, "\\");
+    found = Str.rfind("\"", found);
   }
-  return Result;
+  return Str;
 }
 
 inline std::string jsonToString(llvm::json::Object Obj) {
   std::string Str;
   llvm::raw_string_ostream OS(Str);
   llvm::json::OStream(OS).value(std::move(Obj));
-  std::string Result = OS.str();
-  std::size_t found = Result.rfind("\"");
+  std::size_t found = Str.rfind("\"");
   while (found != std::string::npos) {
-    Result.insert(found, "\\");
-    found = Result.rfind("\"", found);
+    Str.insert(found, "\\");
+    found = Str.rfind("\"", found);
   }
-  return Result;
+  return Str;
 }
 } // namespace dpct
 } // namespace clang
