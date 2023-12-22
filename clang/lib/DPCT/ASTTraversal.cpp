@@ -9016,6 +9016,10 @@ void ConstantMemVarMigrationRule::runRule(
       emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
       return;
     }
+    if (auto VTD = DpctGlobalInfo::findParent<VarTemplateDecl>(MemVar)) {
+      report(VTD->getBeginLoc(), Diagnostics::TEMPLATE_VAR, false,
+             MemVar->getName());
+    }
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
     if (!Info)
       return;
@@ -9476,6 +9480,10 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
     if (!Info)
       return;
 
+    if (auto VTD = DpctGlobalInfo::findParent<VarTemplateDecl>(MemVar)) {
+      report(VTD->getBeginLoc(), Diagnostics::TEMPLATE_VAR, false,
+             MemVar->getName());
+    }
     if (Info->isTypeDeclaredLocal()) {
       processTypeDeclaredLocal(MemVar, Info);
     } else {
