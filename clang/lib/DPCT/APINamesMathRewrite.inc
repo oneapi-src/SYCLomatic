@@ -5413,7 +5413,7 @@ MATH_API_REWRITER_DEVICE(
     "llmax",
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
-            "llmax", CALL(MapNames::getClNamespace(false, true) + "max",
+            "llmax", CALL(MapNames::getDpctNamespace() + "max",
                           CAST_IF_NOT_SAME(makeLiteral("long long"), ARG(0)),
                           CAST_IF_NOT_SAME(makeLiteral("long long"), ARG(1)))),
         EMPTY_FACTORY_ENTRY("llmax"), EMPTY_FACTORY_ENTRY("llmax"),
@@ -5423,7 +5423,7 @@ MATH_API_REWRITER_DEVICE(
     "llmin",
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
-            "llmin", CALL(MapNames::getClNamespace(false, true) + "min",
+            "llmin", CALL(MapNames::getDpctNamespace() + "min",
                           CAST_IF_NOT_SAME(makeLiteral("long long"), ARG(0)),
                           CAST_IF_NOT_SAME(makeLiteral("long long"), ARG(1)))),
         EMPTY_FACTORY_ENTRY("llmin"), EMPTY_FACTORY_ENTRY("llmin"),
@@ -5434,7 +5434,7 @@ MATH_API_REWRITER_DEVICE(
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
             "ullmax",
-            CALL(MapNames::getClNamespace(false, true) + "max",
+            CALL(MapNames::getDpctNamespace() + "max",
                  CAST_IF_NOT_SAME(makeLiteral("unsigned long long"), ARG(0)),
                  CAST_IF_NOT_SAME(makeLiteral("unsigned long long"), ARG(1)))),
         EMPTY_FACTORY_ENTRY("ullmax"), EMPTY_FACTORY_ENTRY("ullmax"),
@@ -5445,7 +5445,7 @@ MATH_API_REWRITER_DEVICE(
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
             "ullmin",
-            CALL(MapNames::getClNamespace(false, true) + "min",
+            CALL(MapNames::getDpctNamespace() + "min",
                  CAST_IF_NOT_SAME(makeLiteral("unsigned long long"), ARG(0)),
                  CAST_IF_NOT_SAME(makeLiteral("unsigned long long"), ARG(1)))),
         EMPTY_FACTORY_ENTRY("ullmin"), EMPTY_FACTORY_ENTRY("ullmin"),
@@ -5456,7 +5456,7 @@ MATH_API_REWRITER_DEVICE(
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
             "umax",
-            CALL(MapNames::getClNamespace(false, true) + "max",
+            CALL(MapNames::getDpctNamespace() + "max",
                  CAST_IF_NOT_SAME(makeLiteral("unsigned int"), ARG(0)),
                  CAST_IF_NOT_SAME(makeLiteral("unsigned int"), ARG(1)))),
         EMPTY_FACTORY_ENTRY("umax"), EMPTY_FACTORY_ENTRY("umax"),
@@ -5467,7 +5467,7 @@ MATH_API_REWRITER_DEVICE(
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
             "umin",
-            CALL(MapNames::getClNamespace(false, true) + "min",
+            CALL(MapNames::getDpctNamespace() + "min",
                  CAST_IF_NOT_SAME(makeLiteral("unsigned int"), ARG(0)),
                  CAST_IF_NOT_SAME(makeLiteral("unsigned int"), ARG(1)))),
         EMPTY_FACTORY_ENTRY("umin"), EMPTY_FACTORY_ENTRY("umin"),

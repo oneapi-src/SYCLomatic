@@ -343,20 +343,16 @@ unsigned long long int test_min(unsigned long long int a,
 // CHECK: unsigned long long int test_min(long long int a, unsigned long long int b) {
 // CHECK:   return dpct::min(a, b);
 // CHECK: }
-#ifndef BUILD_TEST
 unsigned long long int test_min(long long int a, unsigned long long int b) {
   return min(a, b);
 }
-#endif
 
 // CHECK: unsigned long long int test_min(unsigned long long int a, long long int b) {
 // CHECK:   return dpct::min(a, b);
 // CHECK: }
-#ifndef BUILD_TEST
 unsigned long long int test_min(unsigned long long int a, long long int b) {
   return min(a, b);
 }
-#endif
 
 // CHECK: float test_min(float a, float b) { return std::min(a, b); }
 float test_min(float a, float b) { return min(a, b); }
@@ -418,20 +414,16 @@ unsigned long long int test_max(unsigned long long int a,
 // CHECK: unsigned long long int test_max(long long int a, unsigned long long int b) {
 // CHECK:   return dpct::max(a, b);
 // CHECK: }
-#ifndef BUILD_TEST
 unsigned long long int test_max(long long int a, unsigned long long int b) {
   return max(a, b);
 }
-#endif
 
 // CHECK: unsigned long long int test_max(unsigned long long int a, long long int b) {
 // CHECK:   return dpct::max(a, b);
 // CHECK: }
-#ifndef BUILD_TEST
 unsigned long long int test_max(unsigned long long int a, long long int b) {
   return max(a, b);
 }
-#endif
 
 // CHECK: float test_max(float a, float b) { return std::max(a, b); }
 float test_max(float a, float b) { return max(a, b); }

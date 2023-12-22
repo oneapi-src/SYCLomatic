@@ -2189,12 +2189,12 @@ __global__ void testIntegerFunctions() {
   l = labs(l);
   ll = llabs(ll);
 
-  // CHECK: ll = sycl::max(ll, ll);
-  // CHECK-NEXT: ll = sycl::min(ll, (long long)l);
-  // CHECK-NEXT: ull = sycl::max((unsigned long long)ll, ull);
-  // CHECK-NEXT: ull = sycl::min((unsigned long long)ll, (unsigned long long)ll);
-  // CHECK-NEXT: u = sycl::max(u, u);
-  // CHECK-NEXT: u = sycl::min(u, u);
+  // CHECK: ll = dpct::max(ll, ll);
+  // CHECK-NEXT: ll = dpct::min(ll, (long long)l);
+  // CHECK-NEXT: ull = dpct::max((unsigned long long)ll, ull);
+  // CHECK-NEXT: ull = dpct::min((unsigned long long)ll, (unsigned long long)ll);
+  // CHECK-NEXT: u = dpct::max(u, u);
+  // CHECK-NEXT: u = dpct::min(u, u);
   ll = llmax(ll, ll);
   ll = llmin(ll, l);
   ull = ullmax(ll, ull);
