@@ -137,13 +137,13 @@ template <typename T> struct device_reference {
     value >>= input;
     return *this;
   };
+  operator T &() { return value; }
+  operator const T &() const { return value; }
   void swap(device_reference &input) {
     T tmp = (*this);
     *this = (input);
     input = (tmp);
   }
-  operator T &() { return value; }
-  operator const T &() const { return value; }
   T &value;
 };
 
