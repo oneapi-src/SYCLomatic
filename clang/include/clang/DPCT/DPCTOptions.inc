@@ -334,6 +334,11 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisab
                                      int(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath),
                                      "Use sycl::ext::intel::math functions from the libdevice library (provided by Intel(R) oneAPI\n"
                                      "DPC++/C++ Compiler) to migrate functions which have no mapping in the SYCL standard.",
+                                     false),
+             DPCT_OPT_ENUM("peer_access",
+                                     int(DPCPPExtensionsDefaultDisabled::ExtDD_PeerAccess),
+                                     "Use peer access extensions from the libdevice library (provided by Intel(R) oneAPI\n"
+                                     "DPC++/C++ Compiler) to migrate functions which have no mapping in the SYCL standard.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions to be used in migrated code.\n"

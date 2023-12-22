@@ -35,25 +35,28 @@ void foo() {
   // CHECK-NEXT: */
   cudaSetDeviceFlags(flags);
 
-  // CHECK: /*
+  // CHECK:   /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed because SYCL
-  // CHECK-NEXT: currently does not support memory access across peer devices.
+  // CHECK-NEXT: currently does not support memory access across peer devices. You can specify
+  // CHECK-NEXT: "--use-dpcpp-extensions=peer_access" to use the extensions to migrate
+  // CHECK-NEXT: cudaDeviceEnablePeerAccess.
   // CHECK-NEXT: */
   cudaDeviceEnablePeerAccess(peerDevice, flags);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed because SYCL
-  // CHECK-NEXT: currently does not support memory access across peer devices.
+  // CHECK-NEXT: currently does not support memory access across peer devices. You can specify
+  // CHECK-NEXT: "--use-dpcpp-extensions=peer_access" to use the extensions to migrate
+  // CHECK-NEXT: cudaDeviceDisablePeerAccess.
   // CHECK-NEXT: */
   cudaDeviceDisablePeerAccess(peerDevice);
 
-  // CHECK:      /*
-  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: Memory accessing across peer devices is an implementation-specific
-  // CHECK-NEXT: feature which may not be supported by some SYCL backends and compilers. The
-  // CHECK-NEXT: output parameter(s) are set to 0.
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceCanAccessPeer was removed because SYCL
+  // CHECK-NEXT: currently does not support memory access across peer devices. You can specify
+  // CHECK-NEXT: "--use-dpcpp-extensions=peer_access" to use the extensions to migrate
+  // CHECK-NEXT: cudaDeviceCanAccessPeer.
   // CHECK-NEXT: */
-
-  // CHECK-NEXT: *canAccessPeer = 0;
   cudaDeviceCanAccessPeer(canAccessPeer, device, peerDevice);
 
   // CHECK: /*
