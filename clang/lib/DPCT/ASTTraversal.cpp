@@ -301,8 +301,11 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       DefRange = getDefinitionRange(Range.getBegin(), Range.getEnd());
     }
 
-    dpct::DpctGlobalInfo::getExpansionRangeBeginMap()[getCombinedStrFromLoc(DefRange.getBegin())] =
-        SourceRange(MI->getReplacementToken(0).getLocation(), MI->getDefinitionEndLoc());
+    dpct::DpctGlobalInfo::getExpansionRangeBeginMap()[getCombinedStrFromLoc(
+        DefRange.getBegin())] =
+        std::make_pair(DpctGlobalInfo::getLocInfo(
+                           MI->getReplacementToken(0).getLocation()),
+                       DpctGlobalInfo::getLocInfo(MI->getDefinitionEndLoc()));
     if (dpct::DpctGlobalInfo::getMacroDefines().find(HashKey) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
       // Record all processed macro definition
