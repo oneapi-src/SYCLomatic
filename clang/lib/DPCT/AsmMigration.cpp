@@ -1463,6 +1463,54 @@ protected:
     return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax4");
   }
 
+  bool handle_bfe(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3)
+      return SYCLGenError();
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type || (Type->getKind() != InlineAsmBuiltinType::TK_s32 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_s64 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_u32 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_u64))
+      return SYCLGenError();
+    std::string TypeStr, Op[3];
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "bfe_safe<" << TypeStr << ">(" << Op[0]
+         << ", " << Op[1] << ", " << Op[2] << ')';
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
+  bool handle_bfi(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 4)
+      return SYCLGenError();
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type || (Type->getKind() != InlineAsmBuiltinType::TK_b32 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_b64))
+      return SYCLGenError();
+    std::string TypeStr, Op[4];
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+    for (int i = 0; i < 4; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "bfi_safe<" << TypeStr << ">("
+         << Op[0] << ", " << Op[1] << ", " << Op[2] << ", " << Op[3] << ')';
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
   bool handle_brev(const InlineAsmInstruction *Inst) override {
     if (Inst->getNumInputOperands() != 1)
       return SYCLGenError();
