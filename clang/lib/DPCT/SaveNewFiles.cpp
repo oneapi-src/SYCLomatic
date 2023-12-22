@@ -868,12 +868,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedP
     llvm::raw_os_ostream SchemaStreamCUDA(SchemaFileCUDA);
 
     std::string SchemaCUDA =
-        "static std::string type_schema_array=\"" +
-        jsonToString(serializeSchemaToJsonArray(CTypeSchemaMap)) + "\";\n" +
-        dpct::DpctGlobalInfo::getInstance().SchemaFileContentCUDA +
-        "\nclass Init {\npublic:\n  Init() {\n    "
-        "dpct::experimental::parse_type_schema_str(type_schema_array);\n  "
-        "}\n};\nstatic Init init;";
+        "static std::string type_schema_array=" +
+        jsonToString(serializeSchemaToJsonArray(CTypeSchemaMap)) + ";" +
+        getNL() + dpct::DpctGlobalInfo::getInstance().SchemaFileContentCUDA +
+        getNL() + "class Init {" + getNL() + "public:" + getNL() +
+        "  Init() {" + getNL() +
+        "    dpct::experimental::parse_type_schema_str(type_schema_array);" +
+        getNL() + "  }" + getNL() + "};" + getNL() + "static Init init;";
 
     SchemaStreamCUDA << SchemaCUDA;
 
@@ -896,12 +897,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedP
     }
     llvm::raw_os_ostream SchemaStreamSYCL(SchemaFileSYCL);
     std::string SchemaSYCL =
-        "static std::string type_schema_array=\"" +
-        jsonToString(serializeSchemaToJsonArray(STypeSchemaMap)) + "\";\n" +
-        dpct::DpctGlobalInfo::getInstance().SchemaFileContentSYCL +
-        "\nclass Init {\npublic:\n  Init() {\n    "
-        "dpct::experimental::parse_type_schema_str(type_schema_array);\n  "
-        "}\n};\nstatic Init init;";
+        "static std::string type_schema_array=" +
+        jsonToString(serializeSchemaToJsonArray(STypeSchemaMap)) + ";" +
+        getNL() + dpct::DpctGlobalInfo::getInstance().SchemaFileContentSYCL +
+        getNL() + "class Init {" + getNL() + "public:" + getNL() +
+        "  Init() {" + getNL() +
+        "    dpct::experimental::parse_type_schema_str(type_schema_array);" +
+        getNL() + "  }" + getNL() + "};" + getNL() + "static Init init;";
     SchemaStreamSYCL << SchemaSYCL;
   }
   processallOptionAction(InRoot, OutRoot);

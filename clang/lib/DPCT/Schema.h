@@ -125,11 +125,7 @@ inline std::string jsonToString(llvm::json::Array Arr) {
   std::string Str;
   llvm::raw_string_ostream OS(Str);
   llvm::json::OStream(OS).value(std::move(Arr));
-  std::size_t found = Str.rfind("\"");
-  while (found != std::string::npos) {
-    Str.insert(found, "\\");
-    found = Str.rfind("\"", found);
-  }
+  Str = "R\"(" + Str + ")\"";
   return Str;
 }
 
@@ -137,11 +133,7 @@ inline std::string jsonToString(llvm::json::Object Obj) {
   std::string Str;
   llvm::raw_string_ostream OS(Str);
   llvm::json::OStream(OS).value(std::move(Obj));
-  std::size_t found = Str.rfind("\"");
-  while (found != std::string::npos) {
-    Str.insert(found, "\\");
-    found = Str.rfind("\"", found);
-  }
+  Str = "R\"(" + Str + ")\"";
   return Str;
 }
 } // namespace dpct
