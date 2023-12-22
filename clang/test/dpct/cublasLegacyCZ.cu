@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasLegacyCZ %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasLegacyCZ/cublasLegacyCZ.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cublasLegacyCZ/cublasLegacyCZ.dp.cpp -o %T/cublasLegacyCZ/cublasLegacyCZ.dp.o %}
 
 #include <cstdio>
 #include <cublas.h>

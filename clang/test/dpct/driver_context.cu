@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -out-root %T/driver_context %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/driver_context/driver_context.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/driver_context/driver_context.dp.cpp -o %T/driver_context/driver_context.dp.o %}
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
@@ -21,12 +22,12 @@ int main(){
   CUcontext ctx2;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuInit was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuInit was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   cuInit(0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuInit was replaced with 0 because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuInit was replaced with 0 because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: MY_SAFE_CALL(0);
   MY_SAFE_CALL(cuInit(0));
@@ -38,7 +39,7 @@ int main(){
   cuDevicePrimaryCtxRetain(&ctx, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuDevicePrimaryCtxRelease_v2 was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuDevicePrimaryCtxRelease_v2 was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   cuDevicePrimaryCtxRelease(device);
 
@@ -64,12 +65,12 @@ int main(){
   MY_SAFE_CALL(cuCtxSynchronize());
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxDestroy_v2 was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxDestroy_v2 was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   cuCtxDestroy(ctx);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuCtxDestroy_v2 was replaced with 0 because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuCtxDestroy_v2 was replaced with 0 because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: MY_SAFE_CALL(0);
   MY_SAFE_CALL(cuCtxDestroy(ctx2));

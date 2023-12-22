@@ -74,6 +74,15 @@ config.substitutions.append(("%target_triple", config.target_triple))
 
 config.substitutions.append(("%PATH%", config.environment["PATH"]))
 
+#SYCLomatic Code
+dpct_header_path = os.path.join(config.clang_src_dir, "runtime", "dpct-rt", "include")
+if platform.system() == "Linux":
+    llvm_config.with_system_environment(['LD_LIBRARY_PATH','LIBRARY_PATH','CPATH'])
+    llvm_config.with_environment('CPATH', dpct_header_path, append_path=True)
+elif platform.system() == "Windows":
+    llvm_config.with_system_environment(['LIB','CPATH','INCLUDE'])
+    llvm_config.with_environment('INCLUDE', dpct_header_path, append_path=True)
+#End SYCLomatic
 
 # For each occurrence of a clang tool name, replace it with the full path to
 # the build directory holding that tool.  We explicitly specify the directories
@@ -331,43 +340,10 @@ if config.clang_vendor_uti:
 if config.have_llvm_driver:
     config.available_features.add("llvm-driver")
 
-
-def exclude_unsupported_files_for_aix(dirname):
-    for filename in os.listdir(dirname):
-        source_path = os.path.join(dirname, filename)
-        if os.path.isdir(source_path):
-            continue
-        f = open(source_path, "r", encoding="ISO-8859-1")
-        try:
-            data = f.read()
-            # 64-bit object files are not supported on AIX, so exclude the tests.
-            if (
-                any(
-                    option in data
-                    for option in (
-                        "-emit-obj",
-                        "-fmodule-format=obj",
-                        "-fintegrated-as",
-                    )
-                )
-                and "64" in config.target_triple
-            ):
-                config.excludes += [filename]
-        finally:
-            f.close()
-
-
-if "aix" in config.target_triple:
-    for directory in (
-        "/CodeGenCXX",
-        "/Misc",
-        "/Modules",
-        "/PCH",
-        "/Driver",
-        "/ASTMerge/anonymous-fields",
-        "/ASTMerge/injected-class-name-decl",
-    ):
-        exclude_unsupported_files_for_aix(config.test_source_root + directory)
+#SYCLomatic Code
+if "BUILD_LIT" in os.environ and os.environ["BUILD_LIT"] == 'TRUE':
+    config.available_features.add("build_lit")
+#End SYCLomatic
 
 # Some tests perform deep recursion, which requires a larger pthread stack size
 # than the relatively low default of 192 KiB for 64-bit processes on AIX. The

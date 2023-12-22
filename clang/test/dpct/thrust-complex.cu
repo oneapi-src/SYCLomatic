@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/thrust-complex %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-complex/thrust-complex.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-complex/thrust-complex.dp.cpp -o %T/thrust-complex/thrust-complex.dp.o %}
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <sycl/sycl.hpp>

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/module_kernel %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -ptx
 // RUN: FileCheck %s --match-full-lines --input-file %T/module_kernel/module_kernel.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/module_kernel/module_kernel.dp.cpp -o %T/module_kernel/module_kernel.dp.o %}
 
 #include "cuda.h"
 //CHECK: dpct::image_wrapper_base_p tex;
@@ -29,9 +30,10 @@ __constant__ unsigned int const_data[3] = {1, 2, 3};
 // CHECK-NEXT:     dpct::args_selector<2, 0, decltype(foo)> selector(kernelParams, extra);
 // CHECK-NEXT:     auto& k = selector.get<0>();
 // CHECK-NEXT:     auto& y = selector.get<1>();
+// CHECK-NEXT:     const_data.init(queue);
+// CHECK-EMPTY:
 // CHECK-NEXT:     queue.submit(
 // CHECK-NEXT:       [&](sycl::handler &cgh) {
-// CHECK-NEXT:         const_data.init(queue);
 // CHECK:              auto const_data_ptr_ct1 = const_data.get_ptr();
 // CHECK:              sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(localMemSize), cgh);
 // CHECK:              cgh.parallel_for(
@@ -72,17 +74,20 @@ extern "C" __global__ void foo2(float* k, float* y, int2 x=make_int2(1, 2)) {
 
 //CHECK: void goo(){
 //CHECK-NEXT:     float *a, *b;
-//CHECK-NEXT:     dpct::get_in_order_queue().submit(
-//CHECK-NEXT:       [&](sycl::handler &cgh) {
-//CHECK-NEXT:         const_data.init();
-//CHECK:         auto const_data_ptr_ct1 = const_data.get_ptr();
-//CHECK:         sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(0), cgh);
-//CHECK:         cgh.parallel_for(
-//CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
-//CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:             foo(a, b, item_ct1, dpct_local_acc_ct1.get_pointer(), const_data_ptr_ct1);
-//CHECK-NEXT:           });
-//CHECK-NEXT:       });
+//CHECK-NEXT:     {
+//CHECK-NEXT:       const_data.init();
+//CHECK-EMPTY:
+//CHECK-NEXT:       dpct::get_in_order_queue().submit(
+//CHECK-NEXT:         [&](sycl::handler &cgh) {
+//CHECK:                 auto const_data_ptr_ct1 = const_data.get_ptr();
+//CHECK:                 sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(0), cgh);
+//CHECK:                 cgh.parallel_for(
+//CHECK-NEXT:              sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
+//CHECK-NEXT:              [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:                foo(a, b, item_ct1, dpct_local_acc_ct1.get_pointer(), const_data_ptr_ct1);
+//CHECK-NEXT:              });
+//CHECK-NEXT:          });
+//CHECK-NEXT:     }
 //CHECK-NEXT: }
 void goo(){
     float *a, *b;

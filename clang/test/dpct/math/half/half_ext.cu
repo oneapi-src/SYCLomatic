@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --use-dpcpp-extensions=intel_device_math -out-root %T/math/half/half_ext %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/math/half/half_ext/half_ext.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/math/half/half_ext/half_ext.dp.cpp -o %T/math/half/half_ext/half_ext.dp.o %}
 
 #include "cuda_fp16.h"
 
@@ -116,7 +117,7 @@ __global__ void kernelFuncHalfConversion() {
   h = __ll2half_rz(ll);
   // CHECK: f = h2[0];
   f = __low2float(h2);
-  // CHECK: f = *(&h2)[0];
+  // CHECK: f = (*(&h2))[0];
   f = __low2float(*(&h2));
   // CHECK: h = h2[0];
   h = __low2half(h2);

@@ -1,0 +1,1 @@
+dpct_compile_sycl_code(cuda_ptx_file kernel.dp.cpp)

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/nccl_error %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/nccl_error/nccl_error.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/nccl_error/nccl_error.dp.cpp -o %T/nccl_error/nccl_error.dp.o %}
 // CHECK: #include <dpct/ccl_utils.hpp>
 #include "nccl.h"
 
@@ -41,11 +42,11 @@ int main(){
   // CHECK-NEXT: "ncclGetErrorString is not supported"/*ncclGetErrorString(res)*/;
   ncclGetErrorString(res);
   // CHECK:     /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclGetLastError was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclGetLastError was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   ncclGetLastError(NULL);
   // CHECK:     /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclCommGetAsyncError was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclCommGetAsyncError was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   ncclCommGetAsyncError(comm,&res);
   // CHECK: if (res == 0) {

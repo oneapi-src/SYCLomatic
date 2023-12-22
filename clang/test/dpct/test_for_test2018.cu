@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/test_for_test2018 %s --cuda-include-path="%cuda-path/include" --report-type=stats -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/test_for_test2018/test_for_test2018.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/test_for_test2018/test_for_test2018.dp.cpp -o %T/test_for_test2018/test_for_test2018.dp.o %}
 #include <stdio.h>
 
 // CHECK: void foo(){}

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/api-name-migrated %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/api-name-migrated/api-name-migrated.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/api-name-migrated/api-name-migrated.dp.cpp -o %T/api-name-migrated/api-name-migrated.dp.o %}
 
 #include <cuda_runtime.h>
 

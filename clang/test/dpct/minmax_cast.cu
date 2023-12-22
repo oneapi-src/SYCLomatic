@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/minmax_cast %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/minmax_cast/minmax_cast.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/minmax_cast/minmax_cast.dp.cpp -o %T/minmax_cast/minmax_cast.dp.o %}
 
 #include <algorithm>
 #include <cmath>

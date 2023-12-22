@@ -1178,6 +1178,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     if (!RTVersionValue.empty())
       OS << "#define DPCT_COMPAT_RT_VERSION " << RTVersionValue << getNL();
+    if (!CCLVerValue.empty())
+      OS << "#define DPCT_COMPAT_CCL_VERSION " << CCLVerValue << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
     concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
     HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
@@ -1454,7 +1456,7 @@ void KernelCallExpr::addDevCapCheckStmt() {
       OS << ", " << AspectList[i];
     }
     OS << "});";
-    OuterStmts.emplace_back(OS.str());
+    OuterStmts.OthersList.emplace_back(OS.str());
   }
 }
 
@@ -1496,7 +1498,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   }
   if (!VI->isShared()) {
     requestFeature(HelperFeatureEnum::device_ext);
-    SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
+    OuterStmts.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
     if (VI->isLocal()) {
       SubmitStmtsList.MemoryList.emplace_back(
           VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
@@ -1505,7 +1507,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
       // Global variable definition and global variable reference are not in the
       // same file, and are not a share variable, insert extern variable
       // declaration.
-      SubmitStmtsList.ExternList.emplace_back(VI->getExternGlobalVarDecl());
+      OuterStmts.ExternList.emplace_back(VI->getExternGlobalVarDecl());
     }
   }
   VI->appendAccessorOrPointerDecl(
@@ -1622,8 +1624,7 @@ void KernelCallExpr::print(KernelPrinter &Printer) {
       Block = std::move(Printer.block(true));
     else
       Block = std::move(Printer.block(false));
-    for (auto &S : OuterStmts)
-      Printer.line(S.StmtStr);
+    OuterStmts.print(Printer);
   }
   if (NeedLambda) {
     Block = std::move(Printer.block(true));
@@ -2022,6 +2023,7 @@ KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath, const Func
 void KernelCallExpr::setKernelCallDim() {
   if (auto Ptr = getFuncInfo()) {
     Ptr->setKernelInvoked();
+    Ptr->KernelCallBlockDim = std::max(Ptr->KernelCallBlockDim, BlockDim);
     if (GridDim == 1 && BlockDim == 1) {
       if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
         Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);
@@ -3835,6 +3837,18 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   case clang::dpct::MemVarInfo::Global: {
     if (isShared())
       return "";
+    if ((getAttr() == MemVarInfo::VarAttrKind::Constant) &&
+        !isUseHelperFunc()) {
+      std::string Dims;
+      const static std::string NullString;
+      for (auto &Dim : getType()->getRange()) {
+        Dims = Dims + "[" + Dim.getSize() + "]";
+      }
+      return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
+                         getConstVarName() + Dims,
+                         PointerAsArray ? "" : getInitArguments(NullString),
+                         ";");
+    }
     return getMemoryDecl();
   }
   }

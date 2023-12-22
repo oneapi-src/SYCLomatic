@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cufft-refine-setstream %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cufft-refine-setstream/cufft-refine-setstream.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cufft-refine-setstream/cufft-refine-setstream.dp.cpp -o %T/cufft-refine-setstream/cufft-refine-setstream.dp.o %}
 #include "cufft.h"
 
 void foo1() {

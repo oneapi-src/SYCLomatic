@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/kernel-function-info %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel-function-info/kernel-function-info.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel-function-info/kernel-function-info.dp.cpp -o %T/kernel-function-info/kernel-function-info.dp.o %}
 
 //CHECK: template<class T>
 //CHECK-NEXT: void testTemplateKernel(T *data)

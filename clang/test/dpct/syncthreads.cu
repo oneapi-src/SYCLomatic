@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/syncthreads %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads/syncthreads.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/syncthreads/syncthreads.dp.cpp -o %T/syncthreads/syncthreads.dp.o %}
 
 #include "cuda_fp16.h"
 
@@ -274,7 +275,10 @@ __global__ void test11(float *a_ptr, float *b_ptr,
     }
     // CHECK: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function "test11" is called in a multidimensional kernel.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: (item_ct1.get_local_range(2) < j_scalar) ? item_ct1.barrier(sycl::access::fence_space::local_space) : item_ct1.barrier();
     // CHECK-NEXT: float var8 = 0;
     __syncthreads();
     float var8 = 0;
@@ -444,4 +448,17 @@ __global__ void test20() {
   // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
   recursive(10);
   __syncthreads();
+}
+
+__global__ void test21(float *ptr1, float *ptr2, int step1, int step2) {
+  int idx1 = blockDim.x * blockIdx.x + threadIdx.x;
+  int idx2 = blockDim.x * blockIdx.x + threadIdx.x;
+  for (int i = 0; i < 10; i++) {
+    ptr2[idx1] = 123;
+    idx1 += step1;
+    // CHECK: (item_ct1.get_local_range(2) < std::min(step1, step2)) ? item_ct1.barrier(sycl::access::fence_space::local_space) : item_ct1.barrier();
+    __syncthreads();
+    ptr1[idx2] = 456;
+    idx2 += step2;
+  }
 }

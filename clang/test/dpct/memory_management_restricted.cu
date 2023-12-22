@@ -2,6 +2,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=restricted -out-root %T/memory_management_restricted %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management_restricted/memory_management_restricted.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/memory_management_restricted/memory_management_restricted.dp.cpp -o %T/memory_management_restricted/memory_management_restricted.dp.o %}
 
 #include <cuda_runtime.h>
 #include <cuda.h>

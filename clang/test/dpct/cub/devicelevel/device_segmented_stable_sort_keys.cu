@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.2, v11.4
 // RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/device_segmented_stable_sort_keys %S/device_segmented_stable_sort_keys.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/devicelevel/device_segmented_stable_sort_keys/device_segmented_stable_sort_keys.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/device_segmented_stable_sort_keys/device_segmented_stable_sort_keys.dp.cpp -o %T/devicelevel/device_segmented_stable_sort_keys/device_segmented_stable_sort_keys.dp.o %}
 
 // CHECK:#include <oneapi/dpl/execution>
 // CHECK:#include <oneapi/dpl/algorithm>
@@ -18,7 +19,7 @@ cub::DoubleBuffer<int> d_keys(d_keys_in, d_keys_out);
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 // CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   /*
-// CHECK:   DPCT1026:0: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this call is redundant in SYCL.
+// CHECK:   DPCT1026:0: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this functionality is redundant in SYCL.
 // CHECK:   */
 // CHECK:   dpct::segmented_sort_keys(oneapi::dpl::execution::device_policy(q_ct1), d_keys_in, d_keys_out, n, num_segments, d_offsets, d_offsets + 1, false);
 // CHECK: }
@@ -34,7 +35,7 @@ void test1(void) {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 // CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   /*
-// CHECK:   DPCT1026:1: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this call is redundant in SYCL.
+// CHECK:   DPCT1026:1: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this functionality is redundant in SYCL.
 // CHECK:   */
 // CHECK:   dpct::segmented_sort_keys(oneapi::dpl::execution::device_policy(q_ct1), d_keys, n, num_segments, d_offsets, d_offsets + 1, false, true);
 // CHECK: }
@@ -51,7 +52,7 @@ void test2(void) {
 // CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   dpct::queue_ptr s = &q_ct1;
 // CHECK:   /*
-// CHECK:   DPCT1026:2: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this call is redundant in SYCL.
+// CHECK:   DPCT1026:2: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this functionality is redundant in SYCL.
 // CHECK:   */
 // CHECK:   dpct::segmented_sort_keys(oneapi::dpl::execution::device_policy(*s), d_keys, n, num_segments, d_offsets, d_offsets + 1, false, true);
 // CHECK: }
@@ -67,7 +68,7 @@ void test3(void) {
 // CHECK: void test4(void) {
 // CHECK:   dpct::queue_ptr s = (dpct::queue_ptr)(void *)(uintptr_t)0xFF;
 // CHECK:   /*
-// CHECK:   DPCT1026:3: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this call is redundant in SYCL.
+// CHECK:   DPCT1026:3: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this functionality is redundant in SYCL.
 // CHECK:   */
 // CHECK:   dpct::segmented_sort_keys(oneapi::dpl::execution::device_policy(*s), d_keys_in, d_keys_out, n, num_segments, d_offsets, d_offsets + 1, false);
 // CHECK: }
@@ -84,7 +85,7 @@ void test4(void) {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 // CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   /*
-// CHECK:   DPCT1026:4: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this call is redundant in SYCL.
+// CHECK:   DPCT1026:4: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this functionality is redundant in SYCL.
 // CHECK:   */
 // CHECK:   dpct::segmented_sort_keys(oneapi::dpl::execution::device_policy(q_ct1), d_keys_in, d_keys_out, n, num_segments, d_offsets, d_offsets + 1, true);
 // CHECK: }
@@ -100,7 +101,7 @@ void test5(void) {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 // CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   /*
-// CHECK:   DPCT1026:5: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this call is redundant in SYCL.
+// CHECK:   DPCT1026:5: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this functionality is redundant in SYCL.
 // CHECK:   */
 // CHECK:   dpct::segmented_sort_keys(oneapi::dpl::execution::device_policy(q_ct1), d_keys, n, num_segments, d_offsets, d_offsets + 1, true, true);
 // CHECK: }
@@ -117,7 +118,7 @@ void test6(void) {
 // CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   dpct::queue_ptr s = &q_ct1;
 // CHECK:   /*
-// CHECK:   DPCT1026:6: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this call is redundant in SYCL.
+// CHECK:   DPCT1026:6: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this functionality is redundant in SYCL.
 // CHECK:   */
 // CHECK:   dpct::segmented_sort_keys(oneapi::dpl::execution::device_policy(*s), d_keys, n, num_segments, d_offsets, d_offsets + 1, true, true);
 // CHECK: }
@@ -133,7 +134,7 @@ void test7(void) {
 // CHECK: void test8(void) {
 // CHECK:   dpct::queue_ptr s = (dpct::queue_ptr)(void *)(uintptr_t)0xFF;;
 // CHECK:   /*
-// CHECK:   DPCT1026:7: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this call is redundant in SYCL.
+// CHECK:   DPCT1026:7: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this functionality is redundant in SYCL.
 // CHECK:   */
 // CHECK:   dpct::segmented_sort_keys(oneapi::dpl::execution::device_policy(*s), d_keys_in, d_keys_out, n, num_segments, d_offsets, d_offsets + 1, true);
 // CHECK: }

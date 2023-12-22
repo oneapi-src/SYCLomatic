@@ -50,6 +50,11 @@ thrustFactory("thrust::reverse",
               {{3,PolicyState::HasPolicy,2,"oneapi::dpl::reverse", HelperFeatureEnum::none },
                {2,PolicyState::NoPolicy ,2,"oneapi::dpl::reverse", HelperFeatureEnum::none }}),
 
+// thrust::reverse_copy
+thrustFactory("thrust::reverse_copy",
+              {{4,PolicyState::HasPolicy,3,"oneapi::dpl::reverse_copy", HelperFeatureEnum::none },
+               {3,PolicyState::NoPolicy ,3,"oneapi::dpl::reverse_copy", HelperFeatureEnum::none }}),
+
 // thrust::find_if
 thrustFactory("thrust::find_if",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::find_if", HelperFeatureEnum::none },
@@ -87,7 +92,9 @@ thrustFactory("thrust::mismatch",
 // thrust::gather_if
 thrustFactory("thrust::gather_if",
               {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy ,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext}}),
+               {6,PolicyState::NoPolicy ,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext},
+               {6,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy ,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext}}),
 
 // thrust::merge_by_key
 thrustFactory("thrust::merge_by_key",
@@ -1006,7 +1013,9 @@ CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNames
 // thrust::scatter_if
 thrustFactory("thrust::scatter_if",
               {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext}}),
+               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
+               {6,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext}}),
 
 // thrust::uninitialized_copy(
 thrustFactory("thrust::uninitialized_copy",
@@ -1165,3 +1174,6 @@ CALL_FACTORY_ENTRY("thrust::tie", CALL("std::tie",ARG(0), ARG(1)))
 
 // thrust::make_tuple
 CALL_FACTORY_ENTRY("thrust::make_tuple", CALL("std::make_tuple",ARG(0), ARG(1)))
+
+// thrust::return_temporary_buffer
+CALL_FACTORY_ENTRY("thrust::return_temporary_buffer", CALL(MapNames::getDpctNamespace() + "release_temporary_allocation",ARG(0), ARG(1)))

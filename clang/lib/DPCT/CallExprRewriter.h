@@ -341,7 +341,7 @@ public:
 
   std::optional<std::string> rewrite() override {
     std::string Msg =
-        Message.empty() ? "this call is redundant in SYCL." : Message;
+        Message.empty() ? "this functionality is redundant in SYCL." : Message;
     if (IsAssigned) {
       report(Diagnostics::FUNC_CALL_REMOVED_0, false, CalleeName, Msg);
       return std::optional<std::string>("0");
@@ -634,6 +634,11 @@ void printWithParens(StreamT &Stream,
                      std::pair<const CallExpr *, const Expr *> P) {
   ArgumentAnalysis AA;
   printWithParens(Stream, AA, P);
+}
+
+template <class StreamT, class T>
+void printWithParens(StreamT &Stream, const T &Val) {
+  print(Stream, Val);
 }
 
 template <class StreamT> void printMemberOp(StreamT &Stream, bool IsArrow) {
@@ -1001,7 +1006,7 @@ public:
   ArraySubscriptExprPrinter(const BaseT &base, ArgValueT &&Arg)
       : Base(base), ArgValue(std::forward<ArgValueT>(Arg)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, Base);
+    printWithParens(Stream, Base);
     Stream << "[";
     dpct::print(Stream, ArgValue);
     Stream << "]";

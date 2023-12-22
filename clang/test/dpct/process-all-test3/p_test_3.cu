@@ -1,9 +1,11 @@
 // RUN: dpct --format-range=none  -in-root=%S -out-root=%T --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: FileCheck --input-file %T/p_test_3.dp.cpp --match-full-lines %S/p_test_3.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/p_test_3.dp.cpp -o %T/p_test_3.dp.o %}
 // RUN: FileCheck --match-full-lines --input-file %T/readme_3.txt %T/readme_3.txt
 
 // RUN: FileCheck --match-full-lines --input-file %T/standalone_3.dp.cpp %S/standalone_3.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/standalone_3.dp.cpp -o %T/standalone_3.dp.o %}
 
 #include "cuda_runtime.h"
 #include <stdio.h>

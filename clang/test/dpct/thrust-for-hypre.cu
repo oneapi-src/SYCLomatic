@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust-for-hypre %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust-for-hypre/thrust-for-hypre.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-for-hypre/thrust-for-hypre.dp.cpp -o %T/thrust-for-hypre/thrust-for-hypre.dp.o %}
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/logical.h>

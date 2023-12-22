@@ -2,6 +2,7 @@
 // RUN: cd %T
 // RUN: dpct -out-root %T/cufft-func-ptr cufft-func-ptr.cu --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cufft-func-ptr/cufft-func-ptr.dp.cpp --match-full-lines cufft-func-ptr.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/cufft-func-ptr/cufft-func-ptr.dp.cpp -o %T/cufft-func-ptr/cufft-func-ptr.dp.o %}
 #include <cufft.h>
 
 //CHECK:static int (*pt2CufftExec)(dpct::fft::fft_engine_ptr, sycl::double2 *,

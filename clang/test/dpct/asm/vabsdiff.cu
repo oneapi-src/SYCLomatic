@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/vabsdiff %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/vabsdiff/vabsdiff.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/vabsdiff/vabsdiff.dp.cpp -o %T/vabsdiff/vabsdiff.dp.o %}
 
 
 // clang-format off

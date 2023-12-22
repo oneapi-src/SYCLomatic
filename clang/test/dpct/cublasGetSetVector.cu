@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -extra-arg-before=-std=c++14 -out-root %T/cublasGetSetVector %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasGetSetVector/cublasGetSetVector.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cublasGetSetVector/cublasGetSetVector.dp.cpp -o %T/cublasGetSetVector/cublasGetSetVector.dp.o %}
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>

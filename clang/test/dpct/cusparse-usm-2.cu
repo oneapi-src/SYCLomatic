@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --out-root %T/cusparse-usm-2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusparse-usm-2/cusparse-usm-2.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusparse-usm-2/cusparse-usm-2.dp.cpp -o %T/cusparse-usm-2/cusparse-usm-2.dp.o %}
 #include <cstdio>
 #include <cusparse_v2.h>
 #include <cuda_runtime.h>
@@ -12,7 +13,7 @@ const int* csrColIndA;
 const double* x;
 double beta;
 double* y;
-//CHECK: sycl::queue* handle;
+//CHECK: dpct::queue_ptr handle;
 //CHECK-NEXT: oneapi::mkl::transpose transA = oneapi::mkl::transpose::nontrans;
 //CHECK-NEXT: std::shared_ptr<dpct::sparse::matrix_info> descrA;
 cusparseHandle_t handle;
@@ -27,10 +28,10 @@ int foo(int aaaaa){
 
   //CHECK: int mode = 1;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseGetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseGetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetPointerMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetPointerMode was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   cusparsePointerMode_t mode = CUSPARSE_POINTER_MODE_DEVICE;
   cusparseGetPointerMode(handle, &mode);
@@ -76,7 +77,7 @@ int foo(int aaaaa){
   cusparseStatus_t status;
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyMatDescr was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyMatDescr was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: handle = nullptr;
   cusparseDestroyMatDescr(descrA);

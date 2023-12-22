@@ -45,9 +45,10 @@ enum class CudaVersion {
   CUDA_121,
 #ifdef SYCLomatic_CUSTOMIZATION
   CUDA_122,
-  FULLY_SUPPORTED = CUDA_122,
+  CUDA_123,
+  FULLY_SUPPORTED = CUDA_123,
   PARTIALLY_SUPPORTED =
-      CUDA_122, // Partially supported. Proceed with a warning.
+      CUDA_123, // Partially supported. Proceed with a warning.
 #else
   FULLY_SUPPORTED = CUDA_115,
   PARTIALLY_SUPPORTED =
@@ -127,6 +128,8 @@ enum class CudaArch {
   GFX1103,
   GFX1150,
   GFX1151,
+  GFX1200,
+  GFX1201,
   Generic, // A processor model named 'generic' if the target backend defines a
            // public one.
   LAST,
