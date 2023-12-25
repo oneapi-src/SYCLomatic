@@ -140,6 +140,25 @@ inline double cast_ints_to_double(int high32, int low32) {
 template <typename T> inline T reverse_bits(T a) {
   static_assert(std::is_unsigned<T>::value && std::is_integral<T>::value,
                 "unsigned integer required");
+#ifdef __has_builtin
+#if __has_builtin(__builtin_bitreverse8)
+  if constexpr (std::is_same_v<T, uint8_t>)
+    return __builtin_bitreverse8(a);
+#endif
+#if __has_builtin(__builtin_bitreverse16)
+  if constexpr (std::is_same_v<T, uint16_t>)
+    return __builtin_bitreverse16(a);
+#endif
+#if __has_builtin(__builtin_bitreverse32)
+  if constexpr (std::is_same_v<T, uint32_t>)
+    return __builtin_bitreverse32(a);
+#endif
+#if __has_builtin(__builtin_bitreverse64)
+  if constexpr (std::is_same_v<T, uint64_t>)
+    return __builtin_bitreverse64(a);
+#endif
+#endif
+
   if (!a)
     return 0;
   T mask = 0;
