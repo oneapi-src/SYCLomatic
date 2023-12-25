@@ -9,7 +9,7 @@
 #include "BarrierFenceSpaceAnalyzer.h"
 #include "llvm/Support/Casting.h"
 #include <algorithm>
-//#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+
 using namespace llvm;
 
 void clang::dpct::BarrierFenceSpaceAnalyzerResult::merge(
