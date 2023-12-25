@@ -415,35 +415,29 @@ inline unsigned int funnelshift_rc(unsigned int low, unsigned int high,
 /// cbrt function wrapper.
 template <typename T> inline T cbrt(T val) { return sycl::cbrt((T)val); }
 
-// min function overloads.
 template <typename T1, typename T2>
 std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
-                 decltype(T1(0) + T2(0))>
+                 std::common_type_t<T1, T2>>
 min(T1 a, T2 b) {
-  return sycl::min(static_cast<decltype(a + b)>(a),
-                   static_cast<decltype(a + b)>(b));
+  return sycl::min<std::common_type_t<T1, T2>>(a, b);
 }
 template <typename T1, typename T2>
 std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
-                 decltype(T1(0) + T2(0))>
+                 std::common_type_t<T1, T2>>
 min(T1 a, T2 b) {
-  return sycl::fmin(static_cast<decltype(a + b)>(a),
-                    static_cast<decltype(a + b)>(b));
+  return sycl::fmin<std::common_type_t<T1, T2>>(a, b);
 }
-// max function overloads.
 template <typename T1, typename T2>
 std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
-                 decltype(T1(0) + T2(0))>
+                 std::common_type_t<T1, T2>>
 max(T1 a, T2 b) {
-  return sycl::max(static_cast<decltype(a + b)>(a),
-                   static_cast<decltype(a + b)>(b));
+  return sycl::max<std::common_type_t<T1, T2>>(a, b);
 }
 template <typename T1, typename T2>
 std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
-                 decltype(T1(0) + T2(0))>
+                 std::common_type_t<T1, T2>>
 max(T1 a, T2 b) {
-  return sycl::fmax(static_cast<decltype(a + b)>(a),
-                    static_cast<decltype(a + b)>(b));
+  return sycl::fmax<std::common_type_t<T1, T2>>(a, b);
 }
 
 // pow functions overload.
