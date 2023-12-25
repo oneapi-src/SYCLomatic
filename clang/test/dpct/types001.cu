@@ -372,8 +372,8 @@ int main(int argc, char **argv) {
   a = sizeof(blashandle);
   a = sizeof blashandle;
 
-  //CHECK:sycl::queue *solverdnhandle;
-  //CHECK-NEXT:a = sizeof(sycl::queue *);
+  //CHECK:dpct::queue_ptr solverdnhandle;
+  //CHECK-NEXT:a = sizeof(dpct::queue_ptr);
   //CHECK-NEXT:a = sizeof(solverdnhandle);
   //CHECK-NEXT:a = sizeof solverdnhandle;
   cusolverDnHandle_t solverdnhandle;
