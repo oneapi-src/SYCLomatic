@@ -73,7 +73,13 @@ FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
-std::unordered_map<std::string, SourceRange> DpctGlobalInfo::ExpansionRangeBeginMap;
+std::unordered_map<
+    std::string,
+    std::pair<std::pair<clang::tooling::UnifiedPath /*begin file name*/,
+                        unsigned int /*begin offset*/>,
+              std::pair<clang::tooling::UnifiedPath /*end file name*/,
+                        unsigned int /*end offset*/>>>
+    DpctGlobalInfo::ExpansionRangeBeginMap;
 bool DpctGlobalInfo::EnablepProfilingFlag = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
@@ -1178,6 +1184,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     if (!RTVersionValue.empty())
       OS << "#define DPCT_COMPAT_RT_VERSION " << RTVersionValue << getNL();
+    if (!CCLVerValue.empty())
+      OS << "#define DPCT_COMPAT_CCL_VERSION " << CCLVerValue << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
     concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
     HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
@@ -2021,6 +2029,7 @@ KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath, const Func
 void KernelCallExpr::setKernelCallDim() {
   if (auto Ptr = getFuncInfo()) {
     Ptr->setKernelInvoked();
+    Ptr->KernelCallBlockDim = std::max(Ptr->KernelCallBlockDim, BlockDim);
     if (GridDim == 1 && BlockDim == 1) {
       if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
         Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);

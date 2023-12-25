@@ -16,7 +16,7 @@ import argparse
 
 cur_file_dir = os.path.dirname(os.path.realpath(__file__))
 
-runtime_header_src_files_dir = os.path.join(cur_file_dir, "include")
+runtime_header_src_files_dir = os.path.join(cur_file_dir, "include", "dpct")
 
 def exit_script():
     sys.exit()

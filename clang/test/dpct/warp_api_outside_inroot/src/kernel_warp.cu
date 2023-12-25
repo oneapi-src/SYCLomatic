@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --usm-level=none --in-root=%S --out-root=%T/out --analysis-scope-path=%S/.. %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/out/kernel_warp.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/out/kernel_warp.dp.cpp -o %T/out/kernel_warp.dp.o %}
 // out/
 // ├── kernel_warp.dp.cpp
 // └── MainSourceFiles.yaml

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/multi_placeholder_in_macro %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -ptx
 // RUN: FileCheck %s --input-file %T/multi_placeholder_in_macro/multi_placeholder_in_macro.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/multi_placeholder_in_macro/multi_placeholder_in_macro.dp.cpp -o %T/multi_placeholder_in_macro/multi_placeholder_in_macro.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>

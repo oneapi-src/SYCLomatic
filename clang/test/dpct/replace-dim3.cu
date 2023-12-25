@@ -2,6 +2,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/replace-dim3 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/replace-dim3/replace-dim3.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/replace-dim3/replace-dim3.dp.cpp -o %T/replace-dim3/replace-dim3.dp.o %}
 
 #include <cstdio>
 #include <algorithm>

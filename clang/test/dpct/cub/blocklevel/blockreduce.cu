@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct -in-root %S -out-root %T/blocklevel/blockreduce %S/blockreduce.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/blocklevel/blockreduce/blockreduce.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/blocklevel/blockreduce/blockreduce.dp.cpp -o %T/blocklevel/blockreduce/blockreduce.dp.o %}
 
 #include <iostream>
 #include <vector>
@@ -70,6 +71,52 @@ __global__ void ReduceKernel(int* data) {
   data[threadid] = output;
 }
 
+//CHECK: void ReduceKernel_Max(int* data,
+//CHECK-NEXT:  const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
+//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
+//CHECK-NEXT:  int input = data[threadid];
+//CHECK-NEXT:  int output = 0;
+//CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_group(), input, sycl::maximum<>());
+//CHECK-NEXT:  data[threadid] = output;
+//CHECK-NEXT:}
+__global__ void ReduceKernel_Max(int* data) {
+  typedef cub::BlockReduce<int, 4> BlockReduce;
+
+  __shared__ typename BlockReduce::TempStorage temp1;
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  output = BlockReduce(temp1).Reduce(input, cub::Max());
+  data[threadid] = output;
+}
+
+//CHECK: void ReduceKernel_Min(int* data,
+//CHECK-NEXT:  const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
+//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
+//CHECK-NEXT:  int input = data[threadid];
+//CHECK-NEXT:  int output = 0;
+//CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_group(), input, sycl::minimum<>());
+//CHECK-NEXT:  data[threadid] = output;
+//CHECK-NEXT:}
+__global__ void ReduceKernel_Min(int* data) {
+  typedef cub::BlockReduce<int, 4> BlockReduce;
+
+  __shared__ typename BlockReduce::TempStorage temp1;
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  output = BlockReduce(temp1).Reduce(input, cub::Min());
+  data[threadid] = output;
+}
+
 int main() {
   int* dev_data = nullptr;
 
@@ -96,6 +143,26 @@ int main() {
 //CHECK-NEXT:          ReduceKernel(dev_data, item_ct1);
 //CHECK-NEXT:        });
   ReduceKernel<<<GridSize, BlockSize>>>(dev_data);
+  cudaDeviceSynchronize();
+  verify_data(dev_data, TotalThread);
+
+init_data(dev_data, TotalThread);
+//CHECK:  q_ct1.parallel_for(
+//CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          ReduceKernel_Max(dev_data, item_ct1);
+//CHECK-NEXT:        });
+  ReduceKernel_Max<<<GridSize, BlockSize>>>(dev_data);
+  cudaDeviceSynchronize();
+  verify_data(dev_data, TotalThread);
+
+init_data(dev_data, TotalThread);
+//CHECK:  q_ct1.parallel_for(
+//CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          ReduceKernel_Min(dev_data, item_ct1);
+//CHECK-NEXT:        });
+  ReduceKernel_Min<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 

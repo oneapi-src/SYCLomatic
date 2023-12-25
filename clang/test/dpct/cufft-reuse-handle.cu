@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cufft-reuse-handle %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cufft-reuse-handle/cufft-reuse-handle.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cufft-reuse-handle/cufft-reuse-handle.dp.cpp -o %T/cufft-reuse-handle/cufft-reuse-handle.dp.o %}
 #include <cstdio>
 #include <cufft.h>
 #include <cuda_runtime.h>

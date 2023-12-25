@@ -166,14 +166,14 @@ cublasDgemmStridedBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041
 cublasCgemmStridedBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasCgemm3mStridedBatched,NO,
 cublasZgemmStridedBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSsymm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDsymm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCsymm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZsymm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSsyrk,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDsyrk,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCsyrk,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZsyrk,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
+cublasSsymm,YES,:ref:`DPCT1020`
+cublasDsymm,YES,:ref:`DPCT1020`
+cublasCsymm,YES,:ref:`DPCT1020`
+cublasZsymm,YES,:ref:`DPCT1020`
+cublasSsyrk,YES,:ref:`DPCT1020`
+cublasDsyrk,YES,:ref:`DPCT1020`
+cublasCsyrk,YES,:ref:`DPCT1020`
+cublasZsyrk,YES,:ref:`DPCT1020`
 cublasSsyr2k,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasDsyr2k,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasCsyr2k,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
@@ -186,30 +186,30 @@ cublasStrmm,YES,:ref:`DPCT1020`
 cublasDtrmm,YES,:ref:`DPCT1020`
 cublasCtrmm,YES,:ref:`DPCT1020`
 cublasZtrmm,YES,:ref:`DPCT1020`
-cublasStrsm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDtrsm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCtrsm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZtrsm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
+cublasStrsm,YES,:ref:`DPCT1020`
+cublasDtrsm,YES,:ref:`DPCT1020`
+cublasCtrsm,YES,:ref:`DPCT1020`
+cublasZtrsm,YES,:ref:`DPCT1020`
 cublasStrsmBatched,YES,:ref:`DPCT1020`
 cublasDtrsmBatched,YES,:ref:`DPCT1020`
 cublasCtrsmBatched,YES,:ref:`DPCT1020`
 cublasZtrsmBatched,YES,:ref:`DPCT1020`
-cublasChemm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZhemm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
+cublasChemm,YES,:ref:`DPCT1020`
+cublasZhemm,YES,:ref:`DPCT1020`
 cublasCherk,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasZherk,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasCher2k,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasZher2k,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasCherkx,YES,:ref:`DPCT1020`
 cublasZherkx,YES,:ref:`DPCT1020`
-cublasSgeam,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDgeam,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCgeam,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZgeam,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSdgmm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDdgmm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCdgmm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZdgmm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
+cublasSgeam,YES,:ref:`DPCT1020`
+cublasDgeam,YES,:ref:`DPCT1020`
+cublasCgeam,YES,:ref:`DPCT1020`
+cublasZgeam,YES,:ref:`DPCT1020`
+cublasSdgmm,YES,:ref:`DPCT1020`
+cublasDdgmm,YES,:ref:`DPCT1020`
+cublasCdgmm,YES,:ref:`DPCT1020`
+cublasZdgmm,YES,:ref:`DPCT1020`
 cublasSgetrfBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1047`
 cublasDgetrfBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1047`
 cublasCgetrfBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1047`
@@ -669,33 +669,41 @@ cublasSspr2_64,NO,
 cublasDspr2_64,NO,
 cublasChpr2_64,NO,
 cublasZhpr2_64,NO,
-cublasSgemm_64,YES,
-cublasDgemm_64,YES,
-cublasCgemm_64,YES,
-cublasZgemm_64,YES,
-cublasSsyrk_64,NO,
-cublasDsyrk_64,NO,
-cublasCsyrk_64,NO,
-cublasZsyrk_64,NO,
-cublasCherk_64,NO,
-cublasZherk_64,NO,
-cublasSsyr2k_64,NO,
-cublasDsyr2k_64,NO,
-cublasCsyr2k_64,NO,
-cublasZsyr2k_64,NO,
-cublasCher2k_64,NO,
-cublasZher2k_64,NO,
-cublasSsymm_64,NO,
-cublasDsymm_64,NO,
-cublasCsymm_64,NO,
-cublasZsymm_64,NO,
-cublasChemm_64,NO,
-cublasZhemm_64,NO,
-cublasStrsm_64,NO,
-cublasDtrsm_64,NO,
-cublasCtrsm_64,NO,
-cublasZtrsm_64,NO,
+cublasSgemm_64,YES,:ref:`DPCT1020`
+cublasDgemm_64,YES,:ref:`DPCT1020`
+cublasCgemm_64,YES,:ref:`DPCT1020`
+cublasZgemm_64,YES,:ref:`DPCT1020`
+cublasSsyrk_64,YES,:ref:`DPCT1020`
+cublasDsyrk_64,YES,:ref:`DPCT1020`
+cublasCsyrk_64,YES,:ref:`DPCT1020`
+cublasZsyrk_64,YES,:ref:`DPCT1020`
+cublasCherk_64,YES,:ref:`DPCT1020`
+cublasZherk_64,YES,:ref:`DPCT1020`
+cublasSsyr2k_64,YES,:ref:`DPCT1020`
+cublasDsyr2k_64,YES,:ref:`DPCT1020`
+cublasCsyr2k_64,YES,:ref:`DPCT1020`
+cublasZsyr2k_64,YES,:ref:`DPCT1020`
+cublasCher2k_64,YES,:ref:`DPCT1020`
+cublasZher2k_64,YES,:ref:`DPCT1020`
+cublasSsymm_64,YES,:ref:`DPCT1020`
+cublasDsymm_64,YES,:ref:`DPCT1020`
+cublasCsymm_64,YES,:ref:`DPCT1020`
+cublasZsymm_64,YES,:ref:`DPCT1020`
+cublasChemm_64,YES,:ref:`DPCT1020`
+cublasZhemm_64,YES,:ref:`DPCT1020`
+cublasStrsm_64,YES,:ref:`DPCT1020`
+cublasDtrsm_64,YES,:ref:`DPCT1020`
+cublasCtrsm_64,YES,:ref:`DPCT1020`
+cublasZtrsm_64,YES,:ref:`DPCT1020`
 cublasStrmm_64,NO,
 cublasDtrmm_64,NO,
 cublasCtrmm_64,NO,
 cublasZtrmm_64,NO,
+cublasSgeam_64,YES,:ref:`DPCT1020`
+cublasDgeam_64,YES,:ref:`DPCT1020`
+cublasCgeam_64,YES,:ref:`DPCT1020`
+cublasZgeam_64,YES,:ref:`DPCT1020`
+cublasSdgmm_64,YES,:ref:`DPCT1020`
+cublasDdgmm_64,YES,:ref:`DPCT1020`
+cublasCdgmm_64,YES,:ref:`DPCT1020`
+cublasZdgmm_64,YES,:ref:`DPCT1020`

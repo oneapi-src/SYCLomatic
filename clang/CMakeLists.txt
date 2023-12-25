@@ -292,8 +292,10 @@ endif()
 if(NOT DEFINED CLANG_VERSION_PATCHLEVEL)
   set(CLANG_VERSION_PATCHLEVEL ${LLVM_VERSION_PATCH})
 endif()
-# Unlike PACKAGE_VERSION, CLANG_VERSION does not include LLVM_VERSION_SUFFIX.
-set(CLANG_VERSION "${CLANG_VERSION_MAJOR}.${CLANG_VERSION_MINOR}.${CLANG_VERSION_PATCHLEVEL}")
+if(NOT DEFINED CLANG_VERSION_SUFFIX)
+  set(CLANG_VERSION_SUFFIX ${LLVM_VERSION_SUFFIX})
+endif()
+set(CLANG_VERSION "${CLANG_VERSION_MAJOR}.${CLANG_VERSION_MINOR}.${CLANG_VERSION_PATCHLEVEL}${CLANG_VERSION_SUFFIX}")
 message(STATUS "Clang version: ${CLANG_VERSION}")
 
 # Configure the Version.inc file.
@@ -654,6 +656,7 @@ if (CLANG_ENABLE_BOOTSTRAP)
     CLANG_VERSION_MAJOR
     CLANG_VERSION_MINOR
     CLANG_VERSION_PATCHLEVEL
+    CLANG_VERSION_SUFFIX
     CLANG_VENDOR
     LLVM_VERSION_SUFFIX
     LLVM_BINUTILS_INCDIR
@@ -916,6 +919,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-binary
       install-dpct-opt-rules
       install-dpct-cmake-rules
+      install-dpct-cmake-file
       )
   else()
     list(APPEND DPCT_RUN
@@ -925,7 +929,9 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-clang-resource-headers
       install-dpct-binary
       install-dpct-autocomplete
+      install-dpct-opt-rules
       install-dpct-cmake-rules
+      install-dpct-cmake-file
       )
   endif()
 endif()

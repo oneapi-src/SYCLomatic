@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/bninfer %S/bninfer.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/bninfer/bninfer.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/bninfer/bninfer.dp.cpp -o %T/bninfer/bninfer.dp.o %}
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>

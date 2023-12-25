@@ -11,6 +11,7 @@
 // RUN: echo "]" >> %T/foo/compile_commands.json
 // RUN: dpct -p=./foo ./foo/use_format_file_with_p2.cu --out-root=%T/out --cuda-include-path="%cuda-path/include" -- --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/out/use_format_file_with_p2.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/out/use_format_file_with_p2.dp.cpp -o %T/out/use_format_file_with_p2.dp.o %}
 // RUN: rm -rf %T/*
 #include "cuda.h"
 

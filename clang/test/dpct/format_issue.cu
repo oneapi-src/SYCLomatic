@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/format_issue %s --cuda-include-path="%cuda-path/include" --  -x cuda --cuda-host-only -DCOMPILATION
 // RUN: FileCheck %s --match-full-lines --input-file %T/format_issue/format_issue.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/format_issue/format_issue.dp.cpp -o %T/format_issue/format_issue.dp.o %}
 
 #ifdef COMPILATION
 float a;int

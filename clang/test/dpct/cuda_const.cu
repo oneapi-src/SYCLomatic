@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_const %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_const/cuda_const.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda_const/cuda_const.dp.cpp -o %T/cuda_const/cuda_const.dp.o %}
 
 #include <stdio.h>
 
@@ -25,6 +26,12 @@ __global__ void member_acc() {
 __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
 // CHECK: static dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
+
+// CHECK: /*
+// CHECK-NEXT: DPCT1120:{{[0-9]+}}: template_a is in device memory and passed into device functions as extra arguments. As here template_a is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.
+// CHECK-NEXT: */
+template<class T>
+__constant__ T template_a;
 
 // CHECK: static dpct::global_memory<int, 1> const_ptr;
 __constant__ int *const_ptr;

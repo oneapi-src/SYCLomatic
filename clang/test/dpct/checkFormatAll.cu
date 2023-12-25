@@ -2,6 +2,7 @@
 // RUN: cd %T
 // RUN: dpct -out-root %T/checkFormatAll checkFormatAll.cu --cuda-include-path="%cuda-path/include" --format-range=all -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace checkFormatAll.cu --match-full-lines --input-file %T/checkFormatAll/checkFormatAll.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/checkFormatAll/checkFormatAll.dp.cpp -o %T/checkFormatAll/checkFormatAll.dp.o %}
 
 #include <cuda_runtime.h>
 #include <cassert>

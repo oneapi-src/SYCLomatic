@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v12.0, v12.1, v12.2, v12.3
 // RUN: dpct --format-range=none -out-root %T/cooperative_groups_unsupport %s --cuda-include-path="%cuda-path/include" --use-experimental-features=logical-group --extra-arg="-std=c++14"
 // RUN: FileCheck %s --match-full-lines --input-file %T/cooperative_groups_unsupport/cooperative_groups_unsupport.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/cooperative_groups_unsupport/cooperative_groups_unsupport.dp.cpp -o %T/cooperative_groups_unsupport/cooperative_groups_unsupport.dp.o %}
 
 #define _CG_ABI_EXPERIMENTAL
 #include "cooperative_groups.h"

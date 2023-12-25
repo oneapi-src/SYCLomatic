@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --optimize-migration -out-root %T/optimized_math_function %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/optimized_math_function/optimized_math_function.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/optimized_math_function/optimized_math_function.dp.cpp -o %T/optimized_math_function/optimized_math_function.dp.o %}
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cmath>
