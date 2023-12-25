@@ -1695,31 +1695,7 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
     }
 
     if (!Handler) {
-<<<<<<< HEAD
-      if (SinkOpts.empty()) {
-#ifdef SYCLomatic_CUSTOMIZATION
-        *Errs << "Unknown command line argument '" << argv[i] << "'. ";
-#else
-        *Errs << ProgramName << ": Unknown command line argument '" << argv[i]
-              << "'.  Try: '" << argv[0] << " --help'\n";
-#endif // SYCLomatic_CUSTOMIZATION
-
-        if (NearestHandler) {
-          // If we know a near match, report it as well.
-#ifdef SYCLomatic_CUSTOMIZATION
-          *Errs << "Did you mean '"
-                << PrintArg(NearestHandlerString, 0) << "'?\n";
-#else
-          *Errs << ProgramName << ": Did you mean '"
-                << PrintArg(NearestHandlerString, 0) << "'?\n";
-#endif // SYCLomatic_CUSTOMIZATION
-		}
-
-        ErrorParsing = true;
-      } else {
-=======
       if (!SinkOpts.empty()) {
->>>>>>> origin/sycl
         for (Option *SinkOpt : SinkOpts)
           SinkOpt->addOccurrence(i, "", StringRef(argv[i]));
         continue;
@@ -1727,14 +1703,23 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 
       auto ReportUnknownArgument = [&](bool IsArg,
                                        StringRef NearestArgumentName) {
+#ifdef SYCLomatic_CUSTOMIZATION
+        *Errs << "Unknown " << (IsArg ? "command line argument" : "subcommand")
+              << " '" << argv[i] << "'.  Try: '" << argv[0] << " --help'\n";
+#else
         *Errs << ProgramName << ": Unknown "
               << (IsArg ? "command line argument" : "subcommand") << " '"
               << argv[i] << "'.  Try: '" << argv[0] << " --help'\n";
+#endif // SYCLomatic_CUSTOMIZATION
 
         if (NearestArgumentName.empty())
           return;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+        *Errs << "Did you mean '";
+#else
         *Errs << ProgramName << ": Did you mean '";
+#endif // SYCLomatic_CUSTOMIZATION
         if (IsArg)
           *Errs << PrintArg(NearestArgumentName, 0);
         else
