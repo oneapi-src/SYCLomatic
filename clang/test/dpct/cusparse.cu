@@ -15,7 +15,7 @@ const int* csrColIndA;
 const float* x;
 float beta;
 float* y;
-//CHECK: sycl::queue* handle;
+//CHECK: dpct::queue_ptr handle;
 //CHECK-NEXT: oneapi::mkl::transpose transA = oneapi::mkl::transpose::nontrans;
 //CHECK-NEXT: std::shared_ptr<dpct::sparse::matrix_info> descrA;
 cusparseHandle_t handle;

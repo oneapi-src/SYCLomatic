@@ -1,0 +1,1 @@
+set(CUDA_HAS_FP16 TRUE)
