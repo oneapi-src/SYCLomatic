@@ -1,0 +1,2 @@
+file(GLOB REL_CUDA_SRC "file1.dp.cpp" "${CMAKE_SOURCE_DIR}/src/*.dp.cpp")
+file(GLOB SRCS *.cc *.dp.cpp *.dp.hpp)

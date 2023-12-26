@@ -58,13 +58,6 @@ template <typename _Op> struct mark_functor_const {
   }
 };
 
-template <typename T>
-__dpct_inline__ ::std::enable_if_t<::std::is_unsigned_v<T>, T>
-bfe(T source, uint32_t bit_start, uint32_t num_bits) {
-  const T MASK = (T{1} << num_bits) - 1;
-  return (source >> bit_start) & MASK;
-}
-
 namespace internal {
 
 template <class _ExecPolicy, class _T>

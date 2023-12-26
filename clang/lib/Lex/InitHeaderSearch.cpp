@@ -146,8 +146,8 @@ bool InitHeaderSearch::AddUnmappedPath(const Twine &Path, IncludeDirGroup Group,
 #endif // SYCLomatic_CUSTOMIZATION
 
   // If use system headers while cross-compiling, emit the warning.
-  if (HasSysroot && (MappedPathStr.startswith("/usr/include") ||
-                     MappedPathStr.startswith("/usr/local/include"))) {
+  if (HasSysroot && (MappedPathStr.starts_with("/usr/include") ||
+                     MappedPathStr.starts_with("/usr/local/include"))) {
     Headers.getDiags().Report(diag::warn_poison_system_directories)
         << MappedPathStr;
   }
@@ -528,9 +528,8 @@ void InitHeaderSearch::Realize(const LangOptions &Lang) {
   }
 #endif // SYCLomatic_CUSTOMIZATION
 
-  bool DontSearchCurDir = false;  // TODO: set to true if -I- is set?
   Headers.SetSearchPaths(extractLookups(SearchList), NumQuoted, NumAngled,
-                         DontSearchCurDir, mapToUserEntries(SearchList));
+                         mapToUserEntries(SearchList));
 
   Headers.SetSystemHeaderPrefixes(SystemHeaderPrefixes);
 

@@ -565,7 +565,7 @@ protected:
     std::string TypeStr;
     if (tryEmitType(TypeStr, I->getType(0)))
       return SYCLGenError();
-      
+
     auto ExprCmp = [&](StringRef BinOp) {
       OS() << Op[0] << ' ' << BinOp << ' ' << Op[1];
     };
@@ -856,9 +856,11 @@ protected:
 
     if (Inst->hasAttr(InstAttr::sat)) {
       if (Inst->is(asmtok::op_add))
-        OS() << MapNames::getClNamespace() << llvm::formatv("add_sat({0}, {1})", Op[0], Op[1]);
+        OS() << MapNames::getClNamespace()
+             << llvm::formatv("add_sat({0}, {1})", Op[0], Op[1]);
       else
-        OS() << MapNames::getClNamespace() << llvm::formatv("sub_sat({0}, {1})", Op[0], Op[1]);
+        OS() << MapNames::getClNamespace()
+             << llvm::formatv("sub_sat({0}, {1})", Op[0], Op[1]);
     } else {
       if (Inst->is(asmtok::op_add))
         OS() << llvm::formatv("{0} + {1}", Op[0], Op[1]);
@@ -949,7 +951,8 @@ protected:
 
     // mul.hi
     if (Inst->hasAttr(InstAttr::hi)) {
-      OS() << MapNames::getClNamespace() << "mul_hi(" << Op[0] << ", " << Op[1] << ")";
+      OS() << MapNames::getClNamespace() << "mul_hi(" << Op[0] << ", " << Op[1]
+           << ")";
       // mul.wide
     } else if (Inst->hasAttr(InstAttr::wide)) {
       OS() << Cast(GetWiderTypeAsString(Type), Op[0]) << " * "
@@ -1075,10 +1078,11 @@ protected:
     }
 
     if (isMad)
-      OS() << MapNames::getClNamespace() << "mad24(" << Op[0] << ", " << Op[1] << ", " << Op[2]
-           << ")";
+      OS() << MapNames::getClNamespace() << "mad24(" << Op[0] << ", " << Op[1]
+           << ", " << Op[2] << ")";
     else
-      OS() << MapNames::getClNamespace() << "mul24(" << Op[0] << ", " << Op[1] << ")";
+      OS() << MapNames::getClNamespace() << "mul24(" << Op[0] << ", " << Op[1]
+           << ")";
 
     endstmt();
     return SYCLGenSuccess();
@@ -1155,9 +1159,11 @@ protected:
       return SYCLGenError();
 
     if (Inst->is(asmtok::op_popc))
-      OS() << MapNames::getClNamespace() << "popcount<" << TypeRepl << ">(" << OpRepl << ")";
+      OS() << MapNames::getClNamespace() << "popcount<" << TypeRepl << ">("
+           << OpRepl << ")";
     else
-      OS() << MapNames::getClNamespace() << "clz<" << TypeRepl << ">(" << OpRepl << ")";
+      OS() << MapNames::getClNamespace() << "clz<" << TypeRepl << ">(" << OpRepl
+           << ")";
 
     endstmt();
     return SYCLGenSuccess();
@@ -1457,6 +1463,54 @@ protected:
     return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax4");
   }
 
+  bool handle_bfe(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3)
+      return SYCLGenError();
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type || (Type->getKind() != InlineAsmBuiltinType::TK_s32 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_s64 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_u32 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_u64))
+      return SYCLGenError();
+    std::string TypeStr, Op[3];
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "bfe_safe<" << TypeStr << ">(" << Op[0]
+         << ", " << Op[1] << ", " << Op[2] << ')';
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
+  bool handle_bfi(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 4)
+      return SYCLGenError();
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type || (Type->getKind() != InlineAsmBuiltinType::TK_b32 &&
+                  Type->getKind() != InlineAsmBuiltinType::TK_b64))
+      return SYCLGenError();
+    std::string TypeStr, Op[4];
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+    for (int i = 0; i < 4; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    OS() << MapNames::getDpctNamespace() << "bfi_safe<" << TypeStr << ">("
+         << Op[0] << ", " << Op[1] << ", " << Op[2] << ", " << Op[3] << ')';
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
   bool handle_brev(const InlineAsmInstruction *Inst) override {
     if (Inst->getNumInputOperands() != 1)
       return SYCLGenError();
@@ -1464,7 +1518,7 @@ protected:
     if (!Type || (Type->getKind() != InlineAsmBuiltinType::TK_b32 &&
                   Type->getKind() != InlineAsmBuiltinType::TK_b64))
       return SYCLGenError();
-    
+
     std::string TypeStr;
     if (tryEmitType(TypeStr, Type))
       return SYCLGenError();
@@ -1472,8 +1526,7 @@ protected:
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
-    OS() << MapNames::getDpctNamespace() << "reverse_bits<"
-         << TypeStr << ">(";
+    OS() << MapNames::getDpctNamespace() << "reverse_bits<" << TypeStr << ">(";
     if (emitStmt(Inst->getInputOperand(0)))
       return SYCLGenError();
     OS() << ")";
@@ -1564,6 +1617,116 @@ void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
+static TextModification *
+OptimizeMigrationForCUDABackend(const GCCAsmStmt *GAS, StringRef Replacement) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &Ctx = DpctGlobalInfo::getContext();
+  unsigned LastTokLen = Lexer::MeasureTokenLength(
+      SM.getSpellingLoc(GAS->getEndLoc()), SM, Ctx.getLangOpts());
+  auto getBufferData = [&](SourceLocation L) {
+    bool Invalid = false;
+    const char *Ptr = SM.getCharacterData(L, &Invalid);
+    return Invalid ? nullptr : Ptr;
+  };
+
+  const char *AsmStmtBegin =
+      getBufferData(SM.getSpellingLoc(GAS->getBeginLoc()));
+  const char *AsmStmtEnd = getBufferData(
+      SM.getSpellingLoc(GAS->getEndLoc()).getLocWithOffset(LastTokLen));
+
+  if (!AsmStmtBegin || !AsmStmtEnd)
+    return nullptr;
+
+  std::string Buffer, MigratedReplacement;
+  SourceLocation BeginLoc, EndLoc;
+  llvm::raw_string_ostream NewOS(Buffer);
+  NewOS << "#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)" << getNL();
+  auto FileID = SM.getFileID(SM.getSpellingLoc(GAS->getBeginLoc()));
+  auto FileStartLoc = SM.getLocForStartOfFile(FileID);
+  if (isInMacroDefinition(GAS->getBeginLoc(), GAS->getEndLoc())) {
+    auto FindMacroBeginLoc = [&]() {
+      auto Iter = DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
+          getHashStrFromLoc(SM.getSpellingLoc(GAS->getBeginLoc())));
+      if (Iter != DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
+        auto MacroStartLoc =
+            FileStartLoc.getLocWithOffset(Iter->second->Offset);
+        auto LineBeginLoc = FileStartLoc.getLocWithOffset(
+            getOffsetOfLineBegin(MacroStartLoc, SM));
+        return LineBeginLoc;
+      }
+      return SourceLocation();
+    };
+
+    auto FindMacroEndLoc = [&]() {
+      auto Iter = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+          getCombinedStrFromLoc(SM.getSpellingLoc(GAS->getBeginLoc())));
+      if (Iter != DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+        unsigned EndOffset = Iter->second->ReplaceTokenEndOffset;
+        auto MacroEndLoc = FileStartLoc.getLocWithOffset(EndOffset);
+        unsigned Len =
+            Lexer::MeasureTokenLength(MacroEndLoc, SM, Ctx.getLangOpts());
+        return MacroEndLoc.getLocWithOffset(Len);
+      }
+      return SourceLocation();
+    };
+
+    auto MacroBeginLoc = FindMacroBeginLoc();
+    auto MacroEndLoc = FindMacroEndLoc();
+    const char *MacroBegin = getBufferData(MacroBeginLoc);
+    const char *MacroEnd = getBufferData(MacroEndLoc);
+    StringRef MacroStr(MacroBegin, MacroEnd - MacroBegin);
+    NewOS << MacroStr;
+    BeginLoc = MacroBeginLoc;
+    EndLoc = MacroEndLoc;
+    std::string Prefix(MacroBegin, AsmStmtBegin);
+    std::string Suffix(AsmStmtEnd, MacroEnd);
+    MigratedReplacement = Prefix + Replacement.str() + Suffix;
+  } else if (SM.isMacroArgExpansion(GAS->getBeginLoc()) &&
+             SM.isMacroArgExpansion(GAS->getEndLoc())) {
+    auto ExpansionRange = SM.getExpansionRange(GAS->getBeginLoc());
+    auto LineStartLoc = FileStartLoc.getLocWithOffset(
+        getOffsetOfLineBegin(ExpansionRange.getBegin(), SM));
+    const char *LineStart = getBufferData(LineStartLoc);
+    if (!LineStart)
+      return nullptr;
+    auto SemiTok =
+        Lexer::findNextToken(ExpansionRange.getEnd(), SM, Ctx.getLangOpts());
+    // Can't find the trailing semicolon.
+    if (!SemiTok || SemiTok->isNot(tok::semi))
+      return nullptr;
+    const char *ExpansionEnd = getBufferData(SemiTok->getEndLoc());
+    NewOS << StringRef(LineStart, ExpansionEnd - LineStart);
+    BeginLoc = LineStartLoc;
+    EndLoc = LineStartLoc.getLocWithOffset(ExpansionEnd - LineStart);
+    std::string Prefix(LineStart, AsmStmtBegin);
+    std::string Suffix(AsmStmtEnd, ExpansionEnd);
+    MigratedReplacement = Prefix + Replacement.str() + Suffix;
+  } else {
+    auto LineStartLoc = FileStartLoc.getLocWithOffset(
+        getOffsetOfLineBegin(GAS->getBeginLoc(), SM));
+    const char *LineStart = getBufferData(LineStartLoc);
+    if (!LineStart)
+      return nullptr;
+    auto SemiTok = Lexer::findNextToken(SM.getSpellingLoc(GAS->getEndLoc()), SM,
+                                        Ctx.getLangOpts());
+    // Can't find the trailing semicolon.
+    if (!SemiTok || SemiTok->isNot(tok::semi))
+      return nullptr;
+    const char *StmtEnd = getBufferData(SemiTok->getEndLoc());
+    NewOS << StringRef(LineStart, StmtEnd - LineStart);
+    MigratedReplacement =
+        std::string(LineStart, AsmStmtBegin) + Replacement.str();
+    BeginLoc = LineStartLoc;
+    EndLoc = SemiTok->getEndLoc();
+  }
+  NewOS << getNL() << "#else" << getNL() << MigratedReplacement << getNL()
+        << "#endif";
+  NewOS.flush();
+  auto *Repl = new ReplaceText(BeginLoc, EndLoc, std::move(Buffer));
+  Repl->setBlockLevelFormatFlag();
+  return Repl;
+}
+
 void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   const auto &C = DpctGlobalInfo::getContext();
   auto &SM = DpctGlobalInfo::getSourceManager();
@@ -1577,8 +1740,8 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   std::string ReplaceString;
   llvm::raw_string_ostream OS(ReplaceString);
   SYCLGen CodeGen(OS, GAS);
-  StringRef Indent =
-      getIndent(GAS->getBeginLoc(), DpctGlobalInfo::getSourceManager());
+  StringRef Indent = getIndent(SM.getSpellingLoc(GAS->getBeginLoc()),
+                               DpctGlobalInfo::getSourceManager());
 
   CodeGen.setIndentUnit(Indent);
   CodeGen.incIndent();
@@ -1617,23 +1780,20 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   } while (!Parser.getCurToken().is(asmtok::eof));
 
   StringRef Ref = ReplaceString;
-
-  // Trim the trailing whitspace and ';'.
   Ref = Ref.trim();
-  if (Ref.back() == ';')
-    Ref = Ref.drop_back();
-
   if (CodeGen.isInMacroDefine() && Ref.ends_with("\\"))
     Ref = Ref.drop_back();
+  if (Ref.size() > 2 && Ref.back() == ';' && Ref.front() == '{' &&
+      Ref.drop_back().back() == '}')
+    Ref = Ref.drop_back();
+  if (SM.isMacroArgExpansion(GAS->getBeginLoc()) &&
+      SM.isMacroArgExpansion(GAS->getEndLoc()) && Ref.back() == ';')
+    Ref = Ref.drop_back();
 
-  // If the generated SYCL code in '{...}', we should remove ';' after AsmStmt.
-  if (Ref.front() == '{' && Ref.back() == '}') {
-    auto Tok = Lexer::findNextToken(GAS->getEndLoc(), SM, C.getLangOpts());
-
-    if (Tok.has_value() && Tok->is(tok::semi) &&
-        (!CodeGen.isInMacroDefine() ||
-         isInMacroDefinition(Tok->getLocation(), Tok->getEndLoc()))) {
-      emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
+  if (DpctGlobalInfo::isOptimizeMigration()) {
+    if (auto *Repl = OptimizeMigrationForCUDABackend(GAS, Ref)) {
+      emplaceTransformation(Repl);
+      return;
     }
   }
 
@@ -1641,7 +1801,12 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   Repl->setBlockLevelFormatFlag();
   emplaceTransformation(Repl);
 
-  return;
+  auto Range = getDefinitionRange(GAS->getBeginLoc(), GAS->getEndLoc());
+  auto KELoc =
+      getTheLastCompleteImmediateRange(Range.getBegin(), Range.getEnd()).second;
+  auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).value();
+  if (Tok.is(tok::TokenKind::semi))
+    emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
 }
 
 void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {

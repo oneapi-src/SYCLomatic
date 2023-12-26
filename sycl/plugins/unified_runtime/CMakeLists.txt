@@ -57,13 +57,13 @@ if(SYCL_PI_UR_USE_FETCH_CONTENT)
   include(FetchContent)
 
   set(UNIFIED_RUNTIME_REPO "https://github.com/oneapi-src/unified-runtime.git")
-  # commit fe5bc760d0a9fa28247d3f0b57c20114f02eda49
-  # Merge: 47af3ee2 3e1f1636
+  # commit 67e4d1bcf0057eef7910851bfb5020df9e5befd6
   # Author: Kenneth Benzie (Benie) <k.benzie@codeplay.com>
-  # Date:   Fri Dec 1 11:21:41 2023 +0000
-  #     Merge pull request #1102 from hdelan/adapter-batch1
-  #     [HIP] Adapter PR batch
-  set(UNIFIED_RUNTIME_TAG fe5bc760d0a9fa28247d3f0b57c20114f02eda49)
+  # Date:   Fri Dec 15 10:09:02 2023 +0000
+  #     Merge pull request #1185 from aarongreig/aaron/fixCoverityCudaCL
+  #     Fix coverity issues in OpenCL, cuda and hip adapters.[L0] Add several fixes to L0 adapter
+  #     for test-usm
+  set(UNIFIED_RUNTIME_TAG 67e4d1bcf0057eef7910851bfb5020df9e5befd6)
 
   if(SYCL_PI_UR_OVERRIDE_FETCH_CONTENT_REPO)
     set(UNIFIED_RUNTIME_REPO "${SYCL_PI_UR_OVERRIDE_FETCH_CONTENT_REPO}")
@@ -96,10 +96,10 @@ elseif(SYCL_PI_UR_SOURCE_DIR)
 else()
   # SYCL_PI_UR_USE_FETCH_CONTENT is OFF and SYCL_PI_UR_SOURCE_DIR has not been
   # set, check if the fallback local directory exists.
-  if(NOT ${CMAKE_CURRENT_SOURCE_DIR}/unified-runtime)
+  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/unified-runtime)
     message(FATAL_ERROR
-      "SYCL_PI_UR_USE_FETCH_CONTENT is disabled but no alternative Unified
-      Runtime source directory has be proivided, either:
+      "SYCL_PI_UR_USE_FETCH_CONTENT is disabled but no alternative Unified \
+      Runtime source directory has been provided, either:
 
       * Set -DSYCL_PI_UR_SOURCE_DIR=/path/to/unified-runtime
       * Clone the UR repo in ${CMAKE_CURRENT_SOURCE_DIR}/unified-runtime")
@@ -141,7 +141,6 @@ set(UNIFIED_RUNTIME_PLUGIN_ARGS
     # their "ur_bindings.hpp" files.
     "ur_bindings.hpp"
     "pi2ur.hpp"
-    "pi2ur.cpp"
     # These below belong to Unified Runtime PI Plugin only
     "pi_unified_runtime.hpp"
     "pi_unified_runtime.cpp"

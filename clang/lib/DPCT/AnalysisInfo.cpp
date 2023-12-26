@@ -73,7 +73,13 @@ FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
-std::unordered_map<std::string, SourceRange> DpctGlobalInfo::ExpansionRangeBeginMap;
+std::unordered_map<
+    std::string,
+    std::pair<std::pair<clang::tooling::UnifiedPath /*begin file name*/,
+                        unsigned int /*begin offset*/>,
+              std::pair<clang::tooling::UnifiedPath /*end file name*/,
+                        unsigned int /*end offset*/>>>
+    DpctGlobalInfo::ExpansionRangeBeginMap;
 bool DpctGlobalInfo::EnablepProfilingFlag = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;

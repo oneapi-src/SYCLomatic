@@ -27,6 +27,12 @@ __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2]
 // CHECK: static dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 
+// CHECK: /*
+// CHECK-NEXT: DPCT1120:{{[0-9]+}}: template_a is in device memory and passed into device functions as extra arguments. As here template_a is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.
+// CHECK-NEXT: */
+template<class T>
+__constant__ T template_a;
+
 // CHECK: static dpct::constant_memory<int *, 0> const_ptr;
 __constant__ int *const_ptr;
 
