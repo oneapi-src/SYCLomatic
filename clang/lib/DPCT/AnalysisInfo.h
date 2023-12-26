@@ -1784,7 +1784,7 @@ public:
     return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
   }
   static bool usePeerAccess() {
-    return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_PeerAccess);
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess);
   }
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);

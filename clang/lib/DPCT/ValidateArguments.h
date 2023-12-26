@@ -62,12 +62,12 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_EnqueueBarrier = 0,
   ExtDE_DeviceInfo,
   ExtDE_BFloat16,
+  ExtDE_PeerAccess,
   ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
   ExtDD_CCXXStandardLibrary = 0,
   ExtDD_IntelDeviceMath,
-  ExtDD_PeerAccess,
   ExtDD_DPCPPExtensionsDefaultDisabledEnumSize
 };
 enum class ExperimentalFeatures : unsigned int {

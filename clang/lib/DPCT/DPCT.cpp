@@ -862,9 +862,6 @@ int runDPCT(int argc, const char **argv) {
           if (Option.ends_with("intel_device_math"))
             UseDPCPPExtensions.addValue(
                 DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
-          if (Option.ends_with("peer_access"))
-            UseDPCPPExtensions.addValue(
-                DPCPPExtensionsDefaultDisabled::ExtDD_PeerAccess);
         } else if (Option.starts_with("--use-experimental-features")) {
           if (Option.ends_with("bfloat16_math_functions"))
             Experimentals.addValue(ExperimentalFeatures::Exp_BFloat16Math);

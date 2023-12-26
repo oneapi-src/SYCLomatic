@@ -206,6 +206,9 @@ bool printOptions(
         if (!(UValue & (1 << static_cast<unsigned>(
                             DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16))))
           Str += "bfloat16,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess))))
+          Str += "peer_access,";
       }
       if (!Str.empty()) {
         Str = "--no-dpcpp-extensions=" + Str;
@@ -229,9 +232,6 @@ bool printOptions(
       if (UValue &
           (1 << static_cast<unsigned>(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath)))
         Str = Str + "intel_device_math,";
-      if (UValue &
-          (1 << static_cast<unsigned>(DPCPPExtensionsDefaultDisabled::ExtDD_PeerAccess)))
-        Str = Str + "peer_access,";
       if (!Str.empty()) {
         Str = "--use-dpcpp-extensions=" + Str;
         Opts.emplace_back(Str.substr(0, Str.size() - 1));

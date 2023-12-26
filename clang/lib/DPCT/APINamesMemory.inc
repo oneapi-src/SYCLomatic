@@ -598,12 +598,11 @@ CONDITIONAL_FACTORY_ENTRY(
                     CALL(MapNames::getDpctNamespace() +
                              "dev_mgr::instance().get_device",
                          ARG_WC(2))))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
-        "cudaDeviceCanAccessPeer",
-        "SYCL currently does not support memory access across "
-        "peer devices. You can specify "
-        "\"--use-dpcpp-extensions=peer_access\" to use the "
-        "extensions to migrate cudaDeviceCanAccessPeer."))
+    ASSIGNABLE_FACTORY(
+        WARNING_FACTORY_ENTRY("cudaDeviceCanAccessPeer",
+                              ASSIGN_FACTORY_ENTRY("cudaDeviceCanAccessPeer",
+                                                   DEREF(ARG_WC(0)), ARG("0")),
+                              Diagnostics::EXPLICIT_PEER_ACCESS)))
 
 CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),
@@ -615,10 +614,9 @@ CONDITIONAL_FACTORY_ENTRY(
              ARG_WC(0)))),
     REMOVE_API_FACTORY_ENTRY_WITH_MSG(
         "cudaDeviceEnablePeerAccess",
-        "SYCL currently does not support memory access across "
-        "peer devices. You can specify "
-        "\"--use-dpcpp-extensions=peer_access\" to use the "
-        "extensions to migrate cudaDeviceEnablePeerAccess."))
+        "SYCL currently does not support memory access across peer devices. "
+        "You can migrate the code with peer access extension by not specifying "
+        "-no-dpcpp-extensions=peer_access."))
 
 CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),
@@ -630,7 +628,6 @@ CONDITIONAL_FACTORY_ENTRY(
              ARG_WC(0)))),
     REMOVE_API_FACTORY_ENTRY_WITH_MSG(
         "cudaDeviceDisablePeerAccess",
-        "SYCL currently does not support memory access across "
-        "peer devices. You can specify "
-        "\"--use-dpcpp-extensions=peer_access\" to use the "
-        "extensions to migrate cudaDeviceDisablePeerAccess."))
+        "SYCL currently does not support memory access across peer devices. "
+        "You can migrate the code with peer access extension by not specifying "
+        "-no-dpcpp-extensions=peer_access."))
