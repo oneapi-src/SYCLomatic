@@ -116,7 +116,7 @@
 - Rule: rule_cuda_compile_ptx
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: secuda_compile_ptxt
+  CmakeSyntax: cuda_compile_ptx
   In: cuda_compile_ptx(${device} ${value})
   Out: dpct_compile_sycl_code(${device} ${value})
   Subrules:
