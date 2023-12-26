@@ -10249,7 +10249,10 @@ void MemoryMigrationRule::arrayMigration(
 
   if (IsAsync) {
     NameRef = NameRef.drop_back(5 /* len of "Async" */);
-    ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
+    ReplaceStr =
+        DpctGlobalInfo::useExtBindlessImages()
+            ? MapNames::getDpctNamespace() + "experimental::async_dpct_memcpy"
+            : MapNames::getDpctNamespace() + "async_dpct_memcpy";
 
     auto StreamExpr = C->getArg(EndPos);
     std::string Str;
@@ -10267,7 +10270,10 @@ void MemoryMigrationRule::arrayMigration(
     }
     requestFeature(HelperFeatureEnum::device_ext);
   } else {
-    ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
+    ReplaceStr =
+        DpctGlobalInfo::useExtBindlessImages()
+            ? MapNames::getDpctNamespace() + "experimental::dpct_memcpy"
+            : MapNames::getDpctNamespace() + "dpct_memcpy";
     emplaceTransformation(removeArg(C, EndPos, SM));
     requestFeature(HelperFeatureEnum::device_ext);
   }
@@ -10838,7 +10844,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
     printDerefOp(OS, C->getArg(0));
     OS << " = ";
     if (DpctGlobalInfo::useExtBindlessImages())
-      OS << MapNames::getDpctNamespace() << "get_channel("
+      OS << MapNames::getDpctNamespace() << "experimental::get_channel("
          << ExprAnalysis::ref(C->getArg(1)) << ")";
     else
       OS << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
@@ -10926,7 +10932,8 @@ void MemoryMigrationRule::cudaArrayGetInfo(
   printDerefOp(OS, C->getArg(0));
   OS << " = ";
   if (DpctGlobalInfo::useExtBindlessImages())
-    OS << MapNames::getDpctNamespace() << "get_channel(" << Arg3Str << ");";
+    OS << MapNames::getDpctNamespace() << "experimental::get_channel("
+       << Arg3Str << ");";
   else
     OS << Arg3Str << "->get_channel();";
   OS << getNL() << IndentStr;

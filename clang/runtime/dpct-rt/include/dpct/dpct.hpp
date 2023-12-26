@@ -18,8 +18,8 @@ template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
 
 #include "atomic.hpp"
+#include "bindless_images.hpp"
 #include "device.hpp"
-#include "image.hpp"
 #include "kernel.hpp"
 #include "math.hpp"
 #include "memory.hpp"

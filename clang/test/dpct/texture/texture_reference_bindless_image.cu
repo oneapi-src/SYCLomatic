@@ -4,9 +4,9 @@
 // RUN: FileCheck --input-file %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.cpp -o %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.o %}
 
-// CHECK: dpct::bindless_image_wrapper<sycl::short2, 1> tex0;
+// CHECK: dpct::experimental::bindless_image_wrapper<sycl::short2, 1> tex0;
 static texture<short2, 1> tex0;
-// CHECK: dpct::bindless_image_wrapper<sycl::float4, 2> tex;
+// CHECK: dpct::experimental::bindless_image_wrapper<sycl::float4, 2> tex;
 static texture<float4, 2> tex;
 
 // CHECK: void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex0,
@@ -71,7 +71,7 @@ int main() {
   cudaBindTexture(0, tex, dataPtr, pitch * h);
   // CHECK: tex.attach(dataPtr, w, h, pitch);
   cudaBindTexture2D(0, tex, dataPtr, w, h, pitch);
-  // CHECK: dpct::image_mem_p pArr;
+  // CHECK: dpct::experimental::image_mem_ptr pArr;
   cudaArray_t pArr;
   // CHECK: tex.attach(pArr);
   cudaBindTextureToArray(tex, pArr);

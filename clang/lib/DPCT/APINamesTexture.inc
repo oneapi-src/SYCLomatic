@@ -54,21 +54,22 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     CALL_FACTORY_ENTRY("cudaDestroyTextureObject",
                        CALL(MapNames::getDpctNamespace() +
-                                "destroy_bindless_image",
+                                "experimental::destroy_bindless_image",
                             ARG(0), QUEUESTR)),
     DELETER_FACTORY_ENTRY("cudaDestroyTextureObject", ARG(0))))
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    CALL_FACTORY_ENTRY("cuTexObjectDestroy", CALL(MapNames::getDpctNamespace() +
-                                                      "destroy_bindless_image",
-                                                  ARG(0), QUEUESTR)),
+    CALL_FACTORY_ENTRY("cuTexObjectDestroy",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::destroy_bindless_image",
+                            ARG(0), QUEUESTR)),
     DELETER_FACTORY_ENTRY("cuTexObjectDestroy", ARG(0))))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaGetTextureObjectResourceDesc", DEREF(0),
-        CALL(MapNames::getDpctNamespace() + "get_data", ARG(1)))),
+        CALL(MapNames::getDpctNamespace() + "experimental::get_data", ARG(1)))),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                                 "cudaGetTextureObjectResourceDesc", DEREF(0),
@@ -77,7 +78,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaGetTextureObjectTextureDesc", DEREF(0),
-        CALL(MapNames::getDpctNamespace() + "get_sampling_info", ARG(1)))),
+        CALL(MapNames::getDpctNamespace() + "experimental::get_sampling_info", ARG(1)))),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                                 "cudaGetTextureObjectTextureDesc", DEREF(0),
@@ -195,7 +196,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cudaCreateTextureObject", DEREF(0),
                             CALL(DpctGlobalInfo::useExtBindlessImages()
                                      ? MapNames::getDpctNamespace() +
-                                           "create_bindless_image"
+                                           "experimental::create_bindless_image"
                                      : MapNames::getDpctNamespace() +
                                            "create_image_wrapper",
                                  DEREF(1), DEREF(2)))))

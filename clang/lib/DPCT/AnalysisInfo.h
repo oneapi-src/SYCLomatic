@@ -2771,7 +2771,7 @@ public:
     requestFeature(HelperFeatureEnum::device_ext);
 
     getDecl(PS, DpctGlobalInfo::useExtBindlessImages()
-                    ? "bindless_image_wrapper"
+                    ? "experimental::bindless_image_wrapper"
                     : "image_wrapper")
         << ";";
     Type->endForImage();
