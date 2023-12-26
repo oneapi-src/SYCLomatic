@@ -9295,6 +9295,8 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
   auto OffsetOfLineBegin = getOffsetOfLineBegin(BeginLoc, SM);
   auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
   auto FileInfo = DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+  if (!FileInfo)
+    return false;
   auto &S = FileInfo->getConstantMacroTMSet();
   auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
   for (auto &TM : S) {
@@ -9313,8 +9315,6 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
 
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
-      if(!FileInfo)
-        return false;
 
       if (!FileInfo->getRepls())
         return false;
