@@ -383,6 +383,86 @@ public:
     return offset;
   }
   
+  struct stripedToBlockedFunctor{
+  
+   int forward_offset(int i){
+       int fw_offset =  int(i * item.get_local_range(2) * item.get_local_range(1) *
+                       item.get_local_range(0)) +
+                   item.get_local_id(0);
+       return adjust_by_padding(fw_offset); 
+   }
+   
+   int reverse_offset(int i){
+       int rv_offset = int(item.get_local_id(0) * VALUES_PER_THREAD) + i;
+       return adjust_by_padding(rv_offset); 
+   }
+  
+  };
+  
+  /*TBD
+  struct scatterToBlockedFunctor{
+  
+     int forward_offset(int i){
+  
+    }
+  
+     int reverse_offset(int i){
+  
+  
+    }
+  
+  };
+  */
+  
+  template <typename Item, typename offsetFunctorType, typename offsetFunctorFWMethod, typename offsetFunctorRVMethod> 
+  __dpct__inline__ void helper_exchange(Item item,
+                                        T (&keys)[VALUES_PER_THREAD],
+                                        offsetFunctorType& offset_functor,
+                                        offsetFunctorFWMethod fw_method,
+                                        offsetFunctorRVMethod rv_method) {
+                                        
+  T *buffer = reinterpret_cast<T *>(_local_memory);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      int offset = (offset_functor.*fw_method)(i);
+      buffer[offset] = keys[i];
+    }
+
+    item.barrier(sycl::access::fence_space::local_space);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      int offset = (offset_functor.*rv_method)(i);
+      keys[i] = buffer[offset];
+    }
+    
+  
+  }
+  
+  /// Rearrange elements from blocked order to striped order
+  template <typename Item>
+  __dpct_inline__ void blocked_to_striped(Item item,
+                                          T (&keys)[VALUES_PER_THREAD]) {
+                                          
+
+  stripedToBlockedFunctor striped_to_blocked_functor;
+  helper_exchange(item, keys, striped_to_blocked_functor,
+  &stripedToBlockedFunctor::reverse_offset, &stripedToBlockedFunctor::forward_offset);  
+  
+  }
+  
+  /// Rearrange elements from striped order to blocked order
+  template <typename Item>
+  __dpct_inline__ void striped_to_blocked(Item item,
+                                          T (&keys)[VALUES_PER_THREAD]) {
+                                          
+
+  stripedToBlockedFunctor striped_to_blocked_functor;
+  helper_exchange(item, keys, striped_to_blocked_functor,
+  &stripedToBlockedFunctor::forward_offset, &stripedToBlockedFunctor::reverse_offset);  
+  
+  }
   /// Rearrange elements from rank order to blocked order
   template <typename Item>
   __dpct_inline__ void scatter_to_blocked(Item item,
@@ -407,58 +487,6 @@ public:
       keys[i] = buffer[offset];
     }
     
-  }
-
-  /// Rearrange elements from blocked order to striped order
-  template <typename Item>
-  __dpct_inline__ void blocked_to_striped(Item item,
-                                          T (&keys)[VALUES_PER_THREAD]) {
-                                          
-    T *buffer = reinterpret_cast<T *>(_local_memory);
-    
-#pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
-      offset = adjust_by_padding(offset);
-      buffer[offset] = keys[i];
-    }
-
-    item.barrier(sycl::access::fence_space::local_space);
-
-#pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
-                       item.get_local_range(0)) +
-                   item.get_local_id(0);
-      offset = adjust_by_padding(offset);
-      keys[i] = buffer[offset];
-    }
-  }
-
-  /// Rearrange elements from striped order to blocked order
-  template <typename Item>
-  __dpct_inline__ void striped_to_blocked(Item item,
-                                          T (&keys)[VALUES_PER_THREAD]) {
-                                          
-    T *buffer = reinterpret_cast<T *>(_local_memory);
-    
-#pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
-                       item.get_local_range(0)) +
-                   item.get_local_id(0);
-      offset = adjust_by_padding(offset);
-      buffer[offset] = keys[i];
-    }
-
-    item.barrier(sycl::access::fence_space::local_space);
-
-#pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
-      offset = adjust_by_padding(offset);
-      keys[i] = buffer[offset];
-    }
   }
 
 private:
