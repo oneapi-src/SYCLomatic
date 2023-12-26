@@ -136,6 +136,7 @@ jobs:
           cd c2s.src/build
           rm -rf tools/clang/test/dpct
           BUILD_LIT=TRUE ninja check-clang-c2s
+
   linux-test:
     name: linux-test-${{ matrix.test_suite }}-cpu
     runs-on: test
