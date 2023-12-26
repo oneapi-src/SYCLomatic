@@ -374,54 +374,52 @@ public:
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-  template <typename Item>
-  __dpct_inline__ int adjust_by_padding(int offset) {
-  
+  template <typename Item> __dpct_inline__ int adjust_by_padding(int offset) {
+
     if constexpr (INSERT_PADDING) {
-        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
+      offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
     }
     return offset;
   }
-  
-  struct stripedToBlockedFunctor{
-  
-   int forward_offset(int i){
-       int fw_offset =  int(i * item.get_local_range(2) * item.get_local_range(1) *
-                       item.get_local_range(0)) +
-                   item.get_local_id(0);
-       return adjust_by_padding(fw_offset); 
-   }
-   
-   int reverse_offset(int i){
-       int rv_offset = int(item.get_local_id(0) * VALUES_PER_THREAD) + i;
-       return adjust_by_padding(rv_offset); 
-   }
-  
+
+  struct stripedToBlockedFunctor {
+
+    int forward_offset(int i) {
+      int fw_offset = int(i * item.get_local_range(2) *
+                          item.get_local_range(1) * item.get_local_range(0)) +
+                      item.get_local_id(0);
+      return adjust_by_padding(fw_offset);
+    }
+
+    int reverse_offset(int i) {
+      int rv_offset = int(item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      return adjust_by_padding(rv_offset);
+    }
   };
-  
+
   /*TBD
   struct scatterToBlockedFunctor{
-  
+
      int forward_offset(int i){
-  
+
     }
-  
+
      int reverse_offset(int i){
-  
-  
+
+
     }
-  
+
   };
   */
-  
-  template <typename Item, typename offsetFunctorType, typename offsetFunctorFWMethod, typename offsetFunctorRVMethod> 
-  __dpct__inline__ void helper_exchange(Item item,
-                                        T (&keys)[VALUES_PER_THREAD],
-                                        offsetFunctorType& offset_functor,
+
+  template <typename Item, typename offsetFunctorType,
+            typename offsetFunctorFWMethod, typename offsetFunctorRVMethod>
+  __dpct__inline__ void helper_exchange(Item item, T (&keys)[VALUES_PER_THREAD],
+                                        offsetFunctorType &offset_functor,
                                         offsetFunctorFWMethod fw_method,
                                         offsetFunctorRVMethod rv_method) {
-                                        
-  T *buffer = reinterpret_cast<T *>(_local_memory);
+
+    T *buffer = reinterpret_cast<T *>(_local_memory);
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
@@ -436,32 +434,28 @@ public:
       int offset = (offset_functor.*rv_method)(i);
       keys[i] = buffer[offset];
     }
-    
-  
   }
-  
+
   /// Rearrange elements from blocked order to striped order
   template <typename Item>
   __dpct_inline__ void blocked_to_striped(Item item,
                                           T (&keys)[VALUES_PER_THREAD]) {
-                                          
 
-  stripedToBlockedFunctor striped_to_blocked_functor;
-  helper_exchange(item, keys, striped_to_blocked_functor,
-  &stripedToBlockedFunctor::reverse_offset, &stripedToBlockedFunctor::forward_offset);  
-  
+    stripedToBlockedFunctor striped_to_blocked_functor;
+    helper_exchange(item, keys, striped_to_blocked_functor,
+                    &stripedToBlockedFunctor::reverse_offset,
+                    &stripedToBlockedFunctor::forward_offset);
   }
-  
+
   /// Rearrange elements from striped order to blocked order
   template <typename Item>
   __dpct_inline__ void striped_to_blocked(Item item,
                                           T (&keys)[VALUES_PER_THREAD]) {
-                                          
 
-  stripedToBlockedFunctor striped_to_blocked_functor;
-  helper_exchange(item, keys, striped_to_blocked_functor,
-  &stripedToBlockedFunctor::forward_offset, &stripedToBlockedFunctor::reverse_offset);  
-  
+    stripedToBlockedFunctor striped_to_blocked_functor;
+    helper_exchange(item, keys, striped_to_blocked_functor,
+                    &stripedToBlockedFunctor::forward_offset,
+                    &stripedToBlockedFunctor::reverse_offset);
   }
   /// Rearrange elements from rank order to blocked order
   template <typename Item>
