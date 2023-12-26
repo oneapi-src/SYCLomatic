@@ -117,7 +117,7 @@ __global__ void kernelFuncHalfConversion() {
   h = __ll2half_rz(ll);
   // CHECK: f = h2[0];
   f = __low2float(h2);
-  // CHECK: f = *(&h2)[0];
+  // CHECK: f = (*(&h2))[0];
   f = __low2float(*(&h2));
   // CHECK: h = h2[0];
   h = __low2half(h2);

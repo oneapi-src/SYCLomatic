@@ -301,8 +301,11 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       DefRange = getDefinitionRange(Range.getBegin(), Range.getEnd());
     }
 
-    dpct::DpctGlobalInfo::getExpansionRangeBeginMap()[getCombinedStrFromLoc(DefRange.getBegin())] =
-        SourceRange(MI->getReplacementToken(0).getLocation(), MI->getDefinitionEndLoc());
+    dpct::DpctGlobalInfo::getExpansionRangeBeginMap()[getCombinedStrFromLoc(
+        DefRange.getBegin())] =
+        std::make_pair(DpctGlobalInfo::getLocInfo(
+                           MI->getReplacementToken(0).getLocation()),
+                       DpctGlobalInfo::getLocInfo(MI->getDefinitionEndLoc()));
     if (dpct::DpctGlobalInfo::getMacroDefines().find(HashKey) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
       // Record all processed macro definition
@@ -1720,7 +1723,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
-              "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t",
+              "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t", "CUuuid",
               "cusparseSpSVAlg_t", "cudaFuncAttributes", "cudaLaunchAttributeValue"))))))
           .bind("cudaTypeDef"),
       this);
@@ -6523,21 +6526,22 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            "cudaDeviceGetPCIBusId");
   } else if (FuncName == "cudaGetDevice") {
-    std::string ResultVarName = getDrefName(CE->getArg(0));
-    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
+    std::string ReplStr = getDrefName(CE->getArg(0)) + " = ";
     if (DpctGlobalInfo::useNoQueueDevice()) {
-      emplaceTransformation(new ReplaceStmt(CE, "0"));
+      ReplStr += "0";
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
              "cudaGetDevice",
              "it is redundant if it is migrated with option "
              "--helper-function-preference=no-queue-device "
              "which declares a global SYCL device and queue.");
     } else {
-      emplaceTransformation(
-          new ReplaceStmt(CE, MapNames::getDpctNamespace() +
-                                  "dev_mgr::instance().current_device_id()"));
+      ReplStr += MapNames::getDpctNamespace() +
+                 "dev_mgr::instance().current_device_id()";
       requestFeature(HelperFeatureEnum::device_ext);
     }
+    if (IsAssigned)
+      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+    emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
     if (isPlaceholderIdxDuplicated(CE))
@@ -9012,6 +9016,10 @@ void ConstantMemVarMigrationRule::runRule(
       emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
       return;
     }
+    if (auto VTD = DpctGlobalInfo::findParent<VarTemplateDecl>(MemVar)) {
+      report(VTD->getBeginLoc(), Diagnostics::TEMPLATE_VAR, false,
+             MemVar->getName());
+    }
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
     if (!Info)
       return;
@@ -9285,6 +9293,8 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
   auto OffsetOfLineBegin = getOffsetOfLineBegin(BeginLoc, SM);
   auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
   auto FileInfo = DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+  if (!FileInfo)
+    return false;
   auto &S = FileInfo->getConstantMacroTMSet();
   auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
   for (auto &TM : S) {
@@ -9303,8 +9313,6 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
 
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
-      if(!FileInfo)
-        return false;
 
       if (!FileInfo->getRepls())
         return false;
@@ -9472,6 +9480,10 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
     if (!Info)
       return;
 
+    if (auto VTD = DpctGlobalInfo::findParent<VarTemplateDecl>(MemVar)) {
+      report(VTD->getBeginLoc(), Diagnostics::TEMPLATE_VAR, false,
+             MemVar->getName());
+    }
     if (Info->isTypeDeclaredLocal()) {
       processTypeDeclaredLocal(MemVar, Info);
     } else {
@@ -12120,6 +12132,14 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
       Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                     MapNames::getClNamespace() +
                     "access::fence_space::local_space)";
+    } else if (Res.CanUseLocalBarrierWithCondition) {
+      report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER, true,
+             Res.GlobalFunctionName);
+      Replacement =
+          "(" + Res.Condition + ") ? " + DpctGlobalInfo::getItem(CE) +
+          ".barrier(" + MapNames::getClNamespace() +
+          "access::fence_space::local_space) : " + DpctGlobalInfo::getItem(CE) +
+          ".barrier()";
     } else {
       report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
              "nd_item");
@@ -14017,7 +14037,8 @@ void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverDeviceAPI = [&]() {
     return hasAnyName("cuDeviceGet", "cuDeviceComputeCapability",
                       "cuDriverGetVersion", "cuDeviceGetCount",
-                      "cuDeviceGetAttribute", "cuDeviceGetName");
+                      "cuDeviceGetAttribute", "cuDeviceGetName",
+                      "cuDeviceGetUuid", "cuDeviceGetUuid_v2");
   };
 
   MF.addMatcher(
@@ -14142,6 +14163,26 @@ void DriverDeviceAPIRule::runRule(
     printDerefOp(OS, Arg);
     OS << " = "
        << MapNames::getDpctNamespace() + "dev_mgr::instance().device_count()";
+    requestFeature(HelperFeatureEnum::device_ext);
+    if (IsAssigned) {
+      OS << ")";
+    }
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  } else if (APIName == "cuDeviceGetUuid" || APIName == "cuDeviceGetUuid_v2") {
+    if (!DpctGlobalInfo::useDeviceInfo()) {
+      report(CE->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
+             APIName);
+      return;
+    }
+    if (IsAssigned)
+      OS << "DPCT_CHECK_ERROR(";
+    auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    printDerefOp(OS, Arg);
+    ExprAnalysis SecEA(CE->getArg(1));
+    OS << " = "
+       << MapNames::getDpctNamespace() + "get_device(" +
+              SecEA.getReplacedString() + ")" + ".get_device_info()" +
+              ".get_uuid()";
     requestFeature(HelperFeatureEnum::device_ext);
     if (IsAssigned) {
       OS << ")";
@@ -14777,8 +14818,8 @@ void CudaExtentRule::runRule(
 REGISTER_RULE(CudaExtentRule, PassKind::PK_Analysis)
 
 void CudaUuidRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(namedDecl(
-                               hasAnyName("CUuuid_st", "cudaUUID_t")))),
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(namedDecl(hasAnyName(
+                               "CUuuid_st", "cudaUUID_t", "CUuuid")))),
                            member(hasName("bytes")))
                     .bind("UUID_bytes"),
                 this);
