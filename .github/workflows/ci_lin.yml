@@ -129,7 +129,7 @@ jobs:
           rm -rf tools/clang/test/dpct
           CUDA_PATH=$CUDAROOT/cuda-11.8 ninja check-clang-c2s
 
-       - name: BUILD_LIT
+      - name: BUILD_LIT
         if: |
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |

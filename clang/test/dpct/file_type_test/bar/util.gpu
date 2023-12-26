@@ -1,6 +1,6 @@
+#ifndef BUILD_TEST
 #include <cuda_runtime.h>
 #include "util_bar.hh"
-#ifndef BUILD_TEST
 // CHECK:#include "util.gpuhead"
 #include "util.gpuhead"
 
