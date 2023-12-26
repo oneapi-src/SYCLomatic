@@ -1,6 +1,6 @@
 #include <cuda_runtime.h>
 #include "util_bar.hh"
-
+#ifndef BUILD_TEST
 // CHECK:#include "util.gpuhead"
 #include "util.gpuhead"
 
@@ -17,3 +17,4 @@ __host__ __device__ void foo_util(){
   TopFooConf* monteCarlo;
   monteCarlo->fooData->_isotopes[0]._species[0]._reactions[0].fooCollision();
 }
+#endif
