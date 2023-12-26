@@ -260,4 +260,6 @@ DEF_WARNING(CALL_GROUP_FUNC_IN_COND, 1118, MEDIUM_LEVEL, "SYCL group functions a
 DEF_COMMENT(CALL_GROUP_FUNC_IN_COND, 1118, MEDIUM_LEVEL, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
 DEF_WARNING(TRY_EXPERIMENTAL_FEATURE, 1119, MEDIUM_LEVEL, "Migration of '%0' is not supported, please try to remigrate with option: '%1'.")
 DEF_COMMENT(TRY_EXPERIMENTAL_FEATURE, 1119, MEDIUM_LEVEL, "Migration of {0} is not supported, please try to remigrate with option: {1}.")
+DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed into device functions as extra arguments. As here %0 is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
+DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as extra arguments. As here {0} is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
 // clang-format on
