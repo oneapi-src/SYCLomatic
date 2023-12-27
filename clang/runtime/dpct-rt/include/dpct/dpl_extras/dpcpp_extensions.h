@@ -361,6 +361,7 @@ __dpct_inline__ uint32_t shr_add(uint32_t x, uint32_t shift, uint32_t addend) {
 ///
 /// \tparam T type of the data elements exchanges
 /// \tparam VALUES_PER_THREAD number of data elements assigned to a thread
+/// Implements blocked to striped exchange pattern
 template <typename T, int VALUES_PER_THREAD> class exchange {
 public:
   static size_t get_local_memory_size(size_t group_threads) {
@@ -373,18 +374,101 @@ public:
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
+  static int adjust_by_padding(int offset) {
+
+    if constexpr (INSERT_PADDING) {
+      offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
+    }
+    return offset;
+  }
+  template <typename Item>
+  struct stripedToBlockedFunctor {
+
+    int forward_offset(Item item, int i) {
+      int fw_offset = int(i * item.get_local_range(2) *
+                          item.get_local_range(1) * item.get_local_range(0)) +
+                      item.get_local_id(0);
+      return adjust_by_padding(fw_offset);
+    }
+
+    int reverse_offset(Item item, int i) {
+      int rv_offset = int(item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      return adjust_by_padding(rv_offset);
+    }
+  };
+
+  /*TBD
+  struct scatterToBlockedFunctor{
+
+     int forward_offset(int i){
+
+    }
+
+     int reverse_offset(int i){
+
+
+    }
+
+  };
+  */
+
+  template <typename Item, typename offsetFunctorType,
+            typename offsetFunctorFWMethod, typename offsetFunctorRVMethod>
+  __dpct_inline__ void helper_exchange(Item item, T (&keys)[VALUES_PER_THREAD],
+                                        offsetFunctorType &offset_functor,
+                                        offsetFunctorFWMethod fw_method,
+                                        offsetFunctorRVMethod rv_method) {
+
+    T *buffer = reinterpret_cast<T *>(_local_memory);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      int offset = (offset_functor.*fw_method)(item, i);
+      buffer[offset] = keys[i];
+    }
+
+    item.barrier(sycl::access::fence_space::local_space);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+      int offset = (offset_functor.*rv_method)(item, i);
+      keys[i] = buffer[offset];
+    }
+  }
+
+  /// Rearrange elements from blocked order to striped order
+  template <typename Item>
+  __dpct_inline__ void blocked_to_striped(Item item,
+                                          T (&keys)[VALUES_PER_THREAD]) {
+
+    stripedToBlockedFunctor striped_to_blocked_functor;
+    helper_exchange(item, keys, striped_to_blocked_functor,
+                    &stripedToBlockedFunctor::reverse_offset,
+                    &stripedToBlockedFunctor::forward_offset);
+  }
+
+  /// Rearrange elements from striped order to blocked order
+  template <typename Item>
+  __dpct_inline__ void striped_to_blocked(Item item,
+                                          T (&keys)[VALUES_PER_THREAD]) {
+
+    stripedToBlockedFunctor striped_to_blocked_functor;
+    helper_exchange(item, keys, striped_to_blocked_functor,
+                    &stripedToBlockedFunctor::forward_offset,
+                    &stripedToBlockedFunctor::reverse_offset);
+  }
   /// Rearrange elements from rank order to blocked order
   template <typename Item>
-  __dpct_inline__ void
-  scatter_to_blocked(Item item, T (&keys)[VALUES_PER_THREAD],
-                     int (&ranks)[VALUES_PER_THREAD]) {
+  __dpct_inline__ void scatter_to_blocked(Item item,
+                                          T (&keys)[VALUES_PER_THREAD],
+                                          int (&ranks)[VALUES_PER_THREAD]) {
+                                          
     T *buffer = reinterpret_cast<T *>(_local_memory);
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
       int offset = ranks[i];
-      if (INSERT_PADDING)
-        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
+      offset = adust_by_padding(offset);
       buffer[offset] = keys[i];
     }
 
@@ -393,10 +477,10 @@ public:
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
       int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
-      if (INSERT_PADDING)
-        offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
+      offset = adjust_by_padding(offset);
       keys[i] = buffer[offset];
     }
+    
   }
 
 private:
@@ -404,7 +488,7 @@ private:
   static constexpr bool INSERT_PADDING =
       (VALUES_PER_THREAD > 4) &&
       (detail::power_of_two<VALUES_PER_THREAD>::VALUE);
-
+      
   uint8_t *_local_memory;
 };
 
