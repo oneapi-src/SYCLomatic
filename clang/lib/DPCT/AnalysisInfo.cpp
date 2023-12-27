@@ -3527,11 +3527,144 @@ std::string MemVarInfo::getArgName() {
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
 std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
 ///// class TextureTypeInfo /////
-
-
-
-
-
+TextureTypeInfo::TextureTypeInfo(std::string &&DataType, int TexType) {
+  setDataTypeAndTexType(std::move(DataType), TexType);
+}
+void TextureTypeInfo::setDataTypeAndTexType(std::string &&Type, int TexType) {
+  DataType = std::move(Type);
+  IsArray = TexType & 0xF0;
+  Dimension = TexType & 0x0F;
+  // The DataType won't use dpct helper feature
+  MapNames::replaceName(MapNames::TypeNamesMap, DataType);
+}
+void TextureTypeInfo::prepareForImage() {
+  if (IsArray)
+    ++Dimension;
+}
+void TextureTypeInfo::endForImage() {
+  if (IsArray)
+    --Dimension;
+}
+std::string TextureTypeInfo::getDataType() { return DataType; }
+ParameterStream &TextureTypeInfo::printType(ParameterStream &PS,
+                           const std::string &TemplateName) {
+  PS << TemplateName << "<" << DataType << ", " << Dimension;
+  if (IsArray)
+    PS << ", true";
+  PS << ">";
+  return PS;
+}
+///// class TextureInfo /////
+TextureInfo::TextureInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
+            StringRef Name)
+    : FilePath(FilePath), Offset(Offset), Name(Name) {
+  NewVarName = Name.str();
+  for (auto &C : NewVarName) {
+    if ((!isDigit(C)) && (!isLetter(C)) && (C != '_'))
+      C = '_';
+  }
+  if (NewVarName.size() > 1 && NewVarName[NewVarName.size() - 1] == '_')
+    NewVarName.pop_back();
+}
+TextureInfo::TextureInfo(const VarDecl *VD)
+    : TextureInfo(DpctGlobalInfo::getLocInfo(
+                      VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
+                  VD->getName()) {}
+TextureInfo::TextureInfo(const VarDecl *VD, std::string Subscript)
+    : TextureInfo(DpctGlobalInfo::getLocInfo(
+                      VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
+                  VD->getName().str() + "[" + Subscript + "]") {}
+TextureInfo::TextureInfo(std::pair<clang::tooling::UnifiedPath, unsigned> LocInfo,
+            StringRef Name)
+    : TextureInfo(LocInfo.second, LocInfo.first.getCanonicalPath(), Name) {}
+ParameterStream &TextureInfo::getDecl(ParameterStream &PS,
+                         const std::string &TemplateDeclName) {
+  return Type->printType(PS, MapNames::getDpctNamespace() + TemplateDeclName)
+         << " " << Name;
+}
+TextureInfo::TextureInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
+            const VarDecl *VD)
+    : TextureInfo(Offset, FilePath, VD->getName()) {
+  if (auto D = dyn_cast_or_null<ClassTemplateSpecializationDecl>(
+          VD->getType()->getAsCXXRecordDecl())) {
+    auto &TemplateList = D->getTemplateInstantiationArgs();
+    auto DataTy = TemplateList[0].getAsType();
+    if (auto ET = dyn_cast<ElaboratedType>(DataTy))
+      DataTy = ET->getNamedType();
+    setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy),
+            TemplateList[1].getAsIntegral().getExtValue());
+  } else {
+    auto TST = VD->getType()->getAs<TemplateSpecializationType>();
+    if (TST) {
+      auto Args = TST->template_arguments();
+      auto Arg0 = Args[0];
+      auto Arg1 = Args[1];
+      if (Arg1.getKind() == clang::TemplateArgument::Expression) {
+        auto DataTy = Arg0.getAsType();
+        if (auto ET = dyn_cast<ElaboratedType>(DataTy))
+          DataTy = ET->getNamedType();
+        Expr::EvalResult ER;
+        if (!Arg1.getAsExpr()->isValueDependent() &&
+            Arg1.getAsExpr()->EvaluateAsInt(ER,
+                                            DpctGlobalInfo::getContext())) {
+          int64_t Value = ER.Val.getInt().getExtValue();
+          setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy), Value);
+        }
+      }
+    }
+  }
+}
+void TextureInfo::setType(std::string &&DataType, int TexType) {
+  setType(std::make_shared<TextureTypeInfo>(std::move(DataType), TexType));
+}
+void TextureInfo::setType(std::shared_ptr<TextureTypeInfo> TypeInfo) {
+  if (TypeInfo)
+    Type = TypeInfo;
+}
+std::shared_ptr<TextureTypeInfo> TextureInfo::getType() const { return Type; }
+std::string TextureInfo::getHostDeclString() {
+  ParameterStream PS;
+  Type->prepareForImage();
+  requestFeature(HelperFeatureEnum::device_ext);
+  getDecl(PS, "image_wrapper") << ";";
+  Type->endForImage();
+  return PS.Str;
+}
+std::string TextureInfo::getSamplerDecl() {
+  requestFeature(HelperFeatureEnum::device_ext);
+  return buildString("auto ", NewVarName, "_smpl = ", Name,
+                     ".get_sampler();");
+}
+std::string TextureInfo::getAccessorDecl(const std::string &QueueStr) {
+  requestFeature(HelperFeatureEnum::device_ext);
+  std::string Ret;
+  llvm::raw_string_ostream OS(Ret);
+  OS << "auto " << NewVarName << "_acc = " << Name << ".get_access(cgh";
+  printQueueStr(OS, QueueStr);
+  OS << ");";
+  return Ret;
+}
+void TextureInfo::addDecl(StmtList &AccessorList, StmtList &SamplerList,
+                     const std::string &QueueStr) {
+  AccessorList.emplace_back(getAccessorDecl(QueueStr));
+  SamplerList.emplace_back(getSamplerDecl());
+}
+ParameterStream &TextureInfo::getFuncDecl(ParameterStream &PS) {
+  requestFeature(HelperFeatureEnum::device_ext);
+  return getDecl(PS, "image_accessor_ext");
+}
+ParameterStream &TextureInfo::getFuncArg(ParameterStream &PS) { return PS << Name; }
+ParameterStream &TextureInfo::getKernelArg(ParameterStream &OS) {
+  requestFeature(HelperFeatureEnum::device_ext);
+  getType()->printType(OS,
+                       MapNames::getDpctNamespace() + "image_accessor_ext");
+  OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
+  return OS;
+}
+const std::string &TextureInfo::getName() { return Name; }
+unsigned TextureInfo::getOffset() { return Offset; }
+clang::tooling::UnifiedPath TextureInfo::getFilePath() { return FilePath; }
+bool TextureInfo::isUseHelperFunc() { return true; }
 
 
 

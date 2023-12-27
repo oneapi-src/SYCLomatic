@@ -1507,35 +1507,13 @@ class TextureTypeInfo {
   bool IsArray;
 
 public:
-  TextureTypeInfo(std::string &&DataType, int TexType) {
-    setDataTypeAndTexType(std::move(DataType), TexType);
-  }
-
-  void setDataTypeAndTexType(std::string &&Type, int TexType) {
-    DataType = std::move(Type);
-    IsArray = TexType & 0xF0;
-    Dimension = TexType & 0x0F;
-    // The DataType won't use dpct helper feature
-    MapNames::replaceName(MapNames::TypeNamesMap, DataType);
-  }
-
-  void prepareForImage() {
-    if (IsArray)
-      ++Dimension;
-  }
-  void endForImage() {
-    if (IsArray)
-      --Dimension;
-  }
-  std::string getDataType() { return DataType; }
+  TextureTypeInfo(std::string &&DataType, int TexType);
+  void setDataTypeAndTexType(std::string &&Type, int TexType);
+  void prepareForImage();
+  void endForImage();
+  std::string getDataType();
   ParameterStream &printType(ParameterStream &PS,
-                             const std::string &TemplateName) {
-    PS << TemplateName << "<" << DataType << ", " << Dimension;
-    if (IsArray)
-      PS << ", true";
-    PS << ">";
-    return PS;
-  }
+                             const std::string &TemplateName);
 };
 
 class TextureInfo {
@@ -1549,34 +1527,13 @@ protected:
 
 protected:
   TextureInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
-              StringRef Name)
-      : FilePath(FilePath), Offset(Offset), Name(Name) {
-    NewVarName = Name.str();
-    for (auto &C : NewVarName) {
-      if ((!isDigit(C)) && (!isLetter(C)) && (C != '_'))
-        C = '_';
-    }
-    if (NewVarName.size() > 1 && NewVarName[NewVarName.size() - 1] == '_')
-      NewVarName.pop_back();
-  }
-  TextureInfo(const VarDecl *VD)
-      : TextureInfo(DpctGlobalInfo::getLocInfo(
-                        VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
-                    VD->getName()) {}
-  TextureInfo(const VarDecl *VD, std::string Subscript)
-      : TextureInfo(DpctGlobalInfo::getLocInfo(
-                        VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
-                    VD->getName().str() + "[" + Subscript + "]") {}
+              StringRef Name);
+  TextureInfo(const VarDecl *VD);
+  TextureInfo(const VarDecl *VD, std::string Subscript);
   TextureInfo(std::pair<clang::tooling::UnifiedPath, unsigned> LocInfo,
-              StringRef Name)
-      : TextureInfo(LocInfo.second, LocInfo.first.getCanonicalPath(), Name) {}
-
+              StringRef Name);
   ParameterStream &getDecl(ParameterStream &PS,
-                           const std::string &TemplateDeclName) {
-    return Type->printType(PS, MapNames::getDpctNamespace() + TemplateDeclName)
-           << " " << Name;
-  }
-
+                           const std::string &TemplateDeclName);
   template <class StreamT>
   static void printQueueStr(StreamT &OS, const std::string &Queue) {
     if (Queue.empty())
@@ -1586,97 +1543,23 @@ protected:
 
 public:
   TextureInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
-              const VarDecl *VD)
-      : TextureInfo(Offset, FilePath, VD->getName()) {
-    if (auto D = dyn_cast_or_null<ClassTemplateSpecializationDecl>(
-            VD->getType()->getAsCXXRecordDecl())) {
-      auto &TemplateList = D->getTemplateInstantiationArgs();
-      auto DataTy = TemplateList[0].getAsType();
-      if (auto ET = dyn_cast<ElaboratedType>(DataTy))
-        DataTy = ET->getNamedType();
-      setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy),
-              TemplateList[1].getAsIntegral().getExtValue());
-    } else {
-      auto TST = VD->getType()->getAs<TemplateSpecializationType>();
-      if (TST) {
-        auto Args = TST->template_arguments();
-        auto Arg0 = Args[0];
-        auto Arg1 = Args[1];
-
-        if (Arg1.getKind() == clang::TemplateArgument::Expression) {
-          auto DataTy = Arg0.getAsType();
-          if (auto ET = dyn_cast<ElaboratedType>(DataTy))
-            DataTy = ET->getNamedType();
-          Expr::EvalResult ER;
-          if (!Arg1.getAsExpr()->isValueDependent() &&
-              Arg1.getAsExpr()->EvaluateAsInt(ER,
-                                              DpctGlobalInfo::getContext())) {
-            int64_t Value = ER.Val.getInt().getExtValue();
-            setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy), Value);
-          }
-        }
-      }
-    }
-  }
-
+              const VarDecl *VD);
   virtual ~TextureInfo() = default;
-  void setType(std::string &&DataType, int TexType) {
-    setType(std::make_shared<TextureTypeInfo>(std::move(DataType), TexType));
-  }
-  inline void setType(std::shared_ptr<TextureTypeInfo> TypeInfo) {
-    if (TypeInfo)
-      Type = TypeInfo;
-  }
-
-  inline std::shared_ptr<TextureTypeInfo> getType() const { return Type; }
-
-  virtual std::string getHostDeclString() {
-    ParameterStream PS;
-    Type->prepareForImage();
-    requestFeature(HelperFeatureEnum::device_ext);
-
-    getDecl(PS, "image_wrapper") << ";";
-    Type->endForImage();
-    return PS.Str;
-  }
-
-  virtual std::string getSamplerDecl() {
-    requestFeature(HelperFeatureEnum::device_ext);
-    return buildString("auto ", NewVarName, "_smpl = ", Name,
-                       ".get_sampler();");
-  }
-  virtual std::string getAccessorDecl(const std::string &QueueStr) {
-    requestFeature(HelperFeatureEnum::device_ext);
-    std::string Ret;
-    llvm::raw_string_ostream OS(Ret);
-    OS << "auto " << NewVarName << "_acc = " << Name << ".get_access(cgh";
-    printQueueStr(OS, QueueStr);
-    OS << ");";
-    return Ret;
-  }
+  void setType(std::string &&DataType, int TexType);
+  void setType(std::shared_ptr<TextureTypeInfo> TypeInfo);
+  std::shared_ptr<TextureTypeInfo> getType() const;
+  virtual std::string getHostDeclString();
+  virtual std::string getSamplerDecl();
+  virtual std::string getAccessorDecl(const std::string &QueueStr);
   virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList,
-                       const std::string &QueueStr) {
-    AccessorList.emplace_back(getAccessorDecl(QueueStr));
-    SamplerList.emplace_back(getSamplerDecl());
-  }
-
-  inline ParameterStream &getFuncDecl(ParameterStream &PS) {
-    requestFeature(HelperFeatureEnum::device_ext);
-    return getDecl(PS, "image_accessor_ext");
-  }
-  inline ParameterStream &getFuncArg(ParameterStream &PS) { return PS << Name; }
-  virtual ParameterStream &getKernelArg(ParameterStream &OS) {
-    requestFeature(HelperFeatureEnum::device_ext);
-    getType()->printType(OS,
-                         MapNames::getDpctNamespace() + "image_accessor_ext");
-    OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
-    return OS;
-  }
-  inline const std::string &getName() { return Name; }
-
-  inline unsigned getOffset() { return Offset; }
-  inline clang::tooling::UnifiedPath getFilePath() { return FilePath; }
-  inline bool isUseHelperFunc() { return true; }
+                       const std::string &QueueStr);
+  ParameterStream &getFuncDecl(ParameterStream &PS);
+  ParameterStream &getFuncArg(ParameterStream &PS);
+  virtual ParameterStream &getKernelArg(ParameterStream &OS);
+  const std::string &getName();
+  unsigned getOffset();
+  clang::tooling::UnifiedPath getFilePath();
+  bool isUseHelperFunc();
 };
 
 // texture handle info
