@@ -936,9 +936,8 @@ public:
   getExpansionRangeBeginMap();
   static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
   getExpansionRangeToMacroRecord();
-  static std::map<std::string,
-                  std::shared_ptr<DpctGlobalInfo::MacroDefRecord>> &
-  getMacroTokenToMacroDefineLoc();
+  static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+      &getMacroTokenToMacroDefineLoc();
   static std::map<std::string, std::string> &
   getFunctionCallInMacroMigrateRecord();
   static std::map<std::string, SourceLocation> &getEndifLocationOfIfdef();
