@@ -1239,27 +1239,11 @@ private:
 class DpctNameGenerator {
   ASTNameGenerator G;
   PrintingPolicy PP;
-
-  void printName(const FunctionDecl *FD, llvm::raw_ostream &OS) {
-    if (G.writeName(FD, OS)) {
-      FD->printQualifiedName(OS, PP);
-      OS << "@";
-      FD->getType().print(OS, PP);
-    }
-  }
-
+  void printName(const FunctionDecl *FD, llvm::raw_ostream &OS);
 public:
   DpctNameGenerator() : DpctNameGenerator(DpctGlobalInfo::getContext()) {}
-  explicit DpctNameGenerator(ASTContext &Ctx)
-      : G(Ctx), PP(Ctx.getPrintingPolicy()) {
-    PP.PrintCanonicalTypes = true;
-  }
-  std::string getName(const FunctionDecl *D) {
-    std::string Result;
-    llvm::raw_string_ostream OS(Result);
-    printName(D, OS);
-    return OS.str();
-  }
+  explicit DpctNameGenerator(ASTContext &Ctx);
+  std::string getName(const FunctionDecl *D);
 };
 
 class TemplateArgumentInfo;
@@ -1276,12 +1260,7 @@ class SizeInfo {
 public:
   SizeInfo() = default;
   SizeInfo(std::string Size) : Size(std::move(Size)) {}
-  SizeInfo(std::shared_ptr<TemplateDependentStringInfo> TDSI) : TDSI(TDSI) {}
-  const std::string &getSize() {
-    if (TDSI)
-      return TDSI->getSourceString();
-    return Size;
-  }
+  SizeInfo(std::shared_ptr<TemplateDependentStringInfo> TDSI);
   // Get actual size string according to template arguments list;
   void setTemplateList(const std::vector<TemplateArgumentInfo> &TemplateList);
 };
@@ -1293,54 +1272,29 @@ public:
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
-  CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false)
-      : PointerLevel(0), IsReference(false), IsTemplate(false) {
-    if (D && D->getTypeSourceInfo()) {
-      auto TL = D->getTypeSourceInfo()->getTypeLoc();
-      IsConstantQualified = D->hasAttr<CUDAConstantAttr>();
-      setTypeInfo(TL, NeedSizeFold);
-      if (TL.getTypeLocClass() == TypeLoc::IncompleteArray) {
-        if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
-          Range[0] = std::to_string(CAT->getSize().getZExtValue());
-        }
-      }
-    }
-  }
-
-  inline const std::string &getBaseName() { return BaseName; }
-
-  inline size_t getDimension() { return Range.size(); }
-  inline std::vector<SizeInfo> &getRange() { return Range; }
+  CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false);
+  const std::string &getBaseName();
+  size_t getDimension();
+  std::vector<SizeInfo> &getRange();
   // when there is no arguments, parameter MustArguments determine whether
   // parens will exist. Null string will be returned when MustArguments is
   // false, otherwise "()" will be returned.
   std::string getRangeArgument(const std::string &MemSize, bool MustArguments);
-
-  inline bool isTemplate() const { return IsTemplate; }
-  inline bool isPointer() const { return PointerLevel; }
-  inline bool isArray() const { return IsArray; }
-  inline bool isReference() const { return IsReference; }
-  inline void adjustAsMemType() {
-    setPointerAsArray();
-    removeQualifier();
-  }
-
+  inline bool isTemplate() const;
+  inline bool isPointer() const;
+  inline bool isArray() const;
+  inline bool isReference() const;
+  inline void adjustAsMemType();
   // Get instantiated type name with given template arguments.
   // e.g. X<T>, with T = int, result type will be X<int>.
   std::shared_ptr<CtTypeInfo>
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TA);
-
-  bool isWritten() const {
-    return !TDSI || !isTemplate() || TDSI->isDependOnWritten();
-  }
-  std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
-  inline bool containSizeofType() { return ContainSizeofType; }
-  inline std::vector<std::string> getArraySizeOriginExprs() {
-    return ArraySizeOriginExprs;
-  }
-
-  bool containsTemplateDependentMacro() const { return TemplateDependentMacro; }
-  bool isConstantQualified() const { return IsConstantQualified; }
+  bool isWritten() const;
+  std::set<HelperFeatureEnum> getHelperFeatureSet();
+  bool containSizeofType();
+  std::vector<std::string> getArraySizeOriginExprs();
+  bool containsTemplateDependentMacro() const;
+  bool isConstantQualified() const;
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
@@ -1383,15 +1337,8 @@ private:
   void setArrayInfo(const IncompleteArrayTypeLoc &TL, bool NeedSizeFold);
   void setName(const TypeLoc &TL);
   void updateName();
-
-  void setPointerAsArray() {
-    if (isPointer()) {
-      --PointerLevel;
-      Range.emplace_back();
-      updateName();
-    }
-  }
-  inline void removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
+  void setPointerAsArray();
+  void removeQualifier();
 
 private:
   std::string BaseName;

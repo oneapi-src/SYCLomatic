@@ -2702,6 +2702,296 @@ std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
 std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
+///// class DpctNameGenerator /////
+void DpctNameGenerator::printName(const FunctionDecl *FD, llvm::raw_ostream &OS) {
+  if (G.writeName(FD, OS)) {
+    FD->printQualifiedName(OS, PP);
+    OS << "@";
+    FD->getType().print(OS, PP);
+  }
+}
+DpctNameGenerator::DpctNameGenerator(ASTContext &Ctx)
+    : G(Ctx), PP(Ctx.getPrintingPolicy()) {
+  PP.PrintCanonicalTypes = true;
+}
+std::string DpctNameGenerator::getName(const FunctionDecl *D) {
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  printName(D, OS);
+  return OS.str();
+}
+///// class SizeInfo /////
+SizeInfo::SizeInfo(std::shared_ptr<TemplateDependentStringInfo> TDSI) : TDSI(TDSI) {}
+const std::string &getSize() {
+  if (TDSI)
+    return TDSI->getSourceString();
+  return Size;
+}
+void SizeInfo::setTemplateList(
+    const std::vector<TemplateArgumentInfo> &TemplateList) {
+  if (TDSI)
+    TDSI = TDSI->applyTemplateArguments(TemplateList);
+}
+///// class CtTypeInfo /////
+CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
+    : PointerLevel(0), IsTemplate(false) {
+  setTypeInfo(TL, NeedSizeFold);
+}
+CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold)
+    : PointerLevel(0), IsReference(false), IsTemplate(false) {
+  if (D && D->getTypeSourceInfo()) {
+    auto TL = D->getTypeSourceInfo()->getTypeLoc();
+    IsConstantQualified = D->hasAttr<CUDAConstantAttr>();
+    setTypeInfo(TL, NeedSizeFold);
+    if (TL.getTypeLocClass() == TypeLoc::IncompleteArray) {
+      if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
+        Range[0] = std::to_string(CAT->getSize().getZExtValue());
+      }
+    }
+  }
+}
+const std::string &CtTypeInfo::getBaseName() { return BaseName; }
+size_t CtTypeInfo::getDimension() { return Range.size(); }
+std::vector<SizeInfo> &CtTypeInfo::getRange() { return Range; }
+std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
+                                         bool MustArguments) {
+  std::string Arg = "(";
+  for (unsigned i = 0; i < Range.size(); ++i) {
+    auto Size = Range[i].getSize();
+    if (Size.empty()) {
+      if (MemSize.empty()) {
+        Arg += "1, ";
+      } else {
+        Arg += MemSize;
+        Arg += ", ";
+      }
+      for (unsigned tmp = i + 1; tmp < Range.size(); ++tmp)
+        Arg += "1, ";
+      break;
+    } else
+      Arg += Size;
+    Arg += ", ";
+  }
+  return (Arg.size() == 1) ? (MustArguments ? (Arg + ")") : "")
+                           : Arg.replace(Arg.size() - 2, 2, ")");
+}
+bool CtTypeInfo::isTemplate() const { return IsTemplate; }
+bool CtTypeInfo::isPointer() const { return PointerLevel; }
+bool CtTypeInfo::isArray() const { return IsArray; }
+bool CtTypeInfo::isReference() const { return IsReference; }
+void CtTypeInfo::adjustAsMemType() {
+  setPointerAsArray();
+  removeQualifier();
+}
+std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(
+    const std::vector<TemplateArgumentInfo> &TA) {
+  auto NewType = std::make_shared<CtTypeInfo>(*this);
+  if (TDSI)
+    NewType->TDSI = TDSI->applyTemplateArguments(TA);
+  for (auto &R : NewType->Range)
+    R.setTemplateList(TA);
+  NewType->BaseName.clear();
+  NewType->updateName();
+  return NewType;
+}
+bool CtTypeInfo::isWritten() const {
+  return !TDSI || !isTemplate() || TDSI->isDependOnWritten();
+}
+std::set<HelperFeatureEnum> CtTypeInfo::getHelperFeatureSet() { return HelperFeatureSet; }
+bool CtTypeInfo::containSizeofType() { return ContainSizeofType; }
+std::vector<std::string> CtTypeInfo::getArraySizeOriginExprs() {
+  return ArraySizeOriginExprs;
+}
+bool CtTypeInfo::containsTemplateDependentMacro() const { return TemplateDependentMacro; }
+bool CtTypeInfo::isConstantQualified() const { return IsConstantQualified; }
+void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
+  switch (TL.getTypeLocClass()) {
+  case TypeLoc::Qualified:
+    BaseName = TL.getType().getLocalQualifiers().getAsString(
+        DpctGlobalInfo::getContext().getPrintingPolicy());
+    return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
+                       NeedSizeFold);
+  case TypeLoc::ConstantArray:
+    IsArray = true;
+    return setArrayInfo(TYPELOC_CAST(ConstantArrayTypeLoc), NeedSizeFold);
+  case TypeLoc::DependentSizedArray:
+    return setArrayInfo(TYPELOC_CAST(DependentSizedArrayTypeLoc), NeedSizeFold);
+  case TypeLoc::IncompleteArray:
+    return setArrayInfo(TYPELOC_CAST(IncompleteArrayTypeLoc), NeedSizeFold);
+  case TypeLoc::Pointer:
+    ++PointerLevel;
+    return setTypeInfo(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc());
+  case TypeLoc::LValueReference:
+  case TypeLoc::RValueReference:
+    IsReference = true;
+    return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
+  case TypeLoc::Elaborated: {
+    const TypeLoc &NamedTypeLoc =
+        TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
+    if (const auto TTL = NamedTypeLoc.getAs<TypedefTypeLoc>()) {
+      if (setTypedefInfo(TTL, NeedSizeFold))
+        return;
+    }
+    break;
+  }
+  case TypeLoc::Typedef: {
+    if (setTypedefInfo(TYPELOC_CAST(TypedefTypeLoc), NeedSizeFold))
+      return;
+    break;
+  }
+  default:
+    break;
+  }
+  setName(TL);
+}
+std::string CtTypeInfo::getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
+  const auto *const SizeExpr = TL.getSizeExpr();
+
+  auto IsContainMacro =
+      isContainMacro(SizeExpr) || !TL.getSizeExpr()->getBeginLoc().isFileID();
+
+  auto DREMatcher = ast_matchers::findAll(ast_matchers::declRefExpr());
+  auto DREMatchedResults =
+      ast_matchers::match(DREMatcher, *SizeExpr, DpctGlobalInfo::getContext());
+  bool IsContainDRE = !DREMatchedResults.empty();
+
+  bool IsContainSizeOfUserDefinedType = false;
+  auto SOMatcher = ast_matchers::findAll(
+      ast_matchers::unaryExprOrTypeTraitExpr(ast_matchers::ofKind(UETT_SizeOf))
+          .bind("so"));
+  auto SOMatchedResults =
+      ast_matchers::match(SOMatcher, *SizeExpr, DpctGlobalInfo::getContext());
+  for (const auto &Res : SOMatchedResults) {
+    const auto *UETT = Res.getNodeAs<UnaryExprOrTypeTraitExpr>("so");
+    if (UETT->isArgumentType()) {
+      const auto *const RD =
+          UETT->getArgumentType().getCanonicalType()->getAsRecordDecl();
+      if (MapNames::SupportedVectorTypes.count(RD->getNameAsString()) == 0) {
+        IsContainSizeOfUserDefinedType = true;
+        break;
+      }
+    }
+  }
+
+  // We need not fold the size expression in these cases.
+  if (!IsContainMacro && !IsContainDRE && !IsContainSizeOfUserDefinedType) {
+    return getUnfoldedArraySize(TL);
+  }
+
+  auto TLRange = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
+  auto SizeExprRange = getRangeInRange(SizeExpr->getSourceRange(),
+                                       TLRange.getBegin(), TLRange.getEnd());
+  auto SizeExprBegin = SizeExprRange.first;
+  auto SizeExprEnd = SizeExprRange.second;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  size_t Length =
+      SM.getCharacterData(SizeExprEnd) - SM.getCharacterData(SizeExprBegin);
+  auto DL = SM.getDecomposedLoc(SizeExprBegin);
+  auto OriginalStr =
+      std::string(SM.getBufferData(DL.first).substr(DL.second, Length));
+
+  // When it is a literal in macro, we also need not fold.
+  auto LiteralStr = toString(TL.getTypePtr()->getSize(), 10, false, false);
+  if (OriginalStr == LiteralStr) {
+    return getUnfoldedArraySize(TL);
+  }
+
+  ArraySizeOriginExprs.push_back(std::move(OriginalStr));
+  return buildString(LiteralStr, "/*", ArraySizeOriginExprs.back(), "*/");
+}
+std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {
+  ContainSizeofType = containSizeOfType(TL.getSizeExpr());
+  ExprAnalysis A;
+  A.analyze(TL.getSizeExpr());
+  return A.getReplacedString();
+}
+bool CtTypeInfo::setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold) {
+  const TypedefNameDecl *TND = TL.getTypedefNameDecl();
+  if (!TND)
+    return false;
+  if (!TND->getTypeSourceInfo())
+    return false;
+  const TypeLoc TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
+  ConstantArrayTypeLoc CATL;
+  if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
+      (CATL = TypedefTpyeDeclLoc.getAs<ConstantArrayTypeLoc>())) {
+    setArrayInfo(CATL, NeedSizeFold);
+    return true;
+  }
+  return false;
+}
+void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
+                              bool NeedSizeFold) {
+  ContainSizeofType = containSizeOfType(TL.getSizeExpr());
+  if (NeedSizeFold) {
+    Range.emplace_back(getFoldedArraySize(TL));
+  } else {
+    Range.emplace_back(getUnfoldedArraySize(TL));
+  }
+  setTypeInfo(TL.getElementLoc(), NeedSizeFold);
+}
+void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
+                              bool NeedSizeFold) {
+  ContainSizeofType = containSizeOfType(TL.getSizeExpr());
+  ExprAnalysis EA;
+  EA.analyze(TL.getSizeExpr());
+  auto TDSI = EA.getTemplateDependentStringInfo();
+  if (TDSI->containsTemplateDependentMacro())
+    TemplateDependentMacro = true;
+  Range.emplace_back(EA.getTemplateDependentStringInfo());
+  setTypeInfo(TL.getElementLoc(), NeedSizeFold);
+}
+void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
+                              bool NeedSizeFold) {
+  Range.emplace_back();
+  setTypeInfo(TL.getElementLoc(), NeedSizeFold);
+}
+void CtTypeInfo::setName(const TypeLoc &TL) {
+  ExprAnalysis EA;
+  EA.analyze(TL);
+  TDSI = EA.getTemplateDependentStringInfo();
+  auto SetFromTL = EA.getHelperFeatureSet();
+  HelperFeatureSet.insert(SetFromTL.begin(), SetFromTL.end());
+
+  IsTemplate = TL.getTypePtr()->isDependentType();
+  updateName();
+}
+void CtTypeInfo::updateName() {
+  BaseNameWithoutQualifiers = TDSI->getSourceString();
+  auto SetFromTTDSI = TDSI->getHelperFeatureSet();
+  HelperFeatureSet.insert(SetFromTTDSI.begin(), SetFromTTDSI.end());
+
+  if (isPointer()) {
+    BaseNameWithoutQualifiers += ' ';
+    BaseNameWithoutQualifiers.append(PointerLevel, '*');
+  }
+
+  if (BaseName.empty())
+    BaseName = BaseNameWithoutQualifiers;
+  else {
+    BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
+  }
+}
+void CtTypeInfo::setPointerAsArray() {
+  if (isPointer()) {
+    --PointerLevel;
+    Range.emplace_back();
+    updateName();
+  }
+}
+void CtTypeInfo::removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
+///// class VarInfo /////
+
+
+
+
+
+
+
+
+
+
+
 
 
 ///// end /////
@@ -5415,228 +5705,27 @@ bool MemVarMap::isSameAs(const MemVarMap &Other) const {
   return true;
 }
 
-CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
-    : PointerLevel(0), IsTemplate(false) {
-  setTypeInfo(TL, NeedSizeFold);
-}
 
-std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
-                                         bool MustArguments) {
-  std::string Arg = "(";
-  for (unsigned i = 0; i < Range.size(); ++i) {
-    auto Size = Range[i].getSize();
-    if (Size.empty()) {
-      if (MemSize.empty()) {
-        Arg += "1, ";
-      } else {
-        Arg += MemSize;
-        Arg += ", ";
-      }
-      for (unsigned tmp = i + 1; tmp < Range.size(); ++tmp)
-        Arg += "1, ";
-      break;
-    } else
-      Arg += Size;
-    Arg += ", ";
-  }
-  return (Arg.size() == 1) ? (MustArguments ? (Arg + ")") : "")
-                           : Arg.replace(Arg.size() - 2, 2, ")");
-}
 
-void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
-  switch (TL.getTypeLocClass()) {
-  case TypeLoc::Qualified:
-    BaseName = TL.getType().getLocalQualifiers().getAsString(
-        DpctGlobalInfo::getContext().getPrintingPolicy());
-    return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
-                       NeedSizeFold);
-  case TypeLoc::ConstantArray:
-    IsArray = true;
-    return setArrayInfo(TYPELOC_CAST(ConstantArrayTypeLoc), NeedSizeFold);
-  case TypeLoc::DependentSizedArray:
-    return setArrayInfo(TYPELOC_CAST(DependentSizedArrayTypeLoc), NeedSizeFold);
-  case TypeLoc::IncompleteArray:
-    return setArrayInfo(TYPELOC_CAST(IncompleteArrayTypeLoc), NeedSizeFold);
-  case TypeLoc::Pointer:
-    ++PointerLevel;
-    return setTypeInfo(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc());
-  case TypeLoc::LValueReference:
-  case TypeLoc::RValueReference:
-    IsReference = true;
-    return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
-  case TypeLoc::Elaborated: {
-    const TypeLoc &NamedTypeLoc =
-        TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
-    if (const auto TTL = NamedTypeLoc.getAs<TypedefTypeLoc>()) {
-      if (setTypedefInfo(TTL, NeedSizeFold))
-        return;
-    }
-    break;
-  }
-  case TypeLoc::Typedef: {
-    if (setTypedefInfo(TYPELOC_CAST(TypedefTypeLoc), NeedSizeFold))
-      return;
-    break;
-  }
-  default:
-    break;
-  }
-  setName(TL);
-}
 
-bool CtTypeInfo::setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold) {
-  const TypedefNameDecl *TND = TL.getTypedefNameDecl();
-  if (!TND)
-    return false;
-  if (!TND->getTypeSourceInfo())
-    return false;
-  const TypeLoc TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
-  ConstantArrayTypeLoc CATL;
-  if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
-      (CATL = TypedefTpyeDeclLoc.getAs<ConstantArrayTypeLoc>())) {
-    setArrayInfo(CATL, NeedSizeFold);
-    return true;
-  }
-  return false;
-}
 
-void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
-                              bool NeedSizeFold) {
-  Range.emplace_back();
-  setTypeInfo(TL.getElementLoc(), NeedSizeFold);
-}
 
-void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
-                              bool NeedSizeFold) {
-  ContainSizeofType = containSizeOfType(TL.getSizeExpr());
-  ExprAnalysis EA;
-  EA.analyze(TL.getSizeExpr());
-  auto TDSI = EA.getTemplateDependentStringInfo();
-  if (TDSI->containsTemplateDependentMacro())
-    TemplateDependentMacro = true;
-  Range.emplace_back(EA.getTemplateDependentStringInfo());
-  setTypeInfo(TL.getElementLoc(), NeedSizeFold);
-}
 
-void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
-                              bool NeedSizeFold) {
-  ContainSizeofType = containSizeOfType(TL.getSizeExpr());
-  if (NeedSizeFold) {
-    Range.emplace_back(getFoldedArraySize(TL));
-  } else {
-    Range.emplace_back(getUnfoldedArraySize(TL));
-  }
-  setTypeInfo(TL.getElementLoc(), NeedSizeFold);
-}
 
-std::string CtTypeInfo::getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
-  const auto *const SizeExpr = TL.getSizeExpr();
 
-  auto IsContainMacro =
-      isContainMacro(SizeExpr) || !TL.getSizeExpr()->getBeginLoc().isFileID();
 
-  auto DREMatcher = ast_matchers::findAll(ast_matchers::declRefExpr());
-  auto DREMatchedResults =
-      ast_matchers::match(DREMatcher, *SizeExpr, DpctGlobalInfo::getContext());
-  bool IsContainDRE = !DREMatchedResults.empty();
 
-  bool IsContainSizeOfUserDefinedType = false;
-  auto SOMatcher = ast_matchers::findAll(
-      ast_matchers::unaryExprOrTypeTraitExpr(ast_matchers::ofKind(UETT_SizeOf))
-          .bind("so"));
-  auto SOMatchedResults =
-      ast_matchers::match(SOMatcher, *SizeExpr, DpctGlobalInfo::getContext());
-  for (const auto &Res : SOMatchedResults) {
-    const auto *UETT = Res.getNodeAs<UnaryExprOrTypeTraitExpr>("so");
-    if (UETT->isArgumentType()) {
-      const auto *const RD =
-          UETT->getArgumentType().getCanonicalType()->getAsRecordDecl();
-      if (MapNames::SupportedVectorTypes.count(RD->getNameAsString()) == 0) {
-        IsContainSizeOfUserDefinedType = true;
-        break;
-      }
-    }
-  }
 
-  // We need not fold the size expression in these cases.
-  if (!IsContainMacro && !IsContainDRE && !IsContainSizeOfUserDefinedType) {
-    return getUnfoldedArraySize(TL);
-  }
 
-  auto TLRange = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
-  auto SizeExprRange = getRangeInRange(SizeExpr->getSourceRange(),
-                                       TLRange.getBegin(), TLRange.getEnd());
-  auto SizeExprBegin = SizeExprRange.first;
-  auto SizeExprEnd = SizeExprRange.second;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  size_t Length =
-      SM.getCharacterData(SizeExprEnd) - SM.getCharacterData(SizeExprBegin);
-  auto DL = SM.getDecomposedLoc(SizeExprBegin);
-  auto OriginalStr =
-      std::string(SM.getBufferData(DL.first).substr(DL.second, Length));
 
-  // When it is a literal in macro, we also need not fold.
-  auto LiteralStr = toString(TL.getTypePtr()->getSize(), 10, false, false);
-  if (OriginalStr == LiteralStr) {
-    return getUnfoldedArraySize(TL);
-  }
 
-  ArraySizeOriginExprs.push_back(std::move(OriginalStr));
-  return buildString(LiteralStr, "/*", ArraySizeOriginExprs.back(), "*/");
-}
 
-std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {
-  ContainSizeofType = containSizeOfType(TL.getSizeExpr());
-  ExprAnalysis A;
-  A.analyze(TL.getSizeExpr());
-  return A.getReplacedString();
-}
 
-void CtTypeInfo::setName(const TypeLoc &TL) {
-  ExprAnalysis EA;
-  EA.analyze(TL);
-  TDSI = EA.getTemplateDependentStringInfo();
-  auto SetFromTL = EA.getHelperFeatureSet();
-  HelperFeatureSet.insert(SetFromTL.begin(), SetFromTL.end());
 
-  IsTemplate = TL.getTypePtr()->isDependentType();
-  updateName();
-}
 
-void CtTypeInfo::updateName() {
-  BaseNameWithoutQualifiers = TDSI->getSourceString();
-  auto SetFromTTDSI = TDSI->getHelperFeatureSet();
-  HelperFeatureSet.insert(SetFromTTDSI.begin(), SetFromTTDSI.end());
 
-  if (isPointer()) {
-    BaseNameWithoutQualifiers += ' ';
-    BaseNameWithoutQualifiers.append(PointerLevel, '*');
-  }
 
-  if (BaseName.empty())
-    BaseName = BaseNameWithoutQualifiers;
-  else {
-    BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
-  }
-}
 
-std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(
-    const std::vector<TemplateArgumentInfo> &TA) {
-  auto NewType = std::make_shared<CtTypeInfo>(*this);
-  if (TDSI)
-    NewType->TDSI = TDSI->applyTemplateArguments(TA);
-  for (auto &R : NewType->Range)
-    R.setTemplateList(TA);
-  NewType->BaseName.clear();
-  NewType->updateName();
-  return NewType;
-}
-
-void SizeInfo::setTemplateList(
-    const std::vector<TemplateArgumentInfo> &TemplateList) {
-  if (TDSI)
-    TDSI = TDSI->applyTemplateArguments(TemplateList);
-}
 
 
 
