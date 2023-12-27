@@ -218,6 +218,7 @@
       Out: ${arg}.dp.cpp
       MatchMode: Full
       RuleId: "adjust CUDA src file extension"
+
 - Rule: rule_set_property
   Kind: CMakeRule
   Priority: Fallback
