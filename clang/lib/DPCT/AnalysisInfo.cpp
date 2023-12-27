@@ -3665,6 +3665,139 @@ const std::string &TextureInfo::getName() { return Name; }
 unsigned TextureInfo::getOffset() { return Offset; }
 clang::tooling::UnifiedPath TextureInfo::getFilePath() { return FilePath; }
 bool TextureInfo::isUseHelperFunc() { return true; }
+///// class TextureObjectInfo /////
+std::string TextureObjectInfo::getAccessorDecl(const std::string &QueueString) {
+  ParameterStream PS;
+  PS << "auto " << NewVarName << "_acc = static_cast<";
+  getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
+      << " *>(" << Name << ")->get_access(cgh";
+  printQueueStr(PS, QueueString);
+  PS << ");";
+  requestFeature(HelperFeatureEnum::device_ext);
+  return PS.Str;
+}
+std::string TextureObjectInfo::getSamplerDecl() {
+  requestFeature(HelperFeatureEnum::device_ext);
+  return buildString("auto ", NewVarName, "_smpl = ", Name,
+                     "->get_sampler();");
+}
+unsigned TextureObjectInfo::getParamIdx() const { return ParamIdx; }
+std::string TextureObjectInfo::getParamDeclType() {
+  requestFeature(HelperFeatureEnum::device_ext);
+  ParameterStream PS;
+  Type->printType(PS, MapNames::getDpctNamespace() + "image_accessor_ext");
+  return PS.Str;
+}
+void TextureObjectInfo::merge(std::shared_ptr<TextureObjectInfo> Target) {
+  if (Target)
+    setType(Target->getType());
+}
+void TextureObjectInfo::addParamDeclReplacement() {
+  if (Type) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, Offset, ReplaceTypeLength,
+                                         getParamDeclType(), nullptr));
+  }
+}
+///// class CudaLaunchTextureObjectInfo /////
+std::string CudaLaunchTextureObjectInfo::getAccessorDecl(const std::string &QueueString) {
+  requestFeature(HelperFeatureEnum::device_ext);
+  ParameterStream PS;
+  PS << "auto " << Name << "_acc = static_cast<";
+  getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
+      << " *>(" << ArgStr << ")->get_access(cgh";
+  printQueueStr(PS, QueueString);
+  PS << ");";
+  return PS.Str;
+}
+std::string CudaLaunchTextureObjectInfo::getSamplerDecl() {
+  requestFeature(HelperFeatureEnum::device_ext);
+  return buildString("auto ", Name, "_smpl = (", ArgStr, ")->get_sampler();");
+}
+///// class MemberTextureObjectInfo /////
+MemberTextureObjectInfo::NewVarNameRAII::NewVarNameRAII(MemberTextureObjectInfo *M)
+    : OldName(std::move(M->Name)), Member(M) {
+  Member->Name = buildString(M->BaseName, '.', M->MemberName);
+}
+std::shared_ptr<MemberTextureObjectInfo> MemberTextureObjectInfo::create(const MemberExpr *ME) {
+  auto LocInfo = DpctGlobalInfo::getLocInfo(ME);
+  auto Ret = std::shared_ptr<MemberTextureObjectInfo>(
+      new MemberTextureObjectInfo(LocInfo.second, LocInfo.first,
+                                  getTempNameForExpr(ME, false, false)));
+  Ret->MemberName = ME->getMemberDecl()->getNameAsString();
+  return Ret;
+}
+void MemberTextureObjectInfo::addDecl(StmtList &AccessorList, StmtList &SamplerList,
+             const std::string &QueueStr) {
+  NewVarNameRAII RAII(this);
+  TextureObjectInfo::addDecl(AccessorList, SamplerList, QueueStr);
+}
+void MemberTextureObjectInfo::setBaseName(StringRef Name) { BaseName = Name; }
+StringRef MemberTextureObjectInfo::getMemberName() { return MemberName; }
+///// class StructureTextureObjectInfo /////
+StructureTextureObjectInfo::StructureTextureObjectInfo(const ParmVarDecl *PVD)
+    : TextureObjectInfo(PVD) {
+  ContainsVirtualPointer =
+      checkPointerInStructRecursively(getRecordDecl(PVD->getType()));
+  setType("", 0);
+}
+StructureTextureObjectInfo::StructureTextureObjectInfo(const VarDecl *VD)
+    : TextureObjectInfo(VD) {
+  ContainsVirtualPointer =
+      checkPointerInStructRecursively(getRecordDecl(VD->getType()));
+  setType("", 0);
+}
+std::shared_ptr<StructureTextureObjectInfo>
+StructureTextureObjectInfo::create(const CXXThisExpr *This) {
+  auto RD = getRecordDecl(This->getType());
+  if (!RD)
+    return nullptr;
+
+  auto LocInfo = DpctGlobalInfo::getLocInfo(RD);
+
+  auto Ret = std::shared_ptr<StructureTextureObjectInfo>(
+      new StructureTextureObjectInfo(LocInfo.second, LocInfo.first,
+                                     RD->getName()));
+  Ret->ContainsVirtualPointer = checkPointerInStructRecursively(RD);
+  Ret->IsBase = true;
+  Ret->setType("", 0);
+  return Ret;
+}
+bool StructureTextureObjectInfo::isBase() const { return IsBase; }
+bool StructureTextureObjectInfo::containsVirtualPointer() const {
+  return ContainsVirtualPointer;
+}
+std::shared_ptr<MemberTextureObjectInfo>
+StructureTextureObjectInfo::addMember(const MemberExpr *ME) {
+  auto Member = MemberTextureObjectInfo::create(ME);
+  return Members.emplace(Member->getMemberName().str(), Member).first->second;
+}
+void StructureTextureObjectInfo::addDecl(StmtList &AccessorList,
+                                         StmtList &SamplerList,
+                                         const std::string &Queue) {
+  for (const auto &M : Members) {
+    M.second->setBaseName(Name);
+  }
+}
+void StructureTextureObjectInfo::addParamDeclReplacement() { return; }
+void StructureTextureObjectInfo::merge(
+    std::shared_ptr<StructureTextureObjectInfo> Target) {
+  if (!Target)
+    return;
+
+  dpct::merge(Members, Target->Members);
+}
+void StructureTextureObjectInfo::merge(
+    std::shared_ptr<TextureObjectInfo> Target) {
+  merge(std::dynamic_pointer_cast<StructureTextureObjectInfo>(Target));
+}
+ParameterStream &StructureTextureObjectInfo::getKernelArg(ParameterStream &OS) {
+  OS << Name;
+  return OS;
+}
+
+
+
 
 
 
@@ -6282,30 +6415,9 @@ std::string FreeQueriesInfo::getReplaceString(FreeQueriesKind K) {
 
 
 
-void StructureTextureObjectInfo::merge(
-    std::shared_ptr<StructureTextureObjectInfo> Target) {
-  if (!Target)
-    return;
 
-  dpct::merge(Members, Target->Members);
-}
 
-std::shared_ptr<StructureTextureObjectInfo>
-StructureTextureObjectInfo::create(const CXXThisExpr *This) {
-  auto RD = getRecordDecl(This->getType());
-  if (!RD)
-    return nullptr;
 
-  auto LocInfo = DpctGlobalInfo::getLocInfo(RD);
-
-  auto Ret = std::shared_ptr<StructureTextureObjectInfo>(
-      new StructureTextureObjectInfo(LocInfo.second, LocInfo.first,
-                                     RD->getName()));
-  Ret->ContainsVirtualPointer = checkPointerInStructRecursively(RD);
-  Ret->IsBase = true;
-  Ret->setType("", 0);
-  return Ret;
-}
 
 } // namespace dpct
 } // namespace clang

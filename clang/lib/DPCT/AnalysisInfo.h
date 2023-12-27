@@ -1591,43 +1591,12 @@ public:
       : TextureObjectInfo(VD, Subscript, 0) {}
 
   virtual ~TextureObjectInfo() = default;
-  std::string getAccessorDecl(const std::string &QueueString) override {
-    ParameterStream PS;
-
-    PS << "auto " << NewVarName << "_acc = static_cast<";
-    getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
-        << " *>(" << Name << ")->get_access(cgh";
-    printQueueStr(PS, QueueString);
-    PS << ");";
-    requestFeature(HelperFeatureEnum::device_ext);
-    return PS.Str;
-  }
-  std::string getSamplerDecl() override {
-    requestFeature(HelperFeatureEnum::device_ext);
-    return buildString("auto ", NewVarName, "_smpl = ", Name,
-                       "->get_sampler();");
-  }
-  inline unsigned getParamIdx() const { return ParamIdx; }
-
-  std::string getParamDeclType() {
-    requestFeature(HelperFeatureEnum::device_ext);
-    ParameterStream PS;
-    Type->printType(PS, MapNames::getDpctNamespace() + "image_accessor_ext");
-    return PS.Str;
-  }
-
-  virtual void merge(std::shared_ptr<TextureObjectInfo> Target) {
-    if (Target)
-      setType(Target->getType());
-  }
-
-  virtual void addParamDeclReplacement() {
-    if (Type) {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(FilePath, Offset, ReplaceTypeLength,
-                                           getParamDeclType(), nullptr));
-    }
-  }
+  std::string getAccessorDecl(const std::string &QueueString) override;
+  std::string getSamplerDecl() override;
+  inline unsigned getParamIdx() const;
+  std::string getParamDeclType();
+  virtual void merge(std::shared_ptr<TextureObjectInfo> Target);
+  virtual void addParamDeclReplacement();
 
   template <class Node> static inline bool isTextureObject(const Node *E) {
     if (E)
@@ -1643,20 +1612,8 @@ class CudaLaunchTextureObjectInfo : public TextureObjectInfo {
 public:
   CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
-  std::string getAccessorDecl(const std::string &QueueString) override {
-    requestFeature(HelperFeatureEnum::device_ext);
-    ParameterStream PS;
-    PS << "auto " << Name << "_acc = static_cast<";
-    getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
-        << " *>(" << ArgStr << ")->get_access(cgh";
-    printQueueStr(PS, QueueString);
-    PS << ");";
-    return PS.Str;
-  }
-  std::string getSamplerDecl() override {
-    requestFeature(HelperFeatureEnum::device_ext);
-    return buildString("auto ", Name, "_smpl = (", ArgStr, ")->get_sampler();");
-  }
+  std::string getAccessorDecl(const std::string &QueueString) override;
+  std::string getSamplerDecl() override;
 };
 
 class MemberTextureObjectInfo : public TextureObjectInfo {
@@ -1668,10 +1625,7 @@ class MemberTextureObjectInfo : public TextureObjectInfo {
     MemberTextureObjectInfo *Member;
 
   public:
-    NewVarNameRAII(MemberTextureObjectInfo *M)
-        : OldName(std::move(M->Name)), Member(M) {
-      Member->Name = buildString(M->BaseName, '.', M->MemberName);
-    }
+    NewVarNameRAII(MemberTextureObjectInfo *M);
     ~NewVarNameRAII() { Member->Name = std::move(OldName); }
   };
 
@@ -1681,21 +1635,11 @@ class MemberTextureObjectInfo : public TextureObjectInfo {
       : TextureObjectInfo(Offset, FilePath, Name) {}
 
 public:
-  static std::shared_ptr<MemberTextureObjectInfo> create(const MemberExpr *ME) {
-    auto LocInfo = DpctGlobalInfo::getLocInfo(ME);
-    auto Ret = std::shared_ptr<MemberTextureObjectInfo>(
-        new MemberTextureObjectInfo(LocInfo.second, LocInfo.first,
-                                    getTempNameForExpr(ME, false, false)));
-    Ret->MemberName = ME->getMemberDecl()->getNameAsString();
-    return Ret;
-  }
+  static std::shared_ptr<MemberTextureObjectInfo> create(const MemberExpr *ME);
   void addDecl(StmtList &AccessorList, StmtList &SamplerList,
-               const std::string &QueueStr) override {
-    NewVarNameRAII RAII(this);
-    TextureObjectInfo::addDecl(AccessorList, SamplerList, QueueStr);
-  }
-  void setBaseName(StringRef Name) { BaseName = Name; }
-  StringRef getMemberName() { return MemberName; }
+               const std::string &QueueStr) override;
+  void setBaseName(StringRef Name);
+  StringRef getMemberName();
 };
 
 class StructureTextureObjectInfo : public TextureObjectInfo {
@@ -1710,39 +1654,19 @@ class StructureTextureObjectInfo : public TextureObjectInfo {
       : TextureObjectInfo(Offset, FilePath, Name) {}
 
 public:
-  StructureTextureObjectInfo(const ParmVarDecl *PVD) : TextureObjectInfo(PVD) {
-    ContainsVirtualPointer =
-        checkPointerInStructRecursively(getRecordDecl(PVD->getType()));
-    setType("", 0);
-  }
-  StructureTextureObjectInfo(const VarDecl *VD) : TextureObjectInfo(VD) {
-    ContainsVirtualPointer =
-        checkPointerInStructRecursively(getRecordDecl(VD->getType()));
-    setType("", 0);
-  }
+  StructureTextureObjectInfo(const ParmVarDecl *PVD);
+  StructureTextureObjectInfo(const VarDecl *VD);
   static std::shared_ptr<StructureTextureObjectInfo>
   create(const CXXThisExpr *This);
   bool isBase() const { return IsBase; }
-  bool containsVirtualPointer() const { return ContainsVirtualPointer; }
-  std::shared_ptr<MemberTextureObjectInfo> addMember(const MemberExpr *ME) {
-    auto Member = MemberTextureObjectInfo::create(ME);
-    return Members.emplace(Member->getMemberName().str(), Member).first->second;
-  }
+  bool containsVirtualPointer() const;
+  std::shared_ptr<MemberTextureObjectInfo> addMember(const MemberExpr *ME);
   void addDecl(StmtList &AccessorList, StmtList &SamplerList,
-               const std::string &Queue) override {
-    for (const auto &M : Members) {
-      M.second->setBaseName(Name);
-    }
-  }
-  void addParamDeclReplacement() override { return; }
+               const std::string &Queue) override;
+  void addParamDeclReplacement() override;
   void merge(std::shared_ptr<StructureTextureObjectInfo> Target);
-  void merge(std::shared_ptr<TextureObjectInfo> Target) override {
-    merge(std::dynamic_pointer_cast<StructureTextureObjectInfo>(Target));
-  }
-  ParameterStream &getKernelArg(ParameterStream &OS) override {
-    OS << Name;
-    return OS;
-  }
+  void merge(std::shared_ptr<TextureObjectInfo> Target) override;
+  ParameterStream &getKernelArg(ParameterStream &OS) override;
 };
 
 class TemplateArgumentInfo {
