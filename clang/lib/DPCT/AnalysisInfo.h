@@ -1750,74 +1750,28 @@ public:
   unsigned int Dim = 1;
   /// This member is only used to construct the union-find set.
   MemVarMap *Parent = this;
-  bool hasItem() const { return HasItem; }
-  bool hasStream() const { return HasStream; }
-  bool hasSync() const { return HasSync; }
-  bool hasBF64() const { return HasBF64; }
-  bool hasBF16() const { return HasBF16; }
-  bool hasGlobalMemAcc() const { return HasGlobalMemAcc; }
-  bool hasExternShared() const { return !ExternVarMap.empty(); }
-  inline void setItem(bool Has = true) { HasItem = Has; }
-  inline void setStream(bool Has = true) { HasStream = Has; }
-  inline void setSync(bool Has = true) { HasSync = Has; }
-  inline void setBF64(bool Has = true) { HasBF64 = Has; }
-  inline void setBF16(bool Has = true) { HasBF16 = Has; }
-  inline void setGlobalMemAcc(bool Has = true) { HasGlobalMemAcc = Has; }
-  inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
-    TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
-  }
-  void addVar(std::shared_ptr<MemVarInfo> Var) {
-    auto Attr = Var->getAttr();
-    if (Var->isGlobal() && (Attr == MemVarInfo::VarAttrKind::Device ||
-                            Attr == MemVarInfo::VarAttrKind::Managed)) {
-      setGlobalMemAcc(true);
-    }
-    getMap(Var->getScope())
-        .insert(MemVarInfoMap::value_type(Var->getOffset(), Var));
-  }
-  inline void merge(const MemVarMap &OtherMap) {
-    static std::vector<TemplateArgumentInfo> NullTemplates;
-    return merge(OtherMap, NullTemplates);
-  }
+  bool hasItem() const;
+  bool hasStream() const;
+  bool hasSync() const;
+  bool hasBF64() const;
+  bool hasBF16() const;
+  bool hasGlobalMemAcc() const;
+  bool hasExternShared() const;
+  void setItem(bool Has = true);
+  void setStream(bool Has = true);
+  void setSync(bool Has = true);
+  void setBF64(bool Has = true);
+  void setBF16(bool Has = true);
+  void setGlobalMemAcc(bool Has = true);
+  void addTexture(std::shared_ptr<TextureInfo> Tex);
+  void addVar(std::shared_ptr<MemVarInfo> Var);
+  void merge(const MemVarMap &OtherMap);
   void merge(const MemVarMap &VarMap,
-             const std::vector<TemplateArgumentInfo> &TemplateArgs) {
-    setItem(hasItem() || VarMap.hasItem());
-    setStream(hasStream() || VarMap.hasStream());
-    setSync(hasSync() || VarMap.hasSync());
-    setBF64(hasBF64() || VarMap.hasBF64());
-    setBF16(hasBF16() || VarMap.hasBF16());
-    setGlobalMemAcc(hasGlobalMemAcc() || VarMap.hasGlobalMemAcc());
-    merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
-    merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
-    merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
-    dpct::merge(TextureMap, VarMap.TextureMap);
-  }
-  int calculateExtraArgsSize() const {
-    int Size = 0;
-    if (hasStream())
-      Size += MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Stream);
-
-    Size = Size + calculateExtraArgsSize(LocalVarMap) +
-           calculateExtraArgsSize(GlobalVarMap) +
-           calculateExtraArgsSize(ExternVarMap);
-    Size = Size + TextureMap.size() * MapNames::KernelArgTypeSizeMap.at(
-                                          KernelArgType::KAT_Texture);
-
-    return Size;
-  }
+             const std::vector<TemplateArgumentInfo> &TemplateArgs);
+  int calculateExtraArgsSize() const;
   std::string getExtraCallArguments(bool HasPreParam, bool HasPostParam) const;
   void
-  requestFeatureForAllVarMaps(const clang::tooling::UnifiedPath &Path) const {
-    for (const auto &Item : LocalVarMap) {
-      Item.second->requestFeatureForSet(Path);
-    }
-    for (const auto &Item : GlobalVarMap) {
-      Item.second->requestFeatureForSet(Path);
-    }
-    for (const auto &Item : ExternVarMap) {
-      Item.second->requestFeatureForSet(Path);
-    }
-  }
+  requestFeatureForAllVarMaps(const clang::tooling::UnifiedPath &Path) const;
 
   // When adding the ExtraParam with new line, the second argument should be
   // true, and the third argument is the string of indent, which will occur
@@ -1827,28 +1781,11 @@ public:
                     FormatInfo FormatInformation = FormatInfo()) const;
   std::string getKernelArguments(bool HasPreParam, bool HasPostParam,
                                  const clang::tooling::UnifiedPath &Path) const;
-
-  const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const {
-    return const_cast<MemVarMap *>(this)->getMap(Scope);
-  }
-  const GlobalMap<TextureInfo> &getTextureMap() const { return TextureMap; }
+  const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const;
+  const GlobalMap<TextureInfo> &getTextureMap() const;
   void removeDuplicateVar();
 
-  MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) {
-    switch (Scope) {
-    case clang::dpct::MemVarInfo::Local:
-      return LocalVarMap;
-    case clang::dpct::MemVarInfo::Extern:
-      return ExternVarMap;
-    case clang::dpct::MemVarInfo::Global:
-      return GlobalVarMap;
-    }
-    clang::dpct::DpctDebugs()
-        << "[MemVarInfo::VarScope] Unexpected value: " << Scope << "\n";
-    assert(0);
-    static MemVarInfoMap InvalidMap;
-    return InvalidMap;
-  }
+  MemVarInfoMap &getMap(MemVarInfo::VarScope Scope);
   bool isSameAs(const MemVarMap &Other) const;
 
   enum CallOrDecl {
@@ -1858,68 +1795,14 @@ public:
   };
 
   static const MemVarMap *
-  getHeadWithoutPathCompression(const MemVarMap *CurNode) {
-    if (!CurNode)
-      return nullptr;
-
-    const MemVarMap *Head = nullptr;
-
-    while (true) {
-      if (CurNode->Parent == CurNode) {
-        Head = CurNode;
-        break;
-      }
-      CurNode = CurNode->Parent;
-    }
-
-    return Head;
-  }
-
-  static MemVarMap *getHead(MemVarMap *CurNode) {
-    if (!CurNode)
-      return nullptr;
-
-    MemVarMap *Head =
-        const_cast<MemVarMap *>(getHeadWithoutPathCompression(CurNode));
-    if (!Head)
-      return nullptr;
-
-    while (CurNode != Head) {
-      MemVarMap *Temp = CurNode->Parent;
-      CurNode->Parent = Head;
-      CurNode = Temp;
-    }
-    return Head;
-  }
-
-  unsigned int getHeadNodeDim() const {
-    auto Ptr = getHeadWithoutPathCompression(this);
-    if (Ptr)
-      return Ptr->Dim;
-    else
-      return 3;
-  }
+  getHeadWithoutPathCompression(const MemVarMap *CurNode);
+  static MemVarMap *getHead(MemVarMap *CurNode);
+  unsigned int getHeadNodeDim() const;
 
 private:
   static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
-                    const std::vector<TemplateArgumentInfo> &TemplateArgs) {
-    if (TemplateArgs.empty())
-      return dpct::merge(Master, Branch);
-    for (auto &VarInfoPair : Branch)
-      Master
-          .insert(
-              std::make_pair(VarInfoPair.first,
-                             std::make_shared<MemVarInfo>(*VarInfoPair.second)))
-          .first->second->applyTemplateArguments(TemplateArgs);
-  }
-  int calculateExtraArgsSize(const MemVarInfoMap &Map) const {
-    int Size = 0;
-    for (auto &VarInfoPair : Map) {
-      auto D = VarInfoPair.second->getType()->getDimension();
-      Size += MapNames::getArrayTypeSize(D);
-    }
-    return Size;
-  }
+                    const std::vector<TemplateArgumentInfo> &TemplateArgs);
+  int calculateExtraArgsSize(const MemVarInfoMap &Map) const;
 
   template <CallOrDecl COD>
   inline ParameterStream &getItem(ParameterStream &PS) const {
@@ -2042,36 +1925,6 @@ MemVarMap::getSync<MemVarMap::DeclParameter>(ParameterStream &PS) const {
       MapNames::getClNamespace() + "access::address_space::global_space> &" +
       DpctGlobalInfo::getSyncName();
   return PS << SyncParamDecl;
-}
-
-inline void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
-                                                       int PreParams,
-                                                       int PostParams) const {
-  if (hasItem()) {
-    getItem<MemVarMap::DeclParameter>(PS);
-  }
-
-  if (hasStream()) {
-    getStream<MemVarMap::DeclParameter>(PS);
-  }
-
-  if (hasSync()) {
-    getSync<MemVarMap::DeclParameter>(PS);
-  }
-
-  if (!ExternVarMap.empty()) {
-    ParameterStream TPS;
-    GetArgOrParam<MemVarInfo, MemVarMap::DeclParameter>()(
-        TPS, ExternVarMap.begin()->second);
-    PS << TPS.Str;
-  }
-
-  getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
-      PS, GlobalVarMap);
-  getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
-      PS, LocalVarMap);
-  getArgumentsOrParametersFromMap<TextureInfo, MemVarMap::DeclParameter>(
-      PS, TextureMap);
 }
 
 template <>

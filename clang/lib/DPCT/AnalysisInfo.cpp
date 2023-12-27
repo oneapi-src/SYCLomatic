@@ -121,7 +121,19 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
   }
   return "";
 }
-
+template <class T>
+void removeDuplicateVar(GlobalMap<T> &VarMap,
+                        std::unordered_set<std::string> &VarNames) {
+  auto Itr = VarMap.begin();
+  while (Itr != VarMap.end()) {
+    if (VarNames.find(Itr->second->getName()) == VarNames.end()) {
+      VarNames.insert(Itr->second->getName());
+      ++Itr;
+    } else {
+      Itr = VarMap.erase(Itr);
+    }
+  }
+}
 
 
 ///// class FreeQueriesInfo /////
@@ -3855,13 +3867,222 @@ void TemplateArgumentInfo::setArgStr(std::string &&Str) {
   DependentStr =
       std::make_shared<TemplateDependentStringInfo>(std::move(Str));
 }
+///// class MemVarMap /////
+bool MemVarMap::hasItem() const { return HasItem; }
+bool MemVarMap::hasStream() const { return HasStream; }
+bool MemVarMap::hasSync() const { return HasSync; }
+bool MemVarMap::hasBF64() const { return HasBF64; }
+bool MemVarMap::hasBF16() const { return HasBF16; }
+bool MemVarMap::hasGlobalMemAcc() const { return HasGlobalMemAcc; }
+bool MemVarMap::hasExternShared() const { return !ExternVarMap.empty(); }
+void MemVarMap::setItem(bool Has) { HasItem = Has; }
+void MemVarMap::setStream(bool Has) { HasStream = Has; }
+void MemVarMap::setSync(bool Has) { HasSync = Has; }
+void MemVarMap::setBF64(bool Has) { HasBF64 = Has; }
+void MemVarMap::setBF16(bool Has) { HasBF16 = Has; }
+void MemVarMap::setGlobalMemAcc(bool Has) { HasGlobalMemAcc = Has; }
+void MemVarMap::addTexture(std::shared_ptr<TextureInfo> Tex) {
+  TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
+}
+void MemVarMap::addVar(std::shared_ptr<MemVarInfo> Var) {
+  auto Attr = Var->getAttr();
+  if (Var->isGlobal() && (Attr == MemVarInfo::VarAttrKind::Device ||
+                          Attr == MemVarInfo::VarAttrKind::Managed)) {
+    setGlobalMemAcc(true);
+  }
+  getMap(Var->getScope())
+      .insert(MemVarInfoMap::value_type(Var->getOffset(), Var));
+}
+void MemVarMap::merge(const MemVarMap &OtherMap) {
+  static std::vector<TemplateArgumentInfo> NullTemplates;
+  return merge(OtherMap, NullTemplates);
+}
+void MemVarMap::merge(const MemVarMap &VarMap,
+           const std::vector<TemplateArgumentInfo> &TemplateArgs) {
+  setItem(hasItem() || VarMap.hasItem());
+  setStream(hasStream() || VarMap.hasStream());
+  setSync(hasSync() || VarMap.hasSync());
+  setBF64(hasBF64() || VarMap.hasBF64());
+  setBF16(hasBF16() || VarMap.hasBF16());
+  setGlobalMemAcc(hasGlobalMemAcc() || VarMap.hasGlobalMemAcc());
+  merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
+  merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
+  merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
+  dpct::merge(TextureMap, VarMap.TextureMap);
+}
+int MemVarMap::calculateExtraArgsSize() const {
+  int Size = 0;
+  if (hasStream())
+    Size += MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Stream);
 
+  Size = Size + calculateExtraArgsSize(LocalVarMap) +
+         calculateExtraArgsSize(GlobalVarMap) +
+         calculateExtraArgsSize(ExternVarMap);
+  Size = Size + TextureMap.size() * MapNames::KernelArgTypeSizeMap.at(
+                                        KernelArgType::KAT_Texture);
 
+  return Size;
+}
+std::string MemVarMap::getExtraCallArguments(bool HasPreParam,
+                                             bool HasPostParam) const {
+  return getArgumentsOrParameters<CallArgument>(HasPreParam, HasPostParam);
+}
+void
+MemVarMap::requestFeatureForAllVarMaps(const clang::tooling::UnifiedPath &Path) const {
+  for (const auto &Item : LocalVarMap) {
+    Item.second->requestFeatureForSet(Path);
+  }
+  for (const auto &Item : GlobalVarMap) {
+    Item.second->requestFeatureForSet(Path);
+  }
+  for (const auto &Item : ExternVarMap) {
+    Item.second->requestFeatureForSet(Path);
+  }
+}
+std::string MemVarMap::getExtraDeclParam(bool HasPreParam, bool HasPostParam,
+                                         FormatInfo FormatInformation) const {
+  return getArgumentsOrParameters<DeclParameter>(HasPreParam, HasPostParam,
+                                                 FormatInformation);
+}
+std::string
+MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam,
+                              const clang::tooling::UnifiedPath &Path) const {
+  requestFeatureForAllVarMaps(Path);
+  return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
+}
+const MemVarInfoMap &MemVarMap::getMap(MemVarInfo::VarScope Scope) const {
+  return const_cast<MemVarMap *>(this)->getMap(Scope);
+}
+const GlobalMap<TextureInfo> &MemVarMap::getTextureMap() const { return TextureMap; }
+void MemVarMap::removeDuplicateVar() {
+  std::unordered_set<std::string> VarNames{getItemName(),
+                                           DpctGlobalInfo::getStreamName()};
+  dpct::removeDuplicateVar(GlobalVarMap, VarNames);
+  dpct::removeDuplicateVar(LocalVarMap, VarNames);
+  dpct::removeDuplicateVar(ExternVarMap, VarNames);
+  dpct::removeDuplicateVar(TextureMap, VarNames);
+}
+MemVarInfoMap &MemVarMap::getMap(MemVarInfo::VarScope Scope) {
+  switch (Scope) {
+  case clang::dpct::MemVarInfo::Local:
+    return LocalVarMap;
+  case clang::dpct::MemVarInfo::Extern:
+    return ExternVarMap;
+  case clang::dpct::MemVarInfo::Global:
+    return GlobalVarMap;
+  }
+  clang::dpct::DpctDebugs()
+      << "[MemVarInfo::VarScope] Unexpected value: " << Scope << "\n";
+  assert(0);
+  static MemVarInfoMap InvalidMap;
+  return InvalidMap;
+}
+bool MemVarMap::isSameAs(const MemVarMap &Other) const {
+  if (HasItem != Other.HasItem)
+    return false;
+  if (HasStream != Other.HasStream)
+    return false;
+  if (HasSync != Other.HasSync)
+    return false;
 
+#define COMPARE_MAP(MAP)                                                       \
+  {                                                                            \
+    if (MAP.size() != Other.MAP.size())                                        \
+      return false;                                                            \
+    if (!std::equal(MAP.begin(), MAP.end(), Other.MAP.begin()))                \
+      return false;                                                            \
+  }
+  COMPARE_MAP(LocalVarMap);
+  COMPARE_MAP(GlobalVarMap);
+  COMPARE_MAP(ExternVarMap);
+  COMPARE_MAP(TextureMap);
+#undef COMPARE_MAP
+  return true;
+}
+const MemVarMap *
+MemVarMap::getHeadWithoutPathCompression(const MemVarMap *CurNode) {
+  if (!CurNode)
+    return nullptr;
+  const MemVarMap *Head = nullptr;
+  while (true) {
+    if (CurNode->Parent == CurNode) {
+      Head = CurNode;
+      break;
+    }
+    CurNode = CurNode->Parent;
+  }
+  return Head;
+}
+MemVarMap *MemVarMap::getHead(MemVarMap *CurNode) {
+  if (!CurNode)
+    return nullptr;
+  MemVarMap *Head =
+      const_cast<MemVarMap *>(getHeadWithoutPathCompression(CurNode));
+  if (!Head)
+    return nullptr;
+  while (CurNode != Head) {
+    MemVarMap *Temp = CurNode->Parent;
+    CurNode->Parent = Head;
+    CurNode = Temp;
+  }
+  return Head;
+}
+unsigned int MemVarMap::getHeadNodeDim() const {
+  auto Ptr = getHeadWithoutPathCompression(this);
+  if (Ptr)
+    return Ptr->Dim;
+  else
+    return 3;
+}
+void MemVarMap::merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
+                  const std::vector<TemplateArgumentInfo> &TemplateArgs) {
+  if (TemplateArgs.empty())
+    return dpct::merge(Master, Branch);
+  for (auto &VarInfoPair : Branch)
+    Master
+        .insert(
+            std::make_pair(VarInfoPair.first,
+                           std::make_shared<MemVarInfo>(*VarInfoPair.second)))
+        .first->second->applyTemplateArguments(TemplateArgs);
+}
+int MemVarMap::calculateExtraArgsSize(const MemVarInfoMap &Map) const {
+  int Size = 0;
+  for (auto &VarInfoPair : Map) {
+    auto D = VarInfoPair.second->getType()->getDimension();
+    Size += MapNames::getArrayTypeSize(D);
+  }
+  return Size;
+}
+void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
+                                                       int PreParams,
+                                                       int PostParams) const {
+  if (hasItem()) {
+    getItem<MemVarMap::DeclParameter>(PS);
+  }
 
+  if (hasStream()) {
+    getStream<MemVarMap::DeclParameter>(PS);
+  }
 
+  if (hasSync()) {
+    getSync<MemVarMap::DeclParameter>(PS);
+  }
 
+  if (!ExternVarMap.empty()) {
+    ParameterStream TPS;
+    GetArgOrParam<MemVarInfo, MemVarMap::DeclParameter>()(
+        TPS, ExternVarMap.begin()->second);
+    PS << TPS.Str;
+  }
 
+  getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
+      PS, GlobalVarMap);
+  getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
+      PS, LocalVarMap);
+  getArgumentsOrParametersFromMap<TextureInfo, MemVarMap::DeclParameter>(
+      PS, TextureMap);
+}
+///// class CallFunctionExpr /////
 
 
 
@@ -6175,65 +6396,13 @@ DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
 
 
 
-template <class T>
-void removeDuplicateVar(GlobalMap<T> &VarMap,
-                        std::unordered_set<std::string> &VarNames) {
-  auto Itr = VarMap.begin();
-  while (Itr != VarMap.end()) {
-    if (VarNames.find(Itr->second->getName()) == VarNames.end()) {
-      VarNames.insert(Itr->second->getName());
-      ++Itr;
-    } else {
-      Itr = VarMap.erase(Itr);
-    }
-  }
-}
-void MemVarMap::removeDuplicateVar() {
-  std::unordered_set<std::string> VarNames{getItemName(),
-                                           DpctGlobalInfo::getStreamName()};
-  dpct::removeDuplicateVar(GlobalVarMap, VarNames);
-  dpct::removeDuplicateVar(LocalVarMap, VarNames);
-  dpct::removeDuplicateVar(ExternVarMap, VarNames);
-  dpct::removeDuplicateVar(TextureMap, VarNames);
-}
 
-std::string MemVarMap::getExtraCallArguments(bool HasPreParam,
-                                             bool HasPostParam) const {
-  return getArgumentsOrParameters<CallArgument>(HasPreParam, HasPostParam);
-}
-std::string MemVarMap::getExtraDeclParam(bool HasPreParam, bool HasPostParam,
-                                         FormatInfo FormatInformation) const {
-  return getArgumentsOrParameters<DeclParameter>(HasPreParam, HasPostParam,
-                                                 FormatInformation);
-}
-std::string
-MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam,
-                              const clang::tooling::UnifiedPath &Path) const {
-  requestFeatureForAllVarMaps(Path);
-  return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
-}
-bool MemVarMap::isSameAs(const MemVarMap &Other) const {
-  if (HasItem != Other.HasItem)
-    return false;
-  if (HasStream != Other.HasStream)
-    return false;
-  if (HasSync != Other.HasSync)
-    return false;
 
-#define COMPARE_MAP(MAP)                                                       \
-  {                                                                            \
-    if (MAP.size() != Other.MAP.size())                                        \
-      return false;                                                            \
-    if (!std::equal(MAP.begin(), MAP.end(), Other.MAP.begin()))                \
-      return false;                                                            \
-  }
-  COMPARE_MAP(LocalVarMap);
-  COMPARE_MAP(GlobalVarMap);
-  COMPARE_MAP(ExternVarMap);
-  COMPARE_MAP(TextureMap);
-#undef COMPARE_MAP
-  return true;
-}
+
+
+
+
+
 
 
 
