@@ -1658,7 +1658,7 @@ public:
   StructureTextureObjectInfo(const VarDecl *VD);
   static std::shared_ptr<StructureTextureObjectInfo>
   create(const CXXThisExpr *This);
-  bool isBase() const { return IsBase; }
+  bool isBase() const;
   bool containsVirtualPointer() const;
   std::shared_ptr<MemberTextureObjectInfo> addMember(const MemberExpr *ME);
   void addDecl(StmtList &AccessorList, StmtList &SamplerList,
@@ -1672,56 +1672,21 @@ public:
 class TemplateArgumentInfo {
 public:
   explicit TemplateArgumentInfo(const TemplateArgumentLoc &TAL,
-                                SourceRange Range)
-      : Kind(TAL.getArgument().getKind()) {
-    setArgFromExprAnalysis(
-        TAL, getDefinitionRange(Range.getBegin(), Range.getEnd()));
-  }
-
-  explicit TemplateArgumentInfo(std::string &&Str)
-      : Kind(TemplateArgument::Null) {
-    setArgStr(std::move(Str));
-  }
+                                SourceRange Range);
+  explicit TemplateArgumentInfo(std::string &&Str);
   TemplateArgumentInfo() : Kind(TemplateArgument::Null), IsWritten(false) {}
 
-  inline bool isWritten() const { return IsWritten; }
-  inline bool isNull() const { return !DependentStr; }
-  inline bool isType() const { return Kind == TemplateArgument::Type; }
-  inline const std::string &getString() const {
-    return getDependentStringInfo()->getSourceString();
-  }
-  inline std::shared_ptr<const TemplateDependentStringInfo>
-  getDependentStringInfo() const {
-    if (isNull()) {
-      static std::shared_ptr<TemplateDependentStringInfo> Placeholder =
-          std::make_shared<TemplateDependentStringInfo>(
-              "dpct_placeholder/*Fix the type mannually*/");
-      return Placeholder;
-    }
-    return DependentStr;
-  }
-  void setAsType(QualType QT) {
-    if (isPlaceholderType(QT))
-      return;
-    setArgStr(DpctGlobalInfo::getReplacedTypeName(QT));
-    Kind = TemplateArgument::Type;
-  }
-  void setAsType(const TypeLoc &TL) {
-    setArgFromExprAnalysis(TL);
-    Kind = TemplateArgument::Type;
-  }
-  void setAsType(std::string TS) {
-    setArgStr(std::move(TS));
-    Kind = TemplateArgument::Type;
-  }
-  void setAsNonType(const llvm::APInt &Int) {
-    setArgStr(toString(Int, 10, true, false));
-    Kind = TemplateArgument::Integral;
-  }
-  void setAsNonType(const Expr *E) {
-    setArgFromExprAnalysis(E);
-    Kind = TemplateArgument::Expression;
-  }
+  bool isWritten() const;
+  bool isNull() const;
+  bool isType() const;
+  const std::string &getString() const;
+  std::shared_ptr<const TemplateDependentStringInfo>
+  getDependentStringInfo() const;
+  void setAsType(QualType QT);
+  void setAsType(const TypeLoc &TL);
+  void setAsType(std::string TS);
+  void setAsNonType(const llvm::APInt &Int);
+  void setAsNonType(const Expr *E);
 
   static bool isPlaceholderType(clang::QualType QT);
 
@@ -1769,10 +1734,7 @@ private:
     return Arg->getSourceRange();
   }
 
-  void setArgStr(std::string &&Str) {
-    DependentStr =
-        std::make_shared<TemplateDependentStringInfo>(std::move(Str));
-  }
+  void setArgStr(std::string &&Str);
   std::shared_ptr<TemplateDependentStringInfo> DependentStr;
   TemplateArgument::ArgKind Kind;
   bool IsWritten = true;

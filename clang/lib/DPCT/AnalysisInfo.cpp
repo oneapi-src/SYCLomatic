@@ -3795,11 +3795,66 @@ ParameterStream &StructureTextureObjectInfo::getKernelArg(ParameterStream &OS) {
   OS << Name;
   return OS;
 }
-
-
-
-
-
+///// class TemplateArgumentInfo /////
+TemplateArgumentInfo::TemplateArgumentInfo(const TemplateArgumentLoc &TAL,
+                              SourceRange Range)
+    : Kind(TAL.getArgument().getKind()) {
+  setArgFromExprAnalysis(
+      TAL, getDefinitionRange(Range.getBegin(), Range.getEnd()));
+}
+TemplateArgumentInfo::TemplateArgumentInfo(std::string &&Str)
+    : Kind(TemplateArgument::Null) {
+  setArgStr(std::move(Str));
+}
+bool TemplateArgumentInfo::isWritten() const { return IsWritten; }
+bool TemplateArgumentInfo::isNull() const { return !DependentStr; }
+bool TemplateArgumentInfo::isType() const { return Kind == TemplateArgument::Type; }
+const std::string &TemplateArgumentInfo::getString() const {
+  return getDependentStringInfo()->getSourceString();
+}
+std::shared_ptr<const TemplateDependentStringInfo>
+TemplateArgumentInfo::getDependentStringInfo() const {
+  if (isNull()) {
+    static std::shared_ptr<TemplateDependentStringInfo> Placeholder =
+        std::make_shared<TemplateDependentStringInfo>(
+            "dpct_placeholder/*Fix the type mannually*/");
+    return Placeholder;
+  }
+  return DependentStr;
+}
+void TemplateArgumentInfo::setAsType(QualType QT) {
+  if (isPlaceholderType(QT))
+    return;
+  setArgStr(DpctGlobalInfo::getReplacedTypeName(QT));
+  Kind = TemplateArgument::Type;
+}
+void TemplateArgumentInfo::setAsType(const TypeLoc &TL) {
+  setArgFromExprAnalysis(TL);
+  Kind = TemplateArgument::Type;
+}
+void TemplateArgumentInfo::setAsType(std::string TS) {
+  setArgStr(std::move(TS));
+  Kind = TemplateArgument::Type;
+}
+void TemplateArgumentInfo::setAsNonType(const llvm::APInt &Int) {
+  setArgStr(toString(Int, 10, true, false));
+  Kind = TemplateArgument::Integral;
+}
+void TemplateArgumentInfo::setAsNonType(const Expr *E) {
+  setArgFromExprAnalysis(E);
+  Kind = TemplateArgument::Expression;
+}
+bool TemplateArgumentInfo::isPlaceholderType(QualType QT) {
+  if (auto BT = QT->getAs<BuiltinType>()) {
+    if (BT->isPlaceholderType() || BT->isDependentType())
+      return true;
+  }
+  return false;
+}
+void TemplateArgumentInfo::setArgStr(std::string &&Str) {
+  DependentStr =
+      std::make_shared<TemplateDependentStringInfo>(std::move(Str));
+}
 
 
 
@@ -4635,13 +4690,7 @@ void KernelCallExpr::setNeedAddLambda(const CUDAKernelCallExpr *KernelCall) {
 #define ARG_TYPE_CAST(type) TYPE_CAST(ArgType, type)
 #define PARM_TYPE_CAST(type) TYPE_CAST(ParmType, type)
 
-bool TemplateArgumentInfo::isPlaceholderType(QualType QT) {
-  if (auto BT = QT->getAs<BuiltinType>()) {
-    if (BT->isPlaceholderType() || BT->isDependentType())
-      return true;
-  }
-  return false;
-}
+
 
 template <class T>
 void setTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
