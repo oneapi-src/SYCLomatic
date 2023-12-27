@@ -374,24 +374,24 @@ public:
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-  template <typename Item> __dpct_inline__ int adjust_by_padding(int offset) {
+  static int adjust_by_padding(int offset) {
 
     if constexpr (INSERT_PADDING) {
       offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
     }
     return offset;
   }
-
+  template <typename Item>
   struct stripedToBlockedFunctor {
 
-    int forward_offset(int i) {
+    int forward_offset(Item item, int i) {
       int fw_offset = int(i * item.get_local_range(2) *
                           item.get_local_range(1) * item.get_local_range(0)) +
                       item.get_local_id(0);
       return adjust_by_padding(fw_offset);
     }
 
-    int reverse_offset(int i) {
+    int reverse_offset(Item item, int i) {
       int rv_offset = int(item.get_local_id(0) * VALUES_PER_THREAD) + i;
       return adjust_by_padding(rv_offset);
     }
@@ -423,7 +423,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = (offset_functor.*fw_method)(i);
+      int offset = (offset_functor.*fw_method)(item, i);
       buffer[offset] = keys[i];
     }
 
@@ -431,7 +431,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = (offset_functor.*rv_method)(i);
+      int offset = (offset_functor.*rv_method)(item, i);
       keys[i] = buffer[offset];
     }
   }
