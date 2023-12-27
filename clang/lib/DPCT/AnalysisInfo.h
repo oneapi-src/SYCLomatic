@@ -208,49 +208,8 @@ public:
   ParameterStream(FormatInfo FormatInformation, int ColumnLimit)
       : FormatInformation(FormatInformation), ColumnLimit(ColumnLimit) {}
 
-  ParameterStream &operator<<(const std::string &InputParamStr) {
-    if (InputParamStr.size() == 0) {
-      return *this;
-    }
-
-    if (!FormatInformation.EnableFormat) {
-      // append the string directly
-      Str = Str + InputParamStr;
-      return *this;
-    }
-
-    if (FormatInformation.IsAllParamsOneLine) {
-      // all parameters are in one line
-      Str = Str + ", " + InputParamStr;
-      return *this;
-    }
-
-    if (FormatInformation.IsEachParamNL) {
-      // each parameter is in a single line
-      Str = Str + "," + getNL() + FormatInformation.NewLineIndentStr +
-            InputParamStr;
-      return *this;
-    }
-
-    // parameters will be inserted in one line unless the line length > column
-    // limit.
-    if (FormatInformation.CurrentLength + 2 + (int)InputParamStr.size() <=
-        ColumnLimit) {
-      Str = Str + ", " + InputParamStr;
-      FormatInformation.CurrentLength =
-          FormatInformation.CurrentLength + 2 + InputParamStr.size();
-      return *this;
-    } else {
-      Str = Str + std::string(",") + getNL() +
-            FormatInformation.NewLineIndentStr + InputParamStr;
-      FormatInformation.CurrentLength =
-          FormatInformation.NewLineIndentLength + InputParamStr.size();
-      return *this;
-    }
-  }
-  ParameterStream &operator<<(int InputInt) {
-    return *this << std::to_string(InputInt);
-  }
+  ParameterStream &operator<<(const std::string &InputParamStr);
+  ParameterStream &operator<<(int InputInt);
 
   std::string Str = "";
   FormatInfo FormatInformation;

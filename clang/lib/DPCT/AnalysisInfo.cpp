@@ -42,6 +42,90 @@ extern std::function<bool(SourceLocation)> IsInAnalysisScopeFunc;
 extern std::function<unsigned int()> GetRunRound;
 extern std::function<void(SourceLocation, unsigned)> RecordTokenSplit;
 namespace dpct {
+///// global variable definition /////
+
+///// global function definition /////
+
+///// class EventSyncTypeInfo /////
+void EventSyncTypeInfo::buildInfo(clang::tooling::UnifiedPath FilePath,
+                                  unsigned int Offset) {
+  if (NeedReport)
+    DiagnosticsUtils::report(FilePath, Offset,
+                             Diagnostics::NOERROR_RETURN_COMMA_OP, true, false);
+
+  if (IsAssigned && ReplText.empty()) {
+    ReplText = "0";
+  }
+
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, Offset, Length, ReplText, nullptr));
+}
+///// class TimeStubTypeInfo /////
+void TimeStubTypeInfo::buildInfo(clang::tooling::UnifiedPath FilePath,
+                                 unsigned int Offset, bool isReplTxtWithSB) {
+  if (isReplTxtWithSB)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithSB,
+                                         nullptr));
+  else
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithoutSB,
+                                         nullptr));
+}
+///// class BuiltinVarInfo /////
+void BuiltinVarInfo::buildInfo(clang::tooling::UnifiedPath FilePath,
+                               unsigned int Offset, unsigned int ID) {
+  std::string R = Repl + std::to_string(ID) + ")";
+  DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, Offset, Len, R, nullptr));
+}
+
+///// class ParameterStream /////
+ParameterStream &ParameterStream::operator<<(const std::string &InputParamStr) {
+  if (InputParamStr.size() == 0) {
+    return *this;
+  }
+
+  if (!FormatInformation.EnableFormat) {
+    // append the string directly
+    Str = Str + InputParamStr;
+    return *this;
+  }
+
+  if (FormatInformation.IsAllParamsOneLine) {
+    // all parameters are in one line
+    Str = Str + ", " + InputParamStr;
+    return *this;
+  }
+
+  if (FormatInformation.IsEachParamNL) {
+    // each parameter is in a single line
+    Str = Str + "," + getNL() + FormatInformation.NewLineIndentStr +
+          InputParamStr;
+    return *this;
+  }
+
+  // parameters will be inserted in one line unless the line length > column
+  // limit.
+  if (FormatInformation.CurrentLength + 2 + (int)InputParamStr.size() <=
+      ColumnLimit) {
+    Str = Str + ", " + InputParamStr;
+    FormatInformation.CurrentLength =
+        FormatInformation.CurrentLength + 2 + InputParamStr.size();
+    return *this;
+  } else {
+    Str = Str + std::string(",") + getNL() +
+          FormatInformation.NewLineIndentStr + InputParamStr;
+    FormatInformation.CurrentLength =
+        FormatInformation.NewLineIndentLength + InputParamStr.size();
+    return *this;
+  }
+}
+ParameterStream &ParameterStream::operator<<(int InputInt) {
+  return *this << std::to_string(InputInt);
+}
+
+///// end /////
 int HostDeviceFuncInfo::MaxId = 0;
 clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
 clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
@@ -4247,38 +4331,11 @@ void SizeInfo::setTemplateList(
     TDSI = TDSI->applyTemplateArguments(TemplateList);
 }
 
-void TimeStubTypeInfo::buildInfo(clang::tooling::UnifiedPath FilePath,
-                                 unsigned int Offset, bool isReplTxtWithSB) {
-  if (isReplTxtWithSB)
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithSB,
-                                         nullptr));
-  else
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithoutSB,
-                                         nullptr));
-}
 
-void EventSyncTypeInfo::buildInfo(clang::tooling::UnifiedPath FilePath,
-                                  unsigned int Offset) {
-  if (NeedReport)
-    DiagnosticsUtils::report(FilePath, Offset,
-                             Diagnostics::NOERROR_RETURN_COMMA_OP, true, false);
 
-  if (IsAssigned && ReplText.empty()) {
-    ReplText = "0";
-  }
 
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, Offset, Length, ReplText, nullptr));
-}
 
-void BuiltinVarInfo::buildInfo(clang::tooling::UnifiedPath FilePath,
-                               unsigned int Offset, unsigned int ID) {
-  std::string R = Repl + std::to_string(ID) + ")";
-  DpctGlobalInfo::getInstance().addReplacement(
-      std::make_shared<ExtReplacement>(FilePath, Offset, Len, R, nullptr));
-}
+
 
 bool isInAnalysisScope(SourceLocation SL) {
   return DpctGlobalInfo::isInAnalysisScope(SL);
