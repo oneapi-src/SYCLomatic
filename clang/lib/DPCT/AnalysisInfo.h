@@ -537,11 +537,7 @@ public:
     clang::tooling::UnifiedPath FilePath;
     unsigned Offset;
     bool IsInAnalysisScope;
-    MacroDefRecord(SourceLocation NTL, bool IIAS) : IsInAnalysisScope(IIAS) {
-      auto LocInfo = DpctGlobalInfo::getLocInfo(NTL);
-      FilePath = LocInfo.first;
-      Offset = LocInfo.second;
-    }
+    MacroDefRecord(SourceLocation NTL, bool IIAS);
   };
 
   class MacroExpansionRecord {
@@ -557,21 +553,7 @@ public:
     int TokenIndex;
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
                          SourceRange Range, bool IsInAnalysisScope,
-                         int TokenIndex) {
-      auto LocInfoBegin =
-          DpctGlobalInfo::getLocInfo(MI->getReplacementToken(0).getLocation());
-      auto LocInfoEnd = DpctGlobalInfo::getLocInfo(
-          MI->getReplacementToken(MI->getNumTokens() - 1).getLocation());
-      Name = ID->getName().str();
-      NumTokens = MI->getNumTokens();
-      FilePath = LocInfoBegin.first;
-      ReplaceTokenBeginOffset = LocInfoBegin.second;
-      ReplaceTokenEndOffset = LocInfoEnd.second;
-      this->Range = Range;
-      this->IsInAnalysisScope = IsInAnalysisScope;
-      this->IsFunctionLike = MI->getNumParams() > 0;
-      this->TokenIndex = TokenIndex;
-    }
+                         int TokenIndex);
   };
 
   struct HelperFuncReplInfo {
@@ -602,100 +584,32 @@ public:
   };
 
   static std::string removeSymlinks(clang::FileManager &FM,
-                                    std::string FilePathStr) {
-    // Get rid of symlinks
-    SmallString<4096> NoSymlinks = StringRef("");
-    auto Dir =
-        FM.getOptionalDirectoryRef(llvm::sys::path::parent_path(FilePathStr));
-    if (Dir) {
-      StringRef DirName = FM.getCanonicalName(*Dir);
-      StringRef FileName = llvm::sys::path::filename(FilePathStr);
-      llvm::sys::path::append(NoSymlinks, DirName, FileName);
-    }
-    return NoSymlinks.str().str();
-  }
-
-  inline static bool isInRoot(SourceLocation SL) {
-    return isInRoot(DpctGlobalInfo::getLocInfo(SL).first);
-  }
-  static bool isInRoot(clang::tooling::UnifiedPath FilePath) {
-    if (isChildPath(InRoot, FilePath)) {
-      return !isExcluded(FilePath);
-    } else {
-      return false;
-    }
-  }
-  inline static bool isInAnalysisScope(SourceLocation SL) {
-    return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
-  }
-
-  static bool isInAnalysisScope(clang::tooling::UnifiedPath FilePath) {
-    return isChildPath(AnalysisScope, FilePath);
-  }
-
-  static bool isExcluded(const clang::tooling::UnifiedPath &FilePath) {
-    static std::map<std::string, bool> Cache;
-    if (FilePath.getPath().empty() ||
-        DpctGlobalInfo::getExcludePath().empty()) {
-      return false;
-    }
-    if (FilePath.getCanonicalPath().empty()) {
-      return false;
-    }
-    if (Cache.count(FilePath.getCanonicalPath().str())) {
-      return Cache[FilePath.getCanonicalPath().str()];
-    }
-    for (auto &Path : DpctGlobalInfo::getExcludePath()) {
-      if (isChildOrSamePath(Path.first, FilePath)) {
-        Cache[FilePath.getCanonicalPath().str()] = true;
-        return true;
-      }
-    }
-    Cache[FilePath.getCanonicalPath().str()] = false;
-    return false;
-  }
+                                    std::string FilePathStr);
+  static bool isInRoot(SourceLocation SL);
+  static bool isInRoot(clang::tooling::UnifiedPath FilePath);
+  static bool isInAnalysisScope(SourceLocation SL);
+  static bool isInAnalysisScope(clang::tooling::UnifiedPath FilePath);
+  static bool isExcluded(const clang::tooling::UnifiedPath &FilePath);
   // TODO: implement one of this for each source language.
-  inline static bool isInCudaPath(SourceLocation SL) {
-    return isInCudaPath(getSourceManager()
-                            .getFilename(getSourceManager().getExpansionLoc(SL))
-                            .str());
-  }
+  static bool isInCudaPath(SourceLocation SL);
   // TODO: implement one of this for each source language.
-  static bool isInCudaPath(clang::tooling::UnifiedPath FilePath) {
-    return isChildPath(CudaPath, FilePath);
-  }
-  static void setInRoot(const clang::tooling::UnifiedPath &InRootPath) {
-    InRoot = InRootPath;
-  }
-  static const clang::tooling::UnifiedPath &getInRoot() { return InRoot; }
-  static void setOutRoot(const clang::tooling::UnifiedPath &OutRootPath) {
-    OutRoot = OutRootPath;
-  }
-  static const clang::tooling::UnifiedPath &getOutRoot() { return OutRoot; }
+  static bool isInCudaPath(clang::tooling::UnifiedPath FilePath);
+
+  static void setInRoot(const clang::tooling::UnifiedPath &InRootPath);
+  static const clang::tooling::UnifiedPath &getInRoot();
+  static void setOutRoot(const clang::tooling::UnifiedPath &OutRootPath);
+  static const clang::tooling::UnifiedPath &getOutRoot();
   static void
-  setAnalysisScope(const clang::tooling::UnifiedPath &InputAnalysisScope) {
-    AnalysisScope = InputAnalysisScope;
-  }
-  static const clang::tooling::UnifiedPath &getAnalysisScope() {
-    return AnalysisScope;
-  }
-  static inline void addChangeExtensions(const std::string &Extension) {
-    assert(!Extension.empty());
-    ChangeExtensions.insert(Extension);
-  }
-  static inline const std::unordered_set<std::string> &getChangeExtensions() {
-    return ChangeExtensions;
-  }
+  setAnalysisScope(const clang::tooling::UnifiedPath &InputAnalysisScope);
+  static const clang::tooling::UnifiedPath &getAnalysisScope();
+  static void addChangeExtensions(const std::string &Extension);
+  static const std::unordered_set<std::string> &getChangeExtensions();
   // TODO: implement one of this for each source language.
-  static void setCudaPath(const clang::tooling::UnifiedPath &InputCudaPath) {
-    CudaPath = InputCudaPath;
-  }
+  static void setCudaPath(const clang::tooling::UnifiedPath &InputCudaPath);
   // TODO: implement one of this for each source language.
-  static const clang::tooling::UnifiedPath &getCudaPath() { return CudaPath; }
+  static const clang::tooling::UnifiedPath &getCudaPath();
+  static const std::string getCudaVersion();
 
-  static const std::string getCudaVersion() {
-    return clang::CudaVersionToString(SDKVersion);
-  }
   static void printItem(llvm::raw_ostream &, const Stmt *,
                         const FunctionDecl *FD = nullptr);
   static std::string getItem(const Stmt *, const FunctionDecl *FD = nullptr);
@@ -710,318 +624,92 @@ public:
                                  const FunctionDecl *FD = nullptr);
   static std::string getDefaultQueue(const Stmt *);
   static const std::string &getDeviceQueueName();
-  static const std::string &getStreamName() {
-    const static std::string StreamName = "stream" + getCTFixedSuffix();
-    return StreamName;
-  }
-  static const std::string &getSyncName() {
-    const static std::string SyncName = "sync" + getCTFixedSuffix();
-    return SyncName;
-  }
-  static const std::string &getInRootHash() {
-    const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
-    return Hash;
-  }
-  static void setContext(ASTContext &C) {
-    Context = &C;
-    SM = &(Context->getSourceManager());
-    FM = &(SM->getFileManager());
-    Context->getParentMapContext().setTraversalKind(TK_AsIs);
-  }
-  static void setRuleFile(const std::string &Path) { RuleFile = Path; }
-  static ASTContext &getContext() {
-    assert(Context);
-    return *Context;
-  }
-  static SourceManager &getSourceManager() {
-    assert(SM);
-    return *SM;
-  }
-  static FileManager &getFileManager() {
-    assert(FM);
-    return *FM;
-  }
-  inline static bool isKeepOriginCode() { return KeepOriginCode; }
-  inline static void setKeepOriginCode(bool KOC = true) {
-    KeepOriginCode = KOC;
-  }
-  inline static bool isSyclNamedLambda() { return SyclNamedLambda; }
-  inline static void setSyclNamedLambda(bool SNL = true) {
-    SyclNamedLambda = SNL;
-  }
-  inline static void setCheckUnicodeSecurityFlag(bool CUS) {
-    CheckUnicodeSecurityFlag = CUS;
-  }
-  inline static bool getCheckUnicodeSecurityFlag() {
-    return CheckUnicodeSecurityFlag;
-  }
-  inline static void setEnablepProfilingFlag(bool EP) {
-    EnablepProfilingFlag = EP;
-  }
-  inline static bool getEnablepProfilingFlag() { return EnablepProfilingFlag; }
-  inline static bool getGuessIndentWidthMatcherFlag() {
-    return GuessIndentWidthMatcherFlag;
-  }
-  inline static void setGuessIndentWidthMatcherFlag(bool Flag = true) {
-    GuessIndentWidthMatcherFlag = Flag;
-  }
-  inline static void setIndentWidth(unsigned int W) { IndentWidth = W; }
-  inline static unsigned int getIndentWidth() { return IndentWidth; }
-  inline static void insertKCIndentWidth(unsigned int W) {
-    auto Iter = KCIndentWidthMap.find(W);
-    if (Iter != KCIndentWidthMap.end())
-      Iter->second++;
-    else
-      KCIndentWidthMap.insert(std::make_pair(W, 1));
-  }
-  inline static unsigned int getKCIndentWidth() {
-    if (KCIndentWidthMap.empty())
-      return DpctGlobalInfo::getCodeFormatStyle().IndentWidth;
-
-    std::multimap<unsigned int, unsigned int, std::greater<unsigned int>>
-        OccuranceIndentWidthMap;
-    for (const auto &I : KCIndentWidthMap)
-      OccuranceIndentWidthMap.insert(std::make_pair(I.second, I.first));
-
-    return OccuranceIndentWidthMap.begin()->second;
-  }
-  inline static UsmLevel getUsmLevel() { return UsmLvl; }
-  inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
-  inline static clang::CudaVersion getSDKVersion() { return SDKVersion; }
-  inline static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
-  inline static bool isIncMigration() { return IsIncMigration; }
-  inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
-  inline static bool isQueryAPIMapping() { return IsQueryAPIMapping; }
-  inline static void setIsQueryAPIMapping(bool Flag) {
-    IsQueryAPIMapping = Flag;
-  }
-  inline static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
-  inline static void setNeedDpctDeviceExt() { NeedDpctDeviceExt = true; }
-  inline static unsigned int getAssumedNDRangeDim() {
-    return AssumedNDRangeDim;
-  }
-  inline static void setAssumedNDRangeDim(unsigned int Dim) {
-    AssumedNDRangeDim = Dim;
-  }
-
-  inline static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
-    return ExtensionDEFlag & (1 << static_cast<unsigned>(Ext));
-  }
-  inline static void setExtensionDEFlag(unsigned Flag) {
-    ExtensionDEFlag = Flag;
-  }
-  inline static unsigned getExtensionDEFlag() { return ExtensionDEFlag; }
-
-  inline static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
-    return ExtensionDDFlag & (1 << static_cast<unsigned>(Ext));
-  }
-  inline static void setExtensionDDFlag(unsigned Flag) {
-    ExtensionDDFlag = Flag;
-  }
-  inline static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
-
+  static const std::string &getStreamName();
+  static const std::string &getSyncName();
+  static const std::string &getInRootHash();
+  static void setContext(ASTContext &C);
+  static void setRuleFile(const std::string &Path);
+  static ASTContext &getContext();
+  static SourceManager &getSourceManager();
+  static FileManager &getFileManager();
+  static bool isKeepOriginCode();
+  static void setKeepOriginCode(bool KOC = true);
+  static bool isSyclNamedLambda();
+  static void setSyclNamedLambda(bool SNL = true);
+  static void setCheckUnicodeSecurityFlag(bool CUS);
+  static bool getCheckUnicodeSecurityFlag();
+  static void setEnablepProfilingFlag(bool EP);
+  static bool getEnablepProfilingFlag();
+  static bool getGuessIndentWidthMatcherFlag();
+  static void setGuessIndentWidthMatcherFlag(bool Flag = true);
+  static void setIndentWidth(unsigned int W);
+  static unsigned int getIndentWidth();
+  static void insertKCIndentWidth(unsigned int W);
+  static unsigned int getKCIndentWidth();
+  static UsmLevel getUsmLevel();
+  static void setUsmLevel(UsmLevel UL);
+  static clang::CudaVersion getSDKVersion();
+  static void setSDKVersion(clang::CudaVersion V);
+  static bool isIncMigration();
+  static void setIsIncMigration(bool Flag);
+  static bool isQueryAPIMapping();
+  static void setIsQueryAPIMapping(bool Flag);
+  static bool needDpctDeviceExt();
+  static void setNeedDpctDeviceExt();
+  static unsigned int getAssumedNDRangeDim();
+  static void setAssumedNDRangeDim(unsigned int Dim);
+  static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext);
+  static void setExtensionDEFlag(unsigned Flag);
+  static unsigned getExtensionDEFlag();
+  static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext);
+  static void setExtensionDDFlag(unsigned Flag);
+  static unsigned getExtensionDDFlag();
   template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
     return ExperimentalFlag & (1 << static_cast<unsigned>(Exp));
   }
-  static void setExperimentalFlag(unsigned Flag) { ExperimentalFlag = Flag; }
-  static unsigned getExperimentalFlag() { return ExperimentalFlag; }
-
-  static bool getHelperFuncPreference(HelperFuncPreference HFP) {
-    return HelperFuncPreferenceFlag & (1 << static_cast<unsigned>(HFP));
-  }
-  static void setHelperFuncPreferenceFlag(unsigned Flag) {
-    HelperFuncPreferenceFlag = Flag;
-  }
-  static unsigned getHelperFuncPreferenceFlag() {
-    return HelperFuncPreferenceFlag;
-  }
-
-  inline static format::FormatRange getFormatRange() { return FmtRng; }
-  inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
-  inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
-  inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
+  static void setExperimentalFlag(unsigned Flag);
+  static unsigned getExperimentalFlag();
+  static bool getHelperFuncPreference(HelperFuncPreference HFP);
+  static void setHelperFuncPreferenceFlag(unsigned Flag);
+  static unsigned getHelperFuncPreferenceFlag();
+  static format::FormatRange getFormatRange();
+  static void setFormatRange(format::FormatRange FR);
+  static DPCTFormatStyle getFormatStyle();
+  static void setFormatStyle(DPCTFormatStyle FS);
   // Processing the folder or file by following rules:
   // Rule1: For {child path, parent path}, only parent path will be kept.
   // Rule2: Ignore invalid path.
   // Rule3: If path is not in --in-root, then ignore it.
-  inline static void setExcludePath(std::vector<std::string> ExcludePathVec) {
-    if (ExcludePathVec.empty()) {
-      return;
-    }
-    std::set<std::string> ProcessedPath;
-    for (auto Itr = ExcludePathVec.begin(); Itr != ExcludePathVec.end();
-         Itr++) {
-      if ((*Itr).empty()) {
-        continue;
-      }
-      clang::tooling::UnifiedPath PathBuf = *Itr;
-      if (PathBuf.getCanonicalPath().empty()) {
-        clang::dpct::PrintMsg("Note: Path " + PathBuf.getPath().str() +
-                              " is invalid and will be ignored by option "
-                              "--in-root-exclude.\n");
-        continue;
-      }
-      if (ProcessedPath.count(*Itr)) {
-        continue;
-      }
-      ProcessedPath.insert(*Itr);
-      bool IsDirectory;
-      if ((IsDirectory = llvm::sys::fs::is_directory(*Itr)) ||
-          llvm::sys::fs::is_regular_file(*Itr) ||
-          llvm::sys::fs::is_symlink_file(*Itr)) {
-        if (!isChildOrSamePath(InRoot, *Itr)) {
-          clang::dpct::PrintMsg("Note: Path " +
-                                PathBuf.getCanonicalPath().str() +
-                                " is not in --in-root directory and will be "
-                                "ignored by --in-root-exclude.\n");
-        } else {
-          bool IsNeedInsert = true;
-          for (auto EP_Itr = ExcludePath.begin();
-               EP_Itr != ExcludePath.end();) {
-            if ((EP_Itr->first == *Itr) ||
-                (EP_Itr->second && isChildOrSamePath(EP_Itr->first, *Itr))) {
-              // 1. If current path is child or same path of previous path,
-              //    then we skip it.
-              IsNeedInsert = false;
-              break;
-            } else if (IsDirectory && isChildOrSamePath(*Itr, EP_Itr->first)) {
-              // 2. If previous path is child of current path, then
-              //    we delete previous path.
-              EP_Itr = ExcludePath.erase(EP_Itr);
-            } else {
-              EP_Itr++;
-            }
-          }
-          if (IsNeedInsert) {
-            ExcludePath.insert({*Itr, IsDirectory});
-          }
-        }
-      } else {
-        clang::dpct::PrintMsg("Note: Path " + PathBuf.getCanonicalPath().str() +
-                              " is invalid and will be ignored by option "
-                              "--in-root-exclude.\n");
-      }
-    }
-  }
-  inline static std::unordered_map<std::string, bool> getExcludePath() {
-    return ExcludePath;
-  }
-  inline static std::set<ExplicitNamespace> getExplicitNamespaceSet() {
-    return ExplicitNamespaceSet;
-  }
-  inline static void
-  setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec) {
-    size_t NamespaceVecSize = NamespacesVec.size();
-    if (!NamespaceVecSize || NamespaceVecSize > 2) {
-      ShowStatus(MigrationErrorInvalidExplicitNamespace);
-      dpctExit(MigrationErrorInvalidExplicitNamespace);
-    }
-    for (auto &Namespace : NamespacesVec) {
-      // 1. Ensure option none is alone
-      bool Check1 =
-          (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
-      // 2. Ensure option cl, sycl, sycl-math only enabled one
-      bool Check2 =
-          ((Namespace == ExplicitNamespace::EN_CL ||
-            Namespace == ExplicitNamespace::EN_SYCL ||
-            Namespace == ExplicitNamespace::EN_SYCL_Math) &&
-           (ExplicitNamespaceSet.size() == 1 &&
-            ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
-      // 3. Check whether option dpct duplicated
-      bool Check3 =
-          (Namespace == ExplicitNamespace::EN_DPCT &&
-           ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1);
-      if (Check1 || Check2 || Check3) {
-        ShowStatus(MigrationErrorInvalidExplicitNamespace);
-        dpctExit(MigrationErrorInvalidExplicitNamespace);
-      } else {
-        ExplicitNamespaceSet.insert(Namespace);
-      }
-    }
-  }
-  inline static bool isCtadEnabled() { return EnableCtad; }
-  inline static void setCtadEnabled(bool Enable = true) { EnableCtad = Enable; }
-  inline static bool isGenBuildScript() { return GenBuildScript; }
-  inline static void setGenBuildScriptEnabled(bool Enable = true) {
-    GenBuildScript = Enable;
-  }
-  inline static bool IsMigrateCmakeScriptEnabled() {
-    return MigrateCmakeScript;
-  }
-  inline static void setMigrateCmakeScriptEnabled(bool Enable = true) {
-    MigrateCmakeScript = Enable;
-  }
-  inline static bool IsMigrateCmakeScriptOnlyEnabled() {
-    return MigrateCmakeScriptOnly;
-  }
-  inline static void setMigrateCmakeScriptOnlyEnabled(bool Enable = true) {
-    MigrateCmakeScriptOnly = Enable;
-  }
-  inline static bool isCommentsEnabled() { return EnableComments; }
-  inline static void setCommentsEnabled(bool Enable = true) {
-    EnableComments = Enable;
-  }
-
-  inline static bool isDPCTNamespaceTempEnabled() {
-    return TempEnableDPCTNamespace;
-  }
-  inline static void setDPCTNamespaceTempEnabled() {
-    TempEnableDPCTNamespace = true;
-  }
-
-  inline static std::unordered_set<std::string> &getPrecAndDomPairSet() {
-    return PrecAndDomPairSet;
-  }
-
-  inline static bool isMKLHeaderUsed() { return IsMLKHeaderUsed; }
-  inline static void setMKLHeaderUsed(bool Used = true) {
-    IsMLKHeaderUsed = Used;
-  }
-
-  inline static int getSuffixIndexInitValue(std::string FileNameAndOffset) {
-    auto Res = LocationInitIndexMap.find(FileNameAndOffset);
-    if (Res == LocationInitIndexMap.end()) {
-      LocationInitIndexMap.insert(
-          std::make_pair(FileNameAndOffset, CurrentMaxIndex + 1));
-      return CurrentMaxIndex + 1;
-    } else {
-      return Res->second;
-    }
-  }
-
-  inline static void updateInitSuffixIndexInRule(int InitVal) {
-    CurrentIndexInRule = InitVal;
-  }
-  inline static int getSuffixIndexInRuleThenInc() {
-    int Res = CurrentIndexInRule;
-    if (CurrentMaxIndex < Res)
-      CurrentMaxIndex = Res;
-    CurrentIndexInRule++;
-    return Res;
-  }
-  inline static int getSuffixIndexGlobalThenInc() {
-    int Res = CurrentMaxIndex;
-    CurrentMaxIndex++;
-    return Res;
-  }
-  inline static const std::string &getGlobalQueueName() {
-    const static std::string Q = "q_ct1";
-    return Q;
-  }
-  inline static const std::string &getGlobalDeviceName() {
-    const static std::string D = "dev_ct1";
-    return D;
-  }
-
+  static void setExcludePath(std::vector<std::string> ExcludePathVec);
+  static std::unordered_map<std::string, bool> getExcludePath();
+  static std::set<ExplicitNamespace> getExplicitNamespaceSet();
+  static void
+  setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec);
+  static bool isCtadEnabled();
+  static void setCtadEnabled(bool Enable = true);
+  static bool isGenBuildScript();
+  static void setGenBuildScriptEnabled(bool Enable = true);
+  static bool IsMigrateCmakeScriptEnabled();
+  static void setMigrateCmakeScriptEnabled(bool Enable = true);
+  static bool IsMigrateCmakeScriptOnlyEnabled();
+  static void setMigrateCmakeScriptOnlyEnabled(bool Enable = true);
+  static bool isCommentsEnabled();
+  static void setCommentsEnabled(bool Enable = true);
+  static bool isDPCTNamespaceTempEnabled();
+  static void setDPCTNamespaceTempEnabled();
+  static std::unordered_set<std::string> &getPrecAndDomPairSet();
+  static bool isMKLHeaderUsed();
+  static void setMKLHeaderUsed(bool Used = true);
+  static int getSuffixIndexInitValue(std::string FileNameAndOffset);
+  static void updateInitSuffixIndexInRule(int InitVal);
+  static int getSuffixIndexInRuleThenInc();
+  static int getSuffixIndexGlobalThenInc();
+  static const std::string &getGlobalQueueName();
+  static const std::string &getGlobalDeviceName();
   static std::string getStringForRegexReplacement(StringRef);
-
-  inline static void
-  setCodeFormatStyle(const clang::format::FormatStyle &Style) {
-    CodeFormatStyle = Style;
-  }
-  inline static clang::format::FormatStyle getCodeFormatStyle() {
-    return CodeFormatStyle;
-  }
+  static void
+  setCodeFormatStyle(const clang::format::FormatStyle &Style);
+  static clang::format::FormatStyle getCodeFormatStyle();
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
@@ -1129,57 +817,21 @@ public:
   getLocInfo(const T *N, bool *IsInvalid = nullptr /* out */) {
     return getLocInfo(getLocation(N), IsInvalid);
   }
-
   static std::pair<clang::tooling::UnifiedPath, unsigned>
-  getLocInfo(const TypeLoc &TL, bool *IsInvalid = nullptr /*out*/) {
-    return getLocInfo(TL.getBeginLoc(), IsInvalid);
-  }
-
+  getLocInfo(const TypeLoc &TL, bool *IsInvalid = nullptr /*out*/);
   // Return the absolute path of \p ID
   static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(FileID ID);
   // Return the absolute path of \p File
   static std::optional<clang::tooling::UnifiedPath>
   getAbsolutePath(const FileEntry &File);
-
   static inline std::pair<clang::tooling::UnifiedPath, unsigned>
-  getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
-    if (SM->isMacroArgExpansion(Loc)) {
-      Loc = SM->getImmediateSpellingLoc(Loc);
-    }
-    auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
-    auto AbsPath = getAbsolutePath(LocInfo.first);
-    if (AbsPath)
-      return std::make_pair(AbsPath.value(), LocInfo.second);
-    if (IsInvalid)
-      *IsInvalid = true;
-    return std::make_pair(clang::tooling::UnifiedPath(), 0);
-  }
-
-  static inline std::string getTypeName(QualType QT,
-                                        const ASTContext &Context) {
-    if (auto ET = QT->getAs<ElaboratedType>()) {
-      if (ET->getQualifier())
-        QT = Context.getElaboratedType(ElaboratedTypeKeyword::None,
-                                       ET->getQualifier(), ET->getNamedType(),
-                                       ET->getOwnedTagDecl());
-      else
-        QT = ET->getNamedType();
-    }
-    auto PP = Context.getPrintingPolicy();
-    PP.SuppressTagKeyword = true;
-    return QT.getAsString(PP);
-  }
-  static inline std::string getTypeName(QualType QT) {
-    return getTypeName(QT, DpctGlobalInfo::getContext());
-  }
-  static inline std::string getUnqualifiedTypeName(QualType QT,
-                                                   const ASTContext &Context) {
-    return getTypeName(QT.getUnqualifiedType(), Context);
-  }
-  static inline std::string getUnqualifiedTypeName(QualType QT) {
-    return getUnqualifiedTypeName(QT, DpctGlobalInfo::getContext());
-  }
-
+  getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */);
+  static std::string getTypeName(QualType QT,
+                                        const ASTContext &Context);
+  static std::string getTypeName(QualType QT);
+  static std::string getUnqualifiedTypeName(QualType QT,
+                                            const ASTContext &Context);
+  static std::string getUnqualifiedTypeName(QualType QT);
   /// This function will return the replaced type name with qualifiers.
   /// Currently, since clang do not support get the order of original
   /// qualifiers, this function will follow the behavior of
@@ -1189,42 +841,16 @@ public:
   /// \param [in] QT The input qualified type which need migration.
   /// \param [in] Context The AST context.
   /// \return The replaced type name string with qualifiers.
-  static inline std::string getReplacedTypeName(QualType QT,
-                                                const ASTContext &Context) {
-    if (!QT.isNull())
-      if (const auto *AT = dyn_cast<AutoType>(QT.getTypePtr())) {
-        QT = AT->getDeducedType();
-        if (QT.isNull()) {
-          return "";
-        }
-      }
-    std::string MigratedTypeStr;
-    setGetReplacedNamePtr(&getReplacedName);
-    llvm::raw_string_ostream OS(MigratedTypeStr);
-    clang::PrintingPolicy PP =
-        clang::PrintingPolicy(DpctGlobalInfo::getContext().getLangOpts());
-    QT.print(OS, PP);
-    OS.flush();
-    setGetReplacedNamePtr(nullptr);
-    return getFinalCastTypeNameStr(MigratedTypeStr);
-  }
-  static inline std::string getReplacedTypeName(QualType QT) {
-    return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
-  }
+  static std::string getReplacedTypeName(QualType QT,
+                                                const ASTContext &Context);
+  static std::string getReplacedTypeName(QualType QT);
   /// This function will return the original type name with qualifiers.
   /// The order of original qualifiers will follow the behavior of
   /// clang::QualType.print() regardless its order in origin code.
   /// \param [in] QT The input qualified type.
   /// \return The type name string with qualifiers.
-  static inline std::string getOriginalTypeName(QualType QT) {
-    std::string OriginalTypeStr;
-    llvm::raw_string_ostream OS(OriginalTypeStr);
-    clang::PrintingPolicy PP =
-        clang::PrintingPolicy(DpctGlobalInfo::getContext().getLangOpts());
-    QT.print(OS, PP);
-    OS.flush();
-    return OriginalTypeStr;
-  }
+  static std::string getOriginalTypeName(QualType QT);
+
 #define GLOBAL_TYPE(TYPE, NODE_TYPE)                                           \
   std::shared_ptr<TYPE> find##TYPE(const NODE_TYPE *Node) {                    \
     return findNode<TYPE>(Node);                                               \
@@ -1242,54 +868,13 @@ public:
 
   std::shared_ptr<DeviceFunctionDecl> insertDeviceFunctionDecl(
       const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
-      const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList) {
-    auto LocInfo = getLocInfo(FTL);
-    return insertFile(LocInfo.first)
-        ->insertNode<ExplicitInstantiationDecl, DeviceFunctionDecl>(
-            LocInfo.second, FTL, Attrs, Specialization, TAList);
-  }
-
+      const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList);
   std::shared_ptr<DeviceFunctionDecl>
-  insertDeviceFunctionDeclInModule(const FunctionDecl *FD) {
-    auto LocInfo = getLocInfo(FD);
-    return insertFile(LocInfo.first)
-        ->insertNode<DeviceFunctionDeclInModule, DeviceFunctionDecl>(
-            LocInfo.second, FD);
-  }
+  insertDeviceFunctionDeclInModule(const FunctionDecl *FD);
 
   // Build kernel and device function declaration replacements and store
   // them.
-  void buildKernelInfo() {
-    for (auto &File : FileMap)
-      File.second->buildKernelInfo();
-
-    // Construct a union-find set for all the instances of MemVarMap in
-    // DeviceFunctionInfo. During the traversal of the call-graph, do union
-    // operation if caller and callee both need item variable, then after the
-    // traversal, all MemVarMap instance which need item are divided into
-    // some groups. Among different groups, there is no call relationship. If
-    // kernel-call is 3D, then set its head's dim to 3D. When generating
-    // replacements, find current nodes' head to decide to use which dim.
-
-    // Below 4 for-loop cannot be merged.
-    // The later loop depends on the info generated by the previous loop.
-    // Now we consider two links: the call-chain and the macro spelling loc
-    // link Since the macro spelling loc may link a global func from a device
-    // func, we cannot merge set dim into the second loop. Because global func
-    // is the first level function in the buildUnionFindSet(), if it is
-    // visited from previous device func, there is no chance to propagate its
-    // correct dim value (there is no upper level func call to global func and
-    // then it will be skipped).
-    for (auto &File : FileMap)
-      File.second->setKernelCallDim();
-    for (auto &File : FileMap)
-      File.second->setKernelDim();
-    for (auto &File : FileMap)
-      File.second->buildUnionFindSet();
-    for (auto &File : FileMap)
-      File.second->buildUnionFindSetForUncalledFunc();
-  }
-
+  void buildKernelInfo();
   void buildReplacements();
   void processCudaArchMacro();
   void generateHostCode(
@@ -1298,18 +883,9 @@ public:
       HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
-                     std::shared_ptr<ExtReplacements> Repl) {
-    FileReplCache[FilePath] = Repl;
-  }
+                     std::shared_ptr<ExtReplacements> Repl);
   // Emplace stored replacements into replacement set.
-  void emplaceReplacements(ReplTy &ReplSets /*out*/) {
-    if (DpctGlobalInfo::isNeedRunAgain())
-      return;
-    for (auto &FileRepl : FileReplCache) {
-      FileRepl.second->emplaceIntoReplSet(
-          ReplSets[FileRepl.first.getCanonicalPath().str()]);
-    }
-  }
+  void emplaceReplacements(ReplTy &ReplSets /*out*/);
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
 
   void insertCudaMalloc(const CallExpr *CE);
