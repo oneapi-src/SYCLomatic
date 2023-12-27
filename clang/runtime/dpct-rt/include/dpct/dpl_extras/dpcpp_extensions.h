@@ -441,7 +441,7 @@ public:
   __dpct_inline__ void blocked_to_striped(Item item,
                                           T (&keys)[VALUES_PER_THREAD]) {
 
-    stripedToBlockedFunctor striped_to_blocked_functor;
+    stripedToBlockedFunctor<Item> striped_to_blocked_functor;
     helper_exchange(item, keys, striped_to_blocked_functor,
                     &stripedToBlockedFunctor::reverse_offset,
                     &stripedToBlockedFunctor::forward_offset);
@@ -452,7 +452,7 @@ public:
   __dpct_inline__ void striped_to_blocked(Item item,
                                           T (&keys)[VALUES_PER_THREAD]) {
 
-    stripedToBlockedFunctor striped_to_blocked_functor;
+    stripedToBlockedFunctor<Item> striped_to_blocked_functor;
     helper_exchange(item, keys, striped_to_blocked_functor,
                     &stripedToBlockedFunctor::forward_offset,
                     &stripedToBlockedFunctor::reverse_offset);
@@ -468,7 +468,7 @@ public:
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
       int offset = ranks[i];
-      offset = adust_by_padding(offset);
+      offset = adjust_by_padding(offset);
       buffer[offset] = keys[i];
     }
 
