@@ -2981,8 +2981,26 @@ void CtTypeInfo::setPointerAsArray() {
 }
 void CtTypeInfo::removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
 ///// class VarInfo /////
-
-
+const clang::tooling::UnifiedPath &VarInfo::getFilePath() { return FilePath; }
+unsigned VarInfo::getOffset() { return Offset; }
+const std::string &VarInfo::getName() { return Name; }
+const std::string VarInfo::getNameAppendSuffix() { return Name + "_ct1"; }
+std::shared_ptr<CtTypeInfo> &VarInfo::getType() { return Ty; }
+std::string VarInfo::getDerefName() {
+  return buildString(getName(), "_deref_", DpctGlobalInfo::getInRootHash());
+}
+void
+VarInfo::applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TAList) {
+  Ty = Ty->applyTemplateArguments(TAList);
+}
+void VarInfo::requestFeatureForSet(const clang::tooling::UnifiedPath &Path) {
+  if (Ty) {
+    for (const auto &Item : Ty->getHelperFeatureSet()) {
+      requestFeature(Item);
+    }
+  }
+}
+///// class MemVarInfo /////
 
 
 

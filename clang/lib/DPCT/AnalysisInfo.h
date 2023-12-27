@@ -1364,28 +1364,14 @@ public:
           const VarDecl *Var, bool NeedFoldSize = false)
       : FilePath(FilePathIn), Offset(Offset), Name(Var->getName()),
         Ty(std::make_shared<CtTypeInfo>(Var, NeedFoldSize)) {}
-
-  inline const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
-  inline unsigned getOffset() { return Offset; }
-  inline const std::string &getName() { return Name; }
-  inline const std::string getNameAppendSuffix() { return Name + "_ct1"; }
-  inline std::shared_ptr<CtTypeInfo> &getType() { return Ty; }
-
-  inline std::string getDerefName() {
-    return buildString(getName(), "_deref_", DpctGlobalInfo::getInRootHash());
-  }
-
-  inline void
-  applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TAList) {
-    Ty = Ty->applyTemplateArguments(TAList);
-  }
-  inline void requestFeatureForSet(const clang::tooling::UnifiedPath &Path) {
-    if (Ty) {
-      for (const auto &Item : Ty->getHelperFeatureSet()) {
-        requestFeature(Item);
-      }
-    }
-  }
+  const clang::tooling::UnifiedPath &getFilePath();
+  unsigned getOffset();
+  const std::string &getName();
+  const std::string getNameAppendSuffix();
+  std::shared_ptr<CtTypeInfo> &getType();
+  std::string getDerefName();
+  void applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TAList);
+  void requestFeatureForSet(const clang::tooling::UnifiedPath &Path);
 
 private:
   const clang::tooling::UnifiedPath FilePath;
