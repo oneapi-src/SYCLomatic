@@ -57,13 +57,12 @@ if(SYCL_PI_UR_USE_FETCH_CONTENT)
   include(FetchContent)
 
   set(UNIFIED_RUNTIME_REPO "https://github.com/oneapi-src/unified-runtime.git")
-  # commit 67e4d1bcf0057eef7910851bfb5020df9e5befd6
-  # Author: Kenneth Benzie (Benie) <k.benzie@codeplay.com>
-  # Date:   Fri Dec 15 10:09:02 2023 +0000
-  #     Merge pull request #1185 from aarongreig/aaron/fixCoverityCudaCL
-  #     Fix coverity issues in OpenCL, cuda and hip adapters.[L0] Add several fixes to L0 adapter
-  #     for test-usm
-  set(UNIFIED_RUNTIME_TAG 67e4d1bcf0057eef7910851bfb5020df9e5befd6)
+  # commit 8c2d93dd12856dc699cb5b38fe3bd91bd6298a86 (HEAD -> main, gitlab-orion-origin/main)
+  # Author: Weronika Lewandowska <weronika.lewandowska@intel.com>
+  # Date:   Fri Dec 22 10:11:47 2023 +0100
+  #     Merge pull request #1207 from PietroGhg/pietro/remove_event_hpp
+  #     [NATIVECPU] Remove event.hpp inclusion
+  set(UNIFIED_RUNTIME_TAG 8c2d93dd12856dc699cb5b38fe3bd91bd6298a86)
 
   if(SYCL_PI_UR_OVERRIDE_FETCH_CONTENT_REPO)
     set(UNIFIED_RUNTIME_REPO "${SYCL_PI_UR_OVERRIDE_FETCH_CONTENT_REPO}")
