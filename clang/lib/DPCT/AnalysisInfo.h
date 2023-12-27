@@ -2289,12 +2289,12 @@ public:
 
 
 
-  void setNeedSyclExternMacro() { NeedSyclExternMacro = true; }
-  bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
-  void setAlwaysInlineDevFunc() { AlwaysInlineDevFunc = true; }
-  bool IsAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
-  void setForceInlineDevFunc() { ForceInlineDevFunc = true; }
-  bool IsForceInlineDevFunc() { return ForceInlineDevFunc; }
+  void setNeedSyclExternMacro();
+  bool IsSyclExternMacroNeeded();
+  void setAlwaysInlineDevFunc();
+  bool IsAlwaysInlineDevFunc();
+  void setForceInlineDevFunc();
+  bool IsForceInlineDevFunc();
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
@@ -2345,8 +2345,8 @@ class KernelPrinter {
   std::string Indent;
   llvm::raw_string_ostream &Stream;
 
-  void incIndent() { Indent += "  "; }
-  void decIndent() { Indent.erase(Indent.length() - 2, 2); }
+  void incIndent();
+  void decIndent();
 
 public:
   class Block {
@@ -2354,26 +2354,15 @@ public:
     bool WithBrackets;
 
   public:
-    Block(KernelPrinter &Printer, bool WithBrackets)
-        : Printer(Printer), WithBrackets(WithBrackets) {
-      if (WithBrackets)
-        Printer.line("{");
-      Printer.incIndent();
-    }
-    ~Block() {
-      Printer.decIndent();
-      if (WithBrackets)
-        Printer.line("}");
-    }
+    Block(KernelPrinter &Printer, bool WithBrackets);
+    ~Block();
   };
 
 public:
   KernelPrinter(const std::string &NL, const std::string &Indent,
                 llvm::raw_string_ostream &OS)
       : NL(NL), Indent(Indent), Stream(OS) {}
-  std::unique_ptr<Block> block(bool WithBrackets = false) {
-    return std::make_unique<Block>(*this, WithBrackets);
-  }
+  std::unique_ptr<Block> block(bool WithBrackets = false);
   template <class T> KernelPrinter &operator<<(const T &S) {
     Stream << S;
     return *this;
@@ -2382,29 +2371,10 @@ public:
     appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
     return *this;
   }
-  KernelPrinter &operator<<(const StmtList &Stmts) {
-
-    for (auto &S : Stmts) {
-      if (S.StmtStr.empty())
-        continue;
-      if (!S.Warnings.empty()) {
-        for (auto &Warning : S.Warnings) {
-          line("/*");
-          line(Warning);
-          line("*/");
-        }
-      }
-      line(S.StmtStr);
-    }
-    return *this;
-  }
-  KernelPrinter &indent() { return (*this) << Indent; }
-  KernelPrinter &newLine() { return (*this) << NL; }
-  std::string str() {
-    auto Result = Stream.str();
-    return Result.substr(Indent.length(),
-                         Result.length() - Indent.length() - NL.length());
-  }
+  KernelPrinter &operator<<(const StmtList &Stmts);
+  KernelPrinter &indent();
+  KernelPrinter &newLine();
+  std::string str();
 };
 
 class KernelCallExpr : public CallFunctionExpr {
@@ -2415,129 +2385,15 @@ public:
 private:
   struct ArgInfo {
     ArgInfo(const ParmVarDecl *PVD, KernelArgumentAnalysis &Analysis,
-            const Expr *Arg, bool Used, int Index, KernelCallExpr *BASE)
-        : IsPointer(false), IsRedeclareRequired(false),
-          IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
-      Analysis.analyze(Arg);
-      ArgString = Analysis.getReplacedString();
-      TryGetBuffer = Analysis.TryGetBuffer;
-      IsRedeclareRequired = Analysis.IsRedeclareRequired;
-      IsPointer = Analysis.IsPointer;
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-        IsDoublePointer = Analysis.IsDoublePointer;
-      }
-
-      if (IsPointer) {
-        QualType PointerType;
-        if (Arg->getType().getTypePtr()->getTypeClass() ==
-            Type::TypeClass::Decayed) {
-          PointerType = Arg->getType().getCanonicalType();
-        } else {
-          PointerType = Arg->getType();
-        }
-        TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
-        ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
-
-        // Currently, all the device RNG state structs are passed to kernel by
-        // pointer. So we check the pointee type, if it is in the type map, we
-        // replace the TypeString with the MKL generator type.
-        std::string PointeeTypeStr =
-            Arg->getType()->getPointeeType().getUnqualifiedType().getAsString();
-        auto Iter = MapNames::DeviceRandomGeneratorTypeMap.find(PointeeTypeStr);
-        if (Iter != MapNames::DeviceRandomGeneratorTypeMap.end()) {
-          // Here the "*" is not added in the TypeString, the "*" will be added
-          // in function buildKernelArgsStmt
-          TypeString = Iter->second;
-          IsDeviceRandomGeneratorType = true;
-        }
-      } else {
-        auto QT = Arg->getType();
-        QT = QT.getUnqualifiedType();
-        auto Iter =
-            MapNames::VectorTypeMigratedTypeSizeMap.find(QT.getAsString());
-        if (Iter != MapNames::VectorTypeMigratedTypeSizeMap.end())
-          ArgSize = Iter->second;
-        else
-          ArgSize =
-              MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
-        if (PVD) {
-          TypeString = DpctGlobalInfo::getReplacedTypeName(PVD->getType());
-        }
-      }
-      if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
-        IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine,
-                                      Analysis.CallSpellingBegin,
-                                      Analysis.CallSpellingEnd);
-      }
-    }
-
+            const Expr *Arg, bool Used, int Index, KernelCallExpr *BASE);
     ArgInfo(const ParmVarDecl *PVD, const std::string &ArgsArrayName,
-            KernelCallExpr *Kernel)
-        : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
-          IsUsedAsLvalueAfterMalloc(true),
-          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
-                       IsPointer),
-          TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
-          IdString(PVD->getName().str() + "_"),
-          Index(PVD->getFunctionScopeIndex()) {
-      // For parameter declaration 'float *a' with index = 2 and args array's
-      // name is 'args', the arg string will be '*(float **)args[2]'.
-      llvm::raw_string_ostream OS(ArgString);
-      // Get pointer type of the parameter declaration's type, e.g. 'float **'.
-      auto CastPointerType =
-          DpctGlobalInfo::getContext().getPointerType(PVD->getType());
-      // Print '*(float **)'.
-      OS << "*(" << DpctGlobalInfo::getReplacedTypeName(CastPointerType) << ")";
-      // Print args array subscript.
-      OS << ArgsArrayName << "[" << Index << "]";
-
-      if (TextureObjectInfo::isTextureObject(PVD)) {
-        IsRedeclareRequired = false;
-        Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, OS.str());
-        Kernel->addTextureObjectArgInfo(Index, Texture);
-      }
-    }
-
-    ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel)
-        : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
-          IsUsedAsLvalueAfterMalloc(true),
-          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
-                       IsPointer),
-          TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
-          IdString(PVD->getName().str() + "_"),
-          Index(PVD->getFunctionScopeIndex()) {
-      auto ArgName = PVD->getNameAsString();
-      ArgString = ArgName;
-
-      if (TextureObjectInfo::isTextureObject(PVD)) {
-        Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, ArgName);
-        Kernel->addTextureObjectArgInfo(Index, Texture);
-      }
-      IsRedeclareRequired = false;
-    }
-
-    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE)
-        : IsUsedAsLvalueAfterMalloc(false), Texture(Obj) {
-      IsPointer = false;
-      IsRedeclareRequired = false;
-      TypeString = "";
-      Index = 0;
-      if (auto S = std::dynamic_pointer_cast<StructureTextureObjectInfo>(Obj)) {
-        IsDoublePointer = S->containsVirtualPointer();
-      }
-      ArgString = Obj->getName();
-      IdString = ArgString + "_";
-      ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
-    }
-
-    inline const std::string &getArgString() const { return ArgString; }
-    inline const std::string &getTypeString() const { return TypeString; }
-    inline std::string getIdStringWithIndex() const {
-      return buildString(IdString, "ct", Index);
-    }
-    inline std::string getIdStringWithSuffix(const std::string &Suffix) const {
-      return buildString(IdString, Suffix, "_ct", Index);
-    }
+            KernelCallExpr *Kernel);
+    ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel);
+    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE);
+    inline const std::string &getArgString() const;
+    inline const std::string &getTypeString() const;
+    inline std::string getIdStringWithIndex() const;
+    inline std::string getIdStringWithSuffix(const std::string &Suffix) const;
     bool IsPointer;
     // If the pointer is used as lvalue after its most recent memory allocation
     bool IsRedeclareRequired;
@@ -2566,41 +2422,24 @@ private:
 
 public:
   KernelCallExpr(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
-                 const CUDAKernelCallExpr *KernelCall)
-      : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
-    setIsInMacroDefine(KernelCall);
-    setNeedAddLambda(KernelCall);
-    buildCallExprInfo(KernelCall);
-    buildArgsInfo(KernelCall);
-    buildKernelInfo(KernelCall);
-  }
+                 const CUDAKernelCallExpr *KernelCall);
 
   void addAccessorDecl();
   void buildInfo();
   void setKernelCallDim();
   void buildUnionFindSet();
   void addReplacements();
-  inline std::string getExtraArguments() override {
-    if (!getFuncInfo()) {
-      return "";
-    }
+  std::string getExtraArguments() override;
 
-    return getVarMap().getKernelArguments(getFuncInfo()->NonDefaultParamNum,
-                                          getFuncInfo()->ParamsNum -
-                                              getFuncInfo()->NonDefaultParamNum,
-                                          getFilePath());
-  }
-
-  inline const std::vector<ArgInfo> &getArgsInfo() { return ArgsInfo; }
+  const std::vector<ArgInfo> &getArgsInfo();
   int calculateOriginArgsSize() const;
 
   std::string getReplacement();
 
-  inline void setEvent(const std::string &E) { Event = E; }
-  inline const std::string &getEvent() { return Event; }
-
-  inline void setSync(bool Sync = true) { IsSync = Sync; }
-  inline bool isSync() { return IsSync; }
+  void setEvent(const std::string &E);
+  const std::string &getEvent();
+  void setSync(bool Sync = true);
+  bool isSync();
 
   static std::shared_ptr<KernelCallExpr> buildFromCudaLaunchKernel(
       const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
@@ -2610,50 +2449,17 @@ public:
                   std::shared_ptr<DeviceFunctionInfo>);
   unsigned int GridDim = 3;
   unsigned int BlockDim = 3;
-  void setEmitSizeofWarningFlag(bool Flag) { EmitSizeofWarning = Flag; }
+  void setEmitSizeofWarningFlag(bool Flag);
 
 private:
   KernelCallExpr(unsigned Offset, const clang::tooling::UnifiedPath &FilePath)
       : CallFunctionExpr(Offset, FilePath, nullptr), IsSync(false) {}
   void buildArgsInfoFromArgsArray(const FunctionDecl *FD,
                                   const Expr *ArgsArray) {}
-  void buildArgsInfo(const CallExpr *CE) {
-    KernelArgumentAnalysis Analysis(IsInMacroDefine);
-    auto KCallSpellingRange =
-        getTheLastCompleteImmediateRange(CE->getBeginLoc(), CE->getEndLoc());
-    Analysis.setCallSpelling(KCallSpellingRange.first,
-                             KCallSpellingRange.second);
-    auto &TexList = getTextureObjectList();
-
-    for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
-      if (auto Obj = TexList[Idx]) {
-        ArgsInfo.emplace_back(Obj, this);
-      } else {
-        auto Arg = CE->getArg(Idx);
-        bool Used = true;
-        if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
-          Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
-        const auto FD = CE->getDirectCallee();
-        ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis,
-                              Arg, Used, Idx, this);
-      }
-    }
-  }
-  bool isDefaultStream() const {
-    return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
-           ExecutionConfig.IsDefaultStream;
-  }
-
-  bool isQueuePtr() const { return ExecutionConfig.IsQueuePtr; }
-
-  std::string getQueueStr() const {
-    if (isDefaultStream())
-      return "";
-    std::string Ret;
-    if (isQueuePtr())
-      Ret = "*";
-    return Ret += ExecutionConfig.Stream;
-  }
+  void buildArgsInfo(const CallExpr *CE);
+  bool isDefaultStream() const;
+  bool isQueuePtr() const;
+  std::string getQueueStr() const;
 
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
@@ -2664,59 +2470,11 @@ private:
   void buildExecutionConfig(const ArgsRange &ConfigArgs,
                             const CallExpr *KernelCall);
 
-  void removeExtraIndent() {
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(getFilePath(),
-                                         getBegin() - LocInfo.Indent.length(),
-                                         LocInfo.Indent.length(), "", nullptr));
-  }
+  void removeExtraIndent();
   void addDevCapCheckStmt();
   void addAccessorDecl(MemVarInfo::VarScope Scope);
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
-  void addStreamDecl() {
-    if (getVarMap().hasStream())
-      SubmitStmtsList.StreamList.emplace_back(buildString(
-          MapNames::getClNamespace() + "stream ",
-          DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
-    if (getVarMap().hasSync()) {
-      auto DefaultQueue =
-          buildString(MapNames::getDpctNamespace(), "get_",
-                      DpctGlobalInfo::getDeviceQueueName(), "()");
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-        OuterStmts.OthersList.emplace_back(
-            buildString(MapNames::getDpctNamespace(), "global_memory<",
-                        MapNames::getDpctNamespace(), "byte_t, 1> d_",
-                        DpctGlobalInfo::getSyncName(), "(4);"));
-
-        OuterStmts.OthersList.emplace_back(buildString(
-            "d_", DpctGlobalInfo::getSyncName(), ".init(", DefaultQueue, ");"));
-
-        SubmitStmtsList.SyncList.emplace_back(
-            buildString("auto ", DpctGlobalInfo::getSyncName(), " = ",
-                        MapNames::getDpctNamespace(), "get_access(d_",
-                        DpctGlobalInfo::getSyncName(), ".get_ptr(), cgh);"));
-
-        OuterStmts.OthersList.emplace_back(buildString(
-            MapNames::getDpctNamespace(), "dpct_memset(d_",
-            DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));"));
-
-        requestFeature(HelperFeatureEnum::device_ext);
-      } else {
-        OuterStmts.OthersList.emplace_back(buildString(
-            MapNames::getDpctNamespace(), "global_memory<unsigned int, 0> d_",
-            DpctGlobalInfo::getSyncName(), "(0);"));
-        OuterStmts.OthersList.emplace_back(buildString(
-            "unsigned *", DpctGlobalInfo::getSyncName(), " = d_",
-            DpctGlobalInfo::getSyncName(), ".get_ptr(", DefaultQueue, ");"));
-
-        OuterStmts.OthersList.emplace_back(
-            buildString(DefaultQueue, ".memset(", DpctGlobalInfo::getSyncName(),
-                        ", 0, sizeof(int)).wait();"));
-
-        requestFeature(HelperFeatureEnum::device_ext);
-      }
-    }
-  }
+  void addStreamDecl();
 
   void buildKernelArgsStmt();
 

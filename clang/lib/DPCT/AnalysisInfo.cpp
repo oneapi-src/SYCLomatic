@@ -253,7 +253,23 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
                                          nullptr));
   }
 }
-
+const DeclRefExpr *getAddressedRef(const Expr *E) {
+  E = E->IgnoreImplicitAsWritten();
+  if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
+    if (DRE->getDecl()->getKind() == Decl::Function) {
+      return DRE;
+    }
+  } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
+    return getAddressedRef(Paren->getSubExpr());
+  } else if (auto Cast = dyn_cast<CastExpr>(E)) {
+    return getAddressedRef(Cast->getSubExprAsWritten());
+  } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      return getAddressedRef(UO->getSubExpr());
+    }
+  }
+  return nullptr;
+}
 
 ///// class FreeQueriesInfo /////
 class FreeQueriesInfo {
@@ -4465,11 +4481,7 @@ void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
 }
 unsigned CallFunctionExpr::getBegin() { return BeginLoc; }
 const clang::tooling::UnifiedPath &CallFunctionExpr::getFilePath() { return FilePath; }
-void KernelCallExpr::buildInfo() {
-  CallFunctionExpr::buildInfo();
-  TotalArgsSize =
-      getVarMap().calculateExtraArgsSize() + calculateOriginArgsSize();
-}
+
 void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   if (auto CallDecl =
           dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
@@ -5180,331 +5192,166 @@ void DeviceFunctionInfo::mergeTextureObjectList(
   }
   TextureObjectList.insert(SelfItr, BranchItr, Other.end());
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-///// end /////
-int HostDeviceFuncInfo::MaxId = 0;
-
-
-const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
-
-
-int KernelCallExpr::calculateOriginArgsSize() const {
-  int Size = 0;
-  for (auto &ArgInfo : ArgsInfo) {
-    Size += ArgInfo.ArgSize;
-  }
-  return Size;
+///// class KernelPrinter /////
+void KernelPrinter::incIndent() { Indent += "  "; }
+void KernelPrinter::decIndent() { Indent.erase(Indent.length() - 2, 2); }
+KernelPrinter::Block::Block(KernelPrinter &Printer, bool WithBrackets)
+    : Printer(Printer), WithBrackets(WithBrackets) {
+  if (WithBrackets)
+    Printer.line("{");
+  Printer.incIndent();
 }
-
-template <class ArgsRange>
-void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
-                                          const CallExpr *KernelCall) {
-  bool NeedTypeCast = true;
-  int Idx = 0;
-  auto KCallSpellingRange = getTheLastCompleteImmediateRange(
-      KernelCall->getBeginLoc(), KernelCall->getEndLoc());
-  for (auto Arg : ConfigArgs) {
-    KernelConfigAnalysis A(IsInMacroDefine);
-    A.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
-    A.analyze(Arg, Idx, Idx < 2);
-    ExecutionConfig.Config[Idx] = A.getReplacedString();
-    if (Idx == 0) {
-      ExecutionConfig.GroupDirectRef = A.isDirectRef();
-    } else if (Idx == 1) {
-      ExecutionConfig.LocalDirectRef = A.isDirectRef();
-      // Using another analysis because previous analysis may return directly
-      // when in macro is true.
-      // Here set the argument of KFA as false, so it will not return directly.
-      KernelConfigAnalysis KFA(false);
-      KFA.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
-      KFA.analyze(Arg, 1, true);
-      if (KFA.isNeedEmitWGSizeWarning())
-        DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true,
-                                 false);
-      SizeOfHighestDimension = KFA.getSizeOfHighestDimension();
-    } else if (Idx == 3) {
-      llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> DREResults;
-      DREResults = findDREInScope(Arg);
-      for (auto &Result : DREResults) {
-        const DeclRefExpr *MatchedDRE =
-            Result.getNodeAs<DeclRefExpr>("VarReference");
-        if (!MatchedDRE)
-          continue;
-        auto Type = MatchedDRE->getDecl()->getType().getAsString();
-
-        if (Type.find("cudaStream_t") != std::string::npos ||
-            dyn_cast_or_null<CXXDependentScopeMemberExpr>(
-                getParentStmt(MatchedDRE)))
-          NeedTypeCast = false;
+KernelPrinter::Block::~Block() {
+  Printer.decIndent();
+  if (WithBrackets)
+    Printer.line("}");
+}
+std::unique_ptr<KernelPrinter::Block> KernelPrinter::block(bool WithBrackets) {
+  return std::make_unique<Block>(*this, WithBrackets);
+}
+KernelPrinter &KernelPrinter::operator<<(const StmtList &Stmts) {
+  for (auto &S : Stmts) {
+    if (S.StmtStr.empty())
+      continue;
+    if (!S.Warnings.empty()) {
+      for (auto &Warning : S.Warnings) {
+        line("/*");
+        line(Warning);
+        line("*/");
       }
     }
-    ++Idx;
+    line(S.StmtStr);
   }
-
-  Idx = 0;
-  for (auto Arg : ConfigArgs) {
-    if (Idx > 1)
-      break;
-    KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
-    AnalysisTry1D.IsTryToUseOneDimension = true;
-    AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
-    if (Idx == 0) {
-      GridDim = AnalysisTry1D.Dim;
-      ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
-    } else if (Idx == 1) {
-      BlockDim = AnalysisTry1D.Dim;
-      ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
-    }
-    ++Idx;
-  }
-
-  if (ExecutionConfig.Stream == "0") {
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    ExecutionConfig.Stream = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-    ExecutionConfig.IsQueuePtr = false;
-    buildTempVariableMap(Index, *ConfigArgs.begin(),
-                         HelperFuncType::HFT_DefaultQueue);
-  } else if (NeedTypeCast) {
-    ExecutionConfig.Stream =
-        buildString("((sycl::queue*)(", ExecutionConfig.Stream, "))");
-  }
+  return *this;
 }
-
-void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
-  buildLocationInfo(KernelCall);
-  buildExecutionConfig(KernelCall->getConfig()->arguments(), KernelCall);
-  buildNeedBracesInfo(KernelCall);
+KernelPrinter &KernelPrinter::indent() { return (*this) << Indent; }
+KernelPrinter &KernelPrinter::newLine() { return (*this) << NL; }
+std::string KernelPrinter::str() {
+  auto Result = Stream.str();
+  return Result.substr(Indent.length(),
+                       Result.length() - Indent.length() - NL.length());
 }
-
-void KernelCallExpr::buildLocationInfo(const CallExpr *KernelCall) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  SourceLocation Begin = KernelCall->getBeginLoc();
-  LocInfo.NL = getNL();
-  LocInfo.Indent = getIndent(Begin, SM).str();
-  LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
-  if (IsInMacroDefine) {
-    LocInfo.NL = "\\" + LocInfo.NL;
+///// class KernelCallExpr /////
+KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD, KernelArgumentAnalysis &Analysis,
+        const Expr *Arg, bool Used, int Index, KernelCallExpr *BASE)
+    : IsPointer(false), IsRedeclareRequired(false),
+      IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
+  Analysis.analyze(Arg);
+  ArgString = Analysis.getReplacedString();
+  TryGetBuffer = Analysis.TryGetBuffer;
+  IsRedeclareRequired = Analysis.IsRedeclareRequired;
+  IsPointer = Analysis.IsPointer;
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+    IsDoublePointer = Analysis.IsDoublePointer;
   }
-}
 
-void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
-  NeedBraces = true;
-  auto &Context = dpct::DpctGlobalInfo::getContext();
-  // if parent is CompoundStmt, then find if it has more than 1 children.
-  // else if parent is ExprWithCleanups, then do further check.
-  // else it must be case like:  if/for/while() kernel-call, pair of
-  // braces are needed.
-  auto Parents = Context.getParents(*KernelCall);
-  while (Parents.size() == 1) {
-    if (auto *Parent = Parents[0].get<CompoundStmt>()) {
-      NeedBraces = (Parent->size() > 1);
-      return;
-    } else if (Parents[0].get<ExprWithCleanups>()) {
-      // treat ExprWithCleanups same as CUDAKernelCallExpr when they show
-      // up together
-      Parents = Context.getParents(Parents[0]);
+  if (IsPointer) {
+    QualType PointerType;
+    if (Arg->getType().getTypePtr()->getTypeClass() ==
+        Type::TypeClass::Decayed) {
+      PointerType = Arg->getType().getCanonicalType();
     } else {
-      return;
+      PointerType = Arg->getType();
     }
+    TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
+    ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
+
+    // Currently, all the device RNG state structs are passed to kernel by
+    // pointer. So we check the pointee type, if it is in the type map, we
+    // replace the TypeString with the MKL generator type.
+    std::string PointeeTypeStr =
+        Arg->getType()->getPointeeType().getUnqualifiedType().getAsString();
+    auto Iter = MapNames::DeviceRandomGeneratorTypeMap.find(PointeeTypeStr);
+    if (Iter != MapNames::DeviceRandomGeneratorTypeMap.end()) {
+      // Here the "*" is not added in the TypeString, the "*" will be added
+      // in function buildKernelArgsStmt
+      TypeString = Iter->second;
+      IsDeviceRandomGeneratorType = true;
+    }
+  } else {
+    auto QT = Arg->getType();
+    QT = QT.getUnqualifiedType();
+    auto Iter =
+        MapNames::VectorTypeMigratedTypeSizeMap.find(QT.getAsString());
+    if (Iter != MapNames::VectorTypeMigratedTypeSizeMap.end())
+      ArgSize = Iter->second;
+    else
+      ArgSize =
+          MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
+    if (PVD) {
+      TypeString = DpctGlobalInfo::getReplacedTypeName(PVD->getType());
+    }
+  }
+  if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
+    IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine,
+                                  Analysis.CallSpellingBegin,
+                                  Analysis.CallSpellingEnd);
   }
 }
+KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD, const std::string &ArgsArrayName,
+        KernelCallExpr *Kernel)
+    : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
+      IsUsedAsLvalueAfterMalloc(true),
+      TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+                   IsPointer),
+      TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
+      IdString(PVD->getName().str() + "_"),
+      Index(PVD->getFunctionScopeIndex()) {
+  // For parameter declaration 'float *a' with index = 2 and args array's
+  // name is 'args', the arg string will be '*(float **)args[2]'.
+  llvm::raw_string_ostream OS(ArgString);
+  // Get pointer type of the parameter declaration's type, e.g. 'float **'.
+  auto CastPointerType =
+      DpctGlobalInfo::getContext().getPointerType(PVD->getType());
+  // Print '*(float **)'.
+  OS << "*(" << DpctGlobalInfo::getReplacedTypeName(CastPointerType) << ")";
+  // Print args array subscript.
+  OS << ArgsArrayName << "[" << Index << "]";
 
-void KernelCallExpr::addDevCapCheckStmt() {
-  llvm::SmallVector<std::string> AspectList;
-  if (getVarMap().hasBF64()) {
-    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
-  }
-  if (getVarMap().hasBF16()) {
-    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
-  }
-  if (!AspectList.empty()) {
-    requestFeature(HelperFeatureEnum::device_ext);
-    std::string Str;
-    llvm::raw_string_ostream OS(Str);
-    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
-    printStreamBase(OS);
-    OS << "get_device(), {" << AspectList.front();
-    for (size_t i = 1; i < AspectList.size(); ++i) {
-      OS << ", " << AspectList[i];
-    }
-    OS << "});";
-    OuterStmts.OthersList.emplace_back(OS.str());
+  if (TextureObjectInfo::isTextureObject(PVD)) {
+    IsRedeclareRequired = false;
+    Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, OS.str());
+    Kernel->addTextureObjectArgInfo(Index, Texture);
   }
 }
+KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel)
+    : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
+      IsUsedAsLvalueAfterMalloc(true),
+      TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+                   IsPointer),
+      TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
+      IdString(PVD->getName().str() + "_"),
+      Index(PVD->getFunctionScopeIndex()) {
+  auto ArgName = PVD->getNameAsString();
+  ArgString = ArgName;
 
-void KernelCallExpr::addAccessorDecl() {
-  auto &VM = getVarMap();
-  if (VM.hasExternShared()) {
-    addAccessorDecl(VM.getMap(MemVarInfo::Extern).begin()->second);
+  if (TextureObjectInfo::isTextureObject(PVD)) {
+    Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, ArgName);
+    Kernel->addTextureObjectArgInfo(Index, Texture);
   }
-  addAccessorDecl(MemVarInfo::Local);
-  addAccessorDecl(MemVarInfo::Global);
-  for (auto &Tex : getTextureObjectList()) {
-    if (Tex) {
-      if (!Tex->getType()) {
-        // Type dpct_placeholder
-        Tex->setType("dpct_placeholder/*Fix the type manually*/", 1);
-        DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::UNDEDUCED_TYPE, true, false,
-                                 "image_accessor_ext");
-      }
-      Tex->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList,
-                   getQueueStr());
-    }
-  }
-  for (auto &Tex : VM.getTextureMap()) {
-    Tex.second->addDecl(SubmitStmtsList.TextureList,
-                        SubmitStmtsList.SamplerList, getQueueStr());
-  }
+  IsRedeclareRequired = false;
 }
-
-void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
-  for (auto &VI : getVarMap().getMap(Scope)) {
-    addAccessorDecl(VI.second);
+KernelCallExpr::ArgInfo::ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE)
+    : IsUsedAsLvalueAfterMalloc(false), Texture(Obj) {
+  IsPointer = false;
+  IsRedeclareRequired = false;
+  TypeString = "";
+  Index = 0;
+  if (auto S = std::dynamic_pointer_cast<StructureTextureObjectInfo>(Obj)) {
+    IsDoublePointer = S->containsVirtualPointer();
   }
+  ArgString = Obj->getName();
+  IdString = ArgString + "_";
+  ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
 }
-
-void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
-  if (!VI->isUseHelperFunc()) {
-    return;
-  }
-  if (!VI->isShared()) {
-    requestFeature(HelperFeatureEnum::device_ext);
-    OuterStmts.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
-    if (VI->isLocal()) {
-      SubmitStmtsList.MemoryList.emplace_back(
-          VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
-    } else if (getFilePath() != VI->getFilePath() &&
-               !isIncludedFile(getFilePath(), VI->getFilePath())) {
-      // Global variable definition and global variable reference are not in the
-      // same file, and are not a share variable, insert extern variable
-      // declaration.
-      OuterStmts.ExternList.emplace_back(VI->getExternGlobalVarDecl());
-    }
-  }
-  VI->appendAccessorOrPointerDecl(
-      ExecutionConfig.ExternMemSize, EmitSizeofWarning,
-      SubmitStmtsList.AccessorList, SubmitStmtsList.PtrList);
-  if (VI->isTypeDeclaredLocal()) {
-    if (DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::TYPE_IN_FUNCTION, false, false,
-                                 VI->getName(), VI->getLocalTypeName())) {
-      if (!SubmitStmtsList.AccessorList.empty()) {
-        SubmitStmtsList.AccessorList.back().Warnings.push_back(
-            DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-                Diagnostics::TYPE_IN_FUNCTION, VI->getName(),
-                VI->getLocalTypeName()));
-      }
-    }
-  }
+const std::string &KernelCallExpr::ArgInfo::getArgString() const { return ArgString; }
+const std::string &KernelCallExpr::ArgInfo::getTypeString() const { return TypeString; }
+std::string KernelCallExpr::ArgInfo::getIdStringWithIndex() const {
+  return buildString(IdString, "ct", Index);
 }
-
-void KernelCallExpr::buildKernelArgsStmt() {
-  size_t ArgCounter = 0;
-  KernelArgs = "";
-  for (auto &Arg : getArgsInfo()) {
-    // if current arg is the first arg with default value, insert extra args
-    // before current arg
-    if (getFuncInfo()) {
-      if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
-        KernelArgs += getExtraArguments();
-      }
-    }
-    if (ArgCounter != 0)
-      KernelArgs += ", ";
-    if (Arg.IsDoublePointer &&
-        DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      DiagnosticsUtils::report(getFilePath(), getBegin(),
-                               Diagnostics::VIRTUAL_POINTER, true, false,
-                               Arg.getArgString());
-    }
-
-    if (Arg.TryGetBuffer) {
-      auto BufferName = Arg.getIdStringWithSuffix("buf");
-      // If Arg is used as lvalue after its most recent memory allocation,
-      // offsets are necessary; otherwise, offsets are not necessary.
-
-      std::string TypeStr = Arg.getTypeString();
-      if (Arg.IsDeviceRandomGeneratorType) {
-        TypeStr = TypeStr + " *";
-      }
-
-      if (DpctGlobalInfo::isOptimizeMigration() && getFuncInfo() &&
-          !(getFuncInfo()->isParameterReferenced(ArgCounter))) {
-        // Typecast can be removed only when it is a template function and
-        // all template arguments are specified explicitly.
-        if (IsAllTemplateArgsSpecified)
-          KernelArgs += buildString("nullptr");
-        else
-          KernelArgs += buildString("(", TypeStr, ")nullptr");
-      } else {
-        if (Arg.IsUsedAsLvalueAfterMalloc) {
-          requestFeature(HelperFeatureEnum::device_ext);
-          SubmitStmtsList.AccessorList.emplace_back(buildString(
-              MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
-              Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
-              Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
-          KernelArgs += buildString(Arg.getIdStringWithSuffix("acc"),
-                                    ".get_raw_pointer()");
-        } else {
-          requestFeature(HelperFeatureEnum::device_ext);
-          SubmitStmtsList.AccessorList.emplace_back(buildString(
-              "auto ", Arg.getIdStringWithSuffix("acc"),
-              " = " + MapNames::getDpctNamespace() + "get_access(",
-              Arg.getArgString(), Arg.IsDefinedOnDevice ? ".get_ptr()" : "",
-              ", cgh);"));
-          KernelArgs += buildString("(", TypeStr, ")(&",
-                                    Arg.getIdStringWithSuffix("acc"), "[0])");
-        }
-      }
-    } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
-      std::string TypeStr =
-          Arg.getTypeString().empty()
-              ? "auto"
-              : (Arg.IsDeviceRandomGeneratorType ? Arg.getTypeString() + " *"
-                                                 : Arg.getTypeString());
-      SubmitStmtsList.CommandGroupList.emplace_back(
-          buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
-                      Arg.getArgString(), ";"));
-      KernelArgs += Arg.getIdStringWithIndex();
-    } else if (Arg.Texture) {
-      ParameterStream OS;
-      Arg.Texture->getKernelArg(OS);
-      KernelArgs += OS.Str;
-    } else {
-      KernelArgs += Arg.getArgString();
-    }
-    ArgCounter += 1;
-  }
-
-  // if all params have no default value, insert extra args in the end of params
-  if (getFuncInfo()) {
-    if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
-      KernelArgs = KernelArgs + getExtraArguments();
-    }
-  }
-
-  if (KernelArgs.empty()) {
-    KernelArgs += getExtraArguments();
-  }
+std::string KernelCallExpr::ArgInfo::getIdStringWithSuffix(const std::string &Suffix) const {
+  return buildString(IdString, Suffix, "_ct", Index);
 }
-
 void KernelCallExpr::print(KernelPrinter &Printer) {
   std::unique_ptr<KernelPrinter::Block> Block;
   if (!OuterStmts.empty()) {
@@ -5522,7 +5369,6 @@ void KernelCallExpr::print(KernelPrinter &Printer) {
   if (!getEvent().empty() && isSync())
     Printer.line(getEvent(), "->wait();");
 }
-
 void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   std::string SubGroupSizeWarning;
   auto DeviceFuncInfo = getFuncInfo();
@@ -5640,7 +5486,6 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     printSubmitLamda(Printer);
   }
 }
-
 void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   auto Lamda = Printer.block();
   Printer.line("[&](" + MapNames::getClNamespace() + "handler &cgh) {");
@@ -5654,20 +5499,6 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   else
     Printer.line("});");
 }
-
-template <typename IDTy, typename... Ts>
-void KernelCallExpr::printWarningMessage(KernelPrinter &Printer, IDTy MsgID,
-                                         Ts &&...Vals) {
-  Printer.indent();
-  Printer << "/*" << getNL();
-  Printer.indent();
-  Printer << DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-                 MsgID, std::forward<Ts>(Vals)...)
-          << getNL();
-  Printer.indent();
-  Printer << "*/" << getNL();
-}
-
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   std::string TemplateArgsStr;
   if (DpctGlobalInfo::isSyclNamedLambda() && hasTemplateArgs()) {
@@ -5776,7 +5607,6 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   else
     Printer.line("});");
 }
-
 void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   auto B = Printer.block();
   for (auto &S : KernelStmts) {
@@ -5795,7 +5625,18 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   Printer.indent() << getName() << TemplateArgsStr << "(" << KernelArgs << ");";
   Printer.newLine();
 }
-
+template <typename IDTy, typename... Ts>
+void KernelCallExpr::printWarningMessage(KernelPrinter &Printer, IDTy MsgID,
+                                         Ts &&...Vals) {
+  Printer.indent();
+  Printer << "/*" << getNL();
+  Printer.indent();
+  Printer << DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                 MsgID, std::forward<Ts>(Vals)...)
+          << getNL();
+  Printer.indent();
+  Printer << "*/" << getNL();
+}
 template <class T> void KernelCallExpr::printStreamBase(T &Printer) {
   if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
     Printer << "(" << ExecutionConfig.Stream << ")";
@@ -5807,7 +5648,94 @@ template <class T> void KernelCallExpr::printStreamBase(T &Printer) {
   else
     Printer << ".";
 }
+KernelCallExpr::KernelCallExpr(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
+               const CUDAKernelCallExpr *KernelCall)
+    : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
+  setIsInMacroDefine(KernelCall);
+  setNeedAddLambda(KernelCall);
+  buildCallExprInfo(KernelCall);
+  buildArgsInfo(KernelCall);
+  buildKernelInfo(KernelCall);
+}
+void KernelCallExpr::addAccessorDecl() {
+  auto &VM = getVarMap();
+  if (VM.hasExternShared()) {
+    addAccessorDecl(VM.getMap(MemVarInfo::Extern).begin()->second);
+  }
+  addAccessorDecl(MemVarInfo::Local);
+  addAccessorDecl(MemVarInfo::Global);
+  for (auto &Tex : getTextureObjectList()) {
+    if (Tex) {
+      if (!Tex->getType()) {
+        // Type dpct_placeholder
+        Tex->setType("dpct_placeholder/*Fix the type manually*/", 1);
+        DiagnosticsUtils::report(getFilePath(), getBegin(),
+                                 Diagnostics::UNDEDUCED_TYPE, true, false,
+                                 "image_accessor_ext");
+      }
+      Tex->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList,
+                   getQueueStr());
+    }
+  }
+  for (auto &Tex : VM.getTextureMap()) {
+    Tex.second->addDecl(SubmitStmtsList.TextureList,
+                        SubmitStmtsList.SamplerList, getQueueStr());
+  }
+}
+void KernelCallExpr::buildInfo() {
+  CallFunctionExpr::buildInfo();
+  TotalArgsSize =
+      getVarMap().calculateExtraArgsSize() + calculateOriginArgsSize();
+}
+void KernelCallExpr::setKernelCallDim() {
+  if (auto Ptr = getFuncInfo()) {
+    Ptr->setKernelInvoked();
+    Ptr->KernelCallBlockDim = std::max(Ptr->KernelCallBlockDim, BlockDim);
+    if (GridDim == 1 && BlockDim == 1) {
+      if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
+        Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);
+      } else {
+        Ptr->getVarMap().Dim = 1;
+      }
+    } else {
+      Ptr->getVarMap().Dim = 3;
+    }
+  }
+}
+void KernelCallExpr::buildUnionFindSet() {
+  if (auto Ptr = getFuncInfo()) {
+    constructUnionFindSetRecursively(Ptr);
+  }
+}
+void KernelCallExpr::addReplacements() {
+  if (TotalArgsSize >
+      MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_MaxParameterSize))
+    DiagnosticsUtils::report(getFilePath(), getBegin(),
+                             Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true,
+                             false);
+  auto R = std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
+                                            getReplacement(), nullptr);
+  R->setBlockLevelFormatFlag();
+  DpctGlobalInfo::getInstance().addReplacement(R);
+}
+std::string KernelCallExpr::getExtraArguments() {
+  if (!getFuncInfo()) {
+    return "";
+  }
 
+  return getVarMap().getKernelArguments(getFuncInfo()->NonDefaultParamNum,
+                                        getFuncInfo()->ParamsNum -
+                                            getFuncInfo()->NonDefaultParamNum,
+                                        getFilePath());
+}
+const std::vector<KernelCallExpr::ArgInfo> &KernelCallExpr::getArgsInfo() { return ArgsInfo; }
+int KernelCallExpr::calculateOriginArgsSize() const {
+  int Size = 0;
+  for (auto &ArgInfo : ArgsInfo) {
+    Size += ArgInfo.ArgSize;
+  }
+  return Size;
+}
 std::string KernelCallExpr::getReplacement() {
   addDevCapCheckStmt();
   addAccessorDecl();
@@ -5824,27 +5752,10 @@ std::string KernelCallExpr::getReplacement() {
   }
   return ResultStr;
 }
-
-
-
-const DeclRefExpr *getAddressedRef(const Expr *E) {
-  E = E->IgnoreImplicitAsWritten();
-  if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
-    if (DRE->getDecl()->getKind() == Decl::Function) {
-      return DRE;
-    }
-  } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
-    return getAddressedRef(Paren->getSubExpr());
-  } else if (auto Cast = dyn_cast<CastExpr>(E)) {
-    return getAddressedRef(Cast->getSubExprAsWritten());
-  } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
-    if (UO->getOpcode() == UO_AddrOf) {
-      return getAddressedRef(UO->getSubExpr());
-    }
-  }
-  return nullptr;
-}
-
+void KernelCallExpr::setEvent(const std::string &E) { Event = E; }
+const std::string &KernelCallExpr::getEvent() { return Event; }
+void KernelCallExpr::setSync(bool Sync) { IsSync = Sync; }
+bool KernelCallExpr::isSync() { return IsSync; }
 std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
     const CallExpr *CE) {
@@ -5880,7 +5791,6 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
   }
   return std::shared_ptr<KernelCallExpr>();
 }
-
 std::shared_ptr<KernelCallExpr>
 KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath,
                                 const FunctionDecl *FD,
@@ -5906,45 +5816,47 @@ KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath,
   Kernel->LocInfo.Indent = getIndent(FD->getBeginLoc(), SM).str() + "    ";
   return Kernel;
 }
+void KernelCallExpr::setEmitSizeofWarningFlag(bool Flag) { EmitSizeofWarning = Flag; }
+void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
+  KernelArgumentAnalysis Analysis(IsInMacroDefine);
+  auto KCallSpellingRange =
+      getTheLastCompleteImmediateRange(CE->getBeginLoc(), CE->getEndLoc());
+  Analysis.setCallSpelling(KCallSpellingRange.first,
+                           KCallSpellingRange.second);
+  auto &TexList = getTextureObjectList();
 
-void KernelCallExpr::setKernelCallDim() {
-  if (auto Ptr = getFuncInfo()) {
-    Ptr->setKernelInvoked();
-    Ptr->KernelCallBlockDim = std::max(Ptr->KernelCallBlockDim, BlockDim);
-    if (GridDim == 1 && BlockDim == 1) {
-      if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
-        Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);
-      } else {
-        Ptr->getVarMap().Dim = 1;
-      }
+  for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
+    if (auto Obj = TexList[Idx]) {
+      ArgsInfo.emplace_back(Obj, this);
     } else {
-      Ptr->getVarMap().Dim = 3;
+      auto Arg = CE->getArg(Idx);
+      bool Used = true;
+      if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
+        Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
+      const auto FD = CE->getDirectCallee();
+      ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis,
+                            Arg, Used, Idx, this);
     }
   }
 }
-
-void KernelCallExpr::buildUnionFindSet() {
-  if (auto Ptr = getFuncInfo()) {
-    constructUnionFindSetRecursively(Ptr);
-  }
+bool KernelCallExpr::isDefaultStream() const {
+  return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
+         ExecutionConfig.IsDefaultStream;
 }
-
-
-
-void KernelCallExpr::addReplacements() {
-  if (TotalArgsSize >
-      MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_MaxParameterSize))
-    DiagnosticsUtils::report(getFilePath(), getBegin(),
-                             Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true,
-                             false);
-  auto R = std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
-                                            getReplacement(), nullptr);
-  R->setBlockLevelFormatFlag();
-  DpctGlobalInfo::getInstance().addReplacement(R);
+bool KernelCallExpr::isQueuePtr() const { return ExecutionConfig.IsQueuePtr; }
+std::string KernelCallExpr::getQueueStr() const {
+  if (isDefaultStream())
+    return "";
+  std::string Ret;
+  if (isQueuePtr())
+    Ret = "*";
+  return Ret += ExecutionConfig.Stream;
 }
-
-
-
+void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
+  buildLocationInfo(KernelCall);
+  buildExecutionConfig(KernelCall->getConfig()->arguments(), KernelCall);
+  buildNeedBracesInfo(KernelCall);
+}
 void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   // Check if the whole kernel call is in macro arg
@@ -5978,13 +5890,406 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
     IsInMacroDefine = true;
   }
 }
-
 // Check if the kernel call is in a ParenExpr
 void KernelCallExpr::setNeedAddLambda(const CUDAKernelCallExpr *KernelCall) {
   if (dyn_cast<ParenExpr>(getParentStmt(KernelCall))) {
     NeedLambda = true;
   }
 }
+void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
+  NeedBraces = true;
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  // if parent is CompoundStmt, then find if it has more than 1 children.
+  // else if parent is ExprWithCleanups, then do further check.
+  // else it must be case like:  if/for/while() kernel-call, pair of
+  // braces are needed.
+  auto Parents = Context.getParents(*KernelCall);
+  while (Parents.size() == 1) {
+    if (auto *Parent = Parents[0].get<CompoundStmt>()) {
+      NeedBraces = (Parent->size() > 1);
+      return;
+    } else if (Parents[0].get<ExprWithCleanups>()) {
+      // treat ExprWithCleanups same as CUDAKernelCallExpr when they show
+      // up together
+      Parents = Context.getParents(Parents[0]);
+    } else {
+      return;
+    }
+  }
+}
+void KernelCallExpr::buildLocationInfo(const CallExpr *KernelCall) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  SourceLocation Begin = KernelCall->getBeginLoc();
+  LocInfo.NL = getNL();
+  LocInfo.Indent = getIndent(Begin, SM).str();
+  LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
+  if (IsInMacroDefine) {
+    LocInfo.NL = "\\" + LocInfo.NL;
+  }
+}
+template <class ArgsRange>
+void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
+                                          const CallExpr *KernelCall) {
+  bool NeedTypeCast = true;
+  int Idx = 0;
+  auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+      KernelCall->getBeginLoc(), KernelCall->getEndLoc());
+  for (auto Arg : ConfigArgs) {
+    KernelConfigAnalysis A(IsInMacroDefine);
+    A.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
+    A.analyze(Arg, Idx, Idx < 2);
+    ExecutionConfig.Config[Idx] = A.getReplacedString();
+    if (Idx == 0) {
+      ExecutionConfig.GroupDirectRef = A.isDirectRef();
+    } else if (Idx == 1) {
+      ExecutionConfig.LocalDirectRef = A.isDirectRef();
+      // Using another analysis because previous analysis may return directly
+      // when in macro is true.
+      // Here set the argument of KFA as false, so it will not return directly.
+      KernelConfigAnalysis KFA(false);
+      KFA.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
+      KFA.analyze(Arg, 1, true);
+      if (KFA.isNeedEmitWGSizeWarning())
+        DiagnosticsUtils::report(getFilePath(), getBegin(),
+                                 Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true,
+                                 false);
+      SizeOfHighestDimension = KFA.getSizeOfHighestDimension();
+    } else if (Idx == 3) {
+      llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> DREResults;
+      DREResults = findDREInScope(Arg);
+      for (auto &Result : DREResults) {
+        const DeclRefExpr *MatchedDRE =
+            Result.getNodeAs<DeclRefExpr>("VarReference");
+        if (!MatchedDRE)
+          continue;
+        auto Type = MatchedDRE->getDecl()->getType().getAsString();
+
+        if (Type.find("cudaStream_t") != std::string::npos ||
+            dyn_cast_or_null<CXXDependentScopeMemberExpr>(
+                getParentStmt(MatchedDRE)))
+          NeedTypeCast = false;
+      }
+    }
+    ++Idx;
+  }
+
+  Idx = 0;
+  for (auto Arg : ConfigArgs) {
+    if (Idx > 1)
+      break;
+    KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+    AnalysisTry1D.IsTryToUseOneDimension = true;
+    AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
+    if (Idx == 0) {
+      GridDim = AnalysisTry1D.Dim;
+      ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
+    } else if (Idx == 1) {
+      BlockDim = AnalysisTry1D.Dim;
+      ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
+    }
+    ++Idx;
+  }
+
+  if (ExecutionConfig.Stream == "0") {
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    ExecutionConfig.Stream = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+    ExecutionConfig.IsQueuePtr = false;
+    buildTempVariableMap(Index, *ConfigArgs.begin(),
+                         HelperFuncType::HFT_DefaultQueue);
+  } else if (NeedTypeCast) {
+    ExecutionConfig.Stream =
+        buildString("((sycl::queue*)(", ExecutionConfig.Stream, "))");
+  }
+}
+void KernelCallExpr::removeExtraIndent() {
+  DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(getFilePath(),
+                                       getBegin() - LocInfo.Indent.length(),
+                                       LocInfo.Indent.length(), "", nullptr));
+}
+void KernelCallExpr::addDevCapCheckStmt() {
+  llvm::SmallVector<std::string> AspectList;
+  if (getVarMap().hasBF64()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
+  }
+  if (getVarMap().hasBF16()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
+  }
+  if (!AspectList.empty()) {
+    requestFeature(HelperFeatureEnum::device_ext);
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+    printStreamBase(OS);
+    OS << "get_device(), {" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      OS << ", " << AspectList[i];
+    }
+    OS << "});";
+    OuterStmts.OthersList.emplace_back(OS.str());
+  }
+}
+void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
+  for (auto &VI : getVarMap().getMap(Scope)) {
+    addAccessorDecl(VI.second);
+  }
+}
+void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
+  if (!VI->isUseHelperFunc()) {
+    return;
+  }
+  if (!VI->isShared()) {
+    requestFeature(HelperFeatureEnum::device_ext);
+    OuterStmts.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
+    if (VI->isLocal()) {
+      SubmitStmtsList.MemoryList.emplace_back(
+          VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
+    } else if (getFilePath() != VI->getFilePath() &&
+               !isIncludedFile(getFilePath(), VI->getFilePath())) {
+      // Global variable definition and global variable reference are not in the
+      // same file, and are not a share variable, insert extern variable
+      // declaration.
+      OuterStmts.ExternList.emplace_back(VI->getExternGlobalVarDecl());
+    }
+  }
+  VI->appendAccessorOrPointerDecl(
+      ExecutionConfig.ExternMemSize, EmitSizeofWarning,
+      SubmitStmtsList.AccessorList, SubmitStmtsList.PtrList);
+  if (VI->isTypeDeclaredLocal()) {
+    if (DiagnosticsUtils::report(getFilePath(), getBegin(),
+                                 Diagnostics::TYPE_IN_FUNCTION, false, false,
+                                 VI->getName(), VI->getLocalTypeName())) {
+      if (!SubmitStmtsList.AccessorList.empty()) {
+        SubmitStmtsList.AccessorList.back().Warnings.push_back(
+            DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                Diagnostics::TYPE_IN_FUNCTION, VI->getName(),
+                VI->getLocalTypeName()));
+      }
+    }
+  }
+}
+void KernelCallExpr::addStreamDecl() {
+  if (getVarMap().hasStream())
+    SubmitStmtsList.StreamList.emplace_back(
+        buildString(MapNames::getClNamespace() + "stream ",
+                    DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
+  if (getVarMap().hasSync()) {
+    auto DefaultQueue = buildString(MapNames::getDpctNamespace(), "get_",
+                                    DpctGlobalInfo::getDeviceQueueName(), "()");
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      OuterStmts.OthersList.emplace_back(
+          buildString(MapNames::getDpctNamespace(), "global_memory<",
+                      MapNames::getDpctNamespace(), "byte_t, 1> d_",
+                      DpctGlobalInfo::getSyncName(), "(4);"));
+
+      OuterStmts.OthersList.emplace_back(buildString(
+          "d_", DpctGlobalInfo::getSyncName(), ".init(", DefaultQueue, ");"));
+
+      SubmitStmtsList.SyncList.emplace_back(
+          buildString("auto ", DpctGlobalInfo::getSyncName(), " = ",
+                      MapNames::getDpctNamespace(), "get_access(d_",
+                      DpctGlobalInfo::getSyncName(), ".get_ptr(), cgh);"));
+
+      OuterStmts.OthersList.emplace_back(buildString(
+          MapNames::getDpctNamespace(), "dpct_memset(d_",
+          DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));"));
+
+      requestFeature(HelperFeatureEnum::device_ext);
+    } else {
+      OuterStmts.OthersList.emplace_back(buildString(
+          MapNames::getDpctNamespace(), "global_memory<unsigned int, 0> d_",
+          DpctGlobalInfo::getSyncName(), "(0);"));
+      OuterStmts.OthersList.emplace_back(buildString(
+          "unsigned *", DpctGlobalInfo::getSyncName(), " = d_",
+          DpctGlobalInfo::getSyncName(), ".get_ptr(", DefaultQueue, ");"));
+
+      OuterStmts.OthersList.emplace_back(
+          buildString(DefaultQueue, ".memset(", DpctGlobalInfo::getSyncName(),
+                      ", 0, sizeof(int)).wait();"));
+
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
+  }
+}
+void KernelCallExpr::buildKernelArgsStmt() {
+  size_t ArgCounter = 0;
+  KernelArgs = "";
+  for (auto &Arg : getArgsInfo()) {
+    // if current arg is the first arg with default value, insert extra args
+    // before current arg
+    if (getFuncInfo()) {
+      if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
+        KernelArgs += getExtraArguments();
+      }
+    }
+    if (ArgCounter != 0)
+      KernelArgs += ", ";
+    if (Arg.IsDoublePointer &&
+        DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      DiagnosticsUtils::report(getFilePath(), getBegin(),
+                               Diagnostics::VIRTUAL_POINTER, true, false,
+                               Arg.getArgString());
+    }
+
+    if (Arg.TryGetBuffer) {
+      auto BufferName = Arg.getIdStringWithSuffix("buf");
+      // If Arg is used as lvalue after its most recent memory allocation,
+      // offsets are necessary; otherwise, offsets are not necessary.
+
+      std::string TypeStr = Arg.getTypeString();
+      if (Arg.IsDeviceRandomGeneratorType) {
+        TypeStr = TypeStr + " *";
+      }
+
+      if (DpctGlobalInfo::isOptimizeMigration() && getFuncInfo() &&
+          !(getFuncInfo()->isParameterReferenced(ArgCounter))) {
+        // Typecast can be removed only when it is a template function and
+        // all template arguments are specified explicitly.
+        if (IsAllTemplateArgsSpecified)
+          KernelArgs += buildString("nullptr");
+        else
+          KernelArgs += buildString("(", TypeStr, ")nullptr");
+      } else {
+        if (Arg.IsUsedAsLvalueAfterMalloc) {
+          requestFeature(HelperFeatureEnum::device_ext);
+          SubmitStmtsList.AccessorList.emplace_back(buildString(
+              MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
+              Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
+              Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
+          KernelArgs += buildString(Arg.getIdStringWithSuffix("acc"),
+                                    ".get_raw_pointer()");
+        } else {
+          requestFeature(HelperFeatureEnum::device_ext);
+          SubmitStmtsList.AccessorList.emplace_back(buildString(
+              "auto ", Arg.getIdStringWithSuffix("acc"),
+              " = " + MapNames::getDpctNamespace() + "get_access(",
+              Arg.getArgString(), Arg.IsDefinedOnDevice ? ".get_ptr()" : "",
+              ", cgh);"));
+          KernelArgs += buildString("(", TypeStr, ")(&",
+                                    Arg.getIdStringWithSuffix("acc"), "[0])");
+        }
+      }
+    } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
+      std::string TypeStr =
+          Arg.getTypeString().empty()
+              ? "auto"
+              : (Arg.IsDeviceRandomGeneratorType ? Arg.getTypeString() + " *"
+                                                 : Arg.getTypeString());
+      SubmitStmtsList.CommandGroupList.emplace_back(
+          buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
+                      Arg.getArgString(), ";"));
+      KernelArgs += Arg.getIdStringWithIndex();
+    } else if (Arg.Texture) {
+      ParameterStream OS;
+      Arg.Texture->getKernelArg(OS);
+      KernelArgs += OS.Str;
+    } else {
+      KernelArgs += Arg.getArgString();
+    }
+    ArgCounter += 1;
+  }
+
+  // if all params have no default value, insert extra args in the end of params
+  if (getFuncInfo()) {
+    if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
+      KernelArgs = KernelArgs + getExtraArguments();
+    }
+  }
+
+  if (KernelArgs.empty()) {
+    KernelArgs += getExtraArguments();
+  }
+}
+///// class CudaMallocInfo /////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///// end /////
+int HostDeviceFuncInfo::MaxId = 0;
+
+
+const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define TYPE_CAST(qual_type, type) dyn_cast<type>(qual_type)
 #define ARG_TYPE_CAST(type) TYPE_CAST(ArgType, type)
