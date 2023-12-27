@@ -70,9 +70,6 @@
 // cudnnGetActivationDescriptor-NEXT:                                p /*cudnnNanPropagation_t**/, c /*double**/);
 // cudnnGetActivationDescriptor-NEXT: Is migrated to:
 // cudnnGetActivationDescriptor-NEXT:   dpct::dnnl::activation_desc d;
-// cudnnGetActivationDescriptor-NEXT:   /*
-// cudnnGetActivationDescriptor-NEXT:   DPCT1007:1: Migration of Nan numbers propagation option is not supported.
-// cudnnGetActivationDescriptor-NEXT:   */
 // cudnnGetActivationDescriptor-NEXT:   d.get(m, c);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetActivationDescriptorSwishBeta | FileCheck %s -check-prefix=cudnnGetActivationDescriptorSwishBeta
@@ -138,9 +135,6 @@
 // cudnnGetConvolution2dDescriptor-NEXT:       t /*cudnnDataType_t*/);
 // cudnnGetConvolution2dDescriptor-NEXT: Is migrated to:
 // cudnnGetConvolution2dDescriptor-NEXT:   dpct::dnnl::convolution_desc d;
-// cudnnGetConvolution2dDescriptor-NEXT:   /*
-// cudnnGetConvolution2dDescriptor-NEXT:   DPCT1007:1: Migration of convolution mode and computation datatype option is not supported.
-// cudnnGetConvolution2dDescriptor-NEXT:   */
 // cudnnGetConvolution2dDescriptor-NEXT:   d.get(padding_h, padding_h, stride_h, stride_w, dilation_h, dilation_w);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolution2dForwardOutputDim | FileCheck %s -check-prefix=cudnnGetConvolution2dForwardOutputDim
@@ -216,9 +210,6 @@
 // cudnnGetConvolutionNdDescriptor-NEXT:       m /*cudnnConvolutionMode_t**/, t /*cudnnDataType_t**/);
 // cudnnGetConvolutionNdDescriptor-NEXT: Is migrated to:
 // cudnnGetConvolutionNdDescriptor-NEXT:   dpct::dnnl::convolution_desc d;
-// cudnnGetConvolutionNdDescriptor-NEXT:   /*
-// cudnnGetConvolutionNdDescriptor-NEXT:   DPCT1007:1: Migration of convolution mode and computation datatype option is not supported.
-// cudnnGetConvolutionNdDescriptor-NEXT:   */
 // cudnnGetConvolutionNdDescriptor-NEXT:   d.get(rn, n, pada, stridea, dilationa);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionNdForwardOutputDim | FileCheck %s -check-prefix=cudnnGetConvolutionNdForwardOutputDim
@@ -340,9 +331,6 @@
 // cudnnGetOpTensorDescriptor-NEXT:                              p /*cudnnNanPropagation_t**/);
 // cudnnGetOpTensorDescriptor-NEXT: Is migrated to:
 // cudnnGetOpTensorDescriptor-NEXT:   dpct::dnnl::binary_op d;
-// cudnnGetOpTensorDescriptor-NEXT:   /*
-// cudnnGetOpTensorDescriptor-NEXT:   DPCT1007:1: Migration of computation datatype, Nan numbers propagation option is not supported.
-// cudnnGetOpTensorDescriptor-NEXT:   */
 // cudnnGetOpTensorDescriptor-NEXT:   *op = d;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPooling2dDescriptor | FileCheck %s -check-prefix=cudnnGetPooling2dDescriptor
@@ -354,9 +342,6 @@
 // cudnnGetPooling2dDescriptor-NEXT:       hp /*int**/, vs /*int**/, hs /*int**/);
 // cudnnGetPooling2dDescriptor-NEXT: Is migrated to:
 // cudnnGetPooling2dDescriptor-NEXT:   dpct::dnnl::pooling_desc d;
-// cudnnGetPooling2dDescriptor-NEXT:   /*
-// cudnnGetPooling2dDescriptor-NEXT:   DPCT1007:1: Migration of Nan numbers propagation option is not supported.
-// cudnnGetPooling2dDescriptor-NEXT:   */
 // cudnnGetPooling2dDescriptor-NEXT:   d.get(m, h, w, vp, hp, vs, hs);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPooling2dForwardOutputDim | FileCheck %s -check-prefix=cudnnGetPooling2dForwardOutputDim
@@ -378,9 +363,6 @@
 // cudnnGetPoolingNdDescriptor-NEXT:                               da /*int[]*/, pa /*int[]*/, sa /*int[]*/);
 // cudnnGetPoolingNdDescriptor-NEXT: Is migrated to:
 // cudnnGetPoolingNdDescriptor-NEXT:   dpct::dnnl::pooling_desc d;
-// cudnnGetPoolingNdDescriptor-NEXT:   /*
-// cudnnGetPoolingNdDescriptor-NEXT:   DPCT1007:1: Migration of Nan numbers propagation option is not supported.
-// cudnnGetPoolingNdDescriptor-NEXT:   */
 // cudnnGetPoolingNdDescriptor-NEXT:   d.get(rn, m, nd, da, pa, sa);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPoolingNdForwardOutputDim | FileCheck %s -check-prefix=cudnnGetPoolingNdForwardOutputDim
@@ -402,9 +384,6 @@
 // cudnnGetReduceTensorDescriptor-NEXT:       i /*cudnnReduceTensorIndices_t**/, it /*cudnnIndicesType_t**/);
 // cudnnGetReduceTensorDescriptor-NEXT: Is migrated to:
 // cudnnGetReduceTensorDescriptor-NEXT:   dpct::dnnl::reduction_op d;
-// cudnnGetReduceTensorDescriptor-NEXT:   /*
-// cudnnGetReduceTensorDescriptor-NEXT:   DPCT1007:3: Migration of computation datatype, Nan numbers propagation and reduction index option is not supported.
-// cudnnGetReduceTensorDescriptor-NEXT:   */
 // cudnnGetReduceTensorDescriptor-NEXT:   *o = d;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetReductionWorkspaceSize | FileCheck %s -check-prefix=cudnnGetReductionWorkspaceSize
@@ -429,9 +408,6 @@
 // cudnnGetRNNDataDescriptor-NEXT:       rlen /*int*/, sa /*int[]*/, p /*void **/);
 // cudnnGetRNNDataDescriptor-NEXT: Is migrated to:
 // cudnnGetRNNDataDescriptor-NEXT:   dpct::dnnl::memory_desc_ext d;
-// cudnnGetRNNDataDescriptor-NEXT:   /*
-// cudnnGetRNNDataDescriptor-NEXT:   DPCT1007:0: Migration of unpacked data layout is not supported.
-// cudnnGetRNNDataDescriptor-NEXT:   */
 // cudnnGetRNNDataDescriptor-NEXT:   d.get(t, l, len, b, v);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetRNNDescriptor_v8 | FileCheck %s -check-prefix=cudnnGetRNNDescriptor_v8
@@ -447,7 +423,4 @@
 // cudnnGetRNNDescriptor_v8-NEXT:       f /*uint32_t **/);
 // cudnnGetRNNDescriptor_v8-NEXT: Is migrated to:
 // cudnnGetRNNDescriptor_v8-NEXT:   dpct::dnnl::rnn_desc d;
-// cudnnGetRNNDescriptor_v8-NEXT:   /*
-// cudnnGetRNNDescriptor_v8-NEXT:   DPCT1007:0: Migration of persist algorithm, input mode and dropout operation between physical layers is not supported.
-// cudnnGetRNNDescriptor_v8-NEXT:   */
 // cudnnGetRNNDescriptor_v8-NEXT:   d.get(m, bm, dm, t, is, hs, ps, l);
