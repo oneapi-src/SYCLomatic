@@ -450,6 +450,7 @@ public:
 
   std::shared_ptr<tooling::TranslationUnitReplacements> PreviousTUReplFromYAML =
       nullptr;
+
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
@@ -707,8 +708,7 @@ public:
   static const std::string &getGlobalQueueName();
   static const std::string &getGlobalDeviceName();
   static std::string getStringForRegexReplacement(StringRef);
-  static void
-  setCodeFormatStyle(const clang::format::FormatStyle &Style);
+  static void setCodeFormatStyle(const clang::format::FormatStyle &Style);
   static clang::format::FormatStyle getCodeFormatStyle();
 
   template <class TargetTy, class NodeTy>
@@ -826,8 +826,7 @@ public:
   getAbsolutePath(const FileEntry &File);
   static std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */);
-  static std::string getTypeName(QualType QT,
-                                        const ASTContext &Context);
+  static std::string getTypeName(QualType QT, const ASTContext &Context);
   static std::string getTypeName(QualType QT);
   static std::string getUnqualifiedTypeName(QualType QT,
                                             const ASTContext &Context);
@@ -842,7 +841,7 @@ public:
   /// \param [in] Context The AST context.
   /// \return The replaced type name string with qualifiers.
   static std::string getReplacedTypeName(QualType QT,
-                                                const ASTContext &Context);
+                                         const ASTContext &Context);
   static std::string getReplacedTypeName(QualType QT);
   /// This function will return the original type name with qualifiers.
   /// The order of original qualifiers will follow the behavior of
@@ -1019,12 +1018,11 @@ public:
   getPriorityReplInfoMap();
   // For PriorityRelpInfo with same key, the Info with low priority will
   // be filtered and the Info with same priority will be merged.
-  static void
-  addPriorityReplInfo(std::string Key, std::shared_ptr<PriorityReplInfo> Info);
+  static void addPriorityReplInfo(std::string Key,
+                                  std::shared_ptr<PriorityReplInfo> Info);
   static void setOptimizeMigrationFlag(bool Flag);
   static bool isOptimizeMigration();
-  static std::map<std::string, clang::tooling::OptionInfo> &
-  getCurrentOptMap();
+  static std::map<std::string, clang::tooling::OptionInfo> &getCurrentOptMap();
   static void setMainSourceYamlTUR(
       std::shared_ptr<clang::tooling::TranslationUnitReplacements> Ptr);
   static std::shared_ptr<clang::tooling::TranslationUnitReplacements>
@@ -1034,7 +1032,7 @@ public:
       std::unordered_map<clang::tooling::UnifiedPath, std::vector<unsigned>>> &
   getRnnInputMap();
   static std::unordered_map<clang::tooling::UnifiedPath,
-                                   std::vector<clang::tooling::UnifiedPath>> &
+                            std::vector<clang::tooling::UnifiedPath>> &
   getMainSourceFileMap();
   static std::unordered_map<std::string, bool> &getMallocHostInfoMap();
   static std::map<std::shared_ptr<TextModification>, bool> &
@@ -1044,6 +1042,7 @@ public:
   static bool isNeedParenAPI(const std::string &Name);
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
+
 private:
   DpctGlobalInfo();
 
@@ -1092,9 +1091,6 @@ private:
   static SourceLocation getLocation(const CallExpr *CE);
   // The result will be also stored in KernelCallExpr.BeginLoc
   static SourceLocation getLocation(const CUDAKernelCallExpr *CKC);
-
-
-
 
   std::shared_ptr<DpctFileInfo> MainFile = nullptr;
   std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<DpctFileInfo>>
@@ -1240,6 +1236,7 @@ class DpctNameGenerator {
   ASTNameGenerator G;
   PrintingPolicy PP;
   void printName(const FunctionDecl *FD, llvm::raw_ostream &OS);
+
 public:
   DpctNameGenerator() : DpctNameGenerator(DpctGlobalInfo::getContext()) {}
   explicit DpctNameGenerator(ASTContext &Ctx);
@@ -1447,7 +1444,7 @@ private:
 
   std::string getMemoryType();
   std::string getMemoryType(const std::string &MemoryType,
-                                   std::shared_ptr<CtTypeInfo> VarType);
+                            std::shared_ptr<CtTypeInfo> VarType);
   std::string getInitArguments(const std::string &MemSize,
                                bool MustArguments = false);
   const std::string &getMemoryAttr();
@@ -1880,9 +1877,8 @@ private:
       return V->getKernelArg(PS);
     }
   };
-  void getArgumentsOrParametersForDecl(ParameterStream &PS,
-                                              int PreParams,
-                                              int PostParams) const;
+  void getArgumentsOrParametersForDecl(ParameterStream &PS, int PreParams,
+                                       int PostParams) const;
 
   bool HasItem, HasStream, HasSync, HasBF64, HasBF16, HasGlobalMemAcc;
   MemVarInfoMap LocalVarMap;
@@ -1987,8 +1983,7 @@ public:
   void buildCallExprInfo(const CallExpr *CE);
 
   const MemVarMap &getVarMap();
-  const std::vector<std::shared_ptr<TextureObjectInfo>> &
-  getTextureObjectList();
+  const std::vector<std::shared_ptr<TextureObjectInfo>> &getTextureObjectList();
   std::shared_ptr<StructureTextureObjectInfo> getBaseTextureObjectInfo() const;
 
   void emplaceReplacement();
@@ -2277,17 +2272,14 @@ public:
   void setKernel();
   bool isKernelInvoked();
   void setKernelInvoked();
-  std::string
-  getExtraParameters(const clang::tooling::UnifiedPath &Path,
-                     FormatInfo FormatInformation = FormatInfo());
+  std::string getExtraParameters(const clang::tooling::UnifiedPath &Path,
+                                 FormatInfo FormatInformation = FormatInfo());
   std::string
   getExtraParameters(const clang::tooling::UnifiedPath &Path,
                      const std::vector<TemplateArgumentInfo> &TAList,
                      FormatInfo FormatInformation = FormatInfo());
   void setDefinitionFilePath(const clang::tooling::UnifiedPath &Path);
   const clang::tooling::UnifiedPath &getDefinitionFilePath();
-
-
 
   void setNeedSyclExternMacro();
   bool IsSyclExternMacroNeeded();
