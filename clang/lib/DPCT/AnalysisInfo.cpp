@@ -43,9 +43,269 @@ extern std::function<unsigned int()> GetRunRound;
 extern std::function<void(SourceLocation, unsigned)> RecordTokenSplit;
 namespace dpct {
 ///// global variable definition /////
+std::vector<std::pair<HeaderType, std::string>> HeaderSpellings;
+
 
 ///// global function definition /////
+void initHeaderSpellings() {
+  HeaderSpellings = {
+#define HEADER(Name, Spelling) {HT_##Name, Spelling},
+#include "HeaderTypes.inc"
+  };
+}
 
+
+///// class FreeQueriesInfo /////
+class FreeQueriesInfo {
+public:
+  enum FreeQueriesKind {
+    NdItem = 0,
+    Group,
+    SubGroup,
+    End,
+  };
+  static constexpr char FreeQueriesRegexCh = 'F';
+
+private:
+  static constexpr unsigned KindBits = 4;
+  static constexpr unsigned KindMask = (1 << KindBits) - 1;
+  static constexpr unsigned MacroShiftBits = KindBits;
+  static constexpr unsigned MacroMask = 1 << MacroShiftBits;
+  static constexpr unsigned IndexShiftBits = MacroShiftBits + 1;
+
+private:
+  struct FreeQueriesNames {
+    std::string NonFreeQueriesName;
+    std::string FreeQueriesFuncName;
+    std::string ExtraVariableName;
+  };
+  struct MacroInfo {
+    clang::tooling::UnifiedPath FilePath;
+    unsigned Offset;
+    unsigned Dimension = 0;
+    std::vector<unsigned> Infos;
+  };
+  static std::vector<std::shared_ptr<FreeQueriesInfo>> InfoList;
+  static std::vector<std::shared_ptr<MacroInfo>> MacroInfos;
+
+  clang::tooling::UnifiedPath FilePath;
+  unsigned ExtraDeclLoc = 0;
+  unsigned Counter[FreeQueriesKind::End] = {0};
+  std::string Indent;
+  std::string NL;
+  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+  unsigned Dimension = 3;
+  std::set<unsigned> Refs;
+  unsigned Idx = 0;
+
+  static const FreeQueriesNames &getNames(FreeQueriesKind);
+  static std::shared_ptr<FreeQueriesInfo> getInfo(const FunctionDecl *);
+  static void printFreeQueriesFunctionName(llvm::raw_ostream &OS,
+                                           FreeQueriesKind K,
+                                           unsigned Dimension) {
+    OS << getNames(K).FreeQueriesFuncName;
+    if (K != FreeQueriesKind::SubGroup) {
+      OS << '<';
+      if (Dimension) {
+        OS << Dimension;
+      } else {
+        OS << "dpct_placeholder /* Fix the dimension manually */";
+      }
+      OS << '>';
+    }
+    OS << "()";
+  }
+  static FreeQueriesKind getKind(unsigned Num) {
+    return static_cast<FreeQueriesKind>(Num & KindMask);
+  }
+  static unsigned getIndex(unsigned Num) { return Num >> IndexShiftBits; }
+  static bool isMacro(unsigned Num) { return Num & MacroMask; }
+  static unsigned getRegexNum(unsigned Idx, bool IsMacro,
+                              FreeQueriesKind Kind) {
+    return static_cast<unsigned>((Idx << IndexShiftBits) |
+                                 (IsMacro * MacroMask) | (Kind & KindMask));
+  }
+
+  void emplaceExtraDecl();
+  void printImmediateText(llvm::raw_ostream &, SourceLocation, FreeQueriesKind);
+  std::string getReplaceString(FreeQueriesKind K);
+
+public:
+  static void reset() {
+    InfoList.clear();
+    MacroInfos.clear();
+  }
+  template <class Node>
+  static void printImmediateText(llvm::raw_ostream &, const Node *,
+                                 const FunctionDecl *, FreeQueriesKind);
+  static void buildInfo() {
+    for (auto &Info : InfoList)
+      Info->emplaceExtraDecl();
+    for (auto &Info : MacroInfos) {
+      Info->Dimension = InfoList[Info->Infos.front()]->Dimension;
+      for (auto Idx : Info->Infos) {
+        if (Info->Dimension != InfoList[Idx]->Dimension) {
+          Info->Dimension = 0;
+          DiagnosticsUtils::report(Info->FilePath, Info->Offset,
+                                   Diagnostics::FREE_QUERIES_DIMENSION, true,
+                                   false);
+          break;
+        }
+      }
+    }
+  }
+  static std::string getReplaceString(unsigned Num);
+
+  FreeQueriesInfo() = default;
+};
+///// class RnnBackwardFuncInfoBuilder /////
+class RnnBackwardFuncInfoBuilder {
+  std::vector<RnnBackwardFuncInfo> &RBFuncInfo;
+  std::vector<RnnBackwardFuncInfo> ValidBackwardDataFuncInfo;
+  std::vector<RnnBackwardFuncInfo> ValidBackwardWeightFuncInfo;
+  std::vector<std::shared_ptr<ExtReplacement>> Repls;
+  using InfoIter = std::vector<RnnBackwardFuncInfo>::iterator;
+
+public:
+  RnnBackwardFuncInfoBuilder(std::vector<RnnBackwardFuncInfo> &Infos)
+      : RBFuncInfo(Infos){};
+  // This function check if the RNN function input referenced between
+  // backwarddata and backwardweight functiona call.
+  bool isInputNotChanged(InfoIter Data, InfoIter Weight) {
+    for (auto &RnnInput : Data->RnnInputDeclLoc) {
+      auto &RnnInputRefs =
+          DpctGlobalInfo::getRnnInputMap()[RnnInput][Data->FilePath];
+      for (auto &RnnInputRef : RnnInputRefs) {
+        if ((RnnInputRef > (Data->Offset + Data->Length - 1)) &&
+            RnnInputRef < Weight->Offset) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+  // This function check if the backwarddata and backwardweight function
+  // call have same input.
+  bool isInputSame(InfoIter Data, InfoIter Weight) {
+    for (unsigned InputIndex = 0; InputIndex < 3; InputIndex++) {
+      if (Data->RnnInputDeclLoc[InputIndex] !=
+          Weight->RnnInputDeclLoc[InputIndex]) {
+        return false;
+      }
+    }
+    return true;
+  }
+  // This function check if the backwarddata and backwardweight function in
+  // the same scope and backwardweight called after backwarddata.
+  // For example, function will return ture for pattern in following pseudo
+  // code:
+  //   if(...) {
+  //     backwarddata(...);
+  //     ..
+  //     backwardweight(...);
+  //   }
+  bool isValidScopeAndOrder(InfoIter Data, InfoIter Weight) {
+    return !((Data->CompoundLoc != Weight->CompoundLoc) &&
+             (Data->Offset >= Weight->Offset));
+  }
+  void build() {
+    if (RBFuncInfo.empty()) {
+      return;
+    }
+    for (auto &Info : RBFuncInfo) {
+      if (Info.isDataGradient) {
+        ValidBackwardDataFuncInfo.emplace_back(Info);
+      } else {
+        ValidBackwardWeightFuncInfo.emplace_back(Info);
+      }
+    }
+    std::vector<int> WeightPairdFlag(ValidBackwardWeightFuncInfo.size(), 0);
+    auto DataBegin = ValidBackwardDataFuncInfo.begin();
+    auto DataEnd = ValidBackwardDataFuncInfo.end();
+    auto WeightBegin = ValidBackwardWeightFuncInfo.begin();
+    auto WeightEnd = ValidBackwardWeightFuncInfo.end();
+    for (auto DataIter = DataBegin; DataIter != DataEnd; DataIter++) {
+      bool DataPaired = false;
+      for (auto WeightIter = WeightBegin; WeightIter != WeightEnd;
+           WeightIter++) {
+        if (isInputNotChanged(DataIter, WeightIter) &&
+            isInputSame(DataIter, WeightIter) &&
+            isValidScopeAndOrder(DataIter, WeightIter)) {
+          DataPaired = true;
+          WeightPairdFlag[WeightIter - WeightBegin] = 1;
+          auto Repl = generateReplacement(DataIter, WeightIter);
+          Repls.insert(Repls.end(), Repl.begin(), Repl.end());
+          break;
+        }
+      }
+      if (!DataPaired) {
+        DiagnosticsUtils::report(DataIter->FilePath, DataIter->Offset,
+                                 Diagnostics::API_NOT_MIGRATED, true, false,
+                                 "cudnnRNNBackwardData_v8");
+      }
+    }
+    for (auto WeightIter = WeightBegin; WeightIter != WeightEnd; WeightIter++) {
+      if (!WeightPairdFlag[WeightIter - WeightBegin]) {
+        DiagnosticsUtils::report(WeightIter->FilePath, WeightIter->Offset,
+                                 Diagnostics::API_NOT_MIGRATED, true, false,
+                                 "cudnnRNNBackwardWeights_v8");
+      }
+    }
+  }
+  std::vector<std::shared_ptr<ExtReplacement>> getReplacement() {
+    return Repls;
+  }
+  std::vector<std::shared_ptr<ExtReplacement>>
+  generateReplacement(InfoIter Data, InfoIter Weight) {
+    std::vector<std::shared_ptr<ExtReplacement>> Repls;
+    std::ostringstream DataRepl, WeightRepl;
+    RnnBackwardFuncInfo &DataFuncInfo = *Data;
+    RnnBackwardFuncInfo &WeightFuncInfo = *Weight;
+    requestFeature(HelperFeatureEnum::device_ext);
+    Diagnostics WarningType;
+    if (WeightFuncInfo.isAssigned) {
+      WarningType = Diagnostics::FUNC_CALL_REMOVED_0;
+      WeightRepl << "0";
+    } else {
+      WarningType = Diagnostics::FUNC_CALL_REMOVED;
+    }
+    DiagnosticsUtils::report(
+        WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WarningType, true,
+        false, "cudnnRNNBackwardWeights_v8",
+        "this call and cudnnRNNBackwardData_v8 are migrated to a single "
+        "function call async_rnn_backward");
+
+    if (DataFuncInfo.isAssigned) {
+      DataRepl << "DPCT_CHECK_ERROR(";
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
+    DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
+             << DataFuncInfo.FuncArgs[1];
+    // Combine 21 args from backwarddata and 2 args from backwardweight
+    // into args of async_rnn_backward.
+    for (unsigned int index = 3; index <= 21; index++) {
+      DataRepl << ", " << DataFuncInfo.FuncArgs[index];
+      if (index == 6) {
+        DataRepl << ", " << WeightFuncInfo.FuncArgs[0];
+      } else if (index == 17) {
+        DataRepl << ", " << WeightFuncInfo.FuncArgs[1];
+      }
+    }
+    if (DataFuncInfo.isAssigned) {
+      DataRepl << "))";
+    } else {
+      DataRepl << ")";
+    }
+    Repls.emplace_back(std::make_shared<ExtReplacement>(
+        DataFuncInfo.FilePath, DataFuncInfo.Offset, DataFuncInfo.Length,
+        DataRepl.str(), nullptr));
+    Repls.emplace_back(std::make_shared<ExtReplacement>(
+        WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WeightFuncInfo.Length,
+        WeightRepl.str(), nullptr));
+
+    return Repls;
+  }
+};
 ///// class EventSyncTypeInfo /////
 void EventSyncTypeInfo::buildInfo(clang::tooling::UnifiedPath FilePath,
                                   unsigned int Offset) {
@@ -123,6 +383,524 @@ ParameterStream &ParameterStream::operator<<(const std::string &InputParamStr) {
 }
 ParameterStream &ParameterStream::operator<<(int InputInt) {
   return *this << std::to_string(InputInt);
+}
+///// class DpctFileInfo /////
+const clang::tooling::UnifiedPath &DpctFileInfo::getFilePath() {
+  return FilePath;
+}
+void DpctFileInfo::buildReplacements() {
+  if (!isInAnalysisScope())
+    return;
+
+  if (FilePath.getCanonicalPath().empty())
+    return;
+  // Traverse all the global variables stored one by one to check if its name
+  // is same with normal global variable's name in host side, if the one is
+  // found, postfix "_ct" is added to this __constant__ symbol's name.
+  std::unordered_map<unsigned int, std::string> ReplUpdated;
+  for (const auto &Entry : MemVarMap) {
+    if (Entry.second->isIgnore())
+      continue;
+
+    auto Name = Entry.second->getName();
+    auto &GlobalVarNameSet = dpct::DpctGlobalInfo::getGlobalVarNameSet();
+    if (GlobalVarNameSet.find(Name) != end(GlobalVarNameSet)) {
+      Entry.second->setName(Name + "_ct");
+    }
+
+    std::string Repl = Entry.second->getDeclarationReplacement(nullptr);
+    auto FilePath = Entry.second->getFilePath();
+    auto Offset = Entry.second->getNewConstVarOffset();
+    auto Length = Entry.second->getNewConstVarLength();
+
+    auto &ReplText = ReplUpdated[Offset];
+    if (!ReplText.empty()) {
+      ReplText += getNL() + Repl;
+    } else {
+      ReplText = Repl;
+    }
+
+    auto R = std::make_shared<ExtReplacement>(FilePath, Offset, Length,
+                                              ReplText, nullptr);
+
+    addReplacement(R);
+  }
+
+  for (auto &Kernel : KernelMap)
+    Kernel.second->addReplacements();
+
+  for (auto &BuiltinVar : BuiltinVarInfoMap) {
+    auto Ptr = MemVarMap::getHeadWithoutPathCompression(
+        &(BuiltinVar.second.DFI->getVarMap()));
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && Ptr) {
+      unsigned int ID = (Ptr->Dim == 1) ? 0 : 2;
+      BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
+    } else {
+      BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, 2);
+    }
+  }
+
+  for (auto &AtomicInfo : AtomicMap) {
+    if (std::get<2>(AtomicInfo.second))
+      DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
+                               Diagnostics::API_NOT_OCCURRED_IN_AST, true, true,
+                               std::get<1>(AtomicInfo.second));
+  }
+
+  for (auto &DescInfo : EventSyncTypeMap) {
+    DescInfo.second.buildInfo(FilePath, DescInfo.first);
+  }
+
+  const auto &TimeStubBounds = getTimeStubBounds();
+  if (TimeStubBounds.empty()) {
+    for (auto &DescInfo : TimeStubTypeMap) {
+      DescInfo.second.buildInfo(FilePath, DescInfo.first,
+                                /*bool isReplTxtWithSB*/ true);
+    }
+  } else {
+    for (auto &DescInfo : TimeStubTypeMap) {
+      bool isReplTxtWithSB = isReplTxtWithSubmitBarrier(DescInfo.first);
+      DescInfo.second.buildInfo(FilePath, DescInfo.first, isReplTxtWithSB);
+    }
+  }
+
+  buildRnnBackwardFuncInfo();
+
+  // insert header file of user defined rules
+  std::string InsertHeaderStr;
+  llvm::raw_string_ostream HeaderOS(InsertHeaderStr);
+  if (!InsertedHeaders.empty()) {
+    HeaderOS << getNL();
+  }
+  for (auto &HeaderStr : InsertedHeaders) {
+    if (HeaderStr[0] != '<' && HeaderStr[0] != '"') {
+      HeaderStr = "\"" + HeaderStr + "\"";
+    }
+    HeaderOS << "#include " << HeaderStr << getNL();
+  }
+  HeaderOS.flush();
+  insertHeader(std::move(InsertHeaderStr), LastIncludeOffset);
+
+  FreeQueriesInfo::buildInfo();
+
+  // This loop need to be put at the end of DpctFileInfo::buildReplacements.
+  // In addReplacement() the insertHeader() may be invoked, so the size of
+  // vector IncludeDirectiveInsertions may increase.
+  // So here cannot use for loop like "for(auto e : vec)" since the iterator may
+  // be invalid due to the allocation of new storage.
+  for (size_t I = 0, End = IncludeDirectiveInsertions.size(); I < End; I++) {
+    auto IncludeDirective = IncludeDirectiveInsertions[I];
+    bool IsInExternC = false;
+    unsigned int NewInsertLocation = 0;
+    for (auto &ExternCRange : ExternCRanges) {
+      if (IncludeDirective->getOffset() >= ExternCRange.first &&
+          IncludeDirective->getOffset() <= ExternCRange.second) {
+        IsInExternC = true;
+        NewInsertLocation = ExternCRange.first;
+        break;
+      }
+    }
+    if (IsInExternC) {
+      IncludeDirective->setOffset(NewInsertLocation);
+    }
+    addReplacement(IncludeDirective);
+    // Update the End since the size may be changed.
+    End = IncludeDirectiveInsertions.size();
+  }
+}
+void DpctFileInfo::setKernelCallDim() {
+  for (auto &Kernel : KernelMap)
+    Kernel.second->setKernelCallDim();
+}
+void DpctFileInfo::setKernelDim() {
+  for (auto &DeviceFunc : FuncMap) {
+    auto Info = DeviceFunc.second->getFuncInfo();
+    if (Info->isKernel() && !Info->isKernelInvoked()) {
+      Info->getVarMap().Dim = 3;
+    }
+  }
+}
+void DpctFileInfo::buildUnionFindSet() {
+  for (auto &Kernel : KernelMap)
+    Kernel.second->buildUnionFindSet();
+}
+void DpctFileInfo::buildUnionFindSetForUncalledFunc() {
+  for (auto &DeviceFunc : FuncMap) {
+    auto Info = DeviceFunc.second->getFuncInfo();
+    Info->buildInfo();
+    constructUnionFindSetRecursively(Info);
+  }
+}
+void DpctFileInfo::buildKernelInfo() {
+  for (auto &Kernel : KernelMap)
+    Kernel.second->buildInfo();
+
+  for (auto &D : FuncMap) {
+    if (auto I = D.second->getFuncInfo())
+      I->buildInfo();
+  }
+}
+void DpctFileInfo::buildRnnBackwardFuncInfo() {
+  RnnBackwardFuncInfoBuilder Builder(RBFuncInfo);
+  Builder.build();
+  for (auto &Repl : Builder.getReplacement()) {
+    addReplacement(Repl);
+  }
+}
+void DpctFileInfo::postProcess() {
+  if (!isInAnalysisScope())
+    return;
+  for (auto &D : FuncMap)
+    D.second->emplaceReplacement();
+  if (!Repls->empty()) {
+    Repls->postProcess();
+    if (DpctGlobalInfo::getRunRound() == 0) {
+      DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
+    }
+  }
+}
+void DpctFileInfo::emplaceReplacements(
+    std::map<clang::tooling::UnifiedPath, tooling::Replacements> &ReplSet) {
+  if (!Repls->empty())
+    Repls->emplaceIntoReplSet(ReplSet[FilePath]);
+}
+void DpctFileInfo::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
+  if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
+    return;
+  Repls->addReplacement(Repl);
+}
+bool DpctFileInfo::isInAnalysisScope() {
+  return DpctGlobalInfo::isInAnalysisScope(FilePath);
+}
+std::shared_ptr<ExtReplacements> DpctFileInfo::getRepls() { return Repls; }
+size_t DpctFileInfo::getFileSize() const { return FileSize; }
+std::string &DpctFileInfo::getFileContent() { return FileContentCache; }
+void DpctFileInfo::setFileEnterOffset(unsigned Offset) {
+  if (!HasInclusionDirective) {
+    FirstIncludeOffset = Offset;
+    LastIncludeOffset = Offset;
+  }
+}
+void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
+  if (!HasInclusionDirective) {
+    FirstIncludeOffset = Offset;
+    LastIncludeOffset = Offset;
+    HasInclusionDirective = true;
+  }
+}
+void DpctFileInfo::setLastIncludeOffset(unsigned Offset) {
+  LastIncludeOffset = Offset;
+}
+void DpctFileInfo::setHeaderInserted(HeaderType Header) {
+  HeaderInsertedBitMap[Header] = true;
+}
+void DpctFileInfo::setMathHeaderInserted(bool B) {
+  HeaderInsertedBitMap[HeaderType::HT_Math] = B;
+}
+void DpctFileInfo::setAlgorithmHeaderInserted(bool B) {
+  HeaderInsertedBitMap[HeaderType::HT_Algorithm] = B;
+}
+void DpctFileInfo::setTimeHeaderInserted(bool B) {
+  HeaderInsertedBitMap[HeaderType::HT_Time] = B;
+}
+std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
+  auto Pos = llvm::find_if(
+      HeaderSpellings, [=](const std::pair<HeaderType, StringRef> &p) -> bool {
+        return p.second == Header;
+      });
+  if (Pos == std::end(HeaderSpellings))
+    return std::nullopt;
+  return Pos->first;
+}
+StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
+  if (Value < NUM_HEADERS)
+    return HeaderSpellings[Value].second;
+
+  // Only assertion in debug
+  assert(false && "unknown HeaderType");
+  return "";
+}
+void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
+  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
+      Type == HT_DPCT_DNNL_Utils) {
+    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+          Type, FirstIncludeOffset);
+  }
+  if (HeaderInsertedBitMap[Type])
+    return;
+  HeaderInsertedBitMap[Type] = true;
+  std::string ReplStr;
+  llvm::raw_string_ostream OS(ReplStr);
+
+  switch (Type) {
+  // The #include of <oneapi/dpl/execution> and <oneapi/dpl/algorithm> were
+  // previously added here.  However, due to some unfortunate include
+  // dependencies introduced with the PSTL/TBB headers from the gcc-9.3.0
+  // include files, those two headers must now be included before the
+  // <sycl/sycl.hpp> are included, so the FileInfo is set to hold a boolean
+  // that'll indicate whether to insert them when the #include <sycl/sycl.cpp>
+  // is added later
+  case HT_DPL_Algorithm:
+  case HT_DPL_Execution:
+  case HT_DPCT_DNNL_Utils:
+    concatHeader(OS, getHeaderSpelling(Type));
+    return insertHeader(OS.str(), FirstIncludeOffset,
+                        InsertPosition::IP_AlwaysLeft);
+  case HT_SYCL:
+    if (DpctGlobalInfo::getEnablepProfilingFlag())
+      OS << "#define DPCT_PROFILING_ENABLED" << getNL();
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+      OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    if (!RTVersionValue.empty())
+      OS << "#define DPCT_COMPAT_RT_VERSION " << RTVersionValue << getNL();
+    if (!CCLVerValue.empty())
+      OS << "#define DPCT_COMPAT_CCL_VERSION " << CCLVerValue << getNL();
+    concatHeader(OS, getHeaderSpelling(Type));
+    concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
+    HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_DPCT) ||
+        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
+      OS << "using namespace dpct;" << getNL();
+    }
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_SYCL) &&
+        !DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_CL)) {
+      OS << "using namespace sycl;" << getNL();
+    }
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      static bool Flag = true;
+      auto SourceFileType = GetSourceFileType(getFilePath());
+      if (Flag && (SourceFileType == SPT_CudaSource ||
+                   SourceFileType == SPT_CppSource)) {
+        OS << MapNames::getClNamespace() << "device "
+           << DpctGlobalInfo::getGlobalDeviceName()
+           << "(sycl::default_selector_v);" << getNL();
+        // Now the UsmLevel must not be UL_None here.
+        OS << MapNames::getClNamespace() << "queue "
+           << DpctGlobalInfo::getGlobalQueueName() << "("
+           << DpctGlobalInfo::getGlobalDeviceName() << ", "
+           << MapNames::getClNamespace() << "property_list{"
+           << MapNames::getClNamespace() << "property::queue::in_order()";
+        if (DpctGlobalInfo::getEnablepProfilingFlag()) {
+          OS << ", " << MapNames::getClNamespace()
+             << "property::queue::enable_profiling()";
+        }
+        OS << "});" << getNL();
+        Flag = false;
+      } else {
+        OS << "extern " << MapNames::getClNamespace() << "device "
+           << DpctGlobalInfo::getGlobalDeviceName() << ";" << getNL();
+        // Now the UsmLevel must not be UL_None here.
+        OS << "extern " << MapNames::getClNamespace() << "queue "
+           << DpctGlobalInfo::getGlobalQueueName() << ";" << getNL();
+      }
+    }
+    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
+
+  // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
+  // <oneapi/dpl/algorithm>, so we have to make sure that
+  // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
+  // <sycl/sycl.hpp>
+  // e.g.
+  // #include <sycl/sycl.hpp>
+  // #include <dpct/dpct.hpp>
+  // #include <dpct/dpl_utils.hpp>
+  // ...
+  // This will cause compilation error due to onedpl header dependence
+  // The order we expect is:
+  // e.g.
+  // #include <oneapi/dpl/execution>
+  // #include <oneapi/dpl/algorithm>
+  // #include <sycl/sycl.hpp>
+  // #include <dpct/dpct.hpp>
+  // #include <dpct/dpl_utils.hpp>
+  //
+  // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
+  // begining of the main file
+  case HT_DPCT_DPL_Utils:
+    insertHeader(HT_DPL_Execution);
+    insertHeader(HT_DPL_Algorithm);
+    break;
+  case HT_MKL_RNG:
+    insertHeader(HT_MKL_Mkl);
+    break;
+  default:
+    break;
+  }
+
+  if (Offset != FirstIncludeOffset)
+    OS << getNL();
+  concatHeader(OS, getHeaderSpelling(Type));
+  return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
+}
+void DpctFileInfo::insertHeader(HeaderType Type) {
+  switch (Type) {
+#define HEADER(Name, Spelling)                                                 \
+  case HT_##Name:                                                              \
+    return insertHeader(HT_##Name, LastIncludeOffset);
+#include "HeaderTypes.inc"
+  default:
+    return;
+  }
+}
+const DpctFileInfo::SourceLineInfo &
+DpctFileInfo::getLineInfo(unsigned LineNumber) {
+  if (!LineNumber || LineNumber > Lines.size()) {
+    llvm::dbgs() << "[DpctFileInfo::getLineInfo] illegal line number "
+                 << LineNumber;
+    static SourceLineInfo InvalidLine;
+    return InvalidLine;
+  }
+  return Lines[--LineNumber];
+}
+StringRef DpctFileInfo::getLineString(unsigned LineNumber) {
+  return getLineInfo(LineNumber).Line;
+}
+unsigned DpctFileInfo::getLineNumber(unsigned Offset) {
+  return getLineInfoFromOffset(Offset).Number;
+}
+void DpctFileInfo::setLineRange(ExtReplacements::SourceLineRange &LineRange,
+                                std::shared_ptr<ExtReplacement> Repl) {
+  unsigned Begin = Repl->getOffset();
+  unsigned End = Begin + Repl->getLength();
+
+  // Update original code range embedded in the migrated code
+  auto &Map = getFuncDeclRangeMap();
+  for (auto &Entry : Map) {
+    for (auto &Range : Entry.second) {
+      if (Begin >= Range.first && End <= Range.second) {
+        Begin = Range.first;
+        End = Range.second;
+      }
+    }
+  }
+
+  auto &BeginLine = getLineInfoFromOffset(Begin);
+  auto &EndLine = getLineInfoFromOffset(End);
+  LineRange.SrcBeginLine = BeginLine.Number;
+  LineRange.SrcBeginOffset = BeginLine.Offset;
+  if (EndLine.Offset == End)
+    LineRange.SrcEndLine = EndLine.Number - 1;
+  else
+    LineRange.SrcEndLine = EndLine.Number;
+}
+void DpctFileInfo::insertIncludedFilesInfo(std::shared_ptr<DpctFileInfo> Info) {
+  auto Iter = IncludedFilesInfoSet.find(Info);
+  if (Iter == IncludedFilesInfoSet.end()) {
+    IncludedFilesInfoSet.insert(Info);
+  }
+}
+std::map<const CompoundStmt *, MemcpyOrderAnalysisInfo> &
+DpctFileInfo::getMemcpyOrderAnalysisResultMap() {
+  return MemcpyOrderAnalysisResultMap;
+}
+std::map<std::string, std::vector<std::pair<unsigned int, unsigned int>>> &
+DpctFileInfo::getFuncDeclRangeMap() {
+  return FuncDeclRangeMap;
+}
+std::map<unsigned int, EventSyncTypeInfo> &DpctFileInfo::getEventSyncTypeMap() {
+  return EventSyncTypeMap;
+}
+std::map<unsigned int, TimeStubTypeInfo> &DpctFileInfo::getTimeStubTypeMap() {
+  return TimeStubTypeMap;
+}
+std::map<unsigned int, BuiltinVarInfo> &DpctFileInfo::getBuiltinVarInfoMap() {
+  return BuiltinVarInfoMap;
+}
+std::unordered_set<std::shared_ptr<DpctFileInfo>> &
+DpctFileInfo::getIncludedFilesInfoSet() {
+  return IncludedFilesInfoSet;
+}
+std::set<unsigned int> &DpctFileInfo::getSpBLASSet() { return SpBLASSet; }
+std::unordered_set<std::shared_ptr<TextModification>> &
+DpctFileInfo::getConstantMacroTMSet() {
+  return ConstantMacroTMSet;
+}
+std::vector<tooling::Replacement> &DpctFileInfo::getReplacements() {
+  return PreviousTUReplFromYAML->Replacements;
+}
+std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>> &
+DpctFileInfo::getAtomicMap() {
+  return AtomicMap;
+}
+void DpctFileInfo::setAddOneDplHeaders(bool Value) { AddOneDplHeaders = Value; }
+std::vector<std::pair<unsigned int, unsigned int>> &
+DpctFileInfo::getTimeStubBounds() {
+  return TimeStubBounds;
+}
+std::vector<std::pair<unsigned int, unsigned int>> &
+DpctFileInfo::getExternCRanges() {
+  return ExternCRanges;
+}
+std::vector<RnnBackwardFuncInfo> &DpctFileInfo::getRnnBackwardFuncInfo() {
+  return RBFuncInfo;
+}
+void DpctFileInfo::setRTVersionValue(std::string Value) {
+  RTVersionValue = Value;
+}
+std::string DpctFileInfo::getRTVersionValue() { return RTVersionValue; }
+void DpctFileInfo::setCCLVerValue(std::string Value) { CCLVerValue = Value; }
+std::string DpctFileInfo::getCCLVerValue() { return CCLVerValue; }
+bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
+  bool ReplTxtWithSB = true;
+  for (const auto &Entry : TimeStubBounds) {
+    size_t Begin = Entry.first;
+    size_t End = Entry.second;
+    if (Offset >= Begin && Offset <= End) {
+      ReplTxtWithSB = false;
+      break;
+    }
+  }
+  return ReplTxtWithSB;
+}
+// TODO: implement one of this for each source language.
+bool DpctFileInfo::isInCudaPath() {
+  return DpctGlobalInfo::isInCudaPath(FilePath);
+}
+void DpctFileInfo::buildLinesInfo() {
+  if (FilePath.getCanonicalPath().empty())
+    return;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+
+  llvm::Expected<FileEntryRef> Result =
+      SM.getFileManager().getFileRef(FilePath.getCanonicalPath());
+
+  if (auto E = Result.takeError())
+    return;
+
+  auto FID = SM.getOrCreateFileID(*Result, SrcMgr::C_User);
+  auto &Content = SM.getSLocEntry(FID).getFile().getContentCache();
+  if (!Content.SourceLineCache) {
+    bool Invalid;
+    SM.getLineNumber(FID, 0, &Invalid);
+    if (Invalid)
+      return;
+  }
+  auto RawBuffer =
+      Content.getBufferOrNone(SM.getDiagnostics(), SM.getFileManager())
+          .value_or(llvm::MemoryBufferRef())
+          .getBuffer();
+  if (RawBuffer.empty())
+    return;
+  FileContentCache = RawBuffer.str();
+  FileSize = RawBuffer.size();
+  auto LineCache = Content.SourceLineCache.getLines();
+  auto NumLines = Content.SourceLineCache.size();
+  StringRef CacheBuffer(FileContentCache);
+  for (unsigned L = 1; L < NumLines; ++L)
+    Lines.emplace_back(L, LineCache, CacheBuffer);
+  Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, CacheBuffer);
+}
+const DpctFileInfo::SourceLineInfo &
+DpctFileInfo::getLineInfoFromOffset(unsigned Offset) {
+  return *(std::upper_bound(Lines.begin(), Lines.end(), Offset,
+                            [](unsigned Offset, const SourceLineInfo &Line) {
+                              return Line.Offset > Offset;
+                            }) -
+           1);
 }
 
 ///// end /////
@@ -261,108 +1039,7 @@ std::shared_ptr<clang::tooling::TranslationUnitReplacements>
     DpctGlobalInfo::MainSourceYamlTUR =
         std::make_shared<clang::tooling::TranslationUnitReplacements>();
 
-class FreeQueriesInfo {
-public:
-  enum FreeQueriesKind {
-    NdItem = 0,
-    Group,
-    SubGroup,
-    End,
-  };
-  static constexpr char FreeQueriesRegexCh = 'F';
 
-private:
-  static constexpr unsigned KindBits = 4;
-  static constexpr unsigned KindMask = (1 << KindBits) - 1;
-  static constexpr unsigned MacroShiftBits = KindBits;
-  static constexpr unsigned MacroMask = 1 << MacroShiftBits;
-  static constexpr unsigned IndexShiftBits = MacroShiftBits + 1;
-
-private:
-  struct FreeQueriesNames {
-    std::string NonFreeQueriesName;
-    std::string FreeQueriesFuncName;
-    std::string ExtraVariableName;
-  };
-  struct MacroInfo {
-    clang::tooling::UnifiedPath FilePath;
-    unsigned Offset;
-    unsigned Dimension = 0;
-    std::vector<unsigned> Infos;
-  };
-  static std::vector<std::shared_ptr<FreeQueriesInfo>> InfoList;
-  static std::vector<std::shared_ptr<MacroInfo>> MacroInfos;
-
-  clang::tooling::UnifiedPath FilePath;
-  unsigned ExtraDeclLoc = 0;
-  unsigned Counter[FreeQueriesKind::End] = {0};
-  std::string Indent;
-  std::string NL;
-  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
-  unsigned Dimension = 3;
-  std::set<unsigned> Refs;
-  unsigned Idx = 0;
-
-  static const FreeQueriesNames &getNames(FreeQueriesKind);
-  static std::shared_ptr<FreeQueriesInfo> getInfo(const FunctionDecl *);
-  static void printFreeQueriesFunctionName(llvm::raw_ostream &OS,
-                                           FreeQueriesKind K,
-                                           unsigned Dimension) {
-    OS << getNames(K).FreeQueriesFuncName;
-    if (K != FreeQueriesKind::SubGroup) {
-      OS << '<';
-      if (Dimension) {
-        OS << Dimension;
-      } else {
-        OS << "dpct_placeholder /* Fix the dimension manually */";
-      }
-      OS << '>';
-    }
-    OS << "()";
-  }
-  static FreeQueriesKind getKind(unsigned Num) {
-    return static_cast<FreeQueriesKind>(Num & KindMask);
-  }
-  static unsigned getIndex(unsigned Num) { return Num >> IndexShiftBits; }
-  static bool isMacro(unsigned Num) { return Num & MacroMask; }
-  static unsigned getRegexNum(unsigned Idx, bool IsMacro,
-                              FreeQueriesKind Kind) {
-    return static_cast<unsigned>((Idx << IndexShiftBits) |
-                                 (IsMacro * MacroMask) | (Kind & KindMask));
-  }
-
-  void emplaceExtraDecl();
-  void printImmediateText(llvm::raw_ostream &, SourceLocation, FreeQueriesKind);
-  std::string getReplaceString(FreeQueriesKind K);
-
-public:
-  static void reset() {
-    InfoList.clear();
-    MacroInfos.clear();
-  }
-  template <class Node>
-  static void printImmediateText(llvm::raw_ostream &, const Node *,
-                                 const FunctionDecl *, FreeQueriesKind);
-  static void buildInfo() {
-    for (auto &Info : InfoList)
-      Info->emplaceExtraDecl();
-    for (auto &Info : MacroInfos) {
-      Info->Dimension = InfoList[Info->Infos.front()]->Dimension;
-      for (auto Idx : Info->Infos) {
-        if (Info->Dimension != InfoList[Idx]->Dimension) {
-          Info->Dimension = 0;
-          DiagnosticsUtils::report(Info->FilePath, Info->Offset,
-                                   Diagnostics::FREE_QUERIES_DIMENSION, true,
-                                   false);
-          break;
-        }
-      }
-    }
-  }
-  static std::string getReplaceString(unsigned Num);
-
-  FreeQueriesInfo() = default;
-};
 
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
@@ -819,547 +1496,36 @@ void DpctGlobalInfo::generateHostCode(
   return;
 }
 
-bool DpctFileInfo::isInAnalysisScope() {
-  return DpctGlobalInfo::isInAnalysisScope(FilePath);
-}
 
-// TODO: implement one of this for each source language.
-bool DpctFileInfo::isInCudaPath() {
-  return DpctGlobalInfo::isInCudaPath(FilePath);
-}
 
-void DpctFileInfo::buildLinesInfo() {
-  if (FilePath.getCanonicalPath().empty())
-    return;
-  auto &SM = DpctGlobalInfo::getSourceManager();
 
-  llvm::Expected<FileEntryRef> Result =
-      SM.getFileManager().getFileRef(FilePath.getCanonicalPath());
 
-  if (auto E = Result.takeError())
-    return;
 
-  auto FID = SM.getOrCreateFileID(*Result, SrcMgr::C_User);
-  auto &Content = SM.getSLocEntry(FID).getFile().getContentCache();
-  if (!Content.SourceLineCache) {
-    bool Invalid;
-    SM.getLineNumber(FID, 0, &Invalid);
-    if (Invalid)
-      return;
-  }
-  auto RawBuffer =
-      Content.getBufferOrNone(SM.getDiagnostics(), SM.getFileManager())
-          .value_or(llvm::MemoryBufferRef())
-          .getBuffer();
-  if (RawBuffer.empty())
-    return;
-  FileContentCache = RawBuffer.str();
-  FileSize = RawBuffer.size();
-  auto LineCache = Content.SourceLineCache.getLines();
-  auto NumLines = Content.SourceLineCache.size();
-  StringRef CacheBuffer(FileContentCache);
-  for (unsigned L = 1; L < NumLines; ++L)
-    Lines.emplace_back(L, LineCache, CacheBuffer);
-  Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, CacheBuffer);
-}
 
-void DpctFileInfo::setKernelCallDim() {
-  for (auto &Kernel : KernelMap)
-    Kernel.second->setKernelCallDim();
-}
-void DpctFileInfo::setKernelDim() {
-  for (auto &DeviceFunc : FuncMap) {
-    auto Info = DeviceFunc.second->getFuncInfo();
-    if (Info->isKernel() && !Info->isKernelInvoked()) {
-      Info->getVarMap().Dim = 3;
-    }
-  }
-}
-void DpctFileInfo::buildUnionFindSet() {
-  for (auto &Kernel : KernelMap)
-    Kernel.second->buildUnionFindSet();
-}
-void DpctFileInfo::buildUnionFindSetForUncalledFunc() {
-  for (auto &DeviceFunc : FuncMap) {
-    auto Info = DeviceFunc.second->getFuncInfo();
-    Info->buildInfo();
-    constructUnionFindSetRecursively(Info);
-  }
-}
 
-void DpctFileInfo::buildKernelInfo() {
-  for (auto &Kernel : KernelMap)
-    Kernel.second->buildInfo();
 
-  for (auto &D : FuncMap) {
-    if (auto I = D.second->getFuncInfo())
-      I->buildInfo();
-  }
-}
-void DpctFileInfo::postProcess() {
-  if (!isInAnalysisScope())
-    return;
-  for (auto &D : FuncMap)
-    D.second->emplaceReplacement();
-  if (!Repls->empty()) {
-    Repls->postProcess();
-    if (DpctGlobalInfo::getRunRound() == 0) {
-      DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
-    }
-  }
-}
 
-class RnnBackwardFuncInfoBuilder {
-  std::vector<RnnBackwardFuncInfo> &RBFuncInfo;
-  std::vector<RnnBackwardFuncInfo> ValidBackwardDataFuncInfo;
-  std::vector<RnnBackwardFuncInfo> ValidBackwardWeightFuncInfo;
-  std::vector<std::shared_ptr<ExtReplacement>> Repls;
-  using InfoIter = std::vector<RnnBackwardFuncInfo>::iterator;
 
-public:
-  RnnBackwardFuncInfoBuilder(std::vector<RnnBackwardFuncInfo> &Infos)
-      : RBFuncInfo(Infos){};
-  // This function check if the RNN function input referenced between
-  // backwarddata and backwardweight functiona call.
-  bool isInputNotChanged(InfoIter Data, InfoIter Weight) {
-    for (auto &RnnInput : Data->RnnInputDeclLoc) {
-      auto &RnnInputRefs =
-          DpctGlobalInfo::getRnnInputMap()[RnnInput][Data->FilePath];
-      for (auto &RnnInputRef : RnnInputRefs) {
-        if ((RnnInputRef > (Data->Offset + Data->Length - 1)) &&
-            RnnInputRef < Weight->Offset) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-  // This function check if the backwarddata and backwardweight function
-  // call have same input.
-  bool isInputSame(InfoIter Data, InfoIter Weight) {
-    for (unsigned InputIndex = 0; InputIndex < 3; InputIndex++) {
-      if (Data->RnnInputDeclLoc[InputIndex] !=
-          Weight->RnnInputDeclLoc[InputIndex]) {
-        return false;
-      }
-    }
-    return true;
-  }
-  // This function check if the backwarddata and backwardweight function in
-  // the same scope and backwardweight called after backwarddata.
-  // For example, function will return ture for pattern in following pseudo
-  // code:
-  //   if(...) {
-  //     backwarddata(...);
-  //     ..
-  //     backwardweight(...);
-  //   }
-  bool isValidScopeAndOrder(InfoIter Data, InfoIter Weight) {
-    return !((Data->CompoundLoc != Weight->CompoundLoc) &&
-             (Data->Offset >= Weight->Offset));
-  }
-  void build() {
-    if (RBFuncInfo.empty()) {
-      return;
-    }
-    for (auto &Info : RBFuncInfo) {
-      if (Info.isDataGradient) {
-        ValidBackwardDataFuncInfo.emplace_back(Info);
-      } else {
-        ValidBackwardWeightFuncInfo.emplace_back(Info);
-      }
-    }
-    std::vector<int> WeightPairdFlag(ValidBackwardWeightFuncInfo.size(), 0);
-    auto DataBegin = ValidBackwardDataFuncInfo.begin();
-    auto DataEnd = ValidBackwardDataFuncInfo.end();
-    auto WeightBegin = ValidBackwardWeightFuncInfo.begin();
-    auto WeightEnd = ValidBackwardWeightFuncInfo.end();
-    for (auto DataIter = DataBegin; DataIter != DataEnd; DataIter++) {
-      bool DataPaired = false;
-      for (auto WeightIter = WeightBegin; WeightIter != WeightEnd;
-           WeightIter++) {
-        if (isInputNotChanged(DataIter, WeightIter) &&
-            isInputSame(DataIter, WeightIter) &&
-            isValidScopeAndOrder(DataIter, WeightIter)) {
-          DataPaired = true;
-          WeightPairdFlag[WeightIter - WeightBegin] = 1;
-          auto Repl = generateReplacement(DataIter, WeightIter);
-          Repls.insert(Repls.end(), Repl.begin(), Repl.end());
-          break;
-        }
-      }
-      if (!DataPaired) {
-        DiagnosticsUtils::report(DataIter->FilePath, DataIter->Offset,
-                                 Diagnostics::API_NOT_MIGRATED, true, false,
-                                 "cudnnRNNBackwardData_v8");
-      }
-    }
-    for (auto WeightIter = WeightBegin; WeightIter != WeightEnd; WeightIter++) {
-      if (!WeightPairdFlag[WeightIter - WeightBegin]) {
-        DiagnosticsUtils::report(WeightIter->FilePath, WeightIter->Offset,
-                                 Diagnostics::API_NOT_MIGRATED, true, false,
-                                 "cudnnRNNBackwardWeights_v8");
-      }
-    }
-  }
-  std::vector<std::shared_ptr<ExtReplacement>> getReplacement() {
-    return Repls;
-  }
-  std::vector<std::shared_ptr<ExtReplacement>>
-  generateReplacement(InfoIter Data, InfoIter Weight) {
-    std::vector<std::shared_ptr<ExtReplacement>> Repls;
-    std::ostringstream DataRepl, WeightRepl;
-    RnnBackwardFuncInfo &DataFuncInfo = *Data;
-    RnnBackwardFuncInfo &WeightFuncInfo = *Weight;
-    requestFeature(HelperFeatureEnum::device_ext);
-    Diagnostics WarningType;
-    if (WeightFuncInfo.isAssigned) {
-      WarningType = Diagnostics::FUNC_CALL_REMOVED_0;
-      WeightRepl << "0";
-    } else {
-      WarningType = Diagnostics::FUNC_CALL_REMOVED;
-    }
-    DiagnosticsUtils::report(
-        WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WarningType, true,
-        false, "cudnnRNNBackwardWeights_v8",
-        "this call and cudnnRNNBackwardData_v8 are migrated to a single "
-        "function call async_rnn_backward");
 
-    if (DataFuncInfo.isAssigned) {
-      DataRepl << "DPCT_CHECK_ERROR(";
-      requestFeature(HelperFeatureEnum::device_ext);
-    }
-    DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
-             << DataFuncInfo.FuncArgs[1];
-    // Combine 21 args from backwarddata and 2 args from backwardweight
-    // into args of async_rnn_backward.
-    for (unsigned int index = 3; index <= 21; index++) {
-      DataRepl << ", " << DataFuncInfo.FuncArgs[index];
-      if (index == 6) {
-        DataRepl << ", " << WeightFuncInfo.FuncArgs[0];
-      } else if (index == 17) {
-        DataRepl << ", " << WeightFuncInfo.FuncArgs[1];
-      }
-    }
-    if (DataFuncInfo.isAssigned) {
-      DataRepl << "))";
-    } else {
-      DataRepl << ")";
-    }
-    Repls.emplace_back(std::make_shared<ExtReplacement>(
-        DataFuncInfo.FilePath, DataFuncInfo.Offset, DataFuncInfo.Length,
-        DataRepl.str(), nullptr));
-    Repls.emplace_back(std::make_shared<ExtReplacement>(
-        WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WeightFuncInfo.Length,
-        WeightRepl.str(), nullptr));
 
-    return Repls;
-  }
-};
 
-void DpctFileInfo::buildRnnBackwardFuncInfo() {
-  RnnBackwardFuncInfoBuilder Builder(RBFuncInfo);
-  Builder.build();
-  for (auto &Repl : Builder.getReplacement()) {
-    addReplacement(Repl);
-  }
-}
 
-void DpctFileInfo::buildReplacements() {
-  if (!isInAnalysisScope())
-    return;
 
-  if (FilePath.getCanonicalPath().empty())
-    return;
-  // Traverse all the global variables stored one by one to check if its name
-  // is same with normal global variable's name in host side, if the one is
-  // found, postfix "_ct" is added to this __constant__ symbol's name.
-  std::unordered_map<unsigned int, std::string> ReplUpdated;
-  for (const auto &Entry : MemVarMap) {
-    if (Entry.second->isIgnore())
-      continue;
 
-    auto Name = Entry.second->getName();
-    auto &GlobalVarNameSet = dpct::DpctGlobalInfo::getGlobalVarNameSet();
-    if (GlobalVarNameSet.find(Name) != end(GlobalVarNameSet)) {
-      Entry.second->setName(Name + "_ct");
-    }
 
-    std::string Repl = Entry.second->getDeclarationReplacement(nullptr);
-    auto FilePath = Entry.second->getFilePath();
-    auto Offset = Entry.second->getNewConstVarOffset();
-    auto Length = Entry.second->getNewConstVarLength();
 
-    auto &ReplText = ReplUpdated[Offset];
-    if (!ReplText.empty()) {
-      ReplText += getNL() + Repl;
-    } else {
-      ReplText = Repl;
-    }
 
-    auto R = std::make_shared<ExtReplacement>(FilePath, Offset, Length,
-                                              ReplText, nullptr);
 
-    addReplacement(R);
-  }
 
-  for (auto &Kernel : KernelMap)
-    Kernel.second->addReplacements();
 
-  for (auto &BuiltinVar : BuiltinVarInfoMap) {
-    auto Ptr = MemVarMap::getHeadWithoutPathCompression(
-        &(BuiltinVar.second.DFI->getVarMap()));
-    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && Ptr) {
-      unsigned int ID = (Ptr->Dim == 1) ? 0 : 2;
-      BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
-    } else {
-      BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, 2);
-    }
-  }
 
-  for (auto &AtomicInfo : AtomicMap) {
-    if (std::get<2>(AtomicInfo.second))
-      DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
-                               Diagnostics::API_NOT_OCCURRED_IN_AST, true, true,
-                               std::get<1>(AtomicInfo.second));
-  }
 
-  for (auto &DescInfo : EventSyncTypeMap) {
-    DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
 
-  const auto &TimeStubBounds = getTimeStubBounds();
-  if (TimeStubBounds.empty()) {
-    for (auto &DescInfo : TimeStubTypeMap) {
-      DescInfo.second.buildInfo(FilePath, DescInfo.first,
-                                /*bool isReplTxtWithSB*/ true);
-    }
-  } else {
-    for (auto &DescInfo : TimeStubTypeMap) {
-      bool isReplTxtWithSB = isReplTxtWithSubmitBarrier(DescInfo.first);
-      DescInfo.second.buildInfo(FilePath, DescInfo.first, isReplTxtWithSB);
-    }
-  }
 
-  buildRnnBackwardFuncInfo();
 
-  // insert header file of user defined rules
-  std::string InsertHeaderStr;
-  llvm::raw_string_ostream HeaderOS(InsertHeaderStr);
-  if (!InsertedHeaders.empty()) {
-    HeaderOS << getNL();
-  }
-  for (auto &HeaderStr : InsertedHeaders) {
-    if (HeaderStr[0] != '<' && HeaderStr[0] != '"') {
-      HeaderStr = "\"" + HeaderStr + "\"";
-    }
-    HeaderOS << "#include " << HeaderStr << getNL();
-  }
-  HeaderOS.flush();
-  insertHeader(std::move(InsertHeaderStr), LastIncludeOffset);
 
-  FreeQueriesInfo::buildInfo();
 
-  // This loop need to be put at the end of DpctFileInfo::buildReplacements.
-  // In addReplacement() the insertHeader() may be invoked, so the size of
-  // vector IncludeDirectiveInsertions may increase.
-  // So here cannot use for loop like "for(auto e : vec)" since the iterator may
-  // be invalid due to the allocation of new storage.
-  for (size_t I = 0, End = IncludeDirectiveInsertions.size(); I < End; I++) {
-    auto IncludeDirective = IncludeDirectiveInsertions[I];
-    bool IsInExternC = false;
-    unsigned int NewInsertLocation = 0;
-    for (auto &ExternCRange : ExternCRanges) {
-      if (IncludeDirective->getOffset() >= ExternCRange.first &&
-          IncludeDirective->getOffset() <= ExternCRange.second) {
-        IsInExternC = true;
-        NewInsertLocation = ExternCRange.first;
-        break;
-      }
-    }
-    if (IsInExternC) {
-      IncludeDirective->setOffset(NewInsertLocation);
-    }
-    addReplacement(IncludeDirective);
-    // Update the End since the size may be changed.
-    End = IncludeDirectiveInsertions.size();
-  }
-}
 
-bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
-  bool ReplTxtWithSB = true;
-  for (const auto &Entry : TimeStubBounds) {
-    size_t Begin = Entry.first;
-    size_t End = Entry.second;
-    if (Offset >= Begin && Offset <= End) {
-      ReplTxtWithSB = false;
-      break;
-    }
-  }
-  return ReplTxtWithSB;
-}
-
-void DpctFileInfo::emplaceReplacements(
-    std::map<clang::tooling::UnifiedPath, tooling::Replacements> &ReplSet) {
-  if (!Repls->empty())
-    Repls->emplaceIntoReplSet(ReplSet[FilePath]);
-}
-
-std::vector<std::pair<HeaderType, std::string>> HeaderSpellings;
-
-void initHeaderSpellings() {
-  HeaderSpellings = {
-#define HEADER(Name, Spelling) {HT_##Name, Spelling},
-#include "HeaderTypes.inc"
-  };
-}
-
-StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
-  if (Value < NUM_HEADERS)
-    return HeaderSpellings[Value].second;
-
-  // Only assertion in debug
-  assert(false && "unknown HeaderType");
-  return "";
-}
-
-std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
-  auto Pos = llvm::find_if(
-      HeaderSpellings, [=](const std::pair<HeaderType, StringRef> &p) -> bool {
-        return p.second == Header;
-      });
-  if (Pos == std::end(HeaderSpellings))
-    return std::nullopt;
-  return Pos->first;
-}
-
-void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
-  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
-      Type == HT_DPCT_DNNL_Utils) {
-    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-          Type, FirstIncludeOffset);
-  }
-  if (HeaderInsertedBitMap[Type])
-    return;
-  HeaderInsertedBitMap[Type] = true;
-  std::string ReplStr;
-  llvm::raw_string_ostream OS(ReplStr);
-
-  switch (Type) {
-  // The #include of <oneapi/dpl/execution> and <oneapi/dpl/algorithm> were
-  // previously added here.  However, due to some unfortunate include
-  // dependencies introduced with the PSTL/TBB headers from the gcc-9.3.0
-  // include files, those two headers must now be included before the
-  // <sycl/sycl.hpp> are included, so the FileInfo is set to hold a boolean
-  // that'll indicate whether to insert them when the #include <sycl/sycl.cpp>
-  // is added later
-  case HT_DPL_Algorithm:
-  case HT_DPL_Execution:
-  case HT_DPCT_DNNL_Utils:
-    concatHeader(OS, getHeaderSpelling(Type));
-    return insertHeader(OS.str(), FirstIncludeOffset,
-                        InsertPosition::IP_AlwaysLeft);
-  case HT_SYCL:
-    if (DpctGlobalInfo::getEnablepProfilingFlag())
-      OS << "#define DPCT_PROFILING_ENABLED" << getNL();
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
-      OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
-    if (!RTVersionValue.empty())
-      OS << "#define DPCT_COMPAT_RT_VERSION " << RTVersionValue << getNL();
-    if (!CCLVerValue.empty())
-      OS << "#define DPCT_COMPAT_CCL_VERSION " << CCLVerValue << getNL();
-    concatHeader(OS, getHeaderSpelling(Type));
-    concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
-    HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_DPCT) ||
-        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
-      OS << "using namespace dpct;" << getNL();
-    }
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_SYCL) &&
-        !DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_CL)) {
-      OS << "using namespace sycl;" << getNL();
-    }
-    if (DpctGlobalInfo::useNoQueueDevice()) {
-      static bool Flag = true;
-      auto SourceFileType = GetSourceFileType(getFilePath());
-      if (Flag && (SourceFileType == SPT_CudaSource ||
-                   SourceFileType == SPT_CppSource)) {
-        OS << MapNames::getClNamespace() << "device "
-           << DpctGlobalInfo::getGlobalDeviceName()
-           << "(sycl::default_selector_v);" << getNL();
-        // Now the UsmLevel must not be UL_None here.
-        OS << MapNames::getClNamespace() << "queue "
-           << DpctGlobalInfo::getGlobalQueueName() << "("
-           << DpctGlobalInfo::getGlobalDeviceName() << ", "
-           << MapNames::getClNamespace() << "property_list{"
-           << MapNames::getClNamespace() << "property::queue::in_order()";
-        if (DpctGlobalInfo::getEnablepProfilingFlag()) {
-          OS << ", " << MapNames::getClNamespace()
-             << "property::queue::enable_profiling()";
-        }
-        OS << "});" << getNL();
-        Flag = false;
-      } else {
-        OS << "extern " << MapNames::getClNamespace() << "device "
-           << DpctGlobalInfo::getGlobalDeviceName() << ";" << getNL();
-        // Now the UsmLevel must not be UL_None here.
-        OS << "extern " << MapNames::getClNamespace() << "queue "
-           << DpctGlobalInfo::getGlobalQueueName() << ";" << getNL();
-      }
-    }
-    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
-
-  // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
-  // <oneapi/dpl/algorithm>, so we have to make sure that
-  // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
-  // <sycl/sycl.hpp>
-  // e.g.
-  // #include <sycl/sycl.hpp>
-  // #include <dpct/dpct.hpp>
-  // #include <dpct/dpl_utils.hpp>
-  // ...
-  // This will cause compilation error due to onedpl header dependence
-  // The order we expect is:
-  // e.g.
-  // #include <oneapi/dpl/execution>
-  // #include <oneapi/dpl/algorithm>
-  // #include <sycl/sycl.hpp>
-  // #include <dpct/dpct.hpp>
-  // #include <dpct/dpl_utils.hpp>
-  //
-  // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
-  // begining of the main file
-  case HT_DPCT_DPL_Utils:
-    insertHeader(HT_DPL_Execution);
-    insertHeader(HT_DPL_Algorithm);
-    break;
-  case HT_MKL_RNG:
-    insertHeader(HT_MKL_Mkl);
-    break;
-  default:
-    break;
-  }
-
-  if (Offset != FirstIncludeOffset)
-    OS << getNL();
-  concatHeader(OS, getHeaderSpelling(Type));
-  return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
-}
-
-void DpctFileInfo::insertHeader(HeaderType Type) {
-  switch (Type) {
-#define HEADER(Name, Spelling)                                                 \
-  case HT_##Name:                                                              \
-    return insertHeader(HT_##Name, LastIncludeOffset);
-#include "HeaderTypes.inc"
-  default:
-    return;
-  }
-}
 
 void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))

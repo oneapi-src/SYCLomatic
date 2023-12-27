@@ -278,25 +278,29 @@ enum UsingType {
   UT_Queue_P,
 };
 
-//                             DpctGlobalInfo
+// clang-format off
+//
+//                                   DpctGlobalInfo
 //                                         |
-//              --------------------------------------
+//              --------------------------------------------------------
 //              |                          |                           |
-//    DpctFileInfo       DpctFileInfo     ... (other info)
-//                            |
-//           -----------------------------------------------------
-//           |                           |                         | |
-//  MemVarInfo  DeviceFunctionDecl  KernelCallExpr  CudaMallocInfo
-// Global Variable)                |   (inherit from CallFunctionExpr)
-//                           DeviceFunctionInfo
-//                                          |
-//                        --------------------------
-//                        |                                     |
-//            CallFunctionExpr              MemVarInfo
-//       (Call Expr in Function)   (Defined in Function)
-//                        |
-//          DeviceFunctionInfo
-//               (Callee Info)
+//         DpctFileInfo               DpctFileInfo                ... (other info)
+//                                         |
+//             ------------------------------------------------------------------------------------
+//             |                           |                          |                           |
+//    MemVarInfo                   DeviceFunctionDecl           KernelCallExpr             CudaMallocInfo
+//   Global Variable)                      |            (inherit from CallFunctionExpr)
+//                                 DeviceFunctionInfo
+//                                         |
+//                           ----------------------------
+//                           |                          |
+//                    CallFunctionExpr              MemVarInfo
+//                 (Call Expr in Function)    (Defined in Function)
+//                           |
+//                  DeviceFunctionInfo
+//                     (Callee Info)
+//
+// clang-format on
 
 // Store analysis info (eg. memory variable info, kernel function info,
 // replacements and so on) of each file
@@ -324,7 +328,7 @@ public:
                                   std::shared_ptr<Obj> Object) {
     return getMap<Obj>().insert(std::make_pair(Offset, Object)).first->second;
   }
-  inline const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
+  const clang::tooling::UnifiedPath &getFilePath();
 
   // Build kernel and device function declaration replacements and store them.
   void buildReplacements();
@@ -339,51 +343,20 @@ public:
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(std::map<clang::tooling::UnifiedPath,
                                     tooling::Replacements> &ReplSet /*out*/);
-
-  inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
-    if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
-      return;
-    Repls->addReplacement(Repl);
-  }
+  void addReplacement(std::shared_ptr<ExtReplacement> Repl);
   bool isInAnalysisScope();
-  std::shared_ptr<ExtReplacements> getRepls() { return Repls; }
-
-  size_t getFileSize() const { return FileSize; }
-
-  std::string &getFileContent() { return FileContentCache; }
+  std::shared_ptr<ExtReplacements> getRepls();
+  size_t getFileSize() const;
+  std::string &getFileContent();
 
   // Header inclusion directive insertion functions
-  void setFileEnterOffset(unsigned Offset) {
-    if (!HasInclusionDirective) {
-      FirstIncludeOffset = Offset;
-      LastIncludeOffset = Offset;
-    }
-  }
-
-  void setFirstIncludeOffset(unsigned Offset) {
-    if (!HasInclusionDirective) {
-      FirstIncludeOffset = Offset;
-      LastIncludeOffset = Offset;
-      HasInclusionDirective = true;
-    }
-  }
-
-  void setLastIncludeOffset(unsigned Offset) { LastIncludeOffset = Offset; }
-
-  void setHeaderInserted(HeaderType Header) {
-    HeaderInsertedBitMap[Header] = true;
-  }
-  void setMathHeaderInserted(bool B = true) {
-    HeaderInsertedBitMap[HeaderType::HT_Math] = B;
-  }
-
-  void setAlgorithmHeaderInserted(bool B = true) {
-    HeaderInsertedBitMap[HeaderType::HT_Algorithm] = B;
-  }
-
-  void setTimeHeaderInserted(bool B = true) {
-    HeaderInsertedBitMap[HeaderType::HT_Time] = B;
-  }
+  void setFileEnterOffset(unsigned Offset);
+  void setFirstIncludeOffset(unsigned Offset);
+  void setLastIncludeOffset(unsigned Offset);
+  void setHeaderInserted(HeaderType Header);
+  void setMathHeaderInserted(bool B = true);
+  void setAlgorithmHeaderInserted(bool B = true);
+  void setTimeHeaderInserted(bool B = true);
 
   void concatHeader(llvm::raw_string_ostream &OS) {}
   template <class FirstT, class... Args>
@@ -442,118 +415,43 @@ public:
     StringRef Line;
   };
 
-  inline const SourceLineInfo &getLineInfo(unsigned LineNumber) {
-    if (!LineNumber || LineNumber > Lines.size()) {
-      llvm::dbgs() << "[DpctFileInfo::getLineInfo] illegal line number "
-                   << LineNumber;
-      static SourceLineInfo InvalidLine;
-      return InvalidLine;
-    }
-    return Lines[--LineNumber];
-  }
-  StringRef getLineString(unsigned LineNumber) {
-    return getLineInfo(LineNumber).Line;
-  }
+  const SourceLineInfo &getLineInfo(unsigned LineNumber);
+  StringRef getLineString(unsigned LineNumber);
 
   // Get line number by offset
-  inline unsigned getLineNumber(unsigned Offset) {
-    return getLineInfoFromOffset(Offset).Number;
-  }
+  unsigned getLineNumber(unsigned Offset);
   // Set line range info of replacement
   void setLineRange(ExtReplacements::SourceLineRange &LineRange,
-                    std::shared_ptr<ExtReplacement> Repl) {
-    unsigned Begin = Repl->getOffset();
-    unsigned End = Begin + Repl->getLength();
-
-    // Update original code range embedded in the migrated code
-    auto &Map = getFuncDeclRangeMap();
-    for (auto &Entry : Map) {
-      for (auto &Range : Entry.second) {
-        if (Begin >= Range.first && End <= Range.second) {
-          Begin = Range.first;
-          End = Range.second;
-        }
-      }
-    }
-
-    auto &BeginLine = getLineInfoFromOffset(Begin);
-    auto &EndLine = getLineInfoFromOffset(End);
-    LineRange.SrcBeginLine = BeginLine.Number;
-    LineRange.SrcBeginOffset = BeginLine.Offset;
-    if (EndLine.Offset == End)
-      LineRange.SrcEndLine = EndLine.Number - 1;
-    else
-      LineRange.SrcEndLine = EndLine.Number;
-  }
-  void insertIncludedFilesInfo(std::shared_ptr<DpctFileInfo> Info) {
-    auto Iter = IncludedFilesInfoSet.find(Info);
-    if (Iter == IncludedFilesInfoSet.end()) {
-      IncludedFilesInfoSet.insert(Info);
-    }
-  }
+                    std::shared_ptr<ExtReplacement> Repl);
+  void insertIncludedFilesInfo(std::shared_ptr<DpctFileInfo> Info);
 
   std::map<const CompoundStmt *, MemcpyOrderAnalysisInfo> &
-  getMemcpyOrderAnalysisResultMap() {
-    return MemcpyOrderAnalysisResultMap;
-  }
-
+  getMemcpyOrderAnalysisResultMap();
   std::map<std::string, std::vector<std::pair<unsigned int, unsigned int>>> &
-  getFuncDeclRangeMap() {
-    return FuncDeclRangeMap;
-  }
-
-  std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
-    return EventSyncTypeMap;
-  }
-
-  std::map<unsigned int, TimeStubTypeInfo> &getTimeStubTypeMap() {
-    return TimeStubTypeMap;
-  }
-
-  std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap() {
-    return BuiltinVarInfoMap;
-  }
-  std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
-    return IncludedFilesInfoSet;
-  }
-  std::set<unsigned int> &getSpBLASSet() { return SpBLASSet; }
-
+  getFuncDeclRangeMap();
+  std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap();
+  std::map<unsigned int, TimeStubTypeInfo> &getTimeStubTypeMap();
+  std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap();
+  std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet();
+  std::set<unsigned int> &getSpBLASSet();
   std::unordered_set<std::shared_ptr<TextModification>> &
-  getConstantMacroTMSet() {
-    return ConstantMacroTMSet;
-  }
+  getConstantMacroTMSet();
+  std::vector<tooling::Replacement> &getReplacements();
+  std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>> &
+  getAtomicMap();
+  void setAddOneDplHeaders(bool Value);
+  std::vector<std::pair<unsigned int, unsigned int>> &getTimeStubBounds();
+  std::vector<std::pair<unsigned int, unsigned int>> &getExternCRanges();
+  std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo();
+  void setRTVersionValue(std::string Value);
+  std::string getRTVersionValue();
+  void setCCLVerValue(std::string Value);
+  std::string getCCLVerValue();
 
   std::shared_ptr<tooling::TranslationUnitReplacements> PreviousTUReplFromYAML =
       nullptr;
-  std::vector<tooling::Replacement> &getReplacements() {
-    return PreviousTUReplFromYAML->Replacements;
-  }
-
-  std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>> &
-  getAtomicMap() {
-    return AtomicMap;
-  }
-
-  void setAddOneDplHeaders(bool Value) { AddOneDplHeaders = Value; }
-
-  std::vector<std::pair<unsigned int, unsigned int>> &getTimeStubBounds() {
-    return TimeStubBounds;
-  }
-  std::vector<std::pair<unsigned int, unsigned int>> &getExternCRanges() {
-    return ExternCRanges;
-  }
-  std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo() {
-    return RBFuncInfo;
-  }
-  void setRTVersionValue(std::string Value) { RTVersionValue = Value; }
-  std::string getRTVersionValue() { return RTVersionValue; }
-
-  void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
-  std::string getCCLVerValue() { return CCLVerValue; }
-
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
-
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
 
   template <class Obj> GlobalMap<Obj> &getMap() {
@@ -568,13 +466,7 @@ private:
   bool isInCudaPath();
 
   void buildLinesInfo();
-  inline const SourceLineInfo &getLineInfoFromOffset(unsigned Offset) {
-    return *(std::upper_bound(Lines.begin(), Lines.end(), Offset,
-                              [](unsigned Offset, const SourceLineInfo &Line) {
-                                return Line.Offset > Offset;
-                              }) -
-             1);
-  }
+  const SourceLineInfo &getLineInfoFromOffset(unsigned Offset);
 
   std::map<const CompoundStmt *, MemcpyOrderAnalysisInfo>
       MemcpyOrderAnalysisResultMap;
