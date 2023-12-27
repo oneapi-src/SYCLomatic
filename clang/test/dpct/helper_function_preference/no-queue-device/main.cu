@@ -1,7 +1,7 @@
 // UNSUPPORTED: system-windows
 
 // RUN: cp %S/* .
-// RUN: dpct --helper-function-preference=no-queue-device -p=%S -out-root %T --cuda-include-path="%cuda-path/include"
+// RUN: dpct --enable-profiling=0  --helper-function-preference=no-queue-device -p=%S -out-root %T --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/kernel1.dp.cpp --match-full-lines %S/kernel1.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/kernel1.dp.cpp -o %T/kernel1.dp.o %}
 // RUN: FileCheck --input-file %T/kernel2.dp.cpp --match-full-lines %S/kernel2.cu

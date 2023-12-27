@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/tm-complex %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --enable-profiling=0  -out-root %T/tm-complex %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-complex/tm-complex.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/tm-complex/tm-complex.dp.cpp -o %T/tm-complex/tm-complex.dp.o %}
 #include <stdio.h>

@@ -1,4 +1,4 @@
-// RUN: dpct --no-dpcpp-extensions=enqueued_barriers --format-range=none -out-root %T/tm-usm-no-submit-barrier %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --enable-profiling=0  --no-dpcpp-extensions=enqueued_barriers --format-range=none -out-root %T/tm-usm-no-submit-barrier %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-usm-no-submit-barrier/tm-usm-no-submit-barrier.dp.cpp --match-full-lines %s
 #include <stdio.h>
 

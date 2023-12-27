@@ -5,7 +5,7 @@
 // RUN: cd %T
 // RUN: rm -rf %T/macro_test_output
 // RUN: mkdir %T/macro_test_output
-// RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --enable-profiling=0  -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/macro_test_output/macro_test.dp.cpp -o %T/macro_test_output/macro_test.dp.o %}
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h

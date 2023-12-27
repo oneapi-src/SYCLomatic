@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/thrust-placeholders %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --enable-profiling=0  --format-range=none -out-root %T/thrust-placeholders %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/thrust-placeholders/thrust-placeholders.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/thrust-placeholders/thrust-placeholders.dp.cpp -o %T/thrust-placeholders/thrust-placeholders.dp.o %}
 
