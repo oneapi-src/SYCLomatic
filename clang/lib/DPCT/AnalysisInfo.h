@@ -1261,6 +1261,7 @@ public:
   SizeInfo() = default;
   SizeInfo(std::string Size) : Size(std::move(Size)) {}
   SizeInfo(std::shared_ptr<TemplateDependentStringInfo> TDSI);
+  const std::string &getSize();
   // Get actual size string according to template arguments list;
   void setTemplateList(const std::vector<TemplateArgumentInfo> &TemplateList);
 };

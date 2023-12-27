@@ -2722,7 +2722,7 @@ std::string DpctNameGenerator::getName(const FunctionDecl *D) {
 }
 ///// class SizeInfo /////
 SizeInfo::SizeInfo(std::shared_ptr<TemplateDependentStringInfo> TDSI) : TDSI(TDSI) {}
-const std::string &getSize() {
+const std::string &SizeInfo::getSize() {
   if (TDSI)
     return TDSI->getSourceString();
   return Size;
