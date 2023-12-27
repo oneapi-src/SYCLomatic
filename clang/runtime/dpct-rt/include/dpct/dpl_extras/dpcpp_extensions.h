@@ -466,6 +466,50 @@ public:
     }
   }
 
+template <typename Item>
+  __dpct_inline__ void
+  sortBlockedToStriped(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
+       int end_bit = 8 * sizeof(T)) {
+
+    uint32_t(&unsigned_keys)[VALUES_PER_THREAD] =
+        reinterpret_cast<uint32_t(&)[VALUES_PER_THREAD]>(keys);
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; ++i) {
+      unsigned_keys[i] = detail::traits<T>::twiddle_in(unsigned_keys[i]);
+    }
+
+    while (true) {
+      int pass_bits = sycl::min(RADIX_BITS, end_bit - begin_bit);
+
+      int ranks[VALUES_PER_THREAD];
+      detail::radix_rank<RADIX_BITS, DESCENDING>(_local_memory)
+          .template rank_keys(item, unsigned_keys, ranks, begin_bit, pass_bits);
+      begin_bit += RADIX_BITS;
+
+      item.barrier(sycl::access::fence_space::local_space);
+
+      if( begin_bit >= end_bit){
+      
+         exchange<T, VALUES_PER_THREAD>(_local_memory)
+          .scatter_to_striped(item, keys);
+        
+         break;  
+      }
+      
+      exchange<T, VALUES_PER_THREAD>(_local_memory)
+          .scatter_to_blocked(item, keys, ranks);
+
+      item.barrier(sycl::access::fence_space::local_space);
+
+    }
+
+#pragma unroll
+    for (int i = 0; i < VALUES_PER_THREAD; ++i) {
+      unsigned_keys[i] = detail::traits<T>::twiddle_out(unsigned_keys[i]);
+    }
+  }
+
 private:
   static constexpr int RADIX_BITS = 4;
 
