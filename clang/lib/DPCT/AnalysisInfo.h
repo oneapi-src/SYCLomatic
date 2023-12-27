@@ -2594,37 +2594,11 @@ public:
                  const VarDecl *VD)
       : Name(VD->getName().str()) {}
 
-  static const VarDecl *getMallocVar(const Expr *Arg) {
-    if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts())) {
-      if (UO->getOpcode() == UO_AddrOf) {
-        return getDecl(UO->getSubExpr());
-      }
-    }
-    return nullptr;
-  }
-  static const VarDecl *getDecl(const Expr *E) {
-    if (auto DeclRef = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts()))
-      return dyn_cast<VarDecl>(DeclRef->getDecl());
-    return nullptr;
-  }
-
-  void setSizeExpr(const Expr *SizeExpression) {
-    ArgumentAnalysis A(SizeExpression, false);
-    A.analyze();
-    Size = A.getReplacedString();
-  }
-  void setSizeExpr(const Expr *N, const Expr *ElemSize) {
-    ArgumentAnalysis AN(N, false);
-    ArgumentAnalysis AElemSize(ElemSize, false);
-    AN.analyze();
-    AElemSize.analyze();
-    Size = "(" + AN.getReplacedString() + ")*(" +
-           AElemSize.getReplacedString() + ")";
-  }
-
-  std::string getAssignArgs(const std::string &TypeName) {
-    return Name + ", " + Size;
-  }
+  static const VarDecl *getMallocVar(const Expr *Arg);
+  static const VarDecl *getDecl(const Expr *E);
+  void setSizeExpr(const Expr *SizeExpression);
+  void setSizeExpr(const Expr *N, const Expr *ElemSize);
+  std::string getAssignArgs(const std::string &TypeName);
 
 private:
   std::string Size;

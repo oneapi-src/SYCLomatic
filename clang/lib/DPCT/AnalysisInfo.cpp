@@ -6201,7 +6201,35 @@ void KernelCallExpr::buildKernelArgsStmt() {
   }
 }
 ///// class CudaMallocInfo /////
-
+const VarDecl *CudaMallocInfo::getMallocVar(const Expr *Arg) {
+  if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts())) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      return getDecl(UO->getSubExpr());
+    }
+  }
+  return nullptr;
+}
+const VarDecl *CudaMallocInfo::getDecl(const Expr *E) {
+  if (auto DeclRef = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts()))
+    return dyn_cast<VarDecl>(DeclRef->getDecl());
+  return nullptr;
+}
+void CudaMallocInfo::setSizeExpr(const Expr *SizeExpression) {
+  ArgumentAnalysis A(SizeExpression, false);
+  A.analyze();
+  Size = A.getReplacedString();
+}
+void CudaMallocInfo::setSizeExpr(const Expr *N, const Expr *ElemSize) {
+  ArgumentAnalysis AN(N, false);
+  ArgumentAnalysis AElemSize(ElemSize, false);
+  AN.analyze();
+  AElemSize.analyze();
+  Size = "(" + AN.getReplacedString() + ")*(" +
+         AElemSize.getReplacedString() + ")";
+}
+std::string CudaMallocInfo::getAssignArgs(const std::string &TypeName) {
+  return Name + ", " + Size;
+}
 
 
 
