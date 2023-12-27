@@ -5,7 +5,8 @@ set_property(TARGET a
 
 set_property(SOURCE cuda_file.dp.cpp cuda_file2.dp.cpp cuda_file3.dp.cpp)
 
-set_property( SOURCE cuda_file.dp.cpp
+set_property(
+   SOURCE cuda_file.dp.cpp
    DIRECTORY ${CMAKE_SOURCE_DIR}
    APPEND
    PROPERTY COMPILE_DEFINITIONS ${BACKWARD_DEFINITIONS})
