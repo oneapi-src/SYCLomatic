@@ -414,7 +414,7 @@ public:
 
   template <typename Item, typename offsetFunctorType,
             typename offsetFunctorFWMethod, typename offsetFunctorRVMethod>
-  __dpct__inline__ void helper_exchange(Item item, T (&keys)[VALUES_PER_THREAD],
+  __dpct_inline__ void helper_exchange(Item item, T (&keys)[VALUES_PER_THREAD],
                                         offsetFunctorType &offset_functor,
                                         offsetFunctorFWMethod fw_method,
                                         offsetFunctorRVMethod rv_method) {
