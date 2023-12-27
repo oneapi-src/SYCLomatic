@@ -5003,6 +5003,190 @@ void DeviceFunctionDeclInModule::emplaceReplacement() {
   DeviceFunctionDecl::emplaceReplacement();
   insertWrapper();
 }
+///// class DeviceFunctionInfo /////
+DeviceFunctionInfo::DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum,
+                   std::string FunctionName)
+    : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
+      IsBuilt(false),
+      TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
+      FunctionName(FunctionName), IsLambda(false) {
+  ParametersProps.resize(ParamsNum);
+}
+std::shared_ptr<CallFunctionExpr> DeviceFunctionInfo::findCallee(const CallExpr *C) {
+  auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
+  return findObject(CallExprMap, CallLocInfo.second);
+}
+void DeviceFunctionInfo::addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
+void DeviceFunctionInfo::setItem() { VarMap.setItem(); }
+void DeviceFunctionInfo::setStream() { VarMap.setStream(); }
+void DeviceFunctionInfo::setSync() { VarMap.setSync(); }
+void DeviceFunctionInfo::setBF64() { VarMap.setBF64(); }
+void DeviceFunctionInfo::setBF16() { VarMap.setBF16(); }
+void DeviceFunctionInfo::setGlobalMemAcc() { VarMap.setGlobalMemAcc(); }
+void DeviceFunctionInfo::addTexture(std::shared_ptr<TextureInfo> Tex) {
+  VarMap.addTexture(Tex);
+}
+MemVarMap &DeviceFunctionInfo::getVarMap() { return VarMap; }
+std::shared_ptr<TextureObjectInfo> DeviceFunctionInfo::getTextureObject(unsigned Idx) {
+  if (Idx < TextureObjectList.size())
+    return TextureObjectList[Idx];
+  return {};
+}
+std::shared_ptr<StructureTextureObjectInfo> DeviceFunctionInfo::getBaseTextureObject() const {
+  return BaseObjectTexture;
+}
+void DeviceFunctionInfo::setCallGroupFunctionInControlFlow(bool Val) {
+  CallGroupFunctionInControlFlow = Val;
+}
+bool DeviceFunctionInfo::hasCallGroupFunctionInControlFlow() const {
+  return CallGroupFunctionInControlFlow;
+}
+void DeviceFunctionInfo::setHasSideEffectsAnalyzed(bool Val) {
+  HasCheckedCallGroupFunctionInControlFlow = Val;
+}
+bool DeviceFunctionInfo::hasSideEffectsAnalyzed() const {
+  return HasCheckedCallGroupFunctionInControlFlow;
+}
+void DeviceFunctionInfo::buildInfo() {
+  if (isBuilt())
+    return;
+  setBuilt();
+  for (auto &Call : CallExprMap) {
+    Call.second->emplaceReplacement();
+    VarMap.merge(Call.second->getVarMap());
+    mergeCalledTexObj(Call.second->getBaseTextureObjectInfo(),
+                      Call.second->getTextureObjectList());
+  }
+  VarMap.removeDuplicateVar();
+}
+bool DeviceFunctionInfo::hasParams() { return ParamsNum != 0; }
+bool DeviceFunctionInfo::isBuilt() { return IsBuilt; }
+void DeviceFunctionInfo::setBuilt() { IsBuilt = true; }
+bool DeviceFunctionInfo::isLambda() { return IsLambda; }
+void DeviceFunctionInfo::setLambda() { IsLambda = true; }
+bool DeviceFunctionInfo::isInlined() { return IsInlined; }
+void DeviceFunctionInfo::setInlined() { IsInlined = true; }
+bool DeviceFunctionInfo::isKernel() { return IsKernel; }
+void DeviceFunctionInfo::setKernel() { IsKernel = true; }
+bool DeviceFunctionInfo::isKernelInvoked() { return IsKernelInvoked; }
+void DeviceFunctionInfo::setKernelInvoked() { IsKernelInvoked = true; }
+std::string
+DeviceFunctionInfo::getExtraParameters(const clang::tooling::UnifiedPath &Path,
+                   FormatInfo FormatInformation) {
+  buildInfo();
+  VarMap.requestFeatureForAllVarMaps(Path);
+  return VarMap.getExtraDeclParam(
+      NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
+}
+std::string
+DeviceFunctionInfo::getExtraParameters(const clang::tooling::UnifiedPath &Path,
+                   const std::vector<TemplateArgumentInfo> &TAList,
+                   FormatInfo FormatInformation) {
+  MemVarMap TmpVarMap;
+  buildInfo();
+  TmpVarMap.merge(VarMap, TAList);
+  TmpVarMap.requestFeatureForAllVarMaps(Path);
+  return TmpVarMap.getExtraDeclParam(
+      NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
+}
+void DeviceFunctionInfo::setDefinitionFilePath(const clang::tooling::UnifiedPath &Path) {
+  DefinitionFilePath = Path;
+}
+const clang::tooling::UnifiedPath &DeviceFunctionInfo::getDefinitionFilePath() {
+  return DefinitionFilePath;
+}
+
+void DeviceFunctionInfo::setNeedSyclExternMacro() { NeedSyclExternMacro = true; }
+bool DeviceFunctionInfo::IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
+void DeviceFunctionInfo::setAlwaysInlineDevFunc() { AlwaysInlineDevFunc = true; }
+bool DeviceFunctionInfo::IsAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
+void DeviceFunctionInfo::setForceInlineDevFunc() { ForceInlineDevFunc = true; }
+bool DeviceFunctionInfo::IsForceInlineDevFunc() { return ForceInlineDevFunc; }
+void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
+  if (this == Other.get())
+    return;
+  VarMap.merge(Other->getVarMap());
+  dpct::merge(CallExprMap, Other->CallExprMap);
+  if (BaseObjectTexture)
+    BaseObjectTexture->merge(Other->BaseObjectTexture);
+  else
+    BaseObjectTexture = Other->BaseObjectTexture;
+  mergeTextureObjectList(Other->TextureObjectList);
+}
+GlobalMap<CallFunctionExpr> &DeviceFunctionInfo::getCallExprMap() { return CallExprMap; }
+void DeviceFunctionInfo::addSubGroupSizeRequest(unsigned int Size, SourceLocation Loc,
+                            std::string APIName, std::string VarName) {
+  if (Size == 0 || Loc.isInvalid())
+    return;
+  auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+  RequiredSubGroupSize.push_back(
+      std::make_tuple(Size, LocInfo.first, LocInfo.second, APIName, VarName));
+}
+std::vector<std::tuple<unsigned int, clang::tooling::UnifiedPath,
+                       unsigned int, std::string, std::string>> &
+DeviceFunctionInfo::getSubGroupSize() {
+  return RequiredSubGroupSize;
+}
+bool DeviceFunctionInfo::isParameterReferenced(unsigned int Index) {
+  if (Index >= ParametersProps.size())
+    return true;
+  return ParametersProps[Index].IsReferenced;
+}
+void DeviceFunctionInfo::setParameterReferencedStatus(unsigned int Index, bool IsReferenced) {
+  if (Index >= ParametersProps.size())
+    return;
+  ParametersProps[Index].IsReferenced =
+      ParametersProps[Index].IsReferenced || IsReferenced;
+}
+std::string DeviceFunctionInfo::getFunctionName() { return FunctionName; }
+void DeviceFunctionInfo::mergeCalledTexObj(
+    std::shared_ptr<StructureTextureObjectInfo> BaseObj,
+    const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
+  if (BaseObj) {
+    if (BaseObj->isBase()) {
+      if (BaseObjectTexture)
+        BaseObjectTexture->merge(BaseObj);
+      else
+        BaseObjectTexture = BaseObj;
+    } else if (BaseObj->getParamIdx() < TextureObjectList.size()) {
+      auto &Parm = TextureObjectList[BaseObj->getParamIdx()];
+      if (Parm)
+        Parm->merge(BaseObj);
+      else
+        Parm = BaseObj;
+    }
+  }
+  for (auto &Obj : TexObjList) {
+    if (!Obj)
+      continue;
+    if (Obj->getParamIdx() >= TextureObjectList.size())
+      continue;
+    if (auto &Parm = TextureObjectList[Obj->getParamIdx()]) {
+      Parm->merge(Obj);
+    } else {
+      TextureObjectList[Obj->getParamIdx()] = Obj;
+    }
+  }
+}
+void DeviceFunctionInfo::mergeTextureObjectList(
+    const std::vector<std::shared_ptr<TextureObjectInfo>> &Other) {
+  auto SelfItr = TextureObjectList.begin();
+  auto BranchItr = Other.begin();
+  while ((SelfItr != TextureObjectList.end()) && (BranchItr != Other.end())) {
+    if (!(*SelfItr))
+      *SelfItr = *BranchItr;
+    ++SelfItr;
+    ++BranchItr;
+  }
+  TextureObjectList.insert(SelfItr, BranchItr, Other.end());
+}
+
+
+
+
+
+
+
 
 
 
@@ -6211,73 +6395,13 @@ void CallFunctionExpr::buildInfo() {
 
 
 
-void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
-  if (this == Other.get())
-    return;
-  VarMap.merge(Other->getVarMap());
-  dpct::merge(CallExprMap, Other->CallExprMap);
-  if (BaseObjectTexture)
-    BaseObjectTexture->merge(Other->BaseObjectTexture);
-  else
-    BaseObjectTexture = Other->BaseObjectTexture;
-  mergeTextureObjectList(Other->TextureObjectList);
-}
 
-void DeviceFunctionInfo::mergeTextureObjectList(
-    const std::vector<std::shared_ptr<TextureObjectInfo>> &Other) {
-  auto SelfItr = TextureObjectList.begin();
-  auto BranchItr = Other.begin();
-  while ((SelfItr != TextureObjectList.end()) && (BranchItr != Other.end())) {
-    if (!(*SelfItr))
-      *SelfItr = *BranchItr;
-    ++SelfItr;
-    ++BranchItr;
-  }
-  TextureObjectList.insert(SelfItr, BranchItr, Other.end());
-}
 
-void DeviceFunctionInfo::mergeCalledTexObj(
-    std::shared_ptr<StructureTextureObjectInfo> BaseObj,
-    const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
-  if (BaseObj) {
-    if (BaseObj->isBase()) {
-      if (BaseObjectTexture)
-        BaseObjectTexture->merge(BaseObj);
-      else
-        BaseObjectTexture = BaseObj;
-    } else if (BaseObj->getParamIdx() < TextureObjectList.size()) {
-      auto &Parm = TextureObjectList[BaseObj->getParamIdx()];
-      if (Parm)
-        Parm->merge(BaseObj);
-      else
-        Parm = BaseObj;
-    }
-  }
-  for (auto &Obj : TexObjList) {
-    if (!Obj)
-      continue;
-    if (Obj->getParamIdx() >= TextureObjectList.size())
-      continue;
-    if (auto &Parm = TextureObjectList[Obj->getParamIdx()]) {
-      Parm->merge(Obj);
-    } else {
-      TextureObjectList[Obj->getParamIdx()] = Obj;
-    }
-  }
-}
 
-void DeviceFunctionInfo::buildInfo() {
-  if (isBuilt())
-    return;
-  setBuilt();
-  for (auto &Call : CallExprMap) {
-    Call.second->emplaceReplacement();
-    VarMap.merge(Call.second->getVarMap());
-    mergeCalledTexObj(Call.second->getBaseTextureObjectInfo(),
-                      Call.second->getTextureObjectList());
-  }
-  VarMap.removeDuplicateVar();
-}
+
+
+
+
 
 
 

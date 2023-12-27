@@ -2235,21 +2235,12 @@ class DeviceFunctionInfo {
 
 public:
   DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum,
-                     std::string FunctionName)
-      : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
-        IsBuilt(false),
-        TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
-        FunctionName(FunctionName), IsLambda(false) {
-    ParametersProps.resize(ParamsNum);
-  }
+                     std::string FunctionName);
 
   bool ConstructGraphVisited = false;
   unsigned int KernelCallBlockDim = 1;
 
-  std::shared_ptr<CallFunctionExpr> findCallee(const CallExpr *C) {
-    auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
-    return findObject(CallExprMap, CallLocInfo.second);
-  }
+  std::shared_ptr<CallFunctionExpr> findCallee(const CallExpr *C);
   template <class CallT>
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
@@ -2258,84 +2249,46 @@ public:
     Call->buildCallExprInfo(C);
     return Call;
   }
-  inline void addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
-  inline void setItem() { VarMap.setItem(); }
-  inline void setStream() { VarMap.setStream(); }
-  inline void setSync() { VarMap.setSync(); }
-  inline void setBF64() { VarMap.setBF64(); }
-  inline void setBF16() { VarMap.setBF16(); }
-  inline void setGlobalMemAcc() { VarMap.setGlobalMemAcc(); }
-  inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
-    VarMap.addTexture(Tex);
-  }
-  inline MemVarMap &getVarMap() { return VarMap; }
-  inline std::shared_ptr<TextureObjectInfo> getTextureObject(unsigned Idx) {
-    if (Idx < TextureObjectList.size())
-      return TextureObjectList[Idx];
-    return {};
-  }
-  std::shared_ptr<StructureTextureObjectInfo> getBaseTextureObject() const {
-    return BaseObjectTexture;
-  }
-
-  inline void setCallGroupFunctionInControlFlow(bool Val = true) {
-    CallGroupFunctionInControlFlow = Val;
-  }
-  inline bool hasCallGroupFunctionInControlFlow() const {
-    return CallGroupFunctionInControlFlow;
-  }
-
-  inline void setHasSideEffectsAnalyzed(bool Val = true) {
-    HasCheckedCallGroupFunctionInControlFlow = Val;
-  }
-  inline bool hasSideEffectsAnalyzed() const {
-    return HasCheckedCallGroupFunctionInControlFlow;
-  }
+  void addVar(std::shared_ptr<MemVarInfo> Var);
+  void setItem();
+  void setStream();
+  void setSync();
+  void setBF64();
+  void setBF16();
+  void setGlobalMemAcc();
+  void addTexture(std::shared_ptr<TextureInfo> Tex);
+  MemVarMap &getVarMap();
+  std::shared_ptr<TextureObjectInfo> getTextureObject(unsigned Idx);
+  std::shared_ptr<StructureTextureObjectInfo> getBaseTextureObject() const;
+  void setCallGroupFunctionInControlFlow(bool Val = true);
+  bool hasCallGroupFunctionInControlFlow() const;
+  void setHasSideEffectsAnalyzed(bool Val = true);
+  bool hasSideEffectsAnalyzed() const;
 
   void buildInfo();
-  inline bool hasParams() { return ParamsNum != 0; }
-
-  inline bool isBuilt() { return IsBuilt; }
-  inline void setBuilt() { IsBuilt = true; }
-
-  inline bool isLambda() { return IsLambda; }
-  inline void setLambda() { IsLambda = true; }
-
-  inline bool isInlined() { return IsInlined; }
-  inline void setInlined() { IsInlined = true; }
-
-  inline bool isKernel() { return IsKernel; }
-  inline void setKernel() { IsKernel = true; }
-
-  inline bool isKernelInvoked() { return IsKernelInvoked; }
-  inline void setKernelInvoked() { IsKernelInvoked = true; }
-
-  inline std::string
+  bool hasParams();
+  bool isBuilt();
+  void setBuilt();
+  bool isLambda();
+  void setLambda();
+  bool isInlined();
+  void setInlined();
+  bool isKernel();
+  void setKernel();
+  bool isKernelInvoked();
+  void setKernelInvoked();
+  std::string
   getExtraParameters(const clang::tooling::UnifiedPath &Path,
-                     FormatInfo FormatInformation = FormatInfo()) {
-    buildInfo();
-    VarMap.requestFeatureForAllVarMaps(Path);
-    return VarMap.getExtraDeclParam(
-        NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
-  }
+                     FormatInfo FormatInformation = FormatInfo());
   std::string
   getExtraParameters(const clang::tooling::UnifiedPath &Path,
                      const std::vector<TemplateArgumentInfo> &TAList,
-                     FormatInfo FormatInformation = FormatInfo()) {
-    MemVarMap TmpVarMap;
-    buildInfo();
-    TmpVarMap.merge(VarMap, TAList);
-    TmpVarMap.requestFeatureForAllVarMaps(Path);
-    return TmpVarMap.getExtraDeclParam(
-        NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
-  }
+                     FormatInfo FormatInformation = FormatInfo());
+  void setDefinitionFilePath(const clang::tooling::UnifiedPath &Path);
+  const clang::tooling::UnifiedPath &getDefinitionFilePath();
 
-  void setDefinitionFilePath(const clang::tooling::UnifiedPath &Path) {
-    DefinitionFilePath = Path;
-  }
-  const clang::tooling::UnifiedPath &getDefinitionFilePath() {
-    return DefinitionFilePath;
-  }
+
+
   void setNeedSyclExternMacro() { NeedSyclExternMacro = true; }
   bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
   void setAlwaysInlineDevFunc() { AlwaysInlineDevFunc = true; }
@@ -2345,32 +2298,15 @@ public:
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
-  GlobalMap<CallFunctionExpr> &getCallExprMap() { return CallExprMap; }
+  GlobalMap<CallFunctionExpr> &getCallExprMap();
   void addSubGroupSizeRequest(unsigned int Size, SourceLocation Loc,
-                              std::string APIName, std::string VarName = "") {
-    if (Size == 0 || Loc.isInvalid())
-      return;
-    auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
-    RequiredSubGroupSize.push_back(
-        std::make_tuple(Size, LocInfo.first, LocInfo.second, APIName, VarName));
-  }
+                              std::string APIName, std::string VarName = "");
   std::vector<std::tuple<unsigned int, clang::tooling::UnifiedPath,
                          unsigned int, std::string, std::string>> &
-  getSubGroupSize() {
-    return RequiredSubGroupSize;
-  }
-  bool isParameterReferenced(unsigned int Index) {
-    if (Index >= ParametersProps.size())
-      return true;
-    return ParametersProps[Index].IsReferenced;
-  }
-  void setParameterReferencedStatus(unsigned int Index, bool IsReferenced) {
-    if (Index >= ParametersProps.size())
-      return;
-    ParametersProps[Index].IsReferenced =
-        ParametersProps[Index].IsReferenced || IsReferenced;
-  }
-  std::string getFunctionName() { return FunctionName; }
+  getSubGroupSize();
+  bool isParameterReferenced(unsigned int Index);
+  void setParameterReferencedStatus(unsigned int Index, bool IsReferenced);
+  std::string getFunctionName();
 
 private:
   void mergeCalledTexObj(
