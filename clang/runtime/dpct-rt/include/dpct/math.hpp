@@ -1444,7 +1444,7 @@ inline constexpr RetT extend_shl_sat_clamp(T a, uint32_t b, uint32_t c,
 /// \param [in] b The offset to shift
 /// \returns a << (b & 0x1F)
 template <typename RetT, typename T>
-inline constexpr RetT extend_shl_warp(T a, uint32_t b) {
+inline constexpr RetT extend_shl_mask31(T a, uint32_t b) {
   return detail::extend_binary<RetT, false>(a, b & 0x1F, detail::shift_left());
 }
 
@@ -1455,7 +1455,7 @@ inline constexpr RetT extend_shl_warp(T a, uint32_t b) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns second_op(a << (b & 0x1F), c)
 template <typename RetT, typename T, typename BinaryOperation>
-inline constexpr RetT extend_shl_warp(T a, uint32_t b, uint32_t c,
+inline constexpr RetT extend_shl_mask31(T a, uint32_t b, uint32_t c,
                                       BinaryOperation second_op) {
   return detail::extend_binary<RetT, false>(a, b & 0x1F, c,
                                             detail::shift_left(), second_op);
@@ -1466,7 +1466,7 @@ inline constexpr RetT extend_shl_warp(T a, uint32_t b, uint32_t c,
 /// \param [in] b The offset to shift
 /// \returns sat(a << (b & 0x1F))
 template <typename RetT, typename T>
-inline constexpr RetT extend_shl_sat_warp(T a, uint32_t b) {
+inline constexpr RetT extend_shl_sat_mask31(T a, uint32_t b) {
   return detail::extend_binary<RetT, true>(a, b & 0x1F, detail::shift_left());
 }
 
@@ -1477,7 +1477,7 @@ inline constexpr RetT extend_shl_sat_warp(T a, uint32_t b) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns second_op(sat(a << (b & 0x1F)), c)
 template <typename RetT, typename T, typename BinaryOperation>
-inline constexpr RetT extend_shl_sat_warp(T a, uint32_t b, uint32_t c,
+inline constexpr RetT extend_shl_sat_mask31(T a, uint32_t b, uint32_t c,
                                           BinaryOperation second_op) {
   return detail::extend_binary<RetT, true>(a, b & 0x1F, c, detail::shift_left(),
                                            second_op);
@@ -1534,7 +1534,7 @@ inline constexpr RetT extend_shr_sat_clamp(T a, uint32_t b, uint32_t c,
 /// \param [in] b The offset to shift
 /// \returns a >> (b & 0x1F)
 template <typename RetT, typename T>
-inline constexpr RetT extend_shr_warp(T a, uint32_t b) {
+inline constexpr RetT extend_shr_mask31(T a, uint32_t b) {
   return detail::extend_binary<RetT, false>(a, b & 0x1F, detail::shift_right());
 }
 
@@ -1545,7 +1545,7 @@ inline constexpr RetT extend_shr_warp(T a, uint32_t b) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns second_op(a >> (b & 0x1F), c)
 template <typename RetT, typename T, typename BinaryOperation>
-inline constexpr RetT extend_shr_warp(T a, uint32_t b, uint32_t c,
+inline constexpr RetT extend_shr_mask31(T a, uint32_t b, uint32_t c,
                                       BinaryOperation second_op) {
   return detail::extend_binary<RetT, false>(a, b & 0x1F, c,
                                             detail::shift_right(), second_op);
@@ -1556,7 +1556,7 @@ inline constexpr RetT extend_shr_warp(T a, uint32_t b, uint32_t c,
 /// \param [in] b The offset to shift
 /// \returns sat(a >> (b & 0x1F))
 template <typename RetT, typename T>
-inline constexpr RetT extend_shr_sat_warp(T a, uint32_t b) {
+inline constexpr RetT extend_shr_sat_mask31(T a, uint32_t b) {
   return detail::extend_binary<RetT, true>(a, b & 0x1F, detail::shift_right());
 }
 
@@ -1567,7 +1567,7 @@ inline constexpr RetT extend_shr_sat_warp(T a, uint32_t b) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns second_op(sat(a >> (b & 0x1F)), c)
 template <typename RetT, typename T, typename BinaryOperation>
-inline constexpr RetT extend_shr_sat_warp(T a, uint32_t b, uint32_t c,
+inline constexpr RetT extend_shr_sat_mask31(T a, uint32_t b, uint32_t c,
                                           BinaryOperation second_op) {
   return detail::extend_binary<RetT, true>(a, b & 0x1F, c,
                                            detail::shift_right(), second_op);

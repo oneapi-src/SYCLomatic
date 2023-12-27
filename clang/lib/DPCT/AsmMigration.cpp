@@ -11,6 +11,7 @@
 #include "Asm/AsmParser.h"
 #include "CallExprRewriter.h"
 #include "CrashRecovery.h"
+#include "Diagnostics.h"
 #include "MapNames.h"
 #include "MigrationRuleManager.h"
 #include "TextModification.h"
@@ -97,6 +98,17 @@ protected:
         CodeGen.VecExprTypeRecord.pop_back();
     }
   };
+
+  template <typename IDTy, typename... Ts>
+  inline void report(IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    TransformSetTy TS;
+    auto SL = GAS->getBeginLoc();
+    DiagnosticsUtils::report<IDTy, Ts...>(SL, MsgID, &TS, UseTextBegin,
+                                          std::forward<Ts>(Vals)...);
+    for (auto &T : TS)
+      DpctGlobalInfo::getInstance().addReplacement(
+          T->getReplacement(DpctGlobalInfo::getContext()));
+  }
 
 public:
   SYCLGenBase(llvm::raw_ostream &OS, const GCCAsmStmt *G)
@@ -1311,32 +1323,8 @@ protected:
     return HandleNot(Inst);
   }
 
-  bool HandleFloatingRoundingMode(const InlineAsmInstruction *Inst, StringRef Val) {
-    std::string TypeString;
-    if (tryEmitType(TypeString, Inst->getType(0)))
-      return SYCLGenError();
-
-    std::string ReplaceString;
-    auto VecConvert = [&](StringRef RM) {
-      llvm::raw_string_ostream TempOS(ReplaceString);
-      TempOS << MapNames::getClNamespace() << "vec<" << TypeString << ", 1>("
-             << Val << ").convert<" << TypeString << ", "
-             << MapNames::getClNamespace() << "rounding_mode::" << RM << ">()[0]";
-    };
-    if (Inst->hasAttr(InstAttr::rn))
-      VecConvert("rte");
-    else if (Inst->hasAttr(InstAttr::rz))
-      VecConvert("rtz");
-    else if (Inst->hasAttr(InstAttr::rm))
-      VecConvert("rtn");
-    else if (Inst->hasAttr(InstAttr::rp))
-      VecConvert("rtp");
-    OS() << ReplaceString;
-    return SYCLGenSuccess();
-  }
-
   bool HandleSinCosTanhSqrtLg2Ex2(const InlineAsmInstruction *Inst,
-                            StringRef MathFn) {
+                                  StringRef MathFn) {
     if (Inst->getNumInputOperands() != 1)
       return SYCLGenError();
     if (emitStmt(Inst->getOutputOperand()))
@@ -1355,13 +1343,9 @@ protected:
     if (Inst->getOpcode() == asmtok::op_ex2)
       ReplaceString += "2, ";
     ReplaceString += Op + ")";
-    if (Inst->hasAttr(InstAttr::rn, InstAttr::rz, InstAttr::rm,
-                      InstAttr::rp)) {
-      if (HandleFloatingRoundingMode(Inst, ReplaceString))
-        return SYCLGenError();
-    } else {
-      OS() << ReplaceString;
-    }
+    if (Inst->hasAttr(InstAttr::rn, InstAttr::rz, InstAttr::rm, InstAttr::rp))
+      report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, true);
+    OS() << ReplaceString;
     endstmt();
     return SYCLGenSuccess();
   }
@@ -1467,7 +1451,8 @@ protected:
     for (int i = 0; i < 2; ++i)
       if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
         return SYCLGenError();
-    OS() << "std::copysign(" << Op[1] << ", " << Op[0] << ')';
+    OS() << MapNames::getClNamespace() << "copysign(" << Op[1] << ", " << Op[0]
+         << ')';
     endstmt();
     insertHeader(HeaderType::HT_Math);
     return SYCLGenSuccess();
@@ -1502,7 +1487,7 @@ protected:
     if (Inst->hasAttr(InstAttr::sat))
       OS() << "_sat";
     if (Inst->is(asmtok::op_vshl, asmtok::op_vshr))
-      OS() << (Inst->hasAttr(InstAttr::clamp) ? "_clamp" : "_warp");
+      OS() << (Inst->hasAttr(InstAttr::clamp) ? "_clamp" : "_mask31");
     OS() << "<";
     if (emitType(Inst->getType(0)))
       return SYCLGenError();

@@ -12,10 +12,10 @@
 __global__ void copysign() {
   float f32;
   double f64;
-  // CHECK: f32 = std::copysign(10.0f, -100.0f);
+  // CHECK: f32 = sycl::copysign(10.0f, -100.0f);
   asm("copysign.f32 %0, %1, %2;" : "=f"(f32) : "f"(-100.0f), "f"(10.0f));
   
-  // CHECK: f64 = std::copysign(10.0f, -100.0f);
+  // CHECK: f64 = sycl::copysign(10.0f, -100.0f);
   asm("copysign.f64 %0, %1, %2;" : "=l"(f64) : "f"(-100.0f), "f"(10.0f));
 }
 
