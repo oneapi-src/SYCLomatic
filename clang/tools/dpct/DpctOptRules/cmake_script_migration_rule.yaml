@@ -116,7 +116,7 @@
 - Rule: rule_cuda_compile_ptx
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: secuda_compile_ptxt
+  CmakeSyntax: cuda_compile_ptx
   In: cuda_compile_ptx(${device} ${value})
   Out: dpct_compile_sycl_code(${device} ${value})
   Subrules:
@@ -137,4 +137,99 @@
       MatchMode: Full
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
+
+- Rule: rule_add_compile_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_compile_options
+  In: add_compile_options(${arg})
+  Out: add_compile_options(${arg})
+  Subrules:
+    arg:
+      In: -std=${cxx_standard}
+      Out: -std=c++17
+      RuleId: "add_compile_options_cxx_standard"
+
+- Rule: rule_target_compile_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_compile_options
+  In: target_compile_options(${arg})
+  Out: target_compile_options(${arg})
+  Subrules:
+    arg:
+      In: $<$<COMPILE_LANGUAGE:CUDA>:${flags}>
+      Out: ""
+      RuleId: "target_compile_options_cuda_arg"
+
+- Rule: rule_CUDA_HAS_FP16
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_HAS_FP16
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HAS_FP16
+      Out: SYCL_HAS_FP16
+
+# Current Yaml based rule hard-code to map "cxx_std_xx" to "cxx_std_17"
+# A more flexible mapping logic should be implemented in implicit rules
+- Rule: rule_cxx_target_compile_features
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cxx_target_compile_features
+  MatchMode: Partial
+  In: target_compile_features(${value})
+  Out: target_compile_features(${value})
+  Subrules:
+    value:
+      In: cxx_std_${ver}
+      Out: cxx_std_17
+      RuleId: "adjust cxx_ver"
+
+# Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
+# A more flexible mapping logic should be implemented in implicit rules
+- Rule: rule_cuda_target_compile_features
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_target_compile_features
+  MatchMode: Partial
+  In: target_compile_features(${value})
+  Out: target_compile_features(${value})
+  Subrules:
+    value:
+      In: cuda_std_${ver}
+      Out: cxx_std_17
+      RuleId: "adjust cuda_ver"
+
+- Rule: rule_header_file
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuh_file
+  MatchMode: Partial
+  In: file(${value})
+  Out: file(${value})
+  Subrules:
+    value:
+      In: ${arg}.cuh
+      Out: ${arg}.dp.hpp
+      MatchMode: Full
+      RuleId: "adjust CUDA header file extension"
+
+- Rule: rule_src_file
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cu_file
+  MatchMode: Partial
+  In: file(${value})
+  Out: file(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+      MatchMode: Full
+      RuleId: "adjust CUDA src file extension"
 
