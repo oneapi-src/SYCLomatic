@@ -1880,7 +1880,7 @@ private:
       return V->getKernelArg(PS);
     }
   };
-  inline void getArgumentsOrParametersForDecl(ParameterStream &PS,
+  void getArgumentsOrParametersForDecl(ParameterStream &PS,
                                               int PreParams,
                                               int PostParams) const;
 
@@ -1986,26 +1986,17 @@ public:
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
   void buildCallExprInfo(const CallExpr *CE);
 
-  inline const MemVarMap &getVarMap() { return VarMap; }
-  inline const std::vector<std::shared_ptr<TextureObjectInfo>> &
-  getTextureObjectList() {
-    return TextureObjectList;
-  }
-  std::shared_ptr<StructureTextureObjectInfo> getBaseTextureObjectInfo() const {
-    return BaseTextureObject;
-  }
+  const MemVarMap &getVarMap();
+  const std::vector<std::shared_ptr<TextureObjectInfo>> &
+  getTextureObjectList();
+  std::shared_ptr<StructureTextureObjectInfo> getBaseTextureObjectInfo() const;
 
   void emplaceReplacement();
-  unsigned getExtraArgLoc() { return ExtraArgLoc; }
-  inline bool hasArgs() { return HasArgs; }
-  inline bool hasTemplateArgs() { return !TemplateArgs.empty(); }
-  inline bool hasWrittenTemplateArgs() {
-    for (auto &Arg : TemplateArgs)
-      if (!Arg.isNull() && Arg.isWritten())
-        return true;
-    return false;
-  }
-  inline const std::string &getName() { return Name; }
+  unsigned getExtraArgLoc();
+  bool hasArgs();
+  bool hasTemplateArgs();
+  bool hasWrittenTemplateArgs();
+  const std::string &getName();
 
   std::string getTemplateArguments(bool &IsNeedWarning,
                                    bool WrittenArgsOnly = true,
@@ -2013,19 +2004,12 @@ public:
 
   virtual std::string getExtraArguments();
 
-  inline void setHasSideEffects(bool Val = true) {
-    CallGroupFunctionInControlFlow = Val;
-  }
-  inline bool hasSideEffects() const { return CallGroupFunctionInControlFlow; }
+  void setHasSideEffects(bool Val = true);
+  bool hasSideEffects() const;
 
   std::shared_ptr<TextureObjectInfo>
   addTextureObjectArgInfo(unsigned ArgIdx,
-                          std::shared_ptr<TextureObjectInfo> Info) {
-    auto &Obj = TextureObjectList[ArgIdx];
-    if (!Obj)
-      Obj = Info;
-    return Obj;
-  }
+                          std::shared_ptr<TextureObjectInfo> Info);
   virtual std::shared_ptr<TextureObjectInfo>
   addTextureObjectArg(unsigned ArgIdx, const DeclRefExpr *TexRef,
                       bool isKernelCall = false);
@@ -2035,7 +2019,7 @@ public:
   virtual std::shared_ptr<TextureObjectInfo>
   addTextureObjectArg(unsigned ArgIdx, const ArraySubscriptExpr *TexRef,
                       bool isKernelCall = false);
-  std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
+  std::shared_ptr<DeviceFunctionInfo> getFuncInfo();
   bool IsAllTemplateArgsSpecified = false;
 
   virtual ~CallFunctionExpr() = default;
@@ -2043,21 +2027,17 @@ public:
 protected:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;
-  inline unsigned getBegin() { return BeginLoc; }
-  inline const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
+  unsigned getBegin();
+  const clang::tooling::UnifiedPath &getFilePath();
   void buildInfo();
   void buildCalleeInfo(const Expr *Callee);
-  void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
+  void resizeTextureObjectList(size_t Size);
 
 private:
   static std::string getName(const NamedDecl *D);
   void
   buildTemplateArguments(const llvm::ArrayRef<TemplateArgumentLoc> &ArgsList,
-                         SourceRange Range) {
-    if (TemplateArgs.empty())
-      for (auto &Arg : ArgsList)
-        TemplateArgs.emplace_back(Arg, Range);
-  }
+                         SourceRange Range);
 
   void buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL);
   template <class TyLoc>
@@ -2121,44 +2101,19 @@ public:
                      const clang::tooling::UnifiedPath &FilePathIn,
                      const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
                      const FunctionDecl *Specialization);
-  inline static std::shared_ptr<DeviceFunctionInfo>
-  LinkUnresolved(const UnresolvedLookupExpr *ULE) {
-    return LinkDeclRange(ULE->decls(), getFunctionName(ULE));
-  }
-  inline static std::shared_ptr<DeviceFunctionInfo>
-  LinkRedecls(const FunctionDecl *FD) {
-    if (auto D = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD))
-      return D->getFuncInfo();
-    if (auto FTD = FD->getPrimaryTemplate())
-      return LinkTemplateDecl(FTD);
-    else if (FTD = FD->getDescribedFunctionTemplate())
-      return LinkTemplateDecl(FTD);
-    else if (auto Decl = FD->getInstantiatedFromMemberFunction())
-      FD = Decl;
-    return LinkDeclRange(FD->redecls(), getFunctionName(FD));
-  }
-  inline static std::shared_ptr<DeviceFunctionInfo>
-  LinkTemplateDecl(const FunctionTemplateDecl *FTD) {
-    return LinkDeclRange(FTD->redecls(), getFunctionName(FTD));
-  }
-  inline static std::shared_ptr<DeviceFunctionInfo> LinkExplicitInstantiation(
+  static std::shared_ptr<DeviceFunctionInfo>
+  LinkUnresolved(const UnresolvedLookupExpr *ULE);
+  static std::shared_ptr<DeviceFunctionInfo>
+  LinkRedecls(const FunctionDecl *FD);
+  static std::shared_ptr<DeviceFunctionInfo>
+  LinkTemplateDecl(const FunctionTemplateDecl *FTD);
+  static std::shared_ptr<DeviceFunctionInfo> LinkExplicitInstantiation(
       const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
-      const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList) {
-    auto Info = LinkRedecls(Specialization);
-    if (Info) {
-      auto D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(
-          Specialization, FTL, Attrs, TAList);
-      D->setFuncInfo(Info);
-    }
-    return Info;
-  }
-
-  inline std::shared_ptr<DeviceFunctionInfo> getFuncInfo() const {
-    return FuncInfo;
-  }
+      const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList);
+  std::shared_ptr<DeviceFunctionInfo> getFuncInfo() const;
 
   virtual void emplaceReplacement();
-  static void reset() { FuncInfoMap.clear(); };
+  static void reset();
 
   using DeclList = std::vector<std::shared_ptr<DeviceFunctionDecl>>;
 
@@ -2194,22 +2149,12 @@ public:
       LinkDecl(D, List, Info);
   }
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info);
-  void buildReplaceLocInfo(const FunctionDecl *FD);
 
   virtual ~DeviceFunctionDecl() = default;
 
 protected:
-  const FormatInfo &getFormatInfo() { return FormatInformation; }
-  void buildTextureObjectParamsInfo(const ArrayRef<ParmVarDecl *> &Parms) {
-    TextureObjectList.assign(Parms.size(),
-                             std::shared_ptr<TextureObjectInfo>());
-    for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
-      auto Param = Parms[Idx];
-      if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
-          "cudaTextureObject_t")
-        TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
-    }
-  }
+  const FormatInfo &getFormatInfo();
+  void buildTextureObjectParamsInfo(const ArrayRef<ParmVarDecl *> &Parms);
 
   template <class AttrsT>
   void buildReplaceLocInfo(const FunctionTypeLoc &FTL, const AttrsT &Attrs);
@@ -2267,29 +2212,17 @@ class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
   void buildParameterInfo(const FunctionDecl *FD);
   void buildWrapperInfo(const FunctionDecl *FD);
   void buildCallInfo(const FunctionDecl *FD);
-  std::vector<std::pair<std::string, std::string>> &getParametersInfo() {
-    return ParametersInfo;
-  }
+  std::vector<std::pair<std::string, std::string>> &getParametersInfo();
 
 public:
   DeviceFunctionDeclInModule(unsigned Offset,
                              const clang::tooling::UnifiedPath &FilePathIn,
                              const FunctionTypeLoc &FTL,
                              const ParsedAttributes &Attrs,
-                             const FunctionDecl *FD)
-      : DeviceFunctionDecl(Offset, FilePathIn, FTL, Attrs, FD) {
-    buildParameterInfo(FD);
-    buildWrapperInfo(FD);
-    buildCallInfo(FD);
-  }
+                             const FunctionDecl *FD);
   DeviceFunctionDeclInModule(unsigned Offset,
                              const clang::tooling::UnifiedPath &FilePathIn,
-                             const FunctionDecl *FD)
-      : DeviceFunctionDecl(Offset, FilePathIn, FD) {
-    buildParameterInfo(FD);
-    buildWrapperInfo(FD);
-    buildCallInfo(FD);
-  }
+                             const FunctionDecl *FD);
   void emplaceReplacement() override;
 };
 
