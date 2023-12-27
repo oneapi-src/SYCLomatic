@@ -3001,6 +3001,543 @@ void VarInfo::requestFeatureForSet(const clang::tooling::UnifiedPath &Path) {
   }
 }
 ///// class MemVarInfo /////
+std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
+  if (auto Func = DpctGlobalInfo::findAncestor<FunctionDecl>(Var)) {
+    if (Func->getTemplateSpecializationKind() ==
+            TSK_ExplicitInstantiationDefinition ||
+        Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
+      return std::shared_ptr<MemVarInfo>();
+    auto LocInfo = DpctGlobalInfo::getLocInfo(Var);
+    auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
+    if (!DpctGlobalInfo::useGroupLocalMemory() || !VI->isShared() ||
+        VI->isExtern())
+      if (auto DFI = DeviceFunctionDecl::LinkRedecls(Func))
+        DFI->addVar(VI);
+    return VI;
+  }
+  return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
+}
+MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const VarDecl *VD) {
+  if (VD->hasAttrs())
+    return getAddressAttr(VD->getAttrs());
+  return Host;
+}
+MemVarInfo::MemVarInfo(unsigned Offset,
+                       const clang::tooling::UnifiedPath &FilePath,
+                       const VarDecl *Var)
+    : VarInfo(Offset, FilePath, Var,
+              !(DpctGlobalInfo::useGroupLocalMemory() &&
+                getAddressAttr(Var) == Shared &&
+                Var->getStorageClass() != SC_Extern) &&
+                  isLexicallyInLocalScope(Var)),
+      Attr(getAddressAttr(Var)),
+      Scope(isLexicallyInLocalScope(Var)
+                ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
+                : Global),
+      PointerAsArray(false) {
+  if (isTreatPointerAsArray()) {
+    Attr = Device;
+    getType()->adjustAsMemType();
+    PointerAsArray = true;
+  }
+  if (Var->hasInit())
+    setInitList(Var->getInit(), Var);
+  if (Var->getStorageClass() == SC_Static || getAddressAttr(Var) == Constant) {
+    IsStatic = true;
+  }
+
+  if (auto Func = Var->getParentFunctionOrMethod()) {
+    if (DeclOfVarType = Var->getType()->getAsCXXRecordDecl()) {
+      auto F = DeclOfVarType->getParentFunctionOrMethod();
+      if (F && (F == Func)) {
+        IsTypeDeclaredLocal = true;
+
+        auto getParentDeclStmt = [&](const Decl *D) -> const DeclStmt * {
+          auto P = getParentStmt(D);
+          if (!P)
+            return nullptr;
+          auto DS = dyn_cast<DeclStmt>(P);
+          if (!DS)
+            return nullptr;
+          return DS;
+        };
+
+        auto DS1 = getParentDeclStmt(Var);
+        auto DS2 = getParentDeclStmt(DeclOfVarType);
+        if (DS1 && DS2 && DS1 == DS2) {
+          IsAnonymousType = true;
+          DeclStmtOfVarType = DS2;
+          auto Iter = AnonymousTypeDeclStmtMap.find(DS2);
+          if (Iter != AnonymousTypeDeclStmtMap.end()) {
+            LocalTypeName = "type_ct" + std::to_string(Iter->second);
+          } else {
+            LocalTypeName =
+                "type_ct" + std::to_string(AnonymousTypeDeclStmtMap.size() + 1);
+            AnonymousTypeDeclStmtMap.insert(
+                std::make_pair(DS2, AnonymousTypeDeclStmtMap.size() + 1));
+          }
+        } else if (DS2) {
+          DeclStmtOfVarType = DS2;
+        }
+      }
+    }
+  }
+  if (getType()->getDimension() == 0 && !isTypeDeclaredLocal()) {
+    if (Attr == Constant)
+      AccMode = Value;
+    else
+      AccMode = Reference;
+  } else if (getType()->getDimension() <= 1) {
+    AccMode = Pointer;
+  } else {
+    AccMode = Accessor;
+  }
+
+  newConstVarInit(Var);
+}
+MemVarInfo::VarAttrKind MemVarInfo::getAttr() { return Attr; }
+MemVarInfo::VarScope MemVarInfo::getScope() { return Scope; }
+bool MemVarInfo::isGlobal() { return Scope == Global; }
+bool MemVarInfo::isExtern() { return Scope == Extern; }
+bool MemVarInfo::isLocal() { return Scope == Local; }
+bool MemVarInfo::isShared() { return Attr == Shared; }
+bool MemVarInfo::isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
+bool MemVarInfo::isAnonymousType() { return IsAnonymousType; }
+const CXXRecordDecl *MemVarInfo::getDeclOfVarType() { return DeclOfVarType; }
+const DeclStmt *MemVarInfo::getDeclStmtOfVarType() { return DeclStmtOfVarType; }
+void MemVarInfo::setLocalTypeName(std::string T) { LocalTypeName = T; }
+std::string MemVarInfo::getLocalTypeName() { return LocalTypeName; }
+void MemVarInfo::setIgnoreFlag(bool Flag) { IsIgnored = Flag; }
+bool MemVarInfo::isIgnore() { return IsIgnored; }
+bool MemVarInfo::isStatic() { return IsStatic; }
+void MemVarInfo::setName(std::string NewName) { NewConstVarName = NewName; }
+unsigned int MemVarInfo::getNewConstVarOffset() { return NewConstVarOffset; }
+unsigned int MemVarInfo::getNewConstVarLength() { return NewConstVarLength; }
+const std::string MemVarInfo::getConstVarName() {
+  return NewConstVarName.empty() ? getArgName() : NewConstVarName;
+}
+void MemVarInfo::newConstVarInit(const VarDecl *Var) {
+  CharSourceRange SR(DpctGlobalInfo::getSourceManager().getExpansionRange(
+      Var->getSourceRange()));
+  auto BeginLoc = SR.getBegin();
+  SourceManager &SM = DpctGlobalInfo::getSourceManager();
+  size_t repLength = 0;
+  auto Buffer = SM.getCharacterData(BeginLoc);
+  auto Data = Buffer[repLength];
+  while (Data != ';')
+    Data = Buffer[++repLength];
+  NewConstVarLength = ++repLength;
+  NewConstVarOffset = DpctGlobalInfo::getLocInfo(BeginLoc).second;
+}
+std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
+  switch (Scope) {
+  case clang::dpct::MemVarInfo::Local:
+    if (DpctGlobalInfo::useGroupLocalMemory() && VD) {
+
+      auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext());
+      if (FD && FD->hasAttr<CUDADeviceAttr>())
+        DiagnosticsUtils::report(getFilePath(), getOffset(),
+                                 Diagnostics::GROUP_LOCAL_MEMORY, true, false);
+
+      std::string Ret;
+      llvm::raw_string_ostream OS(Ret);
+      OS << "auto &" << getName() << " = "
+         << "*" << MapNames::getClNamespace()
+         << "ext::oneapi::group_local_memory_for_overwrite<"
+         << getType()->getBaseName();
+      for (auto &ArraySize : getType()->getRange()) {
+        OS << "[" << ArraySize.getSize() << "]";
+      }
+      OS << ">(";
+      FreeQueriesInfo::printImmediateText(
+          OS, VD, nullptr, FreeQueriesInfo::FreeQueriesKind::Group);
+      OS << "); ";
+      return OS.str();
+    }
+    return "";
+  case clang::dpct::MemVarInfo::Extern:
+    if (isShared() && getType()->getDimension() > 1) {
+      // For case like:
+      // extern __shared__ int shad_mem[][2][3];
+      // int p = shad_mem[0][0][2];
+      // will be migrated to:
+      // auto shad_mem = (int(*)[2][3])dpct_local;
+      std::string Dimension;
+      size_t Index = 0;
+      for (auto &Entry : getType()->getRange()) {
+        Index++;
+        if (Index == 1)
+          continue;
+        Dimension = Dimension + "[" + Entry.getSize() + "]";
+      }
+      return buildString("auto ", getName(), " = (", getType()->getBaseName(),
+                         "(*)", Dimension, ")", ExternVariableName, ";");
+    }
+
+    return buildString("auto ", getName(), " = (", getType()->getBaseName(),
+                       " *)", ExternVariableName, ";");
+  case clang::dpct::MemVarInfo::Global: {
+    if (isShared())
+      return "";
+    if ((getAttr() == MemVarInfo::VarAttrKind::Constant) &&
+        !isUseHelperFunc()) {
+      std::string Dims;
+      const static std::string NullString;
+      for (auto &Dim : getType()->getRange()) {
+        Dims = Dims + "[" + Dim.getSize() + "]";
+      }
+      return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
+                         getConstVarName() + Dims,
+                         PointerAsArray ? "" : getInitArguments(NullString),
+                         ";");
+    }
+    return getMemoryDecl();
+  }
+  }
+  clang::dpct::DpctDebugs()
+      << "[MemVarInfo::VarAttrKind] Unexpected value: " << Scope << "\n";
+  assert(0);
+  return "";
+}
+std::string MemVarInfo::getInitStmt() { return getInitStmt(""); }
+std::string MemVarInfo::getInitStmt(StringRef QueueString) {
+  if (QueueString.empty())
+    return getConstVarName() + ".init();";
+  return buildString(getConstVarName(), ".init(", QueueString, ");");
+}
+std::string MemVarInfo::getMemoryDecl(const std::string &MemSize) {
+  return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
+                     getConstVarName(),
+                     PointerAsArray ? "" : getInitArguments(MemSize), ";");
+}
+std::string MemVarInfo::getMemoryDecl() {
+  const static std::string NullString;
+  return getMemoryDecl(NullString);
+}
+std::string MemVarInfo::getExternGlobalVarDecl() {
+  return buildString("extern ", getMemoryType(), " ", getConstVarName(), ";");
+}
+void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
+                                             bool ExternEmitWarning,
+                                             StmtList &AccList,
+                                             StmtList &PtrList) {
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  if (isShared()) {
+    OS << getSyclAccessorType();
+    OS << " " << getAccessorName() << "(";
+    if (getType()->getDimension())
+      OS << getRangeClass() << getType()->getRangeArgument(ExternMemSize, false)
+         << ", ";
+    OS << "cgh)";
+    OS << ";";
+    StmtWithWarning AccDecl(OS.str());
+    for (const auto &OriginExpr : getType()->getArraySizeOriginExprs()) {
+      DiagnosticsUtils::report(getFilePath(), getOffset(),
+                               Diagnostics::MACRO_EXPR_REPLACED, false, false,
+                               OriginExpr);
+      AccDecl.Warnings.push_back(
+          DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+              Diagnostics::MACRO_EXPR_REPLACED, OriginExpr));
+    }
+    if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
+      DiagnosticsUtils::report(getFilePath(), getOffset(),
+                               Diagnostics::SIZEOF_WARNING, false, false,
+                               "local memory");
+      AccDecl.Warnings.push_back(
+          DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+              Diagnostics::SIZEOF_WARNING, "local memory"));
+    }
+    if (getType()->getDimension() > 3) {
+      if (DiagnosticsUtils::report(getFilePath(), getOffset(),
+                                   Diagnostics::EXCEED_MAX_DIMENSION, false,
+                                   false)) {
+        AccDecl.Warnings.push_back(
+            DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                Diagnostics::EXCEED_MAX_DIMENSION));
+      }
+    }
+    AccList.emplace_back(std::move(AccDecl));
+  } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted &&
+             AccMode != Accessor) {
+    requestFeature(HelperFeatureEnum::device_ext);
+    PtrList.emplace_back(buildString("auto ", getPtrName(), " = ",
+                                     getConstVarName(), ".get_ptr();"));
+  } else {
+    requestFeature(HelperFeatureEnum::device_ext);
+    AccList.emplace_back(buildString("auto ", getAccessorName(), " = ",
+                                     getConstVarName(), ".get_access(cgh);"));
+  }
+}
+std::string MemVarInfo::getRangeClass() {
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  return DpctGlobalInfo::printCtadClass(OS,
+                                        MapNames::getClNamespace() + "range",
+                                        getType()->getDimension())
+      .str();
+}
+std::string MemVarInfo::getRangeDecl(const std::string &MemSize) {
+  return buildString(getRangeClass(), " ", getRangeName(),
+                     getType()->getRangeArgument(MemSize, false), ";");
+}
+ParameterStream &MemVarInfo::getFuncDecl(ParameterStream &PS) {
+  if (AccMode == Value) {
+    PS << getAccessorDataType(true, true) << " ";
+  } else if (AccMode == Pointer) {
+    PS << getAccessorDataType(true, true);
+    if (!getType()->isPointer())
+      PS << " ";
+    PS << "*";
+  } else if (AccMode == Reference) {
+    PS << getAccessorDataType(true, true);
+    if (!getType()->isPointer())
+      PS << " ";
+    PS << "&";
+  } else if (AccMode == Accessor && isExtern() && isShared() &&
+             getType()->getDimension() > 1) {
+    PS << getAccessorDataType();
+    PS << " *";
+  } else {
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None || isShared())
+      PS << getSyclAccessorType() << " ";
+    else
+      PS << getDpctAccessorType() << " ";
+  }
+  return PS << getArgName();
+}
+ParameterStream &MemVarInfo::getFuncArg(ParameterStream &PS) {
+  return PS << getArgName();
+}
+ParameterStream &MemVarInfo::getKernelArg(ParameterStream &PS) {
+  if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+    if (AccMode == Pointer) {
+      if (!getType()->isWritten())
+        PS << "(" << getAccessorDataType(false, true) << " *)";
+      PS << getAccessorName() << ".get_pointer()";
+    } else {
+      PS << getAccessorName();
+    }
+  } else {
+    if (AccMode == Accessor) {
+      PS << getAccessorName();
+    } else {
+      if (AccMode == Value || AccMode == Reference) {
+        PS << "*";
+      }
+      PS << getPtrName();
+    }
+  }
+  return PS;
+}
+std::string MemVarInfo::getAccessorDataType(bool IsTypeUsedInDevFunDecl,
+                                bool NeedCheckExtraConstQualifier) {
+  if (isExtern()) {
+    return "uint8_t";
+  } else if (isTypeDeclaredLocal()) {
+    if (IsTypeUsedInDevFunDecl) {
+      return "uint8_t";
+    } else {
+      // used in accessor decl
+      return "uint8_t[sizeof(" + LocalTypeName + ")]";
+    }
+  }
+
+  std::string Ret = getType()->getBaseName();
+  if ((!getType()->isArray() && !getType()->isPointer()) ||
+      isTreatPointerAsArray())
+    return Ret;
+  if (NeedCheckExtraConstQualifier && getType()->isConstantQualified()) {
+    return Ret + " const";
+  }
+  return Ret;
+}
+void MemVarInfo::setUseHelperFuncFlag(bool Flag) { UseHelperFuncFlag = Flag; };
+bool MemVarInfo::isUseHelperFunc() { return UseHelperFuncFlag; }
+bool MemVarInfo::isTreatPointerAsArray() {
+  return getType()->isPointer() && getScope() == Global &&
+         DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
+}
+MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
+  VarAttrKind Attr = Host;
+  for (auto VarAttr : Attrs) {
+    auto Kind = VarAttr->getKind();
+    if (Kind == attr::HIPManaged)
+      return Managed;
+    if (Kind == attr::CUDAConstant)
+      return Constant;
+    if (Kind == attr::CUDAShared)
+      return Shared;
+    if (Kind == attr::CUDADevice)
+      Attr = Device;
+  }
+  return Attr;
+}
+void MemVarInfo::setInitList(const Expr *E, const VarDecl *V) {
+  if (auto Ctor = dyn_cast<CXXConstructExpr>(E)) {
+    if (!Ctor->getNumArgs() || Ctor->getArg(0)->isDefaultArgument())
+      return;
+  }
+  InitList = getStmtSpelling(E, V->getSourceRange());
+}
+std::string MemVarInfo::getMemoryType() {
+  switch (Attr) {
+  case clang::dpct::MemVarInfo::Device: {
+    requestFeature(HelperFeatureEnum::device_ext);
+    static std::string DeviceMemory =
+        MapNames::getDpctNamespace() + "global_memory";
+    return getMemoryType(DeviceMemory, getType());
+  }
+  case clang::dpct::MemVarInfo::Constant: {
+    requestFeature(HelperFeatureEnum::device_ext);
+    std::string ConstantMemory =
+        MapNames::getDpctNamespace() + "constant_memory";
+    if (!isUseHelperFunc()) {
+      ConstantMemory = "const ";
+    }
+    return getMemoryType(ConstantMemory, getType());
+  }
+  case clang::dpct::MemVarInfo::Shared: {
+    static std::string SharedMemory =
+        MapNames::getDpctNamespace() + "local_memory";
+    static std::string ExternSharedMemory =
+        MapNames::getDpctNamespace() + "extern_local_memory";
+    if (isExtern())
+      return ExternSharedMemory;
+    return getMemoryType(SharedMemory, getType());
+  }
+  case clang::dpct::MemVarInfo::Managed: {
+
+    requestFeature(HelperFeatureEnum::device_ext);
+
+    static std::string ManagedMemory =
+        MapNames::getDpctNamespace() + "shared_memory";
+
+    return getMemoryType(ManagedMemory, getType());
+  }
+  default:
+    llvm::dbgs() << "[MemVarInfo::getMemoryType] Unexpected attribute.";
+    return "";
+  }
+}
+std::string
+MemVarInfo::getMemoryType(const std::string &MemoryType,
+                          std::shared_ptr<CtTypeInfo> VarType) {
+  if (isUseHelperFunc()) {
+    return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
+                       VarType->getDimension(), ">");
+  } else {
+    return buildString(MemoryType, VarType->getBaseName());
+  }
+}
+std::string MemVarInfo::getInitArguments(const std::string &MemSize,
+                                         bool MustArguments) {
+  if (isUseHelperFunc()) {
+    if (InitList.empty())
+      return getType()->getRangeArgument(MemSize, MustArguments);
+    if (getType()->getDimension())
+      return buildString("(", getRangeClass(),
+                         getType()->getRangeArgument(MemSize, true),
+                         ", " + InitList, ")");
+    return buildString("(", InitList, ")");
+  } else {
+    return InitList.empty() ? "" : buildString(" = ", InitList);
+  }
+}
+const std::string &MemVarInfo::getMemoryAttr() {
+  requestFeature(HelperFeatureEnum::device_ext);
+  switch (Attr) {
+  case clang::dpct::MemVarInfo::Device: {
+    static std::string DeviceMemory = MapNames::getDpctNamespace() + "global";
+    return DeviceMemory;
+  }
+  case clang::dpct::MemVarInfo::Constant: {
+    static std::string ConstantMemory =
+        MapNames::getDpctNamespace() + "constant";
+    return ConstantMemory;
+  }
+  case clang::dpct::MemVarInfo::Shared: {
+    static std::string SharedMemory = MapNames::getDpctNamespace() + "local";
+    return SharedMemory;
+  }
+  case clang::dpct::MemVarInfo::Managed: {
+    static std::string ManagedMemory = MapNames::getDpctNamespace() + "shared";
+    return ManagedMemory;
+  }
+  default:
+    llvm::dbgs() << "[MemVarInfo::getMemoryAttr] Unexpected attribute.";
+    static std::string NullString;
+    return NullString;
+  }
+}
+std::string MemVarInfo::getSyclAccessorType() {
+  std::string Ret;
+  llvm::raw_string_ostream OS(Ret);
+  if (getAttr() == MemVarInfo::VarAttrKind::Shared) {
+    OS << MapNames::getClNamespace() << "local_accessor<";
+    OS << getAccessorDataType() << ", ";
+    OS << getType()->getDimension() << ">";
+  } else {
+    OS << MapNames::getClNamespace() << "accessor<";
+    OS << getAccessorDataType() << ", ";
+    OS << getType()->getDimension() << ", ";
+
+    OS << MapNames::getClNamespace() << "access_mode::";
+    if (getAttr() == MemVarInfo::VarAttrKind::Constant)
+      OS << "read";
+    else
+      OS << "read_write";
+    OS << ", ";
+
+    OS << MapNames::getClNamespace() << "access::target::";
+    switch (getAttr()) {
+    case VarAttrKind::Constant:
+    case VarAttrKind::Device:
+    case VarAttrKind::Managed:
+      OS << "device";
+      break;
+    default:
+      break;
+    }
+
+    OS << ">";
+  }
+  return OS.str();
+}
+std::string MemVarInfo::getDpctAccessorType() {
+  requestFeature(HelperFeatureEnum::device_ext);
+  auto Type = getType();
+  return buildString(MapNames::getDpctNamespace(true), "accessor<",
+                     getAccessorDataType(), ", ", getMemoryAttr(), ", ",
+                     Type->getDimension(), ">");
+}
+std::string MemVarInfo::getNameWithSuffix(StringRef Suffix) {
+  return buildString(getArgName(), "_", Suffix, getCTFixedSuffix());
+}
+std::string MemVarInfo::getAccessorName() { return getNameWithSuffix("acc"); }
+std::string MemVarInfo::getPtrName() { return getNameWithSuffix("ptr"); }
+std::string MemVarInfo::getRangeName() { return getNameWithSuffix("range"); }
+std::string MemVarInfo::getArgName() {
+  if (isExtern())
+    return ExternVariableName;
+  else if (isTypeDeclaredLocal())
+    return getNameAppendSuffix();
+  return getName();
+}
+const std::string MemVarInfo::ExternVariableName = "dpct_local";
+std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
+///// class TextureTypeInfo /////
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3014,8 +3551,8 @@ void VarInfo::requestFeatureForSet(const clang::tooling::UnifiedPath &Path) {
 
 ///// end /////
 int HostDeviceFuncInfo::MaxId = 0;
-const std::string MemVarInfo::ExternVariableName = "dpct_local";
-std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
+
+
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
     DeviceFunctionDecl::FuncInfoMap;
@@ -5289,105 +5826,11 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
   }
 }
 
-MemVarInfo::MemVarInfo(unsigned Offset,
-                       const clang::tooling::UnifiedPath &FilePath,
-                       const VarDecl *Var)
-    : VarInfo(Offset, FilePath, Var,
-              !(DpctGlobalInfo::useGroupLocalMemory() &&
-                getAddressAttr(Var) == Shared &&
-                Var->getStorageClass() != SC_Extern) &&
-                  isLexicallyInLocalScope(Var)),
-      Attr(getAddressAttr(Var)),
-      Scope(isLexicallyInLocalScope(Var)
-                ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
-                : Global),
-      PointerAsArray(false) {
-  if (isTreatPointerAsArray()) {
-    Attr = Device;
-    getType()->adjustAsMemType();
-    PointerAsArray = true;
-  }
-  if (Var->hasInit())
-    setInitList(Var->getInit(), Var);
-  if (Var->getStorageClass() == SC_Static || getAddressAttr(Var) == Constant) {
-    IsStatic = true;
-  }
 
-  if (auto Func = Var->getParentFunctionOrMethod()) {
-    if (DeclOfVarType = Var->getType()->getAsCXXRecordDecl()) {
-      auto F = DeclOfVarType->getParentFunctionOrMethod();
-      if (F && (F == Func)) {
-        IsTypeDeclaredLocal = true;
 
-        auto getParentDeclStmt = [&](const Decl *D) -> const DeclStmt * {
-          auto P = getParentStmt(D);
-          if (!P)
-            return nullptr;
-          auto DS = dyn_cast<DeclStmt>(P);
-          if (!DS)
-            return nullptr;
-          return DS;
-        };
 
-        auto DS1 = getParentDeclStmt(Var);
-        auto DS2 = getParentDeclStmt(DeclOfVarType);
-        if (DS1 && DS2 && DS1 == DS2) {
-          IsAnonymousType = true;
-          DeclStmtOfVarType = DS2;
-          auto Iter = AnonymousTypeDeclStmtMap.find(DS2);
-          if (Iter != AnonymousTypeDeclStmtMap.end()) {
-            LocalTypeName = "type_ct" + std::to_string(Iter->second);
-          } else {
-            LocalTypeName =
-                "type_ct" + std::to_string(AnonymousTypeDeclStmtMap.size() + 1);
-            AnonymousTypeDeclStmtMap.insert(
-                std::make_pair(DS2, AnonymousTypeDeclStmtMap.size() + 1));
-          }
-        } else if (DS2) {
-          DeclStmtOfVarType = DS2;
-        }
-      }
-    }
-  }
-  if (getType()->getDimension() == 0 && !isTypeDeclaredLocal()) {
-    if (Attr == Constant)
-      AccMode = Value;
-    else
-      AccMode = Reference;
-  } else if (getType()->getDimension() <= 1) {
-    AccMode = Pointer;
-  } else {
-    AccMode = Accessor;
-  }
 
-  newConstVarInit(Var);
-}
 
-inline std::string
-MemVarInfo::getMemoryType(const std::string &MemoryType,
-                          std::shared_ptr<CtTypeInfo> VarType) {
-  if (isUseHelperFunc()) {
-    return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
-                       VarType->getDimension(), ">");
-  } else {
-    return buildString(MemoryType, VarType->getBaseName());
-  }
-}
-
-std::string MemVarInfo::getInitArguments(const std::string &MemSize,
-                                         bool MustArguments) {
-  if (isUseHelperFunc()) {
-    if (InitList.empty())
-      return getType()->getRangeArgument(MemSize, MustArguments);
-    if (getType()->getDimension())
-      return buildString("(", getRangeClass(),
-                         getType()->getRangeArgument(MemSize, true),
-                         ", " + InitList, ")");
-    return buildString("(", InitList, ")");
-  } else {
-    return InitList.empty() ? "" : buildString(" = ", InitList);
-  }
-}
 
 std::shared_ptr<DeviceFunctionInfo> &
 DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
@@ -5404,264 +5847,18 @@ DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
   return FuncInfoMap[Key];
 }
 
-std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
-  if (auto Func = DpctGlobalInfo::findAncestor<FunctionDecl>(Var)) {
-    if (Func->getTemplateSpecializationKind() ==
-            TSK_ExplicitInstantiationDefinition ||
-        Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
-      return std::shared_ptr<MemVarInfo>();
-    auto LocInfo = DpctGlobalInfo::getLocInfo(Var);
-    auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
-    if (!DpctGlobalInfo::useGroupLocalMemory() || !VI->isShared() ||
-        VI->isExtern())
-      if (auto DFI = DeviceFunctionDecl::LinkRedecls(Func))
-        DFI->addVar(VI);
-    return VI;
-  }
-  return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
-}
 
-MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
-  VarAttrKind Attr = Host;
-  for (auto VarAttr : Attrs) {
-    auto Kind = VarAttr->getKind();
-    if (Kind == attr::HIPManaged)
-      return Managed;
-    if (Kind == attr::CUDAConstant)
-      return Constant;
-    if (Kind == attr::CUDAShared)
-      return Shared;
-    if (Kind == attr::CUDADevice)
-      Attr = Device;
-  }
-  return Attr;
-}
 
-std::string MemVarInfo::getMemoryType() {
-  switch (Attr) {
-  case clang::dpct::MemVarInfo::Device: {
-    requestFeature(HelperFeatureEnum::device_ext);
-    static std::string DeviceMemory =
-        MapNames::getDpctNamespace() + "global_memory";
-    return getMemoryType(DeviceMemory, getType());
-  }
-  case clang::dpct::MemVarInfo::Constant: {
-    requestFeature(HelperFeatureEnum::device_ext);
-    std::string ConstantMemory =
-        MapNames::getDpctNamespace() + "constant_memory";
-    if (!isUseHelperFunc()) {
-      ConstantMemory = "const ";
-    }
-    return getMemoryType(ConstantMemory, getType());
-  }
-  case clang::dpct::MemVarInfo::Shared: {
-    static std::string SharedMemory =
-        MapNames::getDpctNamespace() + "local_memory";
-    static std::string ExternSharedMemory =
-        MapNames::getDpctNamespace() + "extern_local_memory";
-    if (isExtern())
-      return ExternSharedMemory;
-    return getMemoryType(SharedMemory, getType());
-  }
-  case clang::dpct::MemVarInfo::Managed: {
 
-    requestFeature(HelperFeatureEnum::device_ext);
 
-    static std::string ManagedMemory =
-        MapNames::getDpctNamespace() + "shared_memory";
 
-    return getMemoryType(ManagedMemory, getType());
-  }
-  default:
-    llvm::dbgs() << "[MemVarInfo::getMemoryType] Unexpected attribute.";
-    return "";
-  }
-}
 
-const std::string &MemVarInfo::getMemoryAttr() {
-  requestFeature(HelperFeatureEnum::device_ext);
-  switch (Attr) {
-  case clang::dpct::MemVarInfo::Device: {
-    static std::string DeviceMemory = MapNames::getDpctNamespace() + "global";
-    return DeviceMemory;
-  }
-  case clang::dpct::MemVarInfo::Constant: {
-    static std::string ConstantMemory =
-        MapNames::getDpctNamespace() + "constant";
-    return ConstantMemory;
-  }
-  case clang::dpct::MemVarInfo::Shared: {
-    static std::string SharedMemory = MapNames::getDpctNamespace() + "local";
-    return SharedMemory;
-  }
-  case clang::dpct::MemVarInfo::Managed: {
-    static std::string ManagedMemory = MapNames::getDpctNamespace() + "shared";
-    return ManagedMemory;
-  }
-  default:
-    llvm::dbgs() << "[MemVarInfo::getMemoryAttr] Unexpected attribute.";
-    static std::string NullString;
-    return NullString;
-  }
-}
 
-std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
-  switch (Scope) {
-  case clang::dpct::MemVarInfo::Local:
-    if (DpctGlobalInfo::useGroupLocalMemory() && VD) {
 
-      auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext());
-      if (FD && FD->hasAttr<CUDADeviceAttr>())
-        DiagnosticsUtils::report(getFilePath(), getOffset(),
-                                 Diagnostics::GROUP_LOCAL_MEMORY, true, false);
 
-      std::string Ret;
-      llvm::raw_string_ostream OS(Ret);
-      OS << "auto &" << getName() << " = "
-         << "*" << MapNames::getClNamespace()
-         << "ext::oneapi::group_local_memory_for_overwrite<"
-         << getType()->getBaseName();
-      for (auto &ArraySize : getType()->getRange()) {
-        OS << "[" << ArraySize.getSize() << "]";
-      }
-      OS << ">(";
-      FreeQueriesInfo::printImmediateText(
-          OS, VD, nullptr, FreeQueriesInfo::FreeQueriesKind::Group);
-      OS << "); ";
-      return OS.str();
-    }
-    return "";
-  case clang::dpct::MemVarInfo::Extern:
-    if (isShared() && getType()->getDimension() > 1) {
-      // For case like:
-      // extern __shared__ int shad_mem[][2][3];
-      // int p = shad_mem[0][0][2];
-      // will be migrated to:
-      // auto shad_mem = (int(*)[2][3])dpct_local;
-      std::string Dimension;
-      size_t Index = 0;
-      for (auto &Entry : getType()->getRange()) {
-        Index++;
-        if (Index == 1)
-          continue;
-        Dimension = Dimension + "[" + Entry.getSize() + "]";
-      }
-      return buildString("auto ", getName(), " = (", getType()->getBaseName(),
-                         "(*)", Dimension, ")", ExternVariableName, ";");
-    }
 
-    return buildString("auto ", getName(), " = (", getType()->getBaseName(),
-                       " *)", ExternVariableName, ";");
-  case clang::dpct::MemVarInfo::Global: {
-    if (isShared())
-      return "";
-    if ((getAttr() == MemVarInfo::VarAttrKind::Constant) &&
-        !isUseHelperFunc()) {
-      std::string Dims;
-      const static std::string NullString;
-      for (auto &Dim : getType()->getRange()) {
-        Dims = Dims + "[" + Dim.getSize() + "]";
-      }
-      return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
-                         getConstVarName() + Dims,
-                         PointerAsArray ? "" : getInitArguments(NullString),
-                         ";");
-    }
-    return getMemoryDecl();
-  }
-  }
-  clang::dpct::DpctDebugs()
-      << "[MemVarInfo::VarAttrKind] Unexpected value: " << Scope << "\n";
-  assert(0);
-  return "";
-}
 
-std::string MemVarInfo::getSyclAccessorType() {
-  std::string Ret;
-  llvm::raw_string_ostream OS(Ret);
-  if (getAttr() == MemVarInfo::VarAttrKind::Shared) {
-    OS << MapNames::getClNamespace() << "local_accessor<";
-    OS << getAccessorDataType() << ", ";
-    OS << getType()->getDimension() << ">";
-  } else {
-    OS << MapNames::getClNamespace() << "accessor<";
-    OS << getAccessorDataType() << ", ";
-    OS << getType()->getDimension() << ", ";
 
-    OS << MapNames::getClNamespace() << "access_mode::";
-    if (getAttr() == MemVarInfo::VarAttrKind::Constant)
-      OS << "read";
-    else
-      OS << "read_write";
-    OS << ", ";
-
-    OS << MapNames::getClNamespace() << "access::target::";
-    switch (getAttr()) {
-    case VarAttrKind::Constant:
-    case VarAttrKind::Device:
-    case VarAttrKind::Managed:
-      OS << "device";
-      break;
-    default:
-      break;
-    }
-
-    OS << ">";
-  }
-  return OS.str();
-}
-void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
-                                             bool ExternEmitWarning,
-                                             StmtList &AccList,
-                                             StmtList &PtrList) {
-  std::string Result;
-  llvm::raw_string_ostream OS(Result);
-  if (isShared()) {
-    OS << getSyclAccessorType();
-    OS << " " << getAccessorName() << "(";
-    if (getType()->getDimension())
-      OS << getRangeClass() << getType()->getRangeArgument(ExternMemSize, false)
-         << ", ";
-    OS << "cgh)";
-    OS << ";";
-    StmtWithWarning AccDecl(OS.str());
-    for (const auto &OriginExpr : getType()->getArraySizeOriginExprs()) {
-      DiagnosticsUtils::report(getFilePath(), getOffset(),
-                               Diagnostics::MACRO_EXPR_REPLACED, false, false,
-                               OriginExpr);
-      AccDecl.Warnings.push_back(
-          DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-              Diagnostics::MACRO_EXPR_REPLACED, OriginExpr));
-    }
-    if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
-      DiagnosticsUtils::report(getFilePath(), getOffset(),
-                               Diagnostics::SIZEOF_WARNING, false, false,
-                               "local memory");
-      AccDecl.Warnings.push_back(
-          DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-              Diagnostics::SIZEOF_WARNING, "local memory"));
-    }
-    if (getType()->getDimension() > 3) {
-      if (DiagnosticsUtils::report(getFilePath(), getOffset(),
-                                   Diagnostics::EXCEED_MAX_DIMENSION, false,
-                                   false)) {
-        AccDecl.Warnings.push_back(
-            DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-                Diagnostics::EXCEED_MAX_DIMENSION));
-      }
-    }
-    AccList.emplace_back(std::move(AccDecl));
-  } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted &&
-             AccMode != Accessor) {
-    requestFeature(HelperFeatureEnum::device_ext);
-    PtrList.emplace_back(buildString("auto ", getPtrName(), " = ",
-                                     getConstVarName(), ".get_ptr();"));
-  } else {
-    requestFeature(HelperFeatureEnum::device_ext);
-    AccList.emplace_back(buildString("auto ", getAccessorName(), " = ",
-                                     getConstVarName(), ".get_access(cgh);"));
-  }
-}
 
 template <class T>
 void removeDuplicateVar(GlobalMap<T> &VarMap,

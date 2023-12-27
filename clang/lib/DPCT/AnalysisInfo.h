@@ -1393,213 +1393,70 @@ public:
   enum VarScope { Local = 0, Extern, Global };
 
   static std::shared_ptr<MemVarInfo> buildMemVarInfo(const VarDecl *Var);
-  static VarAttrKind getAddressAttr(const VarDecl *VD) {
-    if (VD->hasAttrs())
-      return getAddressAttr(VD->getAttrs());
-    return Host;
-  }
+  static VarAttrKind getAddressAttr(const VarDecl *VD);
 
   MemVarInfo(unsigned Offset, const clang::tooling::UnifiedPath &FilePath,
              const VarDecl *Var);
 
-  VarAttrKind getAttr() { return Attr; }
-  VarScope getScope() { return Scope; }
-  bool isGlobal() { return Scope == Global; }
-  bool isExtern() { return Scope == Extern; }
-  bool isLocal() { return Scope == Local; }
-  bool isShared() { return Attr == Shared; }
-  bool isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
-  bool isAnonymousType() { return IsAnonymousType; }
-  const CXXRecordDecl *getDeclOfVarType() { return DeclOfVarType; }
-  const DeclStmt *getDeclStmtOfVarType() { return DeclStmtOfVarType; }
-  void setLocalTypeName(std::string T) { LocalTypeName = T; }
-  std::string getLocalTypeName() { return LocalTypeName; }
-  void setIgnoreFlag(bool Flag) { IsIgnored = Flag; }
-  bool isIgnore() { return IsIgnored; }
-  bool isStatic() { return IsStatic; }
-
-  inline void setName(std::string NewName) { NewConstVarName = NewName; }
-
-  inline unsigned int getNewConstVarOffset() { return NewConstVarOffset; }
-  inline unsigned int getNewConstVarLength() { return NewConstVarLength; }
-
-  inline const std::string getConstVarName() {
-    return NewConstVarName.empty() ? getArgName() : NewConstVarName;
-  }
-
+  VarAttrKind getAttr();
+  VarScope getScope();
+  bool isGlobal();
+  bool isExtern();
+  bool isLocal();
+  bool isShared();
+  bool isTypeDeclaredLocal();
+  bool isAnonymousType();
+  const CXXRecordDecl *getDeclOfVarType();
+  const DeclStmt *getDeclStmtOfVarType();
+  void setLocalTypeName(std::string T);
+  std::string getLocalTypeName();
+  void setIgnoreFlag(bool Flag);
+  bool isIgnore();
+  bool isStatic();
+  void setName(std::string NewName);
+  unsigned int getNewConstVarOffset();
+  unsigned int getNewConstVarLength();
+  const std::string getConstVarName();
   // Initialize offset and length for __constant__ variable that needs to be
   // renamed.
-  void newConstVarInit(const VarDecl *Var) {
-    CharSourceRange SR(DpctGlobalInfo::getSourceManager().getExpansionRange(
-        Var->getSourceRange()));
-    auto BeginLoc = SR.getBegin();
-    SourceManager &SM = DpctGlobalInfo::getSourceManager();
-    size_t repLength = 0;
-    auto Buffer = SM.getCharacterData(BeginLoc);
-    auto Data = Buffer[repLength];
-    while (Data != ';')
-      Data = Buffer[++repLength];
-
-    NewConstVarLength = ++repLength;
-    NewConstVarOffset = DpctGlobalInfo::getLocInfo(BeginLoc).second;
-  }
-
+  void newConstVarInit(const VarDecl *Var);
   std::string getDeclarationReplacement(const VarDecl *);
-
-  std::string getInitStmt() { return getInitStmt(""); }
-  std::string getInitStmt(StringRef QueueString) {
-    if (QueueString.empty())
-      return getConstVarName() + ".init();";
-    return buildString(getConstVarName(), ".init(", QueueString, ");");
-  }
-
-  inline std::string getMemoryDecl(const std::string &MemSize) {
-    return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
-                       getConstVarName(),
-                       PointerAsArray ? "" : getInitArguments(MemSize), ";");
-  }
-  std::string getMemoryDecl() {
-    const static std::string NullString;
-    return getMemoryDecl(NullString);
-  }
-
-  std::string getExternGlobalVarDecl() {
-    return buildString("extern ", getMemoryType(), " ", getConstVarName(), ";");
-  }
-
+  std::string getInitStmt();
+  std::string getInitStmt(StringRef QueueString);
+  std::string getMemoryDecl(const std::string &MemSize);
+  std::string getMemoryDecl();
+  std::string getExternGlobalVarDecl();
   void appendAccessorOrPointerDecl(const std::string &ExternMemSize,
                                    bool ExternEmitWarning, StmtList &AccList,
                                    StmtList &PtrList);
-
-  inline std::string getRangeClass() {
-    std::string Result;
-    llvm::raw_string_ostream OS(Result);
-    return DpctGlobalInfo::printCtadClass(OS,
-                                          MapNames::getClNamespace() + "range",
-                                          getType()->getDimension())
-        .str();
-  }
-  std::string getRangeDecl(const std::string &MemSize) {
-    return buildString(getRangeClass(), " ", getRangeName(),
-                       getType()->getRangeArgument(MemSize, false), ";");
-  }
-  ParameterStream &getFuncDecl(ParameterStream &PS) {
-    if (AccMode == Value) {
-      PS << getAccessorDataType(true, true) << " ";
-    } else if (AccMode == Pointer) {
-      PS << getAccessorDataType(true, true);
-      if (!getType()->isPointer())
-        PS << " ";
-      PS << "*";
-    } else if (AccMode == Reference) {
-      PS << getAccessorDataType(true, true);
-      if (!getType()->isPointer())
-        PS << " ";
-      PS << "&";
-    } else if (AccMode == Accessor && isExtern() && isShared() &&
-               getType()->getDimension() > 1) {
-      PS << getAccessorDataType();
-      PS << " *";
-    } else {
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None || isShared())
-        PS << getSyclAccessorType() << " ";
-      else
-        PS << getDpctAccessorType() << " ";
-    }
-    return PS << getArgName();
-  }
-  ParameterStream &getFuncArg(ParameterStream &PS) {
-    return PS << getArgName();
-  }
-  ParameterStream &getKernelArg(ParameterStream &PS) {
-    if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      if (AccMode == Pointer) {
-        if (!getType()->isWritten())
-          PS << "(" << getAccessorDataType(false, true) << " *)";
-        PS << getAccessorName() << ".get_pointer()";
-      } else {
-        PS << getAccessorName();
-      }
-    } else {
-      if (AccMode == Accessor) {
-        PS << getAccessorName();
-      } else {
-        if (AccMode == Value || AccMode == Reference) {
-          PS << "*";
-        }
-        PS << getPtrName();
-      }
-    }
-    return PS;
-  }
+  std::string getRangeClass();
+  std::string getRangeDecl(const std::string &MemSize);
+  ParameterStream &getFuncDecl(ParameterStream &PS);
+  ParameterStream &getFuncArg(ParameterStream &PS);
+  ParameterStream &getKernelArg(ParameterStream &PS);
   std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false,
-                                  bool NeedCheckExtraConstQualifier = false) {
-    if (isExtern()) {
-      return "uint8_t";
-    } else if (isTypeDeclaredLocal()) {
-      if (IsTypeUsedInDevFunDecl) {
-        return "uint8_t";
-      } else {
-        // used in accessor decl
-        return "uint8_t[sizeof(" + LocalTypeName + ")]";
-      }
-    }
-
-    std::string Ret = getType()->getBaseName();
-    if ((!getType()->isArray() && !getType()->isPointer()) ||
-        isTreatPointerAsArray())
-      return Ret;
-    if (NeedCheckExtraConstQualifier && getType()->isConstantQualified()) {
-      return Ret + " const";
-    }
-    return Ret;
-  }
-  void setUseHelperFuncFlag(bool Flag) { UseHelperFuncFlag = Flag; };
-  bool isUseHelperFunc() { return UseHelperFuncFlag; }
+                                  bool NeedCheckExtraConstQualifier = false);
+  void setUseHelperFuncFlag(bool Flag);
+  bool isUseHelperFunc();
 
 private:
-  bool isTreatPointerAsArray() {
-    return getType()->isPointer() && getScope() == Global &&
-           DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
-  }
-
+  bool isTreatPointerAsArray();
   static VarAttrKind getAddressAttr(const AttrVec &Attrs);
-
-  void setInitList(const Expr *E, const VarDecl *V) {
-    if (auto Ctor = dyn_cast<CXXConstructExpr>(E)) {
-      if (!Ctor->getNumArgs() || Ctor->getArg(0)->isDefaultArgument())
-        return;
-    }
-    InitList = getStmtSpelling(E, V->getSourceRange());
-  }
+  void setInitList(const Expr *E, const VarDecl *V);
 
   std::string getMemoryType();
-  inline std::string getMemoryType(const std::string &MemoryType,
+  std::string getMemoryType(const std::string &MemoryType,
                                    std::shared_ptr<CtTypeInfo> VarType);
   std::string getInitArguments(const std::string &MemSize,
                                bool MustArguments = false);
   const std::string &getMemoryAttr();
   std::string getSyclAccessorType();
-  std::string getDpctAccessorType() {
-    requestFeature(HelperFeatureEnum::device_ext);
-    auto Type = getType();
-    return buildString(MapNames::getDpctNamespace(true), "accessor<",
-                       getAccessorDataType(), ", ", getMemoryAttr(), ", ",
-                       Type->getDimension(), ">");
-  }
-  inline std::string getNameWithSuffix(StringRef Suffix) {
-    return buildString(getArgName(), "_", Suffix, getCTFixedSuffix());
-  }
-  inline std::string getAccessorName() { return getNameWithSuffix("acc"); }
-  inline std::string getPtrName() { return getNameWithSuffix("ptr"); }
-  inline std::string getRangeName() { return getNameWithSuffix("range"); }
-  std::string getArgName() {
-    if (isExtern())
-      return ExternVariableName;
-    else if (isTypeDeclaredLocal())
-      return getNameAppendSuffix();
-    return getName();
-  }
+  std::string getDpctAccessorType();
+  std::string getNameWithSuffix(StringRef Suffix);
+  std::string getAccessorName();
+  std::string getPtrName();
+  std::string getRangeName();
+  std::string getArgName();
 
 private:
   // Passing by accessor, value or pointer when invoking kernel.
