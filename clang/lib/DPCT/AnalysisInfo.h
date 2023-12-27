@@ -824,7 +824,7 @@ public:
   // Return the absolute path of \p File
   static std::optional<clang::tooling::UnifiedPath>
   getAbsolutePath(const FileEntry &File);
-  static inline std::pair<clang::tooling::UnifiedPath, unsigned>
+  static std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */);
   static std::string getTypeName(QualType QT,
                                         const ASTContext &Context);
@@ -887,515 +887,163 @@ public:
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSets /*out*/);
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
-
   void insertCudaMalloc(const CallExpr *CE);
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
-  void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
-    insertFile(Repl->getFilePath().str())->addReplacement(Repl);
-  }
-
-  CudaArchPPMap &getCudaArchPPInfoMap() { return CAPPInfoMap; }
-  HDFuncInfoMap &getHostDeviceFuncInfoMap() { return HostDeviceFuncInfoMap; }
+  void addReplacement(std::shared_ptr<ExtReplacement> Repl);
+  CudaArchPPMap &getCudaArchPPInfoMap();
+  HDFuncInfoMap &getHostDeviceFuncInfoMap();
   std::unordered_map<std::string, std::shared_ptr<ExtReplacement>> &
-  getCudaArchMacroReplMap() {
-    return CudaArchMacroRepl;
-  }
-  CudaArchDefMap &getCudaArchDefinedMap() { return CudaArchDefinedMap; }
-
+  getCudaArchMacroReplMap();
+  CudaArchDefMap &getCudaArchDefinedMap();
   void insertReplInfoFromYAMLToFileInfo(
       const clang::tooling::UnifiedPath &FilePath,
-      std::shared_ptr<tooling::TranslationUnitReplacements> TUR) {
-    auto FileInfo = insertFile(FilePath);
-    if (FileInfo->PreviousTUReplFromYAML == nullptr)
-      FileInfo->PreviousTUReplFromYAML = TUR;
-  }
+      std::shared_ptr<tooling::TranslationUnitReplacements> TUR);
   std::shared_ptr<tooling::TranslationUnitReplacements>
-  getReplInfoFromYAMLSavedInFileInfo(clang::tooling::UnifiedPath FilePath) {
-    auto FileInfo = findObject(FileMap, FilePath);
-    if (FileInfo)
-      return FileInfo->PreviousTUReplFromYAML;
-    else
-      return nullptr;
-  }
-
+  getReplInfoFromYAMLSavedInFileInfo(clang::tooling::UnifiedPath FilePath);
   void insertEventSyncTypeInfo(
       const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
-      bool NeedReport = false, bool IsAssigned = false) {
-    std::string FilePath = Repl->getFilePath().str();
-    unsigned int Offset = Repl->getOffset();
-    unsigned int Length = Repl->getLength();
-    const std::string ReplText = Repl->getReplacementText().str();
-
-    auto FileInfo = insertFile(FilePath);
-    auto &M = FileInfo->getEventSyncTypeMap();
-    auto Iter = M.find(Offset);
-    if (Iter == M.end()) {
-      M.insert(std::make_pair(
-          Offset, EventSyncTypeInfo(Length, ReplText, NeedReport, IsAssigned)));
-    } else {
-      Iter->second.IsAssigned = IsAssigned;
-    }
-  }
-
+      bool NeedReport = false, bool IsAssigned = false);
   void updateEventSyncTypeInfo(
-      const std::shared_ptr<clang::dpct::ExtReplacement> Repl) {
-    std::string FilePath = Repl->getFilePath().str();
-    unsigned int Offset = Repl->getOffset();
-    unsigned int Length = Repl->getLength();
-    const std::string ReplText = Repl->getReplacementText().str();
-
-    auto FileInfo = insertFile(FilePath);
-    auto &M = FileInfo->getEventSyncTypeMap();
-    auto Iter = M.find(Offset);
-    if (Iter != M.end()) {
-      Iter->second.ReplText = ReplText;
-      Iter->second.NeedReport = false;
-    } else {
-      M.insert(std::make_pair(
-          Offset, EventSyncTypeInfo(Length, ReplText, false, false)));
-    }
-  }
-
+      const std::shared_ptr<clang::dpct::ExtReplacement> Repl);
   void insertTimeStubTypeInfo(
       const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithSB,
-      const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithoutSB) {
-
-    std::string FilePath = ReplWithSB->getFilePath().str();
-    unsigned int Offset = ReplWithSB->getOffset();
-    unsigned int Length = ReplWithSB->getLength();
-    std::string StrWithSubmitBarrier = ReplWithSB->getReplacementText().str();
-    std::string StrWithoutSubmitBarrier =
-        ReplWithoutSB->getReplacementText().str();
-
-    auto FileInfo = insertFile(FilePath);
-    auto &M = FileInfo->getTimeStubTypeMap();
-    M.insert(
-        std::make_pair(Offset, TimeStubTypeInfo(Length, StrWithSubmitBarrier,
-                                                StrWithoutSubmitBarrier)));
-  }
-
-  void updateTimeStubTypeInfo(SourceLocation BeginLoc, SourceLocation EndLoc) {
-
-    auto LocInfo = getLocInfo(BeginLoc);
-    auto FileInfo = insertFile(LocInfo.first);
-
-    size_t Begin = getLocInfo(BeginLoc).second;
-    size_t End = getLocInfo(EndLoc).second;
-    auto &TimeStubBounds = FileInfo->getTimeStubBounds();
-    TimeStubBounds.push_back(std::make_pair(Begin, End));
-  }
-
+      const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithoutSB);
+  void updateTimeStubTypeInfo(SourceLocation BeginLoc, SourceLocation EndLoc);
   void insertBuiltinVarInfo(SourceLocation SL, unsigned int Len,
                             std::string Repl,
                             std::shared_ptr<DeviceFunctionInfo> DFI);
-
-  void insertSpBLASWarningLocOffset(SourceLocation SL) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    FileInfo->getSpBLASSet().insert(LocInfo.second);
-  }
-
-  std::shared_ptr<TextModification> findConstantMacroTMInfo(SourceLocation SL) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &S = FileInfo->getConstantMacroTMSet();
-    for (const auto &TM : S) {
-      if (TM->getConstantOffset() == LocInfo.second) {
-        return TM;
-      }
-    }
-    return nullptr;
-  }
-
+  void insertSpBLASWarningLocOffset(SourceLocation SL);
+  std::shared_ptr<TextModification> findConstantMacroTMInfo(SourceLocation SL);
   void insertConstantMacroTMInfo(SourceLocation SL,
-                                 std::shared_ptr<TextModification> TM) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    TM->setConstantOffset(LocInfo.second);
-    auto &S = FileInfo->getConstantMacroTMSet();
-    S.insert(TM);
-  }
-
+                                 std::shared_ptr<TextModification> TM);
   void insertAtomicInfo(std::string HashStr, SourceLocation SL,
-                        std::string FuncName) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getAtomicMap();
-    if (M.find(HashStr) == M.end()) {
-      M.insert(std::make_pair(HashStr,
-                              std::make_tuple(LocInfo.second, FuncName, true)));
-    }
-  }
-
-  void removeAtomicInfo(std::string HashStr) {
-    for (auto &File : FileMap) {
-      auto &M = File.second->getAtomicMap();
-      auto Iter = M.find(HashStr);
-      if (Iter != M.end()) {
-        std::get<2>(Iter->second) = false;
-        return;
-      }
-    }
-  }
-
-  void setFileEnterLocation(SourceLocation Loc) {
-    auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->setFileEnterOffset(LocInfo.second);
-  }
-
-  void setFirstIncludeLocation(SourceLocation Loc) {
-    auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->setFirstIncludeOffset(LocInfo.second);
-  }
-
-  void setLastIncludeLocation(SourceLocation Loc) {
-    auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->setLastIncludeOffset(LocInfo.second);
-  }
-
-  void setMathHeaderInserted(SourceLocation Loc, bool B) {
-    auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->setMathHeaderInserted(B);
-  }
-
-  void setAlgorithmHeaderInserted(SourceLocation Loc, bool B) {
-    auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->setAlgorithmHeaderInserted(B);
-  }
-
-  void setTimeHeaderInserted(SourceLocation Loc, bool B) {
-    auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->setTimeHeaderInserted(B);
-  }
-
-  void insertHeader(SourceLocation Loc, HeaderType Type) {
-    auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->insertHeader(Type);
-  }
-
-  void insertHeader(SourceLocation Loc, std::string HeaderName) {
-    auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->insertCustomizedHeader(std::move(HeaderName));
-  }
-
+                        std::string FuncName);
+  void removeAtomicInfo(std::string HashStr);
+  void setFileEnterLocation(SourceLocation Loc);
+  void setFirstIncludeLocation(SourceLocation Loc);
+  void setLastIncludeLocation(SourceLocation Loc);
+  void setMathHeaderInserted(SourceLocation Loc, bool B);
+  void setAlgorithmHeaderInserted(SourceLocation Loc, bool B);
+  void setTimeHeaderInserted(SourceLocation Loc, bool B);
+  void insertHeader(SourceLocation Loc, HeaderType Type);
+  void insertHeader(SourceLocation Loc, std::string HeaderName);
   static std::unordered_map<
       std::string,
       std::pair<std::pair<clang::tooling::UnifiedPath /*begin file name*/,
                           unsigned int /*begin offset*/>,
                 std::pair<clang::tooling::UnifiedPath /*end file name*/,
                           unsigned int /*end offset*/>>> &
-  getExpansionRangeBeginMap() {
-    return ExpansionRangeBeginMap;
-  }
-
+  getExpansionRangeBeginMap();
   static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
-  getExpansionRangeToMacroRecord() {
-    return ExpansionRangeToMacroRecord;
-  }
-
+  getExpansionRangeToMacroRecord();
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroDefRecord>> &
-  getMacroTokenToMacroDefineLoc() {
-    return MacroTokenToMacroDefineLoc;
-  }
-
+  getMacroTokenToMacroDefineLoc();
   static std::map<std::string, std::string> &
-  getFunctionCallInMacroMigrateRecord() {
-    return FunctionCallInMacroMigrateRecord;
-  }
-
-  static std::map<std::string, SourceLocation> &getEndifLocationOfIfdef() {
-    return EndifLocationOfIfdef;
-  }
-
+  getFunctionCallInMacroMigrateRecord();
+  static std::map<std::string, SourceLocation> &getEndifLocationOfIfdef();
   static std::vector<std::pair<clang::tooling::UnifiedPath, size_t>> &
-  getConditionalCompilationLoc() {
-    return ConditionalCompilationLoc;
-  }
-
-  static std::map<std::string, unsigned int> &getBeginOfEmptyMacros() {
-    return BeginOfEmptyMacros;
-  }
-  static std::map<std::string, SourceLocation> &getEndOfEmptyMacros() {
-    return EndOfEmptyMacros;
-  }
-  static std::map<std::string, bool> &getMacroDefines() { return MacroDefines; }
-  static std::set<clang::tooling::UnifiedPath> &getIncludingFileSet() {
-    return IncludingFileSet;
-  }
-  static std::set<std::string> &getFileSetInCompiationDB() {
-    return FileSetInCompiationDB;
-  }
+  getConditionalCompilationLoc();
+  static std::map<std::string, unsigned int> &getBeginOfEmptyMacros();
+  static std::map<std::string, SourceLocation> &getEndOfEmptyMacros();
+  static std::map<std::string, bool> &getMacroDefines();
+  static std::set<clang::tooling::UnifiedPath> &getIncludingFileSet();
+  static std::set<std::string> &getFileSetInCompiationDB();
   static std::unordered_map<std::string,
                             std::vector<clang::tooling::Replacement>> &
-  getFileRelpsMap() {
-    return FileRelpsMap;
-  }
-  static std::unordered_map<std::string, std::string> &getDigestMap() {
-    return DigestMap;
-  }
-  static std::string getYamlFileName() { return YamlFileName; }
-
-  static std::set<std::string> &getGlobalVarNameSet() {
-    return GlobalVarNameSet;
-  }
-  static void removeVarNameInGlobalVarNameSet(const std::string &VarName) {
-    auto Iter = getGlobalVarNameSet().find(VarName);
-    if (Iter != getGlobalVarNameSet().end()) {
-      getGlobalVarNameSet().erase(Iter);
-    }
-  }
-  static bool getDeviceChangedFlag() { return HasFoundDeviceChanged; }
-  static void setDeviceChangedFlag(bool Flag) { HasFoundDeviceChanged = Flag; }
+  getFileRelpsMap();
+  static std::unordered_map<std::string, std::string> &getDigestMap();
+  static std::string getYamlFileName();
+  static std::set<std::string> &getGlobalVarNameSet();
+  static void removeVarNameInGlobalVarNameSet(const std::string &VarName);
+  static bool getDeviceChangedFlag();
+  static void setDeviceChangedFlag(bool Flag);
   static std::unordered_map<int, HelperFuncReplInfo> &
-  getHelperFuncReplInfoMap() {
-    return HelperFuncReplInfoMap;
-  }
-  static int getHelperFuncReplInfoIndexThenInc() {
-    int Res = HelperFuncReplInfoIndex;
-    HelperFuncReplInfoIndex++;
-    return Res;
-  }
+  getHelperFuncReplInfoMap();
+  static int getHelperFuncReplInfoIndexThenInc();
   static std::unordered_map<std::string, TempVariableDeclCounter> &
-  getTempVariableDeclCounterMap() {
-    return TempVariableDeclCounterMap;
-  }
+  getTempVariableDeclCounterMap();
   // Key: string: file:offset for a replacement.
   // Value: int: index of the placeholder in a replacement.
-  static std::unordered_map<std::string, int> &getTempVariableHandledMap() {
-    return TempVariableHandledMap;
-  }
-  static bool getUsingDRYPattern() { return UsingDRYPattern; }
-  static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
-  static bool useNdRangeBarrier() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
-  }
-  static bool useFreeQueries() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
-  }
-  static bool useGroupLocalMemory() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_GroupSharedMemory>();
-  }
-  static bool useLogicalGroup() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
-  }
-  static bool useUserDefineReductions() {
-    return getUsingExperimental<
-        ExperimentalFeatures::Exp_UserDefineReductions>();
-  }
-  static bool useMaskedSubGroupFunction() {
-    return getUsingExperimental<
-        ExperimentalFeatures::Exp_MaskedSubGroupFunction>();
-  }
-  static bool useExtDPLAPI() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
-  }
-  static bool useOccupancyCalculation() {
-    return getUsingExperimental<
-        ExperimentalFeatures::Exp_OccupancyCalculation>();
-  }
-  static bool useExtJointMatrix() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
-  }
-  static bool useExtBFloat16Math() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
-  }
-  static bool useNoQueueDevice() {
-    return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
-  }
-  static bool useEnqueueBarrier() {
-    return getUsingExtensionDE(
-        DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
-  }
-  static bool useCAndCXXStandardLibrariesExt() {
-    return getUsingExtensionDD(
-        DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
-  }
-  static bool useIntelDeviceMath() {
-    return getUsingExtensionDD(
-        DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
-  }
-
-  static bool useDeviceInfo() {
-    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
-  }
-
-  static bool useBFloat16() {
-    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16);
-  }
-
-  inline std::shared_ptr<DpctFileInfo>
-  insertFile(const clang::tooling::UnifiedPath &FilePath) {
-    return insertObject(FileMap, FilePath);
-  }
-
-  inline std::shared_ptr<DpctFileInfo> getMainFile() const { return MainFile; }
-
-  inline void setMainFile(std::shared_ptr<DpctFileInfo> Main) {
-    MainFile = Main;
-  }
-
-  inline void recordIncludingRelationship(
+  static std::unordered_map<std::string, int> &getTempVariableHandledMap();
+  static bool getUsingDRYPattern();
+  static void setUsingDRYPattern(bool Flag);
+  static bool useNdRangeBarrier();
+  static bool useFreeQueries();
+  static bool useGroupLocalMemory();
+  static bool useLogicalGroup();
+  static bool useUserDefineReductions();
+  static bool useMaskedSubGroupFunction();
+  static bool useExtDPLAPI();
+  static bool useOccupancyCalculation();
+  static bool useExtJointMatrix();
+  static bool useExtBFloat16Math();
+  static bool useNoQueueDevice();
+  static bool useEnqueueBarrier();
+  static bool useCAndCXXStandardLibrariesExt();
+  static bool useIntelDeviceMath();
+  static bool useDeviceInfo();
+  static bool useBFloat16();
+  std::shared_ptr<DpctFileInfo>
+  insertFile(const clang::tooling::UnifiedPath &FilePath);
+  std::shared_ptr<DpctFileInfo> getMainFile() const;
+  void setMainFile(std::shared_ptr<DpctFileInfo> Main);
+  void recordIncludingRelationship(
       const clang::tooling::UnifiedPath &CurrentFileName,
-      const clang::tooling::UnifiedPath &IncludedFileName) {
-    auto CurrentFileInfo = this->insertFile(CurrentFileName);
-    auto IncludedFileInfo = this->insertFile(IncludedFileName);
-    CurrentFileInfo->insertIncludedFilesInfo(IncludedFileInfo);
-  }
-
-  static unsigned int getCudaKernelDimDFIIndexThenInc() {
-    unsigned int Res = CudaKernelDimDFIIndex;
-    ++CudaKernelDimDFIIndex;
-    return Res;
-  }
+      const clang::tooling::UnifiedPath &IncludedFileName);
+  static unsigned int getCudaKernelDimDFIIndexThenInc();
   static void
   insertCudaKernelDimDFIMap(unsigned int Index,
-                            std::shared_ptr<DeviceFunctionInfo> Ptr) {
-    CudaKernelDimDFIMap.insert(std::make_pair(Index, Ptr));
-  }
+                            std::shared_ptr<DeviceFunctionInfo> Ptr);
   static std::shared_ptr<DeviceFunctionInfo>
-  getCudaKernelDimDFI(unsigned int Index) {
-    auto Iter = CudaKernelDimDFIMap.find(Index);
-    if (Iter != CudaKernelDimDFIMap.end())
-      return Iter->second;
-    return nullptr;
-  }
-
-  static std::set<clang::tooling::UnifiedPath> &getModuleFiles() {
-    return ModuleFiles;
-  }
-
-  // #tokens, name of the second token, SourceRange of a macro
-  static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
-
-  static void setRunRound(unsigned int Round) { RunRound = Round; }
-  static unsigned int getRunRound() { return RunRound; }
-  static void setNeedRunAgain(bool NRA) { NeedRunAgain = NRA; }
-  static bool isNeedRunAgain() { return NeedRunAgain; }
+  getCudaKernelDimDFI(unsigned int Index);
+  static std::set<clang::tooling::UnifiedPath> &getModuleFiles();
+  static void setRunRound(unsigned int Round);
+  static unsigned int getRunRound();
+  static void setNeedRunAgain(bool NRA);
+  static bool isNeedRunAgain();
   static std::unordered_map<clang::tooling::UnifiedPath,
                             std::shared_ptr<ExtReplacements>> &
-  getFileReplCache() {
-    return FileReplCache;
-  }
+  getFileReplCache();
   void resetInfo();
-  static inline void
-  updateSpellingLocDFIMaps(SourceLocation SL,
-                           std::shared_ptr<DeviceFunctionInfo> DFI) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    std::string Loc = getCombinedStrFromLoc(SM.getSpellingLoc(SL));
-
-    auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(Loc);
-    if (IterOfL2D == SpellingLocToDFIsMapForAssumeNDRange.end()) {
-      std::unordered_set<std::shared_ptr<DeviceFunctionInfo>> Set;
-      Set.insert(DFI);
-      SpellingLocToDFIsMapForAssumeNDRange.insert(std::make_pair(Loc, Set));
-    } else {
-      IterOfL2D->second.insert(DFI);
-    }
-
-    auto IterOfD2L = DFIToSpellingLocsMapForAssumeNDRange.find(DFI);
-    if (IterOfD2L == DFIToSpellingLocsMapForAssumeNDRange.end()) {
-      std::unordered_set<std::string> Set;
-      Set.insert(Loc);
-      DFIToSpellingLocsMapForAssumeNDRange.insert(std::make_pair(DFI, Set));
-    } else {
-      IterOfD2L->second.insert(Loc);
-    }
-  }
-
-  static inline std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>
-  getDFIVecRelatedFromSpellingLoc(std::shared_ptr<DeviceFunctionInfo> DFI) {
-    std::unordered_set<std::shared_ptr<DeviceFunctionInfo>> Res;
-    auto IterOfD2L = DFIToSpellingLocsMapForAssumeNDRange.find(DFI);
-    if (IterOfD2L == DFIToSpellingLocsMapForAssumeNDRange.end()) {
-      return Res;
-    }
-
-    for (const auto &SpellingLoc : IterOfD2L->second) {
-      auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(SpellingLoc);
-      if (IterOfL2D != SpellingLocToDFIsMapForAssumeNDRange.end()) {
-        Res.insert(IterOfL2D->second.begin(), IterOfL2D->second.end());
-      }
-    }
-    return Res;
-  }
-  static unsigned int getColorOption() { return ColorOption; }
-  static void setColorOption(unsigned Color) { ColorOption = Color; }
+  static void updateSpellingLocDFIMaps(SourceLocation SL,
+                                       std::shared_ptr<DeviceFunctionInfo> DFI);
+  static std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>
+  getDFIVecRelatedFromSpellingLoc(std::shared_ptr<DeviceFunctionInfo> DFI);
+  static unsigned int getColorOption();
+  static void setColorOption(unsigned Color);
   std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>> &
-  getCubPlaceholderIndexMap() {
-    return CubPlaceholderIndexMap;
-  }
-  static inline std::unordered_map<std::string,
-                                   std::shared_ptr<PriorityReplInfo>> &
-  getPriorityReplInfoMap() {
-    return PriorityReplInfoMap;
-  }
+  getCubPlaceholderIndexMap();
+  static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>> &
+  getPriorityReplInfoMap();
   // For PriorityRelpInfo with same key, the Info with low priority will
   // be filtered and the Info with same priority will be merged.
-  static inline void
-  addPriorityReplInfo(std::string Key, std::shared_ptr<PriorityReplInfo> Info) {
-    if (PriorityReplInfoMap.count(Key)) {
-      if (PriorityReplInfoMap[Key]->Priority == Info->Priority) {
-        PriorityReplInfoMap[Key]->Repls.insert(
-            PriorityReplInfoMap[Key]->Repls.end(), Info->Repls.begin(),
-            Info->Repls.end());
-        PriorityReplInfoMap[Key]->RelatedAction.insert(
-            PriorityReplInfoMap[Key]->RelatedAction.end(),
-            Info->RelatedAction.begin(), Info->RelatedAction.end());
-      } else if (PriorityReplInfoMap[Key]->Priority < Info->Priority) {
-        PriorityReplInfoMap[Key] = Info;
-      }
-    } else {
-      PriorityReplInfoMap[Key] = Info;
-    }
-  }
-
-  static void setOptimizeMigrationFlag(bool Flag) {
-    OptimizeMigrationFlag = Flag;
-  }
-  static bool isOptimizeMigration() { return OptimizeMigrationFlag; }
-
-  static inline std::map<std::string, clang::tooling::OptionInfo> &
-  getCurrentOptMap() {
-    return CurrentOptMap;
-  }
-  static inline void setMainSourceYamlTUR(
-      std::shared_ptr<clang::tooling::TranslationUnitReplacements> Ptr) {
-    MainSourceYamlTUR = Ptr;
-  }
-  static inline std::shared_ptr<clang::tooling::TranslationUnitReplacements>
-  getMainSourceYamlTUR() {
-    return MainSourceYamlTUR;
-  }
-  static inline std::unordered_map<
+  static void
+  addPriorityReplInfo(std::string Key, std::shared_ptr<PriorityReplInfo> Info);
+  static void setOptimizeMigrationFlag(bool Flag);
+  static bool isOptimizeMigration();
+  static std::map<std::string, clang::tooling::OptionInfo> &
+  getCurrentOptMap();
+  static void setMainSourceYamlTUR(
+      std::shared_ptr<clang::tooling::TranslationUnitReplacements> Ptr);
+  static std::shared_ptr<clang::tooling::TranslationUnitReplacements>
+  getMainSourceYamlTUR();
+  static std::unordered_map<
       std::string,
       std::unordered_map<clang::tooling::UnifiedPath, std::vector<unsigned>>> &
-  getRnnInputMap() {
-    return RnnInputMap;
-  }
-  static inline std::unordered_map<clang::tooling::UnifiedPath,
+  getRnnInputMap();
+  static std::unordered_map<clang::tooling::UnifiedPath,
                                    std::vector<clang::tooling::UnifiedPath>> &
-  getMainSourceFileMap() {
-    return MainSourceFileMap;
-  };
-  static inline std::unordered_map<std::string, bool> &getMallocHostInfoMap() {
-    return MallocHostInfoMap;
-  };
-  static inline std::map<std::shared_ptr<TextModification>, bool> &
-  getConstantReplProcessedFlagMap() {
-    return ConstantReplProcessedFlagMap;
-  }
-  static inline std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
-    return VarUsedByRuntimeSymbolAPISet;
-  }
-  static inline void setNeedParenAPI(const std::string &Name) {
-    NeedParenAPISet.insert(Name);
-  };
-  static inline bool isNeedParenAPI(const std::string &Name) {
-    return NeedParenAPISet.count(Name);
-  };
-
+  getMainSourceFileMap();
+  static std::unordered_map<std::string, bool> &getMallocHostInfoMap();
+  static std::map<std::shared_ptr<TextModification>, bool> &
+  getConstantReplProcessedFlagMap();
+  static std::set<std::string> &getVarUsedByRuntimeSymbolAPISet();
+  static void setNeedParenAPI(const std::string &Name);
+  static bool isNeedParenAPI(const std::string &Name);
+  // #tokens, name of the second token, SourceRange of a macro
+  static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
 private:
   DpctGlobalInfo();
 
@@ -1405,20 +1053,10 @@ private:
   DpctGlobalInfo &operator=(DpctGlobalInfo &&) = delete;
 
   // Wrapper of isInAnalysisScope for std::function usage.
-  static bool checkInAnalysisScope(SourceLocation SL) {
-    return isInAnalysisScope(SL);
-  }
+  static bool checkInAnalysisScope(SourceLocation SL);
 
   // Record token split when it's in macro
-  static void recordTokenSplit(SourceLocation SL, unsigned Len) {
-    auto It = getExpansionRangeToMacroRecord().find(
-        getCombinedStrFromLoc(SM->getSpellingLoc(SL)));
-    if (It != getExpansionRangeToMacroRecord().end()) {
-      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
-          [getCombinedStrFromLoc(
-              SM->getSpellingLoc(SL).getLocWithOffset(Len))] = It->second;
-    }
-  }
+  static void recordTokenSplit(SourceLocation SL, unsigned Len);
 
   // Find stored info by its corresponding AST node.
   // VarDecl=>MemVarInfo
@@ -1448,24 +1086,16 @@ private:
   template <class T> static inline SourceLocation getLocation(const T *N) {
     return N->getBeginLoc();
   }
-  static inline SourceLocation getLocation(const VarDecl *VD) {
-    return VD->getLocation();
-  }
-  static inline SourceLocation getLocation(const FunctionDecl *FD) {
-    return FD->getBeginLoc();
-  }
-  static inline SourceLocation getLocation(const FieldDecl *FD) {
-    return FD->getLocation();
-  }
-  static inline SourceLocation getLocation(const CallExpr *CE) {
-    return CE->getEndLoc();
-  }
+  static SourceLocation getLocation(const VarDecl *VD);
+  static SourceLocation getLocation(const FunctionDecl *FD);
+  static SourceLocation getLocation(const FieldDecl *FD);
+  static SourceLocation getLocation(const CallExpr *CE);
   // The result will be also stored in KernelCallExpr.BeginLoc
-  static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
-    return getTheLastCompleteImmediateRange(CKC->getBeginLoc(),
-                                            CKC->getEndLoc())
-        .first;
-  }
+  static SourceLocation getLocation(const CUDAKernelCallExpr *CKC);
+
+
+
+
   std::shared_ptr<DpctFileInfo> MainFile = nullptr;
   std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<DpctFileInfo>>
       FileMap;
@@ -1493,7 +1123,6 @@ private:
   static bool MigrateCmakeScript;
   static bool MigrateCmakeScriptOnly;
   static bool EnableComments;
-  static std::string ClNamespace;
   static std::set<ExplicitNamespace> ExplicitNamespaceSet;
 
   // This variable is only set true when option "--report-type=stats" or option
@@ -1553,7 +1182,6 @@ private:
       TempVariableDeclCounterMap;
   static std::unordered_map<std::string, int> TempVariableHandledMap;
   static bool UsingDRYPattern;
-  static bool UsingThisItem;
   static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaKernelDimDFIMap;

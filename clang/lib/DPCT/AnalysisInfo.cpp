@@ -2035,172 +2035,367 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
 
   return KernelInfo;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-///// end /////
-int HostDeviceFuncInfo::MaxId = 0;
-clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
-clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
-clang::tooling::UnifiedPath DpctGlobalInfo::AnalysisScope;
-std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
-// TODO: implement one of this for each source language.
-clang::tooling::UnifiedPath DpctGlobalInfo::CudaPath;
-std::string DpctGlobalInfo::RuleFile = std::string();
-UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
-clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
-bool DpctGlobalInfo::NeedDpctDeviceExt = false;
-bool DpctGlobalInfo::IsIncMigration = true;
-bool DpctGlobalInfo::IsQueryAPIMapping = false;
-unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
-std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
-format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
-DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
-std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
-bool DpctGlobalInfo::EnableCtad = false;
-bool DpctGlobalInfo::GenBuildScript = false;
-bool DpctGlobalInfo::MigrateCmakeScript = false;
-bool DpctGlobalInfo::MigrateCmakeScriptOnly = false;
-bool DpctGlobalInfo::EnableComments = false;
-bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
-bool DpctGlobalInfo::IsMLKHeaderUsed = false;
-ASTContext *DpctGlobalInfo::Context = nullptr;
-SourceManager *DpctGlobalInfo::SM = nullptr;
-FileManager *DpctGlobalInfo::FM = nullptr;
-bool DpctGlobalInfo::KeepOriginCode = false;
-bool DpctGlobalInfo::SyclNamedLambda = false;
-bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
+void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
+  if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
+    insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
+}
+void DpctGlobalInfo::insertCublasAlloc(const CallExpr *CE) {
+  if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(2)))
+    insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(0), CE->getArg(1));
+}
+std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
+  if (auto Src = CudaMallocInfo::getMallocVar(E))
+    return findCudaMallocInfo(Src);
+  return std::shared_ptr<CudaMallocInfo>();
+}
+void DpctGlobalInfo::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
+  insertFile(Repl->getFilePath().str())->addReplacement(Repl);
+}
+CudaArchPPMap &DpctGlobalInfo::getCudaArchPPInfoMap() { return CAPPInfoMap; }
+HDFuncInfoMap &DpctGlobalInfo::getHostDeviceFuncInfoMap() { return HostDeviceFuncInfoMap; }
+std::unordered_map<std::string, std::shared_ptr<ExtReplacement>> &
+DpctGlobalInfo::getCudaArchMacroReplMap() {
+  return CudaArchMacroRepl;
+}
+CudaArchDefMap &DpctGlobalInfo::getCudaArchDefinedMap() { return CudaArchDefinedMap; }
+void DpctGlobalInfo::insertReplInfoFromYAMLToFileInfo(
+    const clang::tooling::UnifiedPath &FilePath,
+    std::shared_ptr<tooling::TranslationUnitReplacements> TUR) {
+  auto FileInfo = insertFile(FilePath);
+  if (FileInfo->PreviousTUReplFromYAML == nullptr)
+    FileInfo->PreviousTUReplFromYAML = TUR;
+}
+std::shared_ptr<tooling::TranslationUnitReplacements>
+DpctGlobalInfo::getReplInfoFromYAMLSavedInFileInfo(clang::tooling::UnifiedPath FilePath) {
+  auto FileInfo = findObject(FileMap, FilePath);
+  if (FileInfo)
+    return FileInfo->PreviousTUReplFromYAML;
+  else
+    return nullptr;
+}
+void DpctGlobalInfo::insertEventSyncTypeInfo(
+    const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
+    bool NeedReport, bool IsAssigned) {
+  std::string FilePath = Repl->getFilePath().str();
+  unsigned int Offset = Repl->getOffset();
+  unsigned int Length = Repl->getLength();
+  const std::string ReplText = Repl->getReplacementText().str();
+  auto FileInfo = insertFile(FilePath);
+  auto &M = FileInfo->getEventSyncTypeMap();
+  auto Iter = M.find(Offset);
+  if (Iter == M.end()) {
+    M.insert(std::make_pair(
+        Offset, EventSyncTypeInfo(Length, ReplText, NeedReport, IsAssigned)));
+  } else {
+    Iter->second.IsAssigned = IsAssigned;
+  }
+}
+void DpctGlobalInfo::updateEventSyncTypeInfo(
+    const std::shared_ptr<clang::dpct::ExtReplacement> Repl) {
+  std::string FilePath = Repl->getFilePath().str();
+  unsigned int Offset = Repl->getOffset();
+  unsigned int Length = Repl->getLength();
+  const std::string ReplText = Repl->getReplacementText().str();
+  auto FileInfo = insertFile(FilePath);
+  auto &M = FileInfo->getEventSyncTypeMap();
+  auto Iter = M.find(Offset);
+  if (Iter != M.end()) {
+    Iter->second.ReplText = ReplText;
+    Iter->second.NeedReport = false;
+  } else {
+    M.insert(std::make_pair(
+        Offset, EventSyncTypeInfo(Length, ReplText, false, false)));
+  }
+}
+void DpctGlobalInfo::insertTimeStubTypeInfo(
+    const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithSB,
+    const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithoutSB) {
+  std::string FilePath = ReplWithSB->getFilePath().str();
+  unsigned int Offset = ReplWithSB->getOffset();
+  unsigned int Length = ReplWithSB->getLength();
+  std::string StrWithSubmitBarrier = ReplWithSB->getReplacementText().str();
+  std::string StrWithoutSubmitBarrier =
+      ReplWithoutSB->getReplacementText().str();
+  auto FileInfo = insertFile(FilePath);
+  auto &M = FileInfo->getTimeStubTypeMap();
+  M.insert(
+      std::make_pair(Offset, TimeStubTypeInfo(Length, StrWithSubmitBarrier,
+                                              StrWithoutSubmitBarrier)));
+}
+void DpctGlobalInfo::updateTimeStubTypeInfo(SourceLocation BeginLoc, SourceLocation EndLoc) {
+  auto LocInfo = getLocInfo(BeginLoc);
+  auto FileInfo = insertFile(LocInfo.first);
+  size_t Begin = getLocInfo(BeginLoc).second;
+  size_t End = getLocInfo(EndLoc).second;
+  auto &TimeStubBounds = FileInfo->getTimeStubBounds();
+  TimeStubBounds.push_back(std::make_pair(Begin, End));
+}
+void DpctGlobalInfo::insertBuiltinVarInfo(
+    SourceLocation SL, unsigned int Len, std::string Repl,
+    std::shared_ptr<DeviceFunctionInfo> DFI) {
+  auto LocInfo = getLocInfo(SL);
+  auto FileInfo = insertFile(LocInfo.first);
+  auto &M = FileInfo->getBuiltinVarInfoMap();
+  auto Iter = M.find(LocInfo.second);
+  if (Iter == M.end()) {
+    BuiltinVarInfo BVI(Len, Repl, DFI);
+    M.insert(std::make_pair(LocInfo.second, BVI));
+  }
+}
+void DpctGlobalInfo::insertSpBLASWarningLocOffset(SourceLocation SL) {
+  auto LocInfo = getLocInfo(SL);
+  auto FileInfo = insertFile(LocInfo.first);
+  FileInfo->getSpBLASSet().insert(LocInfo.second);
+}
+std::shared_ptr<TextModification> DpctGlobalInfo::findConstantMacroTMInfo(SourceLocation SL) {
+  auto LocInfo = getLocInfo(SL);
+  auto FileInfo = insertFile(LocInfo.first);
+  auto &S = FileInfo->getConstantMacroTMSet();
+  for (const auto &TM : S) {
+    if (TM->getConstantOffset() == LocInfo.second) {
+      return TM;
+    }
+  }
+  return nullptr;
+}
+void DpctGlobalInfo::insertConstantMacroTMInfo(SourceLocation SL,
+                               std::shared_ptr<TextModification> TM) {
+  auto LocInfo = getLocInfo(SL);
+  auto FileInfo = insertFile(LocInfo.first);
+  TM->setConstantOffset(LocInfo.second);
+  auto &S = FileInfo->getConstantMacroTMSet();
+  S.insert(TM);
+}
+void DpctGlobalInfo::insertAtomicInfo(std::string HashStr, SourceLocation SL,
+                      std::string FuncName) {
+  auto LocInfo = getLocInfo(SL);
+  auto FileInfo = insertFile(LocInfo.first);
+  auto &M = FileInfo->getAtomicMap();
+  if (M.find(HashStr) == M.end()) {
+    M.insert(std::make_pair(HashStr,
+                            std::make_tuple(LocInfo.second, FuncName, true)));
+  }
+}
+void DpctGlobalInfo::removeAtomicInfo(std::string HashStr) {
+  for (auto &File : FileMap) {
+    auto &M = File.second->getAtomicMap();
+    auto Iter = M.find(HashStr);
+    if (Iter != M.end()) {
+      std::get<2>(Iter->second) = false;
+      return;
+    }
+  }
+}
+void DpctGlobalInfo::setFileEnterLocation(SourceLocation Loc) {
+  auto LocInfo = getLocInfo(Loc);
+  insertFile(LocInfo.first)->setFileEnterOffset(LocInfo.second);
+}
+void DpctGlobalInfo::setFirstIncludeLocation(SourceLocation Loc) {
+  auto LocInfo = getLocInfo(Loc);
+  insertFile(LocInfo.first)->setFirstIncludeOffset(LocInfo.second);
+}
+void DpctGlobalInfo::setLastIncludeLocation(SourceLocation Loc) {
+  auto LocInfo = getLocInfo(Loc);
+  insertFile(LocInfo.first)->setLastIncludeOffset(LocInfo.second);
+}
+void DpctGlobalInfo::setMathHeaderInserted(SourceLocation Loc, bool B) {
+  auto LocInfo = getLocInfo(Loc);
+  insertFile(LocInfo.first)->setMathHeaderInserted(B);
+}
+void DpctGlobalInfo::setAlgorithmHeaderInserted(SourceLocation Loc, bool B) {
+  auto LocInfo = getLocInfo(Loc);
+  insertFile(LocInfo.first)->setAlgorithmHeaderInserted(B);
+}
+void DpctGlobalInfo::setTimeHeaderInserted(SourceLocation Loc, bool B) {
+  auto LocInfo = getLocInfo(Loc);
+  insertFile(LocInfo.first)->setTimeHeaderInserted(B);
+}
+void DpctGlobalInfo::insertHeader(SourceLocation Loc, HeaderType Type) {
+  auto LocInfo = getLocInfo(Loc);
+  insertFile(LocInfo.first)->insertHeader(Type);
+}
+void DpctGlobalInfo::insertHeader(SourceLocation Loc, std::string HeaderName) {
+  auto LocInfo = getLocInfo(Loc);
+  insertFile(LocInfo.first)->insertCustomizedHeader(std::move(HeaderName));
+}
 std::unordered_map<
     std::string,
     std::pair<std::pair<clang::tooling::UnifiedPath /*begin file name*/,
                         unsigned int /*begin offset*/>,
               std::pair<clang::tooling::UnifiedPath /*end file name*/,
-                        unsigned int /*end offset*/>>>
-    DpctGlobalInfo::ExpansionRangeBeginMap;
-bool DpctGlobalInfo::EnablepProfilingFlag = false;
-std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
-    DpctGlobalInfo::ExpansionRangeToMacroRecord;
-std::tuple<unsigned int, std::string, SourceRange>
-    DpctGlobalInfo::LastMacroRecord =
-        std::make_tuple<unsigned int, std::string, SourceRange>(0, "",
-                                                                SourceRange());
-std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
-std::vector<std::pair<clang::tooling::UnifiedPath, size_t>>
-    DpctGlobalInfo::ConditionalCompilationLoc;
-std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
-    DpctGlobalInfo::MacroTokenToMacroDefineLoc;
-std::map<std::string, std::string>
-    DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
-std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
-std::map<std::string, unsigned int> DpctGlobalInfo::BeginOfEmptyMacros;
-std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
-std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::IncludingFileSet;
-std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
-std::unordered_map<std::string, std::vector<clang::tooling::Replacement>>
-    DpctGlobalInfo::FileRelpsMap;
-std::unordered_map<std::string, std::string> DpctGlobalInfo::DigestMap;
-const std::string DpctGlobalInfo::YamlFileName = "MainSourceFiles.yaml";
-std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
-const std::string MemVarInfo::ExternVariableName = "dpct_local";
-std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
-const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
-bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
-unsigned int DpctGlobalInfo::IndentWidth = 0;
-std::map<unsigned int, unsigned int> DpctGlobalInfo::KCIndentWidthMap;
-std::unordered_map<std::string, int> DpctGlobalInfo::LocationInitIndexMap;
-int DpctGlobalInfo::CurrentMaxIndex = 0;
-int DpctGlobalInfo::CurrentIndexInRule = 0;
-clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
-bool DpctGlobalInfo::HasFoundDeviceChanged = false;
-std::unordered_map<int, DpctGlobalInfo::HelperFuncReplInfo>
-    DpctGlobalInfo::HelperFuncReplInfoMap;
-int DpctGlobalInfo::HelperFuncReplInfoIndex = 1;
-std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
-    DpctGlobalInfo::TempVariableDeclCounterMap;
-std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
-bool DpctGlobalInfo::UsingDRYPattern = true;
-unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
-std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
-    DpctGlobalInfo::CudaKernelDimDFIMap;
-unsigned int DpctGlobalInfo::RunRound = 0;
-bool DpctGlobalInfo::NeedRunAgain = false;
-std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::ModuleFiles;
-bool DpctGlobalInfo::OptimizeMigrationFlag = false;
-
-std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
-    DeviceFunctionDecl::FuncInfoMap;
-CudaArchPPMap DpctGlobalInfo::CAPPInfoMap;
-HDFuncInfoMap DpctGlobalInfo::HostDeviceFuncInfoMap;
-// __CUDA_ARCH__ Offset -> defined(...) Offset
-CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
-std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
-    DpctGlobalInfo::CudaArchMacroRepl;
-std::unordered_map<clang::tooling::UnifiedPath,
-                   std::shared_ptr<ExtReplacements>>
-    DpctGlobalInfo::FileReplCache;
-std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::ReProcessFile;
+                        unsigned int /*end offset*/>>> &
+DpctGlobalInfo::getExpansionRangeBeginMap() {
+  return ExpansionRangeBeginMap;
+}
+std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>> &
+DpctGlobalInfo::getExpansionRangeToMacroRecord() {
+  return ExpansionRangeToMacroRecord;
+}
+std::map<std::string,
+                std::shared_ptr<DpctGlobalInfo::MacroDefRecord>> &
+DpctGlobalInfo::getMacroTokenToMacroDefineLoc() {
+  return MacroTokenToMacroDefineLoc;
+}
+std::map<std::string, std::string> &
+DpctGlobalInfo::getFunctionCallInMacroMigrateRecord() {
+  return FunctionCallInMacroMigrateRecord;
+}
+std::map<std::string, SourceLocation> &DpctGlobalInfo::getEndifLocationOfIfdef() {
+  return EndifLocationOfIfdef;
+}
+std::vector<std::pair<clang::tooling::UnifiedPath, size_t>> &
+DpctGlobalInfo::getConditionalCompilationLoc() {
+  return ConditionalCompilationLoc;
+}
+std::map<std::string, unsigned int> &DpctGlobalInfo::getBeginOfEmptyMacros() {
+  return BeginOfEmptyMacros;
+}
+std::map<std::string, SourceLocation> &DpctGlobalInfo::getEndOfEmptyMacros() {
+  return EndOfEmptyMacros;
+}
+std::map<std::string, bool> &DpctGlobalInfo::getMacroDefines() { return MacroDefines; }
+std::set<clang::tooling::UnifiedPath> &DpctGlobalInfo::getIncludingFileSet() {
+  return IncludingFileSet;
+}
+std::set<std::string> &DpctGlobalInfo::getFileSetInCompiationDB() {
+  return FileSetInCompiationDB;
+}
 std::unordered_map<std::string,
-                   std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>>
-    DpctGlobalInfo::SpellingLocToDFIsMapForAssumeNDRange;
-std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
-                   std::unordered_set<std::string>>
-    DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
-unsigned DpctGlobalInfo::ExtensionDEFlag = static_cast<unsigned>(-1);
-unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
-unsigned DpctGlobalInfo::ExperimentalFlag = 0;
-unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
-unsigned int DpctGlobalInfo::ColorOption = 1;
-std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
-    DpctGlobalInfo::CubPlaceholderIndexMap;
-std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
-    DpctGlobalInfo::PriorityReplInfoMap;
-std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
-std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
-std::unordered_map<std::string, std::unordered_map<clang::tooling::UnifiedPath,
-                                                   std::vector<unsigned>>>
-    DpctGlobalInfo::RnnInputMap;
+                          std::vector<clang::tooling::Replacement>> &
+DpctGlobalInfo::getFileRelpsMap() {
+  return FileRelpsMap;
+}
+std::unordered_map<std::string, std::string> &DpctGlobalInfo::getDigestMap() {
+  return DigestMap;
+}
+std::string DpctGlobalInfo::getYamlFileName() { return YamlFileName; }
+std::set<std::string> &DpctGlobalInfo::getGlobalVarNameSet() {
+  return GlobalVarNameSet;
+}
+void DpctGlobalInfo::removeVarNameInGlobalVarNameSet(const std::string &VarName) {
+  auto Iter = getGlobalVarNameSet().find(VarName);
+  if (Iter != getGlobalVarNameSet().end()) {
+    getGlobalVarNameSet().erase(Iter);
+  }
+}
+bool DpctGlobalInfo::getDeviceChangedFlag() { return HasFoundDeviceChanged; }
+void DpctGlobalInfo::setDeviceChangedFlag(bool Flag) { HasFoundDeviceChanged = Flag; }
+std::unordered_map<int, DpctGlobalInfo::HelperFuncReplInfo> &
+DpctGlobalInfo::getHelperFuncReplInfoMap() {
+  return HelperFuncReplInfoMap;
+}
+int DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc() {
+  int Res = HelperFuncReplInfoIndex;
+  HelperFuncReplInfoIndex++;
+  return Res;
+}
+std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter> &
+DpctGlobalInfo::getTempVariableDeclCounterMap() {
+  return TempVariableDeclCounterMap;
+}
+std::unordered_map<std::string, int> &DpctGlobalInfo::getTempVariableHandledMap() {
+  return TempVariableHandledMap;
+}
+bool DpctGlobalInfo::getUsingDRYPattern() { return UsingDRYPattern; }
+void DpctGlobalInfo::setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
+bool DpctGlobalInfo::useNdRangeBarrier() {
+  return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
+}
+bool DpctGlobalInfo::useFreeQueries() {
+  return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
+}
+bool DpctGlobalInfo::useGroupLocalMemory() {
+  return getUsingExperimental<ExperimentalFeatures::Exp_GroupSharedMemory>();
+}
+bool DpctGlobalInfo::useLogicalGroup() {
+  return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
+}
+bool DpctGlobalInfo::useUserDefineReductions() {
+  return getUsingExperimental<
+      ExperimentalFeatures::Exp_UserDefineReductions>();
+}
+bool DpctGlobalInfo::useMaskedSubGroupFunction() {
+  return getUsingExperimental<
+      ExperimentalFeatures::Exp_MaskedSubGroupFunction>();
+}
+bool DpctGlobalInfo::useExtDPLAPI() {
+  return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
+}
+bool DpctGlobalInfo::useOccupancyCalculation() {
+  return getUsingExperimental<
+      ExperimentalFeatures::Exp_OccupancyCalculation>();
+}
+bool DpctGlobalInfo::useExtJointMatrix() {
+  return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
+}
+bool DpctGlobalInfo::useExtBFloat16Math() {
+  return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
+}
+bool DpctGlobalInfo::useNoQueueDevice() {
+  return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
+}
+bool DpctGlobalInfo::useEnqueueBarrier() {
+  return getUsingExtensionDE(
+      DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
+}
+bool DpctGlobalInfo::useCAndCXXStandardLibrariesExt() {
+  return getUsingExtensionDD(
+      DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
+}
+bool DpctGlobalInfo::useIntelDeviceMath() {
+  return getUsingExtensionDD(
+      DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+}
+bool DpctGlobalInfo::useDeviceInfo() {
+  return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
+}
+bool DpctGlobalInfo::useBFloat16() {
+  return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16);
+}
+std::shared_ptr<DpctFileInfo>
+DpctGlobalInfo::insertFile(const clang::tooling::UnifiedPath &FilePath) {
+  return insertObject(FileMap, FilePath);
+}
+std::shared_ptr<DpctFileInfo> DpctGlobalInfo::getMainFile() const { return MainFile; }
+void DpctGlobalInfo::setMainFile(std::shared_ptr<DpctFileInfo> Main) {
+  MainFile = Main;
+}
+void DpctGlobalInfo::recordIncludingRelationship(
+    const clang::tooling::UnifiedPath &CurrentFileName,
+    const clang::tooling::UnifiedPath &IncludedFileName) {
+  auto CurrentFileInfo = this->insertFile(CurrentFileName);
+  auto IncludedFileInfo = this->insertFile(IncludedFileName);
+  CurrentFileInfo->insertIncludedFilesInfo(IncludedFileInfo);
+}
+unsigned int DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc() {
+  unsigned int Res = CudaKernelDimDFIIndex;
+  ++CudaKernelDimDFIIndex;
+  return Res;
+}
+void
+DpctGlobalInfo::insertCudaKernelDimDFIMap(unsigned int Index,
+                          std::shared_ptr<DeviceFunctionInfo> Ptr) {
+  CudaKernelDimDFIMap.insert(std::make_pair(Index, Ptr));
+}
+std::shared_ptr<DeviceFunctionInfo>
+DpctGlobalInfo::getCudaKernelDimDFI(unsigned int Index) {
+  auto Iter = CudaKernelDimDFIMap.find(Index);
+  if (Iter != CudaKernelDimDFIMap.end())
+    return Iter->second;
+  return nullptr;
+}
+std::set<clang::tooling::UnifiedPath> &DpctGlobalInfo::getModuleFiles() {
+  return ModuleFiles;
+}
+void DpctGlobalInfo::setRunRound(unsigned int Round) { RunRound = Round; }
+unsigned int DpctGlobalInfo::getRunRound() { return RunRound; }
+void DpctGlobalInfo::setNeedRunAgain(bool NRA) { NeedRunAgain = NRA; }
+bool DpctGlobalInfo::isNeedRunAgain() { return NeedRunAgain; }
 std::unordered_map<clang::tooling::UnifiedPath,
-                   std::vector<clang::tooling::UnifiedPath>>
-    DpctGlobalInfo::MainSourceFileMap;
-std::unordered_map<std::string, bool> DpctGlobalInfo::MallocHostInfoMap;
-std::map<std::shared_ptr<TextModification>, bool>
-    DpctGlobalInfo::ConstantReplProcessedFlagMap;
-std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
-std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
-/// This variable saved the info of previous migration from the
-/// MainSourceFiles.yaml file. This variable is valid after
-/// canContinueMigration() is called.
-std::shared_ptr<clang::tooling::TranslationUnitReplacements>
-    DpctGlobalInfo::MainSourceYamlTUR =
-        std::make_shared<clang::tooling::TranslationUnitReplacements>();
-
-
-
+                          std::shared_ptr<ExtReplacements>> &
+DpctGlobalInfo::getFileReplCache() {
+  return FileReplCache;
+}
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
   PrecAndDomPairSet.clear();
@@ -2232,7 +2427,121 @@ void DpctGlobalInfo::resetInfo() {
   DFIToSpellingLocsMapForAssumeNDRange.clear();
   FreeQueriesInfo::reset();
 }
+void
+DpctGlobalInfo::updateSpellingLocDFIMaps(SourceLocation SL,
+                         std::shared_ptr<DeviceFunctionInfo> DFI) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  std::string Loc = getCombinedStrFromLoc(SM.getSpellingLoc(SL));
 
+  auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(Loc);
+  if (IterOfL2D == SpellingLocToDFIsMapForAssumeNDRange.end()) {
+    std::unordered_set<std::shared_ptr<DeviceFunctionInfo>> Set;
+    Set.insert(DFI);
+    SpellingLocToDFIsMapForAssumeNDRange.insert(std::make_pair(Loc, Set));
+  } else {
+    IterOfL2D->second.insert(DFI);
+  }
+
+  auto IterOfD2L = DFIToSpellingLocsMapForAssumeNDRange.find(DFI);
+  if (IterOfD2L == DFIToSpellingLocsMapForAssumeNDRange.end()) {
+    std::unordered_set<std::string> Set;
+    Set.insert(Loc);
+    DFIToSpellingLocsMapForAssumeNDRange.insert(std::make_pair(DFI, Set));
+  } else {
+    IterOfD2L->second.insert(Loc);
+  }
+}
+std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>
+DpctGlobalInfo::getDFIVecRelatedFromSpellingLoc(std::shared_ptr<DeviceFunctionInfo> DFI) {
+  std::unordered_set<std::shared_ptr<DeviceFunctionInfo>> Res;
+  auto IterOfD2L = DFIToSpellingLocsMapForAssumeNDRange.find(DFI);
+  if (IterOfD2L == DFIToSpellingLocsMapForAssumeNDRange.end()) {
+    return Res;
+  }
+
+  for (const auto &SpellingLoc : IterOfD2L->second) {
+    auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(SpellingLoc);
+    if (IterOfL2D != SpellingLocToDFIsMapForAssumeNDRange.end()) {
+      Res.insert(IterOfL2D->second.begin(), IterOfL2D->second.end());
+    }
+  }
+  return Res;
+}
+unsigned int DpctGlobalInfo::getColorOption() { return ColorOption; }
+void DpctGlobalInfo::setColorOption(unsigned Color) { ColorOption = Color; }
+std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>> &
+DpctGlobalInfo::getCubPlaceholderIndexMap() {
+  return CubPlaceholderIndexMap;
+}
+std::unordered_map<std::string,
+                                 std::shared_ptr<PriorityReplInfo>> &
+DpctGlobalInfo::getPriorityReplInfoMap() {
+  return PriorityReplInfoMap;
+}
+void
+DpctGlobalInfo::addPriorityReplInfo(std::string Key, std::shared_ptr<PriorityReplInfo> Info) {
+  if (PriorityReplInfoMap.count(Key)) {
+    if (PriorityReplInfoMap[Key]->Priority == Info->Priority) {
+      PriorityReplInfoMap[Key]->Repls.insert(
+          PriorityReplInfoMap[Key]->Repls.end(), Info->Repls.begin(),
+          Info->Repls.end());
+      PriorityReplInfoMap[Key]->RelatedAction.insert(
+          PriorityReplInfoMap[Key]->RelatedAction.end(),
+          Info->RelatedAction.begin(), Info->RelatedAction.end());
+    } else if (PriorityReplInfoMap[Key]->Priority < Info->Priority) {
+      PriorityReplInfoMap[Key] = Info;
+    }
+  } else {
+    PriorityReplInfoMap[Key] = Info;
+  }
+}
+void DpctGlobalInfo::setOptimizeMigrationFlag(bool Flag) {
+  OptimizeMigrationFlag = Flag;
+}
+bool DpctGlobalInfo::isOptimizeMigration() { return OptimizeMigrationFlag; }
+std::map<std::string, clang::tooling::OptionInfo> &
+DpctGlobalInfo::getCurrentOptMap() {
+  return CurrentOptMap;
+}
+void DpctGlobalInfo::setMainSourceYamlTUR(
+    std::shared_ptr<clang::tooling::TranslationUnitReplacements> Ptr) {
+  MainSourceYamlTUR = Ptr;
+}
+std::shared_ptr<clang::tooling::TranslationUnitReplacements>
+DpctGlobalInfo::getMainSourceYamlTUR() {
+  return MainSourceYamlTUR;
+}
+std::unordered_map<
+    std::string,
+    std::unordered_map<clang::tooling::UnifiedPath, std::vector<unsigned>>> &
+DpctGlobalInfo::getRnnInputMap() {
+  return RnnInputMap;
+}
+std::unordered_map<clang::tooling::UnifiedPath,
+                                 std::vector<clang::tooling::UnifiedPath>> &
+DpctGlobalInfo::getMainSourceFileMap() {
+  return MainSourceFileMap;
+}
+std::unordered_map<std::string, bool> &DpctGlobalInfo::getMallocHostInfoMap() {
+  return MallocHostInfoMap;
+}
+std::map<std::shared_ptr<TextModification>, bool> &
+DpctGlobalInfo::getConstantReplProcessedFlagMap() {
+  return ConstantReplProcessedFlagMap;
+}
+std::set<std::string> &DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet() {
+  return VarUsedByRuntimeSymbolAPISet;
+}
+void DpctGlobalInfo::setNeedParenAPI(const std::string &Name) {
+  NeedParenAPISet.insert(Name);
+};
+bool DpctGlobalInfo::isNeedParenAPI(const std::string &Name) {
+  return NeedParenAPISet.count(Name);
+}
+std::tuple<unsigned int, std::string, SourceRange>
+    DpctGlobalInfo::LastMacroRecord =
+        std::make_tuple<unsigned int, std::string, SourceRange>(0, "",
+                                                                SourceRange());
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInAnalysisScopeFunc = DpctGlobalInfo::checkInAnalysisScope;
   GetRunRound = DpctGlobalInfo::getRunRound;
@@ -2241,76 +2550,167 @@ DpctGlobalInfo::DpctGlobalInfo() {
   tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
   tooling::SetIsExcludePathHandler(DpctGlobalInfo::isExcluded);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
-  if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
-    insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
+bool DpctGlobalInfo::checkInAnalysisScope(SourceLocation SL) {
+  return isInAnalysisScope(SL);
 }
-void DpctGlobalInfo::insertCublasAlloc(const CallExpr *CE) {
-  if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(2)))
-    insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(0), CE->getArg(1));
-}
-std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
-  if (auto Src = CudaMallocInfo::getMallocVar(E))
-    return findCudaMallocInfo(Src);
-  return std::shared_ptr<CudaMallocInfo>();
-}
-
-void DpctGlobalInfo::insertBuiltinVarInfo(
-    SourceLocation SL, unsigned int Len, std::string Repl,
-    std::shared_ptr<DeviceFunctionInfo> DFI) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getBuiltinVarInfoMap();
-  auto Iter = M.find(LocInfo.second);
-  if (Iter == M.end()) {
-    BuiltinVarInfo BVI(Len, Repl, DFI);
-    M.insert(std::make_pair(LocInfo.second, BVI));
+void DpctGlobalInfo::recordTokenSplit(SourceLocation SL, unsigned Len) {
+  auto It = getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(SM->getSpellingLoc(SL)));
+  if (It != getExpansionRangeToMacroRecord().end()) {
+    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
+        [getCombinedStrFromLoc(
+            SM->getSpellingLoc(SL).getLocWithOffset(Len))] = It->second;
   }
 }
+SourceLocation DpctGlobalInfo::getLocation(const VarDecl *VD) {
+  return VD->getLocation();
+}
+SourceLocation DpctGlobalInfo::getLocation(const FunctionDecl *FD) {
+  return FD->getBeginLoc();
+}
+SourceLocation DpctGlobalInfo::getLocation(const FieldDecl *FD) {
+  return FD->getLocation();
+}
+SourceLocation DpctGlobalInfo::getLocation(const CallExpr *CE) {
+  return CE->getEndLoc();
+}
+SourceLocation DpctGlobalInfo::getLocation(const CUDAKernelCallExpr *CKC) {
+  return getTheLastCompleteImmediateRange(CKC->getBeginLoc(),
+                                          CKC->getEndLoc())
+      .first;
+}
+/// This variable saved the info of previous migration from the
+/// MainSourceFiles.yaml file. This variable is valid after
+/// canContinueMigration() is called.
+std::shared_ptr<clang::tooling::TranslationUnitReplacements>
+    DpctGlobalInfo::MainSourceYamlTUR =
+        std::make_shared<clang::tooling::TranslationUnitReplacements>();
+clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
+clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
+clang::tooling::UnifiedPath DpctGlobalInfo::AnalysisScope;
+std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
+// TODO: implement one of this for each source language.
+clang::tooling::UnifiedPath DpctGlobalInfo::CudaPath;
+std::string DpctGlobalInfo::RuleFile = std::string();
+UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
+bool DpctGlobalInfo::NeedDpctDeviceExt = false;
+bool DpctGlobalInfo::IsIncMigration = true;
+bool DpctGlobalInfo::IsQueryAPIMapping = false;
+unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
+std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
+format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
+DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
+bool DpctGlobalInfo::EnableCtad = false;
+bool DpctGlobalInfo::IsMLKHeaderUsed = false;
+bool DpctGlobalInfo::GenBuildScript = false;
+bool DpctGlobalInfo::MigrateCmakeScript = false;
+bool DpctGlobalInfo::MigrateCmakeScriptOnly = false;
+bool DpctGlobalInfo::EnableComments = false;
+std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
+bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
+ASTContext *DpctGlobalInfo::Context = nullptr;
+SourceManager *DpctGlobalInfo::SM = nullptr;
+FileManager *DpctGlobalInfo::FM = nullptr;
+bool DpctGlobalInfo::KeepOriginCode = false;
+bool DpctGlobalInfo::SyclNamedLambda = false;
+bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
+unsigned int DpctGlobalInfo::IndentWidth = 0;
+std::map<unsigned int, unsigned int> DpctGlobalInfo::KCIndentWidthMap;
+std::unordered_map<std::string, int> DpctGlobalInfo::LocationInitIndexMap;
+std::unordered_map<
+    std::string,
+    std::pair<std::pair<clang::tooling::UnifiedPath /*begin file name*/,
+                        unsigned int /*begin offset*/>,
+              std::pair<clang::tooling::UnifiedPath /*end file name*/,
+                        unsigned int /*end offset*/>>>
+    DpctGlobalInfo::ExpansionRangeBeginMap;
+bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
+bool DpctGlobalInfo::EnablepProfilingFlag = false;
+std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
+    DpctGlobalInfo::ExpansionRangeToMacroRecord;
+std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
+std::vector<std::pair<clang::tooling::UnifiedPath, size_t>>
+    DpctGlobalInfo::ConditionalCompilationLoc;
+std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+    DpctGlobalInfo::MacroTokenToMacroDefineLoc;
+std::map<std::string, std::string>
+    DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
+std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
+std::map<std::string, unsigned int> DpctGlobalInfo::BeginOfEmptyMacros;
+std::unordered_map<std::string, std::vector<clang::tooling::Replacement>>
+    DpctGlobalInfo::FileRelpsMap;
+std::unordered_map<std::string, std::string> DpctGlobalInfo::DigestMap;
+const std::string DpctGlobalInfo::YamlFileName = "MainSourceFiles.yaml";
+std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
+int DpctGlobalInfo::CurrentMaxIndex = 0;
+int DpctGlobalInfo::CurrentIndexInRule = 0;
+std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::IncludingFileSet;
+std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
+std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
+clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
+bool DpctGlobalInfo::HasFoundDeviceChanged = false;
+std::unordered_map<int, DpctGlobalInfo::HelperFuncReplInfo>
+    DpctGlobalInfo::HelperFuncReplInfoMap;
+int DpctGlobalInfo::HelperFuncReplInfoIndex = 1;
+std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
+    DpctGlobalInfo::TempVariableDeclCounterMap;
+std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
+bool DpctGlobalInfo::UsingDRYPattern = true;
+unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
+std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
+    DpctGlobalInfo::CudaKernelDimDFIMap;
+CudaArchPPMap DpctGlobalInfo::CAPPInfoMap;
+HDFuncInfoMap DpctGlobalInfo::HostDeviceFuncInfoMap;
+// __CUDA_ARCH__ Offset -> defined(...) Offset
+CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
+std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
+    DpctGlobalInfo::CudaArchMacroRepl;
+std::unordered_map<clang::tooling::UnifiedPath,
+                   std::shared_ptr<ExtReplacements>>
+    DpctGlobalInfo::FileReplCache;
+std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::ReProcessFile;
+bool DpctGlobalInfo::NeedRunAgain = false;
+unsigned int DpctGlobalInfo::RunRound = 0;
+std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::ModuleFiles;
+std::unordered_map<std::string,
+                   std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>>
+    DpctGlobalInfo::SpellingLocToDFIsMapForAssumeNDRange;
+std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
+                   std::unordered_set<std::string>>
+    DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
+unsigned DpctGlobalInfo::ExtensionDEFlag = static_cast<unsigned>(-1);
+unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
+unsigned DpctGlobalInfo::ExperimentalFlag = 0;
+unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
+unsigned int DpctGlobalInfo::ColorOption = 1;
+std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
+    DpctGlobalInfo::CubPlaceholderIndexMap;
+bool DpctGlobalInfo::OptimizeMigrationFlag = false;
+std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
+    DpctGlobalInfo::PriorityReplInfoMap;
+std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
+std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
+std::unordered_map<std::string, std::unordered_map<clang::tooling::UnifiedPath,
+                                                   std::vector<unsigned>>>
+    DpctGlobalInfo::RnnInputMap;
+std::unordered_map<clang::tooling::UnifiedPath,
+                   std::vector<clang::tooling::UnifiedPath>>
+    DpctGlobalInfo::MainSourceFileMap;
+std::unordered_map<std::string, bool> DpctGlobalInfo::MallocHostInfoMap;
+std::map<std::shared_ptr<TextModification>, bool>
+    DpctGlobalInfo::ConstantReplProcessedFlagMap;
+std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
+std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 
 
+///// end /////
+int HostDeviceFuncInfo::MaxId = 0;
+const std::string MemVarInfo::ExternVariableName = "dpct_local";
+std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
+const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
+std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
+    DeviceFunctionDecl::FuncInfoMap;
 
 int KernelCallExpr::calculateOriginArgsSize() const {
   int Size = 0;
