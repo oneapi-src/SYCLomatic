@@ -222,19 +222,19 @@ public:
   pointer get() const {
     auto res =
         (const_cast<device_pointer_base *>(this)
-             ->buffer.template get_access<sycl::access_mode::read_write>())
+             ->buffer.template get_host_access<sycl::access_mode::read_write>())
             .get_pointer();
     return res + idx;
   }
   operator ValueType *() {
-    auto res = (buffer.template get_access<sycl::access_mode::read_write>())
+    auto res = (buffer.template get_host_access<sycl::access_mode::read_write>())
                    .get_pointer();
     return res + idx;
   }
   operator ValueType *() const {
     auto res =
         (const_cast<device_pointer_base *>(this)
-             ->buffer.template get_access<sycl::access_mode::read_write>())
+             ->buffer.template get_host_access<sycl::access_mode::read_write>())
             .get_pointer();
     return res + idx;
   }
@@ -536,7 +536,7 @@ public:
 
   reference operator*() const {
     return const_cast<device_iterator *>(this)
-        ->buffer.template get_access<mode>()[Base::idx];
+        ->buffer.template get_host_access<mode>()[Base::idx];
   }
 
   reference operator[](difference_type i) const { return *(*this + i); }
