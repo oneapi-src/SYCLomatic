@@ -1,6 +1,13 @@
-#ifndef __DPCT_SCHEMA_HELPER__
-#define __DPCT_SCHEMA_HELPER__
-#include "debug_helper.hpp"
+//==---- schema.hpp -------------------------------*- C++ -*----------------==//
+//
+// Copyright (C) Intel Corporation
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// See https://llvm.org/LICENSE.txt for license information.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef __DPCT_SCHEMA_HPP__
+#define __DPCT_SCHEMA_HPP__
 #include "json.hpp"
 #include <algorithm>
 #include <assert.h>
@@ -25,11 +32,13 @@
 
 namespace dpct {
 namespace experimental {
+namespace detail {
 
 class Schema;
 
 static std::map<std::string, std::shared_ptr<Schema>> schema_map;
 static std::map<std::string, size_t> schema_size;
+
 inline size_t get_size_of_schema(const std::string &schema) {
   if (schema_size.find(schema) == schema_size.end()) {
     schema_size[schema] = 0; // '0' indicates that the size will match the type
@@ -37,9 +46,16 @@ inline size_t get_size_of_schema(const std::string &schema) {
   }
   return schema_size[schema];
 }
+
 inline void set_size_of_schema(const std::string &schema, size_t size) {
   schema_size[schema] = size;
 }
+
+inline std::map<void *, uint32_t> &get_ptr_size_map() {
+  static std::map<void *, uint32_t> ptr_size_map;
+  return ptr_size_map;
+}
+
 enum class ValType { SCALAR, POINTER, ARRAY, POINTERTOPOINTER };
 enum class MemLoc { NONE, HOST, DEVICE };
 enum class schema_type {
@@ -63,7 +79,7 @@ inline ValType getValType(const std::string &str) {
   } else if (to_str == "ARRAY") {
     return ValType::ARRAY;
   }
-  error_exit("The value type:" + str + " is unkonwn");
+  error_exit("The value type : " + str + " is unkonwn.");
 }
 
 inline MemLoc getMemLoc(const std::string &str) {
@@ -75,7 +91,7 @@ inline MemLoc getMemLoc(const std::string &str) {
   } else if (to_str == "DEVICE") {
     return MemLoc::DEVICE;
   }
-  error_exit("The memory location:" + str + " is unkonwn");
+  error_exit("The memory location : " + str + " is unkonwn.");
 }
 
 inline schema_type get_schema_type(const std::string &str) {
@@ -87,7 +103,7 @@ inline schema_type get_schema_type(const std::string &str) {
   } else if (to_str == "MEMBER") {
     return schema_type::MEMBER;
   }
-  error_exit("The schmea type:" + str + " is unkonwn");
+  error_exit("The schmea type : " + str + " is unkonwn.");
 }
 class Schema {
 public:
@@ -182,8 +198,7 @@ create_schema_var(const std::string &VarName, const std::string &TypeName,
 inline std::shared_ptr<Schema> gen_type_schema(dpct_json::value &v) {
   auto obj = v.get_value<dpct_json::object>();
   std::string schema_name = obj.get("TypeName").get_value<std::string>();
-  std::string schema_type_name =
-      obj.get("SchemaType").get_value<std::string>();
+  std::string schema_type_name = obj.get("SchemaType").get_value<std::string>();
   int field_num = obj.get("FieldNum").get_value<int>();
   size_t type_size = obj.get("TypeSize").get_value<int>();
   bool is_virtual = obj.get("IsVirtual").get_value<bool>();
@@ -249,36 +264,16 @@ inline bool dpct_json::parse(const std::string &json, dpct_json::value &v) {
   dpct_json::json_parser parse(json);
   if (parse.parse_value(v))
     return true;
-  error_exit("Parsing JSON string was not success.\n");
+  return false;
 }
 
-inline std::shared_ptr<Schema> parse_var_schema_str(const std::string &str) {
+inline std::shared_ptr<Schema> gen_obj_schema(const std::string &str) {
   dpct_json::value v(nullptr);
   dpct_json::parse(str, v);
   if (v.real_type == dpct_json::value::object_t) {
     return gen_schema(v);
   }
   return nullptr;
-}
-
-inline void parse_type_schema_str(const std::string &str) {
-  dpct_json::value v(nullptr);
-  dpct_json::parse(str, v);
-  if (v.real_type == dpct_json::value::array_t) {
-    dpct_json::array arr = v.get_value<dpct_json::array>();
-    for (auto iter = arr.begin(); iter != arr.end(); iter++) {
-      dpct_json::value &cur_val = *iter;
-      if (cur_val.real_type ==
-          dpct_json::value::object_t) {
-        std::shared_ptr<Schema> type_schema = gen_schema(cur_val);
-        if (type_schema != nullptr) {
-          schema_map[type_schema->get_type_name()] = type_schema;
-        }
-      }
-    }
-    return;
-  }
-  error_exit("The type schema must be the array type.")
 }
 
 inline void get_data_as_hex(const void *data, size_t data_size,
@@ -367,26 +362,26 @@ inline void get_val_from_addr(std::string &value,
 inline static std::map<std::string, int> api_index;
 inline static std::vector<std::string> dump_json;
 inline static std::string dump_file = "dump_log.json";
+
 class Logger {
 public:
-  Logger(const std::string &dump_file) : ipf(dump_file, std::ios::in) {
+  Logger(const std::string &dump_file) : dump_file(dump_file), ipf(dump_file, std::ios::in) {
     if (ipf.is_open()) {
       std::getline(ipf, data);
       ipf.close();
-    } else {
-      std::cerr << "Error opening input file: " << dump_file << std::endl;
     }
   }
+
   ~Logger() {
     opf.open(dump_file);
-    std::string ret = std::accumulate(
+    std::string json = std::accumulate(
         dump_json.begin(), dump_json.end(), std::string("{"),
         [](std::string acc, std::string val) { return acc + val + ','; });
-    if (!ret.empty()) {
-      ret.pop_back();
+    if (!json.empty()) {
+      json.pop_back();
     }
-    ret += "}";
-    opf << ret;
+    json += "}\n";
+    opf << json;
     if (!opf.is_open()) {
       opf.close();
     }
@@ -394,6 +389,7 @@ public:
   const std::string &get_data() { return data; }
 
 private:
+  std::string dump_file;
   std::ifstream ipf;
   std::ofstream opf;
   std::string data;
@@ -404,11 +400,19 @@ static Logger log(dump_file);
 inline void process_var(std::string &log) { log = ""; }
 
 template <class... Args>
-void process_var(std::string &log, const std::string &schema_str, long *value, size_t size,
-                        Args... args) {
-  std::shared_ptr<Schema> schema = parse_var_schema_str(schema_str);
+void process_var(std::string &log, const std::string &schema_str, long *value,
+                 Args... args) {
+  std::shared_ptr<Schema> schema = gen_obj_schema(schema_str);
   if (schema == nullptr) {
-    error_exit("Cannot parse the variable schema, please double check the schema " + schema_str + "\n");
+    error_exit(
+        "Cannot parse the variable schema, please double check the schema " +
+        schema_str + "\n");
+  }
+  size_t size = 0;
+  if (schema->get_val_type() == ValType::SCALAR) {
+    size = schema->get_type_size();
+  } else {
+    size = get_ptr_size_map()[value];
   }
   if (size == 0) {
     size = schema->get_type_size();
@@ -432,8 +436,7 @@ void process_var(std::string &log, const std::string &schema_str, long *value, s
 }
 
 inline void dump_data(const std::string &name, const std::string &data) {
-  std::string data_str = "\"" + name + "\" : "+ "{"  + data + "}";
-  std::cout << "Dump Data: " << data_str << std::endl;
+  std::string data_str = "\"" + name + "\" : " + "{" + data + "}";
   dump_json.push_back(data_str);
 }
 
@@ -448,10 +451,11 @@ void gen_log_API_CP(const std::string &api_name, Args... args) {
   std::string log;
   process_var(log, args...);
   if (log.back() == ',')
-    log.pop_back();  // Pop last ',' character
+    log.pop_back(); // Pop last ',' character
   dump_data(new_api_name, log);
 }
 
+} // namespace detail
 } // namespace experimental
 } // namespace dpct
-#endif // End of __DPCT_SCHEMA_HELPER__
+#endif // End of __DPCT_SCHEMA_HPP__
