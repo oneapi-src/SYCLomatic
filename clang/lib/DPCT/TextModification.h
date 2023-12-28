@@ -225,6 +225,7 @@ class InsertText : public TextModification {
   std::string T;
   unsigned PairID;
   bool SYCLHeaderNeeded;
+
 public:
   InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0,
              bool SYCLHeaderNeeded = true)
