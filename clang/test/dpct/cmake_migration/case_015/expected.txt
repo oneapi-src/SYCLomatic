@@ -1,0 +1,55 @@
+cmake_minimum_required(VERSION 3.24)
+project(AProject)
+cuda_add_library(target_one MODULE nosrc1.dp.cpp)
+
+# Test C++ 99 standard
+set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
+
+# Test C++ 11 standard
+set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
+
+# Test C++ 14 standard
+set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
+
+# No change unless property matches exactly
+set_target_properties(target_one
+                      PROPERTIES
+                      CXX_Standard 14)
+
+# Ideally there should be no change unless
+# value is one of 99, 11, 14. But due to the
+# limitations of pattern-rewriter we will see
+# the versions dropped down to 17. We will fix
+# this in future
+set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
+
+# Test CUDA_SEPARABLE_COMPILATION
+#[[
+set_target_properties(target_one
+                      PROPERTIES CUDA_SEPARABLE_COMPILATION Off)]]
+
+# No change unless property matches exactly
+set_target_properties(target_one
+                      PROPERTIES
+                      Cuda_SEPARABLE_COMPILATION Off)
+
+# Test CUDA_ARCHITECHTURES
+#[[
+set_target_properties(target_one
+                      PROPERTIES CUDA_ARCHITECHTURES Auto)]]
+
+# No change unless property matches exactly
+set_target_properties(target_one
+                      PROPERTIES
+                      cuda_architechtures All)
+
+cuda_add_library(target_two MODULE nosrc2.dp.cpp)
+
+# Test two target specs
+#[[
+set_target_properties(target_one target_two
+                      PROPERTIES CUDA_ARCHITECHTURES Kepler+Tesla)]]
+
+# Make sure other properties are intact
+set_target_properties(target_one PROPERTIES OTHER_PROPERTY 1)
+

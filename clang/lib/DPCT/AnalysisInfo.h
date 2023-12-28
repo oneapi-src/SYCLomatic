@@ -1678,7 +1678,13 @@ public:
     insertFile(LocInfo.first)->insertCustomizedHeader(std::move(HeaderName));
   }
 
-  static std::unordered_map<std::string, SourceRange> &getExpansionRangeBeginMap() {
+  static std::unordered_map<
+      std::string,
+      std::pair<std::pair<clang::tooling::UnifiedPath /*begin file name*/,
+                          unsigned int /*begin offset*/>,
+                std::pair<clang::tooling::UnifiedPath /*end file name*/,
+                          unsigned int /*end offset*/>>> &
+  getExpansionRangeBeginMap() {
     return ExpansionRangeBeginMap;
   }
 
@@ -2089,7 +2095,13 @@ private:
   static unsigned int IndentWidth;
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
-  static std::unordered_map<std::string, SourceRange> ExpansionRangeBeginMap;
+  static std::unordered_map<
+      std::string,
+      std::pair<std::pair<clang::tooling::UnifiedPath /*begin file name*/,
+                          unsigned int /*begin offset*/>,
+                std::pair<clang::tooling::UnifiedPath /*end file name*/,
+                          unsigned int /*end offset*/>>>
+      ExpansionRangeBeginMap;
   static bool CheckUnicodeSecurityFlag;
   static bool EnablepProfilingFlag;
   static std::map<std::string,
@@ -3827,6 +3839,7 @@ public:
   }
 
   bool ConstructGraphVisited = false;
+  unsigned int KernelCallBlockDim = 1;
 
   std::shared_ptr<CallFunctionExpr> findCallee(const CallExpr *C) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);

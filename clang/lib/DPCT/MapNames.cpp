@@ -289,7 +289,7 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getDpctNamespace() + "zip_iterator",
                                       HelperFeatureEnum::device_ext)},
       {"cusolverDnHandle_t",
-       std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr")},
       {"cusolverEigType_t", std::make_shared<TypeNameRule>("int64_t")},
       {"cusolverEigMode_t", std::make_shared<TypeNameRule>("oneapi::mkl::job")},
       {"cusolverStatus_t", std::make_shared<TypeNameRule>("int")},
@@ -342,7 +342,7 @@ void MapNames::setExplicitNamespaceMap() {
                                           "sparse::matrix_info>",
                                       HelperFeatureEnum::device_ext)},
       {"cusparseHandle_t",
-       std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},
@@ -443,6 +443,8 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
       {"cudaUUID_t",
        std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
+      {"CUuuid",
+       std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
       {"cusparseIndexType_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t")},
       {"cusparseFormat_t", std::make_shared<TypeNameRule>(
@@ -475,6 +477,7 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
                                       "kernel_function_info")},
       {"ncclResult_t", std::make_shared<TypeNameRule>("int")},
+      {"cudaLaunchAttributeValue", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -4292,6 +4295,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"CUB_RUNTIME_FUNCTION",
      MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
                         "CUB_RUNTIME_FUNCTION", "")},
+    {"cudaStreamAttrValue",
+     MacroMigrationRule("cudaStreamAttrValue_macro_rule",
+                        RulePriority::Fallback, "cudaStreamAttrValue", "int")},
     {"NCCL_VERSION_CODE",
      MacroMigrationRule("nccl_macro_rule", RulePriority::Fallback,
                         "NCCL_VERSION_CODE", "DPCT_COMPAT_CCL_VERSION")},
