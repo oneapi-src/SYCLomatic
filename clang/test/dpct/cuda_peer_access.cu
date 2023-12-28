@@ -6,7 +6,6 @@
 
 int main() {
   int r;
-
 // CHECK:  /*
 // CHECK:  DPCT1031:{{[0-9]+}}: Memory accessing across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.
 // CHECK:  */
