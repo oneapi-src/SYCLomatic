@@ -41,7 +41,7 @@ class IncludesCallbacks : public PPCallbacks {
 
   std::unordered_set<std::string> SeenFiles;
   bool IsFileInCmd = true;
-
+  int CSourceFileExtensionIndex = 0;
 public:
   IncludesCallbacks(TransformSetTy &TransformSet,
                     IncludeMapSetTy &IncludeMapSet, SourceManager &SM,

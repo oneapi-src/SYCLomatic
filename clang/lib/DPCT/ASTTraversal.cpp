@@ -11635,22 +11635,10 @@ void CMemoryAPIRule::runRule(const MatchFinder::MatchResult &Result) {
   auto ICE = getNodeAsType<ImplicitCastExpr>(Result, "implicitCast");
   if (!ICE)
     return;
-  auto FilePath = DpctGlobalInfo::getLocInfo(ICE->getBeginLoc()).first;
-  auto Extension = path::extension(FilePath.getPath());
-  if (Extension == ".c") {
-    for (auto &Entry : CompileTargetsMap) {
-      if (Entry.first.equalsTo(FilePath)) {
-        if (!llvm::StringRef(Entry.second[1]).endswith("nvcc")) {
-          // If file is c source file or header and not compiled by nvcc, then
-          // not touch it.
-          return;
-        }
-      }
-    }
-  }
   emplaceTransformation(new InsertText(
       ICE->getBeginLoc(),
-      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")"));
+      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")", 0,
+      false));
 }
 
 REGISTER_RULE(CMemoryAPIRule, PassKind::PK_Migration)

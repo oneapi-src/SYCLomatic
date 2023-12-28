@@ -6,6 +6,6 @@
 #include "test.h"
 
 void test() {
-// CHECK: int *host_a = malloc(100 * sizeof(int));
+// CHECK: int *host_a = (int *)malloc(100 * sizeof(int));
   int *host_a = malloc(100 * sizeof(int));
 }

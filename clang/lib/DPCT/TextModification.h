@@ -224,10 +224,12 @@ class InsertText : public TextModification {
   SourceLocation Begin;
   std::string T;
   unsigned PairID;
-
+  bool SYCLHeaderNeeded;
 public:
-  InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0)
-      : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {}
+  InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0,
+             bool SYCLHeaderNeeded = true)
+      : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID),
+        SYCLHeaderNeeded(SYCLHeaderNeeded) {}
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,

@@ -916,7 +916,9 @@ int runDPCT(int argc, const char **argv) {
     dpct::DpctGlobalInfo::setOutRoot(OutRoot);
   }
 
-  clang::tooling::SetCompileTargetsMap(CompileTargetsMap);  
+  if (GenBuildScript) {
+    clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
+  }
 
   UnifiedPath CompilationsDir(OptParser->getCompilationsDir());
 

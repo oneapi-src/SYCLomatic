@@ -319,14 +319,18 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (isInvalid(Repl, FileInfo))
     return;
   if (Repl->getLength()) {
-    if (Repl->IsSYCLHeaderNeeded())
+    if (Repl->IsSYCLHeaderNeeded()) {
       FileInfo->insertHeader(HT_SYCL);
+      FileInfo->setHasCUDASyntax(true);
+    }
     // If Repl is not insert replacement, insert it.
     ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
     // If Repl is insert replacement, check whether it is alive or dead.
   } else if (checkLiveness(Repl)) {
-    if (Repl->IsSYCLHeaderNeeded())
+    if (Repl->IsSYCLHeaderNeeded()) {
       FileInfo->insertHeader(HT_SYCL);
+      FileInfo->setHasCUDASyntax(true);
+    }
     markAsAlive(Repl);
   } else {
     markAsDead(Repl);
@@ -358,8 +362,9 @@ void ExtReplacements::postProcess() {
     // F: free queries function migration, such as this_nd_item, this_group,
     // this_sub_group.
     // G: group dim size, used for cg::thread_block migration
+    // E: extension, used for c source file migration
     StringRef OriginalText = R.second->getReplacementText();
-    std::regex RE("\\{\\{NEEDREPLACE[DQVRFCG][0-9]*\\}\\}");
+    std::regex RE("\\{\\{NEEDREPLACE[DQVRFCGE][0-9]*\\}\\}");
     std::match_results<StringRef::const_iterator> Result;
     std::string NewText;
     auto Begin = OriginalText.begin(), End = OriginalText.end();

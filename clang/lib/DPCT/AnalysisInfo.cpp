@@ -154,6 +154,8 @@ unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
+std::unordered_map<int, std::shared_ptr<DpctFileInfo>>
+    DpctGlobalInfo::CSourceFileExtensionIndexMap;
 std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
     DpctGlobalInfo::PriorityReplInfoMap;
 std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
@@ -4501,6 +4503,7 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // C: range dim, used for cub block migration
   // F: free queries function migration, such as this_nd_item, this_group,
   //    this_sub_group.
+  // E: extension, used for c source file migration
   switch (Method) {
   case 'R':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
@@ -4538,6 +4541,10 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'Q':
     return getStringForRegexDefaultQueueAndDevice(
         HelperFuncType::HFT_DefaultQueue, Index);
+  case 'E': {
+    auto &Map = DpctGlobalInfo::getInstance().getCSourceFileExtensionIndexMap();
+    return Map[Index]->hasCUDASyntax() ? "c.dp.cpp" : "c";
+  }
   case FreeQueriesInfo::FreeQueriesRegexCh:
     return FreeQueriesInfo::getReplaceString(Index);
   default:

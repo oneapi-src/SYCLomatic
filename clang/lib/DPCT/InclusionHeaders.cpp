@@ -164,16 +164,34 @@ void IncludesCallbacks::InclusionDirective(
     // If "IncludedFile" is not under the AnalysisScope folder, do not record
     // the including relationship information.
     Global.recordIncludingRelationship(LocInfo.first, IncludedFile);
-
+    const auto Extension = path::extension(FileName);
     clang::tooling::UnifiedPath NewFilePath = FileName;
-    rewriteFileName(NewFilePath, IncludedFile);
+    if (Extension == ".c") {
+      SmallString<512> CanonicalPathStr(
+          StringRef(NewFilePath.getCanonicalPath()));
+      auto &Map =
+          DpctGlobalInfo::getInstance().getCSourceFileExtensionIndexMap();
+      Map[CSourceFileExtensionIndex] =
+          DpctGlobalInfo::getInstance().insertFile(IncludedFile);
+      path::replace_extension(CanonicalPathStr,
+                              "{{NEEDREPLACEE" +
+                                  std::to_string(CSourceFileExtensionIndex++) +
+                                  "}}");
+      NewFilePath = CanonicalPathStr;
+    } else {
+      rewriteFileName(NewFilePath, IncludedFile);
+    }
     SmallString<512> NewFileName(FileName.str());
     path::remove_filename(NewFileName);
     path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
     NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
     if (NewFileName != FileName) {
-      const auto Extension = path::extension(FileName);
-      auto ReplacedStr = buildString("#include \"", NewFileName, "\"");
+      std::string ReplacedStr;
+      if (IsAngled) {
+        ReplacedStr = buildString("#include <", NewFileName, ">");
+      } else {
+        ReplacedStr = buildString("#include \"", NewFileName, "\"");
+      }
       if (Extension == ".cu" || Extension == ".cuh") {
         // For CUDA files, it will always change name.
         EmplaceReplacement(std::move(ReplacedStr));
