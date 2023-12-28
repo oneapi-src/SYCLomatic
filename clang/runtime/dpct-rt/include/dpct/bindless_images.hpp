@@ -9,10 +9,6 @@
 #ifndef __DPCT_BINDLESS_IMAGE_HPP__
 #define __DPCT_BINDLESS_IMAGE_HPP__
 
-#include <sycl/sycl.hpp>
-
-#include "image.hpp"
-
 namespace dpct {
 namespace experimental {
 
