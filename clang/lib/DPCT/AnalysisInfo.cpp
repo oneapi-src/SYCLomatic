@@ -2202,18 +2202,6 @@ DpctGlobalInfo::getCudaKernelDimDFI(unsigned int Index) {
     return Iter->second;
   return nullptr;
 }
-std::set<clang::tooling::UnifiedPath> &DpctGlobalInfo::getModuleFiles() {
-  return ModuleFiles;
-}
-void DpctGlobalInfo::setRunRound(unsigned int Round) { RunRound = Round; }
-unsigned int DpctGlobalInfo::getRunRound() { return RunRound; }
-void DpctGlobalInfo::setNeedRunAgain(bool NRA) { NeedRunAgain = NRA; }
-bool DpctGlobalInfo::isNeedRunAgain() { return NeedRunAgain; }
-std::unordered_map<clang::tooling::UnifiedPath,
-                   std::shared_ptr<ExtReplacements>> &
-DpctGlobalInfo::getFileReplCache() {
-  return FileReplCache;
-}
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
   PrecAndDomPairSet.clear();
@@ -2285,16 +2273,6 @@ DpctGlobalInfo::getDFIVecRelatedFromSpellingLoc(
   }
   return Res;
 }
-unsigned int DpctGlobalInfo::getColorOption() { return ColorOption; }
-void DpctGlobalInfo::setColorOption(unsigned Color) { ColorOption = Color; }
-std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>> &
-DpctGlobalInfo::getCubPlaceholderIndexMap() {
-  return CubPlaceholderIndexMap;
-}
-std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>> &
-DpctGlobalInfo::getPriorityReplInfoMap() {
-  return PriorityReplInfoMap;
-}
 void DpctGlobalInfo::addPriorityReplInfo(
     std::string Key, std::shared_ptr<PriorityReplInfo> Info) {
   if (PriorityReplInfoMap.count(Key)) {
@@ -2311,48 +2289,6 @@ void DpctGlobalInfo::addPriorityReplInfo(
   } else {
     PriorityReplInfoMap[Key] = Info;
   }
-}
-void DpctGlobalInfo::setOptimizeMigrationFlag(bool Flag) {
-  OptimizeMigrationFlag = Flag;
-}
-bool DpctGlobalInfo::isOptimizeMigration() { return OptimizeMigrationFlag; }
-std::map<std::string, clang::tooling::OptionInfo> &
-DpctGlobalInfo::getCurrentOptMap() {
-  return CurrentOptMap;
-}
-void DpctGlobalInfo::setMainSourceYamlTUR(
-    std::shared_ptr<clang::tooling::TranslationUnitReplacements> Ptr) {
-  MainSourceYamlTUR = Ptr;
-}
-std::shared_ptr<clang::tooling::TranslationUnitReplacements>
-DpctGlobalInfo::getMainSourceYamlTUR() {
-  return MainSourceYamlTUR;
-}
-std::unordered_map<std::string, std::unordered_map<clang::tooling::UnifiedPath,
-                                                   std::vector<unsigned>>> &
-DpctGlobalInfo::getRnnInputMap() {
-  return RnnInputMap;
-}
-std::unordered_map<clang::tooling::UnifiedPath,
-                   std::vector<clang::tooling::UnifiedPath>> &
-DpctGlobalInfo::getMainSourceFileMap() {
-  return MainSourceFileMap;
-}
-std::unordered_map<std::string, bool> &DpctGlobalInfo::getMallocHostInfoMap() {
-  return MallocHostInfoMap;
-}
-std::map<std::shared_ptr<TextModification>, bool> &
-DpctGlobalInfo::getConstantReplProcessedFlagMap() {
-  return ConstantReplProcessedFlagMap;
-}
-std::set<std::string> &DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet() {
-  return VarUsedByRuntimeSymbolAPISet;
-}
-void DpctGlobalInfo::setNeedParenAPI(const std::string &Name) {
-  NeedParenAPISet.insert(Name);
-};
-bool DpctGlobalInfo::isNeedParenAPI(const std::string &Name) {
-  return NeedParenAPISet.count(Name);
 }
 std::tuple<unsigned int, std::string, SourceRange>
     DpctGlobalInfo::LastMacroRecord =
@@ -2567,9 +2503,6 @@ CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold)
     }
   }
 }
-const std::string &CtTypeInfo::getBaseName() { return BaseName; }
-size_t CtTypeInfo::getDimension() { return Range.size(); }
-std::vector<SizeInfo> &CtTypeInfo::getRange() { return Range; }
 std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
                                          bool MustArguments) {
   std::string Arg = "(";
@@ -2592,10 +2525,6 @@ std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
   return (Arg.size() == 1) ? (MustArguments ? (Arg + ")") : "")
                            : Arg.replace(Arg.size() - 2, 2, ")");
 }
-bool CtTypeInfo::isTemplate() const { return IsTemplate; }
-bool CtTypeInfo::isPointer() const { return PointerLevel; }
-bool CtTypeInfo::isArray() const { return IsArray; }
-bool CtTypeInfo::isReference() const { return IsReference; }
 void CtTypeInfo::adjustAsMemType() {
   setPointerAsArray();
   removeQualifier();
@@ -2611,20 +2540,6 @@ std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(
   NewType->updateName();
   return NewType;
 }
-bool CtTypeInfo::isWritten() const {
-  return !TDSI || !isTemplate() || TDSI->isDependOnWritten();
-}
-std::set<HelperFeatureEnum> CtTypeInfo::getHelperFeatureSet() {
-  return HelperFeatureSet;
-}
-bool CtTypeInfo::containSizeofType() { return ContainSizeofType; }
-std::vector<std::string> CtTypeInfo::getArraySizeOriginExprs() {
-  return ArraySizeOriginExprs;
-}
-bool CtTypeInfo::containsTemplateDependentMacro() const {
-  return TemplateDependentMacro;
-}
-bool CtTypeInfo::isConstantQualified() const { return IsConstantQualified; }
 void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
@@ -2800,16 +2715,7 @@ void CtTypeInfo::setPointerAsArray() {
     updateName();
   }
 }
-void CtTypeInfo::removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
 ///// class VarInfo /////
-const clang::tooling::UnifiedPath &VarInfo::getFilePath() { return FilePath; }
-unsigned VarInfo::getOffset() { return Offset; }
-const std::string &VarInfo::getName() { return Name; }
-const std::string VarInfo::getNameAppendSuffix() { return Name + "_ct1"; }
-std::shared_ptr<CtTypeInfo> &VarInfo::getType() { return Ty; }
-std::string VarInfo::getDerefName() {
-  return buildString(getName(), "_deref_", DpctGlobalInfo::getInRootHash());
-}
 void VarInfo::applyTemplateArguments(
     const std::vector<TemplateArgumentInfo> &TAList) {
   Ty = Ty->applyTemplateArguments(TAList);
@@ -2916,27 +2822,6 @@ MemVarInfo::MemVarInfo(unsigned Offset,
 
   newConstVarInit(Var);
 }
-MemVarInfo::VarAttrKind MemVarInfo::getAttr() { return Attr; }
-MemVarInfo::VarScope MemVarInfo::getScope() { return Scope; }
-bool MemVarInfo::isGlobal() { return Scope == Global; }
-bool MemVarInfo::isExtern() { return Scope == Extern; }
-bool MemVarInfo::isLocal() { return Scope == Local; }
-bool MemVarInfo::isShared() { return Attr == Shared; }
-bool MemVarInfo::isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
-bool MemVarInfo::isAnonymousType() { return IsAnonymousType; }
-const CXXRecordDecl *MemVarInfo::getDeclOfVarType() { return DeclOfVarType; }
-const DeclStmt *MemVarInfo::getDeclStmtOfVarType() { return DeclStmtOfVarType; }
-void MemVarInfo::setLocalTypeName(std::string T) { LocalTypeName = T; }
-std::string MemVarInfo::getLocalTypeName() { return LocalTypeName; }
-void MemVarInfo::setIgnoreFlag(bool Flag) { IsIgnored = Flag; }
-bool MemVarInfo::isIgnore() { return IsIgnored; }
-bool MemVarInfo::isStatic() { return IsStatic; }
-void MemVarInfo::setName(std::string NewName) { NewConstVarName = NewName; }
-unsigned int MemVarInfo::getNewConstVarOffset() { return NewConstVarOffset; }
-unsigned int MemVarInfo::getNewConstVarLength() { return NewConstVarLength; }
-const std::string MemVarInfo::getConstVarName() {
-  return NewConstVarName.empty() ? getArgName() : NewConstVarName;
-}
 void MemVarInfo::newConstVarInit(const VarDecl *Var) {
   CharSourceRange SR(DpctGlobalInfo::getSourceManager().getExpansionRange(
       Var->getSourceRange()));
@@ -3020,7 +2905,6 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   assert(0);
   return "";
 }
-std::string MemVarInfo::getInitStmt() { return getInitStmt(""); }
 std::string MemVarInfo::getInitStmt(StringRef QueueString) {
   if (QueueString.empty())
     return getConstVarName() + ".init();";
@@ -3173,8 +3057,6 @@ std::string MemVarInfo::getAccessorDataType(bool IsTypeUsedInDevFunDecl,
   }
   return Ret;
 }
-void MemVarInfo::setUseHelperFuncFlag(bool Flag) { UseHelperFuncFlag = Flag; };
-bool MemVarInfo::isUseHelperFunc() { return UseHelperFuncFlag; }
 bool MemVarInfo::isTreatPointerAsArray() {
   return getType()->isPointer() && getScope() == Global &&
          DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
@@ -3331,12 +3213,6 @@ std::string MemVarInfo::getDpctAccessorType() {
                      getAccessorDataType(), ", ", getMemoryAttr(), ", ",
                      Type->getDimension(), ">");
 }
-std::string MemVarInfo::getNameWithSuffix(StringRef Suffix) {
-  return buildString(getArgName(), "_", Suffix, getCTFixedSuffix());
-}
-std::string MemVarInfo::getAccessorName() { return getNameWithSuffix("acc"); }
-std::string MemVarInfo::getPtrName() { return getNameWithSuffix("ptr"); }
-std::string MemVarInfo::getRangeName() { return getNameWithSuffix("range"); }
 std::string MemVarInfo::getArgName() {
   if (isExtern())
     return ExternVariableName;
@@ -3365,7 +3241,7 @@ void TextureTypeInfo::endForImage() {
   if (IsArray)
     --Dimension;
 }
-std::string TextureTypeInfo::getDataType() { return DataType; }
+
 ParameterStream &TextureTypeInfo::printType(ParameterStream &PS,
                                             const std::string &TemplateName) {
   PS << TemplateName << "<" << DataType << ", " << Dimension;
@@ -3442,7 +3318,6 @@ void TextureInfo::setType(std::shared_ptr<TextureTypeInfo> TypeInfo) {
   if (TypeInfo)
     Type = TypeInfo;
 }
-std::shared_ptr<TextureTypeInfo> TextureInfo::getType() const { return Type; }
 std::string TextureInfo::getHostDeclString() {
   ParameterStream PS;
   Type->prepareForImage();
@@ -3482,10 +3357,6 @@ ParameterStream &TextureInfo::getKernelArg(ParameterStream &OS) {
   OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
   return OS;
 }
-const std::string &TextureInfo::getName() { return Name; }
-unsigned TextureInfo::getOffset() { return Offset; }
-clang::tooling::UnifiedPath TextureInfo::getFilePath() { return FilePath; }
-bool TextureInfo::isUseHelperFunc() { return true; }
 ///// class TextureObjectInfo /////
 std::string TextureObjectInfo::getAccessorDecl(const std::string &QueueString) {
   ParameterStream PS;
@@ -3501,7 +3372,6 @@ std::string TextureObjectInfo::getSamplerDecl() {
   requestFeature(HelperFeatureEnum::device_ext);
   return buildString("auto ", NewVarName, "_smpl = ", Name, "->get_sampler();");
 }
-unsigned TextureObjectInfo::getParamIdx() const { return ParamIdx; }
 std::string TextureObjectInfo::getParamDeclType() {
   requestFeature(HelperFeatureEnum::device_ext);
   ParameterStream PS;
@@ -3556,8 +3426,6 @@ void MemberTextureObjectInfo::addDecl(StmtList &AccessorList,
   NewVarNameRAII RAII(this);
   TextureObjectInfo::addDecl(AccessorList, SamplerList, QueueStr);
 }
-void MemberTextureObjectInfo::setBaseName(StringRef Name) { BaseName = Name; }
-StringRef MemberTextureObjectInfo::getMemberName() { return MemberName; }
 ///// class StructureTextureObjectInfo /////
 StructureTextureObjectInfo::StructureTextureObjectInfo(const ParmVarDecl *PVD)
     : TextureObjectInfo(PVD) {
@@ -3587,10 +3455,6 @@ StructureTextureObjectInfo::create(const CXXThisExpr *This) {
   Ret->setType("", 0);
   return Ret;
 }
-bool StructureTextureObjectInfo::isBase() const { return IsBase; }
-bool StructureTextureObjectInfo::containsVirtualPointer() const {
-  return ContainsVirtualPointer;
-}
 std::shared_ptr<MemberTextureObjectInfo>
 StructureTextureObjectInfo::addMember(const MemberExpr *ME) {
   auto Member = MemberTextureObjectInfo::create(ME);
@@ -3603,7 +3467,6 @@ void StructureTextureObjectInfo::addDecl(StmtList &AccessorList,
     M.second->setBaseName(Name);
   }
 }
-void StructureTextureObjectInfo::addParamDeclReplacement() { return; }
 void StructureTextureObjectInfo::merge(
     std::shared_ptr<StructureTextureObjectInfo> Target) {
   if (!Target)
@@ -3629,14 +3492,6 @@ TemplateArgumentInfo::TemplateArgumentInfo(const TemplateArgumentLoc &TAL,
 TemplateArgumentInfo::TemplateArgumentInfo(std::string &&Str)
     : Kind(TemplateArgument::Null) {
   setArgStr(std::move(Str));
-}
-bool TemplateArgumentInfo::isWritten() const { return IsWritten; }
-bool TemplateArgumentInfo::isNull() const { return !DependentStr; }
-bool TemplateArgumentInfo::isType() const {
-  return Kind == TemplateArgument::Type;
-}
-const std::string &TemplateArgumentInfo::getString() const {
-  return getDependentStringInfo()->getSourceString();
 }
 std::shared_ptr<const TemplateDependentStringInfo>
 TemplateArgumentInfo::getDependentStringInfo() const {
@@ -3713,19 +3568,6 @@ void TemplateArgumentInfo::setArgStr(std::string &&Str) {
   DependentStr = std::make_shared<TemplateDependentStringInfo>(std::move(Str));
 }
 ///// class MemVarMap /////
-bool MemVarMap::hasItem() const { return HasItem; }
-bool MemVarMap::hasStream() const { return HasStream; }
-bool MemVarMap::hasSync() const { return HasSync; }
-bool MemVarMap::hasBF64() const { return HasBF64; }
-bool MemVarMap::hasBF16() const { return HasBF16; }
-bool MemVarMap::hasGlobalMemAcc() const { return HasGlobalMemAcc; }
-bool MemVarMap::hasExternShared() const { return !ExternVarMap.empty(); }
-void MemVarMap::setItem(bool Has) { HasItem = Has; }
-void MemVarMap::setStream(bool Has) { HasStream = Has; }
-void MemVarMap::setSync(bool Has) { HasSync = Has; }
-void MemVarMap::setBF64(bool Has) { HasBF64 = Has; }
-void MemVarMap::setBF16(bool Has) { HasBF16 = Has; }
-void MemVarMap::setGlobalMemAcc(bool Has) { HasGlobalMemAcc = Has; }
 void MemVarMap::addTexture(std::shared_ptr<TextureInfo> Tex) {
   TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
 }
@@ -4132,15 +3974,6 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     }
   }
 }
-const MemVarMap &CallFunctionExpr::getVarMap() { return VarMap; }
-const std::vector<std::shared_ptr<TextureObjectInfo>> &
-CallFunctionExpr::getTextureObjectList() {
-  return TextureObjectList;
-}
-std::shared_ptr<StructureTextureObjectInfo>
-CallFunctionExpr::getBaseTextureObjectInfo() const {
-  return BaseTextureObject;
-}
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
 
@@ -4149,16 +3982,12 @@ void CallFunctionExpr::emplaceReplacement() {
         std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
                                          getExtraArguments(), nullptr));
 }
-unsigned CallFunctionExpr::getExtraArgLoc() { return ExtraArgLoc; }
-bool CallFunctionExpr::hasArgs() { return HasArgs; }
-bool CallFunctionExpr::hasTemplateArgs() { return !TemplateArgs.empty(); }
 bool CallFunctionExpr::hasWrittenTemplateArgs() {
   for (auto &Arg : TemplateArgs)
     if (!Arg.isNull() && Arg.isWritten())
       return true;
   return false;
 }
-const std::string &CallFunctionExpr::getName() { return Name; }
 std::string CallFunctionExpr::getTemplateArguments(bool &IsNeedWarning,
                                                    bool WrittenArgsOnly,
                                                    bool WithScalarWrapped) {
@@ -4263,9 +4092,6 @@ std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
   }
   return std::shared_ptr<TextureObjectInfo>();
 }
-std::shared_ptr<DeviceFunctionInfo> CallFunctionExpr::getFuncInfo() {
-  return FuncInfo;
-}
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   if (FuncInfo && Info && (FuncInfo != Info)) {
     if (!FuncInfo->getVarMap().isSameAs(Info->getVarMap())) {
@@ -4276,11 +4102,6 @@ void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   }
   FuncInfo = Info;
 }
-unsigned CallFunctionExpr::getBegin() { return BeginLoc; }
-const clang::tooling::UnifiedPath &CallFunctionExpr::getFilePath() {
-  return FilePath;
-}
-
 void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   if (auto CallDecl =
           dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
@@ -4517,9 +4338,6 @@ DeviceFunctionDecl::LinkExplicitInstantiation(
     D->setFuncInfo(Info);
   }
   return Info;
-}
-std::shared_ptr<DeviceFunctionInfo> DeviceFunctionDecl::getFuncInfo() const {
-  return FuncInfo;
 }
 void DeviceFunctionDecl::emplaceReplacement() {
   auto Repl = std::make_shared<ExtReplacement>(
@@ -4929,40 +4747,11 @@ DeviceFunctionInfo::findCallee(const CallExpr *C) {
   auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
   return findObject(CallExprMap, CallLocInfo.second);
 }
-void DeviceFunctionInfo::addVar(std::shared_ptr<MemVarInfo> Var) {
-  VarMap.addVar(Var);
-}
-void DeviceFunctionInfo::setItem() { VarMap.setItem(); }
-void DeviceFunctionInfo::setStream() { VarMap.setStream(); }
-void DeviceFunctionInfo::setSync() { VarMap.setSync(); }
-void DeviceFunctionInfo::setBF64() { VarMap.setBF64(); }
-void DeviceFunctionInfo::setBF16() { VarMap.setBF16(); }
-void DeviceFunctionInfo::setGlobalMemAcc() { VarMap.setGlobalMemAcc(); }
-void DeviceFunctionInfo::addTexture(std::shared_ptr<TextureInfo> Tex) {
-  VarMap.addTexture(Tex);
-}
-MemVarMap &DeviceFunctionInfo::getVarMap() { return VarMap; }
 std::shared_ptr<TextureObjectInfo>
 DeviceFunctionInfo::getTextureObject(unsigned Idx) {
   if (Idx < TextureObjectList.size())
     return TextureObjectList[Idx];
   return {};
-}
-std::shared_ptr<StructureTextureObjectInfo>
-DeviceFunctionInfo::getBaseTextureObject() const {
-  return BaseObjectTexture;
-}
-void DeviceFunctionInfo::setCallGroupFunctionInControlFlow(bool Val) {
-  CallGroupFunctionInControlFlow = Val;
-}
-bool DeviceFunctionInfo::hasCallGroupFunctionInControlFlow() const {
-  return CallGroupFunctionInControlFlow;
-}
-void DeviceFunctionInfo::setHasSideEffectsAnalyzed(bool Val) {
-  HasCheckedCallGroupFunctionInControlFlow = Val;
-}
-bool DeviceFunctionInfo::hasSideEffectsAnalyzed() const {
-  return HasCheckedCallGroupFunctionInControlFlow;
 }
 void DeviceFunctionInfo::buildInfo() {
   if (isBuilt())
@@ -4976,17 +4765,6 @@ void DeviceFunctionInfo::buildInfo() {
   }
   VarMap.removeDuplicateVar();
 }
-bool DeviceFunctionInfo::hasParams() { return ParamsNum != 0; }
-bool DeviceFunctionInfo::isBuilt() { return IsBuilt; }
-void DeviceFunctionInfo::setBuilt() { IsBuilt = true; }
-bool DeviceFunctionInfo::isLambda() { return IsLambda; }
-void DeviceFunctionInfo::setLambda() { IsLambda = true; }
-bool DeviceFunctionInfo::isInlined() { return IsInlined; }
-void DeviceFunctionInfo::setInlined() { IsInlined = true; }
-bool DeviceFunctionInfo::isKernel() { return IsKernel; }
-void DeviceFunctionInfo::setKernel() { IsKernel = true; }
-bool DeviceFunctionInfo::isKernelInvoked() { return IsKernelInvoked; }
-void DeviceFunctionInfo::setKernelInvoked() { IsKernelInvoked = true; }
 std::string
 DeviceFunctionInfo::getExtraParameters(const clang::tooling::UnifiedPath &Path,
                                        FormatInfo FormatInformation) {
@@ -5006,26 +4784,6 @@ std::string DeviceFunctionInfo::getExtraParameters(
   return TmpVarMap.getExtraDeclParam(
       NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
 }
-void DeviceFunctionInfo::setDefinitionFilePath(
-    const clang::tooling::UnifiedPath &Path) {
-  DefinitionFilePath = Path;
-}
-const clang::tooling::UnifiedPath &DeviceFunctionInfo::getDefinitionFilePath() {
-  return DefinitionFilePath;
-}
-
-void DeviceFunctionInfo::setNeedSyclExternMacro() {
-  NeedSyclExternMacro = true;
-}
-bool DeviceFunctionInfo::IsSyclExternMacroNeeded() {
-  return NeedSyclExternMacro;
-}
-void DeviceFunctionInfo::setAlwaysInlineDevFunc() {
-  AlwaysInlineDevFunc = true;
-}
-bool DeviceFunctionInfo::IsAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
-void DeviceFunctionInfo::setForceInlineDevFunc() { ForceInlineDevFunc = true; }
-bool DeviceFunctionInfo::IsForceInlineDevFunc() { return ForceInlineDevFunc; }
 void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
   if (this == Other.get())
     return;
@@ -5037,9 +4795,6 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
     BaseObjectTexture = Other->BaseObjectTexture;
   mergeTextureObjectList(Other->TextureObjectList);
 }
-GlobalMap<CallFunctionExpr> &DeviceFunctionInfo::getCallExprMap() {
-  return CallExprMap;
-}
 void DeviceFunctionInfo::addSubGroupSizeRequest(unsigned int Size,
                                                 SourceLocation Loc,
                                                 std::string APIName,
@@ -5049,11 +4804,6 @@ void DeviceFunctionInfo::addSubGroupSizeRequest(unsigned int Size,
   auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
   RequiredSubGroupSize.push_back(
       std::make_tuple(Size, LocInfo.first, LocInfo.second, APIName, VarName));
-}
-std::vector<std::tuple<unsigned int, clang::tooling::UnifiedPath, unsigned int,
-                       std::string, std::string>> &
-DeviceFunctionInfo::getSubGroupSize() {
-  return RequiredSubGroupSize;
 }
 bool DeviceFunctionInfo::isParameterReferenced(unsigned int Index) {
   if (Index >= ParametersProps.size())
@@ -5067,7 +4817,6 @@ void DeviceFunctionInfo::setParameterReferencedStatus(unsigned int Index,
   ParametersProps[Index].IsReferenced =
       ParametersProps[Index].IsReferenced || IsReferenced;
 }
-std::string DeviceFunctionInfo::getFunctionName() { return FunctionName; }
 void DeviceFunctionInfo::mergeCalledTexObj(
     std::shared_ptr<StructureTextureObjectInfo> BaseObj,
     const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
@@ -5640,10 +5389,6 @@ std::string KernelCallExpr::getReplacement() {
   }
   return ResultStr;
 }
-void KernelCallExpr::setEvent(const std::string &E) { Event = E; }
-const std::string &KernelCallExpr::getEvent() { return Event; }
-void KernelCallExpr::setSync(bool Sync) { IsSync = Sync; }
-bool KernelCallExpr::isSync() { return IsSync; }
 std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
     const CallExpr *CE) {
@@ -5732,7 +5477,6 @@ bool KernelCallExpr::isDefaultStream() const {
   return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
          ExecutionConfig.IsDefaultStream;
 }
-bool KernelCallExpr::isQueuePtr() const { return ExecutionConfig.IsQueuePtr; }
 std::string KernelCallExpr::getQueueStr() const {
   if (isDefaultStream())
     return "";
