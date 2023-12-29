@@ -53,13 +53,6 @@ void initHeaderSpellings() {
 #include "HeaderTypes.inc"
   };
 }
-template <class F, class... Ts>
-std::string buildStringFromPrinter(F Func, Ts &&...Args) {
-  std::string Ret;
-  llvm::raw_string_ostream OS(Ret);
-  Func(OS, std::forward<Ts>(Args)...);
-  return OS.str();
-}
 const std::string &getDefaultString(HelperFuncType HFT) {
   const static std::string NullString;
   switch (HFT) {
@@ -818,6 +811,13 @@ void DpctFileInfo::setAlgorithmHeaderInserted(bool B) {
 }
 void DpctFileInfo::setTimeHeaderInserted(bool B) {
   HeaderInsertedBitMap[HeaderType::HT_Time] = B;
+}
+void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS) {}
+template <class FirstT, class... Args>
+void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS, FirstT &&First,
+                                Args &&...Arguments) {
+  appendString(OS, "#include ", std::forward<FirstT>(First), getNL());
+  concatHeader(OS, std::forward<Args>(Arguments)...);
 }
 std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
   auto Pos = llvm::find_if(
@@ -4016,6 +4016,38 @@ bool TemplateArgumentInfo::isPlaceholderType(QualType QT) {
   }
   return false;
 }
+template <class T>
+void TemplateArgumentInfo::setArgFromExprAnalysis(
+    const T &Arg, SourceRange ParentRange = SourceRange()) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto Range = getArgSourceRange(Arg);
+  auto Begin = Range.getBegin();
+  auto End = Range.getEnd();
+  if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin) && End.isMacroID() &&
+      SM.isMacroArgExpansion(End)) {
+    size_t Length;
+    if (ParentRange.isValid()) {
+      auto RR =
+          getRangeInRange(Range, ParentRange.getBegin(), ParentRange.getEnd());
+      Begin = RR.first;
+      End = RR.second;
+      Length = SM.getCharacterData(End) - SM.getCharacterData(Begin);
+    } else {
+      auto RR = getDefinitionRange(Range.getBegin(), Range.getEnd());
+      Begin = RR.getBegin();
+      End = RR.getEnd();
+      Length = SM.getCharacterData(End) - SM.getCharacterData(Begin) +
+               Lexer::MeasureTokenLength(
+                   End, SM, DpctGlobalInfo::getContext().getLangOpts());
+    }
+    std::string Result = std::string(SM.getCharacterData(Begin), Length);
+    setArgStr(std::move(Result));
+  } else {
+    ExprAnalysis EA;
+    EA.analyze(Arg);
+    DependentStr = EA.getTemplateDependentStringInfo();
+  }
+}
 void TemplateArgumentInfo::setArgStr(std::string &&Str) {
   DependentStr = std::make_shared<TemplateDependentStringInfo>(std::move(Str));
 }
@@ -4205,6 +4237,90 @@ int MemVarMap::calculateExtraArgsSize(const MemVarInfoMap &Map) const {
     Size += MapNames::getArrayTypeSize(D);
   }
   return Size;
+}
+template <MemVarMap::CallOrDecl COD>
+inline std::string MemVarMap::getArgumentsOrParameters(
+    int PreParams, int PostParams,
+    FormatInfo FormatInformation = FormatInfo()) const {
+  ParameterStream PS;
+  if (PreParams != 0)
+    PS << ", ";
+  if (hasItem())
+    getItem<COD>(PS) << ", ";
+  if (hasStream())
+    getStream<COD>(PS) << ", ";
+  if (hasSync())
+    getSync<COD>(PS) << ", ";
+  if (!ExternVarMap.empty())
+    GetArgOrParam<MemVarInfo, COD>()(PS, ExternVarMap.begin()->second) << ", ";
+  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap);
+  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap);
+  getArgumentsOrParametersFromMap<TextureInfo, COD>(PS, TextureMap);
+  std::string Result = PS.Str;
+  return (Result.empty() || PostParams != 0) && PreParams == 0
+             ? Result
+             : Result.erase(Result.size() - 2, 2);
+}
+template <>
+inline std::string
+MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
+    int PreParams, int PostParams, FormatInfo FormatInformation) const {
+
+  ParameterStream PS;
+  if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
+    PS = ParameterStream(FormatInformation,
+                         DpctGlobalInfo::getCodeFormatStyle().ColumnLimit);
+  } else {
+    PS = ParameterStream(FormatInformation, 80);
+  }
+  getArgumentsOrParametersForDecl(PS, PreParams, PostParams);
+  std::string Result = PS.Str;
+
+  if (Result.empty())
+    return Result;
+
+  // Remove pre splitter
+  unsigned int RemoveLength = 0;
+  if (FormatInformation.IsFirstArg) {
+    if (FormatInformation.IsAllParamsOneLine) {
+      // comma and space
+      RemoveLength = 2;
+    } else {
+      // calculate length from the first character "," to the next none space
+      // character
+      RemoveLength = 1;
+      while (RemoveLength < Result.size()) {
+        if (!isspace(Result[RemoveLength]))
+          break;
+        RemoveLength++;
+      }
+    }
+    Result = Result.substr(RemoveLength, Result.size() - RemoveLength);
+  }
+
+  // Add post splitter
+  RemoveLength = 0;
+  if (PostParams != 0 && PreParams == 0) {
+    Result = Result + ", ";
+  }
+
+  return Result;
+}
+template <class T, MemVarMap::CallOrDecl COD>
+void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
+                                                const GlobalMap<T> &VarMap) {
+  for (const auto &VI : VarMap) {
+    if (!VI.second->isUseHelperFunc()) {
+      continue;
+    }
+    if (PS.FormatInformation.EnableFormat) {
+      ParameterStream TPS;
+      GetArgOrParam<T, COD>()(TPS, VI.second);
+      PS << TPS.Str;
+    } else {
+      GetArgOrParam<T, COD>()(PS, VI.second) << ", ";
+    }
+  }
 }
 void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
                                                 int PreParams,
@@ -4567,6 +4683,13 @@ void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {
     break;
   }
 }
+template <class TyLoc>
+void CallFunctionExpr::buildTemplateArgumentsFromSpecializationType(
+    const TyLoc &TL) {
+  for (size_t i = 0; i < TL.getNumArgs(); ++i) {
+    TemplateArgs.emplace_back(TL.getArgLoc(i), TL.getSourceRange());
+  }
+}
 /// This function gets the \p FD name with the necessary qualified namespace at
 /// \p Callee position.
 /// Algorithm:
@@ -4630,6 +4753,29 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallExpr *CE) {
     }
   }
   buildTextureObjectArgsInfo<CallExpr>(CE);
+}
+template <class CallT>
+void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
+  auto Args = C->arguments();
+  auto IsKernel = C->getStmtClass() == Stmt::CUDAKernelCallExprClass;
+  auto ArgsNum = std::distance(Args.begin(), Args.end());
+  auto ArgItr = Args.begin();
+  unsigned Idx = 0;
+  TextureObjectList.resize(ArgsNum);
+  while (ArgItr != Args.end()) {
+    const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
+    if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
+      if (Ctor->getConstructor()->isCopyOrMoveConstructor()) {
+        Arg = Ctor->getArg(0);
+      }
+    }
+    if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
+      addTextureObjectArg(Idx, DRE, IsKernel);
+    else if (auto ASE = dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
+      addTextureObjectArg(Idx, ASE, IsKernel);
+    Idx++;
+    ArgItr++;
+  }
 }
 void CallFunctionExpr::mergeTextureObjectInfo() {
   if (BaseTextureObject)
@@ -5239,44 +5385,71 @@ void DeviceFunctionInfo::mergeTextureObjectList(
   TextureObjectList.insert(SelfItr, BranchItr, Other.end());
 }
 ///// class KernelPrinter /////
-void KernelPrinter::incIndent() { Indent += "  "; }
-void KernelPrinter::decIndent() { Indent.erase(Indent.length() - 2, 2); }
-KernelPrinter::Block::Block(KernelPrinter &Printer, bool WithBrackets)
-    : Printer(Printer), WithBrackets(WithBrackets) {
-  if (WithBrackets)
-    Printer.line("{");
-  Printer.incIndent();
-}
-KernelPrinter::Block::~Block() {
-  Printer.decIndent();
-  if (WithBrackets)
-    Printer.line("}");
-}
-std::unique_ptr<KernelPrinter::Block> KernelPrinter::block(bool WithBrackets) {
-  return std::make_unique<Block>(*this, WithBrackets);
-}
-KernelPrinter &KernelPrinter::operator<<(const StmtList &Stmts) {
-  for (auto &S : Stmts) {
-    if (S.StmtStr.empty())
-      continue;
-    if (!S.Warnings.empty()) {
-      for (auto &Warning : S.Warnings) {
-        line("/*");
-        line(Warning);
-        line("*/");
-      }
+class KernelPrinter {
+  const std::string NL;
+  std::string Indent;
+  llvm::raw_string_ostream &Stream;
+
+  void incIndent() { Indent += "  "; }
+  void decIndent() { Indent.erase(Indent.length() - 2, 2); }
+
+public:
+  class Block {
+    KernelPrinter &Printer;
+    bool WithBrackets;
+
+  public:
+    Block(KernelPrinter &Printer, bool WithBrackets)
+        : Printer(Printer), WithBrackets(WithBrackets) {
+      if (WithBrackets)
+        Printer.line("{");
+      Printer.incIndent();
     }
-    line(S.StmtStr);
+    ~Block() {
+      Printer.decIndent();
+      if (WithBrackets)
+        Printer.line("}");
+    }
+  };
+
+public:
+  KernelPrinter(const std::string &NL, const std::string &Indent,
+                llvm::raw_string_ostream &OS)
+      : NL(NL), Indent(Indent), Stream(OS) {}
+  std::unique_ptr<Block> block(bool WithBrackets = false) {
+    return std::make_unique<Block>(*this, WithBrackets);
   }
-  return *this;
-}
-KernelPrinter &KernelPrinter::indent() { return (*this) << Indent; }
-KernelPrinter &KernelPrinter::newLine() { return (*this) << NL; }
-std::string KernelPrinter::str() {
-  auto Result = Stream.str();
-  return Result.substr(Indent.length(),
-                       Result.length() - Indent.length() - NL.length());
-}
+  template <class T> KernelPrinter &operator<<(const T &S) {
+    Stream << S;
+    return *this;
+  }
+  template <class... Args> KernelPrinter &line(Args &&...Arguments) {
+    appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
+    return *this;
+  }
+  KernelPrinter &operator<<(const StmtList &Stmts) {
+    for (auto &S : Stmts) {
+      if (S.StmtStr.empty())
+        continue;
+      if (!S.Warnings.empty()) {
+        for (auto &Warning : S.Warnings) {
+          line("/*");
+          line(Warning);
+          line("*/");
+        }
+      }
+      line(S.StmtStr);
+    }
+    return *this;
+  }
+  KernelPrinter &indent() { return (*this) << Indent; }
+  KernelPrinter &newLine() { return (*this) << NL; }
+  std::string str() {
+    auto Result = Stream.str();
+    return Result.substr(Indent.length(),
+                         Result.length() - Indent.length() - NL.length());
+  }
+};
 ///// class KernelCallExpr /////
 KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelArgumentAnalysis &Analysis,

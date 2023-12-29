@@ -41,6 +41,14 @@ void setGetReplacedNamePtr(llvm::StringRef (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
+template <class F, class... Ts>
+std::string buildStringFromPrinter(F Func, Ts &&...Args) {
+  std::string Ret;
+  llvm::raw_string_ostream OS(Ret);
+  Func(OS, std::forward<Ts>(Args)...);
+  return OS.str();
+}
+
 enum class HelperFuncType : int {
   HFT_InitValue = 0,
   HFT_DefaultQueue = 1,
@@ -289,7 +297,7 @@ enum UsingType {
 //             ------------------------------------------------------------------------------------
 //             |                           |                          |                           |
 //    MemVarInfo                   DeviceFunctionDecl           KernelCallExpr             CudaMallocInfo
-//   Global Variable)                      |            (inherit from CallFunctionExpr)
+//  (Global Variable)                      |            (inherit from CallFunctionExpr)
 //                                 DeviceFunctionInfo
 //                                         |
 //                           ----------------------------
@@ -358,13 +366,10 @@ public:
   void setAlgorithmHeaderInserted(bool B = true);
   void setTimeHeaderInserted(bool B = true);
 
-  void concatHeader(llvm::raw_string_ostream &OS) {}
+  void concatHeader(llvm::raw_string_ostream &OS);
   template <class FirstT, class... Args>
   void concatHeader(llvm::raw_string_ostream &OS, FirstT &&First,
-                    Args &&...Arguments) {
-    appendString(OS, "#include ", std::forward<FirstT>(First), getNL());
-    concatHeader(OS, std::forward<Args>(Arguments)...);
-  }
+                    Args &&...Arguments);
 
   std::optional<HeaderType> findHeaderType(StringRef Header);
   StringRef getHeaderSpelling(HeaderType Type);
@@ -936,8 +941,9 @@ public:
   getExpansionRangeBeginMap();
   static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
   getExpansionRangeToMacroRecord();
-  static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
-      &getMacroTokenToMacroDefineLoc();
+  static std::map<std::string,
+                  std::shared_ptr<DpctGlobalInfo::MacroDefRecord>> &
+  getMacroTokenToMacroDefineLoc();
   static std::map<std::string, std::string> &
   getFunctionCallInMacroMigrateRecord();
   static std::map<std::string, SourceLocation> &getEndifLocationOfIfdef();
@@ -1689,38 +1695,7 @@ public:
 private:
   template <class T>
   void setArgFromExprAnalysis(const T &Arg,
-                              SourceRange ParentRange = SourceRange()) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto Range = getArgSourceRange(Arg);
-    auto Begin = Range.getBegin();
-    auto End = Range.getEnd();
-    if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin) && End.isMacroID() &&
-        SM.isMacroArgExpansion(End)) {
-
-      size_t Length;
-      if (ParentRange.isValid()) {
-        auto RR = getRangeInRange(Range, ParentRange.getBegin(),
-                                  ParentRange.getEnd());
-        Begin = RR.first;
-        End = RR.second;
-        Length = SM.getCharacterData(End) - SM.getCharacterData(Begin);
-      } else {
-        auto RR = getDefinitionRange(Range.getBegin(), Range.getEnd());
-        Begin = RR.getBegin();
-        End = RR.getEnd();
-        Length = SM.getCharacterData(End) - SM.getCharacterData(Begin) +
-                 Lexer::MeasureTokenLength(
-                     End, SM, DpctGlobalInfo::getContext().getLangOpts());
-      }
-
-      std::string Result = std::string(SM.getCharacterData(Begin), Length);
-      setArgStr(std::move(Result));
-    } else {
-      ExprAnalysis EA;
-      EA.analyze(Arg);
-      DependentStr = EA.getTemplateDependentStringInfo();
-    }
-  }
+                              SourceRange ParentRange = SourceRange());
 
   template <class T> SourceRange getArgSourceRange(const T &Arg) {
     return Arg.getSourceRange();
@@ -1818,47 +1793,11 @@ private:
   template <CallOrDecl COD>
   inline std::string
   getArgumentsOrParameters(int PreParams, int PostParams,
-                           FormatInfo FormatInformation = FormatInfo()) const {
-    ParameterStream PS;
-    if (PreParams != 0)
-      PS << ", ";
-    if (hasItem())
-      getItem<COD>(PS) << ", ";
-    if (hasStream())
-      getStream<COD>(PS) << ", ";
-
-    if (hasSync())
-      getSync<COD>(PS) << ", ";
-
-    if (!ExternVarMap.empty())
-      GetArgOrParam<MemVarInfo, COD>()(PS, ExternVarMap.begin()->second)
-          << ", ";
-    getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap);
-    getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap);
-    getArgumentsOrParametersFromMap<TextureInfo, COD>(PS, TextureMap);
-
-    std::string Result = PS.Str;
-    return (Result.empty() || PostParams != 0) && PreParams == 0
-               ? Result
-               : Result.erase(Result.size() - 2, 2);
-  }
+                           FormatInfo FormatInformation = FormatInfo()) const;
 
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
-                                              const GlobalMap<T> &VarMap) {
-    for (const auto &VI : VarMap) {
-      if (!VI.second->isUseHelperFunc()) {
-        continue;
-      }
-      if (PS.FormatInformation.EnableFormat) {
-        ParameterStream TPS;
-        GetArgOrParam<T, COD>()(TPS, VI.second);
-        PS << TPS.Str;
-      } else {
-        GetArgOrParam<T, COD>()(PS, VI.second) << ", ";
-      }
-    }
-  }
+                                              const GlobalMap<T> &VarMap);
 
   template <class T, CallOrDecl COD> struct GetArgOrParam;
   template <class T> struct GetArgOrParam<T, DeclParameter> {
@@ -1920,52 +1859,6 @@ MemVarMap::getSync<MemVarMap::DeclParameter>(ParameterStream &PS) const {
       MapNames::getClNamespace() + "access::address_space::global_space> &" +
       DpctGlobalInfo::getSyncName();
   return PS << SyncParamDecl;
-}
-
-template <>
-inline std::string
-MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
-    int PreParams, int PostParams, FormatInfo FormatInformation) const {
-
-  ParameterStream PS;
-  if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
-    PS = ParameterStream(FormatInformation,
-                         DpctGlobalInfo::getCodeFormatStyle().ColumnLimit);
-  } else {
-    PS = ParameterStream(FormatInformation, 80);
-  }
-  getArgumentsOrParametersForDecl(PS, PreParams, PostParams);
-  std::string Result = PS.Str;
-
-  if (Result.empty())
-    return Result;
-
-  // Remove pre splitter
-  unsigned int RemoveLength = 0;
-  if (FormatInformation.IsFirstArg) {
-    if (FormatInformation.IsAllParamsOneLine) {
-      // comma and space
-      RemoveLength = 2;
-    } else {
-      // calculate length from the first character "," to the next none space
-      // character
-      RemoveLength = 1;
-      while (RemoveLength < Result.size()) {
-        if (!isspace(Result[RemoveLength]))
-          break;
-        RemoveLength++;
-      }
-    }
-    Result = Result.substr(RemoveLength, Result.size() - RemoveLength);
-  }
-
-  // Add post splitter
-  RemoveLength = 0;
-  if (PostParams != 0 && PreParams == 0) {
-    Result = Result + ", ";
-  }
-
-  return Result;
 }
 
 // call function expression includes location, name, arguments num, template
@@ -2035,38 +1928,13 @@ private:
 
   void buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL);
   template <class TyLoc>
-  void buildTemplateArgumentsFromSpecializationType(const TyLoc &TL) {
-    for (size_t i = 0; i < TL.getNumArgs(); ++i) {
-      TemplateArgs.emplace_back(TL.getArgLoc(i), TL.getSourceRange());
-    }
-  }
+  void buildTemplateArgumentsFromSpecializationType(const TyLoc &TL);
 
   std::string getNameWithNamespace(const FunctionDecl *FD, const Expr *Callee);
 
   void buildTextureObjectArgsInfo(const CallExpr *CE);
 
-  template <class CallT> void buildTextureObjectArgsInfo(const CallT *C) {
-    auto Args = C->arguments();
-    auto IsKernel = C->getStmtClass() == Stmt::CUDAKernelCallExprClass;
-    auto ArgsNum = std::distance(Args.begin(), Args.end());
-    auto ArgItr = Args.begin();
-    unsigned Idx = 0;
-    TextureObjectList.resize(ArgsNum);
-    while (ArgItr != Args.end()) {
-      const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
-      if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
-        if (Ctor->getConstructor()->isCopyOrMoveConstructor()) {
-          Arg = Ctor->getArg(0);
-        }
-      }
-      if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
-        addTextureObjectArg(Idx, DRE, IsKernel);
-      else if (auto ASE = dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
-        addTextureObjectArg(Idx, ASE, IsKernel);
-      Idx++;
-      ArgItr++;
-    }
-  }
+  template <class CallT> void buildTextureObjectArgsInfo(const CallT *C);
   void mergeTextureObjectInfo();
 
   const clang::tooling::UnifiedPath FilePath;
@@ -2329,43 +2197,6 @@ private:
   bool IsKernelInvoked = false;
   bool CallGroupFunctionInControlFlow = false;
   bool HasCheckedCallGroupFunctionInControlFlow = false;
-};
-
-class KernelPrinter {
-  const std::string NL;
-  std::string Indent;
-  llvm::raw_string_ostream &Stream;
-
-  void incIndent();
-  void decIndent();
-
-public:
-  class Block {
-    KernelPrinter &Printer;
-    bool WithBrackets;
-
-  public:
-    Block(KernelPrinter &Printer, bool WithBrackets);
-    ~Block();
-  };
-
-public:
-  KernelPrinter(const std::string &NL, const std::string &Indent,
-                llvm::raw_string_ostream &OS)
-      : NL(NL), Indent(Indent), Stream(OS) {}
-  std::unique_ptr<Block> block(bool WithBrackets = false);
-  template <class T> KernelPrinter &operator<<(const T &S) {
-    Stream << S;
-    return *this;
-  }
-  template <class... Args> KernelPrinter &line(Args &&...Arguments) {
-    appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
-    return *this;
-  }
-  KernelPrinter &operator<<(const StmtList &Stmts);
-  KernelPrinter &indent();
-  KernelPrinter &newLine();
-  std::string str();
 };
 
 class KernelCallExpr : public CallFunctionExpr {
