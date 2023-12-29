@@ -4017,8 +4017,8 @@ bool TemplateArgumentInfo::isPlaceholderType(QualType QT) {
   return false;
 }
 template <class T>
-void TemplateArgumentInfo::setArgFromExprAnalysis(
-    const T &Arg, SourceRange ParentRange = SourceRange()) {
+void TemplateArgumentInfo::setArgFromExprAnalysis(const T &Arg,
+                                                  SourceRange ParentRange) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto Range = getArgSourceRange(Arg);
   auto Begin = Range.getBegin();
@@ -4106,6 +4106,72 @@ int MemVarMap::calculateExtraArgsSize() const {
                                         KernelArgType::KAT_Texture);
 
   return Size;
+}
+template <MemVarMap::CallOrDecl COD>
+inline std::string
+MemVarMap::getArgumentsOrParameters(int PreParams, int PostParams,
+                                    FormatInfo FormatInformation) const {
+  ParameterStream PS;
+  if (PreParams != 0)
+    PS << ", ";
+  if (hasItem())
+    getItem<COD>(PS) << ", ";
+  if (hasStream())
+    getStream<COD>(PS) << ", ";
+  if (hasSync())
+    getSync<COD>(PS) << ", ";
+  if (!ExternVarMap.empty())
+    GetArgOrParam<MemVarInfo, COD>()(PS, ExternVarMap.begin()->second) << ", ";
+  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap);
+  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap);
+  getArgumentsOrParametersFromMap<TextureInfo, COD>(PS, TextureMap);
+  std::string Result = PS.Str;
+  return (Result.empty() || PostParams != 0) && PreParams == 0
+             ? Result
+             : Result.erase(Result.size() - 2, 2);
+}
+template <>
+std::string MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
+    int PreParams, int PostParams, FormatInfo FormatInformation) const {
+  ParameterStream PS;
+  if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
+    PS = ParameterStream(FormatInformation,
+                         DpctGlobalInfo::getCodeFormatStyle().ColumnLimit);
+  } else {
+    PS = ParameterStream(FormatInformation, 80);
+  }
+  getArgumentsOrParametersForDecl(PS, PreParams, PostParams);
+  std::string Result = PS.Str;
+
+  if (Result.empty())
+    return Result;
+
+  // Remove pre splitter
+  unsigned int RemoveLength = 0;
+  if (FormatInformation.IsFirstArg) {
+    if (FormatInformation.IsAllParamsOneLine) {
+      // comma and space
+      RemoveLength = 2;
+    } else {
+      // calculate length from the first character "," to the next none space
+      // character
+      RemoveLength = 1;
+      while (RemoveLength < Result.size()) {
+        if (!isspace(Result[RemoveLength]))
+          break;
+        RemoveLength++;
+      }
+    }
+    Result = Result.substr(RemoveLength, Result.size() - RemoveLength);
+  }
+
+  // Add post splitter
+  RemoveLength = 0;
+  if (PostParams != 0 && PreParams == 0) {
+    Result = Result + ", ";
+  }
+
+  return Result;
 }
 std::string MemVarMap::getExtraCallArguments(bool HasPreParam,
                                              bool HasPostParam) const {
@@ -4237,74 +4303,6 @@ int MemVarMap::calculateExtraArgsSize(const MemVarInfoMap &Map) const {
     Size += MapNames::getArrayTypeSize(D);
   }
   return Size;
-}
-template <MemVarMap::CallOrDecl COD>
-inline std::string MemVarMap::getArgumentsOrParameters(
-    int PreParams, int PostParams,
-    FormatInfo FormatInformation = FormatInfo()) const {
-  ParameterStream PS;
-  if (PreParams != 0)
-    PS << ", ";
-  if (hasItem())
-    getItem<COD>(PS) << ", ";
-  if (hasStream())
-    getStream<COD>(PS) << ", ";
-  if (hasSync())
-    getSync<COD>(PS) << ", ";
-  if (!ExternVarMap.empty())
-    GetArgOrParam<MemVarInfo, COD>()(PS, ExternVarMap.begin()->second) << ", ";
-  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap);
-  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap);
-  getArgumentsOrParametersFromMap<TextureInfo, COD>(PS, TextureMap);
-  std::string Result = PS.Str;
-  return (Result.empty() || PostParams != 0) && PreParams == 0
-             ? Result
-             : Result.erase(Result.size() - 2, 2);
-}
-template <>
-inline std::string
-MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
-    int PreParams, int PostParams, FormatInfo FormatInformation) const {
-
-  ParameterStream PS;
-  if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
-    PS = ParameterStream(FormatInformation,
-                         DpctGlobalInfo::getCodeFormatStyle().ColumnLimit);
-  } else {
-    PS = ParameterStream(FormatInformation, 80);
-  }
-  getArgumentsOrParametersForDecl(PS, PreParams, PostParams);
-  std::string Result = PS.Str;
-
-  if (Result.empty())
-    return Result;
-
-  // Remove pre splitter
-  unsigned int RemoveLength = 0;
-  if (FormatInformation.IsFirstArg) {
-    if (FormatInformation.IsAllParamsOneLine) {
-      // comma and space
-      RemoveLength = 2;
-    } else {
-      // calculate length from the first character "," to the next none space
-      // character
-      RemoveLength = 1;
-      while (RemoveLength < Result.size()) {
-        if (!isspace(Result[RemoveLength]))
-          break;
-        RemoveLength++;
-      }
-    }
-    Result = Result.substr(RemoveLength, Result.size() - RemoveLength);
-  }
-
-  // Add post splitter
-  RemoveLength = 0;
-  if (PostParams != 0 && PreParams == 0) {
-    Result = Result + ", ";
-  }
-
-  return Result;
 }
 template <class T, MemVarMap::CallOrDecl COD>
 void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
@@ -5071,6 +5069,72 @@ std::string ExplicitInstantiationDecl::getExtraParameters() {
   return getFuncInfo()->getExtraParameters(FilePath, InstantiationArgs,
                                            getFormatInfo());
 }
+///// class KernelPrinter /////
+class KernelPrinter {
+  const std::string NL;
+  std::string Indent;
+  llvm::raw_string_ostream &Stream;
+
+  void incIndent() { Indent += "  "; }
+  void decIndent() { Indent.erase(Indent.length() - 2, 2); }
+
+public:
+  class Block {
+    KernelPrinter &Printer;
+    bool WithBrackets;
+
+  public:
+    Block(KernelPrinter &Printer, bool WithBrackets)
+        : Printer(Printer), WithBrackets(WithBrackets) {
+      if (WithBrackets)
+        Printer.line("{");
+      Printer.incIndent();
+    }
+    ~Block() {
+      Printer.decIndent();
+      if (WithBrackets)
+        Printer.line("}");
+    }
+  };
+
+public:
+  KernelPrinter(const std::string &NL, const std::string &Indent,
+                llvm::raw_string_ostream &OS)
+      : NL(NL), Indent(Indent), Stream(OS) {}
+  std::unique_ptr<Block> block(bool WithBrackets = false) {
+    return std::make_unique<Block>(*this, WithBrackets);
+  }
+  template <class T> KernelPrinter &operator<<(const T &S) {
+    Stream << S;
+    return *this;
+  }
+  template <class... Args> KernelPrinter &line(Args &&...Arguments) {
+    appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
+    return *this;
+  }
+  KernelPrinter &operator<<(const StmtList &Stmts) {
+    for (auto &S : Stmts) {
+      if (S.StmtStr.empty())
+        continue;
+      if (!S.Warnings.empty()) {
+        for (auto &Warning : S.Warnings) {
+          line("/*");
+          line(Warning);
+          line("*/");
+        }
+      }
+      line(S.StmtStr);
+    }
+    return *this;
+  }
+  KernelPrinter &indent() { return (*this) << Indent; }
+  KernelPrinter &newLine() { return (*this) << NL; }
+  std::string str() {
+    auto Result = Stream.str();
+    return Result.substr(Indent.length(),
+                         Result.length() - Indent.length() - NL.length());
+  }
+};
 ///// class DeviceFunctionDeclInModule /////
 void DeviceFunctionDeclInModule::insertWrapper() {
   auto NL = std::string(getNL());
@@ -5384,72 +5448,6 @@ void DeviceFunctionInfo::mergeTextureObjectList(
   }
   TextureObjectList.insert(SelfItr, BranchItr, Other.end());
 }
-///// class KernelPrinter /////
-class KernelPrinter {
-  const std::string NL;
-  std::string Indent;
-  llvm::raw_string_ostream &Stream;
-
-  void incIndent() { Indent += "  "; }
-  void decIndent() { Indent.erase(Indent.length() - 2, 2); }
-
-public:
-  class Block {
-    KernelPrinter &Printer;
-    bool WithBrackets;
-
-  public:
-    Block(KernelPrinter &Printer, bool WithBrackets)
-        : Printer(Printer), WithBrackets(WithBrackets) {
-      if (WithBrackets)
-        Printer.line("{");
-      Printer.incIndent();
-    }
-    ~Block() {
-      Printer.decIndent();
-      if (WithBrackets)
-        Printer.line("}");
-    }
-  };
-
-public:
-  KernelPrinter(const std::string &NL, const std::string &Indent,
-                llvm::raw_string_ostream &OS)
-      : NL(NL), Indent(Indent), Stream(OS) {}
-  std::unique_ptr<Block> block(bool WithBrackets = false) {
-    return std::make_unique<Block>(*this, WithBrackets);
-  }
-  template <class T> KernelPrinter &operator<<(const T &S) {
-    Stream << S;
-    return *this;
-  }
-  template <class... Args> KernelPrinter &line(Args &&...Arguments) {
-    appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
-    return *this;
-  }
-  KernelPrinter &operator<<(const StmtList &Stmts) {
-    for (auto &S : Stmts) {
-      if (S.StmtStr.empty())
-        continue;
-      if (!S.Warnings.empty()) {
-        for (auto &Warning : S.Warnings) {
-          line("/*");
-          line(Warning);
-          line("*/");
-        }
-      }
-      line(S.StmtStr);
-    }
-    return *this;
-  }
-  KernelPrinter &indent() { return (*this) << Indent; }
-  KernelPrinter &newLine() { return (*this) << NL; }
-  std::string str() {
-    auto Result = Stream.str();
-    return Result.substr(Indent.length(),
-                         Result.length() - Indent.length() - NL.length());
-  }
-};
 ///// class KernelCallExpr /////
 KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelArgumentAnalysis &Analysis,
@@ -6428,6 +6426,55 @@ void KernelCallExpr::buildKernelArgsStmt() {
   if (KernelArgs.empty()) {
     KernelArgs += getExtraArguments();
   }
+}
+KernelPrinter &
+KernelCallExpr::SubmitStmtsList_t::print(KernelPrinter &Printer) {
+  printList(Printer, StreamList);
+  printList(Printer, SyncList);
+  printList(Printer, MemoryList);
+  printList(Printer, RangeList, "ranges used for accessors to device memory");
+  printList(Printer, PtrList, "pointers to device memory");
+  printList(Printer, AccessorList, "accessors to device memory");
+  printList(Printer, TextureList, "accessors to image objects");
+  printList(Printer, SamplerList, "sampler of image objects");
+  printList(Printer, NdRangeList,
+            "ranges to define ND iteration space for the kernel");
+  printList(Printer, CommandGroupList, "helper variables defined");
+  return Printer;
+}
+bool KernelCallExpr::SubmitStmtsList_t::empty() const noexcept {
+  return CommandGroupList.empty() && NdRangeList.empty() &&
+         AccessorList.empty() && PtrList.empty() && MemoryList.empty() &&
+         RangeList.empty() && TextureList.empty() && SamplerList.empty() &&
+         StreamList.empty() && SyncList.empty();
+}
+KernelPrinter &KernelCallExpr::SubmitStmtsList_t::printList(
+    KernelPrinter &Printer, const StmtList &List, StringRef Comments) {
+  if (List.empty())
+    return Printer;
+  if (!Comments.empty() && DpctGlobalInfo::isCommentsEnabled())
+    Printer.line("// ", Comments);
+  Printer << List;
+  return Printer.newLine();
+}
+KernelPrinter &KernelCallExpr::OuterStmts_t::print(KernelPrinter &Printer) {
+  printList(Printer, ExternList);
+  printList(Printer, InitList, "init global memory");
+  printList(Printer, OthersList);
+  return Printer;
+}
+bool KernelCallExpr::OuterStmts_t::empty() const noexcept {
+  return InitList.empty() && ExternList.empty() && OthersList.empty();
+}
+KernelPrinter &KernelCallExpr::OuterStmts_t::printList(KernelPrinter &Printer,
+                                                       const StmtList &List,
+                                                       StringRef Comments) {
+  if (List.empty())
+    return Printer;
+  if (!Comments.empty() && DpctGlobalInfo::isCommentsEnabled())
+    Printer.line("// ", Comments);
+  Printer << List;
+  return Printer.newLine();
 }
 ///// class CudaMallocInfo /////
 const VarDecl *CudaMallocInfo::getMallocVar(const Expr *Arg) {

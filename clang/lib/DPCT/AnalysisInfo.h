@@ -1740,6 +1740,20 @@ public:
   void merge(const MemVarMap &VarMap,
              const std::vector<TemplateArgumentInfo> &TemplateArgs);
   int calculateExtraArgsSize() const;
+
+  enum CallOrDecl {
+    CallArgument = 0,
+    KernelArgument,
+    DeclParameter,
+  };
+
+private:
+  template <CallOrDecl COD>
+  std::string
+  getArgumentsOrParameters(int PreParams, int PostParams,
+                           FormatInfo FormatInformation = FormatInfo()) const;
+
+public:
   std::string getExtraCallArguments(bool HasPreParam, bool HasPostParam) const;
   void
   requestFeatureForAllVarMaps(const clang::tooling::UnifiedPath &Path) const;
@@ -1758,12 +1772,6 @@ public:
 
   MemVarInfoMap &getMap(MemVarInfo::VarScope Scope);
   bool isSameAs(const MemVarMap &Other) const;
-
-  enum CallOrDecl {
-    CallArgument = 0,
-    KernelArgument,
-    DeclParameter,
-  };
 
   static const MemVarMap *
   getHeadWithoutPathCompression(const MemVarMap *CurNode);
@@ -1789,11 +1797,6 @@ private:
   inline ParameterStream &getSync(ParameterStream &PS) const {
     return PS << buildString("atm_", DpctGlobalInfo::getSyncName());
   }
-
-  template <CallOrDecl COD>
-  inline std::string
-  getArgumentsOrParameters(int PreParams, int PostParams,
-                           FormatInfo FormatInformation = FormatInfo()) const;
 
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
@@ -2327,7 +2330,7 @@ private:
   std::string Event;
   bool IsSync;
 
-  class {
+  class SubmitStmtsList_t {
   public:
     StmtList StreamList;
     StmtList SyncList;
@@ -2340,69 +2343,29 @@ private:
     StmtList NdRangeList;
     StmtList CommandGroupList;
 
-    inline KernelPrinter &print(KernelPrinter &Printer) {
-      printList(Printer, StreamList);
-      printList(Printer, SyncList);
-      printList(Printer, MemoryList);
-      printList(Printer, RangeList,
-                "ranges used for accessors to device memory");
-      printList(Printer, PtrList, "pointers to device memory");
-      printList(Printer, AccessorList, "accessors to device memory");
-      printList(Printer, TextureList, "accessors to image objects");
-      printList(Printer, SamplerList, "sampler of image objects");
-      printList(Printer, NdRangeList,
-                "ranges to define ND iteration space for the kernel");
-      printList(Printer, CommandGroupList, "helper variables defined");
-      return Printer;
-    }
-
-    bool empty() const noexcept {
-      return CommandGroupList.empty() && NdRangeList.empty() &&
-             AccessorList.empty() && PtrList.empty() && MemoryList.empty() &&
-             RangeList.empty() && TextureList.empty() && SamplerList.empty() &&
-             StreamList.empty() && SyncList.empty();
-    }
+    KernelPrinter &print(KernelPrinter &Printer);
+    bool empty() const noexcept;
 
   private:
     KernelPrinter &printList(KernelPrinter &Printer, const StmtList &List,
-                             StringRef Comments = "") {
-      if (List.empty())
-        return Printer;
-      if (!Comments.empty() && DpctGlobalInfo::isCommentsEnabled())
-        Printer.line("// ", Comments);
-      Printer << List;
-      return Printer.newLine();
-    }
-  } SubmitStmtsList;
+                             StringRef Comments = "");
+  };
+  SubmitStmtsList_t SubmitStmtsList;
 
-  class {
+  class OuterStmts_t {
   public:
     StmtList ExternList;
     StmtList InitList;
     StmtList OthersList;
 
-    inline KernelPrinter &print(KernelPrinter &Printer) {
-      printList(Printer, ExternList);
-      printList(Printer, InitList, "init global memory");
-      printList(Printer, OthersList);
-      return Printer;
-    }
-
-    bool empty() const noexcept {
-      return InitList.empty() && ExternList.empty() && OthersList.empty();
-    }
+    KernelPrinter &print(KernelPrinter &Printer);
+    bool empty() const noexcept;
 
   private:
     KernelPrinter &printList(KernelPrinter &Printer, const StmtList &List,
-                             StringRef Comments = "") {
-      if (List.empty())
-        return Printer;
-      if (!Comments.empty() && DpctGlobalInfo::isCommentsEnabled())
-        Printer.line("// ", Comments);
-      Printer << List;
-      return Printer.newLine();
-    }
-  } OuterStmts;
+                             StringRef Comments = "");
+  };
+  OuterStmts_t OuterStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
   int TotalArgsSize = 0;
