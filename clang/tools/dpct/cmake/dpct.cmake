@@ -75,27 +75,51 @@ macro(DPCT_COMPILE_SYCL_CODE generated_files)
   DPCT_COMPILE_SYCL_CODE_IMP(sycl_device ${generated_files} ${ARGN})
 endmacro()
 
-# TODO:
-#   * handle source files mentioned as variables
-#   * what happens if cuda_compile is written across multiple line?
-# Note: covers cuda_compile(libname <srcs>... STATIC|... OPTIONS [opts]...)
-macro(DPCT_COMPILE object_name)
+# Always set SYCL_HAS_FP16 to true to assume SYCL device to support float16
+message("dpct.cmake: SYCL_HAS_FP16 is set true by default.")
+set(SYCL_HAS_FP16 TRUE)
+
+# Replaces cuda_compile with it's equivalent SYCL repr
+macro(DPCT_COMPILE generated_files)
+  # list of dp.cpp source files
   set(_sources "")
-  # segregate source files
+  # type of library specified in dpct_compile
+  set(_lib_type "")
+  set(_possible_lib_types "STATIC;SHARED;MODULE")
+
+  # segregate source files, library type and ignore nvcc options
   foreach(arg ${ARGN})
-    if(${arg} MATCHES "\\.dp\\.cpp$")
-      string(APPEND _sources " ${arg}")
+    # to confirm: what about cpp files?
+    if(${arg} MATCHES "\\.dp\\.(cpp|hpp)$")
+      list(APPEND _sources "${arg}")
+
+    elseif(${arg} IN_LIST _possible_lib_types)
+      set(_lib_type "${arg}")
+
+    elseif(${arg} STREQUAL "OPTIONS")
+      # we don't need to pass nvcc options to icpx
+      # to confirm: are there nvcc options compatible with icpx?
+      break()
+
+    else()
+      message(VERBOSE "Ignoring '${arg}' passed to dpct_compile")
+
     endif()
   endforeach()
 
-  # fetch compile options
-  string(REPLACE ";" " " _space_sep_argn "${ARGN}")
-  string(REGEX MATCH "OPTIONS (.*)" _ ${_space_sep_argn})
-  set(_options ${CMAKE_MATCH_1})
+  # can't continue without list of source files
+  if("${_sources}" STREQUAL "")
+    message(FATAL "Failed to find source files while migrating `cuda_compile`")
+  endif()
 
-  # replace cuda_compile
-  add_library(${object_name} OBJECT ${_sources})
-  # add options from cuda_compile to the target object/s
-  # TODO: should this be always PRIVATE?
-  target_compile_options(${object_name} PRIVATE ${_options})
+  # if library type is not specified then the build type is either SHARED or
+  # STATIC based on the cmake variable BUILD_SHARED_LIBS
+  if ("${_lib_type}" STREQUAL "")
+    add_library(${generated_files} ${_sources})
+
+  else()
+    add_library(${generated_files} ${_lib_type} ${_sources})
+
+  endif()
 endmacro()
+

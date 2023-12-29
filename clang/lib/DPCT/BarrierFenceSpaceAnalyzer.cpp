@@ -338,6 +338,22 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
 namespace {
 using namespace clang;
 using namespace dpct;
+
+template <class NodeTy>
+static inline const Stmt *findNearestLoopStmt(const NodeTy *N) {
+  if (!N)
+    return nullptr;
+  auto &Context = DpctGlobalInfo::getContext();
+  clang::DynTypedNodeList Parents = Context.getParents(*N);
+  while (!Parents.empty()) {
+    auto &Cur = Parents[0];
+    if (Cur.get<DoStmt>() || Cur.get<ForStmt>() || Cur.get<WhileStmt>())
+      return Cur.get<Stmt>();
+    Parents = Context.getParents(Cur);
+  }
+  return nullptr;
+}
+
 // Check if this DRE(Ptr) matches pattern: Ptr[Idx]
 // clang-format off
 //    ArraySubscriptExpr <col:7, col:16> 'float' lvalue
@@ -356,67 +372,103 @@ const ArraySubscriptExpr *getArraySubscriptExpr(const DeclRefExpr *Node) {
   return ASE;
 }
 
-const Expr *getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
+// This function matches the pattern "a += b":
+// CompoundAssignOperator '+='
+// |-DeclRefExpr
+// `-ImplicitCastExpr <LValueToRValue>
+//   `-DeclRefExpr
+// If it is matched, return true and the 2nd arg is the string of b.
+// If it isn't matched. return false.
+bool isIncPattern(const DeclRefExpr *DRE, std::string &RHSStr) {
+  const CompoundAssignOperator *CO =
+      DpctGlobalInfo::findParent<CompoundAssignOperator>(DRE);
+  if (!CO)
+    return false;
+  if (CO->getOpcode() != BinaryOperatorKind::BO_AddAssign)
+    return false;
+  const DeclRefExpr *RHS =
+      dyn_cast<DeclRefExpr>(CO->getRHS()->IgnoreImpCasts());
+  if (!RHS)
+    return false;
+  RHSStr = ExprAnalysis::ref(RHS);
+  return true;
+}
+
+// This function tracks the definition of Idx Expr in an ArraySubscriptExpr.
+// If the Idx Expr is constant, return {idx_init_expr, false, ""}
+// E.g.,
+//     __global__ void foo() {
+//       ...
+//       int Idx = threadIdx.x;
+//       mem[Idx] = var;
+//       ...
+//     }
+// Return {threadIdx.x, false, ""}
+// If the Idx Expr is not constant, but it is in a non-nest loop and the inc
+// step is constant, return {idx_init_expr, true, step_str}
+// E.g.,
+//     __global__ void foo() {
+//       ...
+//       int Idx = threadIdx.x;
+//       loop {
+//         mem[Idx] = var;
+//         Idx += step;
+//       }
+//       ...
+//     }
+// Return {threadIdx.x, true, "step"}
+std::tuple<const Expr *, bool, std::string>
+getIdxExprOfASE(const ArraySubscriptExpr *ASE) {
+  bool IsIdxInc = false;
+
   // IdxVD must be local variable and must be defined in this function
   const DeclRefExpr *IdxDRE =
       dyn_cast_or_null<DeclRefExpr>(ASE->getIdx()->IgnoreImpCasts());
   if (!IdxDRE)
-    return nullptr;
+    return {nullptr, IsIdxInc, ""};
   const VarDecl *IdxVD = dyn_cast_or_null<VarDecl>(IdxDRE->getDecl());
   if (!IdxVD)
-    return nullptr;
+    return {nullptr, IsIdxInc, ""};
   if (IdxVD->getKind() != Decl::Var)
-    return nullptr;
+    return {nullptr, IsIdxInc, ""};
   const auto *IdxFD = dyn_cast_or_null<FunctionDecl>(IdxVD->getDeclContext());
   if (!IdxFD)
-    return nullptr;
+    return {nullptr, IsIdxInc, ""};
   const Stmt *IdxVDContext = IdxFD->getBody();
 
+  std::string IncStr;
   using namespace ast_matchers;
-  // VD's DRE should only be used as rvalue
+  // VD's DRE should:
+  // (1) be used as rvalue; Or
+  // (2) meet pattern as "idx += step" and must be in the same loop of ASE
+  //     and there is no nested loop
   auto DREMatcher = findAll(declRefExpr(isDeclSameAs(IdxVD)).bind("DRE"));
   auto MatchedResults =
       match(DREMatcher, *IdxVDContext, DpctGlobalInfo::getContext());
   for (const auto &Res : MatchedResults) {
     const DeclRefExpr *RefDRE = Res.getNodeAs<DeclRefExpr>("DRE");
     auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(RefDRE);
-    if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue))
-      return nullptr;
+    if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue)) {
+      const Stmt *NearestLoopStmtOfRefDRE = findNearestLoopStmt(RefDRE);
+      const Stmt *NearestLoopStmtOfRefASE = findNearestLoopStmt(ASE);
+      if (!NearestLoopStmtOfRefDRE || !NearestLoopStmtOfRefASE ||
+          NearestLoopStmtOfRefDRE != NearestLoopStmtOfRefASE ||
+          !isIncPattern(RefDRE, IncStr)) {
+        return {nullptr, IsIdxInc, IncStr};
+      }
+      auto SecondLoop = findNearestLoopStmt(NearestLoopStmtOfRefDRE);
+      if (SecondLoop) {
+        return {nullptr, IsIdxInc, IncStr};
+      } else {
+        IsIdxInc = true;
+      }
+    }
   }
   if (!IdxVD->hasInit())
-    return nullptr;
-  return IdxVD->getInit()->IgnoreImpCasts();
+    return {nullptr, IsIdxInc, IncStr};
+  return {IdxVD->getInit()->IgnoreImpCasts(), IsIdxInc, IncStr};
 }
 
-bool isIterationSpaceBuiltinVar(const PseudoObjectExpr *Node,
-                                const std::string &BuiltinNameRef,
-                                const std::string &FieldNameRef) {
-  using namespace ast_matchers;
-  if (!Node)
-    return false;
-  auto BuiltinMatcher = findAll(
-      memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
-                     declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
-                                                       "blockIdx"))))
-                         .bind("declRefExpr")))),
-                 hasParent(implicitCastExpr(
-                     hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
-          .bind("memberExpr"));
-  auto MatchedResults =
-      match(BuiltinMatcher, *Node, DpctGlobalInfo::getContext());
-  if (MatchedResults.size() != 1)
-    return false;
-  const auto Res = MatchedResults[0];
-  auto ME = Res.getNodeAs<MemberExpr>("memberExpr");
-  auto DRE = Res.getNodeAs<DeclRefExpr>("declRefExpr");
-  if (!ME || !DRE)
-    return false;
-  StringRef BuiltinName = DRE->getDecl()->getName();
-  StringRef FieldName = ME->getMemberDecl()->getName();
-  if (BuiltinName == BuiltinNameRef && FieldName == FieldNameRef)
-    return true;
-  return false;
-}
 bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "BarrierFenceSpaceAnalyzer Analyzing ..." << std::endl;
@@ -534,20 +586,19 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::constructDefUseMap() {
 #endif
 }
 
-void clang::dpct::BarrierFenceSpaceAnalyzer::simplifyAndConvertToDefLocInfoMap(
-    std::map<const ParmVarDecl *,
-             std::set<std::pair<SourceLocation, AccessMode>>> &DefLocInfoMap) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::simplifyMap(
+    std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap) {
   std::map<const ParmVarDecl *,
            std::set<std::pair<const DeclRefExpr *, AccessMode>>>
-      DefDREInfoMap;
+      DefDREInfoMapTemp;
   // simplify DefUseMap
   for (const auto &Pair : DefUseMap) {
     for (const auto &Item : Pair.second) {
       if (isAccessingMemory(Item)) {
-        if (!hasOverlappingAccessAmongWorkItems(KernelDim, Item)) {
+        if (!hasOverlappingAccessAmongWorkItems(KernelCallBlockDim, Item)) {
           MayDependOn1DKernel = true;
         } else {
-          DefDREInfoMap[Pair.first].insert(
+          DefDREInfoMapTemp[Pair.first].insert(
               std::make_pair(Item, getAccessKind(Item)));
         }
       }
@@ -555,25 +606,25 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::simplifyAndConvertToDefLocInfoMap(
   }
 
   // Convert DRE to Location for comparing
-  for (const auto &Pair : DefDREInfoMap) {
+  for (const auto &Pair : DefDREInfoMapTemp) {
     for (const auto &Item : Pair.second) {
-      DefLocInfoMap[Pair.first].insert(
-          std::make_pair(Item.first->getBeginLoc(), Item.second));
+      DefDREInfoMap[Pair.first].insert(
+          DREInfo(Item.first, Item.first->getBeginLoc(), Item.second));
     }
   }
 
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "===== DefLocInfoMap contnet: =====" << std::endl;
-  for (const auto &LocInfo : DefLocInfoMap) {
+  std::cout << "===== DefDREInfoMap contnet: =====" << std::endl;
+  for (const auto &LocInfo : DefDREInfoMap) {
     const auto &SM = DpctGlobalInfo::getSourceManager();
     std::cout << "Decl:" << LocInfo.first->getBeginLoc().printToString(SM)
               << std::endl;
-    for (const auto &Pair : LocInfo.second) {
-      std::cout << "    DRE:" << Pair.first.printToString(SM)
-                << ", AccessMode:" << (int)(Pair.second) << std::endl;
+    for (const auto &Info : LocInfo.second) {
+      std::cout << "    DRE:" << Info.SL.printToString(SM)
+                << ", AccessMode:" << (int)(Info.AM) << std::endl;
     }
   }
-  std::cout << "===== DefLocInfoMap contnet end =====" << std::endl;
+  std::cout << "===== DefDREInfoMap contnet end =====" << std::endl;
 #endif
 }
 
@@ -583,26 +634,29 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
   // Check prerequirements
   const FunctionDecl *FD = nullptr;
   if (!isMeetAnalyisPrerequirements(CE, FD))
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                           GlobalFunctionName);
 
   // Init values
   this->SkipCacheInAnalyzer = SkipCacheInAnalyzer;
   this->FD = FD;
   GlobalFunctionName = FD->getDeclName().getAsString();
-  auto QueryKernelDim = [](const FunctionDecl *FD) -> int {
+  auto queryKernelDim = [](const FunctionDecl *FD)
+      -> std::pair<int /*kernel dim*/, int /*kernel block dim*/> {
     const auto DFD = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD);
     if (!DFD)
-      return 3;
+      return {3, 3};
     const auto FuncInfo = DFD->getFuncInfo();
     if (!FuncInfo)
-      return 3;
+      return {3, 3};
+    int BlockDim = FuncInfo->KernelCallBlockDim;
     const auto MVM =
         MemVarMap::getHeadWithoutPathCompression(&(FuncInfo->getVarMap()));
     if (!MVM)
-      return 3;
-    return MVM->Dim;
+      return {3, BlockDim};
+    return {MVM->Dim, BlockDim};
   };
-  KernelDim = QueryKernelDim(FD);
+  std::tie(KernelDim, KernelCallBlockDim) = queryKernelDim(FD);
 
   CELoc = getHashStrFromLoc(CE->getBeginLoc());
   FDLoc = getHashStrFromLoc(FD->getBeginLoc());
@@ -614,7 +668,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
       if (CEIter != FDIter->second.end()) {
         return CEIter->second;
       } else {
-        return BarrierFenceSpaceAnalyzerResult(false, false,
+        return BarrierFenceSpaceAnalyzerResult(false, false, false,
                                                GlobalFunctionName);
       }
     }
@@ -629,13 +683,13 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
       CachedResults[FDLoc] =
           std::unordered_map<std::string, BarrierFenceSpaceAnalyzerResult>();
     }
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                           GlobalFunctionName);
   }
 
   constructDefUseMap();
-  std::map<const ParmVarDecl *, std::set<std::pair<SourceLocation, AccessMode>>>
-      DefLocInfoMap;
-  simplifyAndConvertToDefLocInfoMap(DefLocInfoMap);
+  std::map<const ParmVarDecl *, std::set<DREInfo>> DefLocInfoMap;
+  simplifyMap(DefLocInfoMap);
 
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "===== SyncCall info contnet: =====" << std::endl;
@@ -660,18 +714,21 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
   if (SkipCacheInAnalyzer) {
     for (auto &SyncCall : SyncCallsVec) {
       if (CE == SyncCall.first) {
+        auto Res = isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second);
         return BarrierFenceSpaceAnalyzerResult(
-            isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second),
-            MayDependOn1DKernel, GlobalFunctionName);
+            std::get<0>(Res), std::get<1>(Res), MayDependOn1DKernel,
+            GlobalFunctionName, std::get<2>(Res));
       }
     }
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                           GlobalFunctionName);
   }
   for (auto &SyncCall : SyncCallsVec) {
+    auto Res = isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second);
     CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
-        BarrierFenceSpaceAnalyzerResult(
-            isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second),
-            MayDependOn1DKernel, GlobalFunctionName);
+        BarrierFenceSpaceAnalyzerResult(std::get<0>(Res), std::get<1>(Res),
+                                        MayDependOn1DKernel, GlobalFunctionName,
+                                        std::get<2>(Res));
   }
 
   // find the result in the new map
@@ -681,77 +738,34 @@ clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
     if (CEIter != FDIter->second.end()) {
       return CEIter->second;
     } else {
-      return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+      return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                             GlobalFunctionName);
     }
   }
-  return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+  return BarrierFenceSpaceAnalyzerResult(false, false, false,
+                                         GlobalFunctionName);
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
-    int KernelDim, const DeclRefExpr *DRE) {
+    int KernelCallBlockDim, const DeclRefExpr *DRE) {
   using namespace ast_matchers;
-  if (KernelDim != 1) {
+  if (KernelCallBlockDim != 1) {
     return true;
   }
 
   const ArraySubscriptExpr *ASE = getArraySubscriptExpr(DRE);
   if (!ASE)
     return true;
-
-  const Expr *InitExpr = getIdxOfASEConstValueExpr(ASE);
-  if (!InitExpr)
+  auto Res = getIdxExprOfASE(ASE);
+  if (!std::get<0>(Res))
     return true;
 
-  // Check if Index variable match pattern: blockIdx.x * blockDim.x +
-  // threadIdx.x
-  // Case 1: blockIdx.x * blockDim.x + threadIdx.x
-  // Case 2: blockDim.x * blockIdx.x + threadIdx.x
-  // Case 3: threadIdx.x + blockIdx.x * blockDim.x
-  // Case 4: threadIdx.x + blockDim.x * blockIdx.x
-  const BinaryOperator *BOAdd = dyn_cast<BinaryOperator>(InitExpr);
-  if (!BOAdd || BOAdd->getOpcode() != BinaryOperatorKind::BO_Add)
-    return true;
-  const BinaryOperator *BOMul = dyn_cast<BinaryOperator>(BOAdd->getLHS());
-  if (BOMul &&
-      isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getRHS()),
-                                 "threadIdx", "__fetch_builtin_x")) {
-    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
-                                   "blockIdx", "__fetch_builtin_x") &&
-        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
-                                   "blockDim", "__fetch_builtin_x")) {
-      // Case 1
-      return false;
-    }
-    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
-                                   "blockIdx", "__fetch_builtin_x") &&
-        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
-                                   "blockDim", "__fetch_builtin_x")) {
-      // Case 2
-      return false;
-    }
-    return true;
+  IndexAnalysis IA(std::get<0>(Res));
+  if (IA.isDifferenceBetweenThreadIdxXAndIndexConstant()) {
+    DREIncStepMap.insert({DRE, std::get<2>(Res)});
   }
-  BOMul = dyn_cast<BinaryOperator>(BOAdd->getRHS());
-  if (BOMul &&
-      isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getLHS()),
-                                 "threadIdx", "__fetch_builtin_x")) {
-    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
-                                   "blockIdx", "__fetch_builtin_x") &&
-        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
-                                   "blockDim", "__fetch_builtin_x")) {
-      // Case 3
-      return false;
-    }
-    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
-                                   "blockIdx", "__fetch_builtin_x") &&
-        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
-                                   "blockDim", "__fetch_builtin_x")) {
-      // Case 4
-      return false;
-    }
-    return true;
-  }
-  return true;
+  // Check if Index variable has 1:1 mapping to threadIdx.x in a block
+  return std::get<1>(Res) || !IA.isStrictlyMonotonic();
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::containsMacro(
@@ -792,6 +806,46 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
   return false;
 }
 
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
+    SourceLocation SL, std::vector<SourceRange> Ranges) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  for (auto &Range : Ranges) {
+    if (SM.getFileOffset(Range.getBegin()) < SM.getFileOffset(SL) &&
+        SM.getFileOffset(SL) < SM.getFileOffset(Range.getEnd())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// This function recognizes pattern like below:
+// (1) Only 1 access in each iteration for each memory variable
+// (2) The step of the `idx` has been identified in previous step.
+// for () {
+//   ...
+//   mem[idx] = var;
+//   ... 
+// }
+std::string clang::dpct::BarrierFenceSpaceAnalyzer::isAnalyzableWriteInLoop(
+    const std::set<const DeclRefExpr *> &WriteInLoopDRESet) {
+  if (WriteInLoopDRESet.size() > 1) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "isAnalyzableWriteInLoop False case 1" << std::endl;
+#endif
+    return "";
+  }
+
+  const DeclRefExpr *DRE = *WriteInLoopDRESet.begin();
+  auto Iter = DREIncStepMap.find(DRE);
+  if (Iter == DREIncStepMap.end()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "isAnalyzableWriteInLoop False case 2" << std::endl;
+#endif
+    return "";
+  }
+  return Iter->second;
+}
+
 /// @brief Check if it is safe to use local barrier to migrate current
 /// __syncthreads call.
 /// The requirements to return ture:
@@ -804,43 +858,103 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
 /// points
 /// @param SCI Saves predecessor ranges and successor ranges of current
 /// __syncthreads call
-/// @return Is safe or not
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
-    const std::map<const ParmVarDecl *,
-                   std::set<std::pair<SourceLocation, AccessMode>>>
-        &DefLocInfoMap,
+/// @return Is safe or not, and the condition string (if needed)
+std::tuple<bool /*CanUseLocalBarrier*/,
+           bool /*CanUseLocalBarrierWithCondition*/, std::string /*Condition*/>
+clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
+    const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
     const SyncCallInfo &SCI) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "===== isSafeToUseLocalBarrier =====" << std::endl;
 #endif
-  for (auto &LocInfo : DefLocInfoMap) {
+  std::set<std::string> ConditionSet;
+  for (auto &DefDREInfo : DefDREInfoMap) {
     bool FoundRead = false;
     bool FoundWrite = false;
-    for (auto &LocModePair : LocInfo.second) {
-      if (LocModePair.first.isMacroID() ||
-          (LocModePair.second == AccessMode::ReadWrite)) {
+    bool DREInPredecessors = false;
+    bool DREInSuccessors = false;
+    std::set<const DeclRefExpr *> WriteAfterWriteDRE;
+    for (auto &DREInfo : DefDREInfo.second) {
+      if (DREInfo.SL.isMacroID() || (DREInfo.AM == AccessMode::ReadWrite)) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 1" << std::endl;
 #endif
-        return false;
+        return {false, false, ""};
       }
-      if (LocModePair.second == AccessMode::Read) {
+      if (DREInfo.AM == AccessMode::Read) {
         FoundRead = true;
-      } else if (LocModePair.second == AccessMode::Write) {
+      } else if (DREInfo.AM == AccessMode::Write) {
         FoundWrite = true;
       }
+      if (isInRanges(DREInfo.SL, SCI.Predecessors)) {
+        DREInPredecessors = true;
+      }
+      if (isInRanges(DREInfo.SL, SCI.Successors)) {
+        DREInSuccessors = true;
+      }
+
       if (FoundRead && FoundWrite) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 2" << std::endl;
 #endif
-        return false;
+        return {false, false, ""};
+      }
+      if (FoundWrite && DREInPredecessors && DREInSuccessors) {
+        WriteAfterWriteDRE.insert(DREInfo.DRE);
       }
     }
+    if (!WriteAfterWriteDRE.empty()) {
+      auto StepStr = isAnalyzableWriteInLoop(WriteAfterWriteDRE);
+      if (StepStr.empty()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;
+#endif
+        return {false, false, ""};
+      }
+      ConditionSet.insert(StepStr);
+    }
+  }
+
+  if (!ConditionSet.empty()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "isSafeToUseLocalBarrier True with condition" << std::endl;
+#endif
+    // local_range(2) loop0     loop1    loop2    ... loopn
+    //      0         mem[0]    mem[s]   mem[2s]      mem[ns]
+    //      1         mem[1+0]  mem[1+s] mem[1+2s]    mem[1+ns]
+    //      2         mem[2+0]  mem[2+s] mem[2+2s]    mem[2+ns]
+    //     ...
+    //      m         mem[m+0]  mem[m+s] mem[m+2s]    mem[m+ns]
+    //
+    // We can make sure that there is no overlap in the same iteration since idx
+    // should equal to `local_id(2) + C`.
+    // Next, we need to make sure there is no overlap among iterations.
+    // The memory range in an iteration is `local_range(2)`, then if
+    // `s > local_range(2)`, the next iteration start point is larger than previous
+    // end, so there is no overlap.
+
+    std::string RHS;
+    if (ConditionSet.size() == 1) {
+      RHS = *ConditionSet.begin();
+    } else {
+      RHS = "std::min(";
+      for (const auto &C : ConditionSet) {
+        RHS = RHS + C + ", ";
+      }
+      RHS = RHS.substr(0, RHS.size() - 2) + ")";
+    }
+
+    // No need to call DpctGlobalInfo::getItem() here.
+    // It has been invoked in SyncThreadsRule.
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && KernelDim == 1)
+      return {false, true, "item_ct1.get_local_range(0) < " + RHS};
+    else
+      return {false, true, "item_ct1.get_local_range(2) < " + RHS};
   }
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "isSafeToUseLocalBarrier True" << std::endl;
 #endif
-  return true;
+  return {true, false, ""};
 }
 
 std::unordered_map<
