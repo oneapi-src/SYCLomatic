@@ -169,14 +169,6 @@ void IncludesCallbacks::InclusionDirective(
     if (Extension == ".c") {
       SmallString<512> CanonicalPathStr(
           StringRef(NewFilePath.getCanonicalPath()));
-      auto &Map =
-          DpctGlobalInfo::getInstance().getCSourceFileExtensionIndexMap();
-      Map[CSourceFileExtensionIndex] =
-          DpctGlobalInfo::getInstance().insertFile(IncludedFile);
-      path::replace_extension(CanonicalPathStr,
-                              "{{NEEDREPLACEE" +
-                                  std::to_string(CSourceFileExtensionIndex++) +
-                                  "}}");
       NewFilePath = CanonicalPathStr;
     } else {
       rewriteFileName(NewFilePath, IncludedFile);
@@ -185,6 +177,15 @@ void IncludesCallbacks::InclusionDirective(
     path::remove_filename(NewFileName);
     path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
     NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
+    if (Extension == ".c") {
+      auto &Map =
+          DpctGlobalInfo::getInstance().getCSourceFileExtensionIndexMap();
+      Map[CSourceFileExtensionIndex] =
+          DpctGlobalInfo::getInstance().insertFile(IncludedFile);
+      path::replace_extension(
+          NewFileName, "{{NEEDREPLACEE" +
+                           std::to_string(CSourceFileExtensionIndex++) + "}}");
+    }
     if (NewFileName != FileName) {
       std::string ReplacedStr;
       if (IsAngled) {
