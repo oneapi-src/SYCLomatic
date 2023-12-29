@@ -781,9 +781,6 @@ void DpctFileInfo::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
 bool DpctFileInfo::isInAnalysisScope() {
   return DpctGlobalInfo::isInAnalysisScope(FilePath);
 }
-std::shared_ptr<ExtReplacements> DpctFileInfo::getRepls() { return Repls; }
-size_t DpctFileInfo::getFileSize() const { return FileSize; }
-std::string &DpctFileInfo::getFileContent() { return FileContentCache; }
 void DpctFileInfo::setFileEnterOffset(unsigned Offset) {
   if (!HasInclusionDirective) {
     FirstIncludeOffset = Offset;
@@ -1009,57 +1006,7 @@ void DpctFileInfo::insertIncludedFilesInfo(std::shared_ptr<DpctFileInfo> Info) {
     IncludedFilesInfoSet.insert(Info);
   }
 }
-std::map<const CompoundStmt *, MemcpyOrderAnalysisInfo> &
-DpctFileInfo::getMemcpyOrderAnalysisResultMap() {
-  return MemcpyOrderAnalysisResultMap;
-}
-std::map<std::string, std::vector<std::pair<unsigned int, unsigned int>>> &
-DpctFileInfo::getFuncDeclRangeMap() {
-  return FuncDeclRangeMap;
-}
-std::map<unsigned int, EventSyncTypeInfo> &DpctFileInfo::getEventSyncTypeMap() {
-  return EventSyncTypeMap;
-}
-std::map<unsigned int, TimeStubTypeInfo> &DpctFileInfo::getTimeStubTypeMap() {
-  return TimeStubTypeMap;
-}
-std::map<unsigned int, BuiltinVarInfo> &DpctFileInfo::getBuiltinVarInfoMap() {
-  return BuiltinVarInfoMap;
-}
-std::unordered_set<std::shared_ptr<DpctFileInfo>> &
-DpctFileInfo::getIncludedFilesInfoSet() {
-  return IncludedFilesInfoSet;
-}
-std::set<unsigned int> &DpctFileInfo::getSpBLASSet() { return SpBLASSet; }
-std::unordered_set<std::shared_ptr<TextModification>> &
-DpctFileInfo::getConstantMacroTMSet() {
-  return ConstantMacroTMSet;
-}
-std::vector<tooling::Replacement> &DpctFileInfo::getReplacements() {
-  return PreviousTUReplFromYAML->Replacements;
-}
-std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>> &
-DpctFileInfo::getAtomicMap() {
-  return AtomicMap;
-}
-void DpctFileInfo::setAddOneDplHeaders(bool Value) { AddOneDplHeaders = Value; }
-std::vector<std::pair<unsigned int, unsigned int>> &
-DpctFileInfo::getTimeStubBounds() {
-  return TimeStubBounds;
-}
-std::vector<std::pair<unsigned int, unsigned int>> &
-DpctFileInfo::getExternCRanges() {
-  return ExternCRanges;
-}
-std::vector<RnnBackwardFuncInfo> &DpctFileInfo::getRnnBackwardFuncInfo() {
-  return RBFuncInfo;
-}
-void DpctFileInfo::setRTVersionValue(std::string Value) {
-  RTVersionValue = Value;
-}
-std::string DpctFileInfo::getRTVersionValue() { return RTVersionValue; }
-void DpctFileInfo::setCCLVerValue(std::string Value) { CCLVerValue = Value; }
-std::string DpctFileInfo::getCCLVerValue() { return CCLVerValue; }
+
 bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
   bool ReplTxtWithSB = true;
   for (const auto &Entry : TimeStubBounds) {
@@ -1285,59 +1232,12 @@ const std::string &DpctGlobalInfo::getDeviceQueueName() {
   }();
   return DeviceQueue;
 }
-const std::string &DpctGlobalInfo::getStreamName() {
-  const static std::string StreamName = "stream" + getCTFixedSuffix();
-  return StreamName;
-}
-const std::string &DpctGlobalInfo::getSyncName() {
-  const static std::string SyncName = "sync" + getCTFixedSuffix();
-  return SyncName;
-}
-const std::string &DpctGlobalInfo::getInRootHash() {
-  const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
-  return Hash;
-}
 void DpctGlobalInfo::setContext(ASTContext &C) {
   Context = &C;
   SM = &(Context->getSourceManager());
   FM = &(SM->getFileManager());
   Context->getParentMapContext().setTraversalKind(TK_AsIs);
 }
-void DpctGlobalInfo::setRuleFile(const std::string &Path) { RuleFile = Path; }
-ASTContext &DpctGlobalInfo::getContext() {
-  assert(Context);
-  return *Context;
-}
-SourceManager &DpctGlobalInfo::getSourceManager() {
-  assert(SM);
-  return *SM;
-}
-FileManager &DpctGlobalInfo::getFileManager() {
-  assert(FM);
-  return *FM;
-}
-bool DpctGlobalInfo::isKeepOriginCode() { return KeepOriginCode; }
-void DpctGlobalInfo::setKeepOriginCode(bool KOC) { KeepOriginCode = KOC; }
-bool DpctGlobalInfo::isSyclNamedLambda() { return SyclNamedLambda; }
-void DpctGlobalInfo::setSyclNamedLambda(bool SNL) { SyclNamedLambda = SNL; }
-void DpctGlobalInfo::setCheckUnicodeSecurityFlag(bool CUS) {
-  CheckUnicodeSecurityFlag = CUS;
-}
-bool DpctGlobalInfo::getCheckUnicodeSecurityFlag() {
-  return CheckUnicodeSecurityFlag;
-}
-void DpctGlobalInfo::setEnablepProfilingFlag(bool EP) {
-  EnablepProfilingFlag = EP;
-}
-bool DpctGlobalInfo::getEnablepProfilingFlag() { return EnablepProfilingFlag; }
-bool DpctGlobalInfo::getGuessIndentWidthMatcherFlag() {
-  return GuessIndentWidthMatcherFlag;
-}
-void DpctGlobalInfo::setGuessIndentWidthMatcherFlag(bool Flag) {
-  GuessIndentWidthMatcherFlag = Flag;
-}
-void DpctGlobalInfo::setIndentWidth(unsigned int W) { IndentWidth = W; }
-unsigned int DpctGlobalInfo::getIndentWidth() { return IndentWidth; }
 void DpctGlobalInfo::insertKCIndentWidth(unsigned int W) {
   auto Iter = KCIndentWidthMap.find(W);
   if (Iter != KCIndentWidthMap.end())
@@ -1356,55 +1256,6 @@ unsigned int DpctGlobalInfo::getKCIndentWidth() {
 
   return OccuranceIndentWidthMap.begin()->second;
 }
-UsmLevel DpctGlobalInfo::getUsmLevel() { return UsmLvl; }
-void DpctGlobalInfo::setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
-clang::CudaVersion DpctGlobalInfo::getSDKVersion() { return SDKVersion; }
-void DpctGlobalInfo::setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
-bool DpctGlobalInfo::isIncMigration() { return IsIncMigration; }
-void DpctGlobalInfo::setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
-bool DpctGlobalInfo::isQueryAPIMapping() { return IsQueryAPIMapping; }
-void DpctGlobalInfo::setIsQueryAPIMapping(bool Flag) {
-  IsQueryAPIMapping = Flag;
-}
-bool DpctGlobalInfo::needDpctDeviceExt() { return NeedDpctDeviceExt; }
-void DpctGlobalInfo::setNeedDpctDeviceExt() { NeedDpctDeviceExt = true; }
-unsigned int DpctGlobalInfo::getAssumedNDRangeDim() {
-  return AssumedNDRangeDim;
-}
-void DpctGlobalInfo::setAssumedNDRangeDim(unsigned int Dim) {
-  AssumedNDRangeDim = Dim;
-}
-bool DpctGlobalInfo::getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
-  return ExtensionDEFlag & (1 << static_cast<unsigned>(Ext));
-}
-void DpctGlobalInfo::setExtensionDEFlag(unsigned Flag) {
-  ExtensionDEFlag = Flag;
-}
-unsigned DpctGlobalInfo::getExtensionDEFlag() { return ExtensionDEFlag; }
-bool DpctGlobalInfo::getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
-  return ExtensionDDFlag & (1 << static_cast<unsigned>(Ext));
-}
-void DpctGlobalInfo::setExtensionDDFlag(unsigned Flag) {
-  ExtensionDDFlag = Flag;
-}
-unsigned DpctGlobalInfo::getExtensionDDFlag() { return ExtensionDDFlag; }
-void DpctGlobalInfo::setExperimentalFlag(unsigned Flag) {
-  ExperimentalFlag = Flag;
-}
-unsigned DpctGlobalInfo::getExperimentalFlag() { return ExperimentalFlag; }
-bool DpctGlobalInfo::getHelperFuncPreference(HelperFuncPreference HFP) {
-  return HelperFuncPreferenceFlag & (1 << static_cast<unsigned>(HFP));
-}
-void DpctGlobalInfo::setHelperFuncPreferenceFlag(unsigned Flag) {
-  HelperFuncPreferenceFlag = Flag;
-}
-unsigned DpctGlobalInfo::getHelperFuncPreferenceFlag() {
-  return HelperFuncPreferenceFlag;
-}
-format::FormatRange DpctGlobalInfo::getFormatRange() { return FmtRng; }
-void DpctGlobalInfo::setFormatRange(format::FormatRange FR) { FmtRng = FR; }
-DPCTFormatStyle DpctGlobalInfo::getFormatStyle() { return FmtST; }
-void DpctGlobalInfo::setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
 void DpctGlobalInfo::setExcludePath(std::vector<std::string> ExcludePathVec) {
   if (ExcludePathVec.empty()) {
     return;
@@ -1496,39 +1347,6 @@ void DpctGlobalInfo::setExplicitNamespace(
     }
   }
 }
-bool DpctGlobalInfo::isCtadEnabled() { return EnableCtad; }
-void DpctGlobalInfo::setCtadEnabled(bool Enable) { EnableCtad = Enable; }
-bool DpctGlobalInfo::isGenBuildScript() { return GenBuildScript; }
-void DpctGlobalInfo::setGenBuildScriptEnabled(bool Enable) {
-  GenBuildScript = Enable;
-}
-bool DpctGlobalInfo::IsMigrateCmakeScriptEnabled() {
-  return MigrateCmakeScript;
-}
-void DpctGlobalInfo::setMigrateCmakeScriptEnabled(bool Enable) {
-  MigrateCmakeScript = Enable;
-}
-bool DpctGlobalInfo::IsMigrateCmakeScriptOnlyEnabled() {
-  return MigrateCmakeScriptOnly;
-}
-void DpctGlobalInfo::setMigrateCmakeScriptOnlyEnabled(bool Enable) {
-  MigrateCmakeScriptOnly = Enable;
-}
-bool DpctGlobalInfo::isCommentsEnabled() { return EnableComments; }
-void DpctGlobalInfo::setCommentsEnabled(bool Enable) {
-  EnableComments = Enable;
-}
-bool DpctGlobalInfo::isDPCTNamespaceTempEnabled() {
-  return TempEnableDPCTNamespace;
-}
-void DpctGlobalInfo::setDPCTNamespaceTempEnabled() {
-  TempEnableDPCTNamespace = true;
-}
-std::unordered_set<std::string> &DpctGlobalInfo::getPrecAndDomPairSet() {
-  return PrecAndDomPairSet;
-}
-bool DpctGlobalInfo::isMKLHeaderUsed() { return IsMLKHeaderUsed; }
-void DpctGlobalInfo::setMKLHeaderUsed(bool Used) { IsMLKHeaderUsed = Used; }
 int DpctGlobalInfo::getSuffixIndexInitValue(std::string FileNameAndOffset) {
   auto Res = LocationInitIndexMap.find(FileNameAndOffset);
   if (Res == LocationInitIndexMap.end()) {
@@ -1538,9 +1356,6 @@ int DpctGlobalInfo::getSuffixIndexInitValue(std::string FileNameAndOffset) {
   } else {
     return Res->second;
   }
-}
-void DpctGlobalInfo::updateInitSuffixIndexInRule(int InitVal) {
-  CurrentIndexInRule = InitVal;
 }
 int DpctGlobalInfo::getSuffixIndexInRuleThenInc() {
   int Res = CurrentIndexInRule;
@@ -1553,14 +1368,6 @@ int DpctGlobalInfo::getSuffixIndexGlobalThenInc() {
   int Res = CurrentMaxIndex;
   CurrentMaxIndex++;
   return Res;
-}
-const std::string &DpctGlobalInfo::getGlobalQueueName() {
-  const static std::string Q = "q_ct1";
-  return Q;
-}
-const std::string &DpctGlobalInfo::getGlobalDeviceName() {
-  const static std::string D = "dev_ct1";
-  return D;
 }
 std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   unsigned Index = 0;
@@ -2198,17 +2005,6 @@ std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
 void DpctGlobalInfo::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   insertFile(Repl->getFilePath().str())->addReplacement(Repl);
 }
-CudaArchPPMap &DpctGlobalInfo::getCudaArchPPInfoMap() { return CAPPInfoMap; }
-HDFuncInfoMap &DpctGlobalInfo::getHostDeviceFuncInfoMap() {
-  return HostDeviceFuncInfoMap;
-}
-std::unordered_map<std::string, std::shared_ptr<ExtReplacement>> &
-DpctGlobalInfo::getCudaArchMacroReplMap() {
-  return CudaArchMacroRepl;
-}
-CudaArchDefMap &DpctGlobalInfo::getCudaArchDefinedMap() {
-  return CudaArchDefinedMap;
-}
 void DpctGlobalInfo::insertReplInfoFromYAMLToFileInfo(
     const clang::tooling::UnifiedPath &FilePath,
     std::shared_ptr<tooling::TranslationUnitReplacements> TUR) {
@@ -2371,61 +2167,6 @@ void DpctGlobalInfo::insertHeader(SourceLocation Loc, std::string HeaderName) {
   auto LocInfo = getLocInfo(Loc);
   insertFile(LocInfo.first)->insertCustomizedHeader(std::move(HeaderName));
 }
-std::unordered_map<
-    std::string,
-    std::pair<std::pair<clang::tooling::UnifiedPath /*begin file name*/,
-                        unsigned int /*begin offset*/>,
-              std::pair<clang::tooling::UnifiedPath /*end file name*/,
-                        unsigned int /*end offset*/>>> &
-DpctGlobalInfo::getExpansionRangeBeginMap() {
-  return ExpansionRangeBeginMap;
-}
-std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>> &
-DpctGlobalInfo::getExpansionRangeToMacroRecord() {
-  return ExpansionRangeToMacroRecord;
-}
-std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>> &
-DpctGlobalInfo::getMacroTokenToMacroDefineLoc() {
-  return MacroTokenToMacroDefineLoc;
-}
-std::map<std::string, std::string> &
-DpctGlobalInfo::getFunctionCallInMacroMigrateRecord() {
-  return FunctionCallInMacroMigrateRecord;
-}
-std::map<std::string, SourceLocation> &
-DpctGlobalInfo::getEndifLocationOfIfdef() {
-  return EndifLocationOfIfdef;
-}
-std::vector<std::pair<clang::tooling::UnifiedPath, size_t>> &
-DpctGlobalInfo::getConditionalCompilationLoc() {
-  return ConditionalCompilationLoc;
-}
-std::map<std::string, unsigned int> &DpctGlobalInfo::getBeginOfEmptyMacros() {
-  return BeginOfEmptyMacros;
-}
-std::map<std::string, SourceLocation> &DpctGlobalInfo::getEndOfEmptyMacros() {
-  return EndOfEmptyMacros;
-}
-std::map<std::string, bool> &DpctGlobalInfo::getMacroDefines() {
-  return MacroDefines;
-}
-std::set<clang::tooling::UnifiedPath> &DpctGlobalInfo::getIncludingFileSet() {
-  return IncludingFileSet;
-}
-std::set<std::string> &DpctGlobalInfo::getFileSetInCompiationDB() {
-  return FileSetInCompiationDB;
-}
-std::unordered_map<std::string, std::vector<clang::tooling::Replacement>> &
-DpctGlobalInfo::getFileRelpsMap() {
-  return FileRelpsMap;
-}
-std::unordered_map<std::string, std::string> &DpctGlobalInfo::getDigestMap() {
-  return DigestMap;
-}
-std::string DpctGlobalInfo::getYamlFileName() { return YamlFileName; }
-std::set<std::string> &DpctGlobalInfo::getGlobalVarNameSet() {
-  return GlobalVarNameSet;
-}
 void DpctGlobalInfo::removeVarNameInGlobalVarNameSet(
     const std::string &VarName) {
   auto Iter = getGlobalVarNameSet().find(VarName);
@@ -2433,90 +2174,10 @@ void DpctGlobalInfo::removeVarNameInGlobalVarNameSet(
     getGlobalVarNameSet().erase(Iter);
   }
 }
-bool DpctGlobalInfo::getDeviceChangedFlag() { return HasFoundDeviceChanged; }
-void DpctGlobalInfo::setDeviceChangedFlag(bool Flag) {
-  HasFoundDeviceChanged = Flag;
-}
-std::unordered_map<int, DpctGlobalInfo::HelperFuncReplInfo> &
-DpctGlobalInfo::getHelperFuncReplInfoMap() {
-  return HelperFuncReplInfoMap;
-}
 int DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc() {
   int Res = HelperFuncReplInfoIndex;
   HelperFuncReplInfoIndex++;
   return Res;
-}
-std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter> &
-DpctGlobalInfo::getTempVariableDeclCounterMap() {
-  return TempVariableDeclCounterMap;
-}
-std::unordered_map<std::string, int> &
-DpctGlobalInfo::getTempVariableHandledMap() {
-  return TempVariableHandledMap;
-}
-bool DpctGlobalInfo::getUsingDRYPattern() { return UsingDRYPattern; }
-void DpctGlobalInfo::setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
-bool DpctGlobalInfo::useNdRangeBarrier() {
-  return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
-}
-bool DpctGlobalInfo::useFreeQueries() {
-  return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
-}
-bool DpctGlobalInfo::useGroupLocalMemory() {
-  return getUsingExperimental<ExperimentalFeatures::Exp_GroupSharedMemory>();
-}
-bool DpctGlobalInfo::useLogicalGroup() {
-  return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
-}
-bool DpctGlobalInfo::useUserDefineReductions() {
-  return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
-}
-bool DpctGlobalInfo::useMaskedSubGroupFunction() {
-  return getUsingExperimental<
-      ExperimentalFeatures::Exp_MaskedSubGroupFunction>();
-}
-bool DpctGlobalInfo::useExtDPLAPI() {
-  return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
-}
-bool DpctGlobalInfo::useOccupancyCalculation() {
-  return getUsingExperimental<ExperimentalFeatures::Exp_OccupancyCalculation>();
-}
-bool DpctGlobalInfo::useExtJointMatrix() {
-  return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
-}
-bool DpctGlobalInfo::useExtBFloat16Math() {
-  return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
-}
-bool DpctGlobalInfo::useNoQueueDevice() {
-  return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
-}
-bool DpctGlobalInfo::useEnqueueBarrier() {
-  return getUsingExtensionDE(
-      DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
-}
-bool DpctGlobalInfo::useCAndCXXStandardLibrariesExt() {
-  return getUsingExtensionDD(
-      DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
-}
-bool DpctGlobalInfo::useIntelDeviceMath() {
-  return getUsingExtensionDD(
-      DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
-}
-bool DpctGlobalInfo::useDeviceInfo() {
-  return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
-}
-bool DpctGlobalInfo::useBFloat16() {
-  return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16);
-}
-std::shared_ptr<DpctFileInfo>
-DpctGlobalInfo::insertFile(const clang::tooling::UnifiedPath &FilePath) {
-  return insertObject(FileMap, FilePath);
-}
-std::shared_ptr<DpctFileInfo> DpctGlobalInfo::getMainFile() const {
-  return MainFile;
-}
-void DpctGlobalInfo::setMainFile(std::shared_ptr<DpctFileInfo> Main) {
-  MainFile = Main;
 }
 void DpctGlobalInfo::recordIncludingRelationship(
     const clang::tooling::UnifiedPath &CurrentFileName,

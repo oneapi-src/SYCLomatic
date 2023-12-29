@@ -353,9 +353,9 @@ public:
                                     tooling::Replacements> &ReplSet /*out*/);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl);
   bool isInAnalysisScope();
-  std::shared_ptr<ExtReplacements> getRepls();
-  size_t getFileSize() const;
-  std::string &getFileContent();
+  std::shared_ptr<ExtReplacements> getRepls() { return Repls; }
+  size_t getFileSize() const { return FileSize; }
+  std::string &getFileContent() { return FileContentCache; }
 
   // Header inclusion directive insertion functions
   void setFileEnterOffset(unsigned Offset);
@@ -431,27 +431,51 @@ public:
   void insertIncludedFilesInfo(std::shared_ptr<DpctFileInfo> Info);
 
   std::map<const CompoundStmt *, MemcpyOrderAnalysisInfo> &
-  getMemcpyOrderAnalysisResultMap();
+  getMemcpyOrderAnalysisResultMap() {
+    return MemcpyOrderAnalysisResultMap;
+  }
   std::map<std::string, std::vector<std::pair<unsigned int, unsigned int>>> &
-  getFuncDeclRangeMap();
-  std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap();
-  std::map<unsigned int, TimeStubTypeInfo> &getTimeStubTypeMap();
-  std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap();
-  std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet();
-  std::set<unsigned int> &getSpBLASSet();
+  getFuncDeclRangeMap() {
+    return FuncDeclRangeMap;
+  }
+  std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
+    return EventSyncTypeMap;
+  }
+  std::map<unsigned int, TimeStubTypeInfo> &getTimeStubTypeMap() {
+    return TimeStubTypeMap;
+  }
+  std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap() {
+    return BuiltinVarInfoMap;
+  }
+  std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
+    return IncludedFilesInfoSet;
+  }
+  std::set<unsigned int> &getSpBLASSet() { return SpBLASSet; }
   std::unordered_set<std::shared_ptr<TextModification>> &
-  getConstantMacroTMSet();
-  std::vector<tooling::Replacement> &getReplacements();
+  getConstantMacroTMSet() {
+    return ConstantMacroTMSet;
+  }
+  std::vector<tooling::Replacement> &getReplacements() {
+    return PreviousTUReplFromYAML->Replacements;
+  }
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>> &
-  getAtomicMap();
-  void setAddOneDplHeaders(bool Value);
-  std::vector<std::pair<unsigned int, unsigned int>> &getTimeStubBounds();
-  std::vector<std::pair<unsigned int, unsigned int>> &getExternCRanges();
-  std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo();
-  void setRTVersionValue(std::string Value);
-  std::string getRTVersionValue();
-  void setCCLVerValue(std::string Value);
-  std::string getCCLVerValue();
+  getAtomicMap() {
+    return AtomicMap;
+  }
+  void setAddOneDplHeaders(bool Value) { AddOneDplHeaders = Value; }
+  std::vector<std::pair<unsigned int, unsigned int>> &getTimeStubBounds() {
+    return TimeStubBounds;
+  }
+  std::vector<std::pair<unsigned int, unsigned int>> &getExternCRanges() {
+    return ExternCRanges;
+  }
+  std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo() {
+    return RBFuncInfo;
+  }
+  void setRTVersionValue(std::string Value) { RTVersionValue = Value; }
+  std::string getRTVersionValue() { return RTVersionValue; }
+  void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
+  std::string getCCLVerValue() { return CCLVerValue; }
 
   std::shared_ptr<tooling::TranslationUnitReplacements> PreviousTUReplFromYAML =
       nullptr;
@@ -630,58 +654,137 @@ public:
                                  const FunctionDecl *FD = nullptr);
   static std::string getDefaultQueue(const Stmt *);
   static const std::string &getDeviceQueueName();
-  static const std::string &getStreamName();
-  static const std::string &getSyncName();
-  static const std::string &getInRootHash();
+  static const std::string &getStreamName() {
+    const static std::string StreamName = "stream" + getCTFixedSuffix();
+    return StreamName;
+  }
+  static const std::string &getSyncName() {
+    const static std::string SyncName = "sync" + getCTFixedSuffix();
+    return SyncName;
+  }
+  static const std::string &getInRootHash() {
+    const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
+    return Hash;
+  }
   static void setContext(ASTContext &C);
-  static void setRuleFile(const std::string &Path);
-  static ASTContext &getContext();
-  static SourceManager &getSourceManager();
-  static FileManager &getFileManager();
-  static bool isKeepOriginCode();
-  static void setKeepOriginCode(bool KOC = true);
-  static bool isSyclNamedLambda();
-  static void setSyclNamedLambda(bool SNL = true);
-  static void setCheckUnicodeSecurityFlag(bool CUS);
-  static bool getCheckUnicodeSecurityFlag();
-  static void setEnablepProfilingFlag(bool EP);
-  static bool getEnablepProfilingFlag();
-  static bool getGuessIndentWidthMatcherFlag();
-  static void setGuessIndentWidthMatcherFlag(bool Flag = true);
-  static void setIndentWidth(unsigned int W);
-  static unsigned int getIndentWidth();
+  static void setRuleFile(const std::string &Path) {
+    RuleFile = Path;
+  }
+  static ASTContext &getContext() {
+    assert(Context);
+    return *Context;
+  }
+  static SourceManager &getSourceManager() {
+    assert(SM);
+    return *SM;
+  }
+  static FileManager &getFileManager() {
+    assert(FM);
+    return *FM;
+  }
+  static bool isKeepOriginCode() { return KeepOriginCode; }
+  static void setKeepOriginCode(bool KOC) {
+    KeepOriginCode = KOC;
+  }
+  static bool isSyclNamedLambda() { return SyclNamedLambda; }
+  static void setSyclNamedLambda(bool SNL) {
+    SyclNamedLambda = SNL;
+  }
+  static void setCheckUnicodeSecurityFlag(bool CUS) {
+    CheckUnicodeSecurityFlag = CUS;
+  }
+  static bool getCheckUnicodeSecurityFlag() {
+    return CheckUnicodeSecurityFlag;
+  }
+  static void setEnablepProfilingFlag(bool EP) {
+    EnablepProfilingFlag = EP;
+  }
+  static bool getEnablepProfilingFlag() {
+    return EnablepProfilingFlag;
+  }
+  static bool getGuessIndentWidthMatcherFlag() {
+    return GuessIndentWidthMatcherFlag;
+  }
+  static void setGuessIndentWidthMatcherFlag(bool Flag) {
+    GuessIndentWidthMatcherFlag = Flag;
+  }
+  static void setIndentWidth(unsigned int W) {
+    IndentWidth = W;
+  }
+  static unsigned int getIndentWidth() { return IndentWidth; }
   static void insertKCIndentWidth(unsigned int W);
   static unsigned int getKCIndentWidth();
-  static UsmLevel getUsmLevel();
-  static void setUsmLevel(UsmLevel UL);
-  static clang::CudaVersion getSDKVersion();
-  static void setSDKVersion(clang::CudaVersion V);
-  static bool isIncMigration();
-  static void setIsIncMigration(bool Flag);
-  static bool isQueryAPIMapping();
-  static void setIsQueryAPIMapping(bool Flag);
-  static bool needDpctDeviceExt();
-  static void setNeedDpctDeviceExt();
-  static unsigned int getAssumedNDRangeDim();
-  static void setAssumedNDRangeDim(unsigned int Dim);
-  static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext);
-  static void setExtensionDEFlag(unsigned Flag);
-  static unsigned getExtensionDEFlag();
-  static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext);
-  static void setExtensionDDFlag(unsigned Flag);
-  static unsigned getExtensionDDFlag();
+  static UsmLevel getUsmLevel() { return UsmLvl; }
+  static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+  static clang::CudaVersion getSDKVersion() {
+    return SDKVersion;
+  }
+  static void setSDKVersion(clang::CudaVersion V) {
+    SDKVersion = V;
+  }
+  static bool isIncMigration() { return IsIncMigration; }
+  static void setIsIncMigration(bool Flag) {
+    IsIncMigration = Flag;
+  }
+  static bool isQueryAPIMapping() { return IsQueryAPIMapping; }
+  static void setIsQueryAPIMapping(bool Flag) {
+    IsQueryAPIMapping = Flag;
+  }
+  static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
+  static void setNeedDpctDeviceExt() {
+    NeedDpctDeviceExt = true;
+  }
+  static unsigned int getAssumedNDRangeDim() {
+    return AssumedNDRangeDim;
+  }
+  static void setAssumedNDRangeDim(unsigned int Dim) {
+    AssumedNDRangeDim = Dim;
+  }
+  static bool
+  getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
+    return ExtensionDEFlag & (1 << static_cast<unsigned>(Ext));
+  }
+  static void setExtensionDEFlag(unsigned Flag) {
+    ExtensionDEFlag = Flag;
+  }
+  static unsigned getExtensionDEFlag() {
+    return ExtensionDEFlag;
+  }
+  static bool
+  getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
+    return ExtensionDDFlag & (1 << static_cast<unsigned>(Ext));
+  }
+  static void setExtensionDDFlag(unsigned Flag) {
+    ExtensionDDFlag = Flag;
+  }
+  static unsigned getExtensionDDFlag() {
+    return ExtensionDDFlag;
+  }
   template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
     return ExperimentalFlag & (1 << static_cast<unsigned>(Exp));
   }
-  static void setExperimentalFlag(unsigned Flag);
-  static unsigned getExperimentalFlag();
-  static bool getHelperFuncPreference(HelperFuncPreference HFP);
-  static void setHelperFuncPreferenceFlag(unsigned Flag);
-  static unsigned getHelperFuncPreferenceFlag();
-  static format::FormatRange getFormatRange();
-  static void setFormatRange(format::FormatRange FR);
-  static DPCTFormatStyle getFormatStyle();
-  static void setFormatStyle(DPCTFormatStyle FS);
+  static void setExperimentalFlag(unsigned Flag) {
+    ExperimentalFlag = Flag;
+  }
+  static unsigned getExperimentalFlag() {
+    return ExperimentalFlag;
+  }
+  static bool
+  getHelperFuncPreference(HelperFuncPreference HFP) {
+    return HelperFuncPreferenceFlag & (1 << static_cast<unsigned>(HFP));
+  }
+  static void setHelperFuncPreferenceFlag(unsigned Flag) {
+    HelperFuncPreferenceFlag = Flag;
+  }
+  static unsigned getHelperFuncPreferenceFlag() {
+    return HelperFuncPreferenceFlag;
+  }
+  static format::FormatRange getFormatRange() { return FmtRng; }
+  static void setFormatRange(format::FormatRange FR) {
+    FmtRng = FR;
+  }
+  static DPCTFormatStyle getFormatStyle() { return FmtST; }
+  static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
   // Processing the folder or file by following rules:
   // Rule1: For {child path, parent path}, only parent path will be kept.
   // Rule2: Ignore invalid path.
@@ -691,27 +794,47 @@ public:
   static std::set<ExplicitNamespace> getExplicitNamespaceSet();
   static void
   setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec);
-  static bool isCtadEnabled();
-  static void setCtadEnabled(bool Enable = true);
-  static bool isGenBuildScript();
-  static void setGenBuildScriptEnabled(bool Enable = true);
-  static bool IsMigrateCmakeScriptEnabled();
-  static void setMigrateCmakeScriptEnabled(bool Enable = true);
-  static bool IsMigrateCmakeScriptOnlyEnabled();
-  static void setMigrateCmakeScriptOnlyEnabled(bool Enable = true);
-  static bool isCommentsEnabled();
-  static void setCommentsEnabled(bool Enable = true);
-  static bool isDPCTNamespaceTempEnabled();
-  static void setDPCTNamespaceTempEnabled();
-  static std::unordered_set<std::string> &getPrecAndDomPairSet();
-  static bool isMKLHeaderUsed();
-  static void setMKLHeaderUsed(bool Used = true);
+  static bool isCtadEnabled() { return EnableCtad; }
+  static void setCtadEnabled(bool Enable) { EnableCtad = Enable; }
+  static bool isGenBuildScript() { return GenBuildScript; }
+  static void setGenBuildScriptEnabled(bool Enable = true) {
+    GenBuildScript = Enable;
+  }
+  static bool IsMigrateCmakeScriptEnabled() { return MigrateCmakeScript; }
+  static void setMigrateCmakeScriptEnabled(bool Enable = true) {
+    MigrateCmakeScript = Enable;
+  }
+  static bool IsMigrateCmakeScriptOnlyEnabled() {
+    return MigrateCmakeScriptOnly;
+  }
+  static void setMigrateCmakeScriptOnlyEnabled(bool Enable = true) {
+    MigrateCmakeScriptOnly = Enable;
+  }
+  static bool isCommentsEnabled() { return EnableComments; }
+  static void setCommentsEnabled(bool Enable = true) {
+    EnableComments = Enable;
+  }
+  static bool isDPCTNamespaceTempEnabled() { return TempEnableDPCTNamespace; }
+  static void setDPCTNamespaceTempEnabled() { TempEnableDPCTNamespace = true; }
+  static std::unordered_set<std::string> &getPrecAndDomPairSet() {
+    return PrecAndDomPairSet;
+  }
+  static bool isMKLHeaderUsed(){ return IsMLKHeaderUsed; }
+  static void setMKLHeaderUsed(bool Used = true){ IsMLKHeaderUsed = Used; }
   static int getSuffixIndexInitValue(std::string FileNameAndOffset);
-  static void updateInitSuffixIndexInRule(int InitVal);
+  static void updateInitSuffixIndexInRule(int InitVal){
+  CurrentIndexInRule = InitVal;
+}
   static int getSuffixIndexInRuleThenInc();
   static int getSuffixIndexGlobalThenInc();
-  static const std::string &getGlobalQueueName();
-  static const std::string &getGlobalDeviceName();
+  static const std::string &getGlobalQueueName(){
+  const static std::string Q = "q_ct1";
+  return Q;
+}
+  static const std::string &getGlobalDeviceName(){
+  const static std::string D = "dev_ct1";
+  return D;
+}
   static std::string getStringForRegexReplacement(StringRef);
   static void setCodeFormatStyle(const clang::format::FormatStyle &Style);
   static clang::format::FormatStyle getCodeFormatStyle();
@@ -895,11 +1018,17 @@ public:
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl);
-  CudaArchPPMap &getCudaArchPPInfoMap();
-  HDFuncInfoMap &getHostDeviceFuncInfoMap();
+  CudaArchPPMap &getCudaArchPPInfoMap(){ return CAPPInfoMap; }
+  HDFuncInfoMap &getHostDeviceFuncInfoMap(){
+  return HostDeviceFuncInfoMap;
+}
   std::unordered_map<std::string, std::shared_ptr<ExtReplacement>> &
-  getCudaArchMacroReplMap();
-  CudaArchDefMap &getCudaArchDefinedMap();
+  getCudaArchMacroReplMap(){
+  return CudaArchMacroRepl;
+}
+  CudaArchDefMap &getCudaArchDefinedMap(){
+  return CudaArchDefinedMap;
+}
   void insertReplInfoFromYAMLToFileInfo(
       const clang::tooling::UnifiedPath &FilePath,
       std::shared_ptr<tooling::TranslationUnitReplacements> TUR);
@@ -938,61 +1067,139 @@ public:
                           unsigned int /*begin offset*/>,
                 std::pair<clang::tooling::UnifiedPath /*end file name*/,
                           unsigned int /*end offset*/>>> &
-  getExpansionRangeBeginMap();
+  getExpansionRangeBeginMap(){
+  return ExpansionRangeBeginMap;
+}
   static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
-  getExpansionRangeToMacroRecord();
+  getExpansionRangeToMacroRecord(){
+  return ExpansionRangeToMacroRecord;
+}
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroDefRecord>> &
-  getMacroTokenToMacroDefineLoc();
+  getMacroTokenToMacroDefineLoc(){
+  return MacroTokenToMacroDefineLoc;
+}
   static std::map<std::string, std::string> &
-  getFunctionCallInMacroMigrateRecord();
-  static std::map<std::string, SourceLocation> &getEndifLocationOfIfdef();
+  getFunctionCallInMacroMigrateRecord(){
+  return FunctionCallInMacroMigrateRecord;
+}
+  static std::map<std::string, SourceLocation> &getEndifLocationOfIfdef(){
+  return EndifLocationOfIfdef;
+}
   static std::vector<std::pair<clang::tooling::UnifiedPath, size_t>> &
-  getConditionalCompilationLoc();
-  static std::map<std::string, unsigned int> &getBeginOfEmptyMacros();
-  static std::map<std::string, SourceLocation> &getEndOfEmptyMacros();
-  static std::map<std::string, bool> &getMacroDefines();
-  static std::set<clang::tooling::UnifiedPath> &getIncludingFileSet();
-  static std::set<std::string> &getFileSetInCompiationDB();
+  getConditionalCompilationLoc(){
+  return ConditionalCompilationLoc;
+}
+  static std::map<std::string, unsigned int> &getBeginOfEmptyMacros(){
+  return BeginOfEmptyMacros;
+}
+  static std::map<std::string, SourceLocation> &getEndOfEmptyMacros(){
+  return EndOfEmptyMacros;
+}
+  static std::map<std::string, bool> &getMacroDefines(){
+  return MacroDefines;
+}
+  static std::set<clang::tooling::UnifiedPath> &getIncludingFileSet(){
+  return IncludingFileSet;
+}
+  static std::set<std::string> &getFileSetInCompiationDB(){
+  return FileSetInCompiationDB;
+}
   static std::unordered_map<std::string,
                             std::vector<clang::tooling::Replacement>> &
-  getFileRelpsMap();
-  static std::unordered_map<std::string, std::string> &getDigestMap();
-  static std::string getYamlFileName();
-  static std::set<std::string> &getGlobalVarNameSet();
+  getFileRelpsMap(){
+  return FileRelpsMap;
+}
+  static std::unordered_map<std::string, std::string> &getDigestMap(){
+  return DigestMap;
+}
+  static std::string getYamlFileName(){ return YamlFileName; }
+  static std::set<std::string> &getGlobalVarNameSet(){
+  return GlobalVarNameSet;
+}
   static void removeVarNameInGlobalVarNameSet(const std::string &VarName);
-  static bool getDeviceChangedFlag();
-  static void setDeviceChangedFlag(bool Flag);
+  static bool getDeviceChangedFlag(){ return HasFoundDeviceChanged; }
+  static void setDeviceChangedFlag(bool Flag){
+  HasFoundDeviceChanged = Flag;
+}
   static std::unordered_map<int, HelperFuncReplInfo> &
-  getHelperFuncReplInfoMap();
+  getHelperFuncReplInfoMap(){
+  return HelperFuncReplInfoMap;
+}
   static int getHelperFuncReplInfoIndexThenInc();
   static std::unordered_map<std::string, TempVariableDeclCounter> &
-  getTempVariableDeclCounterMap();
+  getTempVariableDeclCounterMap(){
+  return TempVariableDeclCounterMap;
+}
   // Key: string: file:offset for a replacement.
   // Value: int: index of the placeholder in a replacement.
-  static std::unordered_map<std::string, int> &getTempVariableHandledMap();
-  static bool getUsingDRYPattern();
-  static void setUsingDRYPattern(bool Flag);
-  static bool useNdRangeBarrier();
-  static bool useFreeQueries();
-  static bool useGroupLocalMemory();
-  static bool useLogicalGroup();
-  static bool useUserDefineReductions();
-  static bool useMaskedSubGroupFunction();
-  static bool useExtDPLAPI();
-  static bool useOccupancyCalculation();
-  static bool useExtJointMatrix();
-  static bool useExtBFloat16Math();
-  static bool useNoQueueDevice();
-  static bool useEnqueueBarrier();
-  static bool useCAndCXXStandardLibrariesExt();
-  static bool useIntelDeviceMath();
-  static bool useDeviceInfo();
-  static bool useBFloat16();
+  static std::unordered_map<std::string, int> &getTempVariableHandledMap(){
+  return TempVariableHandledMap;
+}
+  static bool getUsingDRYPattern(){ return UsingDRYPattern; }
+  static void setUsingDRYPattern(bool Flag){ UsingDRYPattern = Flag; }
+  static bool useNdRangeBarrier(){
+  return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
+}
+  static bool useFreeQueries(){
+  return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
+}
+  static bool useGroupLocalMemory(){
+  return getUsingExperimental<ExperimentalFeatures::Exp_GroupSharedMemory>();
+}
+  static bool useLogicalGroup(){
+  return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
+}
+  static bool useUserDefineReductions(){
+  return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
+}
+  static bool useMaskedSubGroupFunction(){
+  return getUsingExperimental<
+      ExperimentalFeatures::Exp_MaskedSubGroupFunction>();
+}
+  static bool useExtDPLAPI(){
+  return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
+}
+  static bool useOccupancyCalculation(){
+  return getUsingExperimental<ExperimentalFeatures::Exp_OccupancyCalculation>();
+}
+  static bool useExtJointMatrix(){
+  return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
+}
+  static bool useExtBFloat16Math(){
+  return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
+}
+  static bool useNoQueueDevice(){
+  return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
+}
+  static bool useEnqueueBarrier(){
+  return getUsingExtensionDE(
+      DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
+}
+  static bool useCAndCXXStandardLibrariesExt(){
+  return getUsingExtensionDD(
+      DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
+}
+  static bool useIntelDeviceMath(){
+  return getUsingExtensionDD(
+      DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+}
+  static bool useDeviceInfo(){
+  return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
+}
+  static bool useBFloat16(){
+  return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16);
+}
   std::shared_ptr<DpctFileInfo>
-  insertFile(const clang::tooling::UnifiedPath &FilePath);
-  std::shared_ptr<DpctFileInfo> getMainFile() const;
-  void setMainFile(std::shared_ptr<DpctFileInfo> Main);
+  insertFile(const clang::tooling::UnifiedPath &FilePath){
+  return insertObject(FileMap, FilePath);
+}
+  std::shared_ptr<DpctFileInfo> getMainFile() const{
+  return MainFile;
+}
+  void setMainFile(std::shared_ptr<DpctFileInfo> Main){
+  MainFile = Main;
+}
   void recordIncludingRelationship(
       const clang::tooling::UnifiedPath &CurrentFileName,
       const clang::tooling::UnifiedPath &IncludedFileName);
