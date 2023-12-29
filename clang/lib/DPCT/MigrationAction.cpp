@@ -10,6 +10,7 @@
 
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Lex/PreprocessorOptions.h"
 #include <iostream>
 
 #include "AnalysisInfo.h"
@@ -202,6 +203,10 @@ bool DpctToolAction::runInvocation(
     std::shared_ptr<CompilerInvocation> Invocation, FileManager *Files,
     std::shared_ptr<PCHContainerOperations> PCHContainerOps,
     DiagnosticConsumer *DiagConsumer) {
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    Invocation->getPreprocessorOpts().Includes.clear();
+  }
+
   if (!Invocation)
     return false;
 
