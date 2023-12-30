@@ -1,13 +1,9 @@
-function (user_function file1 file2)
-  message("Doing nothing in function1")
-endfunction
-
 user_function(file1.dp.cpp
               file2.dp.cpp
 )
 
 user_function(filea.cpp fileb.dp.cpp file.cpp)
 
-User_Function(file1.dp.cpp file2.cuh)
+User_Function(file1.dp.cpp file2.dp.cpp)
 
 cmake_language(CALL user_function file1.dp.cpp, file2.dp.cpp)

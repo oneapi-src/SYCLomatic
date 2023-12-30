@@ -1,1 +1,0 @@
-cuda_compile(objs a.dp.cpp b.dp.cpp STATIC OPTIONS -O3 --profile)
