@@ -594,9 +594,6 @@ ParameterStream &ParameterStream::operator<<(int InputInt) {
   return *this << std::to_string(InputInt);
 }
 ///// class DpctFileInfo /////
-const clang::tooling::UnifiedPath &DpctFileInfo::getFilePath() {
-  return FilePath;
-}
 void DpctFileInfo::buildReplacements() {
   if (!isInAnalysisScope())
     return;
@@ -794,21 +791,6 @@ void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
     HasInclusionDirective = true;
   }
 }
-void DpctFileInfo::setLastIncludeOffset(unsigned Offset) {
-  LastIncludeOffset = Offset;
-}
-void DpctFileInfo::setHeaderInserted(HeaderType Header) {
-  HeaderInsertedBitMap[Header] = true;
-}
-void DpctFileInfo::setMathHeaderInserted(bool B) {
-  HeaderInsertedBitMap[HeaderType::HT_Math] = B;
-}
-void DpctFileInfo::setAlgorithmHeaderInserted(bool B) {
-  HeaderInsertedBitMap[HeaderType::HT_Algorithm] = B;
-}
-void DpctFileInfo::setTimeHeaderInserted(bool B) {
-  HeaderInsertedBitMap[HeaderType::HT_Time] = B;
-}
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS) {}
 template <class FirstT, class... Args>
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS, FirstT &&First,
@@ -969,12 +951,6 @@ DpctFileInfo::getLineInfo(unsigned LineNumber) {
   }
   return Lines[--LineNumber];
 }
-StringRef DpctFileInfo::getLineString(unsigned LineNumber) {
-  return getLineInfo(LineNumber).Line;
-}
-unsigned DpctFileInfo::getLineNumber(unsigned Offset) {
-  return getLineInfoFromOffset(Offset).Number;
-}
 void DpctFileInfo::setLineRange(ExtReplacements::SourceLineRange &LineRange,
                                 std::shared_ptr<ExtReplacement> Repl) {
   unsigned Begin = Repl->getOffset();
@@ -1112,12 +1088,6 @@ bool DpctGlobalInfo::isInRoot(clang::tooling::UnifiedPath FilePath) {
     return false;
   }
 }
-bool DpctGlobalInfo::isInAnalysisScope(SourceLocation SL) {
-  return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
-}
-bool DpctGlobalInfo::isInAnalysisScope(clang::tooling::UnifiedPath FilePath) {
-  return isChildPath(AnalysisScope, FilePath);
-}
 bool DpctGlobalInfo::isExcluded(const clang::tooling::UnifiedPath &FilePath) {
   static std::map<std::string, bool> Cache;
   if (FilePath.getPath().empty() || DpctGlobalInfo::getExcludePath().empty()) {
@@ -1143,49 +1113,6 @@ bool DpctGlobalInfo::isInCudaPath(SourceLocation SL) {
   return isInCudaPath(getSourceManager()
                           .getFilename(getSourceManager().getExpansionLoc(SL))
                           .str());
-}
-// TODO: implement one of this for each source language.
-bool DpctGlobalInfo::isInCudaPath(clang::tooling::UnifiedPath FilePath) {
-  return isChildPath(CudaPath, FilePath);
-}
-void DpctGlobalInfo::setInRoot(const clang::tooling::UnifiedPath &InRootPath) {
-  InRoot = InRootPath;
-}
-const clang::tooling::UnifiedPath &DpctGlobalInfo::getInRoot() {
-  return InRoot;
-}
-void DpctGlobalInfo::setOutRoot(
-    const clang::tooling::UnifiedPath &OutRootPath) {
-  OutRoot = OutRootPath;
-}
-const clang::tooling::UnifiedPath &DpctGlobalInfo::getOutRoot() {
-  return OutRoot;
-}
-void DpctGlobalInfo::setAnalysisScope(
-    const clang::tooling::UnifiedPath &InputAnalysisScope) {
-  AnalysisScope = InputAnalysisScope;
-}
-const clang::tooling::UnifiedPath &DpctGlobalInfo::getAnalysisScope() {
-  return AnalysisScope;
-}
-void DpctGlobalInfo::addChangeExtensions(const std::string &Extension) {
-  assert(!Extension.empty());
-  ChangeExtensions.insert(Extension);
-}
-const std::unordered_set<std::string> &DpctGlobalInfo::getChangeExtensions() {
-  return ChangeExtensions;
-}
-// TODO: implement one of this for each source language.
-void DpctGlobalInfo::setCudaPath(
-    const clang::tooling::UnifiedPath &InputCudaPath) {
-  CudaPath = InputCudaPath;
-}
-// TODO: implement one of this for each source language.
-const clang::tooling::UnifiedPath &DpctGlobalInfo::getCudaPath() {
-  return CudaPath;
-}
-const std::string DpctGlobalInfo::getCudaVersion() {
-  return clang::CudaVersionToString(SDKVersion);
 }
 void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
                                const FunctionDecl *FD) {
@@ -1311,12 +1238,6 @@ void DpctGlobalInfo::setExcludePath(std::vector<std::string> ExcludePathVec) {
                             "--in-root-exclude.\n");
     }
   }
-}
-std::unordered_map<std::string, bool> DpctGlobalInfo::getExcludePath() {
-  return ExcludePath;
-}
-std::set<ExplicitNamespace> DpctGlobalInfo::getExplicitNamespaceSet() {
-  return ExplicitNamespaceSet;
 }
 void DpctGlobalInfo::setExplicitNamespace(
     std::vector<ExplicitNamespace> NamespacesVec) {
@@ -1482,16 +1403,6 @@ std::string DpctGlobalInfo::getTypeName(QualType QT,
   PP.SuppressTagKeyword = true;
   return QT.getAsString(PP);
 }
-std::string DpctGlobalInfo::getTypeName(QualType QT) {
-  return getTypeName(QT, DpctGlobalInfo::getContext());
-}
-std::string DpctGlobalInfo::getUnqualifiedTypeName(QualType QT,
-                                                   const ASTContext &Context) {
-  return getTypeName(QT.getUnqualifiedType(), Context);
-}
-std::string DpctGlobalInfo::getUnqualifiedTypeName(QualType QT) {
-  return getUnqualifiedTypeName(QT, DpctGlobalInfo::getContext());
-}
 std::string DpctGlobalInfo::getReplacedTypeName(QualType QT,
                                                 const ASTContext &Context) {
   if (!QT.isNull())
@@ -1510,9 +1421,6 @@ std::string DpctGlobalInfo::getReplacedTypeName(QualType QT,
   OS.flush();
   setGetReplacedNamePtr(nullptr);
   return getFinalCastTypeNameStr(MigratedTypeStr);
-}
-std::string DpctGlobalInfo::getReplacedTypeName(QualType QT) {
-  return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
 }
 std::string DpctGlobalInfo::getOriginalTypeName(QualType QT) {
   std::string OriginalTypeStr;
@@ -2302,9 +2210,6 @@ DpctGlobalInfo::DpctGlobalInfo() {
   tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
   tooling::SetIsExcludePathHandler(DpctGlobalInfo::isExcluded);
 }
-bool DpctGlobalInfo::checkInAnalysisScope(SourceLocation SL) {
-  return isInAnalysisScope(SL);
-}
 void DpctGlobalInfo::recordTokenSplit(SourceLocation SL, unsigned Len) {
   auto It = getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(SM->getSpellingLoc(SL)));
@@ -2313,22 +2218,6 @@ void DpctGlobalInfo::recordTokenSplit(SourceLocation SL, unsigned Len) {
         [getCombinedStrFromLoc(SM->getSpellingLoc(SL).getLocWithOffset(Len))] =
             It->second;
   }
-}
-SourceLocation DpctGlobalInfo::getLocation(const VarDecl *VD) {
-  return VD->getLocation();
-}
-SourceLocation DpctGlobalInfo::getLocation(const FunctionDecl *FD) {
-  return FD->getBeginLoc();
-}
-SourceLocation DpctGlobalInfo::getLocation(const FieldDecl *FD) {
-  return FD->getLocation();
-}
-SourceLocation DpctGlobalInfo::getLocation(const CallExpr *CE) {
-  return CE->getEndLoc();
-}
-SourceLocation DpctGlobalInfo::getLocation(const CUDAKernelCallExpr *CKC) {
-  return getTheLastCompleteImmediateRange(CKC->getBeginLoc(), CKC->getEndLoc())
-      .first;
 }
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after

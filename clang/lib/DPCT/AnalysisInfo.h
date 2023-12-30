@@ -336,7 +336,7 @@ public:
                                   std::shared_ptr<Obj> Object) {
     return getMap<Obj>().insert(std::make_pair(Offset, Object)).first->second;
   }
-  const clang::tooling::UnifiedPath &getFilePath();
+  const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
 
   // Build kernel and device function declaration replacements and store them.
   void buildReplacements();
@@ -360,11 +360,19 @@ public:
   // Header inclusion directive insertion functions
   void setFileEnterOffset(unsigned Offset);
   void setFirstIncludeOffset(unsigned Offset);
-  void setLastIncludeOffset(unsigned Offset);
-  void setHeaderInserted(HeaderType Header);
-  void setMathHeaderInserted(bool B = true);
-  void setAlgorithmHeaderInserted(bool B = true);
-  void setTimeHeaderInserted(bool B = true);
+  void setLastIncludeOffset(unsigned Offset) { LastIncludeOffset = Offset; }
+  void setHeaderInserted(HeaderType Header) {
+    HeaderInsertedBitMap[Header] = true;
+  }
+  void setMathHeaderInserted(bool B = true) {
+    HeaderInsertedBitMap[HeaderType::HT_Math] = B;
+  }
+  void setAlgorithmHeaderInserted(bool B = true) {
+    HeaderInsertedBitMap[HeaderType::HT_Algorithm] = B;
+  }
+  void setTimeHeaderInserted(bool B = true) {
+    HeaderInsertedBitMap[HeaderType::HT_Time] = B;
+  }
 
   void concatHeader(llvm::raw_string_ostream &OS);
   template <class FirstT, class... Args>
@@ -421,10 +429,14 @@ public:
   };
 
   const SourceLineInfo &getLineInfo(unsigned LineNumber);
-  StringRef getLineString(unsigned LineNumber);
+  StringRef getLineString(unsigned LineNumber) {
+    return getLineInfo(LineNumber).Line;
+  }
 
   // Get line number by offset
-  unsigned getLineNumber(unsigned Offset);
+  unsigned getLineNumber(unsigned Offset) {
+    return getLineInfoFromOffset(Offset).Number;
+  }
   // Set line range info of replacement
   void setLineRange(ExtReplacements::SourceLineRange &LineRange,
                     std::shared_ptr<ExtReplacement> Repl);
@@ -617,28 +629,51 @@ public:
                                     std::string FilePathStr);
   static bool isInRoot(SourceLocation SL);
   static bool isInRoot(clang::tooling::UnifiedPath FilePath);
-  static bool isInAnalysisScope(SourceLocation SL);
-  static bool isInAnalysisScope(clang::tooling::UnifiedPath FilePath);
+  static bool isInAnalysisScope(SourceLocation SL) {
+    return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
+  }
+  static bool isInAnalysisScope(clang::tooling::UnifiedPath FilePath) {
+    return isChildPath(AnalysisScope, FilePath);
+  }
   static bool isExcluded(const clang::tooling::UnifiedPath &FilePath);
   // TODO: implement one of this for each source language.
   static bool isInCudaPath(SourceLocation SL);
   // TODO: implement one of this for each source language.
-  static bool isInCudaPath(clang::tooling::UnifiedPath FilePath);
+  static bool isInCudaPath(clang::tooling::UnifiedPath FilePath) {
+    return isChildPath(CudaPath, FilePath);
+  }
 
-  static void setInRoot(const clang::tooling::UnifiedPath &InRootPath);
-  static const clang::tooling::UnifiedPath &getInRoot();
-  static void setOutRoot(const clang::tooling::UnifiedPath &OutRootPath);
-  static const clang::tooling::UnifiedPath &getOutRoot();
+  static void setInRoot(const clang::tooling::UnifiedPath &InRootPath) {
+    InRoot = InRootPath;
+  }
+  static const clang::tooling::UnifiedPath &getInRoot() { return InRoot; }
+  static void setOutRoot(const clang::tooling::UnifiedPath &OutRootPath) {
+    OutRoot = OutRootPath;
+  }
+  static const clang::tooling::UnifiedPath &getOutRoot() { return OutRoot; }
   static void
-  setAnalysisScope(const clang::tooling::UnifiedPath &InputAnalysisScope);
-  static const clang::tooling::UnifiedPath &getAnalysisScope();
-  static void addChangeExtensions(const std::string &Extension);
-  static const std::unordered_set<std::string> &getChangeExtensions();
+  setAnalysisScope(const clang::tooling::UnifiedPath &InputAnalysisScope) {
+    AnalysisScope = InputAnalysisScope;
+  }
+  static const clang::tooling::UnifiedPath &getAnalysisScope() {
+    return AnalysisScope;
+  }
+  static void addChangeExtensions(const std::string &Extension) {
+    assert(!Extension.empty());
+    ChangeExtensions.insert(Extension);
+  }
+  static const std::unordered_set<std::string> &getChangeExtensions() {
+    return ChangeExtensions;
+  }
   // TODO: implement one of this for each source language.
-  static void setCudaPath(const clang::tooling::UnifiedPath &InputCudaPath);
+  static void setCudaPath(const clang::tooling::UnifiedPath &InputCudaPath) {
+    CudaPath = InputCudaPath;
+  }
   // TODO: implement one of this for each source language.
-  static const clang::tooling::UnifiedPath &getCudaPath();
-  static const std::string getCudaVersion();
+  static const clang::tooling::UnifiedPath &getCudaPath() { return CudaPath; }
+  static const std::string getCudaVersion() {
+    return clang::CudaVersionToString(SDKVersion);
+  }
 
   static void printItem(llvm::raw_ostream &, const Stmt *,
                         const FunctionDecl *FD = nullptr);
@@ -747,8 +782,12 @@ public:
   // Rule2: Ignore invalid path.
   // Rule3: If path is not in --in-root, then ignore it.
   static void setExcludePath(std::vector<std::string> ExcludePathVec);
-  static std::unordered_map<std::string, bool> getExcludePath();
-  static std::set<ExplicitNamespace> getExplicitNamespaceSet();
+  static std::unordered_map<std::string, bool> getExcludePath() {
+    return ExcludePath;
+  }
+  static std::set<ExplicitNamespace> getExplicitNamespaceSet() {
+    return ExplicitNamespaceSet;
+  }
   static void
   setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec);
   static bool isCtadEnabled() { return EnableCtad; }
@@ -912,10 +951,16 @@ public:
   static std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */);
   static std::string getTypeName(QualType QT, const ASTContext &Context);
-  static std::string getTypeName(QualType QT);
+  static std::string getTypeName(QualType QT) {
+    return getTypeName(QT, DpctGlobalInfo::getContext());
+  }
   static std::string getUnqualifiedTypeName(QualType QT,
-                                            const ASTContext &Context);
-  static std::string getUnqualifiedTypeName(QualType QT);
+                                            const ASTContext &Context) {
+    return getTypeName(QT.getUnqualifiedType(), Context);
+  }
+  static std::string getUnqualifiedTypeName(QualType QT) {
+    return getUnqualifiedTypeName(QT, DpctGlobalInfo::getContext());
+  }
   /// This function will return the replaced type name with qualifiers.
   /// Currently, since clang do not support get the order of original
   /// qualifiers, this function will follow the behavior of
@@ -927,7 +972,9 @@ public:
   /// \return The replaced type name string with qualifiers.
   static std::string getReplacedTypeName(QualType QT,
                                          const ASTContext &Context);
-  static std::string getReplacedTypeName(QualType QT);
+  static std::string getReplacedTypeName(QualType QT) {
+    return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
+  }
   /// This function will return the original type name with qualifiers.
   /// The order of original qualifiers will follow the behavior of
   /// clang::QualType.print() regardless its order in origin code.
@@ -1027,9 +1074,8 @@ public:
   getExpansionRangeToMacroRecord() {
     return ExpansionRangeToMacroRecord;
   }
-  static std::map<std::string,
-                  std::shared_ptr<DpctGlobalInfo::MacroDefRecord>> &
-  getMacroTokenToMacroDefineLoc() {
+  static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+      &getMacroTokenToMacroDefineLoc() {
     return MacroTokenToMacroDefineLoc;
   }
   static std::map<std::string, std::string> &
@@ -1241,7 +1287,9 @@ private:
   DpctGlobalInfo &operator=(DpctGlobalInfo &&) = delete;
 
   // Wrapper of isInAnalysisScope for std::function usage.
-  static bool checkInAnalysisScope(SourceLocation SL);
+  static bool checkInAnalysisScope(SourceLocation SL) {
+    return isInAnalysisScope(SL);
+  }
 
   // Record token split when it's in macro
   static void recordTokenSplit(SourceLocation SL, unsigned Len);
@@ -1274,12 +1322,24 @@ private:
   template <class T> static inline SourceLocation getLocation(const T *N) {
     return N->getBeginLoc();
   }
-  static SourceLocation getLocation(const VarDecl *VD);
-  static SourceLocation getLocation(const FunctionDecl *FD);
-  static SourceLocation getLocation(const FieldDecl *FD);
-  static SourceLocation getLocation(const CallExpr *CE);
+  static SourceLocation getLocation(const VarDecl *VD) {
+    return VD->getLocation();
+  }
+  static SourceLocation getLocation(const FunctionDecl *FD) {
+    return FD->getBeginLoc();
+  }
+  static SourceLocation getLocation(const FieldDecl *FD) {
+    return FD->getLocation();
+  }
+  static SourceLocation getLocation(const CallExpr *CE) {
+    return CE->getEndLoc();
+  }
   // The result will be also stored in KernelCallExpr.BeginLoc
-  static SourceLocation getLocation(const CUDAKernelCallExpr *CKC);
+  static SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
+    return getTheLastCompleteImmediateRange(CKC->getBeginLoc(),
+                                            CKC->getEndLoc())
+        .first;
+  }
 
   std::shared_ptr<DpctFileInfo> MainFile = nullptr;
   std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<DpctFileInfo>>
