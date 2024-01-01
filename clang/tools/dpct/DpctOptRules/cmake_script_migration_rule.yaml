@@ -249,7 +249,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: add_executable
-  In: add_executable(${value})
+  In: add_executable(${value} OPTIONS {options})
   Out: add_executable(${value})
   Subrules:
     value:
@@ -262,11 +262,5 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: add_executable_opts
-  In: add_executable(${target} ${sources} OPTIONS ${value})
-  Out: add_executable(${target} ${sources} OPTIONS ${value})
-  Subrules:
-    value:
-      In: -arch=${args}
-      Out: ""
-      MatchMode: Partial
-      RuleId: "remove_add_executable_opts"
+  In: add_executable(${value} OPTIONS ${options})
+  Out: add_executable(${value})
