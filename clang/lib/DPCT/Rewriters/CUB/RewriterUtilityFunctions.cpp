@@ -37,11 +37,15 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                ARG(0), ARG(1), ARG(2),
                LITERAL(MapNames::getClNamespace() + "plus<>()")))
       // cub::BFE
-      CALL_FACTORY_ENTRY("cub::BFE", CALL(MapNames::getDpctNamespace() + "bfe",
-                                          ARG(0), ARG(1), ARG(2)))
+      CALL_FACTORY_ENTRY("cub::BFE",
+                         CALL(MapNames::getDpctNamespace() + "bfe_safe", ARG(0),
+                              ARG(1), ARG(2)))
       // cub::BFI
-      CALL_FACTORY_ENTRY("cub::BFI", CALL(MapNames::getDpctNamespace() + "bfe",
-                                          ARG(0), ARG(1), ARG(2), ARG(3)))
+      ASSIGN_FACTORY_ENTRY("cub::BFI", ARG(0),
+                           CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                    MapNames::getDpctNamespace() + "bfi_safe",
+                                    LITERAL("unsigned")),
+                                ARG(0), ARG(1), ARG(2), ARG(3)))
       // cub::LaneId
       MEMBER_CALL_FACTORY_ENTRY(
           "cub::LaneId", MEMBER_CALL(NDITEM, false, LITERAL("get_sub_group")),
