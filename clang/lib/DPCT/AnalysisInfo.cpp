@@ -3211,7 +3211,10 @@ std::string TextureInfo::getHostDeclString() {
   ParameterStream PS;
   Type->prepareForImage();
   requestFeature(HelperFeatureEnum::device_ext);
-  getDecl(PS, "image_wrapper") << ";";
+  getDecl(PS, DpctGlobalInfo::useExtBindlessImages()
+                  ? "experimental::bindless_image_wrapper"
+                  : "image_wrapper")
+      << ";";
   Type->endForImage();
   return PS.Str;
 }
@@ -3230,10 +3233,20 @@ std::string TextureInfo::getAccessorDecl(const std::string &QueueStr) {
 }
 void TextureInfo::addDecl(StmtList &AccessorList, StmtList &SamplerList,
                           const std::string &QueueStr) {
+  if (DpctGlobalInfo::useExtBindlessImages()) {
+    AccessorList.emplace_back("auto " + NewVarName + "_handle = " + Name +
+                              ".get_handle();");
+    return;
+  }
   AccessorList.emplace_back(getAccessorDecl(QueueStr));
   SamplerList.emplace_back(getSamplerDecl());
 }
 ParameterStream &TextureInfo::getFuncDecl(ParameterStream &PS) {
+  if (DpctGlobalInfo::useExtBindlessImages()) {
+    PS << MapNames::getClNamespace()
+       << "ext::oneapi::experimental::sampled_image_handle " << Name;
+    return PS;
+  }
   requestFeature(HelperFeatureEnum::device_ext);
   return getDecl(PS, "image_accessor_ext");
 }
@@ -3242,6 +3255,10 @@ ParameterStream &TextureInfo::getFuncArg(ParameterStream &PS) {
 }
 ParameterStream &TextureInfo::getKernelArg(ParameterStream &OS) {
   requestFeature(HelperFeatureEnum::device_ext);
+  if (DpctGlobalInfo::useExtBindlessImages()) {
+    OS << NewVarName << "_handle";
+    return OS;
+  }
   getType()->printType(OS, MapNames::getDpctNamespace() + "image_accessor_ext");
   OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
   return OS;
@@ -4131,6 +4148,10 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
   auto ArgItr = Args.begin();
   unsigned Idx = 0;
   TextureObjectList.resize(ArgsNum);
+  if (DpctGlobalInfo::useExtBindlessImages()) {
+    // Need return after resize, ortherwise will cause array out of bound.
+    return;
+  }
   while (ArgItr != Args.end()) {
     const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
     if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
@@ -4257,6 +4278,16 @@ void DeviceFunctionDecl::emplaceReplacement() {
   for (auto &Obj : TextureObjectList) {
     if (Obj) {
       Obj->merge(FuncInfo->getTextureObject((Obj->getParamIdx())));
+      if (DpctGlobalInfo::useExtBindlessImages()) {
+        DpctGlobalInfo::getInstance().addReplacement(
+            std::make_shared<ExtReplacement>(
+                Obj->getFilePath(), Obj->getOffset(),
+                strlen("cudaTextureObject_t"),
+                MapNames::getClNamespace() +
+                    "ext::oneapi::experimental::sampled_image_handle",
+                nullptr));
+        continue;
+      }
       if (!Obj->getType()) {
         // Type dpct_placeholder
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);
@@ -5700,7 +5731,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
           buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
                       Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
-    } else if (Arg.Texture) {
+    } else if (Arg.Texture && !DpctGlobalInfo::useExtBindlessImages()) {
       ParameterStream OS;
       Arg.Texture->getKernelArg(OS);
       KernelArgs += OS.Str;

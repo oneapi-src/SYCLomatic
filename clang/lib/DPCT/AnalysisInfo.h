@@ -1166,6 +1166,9 @@ public:
   static bool useExtBFloat16Math() {
     return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
   }
+  static bool useExtBindlessImages() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_BindlessImages>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }

@@ -1,7 +1,8 @@
 // RUN: dpct --format-range=none -out-root %T/kernel-usm %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel-usm/kernel-usm.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/kernel-usm/kernel-usm.dp.cpp -o %T/kernel-usm/kernel-usm.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/kernel-usm/kernel-usm.dp.cpp -o %T/kernel-usm/kernel-usm.dp.o %}
 
+#ifndef BUILD_TEST
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <cassert>
@@ -310,3 +311,4 @@ void run_foo13(float* a_host[]) {
   //CHECK-NEXT:  });
   my_kernel5<<<1, 1>>>(a_host);
 }
+#endif
