@@ -159,34 +159,26 @@ void IncludesCallbacks::InclusionDirective(
   if (Global.isInAnalysisScope(IncludedFile)) {
     IncludeFileMap[IncludedFile] = false;
     Global.getIncludingFileSet().insert(IncludedFile);
-
     // The "IncludedFile" is included by the "IncludingFile".
     // If "IncludedFile" is not under the AnalysisScope folder, do not record
     // the including relationship information.
     Global.recordIncludingRelationship(LocInfo.first, IncludedFile);
     const auto Extension = path::extension(FileName);
-    SmallString<512> NewFileName = FileName;
-    SourceProcessType FileType = GetSourceFileType(FileName);
+    SmallString<512> NewFileName(FileName.str());
 
-    if (DpctGlobalInfo::getChangeExtensions().empty() ||
-        DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
-      if (FileType & SPT_CudaSource) {
-        path::replace_extension(NewFileName, "dp.cpp");
-      } else if (FileType & SPT_CppSource) {
-        if (Extension == ".c") {
-          auto &Vec = DpctGlobalInfo::getInstance()
-                          .getCSourceFileExtensionIndexVector();
-          Vec.push_back(DpctGlobalInfo::getInstance().insertFile(IncludedFile));
-          path::replace_extension(
-              NewFileName, "{{NEEDREPLACEE" +
-                               std::to_string(CSourceFileExtensionIndex++) +
-                               "}}");
-        } else {
-          path::replace_extension(NewFileName, Extension + ".dp.cpp");
-        }
-      } else if (FileType & SPT_CudaHeader) {
-        path::replace_extension(NewFileName, "dp.hpp");
-      }
+    if (Extension == ".c") {
+      auto &Vec =
+          DpctGlobalInfo::getInstance().getCSourceFileExtensionIndexVector();
+      Vec.push_back(DpctGlobalInfo::getInstance().insertFile(IncludedFile));
+      path::replace_extension(
+          NewFileName, "{{NEEDREPLACEE" +
+                           std::to_string(CSourceFileExtensionIndex++) + "}}");
+    } else {
+      clang::tooling::UnifiedPath NewFilePath = FileName;
+      rewriteFileName(NewFilePath, IncludedFile);
+      path::remove_filename(NewFileName);
+      path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
+      NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
     }
 
     if (NewFileName != FileName) {
