@@ -491,6 +491,18 @@ public:
                     get_blocked_from_scatter_offset, ranks);
   }
 
+  /// Rearrange elements from scatter order to striped order
+  template <typename Item>
+  __dpct_inline__ void scatter_to_striped(Item item,
+                                          T (&keys)[VALUES_PER_THREAD],
+                                          int (&ranks)[VALUES_PER_THREAD]) {
+
+    getScatterOffset<Item> get_scatter_offset;
+    getBlockedFromStripedOffset<Item> get_blocked_from_striped_offset;
+    helper_exchange(item, i, get_scatter_offset,
+                    get_blocked_from_striped_offset, ranks);
+  }
+
 private:
   static constexpr int LOG_LOCAL_MEMORY_BANKS = 5;
   static constexpr bool INSERT_PADDING =
