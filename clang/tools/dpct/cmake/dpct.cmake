@@ -83,43 +83,19 @@ set(SYCL_HAS_FP16 TRUE)
 macro(DPCT_COMPILE generated_files)
   # list of dp.cpp source files
   set(_sources "")
-  # type of library specified in dpct_compile
-  set(_lib_type "")
-  set(_possible_lib_types "STATIC;SHARED;MODULE")
 
   # segregate source files, library type and ignore nvcc options
   foreach(arg ${ARGN})
     # to confirm: what about cpp files?
     if(${arg} MATCHES "\\.dp\\.(cpp|hpp)$")
       list(APPEND _sources "${arg}")
-
-    elseif(${arg} IN_LIST _possible_lib_types)
-      set(_lib_type "${arg}")
-
-    elseif(${arg} STREQUAL "OPTIONS")
-      # we don't need to pass nvcc options to icpx
-      # to confirm: are there nvcc options compatible with icpx?
-      break()
-
-    else()
-      message(VERBOSE "Ignoring '${arg}' passed to dpct_compile")
-
     endif()
   endforeach()
 
   # can't continue without list of source files
   if("${_sources}" STREQUAL "")
-    message(FATAL "Failed to find source files while migrating `cuda_compile`")
+    message(FATAL "dpct: failed to find source files while migrating `cuda_compile`")
   endif()
 
-  # if library type is not specified then the build type is either SHARED or
-  # STATIC based on the cmake variable BUILD_SHARED_LIBS
-  if ("${_lib_type}" STREQUAL "")
-    add_library(${generated_files} ${_sources})
-
-  else()
-    add_library(${generated_files} ${_lib_type} ${_sources})
-
-  endif()
+  DPCT_CREATE_BUILD_COMMAND("sycl_device" ${generated_files} ${_sources})
 endmacro()
-
