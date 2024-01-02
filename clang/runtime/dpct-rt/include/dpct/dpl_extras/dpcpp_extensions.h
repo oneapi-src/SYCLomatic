@@ -382,46 +382,41 @@ public:
     return offset;
   }
 
-  template <typename Item>
-  struct getStripedOffset{
-    int operator()(Item item, int i){
-        int offset = int(item.get_local_id(0) * VALUES_PER_THREAD) + i;
-        return adjust_by_padding(offset);
+  template <typename Item> struct getStripedOffset {
+    int operator()(Item item, int i) {
+      int offset = int(item.get_local_id(0) * VALUES_PER_THREAD) + i;
+      return adjust_by_padding(offset);
     }
   };
 
-  template <typename Item>
-  struct getBlockedFromStripedOffset{
-    int operator()(Item item, int i){
-        int offset = int(i * item.get_local_range(2) *
-                          item.get_local_range(1) * item.get_local_range(0)) +
-                      item.get_local_id(0);
-        return adjust_by_padding(offset);  
+  template <typename Item> struct getBlockedFromStripedOffset {
+    int operator()(Item item, int i) {
+      int offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
+                       item.get_local_range(0)) +
+                   item.get_local_id(0);
+      return adjust_by_padding(offset);
     }
   };
 
-  template <typename Item>
-  struct getScatterOffset{
-    int operator()(Item item, int i, int (&ranks)[VALUES_PER_THREAD]){
+  template <typename Item> struct getScatterOffset {
+    int operator()(Item item, int i, int (&ranks)[VALUES_PER_THREAD]) {
       int offset = ranks[i];
       return adjust_by_padding(offset);
-    } 
+    }
   };
 
-  template <typename Item>
-  struct getBlockedFromScatterOffset{
-    int operator()(Item item, int i){
+  template <typename Item> struct getBlockedFromScatterOffset {
+    int operator()(Item item, int i) {
       int offset = (item.get_local_id(0) * VALUES_PER_THREAD) + i;
       return adjust_by_padding(offset);
     }
-
   };
 
-  template <typename Item, typename offsetFunctorTypeFW, typename offsetFunctorTypeRV>
+  template <typename Item, typename offsetFunctorTypeFW,
+            typename offsetFunctorTypeRV>
   __dpct_inline__ void helper_exchange(Item item, T (&keys)[VALUES_PER_THREAD],
-                                        offsetFunctorTypeFW &offset_functor_fw,
-                                        offsetFunctorTypeRV &offset_functor_rv
-                                        ) {
+                                       offsetFunctorTypeFW &offset_functor_fw,
+                                       offsetFunctorTypeRV &offset_functor_rv) {
 
     T *buffer = reinterpret_cast<T *>(_local_memory);
 
@@ -440,12 +435,12 @@ public:
     }
   }
 
-template <typename Item, typename offsetFunctorTypeFW, typename offsetFunctorTypeRV>
+  template <typename Item, typename offsetFunctorTypeFW,
+            typename offsetFunctorTypeRV>
   __dpct_inline__ void helper_exchange(Item item, T (&keys)[VALUES_PER_THREAD],
-                                        offsetFunctorTypeFW &offset_functor_fw,
-                                        offsetFunctorTypeRV &offset_functor_rv,
-                                        int (&ranks)[VALUES_PER_THREAD]
-                                        ) {
+                                       offsetFunctorTypeFW &offset_functor_fw,
+                                       offsetFunctorTypeRV &offset_functor_rv,
+                                       int (&ranks)[VALUES_PER_THREAD]) {
 
     T *buffer = reinterpret_cast<T *>(_local_memory);
 
@@ -463,8 +458,8 @@ template <typename Item, typename offsetFunctorTypeFW, typename offsetFunctorTyp
       keys[i] = buffer[offset];
     }
   }
-  
-/// Rearrange elements from blocked order to striped order
+
+  /// Rearrange elements from blocked order to striped order
   template <typename Item>
   __dpct_inline__ void blocked_to_striped(Item item,
                                           T (&keys)[VALUES_PER_THREAD]) {
@@ -489,10 +484,11 @@ template <typename Item, typename offsetFunctorTypeFW, typename offsetFunctorTyp
   __dpct_inline__ void scatter_to_blocked(Item item,
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
-    
+
     getScatterOffset<Item> get_scatter_offset;
     getBlockedFromScatterOffset<Item> get_blocked_from_scatter_offset;
-    helper_exchange(item, i, get_scatter_offset, get_blocked_from_scatter_offset, ranks);    
+    helper_exchange(item, i, get_scatter_offset,
+                    get_blocked_from_scatter_offset, ranks);
   }
 
 private:
@@ -500,7 +496,7 @@ private:
   static constexpr bool INSERT_PADDING =
       (VALUES_PER_THREAD > 4) &&
       (detail::power_of_two<VALUES_PER_THREAD>::VALUE);
-      
+
   uint8_t *_local_memory;
 };
 
