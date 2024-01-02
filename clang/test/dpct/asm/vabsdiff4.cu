@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/asm/vabsdiff4 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/asm/vabsdiff4/vabsdiff4.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/vabsdiff4/vabsdiff4.dp.cpp -o %T/vabsdiff4/vabsdiff4.dp.o %}
+// RUN: %if build_lit %{icpx -c  -fsycl %T/asm/vabsdiff4/vabsdiff4.dp.cpp -o %T/asm/vabsdiff4/vabsdiff4.dp.o %}
 
 __global__ void vabsdiff4() {
   int a, b, c, d;

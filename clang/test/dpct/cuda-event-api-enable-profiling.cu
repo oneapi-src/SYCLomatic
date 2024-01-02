@@ -1,7 +1,8 @@
 // RUN: dpct --enable-profiling --format-range=none --usm-level=none -out-root %T/cuda-event-api-enable-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.cpp -o %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.cpp -o %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.o %}
 
+#ifndef BUILD_TEST
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT: #define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT: #include <sycl/sycl.hpp>
@@ -345,3 +346,4 @@ void foo2(Node *n) {
     cudaEventRecord(n->p_events[3]);
   }
 }
+#endif
