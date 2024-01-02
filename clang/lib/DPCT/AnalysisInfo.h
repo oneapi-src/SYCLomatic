@@ -594,8 +594,7 @@ public:
 
   void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
   std::string getCCLVerValue() { return CCLVerValue; }
-  void setHasCUDASyntax(bool Flag) { HasCUDASyntax = Flag; }
-  bool hasCUDASyntax() { return HasCUDASyntax; }
+  bool hasCUDASyntax() { return HeaderInsertedBitMap[HeaderType::HT_SYCL]; }
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
@@ -662,7 +661,6 @@ private:
   std::vector<RnnBackwardFuncInfo> RBFuncInfo;
   std::string RTVersionValue = "";
   std::string CCLVerValue = "";
-  bool HasCUDASyntax = false;
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -1893,9 +1891,9 @@ public:
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
   }
-  std::unordered_map<int, std::shared_ptr<DpctFileInfo>> &
-  getCSourceFileExtensionIndexMap() {
-    return CSourceFileExtensionIndexMap;
+  std::vector<std::shared_ptr<DpctFileInfo>> &
+  getCSourceFileExtensionIndexVector() {
+    return CSourceFileExtensionIndexVector;
   }
   static inline std::unordered_map<std::string,
                                    std::shared_ptr<PriorityReplInfo>> &
@@ -2145,8 +2143,8 @@ private:
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
-  static std::unordered_map<int, std::shared_ptr<DpctFileInfo>>
-      CSourceFileExtensionIndexMap;
+  static std::vector<std::shared_ptr<DpctFileInfo>>
+      CSourceFileExtensionIndexVector;
   static bool OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;

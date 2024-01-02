@@ -165,27 +165,30 @@ void IncludesCallbacks::InclusionDirective(
     // the including relationship information.
     Global.recordIncludingRelationship(LocInfo.first, IncludedFile);
     const auto Extension = path::extension(FileName);
-    clang::tooling::UnifiedPath NewFilePath = FileName;
-    if (Extension == ".c") {
-      SmallString<512> CanonicalPathStr(
-          StringRef(NewFilePath.getCanonicalPath()));
-      NewFilePath = CanonicalPathStr;
-    } else {
-      rewriteFileName(NewFilePath, IncludedFile);
+    SmallString<512> NewFileName = FileName;
+    SourceProcessType FileType = GetSourceFileType(FileName);
+
+    if (DpctGlobalInfo::getChangeExtensions().empty() ||
+        DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
+      if (FileType & SPT_CudaSource) {
+        path::replace_extension(NewFileName, "dp.cpp");
+      } else if (FileType & SPT_CppSource) {
+        if (Extension == ".c") {
+          auto &Vec = DpctGlobalInfo::getInstance()
+                          .getCSourceFileExtensionIndexVector();
+          Vec.push_back(DpctGlobalInfo::getInstance().insertFile(IncludedFile));
+          path::replace_extension(
+              NewFileName, "{{NEEDREPLACEE" +
+                               std::to_string(CSourceFileExtensionIndex++) +
+                               "}}");
+        } else {
+          path::replace_extension(NewFileName, Extension + ".dp.cpp");
+        }
+      } else if (FileType & SPT_CudaHeader) {
+        path::replace_extension(NewFileName, "dp.hpp");
+      }
     }
-    SmallString<512> NewFileName(FileName.str());
-    path::remove_filename(NewFileName);
-    path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
-    NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
-    if (Extension == ".c") {
-      auto &Map =
-          DpctGlobalInfo::getInstance().getCSourceFileExtensionIndexMap();
-      Map[CSourceFileExtensionIndex] =
-          DpctGlobalInfo::getInstance().insertFile(IncludedFile);
-      path::replace_extension(
-          NewFileName, "{{NEEDREPLACEE" +
-                           std::to_string(CSourceFileExtensionIndex++) + "}}");
-    }
+
     if (NewFileName != FileName) {
       std::string ReplacedStr;
       if (IsAngled) {

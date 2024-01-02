@@ -321,7 +321,6 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (Repl->getLength()) {
     if (Repl->IsSYCLHeaderNeeded()) {
       FileInfo->insertHeader(HT_SYCL);
-      FileInfo->setHasCUDASyntax(true);
     }
     // If Repl is not insert replacement, insert it.
     ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
@@ -329,7 +328,6 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   } else if (checkLiveness(Repl)) {
     if (Repl->IsSYCLHeaderNeeded()) {
       FileInfo->insertHeader(HT_SYCL);
-      FileInfo->setHasCUDASyntax(true);
     }
     markAsAlive(Repl);
   } else {

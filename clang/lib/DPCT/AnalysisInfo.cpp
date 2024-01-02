@@ -154,8 +154,8 @@ unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
-std::unordered_map<int, std::shared_ptr<DpctFileInfo>>
-    DpctGlobalInfo::CSourceFileExtensionIndexMap;
+std::vector<std::shared_ptr<DpctFileInfo>>
+    DpctGlobalInfo::CSourceFileExtensionIndexVector;
 std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
     DpctGlobalInfo::PriorityReplInfoMap;
 std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
@@ -4542,8 +4542,9 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
     return getStringForRegexDefaultQueueAndDevice(
         HelperFuncType::HFT_DefaultQueue, Index);
   case 'E': {
-    auto &Map = DpctGlobalInfo::getInstance().getCSourceFileExtensionIndexMap();
-    return Map[Index]->hasCUDASyntax() ? "c.dp.cpp" : "c";
+    auto &Vec =
+        DpctGlobalInfo::getInstance().getCSourceFileExtensionIndexVector();
+    return Vec[Index]->hasCUDASyntax() ? "c.dp.cpp" : "c";
   }
   case FreeQueriesInfo::FreeQueriesRegexCh:
     return FreeQueriesInfo::getReplaceString(Index);
