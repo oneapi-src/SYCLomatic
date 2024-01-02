@@ -2063,7 +2063,7 @@ bool needExtraParens(const Expr *E) {
   }
   case Stmt::CXXOperatorCallExprClass:
     return static_cast<const CXXOperatorCallExpr *>(E)->getOperator() !=
-           clang::OO_Subscript;
+           clang::OO_Subscript;  
   default:
     return true;
   }

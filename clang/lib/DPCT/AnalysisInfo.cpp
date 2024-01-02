@@ -1603,7 +1603,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
           buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
                       Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
-    } else if (Arg.Texture) {
+    } else if (Arg.Texture && !DpctGlobalInfo::useExtBindlessImages()) {
       ParameterStream OS;
       Arg.Texture->getKernelArg(OS);
       KernelArgs += OS.Str;
@@ -3146,6 +3146,16 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
   for (auto &Obj : TextureObjectList) {
     if (Obj) {
       Obj->merge(FuncInfo->getTextureObject((Obj->getParamIdx())));
+      if (DpctGlobalInfo::useExtBindlessImages()) {
+        DpctGlobalInfo::getInstance().addReplacement(
+            std::make_shared<ExtReplacement>(
+                Obj->getFilePath(), Obj->getOffset(),
+                strlen("cudaTextureObject_t"),
+                MapNames::getClNamespace() +
+                    "ext::oneapi::experimental::sampled_image_handle",
+                nullptr));
+        continue;
+      }
       if (!Obj->getType()) {
         // Type dpct_placeholder
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);

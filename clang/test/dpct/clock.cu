@@ -1,7 +1,8 @@
 // RUN: dpct --format-range=none -out-root %T/clock %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/clock/clock.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/clock/clock.dp.cpp -o %T/clock/clock.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/clock/clock.dp.cpp -o %T/clock/clock.dp.o %}
 
+#ifndef BUILD_TEST
 // CHECK: #include <stdint.h>
 // CHECK-NEXT: #include <stdio.h>
 // CHECK-NEXT: #include <time.h>
@@ -51,3 +52,4 @@ int main(int argc, char **argv) {
   timedAddition(hinput, houtput, htimer);
   return 0;
 }
+#endif
