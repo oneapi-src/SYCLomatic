@@ -24,50 +24,95 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
   
-     #define TB(x) cg::thread_block x = cg::this_thread_block()
-  
-     __global__ void kernel1() {
-       int id = threadIdx.x;
-       TB(a);
-     }
-     __global__ void kernel3() {
-       int id = threadIdx.z;
+     namespace cg = cooperative_groups;
+     
+     #define TB(b) cg::thread_block b = cg::this_thread_block();
+     
+     __global__ void test1() {
        TB(b);
+     }
+     
+     __global__ void test2() {
+       TB(b);
+     }
+     
+     void foo() {
+       test1<<<dim3(2, 2, 2), dim3(2, 2, 2)>>>();
+       test2<<<2, 2>>>();
      }
 
 migrated with options ``--assume-nd-range-dim=1`` and
-``--use-experimental-features=free-function-queries``, results in the following
-migrated SYCL code:
+``--use-experimental-features=free-function-queries``,
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
 
-     #define TB(x) auto x = sycl::this_group< Placeholder /* Fix the dimension manually */>()
-     // It should be this_group<1>() when used in kernel1 and this_group<3>() when used in kernel3
-  
-     void kernel1() {
-       int id = sycl::this_nd_item<1>().get_local_id(0);
-       TB(a);
-     }
-     void kernel3() {
-       int id = sycl::this_nd_item<3>().get_local_id(0);
+     /*
+     DPCT1088:0: The macro definition has multiple migration results in the dimension
+     of free queries function that could not be unified. You may need to modify the
+     code.
+     */
+     #define TB(b)                                                                  \
+       auto b = sycl::ext::oneapi::experimental::this_group<                        \
+           dpct_placeholder /* Fix the dimension manually */>();
+     
+     void test1() {
        TB(b);
+     }
+     
+     void test2() {
+       TB(b);
+     }
+     
+     void foo() {
+       sycl::device dev_ct1;
+       sycl::queue q_ct1(dev_ct1,
+                         sycl::property_list{sycl::property::queue::in_order()});
+       q_ct1.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(2, 2, 2) * sycl::range<3>(2, 2, 2),
+                             sycl::range<3>(2, 2, 2)),
+           [=](sycl::nd_item<3> item_ct1) {
+             test1();
+           });
+       q_ct1.parallel_for(sycl::nd_range<1>(sycl::range<1>(2) * sycl::range<1>(2),
+                                            sycl::range<1>(2)),
+                          [=](sycl::nd_item<1> item_ct1) {
+                            test2();
+                          });
      }
 
 which is manually adjusted to:
 
 .. code-block:: cpp
    :linenos:
-  
-     #define TB(x, dimensions) auto x = sycl::this_group< dimensions >()
-  
-     void kernel1() {
-       int id = sycl::this_nd_item<1>().get_local_id(0);
-       TB(a, 1);
-     }
-     void kernel3() {
-       int id = sycl::this_nd_item<3>().get_local_id(0);
+
+     #define TB(b, d)                                                                  \
+       auto b = sycl::ext::oneapi::experimental::this_group<d>();
+     
+     void test1() {
        TB(b, 3);
+     }
+     
+     void test2() {
+       TB(b, 1);
+     }
+     
+     void foo() {
+       sycl::device dev_ct1;
+       sycl::queue q_ct1(dev_ct1,
+                         sycl::property_list{sycl::property::queue::in_order()});
+       q_ct1.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(2, 2, 2) * sycl::range<3>(2, 2, 2),
+                             sycl::range<3>(2, 2, 2)),
+           [=](sycl::nd_item<3> item_ct1) {
+             test1();
+           });
+       q_ct1.parallel_for(sycl::nd_range<1>(sycl::range<1>(2) * sycl::range<1>(2),
+                                            sycl::range<1>(2)),
+                          [=](sycl::nd_item<1> item_ct1) {
+                            test2();
+                          });
      }
 
 Suggestions to Fix

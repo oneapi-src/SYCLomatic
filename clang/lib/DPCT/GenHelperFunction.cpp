@@ -25,6 +25,9 @@ const std::string DpctAllContentStr =
 const std::string AtomicAllContentStr =
 #include "clang/DPCT/atomic.hpp.inc"
     ;
+const std::string BindlessImageAllContentStr =
+#include "clang/DPCT/bindless_images.hpp.inc"
+    ;
 const std::string BlasUtilsAllContentStr =
 #include "clang/DPCT/blas_utils.hpp.inc"
     ;
@@ -151,6 +154,7 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
     VAR_NAME##File.flush();                                                    \
   }
   GENERATE_ALL_FILE_CONTENT(Atomic, atomic.hpp)
+  GENERATE_ALL_FILE_CONTENT(BindlessImage, bindless_images.hpp)
   GENERATE_ALL_FILE_CONTENT(BlasUtils, blas_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(Device, device.hpp)
   GENERATE_ALL_FILE_CONTENT(Dpct, dpct.hpp)

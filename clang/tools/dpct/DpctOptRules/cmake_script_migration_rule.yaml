@@ -99,20 +99,6 @@
     #[[
     set_target_properties(${target_property} CUDA_ARCHITECHTURES ${state})]]
 
-- Rule: rule_target_link_libraries_CUDA_LIBRARIES
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
-  In: target_link_libraries(${CULibraries})
-  Out: target_link_libraries(${CULibraries})
-  Subrules:
-    CULibraries:
-      In: |
-        \${CUDA_LIBRARIES}
-      Out: ""
-      MatchMode: Full
-      RuleId: "replace_cuda_reserved_variable_CUDA_LIBRARIES"
-
 - Rule: rule_cuda_compile_ptx
   Kind: CMakeRule
   Priority: Fallback
@@ -246,3 +232,48 @@
       MatchMode: Full
       RuleId: "adjust CUDA src file extension"
 
+- Rule: rule_set_property
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property
+  In: set_property(${value})
+  Out: set_property(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+      MatchMode: Partial
+      RuleId: "replace_set_property_cu_extension_with_dp_cpp"
+
+- Rule: rule_cuda_add_executable
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_add_executable
+  In: cuda_add_executable(${value})
+  Out: add_executable(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+      MatchMode: Partial
+      RuleId: "replace_cuda_add_executable_cu_extension_with_dp_cpp"
+
+- Rule: rule_add_executable
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_executable
+  In: add_executable(${value} OPTIONS {options})
+  Out: add_executable(${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+      MatchMode: Partial
+      RuleId: "replace_add_executable_cu_extension_with_dp_cpp"
+
+- Rule: rule_add_executable_remove_opts
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_executable_opts
+  In: add_executable(${value} OPTIONS ${options})
+  Out: add_executable(${value})
