@@ -1,6 +1,7 @@
 set(dpct_rt_files
   include/dpct/dpct.hpp
   include/dpct/atomic.hpp
+  include/dpct/bindless_images.hpp
   include/dpct/device.hpp
   include/dpct/math.hpp
   include/dpct/memory.hpp

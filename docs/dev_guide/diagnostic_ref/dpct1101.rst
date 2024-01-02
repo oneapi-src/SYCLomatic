@@ -35,6 +35,7 @@ For example, this original CUDA\* code:
      __global__ void f() {
        const int x = 2;
        __shared__ int fold[x];
+       ...
      }
 
      int main() {
@@ -49,12 +50,17 @@ results in the following migrated SYCL code:
 
      void f(int *fold) {
        const int x = 2;
+       ...
      }
-
+     
      int main() {
-       dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+       dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
+         /*
+         DPCT1101:0: 'x' expression was replaced with a value. Modify the code to
+         use the original expression, provided in comments, if it is correct.
+         */
          sycl::local_accessor<int, 1> fold_acc_ct1(sycl::range<1>(2 /*x*/), cgh);
-
+     
          cgh.parallel_for(
              sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
              [=](sycl::nd_item<3> item_ct1) {
@@ -71,13 +77,13 @@ which is rewritten to:
 
      const int x = 2;
      void f(int *fold) {
-
+       ...
      }
-
+     
      int main() {
-       dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+       dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
          sycl::local_accessor<int, 1> fold_acc_ct1(sycl::range<1>(x), cgh);
-
+     
          cgh.parallel_for(
              sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
              [=](sycl::nd_item<3> item_ct1) {
