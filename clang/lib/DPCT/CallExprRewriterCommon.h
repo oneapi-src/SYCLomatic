@@ -2027,6 +2027,11 @@ public:
   }
 };
 
+class UsePeerAccess {
+public:
+  bool operator()(const CallExpr *C) { return DpctGlobalInfo::usePeerAccess(); }
+};
+
 namespace math {
 class IsDefinedInCUDA {
 public:

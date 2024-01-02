@@ -314,6 +314,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
                                      "Enqueued barriers extension.",
+                                     false),
+             DPCT_OPT_ENUM("peer_access",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess),
+                                     "Peer access extension.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"

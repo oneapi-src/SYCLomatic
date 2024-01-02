@@ -6692,33 +6692,6 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Msg);
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
-  } else if (FuncName == "cudaDeviceEnablePeerAccess" ||
-             FuncName == "cudaDeviceDisablePeerAccess") {
-    std::string Msg =
-        "SYCL currently does not support memory access across peer devices.";
-    if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-             MapNames::ITFName.at(FuncName), Msg);
-      emplaceTransformation(new ReplaceStmt(CE, "0"));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             MapNames::ITFName.at(FuncName), Msg);
-      emplaceTransformation(new ReplaceStmt(CE, ""));
-    }
-  } else if (FuncName == "cudaDeviceCanAccessPeer") {
-    ExprAnalysis EA;
-    EA.analyze(CE->getArg(0));
-    auto Arg0Str = EA.getReplacedString();
-    std::string ReplStr{"*"};
-    ReplStr += Arg0Str;
-    ReplStr += " = 0";
-    if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
-      requestFeature(HelperFeatureEnum::device_ext);
-    }
-    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
-    report(CE->getBeginLoc(), Diagnostics::EXPLICIT_PEER_ACCESS, false,
-           MapNames::ITFName.at(FuncName));
   } else if (FuncName == "cudaIpcGetEventHandle" ||
              FuncName == "cudaIpcOpenEventHandle" ||
              FuncName == "cudaIpcGetMemHandle" ||
