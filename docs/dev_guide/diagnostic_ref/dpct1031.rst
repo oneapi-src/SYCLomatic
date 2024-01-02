@@ -8,7 +8,7 @@ Message
 
 .. _msg-1031-start:
 
-Memory accessing across peer devices is an implementation-specific feature which
+Memory access across peer devices is an implementation-specific feature which
 may not be supported by some SYCL backends and compilers. The output parameter(s)
 are set to 0.
 
@@ -17,7 +17,7 @@ are set to 0.
 Detailed Help
 -------------
 
-Memory accessing across peer devices is an implementation-specific feature which
+Memory access across peer devices is an implementation-specific feature which
 may not be supported by some SYCL\* backends and compilers. The output parameter(s)
 are set to 0.
 

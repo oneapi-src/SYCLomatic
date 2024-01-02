@@ -19,7 +19,7 @@ Detailed Help
 
 Data read from `tex` in original code is normalized to a float in the range of (0, 1]
 by default, unless `CU_TRSF_READ_AS_INTEGER` is set.
-While aata read from SYCL\* image cannot be normalized to a float in the range of (0, 1]
+While data read from SYCL\* image cannot be normalized to a float in the range of (0, 1]
 using the standard SYCL API. All flags used in the original code are ignored,
 except coordinate normalization mode.
 

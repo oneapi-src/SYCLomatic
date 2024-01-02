@@ -41,11 +41,11 @@ If you received a warning for ``dpct::fft::fft_engine::create()`` or
 
 * If you are using an internal workspace and do not care about performance, you
   can ignore this warning.
-* If you do care about performance or using external workspace, specify the
+* If you do care about performance, or if you are using an external workspace, specify the
   ``direction_and_placement`` parameter correctly.
 
 If you received this warning for ``dpct::fft::fft_engine::estimate_size()``, you
-need specify the ``direction_and_placement`` parameter correctly.
+need to specify the ``direction_and_placement`` parameter correctly.
 
 For example, this original CUDA\* code:
 
