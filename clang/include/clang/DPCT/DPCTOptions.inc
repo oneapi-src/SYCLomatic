@@ -373,6 +373,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("bfloat16_math_functions", int(ExperimentalFeatures::Exp_BFloat16Math),
         "Experimental extension that allows use of bfloat16 math functions.\n",
+        false),
+             DPCT_OPT_ENUM("bindless_images", int(ExperimentalFeatures::Exp_BindlessImages),
+        "Experimental extension that allows use of bindless images APIs.\n",
         false)
            ),
            llvm::cl::desc("Comma-separated list of experimental features to be used in migrated "

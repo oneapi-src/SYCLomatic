@@ -1771,6 +1771,9 @@ public:
   static bool useExtBFloat16Math() {
     return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
   }
+  static bool useExtBindlessImages() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_BindlessImages>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
@@ -2767,7 +2770,10 @@ public:
     Type->prepareForImage();
     requestFeature(HelperFeatureEnum::device_ext);
 
-    getDecl(PS, "image_wrapper") << ";";
+    getDecl(PS, DpctGlobalInfo::useExtBindlessImages()
+                    ? "experimental::bindless_image_wrapper"
+                    : "image_wrapper")
+        << ";";
     Type->endForImage();
     return PS.Str;
   }
@@ -2787,17 +2793,31 @@ public:
     return Ret;
   }
   virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList, const std::string&QueueStr) {
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      AccessorList.emplace_back("auto " + NewVarName + "_handle = " + Name +
+                                ".get_handle();");
+      return;
+    }
     AccessorList.emplace_back(getAccessorDecl(QueueStr));
     SamplerList.emplace_back(getSamplerDecl());
   }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
     requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      PS << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::sampled_image_handle " << Name;
+      return PS;
+    }
     return getDecl(PS, "image_accessor_ext");
   }
   inline ParameterStream &getFuncArg(ParameterStream &PS) { return PS << Name; }
   virtual ParameterStream &getKernelArg(ParameterStream &OS) {
     requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      OS << NewVarName << "_handle";
+      return OS;
+    }
     getType()->printType(OS,
                          MapNames::getDpctNamespace() + "image_accessor_ext");
     OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
@@ -3582,6 +3602,10 @@ private:
     auto ArgItr = Args.begin();
     unsigned Idx = 0;
     TextureObjectList.resize(ArgsNum);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      // Need return after resize, ortherwise will cause array out of bound.
+      return;
+    }
     while (ArgItr != Args.end()) {
       const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
       if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
