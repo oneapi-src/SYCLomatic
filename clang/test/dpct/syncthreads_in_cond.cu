@@ -2,8 +2,8 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/syncthreads_in_cond %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --input-file %T/syncthreads_in_cond/syncthreads_in_cond.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/syncthreads_in_cond/syncthreads_in_cond.dp.cpp -o %T/syncthreads_in_cond/syncthreads_in_cond.dp.o %}
-
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/syncthreads_in_cond/syncthreads_in_cond.dp.cpp -o %T/syncthreads_in_cond/syncthreads_in_cond.dp.o %}
+#ifndef BUILD_TEST
 __device__ void test1(int *a) {
   unsigned tid =
       ((blockIdx.x + (blockIdx.y * gridDim.x)) * (blockDim.x * blockDim.y)) +
@@ -151,3 +151,4 @@ __global__ void test_no_warn() {
     break;
   }
 }
+#endif

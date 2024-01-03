@@ -12,6 +12,9 @@
 // CUDADEVICEGETLIMIT: CUDA API:
 // CUDADEVICEGETLIMIT-NEXT:   cudaDeviceGetLimit(ps /*size_t **/, l /*cudaLimit*/);
 // CUDADEVICEGETLIMIT-NEXT: Is migrated to:
+// CUDADEVICEGETLIMIT-NEXT:   /*
+// CUDADEVICEGETLIMIT-NEXT:   DPCT1029:0: SYCL currently does not support getting device resource limits. The output parameter(s) are set to 0.
+// CUDADEVICEGETLIMIT-NEXT:   */
 // CUDADEVICEGETLIMIT-NEXT:   *ps = 0;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceReset | FileCheck %s -check-prefix=CUDADEVICERESET
@@ -350,19 +353,19 @@
 // CUDADEVICECANACCESSPEER: CUDA API:
 // CUDADEVICECANACCESSPEER-NEXT:   cudaDeviceCanAccessPeer(pi /*int **/, i1 /*int*/, i2 /*int*/);
 // CUDADEVICECANACCESSPEER-NEXT: Is migrated to:
-// CUDADEVICECANACCESSPEER-NEXT:   *pi = 0;
+// CUDADEVICECANACCESSPEER-NEXT:   *pi = dpct::dev_mgr::instance().get_device(i1).ext_oneapi_can_access_peer(dpct::dev_mgr::instance().get_device(i2));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceDisablePeerAccess | FileCheck %s -check-prefix=CUDADEVICEDISABLEPEERACCESS
 // CUDADEVICEDISABLEPEERACCESS: CUDA API:
 // CUDADEVICEDISABLEPEERACCESS-NEXT:   cudaDeviceDisablePeerAccess(i /*int*/);
-// CUDADEVICEDISABLEPEERACCESS-NEXT: The API is Removed.
-// CUDADEVICEDISABLEPEERACCESS-EMPTY:
+// CUDADEVICEDISABLEPEERACCESS-NEXT: Is migrated to:
+// CUDADEVICEDISABLEPEERACCESS-NEXT:   dpct::get_current_device().ext_oneapi_disable_peer_access(dpct::dev_mgr::instance().get_device(i));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceEnablePeerAccess | FileCheck %s -check-prefix=CUDADEVICEENABLEPEERACCESS
 // CUDADEVICEENABLEPEERACCESS: CUDA API:
 // CUDADEVICEENABLEPEERACCESS-NEXT:   cudaDeviceEnablePeerAccess(i /*int*/, u /*unsigned int*/);
-// CUDADEVICEENABLEPEERACCESS-NEXT: The API is Removed.
-// CUDADEVICEENABLEPEERACCESS-EMPTY:
+// CUDADEVICEENABLEPEERACCESS-NEXT: Is migrated to:
+// CUDADEVICEENABLEPEERACCESS-NEXT:   dpct::get_current_device().ext_oneapi_enable_peer_access(dpct::dev_mgr::instance().get_device(i));
 
 /// Texture Object Management
 
