@@ -7,7 +7,7 @@
 // CHECK: int global_id(const sycl::nd_item<3> &item_ct1);
 __device__ int global_id();
 
-
+#ifndef  BUILD_TEST
 // CHECK: void simple_kernel(unsigned *i_array, const sycl::nd_item<3> &item_ct1) {
 __global__ void simple_kernel(unsigned *i_array) {
   int index;
@@ -18,6 +18,7 @@ __global__ void simple_kernel(unsigned *i_array) {
   }
   return;
 }
+#endif
 
 void sgemm() {
   cublasStatus_t status;

@@ -1002,6 +1002,16 @@ inline std::function<bool(const CallExpr *C)> checkIsGetWorkGroupDim(size_t inde
     };
 }
 
+inline std::function<bool(const CallExpr *C)> checkIsMigratedToHasAspect(size_t index) {
+  return [=](const CallExpr *C) -> bool {
+    if (getStmtSpelling(C->getArg(index)).
+          find("CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY") != std::string::npos) {
+      return true;
+    }
+    return false;
+    };
+}
+
 inline std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
   return [=](const CallExpr *C) -> bool {
     auto Arg2Expr = C->getArg(index);

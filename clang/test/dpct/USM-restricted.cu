@@ -185,8 +185,9 @@ void foo() {
 
   // CHECK: dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
   cudaMemcpy3D(&parms);
-
+#ifndef BUILD_TEST
   struct cudaMemcpy3DParms *parms_pointer;
+#endif
   // Followed call can't be processed.
   cudaMemcpy3D(parms_pointer);
   // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
