@@ -17,6 +17,10 @@
    project(${arg0} ${argN})
    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fsycl")
    find_program(dpct_bin_path NAMES dpct PATHS)
+   if(IS_SYMLINK ${dpct_bin_path})
+       execute_process(COMMAND realpath ${dpct_bin_path}
+                       OUTPUT_VARIABLE dpct_bin_path)
+   endif()
    get_filename_component(bin_path_of_dpct \${dpct_bin_path} DIRECTORY)
    set(dpct_cmake_file_path "\${bin_path_of_dpct}/../cmake/dpct.cmake")
    include(\${dpct_cmake_file_path})
