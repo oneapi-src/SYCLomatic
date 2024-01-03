@@ -10580,14 +10580,14 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       std::ostringstream Repl;
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
       if (hasManagedAttr(0)(C)) {
-          ArgStr = "*(" + ArgStr + ".get_ptr())";
+        ArgStr = "*(" + ArgStr + ".get_ptr())";
       }
       std::string NewFuncName;
       if (DpctGlobalInfo::useNoQueueDevice()) {
-          NewFuncName = MapNames::getClNamespace() + "free";
+        NewFuncName = MapNames::getClNamespace() + "free";
       } else {
-          requestFeature(HelperFeatureEnum::device_ext);
-          NewFuncName = MapNames::getDpctNamespace() + "dpct_free";
+        requestFeature(HelperFeatureEnum::device_ext);
+        NewFuncName = MapNames::getDpctNamespace() + "dpct_free";
       }
       Repl << NewFuncName << "(" << ArgStr
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
