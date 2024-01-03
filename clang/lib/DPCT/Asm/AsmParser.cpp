@@ -453,6 +453,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
   }
   case asmtok::underscore:
     Res = ActOnDiscardExpr();
+    ConsumeToken();
     break;
   case asmtok::numeric_constant:
     Res = ActOnNumericConstant(Tok);
@@ -663,6 +664,8 @@ InlineAsmParser::ActOnVectorExpr(ArrayRef<InlineAsmExpr *> Vec) {
   InlineAsmBuiltinType *ElementType = nullptr;
   // The type of each element must have the same non-predicate builtin type.
   for (auto *E : Vec) {
+    if (isa<InlineAsmDiscardExpr>(E))
+        continue;
     if (auto *T = dyn_cast<InlineAsmBuiltinType>(E->getType())) {
       if (T->getKind() == InlineAsmBuiltinType::TK_pred)
         return AsmExprError();
