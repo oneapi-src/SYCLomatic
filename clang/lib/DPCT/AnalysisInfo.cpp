@@ -73,7 +73,13 @@ FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
-std::unordered_map<std::string, SourceRange> DpctGlobalInfo::ExpansionRangeBeginMap;
+std::unordered_map<
+    std::string,
+    std::pair<std::pair<clang::tooling::UnifiedPath /*begin file name*/,
+                        unsigned int /*begin offset*/>,
+              std::pair<clang::tooling::UnifiedPath /*end file name*/,
+                        unsigned int /*end offset*/>>>
+    DpctGlobalInfo::ExpansionRangeBeginMap;
 bool DpctGlobalInfo::EnablepProfilingFlag = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
@@ -1595,7 +1601,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
           buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
                       Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
-    } else if (Arg.Texture) {
+    } else if (Arg.Texture && !DpctGlobalInfo::useExtBindlessImages()) {
       ParameterStream OS;
       Arg.Texture->getKernelArg(OS);
       KernelArgs += OS.Str;
@@ -2023,6 +2029,7 @@ KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath, const Func
 void KernelCallExpr::setKernelCallDim() {
   if (auto Ptr = getFuncInfo()) {
     Ptr->setKernelInvoked();
+    Ptr->KernelCallBlockDim = std::max(Ptr->KernelCallBlockDim, BlockDim);
     if (GridDim == 1 && BlockDim == 1) {
       if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
         Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);
@@ -3137,6 +3144,16 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
   for (auto &Obj : TextureObjectList) {
     if (Obj) {
       Obj->merge(FuncInfo->getTextureObject((Obj->getParamIdx())));
+      if (DpctGlobalInfo::useExtBindlessImages()) {
+        DpctGlobalInfo::getInstance().addReplacement(
+            std::make_shared<ExtReplacement>(
+                Obj->getFilePath(), Obj->getOffset(),
+                strlen("cudaTextureObject_t"),
+                MapNames::getClNamespace() +
+                    "ext::oneapi::experimental::sampled_image_handle",
+                nullptr));
+        continue;
+      }
       if (!Obj->getType()) {
         // Type dpct_placeholder
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);

@@ -206,6 +206,9 @@ bool printOptions(
         if (!(UValue & (1 << static_cast<unsigned>(
                             DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16))))
           Str += "bfloat16,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess))))
+          Str += "peer_access,";
       }
       if (!Str.empty()) {
         Str = "--no-dpcpp-extensions=" + Str;
