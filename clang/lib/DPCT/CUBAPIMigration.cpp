@@ -112,7 +112,7 @@ bool CubTypeRule::CanMappingToSyclType(StringRef OpTypeName) {
          OpTypeName == "cub::Equality" || OpTypeName == "cub::NullType" ||
 
          // Ignore template arguments, .e.g cub::KeyValuePair<int, int>
-         OpTypeName.startswith("cub::KeyValuePair");
+         OpTypeName.starts_with("cub::KeyValuePair");
 }
 
 void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {

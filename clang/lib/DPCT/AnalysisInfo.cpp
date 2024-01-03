@@ -1306,18 +1306,19 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
 }
 
 std::optional<clang::tooling::UnifiedPath>
-DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
-  if (auto RealPath = File.tryGetRealPathName(); !RealPath.empty())
+DpctGlobalInfo::getAbsolutePath(const OptionalFileEntryRef &File) {
+  if (auto RealPath = File->getFileEntry().tryGetRealPathName();
+      !RealPath.empty())
     return clang::tooling::UnifiedPath(RealPath);
 
-  llvm::SmallString<512> FilePathAbs(File.getName());
+  llvm::SmallString<512> FilePathAbs(File->getName());
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
   return clang::tooling::UnifiedPath(FilePathAbs);
 }
 std::optional<clang::tooling::UnifiedPath> DpctGlobalInfo::getAbsolutePath(FileID ID) {
   assert(SM && "SourceManager must be initialized");
-  if (const auto *FileEntry = SM->getFileEntryForID(ID))
-    return getAbsolutePath(*FileEntry);
+  if (const auto FileEntryRef = SM->getFileEntryRefForID(ID))
+    return getAbsolutePath(FileEntryRef);
   return std::nullopt;
 }
 
@@ -2907,7 +2908,7 @@ std::string CallFunctionExpr::getTemplateArguments(bool &IsNeedWarning,
       // expr is "lambda at FilePath:Row:Col", which will cause compiling
       // failure. Current solution: use the location's hash value as its type.
       StringRef StrRef(Str);
-      if (StrRef.startswith("(lambda at")) {
+      if (StrRef.starts_with("(lambda at")) {
         Str = "class lambda_" + getHashAsString(Str).substr(0, 6);
       }
       appendString(OS, Str, ", ");

@@ -225,7 +225,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
                               PE = path::end(FilePath);
          PI != PE; ++PI) {
       StringRef Comp = *PI;
-      if (Comp.startswith(".")) {
+      if (Comp.starts_with(".")) {
         IsHidden = true;
         break;
       }
