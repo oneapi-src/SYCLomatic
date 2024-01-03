@@ -399,8 +399,19 @@ public:
   };
 
   template <typename Item> struct getScatterOffset {
-    int operator()(Item item, int i, int (&ranks)[VALUES_PER_THREAD]) {
-      int offset = ranks[i];
+    int* ranks_;
+    int ranks_size;
+    getScatterOffset(int size, const int* ranks): ranks_size(size){
+      ranks_ = new int[ranks_size];
+      for(int i = 0; i < ranks_size; i++){
+        ranks_[i] = ranks[i];
+      }
+    }
+    ~getScatterOffset(){
+      delete[] ranks_;
+    }
+    int operator()(Item item, int i) {
+      int offset = ranks_[i];
       return adjust_by_padding(offset);
     }
   };
@@ -423,30 +434,6 @@ public:
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
       int offset = offset_functor_fw(item, i);
-      buffer[offset] = keys[i];
-    }
-
-    item.barrier(sycl::access::fence_space::local_space);
-
-#pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = offset_functor_rv(item, i);
-      keys[i] = buffer[offset];
-    }
-  }
-
-  template <typename Item, typename offsetFunctorTypeFW,
-            typename offsetFunctorTypeRV>
-  __dpct_inline__ void helper_exchange(Item item, T (&keys)[VALUES_PER_THREAD],
-                                       offsetFunctorTypeFW &offset_functor_fw,
-                                       offsetFunctorTypeRV &offset_functor_rv,
-                                       int (&ranks)[VALUES_PER_THREAD]) {
-
-    T *buffer = reinterpret_cast<T *>(_local_memory);
-
-#pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = offset_functor_fw(item, i, ranks);
       buffer[offset] = keys[i];
     }
 
@@ -485,10 +472,10 @@ public:
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
 
-    getScatterOffset<Item> get_scatter_offset;
+    getScatterOffset<Item> get_scatter_offset(VALUES_PER_THREAD, ranks);
     getBlockedFromScatterOffset<Item> get_blocked_from_scatter_offset;
     helper_exchange(item, i, get_scatter_offset,
-                    get_blocked_from_scatter_offset, ranks);
+                    get_blocked_from_scatter_offset);
   }
 
   /// Rearrange elements from scatter order to striped order
@@ -497,10 +484,10 @@ public:
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
 
-    getScatterOffset<Item> get_scatter_offset;
+    getScatterOffset<Item> get_scatter_offset(VALUES_PER_THREAD, ranks);
     getBlockedFromStripedOffset<Item> get_blocked_from_striped_offset;
     helper_exchange(item, i, get_scatter_offset,
-                    get_blocked_from_striped_offset, ranks);
+                    get_blocked_from_striped_offset);
   }
 
 private:
