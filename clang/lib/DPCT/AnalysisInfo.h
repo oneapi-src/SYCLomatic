@@ -1896,9 +1896,8 @@ public:
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
   }
-  std::vector<std::shared_ptr<DpctFileInfo>> &
-  getCSourceFileExtensionIndexVector() {
-    return CSourceFileExtensionIndexVector;
+  std::vector<std::shared_ptr<DpctFileInfo>> &getCSourceFileInfo() {
+    return CSourceFileInfo;
   }
   static inline std::unordered_map<std::string,
                                    std::shared_ptr<PriorityReplInfo>> &
@@ -2149,7 +2148,7 @@ private:
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
   static std::vector<std::shared_ptr<DpctFileInfo>>
-      CSourceFileExtensionIndexVector;
+      CSourceFileInfo;
   static bool OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;

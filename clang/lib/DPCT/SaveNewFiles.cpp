@@ -159,6 +159,8 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName,
     if (FileType & SPT_CudaSource) {
       path::replace_extension(CanonicalPathStr, "dp.cpp");
     } else if (FileType & SPT_CppSource) {
+      // For c source files, the migrated file extension needs to wait until all
+      // replacements are generated to get the correct result.
       if (Extension == ".c") {
         auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FileName);
         if (FileInfo->hasCUDASyntax()) {
