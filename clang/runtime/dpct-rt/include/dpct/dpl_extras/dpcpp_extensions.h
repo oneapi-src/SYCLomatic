@@ -472,7 +472,7 @@ public:
 
     getScatterOffset<Item> get_scatter_offset(VALUES_PER_THREAD, ranks);
     getBlockedFromScatterOffset<Item> get_blocked_from_scatter_offset;
-    helper_exchange(item, i, get_scatter_offset,
+    helper_exchange(item, keys, get_scatter_offset,
                     get_blocked_from_scatter_offset);
   }
 
@@ -484,7 +484,7 @@ public:
 
     getScatterOffset<Item> get_scatter_offset(VALUES_PER_THREAD, ranks);
     getBlockedFromStripedOffset<Item> get_blocked_from_striped_offset;
-    helper_exchange(item, i, get_scatter_offset,
+    helper_exchange(item, keys, get_scatter_offset,
                     get_blocked_from_striped_offset);
   }
 
