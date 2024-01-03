@@ -16,6 +16,7 @@ namespace clang {
 namespace dpct {
 extern const std::string DpctAllContentStr;
 extern const std::string AtomicAllContentStr;
+extern const std::string BindlessImageAllContentStr;
 extern const std::string BlasUtilsAllContentStr;
 extern const std::string DnnlUtilsAllContentStr;
 extern const std::string DeviceAllContentStr;

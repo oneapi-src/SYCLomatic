@@ -2,8 +2,9 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/replace-dim3 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/replace-dim3/replace-dim3.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/replace-dim3/replace-dim3.dp.cpp -o %T/replace-dim3/replace-dim3.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/replace-dim3/replace-dim3.dp.cpp -o %T/replace-dim3/replace-dim3.dp.o %}
 
+#ifndef BUILD_TEST
 #include <cstdio>
 #include <algorithm>
 
@@ -282,3 +283,4 @@ void dim3_foo() {
         DIM3_DEFAULT_VAR(block6);
       });
 }
+#endif
