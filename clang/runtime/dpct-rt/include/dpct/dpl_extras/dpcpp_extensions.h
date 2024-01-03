@@ -399,17 +399,15 @@ public:
   };
 
   template <typename Item> struct getScatterOffset {
-    int* ranks_;
+    int *ranks_;
     int ranks_size;
-    getScatterOffset(int size, const int* ranks): ranks_size(size){
+    getScatterOffset(int size, const int *ranks) : ranks_size(size) {
       ranks_ = new int[ranks_size];
-      for(int i = 0; i < ranks_size; i++){
+      for (int i = 0; i < ranks_size; i++) {
         ranks_[i] = ranks[i];
       }
     }
-    ~getScatterOffset(){
-      delete[] ranks_;
-    }
+    ~getScatterOffset() { delete[] ranks_; }
     int operator()(Item item, int i) {
       int offset = ranks_[i];
       return adjust_by_padding(offset);
