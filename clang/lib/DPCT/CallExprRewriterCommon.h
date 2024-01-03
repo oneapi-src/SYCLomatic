@@ -154,7 +154,6 @@ public:
   }
 };
 
-
 class CastIfSpecialExpr {
   const Expr *Arg;
   const CallExpr *CE;
