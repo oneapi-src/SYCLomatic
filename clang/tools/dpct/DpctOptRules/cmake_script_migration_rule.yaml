@@ -356,3 +356,155 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
+# CUDA_LIBRARIES is cmake cuda reverved list variable, should be removed in SYCL
+- Rule: rule_target_link_libraries_CUDA_LIBRARIES
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
+  In: target_link_libraries(${CULibraries})
+  Out: target_link_libraries(${CULibraries})
+  Subrules:
+    CULibraries:
+      In: |
+        \${CUDA_LIBRARIES}
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_cuda_reserved_variable_CUDA_LIBRARIES"
+
+- Rule: rule_target_link_libraries_-lcublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: -lcublas_target_link_libraries
+  In: target_link_libraries(${CUDALibraries})
+  Out: target_link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: -lcublas
+      Out: -qmkl
+      MatchMode: Full
+      RuleId: "replace_-lcublas_with_qmkl"
+
+- Rule: rule_target_link_libraries_CUDA_cublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_cublas_target_link_libraries
+  In: target_link_libraries(${CUDALibraries})
+  Out: target_link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: "CUDA::cublas"
+      Out: -qmkl
+      MatchMode: Full
+      RuleId: "replace_CUDA_cublas_with_qmkl"
+
+# libsycl.so is linked by default as alternative to cuda_driver library, so removing here
+- Rule: rule_target_link_libraries_cuda_driver
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_driver_target_link_libraries
+  In: target_link_libraries(${CUDALibraries})
+  Out: target_link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: "CUDA::cuda_driver"
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_CUDA_driver"
+
+# libsycl.so is linked by default as alternative to cuda_driver library, so removing here
+- Rule: rule_target_link_libraries_cuda_rt
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cudart_target_link_libraries
+  In: target_link_libraries(${CUDALibraries})
+  Out: target_link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: "CUDA::cudart"
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_CUDA_cudart"
+
+- Rule: rule_target_link_libraries_cudnn
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cudnn_target_link_libraries
+  In: target_link_libraries(${CUDALibraries})
+  Out: target_link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: "cudnn"
+      Out: |
+        \${DNN_LIB}
+      MatchMode: Full
+      RuleId: "replace_cudnn_with_libdnn"
+
+# SYCL does not have mapping for nvrtc currently, so removing here
+- Rule: rule_target_link_libraries_nvrtc
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: nvrtc_target_link_libraries
+  In: target_link_libraries(${CUDALibraries})
+  Out: target_link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: "CUDA::nvrtc"
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_nvrtc"
+
+# SYCL does not have mapping for nvToolsExt currently, so removing here
+- Rule: rule_target_link_libraries_nvToolsExt
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: nvToolsExt_target_link_libraries
+  In: target_link_libraries(${CUDALibraries})
+  Out: target_link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: "CUDA::nvToolsExt"
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_nvToolsExt"
+
+# SYCL does not have mapping for libnvinfer currently, so removing here
+- Rule: rule_target_link_libraries_libnvinfer
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: libnvinfer_target_link_libraries
+  In: target_link_libraries(${CUDALibraries})
+  Out: target_link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: libnvinfer.so
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_libnvinfer"
+
+# SYCL does not have mapping for libnvonnxparser currently, so removing here
+- Rule: rule_target_link_libraries_libnvonnxparser
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: libnvonnxparser_target_link_libraries
+  In: target_link_libraries(${CUDALibraries})
+  Out: target_link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: libnvonnxparser.so
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_libnvonnxparser"
+
+# icpx: error: '-static-libstdc++' is not supported with '-fsycl', so removing here
+- Rule: rule_target_link_libraries_libstdc++
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: libstdc++_target_link_libraries
+  In: target_link_libraries(${StaticLibraries})
+  Out: target_link_libraries(${StaticLibraries})
+  Subrules:
+    StaticLibraries:
+      In: -static-libstdc++
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_-static-libstdc++"
