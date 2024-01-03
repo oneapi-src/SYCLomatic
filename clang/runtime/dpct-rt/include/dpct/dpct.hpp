@@ -25,6 +25,8 @@ template <int Arg> class dpct_kernel_scalar;
 #include "memory.hpp"
 #include "util.hpp"
 
+#include "bindless_images.hpp"
+
 #if defined(_MSC_VER)
 #define __dpct_align__(n) __declspec(align(n))
 #define __dpct_inline__ __forceinline

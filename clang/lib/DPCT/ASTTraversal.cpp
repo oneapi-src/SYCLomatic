@@ -6692,33 +6692,6 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Msg);
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
-  } else if (FuncName == "cudaDeviceEnablePeerAccess" ||
-             FuncName == "cudaDeviceDisablePeerAccess") {
-    std::string Msg =
-        "SYCL currently does not support memory access across peer devices.";
-    if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-             MapNames::ITFName.at(FuncName), Msg);
-      emplaceTransformation(new ReplaceStmt(CE, "0"));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             MapNames::ITFName.at(FuncName), Msg);
-      emplaceTransformation(new ReplaceStmt(CE, ""));
-    }
-  } else if (FuncName == "cudaDeviceCanAccessPeer") {
-    ExprAnalysis EA;
-    EA.analyze(CE->getArg(0));
-    auto Arg0Str = EA.getReplacedString();
-    std::string ReplStr{"*"};
-    ReplStr += Arg0Str;
-    ReplStr += " = 0";
-    if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
-      requestFeature(HelperFeatureEnum::device_ext);
-    }
-    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
-    report(CE->getBeginLoc(), Diagnostics::EXPLICIT_PEER_ACCESS, false,
-           MapNames::ITFName.at(FuncName));
   } else if (FuncName == "cudaIpcGetEventHandle" ||
              FuncName == "cudaIpcOpenEventHandle" ||
              FuncName == "cudaIpcGetMemHandle" ||
@@ -10023,8 +9996,45 @@ void MemoryMigrationRule::mallocMigration(
       requestFeature(HelperFeatureEnum::device_ext);
     }
   } else if (Name == "cudaMalloc3DArray") {
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      DerefExpr(C->getArg(0), C).print(OS);
+      OS << " = new " << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::image_mem("
+         << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::image_descriptor("
+         << ExprAnalysis::ref(C->getArg(2)) << ", ";
+      DerefExpr(C->getArg(1), C).print(OS);
+      OS << ".get_channel_order(), ";
+      DerefExpr(C->getArg(1), C).print(OS);
+      OS << ".get_channel_type()), ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      return emplaceTransformation(new ReplaceStmt(C, Replacement));
+    }
     mallocArrayMigration(C, Name, 3, *Result.SourceManager);
   } else if (Name == "cudaMallocArray") {
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      DerefExpr(C->getArg(0), C).print(OS);
+      OS << " = new " << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::image_mem("
+         << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::image_descriptor({"
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(3)) << "}, ";
+      DerefExpr(C->getArg(1), C).print(OS);
+      OS << ".get_channel_order(), ";
+      DerefExpr(C->getArg(1), C).print(OS);
+      OS << ".get_channel_type()), ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      return emplaceTransformation(new ReplaceStmt(C, Replacement));
+    }
     mallocArrayMigration(C, Name, 4, *Result.SourceManager);
     static std::string SizeClassName =
         DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 2);
@@ -10212,7 +10222,10 @@ void MemoryMigrationRule::arrayMigration(
 
   if (IsAsync) {
     NameRef = NameRef.drop_back(5 /* len of "Async" */);
-    ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
+    ReplaceStr =
+        DpctGlobalInfo::useExtBindlessImages()
+            ? MapNames::getDpctNamespace() + "experimental::async_dpct_memcpy"
+            : MapNames::getDpctNamespace() + "async_dpct_memcpy";
 
     auto StreamExpr = C->getArg(EndPos);
     std::string Str;
@@ -10230,47 +10243,143 @@ void MemoryMigrationRule::arrayMigration(
     }
     requestFeature(HelperFeatureEnum::device_ext);
   } else {
-    ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
+    ReplaceStr =
+        DpctGlobalInfo::useExtBindlessImages()
+            ? MapNames::getDpctNamespace() + "experimental::dpct_memcpy"
+            : MapNames::getDpctNamespace() + "dpct_memcpy";
     emplaceTransformation(removeArg(C, EndPos, SM));
     requestFeature(HelperFeatureEnum::device_ext);
   }
 
   if (NameRef == "cudaMemcpy2DArrayToArray") {
-    insertToPitchedData(C, 0);
-    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
-    insertToPitchedData(C, 3);
-    aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
-    aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", "
+         << ExprAnalysis::ref(C->getArg(5)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(6)) << ", "
+         << ExprAnalysis::ref(C->getArg(7)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      insertToPitchedData(C, 0);
+      aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+      insertToPitchedData(C, 3);
+      aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
+      aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
+    }
   } else if (NameRef == "cudaMemcpy2DFromArray") {
-    aggregatePitchedData(C, 0, 1, SM);
-    insertZeroOffset(C, 2);
-    insertToPitchedData(C, 2);
-    aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
-    aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(5)) << ", "
+         << ExprAnalysis::ref(C->getArg(6)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      aggregatePitchedData(C, 0, 1, SM);
+      insertZeroOffset(C, 2);
+      insertToPitchedData(C, 2);
+      aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
+      aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+    }
   } else if (NameRef == "cudaMemcpy2DToArray") {
-    insertToPitchedData(C, 0);
-    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
-    aggregatePitchedData(C, 3, 4, SM);
-    insertZeroOffset(C, 5);
-    aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", "
+         << ExprAnalysis::ref(C->getArg(5)) << ", "
+         << ExprAnalysis::ref(C->getArg(6)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      insertToPitchedData(C, 0);
+      aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+      aggregatePitchedData(C, 3, 4, SM);
+      insertZeroOffset(C, 5);
+      aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+    }
   } else if (NameRef == "cudaMemcpyArrayToArray") {
-    insertToPitchedData(C, 0);
-    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
-    insertToPitchedData(C, 3);
-    aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
-    aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", "
+         << ExprAnalysis::ref(C->getArg(5)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(6)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      insertToPitchedData(C, 0);
+      aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+      insertToPitchedData(C, 3);
+      aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
+      aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
+    }
   } else if (NameRef == "cudaMemcpyFromArray") {
-    aggregatePitchedData(C, 0, 4, SM, true);
-    insertZeroOffset(C, 1);
-    insertToPitchedData(C, 1);
-    aggregate3DVectorClassCtor(C, "id", 2, "0", SM);
-    aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      aggregatePitchedData(C, 0, 4, SM, true);
+      insertZeroOffset(C, 1);
+      insertToPitchedData(C, 1);
+      aggregate3DVectorClassCtor(C, "id", 2, "0", SM);
+      aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+    }
   } else if (NameRef == "cudaMemcpyToArray") {
-    insertToPitchedData(C, 0);
-    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
-    aggregatePitchedData(C, 3, 4, SM, true);
-    insertZeroOffset(C, 4);
-    aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
+         << ExprAnalysis::ref(C->getArg(0)) << ", "
+         << ExprAnalysis::ref(C->getArg(1)) << ", "
+         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(4)) << ", ";
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      emplaceTransformation(new ReplaceStmt(C, Replacement));
+    } else {
+      insertToPitchedData(C, 0);
+      aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+      aggregatePitchedData(C, 3, 4, SM, true);
+      insertZeroOffset(C, 4);
+      aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+    }
   }
 
   if (ULExpr) {
@@ -10499,6 +10608,14 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       emplaceTransformation(new ReplaceCalleeName(C, "free"));
     }
   } else if (Name == "cudaFreeArray") {
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      return emplaceTransformation(
+          new ReplaceStmt(C, MapNames::getClNamespace() +
+                                 "ext::oneapi::experimental::free_image_mem(" +
+                                 ExprAnalysis::ref(C->getArg(0)) +
+                                 "->get_handle(), {{NEEDREPLACEQ" +
+                                 std::to_string(Index) + "}})"));
+    }
     ExprAnalysis EA(C->getArg(0));
     EA.analyze();
     emplaceTransformation(
@@ -10698,7 +10815,12 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
   } else if (Name == "cudaGetChannelDesc") {
     std::ostringstream OS;
     printDerefOp(OS, C->getArg(0));
-    OS << " = " << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
+    OS << " = ";
+    if (DpctGlobalInfo::useExtBindlessImages())
+      OS << MapNames::getDpctNamespace() << "experimental::get_channel("
+         << ExprAnalysis::ref(C->getArg(1)) << ")";
+    else
+      OS << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
     requestFeature(HelperFeatureEnum::device_ext);
   } else if (Name == "cuMemGetInfo_v2" || Name == "cudaMemGetInfo") {
@@ -10781,7 +10903,13 @@ void MemoryMigrationRule::cudaArrayGetInfo(
   std::ostringstream OS;
   std::string Arg3Str = ExprAnalysis::ref(C->getArg(3));
   printDerefOp(OS, C->getArg(0));
-  OS << " = " << Arg3Str << "->get_channel();" << getNL() << IndentStr;
+  OS << " = ";
+  if (DpctGlobalInfo::useExtBindlessImages())
+    OS << MapNames::getDpctNamespace() << "experimental::get_channel("
+       << Arg3Str << ");";
+  else
+    OS << Arg3Str << "->get_channel();";
+  OS << getNL() << IndentStr;
   printDerefOp(OS, C->getArg(1));
   OS << " = " << Arg3Str << "->get_range();" << getNL() << IndentStr;
   printDerefOp(OS, C->getArg(2));
@@ -13114,7 +13242,7 @@ bool TextureRule::processTexVarDeclInDevice(const VarDecl *VD) {
       auto Tex = DpctGlobalInfo::getInstance().insertTextureInfo(VD);
 
       auto DataType = Tex->getType()->getDataType();
-      if (DataType.back() != '4') {
+      if (DataType.back() != '4' && !DpctGlobalInfo::useExtBindlessImages()) {
         report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
       }
 
@@ -13186,7 +13314,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
 
     auto DataType = Tex->getType()->getDataType();
-    if (DataType.back() != '4') {
+    if (DataType.back() != '4' && !DpctGlobalInfo::useExtBindlessImages()) {
       report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
     }
     emplaceTransformation(new ReplaceVarDecl(VD, Tex->getHostDeclString()));
@@ -13282,7 +13410,8 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
             new ReplaceStmt(CE, true, std::move(Result).value()));
       return;
     }
-    if (Name == "cudaCreateChannelDesc") {
+    if (Name == "cudaCreateChannelDesc" &&
+        !DpctGlobalInfo::useExtBindlessImages()) {
       auto Callee =
           dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImplicitAsWritten());
       if (Callee) {
@@ -13293,7 +13422,8 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
                              .getAsType()
                              .getCanonicalType()
                              .getAsString();
-          if (ChnType.back() != '4') {
+          if (ChnType.back() != '4' &&
+              !DpctGlobalInfo::useExtBindlessImages()) {
             report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
                    true);
           }
@@ -13331,9 +13461,12 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
     }
-    emplaceTransformation(new ReplaceToken(TL->getBeginLoc(), TL->getEndLoc(),
-                                           MapNames::getDpctNamespace() +
-                                               "image_wrapper_base_p"));
+    emplaceTransformation(new ReplaceToken(
+        TL->getBeginLoc(), TL->getEndLoc(),
+        DpctGlobalInfo::useExtBindlessImages()
+            ? MapNames::getClNamespace() +
+                  "ext::oneapi::experimental::sampled_image_handle"
+            : MapNames::getDpctNamespace() + "image_wrapper_base_p"));
     requestFeature(HelperFeatureEnum::device_ext);
   }
 }
