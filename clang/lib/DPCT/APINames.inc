@@ -2119,8 +2119,8 @@ ENTRY(cuCsubf, cuCsubf, true, NO_FLAG, P4, "comment")
 ENTRY(make_cuComplex, make_cuComplex, true, NO_FLAG, P4, "comment")
 ENTRY(make_cuDoubleComplex, make_cuDoubleComplex, true, NO_FLAG, P4, "comment")
 ENTRY(make_cuFloatComplex, make_cuFloatComplex, true, NO_FLAG, P4, "comment")
-ENTRY(__assert_fail, __assert_fail, false, NO_FLAG, P4, "comment")
-ENTRY(__assertfail, __assertfail, false, NO_FLAG, P4, "comment")
+ENTRY(__assert_fail, __assert_fail, true, NO_FLAG, P4, "Successful")
+ENTRY(__assertfail, __assertfail, true, NO_FLAG, P4, "Successful")
 
 // add driver APIs for v12.2
 // Multicast Object Management
