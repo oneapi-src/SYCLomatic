@@ -581,9 +581,10 @@ public:
                                    InputIterator>::type last) {
     auto n = ::std::distance(first, last);
     if (position == end()) {
-      resize(size() + n);
+      reserve(size() + n);
       // unsafe to call on device as we dont know the InputIterator type
-      ::std::copy(first, last, end() - n);
+      ::std::uninitialized_copy(first, last, end());
+      _size += n;
     } else {
       auto m = ::std::distance(position, end());
       // will throw if position is not inside active vector
