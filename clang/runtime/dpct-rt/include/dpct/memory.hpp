@@ -832,7 +832,6 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 /// \returns no return value.
 static inline void dpct_free(void *ptr,
                              sycl::queue &q = get_default_queue()) {
-  q.wait_and_throw();
   dpct::get_current_device().queues_wait_and_throw();
   detail::dpct_free(ptr, q);
 }

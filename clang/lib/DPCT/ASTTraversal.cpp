@@ -10582,7 +10582,14 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       if (hasManagedAttr(0)(C)) {
           ArgStr = "*(" + ArgStr + ".get_ptr())";
       }
-      Repl << MapNames::getDpctNamespace() + "dpct_free(" << ArgStr
+      std::string NewFuncName;
+      if (DpctGlobalInfo::useNoQueueDevice()) {
+          NewFuncName = MapNames::getClNamespace() + "free";
+      } else {
+          requestFeature(HelperFeatureEnum::device_ext);
+          NewFuncName = MapNames::getDpctNamespace() + "dpct_free";
+      }
+      Repl << NewFuncName << "(" << ArgStr
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {

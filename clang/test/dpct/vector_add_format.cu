@@ -54,13 +54,6 @@ int main()
   float Result[VECTOR_SIZE] = {};
   cudaMemcpy(Result, d_C, VECTOR_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
 
-  //     CHECK:  dpct::dpct_free(d_A, q_ct1);
-  // CHECK-NEXT:  dpct::dpct_free(d_B, q_ct1);
-  // CHECK-NEXT:  dpct::dpct_free(d_C, q_ct1);
-  cudaFree(d_A);
-  cudaFree(d_B);
-  cudaFree(d_C);
-
   for (int i = 0; i < VECTOR_SIZE; i++) {
     if (i % 16 == 0) {
       printf("\n");
