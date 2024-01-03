@@ -682,7 +682,6 @@ public:
 inline void dpct_free(void *ptr,
                       const sycl::queue &q) {
   if (ptr) {
-    dpct::get_current_device().queues_wait_and_throw();
 #ifdef DPCT_USM_LEVEL_NONE
     detail::mem_mgr::instance().mem_free(ptr);
 #else
@@ -833,6 +832,8 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 /// \returns no return value.
 static inline void dpct_free(void *ptr,
                              sycl::queue &q = get_default_queue()) {
+  q.wait_and_throw();
+  dpct::get_current_device().queues_wait_and_throw();
   detail::dpct_free(ptr, q);
 }
 
