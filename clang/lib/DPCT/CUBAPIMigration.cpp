@@ -162,12 +162,13 @@ void CubMemberCallRule::runRule(
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(callee(functionDecl(allOf(
-                   hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
-                              "SyncStream", "CurrentDevice", "DeviceCount",
-                              "DeviceCountUncached", "DeviceCountCachedValue",
-                              "PtxVersion", "PtxVersionUncached"),
-                   hasAncestor(namespaceDecl(hasName("cub")))))))
+      callExpr(
+          callee(functionDecl(allOf(
+              hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "BFE", "BFI", "LaneId",
+                         "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
+                         "DeviceCountUncached", "DeviceCountCachedValue",
+                         "PtxVersion", "PtxVersionUncached"),
+              hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
 }

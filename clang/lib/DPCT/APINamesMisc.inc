@@ -85,3 +85,5 @@ CONDITIONAL_FACTORY_ENTRY(
         ARG(2)),
     ENTRY_UNSUPPORTED("cudaOccupancyMaxPotentialBlockSize",
                       Diagnostics::API_NOT_MIGRATED))
+CALL_FACTORY_ENTRY("__assertfail", CALL("assert", LITERAL("0")))
+CALL_FACTORY_ENTRY("__assert_fail", CALL("assert", LITERAL("0")))
