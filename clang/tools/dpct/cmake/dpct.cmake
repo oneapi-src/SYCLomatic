@@ -81,16 +81,7 @@ set(SYCL_HAS_FP16 TRUE)
 
 # Replaces cuda_compile with it's equivalent SYCL repr
 macro(DPCT_COMPILE generated_files)
-  # list of dp.cpp source files
-  set(_sources "")
-
-  # segregate source files, library type and ignore nvcc options
-  foreach(arg ${ARGN})
-    # to confirm: what about cpp files?
-    if(${arg} MATCHES "\\.dp\\.(cpp|hpp)$")
-      list(APPEND _sources "${arg}")
-    endif()
-  endforeach()
+  DPCT_GET_SOURCES(_sources ${ARGN})
 
   # can't continue without list of source files
   if("${_sources}" STREQUAL "")
