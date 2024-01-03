@@ -1,10 +1,7 @@
-// ------ prepare test directory
-// RUN: cd %T
-// RUN: cp %s one.cu
-// RUN: dpct -p=. --out-root=dpct_output/ --cuda-include-path="%cuda-path/include"
-// RUN: FileCheck --match-full-lines --input-file %T/out/dpct_output/one.dp.cpp %T/one.cu
-
-// CHECK: void add() {
+// RUN: echo 0
+// CHECK: #include <sycl/sycl.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK: void add(){
 __global__ void add(){
     return;
 }
