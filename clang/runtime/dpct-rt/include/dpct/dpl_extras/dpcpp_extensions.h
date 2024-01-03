@@ -466,7 +466,6 @@ public:
     }
   }
 
-
   template <typename Item>
   __dpct_inline__ void
   sortBlockedToStriped(const Item &item, T (&keys)[VALUES_PER_THREAD],
