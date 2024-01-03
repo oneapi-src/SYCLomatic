@@ -4551,8 +4551,7 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
     return getStringForRegexDefaultQueueAndDevice(
         HelperFuncType::HFT_DefaultQueue, Index);
   case 'E': {
-    auto &Vec =
-        DpctGlobalInfo::getInstance().getCSourceFileInfo();
+    auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileInfo();
     return Vec[Index]->hasCUDASyntax() ? "c.dp.cpp" : "c";
   }
   case FreeQueriesInfo::FreeQueriesRegexCh:
