@@ -4,7 +4,6 @@
 // RUN: FileCheck --input-file %T/cublas-lambda/cublas-lambda.dp.cpp --match-full-lines cublas-lambda.cu
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cublas-lambda/cublas-lambda.dp.cpp -o %T/cublas-lambda/cublas-lambda.dp.o %}
 
-#ifndef BUILD_TEST
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
@@ -215,4 +214,3 @@ int foo() {
 void foo2() {
   cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 }
-#endif
