@@ -30,9 +30,8 @@ __global__ void VectorAddKernel(float* A, float* B, float* C)
 
 int main()
 {
-  //      CHECK:    sycl::device dev_ct1;
-  // CHECK-NEXT:    sycl::queue q_ct1(dev_ct1,
-  // CHECK-NEXT:                      sycl::property_list{sycl::property::queue::in_order()});
+  //      CHECK:    dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT:    sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   float *d_A, *d_B, *d_C;
 
   //     CHECK:  d_A = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
@@ -53,6 +52,13 @@ int main()
   // CHECK-NEXT:  q_ct1.memcpy(Result, d_C, VECTOR_SIZE * sizeof(float)).wait();
   float Result[VECTOR_SIZE] = {};
   cudaMemcpy(Result, d_C, VECTOR_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
+
+  //      CHECK:  dpct::dpct_free(d_A, q_ct1);
+  // CHECK-NEXT:  dpct::dpct_free(d_B, q_ct1);
+  // CHECK-NEXT:  dpct::dpct_free(d_C, q_ct1);
+  cudaFree(d_A);
+  cudaFree(d_B);
+  cudaFree(d_C);
 
   for (int i = 0; i < VECTOR_SIZE; i++) {
     if (i % 16 == 0) {
