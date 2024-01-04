@@ -130,7 +130,7 @@
   MatchMode: Partial
   CmakeSyntax: rule_cuda_compile_01
   In: cuda_compile(${libname} ${srcs} STATIC OPTIONS ${opts})
-  Out: dpct_compile(${libname} ${srcs})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
   Subrules:
     srcs:
       MatchMode: Full
@@ -143,7 +143,7 @@
   MatchMode: Partial
   CmakeSyntax: rule_cuda_compile_02
   In: cuda_compile(${libname} ${srcs} SHARED OPTIONS ${opts})
-  Out: dpct_compile(${libname} ${srcs})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
   Subrules:
     srcs:
       MatchMode: Full
@@ -157,7 +157,7 @@
   MatchMode: Partial
   CmakeSyntax: rule_cuda_compile_03
   In: cuda_compile(${libname} ${srcs} STATIC)
-  Out: dpct_compile(${libname} ${srcs})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
   Subrules:
     srcs:
       MatchMode: Full
@@ -170,7 +170,7 @@
   MatchMode: Partial
   CmakeSyntax: rule_cuda_compile_04
   In: cuda_compile(${libname} ${srcs} SHARED)
-  Out: dpct_compile(${libname} ${srcs})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
   Subrules:
     srcs:
       MatchMode: Full
@@ -184,7 +184,7 @@
   MatchMode: Partial
   CmakeSyntax: rule_cuda_compile_05
   In: cuda_compile(${libname} ${srcs})
-  Out: dpct_compile(${libname} ${srcs})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
   Subrules:
     srcs:
       MatchMode: Full

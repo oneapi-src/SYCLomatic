@@ -79,13 +79,13 @@ endmacro()
 message("dpct.cmake: SYCL_HAS_FP16 is set true by default.")
 set(SYCL_HAS_FP16 TRUE)
 
-# Replaces cuda_compile with it's equivalent SYCL repr
-macro(DPCT_COMPILE generated_files)
+# Return the list of object file paths generated for the given SYCL source files
+macro(DPCT_HELPER_SYCL_COMPILE generated_files)
   DPCT_GET_SOURCES(_sources ${ARGN})
 
   # can't continue without list of source files
   if("${_sources}" STREQUAL "")
-    message(FATAL "dpct: failed to find source files while migrating `cuda_compile`")
+    message(FATAL "Failed to find the source files while running the macro 'DPCT_HELPER_SYCL_COMPILE'")
   endif()
 
   DPCT_CREATE_BUILD_COMMAND("sycl_device" ${generated_files} ${_sources})
