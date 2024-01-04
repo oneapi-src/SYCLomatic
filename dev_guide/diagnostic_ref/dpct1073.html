@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1053,33 +1053,66 @@ which is used in the migrated code.</p>
 <p>Manually replace the non-migrated call with a DPC++ expression using the actual
 field values of the parameters.</p>
 <p>For example, this original CUDA* code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="o">*</span><span class="n">desc_ptr</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">  </span><span class="n">desc_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">4</span>
-<span class="linenos">5</span><span class="w">  </span><span class="n">Cuarray</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">6</span><span class="w">  </span><span class="n">cuArrayCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">arr</span><span class="p">,</span><span class="w"> </span><span class="n">desc_ptr</span><span class="p">)</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="kt">void</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="o">*</span><span class="n">desc_ptr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="w">  </span><span class="n">CUarray</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 5</span><span class="w">  </span><span class="n">cuArrayCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">arr</span><span class="p">,</span><span class="w"> </span><span class="n">desc_ptr</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="p">}</span><span class="w"></span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">CUarray_format</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="n">desc</span><span class="p">.</span><span class="n">Height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">  </span><span class="n">desc</span><span class="p">.</span><span class="n">Width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">w</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">11</span><span class="w">  </span><span class="n">desc</span><span class="p">.</span><span class="n">Format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">12</span><span class="w">  </span><span class="n">desc</span><span class="p">.</span><span class="n">NumChannels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">13</span><span class="w">  </span><span class="n">bar</span><span class="p">(</span><span class="o">&amp;</span><span class="n">desc</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">14</span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>results in the following migrated SYCL* code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="o">*</span><span class="n">desc_ptr</span><span class="p">;</span><span class="w"> </span><span class="c1">// line was not migrated and can be removed</span>
-<span class="linenos">2</span><span class="w">  </span><span class="kt">size_t</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">4</span><span class="w">  </span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">desc_channel_type_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">5</span><span class="w">  </span><span class="n">desc_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">desc</span><span class="p">;</span><span class="w"> </span><span class="c1">// line can be removed</span>
-<span class="linenos">6</span>
-<span class="linenos">7</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix_p</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">8</span><span class="w">  </span><span class="cm">/* DPCT1073 warning */</span><span class="w"></span>
-<span class="linenos">9</span><span class="w">  </span><span class="n">cuArrayCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">arr</span><span class="p">,</span><span class="w"> </span><span class="n">desc_ptr</span><span class="p">)</span><span class="w"> </span><span class="c1">// line was not migrated and needs to be replaced</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kt">size_t</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">desc_channel_type_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="cm">/*</span>
+<span class="linenos"> 6</span><span class="cm">DPCT1082:1: Migration of CUDA_ARRAY_DESCRIPTOR * type is not supported.</span>
+<span class="linenos"> 7</span><span class="cm">*/</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="kt">void</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="o">*</span><span class="n">desc_ptr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix_p</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos">11</span><span class="cm">  DPCT1073:0: The field values of parameter &#39;desc_ptr&#39; could not be deduced, so</span>
+<span class="linenos">12</span><span class="cm">  the call was not migrated. You need to update this code manually.</span>
+<span class="linenos">13</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos">14</span><span class="w">  </span><span class="n">cuArrayCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">arr</span><span class="p">,</span><span class="w"> </span><span class="n">desc_ptr</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">15</span><span class="p">}</span><span class="w"></span>
+<span class="linenos">16</span>
+<span class="linenos">17</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">18</span><span class="w">  </span><span class="n">desc_y_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">19</span><span class="w">  </span><span class="n">desc_x_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">w</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">20</span><span class="w">  </span><span class="n">desc_channel_type_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">21</span><span class="w">  </span><span class="n">desc_channel_num_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">22</span><span class="w">  </span><span class="n">bar</span><span class="p">(</span><span class="o">&amp;</span><span class="n">desc</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">23</span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>which is manually adjusted to:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="kt">size_t</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">  </span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">desc_channel_type_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">4</span>
-<span class="linenos">5</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix_p</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">6</span><span class="w">  </span><span class="n">arr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix</span><span class="p">(</span><span class="n">desc_channel_typ_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">);</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kt">size_t</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">desc_channel_type_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="kt">void</span><span class="w"> </span><span class="nf">bar</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix_p</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 7</span><span class="w">  </span><span class="n">arr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix</span><span class="p">(</span><span class="n">desc_channel_type_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">,</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">                               </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="p">}</span><span class="w"></span>
+<span class="linenos">10</span>
+<span class="linenos">11</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">12</span><span class="w">  </span><span class="n">desc_y_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">13</span><span class="w">  </span><span class="n">desc_x_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">w</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">14</span><span class="w">  </span><span class="n">desc_channel_type_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">15</span><span class="w">  </span><span class="n">desc_channel_num_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">16</span><span class="w">  </span><span class="n">bar</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">17</span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </section>

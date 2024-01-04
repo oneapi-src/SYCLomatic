@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1063,13 +1063,18 @@ the filter mode on image read.</p>
 </pre></div>
 </div>
 <p>results in the following migrated SYCL* code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">sampling_info</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="n">desc</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">filtering_mode</span><span class="o">::</span><span class="n">linear</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
-<span class="linenos">4</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_wrapper_base_p</span><span class="w"> </span><span class="n">obj</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">5</span><span class="w">  </span><span class="n">obj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">create_image_wrapper</span><span class="p">(...,</span><span class="w"> </span><span class="n">desc</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">6</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
-<span class="linenos">7</span><span class="w">  </span><span class="n">obj</span><span class="p">.</span><span class="n">read</span><span class="p">(...);</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">sampling_info</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="w">  </span><span class="n">desc</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">filtering_mode</span><span class="o">::</span><span class="n">linear</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_wrapper_base_p</span><span class="w"> </span><span class="n">obj</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 5</span><span class="w">  </span><span class="n">obj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">create_image_wrapper</span><span class="p">(...,</span><span class="w"> </span><span class="n">desc</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 7</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos"> 8</span><span class="cm">  DPCT1112:0: If the filter mode is set to &#39;linear&#39;, the behavior of image</span>
+<span class="linenos"> 9</span><span class="cm">  &quot;read&quot; may be different from &quot;tex1Dfetch&quot; in the original code. You may need</span>
+<span class="linenos">10</span><span class="cm">  to adjust the code.</span>
+<span class="linenos">11</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos">12</span><span class="w">  </span><span class="n">obj</span><span class="p">.</span><span class="n">read</span><span class="p">(...);</span><span class="w"></span>
 </pre></div>
 </div>
 <p>which is rewritten to:</p>

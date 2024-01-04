@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1050,6 +1050,62 @@ type, which may cause conflicts in the included SYCL header files.</p>
 <section id="suggestions-to-fix">
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this headline">#</a></h2>
 <p>Rename the macro to avoid conflicts with standard SYCL types.</p>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">// test.h</span>
+<span class="linenos"> 2</span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="n">cudaDeviceAttr</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="p">}</span><span class="w"></span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span><span class="c1">// test.cu</span>
+<span class="linenos"> 7</span><span class="cp">#define int2 int32_t</span>
+<span class="linenos"> 8</span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;test.h&quot;</span><span class="cp"></span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">11</span><span class="w">  </span><span class="n">int2</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">12</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">13</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">// test.h</span>
+<span class="linenos"> 2</span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;sycl/sycl.hpp&gt;</span><span class="cp"></span>
+<span class="linenos"> 3</span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;dpct/dpct.hpp&gt;</span><span class="cp"></span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 7</span><span class="p">}</span><span class="w"></span>
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span><span class="c1">// test.dp.cpp</span>
+<span class="linenos">10</span><span class="cm">/*</span>
+<span class="linenos">11</span><span class="cm">DPCT1077:0: &#39;int2&#39; redefines a standard SYCL type, which may cause conflicts.</span>
+<span class="linenos">12</span><span class="cm">*/</span><span class="w"></span>
+<span class="linenos">13</span><span class="cp">#define int2 int32_t</span>
+<span class="linenos">14</span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;test.h&quot;</span><span class="cp"></span>
+<span class="linenos">15</span>
+<span class="linenos">16</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">17</span><span class="w">  </span><span class="n">int2</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">18</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">19</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">// test.h</span>
+<span class="linenos"> 2</span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;sycl/sycl.hpp&gt;</span><span class="cp"></span>
+<span class="linenos"> 3</span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;dpct/dpct.hpp&gt;</span><span class="cp"></span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 7</span><span class="p">}</span><span class="w"></span>
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span><span class="c1">// test.dp.cpp</span>
+<span class="linenos">10</span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;test.h&quot;</span><span class="cp"></span>
+<span class="linenos">11</span>
+<span class="linenos">12</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">13</span><span class="w">  </span><span class="kt">int32_t</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">14</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">15</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
 </section>
 </section>
 

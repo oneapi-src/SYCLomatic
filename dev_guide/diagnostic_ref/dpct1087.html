@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1056,6 +1056,70 @@ in the migration command.</p>
 <p>Specify <code class="docutils literal notranslate"><span class="pre">--use-experimental-features=nd_range_barrier</span></code> in the migration command
 to use dpct helper function <code class="docutils literal notranslate"><span class="pre">nd_range_barrier</span></code> to migrate CUDA grid level
 synchronization.</p>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">kernel</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="k">namespace</span><span class="w"> </span><span class="nn">cg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nn">cooperative_groups</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">cg</span><span class="o">::</span><span class="n">grid_group</span><span class="w"> </span><span class="n">grid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cg</span><span class="o">::</span><span class="n">this_grid</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="n">grid</span><span class="p">.</span><span class="n">sync</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">5</span><span class="p">}</span><span class="w"></span>
+<span class="linenos">6</span>
+<span class="linenos">7</span><span class="kt">void</span><span class="w"> </span><span class="n">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">8</span><span class="w">  </span><span class="n">kernel</span><span class="o">&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="o">&gt;&gt;&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">9</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos"> 4</span><span class="cm">  DPCT1087:1: SYCL currently does not support cross group synchronization. You</span>
+<span class="linenos"> 5</span><span class="cm">  can specify &quot;--use-experimental-features=nd_range_barrier&quot; to use the dpct</span>
+<span class="linenos"> 6</span><span class="cm">  helper function nd_range_barrier to migrate this_grid().</span>
+<span class="linenos"> 7</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">  </span><span class="n">cg</span><span class="o">::</span><span class="n">grid_group</span><span class="w"> </span><span class="n">grid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cg</span><span class="o">::</span><span class="n">this_grid</span><span class="p">();</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos">10</span><span class="cm">  DPCT1087:0: SYCL currently does not support cross group synchronization. You</span>
+<span class="linenos">11</span><span class="cm">  can specify &quot;--use-experimental-features=nd_range_barrier&quot; to use the dpct</span>
+<span class="linenos">12</span><span class="cm">  helper function nd_range_barrier to migrate grid.sync().</span>
+<span class="linenos">13</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos">14</span><span class="w">  </span><span class="n">grid</span><span class="p">.</span><span class="n">sync</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">15</span><span class="p">}</span><span class="w"></span>
+<span class="linenos">16</span>
+<span class="linenos">17</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">18</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_in_order_queue</span><span class="p">().</span><span class="n">parallel_for</span><span class="p">(</span><span class="w"></span>
+<span class="linenos">19</span><span class="w">      </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_range</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">range</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="p">),</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">range</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="p">)),</span><span class="w"></span>
+<span class="linenos">20</span><span class="w">      </span><span class="p">[</span><span class="o">=</span><span class="p">](</span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">21</span><span class="w">        </span><span class="n">kernel</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">22</span><span class="w">      </span><span class="p">});</span><span class="w"></span>
+<span class="linenos">23</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">item_ct1</span><span class="p">,</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="w">            </span><span class="n">sycl</span><span class="o">::</span><span class="n">atomic_ref</span><span class="o">&lt;</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">memory_order</span><span class="o">::</span><span class="n">seq_cst</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">memory_scope</span><span class="o">::</span><span class="n">device</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">access</span><span class="o">::</span><span class="n">address_space</span><span class="o">::</span><span class="n">global_space</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sync_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">experimental</span><span class="o">::</span><span class="n">nd_range_barrier</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">sync_ct1</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 5</span><span class="p">}</span><span class="w"></span>
+<span class="linenos"> 6</span>
+<span class="linenos"> 7</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">global_memory</span><span class="o">&lt;</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="o">&gt;</span><span class="w"> </span><span class="n">d_sync_ct1</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="o">*</span><span class="n">sync_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d_sync_ct1</span><span class="p">.</span><span class="n">get_ptr</span><span class="p">(</span><span class="n">dpct</span><span class="o">::</span><span class="n">get_in_order_queue</span><span class="p">());</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_in_order_queue</span><span class="p">().</span><span class="n">memset</span><span class="p">(</span><span class="n">sync_ct1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">)).</span><span class="n">wait</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">11</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_in_order_queue</span><span class="p">()</span><span class="w"></span>
+<span class="linenos">12</span><span class="w">      </span><span class="p">.</span><span class="n">parallel_for</span><span class="p">(</span><span class="w"></span>
+<span class="linenos">13</span><span class="w">          </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_range</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">range</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="p">),</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">range</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="p">)),</span><span class="w"></span>
+<span class="linenos">14</span><span class="w">          </span><span class="p">[</span><span class="o">=</span><span class="p">](</span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">15</span><span class="w">            </span><span class="k">auto</span><span class="w"> </span><span class="n">atm_sync_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="linenos">16</span><span class="w">                </span><span class="n">sycl</span><span class="o">::</span><span class="n">atomic_ref</span><span class="o">&lt;</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">memory_order</span><span class="o">::</span><span class="n">seq_cst</span><span class="p">,</span><span class="w"></span>
+<span class="linenos">17</span><span class="w">                                 </span><span class="n">sycl</span><span class="o">::</span><span class="n">memory_scope</span><span class="o">::</span><span class="n">device</span><span class="p">,</span><span class="w"></span>
+<span class="linenos">18</span><span class="w">                                 </span><span class="n">sycl</span><span class="o">::</span><span class="n">access</span><span class="o">::</span><span class="n">address_space</span><span class="o">::</span><span class="n">global_space</span><span class="o">&gt;</span><span class="p">(</span><span class="w"></span>
+<span class="linenos">19</span><span class="w">                    </span><span class="n">sync_ct1</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span><span class="w"></span>
+<span class="linenos">20</span><span class="w">            </span><span class="n">kernel</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">atm_sync_ct1</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">21</span><span class="w">          </span><span class="p">})</span><span class="w"></span>
+<span class="linenos">22</span><span class="w">      </span><span class="p">.</span><span class="n">wait</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">23</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
 </section>
 </section>
 

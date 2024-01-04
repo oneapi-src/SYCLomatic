@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1072,18 +1072,33 @@ option of SYCLomatic to generate wrapped kernel functions:</p>
 memory at runtime. For the following example this can be ensured by setting
 <em>&lt;kernel library filename&gt;</em> to <code class="docutils literal notranslate"><span class="pre">library.so</span></code>.</p>
 <p>For example, this original CUDA code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loadFile</span><span class="p">(</span><span class="s">&quot;module.ptx&quot;</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="n">cuModuleLoadData</span><span class="p">(</span><span class="o">&amp;</span><span class="k">module</span><span class="p">,</span><span class="w"> </span><span class="n">image</span><span class="p">);</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">test</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">CUmodule</span><span class="w"> </span><span class="k">module</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loadFile</span><span class="p">(</span><span class="s">&quot;module.ptx&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="n">cuModuleLoadData</span><span class="p">(</span><span class="o">&amp;</span><span class="k">module</span><span class="p">,</span><span class="w"> </span><span class="n">image</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">5</span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>results in the following migrated SYCL code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loadFile</span><span class="p">(</span><span class="s">&quot;module.ptx&quot;</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="k">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">load_kernel_library</span><span class="p">(</span><span class="n">image</span><span class="p">);</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">test</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">kernel_library</span><span class="w"> </span><span class="k">module</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loadFile</span><span class="p">(</span><span class="s">&quot;module.ptx&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos">5</span><span class="cm">  DPCT1104:0: &#39;image&#39; should point to a dynamic library loaded in memory. The</span>
+<span class="linenos">6</span><span class="cm">  dynamic library should supply wrapped kernel functions.</span>
+<span class="linenos">7</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos">8</span><span class="w">  </span><span class="k">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">load_kernel_library_mem</span><span class="p">(</span><span class="n">image</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">9</span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>which is rewritten to:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loadFile</span><span class="p">(</span><span class="s">&quot;library.so&quot;</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="k">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">load_kernel_library</span><span class="p">(</span><span class="n">image</span><span class="p">);</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">test</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">kernel_library</span><span class="w"> </span><span class="k">module</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="c1">// &quot;library.so&quot; is compiled from the SYCL code which is migrated from CUDA code</span>
+<span class="linenos">4</span><span class="w">  </span><span class="c1">// used to build &quot;module.ptx&quot;</span>
+<span class="linenos">5</span><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loadFile</span><span class="p">(</span><span class="s">&quot;library.so&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">6</span><span class="w">  </span><span class="k">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">load_kernel_library_mem</span><span class="p">(</span><span class="n">image</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">7</span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </section>

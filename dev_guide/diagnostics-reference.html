@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1153,8 +1153,9 @@ You may need to rewrite the code.</p>
 </td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1031.html#dpct1031"><span class="std std-ref">DPCT1031</span></a></p></td>
-<td><p>SYCL currently does not support memory access across peer devices. The output
-parameter(s) are set to 0.</p>
+<td><p>Memory access across peer devices is an implementation-specific feature which
+may not be supported by some SYCL backends and compilers. The output parameter(s)
+are set to 0.</p>
 </td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1032.html#dpct1032"><span class="std std-ref">DPCT1032</span></a></p></td>
@@ -1490,8 +1491,7 @@ dimension is a multiple of <em>&lt;value of kernel sub-group size attribute&gt;<
 </td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1097.html#dpct1097"><span class="std std-ref">DPCT1097</span></a></p></td>
-<td><p>The function <em>&lt;backward function name&gt;</em> may require the workspace used to save intermediate results from function <em>&lt;forward function name&gt;</em>. By default, a workspace from <code class="docutils literal notranslate"><span class="pre">engine_ext</span></code> is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to
-rewrite this code.</p>
+<td><p>The function <em>&lt;backward function name&gt;</em> may require the workspace used to save intermediate results from function <em>&lt;forward function name&gt;</em>. By default, a workspace from <code class="docutils literal notranslate"><span class="pre">engine_ext</span></code> is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.</p>
 </td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1098.html#dpct1098"><span class="std std-ref">DPCT1098</span></a></p></td>
@@ -1502,7 +1502,7 @@ generated code for potential precision and/or performance issues.</p>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1099.html#dpct1099"><span class="std std-ref">DPCT1099</span></a></p></td>
 <td><p>Verify if the default value of the direction and placement used in the function
-<em>&lt;function name&gt;</em> is correct.</p>
+<em>&lt;function name&gt;</em> aligns with the related <code class="docutils literal notranslate"><span class="pre">compute</span></code> function call.</p>
 </td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1100.html#dpct1100"><span class="std std-ref">DPCT1100</span></a></p></td>
@@ -1582,7 +1582,7 @@ call <code class="docutils literal notranslate"><span class="pre">wait()</span><
 </td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1115.html#dpct1115"><span class="std std-ref">DPCT1115</span></a></p></td>
-<td><p>The <code class="docutils literal notranslate"><span class="pre">sycl::ext::oneapi::group_local_memory</span></code> is used to allocate group-local
+<td><p>The <code class="docutils literal notranslate"><span class="pre">sycl::ext::oneapi::group_local_memory_for_overwrite</span></code> is used to allocate group-local
 memory at the none kernel functor scope of a work-group data parallel kernel.
 You may need to adjust the code.</p>
 </td>

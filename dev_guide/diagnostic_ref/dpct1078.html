@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1053,6 +1053,36 @@ memory order to ensure correctness, replace <code class="docutils literal notran
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this headline">#</a></h2>
 <p>Replace <code class="docutils literal notranslate"><span class="pre">memory_order::acq_rel</span></code> with <code class="docutils literal notranslate"><span class="pre">memory_order::seq_cst</span></code> if stricter
 memory order is needed.</p>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">__device__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">foo_dev</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">__threadfence</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">5</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo_dev</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos"> 4</span><span class="cm">  DPCT1078:0: Consider replacing memory_order::acq_rel with</span>
+<span class="linenos"> 5</span><span class="cm">  memory_order::seq_cst for correctness if strong memory order restrictions are</span>
+<span class="linenos"> 6</span><span class="cm">  needed.</span>
+<span class="linenos"> 7</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">  </span><span class="n">sycl</span><span class="o">::</span><span class="n">atomic_fence</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">memory_order</span><span class="o">::</span><span class="n">acq_rel</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">memory_scope</span><span class="o">::</span><span class="n">device</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">10</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo_dev</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="c1">// Assuming strong memory order restrictions are need here</span>
+<span class="linenos">4</span><span class="w">  </span><span class="n">sycl</span><span class="o">::</span><span class="n">atomic_fence</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">memory_order</span><span class="o">::</span><span class="n">seq_cst</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">memory_scope</span><span class="o">::</span><span class="n">device</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">5</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">6</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
 </section>
 </section>
 

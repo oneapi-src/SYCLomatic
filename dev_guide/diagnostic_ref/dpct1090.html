@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1050,6 +1050,46 @@ SYCL*. These device properties are not migrated.</p>
 <section id="suggestions-to-fix">
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this headline">#</a></h2>
 <p>Review and rewrite the code manually.</p>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">cudaDeviceProp</span><span class="w"> </span><span class="n">properties</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">cudaGetDeviceProperties</span><span class="p">(</span><span class="o">&amp;</span><span class="n">properties</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">properties</span><span class="p">.</span><span class="n">regsPerBlock</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">5</span><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">t</span><span class="p">)</span><span class="w"></span>
+<span class="linenos">6</span><span class="w">    </span><span class="n">code</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="linenos">7</span><span class="w">  </span><span class="k">else</span><span class="w"></span>
+<span class="linenos">8</span><span class="w">    </span><span class="n">code</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="mi">2</span><span class="w"></span>
+<span class="linenos">9</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">device_info</span><span class="w"> </span><span class="n">properties</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_device_info</span><span class="p">(</span><span class="n">properties</span><span class="p">,</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">dev_mgr</span><span class="o">::</span><span class="n">instance</span><span class="p">().</span><span class="n">get_device</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos"> 5</span><span class="cm">  DPCT1090:0: SYCL does not support the device property that would be</span>
+<span class="linenos"> 6</span><span class="cm">  functionally compatible with regsPerBlock. It was not migrated. You need to</span>
+<span class="linenos"> 7</span><span class="cm">  rewrite the code.</span>
+<span class="linenos"> 8</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">properties</span><span class="p">.</span><span class="n">regsPerBlock</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">t</span><span class="p">)</span><span class="w"></span>
+<span class="linenos">11</span><span class="w">    </span><span class="n">code</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="linenos">12</span><span class="w">  </span><span class="k">else</span><span class="w"></span>
+<span class="linenos">13</span><span class="w">    </span><span class="n">code</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="mi">2</span><span class="w"></span>
+<span class="linenos">14</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">device_info</span><span class="w"> </span><span class="n">properties</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_device_info</span><span class="p">(</span><span class="n">properties</span><span class="p">,</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">dev_mgr</span><span class="o">::</span><span class="n">instance</span><span class="p">().</span><span class="n">get_device</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span><span class="w"></span>
+<span class="linenos">4</span>
+<span class="linenos">5</span><span class="w">  </span><span class="c1">// You need apply code path1 or path2 depending on the num of registers available on</span>
+<span class="linenos">6</span><span class="w">  </span><span class="c1">// the target hardware.</span>
+<span class="linenos">7</span><span class="w">  </span><span class="n">code</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="w"></span>
+<span class="linenos">8</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
 </section>
 </section>
 
