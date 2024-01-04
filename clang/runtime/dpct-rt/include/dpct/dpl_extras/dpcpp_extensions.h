@@ -374,6 +374,8 @@ public:
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
+  // TODO: Investigate if padding is required for performance, 
+  // and if specializations are required for specific target hardware.
   static size_t adjust_by_padding(size_t offset) {
 
     if constexpr (INSERT_PADDING) {
