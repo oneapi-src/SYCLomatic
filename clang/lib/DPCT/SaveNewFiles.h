@@ -62,12 +62,16 @@ void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
 bool rewriteDir(clang::tooling::UnifiedPath &FilePath, const clang::tooling::UnifiedPath& InRoot,
                 const clang::tooling::UnifiedPath& OutRoot);
 
-// Replace file name \p FileName with new migrated name.
+// Replace file name \p FileName with new migrated name. For c source files, the
+// file extension needs to wait until all replacements are generated to
+// get the correct result.
 void rewriteFileName(clang::tooling::UnifiedPath &FileName);
 // Replace file name \p FileName with new migrated name.
 // This overloaded function is added because in some cases, the \p FileName is
 // relative path, and absolute path \p FullPathName is needed to determine
-// whether the file is in database.
+// whether the file is in database. For c source files, the file
+// extension needs to wait until all replacements are generated to get the
+// correct result.
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
-                     const clang::tooling::UnifiedPath& FullPathName);
+                     const clang::tooling::UnifiedPath &FullPathName);
 #endif // DPCT_SAVE_NEW_FILES_H
