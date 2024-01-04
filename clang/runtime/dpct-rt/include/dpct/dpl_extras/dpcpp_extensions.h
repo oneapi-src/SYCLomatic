@@ -374,7 +374,7 @@ public:
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-  static int adjust_by_padding(int offset) {
+  static size_t adjust_by_padding(size_t offset) {
 
     if constexpr (INSERT_PADDING) {
       offset = detail::shr_add(offset, LOG_LOCAL_MEMORY_BANKS, offset);
@@ -384,16 +384,18 @@ public:
 
   template <typename Item> struct getStripedOffset {
     size_t operator()(Item item, int i) {
-      size_t offset = size_t(item.get_local_id(0) * VALUES_PER_THREAD) + size_t(i);
+      size_t offset =
+          size_t(item.get_local_id(0) * VALUES_PER_THREAD) + size_t(i);
       return adjust_by_padding(offset);
     }
   };
 
   template <typename Item> struct getBlockedOffset {
     size_t operator()(Item item, int i) {
-      size_t offset = size_t(i * item.get_local_range(2) * item.get_local_range(1) *
-                       item.get_local_range(0)) +
-                   item.get_local_id(0);
+      size_t offset =
+          size_t(i * item.get_local_range(2) * item.get_local_range(1) *
+                 item.get_local_range(0)) +
+          item.get_local_id(0);
       return adjust_by_padding(offset);
     }
   };
@@ -401,15 +403,15 @@ public:
   template <typename Item, typename Iterator> struct getScatterOffset {
     Iterator begin;
     Iterator end;
-    getScatterOffset(const int* ranks){
+    getScatterOffset(const int *ranks) {
       begin = ranks;
-      end = ranks + sizeof(ranks)/sizeof(ranks[0]);
+      end = ranks + sizeof(ranks) / sizeof(ranks[0]);
     }
     ~getScatterOffset() {}
     size_t operator()(Item item, int i) const {
-      Iterator it = begin + i ; 
-      if (it >= begin && it < end){
-        size_t offset = size_t(*it);  
+      Iterator it = begin + i;
+      if (it >= begin && it < end) {
+        size_t offset = size_t(*it);
       }
       return adjust_by_padding(offset);
     }
@@ -445,8 +447,7 @@ public:
 
     getBlockedOffset<Item> get_blocked_offset;
     getStripedOffset<Item> get_striped_offset;
-    helper_exchange(item, keys, get_blocked_offset,
-                    get_striped_offset);
+    helper_exchange(item, keys, get_blocked_offset, get_striped_offset);
   }
 
   /// Rearrange elements from striped order to blocked order
@@ -456,8 +457,7 @@ public:
 
     getStripedOffset<Item> get_striped_offset;
     getBlockedOffset<Item> get_blocked_offset;
-    helper_exchange(item, keys, get_striped_offset,
-                    get_blocked_offset);
+    helper_exchange(item, keys, get_striped_offset, get_blocked_offset);
   }
 
   /// Rearrange elements from rank order to blocked order
@@ -466,10 +466,9 @@ public:
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
 
-    getScatterOffset<Item, int*> get_scatter_offset(ranks);
+    getScatterOffset<Item, int *> get_scatter_offset(ranks);
     getStripedOffset<Item> get_striped_offset;
-    helper_exchange(item, keys, get_scatter_offset,
-                    get_striped_offset);
+    helper_exchange(item, keys, get_scatter_offset, get_striped_offset);
   }
 
   /// Rearrange elements from scatter order to striped order
@@ -478,10 +477,9 @@ public:
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
 
-    getScatterOffset<Item, int*> get_scatter_offset(ranks);
+    getScatterOffset<Item, int *> get_scatter_offset(ranks);
     getBlockedOffset<Item> get_blocked_offset;
-    helper_exchange(item, keys, get_scatter_offset,
-                    get_blocked_offset);
+    helper_exchange(item, keys, get_scatter_offset, get_blocked_offset);
   }
 
 private:
