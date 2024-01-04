@@ -403,15 +403,16 @@ public:
   template <typename Item, typename Iterator> struct getScatterOffset {
     Iterator begin;
     Iterator end;
-    getScatterOffset(const int *ranks) {
+    getScatterOffset(const int (&ranks)[VALUES_PER_THREAD]) {
       begin = ranks;
-      end = ranks + sizeof(ranks) / sizeof(ranks[0]);
+      end = ranks + VALUES_PER_THREAD;
     }
     ~getScatterOffset() {}
     size_t operator()(Item item, int i) const {
       Iterator it = begin + i;
+      size_t offset;
       if (it >= begin && it < end) {
-        size_t offset = size_t(*it);
+        offset = size_t(*it);
       }
       return adjust_by_padding(offset);
     }
