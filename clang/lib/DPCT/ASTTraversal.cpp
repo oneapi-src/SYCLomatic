@@ -8482,7 +8482,7 @@ void KernelCallRule::runRule(
           "dpct::experimental::gen_prolog_API_CP" + DebugArgsString, 0, true));
       emplaceTransformation(new InsertText(
           KCallSpellingRange.first,
-          "dpct::experimental::gen_epilog_API_CP" + DebugArgsStringSYCL, 0, false));
+          "dpct::experimental::gen_prolog_API_CP" + DebugArgsStringSYCL, 0, false));
       emplaceTransformation(new InsertText(
           EpilogLocation,
           "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0, true));
@@ -8490,11 +8490,11 @@ void KernelCallRule::runRule(
           EpilogLocation,
           "dpct::experimental::gen_epilog_API_CP" + DebugArgsStringSYCL, 0, false));
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
-                                                 "dpct/debug/debug_helper.hpp");
+                                                 "dpct/codepin/codepin.hpp");
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
                                                  "generated_schema.hpp");
       DpctGlobalInfo::getInstance().insertHeader(
-          KCall->getBeginLoc(), "dpct/debug/debug_helper.hpp", true);
+          KCall->getBeginLoc(), "dpct/codepin/codepin.hpp", true);
       DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
                                                  "generated_schema.hpp", true);
     }
@@ -9823,9 +9823,9 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
             "] = " + ExprAnalysis::ref(C->getArg(AllocMemSizeLoc)) + ";",
         0, false));
     DpctGlobalInfo::getInstance().insertHeader(
-        C->getBeginLoc(), "dpct/debug/debug_helper.hpp", true);
+        C->getBeginLoc(), "dpct/codepin/codepin.hpp", true);
     DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
-                                               "dpct/debug/debug_helper.hpp");
+                                               "dpct/codepin/codepin.hpp");
   }
   return;
 }

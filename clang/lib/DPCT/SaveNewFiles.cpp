@@ -873,7 +873,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedP
         getNL() + dpct::DpctGlobalInfo::getInstance().SchemaFileContentCUDA +
         getNL() + "class Init {" + getNL() + "public:" + getNL() +
         "  Init() {" + getNL() +
-        "    dpct::experimental::parse_type_schema_str(type_schema_array);" +
+        "    dpct::experimental::detail::parse_type_schema_str(type_schema_array);" +
         getNL() + "  }" + getNL() + "};" + getNL() + "static Init init;";
 
     SchemaStreamCUDA << SchemaCUDA;
@@ -902,7 +902,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedP
         getNL() + dpct::DpctGlobalInfo::getInstance().SchemaFileContentSYCL +
         getNL() + "class Init {" + getNL() + "public:" + getNL() +
         "  Init() {" + getNL() +
-        "    dpct::experimental::parse_type_schema_str(type_schema_array);" +
+        "    dpct::experimental::detail::parse_type_schema_str(type_schema_array);" +
         getNL() + "  }" + getNL() + "};" + getNL() + "static Init init;";
     SchemaStreamSYCL << SchemaSYCL;
   }
