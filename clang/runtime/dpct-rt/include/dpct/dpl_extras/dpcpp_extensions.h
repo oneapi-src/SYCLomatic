@@ -374,7 +374,7 @@ public:
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-  // TODO: Investigate if padding is required for performance, 
+  // TODO: Investigate if padding is required for performance,
   // and if specializations are required for specific target hardware.
   static size_t adjust_by_padding(size_t offset) {
 
@@ -386,29 +386,25 @@ public:
 
   template <typename Item> struct getStripedOffset {
     size_t operator()(Item item, int i) {
-      size_t offset =
-          item.get_local_id(0) * VALUES_PER_THREAD + i;
+      size_t offset = item.get_local_id(0) * VALUES_PER_THREAD + i;
       return adjust_by_padding(offset);
     }
   };
 
   template <typename Item> struct getBlockedOffset {
     size_t operator()(Item item, int i) {
-      size_t offset =
-          i * item.get_local_range(2) * item.get_local_range(1) *
-                 item.get_local_range(0) +
-          item.get_local_id(0);
+      size_t offset = i * item.get_local_range(2) * item.get_local_range(1) *
+                          item.get_local_range(0) +
+                      item.get_local_id(0);
       return adjust_by_padding(offset);
     }
   };
 
   template <typename Item, typename Iterator> struct getScatterOffset {
     Iterator begin;
-    getScatterOffset(const int (&ranks)[VALUES_PER_THREAD]) {
-      begin = ranks;
-    }
+    getScatterOffset(const int (&ranks)[VALUES_PER_THREAD]) { begin = ranks; }
     size_t operator()(Item item, int i) const {
-      // iterator i is expected to be within bounds [0,VALUES_PER_THREAD) 
+      // iterator i is expected to be within bounds [0,VALUES_PER_THREAD)
       return adjust_by_padding(begin[i]);
     }
   };
