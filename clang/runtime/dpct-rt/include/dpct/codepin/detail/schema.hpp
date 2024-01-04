@@ -447,7 +447,7 @@ void gen_log_API_CP(const std::string &api_name, Args... args) {
   } else {
     api_index[api_name]++;
   }
-  std::string new_api_name = api_name + std::to_string(api_index[api_name]);
+  std::string new_api_name = api_name + ":" + std::to_string(api_index[api_name]);
   std::string log;
   process_var(log, args...);
   if (log.back() == ',')
