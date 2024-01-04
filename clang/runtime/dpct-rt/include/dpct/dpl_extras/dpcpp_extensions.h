@@ -383,15 +383,15 @@ public:
   }
 
   template <typename Item> struct getStripedOffset {
-    int operator()(Item item, int i) {
-      int offset = int(item.get_local_id(0) * VALUES_PER_THREAD) + i;
+    size_t operator()(Item item, int i) {
+      size_t offset = size_t(item.get_local_id(0) * VALUES_PER_THREAD) + size_t(i);
       return adjust_by_padding(offset);
     }
   };
 
   template <typename Item> struct getBlockedOffset {
-    int operator()(Item item, int i) {
-      int offset = int(i * item.get_local_range(2) * item.get_local_range(1) *
+    size_t operator()(Item item, int i) {
+      size_t offset = size_t(i * item.get_local_range(2) * item.get_local_range(1) *
                        item.get_local_range(0)) +
                    item.get_local_id(0);
       return adjust_by_padding(offset);
@@ -408,8 +408,8 @@ public:
       }
     }
     ~getScatterOffset() { delete[] ranks_; }
-    int operator()(Item item, int i) {
-      int offset = ranks_[i];
+    size_t operator()(Item item, int i) {
+      size_t offset = size_t(ranks_[i]);
       return adjust_by_padding(offset);
     }
   };
@@ -424,7 +424,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = offset_functor_fw(item, i);
+      size_t offset = offset_functor_fw(item, i);
       buffer[offset] = keys[i];
     }
 
@@ -432,7 +432,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; i++) {
-      int offset = offset_functor_rv(item, i);
+      size_t offset = offset_functor_rv(item, i);
       keys[i] = buffer[offset];
     }
   }
@@ -444,7 +444,8 @@ public:
 
     getBlockedOffset<Item> get_blocked_offset;
     getStripedOffset<Item> get_striped_offset;
-    helper_exchange(item, keys, get_blocked_offset, get_striped_offset);
+    helper_exchange(item, keys, get_blocked_offset,
+                    get_striped_offset);
   }
 
   /// Rearrange elements from striped order to blocked order
@@ -454,7 +455,8 @@ public:
 
     getStripedOffset<Item> get_striped_offset;
     getBlockedOffset<Item> get_blocked_offset;
-    helper_exchange(item, keys, get_striped_offset, get_blocked_offset);
+    helper_exchange(item, keys, get_striped_offset,
+                    get_blocked_offset);
   }
 
   /// Rearrange elements from rank order to blocked order
