@@ -98,7 +98,7 @@ else()
 endif()
 
 # Link MKL library to target
-macro(DPCT_ADD_MKL_TO_TARGET target)
+macro(DPCT_HELPER_ADD_MKL_TO_TARGET target)
     if(WIN32)
         target_link_libraries(${target} mkl_sycl_dll.lib mkl_intel_ilp64_dll.lib mkl_tbb_thread_dll.lib mkl_core_dll.lib OpenCL.lib)
     elseif(UNIX AND NOT APPLE)

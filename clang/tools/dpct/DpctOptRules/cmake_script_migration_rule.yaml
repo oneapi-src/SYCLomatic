@@ -534,5 +534,5 @@
   Priority: Fallback
   CmakeSyntax: cuda_add_cufft_to_target
   In: cuda_add_cufft_to_target(${target})
-  Out: dpct_add_mkl_to_target(${target})
+  Out: dpct_helper_add_mkl_to_target(${target})
 
