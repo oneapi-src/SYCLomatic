@@ -154,13 +154,11 @@ After building the SYCLomatic, you can run the lit test by:
 ninja check-clang-c2s
 ```
 
-### Run in-tree build LIT tests (Linux Only)
-After building the SYCLomatic, you can run the build lit by
+Or to build the migrated lit is **optional**, it will depend on SYCL compiler available in testing environment.
 ```
-export BUILD_LIT=TRUE
+export BUILD_LIT=TRUE  # if you want to enable the build test of migrated SYCL files from lit tests.
 ninja check-clang-c2s
 ```
-
 
 ### Run end to end test suite (Recommend for contributors)
 
