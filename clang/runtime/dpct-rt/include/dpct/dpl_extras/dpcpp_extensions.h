@@ -385,7 +385,7 @@ public:
   template <typename Item> struct getStripedOffset {
     size_t operator()(Item item, int i) {
       size_t offset =
-          size_t(item.get_local_id(0) * VALUES_PER_THREAD) + size_t(i);
+          item.get_local_id(0) * VALUES_PER_THREAD + i;
       return adjust_by_padding(offset);
     }
   };
@@ -407,7 +407,6 @@ public:
       begin = ranks;
       end = ranks + VALUES_PER_THREAD;
     }
-    ~getScatterOffset() {}
     size_t operator()(Item item, int i) const {
       Iterator it = begin + i;
       size_t offset;
