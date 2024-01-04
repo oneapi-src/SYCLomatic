@@ -419,7 +419,7 @@ public:
     T *buffer = reinterpret_cast<T *>(_local_memory);
 
 #pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+    for (size_t i = 0; i < VALUES_PER_THREAD; i++) {
       size_t offset = offset_functor_fw(item, i);
       buffer[offset] = keys[i];
     }
@@ -427,7 +427,7 @@ public:
     item.barrier(sycl::access::fence_space::local_space);
 
 #pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; i++) {
+    for (size_t i = 0; i < VALUES_PER_THREAD; i++) {
       size_t offset = offset_functor_rv(item, i);
       keys[i] = buffer[offset];
     }
