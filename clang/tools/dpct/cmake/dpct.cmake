@@ -81,12 +81,12 @@ set(SYCL_HAS_FP16 TRUE)
 
 # Return the list of object file paths generated for the given SYCL source files
 macro(DPCT_HELPER_SYCL_COMPILE generated_files)
-  DPCT_GET_SOURCES(_sources ${ARGN})
+  _DPCT_GET_SOURCES(_sources ${ARGN})
 
   # can't continue without list of source files
   if("${_sources}" STREQUAL "")
     message(FATAL "Failed to find the source files while running the macro 'DPCT_HELPER_SYCL_COMPILE'")
   endif()
 
-  DPCT_CREATE_BUILD_COMMAND("sycl_device" ${generated_files} ${_sources})
+  _DPCT_CREATE_BUILD_COMMAND("sycl_device" ${generated_files} ${_sources})
 endmacro()
