@@ -6254,8 +6254,9 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
         "cudaDeviceGetPCIBusId", "cudaGetDevice", "cudaDeviceSetLimit",
         "cudaGetLastError", "cudaPeekAtLastError", "cudaDeviceSynchronize",
-        "cudaThreadSynchronize", "cudnnGetErrorString", "cudaGetErrorString", "cudaGetErrorName",
-        "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
+        "cudaThreadSynchronize", "cudnnGetErrorString", "cudaGetErrorString",
+        "cudaGetErrorName", "cudaDeviceSetCacheConfig",
+        "cudaDeviceGetCacheConfig", "clock",
         "cudaOccupancyMaxPotentialBlockSize", "cudaThreadSetLimit",
         "cudaFuncSetCacheConfig", "cudaThreadExit", "cudaDeviceGetLimit",
         "cudaDeviceSetSharedMemConfig", "cudaIpcCloseMemHandle",
@@ -6263,11 +6264,12 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaIpcOpenEventHandle", "cudaIpcOpenMemHandle", "cudaSetDeviceFlags",
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
-        "cudaRuntimeGetVersion", "clock64",
+        "cudaRuntimeGetVersion", "clock64", "__nanosleep",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
-        "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaFuncSetAttribute");
+        "cudaStreamSetAttribute", "cudaStreamGetAttribute",
+        "cudaFuncSetAttribute");
   };
 
   MF.addMatcher(
@@ -6569,7 +6571,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
-  } else if (FuncName == "clock" || FuncName == "clock64") {
+  } else if (FuncName == "clock" || FuncName == "clock64" ||
+             FuncName == "__nanosleep") {
     if (CE->getDirectCallee()->hasAttr<CUDAGlobalAttr>() ||
         CE->getDirectCallee()->hasAttr<CUDADeviceAttr>()) {
       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
@@ -15023,6 +15026,7 @@ void CompatWithClangRule::runRule(
 }
 
 REGISTER_RULE(CompatWithClangRule, PassKind::PK_Migration)
+
 void AssertRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("__assert_fail", "__assertfail");
