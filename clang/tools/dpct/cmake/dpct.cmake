@@ -6,7 +6,7 @@
 #
 #===----------------------------------------------------------------------===//
 
-macro(DPCT_GET_SOURCES _sources)
+macro(_DPCT_GET_SOURCES _sources)
   set( ${_sources} )
   foreach(arg ${ARGN})
     # Assume arg is a source file
@@ -14,7 +14,7 @@ macro(DPCT_GET_SOURCES _sources)
   endforeach()
 endmacro()
 
-macro(DPCT_CREATE_BUILD_COMMAND sycl_target generated_files)
+macro(_DPCT_CREATE_BUILD_COMMAND sycl_target generated_files)
   set(_argn_list "${ARGN}")
   set(_generated_files "")
   set(generated_extension ${CMAKE_CXX_OUTPUT_EXTENSION})
@@ -60,19 +60,19 @@ macro(DPCT_CREATE_BUILD_COMMAND sycl_target generated_files)
   set(${generated_files} ${_generated_files})
 endmacro()
 
-macro(DPCT_COMPILE_SYCL_CODE_IMP sycl_target generated_files)
+macro(_DPCT_COMPILE_SYCL_CODE_IMP sycl_target generated_files)
   set(_sycl_target "${sycl_target}")
-  DPCT_GET_SOURCES(_sources ${ARGN})
+  _DPCT_GET_SOURCES(_sources ${ARGN})
 
   # Create custom command for each cpp source file
-  DPCT_CREATE_BUILD_COMMAND( ${_sycl_target} _generated_files ${_sources})
+  _DPCT_CREATE_BUILD_COMMAND( ${_sycl_target} _generated_files ${_sources})
 
   set( ${generated_files} ${_generated_files})
 endmacro()
 
 # Return generated device code files from input SYCL source files
-macro(DPCT_COMPILE_SYCL_CODE generated_files)
-  DPCT_COMPILE_SYCL_CODE_IMP(sycl_device ${generated_files} ${ARGN})
+macro(DPCT_HELPER_COMPILE_SYCL_CODE generated_files)
+  _DPCT_COMPILE_SYCL_CODE_IMP(sycl_device ${generated_files} ${ARGN})
 endmacro()
 
 # Always set SYCL_HAS_FP16 to true to assume SYCL device to support float16

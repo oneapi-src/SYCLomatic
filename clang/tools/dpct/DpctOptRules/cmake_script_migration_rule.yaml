@@ -104,7 +104,7 @@
   Priority: Fallback
   CmakeSyntax: cuda_compile_ptx
   In: cuda_compile_ptx(${device} ${value})
-  Out: dpct_compile_sycl_code(${device} ${value})
+  Out: dpct_helper_compile_sycl_code(${device} ${value})
   Subrules:
     value:
       MatchMode: Full
