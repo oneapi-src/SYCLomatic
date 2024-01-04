@@ -50,6 +50,7 @@
 // DASH-NEXT: --stop-on-parse-err
 // DASH-NEXT: --suppress-warnings
 // DASH-NEXT: --suppress-warnings-all
+// DASH-NEXT: --sycl-file-extension=
 // DASH-NEXT: --sycl-named-lambda
 // DASH-NEXT: --use-dpcpp-extensions=
 // DASH-NEXT: --use-experimental-features=
