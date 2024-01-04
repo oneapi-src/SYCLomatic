@@ -405,15 +405,10 @@ public:
     Iterator end;
     getScatterOffset(const int (&ranks)[VALUES_PER_THREAD]) {
       begin = ranks;
-      end = ranks + VALUES_PER_THREAD;
     }
     size_t operator()(Item item, int i) const {
-      Iterator it = begin + i;
-      size_t offset;
-      if (it >= begin && it < end) {
-        offset = *it;
-      }
-      return adjust_by_padding(offset);
+      // iterator i is expected to be within bounds [0,VALUES_PER_THREAD) 
+      return adjust_by_padding(begin[i]);
     }
   };
 
