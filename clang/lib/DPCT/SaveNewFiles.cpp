@@ -162,7 +162,7 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName,
     else if (FileType & SPT_CppSource)
       path::replace_extension(CanonicalPathStr,
                               Extension +
-                                DpctGlobalInfo::getSYCLSourceExtension());
+                                  DpctGlobalInfo::getSYCLSourceExtension());
     else if (FileType & SPT_CudaHeader)
       path::replace_extension(CanonicalPathStr,
                               DpctGlobalInfo::getSYCLHeaderExtension());
