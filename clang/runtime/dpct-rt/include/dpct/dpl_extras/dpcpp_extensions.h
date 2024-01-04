@@ -402,7 +402,6 @@ public:
 
   template <typename Item, typename Iterator> struct getScatterOffset {
     Iterator begin;
-    Iterator end;
     getScatterOffset(const int (&ranks)[VALUES_PER_THREAD]) {
       begin = ranks;
     }
