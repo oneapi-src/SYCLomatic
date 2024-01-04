@@ -843,23 +843,23 @@ public:
     return SYCLHeaderExtension;
   }
   static inline void setSYCLFileExtensioni(SYCLFileExtensionEnum extension) {
-    switch(extension) {
-      case SYCLFileExtensionEnum::DP_CPP:
-        SYCLSourceExtension = ".dp.cpp";
-        SYCLHeaderExtension = ".dp.hpp";
-        break;
-      case SYCLFileExtensionEnum::SYCL_CPP:
-        SYCLSourceExtension = ".sycl.cpp";
-        SYCLHeaderExtension = ".sycl.hpp";
-        break;
-      case SYCLFileExtensionEnum::CPP:
-        SYCLSourceExtension = ".cpp";
-        SYCLHeaderExtension = ".hpp";
-        break;
-      default:
-        SYCLSourceExtension = ".dp.cpp";
-        SYCLHeaderExtension = ".dp.hpp";
-        break;
+    switch (extension) {
+    case SYCLFileExtensionEnum::DP_CPP:
+      SYCLSourceExtension = ".dp.cpp";
+      SYCLHeaderExtension = ".dp.hpp";
+      break;
+    case SYCLFileExtensionEnum::SYCL_CPP:
+      SYCLSourceExtension = ".sycl.cpp";
+      SYCLHeaderExtension = ".sycl.hpp";
+      break;
+    case SYCLFileExtensionEnum::CPP:
+      SYCLSourceExtension = ".cpp";
+      SYCLHeaderExtension = ".hpp";
+      break;
+    default:
+      SYCLSourceExtension = ".dp.cpp";
+      SYCLHeaderExtension = ".dp.hpp";
+      break;
     }
   }
   // TODO: implement one of this for each source language.
