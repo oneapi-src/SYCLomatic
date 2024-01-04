@@ -393,8 +393,8 @@ public:
   template <typename Item> struct getBlockedOffset {
     size_t operator()(Item item, int i) {
       size_t offset =
-          size_t(i * item.get_local_range(2) * item.get_local_range(1) *
-                 item.get_local_range(0)) +
+          i * item.get_local_range(2) * item.get_local_range(1) *
+                 item.get_local_range(0) +
           item.get_local_id(0);
       return adjust_by_padding(offset);
     }
@@ -412,7 +412,7 @@ public:
       Iterator it = begin + i;
       size_t offset;
       if (it >= begin && it < end) {
-        offset = size_t(*it);
+        offset = *it;
       }
       return adjust_by_padding(offset);
     }
