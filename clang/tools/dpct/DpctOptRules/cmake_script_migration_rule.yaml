@@ -271,7 +271,7 @@
   CmakeSyntax: no_opts_cuda_compile_cubin
   MatchMode: Partial
   In: cuda_compile_cubin(${device} ${value})
-  Out: dpct_compile_sycl_code(${device} ${value})
+  Out: dpct_helper_compile_sycl_code(${device} ${value})
   Subrules:
     value:
       In: ${arg}.cu
@@ -283,7 +283,7 @@
   CmakeSyntax: cuda_compile_cubin
   MatchMode: Partial
   In: cuda_compile_cubin(${device} ${value} OPTIONS ${opts})
-  Out: dpct_compile_sycl_code(${device} ${value})
+  Out: dpct_helper_compile_sycl_code(${device} ${value})
   Subrules:
     value:
       In: ${arg}.cu
