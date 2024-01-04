@@ -398,18 +398,19 @@ public:
     }
   };
 
-  template <typename Item> struct getScatterOffset {
-    int *ranks_;
-    int ranks_size;
-    getScatterOffset(int size, const int *ranks) : ranks_size(size) {
-      ranks_ = new int[ranks_size];
-      for (int i = 0; i < ranks_size; i++) {
-        ranks_[i] = ranks[i];
-      }
+  template <typename Item, typename Iterator> struct getScatterOffset {
+    Iterator begin;
+    Iterator end;
+    getScatterOffset(const int* ranks){
+      begin = ranks;
+      end = ranks + sizeof(ranks)/sizeof(ranks[0]);
     }
-    ~getScatterOffset() { delete[] ranks_; }
-    size_t operator()(Item item, int i) {
-      size_t offset = size_t(ranks_[i]);
+    ~getScatterOffset() {}
+    size_t operator()(Item item, int i) const {
+      Iterator it = begin + i ; 
+      if (it >= begin && it < end){
+        size_t offset = size_t(*it);  
+      }
       return adjust_by_padding(offset);
     }
   };
@@ -465,7 +466,7 @@ public:
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
 
-    getScatterOffset<Item> get_scatter_offset(VALUES_PER_THREAD, ranks);
+    getScatterOffset<Item, int*> get_scatter_offset(ranks);
     getStripedOffset<Item> get_striped_offset;
     helper_exchange(item, keys, get_scatter_offset,
                     get_striped_offset);
@@ -477,14 +478,14 @@ public:
                                           T (&keys)[VALUES_PER_THREAD],
                                           int (&ranks)[VALUES_PER_THREAD]) {
 
-    getScatterOffset<Item> get_scatter_offset(VALUES_PER_THREAD, ranks);
+    getScatterOffset<Item, int*> get_scatter_offset(ranks);
     getBlockedOffset<Item> get_blocked_offset;
     helper_exchange(item, keys, get_scatter_offset,
                     get_blocked_offset);
   }
 
 private:
-  static constexpr int LOG_LOCAL_MEMORY_BANKS = 5;
+  static constexpr int LOG_LOCAL_MEMORY_BANKS = 4;
   static constexpr bool INSERT_PADDING =
       (VALUES_PER_THREAD > 4) &&
       (detail::power_of_two<VALUES_PER_THREAD>::VALUE);
