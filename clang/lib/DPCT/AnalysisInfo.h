@@ -1289,7 +1289,7 @@ public:
   static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(FileID ID);
   // Return the absolute path of \p File
   static std::optional<clang::tooling::UnifiedPath>
-  getAbsolutePath(const OptionalFileEntryRef &File);
+  getAbsolutePath(FileEntryRef File);
 
   static inline std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
