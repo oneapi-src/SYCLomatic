@@ -149,10 +149,18 @@ dpct is an alias command for c2s.
 ### Run in-tree LIT tests
 SYCLomatic uses [LLVM Integrated Tester](https://llvm.org/docs/CommandGuide/lit.html) infrastructure to do the unit test.
 Note: Certain CUDA header files may need to be accessible to the tool.
-After building the SYCLomatic, you can run the list test by:
+After building the SYCLomatic, you can run the lit test by:
 ```
 ninja check-clang-c2s
 ```
+
+### Run in-tree build LIT tests (Linux Only)
+After building the SYCLomatic, you can run the build lit by
+```
+export BUILD_LIT=TRUE
+ninja check-clang-c2s
+```
+
 
 ### Run end to end test suite (Recommend for contributors)
 
