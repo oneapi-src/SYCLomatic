@@ -468,7 +468,7 @@ public:
 
   template <typename Item>
   __dpct_inline__ void
-  sortBlockedToStriped(const Item &item, T (&keys)[VALUES_PER_THREAD],
+  sort_blocked_to_striped(const Item &item, T (&keys)[VALUES_PER_THREAD],
                        int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
 
     uint32_t(&unsigned_keys)[VALUES_PER_THREAD] =
@@ -492,7 +492,7 @@ public:
       if (begin_bit >= end_bit) {
 
         exchange<T, VALUES_PER_THREAD>(_local_memory)
-            .scatter_to_striped(item, keys);
+            .scatter_to_striped(item, keys, ranks);
 
         break;
       }
