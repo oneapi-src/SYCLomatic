@@ -1071,7 +1071,7 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_DebugEnabled,
+    setValueToOptMap(clang::dpct::OPTION_CodePinEnabled,
                      DpctGlobalInfo::isCodePinEnabled(),
                      EnableCodePin.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitClNamespace,
