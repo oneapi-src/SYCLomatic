@@ -174,6 +174,7 @@ std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfo(
 
 std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfoImpl(
     std::shared_ptr<CompilerInvocation> Invocation, bool &Success) {
+  Invocation->getDiagnosticOpts().IgnoreWarnings = true;
   auto DiagConsumer = new TextDiagnosticPrinter(
       DiagnosticStream, &Invocation->getDiagnosticOpts());
   auto Info = std::make_shared<TranslationUnitInfo>();

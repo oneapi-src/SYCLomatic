@@ -43,6 +43,7 @@ extern std::set<int> WarningIDs;
 struct DiagnosticsMessage {
   int ID;
   int Category;
+  EffortLevel EL;
   const char *Msg;
 
 #define DEF_WARNING(NAME, ID, LEVEL, MSG) ID,
@@ -58,8 +59,8 @@ struct DiagnosticsMessage {
 #undef DEF_COMMENT
   DiagnosticsMessage() = default;
   DiagnosticsMessage(std::unordered_map<int, DiagnosticsMessage> &Table, int ID,
-                     int Category, const char *Msg)
-      : ID(ID), Category(Category), Msg(Msg) {
+                     int Category, EffortLevel EL, const char *Msg)
+      : ID(ID), Category(Category), EL(EL), Msg(Msg) {
     assert(Table.find(ID) == Table.end() && "[DPCT Internal error] Two "
                                             "messages with the same ID "
                                             "are being registered");
@@ -317,12 +318,17 @@ inline bool report(SourceLocation SL, IDTy MsgID,
   if (checkDuplicated(FileAndLine, WarningIDAndMsg))
     return false;
 
+  auto Diag = DiagnosticIDTable.find((int)MsgID);
+  if (Diag == DiagnosticIDTable.end())
+    return true;
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    recordAnalysisModeEffort(SL, Diag->second.EL);
+    return true;
+  }
   if (!SuppressWarningsAllFlag) {
     // Only report warnings that are not suppressed
-    if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
-        DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
-      reportWarning(SL, DiagnosticIDTable[(int)MsgID], SM.getDiagnostics(),
-                    Vals...);
+    if (WarningIDs.find((int)MsgID) == WarningIDs.end()) {
+      reportWarning(SL, Diag->second, SM.getDiagnostics(), Vals...);
     }
   }
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
@@ -402,12 +408,17 @@ bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset,
   unsigned int ColNum = Offset - Fileinfo->getLineInfo(LineNum).Offset + 1;
   SourceLocation SL = SM.translateLineCol(FID, LineNum, ColNum);
 
+  auto Diag = DiagnosticIDTable.find((int)MsgID);
+  if (Diag == DiagnosticIDTable.end())
+    return true;
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    recordAnalysisModeEffort(FileAbsPath, Offset, Diag->second.EL);
+    return true;
+  }
   if (!SuppressWarningsAllFlag) {
     // Only report warnings that are not suppressed
-    if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
-        DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
-      reportWarning(SL, DiagnosticIDTable[(int)MsgID], SM.getDiagnostics(),
-                    Vals...);
+    if (WarningIDs.find((int)MsgID) == WarningIDs.end()) {
+      reportWarning(SL, Diag->second, SM.getDiagnostics(), Vals...);
     }
   }
 

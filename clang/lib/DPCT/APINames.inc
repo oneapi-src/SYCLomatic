@@ -1455,6 +1455,7 @@ ENTRY(surfCubemapLayeredread, surfCubemapLayeredread, false, NO_FLAG, P4, "comme
 ENTRY(surfCubemapLayeredwrite, surfCubemapLayeredwrite, false, NO_FLAG, P4, "comment")
 ENTRY(clock, clock, true, NO_FLAG, P0, "DPCT1008")
 ENTRY(clock64, clock64, true, NO_FLAG, P0, "DPCT1008")
+ENTRY(__nanosleep, __nanosleep, true, NO_FLAG, P0, "DPCT1008")
 ENTRY(atomicAdd_system, atomicAdd_system, true, NO_FLAG, P0, "comment")
 ENTRY(atomicSub_system, atomicSub_system, true, NO_FLAG, P4, "comment")
 ENTRY(atomicExch_system, atomicExch_system, true, NO_FLAG, P0, "comment")
