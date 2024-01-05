@@ -10587,13 +10587,17 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       }
       auto &SM = DpctGlobalInfo::getSourceManager();
       auto Indent = getIndent(SM.getExpansionLoc(C->getBeginLoc()), SM).str();
-      if (DpctGlobalInfo::useNoQueueDevice()) {
-        Repl << Indent << "{{NEEDREPLACEQ" << std::to_string(Index)
-             << "}}.wait_and_throw();\n"
-             << Indent << MapNames::getClNamespace() << "free";
+      if (DpctGlobalInfo::isOptimizeMigration()) {
+        Repl << MapNames::getClNamespace() << "free";
       } else {
-        requestFeature(HelperFeatureEnum::device_ext);
-        Repl << MapNames::getDpctNamespace() << "dpct_free";
+        if (DpctGlobalInfo::useNoQueueDevice()) {
+          Repl << Indent << "{{NEEDREPLACEQ" << std::to_string(Index)
+               << "}}.wait_and_throw();\n"
+               << Indent << MapNames::getClNamespace() << "free";
+        } else {
+          requestFeature(HelperFeatureEnum::device_ext);
+          Repl << MapNames::getDpctNamespace() << "dpct_free";
+        }
       }
       Repl << "(" << ArgStr
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
