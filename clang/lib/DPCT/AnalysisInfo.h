@@ -836,6 +836,32 @@ public:
   static inline const std::unordered_set<std::string> &getChangeExtensions() {
     return ChangeExtensions;
   }
+  static inline const std::string &getSYCLSourceExtension() {
+    return SYCLSourceExtension;
+  }
+  static inline const std::string &getSYCLHeaderExtension() {
+    return SYCLHeaderExtension;
+  }
+  static inline void setSYCLFileExtensioni(SYCLFileExtensionEnum extension) {
+    switch (extension) {
+    case SYCLFileExtensionEnum::DP_CPP:
+      SYCLSourceExtension = ".dp.cpp";
+      SYCLHeaderExtension = ".dp.hpp";
+      break;
+    case SYCLFileExtensionEnum::SYCL_CPP:
+      SYCLSourceExtension = ".sycl.cpp";
+      SYCLHeaderExtension = ".sycl.hpp";
+      break;
+    case SYCLFileExtensionEnum::CPP:
+      SYCLSourceExtension = ".cpp";
+      SYCLHeaderExtension = ".hpp";
+      break;
+    default:
+      SYCLSourceExtension = ".dp.cpp";
+      SYCLHeaderExtension = ".dp.hpp";
+      break;
+    }
+  }
   // TODO: implement one of this for each source language.
   static void setCudaPath(const clang::tooling::UnifiedPath &InputCudaPath) {
     CudaPath = InputCudaPath;
@@ -2038,6 +2064,8 @@ private:
   static clang::tooling::UnifiedPath OutRoot;
   static clang::tooling::UnifiedPath AnalysisScope;
   static std::unordered_set<std::string> ChangeExtensions;
+  static std::string SYCLSourceExtension;
+  static std::string SYCLHeaderExtension;
   // TODO: implement one of this for each source language.
   static clang::tooling::UnifiedPath CudaPath;
   static std::string RuleFile;
