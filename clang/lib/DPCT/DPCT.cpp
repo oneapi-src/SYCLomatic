@@ -955,6 +955,17 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
+  if (DefineCUDAVerMajorMinor) {
+    std::string CUDAVerMajor =
+        "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+        CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
+    std::string CUDAVerMinor =
+        "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+        CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
+  }
+
   SetSDKIncludePath(CudaPath.getCanonicalPath().str());
 
 #ifdef _WIN32
