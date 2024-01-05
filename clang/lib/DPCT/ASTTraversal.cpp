@@ -6375,24 +6375,10 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     requestFeature(HelperFeatureEnum::device_ext);
   } else if (FuncName == "cudaGetDeviceProperties" ||
              FuncName == "cudaGetDeviceProperties_v2") {
-    if (IsAssigned) {
-      requestFeature(HelperFeatureEnum::device_ext);
-    }
-    std::string ResultVarName = getDrefName(CE->getArg(0));
-    emplaceTransformation(new ReplaceCalleeName(
-        CE, Prefix + MapNames::getDpctNamespace() + "get_device_info"));
-    emplaceTransformation(new ReplaceStmt(CE->getArg(0), ResultVarName));
-    if (DpctGlobalInfo::useNoQueueDevice()) {
-      emplaceTransformation(new ReplaceStmt(
-          CE->getArg(1), DpctGlobalInfo::getGlobalDeviceName()));
-    } else {
-      emplaceTransformation(new ReplaceStmt(
-          CE->getArg(1), MapNames::getDpctNamespace() +
-                             "dev_mgr::instance().get_device(" +
-                             getStmtSpelling(CE->getArg(1)) + ")"));
-      requestFeature(HelperFeatureEnum::device_ext);
-    }
-    emplaceTransformation(new InsertAfterStmt(CE, std::move(Suffix)));
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
   } else if (FuncName == "cudaDriverGetVersion" ||
              FuncName == "cudaRuntimeGetVersion") {
     if (IsAssigned) {
