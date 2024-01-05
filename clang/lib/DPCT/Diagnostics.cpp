@@ -48,7 +48,13 @@ std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 #undef DEF_WARNING
 #undef DEF_COMMENT
 
-std::unordered_set<int> APIQueryNeedReportWarningIDSet = {1086};
+std::unordered_set<int> APIQueryNeedReportWarningIDSet = {
+    // More IDs may need to be added, like: 1007, 1008, 1028, 1030, 1031, 1037,
+    // 1051, 1053, 1067, 1069, 1076, 1082, 1090, 1107.
+    1023, // MASK_UNSUPPORTED
+    1029, // DEVICE_LIMIT_NOT_SUPPORTED
+    1086, // ACTIVE_MASK
+};
 
 std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 #define DEF_COMMENT(NAME, ID, MSG)                                             \

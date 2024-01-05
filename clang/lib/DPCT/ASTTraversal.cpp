@@ -15023,3 +15023,21 @@ void CompatWithClangRule::runRule(
 }
 
 REGISTER_RULE(CompatWithClangRule, PassKind::PK_Migration)
+void AssertRule::registerMatcher(MatchFinder &MF) {
+  auto functionName = [&]() {
+    return hasAnyName("__assert_fail", "__assertfail");
+  };
+  MF.addMatcher(
+      callExpr(callee(functionDecl(functionName())),
+               hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                              hasAttr(attr::CUDAGlobal)))))
+          .bind("FunctionCall"),
+      this);
+}
+void AssertRule::runRule(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
+}
+REGISTER_RULE(AssertRule, PassKind::PK_Migration)
