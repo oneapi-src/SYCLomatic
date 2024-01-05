@@ -127,7 +127,7 @@ Example:
 .. code-block:: none
 
     python3 setup.py <build-option> -v > build.log 2>&1
-    intercept-build -–parse_build_log build.log
+    intercept-build -–parse-build-log build.log
 
 Generate a Compilation Database with Other Build Systems
 --------------------------------------------------------
