@@ -402,9 +402,8 @@ public:
 
   template <typename Iterator> struct get_scatter_offset {
     Iterator begin;
-    getScatterOffset(const int (&ranks)[VALUES_PER_THREAD]) { begin = ranks; }
-    template <typename Item>
-    size_t operator()(Item item, size_t i) const {
+    get_scatter_offset(const int (&ranks)[VALUES_PER_THREAD]) { begin = ranks; }
+    template <typename Item> size_t operator()(Item item, size_t i) const {
       // iterator i is expected to be within bounds [0,VALUES_PER_THREAD)
       return adjust_by_padding(begin[i]);
     }
