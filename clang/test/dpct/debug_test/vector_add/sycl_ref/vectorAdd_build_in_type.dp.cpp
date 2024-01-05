@@ -1,5 +1,6 @@
+// RUN: echo "empty command"
 //==============================================================
-// Copyright � 2019 Intel Corporation
+// Copyright 2019 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 // =============================================================

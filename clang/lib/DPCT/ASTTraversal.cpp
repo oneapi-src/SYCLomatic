@@ -45,6 +45,7 @@
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SCCIterator.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
@@ -8405,6 +8406,86 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
+void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KCall,
+                                    SourceLocation &EpilogLocation) {
+  const auto &SM = DpctGlobalInfo::getSourceManager();
+  auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+      KCall->getBeginLoc(), KCall->getEndLoc());
+  auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(KCallSpellingRange.first);
+  std::string FilePath = llvm::sys::path::convert_to_slash(
+      StringRef(DpctGlobalInfo::removeSymlinks(
+          SM.getFileManager(), LocInfo.first.getCanonicalPath().str())));
+  auto InRootPath = llvm::sys::path::convert_to_slash(
+      DpctGlobalInfo::getInRoot().getCanonicalPath());
+  size_t FilePathCount = std::count_if(FilePath.begin(), FilePath.end(),
+                                       [](char c) { return c == '/'; });
+  size_t InRootPathCount = std::count_if(InRootPath.begin(), InRootPath.end(),
+                                         [](char c) { return c == '/'; });
+
+  llvm::SmallString<512> RelativePath;
+
+  std::string DebugArgsString = "(\"";
+  std::string DebugArgsStringSYCL = "(\"";
+  DebugArgsString += KCallSpellingRange.first.printToString(SM) + "\", ";
+  DebugArgsStringSYCL +=
+      KCallSpellingRange.first.printToString(SM) + "(SYCL)\", ";
+  std::string StramStr = "0";
+  if (auto *Config = KCall->getConfig()) {
+    if (Config->getNumArgs() > 3) {
+      auto StramStrSpell = getStmtSpelling(Config->getArg(3));
+      if (StramStrSpell.compare("")) {
+        StramStr = StramStrSpell;
+      }
+    }
+  }
+  int Index = getPlaceholderIdx(KCall);
+  if (Index == 0) {
+    Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+  }
+  buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
+  std::string QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+  DebugArgsString += StramStr;
+  DebugArgsStringSYCL += QueueStr;
+  for (auto *Arg : KCall->arguments()) {
+    if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
+      DebugArgsString += ", ";
+      DebugArgsStringSYCL += ", ";
+      std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
+      DebugArgsString += SchemaStr + ", ";
+      DebugArgsStringSYCL += SchemaStr + ", ";
+      DebugArgsString += "(long *)&" + getStmtSpelling(Arg);
+      DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg);
+    }
+  }
+  DebugArgsString += ");" + std::string(getNL());
+  DebugArgsStringSYCL += ");" + std::string(getNL());
+  emplaceTransformation(new InsertText(
+      KCallSpellingRange.first,
+      "dpct::experimental::gen_prolog_API_CP" + DebugArgsString, 0, true));
+  emplaceTransformation(new InsertText(
+      KCallSpellingRange.first,
+      "dpct::experimental::gen_prolog_API_CP" + DebugArgsStringSYCL, 0, false));
+  emplaceTransformation(new InsertText(
+      EpilogLocation, "dpct::experimental::gen_epilog_API_CP" + DebugArgsString,
+      0, true));
+  emplaceTransformation(new InsertText(
+      EpilogLocation,
+      "dpct::experimental::gen_epilog_API_CP" + DebugArgsStringSYCL, 0, false));
+  std::string SchemaRelativePath = "";
+  for (size_t i = 1; i < FilePathCount - InRootPathCount; i++) {
+    SchemaRelativePath += "../";
+  }
+  SchemaRelativePath += "generated_schema.hpp";
+  DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
+                                             "dpct/codepin/codepin.hpp");
+  DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
+                                             SchemaRelativePath);
+  DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
+                                             "dpct/codepin/codepin.hpp", true);
+  DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
+                                             SchemaRelativePath, true);
+}
+
 void KernelCallRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto KCall =
@@ -8430,73 +8511,7 @@ void KernelCallRule::runRule(
         new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
     auto EpilogLocation = removeTrailingSemicolon(KCall, Result);
     if (DpctGlobalInfo::isCodePinEnabled()) {
-      std::string DebugArgsString = "(\"";
-      std::string DebugArgsStringSYCL = "(\"";
-      DebugArgsString += KCallSpellingRange.first.printToString(SM) + "\", ";
-      DebugArgsStringSYCL += KCallSpellingRange.first.printToString(SM) + "(SYCL)\", ";
-      std::string StramStr = "0";
-      if (auto *Config = KCall->getConfig()) {
-        if (Config->getNumArgs() > 3) {
-          auto StramStrSpell = getStmtSpelling(Config->getArg(3));
-          if (StramStrSpell.compare("")) {
-            StramStr = StramStrSpell;
-          }
-        }
-      }
-      int Index = getPlaceholderIdx(KCall);
-      if (Index == 0) {
-        Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      }
-      buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
-      std::string QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-      DebugArgsString += StramStr;
-      DebugArgsStringSYCL += QueueStr;
-      for (auto *Arg : KCall->arguments()) {
-        if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-          DebugArgsString += ", ";
-          DebugArgsStringSYCL += ", ";
-          std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
-          DebugArgsString += SchemaStr + ", ";
-          DebugArgsStringSYCL += SchemaStr + ", ";
-          DebugArgsString += "(long *)&" + getStmtSpelling(Arg) + ", ";
-          DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg) + ", ";
-          if (Arg->getType()->isPointerType()) {
-            DebugArgsString +=
-                "dpct::experimental::getPointerSizeInBitsFromMap(" +
-                getStmtSpelling(Arg) + ")";
-            DebugArgsStringSYCL +=
-                "dpct::experimental::getPointerSizeInBitsFromMap(" +
-                getStmtSpelling(Arg) + ")";
-          } else {
-            DebugArgsString +=
-                "dpct::experimental::get_size_of_schema(" + SchemaStr + ")";
-            DebugArgsStringSYCL +=
-                "dpct::experimental::get_size_of_schema(" + SchemaStr + ")";
-          }
-        }
-      }
-      DebugArgsString += ");" + std::string(getNL());
-      DebugArgsStringSYCL += ");" + std::string(getNL());
-      emplaceTransformation(new InsertText(
-          KCallSpellingRange.first,
-          "dpct::experimental::gen_prolog_API_CP" + DebugArgsString, 0, true));
-      emplaceTransformation(new InsertText(
-          KCallSpellingRange.first,
-          "dpct::experimental::gen_prolog_API_CP" + DebugArgsStringSYCL, 0, false));
-      emplaceTransformation(new InsertText(
-          EpilogLocation,
-          "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0, true));
-      emplaceTransformation(new InsertText(
-          EpilogLocation,
-          "dpct::experimental::gen_epilog_API_CP" + DebugArgsStringSYCL, 0, false));
-      DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
-                                                 "dpct/codepin/codepin.hpp");
-      DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
-                                                 "generated_schema.hpp");
-      DpctGlobalInfo::getInstance().insertHeader(
-          KCall->getBeginLoc(), "dpct/codepin/codepin.hpp", true);
-      DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(),
-                                                 "generated_schema.hpp", true);
+      instrumentKernelLogsForCodePin(KCall, EpilogLocation);
     }
     bool Flag = true;
     unsigned int IndentLen = calculateIndentWidth(
@@ -9808,7 +9823,7 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
         DpctGlobalInfo::getContext().getLangOpts(), false);
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
-        std::string(getNL()) + "dpct::experimental::getPointerSizeMap()[" +
+        std::string(getNL()) + "dpct::experimental::get_ptr_size_map()[" +
             getDrefName(C->getArg(PtrArgLoc)) + "] = " +
             std::string(Lexer::getSourceText(
                 CharSourceRange::getTokenRange(
@@ -9818,7 +9833,7 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
         0, true));
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
-        std::string(getNL()) + "dpct::experimental::getPointerSizeMap()[" +
+        std::string(getNL()) + "dpct::experimental::get_ptr_size_map()[" +
             getDrefName(C->getArg(PtrArgLoc)) +
             "] = " + ExprAnalysis::ref(C->getArg(AllocMemSizeLoc)) + ";",
         0, false));
