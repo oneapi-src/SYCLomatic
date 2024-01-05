@@ -314,10 +314,10 @@ public:
 
   /// Attach linear data to bindless image.
   /// \param [in] data The linear data used to create bindless image.
-  /// \param [in] channel The image channel used to create bindless image.
   /// \param [in] size The size of linear data used to create bindless image.
+  /// \param [in] channel The image channel used to create bindless image.
   /// \param [in] q The queue where the image creation be executed.
-  void attach(void *data, const image_channel &channel, size_t size = UINT_MAX,
+  void attach(void *data, size_t size, const image_channel &channel,
               sycl::queue &q = get_default_queue()) {
     detach(q);
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
@@ -342,20 +342,19 @@ public:
   /// \param [in] data The linear data used to create bindless image.
   /// \param [in] size The size of linear data used to create bindless image.
   /// \param [in] q The queue where the image creation be executed.
-  void attach(void *data, size_t size = UINT_MAX,
-              sycl::queue &q = get_default_queue()) {
-    attach(data, _channel, size, q);
+  void attach(void *data, size_t size, sycl::queue &q = get_default_queue()) {
+    attach(data, size, _channel, q);
   }
 
   /// Attach 2D data to bindless image.
   /// \param [in] data The 2D data used to create bindless image.
-  /// \param [in] channel The image channel used to create bindless image.
   /// \param [in] width The width of 2D data used to create bindless image.
   /// \param [in] height The height of 2D data used to create bindless image.
   /// \param [in] pitch The pitch of 2D data used to create bindless image.
+  /// \param [in] channel The image channel used to create bindless image.
   /// \param [in] q The queue where the image creation be executed.
-  void attach(void *data, const image_channel &channel, size_t width,
-              size_t height, size_t pitch,
+  void attach(void *data, size_t width, size_t height, size_t pitch,
+              const image_channel &channel,
               sycl::queue &q = get_default_queue()) {
     detach(q);
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
@@ -387,7 +386,7 @@ public:
   /// \param [in] q The queue where the image creation be executed.
   void attach(void *data, size_t width, size_t height, size_t pitch,
               sycl::queue &q = get_default_queue()) {
-    attach(data, _channel, width, height, pitch, q);
+    attach(data, width, height, pitch, _channel, q);
   }
 
   /// Attach image memory to bindless image.
