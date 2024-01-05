@@ -606,6 +606,10 @@ int runDPCT(int argc, const char **argv) {
     clang::tooling::SetDiagnosticOutput(DpctTerm());
   }
 
+  if (AnalysisMode) {
+    DpctGlobalInfo::enableAnalysisMode();
+    SuppressWarningsAllFlag = true;
+  }
   initWarningIDs();
 
   DpctInstallPath = getInstallPath(argv[0]);
@@ -872,6 +876,9 @@ int runDPCT(int argc, const char **argv) {
             Experimentals.addValue(ExperimentalFeatures::Exp_FreeQueries);
           else if (Option.ends_with("logical-group"))
             Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
+          else if (Option.ends_with("masked-sub-group-operation"))
+            Experimentals.addValue(
+                ExperimentalFeatures::Exp_MaskedSubGroupFunction);
         } else if (Option == "--no-dry-pattern") {
           NoDRYPatternFlag = true;
         }
@@ -992,6 +999,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
+  DpctGlobalInfo::setSYCLFileExtensioni(SYCLFileExtension);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
@@ -1276,6 +1284,11 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       return MigrationSucceeded;
     }
+  }
+
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    dumpAnalysisModeStatics(llvm::outs());
+    return MigrationSucceeded;
   }
 
   // if run was successful

@@ -837,6 +837,32 @@ public:
   static inline const std::unordered_set<std::string> &getChangeExtensions() {
     return ChangeExtensions;
   }
+  static inline const std::string &getSYCLSourceExtension() {
+    return SYCLSourceExtension;
+  }
+  static inline const std::string &getSYCLHeaderExtension() {
+    return SYCLHeaderExtension;
+  }
+  static inline void setSYCLFileExtensioni(SYCLFileExtensionEnum extension) {
+    switch (extension) {
+    case SYCLFileExtensionEnum::DP_CPP:
+      SYCLSourceExtension = ".dp.cpp";
+      SYCLHeaderExtension = ".dp.hpp";
+      break;
+    case SYCLFileExtensionEnum::SYCL_CPP:
+      SYCLSourceExtension = ".sycl.cpp";
+      SYCLHeaderExtension = ".sycl.hpp";
+      break;
+    case SYCLFileExtensionEnum::CPP:
+      SYCLSourceExtension = ".cpp";
+      SYCLHeaderExtension = ".hpp";
+      break;
+    default:
+      SYCLSourceExtension = ".dp.cpp";
+      SYCLHeaderExtension = ".dp.hpp";
+      break;
+    }
+  }
   // TODO: implement one of this for each source language.
   static void setCudaPath(const clang::tooling::UnifiedPath &InputCudaPath) {
     CudaPath = InputCudaPath;
@@ -987,6 +1013,8 @@ public:
   static unsigned getHelperFuncPreferenceFlag() {
     return HelperFuncPreferenceFlag;
   }
+  static bool isAnalysisModeEnabled() { return AnalysisModeFlag; }
+  static void enableAnalysisMode() { AnalysisModeFlag = true; }
 
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
@@ -2042,6 +2070,8 @@ private:
   static clang::tooling::UnifiedPath OutRoot;
   static clang::tooling::UnifiedPath AnalysisScope;
   static std::unordered_set<std::string> ChangeExtensions;
+  static std::string SYCLSourceExtension;
+  static std::string SYCLHeaderExtension;
   // TODO: implement one of this for each source language.
   static clang::tooling::UnifiedPath CudaPath;
   static std::string RuleFile;
@@ -2144,6 +2174,7 @@ private:
   static unsigned ExtensionDDFlag;
   static unsigned ExperimentalFlag;
   static unsigned HelperFuncPreferenceFlag;
+  static bool AnalysisModeFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;

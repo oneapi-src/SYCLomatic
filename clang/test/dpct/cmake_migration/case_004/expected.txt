@@ -1,0 +1,21 @@
+target_link_libraries(main PRIVATE cxxopts fmt::fmt -qmkl)
+
+target_link_libraries(foo3 PUBLIC  ${TCNN_LIBRARIES} fmt)
+
+target_link_libraries(transformer_engine PUBLIC 
+   -qmkl
+   
+   
+   
+   
+   ${DNN_LIB})
+                     
+target_link_libraries(${target} PRIVATE
+         -static-libgcc
+         
+         )
+                     
+target_link_libraries(${PROJECT_NAME}
+   
+   
+)

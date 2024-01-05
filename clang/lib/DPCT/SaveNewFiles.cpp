@@ -156,20 +156,16 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName,
   // SPT_CudaSource, SPT_CppSource and SPT_CudaHeader files.
   if (DpctGlobalInfo::getChangeExtensions().empty() ||
       DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
-    if (FileType & SPT_CudaSource) {
-      path::replace_extension(CanonicalPathStr, "dp.cpp");
-    } else if (FileType & SPT_CppSource) {
-      if (Extension == ".c") {
-        auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FileName);
-        if (FileInfo->hasCUDASyntax()) {
-          path::replace_extension(CanonicalPathStr, Extension + ".dp.cpp");
-        }
-      } else {
-        path::replace_extension(CanonicalPathStr, Extension + ".dp.cpp");
-      }
-    } else if (FileType & SPT_CudaHeader) {
-      path::replace_extension(CanonicalPathStr, "dp.hpp");
-    }
+    if (FileType & SPT_CudaSource)
+      path::replace_extension(CanonicalPathStr,
+                              DpctGlobalInfo::getSYCLSourceExtension());
+    else if (FileType & SPT_CppSource)
+      path::replace_extension(CanonicalPathStr,
+                              Extension +
+                                  DpctGlobalInfo::getSYCLSourceExtension());
+    else if (FileType & SPT_CudaHeader)
+      path::replace_extension(CanonicalPathStr,
+                              DpctGlobalInfo::getSYCLHeaderExtension());
   }
   FileName = CanonicalPathStr;
 }
