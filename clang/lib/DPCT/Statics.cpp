@@ -182,5 +182,190 @@ void PrintMsg(const std::string &Msg, bool IsPrintOnNormal) {
   assert(0);
 }
 
+enum {
+  LowEffort = static_cast<unsigned>(EffortLevel::EL_Low),
+  MediumEffort = static_cast<unsigned>(EffortLevel::EL_Medium),
+  HighEffort = static_cast<unsigned>(EffortLevel::EL_High),
+  EffortNum = static_cast<unsigned>(EffortLevel::EL_NUM),
+  NoEffort = EffortNum,
+  CounterNum,
+};
+
+class LineStream {
+  const static StringRef NL;
+  llvm::raw_ostream& OS;
+
+public:
+  LineStream(llvm::raw_ostream &OS, unsigned Indent)
+      : OS(OS) {
+    OS.indent(Indent);
+  }
+  ~LineStream() { OS << NL; }
+
+  template<class T> LineStream &operator<<(T &&Input) {
+    OS << std::forward<T>(Input);
+    return *this;
+  }
+};
+const StringRef LineStream::NL = getNL();
+
+struct AnalysisModeSummary {
+  static const unsigned IndentIncremental = 2;
+  static const unsigned NumberWidth = 3;
+
+  StringRef Name;
+  unsigned Total = 0;
+  unsigned Counter[CounterNum] = { 0 };
+
+  AnalysisModeSummary(StringRef Name) : Name(Name) {}
+
+  AnalysisModeSummary &operator+=(const AnalysisModeSummary &Other) {
+    Total += Other.Total;
+    Counter[HighEffort] += Other.Counter[HighEffort];
+    Counter[MediumEffort] += Other.Counter[MediumEffort];
+    Counter[LowEffort] += Other.Counter[LowEffort];
+    Counter[NoEffort] += Other.Counter[NoEffort];
+    return *this;
+  }
+
+  void dump(llvm::raw_ostream &OS, unsigned Indent) const {
+    LineStream(OS, Indent) << llvm::raw_ostream::Colors::BLUE << Name << ':'
+                           << llvm::raw_ostream::Colors::RESET;
+    Indent += IndentIncremental;
+    printClassify(OS, Indent, "will be automatically migrated", NoEffort,
+                  LowEffort, MediumEffort);
+    printClassify(OS, Indent, "will not be automatically migrated", HighEffort);
+  }
+
+private:
+  void printClassifyMsg(llvm::raw_ostream &OS, unsigned Indent,
+                        StringRef ClassifyMsg, unsigned ClassifyNum) const {
+    LineStream(OS, Indent) << '+'
+                           << llvm::format_decimal(ClassifyNum, NumberWidth)
+                           << " lines of code ("
+                           << llvm::format_decimal((ClassifyNum * 100) / Total,
+                                                   3)
+                           << "%) " << ClassifyMsg << '.';
+  }
+  template <class... LevelTys>
+  unsigned sum(unsigned FirstLevel, LevelTys... RestLevels) const {
+    return Counter[FirstLevel] + sum(RestLevels...);
+  }
+  unsigned sum(unsigned Level) const { return Counter[Level]; }
+
+  template <class... LevelTys>
+  void printClassify(llvm::raw_ostream &OS, unsigned Indent,
+                     StringRef ClassifyMsg, LevelTys... Levels) const {
+    printClassifyMsg(OS, Indent, ClassifyMsg, sum(Levels...));
+    printLevel(OS, Indent + IndentIncremental, Levels...);
+  }
+  template <class... LevelTys>
+  void printLevel(llvm::raw_ostream &OS, unsigned Indent, unsigned FirstLevel,
+                  LevelTys... RestLevels) const {
+    printLevel(OS, Indent, FirstLevel);
+    printLevel(OS, Indent, RestLevels...);
+  }
+  void printLevel(llvm::raw_ostream &OS, unsigned Indent,
+                  unsigned Level) const {
+    const static std::string PostMsgs[] = {
+        "High manual effort for code fixing",
+        "Medium manual effort for code fixing",
+        "Low manual effort for checking and code fixing", "No manual effort"};
+    LineStream(OS, Indent) << '-'
+                           << llvm::format_decimal(Counter[Level], NumberWidth)
+                           << " APIs/Types - " << PostMsgs[Level] << '.';
+  }
+};
+
+class AnalysisModeStats {
+  static const std::string LastMsg;
+  static llvm::StringMap<AnalysisModeStats> AnalysisModeStaticsMap;
+
+  struct EffortLevelWrap {
+    unsigned EL;
+    EffortLevelWrap() : EL(NoEffort) {}
+    EffortLevelWrap &operator=(EffortLevel Other) {
+      if (auto O = static_cast<unsigned>(Other); EL > O)
+        EL = O;
+      return *this;
+    }
+
+    operator unsigned() const { return EL; }
+  };
+
+  std::map<unsigned, EffortLevelWrap> FileEffortsMap;
+
+  AnalysisModeSummary getSummary(StringRef Name) const {
+    AnalysisModeSummary Summary(Name);
+    for (auto Entry : FileEffortsMap) {
+      ++Summary.Counter[Entry.second];
+      ++Summary.Total;
+    }
+    return Summary;
+  }
+
+  void recordEffort(unsigned Offset, EffortLevel Level) {
+    FileEffortsMap[Offset] = Level;
+  }
+  void recordApisOrTypes(unsigned Offset) { (void)FileEffortsMap[Offset]; }
+
+public:
+  static void dump(llvm::raw_ostream &OS) {
+    static const unsigned Indent = 0;
+    AnalysisModeSummary Total("Total Project");
+    for (const auto &Entry : AnalysisModeStaticsMap) {
+      auto Summary = Entry.second.getSummary(Entry.first());
+      Summary.dump(OS, Indent);
+      Total += Summary;
+    }
+    Total.dump(OS, Indent);
+    LineStream(OS, Indent) << LastMsg;
+  }
+
+  static void recordApisOrTypes(SourceLocation SL) {
+    auto LocInfo = DpctGlobalInfo::getLocInfo(SL);
+    AnalysisModeStaticsMap[LocInfo.first.getPath()].recordApisOrTypes(
+        LocInfo.second);
+  }
+  static void recordEffort(SourceLocation SL, EffortLevel EL) {
+    auto LocInfo = DpctGlobalInfo::getLocInfo(SL);
+    recordEffort(LocInfo.first, LocInfo.second, EL);
+  }
+  static void recordEffort(const tooling::UnifiedPath &Filename,
+                           unsigned Offset, EffortLevel EL) {
+    AnalysisModeStaticsMap[Filename.getPath()].recordEffort(Offset, EL);
+  }
+};
+
+const std::string AnalysisModeStats::LastMsg =
+    "See "
+    "https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/"
+    "developer-guide-reference/current/overview.html for more details.";
+llvm::StringMap<AnalysisModeStats> AnalysisModeStats::AnalysisModeStaticsMap;
+
+void dumpAnalysisModeStatics(llvm::raw_ostream &OS) {
+  if (!DpctGlobalInfo::isAnalysisModeEnabled())
+    return;
+
+  AnalysisModeStats::dump(OS);
+}
+
+void recordAnalysisModeEffort(SourceLocation SL, EffortLevel EL) {
+  AnalysisModeStats::recordEffort(SL, EL);
+}
+void recordAnalysisModeEffort(const clang::tooling::UnifiedPath &Filename,
+                              unsigned Offset, EffortLevel EL) {
+  AnalysisModeStats::recordEffort(Filename, Offset, EL);
+}
+
+void recordRecognizedAPI(const CallExpr *CE) {
+  if (DpctGlobalInfo::isAnalysisModeEnabled())
+    AnalysisModeStats::recordApisOrTypes(CE->getBeginLoc());
+}
+void recordRecognizedType(TypeLoc TL) {
+  if (DpctGlobalInfo::isAnalysisModeEnabled())
+    AnalysisModeStats::recordApisOrTypes(TL.getBeginLoc());
+}
+
 } // namespace dpct
 } // namespace clang

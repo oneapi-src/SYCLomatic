@@ -1111,6 +1111,26 @@ bool DpctGlobalInfo::isInCudaPath(SourceLocation SL) {
                           .getFilename(getSourceManager().getExpansionLoc(SL))
                           .str());
 }
+void DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtensionEnum Extension) {
+  switch (Extension) {
+  case SYCLFileExtensionEnum::DP_CPP:
+    SYCLSourceExtension = ".dp.cpp";
+    SYCLHeaderExtension = ".dp.hpp";
+    break;
+  case SYCLFileExtensionEnum::SYCL_CPP:
+    SYCLSourceExtension = ".sycl.cpp";
+    SYCLHeaderExtension = ".sycl.hpp";
+    break;
+  case SYCLFileExtensionEnum::CPP:
+    SYCLSourceExtension = ".cpp";
+    SYCLHeaderExtension = ".hpp";
+    break;
+  default:
+    SYCLSourceExtension = ".dp.cpp";
+    SYCLHeaderExtension = ".dp.hpp";
+    break;
+  }
+}
 void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
                                const FunctionDecl *FD) {
   FreeQueriesInfo::printImmediateText(OS, S, FD,
@@ -2208,6 +2228,8 @@ clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
 clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
 clang::tooling::UnifiedPath DpctGlobalInfo::AnalysisScope;
 std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
+std::string DpctGlobalInfo::SYCLSourceExtension = std::string();
+std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();
 // TODO: implement one of this for each source language.
 clang::tooling::UnifiedPath DpctGlobalInfo::CudaPath;
 std::string DpctGlobalInfo::RuleFile = std::string();
@@ -2302,6 +2324,7 @@ unsigned DpctGlobalInfo::ExtensionDEFlag = static_cast<unsigned>(-1);
 unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
+bool DpctGlobalInfo::AnalysisModeFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;

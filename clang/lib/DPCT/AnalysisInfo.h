@@ -667,6 +667,13 @@ public:
   static const std::unordered_set<std::string> &getChangeExtensions() {
     return ChangeExtensions;
   }
+  static const std::string &getSYCLSourceExtension() {
+    return SYCLSourceExtension;
+  }
+  static const std::string &getSYCLHeaderExtension() {
+    return SYCLHeaderExtension;
+  }
+  static void setSYCLFileExtension(SYCLFileExtensionEnum Extension);
   // TODO: implement one of this for each source language.
   static void setCudaPath(const clang::tooling::UnifiedPath &InputCudaPath) {
     CudaPath = InputCudaPath;
@@ -775,6 +782,8 @@ public:
   static unsigned getHelperFuncPreferenceFlag() {
     return HelperFuncPreferenceFlag;
   }
+  static bool isAnalysisModeEnabled() { return AnalysisModeFlag; }
+  static void enableAnalysisMode() { AnalysisModeFlag = true; }
   static format::FormatRange getFormatRange() { return FmtRng; }
   static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   static DPCTFormatStyle getFormatStyle() { return FmtST; }
@@ -1368,6 +1377,8 @@ private:
   static clang::tooling::UnifiedPath OutRoot;
   static clang::tooling::UnifiedPath AnalysisScope;
   static std::unordered_set<std::string> ChangeExtensions;
+  static std::string SYCLSourceExtension;
+  static std::string SYCLHeaderExtension;
   // TODO: implement one of this for each source language.
   static clang::tooling::UnifiedPath CudaPath;
   static std::string RuleFile;
@@ -1470,6 +1481,7 @@ private:
   static unsigned ExtensionDDFlag;
   static unsigned ExperimentalFlag;
   static unsigned HelperFuncPreferenceFlag;
+  static bool AnalysisModeFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;

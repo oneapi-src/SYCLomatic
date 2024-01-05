@@ -124,6 +124,73 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
+- Rule: rule_cuda_compile_with_opts
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: rule_cuda_compile_01
+  In: cuda_compile(${libname} ${srcs} STATIC OPTIONS ${opts})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
+  Subrules:
+    srcs:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+- Rule: rule_cuda_compile_with_opts
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: rule_cuda_compile_02
+  In: cuda_compile(${libname} ${srcs} SHARED OPTIONS ${opts})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
+  Subrules:
+    srcs:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+
+- Rule: rule_cuda_compile_with_lib_type
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: rule_cuda_compile_03
+  In: cuda_compile(${libname} ${srcs} STATIC)
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
+  Subrules:
+    srcs:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+- Rule: rule_cuda_compile_with_lib_type
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: rule_cuda_compile_04
+  In: cuda_compile(${libname} ${srcs} SHARED)
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
+  Subrules:
+    srcs:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+
+- Rule: rule_cuda_compile_with_no_opts
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: rule_cuda_compile_05
+  In: cuda_compile(${libname} ${srcs})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs})
+  Subrules:
+    srcs:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
 - Rule: rule_add_compile_options
   Kind: CMakeRule
   Priority: Fallback
@@ -264,3 +331,28 @@
   CmakeSyntax: add_executable_opts
   In: add_executable(${value} OPTIONS ${options})
   Out: add_executable(${value})
+
+- Rule: rule_no_opts_cuda_compile_cubin
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: no_opts_cuda_compile_cubin
+  MatchMode: Partial
+  In: cuda_compile_cubin(${device} ${value})
+  Out: dpct_helper_compile_sycl_code(${device} ${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+- Rule: rule_cuda_compile_cubin
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_compile_cubin
+  MatchMode: Partial
+  In: cuda_compile_cubin(${device} ${value} OPTIONS ${opts})
+  Out: dpct_helper_compile_sycl_code(${device} ${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
