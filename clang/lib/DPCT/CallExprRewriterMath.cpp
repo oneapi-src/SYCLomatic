@@ -567,6 +567,45 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
        << ", "
        << "int"
        << ">(" << MigratedArg1 << "))";
+  } else if (FuncName == "modf" || FuncName == "modff") {
+    auto Arg = Call->getArg(0);
+    std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+        PrintingPolicy(LangOptions()));
+    std::string ArgExpr = Arg->getStmtClassName();
+    auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
+    if (ArgT == "int") {
+      if (FuncName == "modff") {
+        if (DRE)
+          MigratedArg0 = "(float)" + MigratedArg0;
+        else
+          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
+      } else {
+        if (DRE)
+          MigratedArg0 = "(double)" + MigratedArg0;
+        else
+          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+      }
+    }
+    auto MigratedArg1 = getMigratedArg(1);
+    OS << MapNames::getClNamespace(false, true) + "modf(" << MigratedArg0;
+    if (FuncName == "modf")
+      OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
+         << MapNames::getClNamespace() +
+                "access::address_space::" + getAddressSpace(Call, 1)
+         << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+         << ", "
+         << "double"
+         << ">(";
+    else
+      OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
+         << MapNames::getClNamespace() +
+                "access::address_space::" + getAddressSpace(Call, 1)
+         << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+         << ", "
+         << "float"
+         << ">(";
+
+    OS << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {

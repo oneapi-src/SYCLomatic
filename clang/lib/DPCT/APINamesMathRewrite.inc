@@ -5043,22 +5043,6 @@ MATH_API_REWRITER_DEVICE(
                             CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("y1f"), EMPTY_FACTORY_ENTRY("y1f")))
 
-MATH_API_REWRITER_HOST_DEVICE(
-    MATH_API_REWRITER_HOST(
-        "modff",
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_Math,
-            CALL_FACTORY_ENTRY("modff", CALL("std::modff", ARG(0), ARG(1))))),
-    MATH_API_REWRITER_DEVICE(
-        "modff",
-        MATH_API_DEVICE_NODES(
-            CALL_FACTORY_ENTRY(
-                "modff", CALL(MapNames::getClNamespace(false, true) + "modf",
-                              CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
-                              makeArgWithAddressSpaceCast(1, "float"))),
-            EMPTY_FACTORY_ENTRY("modff"), EMPTY_FACTORY_ENTRY("modff"),
-            EMPTY_FACTORY_ENTRY("modff"))))
-
 // Double Precision Mathematical Functions
 MATH_API_REWRITER_DEVICE(
     "cyl_bessel_i0",
@@ -5308,22 +5292,6 @@ MATH_API_REWRITER_DEVICE(
                 "y1", CALL(MapNames::getClNamespace() + "ext::intel::math::y1",
                            CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("y1"), EMPTY_FACTORY_ENTRY("y1")))
-
-MATH_API_REWRITER_HOST_DEVICE(
-    MATH_API_REWRITER_HOST(
-        "modf",
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_Math,
-            CALL_FACTORY_ENTRY("modf", CALL("std::modf", ARG(0), ARG(1))))),
-    MATH_API_REWRITER_DEVICE(
-        "modf",
-        MATH_API_DEVICE_NODES(
-            CALL_FACTORY_ENTRY(
-                "modf", CALL(MapNames::getClNamespace(false, true) + "modf",
-                             CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
-                             makeArgWithAddressSpaceCast(1, "double"))),
-            EMPTY_FACTORY_ENTRY("modf"), EMPTY_FACTORY_ENTRY("modf"),
-            EMPTY_FACTORY_ENTRY("modf"))))
 
 // Integer Mathematical Functions
 MATH_API_REWRITER_HOST_DEVICE(
