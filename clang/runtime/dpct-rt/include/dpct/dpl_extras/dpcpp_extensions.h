@@ -454,15 +454,13 @@ public:
 
         exchange<T, VALUES_PER_THREAD>(_local_memory)
             .scatter_to_striped(item, keys, ranks);
-        
-        item.barrier(sycl::access::fence_space::local_space);
 
+        item.barrier(sycl::access::fence_space::local_space);
       }
       exchange<T, VALUES_PER_THREAD>(_local_memory)
           .scatter_to_blocked(item, keys, ranks);
 
       item.barrier(sycl::access::fence_space::local_space);
-      
     }
 
 #pragma unroll
@@ -484,7 +482,7 @@ public:
                           int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
     helper_sort(item, keys, begin_bit, end_bit, true);
   }
-
+ 
 private:
   static constexpr int RADIX_BITS = 4;
 
@@ -561,7 +559,7 @@ inclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
   } else {
     outputs[0] = binary_op(inputs[0], exclusive_result);
   }
-
+  
 #pragma unroll
   for (int i = 1; i < VALUES_PER_THREAD; ++i) {
     outputs[i] = binary_op(inputs[i], outputs[i - 1]);
