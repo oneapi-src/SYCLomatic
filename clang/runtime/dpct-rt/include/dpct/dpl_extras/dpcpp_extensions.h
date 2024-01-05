@@ -428,11 +428,10 @@ public:
 
   radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-  
   template <typename Item>
   __dpct_inline__ void
   helper_sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-       int end_bit = 8 * sizeof(T), bool is_striped = false) {
+              int end_bit = 8 * sizeof(T), bool is_striped = false) {
 
     uint32_t(&unsigned_keys)[VALUES_PER_THREAD] =
         reinterpret_cast<uint32_t(&)[VALUES_PER_THREAD]>(keys);
@@ -442,22 +441,21 @@ public:
       unsigned_keys[i] = detail::traits<T>::twiddle_in(unsigned_keys[i]);
     }
 
-    for(int i = begin_bit ; i < end_bit ; i += RADIX_BITS){
+    for (int i = begin_bit; i < end_bit; i += RADIX_BITS) {
       int pass_bits = sycl::min(RADIX_BITS, end_bit - begin_bit);
 
       int ranks[VALUES_PER_THREAD];
       detail::radix_rank<RADIX_BITS, DESCENDING>(_local_memory)
           .template rank_keys(item, unsigned_keys, ranks, i, pass_bits);
-      
+
       item.barrier(sycl::access::fence_space::local_space);
 
-      if(is_striped && i >= end_bit){
-    
+      if (is_striped && i >= end_bit) {
+
         exchange<T, VALUES_PER_THREAD>(_local_memory)
             .scatter_to_striped(item, keys, ranks);
 
         break;
-        
       }
       exchange<T, VALUES_PER_THREAD>(_local_memory)
           .scatter_to_blocked(item, keys, ranks);
@@ -474,15 +472,17 @@ public:
     }
   }
 
-  template<typename Item>
-  __dpct_inline__ void sort_blocked(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-       int end_bit = 8 * sizeof(T)){
+  template <typename Item>
+  __dpct_inline__ void
+  sort_blocked(const Item &item, T (&keys)[VALUES_PER_THREAD],
+               int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
     helper_sort(item, keys, begin_bit, end_bit, false);
   }
 
-  template<typename Item>
-  __dpct_inline__ void sort_blocked_to_striped(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-       int end_bit = 8 * sizeof(T)){
+  template <typename Item>
+  __dpct_inline__ void
+  sort_blocked_to_striped(const Item &item, T (&keys)[VALUES_PER_THREAD],
+                          int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
     helper_sort(item, keys, begin_bit, end_bit, true);
   }
 
