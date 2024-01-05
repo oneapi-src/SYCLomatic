@@ -627,7 +627,9 @@ public:
 
   static std::string removeSymlinks(clang::FileManager &FM,
                                     std::string FilePathStr);
-  static bool isInRoot(SourceLocation SL);
+  static bool isInRoot(SourceLocation SL) {
+    return isInRoot(DpctGlobalInfo::getLocInfo(SL).first);
+  }
   static bool isInRoot(clang::tooling::UnifiedPath FilePath);
   static bool isInAnalysisScope(SourceLocation SL) {
     return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
@@ -832,8 +834,12 @@ public:
     return D;
   }
   static std::string getStringForRegexReplacement(StringRef);
-  static void setCodeFormatStyle(const clang::format::FormatStyle &Style);
-  static clang::format::FormatStyle getCodeFormatStyle();
+  static void setCodeFormatStyle(const clang::format::FormatStyle &Style) {
+    CodeFormatStyle = Style;
+  }
+  static clang::format::FormatStyle getCodeFormatStyle() {
+    return CodeFormatStyle;
+  }
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
@@ -942,7 +948,9 @@ public:
     return getLocInfo(getLocation(N), IsInvalid);
   }
   static std::pair<clang::tooling::UnifiedPath, unsigned>
-  getLocInfo(const TypeLoc &TL, bool *IsInvalid = nullptr /*out*/);
+  getLocInfo(const TypeLoc &TL, bool *IsInvalid = nullptr /*out*/) {
+    return getLocInfo(TL.getBeginLoc(), IsInvalid);
+  }
   // Return the absolute path of \p ID
   static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(FileID ID);
   // Return the absolute path of \p File
@@ -1014,14 +1022,18 @@ public:
       HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
-                     std::shared_ptr<ExtReplacements> Repl);
+                     std::shared_ptr<ExtReplacements> Repl) {
+    FileReplCache[FilePath] = Repl;
+  }
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSets /*out*/);
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
   void insertCudaMalloc(const CallExpr *CE);
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
-  void addReplacement(std::shared_ptr<ExtReplacement> Repl);
+  void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
+    insertFile(Repl->getFilePath().str())->addReplacement(Repl);
+  }
   CudaArchPPMap &getCudaArchPPInfoMap() { return CAPPInfoMap; }
   HDFuncInfoMap &getHostDeviceFuncInfoMap() { return HostDeviceFuncInfoMap; }
   std::unordered_map<std::string, std::shared_ptr<ExtReplacement>> &
@@ -1701,7 +1713,10 @@ public:
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
 
 private:
-  bool isTreatPointerAsArray();
+  bool isTreatPointerAsArray() {
+    return getType()->isPointer() && getScope() == Global &&
+           DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
+  }
   static VarAttrKind getAddressAttr(const AttrVec &Attrs);
   void setInitList(const Expr *E, const VarDecl *V);
 
@@ -1967,7 +1982,10 @@ private:
     return Arg->getSourceRange();
   }
 
-  void setArgStr(std::string &&Str);
+  void setArgStr(std::string &&Str) {
+    DependentStr =
+        std::make_shared<TemplateDependentStringInfo>(std::move(Str));
+  }
   std::shared_ptr<TemplateDependentStringInfo> DependentStr;
   TemplateArgument::ArgKind Kind;
   bool IsWritten = true;
@@ -2161,8 +2179,10 @@ public:
 
   virtual std::string getExtraArguments();
 
-  void setHasSideEffects(bool Val = true);
-  bool hasSideEffects() const;
+  void setHasSideEffects(bool Val = true) {
+    CallGroupFunctionInControlFlow = Val;
+  }
+  bool hasSideEffects() const { return CallGroupFunctionInControlFlow; }
 
   std::shared_ptr<TextureObjectInfo>
   addTextureObjectArgInfo(unsigned ArgIdx,
@@ -2188,7 +2208,7 @@ protected:
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
   void buildCalleeInfo(const Expr *Callee);
-  void resizeTextureObjectList(size_t Size);
+  void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
 
 private:
   static std::string getName(const NamedDecl *D);
@@ -2245,7 +2265,7 @@ public:
   std::shared_ptr<DeviceFunctionInfo> getFuncInfo() const { return FuncInfo; }
 
   virtual void emplaceReplacement();
-  static void reset();
+  static void reset() { FuncInfoMap.clear(); }
 
   using DeclList = std::vector<std::shared_ptr<DeviceFunctionDecl>>;
 
@@ -2344,7 +2364,9 @@ class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
   void buildParameterInfo(const FunctionDecl *FD);
   void buildWrapperInfo(const FunctionDecl *FD);
   void buildCallInfo(const FunctionDecl *FD);
-  std::vector<std::pair<std::string, std::string>> &getParametersInfo();
+  std::vector<std::pair<std::string, std::string>> &getParametersInfo() {
+    return ParametersInfo;
+  }
 
 public:
   DeviceFunctionDeclInModule(unsigned Offset,
@@ -2500,8 +2522,12 @@ private:
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE);
     inline const std::string &getArgString() const;
     inline const std::string &getTypeString() const;
-    inline std::string getIdStringWithIndex() const;
-    inline std::string getIdStringWithSuffix(const std::string &Suffix) const;
+    inline std::string getIdStringWithIndex() const {
+      return buildString(IdString, "ct", Index);
+    }
+    inline std::string getIdStringWithSuffix(const std::string &Suffix) const {
+      return buildString(IdString, Suffix, "_ct", Index);
+    }
     bool IsPointer;
     // If the pointer is used as lvalue after its most recent memory allocation
     bool IsRedeclareRequired;
@@ -2557,7 +2583,7 @@ public:
                   std::shared_ptr<DeviceFunctionInfo>);
   unsigned int GridDim = 3;
   unsigned int BlockDim = 3;
-  void setEmitSizeofWarningFlag(bool Flag);
+  void setEmitSizeofWarningFlag(bool Flag) { EmitSizeofWarning = Flag; }
 
 private:
   KernelCallExpr(unsigned Offset, const clang::tooling::UnifiedPath &FilePath)
@@ -2565,7 +2591,10 @@ private:
   void buildArgsInfoFromArgsArray(const FunctionDecl *FD,
                                   const Expr *ArgsArray) {}
   void buildArgsInfo(const CallExpr *CE);
-  bool isDefaultStream() const;
+  bool isDefaultStream() const {
+    return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
+           ExecutionConfig.IsDefaultStream;
+  }
   bool isQueuePtr() const { return ExecutionConfig.IsQueuePtr; }
   std::string getQueueStr() const;
 
@@ -2613,7 +2642,7 @@ private:
   std::string Event;
   bool IsSync;
 
-  class SubmitStmtsList_t {
+  class SubmitStmtsList {
   public:
     StmtList StreamList;
     StmtList SyncList;
@@ -2633,9 +2662,9 @@ private:
     KernelPrinter &printList(KernelPrinter &Printer, const StmtList &List,
                              StringRef Comments = "");
   };
-  SubmitStmtsList_t SubmitStmtsList;
+  SubmitStmtsList SubmitStmts;
 
-  class OuterStmts_t {
+  class OuterStmtsList {
   public:
     StmtList ExternList;
     StmtList InitList;
@@ -2648,7 +2677,7 @@ private:
     KernelPrinter &printList(KernelPrinter &Printer, const StmtList &List,
                              StringRef Comments = "");
   };
-  OuterStmts_t OuterStmts;
+  OuterStmtsList OuterStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
   int TotalArgsSize = 0;

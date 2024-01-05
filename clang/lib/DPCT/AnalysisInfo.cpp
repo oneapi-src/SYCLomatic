@@ -1078,9 +1078,6 @@ std::string DpctGlobalInfo::removeSymlinks(clang::FileManager &FM,
   }
   return NoSymlinks.str().str();
 }
-bool DpctGlobalInfo::isInRoot(SourceLocation SL) {
-  return isInRoot(DpctGlobalInfo::getLocInfo(SL).first);
-}
 bool DpctGlobalInfo::isInRoot(clang::tooling::UnifiedPath FilePath) {
   if (isChildPath(InRoot, FilePath)) {
     return !isExcluded(FilePath);
@@ -1348,17 +1345,6 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
     assert(0);
     return MatchedStr.str();
   }
-}
-void DpctGlobalInfo::setCodeFormatStyle(
-    const clang::format::FormatStyle &Style) {
-  CodeFormatStyle = Style;
-}
-clang::format::FormatStyle DpctGlobalInfo::getCodeFormatStyle() {
-  return CodeFormatStyle;
-}
-std::pair<clang::tooling::UnifiedPath, unsigned>
-DpctGlobalInfo::getLocInfo(const TypeLoc &TL, bool *IsInvalid) {
-  return getLocInfo(TL.getBeginLoc(), IsInvalid);
 }
 std::optional<clang::tooling::UnifiedPath>
 DpctGlobalInfo::getAbsolutePath(FileID ID) {
@@ -1870,10 +1856,6 @@ void DpctGlobalInfo::postProcess() {
     }
   }
 }
-void DpctGlobalInfo::cacheFileRepl(clang::tooling::UnifiedPath FilePath,
-                                   std::shared_ptr<ExtReplacements> Repl) {
-  FileReplCache[FilePath] = Repl;
-}
 void DpctGlobalInfo::emplaceReplacements(ReplTy &ReplSets /*out*/) {
   if (DpctGlobalInfo::isNeedRunAgain())
     return;
@@ -1909,9 +1891,6 @@ std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
   if (auto Src = CudaMallocInfo::getMallocVar(E))
     return findCudaMallocInfo(Src);
   return std::shared_ptr<CudaMallocInfo>();
-}
-void DpctGlobalInfo::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
-  insertFile(Repl->getFilePath().str())->addReplacement(Repl);
 }
 void DpctGlobalInfo::insertReplInfoFromYAMLToFileInfo(
     const clang::tooling::UnifiedPath &FilePath,
@@ -2946,10 +2925,6 @@ std::string MemVarInfo::getAccessorDataType(bool IsTypeUsedInDevFunDecl,
   }
   return Ret;
 }
-bool MemVarInfo::isTreatPointerAsArray() {
-  return getType()->isPointer() && getScope() == Global &&
-         DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
-}
 MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
   VarAttrKind Attr = Host;
   for (auto VarAttr : Attrs) {
@@ -3470,9 +3445,6 @@ void TemplateArgumentInfo::setArgFromExprAnalysis(const T &Arg,
     DependentStr = EA.getTemplateDependentStringInfo();
   }
 }
-void TemplateArgumentInfo::setArgStr(std::string &&Str) {
-  DependentStr = std::make_shared<TemplateDependentStringInfo>(std::move(Str));
-}
 ///// class MemVarMap /////
 void MemVarMap::addTexture(std::shared_ptr<TextureInfo> Tex) {
   TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
@@ -3933,12 +3905,6 @@ std::string CallFunctionExpr::getExtraArguments() {
                                            FuncInfo->ParamsNum -
                                                FuncInfo->NonDefaultParamNum);
 }
-void CallFunctionExpr::setHasSideEffects(bool Val) {
-  CallGroupFunctionInControlFlow = Val;
-}
-bool CallFunctionExpr::hasSideEffects() const {
-  return CallGroupFunctionInControlFlow;
-}
 std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArgInfo(
     unsigned ArgIdx, std::shared_ptr<TextureObjectInfo> Info) {
   auto &Obj = TextureObjectList[ArgIdx];
@@ -4038,9 +4004,6 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
     Name = DSDRE->getDeclName().getAsString();
     buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
   }
-}
-void CallFunctionExpr::resizeTextureObjectList(size_t Size) {
-  TextureObjectList.resize(Size);
 }
 std::string CallFunctionExpr::getName(const NamedDecl *D) {
   if (auto ID = D->getIdentifier())
@@ -4299,7 +4262,6 @@ void DeviceFunctionDecl::emplaceReplacement() {
     }
   }
 }
-void DeviceFunctionDecl::reset() { FuncInfoMap.clear(); }
 void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
                                   std::shared_ptr<DeviceFunctionInfo> &Info) {
   if (!DpctGlobalInfo::isInAnalysisScope(FD->getBeginLoc()))
@@ -4627,10 +4589,6 @@ void DeviceFunctionDeclInModule::buildWrapperInfo(const FunctionDecl *FD) {
 void DeviceFunctionDeclInModule::buildCallInfo(const FunctionDecl *FD) {
   Kernel = KernelCallExpr::buildForWrapper(FilePath, FD, getFuncInfo(FD));
 }
-std::vector<std::pair<std::string, std::string>> &
-DeviceFunctionDeclInModule::getParametersInfo() {
-  return ParametersInfo;
-}
 DeviceFunctionDeclInModule::DeviceFunctionDeclInModule(
     unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
     const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
@@ -4899,13 +4857,6 @@ const std::string &KernelCallExpr::ArgInfo::getArgString() const {
 const std::string &KernelCallExpr::ArgInfo::getTypeString() const {
   return TypeString;
 }
-std::string KernelCallExpr::ArgInfo::getIdStringWithIndex() const {
-  return buildString(IdString, "ct", Index);
-}
-std::string KernelCallExpr::ArgInfo::getIdStringWithSuffix(
-    const std::string &Suffix) const {
-  return buildString(IdString, Suffix, "_ct", Index);
-}
 void KernelCallExpr::print(KernelPrinter &Printer) {
   std::unique_ptr<KernelPrinter::Block> Block;
   if (!OuterStmts.empty()) {
@@ -5033,7 +4984,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*" << getEvent() << " = ";
   }
   printStreamBase(Printer);
-  if (SubmitStmtsList.empty()) {
+  if (SubmitStmts.empty()) {
     printParallelFor(Printer, false);
   } else {
     (Printer << "submit(").newLine();
@@ -5045,7 +4996,7 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   Printer.line("[&](" + MapNames::getClNamespace() + "handler &cgh) {");
   {
     auto Body = Printer.block();
-    SubmitStmtsList.print(Printer);
+    SubmitStmts.print(Printer);
     printParallelFor(Printer, true);
   }
   if (getVarMap().hasSync())
@@ -5066,8 +5017,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   if (IsInSubmit) {
     Printer.indent() << "cgh.";
   }
-  if (!SubmitStmtsList.NdRangeList.empty() &&
-      DpctGlobalInfo::isCommentsEnabled())
+  if (!SubmitStmts.NdRangeList.empty() && DpctGlobalInfo::isCommentsEnabled())
     Printer.line("// run the kernel within defined ND range");
   Printer << "parallel_for";
   if (DpctGlobalInfo::isSyclNamedLambda()) {
@@ -5228,13 +5178,13 @@ void KernelCallExpr::addAccessorDecl() {
                                  Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
-      Tex->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList,
+      Tex->addDecl(SubmitStmts.TextureList, SubmitStmts.SamplerList,
                    getQueueStr());
     }
   }
   for (auto &Tex : VM.getTextureMap()) {
-    Tex.second->addDecl(SubmitStmtsList.TextureList,
-                        SubmitStmtsList.SamplerList, getQueueStr());
+    Tex.second->addDecl(SubmitStmts.TextureList, SubmitStmts.SamplerList,
+                        getQueueStr());
   }
 }
 void KernelCallExpr::buildInfo() {
@@ -5369,9 +5319,6 @@ KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath,
   Kernel->LocInfo.Indent = getIndent(FD->getBeginLoc(), SM).str() + "    ";
   return Kernel;
 }
-void KernelCallExpr::setEmitSizeofWarningFlag(bool Flag) {
-  EmitSizeofWarning = Flag;
-}
 void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
   KernelArgumentAnalysis Analysis(IsInMacroDefine);
   auto KCallSpellingRange =
@@ -5392,10 +5339,6 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
                             Used, Idx, this);
     }
   }
-}
-bool KernelCallExpr::isDefaultStream() const {
-  return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
-         ExecutionConfig.IsDefaultStream;
 }
 std::string KernelCallExpr::getQueueStr() const {
   if (isDefaultStream())
@@ -5594,7 +5537,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
     requestFeature(HelperFeatureEnum::device_ext);
     OuterStmts.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
     if (VI->isLocal()) {
-      SubmitStmtsList.MemoryList.emplace_back(
+      SubmitStmts.MemoryList.emplace_back(
           VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
     } else if (getFilePath() != VI->getFilePath() &&
                !isIncludedFile(getFilePath(), VI->getFilePath())) {
@@ -5604,15 +5547,15 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
       OuterStmts.ExternList.emplace_back(VI->getExternGlobalVarDecl());
     }
   }
-  VI->appendAccessorOrPointerDecl(
-      ExecutionConfig.ExternMemSize, EmitSizeofWarning,
-      SubmitStmtsList.AccessorList, SubmitStmtsList.PtrList);
+  VI->appendAccessorOrPointerDecl(ExecutionConfig.ExternMemSize,
+                                  EmitSizeofWarning, SubmitStmts.AccessorList,
+                                  SubmitStmts.PtrList);
   if (VI->isTypeDeclaredLocal()) {
     if (DiagnosticsUtils::report(getFilePath(), getBegin(),
                                  Diagnostics::TYPE_IN_FUNCTION, false, false,
                                  VI->getName(), VI->getLocalTypeName())) {
-      if (!SubmitStmtsList.AccessorList.empty()) {
-        SubmitStmtsList.AccessorList.back().Warnings.push_back(
+      if (!SubmitStmts.AccessorList.empty()) {
+        SubmitStmts.AccessorList.back().Warnings.push_back(
             DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
                 Diagnostics::TYPE_IN_FUNCTION, VI->getName(),
                 VI->getLocalTypeName()));
@@ -5622,7 +5565,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
 }
 void KernelCallExpr::addStreamDecl() {
   if (getVarMap().hasStream())
-    SubmitStmtsList.StreamList.emplace_back(
+    SubmitStmts.StreamList.emplace_back(
         buildString(MapNames::getClNamespace() + "stream ",
                     DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
   if (getVarMap().hasSync()) {
@@ -5637,7 +5580,7 @@ void KernelCallExpr::addStreamDecl() {
       OuterStmts.OthersList.emplace_back(buildString(
           "d_", DpctGlobalInfo::getSyncName(), ".init(", DefaultQueue, ");"));
 
-      SubmitStmtsList.SyncList.emplace_back(
+      SubmitStmts.SyncList.emplace_back(
           buildString("auto ", DpctGlobalInfo::getSyncName(), " = ",
                       MapNames::getDpctNamespace(), "get_access(d_",
                       DpctGlobalInfo::getSyncName(), ".get_ptr(), cgh);"));
@@ -5704,7 +5647,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
       } else {
         if (Arg.IsUsedAsLvalueAfterMalloc) {
           requestFeature(HelperFeatureEnum::device_ext);
-          SubmitStmtsList.AccessorList.emplace_back(buildString(
+          SubmitStmts.AccessorList.emplace_back(buildString(
               MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
               Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
               Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
@@ -5712,7 +5655,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
                                     ".get_raw_pointer()");
         } else {
           requestFeature(HelperFeatureEnum::device_ext);
-          SubmitStmtsList.AccessorList.emplace_back(buildString(
+          SubmitStmts.AccessorList.emplace_back(buildString(
               "auto ", Arg.getIdStringWithSuffix("acc"),
               " = " + MapNames::getDpctNamespace() + "get_access(",
               Arg.getArgString(), Arg.IsDefinedOnDevice ? ".get_ptr()" : "",
@@ -5727,7 +5670,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
               ? "auto"
               : (Arg.IsDeviceRandomGeneratorType ? Arg.getTypeString() + " *"
                                                  : Arg.getTypeString());
-      SubmitStmtsList.CommandGroupList.emplace_back(
+      SubmitStmts.CommandGroupList.emplace_back(
           buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
                       Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
@@ -5752,8 +5695,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
     KernelArgs += getExtraArguments();
   }
 }
-KernelPrinter &
-KernelCallExpr::SubmitStmtsList_t::print(KernelPrinter &Printer) {
+KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
   printList(Printer, StreamList);
   printList(Printer, SyncList);
   printList(Printer, MemoryList);
@@ -5767,13 +5709,13 @@ KernelCallExpr::SubmitStmtsList_t::print(KernelPrinter &Printer) {
   printList(Printer, CommandGroupList, "helper variables defined");
   return Printer;
 }
-bool KernelCallExpr::SubmitStmtsList_t::empty() const noexcept {
+bool KernelCallExpr::SubmitStmtsList::empty() const noexcept {
   return CommandGroupList.empty() && NdRangeList.empty() &&
          AccessorList.empty() && PtrList.empty() && MemoryList.empty() &&
          RangeList.empty() && TextureList.empty() && SamplerList.empty() &&
          StreamList.empty() && SyncList.empty();
 }
-KernelPrinter &KernelCallExpr::SubmitStmtsList_t::printList(
+KernelPrinter &KernelCallExpr::SubmitStmtsList::printList(
     KernelPrinter &Printer, const StmtList &List, StringRef Comments) {
   if (List.empty())
     return Printer;
@@ -5782,18 +5724,18 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList_t::printList(
   Printer << List;
   return Printer.newLine();
 }
-KernelPrinter &KernelCallExpr::OuterStmts_t::print(KernelPrinter &Printer) {
+KernelPrinter &KernelCallExpr::OuterStmtsList::print(KernelPrinter &Printer) {
   printList(Printer, ExternList);
   printList(Printer, InitList, "init global memory");
   printList(Printer, OthersList);
   return Printer;
 }
-bool KernelCallExpr::OuterStmts_t::empty() const noexcept {
+bool KernelCallExpr::OuterStmtsList::empty() const noexcept {
   return InitList.empty() && ExternList.empty() && OthersList.empty();
 }
-KernelPrinter &KernelCallExpr::OuterStmts_t::printList(KernelPrinter &Printer,
-                                                       const StmtList &List,
-                                                       StringRef Comments) {
+KernelPrinter &KernelCallExpr::OuterStmtsList::printList(KernelPrinter &Printer,
+                                                         const StmtList &List,
+                                                         StringRef Comments) {
   if (List.empty())
     return Printer;
   if (!Comments.empty() && DpctGlobalInfo::isCommentsEnabled())
