@@ -5120,46 +5120,21 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     }
-  } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2" ||
-             FuncName == "cublasSetStream_v2" ||
-             FuncName == "cublasGetStream_v2" ||
-             FuncName == "cublasSetKernelStream") {
+  } else if (FuncName == "cublasSetKernelStream") {
     SourceRange SR = getFunctionRange(CE);
     auto Len = SM->getDecomposedLoc(SR.getEnd()).second -
                SM->getDecomposedLoc(SR.getBegin()).second;
 
     std::string Repl;
 
-    if (FuncName == "cublasCreate_v2") {
-      std::string LHS = getDrefName(CE->getArg(0));
-      if (isPlaceholderIdxDuplicated(CE))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-      Repl = LHS + " = &{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-    } else if (FuncName == "cublasDestroy_v2") {
-      dpct::ExprAnalysis EA(CE->getArg(0));
-      Repl = EA.getReplacedString() + " = nullptr";
-    } else if (FuncName == "cublasSetStream_v2") {
-      dpct::ExprAnalysis EA0(CE->getArg(0));
-      dpct::ExprAnalysis EA1(CE->getArg(1));
-      Repl = EA0.getReplacedString() + " = " + EA1.getReplacedString();
-    } else if (FuncName == "cublasGetStream_v2") {
-      dpct::ExprAnalysis EA0(CE->getArg(0));
-      std::string LHS = getDrefName(CE->getArg(1));
-      Repl = LHS + " = " + EA0.getReplacedString();
-    } else if (FuncName == "cublasSetKernelStream") {
-      dpct::ExprAnalysis EA(CE->getArg(0));
-      if (isPlaceholderIdxDuplicated(CE))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
-      requestFeature(HelperFeatureEnum::device_ext);
-      Repl = "{{NEEDREPLACED" + std::to_string(Index) + "}}.set_saved_queue(" +
-             EA.getReplacedString() + ")";
-    } else {
+    dpct::ExprAnalysis EA(CE->getArg(0));
+    if (isPlaceholderIdxDuplicated(CE))
       return;
-    }
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
+    requestFeature(HelperFeatureEnum::device_ext);
+    Repl = "{{NEEDREPLACED" + std::to_string(Index) + "}}.set_saved_queue(" +
+           EA.getReplacedString() + ")";
 
     if (SM->isMacroArgExpansion(CE->getBeginLoc()) &&
         SM->isMacroArgExpansion(CE->getEndLoc())) {
