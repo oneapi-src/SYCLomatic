@@ -3479,6 +3479,11 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
 
+  auto Search = EnumConstantRule::EnumNamesMap.find(EC->getDeclName().getAsString());
+  if (Search != EnumConstantRule::EnumNamesMap.end()) {
+    Repl = Search->second->NewName;
+  }
+
   emplaceTransformation(new ReplaceStmt(DE, Repl));
 }
 
@@ -6254,7 +6259,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
         "cudaDeviceGetPCIBusId", "cudaGetDevice", "cudaDeviceSetLimit",
         "cudaGetLastError", "cudaPeekAtLastError", "cudaDeviceSynchronize",
-        "cudaThreadSynchronize", "cudnnGetErrorString", "cudaGetErrorString", "cudaGetErrorName",
+        "cudaThreadSynchronize", "cudnnGetErrorString", "cudaGetErrorString",
+        "cuGetErrorString", "cudaGetErrorName", "cuGetErrorName",
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
         "cudaOccupancyMaxPotentialBlockSize", "cudaThreadSetLimit",
         "cudaFuncSetCacheConfig", "cudaThreadExit", "cudaDeviceGetLimit",
@@ -6565,7 +6571,9 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaGetLastError" ||
              FuncName == "cudaPeekAtLastError" ||
              FuncName == "cudaGetErrorString" ||
-             FuncName == "cudaGetErrorName") {
+             FuncName == "cuGetErrorString" ||
+             FuncName == "cudaGetErrorName" ||
+             FuncName == "cuGetErrorName") {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
