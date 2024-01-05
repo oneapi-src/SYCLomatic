@@ -90,3 +90,9 @@ macro(DPCT_HELPER_SYCL_COMPILE generated_files)
 
   _DPCT_CREATE_BUILD_COMMAND("sycl_device" ${generated_files} ${_sources})
 endmacro()
+
+if(WIN32)
+    set(DNN_LIB "dnnl.lib")
+else()
+    set(DNN_LIB "dnnl")
+endif()
