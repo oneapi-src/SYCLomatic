@@ -86,6 +86,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_ExperimentalFeaturesEnumSize
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
+enum class SYCLFileExtensionEnum { DP_CPP, SYCL_CPP, CPP };
 
 bool makeInRootCanonicalOrSetDefaults(
     clang::tooling::UnifiedPath &InRoot, const std::vector<std::string> SourceFiles);
