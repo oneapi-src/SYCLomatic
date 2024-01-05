@@ -20,6 +20,7 @@
 #include "dpl_extras/algorithm.h"
 #include "dpl_extras/numeric.h"
 #include "dpl_extras/iterators.h"
+#include "dpl_extras/iterator_adaptor.h"
 #include "dpl_extras/vector.h"
 #include "dpl_extras/dpcpp_extensions.h"
 
