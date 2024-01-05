@@ -331,3 +331,28 @@
   CmakeSyntax: add_executable_opts
   In: add_executable(${value} OPTIONS ${options})
   Out: add_executable(${value})
+
+- Rule: rule_no_opts_cuda_compile_cubin
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: no_opts_cuda_compile_cubin
+  MatchMode: Partial
+  In: cuda_compile_cubin(${device} ${value})
+  Out: dpct_helper_compile_sycl_code(${device} ${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
+- Rule: rule_cuda_compile_cubin
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_compile_cubin
+  MatchMode: Partial
+  In: cuda_compile_cubin(${device} ${value} OPTIONS ${opts})
+  Out: dpct_helper_compile_sycl_code(${device} ${value})
+  Subrules:
+    value:
+      In: ${arg}.cu
+      Out: ${arg}.dp.cpp
+
