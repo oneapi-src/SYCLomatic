@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1054,18 +1054,30 @@ is removed.</p>
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this headline">#</a></h2>
 <p>If any of the typedef identifiers are referenced in the class definition, they
 should be replaced with the original template arguments.</p>
-<p>For example, the following code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">thrust</span><span class="o">::</span><span class="n">unary_function</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">    </span><span class="n">argument_type</span><span class="w"> </span><span class="n">arg_data</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">    </span><span class="n">result_type</span><span class="w"> </span><span class="n">result_data</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">4</span><span class="w">  </span><span class="p">};</span><span class="w"></span>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">thrust</span><span class="o">::</span><span class="n">unary_function</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">   </span><span class="n">argument_type</span><span class="w"> </span><span class="n">arg_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">   </span><span class="n">result_type</span><span class="w"> </span><span class="n">result_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">4</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
 </pre></div>
 </div>
-<p>is rewritten as:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">arg_data</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">result_data</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">4</span><span class="w">  </span><span class="p">};</span><span class="w"></span>
+<p>results in the following migrated SYCL* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="cm">/*</span>
+<span class="linenos">2</span><span class="cm"> DPCT1044:0: thrust::unary_function was removed because std::unary_function has</span>
+<span class="linenos">3</span><span class="cm"> been deprecated in C++11. You may need to remove references to typedefs from</span>
+<span class="linenos">4</span><span class="cm"> thrust::unary_function in the class definition.</span>
+<span class="linenos">5</span><span class="cm"> */</span><span class="w"></span>
+<span class="linenos">6</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">7</span><span class="w">   </span><span class="n">argument_type</span><span class="w"> </span><span class="n">arg_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">8</span><span class="w">   </span><span class="n">result_type</span><span class="w"> </span><span class="n">result_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">9</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">   </span><span class="n">argument_type</span><span class="w"> </span><span class="n">arg_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">   </span><span class="n">result_type</span><span class="w"> </span><span class="n">result_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">4</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
 </pre></div>
 </div>
 </section>

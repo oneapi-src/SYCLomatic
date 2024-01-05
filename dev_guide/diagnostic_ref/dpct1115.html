@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1040,13 +1040,13 @@ title="Print to PDF"
 <span id="id1"></span><h1>DPCT1115<a class="headerlink" href="#dpct1115" title="Permalink to this headline">#</a></h1>
 <section id="message">
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
-<p id="msg-1115-start">The <code class="docutils literal notranslate"><span class="pre">sycl::ext::oneapi::group_local_memory</span></code> is used to allocate group-local
+<p id="msg-1115-start">The <code class="docutils literal notranslate"><span class="pre">sycl::ext::oneapi::group_local_memory_for_overwrite</span></code> is used to allocate group-local
 memory at the none kernel functor scope of a work-group data parallel kernel.
 You may need to adjust the code.</p>
 </section>
 <section id="detailed-help">
 <span id="msg-1115-end"></span><h2>Detailed Help<a class="headerlink" href="#detailed-help" title="Permalink to this headline">#</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">sycl::ext::oneapi::group_local_memory</span></code> can be used to allocate group-local
+<p>The <code class="docutils literal notranslate"><span class="pre">sycl::ext::oneapi::group_local_memory_for_overwrite</span></code> can be used to allocate group-local
 memory at the kernel functor scope of a work-group data parallel kernel. The
 restriction that group-local variables must be defined at kernel functor scope
 may be lifted in a future version of this extension.</p>
@@ -1071,18 +1071,18 @@ may be lifted in a future version of this extension.</p>
 <p>results in the following migrated SYCL* code:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">S</span><span class="o">&gt;</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">devfun</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="linenos"> 2</span><span class="w">  </span><span class="cm">/*</span>
-<span class="linenos"> 3</span><span class="cm">  DPCT1115:0: The sycl::ext::oneapi::group_local_memory is used to allocate</span>
+<span class="linenos"> 3</span><span class="cm">  DPCT1115:0: The sycl::ext::oneapi::group_local_memory_for_overwrite is used to allocate</span>
 <span class="linenos"> 4</span><span class="cm">  group-local memory at the none kernel functor scope of a work-group data</span>
 <span class="linenos"> 5</span><span class="cm">  parallel kernel. You may need to adjust the code.</span>
 <span class="linenos"> 6</span><span class="cm">  */</span><span class="w"></span>
 <span class="linenos"> 7</span><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">slm1</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
-<span class="linenos"> 8</span><span class="w">      </span><span class="o">*</span><span class="n">sycl</span><span class="o">::</span><span class="n">ext</span><span class="o">::</span><span class="n">oneapi</span><span class="o">::</span><span class="n">group_local_memory</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">[</span><span class="mi">32</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">S</span><span class="p">]</span><span class="o">&gt;</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_group</span><span class="p">());</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">      </span><span class="o">*</span><span class="n">sycl</span><span class="o">::</span><span class="n">ext</span><span class="o">::</span><span class="n">oneapi</span><span class="o">::</span><span class="n">group_local_memory_for_overwrite</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">[</span><span class="mi">32</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">S</span><span class="p">]</span><span class="o">&gt;</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_group</span><span class="p">());</span><span class="w"></span>
 <span class="linenos"> 9</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
 <span class="linenos">10</span><span class="p">}</span><span class="w"></span>
 <span class="linenos">11</span>
 <span class="linenos">12</span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">S</span><span class="o">&gt;</span><span class="w"> </span><span class="n">__dpct_inline__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">kernel</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="linenos">13</span><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">slm2</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
-<span class="linenos">14</span><span class="w">      </span><span class="o">*</span><span class="n">sycl</span><span class="o">::</span><span class="n">ext</span><span class="o">::</span><span class="n">oneapi</span><span class="o">::</span><span class="n">group_local_memory</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">[</span><span class="n">S</span><span class="p">]</span><span class="o">&gt;</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_group</span><span class="p">());</span><span class="w"></span>
+<span class="linenos">14</span><span class="w">      </span><span class="o">*</span><span class="n">sycl</span><span class="o">::</span><span class="n">ext</span><span class="o">::</span><span class="n">oneapi</span><span class="o">::</span><span class="n">group_local_memory_for_overwrite</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">[</span><span class="n">S</span><span class="p">]</span><span class="o">&gt;</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_group</span><span class="p">());</span><span class="w"></span>
 <span class="linenos">15</span><span class="w">  </span><span class="n">devfun</span><span class="o">&lt;</span><span class="n">S</span><span class="o">&gt;</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">);</span><span class="w"></span>
 <span class="linenos">16</span><span class="p">}</span><span class="w"></span>
 <span class="linenos">17</span>

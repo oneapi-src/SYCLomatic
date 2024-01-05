@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1054,6 +1054,33 @@ performance.</p>
 <section id="suggestions-to-fix">
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this headline">#</a></h2>
 <p>Verify the code for correctness and performance.</p>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">__device__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">device</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__ldg</span><span class="p">(</span><span class="n">f</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">3</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">device</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos">3</span><span class="cm">  DPCT1098:0: The &#39;*&#39; expression is used instead of the __ldg call. These two</span>
+<span class="linenos">4</span><span class="cm">  expressions do not provide the exact same functionality. Check the generated</span>
+<span class="linenos">5</span><span class="cm">  code for potential precision and/or performance issues.</span>
+<span class="linenos">6</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos">7</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">8</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">device</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="cp">#if defined(__NVPTX__) &amp;&amp; defined(__SYCL_DEVICE_ONLY__)</span>
+<span class="linenos">3</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">ext</span><span class="o">::</span><span class="n">oneapi</span><span class="o">::</span><span class="n">experimental</span><span class="o">::</span><span class="n">cuda</span><span class="o">::</span><span class="n">lgd</span><span class="p">(</span><span class="n">f</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">4</span><span class="cp">#else</span>
+<span class="linenos">5</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">6</span><span class="cp">#endif</span>
+<span class="linenos">7</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
 </section>
 </section>
 

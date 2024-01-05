@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1066,7 +1066,7 @@ calls.</p></li>
 </div>
 <p>results in the following migrated SYCL* code:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="cm">/*</span>
-<span class="linenos">2</span><span class="cm">  DPCT1075: Migration of cuFFT calls may be incorrect and requires review.</span>
+<span class="linenos">2</span><span class="cm">  DPCT1075:0: Migration of cuFFT calls may be incorrect and requires review.</span>
 <span class="linenos">3</span><span class="cm">  */</span><span class="w"></span>
 <span class="linenos">4</span><span class="w">  </span><span class="n">plan</span><span class="o">-&gt;</span><span class="n">commit</span><span class="p">(</span><span class="o">*</span><span class="n">s2</span><span class="p">);</span><span class="w"> </span><span class="c1">// wrong queue is used</span>
 <span class="linenos">5</span><span class="w">  </span><span class="p">...</span><span class="w"></span>

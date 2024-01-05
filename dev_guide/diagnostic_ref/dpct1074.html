@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
   // Configure TMS settings
-  var wapLocalCode = 'en_US';
+  var wapLocalCode = 'us-en';
   var wapSection = 'SYCL-docs';
   // Load TMS
   (function () {
@@ -1046,7 +1046,9 @@ as specified in the original code.</p>
 </section>
 <section id="detailed-help">
 <span id="msg-1074-end"></span><h2>Detailed Help<a class="headerlink" href="#detailed-help" title="Permalink to this headline">#</a></h2>
-<p>Data read from SYCL* image cannot be normalized to a float in the range of (0, 1]
+<p>Data read from <cite>tex</cite> in original code is normalized to a float in the range of (0, 1]
+by default, unless <cite>CU_TRSF_READ_AS_INTEGER</cite> is set.
+While data read from SYCL* image cannot be normalized to a float in the range of (0, 1]
 using the standard SYCL API. All flags used in the original code are ignored,
 except coordinate normalization mode.</p>
 </section>
@@ -1054,21 +1056,32 @@ except coordinate normalization mode.</p>
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this headline">#</a></h2>
 <p>Adjust the code manually.</p>
 <p>For example, this original CUDA* code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">cuSetTexFlags</span><span class="p">(</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">CU_TRSF_NORMALIZED_COORDINATES</span><span class="p">);</span><span class="w"> </span><span class="c1">// Need manually fix the read code if the flag CU_TRSF_READ_AS_INTEGER is unset.</span>
-<span class="linenos">2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">  </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex2D</span><span class="p">(</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="c1">// User does not set CU_TRSF_READ_AS_INTEGER here.</span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">cuTexRefSetFlags</span><span class="p">(</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">CU_TRSF_NORMALIZED_COORDINATES</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">cuTexRefSetFormat</span><span class="p">(</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">CU_AD_FORMAT_UNSIGNED_INT16</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">5</span><span class="w">  </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex2D</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"></span>
 </pre></div>
 </div>
 <p>results in the following migrated SYCL code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">tex</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">coordinate_normalization_mode</span><span class="o">::</span><span class="n">normalized</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">  </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"> </span><span class="c1">// data normalization does not match original code</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos"> 2</span><span class="cm">  DPCT1074:0: The SYCL Image class does not support some of the flags used in</span>
+<span class="linenos"> 3</span><span class="cm">  the original code. Unsupported flags were ignored. Data read from SYCL Image</span>
+<span class="linenos"> 4</span><span class="cm">  could not be normalized as specified in the original code.</span>
+<span class="linenos"> 5</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">  </span><span class="n">tex</span><span class="o">-&gt;</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">coordinate_normalization_mode</span><span class="o">::</span><span class="n">normalized</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 7</span><span class="w">  </span><span class="n">tex</span><span class="o">-&gt;</span><span class="n">set_channel_type</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="o">::</span><span class="n">unsigned_int16</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">  </span><span class="n">tex</span><span class="o">-&gt;</span><span class="n">set_channel_num</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">  </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"> </span><span class="c1">// data normalization does not match original code</span>
 </pre></div>
 </div>
 <p>which is manually adjusted to:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">tex</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">coordinate_normalization_mode</span><span class="o">::</span><span class="n">normalized</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">  </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalization</span><span class="p">(</span><span class="n">tex</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">));</span><span class="w"> </span><span class="c1">// Implement the function &quot;normalization&quot; to normalize the result data as required.</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">tex</span><span class="o">-&gt;</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">coordinate_normalization_mode</span><span class="o">::</span><span class="n">normalized</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">tex</span><span class="o">-&gt;</span><span class="n">set_channel_type</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="o">::</span><span class="n">unsigned_int16</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">tex</span><span class="o">-&gt;</span><span class="n">set_channel_num</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">5</span><span class="w">  </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">numeric_limits</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="kt">uint16_t</span><span class="o">&gt;::</span><span class="n">max</span><span class="p">());</span><span class="w"></span>
 </pre></div>
 </div>
 </section>
