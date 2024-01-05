@@ -78,3 +78,15 @@ endmacro()
 # Always set SYCL_HAS_FP16 to true to assume SYCL device to support float16
 message("dpct.cmake: SYCL_HAS_FP16 is set true by default.")
 set(SYCL_HAS_FP16 TRUE)
+
+# Return the list of object file paths generated for the given SYCL source files
+macro(DPCT_HELPER_SYCL_COMPILE generated_files)
+  _DPCT_GET_SOURCES(_sources ${ARGN})
+
+  # can't continue without list of source files
+  if("${_sources}" STREQUAL "")
+    message(FATAL "Failed to find the source files while running the macro 'DPCT_HELPER_SYCL_COMPILE'")
+  endif()
+
+  _DPCT_CREATE_BUILD_COMMAND("sycl_device" ${generated_files} ${_sources})
+endmacro()
