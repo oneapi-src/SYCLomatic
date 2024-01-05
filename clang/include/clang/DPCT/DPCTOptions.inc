@@ -477,4 +477,9 @@ DPCT_ENUM_OPTION(
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
     llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), AnalysisMode, "analysis-mode",
+    llvm::cl::desc("Only generate report for porting effort. Default: off."),
+    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

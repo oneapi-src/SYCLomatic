@@ -606,6 +606,10 @@ int runDPCT(int argc, const char **argv) {
     clang::tooling::SetDiagnosticOutput(DpctTerm());
   }
 
+  if (AnalysisMode) {
+    DpctGlobalInfo::enableAnalysisMode();
+    SuppressWarningsAllFlag = true;
+  }
   initWarningIDs();
 
   DpctInstallPath = getInstallPath(argv[0]);
@@ -1280,6 +1284,11 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       return MigrationSucceeded;
     }
+  }
+
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    dumpAnalysisModeStatics(llvm::outs());
+    return MigrationSucceeded;
   }
 
   // if run was successful

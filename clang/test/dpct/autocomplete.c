@@ -8,6 +8,7 @@
 // Notice: When modify DASH prefix check, need modify behavior_tests/src/bt-autocomplete/do_test.py
 // in SYCLomatic-test repo too.
 // DASH: --always-use-async-handler
+// DASH-NEXT: --analysis-mode
 // DASH-NEXT: --analysis-scope-path
 // DASH-NEXT: --assume-nd-range-dim=
 // DASH-NEXT: --build-script-file

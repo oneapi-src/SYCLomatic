@@ -12483,6 +12483,7 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
       return;
   }
 
+  recordRecognizedAPI(CE);
   auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
   Namespace = getNameSpace(NSD);
   APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
@@ -12526,6 +12527,7 @@ void RecognizeTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TypeTable = MigrationStatistics::GetTypeTable();
   std::vector<std::string> UnsupportedType;
   std::vector<std::string> UnsupportedPointerType;
+  std::vector<std::string> AllTypes;
   for (auto &Type : TypeTable) {
     if (!Type.second) {
       if (Type.first.find("*") != std::string::npos) {
@@ -12534,6 +12536,9 @@ void RecognizeTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       } else {
         UnsupportedType.push_back(Type.first);
       }
+    }
+    if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+      AllTypes.push_back(Type.first);
     }
   }
   MF.addMatcher(
@@ -12544,31 +12549,42 @@ void RecognizeTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                 loc(pointerType(pointee(qualType(hasDeclaration(namedDecl(
                     internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
                         UnsupportedPointerType))))))))))
-          .bind("typeloc"),
+          .bind("unsupportedtypeloc"),
       this);
+
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
+                              namedDecl(internal::Matcher<NamedDecl>(
+                                  new internal::HasNameMatcher(AllTypes)))))))
+                      .bind("alltypeloc"),
+                  this);
+  }
 }
 
 void RecognizeTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  const TypeLoc *TL = getNodeAsType<TypeLoc>(Result, "typeloc");
-  if (!TL)
-    return;
-  auto &Context = DpctGlobalInfo::getContext();
-  QualType QTy = TL->getType();
-  if (QTy.isCanonical())
-    return;
-  std::string TypeName =
+  if (const TypeLoc* TL = getNodeAsType<TypeLoc>(Result, "unsupportedtypeloc")) {
+    auto& Context = DpctGlobalInfo::getContext();
+    QualType QTy = TL->getType();
+    if (QTy.isCanonical())
+      return;
+    std::string TypeName =
       DpctGlobalInfo::getTypeName(QTy.getUnqualifiedType(), Context);
-  // process pointer type
-  if (!QTy->isTypedefNameType() && QTy->isPointerType()) {
-    std::string PointeeTy = DpctGlobalInfo::getTypeName(
+    // process pointer type
+    if (!QTy->isTypedefNameType() && QTy->isPointerType()) {
+      std::string PointeeTy = DpctGlobalInfo::getTypeName(
         QTy->getPointeeType().getUnqualifiedType(), Context);
+      report(TL->getBeginLoc(), Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
+        PointeeTy + " *");
+      return;
+    }
     report(TL->getBeginLoc(), Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
-           PointeeTy + " *");
+      TypeName);
     return;
   }
-  report(TL->getBeginLoc(), Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
-         TypeName);
+  if (const TypeLoc *TL = getNodeAsType<TypeLoc>(Result, "alltypeloc")) {
+    recordRecognizedType(*TL);
+  }
 }
 
 REGISTER_RULE(RecognizeTypeRule, PassKind::PK_Migration)
