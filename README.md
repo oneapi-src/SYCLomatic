@@ -154,9 +154,11 @@ After building the SYCLomatic, you can run the lit test by:
 ninja check-clang-c2s
 ```
 
-Or to build the migrated lit is **optional**, it will depend on SYCL compiler available in testing environment.
+Or enabling extra lit build test besides lit migration test:
+
+Set up compiler and libraries according to [oneAPI Development Environment Setup](https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2024-0/oneapi-development-environment-setup.html#SETVARS-ONEAPI-VARS-AND-VARS-FILES)
 ```
-export BUILD_LIT=TRUE  # if you want to enable the build test of migrated SYCL files from lit tests.
+export BUILD_LIT=TRUE
 ninja check-clang-c2s
 ```
 
