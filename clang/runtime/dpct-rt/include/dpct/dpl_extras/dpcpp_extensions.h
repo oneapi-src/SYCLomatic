@@ -428,7 +428,7 @@ public:
 
   radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-  template <typename Item>
+    template <typename Item>
   __dpct_inline__ void
   helper_sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
               int end_bit = 8 * sizeof(T), bool is_striped = false) {
@@ -450,28 +450,25 @@ public:
 
       item.barrier(sycl::access::fence_space::local_space);
 
-      if ( i == end_bit - RADIX_BITS ) {
+      if (i == end_bit - RADIX_BITS) {
 
-        if(is_striped){
+        if (is_striped) {
           exchange<T, VALUES_PER_THREAD>(_local_memory)
-            .scatter_to_striped(item, keys, ranks);
+              .scatter_to_striped(item, keys, ranks);
 
-          item.barrier(sycl::access::fence_space::local_space); 
+          item.barrier(sycl::access::fence_space::local_space);
+        } else {
+          exchange<T, VALUES_PER_THREAD>(_local_memory)
+              .scatter_to_blocked(item, keys, ranks);
+
+          item.barrier(sycl::access::fence_space::local_space);
         }
-        else{
-          exchange<T, VALUES_PER_THREAD>(_local_memory)
-          .scatter_to_blocked(item, keys, ranks);
-
-          item.barrier(sycl::access::fence_space::local_space);   
-        } 
-      }
-      else{
+      } else {
         exchange<T, VALUES_PER_THREAD>(_local_memory)
-          .scatter_to_blocked(item, keys, ranks);
+            .scatter_to_blocked(item, keys, ranks);
 
-        item.barrier(sycl::access::fence_space::local_space); 
+        item.barrier(sycl::access::fence_space::local_space);
       }
-      
     }
 
 #pragma unroll
