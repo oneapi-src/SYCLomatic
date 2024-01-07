@@ -9,6 +9,17 @@
 #include <cstddef>
 #include <deque>
 
+namespace clang {
+namespace dpct {
+// Key: CUDA type name
+// Value: The corresponding schema of the type
+std::map<std::string, TypeSchema> CTypeSchemaMap;
+// Key: SYCL type name
+// Value: The corresponding schema of the type
+std::map<std::string, TypeSchema> STypeSchemaMap;
+} // namespace dpct
+} // namespace clang
+
 using namespace clang;
 using namespace clang::dpct;
 
@@ -29,6 +40,7 @@ std::string dpct::getFilePathFromDecl(const Decl *D, const SourceManager &SM) {
       return fileEntry->tryGetRealPathName().str();
     }
   }
+  assert(0 && "Invalid Path");
   return "Invalid Path";
 }
 
@@ -86,8 +98,9 @@ void registerBaseClassForCUDA(clang::CXXRecordDecl *RD, TypeSchema &TS) {
     clang::CXXRecordDecl *BCD = base.getType()->getAsCXXRecordDecl();
     if (BCD) {
       auto TsTmp = registerCUDATypeSchema(base.getType());
+      assert(TsTmp.TypeAlign != 0 && "The type alignment should not be 0.");
       BaseOffset = ceilDevide(BaseOffset, TsTmp.TypeAlign);
-      for (auto mem : TsTmp.Members) {
+      for (auto &mem : TsTmp.Members) {
         mem.Offset += BaseOffset;
         mem.FieldName = base.getType().getAsString() + "::" + mem.FieldName;
         TS.Members.emplace_back(mem);
@@ -245,10 +258,6 @@ VarSchema dpct::constructSyclVarSchema(const VarSchema &CVS) {
   }
   return VA;
 }
-
-std::map<std::string, TypeSchema> clang::dpct::CTypeSchemaMap;
-
-std::map<std::string, TypeSchema> clang::dpct::STypeSchemaMap;
 
 llvm::json::Array dpct::serializeSchemaToJsonArray(
     const std::map<std::string, TypeSchema> &TSMap) {
