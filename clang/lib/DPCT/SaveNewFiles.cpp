@@ -14,11 +14,13 @@
 #include "GenMakefile.h"
 #include "PatternRewriter.h"
 #include "Statics.h"
+#include "TextModification.h"
 #include "Utility.h"
 #include "Schema.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
 
@@ -373,7 +375,7 @@ int writeReplacementsToFiles(
     std::unordered_map<clang::tooling::UnifiedPath,
                        std::vector<clang::tooling::Range>>
         &FileBlockLevelFormatRangesMap,
-    bool IsForCUDADebug = false) {
+    clang::dpct::ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
   volatile ProcessStatus status = MigrationSucceeded;
   clang::tooling::UnifiedPath OutPath;
   for (auto &Entry : Replset) {
@@ -387,14 +389,16 @@ int writeReplacementsToFiles(
       if (Repl.getLength() == 0 && Repl.getReplacementText().empty())
         HasRealReplacements = false;
     }
-    auto Find = IncludeFileMap.find(OutPath);
-    if (HasRealReplacements && Find != IncludeFileMap.end()) {
-      IncludeFileMap[OutPath] = true;
-    }
 
-    // This operation won't fail; it already succeeded once during argument
-    // validation.
-    if(!IsForCUDADebug){
+    if (IsForCUDADebug == clang::dpct::RT_ForSYCLMigration) {
+      auto Find = IncludeFileMap.find(OutPath);
+      if (HasRealReplacements && Find != IncludeFileMap.end()) {
+        IncludeFileMap[OutPath] = true;
+      }
+
+      // This operation won't fail; it already succeeded once during argument
+      // validation.
+
       rewriteFileName(OutPath);
     }
     if (!rewriteDir(OutPath, InRoot, Folder)) {
@@ -430,38 +434,40 @@ int writeReplacementsToFiles(
     // For main file, as it can be compiled or preprocessed with different
     // macro defined, it also needs merge the migration triggered by each
     // command.
-    SourceProcessType FileType = GetSourceFileType(Entry.first);
-    if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
-      mergeExternalReps(Entry.first, OutPath, Entry.second);
-    } else {
+    if (IsForCUDADebug == clang::dpct::RT_ForSYCLMigration) {
+      SourceProcessType FileType = GetSourceFileType(Entry.first);
+      if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
+        mergeExternalReps(Entry.first, OutPath, Entry.second);
+      } else {
 
-      auto Hash = llvm::sys::fs::md5_contents(Entry.first);
-      MainSrcFilesDigest.push_back(
-          std::make_pair(Entry.first, Hash->digest().c_str()));
+        auto Hash = llvm::sys::fs::md5_contents(Entry.first);
+        MainSrcFilesDigest.push_back(
+            std::make_pair(Entry.first, Hash->digest().c_str()));
 
-      bool IsMainSrcFileChanged = false;
-      std::string FilePath = Entry.first;
+        bool IsMainSrcFileChanged = false;
+        std::string FilePath = Entry.first;
 
-      auto &DigestMap = DpctGlobalInfo::getDigestMap();
-      auto DigestIter = DigestMap.find(Entry.first);
-      if (DigestIter != DigestMap.end()) {
-        auto Digest = llvm::sys::fs::md5_contents(Entry.first);
-        if (DigestIter->second != Digest->digest().c_str())
-          IsMainSrcFileChanged = true;
-      }
+        auto &DigestMap = DpctGlobalInfo::getDigestMap();
+        auto DigestIter = DigestMap.find(Entry.first);
+        if (DigestIter != DigestMap.end()) {
+          auto Digest = llvm::sys::fs::md5_contents(Entry.first);
+          if (DigestIter->second != Digest->digest().c_str())
+            IsMainSrcFileChanged = true;
+        }
 
-      auto &FileRelpsMap = dpct::DpctGlobalInfo::getFileRelpsMap();
-      auto Iter = FileRelpsMap.find(Entry.first);
-      if (Iter != FileRelpsMap.end() && !IsMainSrcFileChanged) {
-        const auto &PreRepls = Iter->second;
-        mergeAndUniqueReps(Entry.second, PreRepls);
-      }
+        auto &FileRelpsMap = dpct::DpctGlobalInfo::getFileRelpsMap();
+        auto Iter = FileRelpsMap.find(Entry.first);
+        if (Iter != FileRelpsMap.end() && !IsMainSrcFileChanged) {
+          const auto &PreRepls = Iter->second;
+          mergeAndUniqueReps(Entry.second, PreRepls);
+        }
 
-      // Mark current migrating main src file processed.
-      MainSrcFileMap[Entry.first] = true;
+        // Mark current migrating main src file processed.
+        MainSrcFileMap[Entry.first] = true;
 
-      for (const auto &Repl : Entry.second) {
-        MainSrcFilesRepls.push_back(Repl);
+        for (const auto &Repl : Entry.second) {
+          MainSrcFilesRepls.push_back(Repl);
+        }
       }
     }
 
@@ -484,7 +490,8 @@ int writeReplacementsToFiles(
     }
 
     // Do not apply PatternRewriters for CodePin CUDA debug file
-    if (MapNames::PatternRewriters.empty() || IsForCUDADebug) {
+    if (MapNames::PatternRewriters.empty() ||
+        IsForCUDADebug == clang::dpct::RT_ForCUDADebug) {
       Rewrite
           .getEditBuffer(Rewrite.getSourceMgr().getOrCreateFileID(
               *Result, clang::SrcMgr::C_User /*normal user code*/))
@@ -556,12 +563,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
   std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> MainSrcFilesDigest;
 
-  int ReplCount = 0;
-  for(auto &FileRepl : ReplSYCL){
-    ReplCount += FileRepl.second.size();
-  }
-
-  if (!ReplCount) {
+  if (ReplSYCL.empty()) {
     // There are no rules applying on the *.cpp files,
     // dpct just do nothing with them.
     status = MigrationNoCodeChangeHappen;
@@ -581,13 +583,15 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     if (auto RewriteStatus = writeReplacementsToFiles(
             ReplSYCL, Rewrite, OutRoot.getCanonicalPath().str(), InRoot,
             MainSrcFilesDigest, MainSrcFileMap, MainSrcFilesRepls,
-            FileRangesMap, FileBlockLevelFormatRangesMap))
+            FileRangesMap, FileBlockLevelFormatRangesMap,
+            clang::dpct::RT_ForSYCLMigration))
       return RewriteStatus;
     if (DpctGlobalInfo::isCodePinEnabled()) {
       if (auto RewriteStatus = writeReplacementsToFiles(
               ReplCUDA, DebugCUDARewrite, DebugCUDAFolder, InRoot,
               MainSrcFilesDigest, MainSrcFileMap, MainSrcFilesRepls,
-              FileRangesMap, FileBlockLevelFormatRangesMap, true))
+              FileRangesMap, FileBlockLevelFormatRangesMap,
+              clang::dpct::RT_ForCUDADebug))
         return RewriteStatus;
     }
     // Print the in-root path and the number of processed files
@@ -785,21 +789,20 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     }
     llvm::raw_os_ostream SchemaStreamCUDA(SchemaFileCUDA);
 
-    std::string SchemaCUDA =
-        std::string("#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__") + getNL() +
-        "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" + getNL() +
-        "static std::string type_schema_array=" +
-        jsonToString(serializeSchemaToJsonArray(CTypeSchemaMap)) + ";" +
-        getNL() + dpct::DpctGlobalInfo::getInstance().SchemaFileContentCUDA +
-        getNL() + "class Init {" + getNL() + "public:" + getNL() +
-        "  Init() {" + getNL() +
-        "    "
-        "dpct::experimental::detail::parse_type_schema_str(type_schema_array)"
-        ";" +
-        getNL() + "  }" + getNL() + "};" + getNL() + "static Init init;" +
-        getNL() + "#endif" + getNL();
-
-    SchemaStreamCUDA << SchemaCUDA;
+    SchemaStreamCUDA
+        << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
+        << "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
+        << "static std::string type_schema_array="
+        << jsonToString(serializeSchemaToJsonArray(CTypeSchemaMap)) << ";"
+        << getNL() << dpct::DpctGlobalInfo::getInstance().SchemaFileContentCUDA
+        << getNL() << "class Init {" << getNL() << "public:" << getNL()
+        << "  Init() {" << getNL()
+        << "    "
+           "dpct::experimental::detail::parse_type_schema_str(type_schema_"
+           "array)"
+           ";"
+        << getNL() << "  }" << getNL() << "};" << getNL() << "static Init init;"
+        << getNL() << "#endif" << getNL();
 
     EC = fs::create_directories(path::parent_path(SchemaPathSYCL));
     if ((bool)EC) {
@@ -819,20 +822,20 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       return status;
     }
     llvm::raw_os_ostream SchemaStreamSYCL(SchemaFileSYCL);
-    std::string SchemaSYCL =
-        std::string("#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__") + getNL() +
-        "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" + getNL() +
-        "static std::string type_schema_array=" +
-        jsonToString(serializeSchemaToJsonArray(STypeSchemaMap)) + ";" +
-        getNL() + dpct::DpctGlobalInfo::getInstance().SchemaFileContentSYCL +
-        getNL() + "class Init {" + getNL() + "public:" + getNL() +
-        "  Init() {" + getNL() +
-        "    "
-        "dpct::experimental::detail::parse_type_schema_str(type_schema_array)"
-        ";" +
-        getNL() + "  }" + getNL() + "};" + getNL() + "static Init init;" +
-        getNL() + "#endif" + getNL();
-    SchemaStreamSYCL << SchemaSYCL;
+    SchemaStreamSYCL
+        << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
+        << "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
+        << "static std::string type_schema_array="
+        << jsonToString(serializeSchemaToJsonArray(STypeSchemaMap)) << ";"
+        << getNL() << dpct::DpctGlobalInfo::getInstance().SchemaFileContentSYCL
+        << getNL() << "class Init {" << getNL() << "public:" << getNL()
+        << "  Init() {" << getNL()
+        << "    "
+           "dpct::experimental::detail::parse_type_schema_str(type_schema_"
+           "array)"
+           ";"
+        << getNL() << "  }" << getNL() << "};" << getNL() << "static Init init;"
+        << getNL() << "#endif" << getNL();
   }
   processallOptionAction(InRoot, OutRoot);
 
