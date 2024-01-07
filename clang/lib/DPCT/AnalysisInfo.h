@@ -17,6 +17,7 @@
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
+#include "TextModification.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
@@ -448,7 +449,7 @@ public:
   template <typename ReplacementT>
   void insertHeader(ReplacementT &&Repl, unsigned Offset,
                     InsertPosition InsertPos = IP_Left,
-                    bool IsForCUDADebug = false) {
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
     auto R = std::make_shared<ExtReplacement>(
         FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
@@ -458,25 +459,19 @@ public:
   }
 
   template <typename ReplacementT>
-  void insertCustomizedHeader(ReplacementT &&Repl,
-                              bool IsForCUDADebug = false) {
+  void insertCustomizedHeader(ReplacementT &&Repl) {
     if (auto Type = findHeaderType(Repl))
       return insertHeader(Type.value());
-    if (IsForCUDADebug) {
-      if (std::find(InsertedHeadersCUDA.begin(), InsertedHeadersCUDA.end(),
-                    Repl) == InsertedHeadersCUDA.end()) {
-        InsertedHeadersCUDA.push_back(Repl);
-      }
-    } else {
-      if (std::find(InsertedHeaders.begin(), InsertedHeaders.end(), Repl) ==
-          InsertedHeaders.end()) {
-        InsertedHeaders.push_back(Repl);
-      }
+    if (std::find(InsertedHeaders.begin(), InsertedHeaders.end(), Repl) ==
+        InsertedHeaders.end()) {
+      InsertedHeaders.push_back(Repl);
     }
   }
 
-  void insertHeader(HeaderType Type, unsigned Offset);
-  void insertHeader(HeaderType Type);
+  void insertHeader(HeaderType Type, unsigned Offset,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+  void insertHeader(HeaderType Type,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
 
   // Record line info in file.
   struct SourceLineInfo {
@@ -1693,16 +1688,15 @@ public:
     insertFile(LocInfo.first)->setTimeHeaderInserted(B);
   }
 
-  void insertHeader(SourceLocation Loc, HeaderType Type) {
+  void insertHeader(SourceLocation Loc, HeaderType Type,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
     auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->insertHeader(Type);
+    insertFile(LocInfo.first)->insertHeader(Type, IsForCUDADebug);
   }
 
-  void insertHeader(SourceLocation Loc, std::string HeaderName,
-                    bool IsForCUDADebug = false) {
+  void insertHeader(SourceLocation Loc, std::string HeaderName) {
     auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)
-        ->insertCustomizedHeader(std::move(HeaderName), IsForCUDADebug);
+    insertFile(LocInfo.first)->insertCustomizedHeader(std::move(HeaderName));
   }
 
   static std::unordered_map<

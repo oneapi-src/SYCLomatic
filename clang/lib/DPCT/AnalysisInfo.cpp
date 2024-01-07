@@ -10,6 +10,7 @@
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
 #include "Statics.h"
+#include "TextModification.h"
 #include "Utility.h"
 #include "Schema.h"
 
@@ -1091,18 +1092,16 @@ void DpctFileInfo::buildReplacements() {
 
   std::string InsertHeaderStrCUDA;
   llvm::raw_string_ostream HeaderOSCUDA(InsertHeaderStrCUDA);
-  if (!InsertedHeadersCUDA.empty()) {
-    HeaderOSCUDA << getNL();
-  }
+
   for (auto &HeaderStr : InsertedHeadersCUDA) {
     if (HeaderStr[0] != '<' && HeaderStr[0] != '"') {
       HeaderStr = "\"" + HeaderStr + "\"";
     }
-    HeaderOSCUDA << "#include " << HeaderStr << getNL();
+    HeaderOSCUDA << getNL() << "#include " << HeaderStr;
   }
   HeaderOSCUDA.flush();
   insertHeader(std::move(InsertHeaderStrCUDA), LastIncludeOffset, IP_Left,
-               true);
+               RT_ForCUDADebug);
 
   FreeQueriesInfo::buildInfo();
 
@@ -1179,7 +1178,9 @@ std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
   return Pos->first;
 }
 
-void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
+void DpctFileInfo::insertHeader(
+    HeaderType Type, unsigned Offset,
+    ReplacementType IsForCUDADebug) {
   if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
       Type == HT_DPCT_DNNL_Utils) {
     if (this != DpctGlobalInfo::getInstance().getMainFile().get())
@@ -1286,6 +1287,30 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   case HT_MKL_RNG:
     insertHeader(HT_MKL_Mkl);
     break;
+  case HT_DPCT_CodePin_CUDA:
+  case HT_DPCT_CodePin_SYCL: {
+    OS << getNL();
+    concatHeader(OS, getHeaderSpelling(Type));
+    std::string CurrentFilePath =
+        llvm::sys::path::convert_to_slash(getFilePath().getCanonicalPath());
+    auto InRootPath = llvm::sys::path::convert_to_slash(
+        DpctGlobalInfo::getInRoot().getCanonicalPath());
+    size_t FilePathCount =
+        std::count_if(CurrentFilePath.begin(), CurrentFilePath.end(),
+                      [](char c) { return c == '/'; });
+    size_t InRootPathCount = std::count_if(InRootPath.begin(), InRootPath.end(),
+                                           [](char c) { return c == '/'; });
+    std::string SchemaRelativePath = "\"";
+    assert(FilePathCount >= InRootPathCount &&
+           "The processed file should be under --in-root folder.");
+    for (size_t i = 1; i < FilePathCount - InRootPathCount; i++) {
+      SchemaRelativePath += "../";
+    }
+    SchemaRelativePath += "generated_schema.hpp\"";
+    concatHeader(OS, SchemaRelativePath);
+    return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right,
+                        IsForCUDADebug);
+  } break;
   default:
     break;
   }
@@ -1296,11 +1321,12 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
 }
 
-void DpctFileInfo::insertHeader(HeaderType Type) {
+void DpctFileInfo::insertHeader(
+    HeaderType Type, ReplacementType IsForCUDADebug) {
   switch (Type) {
-#define HEADER(Name, Spelling)                                                           \
-  case HT_##Name:                                                                 \
-    return insertHeader(HT_##Name, LastIncludeOffset);
+#define HEADER(Name, Spelling)                                                 \
+  case HT_##Name:                                                              \
+    return insertHeader(HT_##Name, LastIncludeOffset, IsForCUDADebug);
 #include "HeaderTypes.inc"
   default:
     return;
