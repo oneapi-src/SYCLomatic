@@ -57,7 +57,8 @@ FieldSchema constructFieldSchema(const clang::FieldDecl *FD) {
   FS.ValSize = AstContext.getTypeSize(FT) / CHAR_BIT;
   FS.Offset = AstContext.getFieldOffset(FD) / CHAR_BIT;
   FS.TypeSize = AstContext.getTypeSize(OriginT) / CHAR_BIT;
-  if (!FS.IsBasicType)
+  if (auto It = CTypeSchemaMap.find(DpctGlobalInfo::getTypeName(OriginT));
+      It != CTypeSchemaMap.end() && !FS.IsBasicType)
     registerCUDATypeSchema(OriginT);
   return FS;
 }
