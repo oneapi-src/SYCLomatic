@@ -441,7 +441,7 @@ public:
       unsigned_keys[i] = detail::traits<T>::twiddle_in(unsigned_keys[i]);
     }
 
-    for (int i = begin_bit; i <= end_bit; i += RADIX_BITS) {
+    for (int i = begin_bit; i < end_bit; i += RADIX_BITS) {
       int pass_bits = sycl::min(RADIX_BITS, end_bit - begin_bit);
 
       int ranks[VALUES_PER_THREAD];
@@ -450,17 +450,28 @@ public:
 
       item.barrier(sycl::access::fence_space::local_space);
 
-      if (is_striped && i == end_bit) {
+      if ( i == end_bit - RADIX_BITS ) {
 
-        exchange<T, VALUES_PER_THREAD>(_local_memory)
+        if(is_striped){
+          exchange<T, VALUES_PER_THREAD>(_local_memory)
             .scatter_to_striped(item, keys, ranks);
 
-        item.barrier(sycl::access::fence_space::local_space);
-      }
-      exchange<T, VALUES_PER_THREAD>(_local_memory)
+          item.barrier(sycl::access::fence_space::local_space); 
+        }
+        else{
+          exchange<T, VALUES_PER_THREAD>(_local_memory)
           .scatter_to_blocked(item, keys, ranks);
 
-      item.barrier(sycl::access::fence_space::local_space);
+          item.barrier(sycl::access::fence_space::local_space);   
+        } 
+      }
+      else{
+        exchange<T, VALUES_PER_THREAD>(_local_memory)
+          .scatter_to_blocked(item, keys, ranks);
+
+        item.barrier(sycl::access::fence_space::local_space); 
+      }
+      
     }
 
 #pragma unroll
