@@ -58,7 +58,7 @@ FieldSchema constructFieldSchema(const clang::FieldDecl *FD) {
   FS.Offset = AstContext.getFieldOffset(FD) / CHAR_BIT;
   FS.TypeSize = AstContext.getTypeSize(OriginT) / CHAR_BIT;
   if (!FS.IsBasicType)
-    registerTypeSchema(OriginT);
+    registerCUDATypeSchema(OriginT);
   return FS;
 }
 
@@ -75,7 +75,7 @@ uint32_t getFieldTypeAlign(const FieldSchema &FS) {
 
 int ceilDevide(int num, int base) { return ((num + base - 1) / base) * base; }
 
-void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS) {
+void registerBaseClassForCUDA(clang::CXXRecordDecl *RD, TypeSchema &TS) {
   if (RD == nullptr)
     return;
   int BaseOffset = 0;
@@ -84,7 +84,7 @@ void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS) {
       TS.IsVirtual = true;
     clang::CXXRecordDecl *BCD = base.getType()->getAsCXXRecordDecl();
     if (BCD) {
-      auto TsTmp = registerTypeSchema(base.getType());
+      auto TsTmp = registerCUDATypeSchema(base.getType());
       BaseOffset = ceilDevide(BaseOffset, TsTmp.TypeAlign);
       for (auto mem : TsTmp.Members) {
         mem.Offset += BaseOffset;
@@ -97,7 +97,7 @@ void DFSBaseClass(clang::CXXRecordDecl *RD, TypeSchema &TS) {
   return;
 }
 
-int DFSBaseClassForSYCL(clang::CXXRecordDecl *RD, TypeSchema &TS) {
+int registerBaseClassForSYCL(clang::CXXRecordDecl *RD, TypeSchema &TS) {
   int BaseOffset = 0;
   if (RD == nullptr)
     return BaseOffset;
@@ -139,13 +139,14 @@ FieldSchema convertCFieldSchemaToSFieldSChema(const FieldSchema &CFS) {
 }
 
 TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
-  const std::string &KetStr = DpctGlobalInfo::getTypeName(QT);
-  if (STypeSchemaMap.find(KetStr) != STypeSchemaMap.end())
-    return STypeSchemaMap[KetStr];
-  if (MapNames::TypeNamesMap.find(KetStr) != MapNames::TypeNamesMap.end())
-    return STypeSchemaMap[MapNames::TypeNamesMap[KetStr]->NewName];
+  const std::string &KeyStr = DpctGlobalInfo::getTypeName(QT);
+  if (auto It = STypeSchemaMap.find(KeyStr); It != STypeSchemaMap.end())
+    return It->second;
+  if (auto It = MapNames::TypeNamesMap.find(KeyStr);
+      It != MapNames::TypeNamesMap.end())
+    return STypeSchemaMap[It->second->NewName];
   TypeSchema TS;
-  TS.TypeName = KetStr;
+  TS.TypeName = KeyStr;
   if (const clang::RecordType *RT = QT->getAs<clang::RecordType>()) {
     TS.FileName =
         getFilePathFromDecl(RT->getDecl(), DpctGlobalInfo::getSourceManager());
@@ -153,7 +154,7 @@ TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
     if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
       clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
       // visit base class
-       OffSet = DFSBaseClassForSYCL(RD, TS);
+       OffSet = registerBaseClassForSYCL(RD, TS);
     }
     
     for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
@@ -173,19 +174,19 @@ TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
             : ceilDevide((TS.Members.back().Offset + TS.Members.back().ValSize),
                          TS.TypeAlign);
   }
-  STypeSchemaMap[KetStr] = TS;
+  STypeSchemaMap[KeyStr] = TS;
   return TS;
 }
 
-TypeSchema dpct::registerTypeSchema(const clang::QualType &QT) {
+TypeSchema dpct::registerCUDATypeSchema(const clang::QualType &QT) {
   if (QT.isNull())
     return TypeSchema();
-  const std::string &KetStr = DpctGlobalInfo::getTypeName(QT);
-  if (CTypeSchemaMap.find(KetStr) != CTypeSchemaMap.end())
-    return CTypeSchemaMap[KetStr];
+  const std::string &KeyStr = DpctGlobalInfo::getTypeName(QT);
+  if (auto It = CTypeSchemaMap.find(KeyStr); It != CTypeSchemaMap.end())
+    return It->second;
   clang::ASTContext &AstContext = dpct::DpctGlobalInfo::getContext();
   TypeSchema TS;
-  TS.TypeName = KetStr;
+  TS.TypeName = KeyStr;
   TS.TypeSize = AstContext.getTypeSize(QT) / CHAR_BIT;
   if (const clang::RecordType *RT = QT->getAs<clang::RecordType>()) {
     TS.FileName =
@@ -193,7 +194,7 @@ TypeSchema dpct::registerTypeSchema(const clang::QualType &QT) {
     if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
       clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
       // visit base class
-      DFSBaseClass(RD, TS);
+      registerBaseClassForCUDA(RD, TS);
     }
     for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
       TS.Members.push_back(constructFieldSchema(field));
@@ -201,12 +202,12 @@ TypeSchema dpct::registerTypeSchema(const clang::QualType &QT) {
     TS.FieldNum = TS.Members.size();
     TS.TypeAlign = AstContext.getTypeAlign(QT) / CHAR_BIT;
   }
-  CTypeSchemaMap[KetStr] = TS;
+  CTypeSchemaMap[KeyStr] = TS;
   registerSYCLTypeSchema(QT);
   return TS;
 }
 
-VarSchema dpct::constructVarSchema(const clang::DeclRefExpr *DRE) {
+VarSchema dpct::constructCUDAVarSchema(const clang::DeclRefExpr *DRE) {
   clang::ASTContext &AstContext = dpct::DpctGlobalInfo::getContext();
   VarSchema VA;
   VA.VarName = DRE->getNameInfo().getAsString();
@@ -219,7 +220,7 @@ VarSchema dpct::constructVarSchema(const clang::DeclRefExpr *DRE) {
   VA.VarType = DpctGlobalInfo::getTypeName(getDerefType(DRE->getType()));
   VA.TypeSize = AstContext.getTypeSize(getDerefType(DRE->getType())) / CHAR_BIT;
   if (!VA.IsBasicType) {
-    registerTypeSchema(getDerefType(DRE->getType()));
+    registerCUDATypeSchema(getDerefType(DRE->getType()));
   }
   return VA;
 }
@@ -302,27 +303,6 @@ llvm::json::Object dpct::serializeVarSchemaToJson(const VarSchema &VS) {
   JObj.try_emplace("FilePath", VS.FileName);
   JObj.try_emplace("Location", VS.Location);
   return JObj;
-}
-
-std::vector<TypeSchema> dpct::getRelatedTypeSchema(
-    const std::string &TypeName,
-    const std::map<std::string, TypeSchema> &TypeSchemaMap) {
-  if (TypeSchemaMap.find(TypeName) == TypeSchemaMap.end())
-    return std::vector<TypeSchema>();
-  TypeSchema TS = TypeSchemaMap.find(TypeName)->second;
-  std::deque<TypeSchema> Q;
-  std::vector<TypeSchema> Res;
-  Q.push_back(TS);
-  while (!Q.empty()) {
-    TS = Q.front();
-    Res.push_back(TS);
-    Q.pop_front();
-    for (auto &it : TS.Members) {
-      if (TypeSchemaMap.find(it.FieldType) != TypeSchemaMap.end())
-        Q.push_back(TypeSchemaMap.find(it.FieldType)->second);
-    }
-  }
-  return Res;
 }
 
 llvm::json::Array

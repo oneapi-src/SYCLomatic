@@ -35,10 +35,6 @@ inline const char *getValTypeStr(ValType tt) {
   return VTStr[tt];
 }
 
-inline std::ostream &operator<<(std::ostream &strm, ValType tt) {
-  return strm << getValTypeStr(tt);
-}
-
 struct FieldSchema {
   ValType ValTypeOfField;
   bool IsBasicType = false;
@@ -93,11 +89,11 @@ ValType getValType(const clang::QualType &QT);
 
 TypeSchema constructTypeSchema(const clang::RecordType *RT);
 
-TypeSchema registerTypeSchema(const clang::QualType &QT);
+TypeSchema registerCUDATypeSchema(const clang::QualType &QT);
 
 TypeSchema registerSYCLTypeSchema(const clang::QualType &QT);
 
-VarSchema constructVarSchema(const clang::DeclRefExpr *DRE);
+VarSchema constructCUDAVarSchema(const clang::DeclRefExpr *DRE);
 
 VarSchema constructSyclVarSchema(const VarSchema &CVS);
 

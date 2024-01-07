@@ -4525,12 +4525,13 @@ const std::string DpctGlobalInfo::getVarSchema(const clang::DeclRefExpr *DRE) {
       "VAR_SCHEMA_" + std::to_string(DpctGlobalInfo::VarSchemaIndex);
   DpctGlobalInfo::SchemaFileContentCUDA +=
       "#define " + MacroName + " " +
-      jsonToString(serializeVarSchemaToJson(dpct::constructVarSchema(DRE))) +
+      jsonToString(
+          serializeVarSchemaToJson(dpct::constructCUDAVarSchema(DRE))) +
       getNL();
   DpctGlobalInfo::SchemaFileContentSYCL +=
       "#define " + MacroName + " " +
       jsonToString(serializeVarSchemaToJson(
-          constructSyclVarSchema(constructVarSchema(DRE)))) +
+          constructSyclVarSchema(constructCUDAVarSchema(DRE)))) +
       getNL();
 
   DpctGlobalInfo::VarSchemaIndex += 1;
