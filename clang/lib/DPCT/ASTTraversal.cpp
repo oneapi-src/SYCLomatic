@@ -195,10 +195,25 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
       return false;
     if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
       auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+      auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
       DpctGlobalInfo::getInstance()
           .insertFile(LocInfo.first)
           ->setRTVersionValue(
-              clang::CudaVersionToMacroDefStr(DpctGlobalInfo::getSDKVersion()));
+              std::to_string(Ver.first * 1000 + Ver.second * 10));
+    }
+    if (MacroName == "__CUDACC_VER_MAJOR__") {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+      auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+      DpctGlobalInfo::getInstance()
+          .insertFile(LocInfo.first)
+          ->setMajorVersionValue(std::to_string(Ver.first));
+    }
+    if (MacroName == "__CUDACC_VER_MINOR__") {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+      auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+      DpctGlobalInfo::getInstance()
+          .insertFile(LocInfo.first)
+          ->setMinorVersionValue(std::to_string(Ver.second));
     }
     TransformSet.emplace_back(Repl);
     return true;

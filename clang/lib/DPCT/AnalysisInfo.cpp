@@ -1165,6 +1165,9 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   HeaderInsertedBitMap[Type] = true;
   std::string ReplStr;
   llvm::raw_string_ostream OS(ReplStr);
+  std::string MigratedMacroDefinitionStr;
+  llvm::raw_string_ostream MigratedMacroDefinitionOS(
+      MigratedMacroDefinitionStr);
 
   switch (Type) {
   // The #include of <oneapi/dpl/execution> and <oneapi/dpl/algorithm> were
@@ -1185,10 +1188,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "#define DPCT_PROFILING_ENABLED" << getNL();
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
-    if (!RTVersionValue.empty())
-      OS << "#define DPCT_COMPAT_RT_VERSION " << RTVersionValue << getNL();
-    if (!CCLVerValue.empty())
-      OS << "#define DPCT_COMPAT_CCL_VERSION " << CCLVerValue << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
     concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
     HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
@@ -1231,7 +1230,22 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
            << DpctGlobalInfo::getGlobalQueueName() << ";" << getNL();
       }
     }
-    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
+    insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
+    if (!RTVersionValue.empty())
+      MigratedMacroDefinitionOS << "#define DPCT_COMPAT_RT_VERSION "
+                                << RTVersionValue << getNL();
+    if (!MajorVersionValue.empty())
+      MigratedMacroDefinitionOS << "#define DPCT_COMPAT_RT_MAJOR_VERSION "
+                                << MajorVersionValue << getNL();
+    if (!MinorVersionValue.empty())
+      MigratedMacroDefinitionOS << "#define DPCT_COMPAT_RT_MINOR_VERSION "
+                                << MinorVersionValue << getNL();
+    if (!CCLVerValue.empty())
+      MigratedMacroDefinitionOS << "#define DPCT_COMPAT_CCL_VERSION "
+                                << CCLVerValue << getNL();
+    insertHeader(MigratedMacroDefinitionOS.str(), FileBeginOffset,
+                 InsertPosition::IP_AlwaysLeft);
+    return;
 
   // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
   // <oneapi/dpl/algorithm>, so we have to make sure that
