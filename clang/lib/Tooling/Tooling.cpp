@@ -70,6 +70,8 @@ using namespace clang;
 using namespace tooling;
 
 #ifdef SYCLomatic_CUSTOMIZATION
+extern int SDKVersionMajor;
+extern int SDKVersionMinor;
 namespace clang {
 namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
@@ -889,6 +891,18 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+        std::string CUDAVerMajor =
+            "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster(CUDAVerMajor.c_str(),
+                                      ArgumentInsertPosition::BEGIN));
+        std::string CUDAVerMinor =
+            "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster(CUDAVerMinor.c_str(),
+                                      ArgumentInsertPosition::BEGIN));
       }
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
@@ -901,6 +915,18 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+        std::string CUDAVerMajor =
+            "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster(CUDAVerMajor.c_str(),
+                                      ArgumentInsertPosition::BEGIN));
+        std::string CUDAVerMinor =
+            "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster(CUDAVerMinor.c_str(),
+                                      ArgumentInsertPosition::BEGIN));
       }
 #endif
       CommandLine = getInsertArgumentAdjuster(
