@@ -431,7 +431,7 @@ public:
   template <typename Item>
   __dpct_inline__ void
   helper_sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-       int end_bit = 8 * sizeof(T), bool is_striped = false) {
+              int end_bit = 8 * sizeof(T), bool is_striped = false) {
 
     uint32_t(&unsigned_keys)[VALUES_PER_THREAD] =
         reinterpret_cast<uint32_t(&)[VALUES_PER_THREAD]>(keys);
@@ -490,7 +490,7 @@ public:
                           int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
     helper_sort(item, keys, begin_bit, end_bit, true);
   }
- 
+
 private:
   static constexpr int RADIX_BITS = 4;
 
@@ -567,7 +567,7 @@ inclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
   } else {
     outputs[0] = binary_op(inputs[0], exclusive_result);
   }
-  
+
 #pragma unroll
   for (int i = 1; i < VALUES_PER_THREAD; ++i) {
     outputs[i] = binary_op(inputs[i], outputs[i - 1]);
