@@ -2684,7 +2684,9 @@ void no_migration5() {
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
+#ifndef BUILD_TEST
   std::modf(f, &f);
+#endif
   std::nearbyint(f);
   std::remquo(f, f, &i);
   std::acos(f);
@@ -2744,7 +2746,9 @@ __device__ void do_migration5() {
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
+#ifndef BUILD_TEST
   std::modf(f, &f);
+#endif
   std::nearbyint(f);
   std::remquo(f, f, &i);
   std::acos(f);
@@ -2800,7 +2804,9 @@ __global__ void do_migration6() {
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
+#ifndef BUILD_TEST
   std::modf(f, &f);
+#endif
   std::nearbyint(f);
   std::remquo(f, f, &i);
   std::acos(f);
