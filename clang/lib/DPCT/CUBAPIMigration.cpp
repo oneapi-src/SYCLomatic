@@ -668,8 +668,12 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
       return;
     }
     // always remove TempStorage variable declaration
+    if (VDecl.find("cub::BlockRadixSort")!=std::string::npos){
+      emplaceTransformation( new ReplaceStmt(DS, "uint8_t *sort_temp_storage = sycl::ext::oneapi::group_local_memory_for_overwrite<int8_t[]>(dpct::group::radix_sort::get_local_memory_size())"))
+    }
+    else{
     emplaceTransformation(new ReplaceStmt(DS, ""));
-
+    }
     // process TempStorage used in class constructor
     auto TempVarMatcher = compoundStmt(forEachDescendant(
         declRefExpr(to(varDecl(hasName(VarName)))).bind("TempVar")));
