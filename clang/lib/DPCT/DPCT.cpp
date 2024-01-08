@@ -999,7 +999,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
-  DpctGlobalInfo::setSYCLFileExtensioni(SYCLFileExtension);
+  DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
