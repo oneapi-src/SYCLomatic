@@ -40,7 +40,6 @@ std::string dpct::getFilePathFromDecl(const Decl *D, const SourceManager &SM) {
       return fileEntry->tryGetRealPathName().str();
     }
   }
-  assert(0 && "Invalid Path");
   return "Invalid Path";
 }
 
