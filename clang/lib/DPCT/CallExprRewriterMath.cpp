@@ -345,8 +345,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       // The vector type constructors (e.g. make_double3) are available in
       // the host, but should not need to include cmath nor be migrated to
       // SourceCalleeName.
-      if (!SourceCalleeName.startswith("make_")) {
-	// Insert "#include <cmath>" to migrated code
+      if (!SourceCalleeName.starts_with("make_")) {
+        // Insert "#include <cmath>" to migrated code
         DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
         NewFuncName = SourceCalleeName.str();
       }
@@ -382,8 +382,8 @@ std::optional<std::string> MathCallExprRewriter::rewrite() {
 }
 
 void MathCallExprRewriter::reportUnsupportedRoundingMode() {
-  if (SourceCalleeName.endswith("_rd") || SourceCalleeName.endswith("_rn") ||
-      SourceCalleeName.endswith("_ru") || SourceCalleeName.endswith("_rz")) {
+  if (SourceCalleeName.ends_with("_rd") || SourceCalleeName.ends_with("_rn") ||
+      SourceCalleeName.ends_with("_ru") || SourceCalleeName.ends_with("_rz")) {
     report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
   }
 }
