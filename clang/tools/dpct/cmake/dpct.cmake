@@ -99,12 +99,12 @@ endif()
 
 # Link MKL library to target
 macro(DPCT_HELPER_ADD_MKL_TO_TARGET target)
-  set(MKL_ILP64 TRUE)
-  
   if(WIN32)
-    target_link_libraries(${target} mkl_sycl_dll.lib mkl_intel_ilp64_dll.lib mkl_tbb_thread_dll.lib mkl_core_dll.lib OpenCL.lib)
+    target_compile_options(${target} PUBLIC -fsycl /DMKL_ILP64 /Qmkl:parallel /Qtbb /MD)
+    target_link_libraries(${target} PUBLIC -fsycl OpenCL.lib)
   elseif(UNIX AND NOT APPLE)
-    target_link_libraries(${target} -L${MKLROOT}/lib/intel64 -lmkl_intel_ilp64 -lmkl_tbb_thread -lmkl_core -lOpenCL -lmkl_sycl -lpthread -ldl)
+    target_compile_options(${target} PUBLIC -fsycl -DMKL_ILP64 -qmkl=parallel -qtbb)
+    target_link_libraries(${target} PUBLIC -qmkl=parallel -qtbb -fsycl)
   else()
     message(FATAL_ERROR "Unsupported platform")
   endif()
