@@ -384,14 +384,14 @@ public:
     return offset;
   }
 
-  struct get_striped_offset {
+  struct get_blocked_offset {
     template <typename Item> size_t operator()(Item item, size_t i) {
       size_t offset = item.get_local_id(0) * VALUES_PER_THREAD + i;
       return adjust_by_padding(offset);
     }
   };
 
-  struct get_blocked_offset {
+  struct get_striped_offset {
     template <typename Item> size_t operator()(Item item, size_t i) {
       size_t offset = i * item.get_local_range(2) * item.get_local_range(1) *
                           item.get_local_range(0) +
@@ -437,9 +437,9 @@ public:
   __dpct_inline__ void blocked_to_striped(Item item,
                                           T (&keys)[VALUES_PER_THREAD]) {
 
-    get_blocked_offset getBlockedOffset;
     get_striped_offset getStripedOffset;
-    helper_exchange(item, keys, getBlockedOffset, getStripedOffset);
+    get_blocked_offset getBlockedOffset;
+    helper_exchange(item, keys, getStripedOffset, getBlockedOffset);
   }
 
   /// Rearrange elements from striped order to blocked order
@@ -447,9 +447,9 @@ public:
   __dpct_inline__ void striped_to_blocked(Item item,
                                           T (&keys)[VALUES_PER_THREAD]) {
 
-    get_striped_offset getStripedOffset;
     get_blocked_offset getBlockedOffset;
-    helper_exchange(item, keys, getStripedOffset, getBlockedOffset);
+    get_striped_offset getStripedOffset;
+    helper_exchange(item, keys, getBlockedOffset, getStripedOffset);
   }
 
   /// Rearrange elements from rank order to blocked order
@@ -459,8 +459,8 @@ public:
                                           int (&ranks)[VALUES_PER_THREAD]) {
 
     get_scatter_offset<int *> getScatterOffset(ranks);
-    get_striped_offset getStripedOffset;
-    helper_exchange(item, keys, getScatterOffset, getStripedOffset);
+    get_blocked_offset getBlockedOffset;
+    helper_exchange(item, keys, getScatterOffset, getBlockedOffset);
   }
 
   /// Rearrange elements from scatter order to striped order
@@ -470,8 +470,8 @@ public:
                                           int (&ranks)[VALUES_PER_THREAD]) {
 
     get_scatter_offset<int *> getScatterOffset(ranks);
-    get_blocked_offset getBlockedOffset;
-    helper_exchange(item, keys, getScatterOffset, getBlockedOffset);
+    get_striped_offset getStripedOffset;
+    helper_exchange(item, keys, getScatterOffset, getStripedOffset);
   }
 
 private:
