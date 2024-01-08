@@ -374,7 +374,11 @@ class image_data {
 public:
   image_data() { _type = image_data_type::unsupport; }
   image_data(image_matrix_p matrix_data) { set_data(matrix_data); }
-  image_data(void *data_ptr) { set_data(data_ptr); }
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+  image_data(sycl::ext::oneapi::experimental::image_mem *image_mem) {
+    set_data(image_mem);
+  }
+#endif
   image_data(void *data_ptr, size_t x_size, image_channel channel) {
     set_data(data_ptr, x_size, channel);
   }
@@ -387,10 +391,12 @@ public:
     _data = matrix_data;
     _channel = matrix_data->get_channel();
   }
-  void set_data(void *data_ptr) {
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+  void set_data(sycl::ext::oneapi::experimental::image_mem *image_mem) {
     _type = image_data_type::matrix;
-    _data = data_ptr;
+    _data = image_mem;
   }
+#endif
   void set_data(void *data_ptr, size_t x_size, image_channel channel) {
     _type = image_data_type::linear;
     _data = data_ptr;
