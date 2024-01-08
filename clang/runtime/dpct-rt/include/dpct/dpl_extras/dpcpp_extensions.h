@@ -428,10 +428,10 @@ public:
 
   radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-    template <typename Item>
+  template <typename Item>
   __dpct_inline__ void
   helper_sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-              int end_bit = 8 * sizeof(T), bool is_striped = false) {
+       int end_bit = 8 * sizeof(T), bool is_striped = false) {
 
     uint32_t(&unsigned_keys)[VALUES_PER_THREAD] =
         reinterpret_cast<uint32_t(&)[VALUES_PER_THREAD]>(keys);
