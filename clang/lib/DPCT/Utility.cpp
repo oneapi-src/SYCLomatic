@@ -2026,7 +2026,7 @@ getNestedNameSpecifierString(const clang::NestedNameSpecifier *NNS) {
   llvm::raw_string_ostream OS(Result);
   NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
   OS.flush();
-  if (StringRef(Result).startswith("::"))
+  if (StringRef(Result).starts_with("::"))
     Result = Result.substr(2);
   return Result;
 }

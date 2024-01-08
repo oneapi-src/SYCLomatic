@@ -1317,7 +1317,8 @@ public:
   // Return the absolute path of \p ID
   static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(FileID ID);
   // Return the absolute path of \p File
-  static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(const FileEntry &File);
+  static std::optional<clang::tooling::UnifiedPath>
+  getAbsolutePath(FileEntryRef File);
 
   static inline std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
@@ -4330,7 +4331,7 @@ private:
     }
   }
   bool isDefaultStream() const {
-    return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
+    return StringRef(ExecutionConfig.Stream).starts_with("{{NEEDREPLACEQ") ||
            ExecutionConfig.IsDefaultStream;
   }
 

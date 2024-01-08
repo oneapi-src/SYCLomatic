@@ -165,7 +165,7 @@ getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
                               PE = path::end(FilePath.getCanonicalPath());
          PI != PE; ++PI) {
       StringRef Comp = *PI;
-      if (Comp.startswith(".")) {
+      if (Comp.starts_with(".")) {
         IsHidden = true;
         break;
       }
@@ -220,7 +220,7 @@ void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
                               PE = path::end(FilePath.getCanonicalPath());
          PI != PE; ++PI) {
       StringRef Comp = *PI;
-      if (Comp.startswith(".")) {
+      if (Comp.starts_with(".")) {
         IsHidden = true;
         break;
       }
