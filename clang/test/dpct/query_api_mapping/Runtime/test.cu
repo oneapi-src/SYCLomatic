@@ -12,6 +12,9 @@
 // CUDADEVICEGETLIMIT: CUDA API:
 // CUDADEVICEGETLIMIT-NEXT:   cudaDeviceGetLimit(ps /*size_t **/, l /*cudaLimit*/);
 // CUDADEVICEGETLIMIT-NEXT: Is migrated to:
+// CUDADEVICEGETLIMIT-NEXT:   /*
+// CUDADEVICEGETLIMIT-NEXT:   DPCT1029:0: SYCL currently does not support getting device resource limits. The output parameter(s) are set to 0.
+// CUDADEVICEGETLIMIT-NEXT:   */
 // CUDADEVICEGETLIMIT-NEXT:   *ps = 0;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceReset | FileCheck %s -check-prefix=CUDADEVICERESET
@@ -62,7 +65,7 @@
 // CUDAGETDEVICEPROPERTIES-NEXT:   cudaGetDeviceProperties(pd, i /*int*/);
 // CUDAGETDEVICEPROPERTIES-NEXT: Is migrated to:
 // CUDAGETDEVICEPROPERTIES-NEXT:   dpct::device_info *pd;
-// CUDAGETDEVICEPROPERTIES-NEXT:   dpct::get_device_info(*pd, dpct::dev_mgr::instance().get_device(i) /*int*/);
+// CUDAGETDEVICEPROPERTIES-NEXT:   dpct::get_device_info(*pd, dpct::dev_mgr::instance().get_device(i));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaSetDevice | FileCheck %s -check-prefix=CUDASETDEVICE
 // CUDASETDEVICE: CUDA API:

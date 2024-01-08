@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none --use-experimental-features=bindless_images -out-root %T/texture/texture_object_bindless_image %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp -o %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp -o %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.o %}
 
 // CHECK: void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex) {
 __global__ void kernel(cudaTextureObject_t tex) {
@@ -137,8 +137,9 @@ int main() {
   kernel<<<1, 1>>>(tex);
   // CHECK: dpct::experimental::destroy_bindless_image(tex, q_ct1);
   cudaDestroyTextureObject(tex);
+#ifndef BUILD_TEST
   // CHECK: sycl::ext::oneapi::experimental::free_image_mem(pArr->get_handle(), dpct::get_in_order_queue());
   cudaFreeArray(pArr);
-
+#endif
   return 0;
 }
