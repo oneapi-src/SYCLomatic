@@ -31,18 +31,22 @@ __global__ void kernel() {
 }
 
 __global__ void bfe_kernel(int *res) {
+  // CHECK: if (dpct::bfe_safe((uint8_t)0xF0, 4, 8) != 15) {
   if (cub::BFE((uint8_t)0xF0, 4, 8) != 15) {
     *res = 1;
     return;
   }
+  // CHECK: if (dpct::bfe_safe((uint16_t)0x0FF0u, 4, 12) != 255) {
   if (cub::BFE((uint16_t)0x0FF0u, 4, 12) != 255) {
     *res = 2;
     return;
   }
+  // CHECK: if (dpct::bfe_safe(0x00FFFF00u, 8, 16) != 65535u) {
   if (cub::BFE(0x00FFFF00u, 8, 16) != 65535u) {
     *res = 3;
     return;
   }
+  // CHECK: if (dpct::bfe_safe(0x000000FFull, 0, 9) != 255) {
   if (cub::BFE(0x000000FFull, 0, 9) != 255) {
     *res = 4;
     return;
@@ -52,12 +56,14 @@ __global__ void bfe_kernel(int *res) {
 
 __global__ void bfi_kernel(int *res) {
   unsigned d = 0;
+  // CHECK: d = dpct::bfi_safe<unsigned>(0x0000FFFFu, 0x00FF0000u, 0, 16);
   cub::BFI(d, 0x00FF0000u, 0x0000FFFFu, 0, 16);
   if (d != 0x00FFFFFFu) {
     *res = 1;
     return;
   }
 
+  // CHECK: d = dpct::bfi_safe<unsigned>(0x000000FFu, 0x00FF0000u, 0, 8);
   cub::BFI(d, 0x00FF0000u, 0x000000FFu, 0, 8);
   if (d != 0x00FF00FFu) {
     *res = 2;
