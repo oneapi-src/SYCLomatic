@@ -964,7 +964,7 @@ public:
   static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(FileID ID);
   // Return the absolute path of \p File
   static std::optional<clang::tooling::UnifiedPath>
-  getAbsolutePath(const FileEntry &File);
+  getAbsolutePath(FileEntryRef File);
   static std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */);
   static std::string getTypeName(QualType QT, const ASTContext &Context);
@@ -2604,7 +2604,7 @@ private:
                                   const Expr *ArgsArray) {}
   void buildArgsInfo(const CallExpr *CE);
   bool isDefaultStream() const {
-    return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
+    return StringRef(ExecutionConfig.Stream).starts_with("{{NEEDREPLACEQ") ||
            ExecutionConfig.IsDefaultStream;
   }
   bool isQueuePtr() const { return ExecutionConfig.IsQueuePtr; }
