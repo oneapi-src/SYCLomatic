@@ -457,13 +457,16 @@ static std::string processArgOfCmakeVersionRequired(
   return ReplArg;
 }
 
-int skipCmakeComments(const std::string &Input, int Index) {
+static bool skipCmakeComments(const std::string &Input, size_t &Index) {
   const int Size = Input.size();
+  bool CommentFound = false;
   if (Input[Index] == '#') {
+    CommentFound = true;
     for (; Index < Size && Input[Index] != '\n'; Index++) {
     }
+    Index++;
   }
-  return Index;
+  return CommentFound;
 }
 
 void processCmakeMinimumRequired(std::string &Input, size_t &Size,
@@ -513,8 +516,13 @@ void applyImplicitMigrationRule(std::string &Input,
   size_t Index = 0;
   while (Index < Size) {
 
+    // Skip while space '#'
+    Index = skipWhileSpaces(Input, Index);
+
     // Skip comments
-    skipCmakeComments(Input, Index);
+    if (skipCmakeComments(Input, Index)) {
+      continue;
+    }
 
     size_t Begin, End;
     // Go the begin of cmake command
