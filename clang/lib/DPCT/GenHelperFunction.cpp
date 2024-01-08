@@ -144,6 +144,10 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
     llvm::sys::fs::create_directory(ToPath.getCanonicalPath());
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/dpl_extras"))
     llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/dpl_extras");
+  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/codepin"))
+    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/codepin");
+  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/codepin/detail"))
+    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/codepin/detail");
 
 #define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)                         \
   {                                                                            \
