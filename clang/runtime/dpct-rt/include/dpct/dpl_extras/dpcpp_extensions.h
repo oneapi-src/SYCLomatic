@@ -450,25 +450,18 @@ public:
 
       item.barrier(sycl::access::fence_space::local_space);
 
-      if (i == end_bit - RADIX_BITS) {
-
-        if (is_striped) {
-          exchange<T, VALUES_PER_THREAD>(_local_memory)
-              .scatter_to_striped(item, keys, ranks);
-
-          item.barrier(sycl::access::fence_space::local_space);
-        } else {
-          exchange<T, VALUES_PER_THREAD>(_local_memory)
-              .scatter_to_blocked(item, keys, ranks);
-
-          item.barrier(sycl::access::fence_space::local_space);
-        }
+      bool last_iter = i + RADIX_BITS > end_bit;
+      if (last_iter && is_striped) {
+        exchange<T, VALUES_PER_THREAD>(_local_memory)
+              .scatter_to_striped(item, keys, ranks); 
+        
       } else {
         exchange<T, VALUES_PER_THREAD>(_local_memory)
             .scatter_to_blocked(item, keys, ranks);
-
-        item.barrier(sycl::access::fence_space::local_space);
       }
+      
+      item.barrier(sycl::access::fence_space::local_space);
+      
     }
 
 #pragma unroll
