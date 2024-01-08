@@ -459,7 +459,7 @@ public:
         exchange<T, VALUES_PER_THREAD>(_local_memory)
             .scatter_to_blocked(item, keys, ranks);
       }
-      
+
       item.barrier(sycl::access::fence_space::local_space);
     }
 
