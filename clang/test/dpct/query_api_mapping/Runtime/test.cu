@@ -65,7 +65,7 @@
 // CUDAGETDEVICEPROPERTIES-NEXT:   cudaGetDeviceProperties(pd, i /*int*/);
 // CUDAGETDEVICEPROPERTIES-NEXT: Is migrated to:
 // CUDAGETDEVICEPROPERTIES-NEXT:   dpct::device_info *pd;
-// CUDAGETDEVICEPROPERTIES-NEXT:   dpct::get_device_info(*pd, dpct::dev_mgr::instance().get_device(i) /*int*/);
+// CUDAGETDEVICEPROPERTIES-NEXT:   dpct::get_device_info(*pd, dpct::dev_mgr::instance().get_device(i));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaSetDevice | FileCheck %s -check-prefix=CUDASETDEVICE
 // CUDASETDEVICE: CUDA API:

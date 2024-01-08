@@ -1,5 +1,7 @@
 // RUN: dpct --format-range=none -out-root %T/driver_device %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/driver_device/driver_device.dp.cpp
+// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/driver_device/driver_device.dp.cpp -o %T/driver_device/driver_device.dp.o %}
+
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <iostream>
@@ -42,7 +44,7 @@ void test() {
   // CHECK: result4 = dpct::dev_mgr::instance().get_device(device).get_max_register_size_per_work_group();
   cuDeviceGetAttribute(&result4,CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
   std::cout << " result4 " << result4 << std::endl;
-  // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).has(sycl::aspect::usm_host_allocations)();
+  // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).has(sycl::aspect::usm_host_allocations);
   cuDeviceGetAttribute(&result5,CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, device);
   std::cout << " result5 " << result5 << std::endl;
 }
@@ -73,12 +75,14 @@ int main(){
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(device = 0));
   MY_SAFE_CALL(cuDeviceGet(&device, 0));
 
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: cuDeviceGetAttribute(&result1, attr, device);
   CUdevice_attribute attr = CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK;
   cuDeviceGetAttribute(&result1, attr, device);
+#endif
 
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_major_version();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device);
@@ -134,12 +138,13 @@ int main(){
 
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units()));
   MY_SAFE_CALL(cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device));
-
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cuDeviceGetAttribute was not migrated because parameter CU_DEVICE_ATTRIBUTE_GPU_OVERLAP is unsupported.
   // CHECK-NEXT: */
   // CHECK-NEXT: cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
+#endif
 
   // CHECK: result1 = dpct::get_major_version(dpct::dev_mgr::instance().get_device(device));
   // CHECK: result2 = dpct::get_minor_version(dpct::dev_mgr::instance().get_device(device));
