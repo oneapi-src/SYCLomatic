@@ -34,18 +34,6 @@
   In: find_package(${arg0} REQUIRED)
   Out: find_package(IntelSYCL REQUIRED)
 
-- Rule: rule_set
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: set
-  In: set(${value})
-  Out: set(${value})
-  Subrules:
-    value:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-
 - Rule: rule_cmake_cxx_standard
   Kind: CMakeRule
   Priority: Fallback
