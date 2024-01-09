@@ -515,10 +515,7 @@ void applyImplicitMigrationRule(std::string &Input,
   size_t Size = Input.size();
   size_t Index = 0;
   while (Index < Size) {
-
-    // Skip while space '#'
     Index = skipWhileSpaces(Input, Index);
-
     // Skip comments
     if (skipCmakeComments(Input, Index)) {
       continue;

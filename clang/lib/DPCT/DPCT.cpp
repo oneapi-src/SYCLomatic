@@ -538,6 +538,23 @@ void parseFormatStyle() {
   DpctGlobalInfo::setCodeFormatStyle(Style);
 }
 
+static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
+
+  std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
+                                        DpctGlobalInfo::getYamlFileName());
+  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
+  if (llvm::sys::fs::exists(YamlFilePath)) {
+    if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
+
+    } else {
+      llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
+    }
+  }
+  for (auto &Entry : PreTU->MainSourceFilesDigest) {
+    MainSrcFilesHasCudaSyntex.insert(Entry.first);
+  }
+}
+
 int runDPCT(int argc, const char **argv) {
 
   if (argc < 2) {
@@ -1156,28 +1173,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (MigrateCmakeScriptOnly) {
-
-#if 1
-
-    std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
-                                          DpctGlobalInfo::getYamlFileName());
-    auto PreTU =
-        std::make_shared<clang::tooling::TranslationUnitReplacements>();
-    if (llvm::sys::fs::exists(YamlFilePath)) {
-      if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
-
-      } else {
-        llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
-      }
-    }
-    printf("######MigrateCmakeScriptOnly########\n");
-    for(auto &Entry: PreTU->MainSourceFilesDigest) {
-      MainSrcFilesHasCudaSyntex.insert(Entry.first);
-      printf("MainSourceFile[%s] --> [%s]\n", Entry.first.c_str(), Entry.second.c_str());
-    }
-    printf("####################################\n");
-#endif
-
+    loadMainSrcFileInfo(OutRoot);
     collectCmakeScriptsSpecified(OptParser, InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
     return MigrationSucceeded;
@@ -1325,29 +1321,7 @@ int runDPCT(int argc, const char **argv) {
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {
-    {
-#if 1
-      std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
-                                            DpctGlobalInfo::getYamlFileName());
-      auto PreTU =
-          std::make_shared<clang::tooling::TranslationUnitReplacements>();
-      if (llvm::sys::fs::exists(YamlFilePath)) {
-        if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
-
-        } else {
-          llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
-        }
-      }
-      printf("######MigrateCmakeScriptOnly########\n");
-      for (auto &Entry : PreTU->MainSourceFilesDigest) {
-        MainSrcFilesHasCudaSyntex.insert(Entry.first);
-        printf("MainSourceFile[%s] --> [%s]\n", Entry.first.c_str(),
-               Entry.second.c_str());
-      }
-      printf("####################################\n");
-#endif
-    }
-
+    loadMainSrcFileInfo(OutRoot);
     collectCmakeScripts(InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
   }
