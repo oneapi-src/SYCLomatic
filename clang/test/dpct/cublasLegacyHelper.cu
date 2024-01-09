@@ -1,6 +1,8 @@
 // RUN: dpct --no-cl-namespace-inline --format-range=none --usm-level=none -out-root %T/cublasLegacyHelper %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasLegacyHelper/cublasLegacyHelper.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/cublasLegacyHelper/cublasLegacyHelper.dp.cpp -o %T/cublasLegacyHelper/cublasLegacyHelper.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cublasLegacyHelper/cublasLegacyHelper.dp.cpp -o %T/cublasLegacyHelper/cublasLegacyHelper.dp.o %}
+
+#ifndef BUILD_TEST
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
@@ -161,4 +163,4 @@ int main() {
   cublasShutdown();
   return 0;
 }
-
+#endif

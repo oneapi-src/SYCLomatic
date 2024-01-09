@@ -62,6 +62,7 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_EnqueueBarrier = 0,
   ExtDE_DeviceInfo,
   ExtDE_BFloat16,
+  ExtDE_PeerAccess,
   ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
@@ -81,9 +82,11 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_OccupancyCalculation,
   Exp_Matrix,
   Exp_BFloat16Math,
+  Exp_BindlessImages,
   Exp_ExperimentalFeaturesEnumSize
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
+enum class SYCLFileExtensionEnum { DP_CPP, SYCL_CPP, CPP };
 
 bool makeInRootCanonicalOrSetDefaults(
     clang::tooling::UnifiedPath &InRoot, const std::vector<std::string> SourceFiles);

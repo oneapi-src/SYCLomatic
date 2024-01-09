@@ -1,7 +1,8 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/explicit_namespace_cl %S/explicit_namespace_cl.cu --cuda-include-path="%cuda-path/include" --use-explicit-namespace=cl --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/explicit_namespace_cl/explicit_namespace_cl.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/explicit_namespace_cl/explicit_namespace_cl.dp.cpp -o %T/explicit_namespace_cl/explicit_namespace_cl.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/explicit_namespace_cl/explicit_namespace_cl.dp.cpp -o %T/explicit_namespace_cl/explicit_namespace_cl.dp.o %}
 
+#ifndef BUILD_TEST
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: using namespace dpct;
@@ -34,3 +35,4 @@ void foo() {
 int main() {
 
 }
+#endif

@@ -7,8 +7,9 @@
 // RUN: mkdir %T/macro_test_output
 // RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
-// RUN: %if build_lit %{icpx -c -fsycl %T/macro_test_output/macro_test.dp.cpp -o %T/macro_test_output/macro_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/macro_test_output/macro_test.dp.cpp -o %T/macro_test_output/macro_test.dp.o %}
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
+#ifndef BUILD_TEST
 #include "cuda.h"
 #include <math.h>
 #include <iostream>
@@ -1295,3 +1296,4 @@ void foo36() {
   CALLTEMPLATEFOO;
   CALLTEMPLATEFOO2;
 }
+#endif

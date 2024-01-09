@@ -2414,6 +2414,122 @@ void nontrivial_run_length_encode(ExecutionPolicy &&policy,
   ::std::fill(policy, num_runs, num_runs + 1, ret_dist);
 }
 
+namespace internal {
+// This function is ported from oneDPL with the check for an FPGA policy
+// removed. This function should be used to wrap a provided policy when multiple
+// oneDPL calls are made to ensure unique kernel names.
+template <template <typename> class NewKernelName, typename Policy>
+auto make_wrapped_policy(Policy &&policy)
+    -> decltype(oneapi::dpl::execution::make_device_policy<
+                NewKernelName<typename ::std::decay_t<Policy>::kernel_name>>(
+        ::std::forward<Policy>(policy))) {
+  return oneapi::dpl::execution::make_device_policy<
+      NewKernelName<typename ::std::decay_t<Policy>::kernel_name>>(
+      ::std::forward<Policy>(policy));
+}
+
+template <typename Name> class partition_call1;
+
+template <typename Name> class partition_call2;
+
+template <typename Name> class copy_before_partition;
+
+template <typename Name> class reverse_partition;
+
+}; // namespace internal
+
+template <typename ExecutionPolicy, typename InputIterator,
+          typename OutputIterator, typename CountIterator,
+          typename UnaryPredicate>
+void partition_if(ExecutionPolicy &&policy, InputIterator input,
+                  OutputIterator output, CountIterator num_true, int num_items,
+                  UnaryPredicate pred, bool reverse_last = true) {
+  auto copy_policy =
+      internal::make_wrapped_policy<internal::copy_before_partition>(policy);
+  auto partition_policy =
+      internal::make_wrapped_policy<internal::partition_call1>(policy);
+
+  dpl::copy(::std::move(copy_policy), input, input + num_items, output);
+  auto beg_false = dpl::stable_partition(::std::move(partition_policy), output,
+                                         output + num_items, pred);
+  auto num_true_items = ::std::distance(output, beg_false);
+  if (reverse_last) {
+    auto reverse_policy =
+        internal::make_wrapped_policy<internal::reverse_partition>(policy);
+    dpl::reverse(::std::move(reverse_policy), beg_false, output + num_items);
+  }
+  dpl::fill(::std::forward<ExecutionPolicy>(policy), num_true, num_true + 1,
+            num_true_items);
+}
+
+template <typename ExecutionPolicy, typename InputIterator,
+          typename OutputIterator1, typename OutputIterator2,
+          typename OutputIterator3, typename CountIterator,
+          typename UnaryPredicate1, typename UnaryPredicate2>
+void partition_if(ExecutionPolicy &&policy, InputIterator input,
+                  OutputIterator1 output1, OutputIterator2 output2,
+                  OutputIterator3 output3, CountIterator partition_counts,
+                  int num_items, UnaryPredicate1 pred1, UnaryPredicate2 pred2,
+                  bool reverse_last = true) {
+  using internal::__buffer;
+  using ValueType = typename ::std::iterator_traits<InputIterator>::value_type;
+  using CountType = typename ::std::iterator_traits<CountIterator>::value_type;
+  auto partition1_policy =
+      internal::make_wrapped_policy<internal::partition_call1>(policy);
+  auto partition2_policy =
+      internal::make_wrapped_policy<internal::partition_call2>(policy);
+  __buffer<ValueType> tmp(num_items);
+
+  // Partition the first set (elements that satisfy pred1) and store the
+  // remaining in temporary storage.
+  auto [output1_end, tmp_end] =
+      dpct::stable_partition_copy(::std::move(partition1_policy), input,
+                                  input + num_items, output1, tmp.get(), pred1);
+  // Partition the remaining two sets (elements that satisfy pred2 and
+  // unselected).
+  auto [output2_end, output3_end] =
+      dpct::stable_partition_copy(::std::move(partition2_policy), tmp.get(),
+                                  tmp_end, output2, output3, pred2);
+
+  ::std::vector<CountType> host_counts = {
+      static_cast<CountType>(::std::distance(output1, output1_end)),
+      static_cast<CountType>(::std::distance(output2, output2_end)),
+      static_cast<CountType>(::std::distance(output3, output3_end))};
+  if (reverse_last) {
+    auto reverse_policy =
+        internal::make_wrapped_policy<internal::reverse_partition>(policy);
+    dpl::reverse(::std::move(reverse_policy), output3, output3_end);
+  }
+  dpl::copy(::std::forward<ExecutionPolicy>(policy), host_counts.begin(),
+            host_counts.end(), partition_counts);
+}
+
+template <typename ExecutionPolicy, typename InputIterator,
+          typename OutputIterator, typename FlagsIterator,
+          typename CountIterator>
+void partition_flagged(ExecutionPolicy &&policy, InputIterator input,
+                       FlagsIterator flags, OutputIterator output,
+                       CountIterator num_true, int num_items,
+                       bool reverse_last = true) {
+  auto copy_policy =
+      internal::make_wrapped_policy<internal::copy_before_partition>(policy);
+  auto partition_policy =
+      internal::make_wrapped_policy<internal::partition_call1>(policy);
+
+  dpl::copy(::std::move(copy_policy), input, input + num_items, output);
+  auto beg_false = dpct::stable_partition(::std::move(partition_policy), output,
+                                          output + num_items, flags,
+                                          [](auto flag) { return flag != 0; });
+  auto num_true_items = ::std::distance(output, beg_false);
+  if (reverse_last) {
+    auto reverse_policy =
+        internal::make_wrapped_policy<internal::reverse_partition>(policy);
+    dpl::reverse(::std::move(reverse_policy), beg_false, output + num_items);
+  }
+  dpl::fill(::std::forward<ExecutionPolicy>(policy), num_true, num_true + 1,
+            num_true_items);
+}
+
 } // end namespace dpct
 
 #endif

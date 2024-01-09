@@ -18,6 +18,14 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                        CALL(MapNames::getDpctNamespace() + "mkl_get_version",
                             ARG(MapNames::getDpctNamespace() + "version_field::major"), ARG(0)))))
 
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    ASSIGN_FACTORY_ENTRY("cublasCreate_v2", DEREF(0), QUEUEPTRSTR)))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasDestroy_v2", ARG(0),
+                                        ARG("nullptr")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasSetStream_v2", ARG(0), ARG(1)))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasGetStream_v2", DEREF(1), ARG(0)))
+
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSgemm_v2",
     CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0),

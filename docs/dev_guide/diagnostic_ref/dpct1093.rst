@@ -24,32 +24,42 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
-     int main( int argc, char** argv) {
-         cudaSetDevice(1); // Device 1 is the best choice in the original code.
-         foo(argc, argv);
-     }
-
+   int main(int argc, char **argv) {
+     cudaSetDevice(1); // Device 1 is the best choice in the original code.
+     foo(argc, argv);
+     ...
+     return 0;
+   }
 
 results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
 
-     int main( int argc, char** argv) {
-         /*   DPCT1093   */
-         dpct::dev_mgr::instance().select_device(1); // Device 1 maybe not the best choice in SYCL.
-         foo(argc, argv);
-     }
+   int main(int argc, char **argv) {
+     /*
+     DPCT1093:0: The "1" device may be not the one intended for use. Adjust the
+     selected device if needed.
+     */
+     dpct::select_device(1); // Device 1 maybe not the best choice in SYCL.
+     foo(argc, argv);
+     ...
+     return 0;
+   }
 
 which is manually adjusted to:
 
 .. code-block:: cpp
    :linenos:
 
-     int main( int argc, char** argv) {
-         dpct::dev_mgr::instance().select_device(0);
-         foo(argc, argv);
-     }
+   int main(int argc, char **argv) {
+     // User can check device list by command `sycl-ls` and filter the device by using
+     // environment variable `ONEAPI_DEVICE_SELECTOR`.
+     dpct::select_device(0);
+     foo(argc, argv);
+     ...
+     return 0;
+   }
 
 Suggestions to Fix
 ------------------
