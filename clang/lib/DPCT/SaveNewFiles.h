@@ -14,6 +14,9 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include <map>
+#include "clang/Tooling/Refactoring.h"
+
+using ReplTy = std::map<std::string, clang::tooling::Replacements>;
 
 #define DiagRef                                                                \
   "See Diagnostics Reference to resolve warnings and complete the "            \
@@ -25,12 +28,6 @@ namespace llvm {
 class StringRef;
 }
 
-namespace clang {
-namespace tooling {
-class RefactoringTool;
-}
-} // namespace clang
-
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.
 ///
@@ -38,7 +35,8 @@ class RefactoringTool;
 /// Prerequisite: InRoot and OutRoot are both absolute paths
 int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                  clang::tooling::UnifiedPath InRoot,
-                 clang::tooling::UnifiedPath OutRoot);
+                 clang::tooling::UnifiedPath OutRoot, ReplTy &ReplCUDA,
+                 ReplTy &ReplSYCL);
 
 void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);
 

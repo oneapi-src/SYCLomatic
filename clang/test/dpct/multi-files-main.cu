@@ -2,7 +2,6 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/multi-files-main/multi-files-main.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/multi-files-main/multi-files-main.dp.cpp -o %T/multi-files-main/multi-files-main.dp.o %}
 // RUN: FileCheck %S/multi-files-device.cuh --match-full-lines --input-file %T/multi-files-main/multi-files-device.dp.hpp
-#ifndef BUILD_TEST
 #include "multi-files-kernel.cuh"
 
 int main() {
@@ -26,4 +25,3 @@ int main() {
   sgemm();
   randomGen();
 }
-#endif

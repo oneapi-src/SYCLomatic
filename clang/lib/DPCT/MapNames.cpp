@@ -1712,6 +1712,10 @@ void MapNames::setExplicitNamespaceMap() {
   };
 
   BLASAPIWithRewriter = {
+      {"cublasCreate_v2", "handle = queue_p"},
+      {"cublasDestroy_v2", "handle = nullptr"},
+      {"cublasSetStream_v2", "handle = s"},
+      {"cublasGetStream_v2", "s = handle"},
       {"cublasSgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasDgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasCgemm_v2", "oneapi::mkl::blas::column_major::gemm"},

@@ -39,6 +39,9 @@ extern const std::string DplExtrasMemoryAllContentStr;
 extern const std::string DplExtrasNumericAllContentStr;
 extern const std::string DplExtrasVectorAllContentStr;
 extern const std::string DplExtrasDpcppExtensionsAllContentStr;
+extern const std::string CodePinAllContentStr;
+extern const std::string CodePinDetailSchemaAllContentStr;
+extern const std::string CodePinDetailJsonAllContentStr;
 void replaceEndOfLine(std::string &StrNeedProcess);
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot);
 }

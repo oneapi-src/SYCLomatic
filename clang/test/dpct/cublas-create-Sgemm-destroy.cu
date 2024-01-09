@@ -210,3 +210,19 @@ void foo() {
   const cublasHandle_t h_c = nullptr;
   cublasHandle_t h = h_c;
 }
+
+#define CHECK_INTERNAL(err)                                                    \
+  { auto err_ = (err); }
+
+#define CHECK(err) CHECK_INTERNAL(err)
+
+void foo2(cublasHandle_t *handles, int i, cudaStream_t s) {
+  // CHECK: CHECK(DPCT_CHECK_ERROR(handles[i] = &dpct::get_out_of_order_queue()));
+  // CHECK-NEXT: CHECK(DPCT_CHECK_ERROR(handles[i] = nullptr));
+  // CHECK-NEXT: CHECK(DPCT_CHECK_ERROR(handles[i] = s));
+  // CHECK-NEXT: CHECK(DPCT_CHECK_ERROR(s = handles[i]));
+  CHECK(cublasCreate(&handles[i]));
+  CHECK(cublasDestroy(handles[i]));
+  CHECK(cublasSetStream(handles[i], s));
+  CHECK(cublasGetStream(handles[i], &s));
+}

@@ -185,6 +185,8 @@ add_clang_library(DPCT
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
   SpBLASAPIMigration.cpp
+  Schema.cpp
+  TypeSchemaForSYCL.cpp
 
   DEPENDS
   ClangDriverOptions

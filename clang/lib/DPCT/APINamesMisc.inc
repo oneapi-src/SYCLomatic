@@ -87,3 +87,37 @@ CONDITIONAL_FACTORY_ENTRY(
                       Diagnostics::API_NOT_MIGRATED))
 CALL_FACTORY_ENTRY("__assertfail", CALL("assert", LITERAL("0")))
 CALL_FACTORY_ENTRY("__assert_fail", CALL("assert", LITERAL("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsUseNoQueueDevice(),
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY(
+            "cudaGetDeviceProperties",
+            CALL(MapNames::getDpctNamespace() + "get_device_info", DEREF(0),
+                 ARG(DpctGlobalInfo::getGlobalDeviceName()))))),
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY(
+            "cudaGetDeviceProperties",
+            CALL(MapNames::getDpctNamespace() + "get_device_info", DEREF(0),
+                 CALL(MapNames::getDpctNamespace() +
+                          "dev_mgr::instance().get_device",
+                      ARG(1)))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsUseNoQueueDevice(),
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY(
+            "cudaGetDeviceProperties_v2",
+            CALL(MapNames::getDpctNamespace() + "get_device_info", DEREF(0),
+                 ARG(DpctGlobalInfo::getGlobalDeviceName()))))),
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY(
+            "cudaGetDeviceProperties_v2",
+            CALL(MapNames::getDpctNamespace() + "get_device_info", DEREF(0),
+                 CALL(MapNames::getDpctNamespace() +
+                          "dev_mgr::instance().get_device",
+                      ARG(1)))))))
