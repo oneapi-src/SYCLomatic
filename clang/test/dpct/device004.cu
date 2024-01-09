@@ -31,3 +31,15 @@ int main() {
   // CHECK-NEXT: properties.uuid = uuid;
   properties.uuid = uuid;
 }
+
+#define CHECK_INTERNAL(err)                                                    \
+  { auto err_ = (err); }
+
+#define CHECK(err) CHECK_INTERNAL(err)
+
+void foo() {
+  int dev = 1;
+  cudaDeviceProp p;
+  // CHECK: CHECK(DPCT_CHECK_ERROR(dpct::get_device_info(p, dpct::dev_mgr::instance().get_device(dev))));
+  CHECK(cudaGetDeviceProperties(&p, dev));
+}

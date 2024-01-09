@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include" --in-root %S --extra-arg="-I  %S/.."
 // RUN: FileCheck --input-file %T/test.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/test.dp.cpp -o %T/test.dp.o %}
-
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/test.dp.cpp -o %T/test.dp.o %}
+#ifndef  BUILD_TEST
 #include "outer/macro_def.h"
 #include "cuda_runtime.h"
 
@@ -19,3 +19,4 @@ int main() {
   MACRO_B
   return 0;
 }
+#endif

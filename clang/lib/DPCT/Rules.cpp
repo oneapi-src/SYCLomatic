@@ -522,15 +522,15 @@ class RefMatcherInterface
   bool HasQualifier = true;
 
   static bool consumeSuffix(StringRef &RefName, StringRef InputName) {
-    if (InputName.startswith("::"))
+    if (InputName.starts_with("::"))
       InputName = InputName.drop_front(2);
 
-    if (!RefName.endswith(InputName))
+    if (!RefName.ends_with(InputName))
       return false;
 
     RefName = RefName.drop_back(InputName.size());
     if (!RefName.empty())
-      return RefName.endswith("::");
+      return RefName.ends_with("::");
 
     return true;
   }
@@ -565,7 +565,7 @@ class RefMatcherInterface
 public:
   RefMatcherInterface(StringRef APIName, bool HasAnyExplicitTemplateArgs)
       : Name(APIName), HasExplicitTemplateArgs(HasAnyExplicitTemplateArgs) {
-    if (Name.startswith("::"))
+    if (Name.starts_with("::"))
       Name = Name.drop_front(2);
 
     HasQualifier = Name.find("::") != StringRef::npos;

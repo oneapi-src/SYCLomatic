@@ -16,6 +16,7 @@
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/Basic/FileEntry.h"
 #include "llvm/Support/Path.h"
 
 #include <sstream>
@@ -387,6 +388,8 @@ InsertText::getReplacement(const ASTContext &Context) const {
   R->setPairID(PairID);
   R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   R->setInsertPosition(InsertPos);
+  
+  R->IsForCUDADebug = IsForCUDADebug;
   return R;
 }
 
@@ -483,7 +486,8 @@ getReplacementInfo(const ASTContext &Context, const CharSourceRange &Range) {
   const auto &ExpansionBegin = SM.getExpansionLoc(Range.getBegin());
   const std::pair<FileID, unsigned> DecomposedLocation =
       SM.getDecomposedLoc(ExpansionBegin);
-  const FileEntry *Entry = SM.getFileEntryForID(DecomposedLocation.first);
+  const OptionalFileEntryRef Entry =
+      SM.getFileEntryRefForID(DecomposedLocation.first);
   StringRef FilePath = Entry ? Entry->getName() : "";
   unsigned Offset = DecomposedLocation.second;
   unsigned Length = getExpansionRangeSize(SM, Range, LangOptions());
@@ -774,6 +778,7 @@ ReplaceText::getReplacement(const ASTContext &Context) const {
   Repl->setConstantFlag(this->getConstantFlag());
   Repl->setConstantOffset(this->getConstantOffset());
   Repl->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
+  Repl->IsForCUDADebug = IsForCUDADebug;
   return Repl;
 }
 
