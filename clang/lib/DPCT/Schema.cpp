@@ -85,32 +85,13 @@ uint32_t getFieldTypeAlign(const FieldSchema &FS) {
   }
 }
 
-int ceilDevide(int num, int base) { return ((num + base - 1) / base) * base; }
-
-void registerBaseClassForCUDA(clang::CXXRecordDecl *RD, TypeSchema &TS) {
-  if (RD == nullptr)
-    return;
-  int BaseOffset = 0;
-  for (const auto &base : RD->bases()) {
-    if (base.isVirtual())
-      TS.IsVirtual = true;
-    clang::CXXRecordDecl *BCD = base.getType()->getAsCXXRecordDecl();
-    if (BCD) {
-      auto TsTmp = registerCUDATypeSchema(base.getType());
-      assert(TsTmp.TypeAlign != 0 && "The type alignment should not be 0.");
-      BaseOffset = ceilDevide(BaseOffset, TsTmp.TypeAlign);
-      for (auto &mem : TsTmp.Members) {
-        mem.Offset += BaseOffset;
-        mem.FieldName = base.getType().getAsString() + "::" + mem.FieldName;
-        TS.Members.emplace_back(mem);
-      }
-      BaseOffset += TsTmp.TypeSize;
-    }
-  }
-  return;
+inline int ceilDevide(int num, int base) {
+  return ((num + base - 1) / base) * base;
 }
 
-int registerBaseClassForSYCL(clang::CXXRecordDecl *RD, TypeSchema &TS) {
+int registerBaseClassTypeSchema(
+    clang::CXXRecordDecl *RD, TypeSchema &TS,
+    std::function<TypeSchema(const clang::QualType &)> registerTypeSchemaFunc) {
   int BaseOffset = 0;
   if (RD == nullptr)
     return BaseOffset;
@@ -119,13 +100,17 @@ int registerBaseClassForSYCL(clang::CXXRecordDecl *RD, TypeSchema &TS) {
       TS.IsVirtual = true;
     clang::CXXRecordDecl *BCD = base.getType()->getAsCXXRecordDecl();
     if (BCD) {
-      auto TsTmp = registerSYCLTypeSchema(base.getType());
+      const auto &TsTmp = registerTypeSchemaFunc(base.getType());
+      assert(TsTmp.TypeAlign != 0 && "The type alignment should not be 0.");
       BaseOffset = ceilDevide(BaseOffset, TsTmp.TypeAlign);
       for (auto mem : TsTmp.Members) {
         mem.Offset += BaseOffset;
         mem.FieldName = base.getType().getAsString() + "::" + mem.FieldName;
         TS.Members.emplace_back(mem);
-        if (TsTmp.TypeAlign > TS.TypeAlign)
+        if (registerTypeSchemaFunc
+                    .target<TypeSchema(const clang::QualType &)>() ==
+                &dpct::registerSYCLTypeSchema &&
+            TsTmp.TypeAlign > TS.TypeAlign)
           TS.TypeAlign = TsTmp.TypeAlign;
       }
       BaseOffset += TsTmp.TypeSize;
@@ -167,7 +152,7 @@ TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
     if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
       clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
       // visit base class
-       OffSet = registerBaseClassForSYCL(RD, TS);
+      OffSet =registerBaseClassTypeSchema(RD, TS, registerSYCLTypeSchema);
     }
     
     for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
@@ -207,7 +192,7 @@ TypeSchema dpct::registerCUDATypeSchema(const clang::QualType &QT) {
     if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
       clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
       // visit base class
-      registerBaseClassForCUDA(RD, TS);
+      registerBaseClassTypeSchema(RD, TS,registerCUDATypeSchema);
     }
     for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
       TS.Members.push_back(constructFieldSchema(field));
