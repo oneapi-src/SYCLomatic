@@ -2012,17 +2012,13 @@ public:
   static inline bool isNeedParenAPI(const std::string &Name) {
     return NeedParenAPISet.count(Name);
   };
-
-<<<<<<< HEAD
   static inline std::unordered_map<std::string, std::string> &
   getSpecialReplForEAMap() {
     return SpecialReplForEAMap;
   };
-
-=======
   static std::string SchemaFileContentCUDA;
   static std::string SchemaFileContentSYCL;
->>>>>>> SYCLomatic/SYCLomatic
+
 private:
   DpctGlobalInfo();
 

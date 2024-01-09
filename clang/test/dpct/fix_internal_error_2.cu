@@ -8,13 +8,10 @@
 
 // CHECK: 0
 
-<<<<<<< HEAD
-=======
 // Test description:
 // DeviceFunctionDecl::LinkRedecls() may return nullptr. The return value need be checked
 // to avoid dereferencing a nullptr.
 // Below case can test above scenario.
->>>>>>> upstream_syclomatic/SYCLomatic
 namespace test_ns {
 #include "cooperative_groups.h"
 namespace cg = cooperative_groups;
