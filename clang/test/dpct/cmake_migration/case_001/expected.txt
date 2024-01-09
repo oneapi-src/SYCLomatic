@@ -12,6 +12,7 @@ set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(IntelSYCL REQUIRED)
+find_package(OpenCV REQUIRED)
 set(SOURCES
     ${CMAKE_SOURCE_DIR}/foo/main.dp.cpp
     ${CMAKE_SOURCE_DIR}/foo/bar/util.dp.cpp

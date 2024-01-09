@@ -22,6 +22,7 @@
 #include "MemberExprRewriter.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
+#include "PatternRewriter.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Schema.h"
@@ -1171,6 +1172,7 @@ int runDPCT(int argc, const char **argv) {
     }
     printf("######MigrateCmakeScriptOnly########\n");
     for(auto &Entry: PreTU->MainSourceFilesDigest) {
+      MainSrcFilesHasCudaSyntex.insert(Entry.first);
       printf("MainSourceFile[%s] --> [%s]\n", Entry.first.c_str(), Entry.second.c_str());
     }
     for (const auto &Entry : PreTU->CompileTargets) {
@@ -1336,6 +1338,7 @@ int runDPCT(int argc, const char **argv) {
     printf("########MigrateCmakeScript#############\n");
     for (const auto &Entry : PreTU->CompileTargets) {
       for (auto &Val : Entry.second) {
+        MainSrcFilesHasCudaSyntex.insert(Val.MigratedFileName);
         printf("\t[%s]\n", Val.MigratedFileName.c_str());
       }
       printf("\n");

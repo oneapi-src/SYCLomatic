@@ -189,6 +189,33 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName,
   FileName = CanonicalPathStr;
 }
 
+
+void rewriteFileName1(std::string &FileName,
+                     const std::string &FullPathName) {
+  SmallString<512> CanonicalPathStr(FullPathName);
+  const auto Extension = path::extension(CanonicalPathStr);
+  SourceProcessType FileType = GetSourceFileType(FullPathName);
+  // If user does not specify which extension need be changed, we change all the
+  // SPT_CudaSource, SPT_CppSource and SPT_CudaHeader files.
+  if (DpctGlobalInfo::getChangeExtensions().empty() ||
+      DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
+    if (FileType & SPT_CudaSource)
+      path::replace_extension(CanonicalPathStr,
+                              DpctGlobalInfo::getSYCLSourceExtension());
+    else if (FileType & SPT_CppSource)
+      path::replace_extension(CanonicalPathStr,
+                              Extension +
+                                  DpctGlobalInfo::getSYCLSourceExtension());
+    else if (FileType & SPT_CudaHeader)
+      path::replace_extension(CanonicalPathStr,
+                              DpctGlobalInfo::getSYCLHeaderExtension());
+  }
+  FileName = CanonicalPathStr.c_str();
+}
+
+
+
+
 static std::vector<std::string> FilesNotInCompilationDB;
 
 void processallOptionAction(clang::tooling::UnifiedPath &InRoot,

@@ -7,6 +7,9 @@
 //===----------------------------------------------------------------------===//
 
 #include <PatternRewriter.h>
+#include "Rules.h"
+#include "SaveNewFiles.h"
+#include "llvm/ADT/StringRef.h"
 
 #include <optional>
 #include <ostream>
@@ -15,6 +18,8 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+
+std::set<std::string> MainSrcFilesHasCudaSyntex;
 
 struct SpacingElement {};
 
@@ -450,6 +455,46 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       const int Indentation = detectIndentation(Input, Index);
       std::string ElementContents =
           dedent(Input.substr(Index, Next - Index), Indentation);
+
+      printf("Input: [%s]\n", Input.c_str());
+      printf("1111111111111111 ElementContents: [%s]\n",
+             ElementContents.c_str());
+
+      // int End = ElementContents.size() - 1;
+      // while (End > 0 && isWhitespace(Input[End])) {
+      //   End--;
+      // }
+
+      if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
+        size_t Pos = Next - 1;
+        printf("Pos:%d Next:%d\n", Pos, Next);
+        for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
+        }
+        Pos = Pos == 0 ? 0 : Pos + 1;
+        std::string FileName = Input.substr(Pos, Next + 4 - 1 - Pos);
+
+        printf("ElementContents 00 : [%s]\n", FileName.c_str());
+        std::string SyclFileName;
+        rewriteFileName1(SyclFileName, FileName);
+        printf("Output: [%s]\n", SyclFileName.c_str());
+
+        bool HasCudaSyntax = false;
+        for (const auto &File : MainSrcFilesHasCudaSyntex) {
+          if (File.find(FileName) != std::string::npos) {
+            printf("################## File [%s]\n", File.c_str());
+            HasCudaSyntax = true;
+          }
+        }
+        if (HasCudaSyntax)
+          Result.Bindings["extention_name"] = "cpp.dp.cpp";
+        else
+          Result.Bindings["extention_name"] = "cpp";
+      } else {
+        printf("111 ElementContents: [%s]\n", ElementContents.c_str());
+        Result.Bindings["extention_name"] = "dp.cpp";
+      }
+
+
       if (Result.Bindings.count(Code.Name)) {
         if (Result.Bindings[Code.Name] != ElementContents) {
           return {};
@@ -665,6 +710,13 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
               applyPatternRewriter(SubruleIterator->second, Value);
         }
       }
+
+
+    for (const auto &[Name, Value] : Match.Bindings) { 
+      printf("\t######[%s]->[%s]\n", Name.c_str(), Value.c_str());
+    }
+
+
       const int Indentation = detectIndentation(Input, Index);
 
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);

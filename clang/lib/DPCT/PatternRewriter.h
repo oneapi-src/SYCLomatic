@@ -19,4 +19,5 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
 
 bool fixLineEndings(const std::string &Input, std::string &Output);
 
+extern std::set<std::string> MainSrcFilesHasCudaSyntex;
 #endif // DPCT_PATTERN_REWRITER_H

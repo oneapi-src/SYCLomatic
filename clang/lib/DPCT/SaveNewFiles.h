@@ -71,5 +71,8 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName);
 // extension needs to wait until all replacements are generated to get the
 // correct result.
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
-                     const clang::tooling::UnifiedPath &FullPathName);
+                     const clang::tooling::UnifiedPath& FullPathName);
+
+void rewriteFileName1(std::string &FileName,
+                     const std::string &FullPathName);
 #endif // DPCT_SAVE_NEW_FILES_H
