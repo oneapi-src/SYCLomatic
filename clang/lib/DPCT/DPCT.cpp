@@ -24,6 +24,7 @@
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
+#include "Schema.h"
 #include "Statics.h"
 #include "TypeLocRewriters.h"
 #include "Utility.h"
@@ -987,6 +988,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
+  DpctGlobalInfo::setCodePinEnabled(EnableCodePin);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setMigrateCmakeScriptEnabled(MigrateCmakeScript);
   DpctGlobalInfo::setMigrateCmakeScriptOnlyEnabled(MigrateCmakeScriptOnly);
@@ -1035,6 +1037,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   MapNames::setExplicitNamespaceMap();
+  clang::dpct::setSTypeSchemaMap();
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
@@ -1068,6 +1071,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_CodePinEnabled,
+                     DpctGlobalInfo::isCodePinEnabled(),
+                     EnableCodePin.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitClNamespace,
                      ExplicitClNamespace,
                      NoClNamespaceInline.getNumOccurrences());
@@ -1153,7 +1159,7 @@ int runDPCT(int argc, const char **argv) {
     doCmakeScriptMigration(InRoot, OutRoot);
     return MigrationSucceeded;
   }
-
+  ReplTy ReplCUDA, ReplSYCL;
   volatile int RunCount = 0;
   do {
     if (RunCount == 1) {
@@ -1167,7 +1173,7 @@ int runDPCT(int argc, const char **argv) {
                                   !DpctGlobalInfo::isQueryAPIMapping()
                               ? llvm::errs()
                               : DpctTerm(),
-                          Tool.getReplacements(), Passes,
+                          ReplCUDA, ReplSYCL, Passes,
                           {PassKind::PK_Analysis, PassKind::PK_Migration},
                           Tool.getFiles().getVirtualFileSystemPtr());
 
@@ -1228,7 +1234,7 @@ int runDPCT(int argc, const char **argv) {
     LangOptions DefaultLangOptions;
     Rewriter Rewrite(Sources, DefaultLangOptions);
     // Must be only 1 file.
-    tooling::applyAllReplacements(Tool.getReplacements().begin()->second,
+    tooling::applyAllReplacements(ReplSYCL.begin()->second,
                                   Rewrite);
     const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
     static const std::string StartStr{"// Start"};
@@ -1292,7 +1298,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   // if run was successful
-  int Status = saveNewFiles(Tool, InRoot, OutRoot);
+  int Status = saveNewFiles(Tool, InRoot, OutRoot, ReplCUDA, ReplSYCL);
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {

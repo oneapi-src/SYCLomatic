@@ -9,7 +9,9 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
+#include "Schema.h"
 #include "Statics.h"
+#include "TextModification.h"
 #include "Utility.h"
 
 #include "clang/AST/DeclTemplate.h"
@@ -20,6 +22,7 @@
 #include <deque>
 #include <fstream>
 #include <optional>
+#include <string>
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
@@ -687,6 +690,19 @@ void DpctFileInfo::buildReplacements() {
   HeaderOS.flush();
   insertHeader(std::move(InsertHeaderStr), LastIncludeOffset);
 
+  std::string InsertHeaderStrCUDA;
+  llvm::raw_string_ostream HeaderOSCUDA(InsertHeaderStrCUDA);
+
+  for (auto &HeaderStr : InsertedHeadersCUDA) {
+    if (HeaderStr[0] != '<' && HeaderStr[0] != '"') {
+      HeaderStr = "\"" + HeaderStr + "\"";
+    }
+    HeaderOSCUDA << getNL() << "#include " << HeaderStr;
+  }
+  HeaderOSCUDA.flush();
+  insertHeader(std::move(InsertHeaderStrCUDA), LastIncludeOffset, IP_Left,
+               RT_ForCUDADebug);
+
   FreeQueriesInfo::buildInfo();
 
   // This loop need to be put at the end of DpctFileInfo::buildReplacements.
@@ -758,22 +774,28 @@ void DpctFileInfo::postProcess() {
     return;
   for (auto &D : FuncMap)
     D.second->emplaceReplacement();
-  if (!Repls->empty()) {
-    Repls->postProcess();
+  if (!ReplsSYCL->empty()) {
+    ReplsSYCL->postProcess();
     if (DpctGlobalInfo::getRunRound() == 0) {
-      DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
+      auto &CacheEntry =
+          DpctGlobalInfo::getInstance().getFileReplCache()[FilePath];
+      CacheEntry.first = ReplsCUDA;
+      CacheEntry.second = ReplsSYCL;
     }
   }
 }
 void DpctFileInfo::emplaceReplacements(
     std::map<clang::tooling::UnifiedPath, tooling::Replacements> &ReplSet) {
-  if (!Repls->empty())
-    Repls->emplaceIntoReplSet(ReplSet[FilePath]);
+  if (!ReplsSYCL->empty())
+    ReplsSYCL->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 void DpctFileInfo::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
     return;
-  Repls->addReplacement(Repl);
+  if (Repl->IsForCUDADebug)
+    ReplsCUDA->addReplacement(Repl);
+  else
+    ReplsSYCL->addReplacement(Repl);
 }
 bool DpctFileInfo::isInAnalysisScope() {
   return DpctGlobalInfo::isInAnalysisScope(FilePath);
@@ -815,7 +837,8 @@ StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
   assert(false && "unknown HeaderType");
   return "";
 }
-void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
+void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
+                                ReplacementType IsForCUDADebug) {
   if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
       Type == HT_DPCT_DNNL_Utils) {
     if (this != DpctGlobalInfo::getInstance().getMainFile().get())
@@ -922,6 +945,30 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   case HT_MKL_RNG:
     insertHeader(HT_MKL_Mkl);
     break;
+  case HT_DPCT_CodePin_CUDA:
+  case HT_DPCT_CodePin_SYCL: {
+    OS << getNL();
+    concatHeader(OS, getHeaderSpelling(Type));
+    std::string CurrentFilePath =
+        llvm::sys::path::convert_to_slash(getFilePath().getCanonicalPath());
+    auto InRootPath = llvm::sys::path::convert_to_slash(
+        DpctGlobalInfo::getInRoot().getCanonicalPath());
+    size_t FilePathCount =
+        std::count_if(CurrentFilePath.begin(), CurrentFilePath.end(),
+                      [](char c) { return c == '/'; });
+    size_t InRootPathCount = std::count_if(InRootPath.begin(), InRootPath.end(),
+                                           [](char c) { return c == '/'; });
+    std::string SchemaRelativePath = "\"";
+    assert(FilePathCount >= InRootPathCount &&
+           "The processed file should be under --in-root folder.");
+    for (size_t i = 1; i < FilePathCount - InRootPathCount; i++) {
+      SchemaRelativePath += "../";
+    }
+    SchemaRelativePath += "generated_schema.hpp\"";
+    concatHeader(OS, SchemaRelativePath);
+    return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right,
+                        IsForCUDADebug);
+  } break;
   default:
     break;
   }
@@ -931,11 +978,12 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   concatHeader(OS, getHeaderSpelling(Type));
   return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
 }
-void DpctFileInfo::insertHeader(HeaderType Type) {
+void DpctFileInfo::insertHeader(HeaderType Type,
+                                ReplacementType IsForCUDADebug) {
   switch (Type) {
 #define HEADER(Name, Spelling)                                                 \
   case HT_##Name:                                                              \
-    return insertHeader(HT_##Name, LastIncludeOffset);
+    return insertHeader(HT_##Name, LastIncludeOffset, IsForCUDADebug);
 #include "HeaderTypes.inc"
   default:
     return;
@@ -1130,6 +1178,23 @@ void DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtensionEnum Extension) {
     SYCLHeaderExtension = ".dp.hpp";
     break;
   }
+}
+const std::string DpctGlobalInfo::getVarSchema(const clang::DeclRefExpr *DRE) {
+  std::string MacroName =
+      "VAR_SCHEMA_" + std::to_string(DpctGlobalInfo::VarSchemaIndex);
+  DpctGlobalInfo::SchemaFileContentCUDA +=
+      "#define " + MacroName + " " +
+      jsonToString(
+          serializeVarSchemaToJson(dpct::constructCUDAVarSchema(DRE))) +
+      getNL();
+  DpctGlobalInfo::SchemaFileContentSYCL +=
+      "#define " + MacroName + " " +
+      jsonToString(serializeVarSchemaToJson(
+          constructSyclVarSchema(constructCUDAVarSchema(DRE)))) +
+      getNL();
+
+  DpctGlobalInfo::VarSchemaIndex += 1;
+  return MacroName;
 }
 void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
                                const FunctionDecl *FD) {
@@ -1811,7 +1876,7 @@ void DpctGlobalInfo::generateHostCode(
 
   for (auto &R : ExtraRepl) {
     auto &FileReplCache = DpctGlobalInfo::getFileReplCache();
-    FileReplCache[R->getFilePath().str()]->addReplacement(R);
+    FileReplCache[R->getFilePath().str()].second->addReplacement(R);
   }
   return;
 }
@@ -1870,19 +1935,23 @@ void DpctGlobalInfo::postProcess() {
           if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
             continue;
           }
-          auto &ReplLists = FileMap[LocInfo.FilePath]->getRepls()->getReplMap();
+          auto &ReplLists =
+              FileMap[LocInfo.FilePath]->getReplsSYCL()->getReplMap();
           generateHostCode(ReplLists, LocInfo, Info.PostFixId);
         }
       }
     }
   }
 }
-void DpctGlobalInfo::emplaceReplacements(ReplTy &ReplSets /*out*/) {
+void DpctGlobalInfo::emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
+                                         ReplTy &ReplSetsSYCL /*out*/) {
   if (DpctGlobalInfo::isNeedRunAgain())
     return;
   for (auto &FileRepl : FileReplCache) {
-    FileRepl.second->emplaceIntoReplSet(
-        ReplSets[FileRepl.first.getCanonicalPath().str()]);
+    FileRepl.second.first->emplaceIntoReplSet(
+        ReplSetsCUDA[FileRepl.first.getCanonicalPath().str()]);
+    FileRepl.second.second->emplaceIntoReplSet(
+        ReplSetsSYCL[FileRepl.first.getCanonicalPath().str()]);
   }
 }
 std::shared_ptr<KernelCallExpr>
@@ -2067,9 +2136,10 @@ void DpctGlobalInfo::setTimeHeaderInserted(SourceLocation Loc, bool B) {
   auto LocInfo = getLocInfo(Loc);
   insertFile(LocInfo.first)->setTimeHeaderInserted(B);
 }
-void DpctGlobalInfo::insertHeader(SourceLocation Loc, HeaderType Type) {
+void DpctGlobalInfo::insertHeader(SourceLocation Loc, HeaderType Type,
+                                  ReplacementType IsForCUDADebug) {
   auto LocInfo = getLocInfo(Loc);
-  insertFile(LocInfo.first)->insertHeader(Type);
+  insertFile(LocInfo.first)->insertHeader(Type, IsForCUDADebug);
 }
 void DpctGlobalInfo::insertHeader(SourceLocation Loc, std::string HeaderName) {
   auto LocInfo = getLocInfo(Loc);
@@ -2202,6 +2272,8 @@ std::tuple<unsigned int, std::string, SourceRange>
     DpctGlobalInfo::LastMacroRecord =
         std::make_tuple<unsigned int, std::string, SourceRange>(0, "",
                                                                 SourceRange());
+std::string DpctGlobalInfo::SchemaFileContentCUDA = "";
+std::string DpctGlobalInfo::SchemaFileContentSYCL = "";
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInAnalysisScopeFunc = DpctGlobalInfo::checkInAnalysisScope;
   GetRunRound = DpctGlobalInfo::getRunRound;
@@ -2244,6 +2316,7 @@ std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 bool DpctGlobalInfo::EnableCtad = false;
+bool DpctGlobalInfo::EnableCodePin = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::MigrateCmakeScript = false;
@@ -2288,6 +2361,7 @@ std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 int DpctGlobalInfo::CurrentMaxIndex = 0;
 int DpctGlobalInfo::CurrentIndexInRule = 0;
 std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::IncludingFileSet;
+int DpctGlobalInfo::VarSchemaIndex = 0;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
 std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
 clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
@@ -2309,7 +2383,8 @@ CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
 std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
     DpctGlobalInfo::CudaArchMacroRepl;
 std::unordered_map<clang::tooling::UnifiedPath,
-                   std::shared_ptr<ExtReplacements>>
+                   std::pair<std::shared_ptr<ExtReplacements>,
+                             std::shared_ptr<ExtReplacements>>>
     DpctGlobalInfo::FileReplCache;
 std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::ReProcessFile;
 bool DpctGlobalInfo::NeedRunAgain = false;
