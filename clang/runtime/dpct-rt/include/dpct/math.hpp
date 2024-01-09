@@ -415,101 +415,29 @@ inline unsigned int funnelshift_rc(unsigned int low, unsigned int high,
 /// cbrt function wrapper.
 template <typename T> inline T cbrt(T val) { return sycl::cbrt((T)val); }
 
-// min function overloads.
-// For floating-point types, `float` or `double` arguments are acceptable.
-// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
-// `std::int64_t` type arguments are acceptable.
-inline double min(const double a, const float b) {
-  return sycl::fmin(a, static_cast<double>(b));
+template <typename T1, typename T2>
+std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
+                 std::common_type_t<T1, T2>>
+min(T1 a, T2 b) {
+  return sycl::min<std::common_type_t<T1, T2>>(a, b);
 }
-inline double min(const float a, const double b) {
-  return sycl::fmin(static_cast<double>(a), b);
+template <typename T1, typename T2>
+std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
+                 std::common_type_t<T1, T2>>
+min(T1 a, T2 b) {
+  return sycl::fmin<std::common_type_t<T1, T2>>(a, b);
 }
-inline float min(const float a, const float b) { return sycl::fmin(a, b); }
-inline double min(const double a, const double b) { return sycl::fmin(a, b); }
-inline std::uint32_t min(const std::uint32_t a, const std::int32_t b) {
-  return sycl::min(a, static_cast<std::uint32_t>(b));
+template <typename T1, typename T2>
+std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
+                 std::common_type_t<T1, T2>>
+max(T1 a, T2 b) {
+  return sycl::max<std::common_type_t<T1, T2>>(a, b);
 }
-inline std::uint32_t min(const std::int32_t a, const std::uint32_t b) {
-  return sycl::min(static_cast<std::uint32_t>(a), b);
-}
-inline std::int32_t min(const std::int32_t a, const std::int32_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint32_t min(const std::uint32_t a, const std::uint32_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::int64_t b) {
-  return sycl::min(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t min(const std::int64_t a, const std::uint64_t b) {
-  return sycl::min(static_cast<std::uint64_t>(a), b);
-}
-inline std::int64_t min(const std::int64_t a, const std::int64_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::uint64_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::int32_t b) {
-  return sycl::min(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t min(const std::int32_t a, const std::uint64_t b) {
-  return sycl::min(static_cast<std::uint64_t>(a), b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::uint32_t b) {
-  return sycl::min(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t min(const std::uint32_t a, const std::uint64_t b) {
-  return sycl::min(static_cast<std::uint64_t>(a), b);
-}
-// max function overloads.
-// For floating-point types, `float` or `double` arguments are acceptable.
-// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
-// `std::int64_t` type arguments are acceptable.
-inline double max(const double a, const float b) {
-  return sycl::fmax(a, static_cast<double>(b));
-}
-inline double max(const float a, const double b) {
-  return sycl::fmax(static_cast<double>(a), b);
-}
-inline float max(const float a, const float b) { return sycl::fmax(a, b); }
-inline double max(const double a, const double b) { return sycl::fmax(a, b); }
-inline std::uint32_t max(const std::uint32_t a, const std::int32_t b) {
-  return sycl::max(a, static_cast<std::uint32_t>(b));
-}
-inline std::uint32_t max(const std::int32_t a, const std::uint32_t b) {
-  return sycl::max(static_cast<std::uint32_t>(a), b);
-}
-inline std::int32_t max(const std::int32_t a, const std::int32_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint32_t max(const std::uint32_t a, const std::uint32_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::int64_t b) {
-  return sycl::max(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t max(const std::int64_t a, const std::uint64_t b) {
-  return sycl::max(static_cast<std::uint64_t>(a), b);
-}
-inline std::int64_t max(const std::int64_t a, const std::int64_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::uint64_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::int32_t b) {
-  return sycl::max(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t max(const std::int32_t a, const std::uint64_t b) {
-  return sycl::max(static_cast<std::uint64_t>(a), b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::uint32_t b) {
-  return sycl::max(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
-  return sycl::max(static_cast<std::uint64_t>(a), b);
+template <typename T1, typename T2>
+std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
+                 std::common_type_t<T1, T2>>
+max(T1 a, T2 b) {
+  return sycl::fmax<std::common_type_t<T1, T2>>(a, b);
 }
 
 // pow functions overload.
@@ -693,6 +621,29 @@ struct sub_sat {
     return sycl::sub_sat(x, y);
   }
 };
+
+namespace detail {
+struct shift_left {
+  template <typename T>
+  auto operator()(const T x, const uint32_t offset) const {
+    return x << offset;
+  }
+};
+
+struct shift_right {
+  template <typename T>
+  auto operator()(const T x, const uint32_t offset) const {
+    return x >> offset;
+  }
+};
+
+struct average {
+  template <typename T>
+  auto operator()(const T x, const T y) const {
+    return (x + y + (x + y >= 0)) >> 1;
+  }
+};
+} // namespace detail
 
 /// Compute vectorized binary operation value for two values, with each value
 /// treated as a vector type \p VecT.
@@ -1370,6 +1321,186 @@ inline constexpr RetT extend_max_sat(AT a, BT b, CT c,
   return detail::extend_binary<RetT, true>(a, b, c, maximum(), second_op);
 }
 
+/// Extend \p a and \p b to 33 bit and return a << clamp(b, 0, 32).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns a << clamp(b, 0, 32)
+template <typename RetT, typename T>
+inline constexpr RetT extend_shl_clamp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, false>(a, sycl::clamp(b, 0u, 32u),
+                                            detail::shift_left());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(a << clamp(b, 0, 32), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(a << clamp(b, 0, 32), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shl_clamp(T a, uint32_t b, uint32_t c,
+                                       BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, sycl::clamp(b, 0u, 32u), c,
+                                            detail::shift_left(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return sat(a << clamp(b, 0, 32)).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns sat(a << clamp(b, 0, 32))
+template <typename RetT, typename T>
+inline constexpr RetT extend_shl_sat_clamp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, true>(a, sycl::clamp(b, 0u, 32u),
+                                           detail::shift_left());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(sat(a << clamp(b, 0, 32)), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(sat(a << clamp(b, 0, 32)), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shl_sat_clamp(T a, uint32_t b, uint32_t c,
+                                           BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, sycl::clamp(b, 0u, 32u), c,
+                                           detail::shift_left(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return a << (b & 0x1F).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns a << (b & 0x1F)
+template <typename RetT, typename T>
+inline constexpr RetT extend_shl_mask31(T a, uint32_t b) {
+  return detail::extend_binary<RetT, false>(a, b & 0x1F, detail::shift_left());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(a << (b & 0x1F), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(a << (b & 0x1F), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shl_mask31(T a, uint32_t b, uint32_t c,
+                                      BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b & 0x1F, c,
+                                            detail::shift_left(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return sat(a << (b & 0x1F)).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns sat(a << (b & 0x1F))
+template <typename RetT, typename T>
+inline constexpr RetT extend_shl_sat_mask31(T a, uint32_t b) {
+  return detail::extend_binary<RetT, true>(a, b & 0x1F, detail::shift_left());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(sat(a << (b & 0x1F)), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(sat(a << (b & 0x1F)), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shl_sat_mask31(T a, uint32_t b, uint32_t c,
+                                          BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b & 0x1F, c, detail::shift_left(),
+                                           second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return a >> clamp(b, 0, 32).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns a >> clamp(b, 0, 32)
+template <typename RetT, typename T>
+inline constexpr RetT extend_shr_clamp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, false>(a, sycl::clamp(b, 0u, 32u),
+                                            detail::shift_right());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(a >> clamp(b, 0, 32), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(a >> clamp(b, 0, 32), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shr_clamp(T a, uint32_t b, uint32_t c,
+                                       BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, sycl::clamp(b, 0u, 32u), c,
+                                            detail::shift_right(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return sat(a >> clamp(b, 0, 32)).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns sat(a >> clamp(b, 0, 32))
+template <typename RetT, typename T>
+inline constexpr RetT extend_shr_sat_clamp(T a, uint32_t b) {
+  return detail::extend_binary<RetT, true>(a, sycl::clamp(b, 0u, 32u),
+                                           detail::shift_right());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(sat(a >> clamp(b, 0, 32)), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(sat(a >> clamp(b, 0, 32)), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shr_sat_clamp(T a, uint32_t b, uint32_t c,
+                                           BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, sycl::clamp(b, 0u, 32u), c,
+                                           detail::shift_right(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return a >> (b & 0x1F).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns a >> (b & 0x1F)
+template <typename RetT, typename T>
+inline constexpr RetT extend_shr_mask31(T a, uint32_t b) {
+  return detail::extend_binary<RetT, false>(a, b & 0x1F, detail::shift_right());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(a >> (b & 0x1F), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(a >> (b & 0x1F), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shr_mask31(T a, uint32_t b, uint32_t c,
+                                      BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b & 0x1F, c,
+                                            detail::shift_right(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return sat(a >> (b & 0x1F)).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \returns sat(a >> (b & 0x1F))
+template <typename RetT, typename T>
+inline constexpr RetT extend_shr_sat_mask31(T a, uint32_t b) {
+  return detail::extend_binary<RetT, true>(a, b & 0x1F, detail::shift_right());
+}
+
+/// Extend Inputs to 33 bit, and return second_op(sat(a >> (b & 0x1F)), c).
+/// \param [in] a The source value
+/// \param [in] b The offset to shift
+/// \param [in] c The value to merge
+/// \param [in] second_op The operation to do with the third value
+/// \returns second_op(sat(a >> (b & 0x1F)), c)
+template <typename RetT, typename T, typename BinaryOperation>
+inline constexpr RetT extend_shr_sat_mask31(T a, uint32_t b, uint32_t c,
+                                          BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b & 0x1F, c,
+                                           detail::shift_right(), second_op);
+}
+
 /// Compute vectorized addition of \p a and \p b, with each value treated as a
 /// 2 elements vector type and extend each element to 17 bit.
 /// \tparam [in] RetT The type of the return value, can only be 32 bit integer
@@ -1590,6 +1721,50 @@ inline constexpr RetT extend_vmax2_sat(AT a, BT b, RetT c) {
   return detail::extend_vbinary2<RetT, true, false>(a, b, c, maximum());
 }
 
+/// Compute vectorized average of \p a and \p b, with each value treated as a 2
+/// elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized average of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg2(AT a, BT b, RetT c) {
+  return detail::extend_vbinary2<RetT, false, false>(a, b, c, detail::average());
+}
+
+/// Compute vectorized average of \p a and \p b, with each value treated as a 2
+/// elements vector type and extend each element to 17 bit. Then add each half
+/// of the result and add with \p c.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The addition of each half of extend average maximum of the
+/// two values and the third value
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg2_add(AT a, BT b, RetT c) {
+  return detail::extend_vbinary2<RetT, false, true>(a, b, c, detail::average());
+}
+
+/// Compute vectorized average of \p a and \p b with saturation, with each value
+/// treated as a 2 elements vector type and extend each element to 17 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized average of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg2_sat(AT a, BT b, RetT c) {
+  return detail::extend_vbinary2<RetT, true, false>(a, b, c, detail::average());
+}
+
 /// Compute vectorized addition of \p a and \p b, with each value treated as a
 /// 4 elements vector type and extend each element to 9 bit.
 /// \tparam [in] RetT The type of the return value, can only be 32 bit integer
@@ -1808,6 +1983,50 @@ inline constexpr RetT extend_vmax4_add(AT a, BT b, RetT c) {
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vmax4_sat(AT a, BT b, RetT c) {
   return detail::extend_vbinary4<RetT, true, false>(a, b, c, maximum());
+}
+
+/// Compute vectorized average of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized average of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg4(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, false>(a, b, c, detail::average());
+}
+
+/// Compute vectorized average of \p a and \p b, with each value treated as a 4
+/// elements vector type and extend each element to 9 bit. Then add each half
+/// of the result and add with \p c.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The addition of each half of extend vectorized average of the
+/// two values and the third value
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg4_add(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, false, true>(a, b, c, detail::average());
+}
+
+/// Compute vectorized average of \p a and \p b with saturation, with each value
+/// treated as a 4 elements vector type and extend each element to 9 bit.
+/// \tparam [in] RetT The type of the return value, can only be 32 bit integer
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \returns The extend vectorized average of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_vavrg4_sat(AT a, BT b, RetT c) {
+  return detail::extend_vbinary4<RetT, true, false>(a, b, c, detail::average());
 }
 } // namespace dpct
 

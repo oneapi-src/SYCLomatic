@@ -1,6 +1,7 @@
 set(dpct_rt_files
   include/dpct/dpct.hpp
   include/dpct/atomic.hpp
+  include/dpct/bindless_images.hpp
   include/dpct/device.hpp
   include/dpct/math.hpp
   include/dpct/memory.hpp
@@ -28,8 +29,15 @@ set(dpct_rt_dpstd_files
   include/dpct/dpl_extras/dpcpp_extensions.h
 )
 
+set(dpct_rt_codepin_files
+  include/dpct/codepin/codepin.hpp
+  include/dpct/codepin/detail/json.hpp
+  include/dpct/codepin/detail/schema.hpp
+)
+
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)
 set(output_dpstd_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct/dpl_extras)
+set(output_codepin_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct/codepin)
 
 set(out_files)
 foreach( f ${dpct_rt_files})
@@ -51,6 +59,16 @@ foreach( f ${dpct_rt_dpstd_files})
     COMMENT "Copying clang's ${f}...")
   list(APPEND out_files ${dst})
 endforeach( f )
+
+foreach( f ${dpct_rt_codepin_files})
+  set( src ${CMAKE_CURRENT_SOURCE_DIR}/${f} )
+  set( dst ${output_codepin_dir}/${f} )
+  add_custom_command(OUTPUT ${dst}
+    DEPENDS ${src}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${src} ${dst}
+    COMMENT "Copying clang's ${f}...")
+  list(APPEND out_files ${dst})
+endforeach( f )
 add_custom_target(dpct-headers ALL DEPENDS ${out_files})
 
 install(
@@ -65,6 +83,11 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION include/dpct/dpl_extras)
 
+install(
+  DIRECTORY include/dpct/codepin DESTINATION include/dpct
+  COMPONENT dpct-headers
+  USE_SOURCE_PERMISSIONS
+)
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-headers
                            DEPENDS dpct-headers

@@ -8,6 +8,7 @@
 // Notice: When modify DASH prefix check, need modify behavior_tests/src/bt-autocomplete/do_test.py
 // in SYCLomatic-test repo too.
 // DASH: --always-use-async-handler
+// DASH-NEXT: --analysis-mode
 // DASH-NEXT: --analysis-scope-path
 // DASH-NEXT: --assume-nd-range-dim=
 // DASH-NEXT: --build-script-file
@@ -16,6 +17,7 @@
 // DASH-NEXT: --comments
 // DASH-NEXT: --compilation-database
 // DASH-NEXT: --cuda-include-path
+// DASH-NEXT: --enable-codepin
 // DASH-NEXT: --enable-ctad
 // DASH-NEXT: --enable-profiling
 // DASH-NEXT: --extra-arg
@@ -50,6 +52,7 @@
 // DASH-NEXT: --stop-on-parse-err
 // DASH-NEXT: --suppress-warnings
 // DASH-NEXT: --suppress-warnings-all
+// DASH-NEXT: --sycl-file-extension=
 // DASH-NEXT: --sycl-named-lambda
 // DASH-NEXT: --use-dpcpp-extensions=
 // DASH-NEXT: --use-experimental-features=
