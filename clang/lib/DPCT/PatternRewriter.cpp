@@ -703,12 +703,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
         }
       }
 
-
-    for (const auto &[Name, Value] : Match.Bindings) { 
-      printf("\t######[%s]->[%s]\n", Name.c_str(), Value.c_str());
-    }
-
-
       const int Indentation = detectIndentation(Input, Index);
 
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);

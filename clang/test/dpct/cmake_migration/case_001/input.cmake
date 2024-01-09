@@ -8,6 +8,7 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 Find_Package(CUDA REQUIRED)
 find_package(OpenCV REQUIRED)
+Find_Package(CUDA)
 set(SOURCES
     ${CMAKE_SOURCE_DIR}/foo/main.cu
     ${CMAKE_SOURCE_DIR}/foo/bar/util.cu

@@ -31,7 +31,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package
-  In: find_package(CUDA REQUIRED)
+  In: find_package(CUDA${opts})
   Out: find_package(IntelSYCL REQUIRED)
 
 - Rule: rule_cmake_cxx_standard
