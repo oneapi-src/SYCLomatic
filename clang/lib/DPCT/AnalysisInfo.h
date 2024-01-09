@@ -17,6 +17,7 @@
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
+#include "TextModification.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
@@ -27,6 +28,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/ParentMapContext.h"
@@ -273,8 +275,6 @@ using StmtList = std::vector<StmtWithWarning>;
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
-using ReplTy = std::map<std::string, tooling::Replacements>;
-
 template <class T> inline void merge(T &Master, const T &Branch) {
   Master.insert(Branch.begin(), Branch.end());
 }
@@ -347,7 +347,8 @@ enum UsingType {
 class DpctFileInfo {
 public:
   DpctFileInfo(const clang::tooling::UnifiedPath &FilePathIn)
-      : Repls(std::make_shared<ExtReplacements>(FilePathIn)),
+      : ReplsSYCL(std::make_shared<ExtReplacements>(FilePathIn)),
+        ReplsCUDA(std::make_shared<ExtReplacements>(FilePathIn)),
         FilePath(FilePathIn) {
     buildLinesInfo();
   }
@@ -387,10 +388,14 @@ public:
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
       return;
-    Repls->addReplacement(Repl);
+    if(Repl->IsForCUDADebug)
+      ReplsCUDA->addReplacement(Repl);
+    else
+      ReplsSYCL->addReplacement(Repl);
   }
   bool isInAnalysisScope();
-  std::shared_ptr<ExtReplacements> getRepls() { return Repls; }
+  std::shared_ptr<ExtReplacements> getReplsSYCL() { return ReplsSYCL; }
+  std::shared_ptr<ExtReplacements> getReplsCUDA() { return ReplsCUDA; }
 
   size_t getFileSize() const { return FileSize; }
 
@@ -443,11 +448,13 @@ public:
   // Insert one or more header inclusion directives at a specified offset
   template <typename ReplacementT>
   void insertHeader(ReplacementT &&Repl, unsigned Offset,
-                    InsertPosition InsertPos = IP_Left) {
+                    InsertPosition InsertPos = IP_Left,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
     auto R = std::make_shared<ExtReplacement>(
         FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
     R->setInsertPosition(InsertPos);
+    R->IsForCUDADebug = IsForCUDADebug;
     IncludeDirectiveInsertions.push_back(R);
   }
 
@@ -461,8 +468,10 @@ public:
     }
   }
 
-  void insertHeader(HeaderType Type, unsigned Offset);
-  void insertHeader(HeaderType Type);
+  void insertHeader(HeaderType Type, unsigned Offset,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+  void insertHeader(HeaderType Type,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
 
   // Record line info in file.
   struct SourceLineInfo {
@@ -645,7 +654,8 @@ private:
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
       AtomicMap;
-  std::shared_ptr<ExtReplacements> Repls;
+  std::shared_ptr<ExtReplacements> ReplsSYCL;
+  std::shared_ptr<ExtReplacements> ReplsCUDA;
   size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
 
@@ -657,6 +667,7 @@ private:
   const unsigned FileBeginOffset = 0;
   bool HasInclusionDirective = false;
   std::vector<std::string> InsertedHeaders;
+  std::vector<std::string> InsertedHeadersCUDA;
   std::bitset<32> HeaderInsertedBitMap;
   std::bitset<32> UsingInsertedBitMap;
   bool AddOneDplHeaders = false;
@@ -878,6 +889,7 @@ public:
     return CudaPath;
   }
 
+  static const std::string getVarSchema(const clang::DeclRefExpr*);
   static const std::string getCudaVersion() {
     return clang::CudaVersionToString(SDKVersion);
   }
@@ -1127,6 +1139,8 @@ public:
   }
   inline static bool isCtadEnabled() { return EnableCtad; }
   inline static void setCtadEnabled(bool Enable = true) { EnableCtad = Enable; }
+  inline static bool isCodePinEnabled() { return EnableCodePin; }
+  inline static void setCodePinEnabled(bool Enable = false) { EnableCodePin = Enable; }
   inline static bool isGenBuildScript() { return GenBuildScript; }
   inline static void setGenBuildScriptEnabled(bool Enable = true) {
     GenBuildScript = Enable;
@@ -1483,16 +1497,19 @@ public:
       HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
-                     std::shared_ptr<ExtReplacements> Repl) {
+                     std::pair<std::shared_ptr<ExtReplacements>,
+                               std::shared_ptr<ExtReplacements>>
+                         Repl) {
     FileReplCache[FilePath] = Repl;
   }
   // Emplace stored replacements into replacement set.
-  void emplaceReplacements(ReplTy &ReplSets /*out*/) {
+  void emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
+                           ReplTy &ReplSetsSYCL /*out*/) {
     if (DpctGlobalInfo::isNeedRunAgain())
       return;
     for (auto &FileRepl : FileReplCache) {
-      FileRepl.second->emplaceIntoReplSet(
-          ReplSets[FileRepl.first.getCanonicalPath().str()]);
+      FileRepl.second.first->emplaceIntoReplSet(ReplSetsCUDA[FileRepl.first.getCanonicalPath().str()]);
+      FileRepl.second.second->emplaceIntoReplSet(ReplSetsSYCL[FileRepl.first.getCanonicalPath().str()]);
     }
   }
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
@@ -1678,9 +1695,10 @@ public:
     insertFile(LocInfo.first)->setTimeHeaderInserted(B);
   }
 
-  void insertHeader(SourceLocation Loc, HeaderType Type) {
+  void insertHeader(SourceLocation Loc, HeaderType Type,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
     auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->insertHeader(Type);
+    insertFile(LocInfo.first)->insertHeader(Type, IsForCUDADebug);
   }
 
   void insertHeader(SourceLocation Loc, std::string HeaderName) {
@@ -1879,7 +1897,9 @@ public:
   static unsigned int getRunRound() { return RunRound; }
   static void setNeedRunAgain(bool NRA) { NeedRunAgain = NRA; }
   static bool isNeedRunAgain() { return NeedRunAgain; }
-  static std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacements>> &
+  static std::unordered_map<clang::tooling::UnifiedPath,
+                            std::pair<std::shared_ptr<ExtReplacements>,
+                                      std::shared_ptr<ExtReplacements>>> &
   getFileReplCache() {
     return FileReplCache;
   }
@@ -2000,6 +2020,8 @@ public:
     return NeedParenAPISet.count(Name);
   };
 
+  static std::string SchemaFileContentCUDA;
+  static std::string SchemaFileContentSYCL;
 private:
   DpctGlobalInfo();
 
@@ -2089,6 +2111,7 @@ private:
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
+  static bool EnableCodePin;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
   static bool MigrateCmakeScript;
@@ -2143,6 +2166,7 @@ private:
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
   static std::set<clang::tooling::UnifiedPath> IncludingFileSet;
+  static int VarSchemaIndex;
   static std::set<std::string> FileSetInCompiationDB;
   static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;
@@ -2162,7 +2186,9 @@ private:
   static CudaArchDefMap CudaArchDefinedMap;
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
       CudaArchMacroRepl;
-  static std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacements>>
+  static std::unordered_map<clang::tooling::UnifiedPath,
+                            std::pair<std::shared_ptr<ExtReplacements>,
+                                      std::shared_ptr<ExtReplacements>>>
       FileReplCache;
   static std::set<clang::tooling::UnifiedPath> ReProcessFile;
   static bool NeedRunAgain;

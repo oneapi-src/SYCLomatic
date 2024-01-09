@@ -95,6 +95,19 @@ const std::string DplExtrasDpcppExtensionsAllContentStr =
 #include "clang/DPCT/dpl_extras/dpcpp_extensions.h.inc"
     ;
 
+const std::string CodePinAllContentStr =
+#include "clang/DPCT/codepin/codepin.hpp.inc"
+    ;
+
+const std::string CodePinDetailSchemaAllContentStr =
+#include "clang/DPCT/codepin/detail/schema.hpp.inc"
+    ;
+
+const std::string CodePinDetailJsonAllContentStr =
+#include "clang/DPCT/codepin/detail/json.hpp.inc"
+    ;
+
+
 void replaceAllOccurredStrsInStr(std::string &StrNeedProcess,
                                  const std::string &Pattern,
                                  const std::string &Repl) {
@@ -131,6 +144,10 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
     llvm::sys::fs::create_directory(ToPath.getCanonicalPath());
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/dpl_extras"))
     llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/dpl_extras");
+  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/codepin"))
+    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/codepin");
+  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/codepin/detail"))
+    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/codepin/detail");
 
 #define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)                         \
   {                                                                            \
@@ -146,6 +163,29 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   {                                                                            \
     std::ofstream VAR_NAME##File(                                              \
         appendPath(appendPath(ToPath.getCanonicalPath().str(), "dpl_extras"),  \
+                   #FILE_NAME),                                                \
+        std::ios::binary);                                                     \
+    std::string Code = VAR_NAME##AllContentStr;                                \
+    replaceEndOfLine(Code);                                                    \
+    VAR_NAME##File << Code;                                                    \
+    VAR_NAME##File.flush();                                                    \
+  }
+#define GENERATE_CODEPIN_CONTENT(VAR_NAME, FILE_NAME)                          \
+  {                                                                            \
+    std::ofstream VAR_NAME##File(                                              \
+        appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"),  \
+                   #FILE_NAME),                                                \
+        std::ios::binary);                                                     \
+    std::string Code = VAR_NAME##AllContentStr;                                \
+    replaceEndOfLine(Code);                                                    \
+    VAR_NAME##File << Code;                                                    \
+    VAR_NAME##File.flush();                                                    \
+  }
+#define GENERATE_CODEPIN_DETAIL_CONTENT(VAR_NAME, FILE_NAME)                   \
+  {                                                                            \
+    std::ofstream VAR_NAME##File(                                              \
+        appendPath(appendPath(                                                 \
+            appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail"), \
                    #FILE_NAME),                                                \
         std::ios::binary);                                                     \
     std::string Code = VAR_NAME##AllContentStr;                                \
@@ -171,6 +211,9 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(SparseUtils, sparse_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(FftUtils, fft_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(LapackUtils, lapack_utils.hpp)
+  GENERATE_CODEPIN_CONTENT(CodePin, codepin.hpp)
+  GENERATE_CODEPIN_DETAIL_CONTENT(CodePinDetailSchema, schema.hpp)
+  GENERATE_CODEPIN_DETAIL_CONTENT(CodePinDetailJson, json.hpp)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasAlgorithm, algorithm.h)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasFunctional, functional.h)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasIterators, iterators.h)
