@@ -243,6 +243,10 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ProcessAll
                  "Default: off."),
            llvm::cl::cat(DPCTCat), llvm::cl::location(ProcessAllFlag))
 
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCodePin, "enable-codepin",
+           llvm::cl::desc("EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verification purpose."),
+           llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCTAD, "enable-ctad",
            llvm::cl::desc("Use a C++17 class template argument deduction (CTAD) in "
                    "your generated code.\n"
@@ -314,6 +318,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
                                      "Enqueued barriers extension.",
+                                     false),
+             DPCT_OPT_ENUM("peer_access",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess),
+                                     "Peer access extension.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
@@ -373,6 +381,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("bfloat16_math_functions", int(ExperimentalFeatures::Exp_BFloat16Math),
         "Experimental extension that allows use of bfloat16 math functions.\n",
+        false),
+             DPCT_OPT_ENUM("bindless_images", int(ExperimentalFeatures::Exp_BindlessImages),
+        "Experimental extension that allows use of bindless images APIs.\n",
         false)
            ),
            llvm::cl::desc("Comma-separated list of experimental features to be used in migrated "
@@ -422,6 +433,16 @@ DPCT_NON_ENUM_OPTION(
         "Limit extension change to .cu and .cuh files only. Default: off."),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
+DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<SYCLFileExtensionEnum>), SYCLFileExtension, "sycl-file-extension",
+           DPCT_OPTION_VALUES(
+             DPCT_OPT_ENUM("sycl-cpp", int(SYCLFileExtensionEnum::SYCL_CPP), "Use extension .sycl.cpp and .sycl.hpp", false),
+             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension .cpp and .hpp", false),
+             DPCT_OPT_ENUM("dp-cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension .dp.cpp and .dp.hpp", false)
+           ),
+           llvm::cl::desc("File extension of migrated source files\n"),
+           llvm::cl::init(SYCLFileExtensionEnum::DP_CPP), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
+           llvm::cl::Optional)
+
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunction, "gen-helper-function",
         llvm::cl::desc("Generate helper function files in the --out-root directory. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
@@ -459,5 +480,10 @@ DPCT_ENUM_OPTION(
     llvm::cl::desc("The preference of helper function usage in migration.\n"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
     llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), AnalysisMode, "analysis-mode",
+    llvm::cl::desc("Only generate report for porting effort. Default: off."),
+    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

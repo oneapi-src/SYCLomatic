@@ -8,8 +8,7 @@ Message
 
 .. _msg-1097-start:
 
-The function *<backward function name>* may require the workspace used to save intermediate results from function *<forward function name>*. By default, a workspace from ``engine_ext`` is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to
-rewrite this code.
+The function *<backward function name>* may require the workspace used to save intermediate results from function *<forward function name>*. By default, a workspace from ``engine_ext`` is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.
 
 .. _msg-1097-end:
 
@@ -23,29 +22,70 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
-     cudnnLRNCrossChannelForward(handle, ...);
+   void test(cudnnHandle_t handle, cudnnTensorDescriptor_t dataTensor,
+             cudnnTensorDescriptor_t outTensor,
+             cudnnTensorDescriptor_t diffdataTensor,
+             cudnnTensorDescriptor_t diffoutTensor, float *data, float *out,
+             float *diffdata, float *diffout, float alpha, float beta,
+             cudnnLRNDescriptor_t desc) {
      ...
-     cudnnLRNCrossChannelBackward(handle, ...);
+     cudnnLRNCrossChannelForward(handle, desc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
+                                 &alpha, dataTensor, data, &beta, outTensor, out);
+     ...
+     cudnnLRNCrossChannelBackward(handle, desc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
+                                  &alpha, outTensor, out, diffoutTensor, diffout,
+                                  dataTensor, data, &beta, diffdataTensor,
+                                  diffdata);
+     ...
+   }
 
 results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
 
-     handle.lrn_forward(...);
+   void test(dpct::dnnl::engine_ext handle, dpct::dnnl::memory_desc_ext dataTensor,
+             dpct::dnnl::memory_desc_ext outTensor,
+             dpct::dnnl::memory_desc_ext diffdataTensor,
+             dpct::dnnl::memory_desc_ext diffoutTensor, float *data, float *out,
+             float *diffdata, float *diffout, float alpha, float beta,
+             dpct::dnnl::lrn_desc desc) {
      ...
-     handle.lrn_backward(...);
+     handle.async_lrn_forward(desc, alpha, dataTensor, data, beta, outTensor, out);
+     ...
+     /*
+     DPCT1097:0: The function "async_lrn_backward" may require the workspace used
+     to save intermediate results from function "async_lrn_forward". By default, a
+     workspace from engine_ext is selected according to the source data pointer,
+     but this may be incorrect and cause a workspace data race. You may need to
+     rewrite this code.
+     */
+     handle.async_lrn_backward(desc, alpha, outTensor, out, diffoutTensor, diffout,
+                               dataTensor, data, beta, diffdataTensor, diffdata);
+     ...
+   }
 
 which is manually adjusted to:
 
 .. code-block:: cpp
    :linenos:
 
-     dnnl::memory workspace;
-     handle.lrn_forward(..., &workspace);
+   void test(dpct::dnnl::engine_ext handle, dpct::dnnl::memory_desc_ext dataTensor,
+             dpct::dnnl::memory_desc_ext outTensor,
+             dpct::dnnl::memory_desc_ext diffdataTensor,
+             dpct::dnnl::memory_desc_ext diffoutTensor, float *data, float *out,
+             float *diffdata, float *diffout, float alpha, float beta,
+             dpct::dnnl::lrn_desc desc) {
      ...
-     handle.lrn_backward(..., &workspace);
-
+     dnnl::memory workspace;
+     handle.async_lrn_forward(desc, alpha, dataTensor, data, beta, outTensor, out,
+                              &workspace);
+     ...
+     handle.async_lrn_backward(desc, alpha, outTensor, out, diffoutTensor, diffout,
+                               dataTensor, data, beta, diffdataTensor, diffdata,
+                               &workspace);
+     ...
+   }
 
 Suggestions to Fix
 ------------------

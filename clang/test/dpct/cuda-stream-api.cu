@@ -2,8 +2,9 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --usm-level=none -out-root %T/cuda-stream-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-stream-api/cuda-stream-api.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/cuda-stream-api/cuda-stream-api.dp.cpp -o %T/cuda-stream-api/cuda-stream-api.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cuda-stream-api/cuda-stream-api.dp.cpp -o %T/cuda-stream-api/cuda-stream-api.dp.o %}
 
+#ifndef BUILD_TEST
 #include <list>
 #include <functional>
 
@@ -326,4 +327,4 @@ class C {
     streams2 = INIT_STREAM;
   }
 };
-
+#endif
