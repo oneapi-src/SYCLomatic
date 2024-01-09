@@ -110,7 +110,7 @@
     value:
       MatchMode: Full
       In: ${arg}.cpp
-      Out: ${arg}.${extention_name}
+      Out: ${arg}.${rewrite_extention_name}
 
 - Rule: rule_user_defined_function_cu
   Kind: CMakeRule
@@ -123,7 +123,7 @@
     value:
       MatchMode: Full
       In: ${arg}.cu
-      Out: ${arg}.${extention_name}
+      Out: ${arg}.${rewrite_extention_name}
 
 
 - Rule: rule_cuda_compile_with_opts

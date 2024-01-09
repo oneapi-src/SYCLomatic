@@ -158,40 +158,12 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
 
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
                      const clang::tooling::UnifiedPath &FullPathName) {
-  SmallString<512> CanonicalPathStr(StringRef(FileName.getCanonicalPath()));
-  const auto Extension = path::extension(CanonicalPathStr);
-  SourceProcessType FileType = GetSourceFileType(FullPathName);
-  // If user does not specify which extension need be changed, we change all the
-  // SPT_CudaSource, SPT_CppSource and SPT_CudaHeader files.
-  if (DpctGlobalInfo::getChangeExtensions().empty() ||
-      DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
-    if (FileType & SPT_CudaSource) {
-      path::replace_extension(CanonicalPathStr,
-                              DpctGlobalInfo::getSYCLSourceExtension());
-    } else if (FileType & SPT_CppSource) {
-      if (Extension == ".c") {
-        auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FileName);
-        if (FileInfo->hasCUDASyntax()) {
-          path::replace_extension(CanonicalPathStr,
-                                  Extension +
-                                      DpctGlobalInfo::getSYCLSourceExtension());
-        }
-      } else {
-        path::replace_extension(CanonicalPathStr,
-                                Extension +
-                                    DpctGlobalInfo::getSYCLSourceExtension());
-      }
-    } else if (FileType & SPT_CudaHeader) {
-      path::replace_extension(CanonicalPathStr,
-                              DpctGlobalInfo::getSYCLHeaderExtension());
-    }
-  }
-  FileName = CanonicalPathStr;
+  std::string FilePath;
+  rewriteFileName(FilePath, FullPathName.getPath().str());
+  FileName = FilePath;
 }
 
-
-void rewriteFileName1(std::string &FileName,
-                     const std::string &FullPathName) {
+void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
   SmallString<512> CanonicalPathStr(FullPathName);
   const auto Extension = path::extension(CanonicalPathStr);
   SourceProcessType FileType = GetSourceFileType(FullPathName);
@@ -212,9 +184,6 @@ void rewriteFileName1(std::string &FileName,
   }
   FileName = CanonicalPathStr.c_str();
 }
-
-
-
 
 static std::vector<std::string> FilesNotInCompilationDB;
 

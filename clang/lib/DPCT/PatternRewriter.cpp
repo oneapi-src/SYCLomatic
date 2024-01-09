@@ -393,6 +393,33 @@ static bool isIdentifiedChar(char Char) {
   return false;
 }
 
+static void
+updateExtentionName(const std::string &Input, size_t Next,
+                    std::unordered_map<std::string, std::string> &Bindings) {
+  if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
+    size_t Pos = Next - 1;
+    for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
+    }
+    Pos = Pos == 0 ? 0 : Pos + 1;
+    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - 1 - Pos);
+
+    std::string SyclFileName;
+    rewriteFileName(SyclFileName, FileName);
+    bool HasCudaSyntax = false;
+    for (const auto &File : MainSrcFilesHasCudaSyntex) {
+      if (File.find(FileName) != std::string::npos) {
+        HasCudaSyntax = true;
+      }
+    }
+    if (HasCudaSyntax)
+      Bindings["rewrite_extention_name"] = "cpp.dp.cpp";
+    else
+      Bindings["rewrite_extention_name"] = "cpp";
+  } else {
+    Bindings["rewrite_extention_name"] = "dp.cpp";
+  }
+}
+
 static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
                                                 const std::string &Input,
                                                 const int Start) {
@@ -456,44 +483,9 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       std::string ElementContents =
           dedent(Input.substr(Index, Next - Index), Indentation);
 
-      printf("Input: [%s]\n", Input.c_str());
-      printf("1111111111111111 ElementContents: [%s]\n",
-             ElementContents.c_str());
-
-      // int End = ElementContents.size() - 1;
-      // while (End > 0 && isWhitespace(Input[End])) {
-      //   End--;
-      // }
-
-      if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
-        size_t Pos = Next - 1;
-        printf("Pos:%d Next:%d\n", Pos, Next);
-        for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
-        }
-        Pos = Pos == 0 ? 0 : Pos + 1;
-        std::string FileName = Input.substr(Pos, Next + 4 - 1 - Pos);
-
-        printf("ElementContents 00 : [%s]\n", FileName.c_str());
-        std::string SyclFileName;
-        rewriteFileName1(SyclFileName, FileName);
-        printf("Output: [%s]\n", SyclFileName.c_str());
-
-        bool HasCudaSyntax = false;
-        for (const auto &File : MainSrcFilesHasCudaSyntex) {
-          if (File.find(FileName) != std::string::npos) {
-            printf("################## File [%s]\n", File.c_str());
-            HasCudaSyntax = true;
-          }
-        }
-        if (HasCudaSyntax)
-          Result.Bindings["extention_name"] = "cpp.dp.cpp";
-        else
-          Result.Bindings["extention_name"] = "cpp";
-      } else {
-        printf("111 ElementContents: [%s]\n", ElementContents.c_str());
-        Result.Bindings["extention_name"] = "dp.cpp";
+      if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
+        updateExtentionName(Input, Next, Result.Bindings);
       }
-
 
       if (Result.Bindings.count(Code.Name)) {
         if (Result.Bindings[Code.Name] != ElementContents) {
