@@ -17,6 +17,7 @@
 // DASH-NEXT: --comments
 // DASH-NEXT: --compilation-database
 // DASH-NEXT: --cuda-include-path
+// DASH-NEXT: --enable-codepin
 // DASH-NEXT: --enable-ctad
 // DASH-NEXT: --enable-profiling
 // DASH-NEXT: --extra-arg
