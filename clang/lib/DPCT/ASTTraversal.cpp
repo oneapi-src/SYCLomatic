@@ -11836,10 +11836,11 @@ void CMemoryAPIRule::runRule(const MatchFinder::MatchResult &Result) {
   auto ICE = getNodeAsType<ImplicitCastExpr>(Result, "implicitCast");
   if (!ICE)
     return;
-  emplaceTransformation(new InsertText(
+  auto Repl = new InsertText(
       ICE->getBeginLoc(),
-      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")", 0,
-      false));
+      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")");
+  Repl->setSYCLHeaderNeeded(false);
+  emplaceTransformation(Repl);
 }
 
 REGISTER_RULE(CMemoryAPIRule, PassKind::PK_Migration)

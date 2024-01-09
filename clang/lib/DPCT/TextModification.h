@@ -229,20 +229,19 @@ class InsertText : public TextModification {
   SourceLocation Begin;
   std::string T;
   unsigned PairID;
-  bool SYCLHeaderNeeded;
+  bool IsSYCLHeaderNeeded = true;
 
 public:
   InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0,
-             ReplacementType IsForCUDADebug = RT_ForSYCLMigration,
-             bool SYCLHeaderNeeded = true)
-      : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID),
-        SYCLHeaderNeeded(SYCLHeaderNeeded) {
+             ReplacementType IsForCUDADebug = RT_ForSYCLMigration)
+      : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {
     this->IsForCUDADebug = IsForCUDADebug;
   }
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
+  void setSYCLHeaderNeeded(bool Flag) { IsSYCLHeaderNeeded = Flag; };
 };
 
 /// For macros and typedefs source location is unreliable (begin and end of the

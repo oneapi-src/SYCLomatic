@@ -390,7 +390,7 @@ InsertText::getReplacement(const ASTContext &Context) const {
   R->setPairID(PairID);
   R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   R->setInsertPosition(InsertPos);
-  R->setSYCLHeaderNeeded(SYCLHeaderNeeded);
+  R->setSYCLHeaderNeeded(IsSYCLHeaderNeeded);
   R->IsForCUDADebug = IsForCUDADebug;
   return R;
 }
