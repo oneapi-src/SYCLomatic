@@ -17,7 +17,7 @@
 // CUDAFREE: CUDA API:
 // CUDAFREE-NEXT:   cudaFree(pDev /*void **/);
 // CUDAFREE-NEXT: Is migrated to:
-// CUDAFREE-NEXT:   sycl::free(pDev, dpct::get_in_order_queue());
+// CUDAFREE-NEXT:   dpct::dpct_free(pDev, dpct::get_in_order_queue());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFreeArray | FileCheck %s -check-prefix=CUDAFREEARRAY
 // CUDAFREEARRAY: CUDA API:
