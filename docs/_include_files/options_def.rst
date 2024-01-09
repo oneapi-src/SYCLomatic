@@ -263,6 +263,18 @@ The preference of helper function usage in migration. Value:
 
 
 
+.. _opt-intercept-build:
+
+``--intercept-build``
+
+.. _desc-intercept-build:
+
+Intercept build tool to generate a compilation database.
+
+.. _end-intercept-build:
+
+
+
 .. _opt-in-root:
 
 ``--in-root=<dir>``
