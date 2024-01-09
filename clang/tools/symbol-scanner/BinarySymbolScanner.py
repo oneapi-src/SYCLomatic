@@ -72,7 +72,9 @@ class api_mapping_support:
                 "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuSPARSE_API_migration_status.csv",
                 "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/nvGRAPH_API_migration_status.csv",
                 "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/nvJPEG_API_migration_status.csv",
-                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/thrust_API_migration_status.csv"]
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/thrust_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/ASM_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/wmma_API_migration_status.csv"]
 
         # Reading the contents of the individual CSV files into one unified Dataframe
         np1=p.read_csv(self.api_mapping_urls[0])
