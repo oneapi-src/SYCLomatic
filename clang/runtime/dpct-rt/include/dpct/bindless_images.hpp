@@ -235,7 +235,7 @@ create_bindless_image(image_data data, sampling_info info,
 #else
     auto img = sycl::ext::oneapi::experimental::create_image(
         data.get_data_ptr(), data.get_pitch(), samp, desc, q);
-    detail::get_img_mem_map(img) = 0;
+    detail::get_img_mem_map(img) = nullptr;
 #endif
     detail::get_img_info_map(img) = {data, info};
     return img;
@@ -245,7 +245,7 @@ create_bindless_image(image_data data, sampling_info info,
         data.get_data_ptr());
     auto img = sycl::ext::oneapi::experimental::create_image(
         *mem, samp, mem->get_descriptor(), q);
-    detail::get_img_mem_map(img) = 0;
+    detail::get_img_mem_map(img) = nullptr;
     detail::get_img_info_map(img) = {data, info};
     return img;
   }
@@ -310,7 +310,14 @@ public:
 
   /// Destroy bindless image wrapper.
   ~bindless_image_wrapper() {
-    destroy_bindless_image(*_img, get_default_queue());
+    auto &mem = detail::get_img_mem_map(_img);
+    if (mem) {
+      sycl::ext::oneapi::experimental::free_image_mem(
+          mem->get_handle(),
+          sycl::ext::oneapi::experimental::image_type::standard,
+          get_default_queue());
+      mem = nullptr;
+    }
   }
 
   /// Attach linear data to bindless image.
@@ -327,8 +334,8 @@ public:
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
     // TODO: Use pointer to create image when bindless image support.
     auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    *_img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
-    detail::get_img_mem_map(*_img) = mem;
+    _img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
+    detail::get_img_mem_map(_img) = mem;
     auto ptr = data;
 #ifdef DPCT_USM_LEVEL_NONE
     ptr = get_buffer(data)
@@ -365,17 +372,17 @@ public:
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
 #ifdef DPCT_USM_LEVEL_NONE
     auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    *_img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
-    detail::get_img_mem_map(*_img) = mem;
+    _img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
+    detail::get_img_mem_map(_img) = mem;
     auto ptr = get_buffer(data)
                    .template get_access<sycl::access_mode::read_write>()
                    .get_pointer();
     q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
     q.wait_and_throw();
 #else
-    *_img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp,
-                                                          desc, q);
-    detail::get_img_mem_map(*_img) = 0;
+    _img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp,
+                                                         desc, q);
+    detail::get_img_mem_map(_img) = nullptr;
 #endif
   }
 
@@ -400,9 +407,9 @@ public:
     detach(q);
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
-    *_img = sycl::ext::oneapi::experimental::create_image(
+    _img = sycl::ext::oneapi::experimental::create_image(
         *mem, samp, mem->get_descriptor(), q);
-    detail::get_img_mem_map(*_img) = 0;
+    detail::get_img_mem_map(_img) = nullptr;
   }
 
   /// Attach image memory to bindless image.
@@ -416,7 +423,7 @@ public:
   /// Detach bindless image data.
   /// \param [in] q The queue where the image destruction be executed.
   void detach(sycl::queue &q = get_default_queue()) {
-    destroy_bindless_image(*_img, q);
+    destroy_bindless_image(_img, q);
   }
 
   /// Set image channel of bindless image.
@@ -481,7 +488,7 @@ public:
   /// Get bindless image handle.
   /// \returns The sampled image handle of created bindless image.
   inline sycl::ext::oneapi::experimental::sampled_image_handle get_handle() {
-    return *_img;
+    return _img;
   }
 
 private:
@@ -490,7 +497,7 @@ private:
   sycl::coordinate_normalization_mode _coordinate_normalization_mode =
       sycl::coordinate_normalization_mode::unnormalized;
   sycl::filtering_mode _filtering_mode = sycl::filtering_mode::nearest;
-  sycl::ext::oneapi::experimental::sampled_image_handle *_img;
+  sycl::ext::oneapi::experimental::sampled_image_handle _img{0};
 };
 
 /// Asynchronously copies from the image memory to memory specified by a
