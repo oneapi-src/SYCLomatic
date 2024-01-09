@@ -38,4 +38,15 @@ void clang::dpct::setSTypeSchemaMap() {
       "sycl::int2", 1, 4, 8, false, "sycl header path",
       std::vector<FieldSchema>(1, FieldSchema("m_Data", ValType::ArrayValue,
                                               "int", true, 8, 4, 0, "None")));
+  STypeSchemaMap["sycl::float3"] =
+      TypeSchema("sycl::float3", 1, 4, 16, false, "sycl header path",
+                 std::vector<FieldSchema>(
+                     1, FieldSchema("m_Data", ValType::ArrayValue, "float",
+                                    true, 12, 4, 0, "None")));
+
+
+  STypeSchemaMap["sycl::int3"] = TypeSchema(
+      "sycl::int3", 1, 4, 16, false, "sycl header path",
+      std::vector<FieldSchema>(1, FieldSchema("m_Data", ValType::ArrayValue,
+                                              "int", true, 12, 4, 0, "None")));
 }

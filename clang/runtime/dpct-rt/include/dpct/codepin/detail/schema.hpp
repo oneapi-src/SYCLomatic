@@ -39,18 +39,6 @@ class Schema;
 static std::map<std::string, std::shared_ptr<Schema>> schema_map;
 static std::map<std::string, size_t> schema_size;
 
-inline size_t get_size_of_schema(const std::string &schema) {
-  if (schema_size.find(schema) == schema_size.end()) {
-    schema_size[schema] = 0; // '0' indicates that the size will match the type
-                             // size specified in the schema string
-  }
-  return schema_size[schema];
-}
-
-inline void set_size_of_schema(const std::string &schema, size_t size) {
-  schema_size[schema] = size;
-}
-
 inline std::map<void *, uint32_t> &get_ptr_size_map() {
   static std::map<void *, uint32_t> ptr_size_map;
   return ptr_size_map;
@@ -162,6 +150,16 @@ private:
   size_t ValSize = 0;
   MemLoc Location = MemLoc::NONE;
 };
+
+inline size_t get_var_size(std::shared_ptr<Schema> schema, void *ptr) {
+  size_t size = 0;
+  if (schema->get_val_type() != ValType::SCALAR) {
+    size = get_ptr_size_map()[(void *)(ptr)];
+  }
+  if (size == 0)
+    size = schema->get_type_size();
+  return size;
+}
 
 // data, test_namespace::A + varName,
 inline std::pair<std::string, std::shared_ptr<Schema>>
@@ -322,7 +320,7 @@ inline void copy_mem_to_device(void *dst, void *src, size_t size) {
 #endif
 }
 
-inline bool is_device_point(void *p) {
+inline bool is_dev_ptr(void *p) {
 #ifdef __NVCC__
   cudaPointerAttributes attr;
   cudaPointerGetAttributes(&attr, p);
@@ -338,44 +336,49 @@ inline bool is_device_point(void *p) {
 #endif
 }
 
-inline void get_val_from_addr(std::string &value,
-                              std::shared_ptr<Schema> schema, void *addr,
-                              size_t size) {
+inline void get_val_from_addr(std::string &dump_json,
+                              std::shared_ptr<Schema> schema, void *addr) {
   void *h_addr = addr;
-  if (is_device_point(addr)) {
-    h_addr = malloc(size);
-    copy_mem_to_device(h_addr, addr, size);
+  size_t mem_size = get_var_size(schema, addr);
+  if (is_dev_ptr(addr)) {
+    h_addr = malloc(mem_size);
+    copy_mem_to_device(h_addr, addr, mem_size);
   }
   if (schema->is_basic_type()) {
-    value += "\"" + schema->get_var_name() + "\":\"";
+    dump_json += "\"" + schema->get_var_name() + "\":\"";
     std::string hex_str = "";
-    get_data_as_hex(h_addr, size, hex_str);
-    value += hex_str + "\",";
-    if (is_device_point(addr))
+    get_data_as_hex(h_addr, mem_size, hex_str);
+    dump_json += hex_str + "\",";
+    if (is_dev_ptr(addr))
       free(h_addr);
     return;
   }
   std::shared_ptr<Schema> type_schema = schema_map[schema->get_type_name()];
-
-  std::vector<std::shared_ptr<Schema>> type_members =
-      type_schema->get_type_member();
-  value += "\"" + schema->get_var_name() + "\":{";
-  for (auto member : type_members) {
-    value += "\"" + member->get_var_name() + "\":\"";
-    std::string hex_str = "";
-    char *addr_with_offset = (char *)h_addr + member->get_offset();
-    if (member->is_basic_type()) {
-      get_data_as_hex((void *)addr_with_offset, member->get_val_size(),
-                      hex_str);
-    } else {
-      get_val_from_addr(hex_str, member, (void *)addr_with_offset, size);
+  unsigned int items = 1;
+  if (type_schema->get_type_size() != 0)
+    items = mem_size / type_schema->get_type_size();
+  for (unsigned int i = 0; i < items; i++) {
+    std::vector<std::shared_ptr<Schema>> type_members =
+        type_schema->get_type_member();
+    dump_json += "\"" + schema->get_var_name() + "\":{";
+    char *addr_begin = (char *)h_addr  + i * type_schema->get_type_size();
+    for (auto member : type_members) {
+      dump_json += "\"" + member->get_var_name() + "\":\"";
+      std::string hex_str = "";
+      char *addr_with_offset = addr_begin + member->get_offset();
+      if (member->is_basic_type()) {
+        get_data_as_hex((void *)addr_with_offset, member->get_val_size(),
+                        hex_str);
+      } else {
+        get_val_from_addr(hex_str, member, (void *)addr_with_offset);
+      }
+      dump_json += hex_str + "\",";
     }
-    value += hex_str + "\",";
+    if (dump_json.back() == ',')
+      dump_json.pop_back();
+    dump_json += "},";
   }
-  if (value.back() == ',')
-    value.pop_back();
-  value += "},";
-  if (is_device_point(addr))
+  if (is_dev_ptr(addr))
     free(h_addr);
 }
 
@@ -428,26 +431,16 @@ void process_var(std::string &log, const std::string &schema_str, long *value,
         "Cannot parse the variable schema, please double check the schema " +
         schema_str + "\n");
   }
-  size_t size = 0;
-  if (schema->get_val_type() == ValType::SCALAR) {
-    size = schema->get_type_size();
-  } else {
-    size = get_ptr_size_map()[value];
-  }
-  if (size == 0) {
-    size = schema->get_type_size();
-  }
-  set_size_of_schema(schema_str, size);
   switch (schema->get_val_type()) {
   case ValType::SCALAR:
-    get_val_from_addr(log, schema, (void *)value, size);
+    get_val_from_addr(log, schema, (void *)value);
     break;
   case ValType::ARRAY:
   case ValType::POINTER:
-    get_val_from_addr(log, schema, (void *)(*value), size);
+    get_val_from_addr(log, schema, (void *)(*value));
     break;
   case ValType::POINTERTOPOINTER:
-    get_val_from_addr(log, schema, *(void **)(*value), size);
+    get_val_from_addr(log, schema, *(void **)(*value));
     break;
   };
   std::string ret;
