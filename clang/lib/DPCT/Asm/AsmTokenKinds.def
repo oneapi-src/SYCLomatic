@@ -318,7 +318,7 @@ SAT_MOD(sat, ".sat")
 SAT_MOD(satfinite, ".satfinite")
 SAT_MOD(relu, ".relu")
 SAT_MOD(clamp, ".clamp")
-SAT_MOD(warp, ".warp")
+SAT_MOD(warp, ".wrap")
 
 MUL_MOD(wide, ".wide")
 
