@@ -1,0 +1,143 @@
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
+// RUN: dpct --format-range=none -out-root %T/vshl %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/vshl/vshl.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/vshl/vshl.dp.cpp -o %T/vshl/vshl.dp.o %}
+
+// clang-format off
+#include <cuda_runtime.h>
+
+__global__ void vshl() {
+  int i32;
+  unsigned u32;
+  // CHECK: i32 = dpct::extend_shl_clamp<int32_t>(i32, u32);
+  // CHECK-NEXT: i32 = dpct::extend_shl_clamp<int32_t>(i32, u32);
+  // CHECK-NEXT: u32 = dpct::extend_shl_clamp<uint32_t>(i32, u32);
+  // CHECK-NEXT: u32 = dpct::extend_shl_clamp<uint32_t>(i32, u32);
+  // CHECK-NEXT: i32 = dpct::extend_shl_mask31<int32_t>(i32, u32);
+  // CHECK-NEXT: i32 = dpct::extend_shl_mask31<int32_t>(i32, u32);
+  // CHECK-NEXT: u32 = dpct::extend_shl_mask31<uint32_t>(i32, u32);
+  // CHECK-NEXT: u32 = dpct::extend_shl_mask31<uint32_t>(i32, u32);
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_clamp<int32_t>(i32, u32);
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_clamp<int32_t>(i32, u32);
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_clamp<uint32_t>(i32, u32);
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_clamp<uint32_t>(i32, u32);
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_mask31<int32_t>(i32, u32);
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_mask31<int32_t>(i32, u32);
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_mask31<uint32_t>(i32, u32);
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_mask31<uint32_t>(i32, u32);
+  // CHECK-NEXT: i32 = dpct::extend_shl_clamp<int32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_clamp<int32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_clamp<uint32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_clamp<uint32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_mask31<int32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_mask31<int32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_mask31<uint32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_mask31<uint32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_clamp<int32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_clamp<int32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_clamp<uint32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_clamp<uint32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_mask31<int32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_mask31<int32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_mask31<uint32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_mask31<uint32_t>(i32, u32, u32, sycl::plus<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_clamp<int32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_clamp<int32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_clamp<uint32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_clamp<uint32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_mask31<int32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_mask31<int32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_mask31<uint32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_mask31<uint32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_clamp<int32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_clamp<int32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_clamp<uint32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_clamp<uint32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_mask31<int32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_mask31<int32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_mask31<uint32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_mask31<uint32_t>(i32, u32, u32, sycl::minimum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_clamp<int32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_clamp<int32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_clamp<uint32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_clamp<uint32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_mask31<int32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_mask31<int32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_mask31<uint32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_mask31<uint32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_clamp<int32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_clamp<int32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_clamp<uint32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_clamp<uint32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_mask31<int32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: i32 = dpct::extend_shl_sat_mask31<int32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_mask31<uint32_t>(i32, u32, u32, sycl::maximum<>());
+  // CHECK-NEXT: u32 = dpct::extend_shl_sat_mask31<uint32_t>(i32, u32, u32, sycl::maximum<>());
+  asm("vshl.s32.s32.u32.clamp %0, %1, %2;" : "=r"(i32) : "r"(i32), "r"(u32));
+  asm("vshl.s32.u32.u32.clamp %0, %1, %2;" : "=r"(i32) : "r"(i32), "r"(u32));
+  asm("vshl.u32.s32.u32.clamp %0, %1, %2;" : "=r"(u32) : "r"(i32), "r"(u32));
+  asm("vshl.u32.u32.u32.clamp %0, %1, %2;" : "=r"(u32) : "r"(i32), "r"(u32));
+  asm("vshl.s32.s32.u32.wrap %0, %1, %2;" : "=r"(i32) : "r"(i32), "r"(u32));
+  asm("vshl.s32.u32.u32.wrap %0, %1, %2;" : "=r"(i32) : "r"(i32), "r"(u32));
+  asm("vshl.u32.s32.u32.wrap %0, %1, %2;" : "=r"(u32) : "r"(i32), "r"(u32));
+  asm("vshl.u32.u32.u32.wrap %0, %1, %2;" : "=r"(u32) : "r"(i32), "r"(u32));
+  asm("vshl.s32.s32.u32.sat.clamp %0, %1, %2;" : "=r"(i32) : "r"(i32), "r"(u32));
+  asm("vshl.s32.u32.u32.sat.clamp %0, %1, %2;" : "=r"(i32) : "r"(i32), "r"(u32));
+  asm("vshl.u32.s32.u32.sat.clamp %0, %1, %2;" : "=r"(u32) : "r"(i32), "r"(u32));
+  asm("vshl.u32.u32.u32.sat.clamp %0, %1, %2;" : "=r"(u32) : "r"(i32), "r"(u32));
+  asm("vshl.s32.s32.u32.sat.wrap %0, %1, %2;" : "=r"(i32) : "r"(i32), "r"(u32));
+  asm("vshl.s32.u32.u32.sat.wrap %0, %1, %2;" : "=r"(i32) : "r"(i32), "r"(u32));
+  asm("vshl.u32.s32.u32.sat.wrap %0, %1, %2;" : "=r"(u32) : "r"(i32), "r"(u32));
+  asm("vshl.u32.u32.u32.sat.wrap %0, %1, %2;" : "=r"(u32) : "r"(i32), "r"(u32));
+  asm("vshl.s32.s32.u32.clamp.add %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.clamp.add %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.clamp.add %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.clamp.add %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.wrap.add %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.wrap.add %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.wrap.add %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.wrap.add %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.sat.clamp.add %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.sat.clamp.add %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.sat.clamp.add %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.sat.clamp.add %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.sat.wrap.add %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.sat.wrap.add %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.sat.wrap.add %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.sat.wrap.add %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.clamp.min %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.clamp.min %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.clamp.min %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.clamp.min %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.wrap.min %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.wrap.min %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.wrap.min %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.wrap.min %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.sat.clamp.min %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.sat.clamp.min %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.sat.clamp.min %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.sat.clamp.min %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.sat.wrap.min %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.sat.wrap.min %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.sat.wrap.min %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.sat.wrap.min %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.clamp.max %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.clamp.max %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.clamp.max %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.clamp.max %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.wrap.max %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.wrap.max %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.wrap.max %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.wrap.max %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.sat.clamp.max %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.sat.clamp.max %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.sat.clamp.max %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.sat.clamp.max %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.s32.u32.sat.wrap.max %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.s32.u32.u32.sat.wrap.max %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.s32.u32.sat.wrap.max %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+  asm("vshl.u32.u32.u32.sat.wrap.max %0, %1, %2, %3;" : "=r"(u32) : "r"(i32), "r"(u32), "r"(u32));
+}
+
+// clang-format on

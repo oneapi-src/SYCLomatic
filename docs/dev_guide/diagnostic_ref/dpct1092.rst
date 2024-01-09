@@ -28,3 +28,5 @@ Suggestions to Fix
 
 Replace work-group size with a greater value for better performance, as supported
 by the hardware.
+
+Refer to :ref:`DPCT1091`.

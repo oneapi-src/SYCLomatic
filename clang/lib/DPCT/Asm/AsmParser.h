@@ -109,6 +109,7 @@ public:
   bool isUnsignedInt() const;
   bool isFloating() const;
   bool isBitSize() const;
+  unsigned getWidth() const;
 
   static bool classof(const InlineAsmType *T) {
     return T->getTypeClass() == BuiltinClass;

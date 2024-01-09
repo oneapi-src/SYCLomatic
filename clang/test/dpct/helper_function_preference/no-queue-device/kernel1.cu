@@ -9,7 +9,8 @@ static uint *d_Data1;
 // CHECK: void malloc1() { d_Data1 = (uint *)sycl::malloc_device(SIZE * sizeof(int), q_ct1); }
 void malloc1() { cudaMalloc((void **)&d_Data1, SIZE * sizeof(int)); }
 
-// CHECK: void free1() { sycl::free(d_Data1, q_ct1); }
+// CHECK: void free1() { q_ct1.wait_and_throw();
+// CHECK:   sycl::free(d_Data1, q_ct1); }
 void free1() { cudaFree(d_Data1); }
 
 // CHECK: void kernelWrapper1(int *d_Data) {

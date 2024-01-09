@@ -17,6 +17,7 @@
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
+#include "TextModification.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
@@ -27,6 +28,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/ParentMapContext.h"
@@ -273,8 +275,6 @@ using StmtList = std::vector<StmtWithWarning>;
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
-using ReplTy = std::map<std::string, tooling::Replacements>;
-
 template <class T> inline void merge(T &Master, const T &Branch) {
   Master.insert(Branch.begin(), Branch.end());
 }
@@ -347,7 +347,8 @@ enum UsingType {
 class DpctFileInfo {
 public:
   DpctFileInfo(const clang::tooling::UnifiedPath &FilePathIn)
-      : Repls(std::make_shared<ExtReplacements>(FilePathIn)),
+      : ReplsSYCL(std::make_shared<ExtReplacements>(FilePathIn)),
+        ReplsCUDA(std::make_shared<ExtReplacements>(FilePathIn)),
         FilePath(FilePathIn) {
     buildLinesInfo();
   }
@@ -387,10 +388,14 @@ public:
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
       return;
-    Repls->addReplacement(Repl);
+    if(Repl->IsForCUDADebug)
+      ReplsCUDA->addReplacement(Repl);
+    else
+      ReplsSYCL->addReplacement(Repl);
   }
   bool isInAnalysisScope();
-  std::shared_ptr<ExtReplacements> getRepls() { return Repls; }
+  std::shared_ptr<ExtReplacements> getReplsSYCL() { return ReplsSYCL; }
+  std::shared_ptr<ExtReplacements> getReplsCUDA() { return ReplsCUDA; }
 
   size_t getFileSize() const { return FileSize; }
 
@@ -443,11 +448,13 @@ public:
   // Insert one or more header inclusion directives at a specified offset
   template <typename ReplacementT>
   void insertHeader(ReplacementT &&Repl, unsigned Offset,
-                    InsertPosition InsertPos = IP_Left) {
+                    InsertPosition InsertPos = IP_Left,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
     auto R = std::make_shared<ExtReplacement>(
         FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
     R->setInsertPosition(InsertPos);
+    R->IsForCUDADebug = IsForCUDADebug;
     IncludeDirectiveInsertions.push_back(R);
   }
 
@@ -461,8 +468,10 @@ public:
     }
   }
 
-  void insertHeader(HeaderType Type, unsigned Offset);
-  void insertHeader(HeaderType Type);
+  void insertHeader(HeaderType Type, unsigned Offset,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+  void insertHeader(HeaderType Type,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
 
   // Record line info in file.
   struct SourceLineInfo {
@@ -641,7 +650,8 @@ private:
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
       AtomicMap;
-  std::shared_ptr<ExtReplacements> Repls;
+  std::shared_ptr<ExtReplacements> ReplsSYCL;
+  std::shared_ptr<ExtReplacements> ReplsCUDA;
   size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
 
@@ -652,6 +662,7 @@ private:
   unsigned LastIncludeOffset = 0;
   bool HasInclusionDirective = false;
   std::vector<std::string> InsertedHeaders;
+  std::vector<std::string> InsertedHeadersCUDA;
   std::bitset<32> HeaderInsertedBitMap;
   std::bitset<32> UsingInsertedBitMap;
   bool AddOneDplHeaders = false;
@@ -836,6 +847,32 @@ public:
   static inline const std::unordered_set<std::string> &getChangeExtensions() {
     return ChangeExtensions;
   }
+  static inline const std::string &getSYCLSourceExtension() {
+    return SYCLSourceExtension;
+  }
+  static inline const std::string &getSYCLHeaderExtension() {
+    return SYCLHeaderExtension;
+  }
+  static inline void setSYCLFileExtensioni(SYCLFileExtensionEnum extension) {
+    switch (extension) {
+    case SYCLFileExtensionEnum::DP_CPP:
+      SYCLSourceExtension = ".dp.cpp";
+      SYCLHeaderExtension = ".dp.hpp";
+      break;
+    case SYCLFileExtensionEnum::SYCL_CPP:
+      SYCLSourceExtension = ".sycl.cpp";
+      SYCLHeaderExtension = ".sycl.hpp";
+      break;
+    case SYCLFileExtensionEnum::CPP:
+      SYCLSourceExtension = ".cpp";
+      SYCLHeaderExtension = ".hpp";
+      break;
+    default:
+      SYCLSourceExtension = ".dp.cpp";
+      SYCLHeaderExtension = ".dp.hpp";
+      break;
+    }
+  }
   // TODO: implement one of this for each source language.
   static void setCudaPath(const clang::tooling::UnifiedPath &InputCudaPath) {
     CudaPath = InputCudaPath;
@@ -845,6 +882,7 @@ public:
     return CudaPath;
   }
 
+  static const std::string getVarSchema(const clang::DeclRefExpr*);
   static const std::string getCudaVersion() {
     return clang::CudaVersionToString(SDKVersion);
   }
@@ -986,6 +1024,8 @@ public:
   static unsigned getHelperFuncPreferenceFlag() {
     return HelperFuncPreferenceFlag;
   }
+  static bool isAnalysisModeEnabled() { return AnalysisModeFlag; }
+  static void enableAnalysisMode() { AnalysisModeFlag = true; }
 
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
@@ -1092,6 +1132,8 @@ public:
   }
   inline static bool isCtadEnabled() { return EnableCtad; }
   inline static void setCtadEnabled(bool Enable = true) { EnableCtad = Enable; }
+  inline static bool isCodePinEnabled() { return EnableCodePin; }
+  inline static void setCodePinEnabled(bool Enable = false) { EnableCodePin = Enable; }
   inline static bool isGenBuildScript() { return GenBuildScript; }
   inline static void setGenBuildScriptEnabled(bool Enable = true) {
     GenBuildScript = Enable;
@@ -1288,7 +1330,8 @@ public:
   // Return the absolute path of \p ID
   static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(FileID ID);
   // Return the absolute path of \p File
-  static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(const FileEntry &File);
+  static std::optional<clang::tooling::UnifiedPath>
+  getAbsolutePath(FileEntryRef File);
 
   static inline std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
@@ -1447,16 +1490,19 @@ public:
       HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
-                     std::shared_ptr<ExtReplacements> Repl) {
+                     std::pair<std::shared_ptr<ExtReplacements>,
+                               std::shared_ptr<ExtReplacements>>
+                         Repl) {
     FileReplCache[FilePath] = Repl;
   }
   // Emplace stored replacements into replacement set.
-  void emplaceReplacements(ReplTy &ReplSets /*out*/) {
+  void emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
+                           ReplTy &ReplSetsSYCL /*out*/) {
     if (DpctGlobalInfo::isNeedRunAgain())
       return;
     for (auto &FileRepl : FileReplCache) {
-      FileRepl.second->emplaceIntoReplSet(
-          ReplSets[FileRepl.first.getCanonicalPath().str()]);
+      FileRepl.second.first->emplaceIntoReplSet(ReplSetsCUDA[FileRepl.first.getCanonicalPath().str()]);
+      FileRepl.second.second->emplaceIntoReplSet(ReplSetsSYCL[FileRepl.first.getCanonicalPath().str()]);
     }
   }
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
@@ -1642,9 +1688,10 @@ public:
     insertFile(LocInfo.first)->setTimeHeaderInserted(B);
   }
 
-  void insertHeader(SourceLocation Loc, HeaderType Type) {
+  void insertHeader(SourceLocation Loc, HeaderType Type,
+                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
     auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->insertHeader(Type);
+    insertFile(LocInfo.first)->insertHeader(Type, IsForCUDADebug);
   }
 
   void insertHeader(SourceLocation Loc, std::string HeaderName) {
@@ -1771,6 +1818,9 @@ public:
   static bool useExtBFloat16Math() {
     return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
   }
+  static bool useExtBindlessImages() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_BindlessImages>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
@@ -1783,7 +1833,9 @@ public:
   static bool useIntelDeviceMath() {
     return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
   }
-
+  static bool usePeerAccess() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess);
+  }
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
   }
@@ -1838,7 +1890,9 @@ public:
   static unsigned int getRunRound() { return RunRound; }
   static void setNeedRunAgain(bool NRA) { NeedRunAgain = NRA; }
   static bool isNeedRunAgain() { return NeedRunAgain; }
-  static std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacements>> &
+  static std::unordered_map<clang::tooling::UnifiedPath,
+                            std::pair<std::shared_ptr<ExtReplacements>,
+                                      std::shared_ptr<ExtReplacements>>> &
   getFileReplCache() {
     return FileReplCache;
   }
@@ -1959,11 +2013,16 @@ public:
     return NeedParenAPISet.count(Name);
   };
 
+<<<<<<< HEAD
   static inline std::unordered_map<std::string, std::string> &
   getSpecialReplForEAMap() {
     return SpecialReplForEAMap;
   };
 
+=======
+  static std::string SchemaFileContentCUDA;
+  static std::string SchemaFileContentSYCL;
+>>>>>>> SYCLomatic/SYCLomatic
 private:
   DpctGlobalInfo();
 
@@ -2038,6 +2097,8 @@ private:
   static clang::tooling::UnifiedPath OutRoot;
   static clang::tooling::UnifiedPath AnalysisScope;
   static std::unordered_set<std::string> ChangeExtensions;
+  static std::string SYCLSourceExtension;
+  static std::string SYCLHeaderExtension;
   // TODO: implement one of this for each source language.
   static clang::tooling::UnifiedPath CudaPath;
   static std::string RuleFile;
@@ -2051,6 +2112,7 @@ private:
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
+  static bool EnableCodePin;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
   static bool MigrateCmakeScript;
@@ -2105,6 +2167,7 @@ private:
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
   static std::set<clang::tooling::UnifiedPath> IncludingFileSet;
+  static int VarSchemaIndex;
   static std::set<std::string> FileSetInCompiationDB;
   static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;
@@ -2124,7 +2187,9 @@ private:
   static CudaArchDefMap CudaArchDefinedMap;
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
       CudaArchMacroRepl;
-  static std::unordered_map<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacements>>
+  static std::unordered_map<clang::tooling::UnifiedPath,
+                            std::pair<std::shared_ptr<ExtReplacements>,
+                                      std::shared_ptr<ExtReplacements>>>
       FileReplCache;
   static std::set<clang::tooling::UnifiedPath> ReProcessFile;
   static bool NeedRunAgain;
@@ -2140,6 +2205,7 @@ private:
   static unsigned ExtensionDDFlag;
   static unsigned ExperimentalFlag;
   static unsigned HelperFuncPreferenceFlag;
+  static bool AnalysisModeFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
@@ -2777,7 +2843,10 @@ public:
     Type->prepareForImage();
     requestFeature(HelperFeatureEnum::device_ext);
 
-    getDecl(PS, "image_wrapper") << ";";
+    getDecl(PS, DpctGlobalInfo::useExtBindlessImages()
+                    ? "experimental::bindless_image_wrapper"
+                    : "image_wrapper")
+        << ";";
     Type->endForImage();
     return PS.Str;
   }
@@ -2797,17 +2866,31 @@ public:
     return Ret;
   }
   virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList, const std::string&QueueStr) {
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      AccessorList.emplace_back("auto " + NewVarName + "_handle = " + Name +
+                                ".get_handle();");
+      return;
+    }
     AccessorList.emplace_back(getAccessorDecl(QueueStr));
     SamplerList.emplace_back(getSamplerDecl());
   }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
     requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      PS << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::sampled_image_handle " << Name;
+      return PS;
+    }
     return getDecl(PS, "image_accessor_ext");
   }
   inline ParameterStream &getFuncArg(ParameterStream &PS) { return PS << Name; }
   virtual ParameterStream &getKernelArg(ParameterStream &OS) {
     requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      OS << NewVarName << "_handle";
+      return OS;
+    }
     getType()->printType(OS,
                          MapNames::getDpctNamespace() + "image_accessor_ext");
     OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
@@ -3592,6 +3675,10 @@ private:
     auto ArgItr = Args.begin();
     unsigned Idx = 0;
     TextureObjectList.resize(ArgsNum);
+    if (DpctGlobalInfo::useExtBindlessImages()) {
+      // Need return after resize, ortherwise will cause array out of bound.
+      return;
+    }
     while (ArgItr != Args.end()) {
       const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
       if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
@@ -4278,7 +4365,7 @@ private:
     }
   }
   bool isDefaultStream() const {
-    return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
+    return StringRef(ExecutionConfig.Stream).starts_with("{{NEEDREPLACEQ") ||
            ExecutionConfig.IsDefaultStream;
   }
 
