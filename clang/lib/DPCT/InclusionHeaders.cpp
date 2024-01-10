@@ -159,21 +159,33 @@ void IncludesCallbacks::InclusionDirective(
   if (Global.isInAnalysisScope(IncludedFile)) {
     IncludeFileMap[IncludedFile] = false;
     Global.getIncludingFileSet().insert(IncludedFile);
-
     // The "IncludedFile" is included by the "IncludingFile".
     // If "IncludedFile" is not under the AnalysisScope folder, do not record
     // the including relationship information.
     Global.recordIncludingRelationship(LocInfo.first, IncludedFile);
-
-    clang::tooling::UnifiedPath NewFilePath = FileName;
-    rewriteFileName(NewFilePath, IncludedFile);
+    const auto Extension = path::extension(FileName);
     SmallString<512> NewFileName(FileName.str());
-    path::remove_filename(NewFileName);
-    path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
-    NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
+
+    if (Extension == ".c") {
+      auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileInfo();
+      path::replace_extension(
+          NewFileName, "{{NEEDREPLACEE" + std::to_string(Vec.size()) + "}}");
+      Vec.push_back(DpctGlobalInfo::getInstance().insertFile(IncludedFile));
+    } else {
+      clang::tooling::UnifiedPath NewFilePath = FileName;
+      rewriteFileName(NewFilePath, IncludedFile);
+      path::remove_filename(NewFileName);
+      path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
+      NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
+    }
+
     if (NewFileName != FileName) {
-      const auto Extension = path::extension(FileName);
-      auto ReplacedStr = buildString("#include \"", NewFileName, "\"");
+      std::string ReplacedStr;
+      if (IsAngled) {
+        ReplacedStr = buildString("#include <", NewFileName, ">");
+      } else {
+        ReplacedStr = buildString("#include \"", NewFileName, "\"");
+      }
       if (Extension == ".cu" || Extension == ".cuh") {
         // For CUDA files, it will always change name.
         EmplaceReplacement(std::move(ReplacedStr));
