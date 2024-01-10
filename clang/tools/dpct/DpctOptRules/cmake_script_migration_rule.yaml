@@ -508,6 +508,7 @@
       Out: ""
       MatchMode: Full
       RuleId: "remove_-static-libstdc++"
+
 - Rule: rule_cuda_compile_fatbin
   Kind: CMakeRule
   Priority: Fallback
@@ -527,3 +528,12 @@
   CmakeSyntax: cuda_compile_fatbin_opts
   In: dpct_helper_compile_sycl_code(${value} OPTIONS ${options})
   Out: dpct_helper_compile_sycl_code(${value})
+
+- Rule: rule_cuda_include_directories
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_include_directories
+  MatchMode: Partial
+  In: cuda_include_directories(${value})
+  Out: include_directories(${value})
+
