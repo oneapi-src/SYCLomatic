@@ -31,20 +31,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package
-  In: find_package(${arg0} REQUIRED)
+  In: find_package(CUDA${opts})
   Out: find_package(IntelSYCL REQUIRED)
-
-- Rule: rule_set
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: set
-  In: set(${value})
-  Out: set(${value})
-  Subrules:
-    value:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 - Rule: rule_cmake_cxx_standard
   Kind: CMakeRule
@@ -111,18 +99,32 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
-- Rule: rule_user_defined_function
+- Rule: rule_user_defined_function_cpp
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
-  CmakeSyntax: cuda_files_in_user_defined_function
+  CmakeSyntax: cuda_files_in_user_defined_function_cpp
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cpp
+      Out: ${arg}.${rewrite_extention_name}
+
+- Rule: rule_user_defined_function_cu
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_files_in_user_defined_function_cu
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
     value:
       MatchMode: Full
       In: ${arg}.cu
-      Out: ${arg}.dp.cpp
+      Out: ${arg}.${rewrite_extention_name}
+
 
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
