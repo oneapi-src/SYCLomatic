@@ -1010,6 +1010,8 @@ int ClangTool::run(ToolAction *Action) {
                  << CWD.getError().message() << "\n";
   }
 
+  size_t NumOfTotalFiles = AbsolutePaths.size();
+  unsigned ProcessedFileCounter = 0;
   for (llvm::StringRef File : AbsolutePaths) {
 
 #ifndef SYCLomatic_CUSTOMIZATION
@@ -1069,7 +1071,11 @@ int ClangTool::run(ToolAction *Action) {
 
       // FIXME: We need a callback mechanism for the tool writer to output a
       // customized message for each file.
-      LLVM_DEBUG({ llvm::dbgs() << "Processing: " << File << ".\n"; });
+      if (NumOfTotalFiles > 1)
+        llvm::errs() << "[" + std::to_string(++ProcessedFileCounter) + "/" +
+                            std::to_string(NumOfTotalFiles) +
+                            "] Processing file " + File
+                     << ".\n";
       ToolInvocation Invocation(std::move(CommandLine), Action, Files.get(),
                                 PCHContainerOps);
       Invocation.setDiagnosticConsumer(DiagConsumer);

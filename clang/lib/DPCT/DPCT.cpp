@@ -20,8 +20,10 @@
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
 #include "MemberExprRewriter.h"
+#include "MigrateCmakeScript.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
+#include "PatternRewriter.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Schema.h"
@@ -30,7 +32,6 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
-#include "MigrateCmakeScript.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Format/Format.h"
@@ -537,6 +538,20 @@ void parseFormatStyle() {
   DpctGlobalInfo::setCodeFormatStyle(Style);
 }
 
+static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
+  std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
+                                        DpctGlobalInfo::getYamlFileName());
+  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
+  if (llvm::sys::fs::exists(YamlFilePath)) {
+    if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
+      llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
+    }
+  }
+  for (auto &Entry : PreTU->MainSourceFilesDigest) {
+    MainSrcFilesHasCudaSyntex.insert(Entry.first);
+  }
+}
+
 int runDPCT(int argc, const char **argv) {
 
   if (argc < 2) {
@@ -1001,7 +1016,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
-  DpctGlobalInfo::setSYCLFileExtensioni(SYCLFileExtension);
+  DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
@@ -1155,6 +1170,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (MigrateCmakeScriptOnly) {
+    loadMainSrcFileInfo(OutRoot);
     collectCmakeScriptsSpecified(OptParser, InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
     return MigrationSucceeded;
@@ -1302,6 +1318,7 @@ int runDPCT(int argc, const char **argv) {
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {
+    loadMainSrcFileInfo(OutRoot);
     collectCmakeScripts(InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
   }
