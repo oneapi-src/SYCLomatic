@@ -268,7 +268,8 @@ static inline void destroy_bindless_image(
   auto &mem = detail::get_img_mem_map(handle);
   if (mem) {
     sycl::ext::oneapi::experimental::free_image_mem(
-        mem->get_handle(), q.get_device(), q.get_context());
+        mem->get_handle(),
+        sycl::ext::oneapi::experimental::image_type::standard, q);
     mem = 0;
   }
   sycl::ext::oneapi::experimental::destroy_image_handle(handle, q);
