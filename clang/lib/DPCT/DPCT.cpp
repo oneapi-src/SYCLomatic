@@ -539,14 +539,11 @@ void parseFormatStyle() {
 }
 
 static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
-
   std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
                                         DpctGlobalInfo::getYamlFileName());
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (llvm::sys::fs::exists(YamlFilePath)) {
-    if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
-
-    } else {
+    if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
       llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
     }
   }
