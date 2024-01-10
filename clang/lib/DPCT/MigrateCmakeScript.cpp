@@ -292,7 +292,7 @@ void collectCmakeScriptsSpecified(
   }
 }
 
-static size_t skipWhileSpaces(const std::string Input, size_t Index) {
+static size_t skipWhiteSpaces(const std::string Input, size_t Index) {
   size_t Size = Input.size();
   for (; Index < Size && isWhitespace(Input[Index]); Index++) {
   }
@@ -362,7 +362,7 @@ static void parseVariable(const std::string &Input) {
     }
     int Begin, End;
     // Go the begin of cmake command
-    Index = skipWhileSpaces(Input, Index);
+    Index = skipWhiteSpaces(Input, Index);
     Begin = Index;
 
     // Go the end of cmake command
@@ -370,7 +370,7 @@ static void parseVariable(const std::string &Input) {
     End = Index;
 
     // Skip possible space
-    Index = skipWhileSpaces(Input, Index);
+    Index = skipWhiteSpaces(Input, Index);
 
     if (Index < Size && Input[Index] == '(') {
       std::string Command = Input.substr(Begin, End - Begin);
@@ -383,7 +383,7 @@ static void parseVariable(const std::string &Input) {
         std::string Value;
 
         // Get the begin of firt argument of set
-        Index = skipWhileSpaces(Input, Index);
+        Index = skipWhiteSpaces(Input, Index);
         Begin = Index;
 
         // Get the end of the first argument of set
@@ -457,13 +457,16 @@ static std::string processArgOfCmakeVersionRequired(
   return ReplArg;
 }
 
-int skipCmakeComments(const std::string &Input, int Index) {
-  const int Size = Input.size();
+static bool skipCmakeComments(const std::string &Input, size_t &Index) {
+  const size_t Size = Input.size();
+  bool CommentFound = false;
   if (Input[Index] == '#') {
+    CommentFound = true;
     for (; Index < Size && Input[Index] != '\n'; Index++) {
     }
+    Index++;
   }
-  return Index;
+  return CommentFound;
 }
 
 void processCmakeMinimumRequired(std::string &Input, size_t &Size,
@@ -473,7 +476,7 @@ void processCmakeMinimumRequired(std::string &Input, size_t &Size,
   size_t Begin, End;
 
   // Get the begin of firt argument of cmake_minimum_required
-  Index = skipWhileSpaces(Input, Index);
+  Index = skipWhiteSpaces(Input, Index);
   Begin = Index;
 
   // Get the end of the first argument of cmake_minimum_required
@@ -484,7 +487,7 @@ void processCmakeMinimumRequired(std::string &Input, size_t &Size,
   VarName = Input.substr(Begin, End - Begin);
 
   // Get the begin of the second argument
-  Index = skipWhileSpaces(Input, End + 1);
+  Index = skipWhiteSpaces(Input, End + 1);
   Begin = Index;
 
   // Get the end of the second argument
@@ -512,13 +515,15 @@ void applyImplicitMigrationRule(std::string &Input,
   size_t Size = Input.size();
   size_t Index = 0;
   while (Index < Size) {
-
+    Index = skipWhiteSpaces(Input, Index);
     // Skip comments
-    skipCmakeComments(Input, Index);
+    if (skipCmakeComments(Input, Index)) {
+      continue;
+    }
 
     size_t Begin, End;
     // Go the begin of cmake command
-    Index = skipWhileSpaces(Input, Index);
+    Index = skipWhiteSpaces(Input, Index);
     Begin = Index;
 
     // Go the end of cmake command
@@ -526,7 +531,7 @@ void applyImplicitMigrationRule(std::string &Input,
     End = Index;
 
     // Skip possible space
-    Index = skipWhileSpaces(Input, Index);
+    Index = skipWhiteSpaces(Input, Index);
 
     if (Index < Size && Input[Index] == '(') {
       std::string Command = Input.substr(Begin, End - Begin);
@@ -555,7 +560,7 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString) {
     int Index = 0;
 
     // Go the begin of cmake command
-    Index = skipWhileSpaces(Line, Index);
+    Index = skipWhiteSpaces(Line, Index);
     int Begin = Index;
 
     // Go the end of cmake command
@@ -611,6 +616,7 @@ static void applyCmakeMigrationRules() {
       };
 
   for (auto &Entry : CmakeScriptFileBufferMap) {
+    llvm::outs() << "Processing: " + Entry.first.getPath() + "\n";
     auto &Buffer = Entry.second;
 
     // Apply user define migration rules

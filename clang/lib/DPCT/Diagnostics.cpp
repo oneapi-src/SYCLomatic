@@ -48,9 +48,6 @@ std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 
 #include "Diagnostics.inc"
 
-#undef DEF_WARNING
-#undef DEF_COMMENT
-
 std::unordered_set<int> APIQueryNeedReportWarningIDSet = {
     // More IDs may need to be added, like: 1007, 1008, 1028, 1030, 1031, 1037,
     // 1051, 1053, 1067, 1069, 1076, 1082, 1090, 1107.
