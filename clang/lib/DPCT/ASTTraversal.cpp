@@ -193,9 +193,13 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
       }
       return false;
     }
-    if (MacroName == "__CUDACC__" &&
-        !MacroNameTok.getIdentifierInfo()->hasMacroDefinition())
-      return false;
+    if (MacroName == "__CUDACC__") {
+      if (MacroNameTok.getIdentifierInfo()->hasMacroDefinition()) {
+        Repl->setSYCLHeaderNeeded(false);
+      } else {
+        return false;
+      }
+    }
     if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
       auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
       DpctGlobalInfo::getInstance()
@@ -11848,10 +11852,11 @@ void CMemoryAPIRule::runRule(const MatchFinder::MatchResult &Result) {
   auto ICE = getNodeAsType<ImplicitCastExpr>(Result, "implicitCast");
   if (!ICE)
     return;
-
-  emplaceTransformation(new InsertText(
+  auto Repl = new InsertText(
       ICE->getBeginLoc(),
-      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")"));
+      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")");
+  Repl->setSYCLHeaderNeeded(false);
+  emplaceTransformation(Repl);
 }
 
 REGISTER_RULE(CMemoryAPIRule, PassKind::PK_Migration)

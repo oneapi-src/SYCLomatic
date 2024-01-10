@@ -603,6 +603,7 @@ public:
 
   void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
   std::string getCCLVerValue() { return CCLVerValue; }
+  bool hasCUDASyntax() { return HeaderInsertedBitMap[HeaderType::HT_SYCL]; }
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
@@ -1944,6 +1945,9 @@ public:
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
   }
+  std::vector<std::shared_ptr<DpctFileInfo>> &getCSourceFileInfo() {
+    return CSourceFileInfo;
+  }
   static inline std::unordered_map<std::string,
                                    std::shared_ptr<PriorityReplInfo>> &
   getPriorityReplInfoMap() {
@@ -2201,6 +2205,7 @@ private:
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
+  static std::vector<std::shared_ptr<DpctFileInfo>> CSourceFileInfo;
   static bool OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;
