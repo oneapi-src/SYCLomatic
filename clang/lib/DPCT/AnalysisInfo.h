@@ -1136,8 +1136,8 @@ public:
   static std::set<clang::tooling::UnifiedPath> &getIncludingFileSet() {
     return IncludingFileSet;
   }
-  static std::set<std::string> &getFileSetInCompiationDB() {
-    return FileSetInCompiationDB;
+  static std::set<std::string> &getFileSetInCompilationDB() {
+    return FileSetInCompilationDB;
   }
   static std::unordered_map<std::string,
                             std::vector<clang::tooling::Replacement>> &
@@ -1471,7 +1471,7 @@ private:
   static int CurrentIndexInRule;
   static std::set<clang::tooling::UnifiedPath> IncludingFileSet;
   static int VarSchemaIndex;
-  static std::set<std::string> FileSetInCompiationDB;
+  static std::set<std::string> FileSetInCompilationDB;
   static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;
   static bool HasFoundDeviceChanged;
