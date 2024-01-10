@@ -374,11 +374,6 @@ class image_data {
 public:
   image_data() { _type = image_data_type::unsupport; }
   image_data(image_matrix_p matrix_data) { set_data(matrix_data); }
-#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
-  image_data(sycl::ext::oneapi::experimental::image_mem *image_mem) {
-    set_data(image_mem);
-  }
-#endif
   image_data(void *data_ptr, size_t x_size, image_channel channel) {
     set_data(data_ptr, x_size, channel);
   }
