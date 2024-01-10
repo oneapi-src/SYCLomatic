@@ -1,6 +1,8 @@
 // RUN: dpct --format-range=none --enable-codepin -out-root %T/debug_test/vector_add_int3 %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/vector_add_int3/test.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/vector_add_int3/test.dp.cpp -o %T/debug_test/vector_add_int3/test.dp.o %}
+//CHECK: #include <dpct/codepin/codepin.hpp>
+//CHECK: #include "generated_schema.hpp"
 #include <iostream>
  
 // CUDA kernel: Vector addition for int3
@@ -37,8 +39,11 @@ int main() {
     int3 *d_a, *d_b, *d_result;
  
     // Allocate memory for device vectors
+    //CHECK: dpct::experimental::get_ptr_size_map()[*((void**)&d_a)] = vectorSize * sizeof(sycl::int3);
     cudaMalloc((void**)&d_a, vectorSize * sizeof(int3));
+    //CHECK: dpct::experimental::get_ptr_size_map()[*((void**)&d_b)] = vectorSize * sizeof(sycl::int3);
     cudaMalloc((void**)&d_b, vectorSize * sizeof(int3));
+    //CHECK: dpct::experimental::get_ptr_size_map()[*((void**)&d_result)] = vectorSize * sizeof(sycl::int3);
     cudaMalloc((void**)&d_result, vectorSize * sizeof(int3));
  
     // Copy host vectors to device
