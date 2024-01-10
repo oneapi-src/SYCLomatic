@@ -568,52 +568,34 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
        << "int"
        << ">(" << MigratedArg1 << "))";
   } else if (FuncName == "modf" || FuncName == "modff") {
-    auto Arg = Call->getArg(0);
-    std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
-        PrintingPolicy(LangOptions()));
-    std::string ArgExpr = Arg->getStmtClassName();
-    auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-    if (ArgT == "int") {
-      if (FuncName == "modff") {
-        if (DRE)
-          MigratedArg0 = "(float)" + MigratedArg0;
-        else
-          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
-      } else {
-        if (DRE)
-          MigratedArg0 = "(double)" + MigratedArg0;
-        else
-          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
-      }
+    clang::QualType ParamType = Call->getArg(0)->getType().getCanonicalType();
+    ParamType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
+    clang::QualType Arg0Type =
+        Call->getArg(0)->IgnoreImpCasts()->getType().getCanonicalType();
+    Arg0Type.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
+
+    auto DRE = dyn_cast<DeclRefExpr>(Call->getArg(0)->IgnoreCasts());
+    if (Arg0Type.getAsString() != ParamType.getAsString()) {
+      if (DRE)
+        MigratedArg0 = "(" + ParamType.getAsString() + ")" + MigratedArg0;
+      else
+        MigratedArg0 =
+            "(" + ParamType.getAsString() + ")(" + MigratedArg0 + ")";
     }
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace(false, true) + "modf(" << MigratedArg0;
 
-    const Expr *Arg1 = Call->getArg(1)->IgnoreImpCasts();
-    clang::QualType Arg1Type = Arg1->getType().getCanonicalType();
+    clang::QualType Arg1Type =
+        Call->getArg(1)->IgnoreImpCasts()->getType().getCanonicalType();
     Arg1Type.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
 
-    if (FuncName == "modf") {
-      OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
-         << MapNames::getClNamespace() +
-                "access::address_space::" + getAddressSpace(Call, 1)
-         << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-         << ", "
-         << "double"
-         << ">(";
-      if (Arg1Type->getPointeeType().getAsString() != "double")
-        OS << "(double *)";
-    } else {
-      OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
-         << MapNames::getClNamespace() +
-                "access::address_space::" + getAddressSpace(Call, 1)
-         << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-         << ", "
-         << "float"
-         << ">(";
-      if (Arg1Type->getPointeeType().getAsString() != "float")
-        OS << "(float *)";
-    }
+    OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
+       << MapNames::getClNamespace() +
+              "access::address_space::" + getAddressSpace(Call, 1)
+       << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+       << ", " << ParamType.getAsString() << ">(";
+    if (Arg1Type->getPointeeType().getAsString() != ParamType.getAsString())
+      OS << "(" << ParamType.getAsString() << " *)";
 
     OS << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
