@@ -267,6 +267,9 @@ SourceProcessType GetSourceFileType(const clang::tooling::UnifiedPath &SourcePat
   if (Extension == ".cuh") {
     return SPT_CudaHeader;
   }
+  if (Extension == ".c") {
+    return SPT_CppSource;
+  }
   // the database check and including check need before the extension check.
   // Because the header file "xxx.cc" without CUDA syntax will not change file
   // name, but the "include" statement will change file name when this check is
