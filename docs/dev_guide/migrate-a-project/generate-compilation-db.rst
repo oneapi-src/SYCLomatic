@@ -119,7 +119,12 @@ Generate a Compilation Database for Setuptools-Based Projects
 --------------------------------------------------------
 Setuptools is a package development library in Python for facilitating packaging, distribution and installation of Python projects. For projects with setuptools as their build system, the steps to generate a compilation database are as follows:
 
-#. Generate the build log for the project using the verbose flag.
+#. Generate a build log for the setuptools project by using the ``-v`` or ``--verbose`` flag with the Python build command.
+
+.. code-block:: none
+
+    python3 setup.py <build-option> -v
+
 #. Use ``intercept-build –-parse-build-log`` option to generate the compilation database.
 
 Example:
