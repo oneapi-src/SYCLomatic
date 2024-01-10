@@ -121,8 +121,8 @@ public:
 
 protected:
   std::string getNewFuncName();
-  static const std::vector<std::string> SingleFuctions;
-  static const std::vector<std::string> DoubleFuctions;
+  static const std::vector<std::string> SingleFunctions;
+  static const std::vector<std::string> DoubleFunctions;
   friend MathFuncNameRewriterFactory;
 };
 
@@ -272,8 +272,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           NewFuncName = NewFuncName + "<" + TypePair.first + ">";
       }
 
-      if (std::find(SingleFuctions.begin(), SingleFuctions.end(),
-                    SourceCalleeName) != SingleFuctions.end()) {
+      if (std::find(SingleFunctions.begin(), SingleFunctions.end(),
+                    SourceCalleeName) != SingleFunctions.end()) {
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           auto Arg = Call->getArg(i);
@@ -306,8 +306,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               RewriteArgList[i] = "(float)(" + RewriteArgList[i] + ")";
           }
         }
-      } else if (std::find(DoubleFuctions.begin(), DoubleFuctions.end(),
-                           SourceCalleeName) != DoubleFuctions.end()) {
+      } else if (std::find(DoubleFunctions.begin(), DoubleFunctions.end(),
+                           SourceCalleeName) != DoubleFunctions.end()) {
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           auto Arg = Call->getArg(i);
@@ -1213,7 +1213,7 @@ void CallExprRewriterFactoryBase::initRewriterMapMath() {
       }));
 }
 
-const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
+const std::vector<std::string> MathFuncNameRewriter::SingleFunctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
@@ -1235,7 +1235,7 @@ const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #undef ENTRY_REWRITE
 };
 
-const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
+const std::vector<std::string> MathFuncNameRewriter::DoubleFunctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)

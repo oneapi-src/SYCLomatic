@@ -282,7 +282,7 @@ SourceProcessType GetSourceFileType(const clang::tooling::UnifiedPath &SourcePat
   //    file.
   // C. If both A and B hold, then default to A.
   // clang-format on
-  auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
+  auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompilationDB();
   if (FileSetInDB.find(SourcePath.getCanonicalPath().str()) != end(FileSetInDB)) {
     return SPT_CppSource;
   }
