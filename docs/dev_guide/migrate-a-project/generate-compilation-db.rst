@@ -121,18 +121,15 @@ Setuptools is a package development library in Python for facilitating packaging
 
 #. Generate a build log for the setuptools project by using the ``-v`` or ``--verbose`` flag with the Python build command.
 
-.. code-block:: none
+   .. code-block:: none
 
-    python3 setup.py <build-option> -v
+       python3 setup.py <build-option> -v > build.log 2>&1
 
 #. Use ``intercept-build –-parse-build-log`` option to generate the compilation database.
 
-Example:
+   .. code-block:: none
 
-.. code-block:: none
-
-    python3 setup.py <build-option> -v > build.log 2>&1
-    intercept-build -–parse-build-log build.log
+       intercept-build -–parse-build-log build.log
 
 Generate a Compilation Database with Other Build Systems
 --------------------------------------------------------
