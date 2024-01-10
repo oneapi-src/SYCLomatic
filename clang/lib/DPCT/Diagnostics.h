@@ -47,7 +47,6 @@ struct DiagnosticsMessage {
   const char *Msg;
 
 #define DEF_WARNING(NAME, ID, LEVEL, MSG) ID,
-#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
   constexpr static size_t MinID = std::min({
 #include "Diagnostics.inc"
   });
@@ -55,8 +54,7 @@ struct DiagnosticsMessage {
   constexpr static size_t MaxID = std::max({
 #include "Diagnostics.inc"
   });
-#undef DEF_WARNING
-#undef DEF_COMMENT
+
   DiagnosticsMessage() = default;
   DiagnosticsMessage(std::unordered_map<int, DiagnosticsMessage> &Table, int ID,
                      int Category, EffortLevel EL, const char *Msg)
@@ -69,27 +67,18 @@ struct DiagnosticsMessage {
 };
 
 #define DEF_WARNING(NAME, ID, LEVEL, MSG) NAME = ID,
-#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
 enum class Diagnostics {
 #include "Diagnostics.inc"
-#undef DEF_WARNING
-#undef DEF_COMMENT
 };
 
-#define DEF_WARNING(NAME, ID, LEVEL, MSG)
 #define DEF_COMMENT(NAME, ID, LEVEL, MSG) NAME = ID,
 enum class Comments {
 #include "Diagnostics.inc"
-#undef DEF_WARNING
-#undef DEF_COMMENT
 };
 
 #define DEF_WARNING(NAME, ID, LEVEL, MSG) NAME = ID,
-#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
 enum class Warnings {
 #include "Diagnostics.inc"
-#undef DEF_WARNING
-#undef DEF_COMMENT
 };
 
 #define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
