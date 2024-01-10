@@ -137,9 +137,7 @@ int main() {
   kernel<<<1, 1>>>(tex);
   // CHECK: dpct::experimental::destroy_bindless_image(tex, q_ct1);
   cudaDestroyTextureObject(tex);
-#ifndef BUILD_TEST
-  // CHECK: sycl::ext::oneapi::experimental::free_image_mem(pArr->get_handle(), dpct::get_in_order_queue());
+  // CHECK: sycl::ext::oneapi::experimental::free_image_mem(pArr->get_handle(), sycl::ext::oneapi::experimental::image_type::standard, dpct::get_in_order_queue());
   cudaFreeArray(pArr);
-#endif
   return 0;
 }

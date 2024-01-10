@@ -494,6 +494,7 @@ public:
   std::string getRTVersionValue() { return RTVersionValue; }
   void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
   std::string getCCLVerValue() { return CCLVerValue; }
+  bool hasCUDASyntax() { return HeaderInsertedBitMap[HeaderType::HT_SYCL]; }
 
   std::shared_ptr<tooling::TranslationUnitReplacements> PreviousTUReplFromYAML =
       nullptr;
@@ -1268,6 +1269,9 @@ public:
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
   }
+  std::vector<std::shared_ptr<DpctFileInfo>> &getCSourceFileInfo() {
+    return CSourceFileInfo;
+  }
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>> &
   getPriorityReplInfoMap() {
     return PriorityReplInfoMap;
@@ -1507,6 +1511,7 @@ private:
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
+  static std::vector<std::shared_ptr<DpctFileInfo>> CSourceFileInfo;
   static bool OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;
