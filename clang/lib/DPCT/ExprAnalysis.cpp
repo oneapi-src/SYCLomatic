@@ -1074,8 +1074,8 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
     return;
 
   auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
-  if (StringRef(BaseType).startswith("cub::") ||
-      StringRef(BaseType).startswith("cuda::std::")) {
+  if (StringRef(BaseType).starts_with("cub::") ||
+      StringRef(BaseType).starts_with("cuda::std::")) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
       if (const auto *RD = DRE->getDecl()->getType()->getAsCXXRecordDecl()) {
         BaseType.clear();

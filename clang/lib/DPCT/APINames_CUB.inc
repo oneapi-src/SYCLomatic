@@ -200,10 +200,10 @@ ENTRY(cub::LoadDirectWarpStriped, cub::LoadDirectWarpStriped, false, NO_FLAG, P4
 ENTRY(cub::StoreDirectWarpStriped, cub::StoreDirectWarpStriped, false, NO_FLAG, P4, "Comment")
 
 // PTX intrinsics
-ENTRY(cub::SHR_ADD, cub::SHR_ADD, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::SHL_ADD, cub::SHL_ADD, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::BFE, cub::BFE, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::BFI, cub::BFI, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::SHR_ADD, cub::SHR_ADD, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::SHL_ADD, cub::SHL_ADD, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::BFE, cub::BFE, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::BFI, cub::BFI, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::IADD3, cub::IADD3, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::PRMT, cub::PRMT, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::ThreadExit, cub::ThreadExit, false, NO_FLAG, P4, "Comment")

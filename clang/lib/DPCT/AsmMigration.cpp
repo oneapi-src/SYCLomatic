@@ -11,6 +11,7 @@
 #include "Asm/AsmParser.h"
 #include "CallExprRewriter.h"
 #include "CrashRecovery.h"
+#include "Diagnostics.h"
 #include "MapNames.h"
 #include "MigrationRuleManager.h"
 #include "TextModification.h"
@@ -97,6 +98,17 @@ protected:
         CodeGen.VecExprTypeRecord.pop_back();
     }
   };
+
+  template <typename IDTy, typename... Ts>
+  inline void report(IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    TransformSetTy TS;
+    auto SL = GAS->getBeginLoc();
+    DiagnosticsUtils::report<IDTy, Ts...>(SL, MsgID, &TS, UseTextBegin,
+                                          std::forward<Ts>(Vals)...);
+    for (auto &T : TS)
+      DpctGlobalInfo::getInstance().addReplacement(
+          T->getReplacement(DpctGlobalInfo::getContext()));
+  }
 
 public:
   SYCLGenBase(llvm::raw_ostream &OS, const GCCAsmStmt *G)
@@ -533,15 +545,103 @@ public:
   bool handleStatement(const InlineAsmStmt *S) { return emitStmt(S); }
 
 protected:
+  unsigned getBitSizeTypeWidth(const InlineAsmBuiltinType *T) const {
+    switch (T->getKind()) {
+    case InlineAsmBuiltinType::TK_b8:
+      return 8;
+    case InlineAsmBuiltinType::TK_b16:
+      return 16;
+    case InlineAsmBuiltinType::TK_b32:
+      return 32;
+    case InlineAsmBuiltinType::TK_b64:
+      return 64;
+    default:
+      return 0;
+    }
+  }
+
+  const char *unpackBitSizeType(const InlineAsmBuiltinType *T,
+                                unsigned N) const {
+    assert(T->isBitSize());
+    unsigned OriginTypeWidth = getBitSizeTypeWidth(T);
+    unsigned UnpackTypeWidth = OriginTypeWidth / N;
+    switch (UnpackTypeWidth) {
+    case 8:
+      return "uint8_t";
+    case 16:
+      return "uint16_t";
+    case 32:
+      return "uint32_t";
+    default:
+      return nullptr;
+    }
+  }
+
   bool handle_mov(const InlineAsmInstruction *I) override {
     if (I->getNumInputOperands() != 1)
       return SYCLGenError();
-    if (emitStmt(I->getOutputOperand()))
-      return SYCLGenError();
-    OS() << " = ";
-    if (emitStmt(I->getInputOperand(0)))
-      return SYCLGenError();
-    endstmt();
+    // Handle data unpack mov.
+    // mov.b32 {%0, %1}, %2;
+    // %0 = sycl::vec<uint32_t, 1>(%2).template as<sycl::vec<uint16_t, 2>>()[0];
+    // %1 = sycl::vec<uint32_t, 1>(%2).template as<sycl::vec<uint16_t, 2>>()[1];
+    if (const auto *VE = dyn_cast<InlineAsmVectorExpr>(I->getOutputOperand())) {
+      const auto *Type =
+          llvm::dyn_cast_or_null<InlineAsmBuiltinType>(I->getType(0));
+      if (!Type || !Type->isBitSize())
+        return SYCLGenError();
+      std::string OriginType, InputOp;
+      std::string UnpackType = unpackBitSizeType(Type, VE->getNumElements());
+      if (tryEmitType(OriginType, Type) ||
+          tryEmitStmt(InputOp, I->getInputOperand(0)))
+        return SYCLGenError();
+      std::string SYCLVec;
+      {
+        llvm::raw_string_ostream TmpOS(SYCLVec);
+        TmpOS << MapNames::getClNamespace() << "vec<" << OriginType << ", 1>("
+              << InputOp << ").template as<" << MapNames::getClNamespace()
+              << "vec<" << UnpackType << ", " << VE->getNumElements() << ">>()";
+      }
+      for (unsigned I = 0, E = VE->getNumElements(); I != E; ++I) {
+        if (isa<InlineAsmDiscardExpr>(VE->getElement(I)))
+          continue;
+        if (I > 0)
+          indent();
+        if (emitStmt(VE->getElement(I)))
+          return SYCLGenError();
+        OS() << " = " << SYCLVec << '[' << I << ']';
+        endstmt();
+      }
+    } else if (const auto *VE =
+                   dyn_cast<InlineAsmVectorExpr>(I->getInputOperand(0))) {
+      // Handle data pack ov.
+      // mov.b32 %0, {%1, %2};
+      // %0 = sycl::vec<uint16_t, 2>{%1, %2}.template as<sycl::vec<uint32_t,
+      // 1>>()[0];
+      const auto *Type =
+          llvm::dyn_cast_or_null<InlineAsmBuiltinType>(I->getType(0));
+      if (!Type || !Type->isBitSize())
+        return SYCLGenError();
+      std::string PackType, OutputOp;
+      std::string OriginType = unpackBitSizeType(Type, VE->getNumElements());
+      if (tryEmitType(PackType, Type))
+        return SYCLGenError();
+      if (emitStmt(I->getOutputOperand()))
+        return SYCLGenError();
+      OS() << " = " << MapNames::getClNamespace() << "vec<" << OriginType
+           << ", " << VE->getNumElements() << ">(";
+      if (emitStmt(VE))
+        return SYCLGenError();
+      OS() << ").template as<" << MapNames::getClNamespace() << "vec<"
+           << PackType << ", 1>>()[0]";
+      endstmt();
+    } else {
+      if (emitStmt(I->getOutputOperand()))
+        return SYCLGenError();
+      OS() << " = ";
+      if (emitStmt(I->getInputOperand(0)))
+        return SYCLGenError();
+      endstmt();
+    }
     return SYCLGenSuccess();
   }
 
@@ -1311,6 +1411,141 @@ protected:
     return HandleNot(Inst);
   }
 
+  bool HandleSinCosTanhSqrtLg2Ex2(const InlineAsmInstruction *Inst,
+                                  StringRef MathFn) {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+
+    std::string TypeString;
+    if (tryEmitType(TypeString, Inst->getType(0)))
+      return SYCLGenError();
+
+    std::string ReplaceString =
+        MapNames::getClNamespace() + MathFn.str() + "<" + TypeString + ">(";
+    if (Inst->getOpcode() == asmtok::op_ex2)
+      ReplaceString += "2, ";
+    ReplaceString += Op + ")";
+    if (Inst->hasAttr(InstAttr::rn, InstAttr::rz, InstAttr::rm, InstAttr::rp))
+      report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, true);
+    OS() << ReplaceString;
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_cos(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "cos");
+  }
+
+  bool handle_sin(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "sin");
+  }
+
+  bool handle_tanh(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "tanh");
+  }
+
+  bool handle_sqrt(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "sqrt");
+  }
+
+  bool handle_rsqrt(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "rsqrt");
+  }
+
+  bool handle_lg2(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "log2");
+  }
+
+  bool handle_ex2(const InlineAsmInstruction *Inst) override {
+    return HandleSinCosTanhSqrtLg2Ex2(Inst, "pow");
+  }
+
+  bool handle_sad(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 && Inst->getNumTypes() != 0)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op[3], TypeString;
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    if (tryEmitType(TypeString, Inst->getType(0)))
+      return SYCLGenError();
+
+    OS() << MapNames::getClNamespace() << "abs_diff<" << TypeString << ">("
+         << Op[0] << ", " << Op[1] << ") + " << Op[2];
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_testp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    if (Inst->hasAttr(InstAttr::finite))
+      OS() << MapNames::getClNamespace() << "isfinite(";
+    else if (Inst->hasAttr(InstAttr::infinite))
+      OS() << MapNames::getClNamespace() << "isinf(";
+    else if (Inst->hasAttr(InstAttr::number))
+      OS() << "!" << MapNames::getClNamespace() << "isnan(";
+    else if (Inst->hasAttr(InstAttr::notanumber))
+      OS() << MapNames::getClNamespace() << "isnan(";
+    else if (Inst->hasAttr(InstAttr::normal))
+      OS() << MapNames::getClNamespace() << "isnormal(";
+    else if (Inst->hasAttr(InstAttr::subnormal))
+      OS() << "!" << MapNames::getClNamespace() << "isnormal(";
+    else
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getInputOperand(0)))
+      return SYCLGenError();
+    OS() << ')';
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_selp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op[3];
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    OS() << Op[2] << " == 1 ? " << Op[0] << " : " << Op[1];
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_copysign(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 2)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op[2];
+    for (int i = 0; i < 2; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    OS() << MapNames::getClNamespace() << "copysign(" << Op[1] << ", " << Op[0]
+         << ')';
+    endstmt();
+    insertHeader(HeaderType::HT_Math);
+    return SYCLGenSuccess();
+  }
+
   // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
   bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst,
                                     StringRef Fn) {
@@ -1339,6 +1574,8 @@ protected:
     OS() << " = " << Fn;
     if (Inst->hasAttr(InstAttr::sat))
       OS() << "_sat";
+    if (Inst->is(asmtok::op_vshl, asmtok::op_vshr))
+      OS() << (Inst->hasAttr(InstAttr::clamp) ? "_clamp" : "_mask31");
     OS() << "<";
     if (emitType(Inst->getType(0)))
       return SYCLGenError();
@@ -1365,23 +1602,38 @@ protected:
   }
 
   bool handle_vadd(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_add");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_add");
   }
 
   bool handle_vsub(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_sub");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_sub");
   }
 
   bool handle_vabsdiff(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_absdiff");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_absdiff");
   }
 
   bool handle_vmax(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_max");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_max");
   }
 
   bool handle_vmin(const InlineAsmInstruction *I) override {
-    return HandleOneElementAddSubMinMax(I, "dpct::extend_min");
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_min");
+  }
+
+  bool handle_vshl(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_shl");
+  }
+
+  bool handle_vshr(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                               "extend_shr");
   }
 
   // Handle the 2/4 element video instructions.
@@ -1433,34 +1685,52 @@ protected:
   }
 
   bool handle_vadd2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vadd2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vadd2");
   }
   bool handle_vsub2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vsub2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vsub2");
   }
   bool handle_vabsdiff2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vabsdiff2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vabsdiff2");
   }
   bool handle_vmin2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmin2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vmin2");
   }
   bool handle_vmax2(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax2");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vmax2");
+  }
+  bool handle_vavrg2(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vavrg2");
   }
   bool handle_vadd4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vadd4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vadd4");
   }
   bool handle_vsub4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vsub4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vsub4");
   }
   bool handle_vabsdiff4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vabsdiff4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vabsdiff4");
   }
   bool handle_vmin4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmin4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vmin4");
   }
   bool handle_vmax4(const InlineAsmInstruction *I) override {
-    return handleMultiElementAddSubMinMax(I, "dpct::extend_vmax4");
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vmax4");
+  }
+  bool handle_vavrg4(const InlineAsmInstruction *I) override {
+    return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
+                                                 "extend_vavrg4");
   }
 
   bool handle_bfe(const InlineAsmInstruction *Inst) override {
@@ -1753,7 +2023,8 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
     AA.setCallSpelling(SM.getSpellingLoc(GAS->getBeginLoc()),
                        SM.getSpellingLoc(GAS->getEndLoc()));
     AA.analyze(E);
-    if (needExtraParens(E))
+    if (needExtraParens(E) && !isa<UnaryOperator>(E) &&
+        !isa<UnaryExprOrTypeTraitExpr>(E))
       return "(" + AA.getRewriteString() + ")";
     return AA.getRewriteString();
   };

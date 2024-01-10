@@ -49,6 +49,11 @@ results in the following migrated SYCL\* code:
      dpct::image_wrapper_base_p obj;
      obj = dpct::create_image_wrapper(..., desc);
      ...
+     /*
+     DPCT1112:0: If the filter mode is set to 'linear', the behavior of image
+     "read" may be different from "tex1Dfetch" in the original code. You may need
+     to adjust the code.
+     */
      obj.read(...);
 
 

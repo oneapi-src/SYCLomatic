@@ -60,7 +60,19 @@ enum VerboseLevel {
   VL_VerboseHigh = 2,
 };
 
+enum class EffortLevel : unsigned { EL_High = 0, EL_Medium, EL_Low, EL_NUM };
+
 void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
+
+void dumpAnalysisModeStatics(llvm::raw_ostream& OS);
+
+void recordAnalysisModeEffort(SourceLocation SL, EffortLevel EL);
+void recordAnalysisModeEffort(const clang::tooling::UnifiedPath &Filename, unsigned Offset,
+                              EffortLevel EL);
+
+void recordRecognizedAPI(const CallExpr *CE);
+void recordRecognizedType(TypeLoc TL);
+
 } // namespace dpct
 } // namespace clang
 #endif // DPCT_DEBUG_H

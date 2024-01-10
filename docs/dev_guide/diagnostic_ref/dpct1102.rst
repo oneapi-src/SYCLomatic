@@ -29,16 +29,18 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
+     #define DATA_NUM 16
+     
      struct Foo {
        ...
        float data[0];
      };
-
+     
      __global__ void kernel(Foo *foo) {
-       Foo->data[DATA_NUM - 1] = 123.f;
+       foo->data[DATA_NUM - 1] = 123.f;
      }
-
-     int main() {
+     
+     void test() {
        Foo* foo;
        cudaMalloc(&foo, sizeof(Foo) + DATA_NUM * sizeof(float));
        kernel<<<1, 1>>>(foo);
@@ -50,20 +52,27 @@ results in the following migrated SYCL code:
 .. code-block:: cpp
    :linenos:
 
+     #define DATA_NUM 16
+     
      struct Foo {
        ...
-       std::byte data[0];
+       /*
+       DPCT1102:0: Zero-length arrays are not permitted in SYCL device code.
+       */
+       float data[0];
      };
-
+     
      void kernel(Foo *foo) {
        foo->data[DATA_NUM - 1] = 123.f;
      }
-
-     int main() {
-       dpct::device_ext &dev_ct1 = dpct::get_current_device();
-       sycl::queue &q_ct1 = dev_ct1.default_queue();
+     
+     void test() {
+       sycl::device dev_ct1;
+       sycl::queue q_ct1(dev_ct1,
+                         sycl::property_list{sycl::property::queue::in_order()});
        Foo* foo;
-       foo = (Foo *)sycl::malloc_device(sizeof(Foo) + DATA_NUM * sizeof(float), q_ct1);
+       foo =
+           (Foo *)sycl::malloc_device(sizeof(Foo) + DATA_NUM * sizeof(float), q_ct1);
        q_ct1.parallel_for(
            sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
            [=](sycl::nd_item<3> item_ct1) {
@@ -77,18 +86,21 @@ which is rewritten to:
 .. code-block:: cpp
    :linenos:
 
+     #define DATA_NUM 16
+     
      struct Foo {
        ...
        std::byte data[DATA_NUM];
      };
-
+     
      void kernel(Foo *foo) {
        foo->data[DATA_NUM - 1] = 123.f;
      }
-
-     int main() {
-       dpct::device_ext &dev_ct1 = dpct::get_current_device();
-       sycl::queue &q_ct1 = dev_ct1.default_queue();
+     
+     void test() {
+       sycl::device dev_ct1;
+       sycl::queue q_ct1(dev_ct1,
+                         sycl::property_list{sycl::property::queue::in_order()});
        Foo* foo;
        foo = (Foo *)sycl::malloc_device(sizeof(Foo), q_ct1);
        q_ct1.parallel_for(

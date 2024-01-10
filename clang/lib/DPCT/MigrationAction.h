@@ -56,9 +56,9 @@ private:
 
 class DpctToolAction : public tooling::ToolAction {
 public:
-  DpctToolAction(llvm::raw_ostream &DS,
-                 std::map<std::string, tooling::Replacements> &Replacements,
-                 const std::string &RuleNames, std::vector<PassKind> Passes,
+  DpctToolAction(llvm::raw_ostream &DS, ReplTy &ReplCUDA,
+                 ReplTy &ReplSYCL, const std::string &RuleNames,
+                 std::vector<PassKind> Passes,
                  llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS);
   /// Perform an action for an invocation.
   bool runInvocation(std::shared_ptr<CompilerInvocation> Invocation,
@@ -94,7 +94,8 @@ private:
         : TU(T) {}
   };
   DpctGlobalInfo &Global;
-  ReplTy &Repls;
+  ReplTy &ReplsCUDA;
+  ReplTy &ReplsSYCL;
   std::vector<std::string> MigrationRuleNames;
   std::vector<PassKind> Passes;
   std::vector<InvocationOrTranslationUnit> IOTUs;

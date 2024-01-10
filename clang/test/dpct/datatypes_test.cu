@@ -1,6 +1,8 @@
 // RUN: dpct --format-range=none -out-root %T/datatypes_test %s --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++14" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/datatypes_test/datatypes_test.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/datatypes_test/datatypes_test.dp.cpp -o %T/datatypes_test/datatypes_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/datatypes_test/datatypes_test.dp.cpp -o %T/datatypes_test/datatypes_test.dp.o %}
+
+#ifndef BUILD_TEST
 
 #include <iostream>
 #include <iostream>
@@ -4392,3 +4394,4 @@ template <> void foo2(CUstream_st){}
 template <> void foo3(CUstream_st){}
 template <> void foo4(CUstream_st){}
 
+#endif

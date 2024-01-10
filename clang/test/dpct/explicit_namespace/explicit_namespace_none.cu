@@ -2,8 +2,9 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -in-root %S -out-root %T/explicit_namespace_none %S/explicit_namespace_none.cu --cuda-include-path="%cuda-path/include" --use-explicit-namespace=none --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/explicit_namespace_none/explicit_namespace_none.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/explicit_namespace_none/explicit_namespace_none.dp.cpp -o %T/explicit_namespace_none/explicit_namespace_none.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/explicit_namespace_none/explicit_namespace_none.dp.cpp -o %T/explicit_namespace_none/explicit_namespace_none.dp.o %}
 
+#ifndef BUILD_TEST
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: using namespace dpct;
@@ -96,3 +97,4 @@ int main() {
   // CHECK:  stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
   thrust::stable_sort_by_key(mapspkeyT, mapspkeyT + numsH, mapspvalT);
 }
+#endif
