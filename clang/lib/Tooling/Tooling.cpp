@@ -74,7 +74,7 @@ namespace clang {
 namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
-static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
+static std::set<std::string> *FileSetInCompilationDBPtr = nullptr;
 static std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
     *CompileTargetsMapPtr = nullptr;
 static StringRef InRoot;
@@ -90,8 +90,8 @@ void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
 }
 
-void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
-  FileSetInCompiationDBPtr = &FileSetInCompiationDB;
+void SetFileSetInCompilationDB(std::set<std::string> &FileSetInCompilationDB) {
+  FileSetInCompilationDBPtr = &FileSetInCompilationDB;
 }
 
 void SetCompileTargetsMap(
@@ -107,8 +107,8 @@ void SetFileProcessHandle(StringRef In, StringRef Out, FileProcessType Handle) {
 }
 
 void CollectFileFromDB(std::string FileName) {
-  if (FileSetInCompiationDBPtr != nullptr) {
-    (*FileSetInCompiationDBPtr).insert(FileName);
+  if (FileSetInCompilationDBPtr != nullptr) {
+    (*FileSetInCompilationDBPtr).insert(FileName);
   }
 }
 
@@ -1010,6 +1010,8 @@ int ClangTool::run(ToolAction *Action) {
                  << CWD.getError().message() << "\n";
   }
 
+  size_t NumOfTotalFiles = AbsolutePaths.size();
+  unsigned ProcessedFileCounter = 0;
   for (llvm::StringRef File : AbsolutePaths) {
 
 #ifndef SYCLomatic_CUSTOMIZATION
@@ -1069,7 +1071,11 @@ int ClangTool::run(ToolAction *Action) {
 
       // FIXME: We need a callback mechanism for the tool writer to output a
       // customized message for each file.
-      LLVM_DEBUG({ llvm::dbgs() << "Processing: " << File << ".\n"; });
+      if (NumOfTotalFiles > 1)
+        llvm::errs() << "[" + std::to_string(++ProcessedFileCounter) + "/" +
+                            std::to_string(NumOfTotalFiles) +
+                            "] Processing file " + File
+                     << ".\n";
       ToolInvocation Invocation(std::move(CommandLine), Action, Files.get(),
                                 PCHContainerOps);
       Invocation.setDiagnosticConsumer(DiagConsumer);
