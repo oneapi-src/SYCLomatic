@@ -1,0 +1,2 @@
+include_directories(foo foo/bar)
+include_directories(${path1} ../)
