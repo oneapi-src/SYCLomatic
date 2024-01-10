@@ -616,6 +616,7 @@ static void applyCmakeMigrationRules() {
       };
 
   for (auto &Entry : CmakeScriptFileBufferMap) {
+    llvm::outs() << "Processing: " + Entry.first.getPath() + "\n";
     auto &Buffer = Entry.second;
 
     // Apply user define migration rules

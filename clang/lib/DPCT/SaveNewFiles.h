@@ -74,6 +74,5 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName,
                      const clang::tooling::UnifiedPath& FullPathName);
 
 // Replace file name \p FileName with new migrated name.
-void rewriteFileName(std::string &FileName,
-                     const std::string &FullPathName);
+void rewriteFileName(std::string &FileName, const std::string &FullPathName);
 #endif // DPCT_SAVE_NEW_FILES_H

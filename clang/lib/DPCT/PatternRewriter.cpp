@@ -6,10 +6,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <PatternRewriter.h>
+#include "AnalysisInfo.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "llvm/ADT/StringRef.h"
+#include <PatternRewriter.h>
 
 #include <optional>
 #include <ostream>
@@ -396,6 +397,7 @@ static bool isIdentifiedChar(char Char) {
 static void
 updateExtentionName(const std::string &Input, size_t Next,
                     std::unordered_map<std::string, std::string> &Bindings) {
+  auto Extension = clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
   if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
     size_t Pos = Next - 1;
     for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
@@ -411,12 +413,13 @@ updateExtentionName(const std::string &Input, size_t Next,
         HasCudaSyntax = true;
       }
     }
+
     if (HasCudaSyntax)
-      Bindings["rewrite_extention_name"] = "cpp.dp.cpp";
+      Bindings["rewrite_extention_name"] = "cpp" + Extension;
     else
       Bindings["rewrite_extention_name"] = "cpp";
   } else {
-    Bindings["rewrite_extention_name"] = "dp.cpp";
+    Bindings["rewrite_extention_name"] = Extension.erase(0, 1);
   }
 }
 
