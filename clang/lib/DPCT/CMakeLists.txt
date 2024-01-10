@@ -84,9 +84,9 @@ set(API_MAPPING_REGISTER_FOLDER ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DP
 file(GLOB SRC_FILES ../../examples/DPCT/*/*.cu)
 add_custom_target(gen_mapping_register
   COMMAND "${CMAKE_COMMAND}"
-    -DTARGET="${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def"
+    -DTARGET="${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterSlow.def"
     -DSRC_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/APIMapping/GenerateRegister.cmake
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/APIMapping/GenerateRegisterSlow.cmake
   DEPENDS ${SRC_FILES})
 include_directories(
   ${API_MAPPING_REGISTER_FOLDER}
@@ -99,7 +99,7 @@ include_directories(
 
 add_subdirectory(ConfusableTable)
 
-add_clang_library(DPCT
+set(DPCT_SRC
   ASTTraversal.cpp
   AnalysisInfo.cpp
   Rewriters/CUB/CallExprRewriterCUB.cpp
@@ -204,15 +204,17 @@ add_clang_library(DPCT
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
   SpBLASAPIMigration.cpp
+  )
 
-  DEPENDS
+set(DPCT_DEPENDS
   ClangDriverOptions
   DeviceConfigFile
   dpct_helper_headers_and_inc
   genconfusable
   gen_mapping_register
+  )
 
-  LINK_LIBS
+set(DPCT_LINK_LIBS
   clangBasic
   clangLex
   clangAnalysis
@@ -228,4 +230,45 @@ add_clang_library(DPCT
   clangSerialization
   clangTooling
   clangToolingCore
-)
+  )
+
+if(TRUE)
+  message("yes yes yes")
+  message("yes yes yes")
+  message("yes yes yes")
+  add_clang_library(DPCT_TMP
+    ${DPCT_SRC}
+    APIMapping/QueryAPIMappingSlow.cpp
+  
+    DEPENDS
+    ${DPCT_DEPENDS}
+  
+    LINK_LIBS
+    ${DPCT_LINK_LIBS}
+  )
+  add_clang_library(DPCT
+    ${DPCT_SRC}
+    APIMapping/QueryAPIMappingFast.cpp
+  
+    DEPENDS
+    ${DPCT_DEPENDS}
+    gen_mapping_str
+  
+    LINK_LIBS
+    ${DPCT_LINK_LIBS}
+  )
+else()
+  message("not not not")
+  message("not not not")
+  message("not not not")
+  add_clang_library(DPCT
+    ${DPCT_SRC}
+    APIMapping/QueryAPIMappingSlow.cpp
+  
+    DEPENDS
+    ${DPCT_DEPENDS}
+  
+    LINK_LIBS
+    ${DPCT_LINK_LIBS}
+  )
+endif()

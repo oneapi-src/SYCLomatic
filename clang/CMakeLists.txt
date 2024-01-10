@@ -949,6 +949,7 @@ configure_file(
   ${CLANG_BINARY_DIR}/include/clang/Config/config.h)
 
 # SYCLomatic_CUSTOMIZATION begin
+option(DPCT_BUILD_FAST "TODO TODO TODO." OFF)
 if (NOT CLANG_BUILT_STANDALONE)
   if(WIN32)
     list(APPEND DPCT_RUN

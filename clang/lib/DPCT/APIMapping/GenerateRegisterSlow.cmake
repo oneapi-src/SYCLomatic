@@ -1,6 +1,7 @@
 file(WRITE ${TARGET} "")
 file(GLOB SRC_FILES ${SRC_DIRECTORY}*/*.cu)
 set(API_NAME_SET)
+message("generating " ${TARGET})
 foreach(FILE ${SRC_FILES})
   file(READ ${FILE} FILE_STR)
   string(REGEX REPLACE ".*/(.*).cu$" "\\1" API_NAME ${FILE})

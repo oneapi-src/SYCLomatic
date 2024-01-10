@@ -23,6 +23,7 @@ class APIMapping {
   static std::vector<llvm::StringRef> EntryArray;
   static std::set<std::string> EntrySet;
   static bool PrintAll;
+  static bool FastMode;
 
   static void registerEntry(std::string Name, llvm::StringRef Description);
 
@@ -34,6 +35,7 @@ public:
   inline static void setPrintAll(bool Flag) { PrintAll = Flag; }
   inline static bool getPrintAll() { return PrintAll; }
   static void printAll();
+  inline static bool isFastMode() { return FastMode; }
 };
 
 } // namespace dpct

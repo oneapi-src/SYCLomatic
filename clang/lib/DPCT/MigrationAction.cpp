@@ -203,9 +203,6 @@ bool DpctToolAction::runInvocation(
     std::shared_ptr<CompilerInvocation> Invocation, FileManager *Files,
     std::shared_ptr<PCHContainerOperations> PCHContainerOps,
     DiagnosticConsumer *DiagConsumer) {
-  if (DpctGlobalInfo::isQueryAPIMapping()) {
-    Invocation->getPreprocessorOpts().Includes.clear();
-  }
 
   if (!Invocation)
     return false;

@@ -10,9 +10,37 @@ set(LLVM_LINK_COMPONENTS
   support
   )
 
-add_clang_tool(dpct-binary
-  DPCT.cpp NO_INSTALL_RPATH
-  )
+if(TRUE)
+  message("yes yes yes")
+  message("yes yes yes")
+  message("yes yes yes")
+  add_clang_tool(dpct-binary-tmp
+    DPCT.cpp NO_INSTALL_RPATH
+    )
+  set_target_properties(dpct-binary-tmp PROPERTIES OUTPUT_NAME "dpct-tmp")
+  target_link_libraries(dpct-binary-tmp
+    PRIVATE
+    DPCT_TMP
+    )
+  add_custom_target(gen_mapping_str
+    COMMAND "${CMAKE_COMMAND}"
+      -DTARGET="${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/APIMappingRegisterFast.def"
+      -DSRC_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
+    DEPENDS dpct-binary-tmp)
+  add_clang_tool(dpct-binary
+    DPCT.cpp NO_INSTALL_RPATH
+    DEPENDS gen_mapping_str
+    )
+else()
+  message("not not not")
+  message("not not not")
+  message("not not not")
+  add_clang_tool(dpct-binary
+    DPCT.cpp NO_INSTALL_RPATH
+    )
+endif()
+
 set_target_properties(dpct-binary PROPERTIES OUTPUT_NAME "dpct")
 include_directories(
   # For the CUDA-Toolchain and its CudaInstallationDetector
@@ -73,6 +101,25 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ./cmake)
 
+# set(API_NAME_SET)
+# foreach(FILE ${SRC_FILES})
+#   file(READ ${FILE} FILE_STR)
+#   string(REGEX REPLACE ".*/(.*).cu$" "\\1" API_NAME ${FILE})
+#   list(FIND API_NAME_SET ${API_NAME} INDEX)
+#   if(${INDEX} GREATER_EQUAL 0)
+#     message(FATAL_ERROR "The API Mapping cases name " ${API_NAME} " is duplicated.")
+#   endif()
+#   list(APPEND API_NAME_SET ${API_NAME})
+#   file(APPEND ${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def
+#   "registerEntry(\"" "${API_NAME}" "\",\nR\"(" "${FILE_STR}" ")\");\n")
+# endforeach()
+
+# install(
+#   FILES ${dpct_cmake_helper_file}
+#   COMPONENT dpct-cmake-file
+#   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+#   DESTINATION ./cmake)
+  
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-cmake-file
                            COMPONENT dpct-cmake-file)

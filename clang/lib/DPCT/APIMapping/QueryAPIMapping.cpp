@@ -59,10 +59,6 @@ void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
   EntryArray.emplace_back(SourceCode);
 }
 
-void APIMapping::initEntryMap(){
-#include "APIMappingRegister.def"
-}
-
 llvm::StringRef APIMapping::getAPISourceCode(std::string Key) {
   Key.erase(0, Key.find_first_not_of(" "));
   Key.erase(Key.find_last_not_of(" ") + 1);
