@@ -162,7 +162,7 @@ rem call Visual Studio vcvarsall.bat script
 :Setup
 
 :: print product info
-echo Copyright (C) 2018 - 2023 Intel Corporation. All rights reserved.
+echo Copyright (C) 2018 - 2024 Intel Corporation. All rights reserved.
 echo Intel(R) DPC++ Compatibility Tool.
 echo.
 
