@@ -458,7 +458,7 @@ static std::string processArgOfCmakeVersionRequired(
 }
 
 static bool skipCmakeComments(const std::string &Input, size_t &Index) {
-  const int Size = Input.size();
+  const size_t Size = Input.size();
   bool CommentFound = false;
   if (Input[Index] == '#') {
     CommentFound = true;
