@@ -338,19 +338,19 @@ inline bool is_dev_ptr(void *p) {
 
 inline void get_val_from_addr(std::string &dump_json,
                               std::shared_ptr<Schema> schema, void *addr) {
-  void *h_addr = addr;
+  void *host_addr = addr;
   size_t mem_size = get_var_size(schema, addr);
   if (is_dev_ptr(addr)) {
-    h_addr = malloc(mem_size);
-    copy_mem_to_device(h_addr, addr, mem_size);
+    host_addr = malloc(mem_size);
+    copy_mem_to_device(host_addr, addr, mem_size);
   }
   if (schema->is_basic_type()) {
     dump_json += "\"" + schema->get_var_name() + "\":\"";
     std::string hex_str = "";
-    get_data_as_hex(h_addr, mem_size, hex_str);
+    get_data_as_hex(host_addr, mem_size, hex_str);
     dump_json += hex_str + "\",";
     if (is_dev_ptr(addr))
-      free(h_addr);
+      free(host_addr);
     return;
   }
   std::shared_ptr<Schema> type_schema = schema_map[schema->get_type_name()];
@@ -361,7 +361,7 @@ inline void get_val_from_addr(std::string &dump_json,
     std::vector<std::shared_ptr<Schema>> type_members =
         type_schema->get_type_member();
     dump_json += "\"" + schema->get_var_name() + "\":{";
-    char *addr_begin = (char *)h_addr  + i * type_schema->get_type_size();
+    char *addr_begin = (char *)host_addr  + i * type_schema->get_type_size();
     for (auto member : type_members) {
       dump_json += "\"" + member->get_var_name() + "\":\"";
       std::string hex_str = "";
@@ -379,7 +379,7 @@ inline void get_val_from_addr(std::string &dump_json,
     dump_json += "},";
   }
   if (is_dev_ptr(addr))
-    free(h_addr);
+    free(host_addr);
 }
 
 inline static std::map<std::string, int> api_index;
