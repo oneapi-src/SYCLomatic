@@ -48,59 +48,8 @@ namespace dpct {
 ///// global variable definition /////
 std::vector<std::pair<HeaderType, std::string>> HeaderSpellings;
 static const std::string RegexPrefix = "{{NEEDREPLACE", RegexSuffix = "}}";
-
-<<<<<<< HEAD
-std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
-    DeviceFunctionDecl::FuncInfoMap;
-CudaArchPPMap DpctGlobalInfo::CAPPInfoMap;
-HDFuncInfoMap DpctGlobalInfo::HostDeviceFuncInfoMap;
-// __CUDA_ARCH__ Offset -> defined(...) Offset
-CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
-std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
-    DpctGlobalInfo::CudaArchMacroRepl;
-std::unordered_map<clang::tooling::UnifiedPath,
-                   std::pair<std::shared_ptr<ExtReplacements>,
-                             std::shared_ptr<ExtReplacements>>>
-    DpctGlobalInfo::FileReplCache;
-std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::ReProcessFile;
-std::unordered_map<std::string,
-                   std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>>
-    DpctGlobalInfo::SpellingLocToDFIsMapForAssumeNDRange;
-std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
-                   std::unordered_set<std::string>>
-    DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
-unsigned DpctGlobalInfo::ExtensionDEFlag = static_cast<unsigned>(-1);
-unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
-unsigned DpctGlobalInfo::ExperimentalFlag = 0;
-unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
-bool DpctGlobalInfo::AnalysisModeFlag = false;
-unsigned int DpctGlobalInfo::ColorOption = 1;
-std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
-    DpctGlobalInfo::CubPlaceholderIndexMap;
-std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
-    DpctGlobalInfo::PriorityReplInfoMap;
-std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
-std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
-std::unordered_map<std::string,
-                   std::unordered_map<clang::tooling::UnifiedPath, std::vector<unsigned>>>
-    DpctGlobalInfo::RnnInputMap;
-std::unordered_map<clang::tooling::UnifiedPath, std::vector<clang::tooling::UnifiedPath>>
-    DpctGlobalInfo::MainSourceFileMap;
-std::unordered_map<std::string, bool>
-    DpctGlobalInfo::MallocHostInfoMap;
-std::map<std::shared_ptr<TextModification>, bool>
-    DpctGlobalInfo::ConstantReplProcessedFlagMap;
-std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
 std::unordered_map<std::string, std::string>
     DpctGlobalInfo::SpecialReplForEAMap;
-std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
-/// This variable saved the info of previous migration from the
-/// MainSourceFiles.yaml file. This variable is valid after
-/// canContinueMigration() is called.
-std::shared_ptr<clang::tooling::TranslationUnitReplacements>
-    DpctGlobalInfo::MainSourceYamlTUR =
-        std::make_shared<clang::tooling::TranslationUnitReplacements>();
-=======
 ///// global function definition /////
 void initHeaderSpellings() {
   HeaderSpellings = {
@@ -140,7 +89,6 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
                                                    int Index) {
   if (HFT == HelperFuncType::HFT_DefaultQueue ||
       HFT == HelperFuncType::HFT_CurrentDevice) {
->>>>>>> SYCLomatic
 
     if (DpctGlobalInfo::getDeviceChangedFlag() ||
         !DpctGlobalInfo::getUsingDRYPattern()) {

@@ -1321,18 +1321,13 @@ public:
   }
   static bool isNeedParenAPI(const std::string &Name) {
     return NeedParenAPISet.count(Name);
-<<<<<<< HEAD
-  };
+  }
   static inline std::unordered_map<std::string, std::string> &
   getSpecialReplForEAMap() {
     return SpecialReplForEAMap;
-  };
-=======
   }
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
-
->>>>>>> SYCLomatic
   static std::string SchemaFileContentCUDA;
   static std::string SchemaFileContentSYCL;
 
