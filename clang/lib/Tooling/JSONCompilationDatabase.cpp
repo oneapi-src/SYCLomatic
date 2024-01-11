@@ -394,11 +394,6 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
           ErrorMessage = "Expected sequence as value.";
           return false;
         }
-#ifdef SYCLomatic_CUSTOMIZATION
-        ErrorMessage =
-          ("Unknown key: \"" + KeyString->getRawValue() + "\"").str();
-        return false;
-#else
         Command = std::vector<llvm::yaml::ScalarNode *>();
         for (auto &Argument : *SequenceString) {
           auto *Scalar = dyn_cast<llvm::yaml::ScalarNode>(&Argument);
@@ -408,7 +403,6 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
           }
           Command->push_back(Scalar);
         }
-#endif // SYCLomatic_CUSTOMIZATION
       } else {
         if (!ValueString) {
           ErrorMessage = "Expected string as value.";
@@ -425,10 +419,8 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
 #endif // SYCLomatic_CUSTOMIZATION
         } else if (KeyValue == "file") {
           File = ValueString;
-#ifndef SYCLomatic_CUSTOMIZATION
         } else if (KeyValue == "output") {
           Output = ValueString;
-#endif // SYCLomatic_CUSTOMIZATION
         } else {
           ErrorMessage =
               ("Unknown key: \"" + KeyString->getRawValue() + "\"").str();
