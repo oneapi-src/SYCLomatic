@@ -158,7 +158,7 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
 
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
                      const clang::tooling::UnifiedPath &FullPathName) {
-  std::string FilePath;
+  std::string FilePath = FileName.getPath().str();
   rewriteFileName(FilePath, FullPathName.getPath().str());
   FileName = FilePath;
 }
@@ -171,16 +171,26 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
   // SPT_CudaSource, SPT_CppSource and SPT_CudaHeader files.
   if (DpctGlobalInfo::getChangeExtensions().empty() ||
       DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
-    if (FileType & SPT_CudaSource)
+    if (FileType & SPT_CudaSource) {
       path::replace_extension(CanonicalPathStr,
                               DpctGlobalInfo::getSYCLSourceExtension());
-    else if (FileType & SPT_CppSource)
-      path::replace_extension(CanonicalPathStr,
-                              Extension +
-                                  DpctGlobalInfo::getSYCLSourceExtension());
-    else if (FileType & SPT_CudaHeader)
+    } else if (FileType & SPT_CppSource) {
+      if (Extension == ".c") {
+        auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FileName);
+        if (FileInfo->hasCUDASyntax()) {
+          path::replace_extension(CanonicalPathStr,
+                                  Extension +
+                                      DpctGlobalInfo::getSYCLSourceExtension());
+        }
+      } else {
+        path::replace_extension(CanonicalPathStr,
+                                Extension +
+                                    DpctGlobalInfo::getSYCLSourceExtension());
+      }
+    } else if (FileType & SPT_CudaHeader) {
       path::replace_extension(CanonicalPathStr,
                               DpctGlobalInfo::getSYCLHeaderExtension());
+    }
   }
   FileName = CanonicalPathStr.c_str();
 }
