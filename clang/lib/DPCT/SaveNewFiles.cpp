@@ -158,7 +158,13 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
 
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
                      const clang::tooling::UnifiedPath &FullPathName) {
-  SmallString<512> CanonicalPathStr(StringRef(FileName.getCanonicalPath()));
+  std::string FilePath = FileName.getPath().str();
+  rewriteFileName(FilePath, FullPathName.getPath().str());
+  FileName = FilePath;
+}
+
+void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
+  SmallString<512> CanonicalPathStr(FullPathName);
   const auto Extension = path::extension(CanonicalPathStr);
   SourceProcessType FileType = GetSourceFileType(FullPathName);
   // If user does not specify which extension need be changed, we change all the
@@ -186,7 +192,7 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName,
                               DpctGlobalInfo::getSYCLHeaderExtension());
     }
   }
-  FileName = CanonicalPathStr;
+  FileName = CanonicalPathStr.c_str();
 }
 
 static std::vector<std::string> FilesNotInCompilationDB;
