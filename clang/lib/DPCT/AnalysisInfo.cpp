@@ -1851,72 +1851,6 @@ void DpctGlobalInfo::processCudaArchMacro() {
   }
 }
 
-void DpctGlobalInfo::postProcess() {
-  auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
-  bool isFirstPass = !DpctGlobalInfo::getRunRound();
-  processCudaArchMacro();
-  for (auto &Element : HostDeviceFuncInfoMap) {
-    auto &Info = Element.second;
-    if (Info.isDefInserted) {
-      Info.needGenerateHostCode = true;
-      if (Info.PostFixId == -1) {
-        Info.PostFixId = HostDeviceFuncInfo::MaxId++;
-      }
-      for (auto &E : Info.LocInfos) {
-        auto &LocInfo = E.second;
-        if (isFirstPass) {
-          auto &MSFiles = MSMap[LocInfo.FilePath];
-          for (auto &File : MSFiles) {
-            ReProcessFile.emplace(File);
-          }
-        }
-        if (LocInfo.Type == HDFuncInfoType::HDFI_Call &&
-          !LocInfo.Processed) {
-          if(LocInfo.CalledByHostDeviceFunction && isFirstPass) {
-            LocInfo.Processed = true;
-            continue;
-          }
-          LocInfo.Processed = true;
-          auto R = std::make_shared<ExtReplacement>(
-              LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
-              "_host_ct" + std::to_string(Info.PostFixId), nullptr);
-          addReplacement(R);
-        }
-      }
-    }
-  }
-  if (!ReProcessFile.empty() && isFirstPass) {
-    DpctGlobalInfo::setNeedRunAgain(true);
-  }
-  for (auto &File : FileMap) {
-    auto &S = File.second->getConstantMacroTMSet();
-    auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
-    for (auto &E : S) {
-      if (!Map[E]) {
-        addReplacement(E->getReplacement(DpctGlobalInfo::getContext()));
-      }
-    }
-    File.second->postProcess();
-  }
-
-  if (!isFirstPass) {
-    for (auto &Element : HostDeviceFuncInfoMap) {
-      auto &Info = Element.second;
-      if (Info.needGenerateHostCode) {
-        for (auto &E : Info.LocInfos) {
-          auto &LocInfo = E.second;
-          if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
-            continue;
-          }
-          auto &ReplLists =
-              FileMap[LocInfo.FilePath]->getReplsSYCL()->getReplMap();
-          generateHostCode(ReplLists, LocInfo, Info.PostFixId);
-        }
-      }
-    }
-  }
-}
-
 void DpctGlobalInfo::generateHostCode(
     std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
         &ProcessedReplList,
@@ -1960,7 +1894,7 @@ void DpctGlobalInfo::postProcess() {
   processCudaArchMacro();
   for (auto &Element : HostDeviceFuncInfoMap) {
     auto &Info = Element.second;
-    if (Info.isCalledInHost && Info.isDefInserted) {
+    if (Info.isDefInserted) {
       Info.needGenerateHostCode = true;
       if (Info.PostFixId == -1) {
         Info.PostFixId = HostDeviceFuncInfo::MaxId++;
