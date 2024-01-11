@@ -567,8 +567,8 @@ int runDPCT(int argc, const char **argv) {
 
   // Set handle for libclangTooling to process message for dpct
   clang::tooling::SetPrintHandle(PrintMsg);
-  clang::tooling::SetFileSetInCompiationDB(
-      dpct::DpctGlobalInfo::getFileSetInCompiationDB());
+  clang::tooling::SetFileSetInCompilationDB(
+      dpct::DpctGlobalInfo::getFileSetInCompilationDB());
 
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;

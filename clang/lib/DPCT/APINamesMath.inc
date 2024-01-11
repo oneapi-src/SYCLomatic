@@ -108,7 +108,7 @@ ENTRY_RENAMED_SINGLE("tanhf", MapNames::getClNamespace(false, true) + "tanh")
 ENTRY_RENAMED_SINGLE("tgammaf", MapNames::getClNamespace(false, true) + "tgamma")
 ENTRY_RENAMED_SINGLE("truncf", MapNames::getClNamespace(false, true) + "trunc")
 
-// Single precision intrinisics
+// Single precision intrinsics
 ENTRY_RENAMED_SINGLE("__cosf", MapNames::getClNamespace(false, true) + "cos")
 ENTRY_RENAMED_SINGLE("__exp10f", MapNames::getClNamespace(false, true) + "exp10")
 ENTRY_REWRITE("__expf")
@@ -185,7 +185,7 @@ ENTRY_RENAMED_DOUBLE("tanh", MapNames::getClNamespace(false, true) + "tanh")
 ENTRY_RENAMED_DOUBLE("tgamma", MapNames::getClNamespace(false, true) + "tgamma")
 ENTRY_RENAMED_DOUBLE("trunc", MapNames::getClNamespace(false, true) + "trunc")
 
-// Double precision intrinisics
+// Double precision intrinsics
 ENTRY_RENAMED_DOUBLE("__dsqrt_rd", MapNames::getClNamespace(false, true) + "sqrt")
 ENTRY_RENAMED_DOUBLE("__dsqrt_rn", MapNames::getClNamespace(false, true) + "sqrt")
 ENTRY_RENAMED_DOUBLE("__dsqrt_ru", MapNames::getClNamespace(false, true) + "sqrt")
@@ -336,7 +336,7 @@ ENTRY_OPERATOR("__fdiv_rz", BinaryOperatorKind::BO_Div)
 ENTRY_OPERATOR("fdividef",  BinaryOperatorKind::BO_Div)
 ENTRY_OPERATOR("__fdividef", BinaryOperatorKind::BO_Div)
 
-// Double precision intrinisics
+// Double precision intrinsics
 ENTRY_REWRITE("__dadd_rd")
 ENTRY_REWRITE("__dadd_rn")
 ENTRY_REWRITE("__dadd_ru")
