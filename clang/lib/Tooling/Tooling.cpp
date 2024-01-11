@@ -74,7 +74,7 @@ namespace clang {
 namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
-static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
+static std::set<std::string> *FileSetInCompilationDBPtr = nullptr;
 static std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
     *CompileTargetsMapPtr = nullptr;
 static StringRef InRoot;
@@ -90,8 +90,8 @@ void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
 }
 
-void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
-  FileSetInCompiationDBPtr = &FileSetInCompiationDB;
+void SetFileSetInCompilationDB(std::set<std::string> &FileSetInCompilationDB) {
+  FileSetInCompilationDBPtr = &FileSetInCompilationDB;
 }
 
 void SetCompileTargetsMap(
@@ -107,8 +107,8 @@ void SetFileProcessHandle(StringRef In, StringRef Out, FileProcessType Handle) {
 }
 
 void CollectFileFromDB(std::string FileName) {
-  if (FileSetInCompiationDBPtr != nullptr) {
-    (*FileSetInCompiationDBPtr).insert(FileName);
+  if (FileSetInCompilationDBPtr != nullptr) {
+    (*FileSetInCompilationDBPtr).insert(FileName);
   }
 }
 
