@@ -2219,7 +2219,7 @@ void DpctGlobalInfo::resetInfo() {
   CurrentMaxIndex = 0;
   CurrentIndexInRule = 0;
   IncludingFileSet.clear();
-  FileSetInCompiationDB.clear();
+  FileSetInCompilationDB.clear();
   GlobalVarNameSet.clear();
   HasFoundDeviceChanged = false;
   HelperFuncReplInfoMap.clear();
@@ -2383,7 +2383,7 @@ int DpctGlobalInfo::CurrentMaxIndex = 0;
 int DpctGlobalInfo::CurrentIndexInRule = 0;
 std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::IncludingFileSet;
 int DpctGlobalInfo::VarSchemaIndex = 0;
-std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
+std::set<std::string> DpctGlobalInfo::FileSetInCompilationDB;
 std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
 clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
 bool DpctGlobalInfo::HasFoundDeviceChanged = false;
