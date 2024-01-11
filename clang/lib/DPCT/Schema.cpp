@@ -85,13 +85,13 @@ uint32_t getFieldTypeAlign(const FieldSchema &FS) {
   }
 }
 
-inline int ceilDevide(int num, int base) {
+inline int alignTool(int num, int base) {
   return ((num + base - 1) / base) * base;
 }
 
 int registerBaseClassTypeSchema(
     clang::CXXRecordDecl *RD, TypeSchema &TS,
-    std::function<TypeSchema(const clang::QualType &)> registerTypeSchemaFunc) {
+    TypeSchema (*registerTypeSchemaFunc)(const clang::QualType &)) {
   int BaseOffset = 0;
   if (RD == nullptr)
     return BaseOffset;
@@ -102,15 +102,12 @@ int registerBaseClassTypeSchema(
     if (BCD) {
       const auto &TsTmp = registerTypeSchemaFunc(base.getType());
       assert(TsTmp.TypeAlign != 0 && "The type alignment should not be 0.");
-      BaseOffset = ceilDevide(BaseOffset, TsTmp.TypeAlign);
+      BaseOffset = alignTool(BaseOffset, TsTmp.TypeAlign);
       for (auto mem : TsTmp.Members) {
         mem.Offset += BaseOffset;
         mem.FieldName = base.getType().getAsString() + "::" + mem.FieldName;
         TS.Members.emplace_back(mem);
-        if (registerTypeSchemaFunc
-                    .target<TypeSchema(const clang::QualType &)>() ==
-                &dpct::registerSYCLTypeSchema &&
-            TsTmp.TypeAlign > TS.TypeAlign)
+        if (TsTmp.TypeAlign > TS.TypeAlign)
           TS.TypeAlign = TsTmp.TypeAlign;
       }
       BaseOffset += TsTmp.TypeSize;
@@ -152,15 +149,15 @@ TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
     if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
       clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
       // visit base class
-      OffSet =registerBaseClassTypeSchema(RD, TS, registerSYCLTypeSchema);
+      OffSet = registerBaseClassTypeSchema(RD, TS, registerSYCLTypeSchema);
     }
-    
+
     for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
       auto FsTmp =
           convertCFieldSchemaToSFieldSChema(constructFieldSchema(field));
       // Update Field Offset
       int CurAlign = getFieldTypeAlign(FsTmp);
-      FsTmp.Offset = ceilDevide(OffSet, CurAlign);
+      FsTmp.Offset = alignTool(OffSet, CurAlign);
       OffSet = FsTmp.Offset + FsTmp.ValSize;
       TS.Members.push_back(FsTmp);
       TS.TypeAlign = std::max(TS.TypeAlign, CurAlign);
@@ -169,8 +166,8 @@ TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
     TS.TypeSize =
         TS.FieldNum == 0
             ? 0
-            : ceilDevide((TS.Members.back().Offset + TS.Members.back().ValSize),
-                         TS.TypeAlign);
+            : alignTool((TS.Members.back().Offset + TS.Members.back().ValSize),
+                        TS.TypeAlign);
   }
   STypeSchemaMap[KeyStr] = TS;
   return TS;
@@ -192,7 +189,7 @@ TypeSchema dpct::registerCUDATypeSchema(const clang::QualType &QT) {
     if (isa<clang::CXXRecordDecl>(RT->getDecl())) {
       clang::CXXRecordDecl *RD = RT->getAsCXXRecordDecl();
       // visit base class
-      registerBaseClassTypeSchema(RD, TS,registerCUDATypeSchema);
+      registerBaseClassTypeSchema(RD, TS, registerCUDATypeSchema);
     }
     for (const clang::FieldDecl *field : RT->getDecl()->fields()) {
       TS.Members.push_back(constructFieldSchema(field));
