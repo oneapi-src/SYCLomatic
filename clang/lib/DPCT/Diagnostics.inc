@@ -23,6 +23,12 @@
 #ifndef LOW_LEVEL
 #define LOW_LEVEL
 #endif
+#ifndef DEF_WARNING
+#define DEF_WARNING(NAME, ID, LEVEL, MESSAGE)
+#endif
+#ifndef DEF_COMMENT
+#define DEF_COMMENT(NAME, ID, LEVEL, MESSAGE)
+#endif
 
 DEF_WARNING(ATOMIC_OPTIMIZATION, 1116, LOW_LEVEL, "The %0 was migrated to %1 for performance, and %2 is computed by (UINT_MAX + 1) / ('%3' + 1). This migration requires the initial value of '%4' to be scaled by multiplying %2, and any usage of value of '%4' outside atomic function to be scaled by dividing %2.")
 DEF_COMMENT(ATOMIC_OPTIMIZATION, 1116, LOW_LEVEL, "The {0} was migrated to {1} for performance, and {2} is computed by (UINT_MAX + 1) / ('{3}' + 1). This migration requires the initial value of '{4}' to be scaled by multiplying {2}, and any usage of value of '{4}' outside atomic function to be scaled by dividing {2}.")
@@ -267,3 +273,9 @@ DEF_COMMENT(TRY_EXPERIMENTAL_FEATURE, 1119, MEDIUM_LEVEL, "Migration of {0} is n
 DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed into device functions as extra arguments. As here %0 is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
 DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as extra arguments. As here {0} is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
 // clang-format on
+
+#undef DEF_COMMENT
+#undef DEF_WARNING
+#undef LOW_LEVEL
+#undef MEDIUM_LEVEL
+#undef HIGH_LEVEL

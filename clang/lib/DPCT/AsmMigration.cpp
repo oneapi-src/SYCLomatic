@@ -1575,7 +1575,7 @@ protected:
     if (Inst->hasAttr(InstAttr::sat))
       OS() << "_sat";
     if (Inst->is(asmtok::op_vshl, asmtok::op_vshr))
-      OS() << (Inst->hasAttr(InstAttr::clamp) ? "_clamp" : "_mask31");
+      OS() << (Inst->hasAttr(InstAttr::clamp) ? "_clamp" : "_wrap");
     OS() << "<";
     if (emitType(Inst->getType(0)))
       return SYCLGenError();
