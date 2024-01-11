@@ -654,7 +654,7 @@ void DpctGlobalInfo::postProcess() {
   processCudaArchMacro();
   for (auto &Element : HostDeviceFuncInfoMap) {
     auto &Info = Element.second;
-    if (Info.isCalledInHost && Info.isDefInserted) {
+    if (Info.isDefInserted) {
       Info.needGenerateHostCode = true;
       if (Info.PostFixId == -1) {
         Info.PostFixId = HostDeviceFuncInfo::MaxId++;

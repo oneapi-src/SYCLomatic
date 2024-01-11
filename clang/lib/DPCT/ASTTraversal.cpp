@@ -14798,7 +14798,6 @@ void CudaArchMacroRule::runRule(
       HDFIMap[ManglingName].LocInfos.insert(
           {HDFLI.FilePath.getCanonicalPath().str() + "Call" + std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
-      HDFIMap[ManglingName].isCalledInHost = true;
     }
   }
 }
