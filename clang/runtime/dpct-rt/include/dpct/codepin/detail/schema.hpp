@@ -361,7 +361,7 @@ inline void get_val_from_addr(std::string &dump_json,
     std::vector<std::shared_ptr<Schema>> type_members =
         type_schema->get_type_member();
     dump_json += "\"" + schema->get_var_name() + "\":{";
-    char *addr_begin = (char *)host_addr  + i * type_schema->get_type_size();
+    char *addr_begin = (char *)host_addr + i * type_schema->get_type_size();
     for (auto member : type_members) {
       dump_json += "\"" + member->get_var_name() + "\":\"";
       std::string hex_str = "";
