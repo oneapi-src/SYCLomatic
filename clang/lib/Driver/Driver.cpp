@@ -8266,8 +8266,15 @@ void Driver::BuildJobs(Compilation &C) const {
           Diag(diag::err_drv_unsupported_opt_for_target)
               << A->getSpelling() << getTargetTriple();
         } else {
+#ifdef SYCLomatic_CUSTOMIZATION
+          if (!A->getOption().matches(
+                  options::OPT_fgpu_exclude_wrong_side_overloads)) {
+#endif // SYCLomatic_CUSTOMIZATION
           Diag(clang::diag::warn_drv_unused_argument)
               << A->getAsString(C.getArgs());
+#ifdef SYCLomatic_CUSTOMIZATION
+          }
+#endif // SYCLomatic_CUSTOMIZATION
         }
       }
     }
