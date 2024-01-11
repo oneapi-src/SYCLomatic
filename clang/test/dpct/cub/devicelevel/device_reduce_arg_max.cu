@@ -34,7 +34,7 @@ void test1() {
 // CHECK-NOT: size_t temp_storage_bytes = 0;
 // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceReduce::ArgMax was removed because this functionality is redundant in SYCL.
 // CHECK: dpct::reduce_argmax(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_out, num_items);
-// CHECK-NOT: sycl::free({{.*}})
+// CHECK-NOT: dpct::dpct_free({{.*}})
 // CHECK: }
 
 void test2() {
@@ -51,7 +51,7 @@ void test2() {
 // CHECK: DPCT1027:{{.*}}: The call to cub::DeviceReduce::ArgMax was replaced with 0 because this functionality is redundant in SYCL.
 // CHECK: auto res = 0;
 // CHECK: dpct::reduce_argmax(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_out, num_items);
-// CHECK-NOT: sycl::free({{.*}})
+// CHECK-NOT: dpct::dpct_free({{.*}})
 // CHECK: }
 
 void test3() {
@@ -73,7 +73,7 @@ void test3() {
 // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceReduce::ArgMax was removed because this functionality is redundant in SYCL.
 // CHECK: dpct::reduce_argmax(oneapi::dpl::execution::device_policy(*s), d_in, d_out, num_items);
 // CHECK: dev_ct1.destroy_queue(s);
-// CHECK-NOT: sycl::free({{.*}})
+// CHECK-NOT: dpct::dpct_free({{.*}})
 // CHECK: }
 
 int main() {

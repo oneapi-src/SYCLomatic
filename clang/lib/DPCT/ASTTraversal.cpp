@@ -193,9 +193,13 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
       }
       return false;
     }
-    if (MacroName == "__CUDACC__" &&
-        !MacroNameTok.getIdentifierInfo()->hasMacroDefinition())
-      return false;
+    if (MacroName == "__CUDACC__") {
+      if (MacroNameTok.getIdentifierInfo()->hasMacroDefinition()) {
+        Repl->setSYCLHeaderNeeded(false);
+      } else {
+        return false;
+      }
+    }
     if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
       auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
       DpctGlobalInfo::getInstance()
@@ -10654,9 +10658,23 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       std::ostringstream Repl;
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
       if (hasManagedAttr(0)(C)) {
-          ArgStr = "*(" + ArgStr + ".get_ptr())";
+        ArgStr = "*(" + ArgStr + ".get_ptr())";
       }
-      Repl << MapNames::getClNamespace() + "free(" << ArgStr
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto Indent = getIndent(SM.getExpansionLoc(C->getBeginLoc()), SM).str();
+      if (DpctGlobalInfo::isOptimizeMigration()) {
+        Repl << MapNames::getClNamespace() << "free";
+      } else {
+        if (DpctGlobalInfo::useNoQueueDevice()) {
+          Repl << Indent << "{{NEEDREPLACEQ" << std::to_string(Index)
+               << "}}.wait_and_throw();\n"
+               << Indent << MapNames::getClNamespace() << "free";
+        } else {
+          requestFeature(HelperFeatureEnum::device_ext);
+          Repl << MapNames::getDpctNamespace() << "dpct_free";
+        }
+      }
+      Repl << "(" << ArgStr
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
@@ -10687,7 +10705,9 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
           new ReplaceStmt(C, MapNames::getClNamespace() +
                                  "ext::oneapi::experimental::free_image_mem(" +
                                  ExprAnalysis::ref(C->getArg(0)) +
-                                 "->get_handle(), {{NEEDREPLACEQ" +
+                                 "->get_handle(), "
+                                 "sycl::ext::oneapi::experimental::image_type::"
+                                 "standard, {{NEEDREPLACEQ" +
                                  std::to_string(Index) + "}})"));
     }
     ExprAnalysis EA(C->getArg(0));
@@ -11832,10 +11852,11 @@ void CMemoryAPIRule::runRule(const MatchFinder::MatchResult &Result) {
   auto ICE = getNodeAsType<ImplicitCastExpr>(Result, "implicitCast");
   if (!ICE)
     return;
-
-  emplaceTransformation(new InsertText(
+  auto Repl = new InsertText(
       ICE->getBeginLoc(),
-      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")"));
+      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")");
+  Repl->setSYCLHeaderNeeded(false);
+  emplaceTransformation(Repl);
 }
 
 REGISTER_RULE(CMemoryAPIRule, PassKind::PK_Migration)
