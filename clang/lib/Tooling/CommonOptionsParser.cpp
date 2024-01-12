@@ -444,10 +444,12 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
         std::move(Adjuster),
         getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
     DefineCUDAVerMajorMinor = true;
-    std::string NVCCDefine = std::string("-D") + "__NVCC__";
     Adjuster = combineAdjusters(
         std::move(Adjuster),
-        getInsertArgumentAdjuster(NVCCDefine.c_str(),
+        getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
                                   ArgumentInsertPosition::BEGIN));
   }
 #endif // SYCLomatic_CUSTOMIZATION

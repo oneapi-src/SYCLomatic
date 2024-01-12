@@ -901,6 +901,10 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster(CUDAVerMinor.c_str(),
                                       ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
+                                      ArgumentInsertPosition::BEGIN));
       }
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
@@ -924,6 +928,10 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster(CUDAVerMinor.c_str(),
+                                      ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
                                       ArgumentInsertPosition::BEGIN));
       }
 #endif
