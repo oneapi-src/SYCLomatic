@@ -8869,7 +8869,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
   auto Decl = getAssistNodeAsType<VarDecl>(Result, "decl");
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
-  if (DpctGlobalInfo::isOptimizeMigration() &&
+  if (Decl && DpctGlobalInfo::isOptimizeMigration() &&
       Decl->hasAttr<CUDAConstantAttr>()) {
     auto &VarUsedBySymbolAPISet =
         DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
