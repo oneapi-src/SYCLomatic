@@ -10,7 +10,7 @@
 
 /*************************How to add a new typeschema************************
 *
-STypeSchemaMap[TypeName] = TypeSchema(TypeName, FieldNumInType, TypeAlignNum, 
+STypeSchemaMap[TypeName] = TypeSchema(TypeName, FieldNumInType, TypeAlignNum,
                                       TypeSizeInByte, IsVirtual, FilePath,
                                       std::vector<FieldSchema>)
 
@@ -21,7 +21,7 @@ How to construct a FieldSchema:
 FieldSchema(MemberVarName, ValTypeOfMemberVar, TypeOfMemberVar, IsBasicType,
             SizeOfMemberVar, SizeOfVarType, OffsetOfMemberVar, "None")
 
-ValTypeOfMemberVar : ValType::{ScalarValue, ArrayValue, 
+ValTypeOfMemberVar : ValType::{ScalarValue, ArrayValue,
                                Pointer, PointerOfPointer}
 
 IsBasicType : true/false
