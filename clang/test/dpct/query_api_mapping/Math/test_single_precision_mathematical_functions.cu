@@ -318,7 +318,7 @@
 // MODFF: CUDA API:
 // MODFF-NEXT:   modff(f /*float*/, pf /*float **/);
 // MODFF-NEXT: Is migrated to:
-// MODFF-NEXT:   sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(pf));
+// MODFF-NEXT:   sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pf));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=nanf | FileCheck %s -check-prefix=NANF
 // NANF: CUDA API:

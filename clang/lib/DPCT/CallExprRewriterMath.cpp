@@ -585,19 +585,11 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace(false, true) + "modf(" << MigratedArg0;
 
-    clang::QualType Arg1Type =
-        Call->getArg(1)->IgnoreImpCasts()->getType().getCanonicalType();
-    Arg1Type.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
-
     OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
        << MapNames::getClNamespace() +
               "access::address_space::" + getAddressSpace(Call, 1)
-       << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-       << ", " << ParamType.getAsString() << ">(";
-    if (Arg1Type->getPointeeType().getAsString() != ParamType.getAsString())
-      OS << "(" << ParamType.getAsString() << " *)";
-
-    OS << MigratedArg1 << "))";
+       << ", " << MapNames::getClNamespace() + "access::decorated::yes>("
+       << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {
