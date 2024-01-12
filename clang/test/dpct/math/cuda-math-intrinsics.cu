@@ -1971,7 +1971,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: */
   d = erfcinv(d);
 #endif
-  // CHECK: d = sycl::exp(d*d)*sycl::erfc(d);
+  // CHECK: d = sycl::exp(d * d) * sycl::erfc(d);
   d = erfcx(d);
 #ifndef BUILD_TEST
   // CHECK: /*
@@ -2133,13 +2133,13 @@ __global__ void testSimulation() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospif call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
+  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&d));
+  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&d));
   sincospi(d, &d, &d);
 }
 
@@ -3009,7 +3009,7 @@ __global__ void k2() {
   long long ll, ll2;
   unsigned long long ull, ull2;
 
-  // CHECK: sycl::exp(d0*d0)*sycl::erfc(d0);
+  // CHECK: sycl::exp(d0 * d0) * sycl::erfc(d0);
   erfcx(d0);
   // CHECK: sycl::exp(f0*f0)*sycl::erfc(f0);
   erfcxf(f0);

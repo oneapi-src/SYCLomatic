@@ -5021,6 +5021,19 @@ MATH_API_REWRITER_DEVICE(
                 Diagnostics::MATH_EMULATION, std::string("rnormf"),
                 MapNames::getDpctNamespace() + "length"))))
 
+WARNING_FACTORY_ENTRY(
+    "sincospif",
+    MULTI_STMTS_FACTORY_ENTRY(
+        "sincospif", false, true, false, false,
+        BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),
+           CALL(MapNames::getClNamespace() + "sincos",
+                BO(BinaryOperatorKind::BO_Mul,
+                   CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
+                   makeLiteral("DPCT_PI_F")),
+                makeArgWithAddressSpaceCast(2)))),
+    Diagnostics::MATH_EMULATION, std::string("sincospif"),
+    MapNames::getClNamespace() + std::string("sincos"))
+
 MATH_API_REWRITER_DEVICE(
     "y0f",
     MATH_API_DEVICE_NODES(
@@ -5044,6 +5057,10 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("y1f"), EMPTY_FACTORY_ENTRY("y1f")))
 
 // Double Precision Mathematical Functions
+CALL_FACTORY_ENTRY("cospi",
+                   CALL(MapNames::getClNamespace(false, true) + "cospi",
+                        CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))
+
 MATH_API_REWRITER_DEVICE(
     "cyl_bessel_i0",
     MATH_API_DEVICE_NODES(
@@ -5083,6 +5100,15 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getClNamespace() + "ext::intel::math::erfcinv",
                      CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("erfcinv"), EMPTY_FACTORY_ENTRY("erfcinv")))
+
+BINARY_OP_FACTORY_ENTRY("erfcx", BinaryOperatorKind::BO_Mul,
+                        CALL(MapNames::getClNamespace(false, true) + "exp",
+                             BO(BinaryOperatorKind::BO_Mul,
+                                CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
+                                CAST_IF_NOT_SAME(makeLiteral("double"),
+                                                 ARG(0)))),
+                        CALL(MapNames::getClNamespace(false, true) + "erfc",
+                             CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))
 
 MATH_API_REWRITER_DEVICE(
     "erfinv",
@@ -5255,6 +5281,23 @@ MATH_API_REWRITER_DEVICE(
             CALL(MapNames::getClNamespace(false, true) + "length",
                  CALL(MapNames::getClNamespace() + "double4", ARG(0), ARG(1),
                       ARG(2), ARG(3))))))
+
+WARNING_FACTORY_ENTRY(
+    "sincospi",
+    MULTI_STMTS_FACTORY_ENTRY(
+        "sincospi", false, true, false, false,
+        BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),
+           CALL(MapNames::getClNamespace() + "sincos",
+                BO(BinaryOperatorKind::BO_Mul,
+                   CAST_IF_NOT_SAME(getDerefedType(1), ARG(0)),
+                   makeLiteral("DPCT_PI")),
+                makeArgWithAddressSpaceCast(2)))),
+    Diagnostics::MATH_EMULATION, std::string("sincospi"),
+    MapNames::getClNamespace() + std::string("sincos"))
+
+CALL_FACTORY_ENTRY("sinpi",
+                   CALL(MapNames::getClNamespace(false, true) + "sinpi",
+                        CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))
 
 MATH_API_REWRITER_HOST_DEVICE(
     MATH_API_REWRITER_HOST(
@@ -7512,12 +7555,12 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
                   BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),          \
                      CALL(MapNames::getClNamespace() + "sincos",               \
                           CAST(makeLiteral(CastType), ARG_WC(0)),              \
-                          makeArgWithAddressSpaceCast(2, CastType)))),         \
+                          makeArgWithAddressSpaceCast(2)))),                   \
               MULTI_STMTS_FACTORY_ENTRY(                                       \
                   FuncName, false, true, false, false,                         \
                   BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),          \
                      CALL(MapNames::getClNamespace() + "sincos", ARG_WC(0),    \
-                          makeArgWithAddressSpaceCast(2, CastType)))))),       \
+                          makeArgWithAddressSpaceCast(2)))))),                 \
       MATH_API_REWRITER_DEVICE_WITH_PERF(                                      \
           FuncName, SinCosPerfPred(),                                          \
           WARNING_FACTORY_ENTRY(                                               \
@@ -7549,13 +7592,12 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
                       BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
                          CALL(MapNames::getClNamespace() + "sincos",           \
                               CAST(makeLiteral(CastType), ARG_WC(0)),          \
-                              makeArgWithAddressSpaceCast(2, CastType)))),     \
+                              makeArgWithAddressSpaceCast(2)))),               \
                   MULTI_STMTS_FACTORY_ENTRY(                                   \
                       FuncName, false, true, false, false,                     \
                       BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
                          CALL(MapNames::getClNamespace() + "sincos",           \
-                              ARG_WC(0),                                       \
-                              makeArgWithAddressSpaceCast(2, CastType))))),    \
+                              ARG_WC(0), makeArgWithAddressSpaceCast(2))))),   \
               EMPTY_FACTORY_ENTRY(FuncName), EMPTY_FACTORY_ENTRY(FuncName),    \
               EMPTY_FACTORY_ENTRY(FuncName))))
 
