@@ -10,8 +10,8 @@
 
 /*************************How to add a new typeschema************************
 *
-STypeSchemaMap[TypeName] = TypeSchema(TypeName, FieldNumInType, TypeAlignNum, 
-                                      TypeSizeInByte, IsVirtual, FilePath,
+STypeSchemaMap[TypeName] = TypeSchema(TypeName, FieldNum, TypeAlign,
+                                      TypeSize, IsVirtual, FilePath,
                                       std::vector<FieldSchema>)
 
 For SYCL, TypeSchema, IsVirtual always is false
@@ -35,17 +35,17 @@ using namespace clang;
 using namespace clang::dpct;
 void clang::dpct::setSTypeSchemaMap() {
   STypeSchemaMap["sycl::int2"] = TypeSchema(
-      "sycl::int2", 1, 4, 8, false, "sycl header path",
+      "sycl::int2", 1, 8, 8, false, "sycl header path",
       std::vector<FieldSchema>(1, FieldSchema("m_Data", ValType::ArrayValue,
                                               "int", true, 8, 4, 0, "None")));
   STypeSchemaMap["sycl::float3"] =
-      TypeSchema("sycl::float3", 1, 4, 16, false, "sycl header path",
+      TypeSchema("sycl::float3", 1, 16, 16, false, "sycl header path",
                  std::vector<FieldSchema>(
                      1, FieldSchema("m_Data", ValType::ArrayValue, "float",
                                     true, 12, 4, 0, "None")));
 
   STypeSchemaMap["sycl::int3"] = TypeSchema(
-      "sycl::int3", 1, 4, 16, false, "sycl header path",
+      "sycl::int3", 1, 16, 16, false, "sycl header path",
       std::vector<FieldSchema>(1, FieldSchema("m_Data", ValType::ArrayValue,
                                               "int", true, 12, 4, 0, "None")));
 }
