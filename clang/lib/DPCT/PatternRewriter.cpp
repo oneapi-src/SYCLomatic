@@ -6,6 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "AnalysisInfo.h"
+#include "Rules.h"
+#include "SaveNewFiles.h"
+#include "llvm/ADT/StringRef.h"
 #include <PatternRewriter.h>
 
 #include <optional>
@@ -15,6 +19,8 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+
+std::set<std::string> MainSrcFilesHasCudaSyntex;
 
 struct SpacingElement {};
 
@@ -388,6 +394,35 @@ static bool isIdentifiedChar(char Char) {
   return false;
 }
 
+static void
+updateExtentionName(const std::string &Input, size_t Next,
+                    std::unordered_map<std::string, std::string> &Bindings) {
+  auto Extension = clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
+  if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
+    size_t Pos = Next - 1;
+    for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
+    }
+    Pos = Pos == 0 ? 0 : Pos + 1;
+    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - 1 - Pos);
+
+    std::string SyclFileName;
+    rewriteFileName(SyclFileName, FileName);
+    bool HasCudaSyntax = false;
+    for (const auto &File : MainSrcFilesHasCudaSyntex) {
+      if (File.find(FileName) != std::string::npos) {
+        HasCudaSyntax = true;
+      }
+    }
+
+    if (HasCudaSyntax)
+      Bindings["rewrite_extention_name"] = "cpp" + Extension;
+    else
+      Bindings["rewrite_extention_name"] = "cpp";
+  } else {
+    Bindings["rewrite_extention_name"] = Extension.erase(0, 1);
+  }
+}
+
 static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
                                                 const std::string &Input,
                                                 const int Start) {
@@ -450,6 +485,11 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       const int Indentation = detectIndentation(Input, Index);
       std::string ElementContents =
           dedent(Input.substr(Index, Next - Index), Indentation);
+
+      if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
+        updateExtentionName(Input, Next, Result.Bindings);
+      }
+
       if (Result.Bindings.count(Code.Name)) {
         if (Result.Bindings[Code.Name] != ElementContents) {
           return {};
@@ -665,6 +705,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
               applyPatternRewriter(SubruleIterator->second, Value);
         }
       }
+
       const int Indentation = detectIndentation(Input, Index);
 
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);

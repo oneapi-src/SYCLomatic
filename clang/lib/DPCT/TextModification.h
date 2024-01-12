@@ -229,6 +229,7 @@ class InsertText : public TextModification {
   SourceLocation Begin;
   std::string T;
   unsigned PairID;
+  bool IsSYCLHeaderNeeded = true;
 
 public:
   InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0,
@@ -240,6 +241,7 @@ public:
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
+  void setSYCLHeaderNeeded(bool Flag) { IsSYCLHeaderNeeded = Flag; };
 };
 
 /// For macros and typedefs source location is unreliable (begin and end of the
@@ -249,6 +251,7 @@ class ReplaceToken : public TextModification {
   SourceLocation Begin;
   SourceLocation End;
   std::string T;
+  bool IsSYCLHeaderNeeded = true;
 
 public:
   ReplaceToken(SourceLocation Loc, std::string &&S)
@@ -259,6 +262,7 @@ public:
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
+  void setSYCLHeaderNeeded(bool Flag) { IsSYCLHeaderNeeded = Flag; };
 };
 
 /// Replace a statement (w/o semicolon) with a specified string.
