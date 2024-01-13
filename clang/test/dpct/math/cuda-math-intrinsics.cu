@@ -592,9 +592,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::rsqrt((double)i);
   d2 = rsqrt((double)i);
 
-  // CHECK: d1 = sycl::sincos(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
+  // CHECK: d1 = sycl::sincos(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d2));
   sincos(d0, &d1, &d2);
-  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
+  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d2));
   sincos(i, &d1, &d2);
 
   // CHECK: d2 = sycl::sin(d0);
@@ -1207,9 +1207,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::signbit((float)i);
   f2 = signbit(i);
 
-  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
+  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f2));
   sincosf(f0, &f1, &f2);
-  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
+  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f2));
   sincosf(i, &f1, &f2);
 
   // CHECK: f2 = sycl::sin(f0);
@@ -1510,9 +1510,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = dpct::pow(i, f1);
   f2 = __powf(i, f1);
 
-  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
+  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f2));
   __sincosf(f0, &f1, &f2);
-  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
+  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f2));
   __sincosf(i, &f1, &f2);
 
   // CHECK: f1 = sycl::sin(f1);
@@ -3308,7 +3308,7 @@ __device__ void bar1(double *d) {
   double &d2 = *d;
 
   // CHECK: DPCT1081:{{[0-9]+}}: The generated code assumes that "&d2" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
-  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
+  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d2));
   sincos(i, &d1, &d2);
 }
 
@@ -3319,16 +3319,16 @@ __device__ void bar1(double *d, bool flag) {
   double *d2_p;
   d2_p = &d2;
 
-  //CHECK:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
+  //CHECK:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(d2_p));
   //CHECK-NEXT:if (flag) {
   //CHECK-NEXT:  d2_p = d + 2;
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1081:{{[0-9]+}}: The generated code assumes that "d2_p" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(d2_p));
   //CHECK-NEXT:d2_p = &d2;
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(d2_p));
   sincos(i, &d1, d2_p);
   if (flag) {
     d2_p = d + 2;
