@@ -883,9 +883,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
       OS << "using namespace dpct;" << getNL();
     }
     if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_SYCL) &&
-        !DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_CL)) {
+            ExplicitNamespace::EN_SYCL)) {
       OS << "using namespace sycl;" << getNL();
     }
     if (DpctGlobalInfo::useNoQueueDevice()) {
@@ -1332,10 +1330,9 @@ void DpctGlobalInfo::setExplicitNamespace(
     // 1. Ensure option none is alone
     bool Check1 =
         (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
-    // 2. Ensure option cl, sycl, sycl-math only enabled one
+    // 2. Ensure option sycl, sycl-math only enabled one
     bool Check2 =
-        ((Namespace == ExplicitNamespace::EN_CL ||
-          Namespace == ExplicitNamespace::EN_SYCL ||
+        ((Namespace == ExplicitNamespace::EN_SYCL ||
           Namespace == ExplicitNamespace::EN_SYCL_Math) &&
          (ExplicitNamespaceSet.size() == 1 &&
           ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
