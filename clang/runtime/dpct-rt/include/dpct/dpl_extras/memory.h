@@ -221,17 +221,17 @@ public:
       : buffer(in.buffer), idx(in.idx) {}
   pointer get() const {
     auto res = (const_cast<device_pointer_base *>(this)
-                    ->buffer.template get_host_access())
+                    ->buffer.get_host_access())
                    .get_pointer();
     return res + idx;
   }
   operator ValueType *() {
-    auto res = (buffer.template get_host_access()).get_pointer();
+    auto res = (buffer.get_host_access()).get_pointer();
     return res + idx;
   }
   operator ValueType *() const {
     auto res = (const_cast<device_pointer_base *>(this)
-                    ->buffer.template get_host_access())
+                    ->buffer.get_host_access())
                    .get_pointer();
     return res + idx;
   }
@@ -533,7 +533,7 @@ public:
 
   reference operator*() const {
     return const_cast<device_iterator *>(this)
-        ->buffer.template get_host_access<mode>()[Base::idx];
+        ->buffer.get_host_access()[Base::idx];
   }
 
   reference operator[](difference_type i) const { return *(*this + i); }
