@@ -562,14 +562,14 @@ public:
   T *real_begin() {
     return (detail::mem_mgr::instance()
                 .translate_ptr(_storage)
-                .buffer.template get_host_access<sycl::access_mode::read_write>())
+                .buffer.get_host_access())
         .get_pointer();
   }
   const T *real_begin() const {
     return const_cast<device_vector *>(this)
         ->detail::mem_mgr::instance()
         .translate_ptr(_storage)
-        .buffer.template get_host_access<sycl::access_mode::read_write>()
+        .buffer.get_host_access()
         .get_pointer();
   }
   void swap(device_vector &v) {

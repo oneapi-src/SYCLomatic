@@ -220,22 +220,19 @@ public:
   device_pointer_base(const device_pointer_base &in)
       : buffer(in.buffer), idx(in.idx) {}
   pointer get() const {
-    auto res =
-        (const_cast<device_pointer_base *>(this)
-             ->buffer.template get_host_access<sycl::access_mode::read_write>())
-            .get_pointer();
-    return res + idx;
-  }
-  operator ValueType *() {
-    auto res = (buffer.template get_host_access<sycl::access_mode::read_write>())
+    auto res = (const_cast<device_pointer_base *>(this)
+                    ->buffer.template get_host_access())
                    .get_pointer();
     return res + idx;
   }
+  operator ValueType *() {
+    auto res = (buffer.template get_host_access()).get_pointer();
+    return res + idx;
+  }
   operator ValueType *() const {
-    auto res =
-        (const_cast<device_pointer_base *>(this)
-             ->buffer.template get_host_access<sycl::access_mode::read_write>())
-            .get_pointer();
+    auto res = (const_cast<device_pointer_base *>(this)
+                    ->buffer.template get_host_access())
+                   .get_pointer();
     return res + idx;
   }
   Derived operator+(difference_type forward) const {
