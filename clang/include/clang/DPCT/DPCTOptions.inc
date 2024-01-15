@@ -16,9 +16,12 @@
 
 #ifdef DPCT_OPTIONS_IN_CLANG_TOOLING
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), BuildPath, "compilation-database",
-           llvm::cl::desc("The directory path for the compilation database (compile_commands.json). When no\n"
-               "path is specified, a search for compile_commands.json is attempted through all\n"
-               "parent directories of the first input source file. Same as -p."),
+           llvm::cl::desc("The directory path for the compilation database (compile_commands.json) for the files to\n"
+                          "be migrated. Paths and build options described in the project file are used to guide the\n"
+                          "migration.\n"
+                          "When no path is specified, a search for compile_commands.json is attempted through all\n"
+                          "parent directories of the first input source file.\n"
+                          "Same as -p."),
            llvm::cl::value_desc("dir"), llvm::cl::cat(Category),
            llvm::cl::Optional, llvm::cl::sub(*llvm::cl::AllSubCommands))
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::alias), BuildPathAlias, "p",
@@ -33,7 +36,9 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ArgsAfte
            llvm::cl::CommaSeparated)
 #ifdef _WIN32
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), VcxprojFile, "vcxprojfile",
-           llvm::cl::desc("The file path of vcxproj."),
+           llvm::cl::desc("The directory path for the C++ project file (.vcxproj) of the Visual Studio project to\n"
+                          "migrate. Paths and build options described in the project file are used to guide the\n"
+                          "migration."),
            llvm::cl::value_desc("file"), llvm::cl::cat(Category),
            llvm::cl::Optional, llvm::cl::sub(*llvm::cl::AllSubCommands))
 #endif
