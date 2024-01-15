@@ -1916,12 +1916,11 @@ void DpctGlobalInfo::postProcess() {
           auto R = std::make_shared<ExtReplacement>(
               LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
               "_host_ct" + std::to_string(Info.PostFixId), nullptr);
-        if (isFirstPass) {
           addReplacement(R);
-        } else {{
-          auto &FileReplCache = DpctGlobalInfo::getFileReplCache();
-          FileReplCache[R->getFilePath().str()].second->addReplacement(R);}
-        }
+          if (!isFirstPass) {
+            auto &FileReplCache = DpctGlobalInfo::getFileReplCache();
+            FileReplCache[R->getFilePath().str()].second->addReplacement(R);
+          }
         }
       }
     }
