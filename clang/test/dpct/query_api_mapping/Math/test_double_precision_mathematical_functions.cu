@@ -426,7 +426,7 @@
 // SINCOS: CUDA API:
 // SINCOS-NEXT:   sincos(d /*double*/, pd1 /*double **/, pd2 /*double **/);
 // SINCOS-NEXT: Is migrated to:
-// SINCOS-NEXT:   *pd1 = sycl::sincos(d, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(pd2));
+// SINCOS-NEXT:   *pd1 = sycl::sincos(d, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pd2));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sincospi | FileCheck %s -check-prefix=SINCOSPI
 // SINCOSPI: CUDA API:
