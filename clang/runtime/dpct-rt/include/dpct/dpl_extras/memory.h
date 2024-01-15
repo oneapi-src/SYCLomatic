@@ -220,9 +220,9 @@ public:
   device_pointer_base(const device_pointer_base &in)
       : buffer(in.buffer), idx(in.idx) {}
   pointer get() const {
-    auto res = (const_cast<device_pointer_base *>(this)
-                    ->buffer.get_host_access())
-                   .get_pointer();
+    auto res =
+        (const_cast<device_pointer_base *>(this)->buffer.get_host_access())
+            .get_pointer();
     return res + idx;
   }
   operator ValueType *() {
@@ -230,9 +230,9 @@ public:
     return res + idx;
   }
   operator ValueType *() const {
-    auto res = (const_cast<device_pointer_base *>(this)
-                    ->buffer.get_host_access())
-                   .get_pointer();
+    auto res =
+        (const_cast<device_pointer_base *>(this)->buffer.get_host_access())
+            .get_pointer();
     return res + idx;
   }
   Derived operator+(difference_type forward) const {
