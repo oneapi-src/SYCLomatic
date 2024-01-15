@@ -609,8 +609,8 @@ makeArgWithAddressSpaceCast(int ArgIdx, std::string Type) {
         MapNames::getClNamespace() + "address_space_cast<" +
         MapNames::getClNamespace() +
         "access::address_space::" + getAddressSpace(C, ArgIdx) + ", " +
-        MapNames::getClNamespace() + "access::decorated::yes" + ", " +
-        Type + ">(" + EA.getReplacedString() + ")";
+        MapNames::getClNamespace() + "access::decorated::yes>(" +
+        EA.getReplacedString() + ")";
     return Result;
   };
 }
