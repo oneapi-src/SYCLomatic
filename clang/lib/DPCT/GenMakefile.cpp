@@ -474,11 +474,8 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
                                   "_FLAG_" + std::to_string(Idx);
         OS << buildString("$(", ObjStrName, "):$(", SrcStrName, ")\n");
 
-        // Use 'icpx -fsycl' to compile the migrated SYCL file.
-        std::string Compiler =
-            llvm::StringRef((Entry.second)[Idx].Compiler).ends_with("nvcc")
-                ? "$(CC) -fsycl"
-                : (Entry.second)[Idx].Compiler;
+        // Use 'icpx -fsycl' to compile all the migrated SYCL file.
+        std::string Compiler = "$(CC) -fsycl";
 
         OS << buildString("\t", Compiler, " -c ${", SrcStrName, "} -o ${",
                           ObjStrName, "} $(", FlagStrName, ")\n\n");
@@ -513,10 +510,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
                                   "_FLAG_" + std::to_string(Idx);
         OS << buildString("$(", ObjStrName, "):$(", SrcStrName, ")\n");
 
-        std::string Compiler =
-            llvm::StringRef((Entry.second)[Idx].Compiler).ends_with("nvcc")
-                ? "$(CC) -fsycl"
-                : (Entry.second)[Idx].Compiler;
+        std::string Compiler = "$(CC) -fsycl";
 
         OS << buildString("\t", Compiler, " -c ${", SrcStrName, "} -o ${",
                           ObjStrName, "} $(", FlagStrName, ")\n\n");
