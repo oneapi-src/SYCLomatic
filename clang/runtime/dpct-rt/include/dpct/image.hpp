@@ -386,6 +386,12 @@ public:
     _data = matrix_data;
     _channel = matrix_data->get_channel();
   }
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+  void set_data(sycl::ext::oneapi::experimental::image_mem *image_mem) {
+    _type = image_data_type::matrix;
+    _data = image_mem;
+  }
+#endif
   void set_data(void *data_ptr, size_t x_size, image_channel channel) {
     _type = image_data_type::linear;
     _data = data_ptr;
