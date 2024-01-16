@@ -304,8 +304,12 @@ static void getCompileInfo(
     }
 
     auto OrigFileName = FileName;
-    rewriteDir(FileName, InRoot, OutRoot);
+
+    // rewriteFileName() should be called before rewriteDir(), as FileName
+    // needs to be a existing file path passed to DpctFileInfo referred in
+    // rewriteFileName() to avoid potensial crash issue.
     rewriteFileName(FileName);
+    rewriteDir(FileName, InRoot, OutRoot);
 
     if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
       SmallString<512> OutDirectory(FileName.getCanonicalPath());
