@@ -62,7 +62,7 @@ SUBGROUPSIZE_FACTORY(UINT_MAX,
                      CALL_FACTORY_ENTRY("__match_any_sync",
                                         CALL(MapNames::getDpctNamespace() +
                                                  "match_any_over_sub_group",
-                                             SUBGROUP, ARG_WC(0), ARG_WC(1))))
+                                             SUBGROUP, ARG_WC(0), ARG(1))))
 
 // __match_all_sync
 SUBGROUPSIZE_FACTORY(UINT_MAX,
@@ -70,7 +70,7 @@ SUBGROUPSIZE_FACTORY(UINT_MAX,
                      CALL_FACTORY_ENTRY("__match_all_sync",
                                         CALL(MapNames::getDpctNamespace() +
                                                  "match_all_over_sub_group",
-                                             SUBGROUP, ARG_WC(0), ARG_WC(1),
+                                             SUBGROUP, ARG_WC(0), ARG(1),
                                              ARG_WC(2))))
 
 // __reduce_add_sync
