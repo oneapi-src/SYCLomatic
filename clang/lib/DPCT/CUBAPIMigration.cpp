@@ -669,7 +669,7 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
     }
     // always remove TempStorage variable declaration
     if (VDecl.find("cub::BlockRadixSort")!=std::string::npos){
-      emplaceTransformation( new ReplaceStmt(DS, "uint8_t *sort_temp_storage = sycl::ext::oneapi::group_local_memory_for_overwrite<int8_t[]>(dpct::group::radix_sort::get_local_memory_size())"))
+      emplaceTransformation( new ReplaceStmt(DS, "uint8_t* _local_memory = sycl::ext::oneapi::group_local_memory_for_overwrite<int8_t*>"))
     }
     else{
     emplaceTransformation(new ReplaceStmt(DS, ""));
