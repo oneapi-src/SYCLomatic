@@ -44,12 +44,17 @@ inline std::map<void *, uint32_t> &get_ptr_size_map() {
   return ptr_size_map;
 }
 
-enum class ValType { SCALAR, POINTER, ARRAY, POINTERTOPOINTER };
-enum class MemLoc { NONE, HOST, DEVICE };
+enum class ValType {
+  DPCT_SCALAR,
+  DPCT_POINTER,
+  DPCT_ARRAY,
+  DPCT_POINTERTOPOINTER
+};
+enum class MemLoc { DPCT_NONE, DPCT_HOST, DPCT_DEVICE };
 enum class schema_type {
-  TYPE,  // class or struct type.
-  DATA,  // alloc data type.
-  MEMBER // data member in class or struct.
+  DPCT_TYPE,  // class or struct type.
+  DPCT_DATA,  // alloc data type.
+  DPCT_MEMBER // data member in class or struct.
 };
 
 inline std::string to_upper(std::string str) {
@@ -61,11 +66,11 @@ inline std::string to_upper(std::string str) {
 inline ValType getValType(const std::string &str) {
   std::string to_str = to_upper(str);
   if (to_str == "SCALAR") {
-    return ValType::SCALAR;
+    return ValType::DPCT_SCALAR;
   } else if (to_str == "POINTER") {
-    return ValType::POINTER;
+    return ValType::DPCT_POINTER;
   } else if (to_str == "ARRAY") {
-    return ValType::ARRAY;
+    return ValType::DPCT_ARRAY;
   }
   error_exit("The value type : " + str + " is unkonwn.");
 }
@@ -73,11 +78,11 @@ inline ValType getValType(const std::string &str) {
 inline MemLoc getMemLoc(const std::string &str) {
   std::string to_str = to_upper(str);
   if (to_str == "NONE") {
-    return MemLoc::NONE;
+    return MemLoc::DPCT_NONE;
   } else if (to_str == "HOST") {
-    return MemLoc::HOST;
+    return MemLoc::DPCT_HOST;
   } else if (to_str == "DEVICE") {
-    return MemLoc::DEVICE;
+    return MemLoc::DPCT_DEVICE;
   }
   error_exit("The memory location : " + str + " is unkonwn.");
 }
@@ -85,11 +90,11 @@ inline MemLoc getMemLoc(const std::string &str) {
 inline schema_type get_schema_type(const std::string &str) {
   std::string to_str = to_upper(str);
   if (to_str == "TYPE") {
-    return schema_type::TYPE;
+    return schema_type::DPCT_TYPE;
   } else if (to_str == "DATA") {
-    return schema_type::DATA;
+    return schema_type::DPCT_DATA;
   } else if (to_str == "MEMBER") {
-    return schema_type::MEMBER;
+    return schema_type::DPCT_MEMBER;
   }
   error_exit("The schmea type : " + str + " is unkonwn.");
 }
@@ -134,8 +139,8 @@ public:
 
 private:
   // Common Part
-  std::string TypeName = "";                // namespace + class type + name;
-  schema_type SchemaTy = schema_type::TYPE; // Data or Type
+  std::string TypeName = ""; // namespace + class type + name;
+  schema_type SchemaTy = schema_type::DPCT_TYPE; // Data or Type
   std::string VarName = "";
   bool IsBasicType = true;
   std::string FilePath;
@@ -145,15 +150,15 @@ private:
   size_t TypeSize = 0;
   std::vector<std::shared_ptr<Schema>> Members;
   /* Data member only */
-  ValType ValTy = ValType::SCALAR;
+  ValType ValTy = ValType::DPCT_SCALAR;
   size_t Offset = 0;
   size_t ValSize = 0;
-  MemLoc Location = MemLoc::NONE;
+  MemLoc Location = MemLoc::DPCT_NONE;
 };
 
 inline size_t get_var_size(std::shared_ptr<Schema> schema, void *ptr) {
   size_t size = 0;
-  if (schema->get_val_type() != ValType::SCALAR) {
+  if (schema->get_val_type() != ValType::DPCT_SCALAR) {
     size = get_ptr_size_map()[(void *)(ptr)];
   }
   if (size == 0)
@@ -250,9 +255,9 @@ inline std::shared_ptr<Schema> gen_schema(dpct_json::value &value) {
   auto json_obj = value.get_value<dpct_json::object>();
   const schema_type schema_type =
       get_schema_type(json_obj.get("SchemaType").get_value<std::string>());
-  if (schema_type::TYPE == schema_type) {
+  if (schema_type::DPCT_TYPE == schema_type) {
     return gen_type_schema(value);
-  } else if (schema_type::DATA == schema_type) {
+  } else if (schema_type::DPCT_DATA == schema_type) {
     return gen_data_schema(value);
   }
   return nullptr;
@@ -432,14 +437,14 @@ void process_var(std::string &log, const std::string &schema_str, long *value,
         schema_str + "\n");
   }
   switch (schema->get_val_type()) {
-  case ValType::SCALAR:
+  case ValType::DPCT_SCALAR:
     get_val_from_addr(log, schema, (void *)value);
     break;
-  case ValType::ARRAY:
-  case ValType::POINTER:
+  case ValType::DPCT_ARRAY:
+  case ValType::DPCT_POINTER:
     get_val_from_addr(log, schema, (void *)(*value));
     break;
-  case ValType::POINTERTOPOINTER:
+  case ValType::DPCT_POINTERTOPOINTER:
     get_val_from_addr(log, schema, *(void **)(*value));
     break;
   };

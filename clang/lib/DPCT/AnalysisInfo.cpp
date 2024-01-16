@@ -966,7 +966,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     }
     SchemaRelativePath += "generated_schema.hpp\"";
     concatHeader(OS, SchemaRelativePath);
-    return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right,
+    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
                         IsForCUDADebug);
   } break;
   default:
