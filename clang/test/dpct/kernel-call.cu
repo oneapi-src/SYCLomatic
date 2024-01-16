@@ -686,6 +686,7 @@ void test_ctor() {
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
+#ifndef BUILD_TEST
 template <typename T>
 __global__ void k11(T a){
 __shared__ union {
@@ -699,6 +700,7 @@ void foo11() {
   TT a;
   k11<TT><<<1,1>>>(a);
 }
+#endif // !BUILD_TEST
 
 //CHECK:template <typename T>
 //CHECK-NEXT:__dpct_inline__ void k12(T a, uint8_t *temp_ct1, uint8_t *temp2_ct1){
@@ -735,6 +737,7 @@ void foo11() {
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
+#ifndef BUILD_TEST
 template <typename T>
 __global__ void k12(T a){
   union UnionType {
@@ -752,6 +755,7 @@ void foo2() {
   TT a;
   k12<TT><<<1,1>>>(a);
 }
+#endif // !BUILD_TEST
 
 __global__ void my_kernel4(int a, int* b, int c, int d, int e, int f, int g){
   b[0];
