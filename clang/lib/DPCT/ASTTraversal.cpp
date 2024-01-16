@@ -8405,13 +8405,15 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
   DebugArgsStringSYCL += QueueStr;
   for (auto *Arg : KCall->arguments()) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-      DebugArgsString += ", ";
-      DebugArgsStringSYCL += ", ";
-      std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
-      DebugArgsString += SchemaStr + ", ";
-      DebugArgsStringSYCL += SchemaStr + ", ";
-      DebugArgsString += "(long *)&" + getStmtSpelling(Arg);
-      DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg);
+      if (DRE->isLValue()) {
+        DebugArgsString += ", ";
+        DebugArgsStringSYCL += ", ";
+        std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
+        DebugArgsString += SchemaStr + ", ";
+        DebugArgsStringSYCL += SchemaStr + ", ";
+        DebugArgsString += "(long *)&" + getStmtSpelling(Arg);
+        DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg);
+      }
     }
   }
   DebugArgsString += ");" + std::string(getNL());
@@ -8873,7 +8875,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
   auto Decl = getAssistNodeAsType<VarDecl>(Result, "decl");
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
-  if (DpctGlobalInfo::isOptimizeMigration() &&
+  if (Decl && DpctGlobalInfo::isOptimizeMigration() &&
       Decl->hasAttr<CUDAConstantAttr>()) {
     auto &VarUsedBySymbolAPISet =
         DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
