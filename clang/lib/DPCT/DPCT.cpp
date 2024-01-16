@@ -1025,11 +1025,10 @@ int runDPCT(int argc, const char **argv) {
 
   std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
       ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};
-  if (UseExplicitNamespace.getNumOccurrences()) {
+  if (UseExplicitNamespace.getNumOccurrences())
     DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-  } else {
+  else
     DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-  }
 
   MapNames::setExplicitNamespaceMap();
   clang::dpct::setSTypeSchemaMap();
