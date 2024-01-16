@@ -32,9 +32,10 @@ void print_data(int* data, int num) {
 
 //CHECK: void BlockRadixSortKernel(int* d_data,
 //CHECK:  const sycl::nd_item<3> &item_ct1) {
-//CHECK:  int threadid = item_ct1.get_local_id(2);
+//CHECK:  uint8_t* _local_memory = sycl::ext::oneapi::group_local_memory_for_overwrite<uint8_t*>(dpct::group::radix_sort::get_local_memory_size());
+//CHECK:  int threadid = threadIdx.x;
 //CHECK:  d_data[threadid*ItemsPerThread] = (threadid*2)%32;
-//CHECK:  dpct::group::radix_sort().sort(item_ct1.get_group(), d_data);
+//CHECK:  dpct::group::radix_sort<d_data, VALUES_PER_THREAD> radix_sort(_local_memory).sort_blocked(item_ct1.get_group(), d_data);
 //CHECK:}
 __global__ void BlockRadixSortKernel(int *d_data)
 {
