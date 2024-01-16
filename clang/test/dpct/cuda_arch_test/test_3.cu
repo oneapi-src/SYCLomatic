@@ -1,5 +1,7 @@
 // RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/cuda_arch_test_3 %S/test_3.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_arch_test_3/test_3.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda_arch_test_3/test_3.dp.cpp -o %T/cuda_arch_test_3/test_3.dp.o %}
+
 #include<cuda_runtime.h>
 #include<iostream>
 
