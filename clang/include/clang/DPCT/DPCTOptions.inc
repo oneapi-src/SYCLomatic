@@ -405,10 +405,10 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), BuildScriptFile,
         llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScript, "migrate-cmake-script",
-        llvm::cl::desc("EXPERIMENTAL: Migrate the cmakfile build script. Default: off."),
+        llvm::cl::desc("EXPERIMENTAL: Migrate the CMake file(s). Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScriptOnly, "migrate-cmake-script-only",
-        llvm::cl::desc("EXPERIMENTAL: Only migrate the cmakfile build script. Default: off."),
+        llvm::cl::desc("EXPERIMENTAL: Only migrate the CMake file(s). Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ExcludePathList, "in-root-exclude",
@@ -440,11 +440,11 @@ DPCT_NON_ENUM_OPTION(
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<SYCLFileExtensionEnum>), SYCLFileExtension, "sycl-file-extension",
            DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("sycl-cpp", int(SYCLFileExtensionEnum::SYCL_CPP), "Use extension .sycl.cpp and .sycl.hpp", false),
-             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension .cpp and .hpp", false),
-             DPCT_OPT_ENUM("dp-cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension .dp.cpp and .dp.hpp", false)
+             DPCT_OPT_ENUM("sycl-cpp", int(SYCLFileExtensionEnum::SYCL_CPP), "Use extension `.sycl.cpp` and `.sycl.hpp`.", false),
+             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension `.cpp` and `.hpp`.", false),
+             DPCT_OPT_ENUM("dp-cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension `.dp.cpp` and `.dp.hpp`.", false)
            ),
-           llvm::cl::desc("File extension of migrated source files\n"),
+           llvm::cl::desc("Specifies the extension of migrated source file(s).\nThe values are:\n"),
            llvm::cl::init(SYCLFileExtensionEnum::DP_CPP), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
            llvm::cl::Optional)
 
@@ -463,7 +463,7 @@ DPCT_NON_ENUM_OPTION(
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), InterceptBuildCommand,
     "intercept-build",
-    llvm::cl::desc("Intercept build tool to generate a compilation database"),
+    llvm::cl::desc("Intercept build tool to generate a compilation database."),
     llvm::cl::value_desc("build command"), llvm::cl::cat(DPCTCat),
     llvm::cl::init(false))
 #endif
