@@ -8405,13 +8405,15 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
   DebugArgsStringSYCL += QueueStr;
   for (auto *Arg : KCall->arguments()) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-      DebugArgsString += ", ";
-      DebugArgsStringSYCL += ", ";
-      std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
-      DebugArgsString += SchemaStr + ", ";
-      DebugArgsStringSYCL += SchemaStr + ", ";
-      DebugArgsString += "(long *)&" + getStmtSpelling(Arg);
-      DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg);
+      if (DRE->isLValue()) {
+        DebugArgsString += ", ";
+        DebugArgsStringSYCL += ", ";
+        std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
+        DebugArgsString += SchemaStr + ", ";
+        DebugArgsStringSYCL += SchemaStr + ", ";
+        DebugArgsString += "(long *)&" + getStmtSpelling(Arg);
+        DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg);
+      }
     }
   }
   DebugArgsString += ");" + std::string(getNL());
