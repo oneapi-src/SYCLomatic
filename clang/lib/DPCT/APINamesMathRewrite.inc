@@ -5059,7 +5059,7 @@ MATH_API_REWRITER_DEVICE(
 // Double Precision Mathematical Functions
 CALL_FACTORY_ENTRY("cospi",
                    CALL(MapNames::getClNamespace(false, true) + "cospi",
-                        CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))
+                        ARG(0)))
 
 MATH_API_REWRITER_DEVICE(
     "cyl_bessel_i0",
@@ -5103,12 +5103,9 @@ MATH_API_REWRITER_DEVICE(
 
 BINARY_OP_FACTORY_ENTRY("erfcx", BinaryOperatorKind::BO_Mul,
                         CALL(MapNames::getClNamespace(false, true) + "exp",
-                             BO(BinaryOperatorKind::BO_Mul,
-                                CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
-                                CAST_IF_NOT_SAME(makeLiteral("double"),
-                                                 ARG(0)))),
+                             BO(BinaryOperatorKind::BO_Mul, ARG(0), ARG(0))),
                         CALL(MapNames::getClNamespace(false, true) + "erfc",
-                             CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))
+                             ARG(0)))
 
 MATH_API_REWRITER_DEVICE(
     "erfinv",
@@ -5297,7 +5294,7 @@ WARNING_FACTORY_ENTRY(
 
 CALL_FACTORY_ENTRY("sinpi",
                    CALL(MapNames::getClNamespace(false, true) + "sinpi",
-                        CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))
+                        ARG(0)))
 
 MATH_API_REWRITER_HOST_DEVICE(
     MATH_API_REWRITER_HOST(

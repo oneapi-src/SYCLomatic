@@ -531,14 +531,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
   llvm::raw_string_ostream OS(ReplStr);
   auto MigratedArg0 = getMigratedArg(0);
 
-  auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto Parents = Context.getParents(*Call);
-  bool IsInReturnStmt = false;
-  if (Parents.size())
-    if (auto ParentStmt = getParentStmt(Call))
-      if (ParentStmt->getStmtClass() == Stmt::StmtClass::ReturnStmtClass)
-          IsInReturnStmt = true;
-
   if (FuncName == "frexp" || FuncName == "frexpf") {
     auto Arg = Call->getArg(0);
     std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
