@@ -862,23 +862,39 @@ public:
     return CodeFormatStyle;
   }
 
+private:
+  template <class T, class T1, class... Ts>
+  static constexpr bool IsSameAsAnyTy = (std::is_same_v<T, Ts> || ...);
+
+  template <typename T>
+  static constexpr bool IsNonPtrNode =
+      IsSameAsAnyTy<T, TemplateArgument, TemplateArgumentLoc,
+                    NestedNameSpecifierLoc, QualType, TypeLoc, ObjCProtocolLoc>;
+
+public:
   template <class TargetTy, class NodeTy>
-  static inline const TargetTy *
+  static inline std::conditional_t<IsNonPtrNode<TargetTy>,
+                                   std::optional<TargetTy>, const TargetTy *>
   findAncestor(const NodeTy *N,
                const std::function<bool(const DynTypedNode &)> &Condition) {
-    if (!N)
-      return nullptr;
-
-    auto &Context = getContext();
-    clang::DynTypedNodeList Parents = Context.getParents(*N);
-    while (!Parents.empty()) {
-      auto &Cur = Parents[0];
-      if (Condition(Cur))
-        return Cur.get<TargetTy>();
-      Parents = Context.getParents(Cur);
+    if (LLVM_LIKELY(N)) {
+      auto &Context = getContext();
+      clang::DynTypedNodeList Parents = Context.getParents(*N);
+      while (!Parents.empty()) {
+        auto &Cur = Parents[0];
+        if (Condition(Cur)) {
+          if constexpr (IsNonPtrNode<TargetTy>)
+            return *Cur.get<TargetTy>();
+          else
+            return Cur.get<TargetTy>();
+        }
+        Parents = Context.getParents(Cur);
+      }
     }
-
-    return nullptr;
+    if constexpr (IsNonPtrNode<TargetTy>)
+      return std::nullopt;
+    else
+      return nullptr;
   }
 
   template <class NodeTy>
@@ -891,13 +907,13 @@ public:
   }
 
   template <class TargetTy, class NodeTy>
-  static const TargetTy *findAncestor(const NodeTy *Node) {
+  static auto findAncestor(const NodeTy *Node) {
     return findAncestor<TargetTy>(Node, [&](const DynTypedNode &Cur) -> bool {
       return Cur.get<TargetTy>();
     });
   }
   template <class TargetTy, class NodeTy>
-  static const TargetTy *findParent(const NodeTy *Node) {
+  static auto findParent(const NodeTy *Node) {
     return findAncestor<TargetTy>(
         Node, [](const DynTypedNode &Cur) -> bool { return true; });
   }
@@ -905,11 +921,7 @@ public:
   template <typename TargetTy, typename NodeTy>
   static bool isAncestor(TargetTy *AncestorNode, NodeTy *Node) {
     return findAncestor<TargetTy>(Node, [&](const DynTypedNode &Cur) -> bool {
-      if (Cur.get<TargetTy>() == AncestorNode) {
-        return true;
-      } else {
-        return false;
-      };
+      return Cur.get<TargetTy>() == AncestorNode;
     });
   }
   template <class NodeTy>
