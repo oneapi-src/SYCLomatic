@@ -341,6 +341,8 @@ inline bool is_device_point(void *p) {
 inline void get_val_from_addr(std::string &value,
                               std::shared_ptr<Schema> schema, void *addr,
                               size_t size) {
+  if (schema->get_type_size() == 0)
+    return;
   void *h_addr = addr;
   if (is_device_point(addr)) {
     h_addr = malloc(size);
