@@ -965,7 +965,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     }
     SchemaRelativePath += "generated_schema.hpp\"";
     concatHeader(OS, SchemaRelativePath);
-    return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right,
+    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
                         IsForCUDADebug);
   } break;
   default:
@@ -1848,6 +1848,7 @@ void DpctGlobalInfo::processCudaArchMacro() {
     }
   }
 }
+
 void DpctGlobalInfo::generateHostCode(
     std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
         &ProcessedReplList,
@@ -1891,7 +1892,7 @@ void DpctGlobalInfo::postProcess() {
   processCudaArchMacro();
   for (auto &Element : HostDeviceFuncInfoMap) {
     auto &Info = Element.second;
-    if (Info.isCalledInHost && Info.isDefInserted) {
+    if (Info.isDefInserted) {
       Info.needGenerateHostCode = true;
       if (Info.PostFixId == -1) {
         Info.PostFixId = HostDeviceFuncInfo::MaxId++;
@@ -1914,6 +1915,10 @@ void DpctGlobalInfo::postProcess() {
               LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
               "_host_ct" + std::to_string(Info.PostFixId), nullptr);
           addReplacement(R);
+          if (!isFirstPass) {
+            auto &FileReplCache = DpctGlobalInfo::getFileReplCache();
+            FileReplCache[R->getFilePath().str()].second->addReplacement(R);
+          }
         }
       }
     }
