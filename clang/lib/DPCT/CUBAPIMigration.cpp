@@ -96,7 +96,15 @@ void CubTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const TypeLoc *TL = getAssistNodeAsType<TypeLoc>(Result, "loc")) {
     ExprAnalysis EA;
-    EA.analyze(*TL);
+    auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
+    auto NNSL = DpctGlobalInfo::findAncestor<NestedNameSpecifierLoc>(TL);
+    if (NNSL) {
+      EA.analyze(*TL, *NNSL);
+    } else if (DNTL) {
+      EA.analyze(*TL, *DNTL);
+    } else {
+      EA.analyze(*TL);
+    }
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   }
