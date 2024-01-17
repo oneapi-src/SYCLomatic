@@ -439,7 +439,7 @@ void process_var(std::string &log, const std::string &schema_str, long *value,
   case val_type::pointer:
     get_val_from_addr(log, schema, (void *)(*value));
     break;
-  case val_type::pointerTOPOINTER:
+  case val_type::pointer_to_pointer:
     get_val_from_addr(log, schema, *(void **)(*value));
     break;
   };
