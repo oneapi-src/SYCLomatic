@@ -215,7 +215,7 @@ inline std::shared_ptr<Schema> gen_type_schema(dpct_json::value &v) {
       std::string type_name = data_obj.get("TypeName").get_value<std::string>();
       size_t type_size = obj.get("TypeSize").get_value<int>();
       bool is_basic_type = data_obj.get("IsBasicType").get_value<bool>();
-      std::string val_type = data_obj.get("val_type").get_value<std::string>();
+      std::string val_type = data_obj.get("ValType").get_value<std::string>();
       size_t val_size = data_obj.get("ValSize").get_value<int>();
       size_t offset = data_obj.get("Offset").get_value<int>();
       std::string location = data_obj.get("Location").get_value<std::string>();
@@ -235,7 +235,7 @@ inline std::shared_ptr<Schema> gen_data_schema(dpct_json::value &v) {
       get_schema_type(data_obj.get("SchemaType").get_value<std::string>());
   bool is_basic_type = data_obj.get("IsBasicType").get_value<bool>();
   size_t type_size = data_obj.get("TypeSize").get_value<int>();
-  std::string val_type = data_obj.get("val_type").get_value<std::string>();
+  std::string val_type = data_obj.get("ValType").get_value<std::string>();
   size_t val_size = data_obj.get("ValSize").get_value<int>();
   std::string location = data_obj.get("Location").get_value<std::string>();
 
