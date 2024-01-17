@@ -8380,9 +8380,12 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
 
   std::string DebugArgsString = "(\"";
   std::string DebugArgsStringSYCL = "(\"";
-  DebugArgsString += KCallSpellingRange.first.printToString(SM) + "\", ";
-  DebugArgsStringSYCL +=
-      KCallSpellingRange.first.printToString(SM) + "(SYCL)\", ";
+  DebugArgsString += llvm::sys::path::convert_to_slash(
+                         KCallSpellingRange.first.printToString(SM)) +
+                     "\", ";
+  DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
+                             KCallSpellingRange.first.printToString(SM)) +
+                         "(SYCL)\", ";
   std::string StramStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
