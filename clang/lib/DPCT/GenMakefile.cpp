@@ -307,7 +307,7 @@ static void getCompileInfo(
 
     // rewriteFileName() should be called before rewriteDir(), as FileName
     // needs to be a existing file path passed to DpctFileInfo referred in
-    // rewriteFileName() to avoid potensial crash issue.
+    // rewriteFileName() to avoid potential crash issue.
     rewriteFileName(FileName);
     rewriteDir(FileName, InRoot, OutRoot);
 
