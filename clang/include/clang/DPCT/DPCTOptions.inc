@@ -431,9 +431,9 @@ DPCT_NON_ENUM_OPTION(
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<SYCLFileExtensionEnum>), SYCLFileExtension, "sycl-file-extension",
            DPCT_OPTION_VALUES(
+             DPCT_OPT_ENUM("dp-cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension .dp.cpp and .dp.hpp (default)", false),
              DPCT_OPT_ENUM("sycl-cpp", int(SYCLFileExtensionEnum::SYCL_CPP), "Use extension .sycl.cpp and .sycl.hpp", false),
-             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension .cpp and .hpp", false),
-             DPCT_OPT_ENUM("dp-cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension .dp.cpp and .dp.hpp", false)
+             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension .cpp and .hpp", false)
            ),
            llvm::cl::desc("File extension of migrated source files\n"),
            llvm::cl::init(SYCLFileExtensionEnum::DP_CPP), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
