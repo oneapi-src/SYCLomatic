@@ -1,0 +1,22 @@
+find_package(IntelSYCL REQUIRED)
+find_package(IntelSYCL REQUIRED)
+find_package(IntelSYCL REQUIRED)
+find_package(IntelSYCL)
+find_package(MKL)
+find_package(IntelSYCL REQUIRED)
+find_package(MKL REQUIRED)
+find_package(IntelSYCL REQUIRED)
+find_package(MKL REQUIRED)
+find_package(IntelSYCL REQUIRED)
+find_package(MKL REQUIRED)
+find_package(oneDPL)
+find_package(oneDPL REQUIRED)
+#Current YAML rule comments find_package(MPI) as it changes CMAKE_CXX_COMPILER
+#find_package(MPI)
+#find_package(MPI REQUIRED)
+#Current YAML rule comments find_package(OpenMP) as it changes CMAKE_CXX_COMPILER
+#find_package(OpenMP)
+#find_package(OpenMP REQUIRED)
+#Current YAML rule comments find_package(NVJPEG) as no SYCL equivalent lib exists
+#find_package(NVJPEG)
+#find_package(NVJPEG 9.0 REQUIRED)

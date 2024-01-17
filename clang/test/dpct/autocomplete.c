@@ -34,7 +34,6 @@
 // DASH-NEXT: --keep-original-code
 // DASH-NEXT: --migrate-cmake-script
 // DASH-NEXT: --migrate-cmake-script-only
-// DASH-NEXT: --no-cl-namespace-inline
 // DASH-NEXT: --no-dpcpp-extensions=
 // DASH-NEXT: --no-dry-pattern
 // DASH-NEXT: --no-incremental-migration
@@ -100,12 +99,11 @@
 // RUN: dpct --autocomplete=-p | FileCheck %s -check-prefix=DATA_BASE
 // DATA_BASE: -p
 
-// RUN: dpct --autocomplete=--usm-level=#none,restricted#--use-explicit-namespace=#cl,sycl, | FileCheck %s -check-prefix=UEN_ALL
-// UEN_ALL: cl,sycl,cl
-// UEN_ALL-NEXT: cl,sycl,dpct
-// UEN_ALL-NEXT: cl,sycl,none
-// UEN_ALL-NEXT: cl,sycl,sycl
-// UEN_ALL-NEXT: cl,sycl,sycl-math
-// RUN: dpct --autocomplete=--usm-level=#none,restricted#--use-explicit-namespace=#cl,sycl,s | FileCheck %s -check-prefix=UEN_S
-// UEN_S: cl,sycl,sycl
-// UEN_S-NEXT: cl,sycl,sycl-math
+// RUN: dpct --autocomplete=--usm-level=#none,restricted#--use-explicit-namespace=#sycl, | FileCheck %s -check-prefix=UEN_ALL
+// UEN_ALL: sycl,dpct
+// UEN_ALL-NEXT: sycl,none
+// UEN_ALL-NEXT: sycl,sycl
+// UEN_ALL-NEXT: sycl,sycl-math
+// RUN: dpct --autocomplete=--usm-level=#none,restricted#--use-explicit-namespace=#sycl,s | FileCheck %s -check-prefix=UEN_S
+// UEN_S: sycl,sycl
+// UEN_S-NEXT: sycl,sycl-math

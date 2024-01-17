@@ -126,7 +126,6 @@ bool StopOnParseErr = false;
 bool CheckUnicodeSecurityFlag = false;
 bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
-bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
 bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
@@ -1026,30 +1025,10 @@ int runDPCT(int argc, const char **argv) {
 
   std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
       ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};
-  if (NoClNamespaceInline.getNumOccurrences()) {
-    if (UseExplicitNamespace.getNumOccurrences()) {
-      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-      clang::dpct::PrintMsg(
-          "Note: Option --no-cl-namespace-inline is deprecated and will be "
-          "ignored. Option --use-explicit-namespace is used instead.\n");
-    } else {
-      if (ExplicitClNamespace) {
-        DpctGlobalInfo::setExplicitNamespace(std::vector<ExplicitNamespace>{
-            ExplicitNamespace::EN_CL, ExplicitNamespace::EN_DPCT});
-      } else {
-        DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-      }
-      clang::dpct::PrintMsg(
-          "Note: Option --no-cl-namespace-inline is deprecated. Use "
-          "--use-explicit-namespace instead.\n");
-    }
-  } else {
-    if (UseExplicitNamespace.getNumOccurrences()) {
-      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-    } else {
-      DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-    }
-  }
+  if (UseExplicitNamespace.getNumOccurrences())
+    DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
+  else
+    DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
 
   MapNames::setExplicitNamespaceMap();
   clang::dpct::setSTypeSchemaMap();
@@ -1089,9 +1068,6 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CodePinEnabled,
                      DpctGlobalInfo::isCodePinEnabled(),
                      EnableCodePin.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_ExplicitClNamespace,
-                     ExplicitClNamespace,
-                     NoClNamespaceInline.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExtensionDEFlag,
                      DpctGlobalInfo::getExtensionDEFlag(),
                      NoDPCPPExtensions.getNumOccurrences());

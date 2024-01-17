@@ -67,7 +67,6 @@ using namespace clang::tooling;
 extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
 extern llvm::cl::opt<UsmLevel> USMLevel;
 extern bool ProcessAllFlag;
-extern bool ExplicitClNamespace;
 
 TextModification *clang::dpct::replaceText(SourceLocation Begin, SourceLocation End,
                               std::string &&Str, const SourceManager &SM) {

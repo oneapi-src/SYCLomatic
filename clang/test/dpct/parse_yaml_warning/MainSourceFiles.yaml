@@ -50,9 +50,6 @@ OptionMap:
   ExperimentalFlag:
     Value:           '0'
     Specified:       false
-  ExplicitClNamespace:
-    Value:           'false'
-    Specified:       false
   ExplicitNamespace:
     Value:           '20'
     Specified:       false

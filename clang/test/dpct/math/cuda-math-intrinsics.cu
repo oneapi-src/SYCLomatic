@@ -544,9 +544,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::round((double)i);
   d2 = lround(i);
 
-  // CHECK: d2 = sycl::modf(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d1));
+  // CHECK: d2 = sycl::modf(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d1));
   d2 = modf(d0, &d1);
-  // CHECK: d2 = sycl::modf((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d1));
+  // CHECK: d2 = sycl::modf((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d1));
   d2 = modf(i, &d1);
 
   // CHECK: d2 = sycl::nan(0u);
@@ -1152,9 +1152,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::round((float)i);
   f2 = lroundf(i);
 
-  // CHECK: f2 = sycl::modf(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f1));
+  // CHECK: f2 = sycl::modf(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f1));
   f2 = modff(f0, &f1);
-  // CHECK: f2 = sycl::modf((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f1));
+  // CHECK: f2 = sycl::modf((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f1));
   f2 = modff(i, &f1);
 
   // CHECK: f2 = sycl::nan(0u);
@@ -2719,12 +2719,10 @@ __device__ void do_migration5() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT:#ifndef BUILD_TEST
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
-  //CHECK-NEXT:#endif
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2746,9 +2744,7 @@ __device__ void do_migration5() {
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
-#ifndef BUILD_TEST
   std::modf(f, &f);
-#endif
   std::nearbyint(f);
   std::remquo(f, f, &i);
   std::acos(f);
@@ -2779,12 +2775,10 @@ __global__ void do_migration6() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT:#ifndef BUILD_TEST
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
-  //CHECK-NEXT:#endif
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2806,9 +2800,7 @@ __global__ void do_migration6() {
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
-#ifndef BUILD_TEST
   std::modf(f, &f);
-#endif
   std::nearbyint(f);
   std::remquo(f, f, &i);
   std::acos(f);
@@ -2838,12 +2830,10 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT:#ifndef BUILD_TEST
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
-  //CHECK-NEXT:#endif
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2864,9 +2854,7 @@ __device__ __host__ void do_migration7() {
   std::acoshf(f);
   std::asinhf(f);
   std::frexp(f, &i);
-#ifndef BUILD_TEST
   std::modf(f, &f);
-#endif
   std::nearbyint(f);
   std::remquo(f, f, &i);
   std::acos(f);
