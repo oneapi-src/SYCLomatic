@@ -14792,14 +14792,14 @@ void CudaArchMacroRule::runRule(
       }
       auto LocInfo = Global.getLocInfo(CE->getBeginLoc());
       Global.getMainSourceFileMap()[LocInfo.first].push_back(
-        Global.getMainFile()->getFilePath());
+          Global.getMainFile()->getFilePath());
       HDFLI.Type = HDFuncInfoType::HDFI_Call;
       HDFLI.FilePath = LocInfo.first;
       HDFLI.FuncEndOffset = LocInfo.second + Offset;
       HDFIMap[ManglingName].LocInfos.insert(
-          {HDFLI.FilePath.getCanonicalPath().str() + "Call" + std::to_string(HDFLI.FuncEndOffset),
+          {HDFLI.FilePath.getCanonicalPath().str() + "Call" +
+               std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
-      HDFIMap[ManglingName].isCalledInHost = true;
     }
   }
 }
