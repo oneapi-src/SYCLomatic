@@ -564,6 +564,38 @@ private:
   uint8_t *_local_memory;
 };
 
+/// Load linear segment items into block format across threads
+/// Helper for Block Load 
+template <int GROUP_THREADS, typename InputT, int ITEMS_PER_THREAD,
+          typename InputIteratorT>
+void load_blocked(int linear_tid, InputIteratorT block_itr,
+                       InputT (&items)[ITEMS_PER_THREAD]) {
+#pragma unroll
+  for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
+    
+    if ((linear_tid * ITEMS_PER_THREAD) + ITEM < GROUP_THREADS){
+        
+        items[ITEM] = block_itr[(linear_tid * ITEMS_PER_THREAD) + ITEM];
+      
+    }    
+  }
+}
+
+template <int GROUP_THREADS, typename InputT, int ITEMS_PER_THREAD,
+          typename InputIteratorT>
+void load_striped(int linear_tid, InputIteratorT block_itr,
+                       InputT (&items)[ITEMS_PER_THREAD]) {
+#pragma unroll
+  for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
+
+    if((linear_tid + (ITEM * ITEMS_PER_THREAD) < GROUP_THREADS){
+
+      items[ITEM] = block_itr[linear_tid + (ITEM * ITEMS_PER_THREAD)];
+
+    }    
+  }
+}
+
 /// Perform a reduction of the data elements assigned to all threads in the
 /// group.
 ///
