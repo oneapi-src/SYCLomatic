@@ -1003,7 +1003,7 @@ template <typename T> T *get_raw_pointer(const device_pointer<T> &ptr) {
                   "sycl::buffer, and raw pointers to that data are "
                   "inaccessible.");
   return ::std::nullptr;
-#else // DPCT_USM_LEVEL_NONE
+#else  // DPCT_USM_LEVEL_NONE
   return ptr.get();
 #endif // DPCT_USM_LEVEL_NONE
 }
