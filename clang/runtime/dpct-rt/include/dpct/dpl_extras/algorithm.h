@@ -2530,6 +2530,32 @@ void partition_flagged(ExecutionPolicy &&policy, InputIterator input,
             num_true_items);
 }
 
+template <typename ExecutionPolicy, typename InputIterator, typename BinaryPred>
+typename ::std::iterator_traits<InputIterator>::difference_type
+unique_count(ExecutionPolicy &&policy, InputIterator begin, InputIterator end,
+             BinaryPred binary_pred) {
+  auto n = ::std::distance(begin, end);
+  if (n == 0)
+    return 0;
+  if (n == 1)
+    return 1;
+  auto zip_beg = dpl::make_zip_iterator(begin, begin + 1);
+  auto zip_end = zip_beg + n - 1;
+  return 1 + dpl::count_if(::std::forward<ExecutionPolicy>(policy), zip_beg,
+                           zip_end, [binary_pred](auto e) {
+                             using ::std::get;
+                             return !binary_pred(get<0>(e), get<1>(e));
+                           });
+}
+
+template <typename ExecutionPolicy, typename InputIterator>
+typename ::std::iterator_traits<InputIterator>::difference_type
+unique_count(ExecutionPolicy &&policy, InputIterator begin, InputIterator end) {
+  using T = typename ::std::iterator_traits<InputIterator>::value_type;
+  return dpct::unique_count(::std::forward<ExecutionPolicy>(policy), begin, end,
+                            ::std::equal_to<T>());
+}
+
 } // end namespace dpct
 
 #endif
