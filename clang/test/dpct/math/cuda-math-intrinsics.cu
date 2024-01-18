@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/math/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp -o %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.o %}
 
 #include <cmath>
 #include <iomanip>
@@ -543,9 +544,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::round((double)i);
   d2 = lround(i);
 
-  // CHECK: d2 = sycl::modf(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d1));
+  // CHECK: d2 = sycl::modf(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d1));
   d2 = modf(d0, &d1);
-  // CHECK: d2 = sycl::modf((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d1));
+  // CHECK: d2 = sycl::modf((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d1));
   d2 = modf(i, &d1);
 
   // CHECK: d2 = sycl::nan(0u);
@@ -591,9 +592,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::rsqrt((double)i);
   d2 = rsqrt((double)i);
 
-  // CHECK: d1 = sycl::sincos(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
+  // CHECK: d1 = sycl::sincos(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d2));
   sincos(d0, &d1, &d2);
-  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
+  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d2));
   sincos(i, &d1, &d2);
 
   // CHECK: d2 = sycl::sin(d0);
@@ -1151,9 +1152,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::round((float)i);
   f2 = lroundf(i);
 
-  // CHECK: f2 = sycl::modf(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f1));
+  // CHECK: f2 = sycl::modf(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f1));
   f2 = modff(f0, &f1);
-  // CHECK: f2 = sycl::modf((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f1));
+  // CHECK: f2 = sycl::modf((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f1));
   f2 = modff(i, &f1);
 
   // CHECK: f2 = sycl::nan(0u);
@@ -1206,9 +1207,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::signbit((float)i);
   f2 = signbit(i);
 
-  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
+  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f2));
   sincosf(f0, &f1, &f2);
-  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
+  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f2));
   sincosf(i, &f1, &f2);
 
   // CHECK: f2 = sycl::sin(f0);
@@ -1509,9 +1510,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = dpct::pow(i, f1);
   f2 = __powf(i, f1);
 
-  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
+  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f2));
   __sincosf(f0, &f1, &f2);
-  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
+  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&f2));
   __sincosf(i, &f1, &f2);
 
   // CHECK: f1 = sycl::sin(f1);
@@ -1873,6 +1874,7 @@ __global__ void testUnsupported() {
   half2 h2;
   bool b;
 
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i0f is not supported.
   // CHECK-NEXT: */
@@ -1885,8 +1887,10 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfcinvf is not supported.
   // CHECK-NEXT: */
   f = erfcinvf(f);
+#endif
   // CHECK: f = sycl::exp(f*f)*sycl::erfc(f);
   f = erfcxf(f);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinvf is not supported.
   // CHECK-NEXT: */
@@ -1903,6 +1907,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jnf is not supported.
   // CHECK-NEXT: */
   f = jnf(i, f);
+#endif
 
   // CHECK: f = sycl::length(sycl::float3(f, f, f));
   f = norm3df(f, f, f);
@@ -1910,10 +1915,12 @@ __global__ void testUnsupported() {
   f = norm4df(f, f, f, f);
   // CHECK: f = sycl::erfc(f / -sycl::sqrt(2.0)) / 2;
   f = normcdff(f);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinvf is not supported.
   // CHECK-NEXT: */
   f = normcdfinvf(f);
+#endif
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the normf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
@@ -1937,6 +1944,7 @@ __global__ void testUnsupported() {
   f = scalblnf(f, l);
   // CHECK: f = f*(2<<i);
   f = scalbnf(f, i);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0f is not supported.
   // CHECK-NEXT: */
@@ -1962,8 +1970,10 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfcinv is not supported.
   // CHECK-NEXT: */
   d = erfcinv(d);
-  // CHECK: d = sycl::exp(d*d)*sycl::erfc(d);
+#endif
+  // CHECK: d = sycl::exp(d * d) * sycl::erfc(d);
   d = erfcx(d);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinv is not supported.
   // CHECK-NEXT: */
@@ -1980,6 +1990,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jn is not supported.
   // CHECK-NEXT: */
   d = jn(i, d);
+#endif
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
@@ -1991,10 +2002,12 @@ __global__ void testUnsupported() {
   d = norm4d(d, d, d, d);
   // CHECK:  d = sycl::erfc(d / -sycl::sqrt(2.0)) / 2;
   d = normcdf(d);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported.
   // CHECK-NEXT: */
   d = normcdfinv(d);
+#endif
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
@@ -2013,6 +2026,7 @@ __global__ void testUnsupported() {
   d = scalbln(d, l);
   // CHECK: d = d*(2<<i);
   d = scalbn(d, i);
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0 is not supported.
   // CHECK-NEXT: */
@@ -2025,6 +2039,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of yn is not supported.
   // CHECK-NEXT: */
   d = yn(i, d);
+#endif
 
   // CHECK: f = sycl::clamp<float>(f, 0.0f, 1.0f);
   f = __saturatef(f);
@@ -2118,13 +2133,13 @@ __global__ void testSimulation() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospif call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
+  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&d));
+  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&d));
   sincospi(d, &d, &d);
 }
 
@@ -2612,7 +2627,7 @@ int max(int i, int j) {
   return i > j ? i : j;
 }
 }
-void do_migration5() {
+void do_migration8() {
   int i, j;
   // CHECK: std::max(i, j);
   max(i, j);
@@ -2627,7 +2642,7 @@ void no_migration3() {
   // CHECK: std::max(i, j);
   std::max(i, j);
 }
-__host__ void do_migration6() {
+__host__ void do_migration9() {
   int i, j;
   // CHECK: std::max(i, j);
   max(i, j);
@@ -2707,7 +2722,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2763,7 +2778,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2818,7 +2833,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2994,7 +3009,7 @@ __global__ void k2() {
   long long ll, ll2;
   unsigned long long ull, ull2;
 
-  // CHECK: sycl::exp(d0*d0)*sycl::erfc(d0);
+  // CHECK: sycl::exp(d0 * d0) * sycl::erfc(d0);
   erfcx(d0);
   // CHECK: sycl::exp(f0*f0)*sycl::erfc(f0);
   erfcxf(f0);
@@ -3281,7 +3296,7 @@ __device__ void bar1(double *d) {
   double &d2 = *d;
 
   // CHECK: DPCT1081:{{[0-9]+}}: The generated code assumes that "&d2" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
-  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
+  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(&d2));
   sincos(i, &d1, &d2);
 }
 
@@ -3292,16 +3307,16 @@ __device__ void bar1(double *d, bool flag) {
   double *d2_p;
   d2_p = &d2;
 
-  //CHECK:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
+  //CHECK:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(d2_p));
   //CHECK-NEXT:if (flag) {
   //CHECK-NEXT:  d2_p = d + 2;
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1081:{{[0-9]+}}: The generated code assumes that "d2_p" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(d2_p));
   //CHECK-NEXT:d2_p = &d2;
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes>(d2_p));
   sincos(i, &d1, d2_p);
   if (flag) {
     d2_p = d + 2;

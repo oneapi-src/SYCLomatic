@@ -2,7 +2,6 @@
 // RUN: FileCheck --input-file %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.cpp -o %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.o %}
 
-#ifndef  BUILD_TEST
 #include <cuda.h>
 #include <curand_kernel.h>
 #include <cstdio>
@@ -17,9 +16,11 @@ __global__ void picount(int *totals) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
   // CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng;
-  // CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(clock64(), 1234);
   curandState_t rng;
+#ifndef BUILD_TEST
+  // CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(clock64(), 1234);
   curand_init(clock64(), tid, 1234, &rng);
+#endif
 
   counter[threadIdx.x] = 0;
 
@@ -54,4 +55,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-#endif
