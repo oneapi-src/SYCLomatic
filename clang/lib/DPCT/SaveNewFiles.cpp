@@ -19,6 +19,7 @@
 #include "Schema.h"
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/Path.h"
@@ -38,6 +39,7 @@
 #include <algorithm>
 #include <cassert>
 #include <fstream>
+#include <iostream>
 
 using namespace clang::dpct;
 using namespace llvm;
@@ -172,6 +174,7 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
   if (DpctGlobalInfo::getChangeExtensions().empty() ||
       DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
     if (FileType & SPT_CudaSource) {
+      std::cout << "Just before adding extn: " << CanonicalPathStr.c_str() << "\n";
       path::replace_extension(CanonicalPathStr,
                               DpctGlobalInfo::getSYCLSourceExtension());
     } else if (FileType & SPT_CppSource) {
@@ -394,9 +397,15 @@ int writeReplacementsToFiles(
     clang::dpct::ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
   volatile ProcessStatus status = MigrationSucceeded;
   clang::tooling::UnifiedPath OutPath;
+
+  for (auto &E : MainSrcFileMap) {
+    std::cout << "-- File: " << E.first << "\n";
+  }
+
   for (auto &Entry : Replset) {
     OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
         Rewrite.getSourceMgr().getFileManager(), Entry.first));
+    std::cout << "-- Outpath as Entry.first without symlinks " + OutPath.getCanonicalPath().str() + "\n";
     bool HasRealReplacements = true;
     auto Repls = Entry.second;
 
@@ -416,10 +425,13 @@ int writeReplacementsToFiles(
       // validation.
 
       rewriteFileName(OutPath);
+      std::cout << "-- OutPath after rewriteFileName: " << OutPath.getCanonicalPath().str() << "\n";
     }
+    std::string FileNameWithReplaceExtn = OutPath.getCanonicalPath().str();
     if (!rewriteDir(OutPath, InRoot, Folder)) {
       continue;
     }
+      std::cout << "-- OutPath after rewriteDir: " << OutPath.getCanonicalPath().str() << "\n";
 
     std::error_code EC;
 
@@ -445,13 +457,13 @@ int writeReplacementsToFiles(
       return status;
     }
 
+    SourceProcessType FileType = GetSourceFileType(Entry.first);
     // For header file, as it can be included from different file, it needs
     // merge the migration triggered by each including.
     // For main file, as it can be compiled or preprocessed with different
     // macro defined, it also needs merge the migration triggered by each
     // command.
     if (IsForCUDADebug == clang::dpct::RT_ForSYCLMigration) {
-      SourceProcessType FileType = GetSourceFileType(Entry.first);
       if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
         mergeExternalReps(Entry.first, OutPath, Entry.second);
       } else {
@@ -505,6 +517,19 @@ int writeReplacementsToFiles(
       continue;
     }
 
+    std::cout << "-- Entry.first is          " << Entry.first << "\n";
+    std::cout << "-- FileNameWithReplaceExtn " << FileNameWithReplaceExtn << "\n";
+
+    auto FE = Rewrite.getSourceMgr().getFileManager().getFile(FileNameWithReplaceExtn, false, false);
+
+    if (FE && !(FileType & (SPT_CppHeader | SPT_CudaHeader))) {
+      std::string ErrMsg = "[WARNING] Replacing an existing file '" +
+                           OutPath.getCanonicalPath().str() +
+                           "' with a migrated file because they share the same "
+                           "extension. Consider using a different extension. "
+                           "See option --sycl-file-extension\n";
+      PrintMsg(ErrMsg);
+    }
     // Do not apply PatternRewriters for CodePin CUDA debug file
     if (MapNames::PatternRewriters.empty() ||
         IsForCUDADebug == clang::dpct::RT_ForCUDADebug) {
