@@ -997,13 +997,13 @@ device_pointer<T> get_device_pointer(const device_pointer<T> &ptr) {
 }
 
 template <typename T> T *get_raw_pointer(const device_pointer<T> &ptr) {
-  #ifdef DPCT_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
   assert(false && "Invalid to get raw pointer of a device_pointer"
                   "with DPCT_USM_LEVEL_NONE, data is stored in a "
                   "sycl::buffer, and raw pointers to that data are "
                   "inaccessible.");
   return ::std::nullptr;
-else // DPCT_USM_LEVEL_NONE
+#else // DPCT_USM_LEVEL_NONE
   return ptr.get();
 #endif // DPCT_USM_LEVEL_NONE
 }
