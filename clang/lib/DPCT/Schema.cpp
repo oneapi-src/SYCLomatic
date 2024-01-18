@@ -85,7 +85,7 @@ uint32_t getFieldTypeAlign(const FieldSchema &FS) {
   }
 }
 
-inline int alignTool(int num, int base) {
+inline int alignTo(int num, int base) {
   return ((num + base - 1) / base) * base;
 }
 
@@ -102,7 +102,7 @@ int registerBaseClassTypeSchema(
     if (BCD) {
       const auto &TsTmp = registerTypeSchemaFunc(base.getType());
       assert(TsTmp.TypeAlign != 0 && "The type alignment should not be 0.");
-      BaseOffset = alignTool(BaseOffset, TsTmp.TypeAlign);
+      BaseOffset = alignTo(BaseOffset, TsTmp.TypeAlign);
       for (auto mem : TsTmp.Members) {
         mem.Offset += BaseOffset;
         mem.FieldName = base.getType().getAsString() + "::" + mem.FieldName;
@@ -157,7 +157,7 @@ TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
           convertCFieldSchemaToSFieldSChema(constructFieldSchema(field));
       // Update Field Offset
       int CurAlign = getFieldTypeAlign(FsTmp);
-      FsTmp.Offset = alignTool(OffSet, CurAlign);
+      FsTmp.Offset = alignTo(OffSet, CurAlign);
       OffSet = FsTmp.Offset + FsTmp.ValSize;
       TS.Members.push_back(FsTmp);
       TS.TypeAlign = std::max(TS.TypeAlign, CurAlign);
@@ -166,8 +166,8 @@ TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
     TS.TypeSize =
         TS.FieldNum == 0
             ? 0
-            : alignTool((TS.Members.back().Offset + TS.Members.back().ValSize),
-                        TS.TypeAlign);
+            : alignTo((TS.Members.back().Offset + TS.Members.back().ValSize),
+                      TS.TypeAlign);
   }
   STypeSchemaMap[KeyStr] = TS;
   return TS;
