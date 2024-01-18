@@ -223,21 +223,21 @@ public:
     assert(false && "Invalid to use device_pointer::get() with "
                     "DPCT_USM_LEVEL_NONE, data is stored in a sycl::buffer, "
                     "and raw pointers to that data are inaccessible.");
-    return ::std::nullptr;
+    return nullptr;
   }
   operator ValueType *() {
     assert(false && "Invalid to use device_pointer to raw pointer conversion "
                     "with DPCT_USM_LEVEL_NONE, data is stored in a "
                     "sycl::buffer, and raw pointers to that data are "
                     "inaccessible.");
-    return ::std::nullptr;
+    return nullptr;
   }
   operator ValueType *() const {
     assert(false && "Invalid to use device_pointer to raw pointer conversion "
                     "with DPCT_USM_LEVEL_NONE, data is stored in a "
                     "sycl::buffer, and raw pointers to that data are "
                     "inaccessible.");
-    return ::std::nullptr;
+    return nullptr;
   }
   Derived operator+(difference_type forward) const {
     return Derived{buffer, idx + forward};
@@ -1002,7 +1002,7 @@ template <typename T> T *get_raw_pointer(const device_pointer<T> &ptr) {
                   "with DPCT_USM_LEVEL_NONE, data is stored in a "
                   "sycl::buffer, and raw pointers to that data are "
                   "inaccessible.");
-  return ::std::nullptr;
+  return nullptr;
 #else  // DPCT_USM_LEVEL_NONE
   return ptr.get();
 #endif // DPCT_USM_LEVEL_NONE

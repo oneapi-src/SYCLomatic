@@ -563,13 +563,13 @@ public:
     assert(false && "Invalid to use device_vector::real_begin() with "
                     "DPCT_USM_LEVEL_NONE, data is stored in a sycl::buffer, "
                     "and raw pointers to that data are inaccessible.");
-    return ::std::nullptr;
+    return nullptr;
   }
   const T *real_begin() const {
     assert(false && "Invalid to use device_vector::real_begin() with "
                     "DPCT_USM_LEVEL_NONE, data is stored in a sycl::buffer, "
                     "and raw pointers to that data are inaccessible.");
-    return ::std::nullptr;
+    return nullptr;
   }
   void swap(device_vector &v) {
     void *temp = v._storage;
