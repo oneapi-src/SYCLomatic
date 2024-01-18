@@ -560,17 +560,16 @@ public:
   const_iterator end() const { return device_iterator<T>(get_buffer(), _size); }
   const_iterator cend() const { return end(); }
   T *real_begin() {
-    return (detail::mem_mgr::instance()
-                .translate_ptr(_storage)
-                .buffer.template get_access<sycl::access_mode::read_write>())
-        .get_pointer();
+    assert(false && "Invalid to use device_vector::real_begin() with "
+                    "DPCT_USM_LEVEL_NONE, data is stored in a sycl::buffer, "
+                    "and raw pointers to that data are inaccessible.");
+    return ::std::nullptr;
   }
   const T *real_begin() const {
-    return const_cast<device_vector *>(this)
-        ->detail::mem_mgr::instance()
-        .translate_ptr(_storage)
-        .buffer.template get_access<sycl::access_mode::read_write>()
-        .get_pointer();
+    assert(false && "Invalid to use device_vector::real_begin() with "
+                    "DPCT_USM_LEVEL_NONE, data is stored in a sycl::buffer, "
+                    "and raw pointers to that data are inaccessible.");
+    return ::std::nullptr;
   }
   void swap(device_vector &v) {
     void *temp = v._storage;
