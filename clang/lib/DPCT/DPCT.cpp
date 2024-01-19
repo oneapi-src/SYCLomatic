@@ -1262,6 +1262,16 @@ int runDPCT(int argc, const char **argv) {
     return MigrationSucceeded;
   }
 
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    if (AnalysisModeOutputFile.empty())
+      dumpAnalysisModeStatics(llvm::outs());
+
+    std::error_code EC;    
+    llvm::raw_fd_stream Out(AnalysisModeOutputFile, EC);
+    dumpAnalysisModeStatics(Out);
+    return MigrationSucceeded;
+  }
+
   if (GenReport) {
     // report: apis, stats, all, diags
     if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
@@ -1282,11 +1292,6 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       return MigrationSucceeded;
     }
-  }
-
-  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
-    dumpAnalysisModeStatics(llvm::outs());
-    return MigrationSucceeded;
   }
 
   // if run was successful
