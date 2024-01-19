@@ -19,6 +19,27 @@ class CheckThrustArgType {
 public:
   CheckThrustArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
   bool operator()(const CallExpr *C) {
+
+    const auto *Decl = C->getCalleeDecl();
+    if (Decl) {
+      //  To do specific process for thrust::copy when it invokes copy operation
+      //  on std::ostream_iterator.
+      auto ThrustFuncName =
+          C->getCalleeDecl()->getAsFunction()->getNameAsString();
+      if (ThrustFuncName == "copy") {
+        auto NumArgs = C->getNumArgs();
+        const auto *CXXTempObj =
+            dyn_cast<CXXTemporaryObjectExpr>(C->getArg(NumArgs - 1));
+        if (CXXTempObj) {
+          std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+              CXXTempObj->getType().getCanonicalType());
+          if (OpType.find("std::ostream_iterator") != std::string::npos) {
+            return false;
+          }
+        }
+      }
+    }
+
     std::string ArgType;
     unsigned NumArgs = C->getNumArgs();
     if (Idx < NumArgs) {

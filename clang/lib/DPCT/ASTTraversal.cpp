@@ -8375,14 +8375,19 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
   const auto &SM = DpctGlobalInfo::getSourceManager();
   auto KCallSpellingRange = getTheLastCompleteImmediateRange(
       KCall->getBeginLoc(), KCall->getEndLoc());
-
+if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
+      CodePinInstrumentation.end()) 
+      return ;
   llvm::SmallString<512> RelativePath;
 
   std::string DebugArgsString = "(\"";
   std::string DebugArgsStringSYCL = "(\"";
-  DebugArgsString += KCallSpellingRange.first.printToString(SM) + "\", ";
-  DebugArgsStringSYCL +=
-      KCallSpellingRange.first.printToString(SM) + "(SYCL)\", ";
+  DebugArgsString += llvm::sys::path::convert_to_slash(
+                         KCallSpellingRange.first.printToString(SM)) +
+                     "\", ";
+  DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
+                             KCallSpellingRange.first.printToString(SM)) +
+                         "(SYCL)\", ";
   std::string StramStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
@@ -8432,7 +8437,7 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
                                        "dpct::experimental::gen_epilog_API_CP" +
                                            DebugArgsStringSYCL,
                                        0, RT_ForSYCLMigration));
-
+  CodePinInstrumentation.insert(KCallSpellingRange.first);
   DpctGlobalInfo::getInstance().insertHeader(
       KCall->getBeginLoc(), HT_DPCT_CodePin_SYCL, RT_ForSYCLMigration);
   DpctGlobalInfo::getInstance().insertHeader(
@@ -12017,7 +12022,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
   // For CUDA file, nvcc can include math header files implicitly.
   // So we need add the cmath header file if the API is not from SDK
   // header.
-  bool NeedInsertCmath = false;
+  bool NeedInsertCmath = DpctGlobalInfo::getContext().getLangOpts().CUDA;
   if (FD) {
     std::string Name = FD->getNameInfo().getName().getAsString();
     if (Name == "__brev" || Name == "__brevll") {
@@ -12027,11 +12032,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
     } else if (Name == "__ffs" || Name == "__ffsll") {
       requestFeature(HelperFeatureEnum::device_ext);
     }
-    if (!math::IsDefinedInCUDA()(CE)) {
-      NeedInsertCmath = true;
-    }
-  } else {
-    NeedInsertCmath = true;
+    NeedInsertCmath = NeedInsertCmath && !math::IsDefinedInCUDA()(CE);
   }
   if (NeedInsertCmath) {
     DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Math);
@@ -14792,14 +14793,14 @@ void CudaArchMacroRule::runRule(
       }
       auto LocInfo = Global.getLocInfo(CE->getBeginLoc());
       Global.getMainSourceFileMap()[LocInfo.first].push_back(
-        Global.getMainFile()->getFilePath());
+          Global.getMainFile()->getFilePath());
       HDFLI.Type = HDFuncInfoType::HDFI_Call;
       HDFLI.FilePath = LocInfo.first;
       HDFLI.FuncEndOffset = LocInfo.second + Offset;
       HDFIMap[ManglingName].LocInfos.insert(
-          {HDFLI.FilePath.getCanonicalPath().str() + "Call" + std::to_string(HDFLI.FuncEndOffset),
+          {HDFLI.FilePath.getCanonicalPath().str() + "Call" +
+               std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
-      HDFIMap[ManglingName].isCalledInHost = true;
     }
   }
 }
