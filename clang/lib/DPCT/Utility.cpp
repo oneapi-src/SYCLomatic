@@ -4756,13 +4756,21 @@ matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
 int isArgumentInitialized(
     const clang::Expr *Arg,
     std::vector<const clang::VarDecl *> &DeclsNeedToBeInitialized) {
-  std::cout << "Arg:" << Arg->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
-  auto isInitBeforeArg = [](const clang::DeclRefExpr *DRE,
+  auto isInitBeforeArg = [](const CompoundStmt *Context,
+                            const clang::DeclRefExpr *DRE,
                             const clang::Expr *Arg) -> bool {
     const auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(DRE);
     if (ICE && ICE->getCastKind() == CastKind::CK_LValueToRValue)
       return false;
-    const auto& SM = DpctGlobalInfo::getSourceManager();
+    const CompoundStmt *DREContext =
+        DpctGlobalInfo::findAncestor<CompoundStmt>(DRE);
+    if (!DREContext || DREContext != Context)
+      return false;
+    const CompoundStmt *ArgContext =
+        DpctGlobalInfo::findAncestor<CompoundStmt>(Arg);
+    if (!ArgContext || ArgContext != Context)
+      return false;
+    const auto &SM = DpctGlobalInfo::getSourceManager();
     return SM.getExpansionLoc(DRE->getEndLoc()).getRawEncoding() <
            SM.getExpansionLoc(Arg->getBeginLoc()).getRawEncoding();
   };
@@ -4803,14 +4811,15 @@ int isArgumentInitialized(
         matchTargetDREInScope(VD, CS);
     bool HasInitBeforeArg = false;
     for (const auto DRERef : DRERefSet) {
-      if (HasInitBeforeArg = isInitBeforeArg(DRERef, Arg))
+      if (HasInitBeforeArg = isInitBeforeArg(CS, DRERef, Arg))
         break;
     }
     if (HasInitBeforeArg)
       continue;
     else if (VD->getType()->isFundamentalType())
       DeclsNeedToBeInitialized.push_back(VD);
-    return -1;
+    else
+      return -1;
   }
 
   return DeclsNeedToBeInitialized.empty();
