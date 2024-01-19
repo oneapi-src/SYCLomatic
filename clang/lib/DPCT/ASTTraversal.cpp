@@ -15170,7 +15170,24 @@ void UninitializedDeviceVarRule::runRule(
   const clang::Expr *Call = nullptr;
   const clang::Expr *Arg = nullptr;
 
-
+  do {
+    if (const CXXMemberCallExpr *MC =
+            getNodeAsType<CXXMemberCallExpr>(Result, "MemberCall")) {
+      auto ObjType = MC->getObjectType().getCanonicalType();
+      std::string ObjTypeStr = ObjType.getAsString();
+      if (ObjTypeStr.find("class cub::WarpScan") == 0 ||
+          ObjTypeStr.find("class cub::WarpReduce") == 0) {
+        if (!MC || !MC->getMethodDecl())
+          return;
+        std::string FuncName = MC->getMethodDecl()->getNameAsString();
+        if (FuncName == "Broadcast") {
+          Call = MC;
+          Arg = MC->getArg(0);
+          break;
+        }
+      }
+    }
+  } while (0);
 
   if (!Call || !Arg)
     return;

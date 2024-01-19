@@ -4756,6 +4756,7 @@ matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
 int isArgumentInitialized(
     const clang::Expr *Arg,
     std::vector<const clang::VarDecl *> &DeclsNeedToBeInitialized) {
+  std::cout << "Arg:" << Arg->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
   auto isInitBeforeArg = [](const clang::DeclRefExpr *DRE,
                             const clang::Expr *Arg) -> bool {
     const auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(DRE);
