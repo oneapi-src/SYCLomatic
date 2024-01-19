@@ -518,14 +518,16 @@ int writeReplacementsToFiles(
     // After migration we will end up replacing src.cpp with migrated src.cu
     // when the --sycl-file-extension is cpp
     // In such a case warn the user.
-    auto FE = Rewrite.getSourceMgr().getFileManager().getFile(MigFilepathNoOutRoot, false, false);
+    auto FE = Rewrite.getSourceMgr().getFileManager().getFile(
+        MigFilepathNoOutRoot, false, false);
+
     if (FE && !(FileType & SPT_CppHeader)) {
-      std::string ErrMsg = "[WARNING] Replacing an existing file '" +
+      std::string Warning = "[WARNING] Replacing an existing file '" +
                            MigFilepathNoOutRoot +
                            "' with a migrated file because they share the same "
                            "extension. To use a different extension see option "
                            "--sycl-file-extension\n";
-      PrintMsg(ErrMsg);
+      PrintMsg(Warning);
     }
 
     // Do not apply PatternRewriters for CodePin CUDA debug file
