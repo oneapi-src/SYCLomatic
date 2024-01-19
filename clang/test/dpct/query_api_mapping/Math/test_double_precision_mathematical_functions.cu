@@ -114,7 +114,7 @@
 // ERFCX: CUDA API:
 // ERFCX-NEXT:   erfcx(d /*double*/);
 // ERFCX-NEXT: Is migrated to:
-// ERFCX-NEXT:   sycl::exp(d*d)*sycl::erfc(d);
+// ERFCX-NEXT:   sycl::exp(d * d) * sycl::erfc(d);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=erfinv | FileCheck %s -check-prefix=ERFINV
 // ERFINV: CUDA API:
@@ -288,7 +288,7 @@
 // MODF: CUDA API:
 // MODF-NEXT:   modf(d /*double*/, pd /*double **/);
 // MODF-NEXT: Is migrated to:
-// MODF-NEXT:   sycl::modf(d, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(pd));
+// MODF-NEXT:   sycl::modf(d, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pd));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=nan | FileCheck %s -check-prefix=NAN
 // NAN: CUDA API:
@@ -432,7 +432,7 @@
 // SINCOSPI: CUDA API:
 // SINCOSPI-NEXT:   sincospi(d /*double*/, pd1 /*double **/, pd2 /*double **/);
 // SINCOSPI-NEXT: Is migrated to:
-// SINCOSPI-NEXT:   *(pd1) = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(pd2));
+// SINCOSPI-NEXT:   *pd1 = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pd2));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sinh | FileCheck %s -check-prefix=SINH
 // SINH: CUDA API:
