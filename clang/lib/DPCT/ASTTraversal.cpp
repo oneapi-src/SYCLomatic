@@ -8375,7 +8375,9 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
   const auto &SM = DpctGlobalInfo::getSourceManager();
   auto KCallSpellingRange = getTheLastCompleteImmediateRange(
       KCall->getBeginLoc(), KCall->getEndLoc());
-
+if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
+      CodePinInstrumentation.end()) 
+      return ;
   llvm::SmallString<512> RelativePath;
 
   std::string DebugArgsString = "(\"";
@@ -8435,7 +8437,7 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
                                        "dpct::experimental::gen_epilog_API_CP" +
                                            DebugArgsStringSYCL,
                                        0, RT_ForSYCLMigration));
-
+  CodePinInstrumentation.insert(KCallSpellingRange.first);
   DpctGlobalInfo::getInstance().insertHeader(
       KCall->getBeginLoc(), HT_DPCT_CodePin_SYCL, RT_ForSYCLMigration);
   DpctGlobalInfo::getInstance().insertHeader(
