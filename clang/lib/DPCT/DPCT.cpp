@@ -730,6 +730,14 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationErrorNoExplicitInRoot);
   }
 
+  if (MigrateCmakeScriptOnly) {
+    if (InRoot.getPath().empty() &&
+        !cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrationErrorNoExplicitInRootAndCMakeScript);
+      dpctExit(MigrationErrorNoExplicitInRootAndCMakeScript);
+    }
+  }
+
   if (!makeInRootCanonicalOrSetDefaults(InRoot,
                                         OptParser->getSourcePathList())) {
     ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
