@@ -39,7 +39,6 @@
 #include <algorithm>
 #include <cassert>
 #include <fstream>
-#include <iostream>
 
 using namespace clang::dpct;
 using namespace llvm;
@@ -49,7 +48,7 @@ namespace fs = llvm::sys::fs;
 namespace clang {
 namespace tooling {
 UnifiedPath getFormatSearchPath();
-}
+} // namespace tooling
 } // namespace clang
 
 extern std::map<std::string, uint64_t> ErrorCnt;
@@ -174,7 +173,6 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
   if (DpctGlobalInfo::getChangeExtensions().empty() ||
       DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
     if (FileType & SPT_CudaSource) {
-      std::cout << "Just before adding extn: " << CanonicalPathStr.c_str() << "\n";
       path::replace_extension(CanonicalPathStr,
                               DpctGlobalInfo::getSYCLSourceExtension());
     } else if (FileType & SPT_CppSource) {
@@ -398,14 +396,9 @@ int writeReplacementsToFiles(
   volatile ProcessStatus status = MigrationSucceeded;
   clang::tooling::UnifiedPath OutPath;
 
-  for (auto &E : MainSrcFileMap) {
-    std::cout << "-- File: " << E.first << "\n";
-  }
-
   for (auto &Entry : Replset) {
     OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
         Rewrite.getSourceMgr().getFileManager(), Entry.first));
-    std::cout << "-- Outpath as Entry.first without symlinks " + OutPath.getCanonicalPath().str() + "\n";
     bool HasRealReplacements = true;
     auto Repls = Entry.second;
 
@@ -425,13 +418,14 @@ int writeReplacementsToFiles(
       // validation.
 
       rewriteFileName(OutPath);
-      std::cout << "-- OutPath after rewriteFileName: " << OutPath.getCanonicalPath().str() << "\n";
     }
-    std::string FileNameWithReplaceExtn = OutPath.getCanonicalPath().str();
+
+    // This is path to file with replaced SYCL extension and without --out-root
+    std::string MigFilepathNoOutRoot = OutPath.getCanonicalPath().str();
+
     if (!rewriteDir(OutPath, InRoot, Folder)) {
       continue;
     }
-      std::cout << "-- OutPath after rewriteDir: " << OutPath.getCanonicalPath().str() << "\n";
 
     std::error_code EC;
 
@@ -517,19 +511,23 @@ int writeReplacementsToFiles(
       continue;
     }
 
-    std::cout << "-- Entry.first is          " << Entry.first << "\n";
-    std::cout << "-- FileNameWithReplaceExtn " << FileNameWithReplaceExtn << "\n";
-
-    auto FE = Rewrite.getSourceMgr().getFileManager().getFile(FileNameWithReplaceExtn, false, false);
-
-    if (FE && !(FileType & (SPT_CppHeader | SPT_CudaHeader))) {
+    // Check for another file with SYCL extension. For example
+    // In in-root we have
+    //  * src.cpp
+    //  * src.cu
+    // After migration we will end up replacing src.cpp with migrated src.cu
+    // when the --sycl-file-extension is cpp
+    // In such a case warn the user.
+    auto FE = Rewrite.getSourceMgr().getFileManager().getFile(MigFilepathNoOutRoot, false, false);
+    if (FE && !(FileType & SPT_CppHeader)) {
       std::string ErrMsg = "[WARNING] Replacing an existing file '" +
-                           OutPath.getCanonicalPath().str() +
+                           MigFilepathNoOutRoot +
                            "' with a migrated file because they share the same "
-                           "extension. Consider using a different extension. "
-                           "See option --sycl-file-extension\n";
+                           "extension. To use a different extension see option "
+                           "--sycl-file-extension\n";
       PrintMsg(ErrMsg);
     }
+
     // Do not apply PatternRewriters for CodePin CUDA debug file
     if (MapNames::PatternRewriters.empty() ||
         IsForCUDADebug == clang::dpct::RT_ForCUDADebug) {
