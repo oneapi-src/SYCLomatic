@@ -192,7 +192,7 @@ TypeSchema dpct::registerSYCLTypeSchema(const clang::QualType &QT) {
 }
 
 TypeSchema dpct::registerCUDATypeSchema(const clang::QualType &QT) {
-  if (QT.isNull())
+  if (QT.isNull() || QT->isDependentType())
     return TypeSchema();
   const std::string &KeyStr = DpctGlobalInfo::getTypeName(QT);
   if (auto It = CTypeSchemaMap.find(KeyStr); It != CTypeSchemaMap.end())

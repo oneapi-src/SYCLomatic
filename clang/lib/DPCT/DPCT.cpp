@@ -730,6 +730,14 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationErrorNoExplicitInRoot);
   }
 
+  if (MigrateCmakeScriptOnly) {
+    if (InRoot.getPath().empty() &&
+        !cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrationErrorNoExplicitInRootAndCMakeScript);
+      dpctExit(MigrationErrorNoExplicitInRootAndCMakeScript);
+    }
+  }
+
   if (!makeInRootCanonicalOrSetDefaults(InRoot,
                                         OptParser->getSourcePathList())) {
     ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
@@ -1040,7 +1048,7 @@ int runDPCT(int argc, const char **argv) {
   if (MigrateCmakeScriptOnly || MigrateCmakeScript) {
     SmallString<128> CmakeRuleFilePath(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(CmakeRuleFilePath,
-                            Twine("extensions/opt_rules/cmake_rules/"
+                            Twine("extensions/cmake_rules/"
                                   "cmake_script_migration_rule.yaml"));
     if (llvm::sys::fs::exists(CmakeRuleFilePath)) {
       std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{

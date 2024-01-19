@@ -61,7 +61,8 @@ enum ProcessStatus {
   MigrationErrorCMakeScriptPathInvalid = -48,
   MigrateCmakeScriptOnlyNotSpecifed = -49,
   MigarteCmakeScriptIncorrectUse = -50,
-  MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse= -51,
+  MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse = -51,
+  MigrationErrorNoExplicitInRootAndCMakeScript = -52,
 };
 
 namespace clang {
