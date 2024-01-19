@@ -203,7 +203,7 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorNoExplicitInRootAndCMakeScript:
     StatusString =
         "Error: The option -migrate-cmake-script-only requires that either "
-        "the option '--in-root' or the CMake files be specified explicitly.";
+        "the option '--in-root' or the CMake file(s) be specified explicitly.";
     break;
   default:
     DpctLog() << "Unknown error\n";
