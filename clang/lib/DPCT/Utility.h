@@ -581,6 +581,12 @@ public:
   ~PairedPrinter() { OS << Postfix; }
 };
 std::string appendPath(const std::string &P1, const std::string &P2);
+/// @brief Check if an argument is initialized.
+/// @param Arg Function call argument.
+/// @return  1: Initialized
+///          0: Not initialized.
+///         -1: Cannot deduce.
+int isArgumentInitialized(const clang::Expr *Arg);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

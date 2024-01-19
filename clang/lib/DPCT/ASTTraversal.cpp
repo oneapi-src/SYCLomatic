@@ -15155,3 +15155,23 @@ void AssertRule::runRule(const MatchFinder::MatchResult &Result) {
   EA.applyAllSubExprRepl();
 }
 REGISTER_RULE(AssertRule, PassKind::PK_Migration)
+
+void UninitializedDeviceVarRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
+                                      "Broadcast")))))
+                    .bind("MemberCall"),
+                this);
+}
+void UninitializedDeviceVarRule::runRule(
+    const MatchFinder::MatchResult &Result) {
+  if (const VarDecl *VD = getNodeAsType<VarDecl>(Result, "Var")) {
+    if (VD->getType()->isFundamentalType()) {
+      emplaceTransformation(new InsertText(
+          VD->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+              VD->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+              DpctGlobalInfo::getContext().getLangOpts())),
+          " = 0"));
+    }
+  }
+}
+REGISTER_RULE(UninitializedDeviceVarRule, PassKind::PK_Migration)

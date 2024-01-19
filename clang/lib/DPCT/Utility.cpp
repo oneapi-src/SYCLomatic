@@ -4736,5 +4736,8 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
   llvm::sys::path::append(TempPath, P2);
   return TempPath.str().str();
 }
+int isArgumentInitialized(const clang::Expr *Arg) {
+  return false;
+}
 } // namespace dpct
 } // namespace clang
