@@ -8380,9 +8380,12 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
 
   std::string DebugArgsString = "(\"";
   std::string DebugArgsStringSYCL = "(\"";
-  DebugArgsString += KCallSpellingRange.first.printToString(SM) + "\", ";
-  DebugArgsStringSYCL +=
-      KCallSpellingRange.first.printToString(SM) + "(SYCL)\", ";
+  DebugArgsString += llvm::sys::path::convert_to_slash(
+                         KCallSpellingRange.first.printToString(SM)) +
+                     "\", ";
+  DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
+                             KCallSpellingRange.first.printToString(SM)) +
+                         "(SYCL)\", ";
   std::string StramStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
@@ -14792,14 +14795,14 @@ void CudaArchMacroRule::runRule(
       }
       auto LocInfo = Global.getLocInfo(CE->getBeginLoc());
       Global.getMainSourceFileMap()[LocInfo.first].push_back(
-        Global.getMainFile()->getFilePath());
+          Global.getMainFile()->getFilePath());
       HDFLI.Type = HDFuncInfoType::HDFI_Call;
       HDFLI.FilePath = LocInfo.first;
       HDFLI.FuncEndOffset = LocInfo.second + Offset;
       HDFIMap[ManglingName].LocInfos.insert(
-          {HDFLI.FilePath.getCanonicalPath().str() + "Call" + std::to_string(HDFLI.FuncEndOffset),
+          {HDFLI.FilePath.getCanonicalPath().str() + "Call" +
+               std::to_string(HDFLI.FuncEndOffset),
            HDFLI});
-      HDFIMap[ManglingName].isCalledInHost = true;
     }
   }
 }

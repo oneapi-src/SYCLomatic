@@ -154,7 +154,6 @@ struct HostDeviceFuncLocInfo {
 
 struct HostDeviceFuncInfo {
   std::unordered_map<std::string, HostDeviceFuncLocInfo> LocInfos;
-  bool isCalledInHost = false;
   bool isDefInserted = false;
   bool needGenerateHostCode = false;
   int PostFixId = -1;
