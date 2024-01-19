@@ -15167,14 +15167,26 @@ void UninitializedDeviceVarRule::registerMatcher(MatchFinder &MF) {
 }
 void UninitializedDeviceVarRule::runRule(
     const MatchFinder::MatchResult &Result) {
-  if (const VarDecl *VD = getNodeAsType<VarDecl>(Result, "Var")) {
-    if (VD->getType()->isFundamentalType()) {
+  const clang::Expr *Call = nullptr;
+  const clang::Expr *Arg = nullptr;
+
+
+
+  if (!Call || !Arg)
+    return;
+  std::vector<const clang::VarDecl *> DeclsNeedToBeInitialized;
+  int Res = isArgumentInitialized(Arg, DeclsNeedToBeInitialized);
+  if (Res == -1) {
+    for (const auto D : DeclsNeedToBeInitialized) {
       emplaceTransformation(new InsertText(
-          VD->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-              VD->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+          D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+              D->getEndLoc(), DpctGlobalInfo::getSourceManager(),
               DpctGlobalInfo::getContext().getLangOpts())),
           " = 0"));
     }
+  } else if (Res == 0) {
+    report(Call->getBeginLoc(), Diagnostics::UNINITIALIZED_DEVICE_VAR, false,
+           ExprAnalysis::ref(Arg));
   }
 }
 REGISTER_RULE(UninitializedDeviceVarRule, PassKind::PK_Migration)
