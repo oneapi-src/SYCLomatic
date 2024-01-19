@@ -522,12 +522,12 @@ int writeReplacementsToFiles(
         MigFilepathNoOutRoot, false, false);
 
     if (FE && !(FileType & SPT_CppHeader)) {
-      std::string Warning = "[WARNING] Replacing an existing file '" +
-                           MigFilepathNoOutRoot +
-                           "' with a migrated file because they share the same "
-                           "extension. To use a different extension see option "
-                           "--sycl-file-extension\n";
-      PrintMsg(Warning);
+        std::string Warning =
+            "[WARNING] Replacing an existing file '" + MigFilepathNoOutRoot +
+            "' with a migrated file because they share the same "
+            "extension. To use a different extension see option "
+            "--sycl-file-extension\n";
+        PrintMsg(Warning);
     }
 
     // Do not apply PatternRewriters for CodePin CUDA debug file
