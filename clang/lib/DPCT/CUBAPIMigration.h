@@ -119,6 +119,9 @@ private:
   void processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processBlockLevelMemberCall(const CXXMemberCallExpr *MC);
   void processWarpLevelMemberCall(const CXXMemberCallExpr *MC);
+
+  void analyzeUninitializedDeviceVar(const clang::Expr *Call,
+                                     const clang::Expr *Arg);
 };
 
 } // namespace dpct
