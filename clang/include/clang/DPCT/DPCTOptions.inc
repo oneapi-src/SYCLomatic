@@ -232,11 +232,6 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<DPCTFormatStyle>), FormatST,
            llvm::cl::init(DPCTFormatStyle::FS_Custom), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
            llvm::cl::Optional)
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), NoClNamespaceInline, "no-cl-namespace-inline",
-           llvm::cl::desc("DEPRECATED: Do not use cl:: namespace inline. Default: off. This option will be\n"
-                   "ignored if the replacement option --use-explicit-namespace is used.\n"),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(ExplicitClNamespace))
-
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), NoDRYPattern, "no-dry-pattern",
            llvm::cl::desc("Do not use DRY (do not repeat yourself) pattern when functions from dpct\n"
                                    "namespace are inserted. Default: off.\n"),
@@ -285,10 +280,6 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<AssumedNDRangeDimEnum>), NDR
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExplicitNamespace, "use-explicit-namespace",
            DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("cl", int(ExplicitNamespace::EN_CL),
-               "DEPRECATED: Generate code with cl::sycl:: namespace. Cannot be used with "
-               "sycl or sycl-math values.",
-               false),
              DPCT_OPT_ENUM("dpct", int(ExplicitNamespace::EN_DPCT),
                                      "Generate code with dpct:: namespace.",
                                      false),
@@ -440,9 +431,9 @@ DPCT_NON_ENUM_OPTION(
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<SYCLFileExtensionEnum>), SYCLFileExtension, "sycl-file-extension",
            DPCT_OPTION_VALUES(
+             DPCT_OPT_ENUM("dp-cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension .dp.cpp and .dp.hpp (default)", false),
              DPCT_OPT_ENUM("sycl-cpp", int(SYCLFileExtensionEnum::SYCL_CPP), "Use extension .sycl.cpp and .sycl.hpp", false),
-             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension .cpp and .hpp", false),
-             DPCT_OPT_ENUM("dp-cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension .dp.cpp and .dp.hpp", false)
+             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension .cpp and .hpp", false)
            ),
            llvm::cl::desc("File extension of migrated source files\n"),
            llvm::cl::init(SYCLFileExtensionEnum::DP_CPP), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
