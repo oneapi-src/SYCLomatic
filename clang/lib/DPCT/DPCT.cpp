@@ -1263,12 +1263,13 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (DpctGlobalInfo::isAnalysisModeEnabled()) {
-    if (AnalysisModeOutputFile.empty())
+    if (AnalysisModeOutputFile.empty()) {
       dumpAnalysisModeStatics(llvm::outs());
-
-    std::error_code EC;    
-    llvm::raw_fd_stream Out(AnalysisModeOutputFile, EC);
-    dumpAnalysisModeStatics(Out);
+    } else {
+      std::error_code EC;
+      llvm::raw_fd_stream Out(AnalysisModeOutputFile, EC);
+      dumpAnalysisModeStatics(Out);
+    }
     return MigrationSucceeded;
   }
 
