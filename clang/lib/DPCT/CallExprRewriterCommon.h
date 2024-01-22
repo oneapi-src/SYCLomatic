@@ -1236,6 +1236,16 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createReportWarningRewriterF
       Factory.second, FuncName, MsgId, ArgsCreator...);
 }
 
+template <class T>
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createAnalyzeUninitializedDeviceVarRewriterFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Factory,
+    const std::string &FuncName, int Idx, T MsgArg) {
+  return std::make_shared<AnalyzeUninitializedDeviceVarRewriterFactory<T>>(
+      Factory.second, FuncName, Idx, MsgArg);
+}
+
 template <class ArgT>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createDeleterCallExprRewriterFactory(
@@ -2148,6 +2158,9 @@ public:
   {FuncName, createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)},
 #define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
   {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
+#define ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(FuncName, Factory, Idx, MsgArg)   \
+  {FuncName, createAnalyzeUninitializedDeviceVarRewriterFactory(               \
+                 Factory FuncName, Idx, MsgArg)},
 #define TOSTRING_FACTORY_ENTRY(FuncName, ...)                                  \
   {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define REMOVE_API_FACTORY_ENTRY(FuncName)                                     \

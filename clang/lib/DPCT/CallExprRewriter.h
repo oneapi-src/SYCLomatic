@@ -259,6 +259,42 @@ public:
   }
 };
 
+template <class T>
+class AnalyzeUninitializedDeviceVarRewriterFactory
+    : public CallExprRewriterFactory<UnsupportFunctionRewriter<T>, Diagnostics,
+                                     T> {
+  using BaseT =
+      CallExprRewriterFactory<UnsupportFunctionRewriter<T>, Diagnostics, T>;
+  std::shared_ptr<CallExprRewriterFactoryBase> First;
+  int Idx = 0;
+
+public:
+  AnalyzeUninitializedDeviceVarRewriterFactory(
+      std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory,
+      std::string FuncName, int Idx, T MsgArg)
+      : BaseT(FuncName, Diagnostics::UNINITIALIZED_DEVICE_VAR, MsgArg),
+        First(FirstFactory), Idx(Idx) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    std::vector<const clang::VarDecl *> DeclsNeedToBeInitialized;
+    int Res = isArgumentInitialized(C->getArg(Idx), DeclsNeedToBeInitialized);
+    if (Res == 0) {
+      for (const auto D : DeclsNeedToBeInitialized) {
+        SourceLocation InsertLoc =
+            D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+                D->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+                DpctGlobalInfo::getContext().getLangOpts()));
+        std::string Repl = " = 0";
+        DpctGlobalInfo::getInstance().addReplacement(
+            std::make_shared<ExtReplacement>(DpctGlobalInfo::getSourceManager(),
+                                             InsertLoc, 0, Repl, nullptr));
+      }
+    } else if (Res == -1) {
+      BaseT::create(C);
+    }
+    return First->create(C);
+  }
+};
+
 class AssignableRewriter : public CallExprRewriter {
   std::shared_ptr<CallExprRewriter> Inner;
   bool IsAssigned;
