@@ -169,7 +169,7 @@
 // cublasCreate: CUDA API:
 // cublasCreate-NEXT:   cublasCreate(handle /*cublasHandle_t **/);
 // cublasCreate-NEXT: Is migrated to:
-// cublasCreate-NEXT:   handle->get_queue() = std::make_shared<dpct::blas::descriptor>();
+// cublasCreate-NEXT:   *handle = std::make_shared<dpct::blas::descriptor>();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasChpmv | FileCheck %s -check-prefix=cublasChpmv
 // cublasChpmv: CUDA API:
