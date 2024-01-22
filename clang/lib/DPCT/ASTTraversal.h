@@ -1637,6 +1637,8 @@ class SyncThreadsRule : public NamedMigrationRule<SyncThreadsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+  void analyzeUninitializedDeviceVar(const clang::Expr *Call,
+                                     const clang::Expr *Arg);
 };
 
 class SyncThreadsMigrationRule

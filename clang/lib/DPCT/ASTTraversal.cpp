@@ -12238,6 +12238,26 @@ void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
+void SyncThreadsRule::analyzeUninitializedDeviceVar(const clang::Expr *Call,
+                                                    const clang::Expr *Arg) {
+  if (!Call || !Arg)
+    return;
+  std::vector<const clang::VarDecl *> DeclsNeedToBeInitialized;
+  int Res = isArgumentInitialized(Arg, DeclsNeedToBeInitialized);
+  if (Res == -1) {
+    for (const auto D : DeclsNeedToBeInitialized) {
+      emplaceTransformation(new InsertText(
+          D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+              D->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+              DpctGlobalInfo::getContext().getLangOpts())),
+          " = 0"));
+    }
+  } else if (Res == 0) {
+    report(Call->getBeginLoc(), Diagnostics::UNINITIALIZED_DEVICE_VAR, false,
+           ExprAnalysis::ref(Arg));
+  }
+}
+
 void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "SyncFuncCall");
@@ -12309,6 +12329,7 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       ReplStr += MapNames::getClNamespace() + "reduce_over_group(";
     }
+    analyzeUninitializedDeviceVar(CE, CE->getArg(0));
     ReplStr += DpctGlobalInfo::getGroup(CE) + ", ";
     if (FuncName == "__syncthreads_count") {
       ReplStr += ExprAnalysis::ref(CE->getArg(0)) + " == 0 ? 0 : 1, " +
