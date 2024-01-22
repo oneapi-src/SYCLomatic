@@ -327,7 +327,7 @@ __global__ void kernel34() {
 }
 
 __global__ void kernel35() {
-  // CHECK: int val;
+  // CHECK: int val = 0;
   // CHECK-NEXT: int laneMask;
   // CHECK-NEXT: int WS;
   // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, WS);

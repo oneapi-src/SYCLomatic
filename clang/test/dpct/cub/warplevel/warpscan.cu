@@ -292,7 +292,7 @@ __global__ void WarningTestKernel1(int* data) {
 
 //CHECK: void WarpScanTest(const sycl::nd_item<3> &item_ct1){
 //CHECK-EMPTY:
-//CHECK-NEXT:  int data;
+//CHECK-NEXT:  int data = 0;
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function inclusive_scan_over_group requires sub-group size to be 32, while other sub-group functions in the same SYCL kernel require a different sub-group size. You may need to adjust the code.
 //CHECK-NEXT:  */
@@ -353,7 +353,7 @@ __global__ void WarningTestKernel2(int* data) {
 
 //CHECK: template<typename ScanTy, typename DataTy>
 //CHECK-NEXT: void Scan1(ScanTy &s) {
-//CHECK-NEXT:  DataTy d;
+//CHECK-NEXT:  DataTy d = 0;
 //CHECK-NEXT:  d = sycl::inclusive_scan_over_group(s, d, sycl::plus<>());
 //CHECK-NEXT: }
 template<typename ScanTy, typename DataTy>

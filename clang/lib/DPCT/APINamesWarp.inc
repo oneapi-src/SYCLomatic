@@ -10,7 +10,7 @@
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "all_of_group",
     ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(
-        "all_of_group",
+        "__all_sync",
         CALL_FACTORY_ENTRY(
             "__all_sync",
             CALL(MapNames::getClNamespace() + "all_of_group", SUBGROUP,
@@ -31,7 +31,7 @@ SUBGROUPSIZE_FACTORY(
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "all_of_group",
     ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(
-        "all_of_group",
+        "__all",
         CALL_FACTORY_ENTRY("__all",
                            CALL(MapNames::getClNamespace() + "all_of_group",
                                 SUBGROUP, makeCallArgCreatorWithCall(0))),
