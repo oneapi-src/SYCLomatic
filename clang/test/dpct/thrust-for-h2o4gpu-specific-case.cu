@@ -38,3 +38,22 @@ void foo_1() {
 
 //CHECK:namespace foo_struct { template <typename T, typename MemorySpace> struct default_memory_allocator : dpct::deprecated::usm_device_allocator<T>{};}
 namespace foo_struct { template <typename T, typename MemorySpace> struct default_memory_allocator : thrust::device_malloc_allocator<T>{};}
+
+template <class T, class DeviceAllocatorT>
+using RebindVector =
+    thrust::device_vector<T, 
+      typename DeviceAllocatorT::template rebind<T>::other>;
+
+template <typename SizeTAllocatorT>
+size_t get_bins(const thrust::device_vector<size_t, SizeTAllocatorT> &bin_segments) {
+    size_t bins_per_row = bin_segments.size() - 1;
+    return bins_per_row;
+}
+
+//CHECK:template <typename DeviceAllocatorT = dpct::deprecated::usm_device_allocator<int>>
+template <typename DeviceAllocatorT = thrust::device_allocator<int>>
+void test() {
+    using size_vector = RebindVector<size_t, DeviceAllocatorT>;
+    size_vector device_bin_segments;
+    std::cout << get_bins(device_bin_segments) << std::endl;
+}

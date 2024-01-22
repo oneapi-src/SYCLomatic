@@ -219,7 +219,7 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "thrust::detail::vector_base", "thrust::optional", "thrust::nullopt",
         "thrust::system::system_error", "thrust::system::error_code",
         "enum thrust::system::errc::errc_t", "thrust::system::error_condition",
-        "thrust::device_system_tag", "thrust::pointer");
+        "thrust::device_system_tag", "thrust::pointer", "thrust::device_allocator");
   };
 
   MF.addMatcher(
