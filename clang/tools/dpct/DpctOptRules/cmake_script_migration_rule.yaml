@@ -27,12 +27,93 @@
       MatchMode: Full
       RuleId: "remove_cuda"
 
-- Rule: rule_find_package
+- Rule: rule_find_package-cuda_no_args
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package
-  In: find_package(CUDA${opts})
+  CmakeSyntax: find_package-cuda_no_args
+  In: find_package(CUDA)
   Out: find_package(IntelSYCL REQUIRED)
+
+- Rule: rule_find_package-cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cuda
+  In: find_package(CUDA ${opts})
+  Out: find_package(IntelSYCL REQUIRED)
+
+- Rule: rule_find_package-cudatoolkit_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cudatoolkit_no_args
+  In: find_package(CUDAToolkit)
+  Out: |
+    find_package(IntelSYCL)
+    find_package(MKL)
+
+- Rule: rule_find_package-cudatoolkit
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cudatoolkit
+  In: find_package(CUDAToolkit ${value})
+  Out: |
+    find_package(IntelSYCL REQUIRED)
+    find_package(MKL REQUIRED)
+
+- Rule: rule_find_package-cub_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cub_no_args
+  In: find_package(CUB)
+  Out: find_package(oneDPL)
+
+- Rule: rule_find_package-cub
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-cub
+  In: find_package(CUB ${args})
+  Out: find_package(oneDPL REQUIRED)
+
+- Rule: rule_find_package-mpi_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-mpi_no_args
+  In: find_package(MPI)
+  Out: "#find_package(MPI)"
+
+- Rule: rule_find_package-mpi
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-mpi
+  In: find_package(MPI ${args})
+  Out: "#find_package(MPI ${args})"
+
+- Rule: rule_find_package-omp_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-omp_no_args
+  In: find_package(OpenMP)
+  Out: "#find_package(OpenMP)"
+
+- Rule: rule_find_package-omp
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-omp
+  In: find_package(OpenMP ${args})
+  Out: "#find_package(OpenMP ${args})"
+
+- Rule: rule_find_package-nvjpeg_no_args
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-nvjpeg_no_args
+  In: find_package(NVJPEG)
+  Out: "#find_package(NVJPEG)"
+
+- Rule: rule_find_package-nvjpeg
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_package-nvjpeg
+  In: find_package(NVJPEG ${args})
+  Out: "#find_package(NVJPEG ${args})"
 
 - Rule: rule_cmake_cxx_standard
   Kind: CMakeRule
@@ -545,4 +626,3 @@
   CmakeSyntax: cuda_add_cufft_to_target
   In: cuda_add_cufft_to_target(${target})
   Out: dpct_helper_add_mkl_to_target(${target})
-

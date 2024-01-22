@@ -63,10 +63,7 @@ void MapNames::setExplicitNamespaceMap() {
     // Use dpct:: namespace explicitly
     DpctNamespace[0] = "dpct::";
   }
-  if (NamespaceSet.count(ExplicitNamespace::EN_CL)) {
-    // Use cl::sycl:: namespace explicitly
-    ClNamespace = {"cl::sycl::", "cl::sycl::", "cl::sycl::", "cl::sycl::"};
-  } else if (NamespaceSet.count(ExplicitNamespace::EN_SYCL)) {
+  if (NamespaceSet.count(ExplicitNamespace::EN_SYCL)) {
     // Use sycl:: namespace explicitly
     ClNamespace = {"sycl::", "sycl::", "sycl::", "sycl::"};
   } else if (NamespaceSet.count(ExplicitNamespace::EN_SYCL_Math)) {

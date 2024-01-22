@@ -17,11 +17,11 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
-#include <numeric>
 
 #ifdef __NVCC__
 #include <cuda_runtime.h>
@@ -39,29 +39,17 @@ class Schema;
 static std::map<std::string, std::shared_ptr<Schema>> schema_map;
 static std::map<std::string, size_t> schema_size;
 
-inline size_t get_size_of_schema(const std::string &schema) {
-  if (schema_size.find(schema) == schema_size.end()) {
-    schema_size[schema] = 0; // '0' indicates that the size will match the type
-                             // size specified in the schema string
-  }
-  return schema_size[schema];
-}
-
-inline void set_size_of_schema(const std::string &schema, size_t size) {
-  schema_size[schema] = size;
-}
-
 inline std::map<void *, uint32_t> &get_ptr_size_map() {
   static std::map<void *, uint32_t> ptr_size_map;
   return ptr_size_map;
 }
 
-enum class ValType { SCALAR, POINTER, ARRAY, POINTERTOPOINTER };
-enum class MemLoc { NONE, HOST, DEVICE };
+enum class val_type { scalar, pointer, array, pointer_to_pointer };
+enum class mem_loc { none, host, device };
 enum class schema_type {
-  TYPE,  // class or struct type.
-  DATA,  // alloc data type.
-  MEMBER // data member in class or struct.
+  type,  // class or struct type.
+  data,  // alloc data type.
+  member // data member in class or struct.
 };
 
 inline std::string to_upper(std::string str) {
@@ -70,26 +58,26 @@ inline std::string to_upper(std::string str) {
   return str;
 }
 
-inline ValType getValType(const std::string &str) {
+inline val_type getValType(const std::string &str) {
   std::string to_str = to_upper(str);
   if (to_str == "SCALAR") {
-    return ValType::SCALAR;
+    return val_type::scalar;
   } else if (to_str == "POINTER") {
-    return ValType::POINTER;
+    return val_type::pointer;
   } else if (to_str == "ARRAY") {
-    return ValType::ARRAY;
+    return val_type::array;
   }
   error_exit("The value type : " + str + " is unkonwn.");
 }
 
-inline MemLoc getMemLoc(const std::string &str) {
+inline mem_loc getMemLoc(const std::string &str) {
   std::string to_str = to_upper(str);
   if (to_str == "NONE") {
-    return MemLoc::NONE;
+    return mem_loc::none;
   } else if (to_str == "HOST") {
-    return MemLoc::HOST;
+    return mem_loc::host;
   } else if (to_str == "DEVICE") {
-    return MemLoc::DEVICE;
+    return mem_loc::device;
   }
   error_exit("The memory location : " + str + " is unkonwn.");
 }
@@ -97,11 +85,11 @@ inline MemLoc getMemLoc(const std::string &str) {
 inline schema_type get_schema_type(const std::string &str) {
   std::string to_str = to_upper(str);
   if (to_str == "TYPE") {
-    return schema_type::TYPE;
+    return schema_type::type;
   } else if (to_str == "DATA") {
-    return schema_type::DATA;
+    return schema_type::data;
   } else if (to_str == "MEMBER") {
-    return schema_type::MEMBER;
+    return schema_type::member;
   }
   error_exit("The schmea type : " + str + " is unkonwn.");
 }
@@ -115,16 +103,16 @@ public:
 
   // Construct the data member.
   Schema(const std::string &VarName, const std::string &TypeName,
-         size_t TypeSize, bool IsBasicType, ValType ValTy, size_t ValSize,
-         size_t Offset, MemLoc Location)
+         size_t TypeSize, bool IsBasicType, val_type ValTy, size_t ValSize,
+         size_t Offset, mem_loc Location)
       : VarName(VarName), TypeName(TypeName), TypeSize(TypeSize),
         IsBasicType(IsBasicType), ValTy(ValTy), ValSize(ValSize),
         Offset(Offset), Location(Location) {}
 
   // Construct the data member in class.
   Schema(const std::string &VarName, const std::string &TypeName,
-         size_t TypeSize, schema_type SchemaTy, bool IsBasicType, ValType ValTy,
-         size_t ValSize, MemLoc Location)
+         size_t TypeSize, schema_type SchemaTy, bool IsBasicType,
+         val_type ValTy, size_t ValSize, mem_loc Location)
       : TypeName(TypeName), TypeSize(TypeSize), VarName(VarName),
         SchemaTy(SchemaTy), IsBasicType(IsBasicType), ValTy(ValTy),
         ValSize(ValSize), Location(Location) {}
@@ -133,7 +121,7 @@ public:
     Members.push_back(data);
   }
 
-  ValType get_val_type() { return ValTy; }
+  val_type get_val_type() { return ValTy; }
   size_t get_val_size() { return ValSize; }
   size_t get_type_size() { return TypeSize; }
   bool is_basic_type() { return IsBasicType; }
@@ -147,7 +135,7 @@ public:
 private:
   // Common Part
   std::string TypeName = "";                // namespace + class type + name;
-  schema_type SchemaTy = schema_type::TYPE; // Data or Type
+  schema_type SchemaTy = schema_type::type; // Data or Type
   std::string VarName = "";
   bool IsBasicType = true;
   std::string FilePath;
@@ -157,11 +145,21 @@ private:
   size_t TypeSize = 0;
   std::vector<std::shared_ptr<Schema>> Members;
   /* Data member only */
-  ValType ValTy = ValType::SCALAR;
+  val_type ValTy = val_type::scalar;
   size_t Offset = 0;
   size_t ValSize = 0;
-  MemLoc Location = MemLoc::NONE;
+  mem_loc Location = mem_loc::none;
 };
+
+inline size_t get_var_size(std::shared_ptr<Schema> schema, void *ptr) {
+  size_t size = 0;
+  if (schema->get_val_type() != val_type::scalar) {
+    size = get_ptr_size_map()[(void *)(ptr)];
+  }
+  if (size == 0)
+    size = schema->get_type_size();
+  return size;
+}
 
 // data, test_namespace::A + varName,
 inline std::pair<std::string, std::shared_ptr<Schema>>
@@ -176,9 +174,9 @@ create_schema_struct(const std::string &TypeName, schema_type SchemaTy,
 inline void create_schema_member(std::shared_ptr<Schema> TypeSchemaStruct,
                                  const std::string &VarName,
                                  const std::string &TypeName, size_t type_size,
-                                 bool IsBasicType, ValType ValTy,
+                                 bool IsBasicType, val_type ValTy,
                                  size_t ValSize, size_t Offset,
-                                 MemLoc Location) {
+                                 mem_loc Location) {
   std::shared_ptr<Schema> DataMember =
       std::make_shared<Schema>(VarName, TypeName, type_size, IsBasicType, ValTy,
                                ValSize, Offset, Location);
@@ -188,7 +186,7 @@ inline void create_schema_member(std::shared_ptr<Schema> TypeSchemaStruct,
 inline std::pair<std::string, std::shared_ptr<Schema>>
 create_schema_var(const std::string &VarName, const std::string &TypeName,
                   size_t type_size, schema_type SchemaTy, bool IsBasicType,
-                  ValType ValTy, size_t ValSize, MemLoc Location) {
+                  val_type ValTy, size_t ValSize, mem_loc Location) {
   return std::pair<std::string, std::shared_ptr<Schema>>(
       TypeName,
       std::make_shared<Schema>(VarName, TypeName, type_size, SchemaTy,
@@ -252,9 +250,9 @@ inline std::shared_ptr<Schema> gen_schema(dpct_json::value &value) {
   auto json_obj = value.get_value<dpct_json::object>();
   const schema_type schema_type =
       get_schema_type(json_obj.get("SchemaType").get_value<std::string>());
-  if (schema_type::TYPE == schema_type) {
+  if (schema_type::type == schema_type) {
     return gen_type_schema(value);
-  } else if (schema_type::DATA == schema_type) {
+  } else if (schema_type::data == schema_type) {
     return gen_data_schema(value);
   }
   return nullptr;
@@ -283,8 +281,7 @@ inline void parse_type_schema_str(const std::string &str) {
     dpct_json::array arr = v.get_value<dpct_json::array>();
     for (auto iter = arr.begin(); iter != arr.end(); iter++) {
       dpct_json::value &cur_val = *iter;
-      if (cur_val.real_type ==
-          dpct_json::value::object_t) {
+      if (cur_val.real_type == dpct_json::value::object_t) {
         std::shared_ptr<Schema> type_schema = gen_schema(cur_val);
         if (type_schema != nullptr) {
           schema_map[type_schema->get_type_name()] = type_schema;
@@ -322,7 +319,7 @@ inline void copy_mem_to_device(void *dst, void *src, size_t size) {
 #endif
 }
 
-inline bool is_device_point(void *p) {
+inline bool is_dev_ptr(void *p) {
 #ifdef __NVCC__
   cudaPointerAttributes attr;
   cudaPointerGetAttributes(&attr, p);
@@ -338,45 +335,52 @@ inline bool is_device_point(void *p) {
 #endif
 }
 
-inline void get_val_from_addr(std::string &value,
-                              std::shared_ptr<Schema> schema, void *addr,
-                              size_t size) {
-  void *h_addr = addr;
-  if (is_device_point(addr)) {
-    h_addr = malloc(size);
-    copy_mem_to_device(h_addr, addr, size);
+inline void get_val_from_addr(std::string &dump_json,
+                              std::shared_ptr<Schema> schema, void *addr) {
+  if (schema->get_type_size() == 0)
+    return;
+  void *host_addr = addr;
+  size_t mem_size = get_var_size(schema, addr);
+  if (is_dev_ptr(addr)) {
+    host_addr = malloc(mem_size);
+    copy_mem_to_device(host_addr, addr, mem_size);
   }
   if (schema->is_basic_type()) {
-    value += "\"" + schema->get_var_name() + "\":\"";
+    dump_json += "\"" + schema->get_var_name() + "\":\"";
     std::string hex_str = "";
-    get_data_as_hex(h_addr, size, hex_str);
-    value += hex_str + "\",";
-    if (is_device_point(addr))
-      free(h_addr);
+    get_data_as_hex(host_addr, mem_size, hex_str);
+    dump_json += hex_str + "\",";
+    if (is_dev_ptr(addr))
+      free(host_addr);
     return;
   }
   std::shared_ptr<Schema> type_schema = schema_map[schema->get_type_name()];
-
-  std::vector<std::shared_ptr<Schema>> type_members =
-      type_schema->get_type_member();
-  value += "\"" + schema->get_var_name() + "\":{";
-  for (auto member : type_members) {
-    value += "\"" + member->get_var_name() + "\":\"";
-    std::string hex_str = "";
-    char *addr_with_offset = (char *)h_addr + member->get_offset();
-    if (member->is_basic_type()) {
-      get_data_as_hex((void *)addr_with_offset, member->get_val_size(),
-                      hex_str);
-    } else {
-      get_val_from_addr(hex_str, member, (void *)addr_with_offset, size);
+  unsigned int items = 1;
+  if (type_schema->get_type_size() != 0)
+    items = mem_size / type_schema->get_type_size();
+  for (unsigned int i = 0; i < items; i++) {
+    std::vector<std::shared_ptr<Schema>> type_members =
+        type_schema->get_type_member();
+    dump_json += "\"" + schema->get_var_name() + "\":{";
+    char *addr_begin = (char *)host_addr + i * type_schema->get_type_size();
+    for (auto member : type_members) {
+      dump_json += "\"" + member->get_var_name() + "\":\"";
+      std::string hex_str = "";
+      char *addr_with_offset = addr_begin + member->get_offset();
+      if (member->is_basic_type()) {
+        get_data_as_hex((void *)addr_with_offset, member->get_val_size(),
+                        hex_str);
+      } else {
+        get_val_from_addr(hex_str, member, (void *)addr_with_offset);
+      }
+      dump_json += hex_str + "\",";
     }
-    value += hex_str + "\",";
+    if (dump_json.back() == ',')
+      dump_json.pop_back();
+    dump_json += "},";
   }
-  if (value.back() == ',')
-    value.pop_back();
-  value += "},";
-  if (is_device_point(addr))
-    free(h_addr);
+  if (is_dev_ptr(addr))
+    free(host_addr);
 }
 
 inline static std::map<std::string, int> api_index;
@@ -385,7 +389,8 @@ inline static std::string dump_file = "dump_log.json";
 
 class Logger {
 public:
-  Logger(const std::string &dump_file) : dump_file(dump_file), ipf(dump_file, std::ios::in) {
+  Logger(const std::string &dump_file)
+      : dump_file(dump_file), ipf(dump_file, std::ios::in) {
     if (ipf.is_open()) {
       std::getline(ipf, data);
       ipf.close();
@@ -428,26 +433,16 @@ void process_var(std::string &log, const std::string &schema_str, long *value,
         "Cannot parse the variable schema, please double check the schema " +
         schema_str + "\n");
   }
-  size_t size = 0;
-  if (schema->get_val_type() == ValType::SCALAR) {
-    size = schema->get_type_size();
-  } else {
-    size = get_ptr_size_map()[value];
-  }
-  if (size == 0) {
-    size = schema->get_type_size();
-  }
-  set_size_of_schema(schema_str, size);
   switch (schema->get_val_type()) {
-  case ValType::SCALAR:
-    get_val_from_addr(log, schema, (void *)value, size);
+  case val_type::scalar:
+    get_val_from_addr(log, schema, (void *)value);
     break;
-  case ValType::ARRAY:
-  case ValType::POINTER:
-    get_val_from_addr(log, schema, (void *)(*value), size);
+  case val_type::array:
+  case val_type::pointer:
+    get_val_from_addr(log, schema, (void *)(*value));
     break;
-  case ValType::POINTERTOPOINTER:
-    get_val_from_addr(log, schema, *(void **)(*value), size);
+  case val_type::pointer_to_pointer:
+    get_val_from_addr(log, schema, *(void **)(*value));
     break;
   };
   std::string ret;
@@ -467,7 +462,8 @@ void gen_log_API_CP(const std::string &api_name, Args... args) {
   } else {
     api_index[api_name]++;
   }
-  std::string new_api_name = api_name + ":" + std::to_string(api_index[api_name]);
+  std::string new_api_name =
+      api_name + ":" + std::to_string(api_index[api_name]);
   std::string log;
   process_var(log, args...);
   if (log.back() == ',')
