@@ -598,7 +598,7 @@ inline std::function<bool(const CallExpr *)> SinCosPerfPred(){
 }
 
 inline std::function<std::string(const CallExpr *)>
-makeArgWithAddressSpaceCast(int ArgIdx, std::string Type) {
+makeArgWithAddressSpaceCast(int ArgIdx) {
   return [=](const CallExpr *C) -> std::string {
     const Expr *E = C->getArg(ArgIdx);
     if (!E) {
@@ -609,8 +609,8 @@ makeArgWithAddressSpaceCast(int ArgIdx, std::string Type) {
         MapNames::getClNamespace() + "address_space_cast<" +
         MapNames::getClNamespace() +
         "access::address_space::" + getAddressSpace(C, ArgIdx) + ", " +
-        MapNames::getClNamespace() + "access::decorated::yes" + ", " +
-        Type + ">(" + EA.getReplacedString() + ")";
+        MapNames::getClNamespace() + "access::decorated::yes>(" +
+        EA.getReplacedString() + ")";
     return Result;
   };
 }

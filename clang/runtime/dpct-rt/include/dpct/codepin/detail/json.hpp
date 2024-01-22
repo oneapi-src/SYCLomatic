@@ -252,7 +252,7 @@ inline bool json_parser::parse_str(std::string &str) {
   return true;
 }
 
-static bool is_number(char c) {
+inline static bool is_number(char c) {
   return (c == '0') || (c == '1') || (c == '2') || (c == '3') || (c == '4') ||
          (c == '5') || (c == '6') || (c == '7') || (c == '8') || (c == '9') ||
          (c == '-') || (c == '+') || (c == '.') || (c == 'e') || (c == 'E');
