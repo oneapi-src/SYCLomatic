@@ -200,6 +200,11 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: option '-migrate-cmake-script' and "
                    "'-migrate-cmake-script-only' cannot be used together.";
     break;
+  case MigrationErrorNoExplicitInRootAndCMakeScript:
+    StatusString =
+        "Error: The option -migrate-cmake-script-only requires that either "
+        "the option '--in-root' or the CMake file(s) be specified explicitly.";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);
