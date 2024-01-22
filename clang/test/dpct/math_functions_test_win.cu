@@ -236,21 +236,21 @@ float test_rsqrt(float a) { return rsqrt(a); }
 // CHECK: float test_rcbrt(float a) { return 1 / dpct::cbrt<double>(a); }
 float test_rcbrt(float a) { return rcbrt(a); }
 
-// CHECK: float test_sinpi(float a) { return sinpi(a); }
+// CHECK: float test_sinpi(float a) { return sycl::sinpi(a); }
 float test_sinpi(float a) { return sinpi(a); }
 
-// CHECK: float test_cospi(float a) { return cospi(a); }
+// CHECK: float test_cospi(float a) { return sycl::cospi(a); }
 float test_cospi(float a) { return cospi(a); }
 
 // CHECK: void test_sincospi(float a, float *sptr, float *cptr) {
-// CHECK:   return sincospi(a, sptr, cptr);
+// CHECK:   return [&](){ *sptr = sycl::sincos(a * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(cptr)); }();
 // CHECK: }
 void test_sincospi(float a, float *sptr, float *cptr) {
   return sincospi(a, sptr, cptr);
 }
 
 // CHECK: void test_sincos(float a, float *sptr, float *cptr) {
-// CHECK:   return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(cptr)); }();
+// CHECK:   return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(cptr)); }();
 // CHECK: }
 void test_sincos(float a, float *sptr, float *cptr) {
   return sincos(a, sptr, cptr);
@@ -286,7 +286,7 @@ float test_normcdfinv(float a) { return normcdfinv(a); }
 // CHECK: float test_normcdf(float a) { return sycl::erfc((double)a / -sycl::sqrt(2.0)) / 2; }
 float test_normcdf(float a) { return normcdf(a); }
 
-// CHECK: float test_erfcx(float a) { return erfcx(a); }
+// CHECK: float test_erfcx(float a) { return sycl::exp(a * a) * sycl::erfc(a); }
 float test_erfcx(float a) { return erfcx(a); }
 
 // CHECK: double test_copysign(double a, float b) { return copysign(a, b); }

@@ -3,7 +3,6 @@
 // RUN: FileCheck --input-file %T/math_functions_test/math_functions_test.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/math_functions_test/math_functions_test.dp.cpp -o %T/math_functions_test/math_functions_test.dp.o %}
 
-#ifndef BUILD_TEST
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cmath>
@@ -237,21 +236,21 @@ float test_rsqrt(float a) { return rsqrt(a); }
 // CHECK: float test_rcbrt(float a) { return 1 / dpct::cbrt<double>(a); }
 float test_rcbrt(float a) { return rcbrt(a); }
 
-// CHECK: float test_sinpi(float a) { return sinpi(a); }
+// CHECK: float test_sinpi(float a) { return sycl::sinpi(a); }
 float test_sinpi(float a) { return sinpi(a); }
 
-// CHECK: float test_cospi(float a) { return cospi(a); }
+// CHECK: float test_cospi(float a) { return sycl::cospi(a); }
 float test_cospi(float a) { return cospi(a); }
 
 // CHECK: void test_sincospi(float a, float *sptr, float *cptr) {
-// CHECK:   return sincospi(a, sptr, cptr);
+// CHECK:   return [&](){ *sptr = sycl::sincos(a * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(cptr)); }();
 // CHECK: }
 void test_sincospi(float a, float *sptr, float *cptr) {
   return sincospi(a, sptr, cptr);
 }
 
 // CHECK: void test_sincos(float a, float *sptr, float *cptr) {
-// CHECK:   return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(cptr)); }();
+// CHECK:   return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(cptr)); }();
 // CHECK: }
 void test_sincos(float a, float *sptr, float *cptr) {
   return sincos(a, sptr, cptr);
@@ -263,8 +262,12 @@ float test_j0(float a) { return j0(a); }
 // CHECK: float test_j1(float a) { return j1(a); }
 float test_j1(float a) { return j1(a); }
 
-// CHECK: float test_jn(int n, float a) { return jn(n, a); }
+#ifndef BUILD_TEST
+// CHECK: /*
+// CHECK: DPCT1007:{{[0-9]+}}: Migration of jn is not supported.
+// CHECK: */
 float test_jn(int n, float a) { return jn(n, a); }
+#endif
 
 // CHECK: float test_y0(float a) { return y0(a); }
 float test_y0(float a) { return y0(a); }
@@ -272,22 +275,32 @@ float test_y0(float a) { return y0(a); }
 // CHECK: float test_y1(float a) { return y1(a); }
 float test_y1(float a) { return y1(a); }
 
-// CHECK: float test_yn(int n, float a) { return yn(n, a); }
+#ifndef BUILD_TEST
+// CHECK: /*
+// CHECK: DPCT1007:{{[0-9]+}}: Migration of yn is not supported.
+// CHECK: */
 float test_yn(int n, float a) { return yn(n, a); }
 
-// CHECK: float test_erfinv(float a) { return erfinv(a); }
+// CHECK: /*
+// CHECK: DPCT1007:{{[0-9]+}}: Migration of erfinv is not supported.
+// CHECK: */
 float test_erfinv(float a) { return erfinv(a); }
 
-// CHECK: float test_erfcinv(float a) { return erfcinv(a); }
+// CHECK: /*
+// CHECK: DPCT1007:{{[0-9]+}}: Migration of erfcinv is not supported.
+// CHECK: */
 float test_erfcinv(float a) { return erfcinv(a); }
 
-// CHECK: float test_normcdfinv(float a) { return normcdfinv(a); }
+// CHECK: /*
+// CHECK: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported.
+// CHECK: */
 float test_normcdfinv(float a) { return normcdfinv(a); }
+#endif
 
 // CHECK: float test_normcdf(float a) { return sycl::erfc((double)a / -sycl::sqrt(2.0)) / 2; }
 float test_normcdf(float a) { return normcdf(a); }
 
-// CHECK: float test_erfcx(float a) { return erfcx(a); }
+// CHECK: float test_erfcx(float a) { return sycl::exp(a * a) * sycl::erfc(a); }
 float test_erfcx(float a) { return erfcx(a); }
 
 // CHECK: double test_copysign(double a, float b) { return copysign(a, b); }
@@ -467,4 +480,3 @@ void foo_3(){
   unsigned long long max = foo_inner((unsigned long long) std::numeric_limits<int>::max());
   unsigned long long min = foo_inner((unsigned long long) std::numeric_limits<int>::min());
 }
-#endif

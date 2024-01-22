@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none --use-dpcpp-extensions=intel_device_math -out-root %T/math/cuda-math-extension %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/cuda-math-extension/cuda-math-extension.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/math/cuda-math-extension/cuda-math-extension.dp.cpp -o %T/math/cuda-math-extension/cuda-math-extension.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl %T/math/cuda-math-extension/cuda-math-extension.dp.cpp -o %T/math/cuda-math-extension/cuda-math-extension.dp.o %}
+
 // CHECK: #include <sycl/ext/intel/math.hpp>
 #include "cuda_fp16.h"
 
@@ -558,4 +558,3 @@ __global__ void kernelFuncSIMD() {
 }
 
 int main() { return 0; }
-#endif

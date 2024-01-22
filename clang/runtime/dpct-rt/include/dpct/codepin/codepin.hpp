@@ -44,7 +44,7 @@ void gen_epilog_API_CP(const std::string &api_name, cudaStream_t stream,
   gen_prolog_API_CP(api_name, stream, args...);
 }
 #else
-void synchronize(sycl::queue *q) { q->wait(); }
+inline void synchronize(sycl::queue *q) { q->wait(); }
 
 /// Generate API check point prolog.
 /// \param api_name The UID of the function call.

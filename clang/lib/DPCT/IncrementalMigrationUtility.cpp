@@ -180,10 +180,6 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--enable-ctad");
     }
-    if (Key == clang::dpct::OPTION_ExplicitClNamespace) {
-      if ("true" == Value)
-        Opts.emplace_back("--no-cl-namespace-inline");
-    }
     if (Key == clang::dpct::OPTION_ExtensionDEFlag && Specified) {
       std::string MaxValueStr = std::to_string(static_cast<unsigned>(-1));
       if (Value.empty() || Value.length() > MaxValueStr.length() ||
@@ -304,9 +300,6 @@ bool printOptions(
       std::vector<std::string> Values;
       if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_None))) {
         Values.emplace_back("none");
-      }
-      if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_CL))) {
-        Values.emplace_back("cl");
       }
       if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_SYCL))) {
         Values.emplace_back("sycl");

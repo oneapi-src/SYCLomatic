@@ -882,9 +882,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
       OS << "using namespace dpct;" << getNL();
     }
     if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_SYCL) &&
-        !DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_CL)) {
+            ExplicitNamespace::EN_SYCL)) {
       OS << "using namespace sycl;" << getNL();
     }
     if (DpctGlobalInfo::useNoQueueDevice()) {
@@ -980,7 +978,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     }
     SchemaRelativePath += "generated_schema.hpp\"";
     concatHeader(OS, SchemaRelativePath);
-    return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right,
+    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
                         IsForCUDADebug);
   } break;
   default:
@@ -1346,10 +1344,9 @@ void DpctGlobalInfo::setExplicitNamespace(
     // 1. Ensure option none is alone
     bool Check1 =
         (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
-    // 2. Ensure option cl, sycl, sycl-math only enabled one
+    // 2. Ensure option sycl, sycl-math only enabled one
     bool Check2 =
-        ((Namespace == ExplicitNamespace::EN_CL ||
-          Namespace == ExplicitNamespace::EN_SYCL ||
+        ((Namespace == ExplicitNamespace::EN_SYCL ||
           Namespace == ExplicitNamespace::EN_SYCL_Math) &&
          (ExplicitNamespaceSet.size() == 1 &&
           ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
@@ -1864,6 +1861,7 @@ void DpctGlobalInfo::processCudaArchMacro() {
     }
   }
 }
+
 void DpctGlobalInfo::generateHostCode(
     std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
         &ProcessedReplList,
@@ -1907,7 +1905,7 @@ void DpctGlobalInfo::postProcess() {
   processCudaArchMacro();
   for (auto &Element : HostDeviceFuncInfoMap) {
     auto &Info = Element.second;
-    if (Info.isCalledInHost && Info.isDefInserted) {
+    if (Info.isDefInserted) {
       Info.needGenerateHostCode = true;
       if (Info.PostFixId == -1) {
         Info.PostFixId = HostDeviceFuncInfo::MaxId++;
@@ -1930,6 +1928,10 @@ void DpctGlobalInfo::postProcess() {
               LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
               "_host_ct" + std::to_string(Info.PostFixId), nullptr);
           addReplacement(R);
+          if (!isFirstPass) {
+            auto &FileReplCache = DpctGlobalInfo::getFileReplCache();
+            FileReplCache[R->getFilePath().str()].second->addReplacement(R);
+          }
         }
       }
     }
