@@ -639,3 +639,17 @@
   CmakeSyntax: cuda_add_cufft_to_target
   In: cuda_add_cufft_to_target(${target})
   Out: dpct_helper_add_mkl_to_target(${target})
+
+- Rule: rule_include_directories
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: include_directories
+  MatchMode: Partial
+  In: include_directories(${value})
+  Out: include_directories(${value})
+  Subrules:
+    value:
+      In: CUDA_INCLUDE_DIRS
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "Replace CUDA include dir with SYCL header dir"
