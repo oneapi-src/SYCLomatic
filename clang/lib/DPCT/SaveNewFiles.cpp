@@ -13,10 +13,10 @@
 #include "ExternalReplacement.h"
 #include "GenMakefile.h"
 #include "PatternRewriter.h"
+#include "Schema.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
-#include "Schema.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
@@ -29,7 +29,6 @@
 #include "clang/Basic/LangOptions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
-
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
@@ -53,7 +52,7 @@ UnifiedPath getFormatSearchPath();
 
 extern std::map<std::string, uint64_t> ErrorCnt;
 
-static bool formatFile(const clang::tooling::UnifiedPath& FileName,
+static bool formatFile(const clang::tooling::UnifiedPath &FileName,
                        const std::vector<clang::tooling::Range> &Ranges,
                        clang::tooling::Replacements &FormatChanges) {
   ErrorOr<std::unique_ptr<MemoryBuffer>> ErrorOrMemoryBuffer =
@@ -108,8 +107,8 @@ static bool formatFile(const clang::tooling::UnifiedPath& FileName,
                              FileName.getCanonicalPath(), &Status);
   } else {
     // only format migrated lines
-    FormatChanges =
-        reformat(Style, FileBuffer->getBuffer(), Ranges, FileName.getCanonicalPath(), &Status);
+    FormatChanges = reformat(Style, FileBuffer->getBuffer(), Ranges,
+                             FileName.getCanonicalPath(), &Status);
   }
 
   clang::tooling::applyAllReplacements(FormatChanges, Rewrite);
@@ -127,8 +126,7 @@ bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
   std::string Filename = sys::path::filename(FilePath.getPath()).str();
 #endif
 
-  if (!isChildPath(InRoot, FilePath) ||
-      DpctGlobalInfo::isExcluded(FilePath)) {
+  if (!isChildPath(InRoot, FilePath) || DpctGlobalInfo::isExcluded(FilePath)) {
     // Skip rewriting file path if FilePath is not child of InRoot
     // E.g,
     //  FilePath : /path/to/inc/util.cuh
@@ -140,8 +138,7 @@ bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
   auto PathDiff = std::mismatch(path::begin(FilePath.getCanonicalPath()),
                                 path::end(FilePath.getCanonicalPath()),
                                 path::begin(InRoot.getCanonicalPath()));
-  SmallString<512> NewFilePath =
-      SmallString<512>(OutRoot.getCanonicalPath());
+  SmallString<512> NewFilePath = SmallString<512>(OutRoot.getCanonicalPath());
   path::append(NewFilePath, PathDiff.first,
                path::end(FilePath.getCanonicalPath()));
 #if defined(_WIN64)
@@ -322,7 +319,8 @@ static void getMainSrcFilesRepls(
       MainSrcFilesRepls.push_back(Repl);
 }
 static void getMainSrcFilesDigest(
-    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest) {
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+        &MainSrcFilesDigest) {
   auto &DigestMap = DpctGlobalInfo::getDigestMap();
   for (const auto &Entry : DigestMap)
     MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
@@ -330,7 +328,8 @@ static void getMainSrcFilesDigest(
 
 static void saveUpdatedMigrationDataIntoYAML(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
-    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest,
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+        &MainSrcFilesDigest,
     clang::tooling::UnifiedPath YamlFile, clang::tooling::UnifiedPath SrcFile,
     std::unordered_map<std::string, bool> &MainSrcFileMap) {
   // Save history repls to yaml file.
@@ -420,15 +419,26 @@ int writeReplacementsToFiles(
       rewriteFileName(OutPath);
     }
 
-    // This is path to file with replaced SYCL extension and without --out-root
-    std::string MigFilepathNoOutRoot = OutPath.getCanonicalPath().str();
-
     if (!rewriteDir(OutPath, InRoot, Folder)) {
       continue;
     }
 
-    std::error_code EC;
+    // Check for another file with SYCL extension. For example
+    // In in-root we have
+    //  * src.cpp
+    //  * src.cu
+    // After migration we will end up replacing src.cpp with migrated src.cu
+    // when the --sycl-file-extension is cpp
+    // In such a case warn the user.
+    if (fs::exists(OutPath.getCanonicalPath())) {
+      // A file with this name already exists.
+      llvm::errs() << "File '" << OutPath << "' already exists; "
+                   << "A possible reason is a name collusion "
+                   << "with another migrated file. Skipping it.\n";
+      continue;
+    }
 
+    std::error_code EC;
     EC = fs::create_directories(path::parent_path(OutPath.getCanonicalPath()));
     if ((bool)EC) {
       std::string ErrMsg = "[ERROR] Create file : " +
@@ -451,13 +461,13 @@ int writeReplacementsToFiles(
       return status;
     }
 
-    SourceProcessType FileType = GetSourceFileType(Entry.first);
     // For header file, as it can be included from different file, it needs
     // merge the migration triggered by each including.
     // For main file, as it can be compiled or preprocessed with different
     // macro defined, it also needs merge the migration triggered by each
     // command.
     if (IsForCUDADebug == clang::dpct::RT_ForSYCLMigration) {
+      SourceProcessType FileType = GetSourceFileType(Entry.first);
       if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
         mergeExternalReps(Entry.first, OutPath, Entry.second);
       } else {
@@ -511,25 +521,6 @@ int writeReplacementsToFiles(
       continue;
     }
 
-    // Check for another file with SYCL extension. For example
-    // In in-root we have
-    //  * src.cpp
-    //  * src.cu
-    // After migration we will end up replacing src.cpp with migrated src.cu
-    // when the --sycl-file-extension is cpp
-    // In such a case warn the user.
-    auto FE = Rewrite.getSourceMgr().getFileManager().getFile(
-        MigFilepathNoOutRoot, false, false);
-
-    if (FE && !(FileType & SPT_CppHeader)) {
-      std::string Warning =
-          "[WARNING] Replacing an existing file '" + MigFilepathNoOutRoot +
-          "' with a migrated file because they share the same "
-          "extension. To use a different extension see option "
-          "--sycl-file-extension\n";
-      PrintMsg(Warning);
-    }
-
     // Do not apply PatternRewriters for CodePin CUDA debug file
     if (MapNames::PatternRewriters.empty() ||
         IsForCUDADebug == clang::dpct::RT_ForCUDADebug) {
@@ -572,7 +563,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   Rewriter Rewrite(Sources, DefaultLangOptions);
   Rewriter DebugCUDARewrite(Sources, DefaultLangOptions);
   extern bool ProcessAllFlag;
-  
+
   // The variable defined here assists to merge history records.
   std::unordered_map<std::string /*FileName*/,
                      bool /*false:Not processed in current migration*/>
@@ -602,7 +593,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   }
 
   std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
-  std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> MainSrcFilesDigest;
+  std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+      MainSrcFilesDigest;
 
   if (ReplSYCL.empty()) {
     // There are no rules applying on the *.cpp files,
@@ -612,9 +604,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     getMainSrcFilesRepls(MainSrcFilesRepls);
     getMainSrcFilesDigest(MainSrcFilesDigest);
   } else {
-    std::unordered_map<clang::tooling::UnifiedPath, std::vector<clang::tooling::Range>>
+    std::unordered_map<clang::tooling::UnifiedPath,
+                       std::vector<clang::tooling::Range>>
         FileRangesMap;
-    std::unordered_map<clang::tooling::UnifiedPath, std::vector<clang::tooling::Range>>
+    std::unordered_map<clang::tooling::UnifiedPath,
+                       std::vector<clang::tooling::Range>>
         FileBlockLevelFormatRangesMap;
     // There are matching rules for *.cpp files, *.cu files, also header files
     // included, migrate these files into *.dp.cpp files.
@@ -735,24 +729,30 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       SourceProcessType FileType = GetSourceFileType(FilePath);
       SmallString<512> TempFilePath(FilePath.getCanonicalPath());
       if (FileType & SPT_CudaHeader) {
-        path::replace_extension(TempFilePath, "dp.hpp");
+        path::replace_extension(TempFilePath,
+                                DpctGlobalInfo::getSYCLHeaderExtension());
       } else if (FileType & SPT_CudaSource) {
-        path::replace_extension(TempFilePath, "dp.cpp");
+        path::replace_extension(TempFilePath,
+                                DpctGlobalInfo::getSYCLSourceExtension());
       }
       FilePath = TempFilePath;
 
       if (!rewriteDir(FilePath, InRoot, OutRoot)) {
         continue;
       }
+
       if (fs::exists(FilePath.getCanonicalPath())) {
         // A header file with this name already exists.
-        llvm::errs() << "File '" << FilePath
-                     << "' already exists; skipping it.\n";
+        llvm::errs() << "File '" << FilePath << "' already exists; "
+                     << "A possible reason is a name collusion "
+                     << "with another migrated file. Skipping it.\n";
+
         continue;
       }
 
       std::error_code EC;
-      EC = fs::create_directories(path::parent_path(FilePath.getCanonicalPath()));
+      EC = fs::create_directories(
+          path::parent_path(FilePath.getCanonicalPath()));
       if ((bool)EC) {
         std::string ErrMsg =
             "[ERROR] Create file: " + FilePath.getCanonicalPath().str() +
