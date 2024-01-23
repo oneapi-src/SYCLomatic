@@ -29,7 +29,7 @@ namespace dpct {
 
 namespace {
 constexpr size_t MinAvailableMemorySize = 512 * 1024 * 1024; // 512Mb
-constexpr size_t MinAvailableMemoryPercent = 25;             // 25 percent
+constexpr size_t MinAvailableMemoryPercent = 50;             // 25 percent
 
 /// Check whether available memory size is enough to cache more translate unit
 /// info.
@@ -70,6 +70,7 @@ bool canCacheMoreTranslateUnit() {
     /// 3rd line: "MemAvailable:   **** kB"
     File >> Dummy >> Available >> Dummy;
 
+  std::cout << " Total is " << Total << "   Ava:  " << Available << std::endl;
     return Available * 100 / Total > MinAvailableMemoryPercent &&
            Available * 1024 > MinAvailableMemorySize;
   } catch (std::exception &) {
@@ -80,6 +81,33 @@ bool canCacheMoreTranslateUnit() {
 #endif // _WIN32
 } // namespace
 
+namespace {
+bool PrintCache() {
+  std::ifstream File("/proc/meminfo", std::ios::in);
+
+  ///  Always return false if can not open meminfo file.
+  if (!File.is_open())
+    return false;
+
+  std::string Dummy;
+  size_t Total = 0, Available = 0;
+
+  try {
+  /// 1st line:  "MemTotal:       **** kB"
+  File >> Dummy >> Total >> Dummy;
+  if (!Total)
+    return false;
+
+  /// 2nd line: "MemFree:        **** kB"
+  File >> Dummy >> Dummy >> Dummy;
+  /// 3rd line: "MemAvailable:   **** kB"
+  File >> Dummy >> Available >> Dummy;
+  } catch (std::exception &) {
+    /// Return false if any exception
+    return false;
+  }
+}
+} // namespace
 DpctConsumer::DpctConsumer(TranslationUnitInfo *TUI, Preprocessor &PP)
     : Info(TUI) {
   PP.addPPCallbacks(
@@ -264,9 +292,11 @@ void DpctToolAction::runPass(PassKind Pass) {
     }
     traversTranslationUnit(Pass, *TU);
   }
-
+ std::cout << "After parsing " << std::endl;
+  canCacheMoreTranslateUnit();
+  std::cout << "ANALYSIS SSSSSSSSSS" << std::endl;
   if (Pass == PassKind::PK_Analysis) {
-    runWithCrashGuard([&]() { Global.buildKernelInfo(); }, PostProcessFaultMsg);
+    runWithCrashGuard([&]() { Global.buildKernelInfo();canCacheMoreTranslateUnit(); /*PrintCache();*/}, PostProcessFaultMsg);
   }
 }
 
@@ -281,6 +311,9 @@ void DpctToolAction::runPasses() {
         Global.emplaceReplacements(ReplsCUDA, ReplsSYCL);
       },
       PostProcessFaultMsg);
+  //PrintCache();
+std::cout << "RUNPPPPP " << std::endl;
+canCacheMoreTranslateUnit();
 }
 
 const std::string DpctToolAction::PostProcessFaultMsg =
