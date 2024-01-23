@@ -29,8 +29,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                           checkEnableUserDefineReductions(),
                           FEATURE_REQUEST_FACTORY(
                               HelperFeatureEnum::device_ext,
-                              ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(
-                                  "cub::DeviceSegmentedReduce::Reduce",
+                              ANALYZE_UNINIT_DEV_VAR_FACTORY(
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL(TEMPLATED_CALLEE_WITH_ARGS(
@@ -46,8 +45,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                               HelperFeatureEnum::device_ext,
                               CONDITIONAL_FACTORY_ENTRY(
                                   checkArgCanMappingToSyclNativeBinaryOp(7),
-                                  ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(
-                                      "cub::DeviceSegmentedReduce::Reduce",
+                                  ANALYZE_UNINIT_DEV_VAR_FACTORY(
                                       CALL_FACTORY_ENTRY(
                                           "cub::DeviceSegmentedReduce::Reduce",
                                           CALL(
@@ -61,8 +59,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                       8),
                                   WARNING_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
-                                      ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(
-                                          "cub::DeviceSegmentedReduce::Reduce",
+                                      ANALYZE_UNINIT_DEV_VAR_FACTORY(
                                           CALL_FACTORY_ENTRY(
                                               "cub::DeviceSegmentedReduce::"
                                               "Reduce",
@@ -84,8 +81,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                           checkEnableUserDefineReductions(),
                           FEATURE_REQUEST_FACTORY(
                               HelperFeatureEnum::device_ext,
-                              ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(
-                                  "cub::DeviceSegmentedReduce::Reduce",
+                              ANALYZE_UNINIT_DEV_VAR_FACTORY(
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL(TEMPLATED_CALLEE_WITH_ARGS(
@@ -101,8 +97,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                               HelperFeatureEnum::device_ext,
                               CONDITIONAL_FACTORY_ENTRY(
                                   checkArgCanMappingToSyclNativeBinaryOp(7),
-                                  ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(
-                                      "cub::DeviceSegmentedReduce::Reduce",
+                                  ANALYZE_UNINIT_DEV_VAR_FACTORY(
                                       CALL_FACTORY_ENTRY(
                                           "cub::DeviceSegmentedReduce::Reduce",
                                           CALL(
@@ -116,8 +111,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                       8),
                                   WARNING_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
-                                      ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(
-                                          "cub::DeviceSegmentedReduce::Reduce",
+                                      ANALYZE_UNINIT_DEV_VAR_FACTORY(
                                           CALL_FACTORY_ENTRY(
                                               "cub::DeviceSegmentedReduce::"
                                               "Reduce",

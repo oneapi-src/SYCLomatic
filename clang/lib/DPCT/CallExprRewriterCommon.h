@@ -1049,6 +1049,26 @@ createFactoryWithSubGroupSizeRequest(
                                                    std::move(Inner));
 }
 
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAnalyzeUninitializedDeviceVarRewriterFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Factory,
+    int Idx) {
+  return std::make_pair(
+      std::move(Factory.first),
+      std::make_shared<AnalyzeUninitializedDeviceVarRewriterFactory>(
+          Factory.second, Idx));
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAnalyzeUninitializedDeviceVarRewriterFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Factory,
+    int Idx, T) {
+  return createAnalyzeUninitializedDeviceVarRewriterFactory(Factory, Idx);
+}
+
 template <class... StmtPrinters>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMultiStmtsRewriterFactory(
@@ -1234,15 +1254,6 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createReportWarningRewriterF
     const std::string &FuncName, Diagnostics MsgId, ArgsT... ArgsCreator) {
   return std::make_shared<ReportWarningRewriterFactory<ArgsT...>>(
       Factory.second, FuncName, MsgId, ArgsCreator...);
-}
-
-inline std::shared_ptr<CallExprRewriterFactoryBase>
-createAnalyzeUninitializedDeviceVarRewriterFactory(
-    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-        Factory,
-    int Idx) {
-  return std::make_shared<AnalyzeUninitializedDeviceVarRewriterFactory>(
-      Factory.second, Idx);
 }
 
 template <class ArgT>
@@ -2078,6 +2089,8 @@ public:
 #define HEADER_INSERT_FACTORY(HEADER, x) createInsertHeaderFactory(HEADER, x 0),
 #define SUBGROUPSIZE_FACTORY(IDX, NEWFUNCNAME, x)                              \
   createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
+#define ANALYZE_UNINIT_DEV_VAR_FACTORY(Factory, Idx)                           \
+  createAnalyzeUninitializedDeviceVarRewriterFactory(Factory Idx),
 #define STREAM(x) makeDerefStreamExprCreator(x)
 #define ADDROF(x) makeAddrOfExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
@@ -2157,8 +2170,6 @@ public:
   {FuncName, createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)},
 #define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
   {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
-#define ANALYZE_UNINIT_DEV_VAR_FACTORY_ENTRY(FuncName, Factory, Idx)           \
-  {FuncName, createAnalyzeUninitializedDeviceVarRewriterFactory(Factory Idx)},
 #define TOSTRING_FACTORY_ENTRY(FuncName, ...)                                  \
   {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define REMOVE_API_FACTORY_ENTRY(FuncName)                                     \
