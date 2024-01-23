@@ -880,35 +880,11 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
 
       if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
           (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
-           llvm::sys::path::extension(File)==".cu")) {
-        emitDefaultLanguageWarningIfNecessary(File.str(),
-                                              SpecifyLanguageInOption);
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-        std::string CUDAVerMajor =
-            "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster(CUDAVerMajor.c_str(),
-                                      ArgumentInsertPosition::BEGIN));
-        std::string CUDAVerMinor =
-            "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster(CUDAVerMinor.c_str(),
-                                      ArgumentInsertPosition::BEGIN));
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
-                                      ArgumentInsertPosition::BEGIN));
-      }
+           llvm::sys::path::extension(File) == ".cu")) {
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
           CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
+#endif
         emitDefaultLanguageWarningIfNecessary(File.str(),
                                               SpecifyLanguageInOption);
         CudaArgsAdjuster = combineAdjusters(
@@ -934,7 +910,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
             getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
                                       ArgumentInsertPosition::BEGIN));
       }
-#endif
+
       CommandLine = getInsertArgumentAdjuster(
           (std::string("-I") + SDKIncludePath).c_str(),
           ArgumentInsertPosition::END)(CommandLine, "");
