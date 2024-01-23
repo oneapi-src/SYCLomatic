@@ -1,16 +1,10 @@
-.. _cmd_opt_ref:
+.. _alpha_opt:
 
-Command Line Options Reference
-==============================
+Alphabetical Option List
+========================
 
-This topic shows the command line options, current deprecated options, and
-information for working with source files.
 
-Command Line Options
---------------------
-
-The following table lists all current |tool_name| command line options
-in alphabetical order.
+The following table lists |tool_name| command line options in alphabetical order.
 
 .. list-table::
    :widths: 30 70
@@ -319,40 +313,3 @@ in alphabetical order.
           :start-after: desc-version:
           :end-before: end-version:
 
-
-.. note::
-
-   .. include:: /_include_files/options_def.rst
-      :start-after: report-opt-block:
-      :end-before: end-report-opt-block:
-
-Deprecated Command Line Options
--------------------------------
-
-The following table lists |tool_name| command line options that are deprecated.
-
-.. list-table::
-   :widths: 50 50
-   :header-rows: 1
-
-   * - Deprecated Option
-     - Suggested Replacement
-   * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-custom-helper-name:
-          :end-before: desc-custom-helper-name:
-     - No replacement
-   * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-no-cl-namespace-inline:
-          :end-before: desc-no-cl-namespace-inline:
-     - .. include:: /_include_files/options_def.rst
-          :start-after: opt-use-explicit-namespace:
-          :end-before: desc-use-explicit-namespace:
-   * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-use-custom-helper:
-          :end-before: desc-use-custom-helper:
-     - No replacement
-
-
-.. include:: /_include_files/options_def.rst
-   :start-after: opt-intercept-build-block:
-   :end-before: end-intercept-build-block:

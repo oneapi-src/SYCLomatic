@@ -802,8 +802,9 @@ Generates helper function files in the ``--out-root`` directory. Default: ``off`
 intercept-build Options
 -----------------------
 
-The following table lists all current `intercept-build` tool command line options
-in alphabetical order.
+The `intercept-build` tool is available for Linux\* only. It is available as part of |tool_name| installation.
+
+The following table lists `intercept-build` tool command line options.
 
 .. list-table::
    :widths: 30 70
@@ -817,6 +818,8 @@ in alphabetical order.
        updated; it's done when the build command finished. Default: disabled.
    * - `--cdb <file>`
      - The JSON compilation database. Default name: `compile_commands.json`.
+   * - `--intercept-build`
+     - Invoke the `intercept-build` tool to generate a compilation database.
    * - `--linker-entry`
      - Generate linker entry in compilation database if the `--linker-entry` option
        is present. Default: enabled.
@@ -836,13 +839,4 @@ in alphabetical order.
 .. _end-intercept-build-block:
 
 
-.. _report-opt-block:
 
-Specifying any of the following options will trigger report generation:
-
--  ``--report-file-prefix``
--  ``--report-type``
--  ``--report-format``
--  ``--report-only``
-
-.. _end-report-opt-block:
