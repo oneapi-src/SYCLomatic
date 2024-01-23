@@ -253,6 +253,18 @@ UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
+bool hasOptConflictWithQuery(int argc, const char **argv) {
+  for (auto I = 1; I < argc; I++) {
+    auto Opt = StringRef(argv[I]);
+    if (!Opt.starts_with("--query-api-mapping") &&
+        !Opt.starts_with("--cuda-include-path") &&
+        !Opt.starts_with("--extra-arg")) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static bool isCUDAHeaderRequired() { return !MigrateBuildScriptOnly; }
 
 UnifiedPath getInstallPath(const char *invokeCommand) {
@@ -845,6 +857,17 @@ int runDPCT(int argc, const char **argv) {
 
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
+    if (QueryAPIMapping.getNumOccurrences() > 1) {
+      llvm::outs() << "Warning: Each query focuses on one API. Only the last "
+                      "one will be queried.\n";
+    }
+    if (hasOptConflictWithQuery(argc, argv)) {
+      llvm::outs()
+          << "Warning: When using --query-api-mapping, only "
+             "\"--extra-arg\" and \"--cuda-include-path\" option can be set.\n";
+      ShowStatus(MigrationErrorConflictOptions);
+      dpctExit(MigrationErrorConflictOptions);
+    }
     // Set a virtual file for --query-api-mapping.
     llvm::SmallString<16> VirtFolderSS;
     llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFolderSS);
