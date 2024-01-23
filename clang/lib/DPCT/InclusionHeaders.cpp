@@ -138,18 +138,13 @@ void IncludesCallbacks::InclusionDirective(
   if (Global.isExcluded(IncludedFile))
     return;
 
-  auto GenReplacement =
-      [&, ReplaceRange =
-              CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                              /*IsTokenRange=*/false)](
-          std::string ReplacedStr, bool RemoveTrailingSpaces = false) {
-        return new ReplaceInclude(ReplaceRange, std::move(ReplacedStr),
-                                  RemoveTrailingSpaces);
-      };
+  auto ReplaceRange =
+      CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                      /*IsTokenRange=*/false);
   auto EmplaceReplacement = [&](std::string ReplacedStr,
                                 bool RemoveTrailingSpaces = false) {
-    TransformSet.emplace_back(
-        GenReplacement(std::move(ReplacedStr), RemoveTrailingSpaces));
+    TransformSet.emplace_back(new ReplaceInclude(
+        ReplaceRange, std::move(ReplacedStr), RemoveTrailingSpaces));
   };
   auto RemoveInslusion = [&]() {
     EmplaceReplacement("", true);
@@ -193,9 +188,7 @@ void IncludesCallbacks::InclusionDirective(
         // For other CppSource file type, it may change name or not, which
         // determined by whether it has CUDA syntax, so just record the
         // replacement in the IncludeMapSet.
-        auto Range = CharSourceRange(
-            SourceRange(HashLoc, FilenameRange.getEnd()), false);
-        auto Repl = ReplaceInclude(Range, std::move(ReplacedStr), false)
+        auto Repl = ReplaceInclude(ReplaceRange, std::move(ReplacedStr), false)
                         .getReplacement(DpctGlobalInfo::getContext());
         DpctGlobalInfo::getIncludeMapSet().push_back({IncludedFile, Repl});
       }

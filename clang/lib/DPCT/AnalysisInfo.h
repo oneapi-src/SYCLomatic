@@ -1245,6 +1245,10 @@ public:
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
   }
+  std::shared_ptr<DpctFileInfo>
+  findFile(const clang::tooling::UnifiedPath &FilePath) {
+    return findObject(FileMap, FilePath);
+  }
   std::shared_ptr<DpctFileInfo> getMainFile() const { return MainFile; }
   void setMainFile(std::shared_ptr<DpctFileInfo> Main) { MainFile = Main; }
   void recordIncludingRelationship(

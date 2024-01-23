@@ -1926,8 +1926,10 @@ void DpctGlobalInfo::postProcess() {
     DpctGlobalInfo::setNeedRunAgain(true);
   }
   for (const auto &R : IncludeMapSet) {
-    if (!insertFile(R.first)->getReplsSYCL()->empty()) {
-      addReplacement(R.second);
+    if (auto F = findFile(R.first)) {
+      if (!F->getReplsSYCL()->empty()) {
+        addReplacement(R.second);
+      }
     }
   }
   for (auto &File : FileMap) {
