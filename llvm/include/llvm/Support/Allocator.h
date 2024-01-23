@@ -29,6 +29,7 @@
 #include <iterator>
 #include <optional>
 #include <utility>
+#include <iostream>
 
 namespace llvm {
 
@@ -148,7 +149,6 @@ public:
   LLVM_ATTRIBUTE_RETURNS_NONNULL void *Allocate(size_t Size, Align Alignment) {
     // Keep track of how many bytes we've allocated.
     BytesAllocated += Size;
-
     size_t Adjustment = offsetToAlignedAddr(CurPtr, Alignment);
     assert(Adjustment + Size >= Size && "Adjustment + Size must not overflow");
 

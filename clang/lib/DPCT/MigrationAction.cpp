@@ -28,14 +28,14 @@ namespace clang {
 namespace dpct {
 
 namespace {
-constexpr size_t MinAvailableMemorySize = 512 * 1024 * 1024; // 512Mb
-constexpr size_t MinAvailableMemoryPercent = 25;             // 25 percent
+constexpr uint64_t ExpectedGlobalMemorySize =
+    12 * 1024 *
+    1024; // 10 * 1024 * 1024 kB = 12 GB, keep 12GB for global memory
 
 /// Check whether available memory size is enough to cache more translate unit
 /// info.
 /// Return true if available phy memory is larger than \p
-/// MinAvailableMemorySize and available phy memory percents is larger than \p
-/// MinAvailableMemoryPercent. Otherwise return false.
+/// ExpectedGlobalMemorySize. Otherwise return false.
 bool canCacheMoreTranslateUnit();
 
 #ifdef _WIN32
@@ -45,8 +45,10 @@ bool canCacheMoreTranslateUnit() {
   if (!GlobalMemoryStatusEx(&MStatus))
     return false;
 
-  return MinAvailableMemoryPercent < 100 - MStatus.dwMemoryLoad &&
-         MStatus.ullAvailPhys > MinAvailableMemorySize;
+  int64_t AvailableToCache =
+      MStatus.ullAvailPhys -
+      ExpectedGlobalMemorySize * 1024; // The AvailableToCache is in bytes.
+  return AvailableToCache > 0 ? true : false;
 }
 #else  // _WIN32
 bool canCacheMoreTranslateUnit() {
@@ -70,8 +72,8 @@ bool canCacheMoreTranslateUnit() {
     /// 3rd line: "MemAvailable:   **** kB"
     File >> Dummy >> Available >> Dummy;
 
-    return Available * 100 / Total > MinAvailableMemoryPercent &&
-           Available * 1024 > MinAvailableMemorySize;
+    int64_t AvailableToCache = Available - ExpectedGlobalMemorySize;
+    return AvailableToCache > 0 ? true : false;
   } catch (std::exception &) {
     /// Return false if any exception
     return false;
