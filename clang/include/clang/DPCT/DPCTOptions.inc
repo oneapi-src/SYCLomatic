@@ -170,13 +170,13 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SyclNamedL
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<OutputVerbosityLevel>), OutputVerbosity, "output-verbosity",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("detailed", int(OutputVerbosityLevel::OVL_Detailed),
-                                  "\'normal\' and messages about which file is being processed.",
+                                  "'normal' and messages about which file is being processed.",
                                   false),
              DPCT_OPT_ENUM("diagnostics", int(OutputVerbosityLevel::OVL_Diagnostics),
-                                  "\'detailed\' and information about the detected "
+                                  "'detailed' and information about the detected "
                                   "conflicts and crashes. (default)", false),
              DPCT_OPT_ENUM("normal", int(OutputVerbosityLevel::OVL_Normal),
-                                  "\'silent\' and warnings, errors, and notes from dpct.",
+                                  "'silent' and warnings, errors, and notes from dpct.",
                                   false),
              DPCT_OPT_ENUM("silent", int(OutputVerbosityLevel::OVL_Silent),
                                   "Only messages from clang.", false)
@@ -347,8 +347,8 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisab
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Experimentals, "use-experimental-features",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),
-        "Experimental extension that allows getting `id`, `item`, `nd_item`, `group`, and\n"
-        "`sub_group` instances globally.",
+        "Experimental extension that allows getting 'id', 'item', 'nd_item', 'group', and\n"
+        "'sub_group' instances globally.",
         false),
              DPCT_OPT_ENUM("local-memory-kernel-scope-allocation", int(ExperimentalFeatures::Exp_GroupSharedMemory),
         "Experimental extension that allows allocation of local memory objects at the kernel\n"
@@ -396,10 +396,10 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), BuildScriptFile,
         llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScript, "migrate-cmake-script",
-        llvm::cl::desc("EXPERIMENTAL: Migrate the cmakfile build script. Default: off."),
+        llvm::cl::desc("EXPERIMENTAL: Migrate the CMake file(s). Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScriptOnly, "migrate-cmake-script-only",
-        llvm::cl::desc("EXPERIMENTAL: Only migrate the cmakfile build script. Default: off."),
+        llvm::cl::desc("EXPERIMENTAL: Only migrate the CMake file(s). Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ExcludePathList, "in-root-exclude",
@@ -431,11 +431,11 @@ DPCT_NON_ENUM_OPTION(
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<SYCLFileExtensionEnum>), SYCLFileExtension, "sycl-file-extension",
            DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("dp-cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension .dp.cpp and .dp.hpp (default)", false),
-             DPCT_OPT_ENUM("sycl-cpp", int(SYCLFileExtensionEnum::SYCL_CPP), "Use extension .sycl.cpp and .sycl.hpp", false),
-             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension .cpp and .hpp", false)
+             DPCT_OPT_ENUM("dp-cpp", int(SYCLFileExtensionEnum::DP_CPP), "Use extension '.dp.cpp' and '.dp.hpp' (default).", false),
+             DPCT_OPT_ENUM("sycl-cpp", int(SYCLFileExtensionEnum::SYCL_CPP), "Use extension '.sycl.cpp' and '.sycl.hpp'.", false),
+             DPCT_OPT_ENUM("cpp", int(SYCLFileExtensionEnum::CPP), "Use extension '.cpp' and '.hpp'.", false)
            ),
-           llvm::cl::desc("File extension of migrated source files\n"),
+           llvm::cl::desc("Specifies the extension of migrated source file(s).\nThe values are:\n"),
            llvm::cl::init(SYCLFileExtensionEnum::DP_CPP), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
            llvm::cl::Optional)
 
@@ -454,7 +454,7 @@ DPCT_NON_ENUM_OPTION(
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), InterceptBuildCommand,
     "intercept-build",
-    llvm::cl::desc("Intercept build tool to generate a compilation database"),
+    llvm::cl::desc("Intercept build tool to generate a compilation database."),
     llvm::cl::value_desc("build command"), llvm::cl::cat(DPCTCat),
     llvm::cl::init(false))
 #endif

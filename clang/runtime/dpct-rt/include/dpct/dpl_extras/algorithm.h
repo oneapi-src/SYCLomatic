@@ -369,7 +369,7 @@ void scatter_if(Policy &&policy, InputIter1 first, InputIter1 last,
               typename std::iterator_traits<OutputIter>::iterator_category,
               std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
-  transform_if(
+  dpct::transform_if(
       ::std::forward<Policy>(policy), first, last, mask,
       oneapi::dpl::make_permutation_iterator(result, map),
       [=](auto &&v) { return v; }, [=](auto &&m) { return pred(m); });
@@ -405,7 +405,7 @@ OutputIter gather_if(Policy &&policy, InputIter1 map_first, InputIter1 map_last,
       oneapi::dpl::make_permutation_iterator(input_first, map_first);
   const int n = std::distance(map_first, map_last);
 
-  return transform_if(
+  return dpct::transform_if(
       ::std::forward<Policy>(policy), perm_begin, perm_begin + n, mask, result,
       [=](auto &&v) { return v; }, [=](auto &&m) { return pred(m); });
 }
