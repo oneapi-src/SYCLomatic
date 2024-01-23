@@ -444,8 +444,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
-  In: target_link_libraries(${CULibraries})
-  Out: target_link_libraries(${CULibraries})
+  In: ${prefix}link_libraries(${CULibraries})
+  Out: ${prefix}link_libraries(${CULibraries})
   Subrules:
     CULibraries:
       In: |
@@ -458,8 +458,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: -lcublas_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: -lcublas
@@ -471,8 +471,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: CUDA_cublas_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::cublas"
@@ -485,8 +485,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuda_driver_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::cuda_driver"
@@ -499,8 +499,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cudart_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::cudart"
@@ -512,8 +512,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cudnn_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "cudnn"
@@ -527,8 +527,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: nvrtc_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::nvrtc"
@@ -541,8 +541,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: nvToolsExt_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::nvToolsExt"
@@ -555,8 +555,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvinfer_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: libnvinfer.so
@@ -569,8 +569,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvonnxparser_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: libnvonnxparser.so
@@ -583,8 +583,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libstdc++_target_link_libraries
-  In: target_link_libraries(${StaticLibraries})
-  Out: target_link_libraries(${StaticLibraries})
+  In: ${prefix}link_libraries(${StaticLibraries})
+  Out: ${prefix}link_libraries(${StaticLibraries})
   Subrules:
     StaticLibraries:
       In: -static-libstdc++
