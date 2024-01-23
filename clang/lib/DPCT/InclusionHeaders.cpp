@@ -193,8 +193,11 @@ void IncludesCallbacks::InclusionDirective(
         // For other CppSource file type, it may change name or not, which
         // determined by whether it has CUDA syntax, so just record the
         // replacement in the IncludeMapSet.
-        IncludeMapSet[IncludedFile].emplace_back(
-            GenReplacement(std::move(ReplacedStr)));
+        auto Range = CharSourceRange(
+            SourceRange(HashLoc, FilenameRange.getEnd()), false);
+        auto Repl = ReplaceInclude(Range, std::move(ReplacedStr), false)
+                        .getReplacement(DpctGlobalInfo::getContext());
+        DpctGlobalInfo::getIncludeMapSet().push_back({IncludedFile, Repl});
       }
     }
     return;

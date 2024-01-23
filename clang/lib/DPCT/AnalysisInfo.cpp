@@ -1925,6 +1925,11 @@ void DpctGlobalInfo::postProcess() {
   if (!ReProcessFile.empty() && isFirstPass) {
     DpctGlobalInfo::setNeedRunAgain(true);
   }
+  for (const auto &R : IncludeMapSet) {
+    if (!insertFile(R.first)->getReplsSYCL()->empty()) {
+      addReplacement(R.second);
+    }
+  }
   for (auto &File : FileMap) {
     auto &S = File.second->getConstantMacroTMSet();
     auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
@@ -2429,6 +2434,7 @@ std::unordered_map<std::string, bool> DpctGlobalInfo::MallocHostInfoMap;
 std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
 std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
+IncludeMapSetTy DpctGlobalInfo::IncludeMapSet;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,

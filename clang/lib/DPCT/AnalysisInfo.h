@@ -1327,6 +1327,7 @@ public:
   static std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
     return VarUsedByRuntimeSymbolAPISet;
   }
+  static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
   }
@@ -1541,6 +1542,7 @@ private:
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
+  static IncludeMapSetTy IncludeMapSet;
   static std::unordered_set<std::string> NeedParenAPISet;
 };
 
