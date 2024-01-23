@@ -25,7 +25,7 @@ SUBGROUPSIZE_FACTORY(
                                      SUBGROUP,
                                      ARG(".get_local_linear_id())) || "))),
                              makeCallArgCreatorWithCall(1)))))),
-        1, ARG(1)))
+        1))
 
 // __all
 SUBGROUPSIZE_FACTORY(
@@ -35,7 +35,7 @@ SUBGROUPSIZE_FACTORY(
         CALL_FACTORY_ENTRY("__all",
                            CALL(MapNames::getClNamespace() + "all_of_group",
                                 SUBGROUP, makeCallArgCreatorWithCall(0))),
-        0, ARG(0)))
+        0))
 
 // __any_sync
 SUBGROUPSIZE_FACTORY(
@@ -56,7 +56,7 @@ SUBGROUPSIZE_FACTORY(
                                      SUBGROUP,
                                      ARG(".get_local_linear_id())) && "))),
                              makeCallArgCreatorWithCall(1)))))),
-        1, ARG(1)))
+        1))
 
 // __any
 SUBGROUPSIZE_FACTORY(
@@ -66,7 +66,7 @@ SUBGROUPSIZE_FACTORY(
         CALL_FACTORY_ENTRY("__any",
                            CALL(MapNames::getClNamespace() + "any_of_group",
                                 SUBGROUP, makeCallArgCreatorWithCall(0))),
-        0, ARG(0)))
+        0))
 
 // __match_any_sync
 SUBGROUPSIZE_FACTORY(UINT_MAX,
@@ -78,7 +78,7 @@ SUBGROUPSIZE_FACTORY(UINT_MAX,
                                                      "match_any_over_sub_group",
                                                  SUBGROUP, ARG_WC(0),
                                                  ARG_WC(1))),
-                         1, ARG(1)))
+                         1))
 
 // __match_all_sync
 SUBGROUPSIZE_FACTORY(UINT_MAX,
@@ -90,7 +90,7 @@ SUBGROUPSIZE_FACTORY(UINT_MAX,
                                                      "match_all_over_sub_group",
                                                  SUBGROUP, ARG_WC(0), ARG_WC(1),
                                                  ARG_WC(2))),
-                         1, ARG(1)))
+                         1))
 
 // __reduce_add_sync
 SUBGROUPSIZE_FACTORY(
@@ -103,7 +103,7 @@ SUBGROUPSIZE_FACTORY(
                 "__reduce_add_sync",
                 CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
                      ARG(1), LITERAL(MapNames::getClNamespace() + "plus<>()"))),
-            1, ARG(1)),
+            1),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -119,7 +119,7 @@ SUBGROUPSIZE_FACTORY(
                 CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
                      ARG(1),
                      LITERAL(MapNames::getClNamespace() + "minimum()"))),
-            1, ARG(1)),
+            1),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -135,7 +135,7 @@ SUBGROUPSIZE_FACTORY(
                 CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
                      ARG(1),
                      LITERAL(MapNames::getClNamespace() + "maximum()"))),
-            1, ARG(1)),
+            1),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -151,7 +151,7 @@ SUBGROUPSIZE_FACTORY(
                 CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
                      ARG(1),
                      LITERAL(MapNames::getClNamespace() + "bit_and<>()"))),
-            1, ARG(1)),
+            1),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -167,7 +167,7 @@ SUBGROUPSIZE_FACTORY(
                 CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
                      ARG(1),
                      LITERAL(MapNames::getClNamespace() + "bit_or<>()"))),
-            1, ARG(1)),
+            1),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -183,7 +183,7 @@ SUBGROUPSIZE_FACTORY(
                 CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
                      ARG(1),
                      LITERAL(MapNames::getClNamespace() + "bit_xor<>()"))),
-            1, ARG(1)),
+            1),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -209,7 +209,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  makeCallArgCreatorWithCall(0), SUBGROUP,
                                  makeCallArgCreatorWithCall(1),
                                  makeCallArgCreatorWithCall(2))),
-                        1, ARG(1))),
+                        1)),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_up_sync"),
                 ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
@@ -230,7 +230,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  makeCallArgCreatorWithCall(1),
                                  makeCallArgCreatorWithCall(2),
                                  makeCallArgCreatorWithCall(3))),
-                        1, ARG(1))),
+                        1)),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_up_sync"),
                 ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
@@ -250,7 +250,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 SUBGROUP,
                                                 makeCallArgCreatorWithCall(1),
                                                 makeCallArgCreatorWithCall(2))),
-                        1, ARG(1)))),
+                        1))),
             SUBGROUPSIZE_FACTORY(
                 UINT_MAX,
                 MapNames::getDpctNamespace() + "shift_sub_group_right",
@@ -265,7 +265,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 makeCallArgCreatorWithCall(1),
                                                 makeCallArgCreatorWithCall(2),
                                                 makeCallArgCreatorWithCall(3))),
-                        1, ARG(1))))),
+                        1)))),
         CONDITIONAL_FACTORY_ENTRY(
             CheckArgIsConstantIntWithValue(3, 32),
             SUBGROUPSIZE_FACTORY(
@@ -283,7 +283,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          "shift_sub_group_right",
                                      SUBGROUP, makeCallArgCreatorWithCall(1),
                                      makeCallArgCreatorWithCall(2))),
-                            1, ARG(1))),
+                            1)),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "shift_sub_group_right." +
@@ -308,7 +308,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                      SUBGROUP, makeCallArgCreatorWithCall(1),
                                      makeCallArgCreatorWithCall(2),
                                      makeCallArgCreatorWithCall(3))),
-                            1, ARG(1))),
+                            1)),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "shift_sub_group_right." +
@@ -332,7 +332,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             "shift_sub_group_right",
                                         SUBGROUP, makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1))),
-                0, ARG(0)))),
+                0))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
         FEATURE_REQUEST_FACTORY(
@@ -345,7 +345,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                         SUBGROUP, makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1),
                                         makeCallArgCreatorWithCall(2))),
-                0, ARG(0)))))
+                0))))
 
 // __shfl_down_sync
 CONDITIONAL_FACTORY_ENTRY(
@@ -368,7 +368,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  makeCallArgCreatorWithCall(0), SUBGROUP,
                                  makeCallArgCreatorWithCall(1),
                                  makeCallArgCreatorWithCall(2))),
-                        1, ARG(1))),
+                        1)),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_down_sync"),
                 ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
@@ -388,7 +388,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  makeCallArgCreatorWithCall(1),
                                  makeCallArgCreatorWithCall(2),
                                  makeCallArgCreatorWithCall(3))),
-                        1, ARG(1))),
+                        1)),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_down_sync"),
                 ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
@@ -407,7 +407,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 SUBGROUP,
                                                 makeCallArgCreatorWithCall(1),
                                                 makeCallArgCreatorWithCall(2))),
-                        1, ARG(1)))),
+                        1))),
             SUBGROUPSIZE_FACTORY(
                 UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
                 FEATURE_REQUEST_FACTORY(
@@ -421,7 +421,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 makeCallArgCreatorWithCall(1),
                                                 makeCallArgCreatorWithCall(2),
                                                 makeCallArgCreatorWithCall(3))),
-                        1, ARG(1))))),
+                        1)))),
         CONDITIONAL_FACTORY_ENTRY(
             CheckArgIsConstantIntWithValue(3, 32),
             SUBGROUPSIZE_FACTORY(
@@ -438,7 +438,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          "shift_sub_group_left",
                                      SUBGROUP, makeCallArgCreatorWithCall(1),
                                      makeCallArgCreatorWithCall(2))),
-                            1, ARG(1))),
+                            1)),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() + "shift_sub_group_left." +
                         " You can specify "
@@ -461,7 +461,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                      SUBGROUP, makeCallArgCreatorWithCall(1),
                                      makeCallArgCreatorWithCall(2),
                                      makeCallArgCreatorWithCall(3))),
-                            1, ARG(1))),
+                            1)),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() + "shift_sub_group_left." +
                         " You can specify "
@@ -484,7 +484,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             "shift_sub_group_left",
                                         SUBGROUP, makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1))),
-                0, ARG(0)))),
+                0))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
         FEATURE_REQUEST_FACTORY(
@@ -497,7 +497,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                         SUBGROUP, makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1),
                                         makeCallArgCreatorWithCall(2))),
-                0, ARG(0)))))
+                0))))
 
 //__shfl_sync
 CONDITIONAL_FACTORY_ENTRY(
@@ -521,7 +521,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  makeCallArgCreatorWithCall(0), SUBGROUP,
                                  makeCallArgCreatorWithCall(1),
                                  makeCallArgCreatorWithCall(2))),
-                        1, ARG(1))),
+                        1)),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_sync"),
                 ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
@@ -542,7 +542,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  makeCallArgCreatorWithCall(1),
                                  makeCallArgCreatorWithCall(2),
                                  makeCallArgCreatorWithCall(3))),
-                        1, ARG(1))),
+                        1)),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_sync"),
                 ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
@@ -562,7 +562,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 SUBGROUP,
                                                 makeCallArgCreatorWithCall(1),
                                                 makeCallArgCreatorWithCall(2))),
-                        1, ARG(1)))),
+                        1))),
             SUBGROUPSIZE_FACTORY(
                 UINT_MAX,
                 MapNames::getDpctNamespace() + "select_from_sub_group",
@@ -577,7 +577,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 makeCallArgCreatorWithCall(1),
                                                 makeCallArgCreatorWithCall(2),
                                                 makeCallArgCreatorWithCall(3))),
-                        1, ARG(1))))),
+                        1)))),
         CONDITIONAL_FACTORY_ENTRY(
             CheckArgIsConstantIntWithValue(3, 32),
             SUBGROUPSIZE_FACTORY(
@@ -595,7 +595,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          "select_from_sub_group",
                                      SUBGROUP, makeCallArgCreatorWithCall(1),
                                      makeCallArgCreatorWithCall(2))),
-                            1, ARG(1))),
+                            1)),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "select_from_sub_group." +
@@ -620,7 +620,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                      SUBGROUP, makeCallArgCreatorWithCall(1),
                                      makeCallArgCreatorWithCall(2),
                                      makeCallArgCreatorWithCall(3))),
-                            1, ARG(1))),
+                            1)),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "select_from_sub_group." +
@@ -644,7 +644,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             "select_from_sub_group",
                                         SUBGROUP, makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1))),
-                0, ARG(0)))),
+                0))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
         FEATURE_REQUEST_FACTORY(
@@ -657,7 +657,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                         SUBGROUP, makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1),
                                         makeCallArgCreatorWithCall(2))),
-                0, ARG(0)))))
+                0))))
 
 // __shfl_xor_sync
 CONDITIONAL_FACTORY_ENTRY(
@@ -681,7 +681,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  makeCallArgCreatorWithCall(0), SUBGROUP,
                                  makeCallArgCreatorWithCall(1),
                                  makeCallArgCreatorWithCall(2))),
-                        1, ARG(1))),
+                        1)),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_xor_sync"),
                 ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
@@ -702,7 +702,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  makeCallArgCreatorWithCall(1),
                                  makeCallArgCreatorWithCall(2),
                                  makeCallArgCreatorWithCall(3))),
-                        1, ARG(1))),
+                        1)),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_xor_sync"),
                 ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
@@ -722,7 +722,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 SUBGROUP,
                                                 makeCallArgCreatorWithCall(1),
                                                 makeCallArgCreatorWithCall(2))),
-                        1, ARG(1)))),
+                        1))),
             SUBGROUPSIZE_FACTORY(
                 UINT_MAX,
                 MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
@@ -737,7 +737,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 makeCallArgCreatorWithCall(1),
                                                 makeCallArgCreatorWithCall(2),
                                                 makeCallArgCreatorWithCall(3))),
-                        1, ARG(1))))),
+                        1)))),
         CONDITIONAL_FACTORY_ENTRY(
             CheckArgIsConstantIntWithValue(3, 32),
             SUBGROUPSIZE_FACTORY(
@@ -755,7 +755,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, makeCallArgCreatorWithCall(1),
                                      makeCallArgCreatorWithCall(2))),
-                            1, ARG(1))),
+                            1)),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "permute_sub_group_by_xor." +
@@ -780,7 +780,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                      SUBGROUP, makeCallArgCreatorWithCall(1),
                                      makeCallArgCreatorWithCall(2),
                                      makeCallArgCreatorWithCall(3))),
-                            1, ARG(1))),
+                            1)),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "permute_sub_group_by_xor." +
@@ -804,7 +804,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             "permute_sub_group_by_xor",
                                         SUBGROUP, makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1))),
-                0, ARG(0)))),
+                0))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
         FEATURE_REQUEST_FACTORY(
@@ -817,7 +817,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                         SUBGROUP, makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1),
                                         makeCallArgCreatorWithCall(2))),
-                0, ARG(0)))))
+                0))))
 
 WARNING_FACTORY_ENTRY("__activemask",
                       TOSTRING_FACTORY_ENTRY("__activemask",
@@ -838,7 +838,7 @@ SUBGROUPSIZE_FACTORY(
                                  ARG(".get_local_linear_id()) : 0, " +
                                      MapNames::getClNamespace() +
                                      "ext::oneapi::plus<>()"))))),
-        0, ARG(0)))
+        0))
 
 // __ballot_sync
 SUBGROUPSIZE_FACTORY(
@@ -864,4 +864,4 @@ SUBGROUPSIZE_FACTORY(
                                      ARG(".get_local_linear_id()) : 0, " +
                                          MapNames::getClNamespace() +
                                          "ext::oneapi::plus<>()")))))))),
-        1, ARG(1)))
+        1))

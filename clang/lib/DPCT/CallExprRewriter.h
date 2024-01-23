@@ -259,20 +259,23 @@ public:
   }
 };
 
-template <class T>
 class AnalyzeUninitializedDeviceVarRewriterFactory
-    : public CallExprRewriterFactory<UnsupportFunctionRewriter<T>, Diagnostics,
-                                     T> {
-  using BaseT =
-      CallExprRewriterFactory<UnsupportFunctionRewriter<T>, Diagnostics, T>;
+    : public CallExprRewriterFactory<
+          UnsupportFunctionRewriter<
+              std::function<const Expr *(const CallExpr *C)>>,
+          Diagnostics, std::function<const Expr *(const CallExpr *C)>> {
+  using BaseT = CallExprRewriterFactory<
+      UnsupportFunctionRewriter<std::function<const Expr *(const CallExpr *C)>>,
+      Diagnostics, std::function<const Expr *(const CallExpr *C)>>;
   std::shared_ptr<CallExprRewriterFactoryBase> First;
   int Idx = 0;
 
 public:
   AnalyzeUninitializedDeviceVarRewriterFactory(
-      std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory,
-      std::string FuncName, int Idx, T MsgArg)
-      : BaseT(FuncName, Diagnostics::UNINITIALIZED_DEVICE_VAR, MsgArg),
+      std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory, int Idx)
+      : BaseT(
+            "", Diagnostics::UNINITIALIZED_DEVICE_VAR,
+            [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); }),
         First(FirstFactory), Idx(Idx) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     std::vector<const clang::VarDecl *> DeclsNeedToBeInitialized;
