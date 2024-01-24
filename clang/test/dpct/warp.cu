@@ -337,6 +337,36 @@ __global__ void kernel35() {
   __shfl_xor_sync(0xFFFFFFFF, val, laneMask, WS);
 }
 
+__device__ void device36(int val, int laneMask, int WS) {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1121:{{[0-9]+}}: Please initialize "val" which is used in the SYCL group function/algorithm.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_ct1.get_sub_group(), val, laneMask, WS);
+  __shfl_xor_sync(0xFFFFFFFF, val, laneMask, WS);
+}
+
+__global__ void kernel36() {
+  int val;
+  int laneMask;
+  int WS;
+  device36(0xFFFFFFFF, val, laneMask, WS);
+}
+
+__device__ int device37() {
+  return 0;
+}
+
+__global__ void kernel37() {
+  // CHECK: int val = device37();
+  // CHECK-NEXT: int laneMask;
+  // CHECK-NEXT: int WS;
+  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, WS);
+  int val = device37();
+  int laneMask;
+  int WS;
+  __shfl_xor_sync(0xFFFFFFFF, val, laneMask, WS);
+}
+
 int main() {
 
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
