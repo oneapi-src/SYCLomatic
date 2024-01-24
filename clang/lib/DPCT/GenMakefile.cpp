@@ -28,32 +28,27 @@ using namespace llvm;
 // Used to identify compilation commands without target
 const std::string EmptyTarget = "NoLinker";
 
-std::map<clang::tooling::UnifiedPath /*migrated file name*/,
-         clang::tooling::CompilationInfo>
+std::map<clang::tooling::UnifiedPath /*migrated file name*/, clang::tooling::CompilationInfo>
     CompileCmdsMap;
 
-std::map<clang::tooling::UnifiedPath /*target*/,
-         std::vector<clang::tooling::CompilationInfo>>
+std::map<clang::tooling::UnifiedPath /*target*/, std::vector<clang::tooling::CompilationInfo>>
     CompileCmdsPerTarget;
 
-std::vector<std::pair<
-    clang::tooling::UnifiedPath /*original file name or linker entry*/,
-    std::vector<std::string> /*original compile command*/>>
+std::vector<std::pair<clang::tooling::UnifiedPath /*original file name or linker entry*/,
+                      std::vector<std::string> /*original compile command*/>>
     CompileTargetsMap;
 
 static void fillCompileCmds(
-    std::map<clang::tooling::UnifiedPath,
-             std::vector<clang::tooling::CompilationInfo>> &CompileCmds,
-    clang::tooling::CompilationInfo &CmpInfo,
-    clang::tooling::UnifiedPath TargetName) {
+    std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
+        &CompileCmds,
+    clang::tooling::CompilationInfo &CmpInfo, clang::tooling::UnifiedPath TargetName) {
   CompileCmds[TargetName].push_back(CmpInfo);
 }
 
 // To get customized basename from the file path.
 // E.g: /path/to/foo.cc.cpp --> foo.cc
 static std::string getCustomBaseName(const clang::tooling::UnifiedPath &Path) {
-  std::string Filename =
-      llvm::sys::path::filename(Path.getCanonicalPath()).str();
+  std::string Filename = llvm::sys::path::filename(Path.getCanonicalPath()).str();
   std::size_t Pos = Filename.find_last_of('.');
   if (Pos != std::string::npos) {
     std::string BaseName = Filename.substr(0, Pos);
@@ -65,18 +60,15 @@ static std::string getCustomBaseName(const clang::tooling::UnifiedPath &Path) {
 extern std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 
 static void getCompileInfo(
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::map<clang::tooling::UnifiedPath,
-             std::vector<clang::tooling::CompilationInfo>> &CompileCmds,
-    std::unordered_map<clang::tooling::UnifiedPath, std::string>
-        &ToolPerTarget) {
+    const clang::tooling::UnifiedPath& InRoot, const clang::tooling::UnifiedPath& OutRoot,
+    std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
+        &CompileCmds,
+    std::unordered_map<clang::tooling::UnifiedPath, std::string> &ToolPerTarget) {
 
   std::unordered_map<clang::tooling::UnifiedPath, std::vector<std::string>>
       ObjsInLinkerCmdPerTarget;
 
-  std::map<clang::tooling::UnifiedPath, clang::tooling::CompilationInfo>
-      CmdsMap;
+  std::map<clang::tooling::UnifiedPath, clang::tooling::CompilationInfo> CmdsMap;
 
   for (const auto &Entry : CompileTargetsMap) {
     clang::tooling::UnifiedPath FileName = Entry.first;
@@ -511,12 +503,6 @@ static void genMakefile(
         std::string ObjStrName = ObjFilesBufferMap[Obj.str().str()];
         std::string FlagStrName = FlagsBufferMap[Option];
 
-        // std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) +
-        //                          "_SRC_" + std::to_string(Idx);
-        // std::string ObjStrName = "TARGET_" + std::to_string(TargetIdx) +
-        //                          "_OBJ_" + std::to_string(Idx);
-        // std::string FlagStrName = "TARGET_" + std::to_string(TargetIdx) +
-        //                           "_FLAG_" + std::to_string(Idx);
         OS << buildString("$(", ObjStrName, "):$(", SrcStrName, ")\n");
 
         // Use 'icpx -fsycl' to compile all the migrated SYCL file.
