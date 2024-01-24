@@ -206,6 +206,20 @@
       In: ${arg}.cu
       Out: ${arg}.${rewrite_extention_name}
 
+# ${CUDA_LIBRARIES} is cmake reserved variable for static version of the CUDA runtime library.
+# In SYCL side, SYCL runtime is default auto-loaded when option "-fsycl" is specified, so we remove it in SYCL side.
+- Rule: rule_user_defined_function_cuda_libraries
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_files_in_user_defined_function_cuda_libraries
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_LIBRARIES}
+      Out: ""
 
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
