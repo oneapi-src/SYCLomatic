@@ -70,8 +70,7 @@ DPCT_NON_ENUM_OPTION(
     "report-file-prefix",
     llvm::cl::desc(
         "Prefix for the migration report file names. The full file name will "
-        "have a "
-        "suffix derived\n"
+        "have a suffix derived\n"
         "from the report-type and an extension derived from the report-format. "
         "For\n"
         "example: <prefix>.apis.csv or <prefix>.stats.log. If this option is "
