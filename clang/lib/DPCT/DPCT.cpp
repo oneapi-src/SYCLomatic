@@ -253,6 +253,8 @@ UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
+// Check if there are any options conflicting with '--query-api-mapping'.
+// Now only '--cuda-include-path' and '--extra-arg' are allowed.
 bool hasOptConflictWithQuery(int argc, const char **argv) {
   for (auto I = 1; I < argc; I++) {
     auto Opt = StringRef(argv[I]);
@@ -858,13 +860,15 @@ int runDPCT(int argc, const char **argv) {
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
     if (QueryAPIMapping.getNumOccurrences() > 1) {
-      llvm::outs() << "Warning: Each query focuses on one API. Only the last "
-                      "one will be queried.\n";
+      llvm::outs()
+          << "Warning: Option --query-api-mapping is specified multi time, "
+             "only the last one is used, all other are ignored.\n";
     }
     if (hasOptConflictWithQuery(argc, argv)) {
       llvm::outs()
-          << "Warning: When using --query-api-mapping, only "
-             "\"--extra-arg\" and \"--cuda-include-path\" option can be set.\n";
+          << "Warning: For API mapping query function triggered by option "
+             "--query-api-mapping, only \"--extra-arg\" and "
+             "\"--cuda-include-path\" option can be set.\n";
       ShowStatus(MigrationErrorConflictOptions);
       dpctExit(MigrationErrorConflictOptions);
     }
