@@ -9,8 +9,7 @@ Migration
    migration/generate-compilation-db
    migration/incremental-migration
    migration/migration-rules
-
-
+   migration/API-Mapping-query-guide
 
 
 |tool_name| ports CUDA\* language kernels and library API calls to
