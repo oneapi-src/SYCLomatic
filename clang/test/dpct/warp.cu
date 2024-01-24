@@ -349,7 +349,7 @@ __global__ void kernel36() {
   int val;
   int laneMask;
   int WS;
-  device36(0xFFFFFFFF, val, laneMask, WS);
+  device36(val, laneMask, WS);
 }
 
 __device__ int device37() {
