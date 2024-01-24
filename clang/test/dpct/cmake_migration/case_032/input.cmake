@@ -1,4 +1,6 @@
-link_libraries(main PRIVATE cxxopts fmt::fmt -lcublas cublas)
+link_libraries(main PRIVATE cxxopts fmt::fmt -lcublas)
+
+link_libraries(main PUBLIC cuda cublas)
 
 link_libraries(foo3 PUBLIC ${CUDA_LIBRARIES} ${TCNN_LIBRARIES} fmt)
 

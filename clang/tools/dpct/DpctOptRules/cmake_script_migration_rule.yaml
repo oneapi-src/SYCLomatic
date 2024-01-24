@@ -454,6 +454,18 @@
       MatchMode: Full
       RuleId: "remove_cuda_reserved_variable_CUDA_LIBRARIES"
 
+- Rule: rule_target_link_libraries_cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_target_link_libraries
+  In: ${prefix}link_libraries(${CULibraries})
+  Out: ${prefix}link_libraries(${CULibraries})
+  Subrules:
+    CULibraries:
+      In: cuda
+      Out: ""
+      MatchMode: Full
+
 - Rule: rule_target_link_libraries_cublas
   Kind: CMakeRule
   Priority: Fallback
@@ -463,7 +475,7 @@
   Subrules:
     CUDALibraries:
       In: cublas
-      Out: MKL::MKL_SYCL
+      Out: -qmkl
       MatchMode: Full
       RuleId: "replace_cublas_with_MKL_target"
 
