@@ -9,12 +9,9 @@
 #ifndef DPCT_SAVE_NEW_FILES_H
 #define DPCT_SAVE_NEW_FILES_H
 
-#include "ValidateArguments.h"
-#include "llvm/ADT/SmallString.h"
-#include "llvm/Support/Error.h"
-#include "llvm/Support/raw_os_ostream.h"
-#include <map>
 #include "clang/Tooling/Refactoring.h"
+
+#include <map>
 
 using ReplTy = std::map<std::string, clang::tooling::Replacements>;
 
@@ -26,7 +23,7 @@ using ReplTy = std::map<std::string, clang::tooling::Replacements>;
 
 namespace llvm {
 class StringRef;
-}
+} // namespace llvm
 
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.
@@ -57,8 +54,9 @@ void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
 /// Replace file path specified by \pInRoot with \pOutRoot in \pFilePath.
 ///
 /// \returns true if file path is rewritten, false otherwise.
-bool rewriteDir(clang::tooling::UnifiedPath &FilePath, const clang::tooling::UnifiedPath& InRoot,
-                const clang::tooling::UnifiedPath& OutRoot);
+bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
+                const clang::tooling::UnifiedPath &InRoot,
+                const clang::tooling::UnifiedPath &OutRoot);
 
 // Replace file name \p FileName with new migrated name. For c source files, the
 // file extension needs to wait until all replacements are generated to
@@ -71,8 +69,11 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName);
 // extension needs to wait until all replacements are generated to get the
 // correct result.
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
-                     const clang::tooling::UnifiedPath& FullPathName);
+                     const clang::tooling::UnifiedPath &FullPathName);
 
 // Replace file name \p FileName with new migrated name.
 void rewriteFileName(std::string &FileName, const std::string &FullPathName);
+
+// A mapping from output file path to it's corresponding input file.
+extern std::map<std::string, std::string> OutFilePath2InFilePath;
 #endif // DPCT_SAVE_NEW_FILES_H

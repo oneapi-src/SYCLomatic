@@ -195,6 +195,25 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
 
 static std::vector<std::string> FilesNotInCompilationDB;
 
+std::map<std::string, std::string> OutFilePath2InFilePath;
+
+static bool checkOverwriteAndWarn(const std::string &OutFilePath,
+                                  const std::string &InFilePath) {
+  auto SrcFilePath = OutFilePath2InFilePath.find(OutFilePath);
+
+  bool Overwrites = false;
+  // Make sure that the output file corresponds to a single and unique input
+  // file.
+  if (SrcFilePath != OutFilePath2InFilePath.end() &&
+      SrcFilePath->second != InFilePath) {
+    llvm::errs() << "[WARNING]: Due to name collusion with another file, skip "
+                    "writing file '"
+                 << OutFilePath << "'\n";
+    Overwrites = true;
+  }
+  return Overwrites;
+}
+
 void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
                             clang::tooling::UnifiedPath &OutRoot) {
   for (const auto &File : FilesNotInCompilationDB) {
@@ -208,6 +227,19 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
+    // Check for another file with SYCL extension. For example
+    // In in-root we have
+    //  * src.cpp
+    //  * src.cu
+    // After migration we will end up replacing src.cpp with migrated src.cu
+    // when the --sycl-file-extension is cpp
+    // In such a case warn the user.
+
+    // Make sure that the output file corresponds to a single and unique input
+    // file.
+    if (checkOverwriteAndWarn(OutputFile.getCanonicalPath().str(), File))
+      continue;
+
     auto Parent = path::parent_path(OutputFile.getCanonicalPath());
     std::error_code EC;
     EC = fs::create_directories(Parent);
@@ -430,13 +462,8 @@ int writeReplacementsToFiles(
     // After migration we will end up replacing src.cpp with migrated src.cu
     // when the --sycl-file-extension is cpp
     // In such a case warn the user.
-    if (fs::exists(OutPath.getCanonicalPath())) {
-      // A file with this name already exists.
-      llvm::errs() << "File '" << OutPath << "' already exists; "
-                   << "A possible reason is a name collusion "
-                   << "with another migrated file. Skipping it.\n";
+    if (checkOverwriteAndWarn(OutPath.getCanonicalPath().str(), Entry.first))
       continue;
-    }
 
     std::error_code EC;
     EC = fs::create_directories(path::parent_path(OutPath.getCanonicalPath()));
@@ -537,6 +564,8 @@ int writeReplacementsToFiles(
           .write(RSW);
       applyPatternRewriter(OutputString, OutStream);
     }
+    // We have written a migrated file; Update the output file path info
+    OutFilePath2InFilePath[OutPath.getCanonicalPath().str()] = Entry.first;
   }
   return status;
 }
@@ -741,14 +770,16 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         continue;
       }
 
-      if (fs::exists(FilePath.getCanonicalPath())) {
-        // A header file with this name already exists.
-        llvm::errs() << "File '" << FilePath << "' already exists; "
-                     << "A possible reason is a name collusion "
-                     << "with another migrated file. Skipping it.\n";
-
+      // Check for another file with SYCL extension. For example
+      // In in-root we have
+      //  * src.cpp
+      //  * src.cu
+      // After migration we will end up replacing src.cpp with migrated src.cu
+      // when the --sycl-file-extension is cpp
+      // In such a case warn the user.
+      if (checkOverwriteAndWarn(FilePath.getCanonicalPath().str(),
+                                Entry.first.getCanonicalPath().str()))
         continue;
-      }
 
       std::error_code EC;
       EC = fs::create_directories(
@@ -795,6 +826,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }
+      OutFilePath2InFilePath[FilePath.getCanonicalPath().str()] =
+          Entry.first.getCanonicalPath().str();
     }
   }
 
