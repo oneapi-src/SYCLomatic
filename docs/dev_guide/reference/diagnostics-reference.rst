@@ -113,10 +113,6 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct1021.rst
           :start-after: msg-1021-start:
           :end-before: msg-1021-end:
-   * - :ref:`DPCT1022`
-     - .. include:: diagnostic_ref/dpct1022.rst
-          :start-after: msg-1022-start:
-          :end-before: msg-1022-end:
    * - :ref:`DPCT1023`
      - .. include:: diagnostic_ref/dpct1023.rst
           :start-after: msg-1023-start:
