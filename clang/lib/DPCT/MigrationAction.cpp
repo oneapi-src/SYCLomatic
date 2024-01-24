@@ -190,7 +190,7 @@ std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfoIm
   // Use the FileSystem passed by RefactoringTool.
   Info->AST->getFileManager().setVirtualFileSystem(FS);
   DpctFrontEndAction FEAction(Info.get());
-  auto Ret = ASTUnit::LoadFromCompilerInvocationAction(
+  auto Ret = ASTUnit::LoadFromCompilerInvocationAction( //Why?
       Invocation, std::make_shared<PCHContainerOperations>(), Diags, &FEAction,
       Info->AST.get());
   Success = !DiagConsumer->getNumErrors();
