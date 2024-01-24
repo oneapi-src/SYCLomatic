@@ -6,7 +6,7 @@
 #
 #===----------------------------------------------------------------------===//
 
-macro(DPCT_GET_SOURCES _sources)
+macro(_DPCT_GET_SOURCES _sources)
   set( ${_sources} )
   foreach(arg ${ARGN})
     # Assume arg is a source file
@@ -14,7 +14,7 @@ macro(DPCT_GET_SOURCES _sources)
   endforeach()
 endmacro()
 
-macro(DPCT_CREATE_BUILD_COMMAND sycl_target generated_files)
+macro(_DPCT_CREATE_BUILD_COMMAND sycl_target generated_files)
   set(_argn_list "${ARGN}")
   set(_generated_files "")
   set(generated_extension ${CMAKE_CXX_OUTPUT_EXTENSION})
@@ -60,21 +60,52 @@ macro(DPCT_CREATE_BUILD_COMMAND sycl_target generated_files)
   set(${generated_files} ${_generated_files})
 endmacro()
 
-macro(DPCT_COMPILE_SYCL_CODE_IMP sycl_target generated_files)
+macro(_DPCT_COMPILE_SYCL_CODE_IMP sycl_target generated_files)
   set(_sycl_target "${sycl_target}")
-  DPCT_GET_SOURCES(_sources ${ARGN})
+  _DPCT_GET_SOURCES(_sources ${ARGN})
 
   # Create custom command for each cpp source file
-  DPCT_CREATE_BUILD_COMMAND( ${_sycl_target} _generated_files ${_sources})
+  _DPCT_CREATE_BUILD_COMMAND( ${_sycl_target} _generated_files ${_sources})
 
   set( ${generated_files} ${_generated_files})
 endmacro()
 
 # Return generated device code files from input SYCL source files
-macro(DPCT_COMPILE_SYCL_CODE generated_files)
-  DPCT_COMPILE_SYCL_CODE_IMP(sycl_device ${generated_files} ${ARGN})
+macro(DPCT_HELPER_COMPILE_SYCL_CODE generated_files)
+  _DPCT_COMPILE_SYCL_CODE_IMP(sycl_device ${generated_files} ${ARGN})
 endmacro()
 
 # Always set SYCL_HAS_FP16 to true to assume SYCL device to support float16
 message("dpct.cmake: SYCL_HAS_FP16 is set true by default.")
 set(SYCL_HAS_FP16 TRUE)
+
+# Return the list of object file paths generated for the given SYCL source files
+macro(DPCT_HELPER_SYCL_COMPILE generated_files)
+  _DPCT_GET_SOURCES(_sources ${ARGN})
+
+  # can't continue without list of source files
+  if("${_sources}" STREQUAL "")
+    message(FATAL "Failed to find the source files while running the macro 'DPCT_HELPER_SYCL_COMPILE'")
+  endif()
+
+  _DPCT_CREATE_BUILD_COMMAND("sycl_device" ${generated_files} ${_sources})
+endmacro()
+
+if(WIN32)
+    set(DNN_LIB "dnnl.lib")
+else()
+    set(DNN_LIB "dnnl")
+endif()
+
+# Link MKL library to target
+macro(DPCT_HELPER_ADD_MKL_TO_TARGET target)
+  if(WIN32)
+    target_compile_options(${target} PUBLIC -fsycl /DMKL_ILP64 /Qmkl:parallel /Qtbb /MD)
+    target_link_libraries(${target} PUBLIC -fsycl OpenCL.lib)
+  elseif(UNIX AND NOT APPLE)
+    target_compile_options(${target} PUBLIC -fsycl -DMKL_ILP64 -qmkl=parallel -qtbb)
+    target_link_libraries(${target} PUBLIC -qmkl=parallel -qtbb -fsycl)
+  else()
+    message(FATAL_ERROR "Unsupported platform")
+  endif()
+endmacro()

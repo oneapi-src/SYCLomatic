@@ -96,7 +96,15 @@ void CubTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const TypeLoc *TL = getAssistNodeAsType<TypeLoc>(Result, "loc")) {
     ExprAnalysis EA;
-    EA.analyze(*TL);
+    auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
+    auto NNSL = DpctGlobalInfo::findAncestor<NestedNameSpecifierLoc>(TL);
+    if (NNSL) {
+      EA.analyze(*TL, *NNSL);
+    } else if (DNTL) {
+      EA.analyze(*TL, *DNTL);
+    } else {
+      EA.analyze(*TL);
+    }
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   }
@@ -112,7 +120,7 @@ bool CubTypeRule::CanMappingToSyclType(StringRef OpTypeName) {
          OpTypeName == "cub::Equality" || OpTypeName == "cub::NullType" ||
 
          // Ignore template arguments, .e.g cub::KeyValuePair<int, int>
-         OpTypeName.startswith("cub::KeyValuePair");
+         OpTypeName.starts_with("cub::KeyValuePair");
 }
 
 void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {

@@ -267,6 +267,9 @@ SourceProcessType GetSourceFileType(const clang::tooling::UnifiedPath &SourcePat
   if (Extension == ".cuh") {
     return SPT_CudaHeader;
   }
+  if (Extension == ".c") {
+    return SPT_CppSource;
+  }
   // the database check and including check need before the extension check.
   // Because the header file "xxx.cc" without CUDA syntax will not change file
   // name, but the "include" statement will change file name when this check is
@@ -279,7 +282,7 @@ SourceProcessType GetSourceFileType(const clang::tooling::UnifiedPath &SourcePat
   //    file.
   // C. If both A and B hold, then default to A.
   // clang-format on
-  auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
+  auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompilationDB();
   if (FileSetInDB.find(SourcePath.getCanonicalPath().str()) != end(FileSetInDB)) {
     return SPT_CppSource;
   }
@@ -2023,7 +2026,7 @@ getNestedNameSpecifierString(const clang::NestedNameSpecifier *NNS) {
   llvm::raw_string_ostream OS(Result);
   NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
   OS.flush();
-  if (StringRef(Result).startswith("::"))
+  if (StringRef(Result).starts_with("::"))
     Result = Result.substr(2);
   return Result;
 }

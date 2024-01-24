@@ -53,7 +53,7 @@ enum class ReportTypeEnum {
 enum class AssumedNDRangeDimEnum : unsigned int { ARE_Dim1 = 1, ARE_Dim3 = 3 };
 enum class ExplicitNamespace : unsigned int {
   EN_None = 0,
-  EN_CL = 1,
+  // 1 means EN_CL and it has already been removed
   EN_SYCL = 2,
   EN_SYCL_Math = 3,
   EN_DPCT = 4
@@ -86,6 +86,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_ExperimentalFeaturesEnumSize
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
+enum class SYCLFileExtensionEnum { DP_CPP, SYCL_CPP, CPP };
 
 bool makeInRootCanonicalOrSetDefaults(
     clang::tooling::UnifiedPath &InRoot, const std::vector<std::string> SourceFiles);

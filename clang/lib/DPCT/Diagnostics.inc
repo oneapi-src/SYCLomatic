@@ -23,6 +23,12 @@
 #ifndef LOW_LEVEL
 #define LOW_LEVEL
 #endif
+#ifndef DEF_WARNING
+#define DEF_WARNING(NAME, ID, LEVEL, MESSAGE)
+#endif
+#ifndef DEF_COMMENT
+#define DEF_COMMENT(NAME, ID, LEVEL, MESSAGE)
+#endif
 
 DEF_WARNING(IFSTMT_NOT_REMOVED, 1000, LOW_LEVEL, "Error handling if-stmt was detected but could not be rewritten.")
 DEF_COMMENT(IFSTMT_NOT_REMOVED, 1000, LOW_LEVEL, "Error handling if-stmt was detected but could not be rewritten.")
@@ -86,8 +92,8 @@ DEF_WARNING(DEVICE_LIMIT_NOT_SUPPORTED, 1029, HIGH_LEVEL, "SYCL currently does n
 DEF_COMMENT(DEVICE_LIMIT_NOT_SUPPORTED, 1029, HIGH_LEVEL, "SYCL currently does not support getting device resource limits. The output parameter(s) are set to 0.")
 DEF_WARNING(IPC_NOT_SUPPORTED, 1030, HIGH_LEVEL, "SYCL currently does not support inter-process communication (IPC) operations. You may need to rewrite the code.")
 DEF_COMMENT(IPC_NOT_SUPPORTED, 1030, HIGH_LEVEL, "SYCL currently does not support inter-process communication (IPC) operations. You may need to rewrite the code.")
-DEF_WARNING(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory accessing across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.")
-DEF_COMMENT(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory accessing across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.")
+DEF_WARNING(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory access across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.")
+DEF_COMMENT(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory access across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.")
 DEF_WARNING(DIFFERENT_GENERATOR, 1032, LOW_LEVEL, "A different random number generator is used. You may need to adjust the code.")
 DEF_COMMENT(DIFFERENT_GENERATOR, 1032, LOW_LEVEL, "A different random number generator is used. You may need to adjust the code.")
 DEF_WARNING(DIFFERENT_BASIC_GENERATOR, 1033, LOW_LEVEL, "Migrated code uses a basic Sobol generator. Initialize oneapi::mkl::rng::sobol generator with user-defined direction numbers to use it as Scrambled Sobol generator.")
@@ -263,3 +269,9 @@ DEF_COMMENT(TRY_EXPERIMENTAL_FEATURE, 1119, MEDIUM_LEVEL, "Migration of {0} is n
 DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed into device functions as extra arguments. As here %0 is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
 DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as extra arguments. As here {0} is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
 // clang-format on
+
+#undef DEF_COMMENT
+#undef DEF_WARNING
+#undef LOW_LEVEL
+#undef MEDIUM_LEVEL
+#undef HIGH_LEVEL

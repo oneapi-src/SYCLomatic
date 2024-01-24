@@ -8,6 +8,7 @@
 // Notice: When modify DASH prefix check, need modify behavior_tests/src/bt-autocomplete/do_test.py
 // in SYCLomatic-test repo too.
 // DASH: --always-use-async-handler
+// DASH-NEXT: --analysis-mode
 // DASH-NEXT: --analysis-scope-path
 // DASH-NEXT: --assume-nd-range-dim=
 // DASH-NEXT: --build-script-file
@@ -16,6 +17,7 @@
 // DASH-NEXT: --comments
 // DASH-NEXT: --compilation-database
 // DASH-NEXT: --cuda-include-path
+// DASH-NEXT: --enable-codepin
 // DASH-NEXT: --enable-ctad
 // DASH-NEXT: --enable-profiling
 // DASH-NEXT: --extra-arg
@@ -32,7 +34,6 @@
 // DASH-NEXT: --keep-original-code
 // DASH-NEXT: --migrate-cmake-script
 // DASH-NEXT: --migrate-cmake-script-only
-// DASH-NEXT: --no-cl-namespace-inline
 // DASH-NEXT: --no-dpcpp-extensions=
 // DASH-NEXT: --no-dry-pattern
 // DASH-NEXT: --no-incremental-migration
@@ -50,6 +51,7 @@
 // DASH-NEXT: --stop-on-parse-err
 // DASH-NEXT: --suppress-warnings
 // DASH-NEXT: --suppress-warnings-all
+// DASH-NEXT: --sycl-file-extension=
 // DASH-NEXT: --sycl-named-lambda
 // DASH-NEXT: --use-dpcpp-extensions=
 // DASH-NEXT: --use-experimental-features=
@@ -97,12 +99,11 @@
 // RUN: dpct --autocomplete=-p | FileCheck %s -check-prefix=DATA_BASE
 // DATA_BASE: -p
 
-// RUN: dpct --autocomplete=--usm-level=#none,restricted#--use-explicit-namespace=#cl,sycl, | FileCheck %s -check-prefix=UEN_ALL
-// UEN_ALL: cl,sycl,cl
-// UEN_ALL-NEXT: cl,sycl,dpct
-// UEN_ALL-NEXT: cl,sycl,none
-// UEN_ALL-NEXT: cl,sycl,sycl
-// UEN_ALL-NEXT: cl,sycl,sycl-math
-// RUN: dpct --autocomplete=--usm-level=#none,restricted#--use-explicit-namespace=#cl,sycl,s | FileCheck %s -check-prefix=UEN_S
-// UEN_S: cl,sycl,sycl
-// UEN_S-NEXT: cl,sycl,sycl-math
+// RUN: dpct --autocomplete=--usm-level=#none,restricted#--use-explicit-namespace=#sycl, | FileCheck %s -check-prefix=UEN_ALL
+// UEN_ALL: sycl,dpct
+// UEN_ALL-NEXT: sycl,none
+// UEN_ALL-NEXT: sycl,sycl
+// UEN_ALL-NEXT: sycl,sycl-math
+// RUN: dpct --autocomplete=--usm-level=#none,restricted#--use-explicit-namespace=#sycl,s | FileCheck %s -check-prefix=UEN_S
+// UEN_S: sycl,sycl
+// UEN_S-NEXT: sycl,sycl-math

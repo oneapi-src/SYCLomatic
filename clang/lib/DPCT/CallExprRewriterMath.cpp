@@ -121,8 +121,8 @@ public:
 
 protected:
   std::string getNewFuncName();
-  static const std::vector<std::string> SingleFuctions;
-  static const std::vector<std::string> DoubleFuctions;
+  static const std::vector<std::string> SingleFunctions;
+  static const std::vector<std::string> DoubleFunctions;
   friend MathFuncNameRewriterFactory;
 };
 
@@ -272,8 +272,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           NewFuncName = NewFuncName + "<" + TypePair.first + ">";
       }
 
-      if (std::find(SingleFuctions.begin(), SingleFuctions.end(),
-                    SourceCalleeName) != SingleFuctions.end()) {
+      if (std::find(SingleFunctions.begin(), SingleFunctions.end(),
+                    SourceCalleeName) != SingleFunctions.end()) {
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           auto Arg = Call->getArg(i);
@@ -306,8 +306,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               RewriteArgList[i] = "(float)(" + RewriteArgList[i] + ")";
           }
         }
-      } else if (std::find(DoubleFuctions.begin(), DoubleFuctions.end(),
-                           SourceCalleeName) != DoubleFuctions.end()) {
+      } else if (std::find(DoubleFunctions.begin(), DoubleFunctions.end(),
+                           SourceCalleeName) != DoubleFunctions.end()) {
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           auto Arg = Call->getArg(i);
@@ -345,9 +345,11 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       // The vector type constructors (e.g. make_double3) are available in
       // the host, but should not need to include cmath nor be migrated to
       // SourceCalleeName.
-      if (!SourceCalleeName.startswith("make_")) {
-	// Insert "#include <cmath>" to migrated code
-        DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
+      if (!SourceCalleeName.starts_with("make_")) {
+        // Insert "#include <cmath>" to migrated code
+        if (DpctGlobalInfo::getContext().getLangOpts().CUDA)
+          DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(),
+                                                     HT_Math);
         NewFuncName = SourceCalleeName.str();
       }
 
@@ -382,8 +384,8 @@ std::optional<std::string> MathCallExprRewriter::rewrite() {
 }
 
 void MathCallExprRewriter::reportUnsupportedRoundingMode() {
-  if (SourceCalleeName.endswith("_rd") || SourceCalleeName.endswith("_rn") ||
-      SourceCalleeName.endswith("_ru") || SourceCalleeName.endswith("_rz")) {
+  if (SourceCalleeName.ends_with("_rd") || SourceCalleeName.ends_with("_rn") ||
+      SourceCalleeName.ends_with("_ru") || SourceCalleeName.ends_with("_rz")) {
     report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
   }
 }
@@ -531,14 +533,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
   llvm::raw_string_ostream OS(ReplStr);
   auto MigratedArg0 = getMigratedArg(0);
 
-  auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto Parents = Context.getParents(*Call);
-  bool IsInReturnStmt = false;
-  if (Parents.size())
-    if (auto ParentStmt = getParentStmt(Call))
-      if (ParentStmt->getStmtClass() == Stmt::StmtClass::ReturnStmtClass)
-          IsInReturnStmt = true;
-
   if (FuncName == "frexp" || FuncName == "frexpf") {
     auto Arg = Call->getArg(0);
     std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
@@ -568,90 +562,30 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
        << "int"
        << ">(" << MigratedArg1 << "))";
   } else if (FuncName == "modf" || FuncName == "modff") {
-    auto Arg = Call->getArg(0);
-    std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
-        PrintingPolicy(LangOptions()));
-    std::string ArgExpr = Arg->getStmtClassName();
-    auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-    if (ArgT == "int") {
-      if (FuncName == "modff") {
-        if (DRE)
-          MigratedArg0 = "(float)" + MigratedArg0;
-        else
-          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
-      } else {
-        if (DRE)
-          MigratedArg0 = "(double)" + MigratedArg0;
-        else
-          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
-      }
+    clang::QualType ParamType = Call->getArg(0)->getType().getCanonicalType();
+    ParamType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
+    clang::QualType Arg0Type =
+        Call->getArg(0)->IgnoreImpCasts()->getType().getCanonicalType();
+    Arg0Type.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
+
+    auto DRE = dyn_cast<DeclRefExpr>(Call->getArg(0)->IgnoreCasts());
+    if (Arg0Type.getAsString() != ParamType.getAsString()) {
+      if (DRE)
+        MigratedArg0 = "(" + ParamType.getAsString() + ")" + MigratedArg0;
+      else
+        MigratedArg0 =
+            "(" + ParamType.getAsString() + ")(" + MigratedArg0 + ")";
     }
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace(false, true) + "modf(" << MigratedArg0;
-    if (FuncName == "modf")
-      OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
-         << MapNames::getClNamespace() +
-                "access::address_space::" + getAddressSpace(Call, 1)
-         << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-         << ", "
-         << "double"
-         << ">(";
-    else
-      OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
-         << MapNames::getClNamespace() +
-                "access::address_space::" + getAddressSpace(Call, 1)
-         << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-         << ", "
-         << "float"
-         << ">(";
 
-    OS << MigratedArg1 << "))";
+    OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
+       << MapNames::getClNamespace() +
+              "access::address_space::" + getAddressSpace(Call, 1)
+       << ", " << MapNames::getClNamespace() + "access::decorated::yes>("
+       << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
-  } else if (FuncName == "sincospi" || FuncName == "sincospif") {
-    std::string Buf;
-    llvm::raw_string_ostream RSO(Buf);
-
-    auto MigratedArg1 = getMigratedArg(1);
-    auto MigratedArg2 = getMigratedArg(2);
-    if (MigratedArg1[0] == '&')
-      RSO << MigratedArg1.substr(1);
-    else
-      RSO << "*(" + MigratedArg1 + ")";
-    RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
-       << MigratedArg0;
-    if (FuncName == "sincospi") {
-      RSO << " * DPCT_PI";
-      requestFeature(HelperFeatureEnum::device_ext);
-    } else {
-      RSO << " * DPCT_PI_F";
-      requestFeature(HelperFeatureEnum::device_ext);
-    }
-
-    if (FuncName == "sincospi")
-      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() +
-                 "access::address_space::" + getAddressSpace(Call, 2)
-          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-          << ", "
-          << "double"
-          << ">(";
-    else
-      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() +
-                 "access::address_space::" + getAddressSpace(Call, 2)
-          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-          << ", "
-          << "float"
-          << ">(";
-
-    RSO << MigratedArg2 << "))";
-    if(IsInReturnStmt) {
-      OS << "[&](){ " << Buf << ";"<< " }()";
-      BlockLevelFormatFlag = true;
-    } else {
-      OS << Buf;
-    }
   } else if (FuncName == "remquo" || FuncName == "remquof") {
     {
       auto Arg = Call->getArg(0);
@@ -769,7 +703,7 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
         return "(" + Arg0Str + ") * (" + Arg0Str + ")";
     }
     return buildRewriteString();
-  } else if (FuncName == "erfcx" || FuncName == "erfcxf") {
+  } else if (FuncName == "erfcxf") {
     OS << MapNames::getClNamespace(false, true) << "exp(" << MigratedArg0 << "*"
        << MigratedArg0 << ")*" << TargetCalleeName << "(" << MigratedArg0
        << ")";
@@ -792,10 +726,8 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << TargetCalleeName << "(" << MigratedArg0 << ", " << getMigratedArg(1)
        << ")"
        << "+" << getMigratedArg(2);
-  } else if (FuncName == "__drcp_rd" ||
-             FuncName == "__drcp_rn" ||
-             FuncName == "__drcp_ru" ||
-             FuncName == "__drcp_rz") {
+  } else if (FuncName == "__drcp_rd" || FuncName == "__drcp_rn" ||
+             FuncName == "__drcp_ru" || FuncName == "__drcp_rz") {
     auto Arg0 = Call->getArg(0);
     auto T0 = Arg0->IgnoreCasts()->getType();
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
@@ -1213,7 +1145,7 @@ void CallExprRewriterFactoryBase::initRewriterMapMath() {
       }));
 }
 
-const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
+const std::vector<std::string> MathFuncNameRewriter::SingleFunctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
@@ -1235,7 +1167,7 @@ const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #undef ENTRY_REWRITE
 };
 
-const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
+const std::vector<std::string> MathFuncNameRewriter::DoubleFunctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)

@@ -20,16 +20,18 @@
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
 #include "MemberExprRewriter.h"
+#include "MigrateCmakeScript.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
+#include "PatternRewriter.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
+#include "Schema.h"
 #include "Statics.h"
 #include "TypeLocRewriters.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
-#include "MigrateCmakeScript.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Format/Format.h"
@@ -124,7 +126,6 @@ bool StopOnParseErr = false;
 bool CheckUnicodeSecurityFlag = false;
 bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
-bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
 bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
@@ -536,6 +537,20 @@ void parseFormatStyle() {
   DpctGlobalInfo::setCodeFormatStyle(Style);
 }
 
+static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
+  std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
+                                        DpctGlobalInfo::getYamlFileName());
+  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
+  if (llvm::sys::fs::exists(YamlFilePath)) {
+    if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
+      llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
+    }
+  }
+  for (auto &Entry : PreTU->MainSourceFilesDigest) {
+    MainSrcFilesHasCudaSyntex.insert(Entry.first);
+  }
+}
+
 int runDPCT(int argc, const char **argv) {
 
   if (argc < 2) {
@@ -551,8 +566,8 @@ int runDPCT(int argc, const char **argv) {
 
   // Set handle for libclangTooling to process message for dpct
   clang::tooling::SetPrintHandle(PrintMsg);
-  clang::tooling::SetFileSetInCompiationDB(
-      dpct::DpctGlobalInfo::getFileSetInCompiationDB());
+  clang::tooling::SetFileSetInCompilationDB(
+      dpct::DpctGlobalInfo::getFileSetInCompilationDB());
 
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
@@ -606,6 +621,10 @@ int runDPCT(int argc, const char **argv) {
     clang::tooling::SetDiagnosticOutput(DpctTerm());
   }
 
+  if (AnalysisMode) {
+    DpctGlobalInfo::enableAnalysisMode();
+    SuppressWarningsAllFlag = true;
+  }
   initWarningIDs();
 
   DpctInstallPath = getInstallPath(argv[0]);
@@ -709,6 +728,14 @@ int runDPCT(int argc, const char **argv) {
   if (InRoot.getPath().empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);
+  }
+
+  if (MigrateCmakeScriptOnly) {
+    if (InRoot.getPath().empty() &&
+        !cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrationErrorNoExplicitInRootAndCMakeScript);
+      dpctExit(MigrationErrorNoExplicitInRootAndCMakeScript);
+    }
   }
 
   if (!makeInRootCanonicalOrSetDefaults(InRoot,
@@ -983,6 +1010,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
+  DpctGlobalInfo::setCodePinEnabled(EnableCodePin);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setMigrateCmakeScriptEnabled(MigrateCmakeScript);
   DpctGlobalInfo::setMigrateCmakeScriptOnlyEnabled(MigrateCmakeScriptOnly);
@@ -995,6 +1023,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
+  DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
@@ -1004,32 +1033,13 @@ int runDPCT(int argc, const char **argv) {
 
   std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
       ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};
-  if (NoClNamespaceInline.getNumOccurrences()) {
-    if (UseExplicitNamespace.getNumOccurrences()) {
-      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-      clang::dpct::PrintMsg(
-          "Note: Option --no-cl-namespace-inline is deprecated and will be "
-          "ignored. Option --use-explicit-namespace is used instead.\n");
-    } else {
-      if (ExplicitClNamespace) {
-        DpctGlobalInfo::setExplicitNamespace(std::vector<ExplicitNamespace>{
-            ExplicitNamespace::EN_CL, ExplicitNamespace::EN_DPCT});
-      } else {
-        DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-      }
-      clang::dpct::PrintMsg(
-          "Note: Option --no-cl-namespace-inline is deprecated. Use "
-          "--use-explicit-namespace instead.\n");
-    }
-  } else {
-    if (UseExplicitNamespace.getNumOccurrences()) {
-      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-    } else {
-      DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-    }
-  }
+  if (UseExplicitNamespace.getNumOccurrences())
+    DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
+  else
+    DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
 
   MapNames::setExplicitNamespaceMap();
+  clang::dpct::setSTypeSchemaMap();
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
@@ -1038,7 +1048,7 @@ int runDPCT(int argc, const char **argv) {
   if (MigrateCmakeScriptOnly || MigrateCmakeScript) {
     SmallString<128> CmakeRuleFilePath(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(CmakeRuleFilePath,
-                            Twine("extensions/opt_rules/cmake_rules/"
+                            Twine("extensions/cmake_rules/"
                                   "cmake_script_migration_rule.yaml"));
     if (llvm::sys::fs::exists(CmakeRuleFilePath)) {
       std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{
@@ -1063,9 +1073,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_ExplicitClNamespace,
-                     ExplicitClNamespace,
-                     NoClNamespaceInline.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_CodePinEnabled,
+                     DpctGlobalInfo::isCodePinEnabled(),
+                     EnableCodePin.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExtensionDEFlag,
                      DpctGlobalInfo::getExtensionDEFlag(),
                      NoDPCPPExtensions.getNumOccurrences());
@@ -1144,11 +1154,12 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (MigrateCmakeScriptOnly) {
+    loadMainSrcFileInfo(OutRoot);
     collectCmakeScriptsSpecified(OptParser, InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
     return MigrationSucceeded;
   }
-
+  ReplTy ReplCUDA, ReplSYCL;
   volatile int RunCount = 0;
   do {
     if (RunCount == 1) {
@@ -1162,7 +1173,7 @@ int runDPCT(int argc, const char **argv) {
                                   !DpctGlobalInfo::isQueryAPIMapping()
                               ? llvm::errs()
                               : DpctTerm(),
-                          Tool.getReplacements(), Passes,
+                          ReplCUDA, ReplSYCL, Passes,
                           {PassKind::PK_Analysis, PassKind::PK_Migration},
                           Tool.getFiles().getVirtualFileSystemPtr());
 
@@ -1223,7 +1234,7 @@ int runDPCT(int argc, const char **argv) {
     LangOptions DefaultLangOptions;
     Rewriter Rewrite(Sources, DefaultLangOptions);
     // Must be only 1 file.
-    tooling::applyAllReplacements(Tool.getReplacements().begin()->second,
+    tooling::applyAllReplacements(ReplSYCL.begin()->second,
                                   Rewrite);
     const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
     static const std::string StartStr{"// Start"};
@@ -1281,11 +1292,17 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    dumpAnalysisModeStatics(llvm::outs());
+    return MigrationSucceeded;
+  }
+
   // if run was successful
-  int Status = saveNewFiles(Tool, InRoot, OutRoot);
+  int Status = saveNewFiles(Tool, InRoot, OutRoot, ReplCUDA, ReplSYCL);
   ShowStatus(Status);
 
   if (MigrateCmakeScript) {
+    loadMainSrcFileInfo(OutRoot);
     collectCmakeScripts(InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
   }

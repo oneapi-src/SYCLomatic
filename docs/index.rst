@@ -18,4 +18,5 @@ Use |tool_name| to help port CUDA\* language kernels and library API calls to |d
    dev_guide/migration
    dev_guide/reference
    dev_guide/frequently-asked-questions-faq
+   dev_guide/API-Mapping-query-guide
 

@@ -34,19 +34,19 @@ bool checkDuplicated(const std::string &FileAndLine,
 std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 
+#define HIGH_LEVEL EffortLevel::EL_High
+#define MEDIUM_LEVEL EffortLevel::EL_Medium
+#define LOW_LEVEL EffortLevel::EL_Low
 
-#define DEF_WARNING(NAME, ID, LEVEL, MSG)                                             \
+#define DEF_WARNING(NAME, ID, LEVEL, MSG)                                      \
   DiagnosticsMessage wg_##NAME(DiagnosticIDTable, ID,                          \
-                               clang::DiagnosticIDs::Warning, MSG);
+                               clang::DiagnosticIDs::Warning, LEVEL, MSG);
 
-#define DEF_COMMENT(NAME, ID, LEVEL, MSG)                                             \
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG)                                      \
   DiagnosticsMessage cg_##NAME(CommentIDTable, ID, clang::DiagnosticIDs::Note, \
-                               MSG);
+                               LEVEL, MSG);
 
 #include "Diagnostics.inc"
-
-#undef DEF_WARNING
-#undef DEF_COMMENT
 
 std::unordered_set<int> APIQueryNeedReportWarningIDSet = {
     // More IDs may need to be added, like: 1007, 1008, 1028, 1030, 1031, 1037,
@@ -58,7 +58,8 @@ std::unordered_set<int> APIQueryNeedReportWarningIDSet = {
 
 std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 #define DEF_COMMENT(NAME, ID, MSG)                                             \
-  DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note, MSG);
+  DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note,     \
+                               EffortLevel::EL_Low, MSG);
 #include "DiagnosticsBuildScript.inc"
 #undef DEF_COMMENT
 

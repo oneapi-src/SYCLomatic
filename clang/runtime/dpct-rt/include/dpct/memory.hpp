@@ -659,6 +659,7 @@ public:
   };
 
   usm_allocator() : _impl(dpct::get_default_queue()) {}
+  usm_allocator(sycl::queue &q) : _impl(q) {}
   ~usm_allocator() {}
   usm_allocator(const usm_allocator &other) : _impl(other._impl) {}
   usm_allocator(usm_allocator &&other) : _impl(std::move(other._impl)) {}
@@ -832,6 +833,9 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 /// \returns no return value.
 static inline void dpct_free(void *ptr,
                              sycl::queue &q = get_default_queue()) {
+#ifndef DPCT_USM_LEVEL_NONE
+  dpct::get_current_device().queues_wait_and_throw();
+#endif
   detail::dpct_free(ptr, q);
 }
 

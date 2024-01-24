@@ -76,7 +76,8 @@ static void getCompileInfo(
     // Get value of key "directory" from compilation database
     const clang::tooling::UnifiedPath Directory = Entry.second[0];
 
-    if (path::filename(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
+    if (path::filename(FileName.getCanonicalPath())
+            .starts_with("LinkerEntry")) {
       // Parse linker cmd to get target name and objfile names
       std::vector<std::string> ObjsInLKOrARCmd;
 
@@ -98,7 +99,7 @@ static void getCompileInfo(
           IsTargetName = false;
           Tool = "$(CC) -fsycl -o"; // use 'icpx -fsycl' to link the target file
                                     // in the generated Makefile.
-        } else if (llvm::StringRef(Obj).endswith(".o")) {
+        } else if (llvm::StringRef(Obj).ends_with(".o")) {
           clang::tooling::UnifiedPath FilePathAbs(Obj);
 
           if (!llvm::sys::path::is_absolute(Obj))
@@ -117,8 +118,8 @@ static void getCompileInfo(
         }
       }
 
-      if (llvm::StringRef(TargetName).endswith(".o") &&
-          llvm::StringRef(Entry.second[1]).endswith("nvcc")) {
+      if (llvm::StringRef(TargetName).ends_with(".o") &&
+          llvm::StringRef(Entry.second[1]).ends_with("nvcc")) {
         // Skip linker command like:
         // foo_generated_foo.cu.o ->foo_intermediate_link.o
         continue;
@@ -146,7 +147,8 @@ static void getCompileInfo(
   for (const auto &Entry : CompileTargetsMap) {
     clang::tooling::UnifiedPath FileName = Entry.first;
 
-    if (path::filename(FileName.getCanonicalPath()).startswith("LinkerEntry")) {
+    if (path::filename(FileName.getCanonicalPath())
+            .starts_with("LinkerEntry")) {
       continue;
     }
 
@@ -183,7 +185,8 @@ static void getCompileInfo(
         continue;
       }
 
-      if (IsIncludeWithWhitespace || llvm::StringRef(Option).startswith("-I")) {
+      if (IsIncludeWithWhitespace ||
+          llvm::StringRef(Option).starts_with("-I")) {
 
         if (llvm::StringRef(Option).trim() == "-I") {
           IsIncludeWithWhitespace = true;
@@ -220,9 +223,9 @@ static void getCompileInfo(
         NewOptions += OutDirectoryStr.c_str();
         NewOptions += " ";
 
-      } else if (llvm::StringRef(Option).startswith("-isystem")) {
+      } else if (llvm::StringRef(Option).starts_with("-isystem")) {
         IsSystemInclude = true;
-      } else if (llvm::StringRef(Option).startswith("-D")) {
+      } else if (llvm::StringRef(Option).starts_with("-D")) {
         // Parse macros defined.
         std::size_t Len = Option.length() - strlen("-D");
         std::size_t Pos = Option.find("=");
@@ -236,7 +239,7 @@ static void getCompileInfo(
           continue;
         else
           NewOptions += Option + " ";
-      } else if (llvm::StringRef(Option).startswith("-std=")) {
+      } else if (llvm::StringRef(Option).starts_with("-std=")) {
 
         size_t Idx = 0;
         for (; Idx < Option.length(); Idx++) {
@@ -266,7 +269,7 @@ static void getCompileInfo(
         clang::tooling::UnifiedPath FilePathAbs(Option);
         Orig2ObjMap[FileName] = FilePathAbs;
         IsObjName = false;
-      } else if (llvm::StringRef(Option).startswith("-O")) {
+      } else if (llvm::StringRef(Option).starts_with("-O")) {
         // Keep optimization level same as original compile command.
         NewOptions += Option + " ";
       } else if (Option == "-msse4.1" || Option == "-mavx512vl") {
@@ -295,14 +298,18 @@ static void getCompileInfo(
     // for source files which originally has CUDA Semantics and compiled by
     // non-nvcc compiler
     if (HasCudaSemantics &&
-        !llvm::StringRef(Entry.second[1]).endswith("nvcc")) {
+        !llvm::StringRef(Entry.second[1]).ends_with("nvcc")) {
       NewOptions += "-I $(INCLUDE_SYCL) ";
       NewOptions += "-I $(INCLUDE_CL) ";
     }
 
     auto OrigFileName = FileName;
-    rewriteDir(FileName, InRoot, OutRoot);
+
+    // rewriteFileName() should be called before rewriteDir(), as FileName
+    // needs to be a existing file path passed to DpctFileInfo referred in
+    // rewriteFileName() to avoid potential crash issue.
     rewriteFileName(FileName);
+    rewriteDir(FileName, InRoot, OutRoot);
 
     if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
       SmallString<512> OutDirectory(FileName.getCanonicalPath());
@@ -471,11 +478,8 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
                                   "_FLAG_" + std::to_string(Idx);
         OS << buildString("$(", ObjStrName, "):$(", SrcStrName, ")\n");
 
-        // Use 'icpx -fsycl' to compile the migrated SYCL file.
-        std::string Compiler =
-            llvm::StringRef((Entry.second)[Idx].Compiler).endswith("nvcc")
-                ? "$(CC) -fsycl"
-                : (Entry.second)[Idx].Compiler;
+        // Use 'icpx -fsycl' to compile all the migrated SYCL file.
+        std::string Compiler = "$(CC) -fsycl";
 
         OS << buildString("\t", Compiler, " -c ${", SrcStrName, "} -o ${",
                           ObjStrName, "} $(", FlagStrName, ")\n\n");
@@ -510,10 +514,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
                                   "_FLAG_" + std::to_string(Idx);
         OS << buildString("$(", ObjStrName, "):$(", SrcStrName, ")\n");
 
-        std::string Compiler =
-            llvm::StringRef((Entry.second)[Idx].Compiler).endswith("nvcc")
-                ? "$(CC) -fsycl"
-                : (Entry.second)[Idx].Compiler;
+        std::string Compiler = "$(CC) -fsycl";
 
         OS << buildString("\t", Compiler, " -c ${", SrcStrName, "} -o ${",
                           ObjStrName, "} $(", FlagStrName, ")\n\n");

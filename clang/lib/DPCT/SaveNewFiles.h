@@ -14,6 +14,9 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include <map>
+#include "clang/Tooling/Refactoring.h"
+
+using ReplTy = std::map<std::string, clang::tooling::Replacements>;
 
 #define DiagRef                                                                \
   "See Diagnostics Reference to resolve warnings and complete the "            \
@@ -25,12 +28,6 @@ namespace llvm {
 class StringRef;
 }
 
-namespace clang {
-namespace tooling {
-class RefactoringTool;
-}
-} // namespace clang
-
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.
 ///
@@ -38,7 +35,8 @@ class RefactoringTool;
 /// Prerequisite: InRoot and OutRoot are both absolute paths
 int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                  clang::tooling::UnifiedPath InRoot,
-                 clang::tooling::UnifiedPath OutRoot);
+                 clang::tooling::UnifiedPath OutRoot, ReplTy &ReplCUDA,
+                 ReplTy &ReplSYCL);
 
 void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);
 
@@ -62,12 +60,19 @@ void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
 bool rewriteDir(clang::tooling::UnifiedPath &FilePath, const clang::tooling::UnifiedPath& InRoot,
                 const clang::tooling::UnifiedPath& OutRoot);
 
-// Replace file name \p FileName with new migrated name.
+// Replace file name \p FileName with new migrated name. For c source files, the
+// file extension needs to wait until all replacements are generated to
+// get the correct result.
 void rewriteFileName(clang::tooling::UnifiedPath &FileName);
 // Replace file name \p FileName with new migrated name.
 // This overloaded function is added because in some cases, the \p FileName is
 // relative path, and absolute path \p FullPathName is needed to determine
-// whether the file is in database.
+// whether the file is in database. For c source files, the file
+// extension needs to wait until all replacements are generated to get the
+// correct result.
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
                      const clang::tooling::UnifiedPath& FullPathName);
+
+// Replace file name \p FileName with new migrated name.
+void rewriteFileName(std::string &FileName, const std::string &FullPathName);
 #endif // DPCT_SAVE_NEW_FILES_H

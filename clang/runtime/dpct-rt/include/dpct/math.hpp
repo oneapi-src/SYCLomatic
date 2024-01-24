@@ -415,101 +415,29 @@ inline unsigned int funnelshift_rc(unsigned int low, unsigned int high,
 /// cbrt function wrapper.
 template <typename T> inline T cbrt(T val) { return sycl::cbrt((T)val); }
 
-// min function overloads.
-// For floating-point types, `float` or `double` arguments are acceptable.
-// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
-// `std::int64_t` type arguments are acceptable.
-inline double min(const double a, const float b) {
-  return sycl::fmin(a, static_cast<double>(b));
+template <typename T1, typename T2>
+std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
+                 std::common_type_t<T1, T2>>
+min(T1 a, T2 b) {
+  return sycl::min<std::common_type_t<T1, T2>>(a, b);
 }
-inline double min(const float a, const double b) {
-  return sycl::fmin(static_cast<double>(a), b);
+template <typename T1, typename T2>
+std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
+                 std::common_type_t<T1, T2>>
+min(T1 a, T2 b) {
+  return sycl::fmin<std::common_type_t<T1, T2>>(a, b);
 }
-inline float min(const float a, const float b) { return sycl::fmin(a, b); }
-inline double min(const double a, const double b) { return sycl::fmin(a, b); }
-inline std::uint32_t min(const std::uint32_t a, const std::int32_t b) {
-  return sycl::min(a, static_cast<std::uint32_t>(b));
+template <typename T1, typename T2>
+std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
+                 std::common_type_t<T1, T2>>
+max(T1 a, T2 b) {
+  return sycl::max<std::common_type_t<T1, T2>>(a, b);
 }
-inline std::uint32_t min(const std::int32_t a, const std::uint32_t b) {
-  return sycl::min(static_cast<std::uint32_t>(a), b);
-}
-inline std::int32_t min(const std::int32_t a, const std::int32_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint32_t min(const std::uint32_t a, const std::uint32_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::int64_t b) {
-  return sycl::min(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t min(const std::int64_t a, const std::uint64_t b) {
-  return sycl::min(static_cast<std::uint64_t>(a), b);
-}
-inline std::int64_t min(const std::int64_t a, const std::int64_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::uint64_t b) {
-  return sycl::min(a, b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::int32_t b) {
-  return sycl::min(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t min(const std::int32_t a, const std::uint64_t b) {
-  return sycl::min(static_cast<std::uint64_t>(a), b);
-}
-inline std::uint64_t min(const std::uint64_t a, const std::uint32_t b) {
-  return sycl::min(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t min(const std::uint32_t a, const std::uint64_t b) {
-  return sycl::min(static_cast<std::uint64_t>(a), b);
-}
-// max function overloads.
-// For floating-point types, `float` or `double` arguments are acceptable.
-// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
-// `std::int64_t` type arguments are acceptable.
-inline double max(const double a, const float b) {
-  return sycl::fmax(a, static_cast<double>(b));
-}
-inline double max(const float a, const double b) {
-  return sycl::fmax(static_cast<double>(a), b);
-}
-inline float max(const float a, const float b) { return sycl::fmax(a, b); }
-inline double max(const double a, const double b) { return sycl::fmax(a, b); }
-inline std::uint32_t max(const std::uint32_t a, const std::int32_t b) {
-  return sycl::max(a, static_cast<std::uint32_t>(b));
-}
-inline std::uint32_t max(const std::int32_t a, const std::uint32_t b) {
-  return sycl::max(static_cast<std::uint32_t>(a), b);
-}
-inline std::int32_t max(const std::int32_t a, const std::int32_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint32_t max(const std::uint32_t a, const std::uint32_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::int64_t b) {
-  return sycl::max(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t max(const std::int64_t a, const std::uint64_t b) {
-  return sycl::max(static_cast<std::uint64_t>(a), b);
-}
-inline std::int64_t max(const std::int64_t a, const std::int64_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::uint64_t b) {
-  return sycl::max(a, b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::int32_t b) {
-  return sycl::max(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t max(const std::int32_t a, const std::uint64_t b) {
-  return sycl::max(static_cast<std::uint64_t>(a), b);
-}
-inline std::uint64_t max(const std::uint64_t a, const std::uint32_t b) {
-  return sycl::max(a, static_cast<std::uint64_t>(b));
-}
-inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
-  return sycl::max(static_cast<std::uint64_t>(a), b);
+template <typename T1, typename T2>
+std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
+                 std::common_type_t<T1, T2>>
+max(T1 a, T2 b) {
+  return sycl::fmax<std::common_type_t<T1, T2>>(a, b);
 }
 
 // pow functions overload.
@@ -1444,7 +1372,7 @@ inline constexpr RetT extend_shl_sat_clamp(T a, uint32_t b, uint32_t c,
 /// \param [in] b The offset to shift
 /// \returns a << (b & 0x1F)
 template <typename RetT, typename T>
-inline constexpr RetT extend_shl_mask31(T a, uint32_t b) {
+inline constexpr RetT extend_shl_wrap(T a, uint32_t b) {
   return detail::extend_binary<RetT, false>(a, b & 0x1F, detail::shift_left());
 }
 
@@ -1455,7 +1383,7 @@ inline constexpr RetT extend_shl_mask31(T a, uint32_t b) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns second_op(a << (b & 0x1F), c)
 template <typename RetT, typename T, typename BinaryOperation>
-inline constexpr RetT extend_shl_mask31(T a, uint32_t b, uint32_t c,
+inline constexpr RetT extend_shl_wrap(T a, uint32_t b, uint32_t c,
                                       BinaryOperation second_op) {
   return detail::extend_binary<RetT, false>(a, b & 0x1F, c,
                                             detail::shift_left(), second_op);
@@ -1466,7 +1394,7 @@ inline constexpr RetT extend_shl_mask31(T a, uint32_t b, uint32_t c,
 /// \param [in] b The offset to shift
 /// \returns sat(a << (b & 0x1F))
 template <typename RetT, typename T>
-inline constexpr RetT extend_shl_sat_mask31(T a, uint32_t b) {
+inline constexpr RetT extend_shl_sat_wrap(T a, uint32_t b) {
   return detail::extend_binary<RetT, true>(a, b & 0x1F, detail::shift_left());
 }
 
@@ -1477,7 +1405,7 @@ inline constexpr RetT extend_shl_sat_mask31(T a, uint32_t b) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns second_op(sat(a << (b & 0x1F)), c)
 template <typename RetT, typename T, typename BinaryOperation>
-inline constexpr RetT extend_shl_sat_mask31(T a, uint32_t b, uint32_t c,
+inline constexpr RetT extend_shl_sat_wrap(T a, uint32_t b, uint32_t c,
                                           BinaryOperation second_op) {
   return detail::extend_binary<RetT, true>(a, b & 0x1F, c, detail::shift_left(),
                                            second_op);
@@ -1534,7 +1462,7 @@ inline constexpr RetT extend_shr_sat_clamp(T a, uint32_t b, uint32_t c,
 /// \param [in] b The offset to shift
 /// \returns a >> (b & 0x1F)
 template <typename RetT, typename T>
-inline constexpr RetT extend_shr_mask31(T a, uint32_t b) {
+inline constexpr RetT extend_shr_wrap(T a, uint32_t b) {
   return detail::extend_binary<RetT, false>(a, b & 0x1F, detail::shift_right());
 }
 
@@ -1545,7 +1473,7 @@ inline constexpr RetT extend_shr_mask31(T a, uint32_t b) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns second_op(a >> (b & 0x1F), c)
 template <typename RetT, typename T, typename BinaryOperation>
-inline constexpr RetT extend_shr_mask31(T a, uint32_t b, uint32_t c,
+inline constexpr RetT extend_shr_wrap(T a, uint32_t b, uint32_t c,
                                       BinaryOperation second_op) {
   return detail::extend_binary<RetT, false>(a, b & 0x1F, c,
                                             detail::shift_right(), second_op);
@@ -1556,7 +1484,7 @@ inline constexpr RetT extend_shr_mask31(T a, uint32_t b, uint32_t c,
 /// \param [in] b The offset to shift
 /// \returns sat(a >> (b & 0x1F))
 template <typename RetT, typename T>
-inline constexpr RetT extend_shr_sat_mask31(T a, uint32_t b) {
+inline constexpr RetT extend_shr_sat_wrap(T a, uint32_t b) {
   return detail::extend_binary<RetT, true>(a, b & 0x1F, detail::shift_right());
 }
 
@@ -1567,7 +1495,7 @@ inline constexpr RetT extend_shr_sat_mask31(T a, uint32_t b) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns second_op(sat(a >> (b & 0x1F)), c)
 template <typename RetT, typename T, typename BinaryOperation>
-inline constexpr RetT extend_shr_sat_mask31(T a, uint32_t b, uint32_t c,
+inline constexpr RetT extend_shr_sat_wrap(T a, uint32_t b, uint32_t c,
                                           BinaryOperation second_op) {
   return detail::extend_binary<RetT, true>(a, b & 0x1F, c,
                                            detail::shift_right(), second_op);

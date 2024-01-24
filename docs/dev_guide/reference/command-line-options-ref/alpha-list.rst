@@ -133,6 +133,12 @@ The following table lists |tool_name| command line options in alphabetical order
           :start-after: desc-helper-func-pref:
           :end-before: end-helper-func-pref:
    * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-intercept-build:
+          :end-before: desc-intercept-build:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-intercept-build:
+          :end-before: end-intercept-build:
+   * - .. include:: /_include_files/options_def.rst
           :start-after: opt-in-root:
           :end-before: desc-in-root:
      - .. include:: /_include_files/options_def.rst

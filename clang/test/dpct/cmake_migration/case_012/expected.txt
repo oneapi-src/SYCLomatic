@@ -1,0 +1,4 @@
+dpct_helper_add_mkl_to_target(culib)
+dpct_helper_add_mkl_to_target(
+  culib
+)

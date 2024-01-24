@@ -598,7 +598,7 @@ inline std::function<bool(const CallExpr *)> SinCosPerfPred(){
 }
 
 inline std::function<std::string(const CallExpr *)>
-makeArgWithAddressSpaceCast(int ArgIdx, std::string Type) {
+makeArgWithAddressSpaceCast(int ArgIdx) {
   return [=](const CallExpr *C) -> std::string {
     const Expr *E = C->getArg(ArgIdx);
     if (!E) {
@@ -609,8 +609,8 @@ makeArgWithAddressSpaceCast(int ArgIdx, std::string Type) {
         MapNames::getClNamespace() + "address_space_cast<" +
         MapNames::getClNamespace() +
         "access::address_space::" + getAddressSpace(C, ArgIdx) + ", " +
-        MapNames::getClNamespace() + "access::decorated::yes" + ", " +
-        Type + ">(" + EA.getReplacedString() + ")";
+        MapNames::getClNamespace() + "access::decorated::yes>(" +
+        EA.getReplacedString() + ")";
     return Result;
   };
 }
@@ -1000,6 +1000,18 @@ inline std::function<bool(const CallExpr *C)> checkIsGetWorkGroupDim(size_t inde
     }
     return false;
     };
+}
+
+inline std::function<bool(const CallExpr *C)>
+checkIsMigratedToHasAspect(size_t index) {
+  return [=](const CallExpr *C) -> bool {
+    if (getStmtSpelling(C->getArg(index))
+            .find("CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY") !=
+        std::string::npos) {
+      return true;
+    }
+    return false;
+  };
 }
 
 inline std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {

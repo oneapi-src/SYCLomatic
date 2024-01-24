@@ -80,7 +80,7 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
     PP.PrintCanonicalTypes = true;
     auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
     StringRef BaseTypeRef(BaseType);
-    if (BaseTypeRef.startswith("thrust::cuda_cub::execute_on_stream_base<") &&
+    if (BaseTypeRef.starts_with("thrust::cuda_cub::execute_on_stream_base<") &&
         ThrustFuncName == "on") {
       std::string ReplStr = "oneapi::dpl::execution::make_device_policy(" +
                             getDrefName(CMCE->getArg(0)) + ")";
@@ -219,7 +219,8 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "thrust::detail::vector_base", "thrust::optional", "thrust::nullopt",
         "thrust::system::system_error", "thrust::system::error_code",
         "enum thrust::system::errc::errc_t", "thrust::system::error_condition",
-        "thrust::device_system_tag", "thrust::pointer");
+        "thrust::device_system_tag", "thrust::pointer",
+        "thrust::device_allocator");
   };
 
   MF.addMatcher(

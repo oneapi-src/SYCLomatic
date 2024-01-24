@@ -20,6 +20,7 @@
 
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Basic/DiagnosticIDs.h"
+#include "clang/Basic/SourceLocation.h"
 #include "clang/Frontend/CompilerInstance.h"
 
 #include <algorithm>
@@ -1300,13 +1301,16 @@ public:
 /// Migration rule for kernel API calls
 class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
-
+  std::set<clang::SourceLocation> CodePinInstrumentation;
+  
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-  void
+  SourceLocation
   removeTrailingSemicolon(const CallExpr *KCall,
                           const ast_matchers::MatchFinder::MatchResult &Result);
+  void instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KCall,
+                                      SourceLocation &EpilogLocation);
 };
 
 /// Migration rule for device function calls
@@ -1480,6 +1484,8 @@ private:
       emplaceTransformation(new InsertBeforeStmt(C->getArg(InsertArgIndex),
                                                  std::string(InsertedText)));
   }
+  void instrumentAddressToSizeRecordForCodePin(const CallExpr *C, int PtrArgLoc,
+                                               int AllocMemSizeLoc);
 };
 
 class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {

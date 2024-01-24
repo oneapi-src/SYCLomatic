@@ -43,10 +43,10 @@ extern std::set<int> WarningIDs;
 struct DiagnosticsMessage {
   int ID;
   int Category;
+  EffortLevel EL;
   const char *Msg;
 
 #define DEF_WARNING(NAME, ID, LEVEL, MSG) ID,
-#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
   constexpr static size_t MinID = std::min({
 #include "Diagnostics.inc"
   });
@@ -54,12 +54,11 @@ struct DiagnosticsMessage {
   constexpr static size_t MaxID = std::max({
 #include "Diagnostics.inc"
   });
-#undef DEF_WARNING
-#undef DEF_COMMENT
+
   DiagnosticsMessage() = default;
   DiagnosticsMessage(std::unordered_map<int, DiagnosticsMessage> &Table, int ID,
-                     int Category, const char *Msg)
-      : ID(ID), Category(Category), Msg(Msg) {
+                     int Category, EffortLevel EL, const char *Msg)
+      : ID(ID), Category(Category), EL(EL), Msg(Msg) {
     assert(Table.find(ID) == Table.end() && "[DPCT Internal error] Two "
                                             "messages with the same ID "
                                             "are being registered");
@@ -68,27 +67,18 @@ struct DiagnosticsMessage {
 };
 
 #define DEF_WARNING(NAME, ID, LEVEL, MSG) NAME = ID,
-#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
 enum class Diagnostics {
 #include "Diagnostics.inc"
-#undef DEF_WARNING
-#undef DEF_COMMENT
 };
 
-#define DEF_WARNING(NAME, ID, LEVEL, MSG)
 #define DEF_COMMENT(NAME, ID, LEVEL, MSG) NAME = ID,
 enum class Comments {
 #include "Diagnostics.inc"
-#undef DEF_WARNING
-#undef DEF_COMMENT
 };
 
 #define DEF_WARNING(NAME, ID, LEVEL, MSG) NAME = ID,
-#define DEF_COMMENT(NAME, ID, LEVEL, MSG)
 enum class Warnings {
 #include "Diagnostics.inc"
-#undef DEF_WARNING
-#undef DEF_COMMENT
 };
 
 #define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
@@ -317,12 +307,17 @@ inline bool report(SourceLocation SL, IDTy MsgID,
   if (checkDuplicated(FileAndLine, WarningIDAndMsg))
     return false;
 
+  auto Diag = DiagnosticIDTable.find((int)MsgID);
+  if (Diag == DiagnosticIDTable.end())
+    return true;
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    recordAnalysisModeEffort(SL, Diag->second.EL);
+    return true;
+  }
   if (!SuppressWarningsAllFlag) {
     // Only report warnings that are not suppressed
-    if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
-        DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
-      reportWarning(SL, DiagnosticIDTable[(int)MsgID], SM.getDiagnostics(),
-                    Vals...);
+    if (WarningIDs.find((int)MsgID) == WarningIDs.end()) {
+      reportWarning(SL, Diag->second, SM.getDiagnostics(), Vals...);
     }
   }
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
@@ -402,12 +397,17 @@ bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset,
   unsigned int ColNum = Offset - Fileinfo->getLineInfo(LineNum).Offset + 1;
   SourceLocation SL = SM.translateLineCol(FID, LineNum, ColNum);
 
+  auto Diag = DiagnosticIDTable.find((int)MsgID);
+  if (Diag == DiagnosticIDTable.end())
+    return true;
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    recordAnalysisModeEffort(FileAbsPath, Offset, Diag->second.EL);
+    return true;
+  }
   if (!SuppressWarningsAllFlag) {
     // Only report warnings that are not suppressed
-    if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
-        DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
-      reportWarning(SL, DiagnosticIDTable[(int)MsgID], SM.getDiagnostics(),
-                    Vals...);
+    if (WarningIDs.find((int)MsgID) == WarningIDs.end()) {
+      reportWarning(SL, Diag->second, SM.getDiagnostics(), Vals...);
     }
   }
 

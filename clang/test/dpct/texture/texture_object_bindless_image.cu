@@ -99,6 +99,33 @@ int main() {
   resDesc4.res.pitch2D.height = h;
   // CHECK: resDesc4.set_pitch(sizeInBytes);
   resDesc4.res.pitch2D.pitchInBytes = sizeInBytes;
+  {
+    // CHECK: dpct::image_data resDesc;
+    cudaResourceDesc resDesc;
+    // CHECK: resDesc.set_data(pArr);
+    resDesc.resType = cudaResourceTypeArray;
+    resDesc.res.array.array = pArr;
+  }
+  {
+    // CHECK: dpct::image_data resDesc;
+    cudaResourceDesc resDesc;
+    // CHECK: resDesc.set_data(input, sizeInBytes, desc);
+    resDesc.resType = cudaResourceTypeLinear;
+    resDesc.res.linear.devPtr = input;
+    resDesc.res.linear.desc = desc;
+    resDesc.res.linear.sizeInBytes = sizeInBytes;
+  }
+  {
+    // CHECK: dpct::image_data resDesc;
+    cudaResourceDesc resDesc;
+    // CHECK: resDesc.set_data(input, w, h, sizeInBytes, desc);
+    resDesc.resType = cudaResourceTypePitch2D;
+    resDesc.res.pitch2D.devPtr = input;
+    resDesc.res.pitch2D.desc = desc;
+    resDesc.res.pitch2D.width = w;
+    resDesc.res.pitch2D.height = h;
+    resDesc.res.pitch2D.pitchInBytes = sizeInBytes;
+  }
 
   // CHECK: dpct::sampling_info texDesc1, texDesc2, texDesc3, texDesc4;
   cudaTextureDesc texDesc1, texDesc2, texDesc3, texDesc4;
@@ -137,9 +164,7 @@ int main() {
   kernel<<<1, 1>>>(tex);
   // CHECK: dpct::experimental::destroy_bindless_image(tex, q_ct1);
   cudaDestroyTextureObject(tex);
-#ifndef BUILD_TEST
-  // CHECK: sycl::ext::oneapi::experimental::free_image_mem(pArr->get_handle(), dpct::get_in_order_queue());
+  // CHECK: sycl::ext::oneapi::experimental::free_image_mem(pArr->get_handle(), sycl::ext::oneapi::experimental::image_type::standard, dpct::get_in_order_queue());
   cudaFreeArray(pArr);
-#endif
   return 0;
 }

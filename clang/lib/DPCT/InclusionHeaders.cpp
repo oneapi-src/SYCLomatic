@@ -80,7 +80,7 @@ SmallVector<std::string, 8> AlwaysRemovedSDKFilePrefix = {
 
 bool isAlwaysRemoved(StringRef Path) {
   for (auto &S : AlwaysRemovedSDKFilePrefix)
-    if (Path.startswith(S))
+    if (Path.starts_with(S))
       return true;
   return false;
 }
@@ -104,7 +104,7 @@ const DpctInclusionInfo *findInFullMatcheMode(StringRef Filename) {
 
 const DpctInclusionInfo *findInStartwithMode(StringRef Filename) {
   for (auto &Entry : InclusionStartWithMap) {
-    if (Filename.startswith(Entry.Prefix))
+    if (Filename.starts_with(Entry.Prefix))
       return &Entry.Info;
   }
   return nullptr;
@@ -132,7 +132,7 @@ void IncludesCallbacks::InclusionDirective(
   LastInclusionLocationUpdater Updater(FileInfo, FilenameRange.getEnd());
 
   clang::tooling::UnifiedPath IncludedFile;
-  if (auto OptionalAbs = Global.getAbsolutePath(File->getFileEntry()))
+  if (auto OptionalAbs = Global.getAbsolutePath(*File))
     IncludedFile = OptionalAbs.value();
 
   if (Global.isExcluded(IncludedFile))
@@ -159,21 +159,33 @@ void IncludesCallbacks::InclusionDirective(
   if (Global.isInAnalysisScope(IncludedFile)) {
     IncludeFileMap[IncludedFile] = false;
     Global.getIncludingFileSet().insert(IncludedFile);
-
     // The "IncludedFile" is included by the "IncludingFile".
     // If "IncludedFile" is not under the AnalysisScope folder, do not record
     // the including relationship information.
     Global.recordIncludingRelationship(LocInfo.first, IncludedFile);
-
-    clang::tooling::UnifiedPath NewFilePath = FileName;
-    rewriteFileName(NewFilePath, IncludedFile);
+    const auto Extension = path::extension(FileName);
     SmallString<512> NewFileName(FileName.str());
-    path::remove_filename(NewFileName);
-    path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
-    NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
+
+    if (Extension == ".c") {
+      auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileInfo();
+      path::replace_extension(
+          NewFileName, "{{NEEDREPLACEE" + std::to_string(Vec.size()) + "}}");
+      Vec.push_back(DpctGlobalInfo::getInstance().insertFile(IncludedFile));
+    } else {
+      clang::tooling::UnifiedPath NewFilePath = FileName;
+      rewriteFileName(NewFilePath, IncludedFile);
+      path::remove_filename(NewFileName);
+      path::append(NewFileName, path::filename(NewFilePath.getCanonicalPath()));
+      NewFileName = path::convert_to_slash(NewFileName, path::Style::native);
+    }
+
     if (NewFileName != FileName) {
-      const auto Extension = path::extension(FileName);
-      auto ReplacedStr = buildString("#include \"", NewFileName, "\"");
+      std::string ReplacedStr;
+      if (IsAngled) {
+        ReplacedStr = buildString("#include <", NewFileName, ">");
+      } else {
+        ReplacedStr = buildString("#include \"", NewFileName, "\"");
+      }
       if (Extension == ".cu" || Extension == ".cuh") {
         // For CUDA files, it will always change name.
         EmplaceReplacement(std::move(ReplacedStr));
@@ -231,10 +243,10 @@ void IncludesCallbacks::InclusionDirective(
   // TODO: implement one of this for each source language.
   // Remove all includes from the SDK.
   if (isChildOrSamePath(CudaPath, SearchPath.str()) ||
-      SearchPath.startswith("/usr/local/cuda")) {
+      SearchPath.starts_with("/usr/local/cuda")) {
     // If CudaPath is in /usr/include,
     // for all the include files without starting with specified string, keep it
-    if (!StringRef(CudaPath.getCanonicalPath()).startswith("/usr/include") ||
+    if (!StringRef(CudaPath.getCanonicalPath()).starts_with("/usr/include") ||
         isAlwaysRemoved(FileName)) {
       RemoveInslusion();
     }

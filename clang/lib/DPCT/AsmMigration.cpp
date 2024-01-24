@@ -545,15 +545,103 @@ public:
   bool handleStatement(const InlineAsmStmt *S) { return emitStmt(S); }
 
 protected:
+  unsigned getBitSizeTypeWidth(const InlineAsmBuiltinType *T) const {
+    switch (T->getKind()) {
+    case InlineAsmBuiltinType::TK_b8:
+      return 8;
+    case InlineAsmBuiltinType::TK_b16:
+      return 16;
+    case InlineAsmBuiltinType::TK_b32:
+      return 32;
+    case InlineAsmBuiltinType::TK_b64:
+      return 64;
+    default:
+      return 0;
+    }
+  }
+
+  const char *unpackBitSizeType(const InlineAsmBuiltinType *T,
+                                unsigned N) const {
+    assert(T->isBitSize());
+    unsigned OriginTypeWidth = getBitSizeTypeWidth(T);
+    unsigned UnpackTypeWidth = OriginTypeWidth / N;
+    switch (UnpackTypeWidth) {
+    case 8:
+      return "uint8_t";
+    case 16:
+      return "uint16_t";
+    case 32:
+      return "uint32_t";
+    default:
+      return nullptr;
+    }
+  }
+
   bool handle_mov(const InlineAsmInstruction *I) override {
     if (I->getNumInputOperands() != 1)
       return SYCLGenError();
-    if (emitStmt(I->getOutputOperand()))
-      return SYCLGenError();
-    OS() << " = ";
-    if (emitStmt(I->getInputOperand(0)))
-      return SYCLGenError();
-    endstmt();
+    // Handle data unpack mov.
+    // mov.b32 {%0, %1}, %2;
+    // %0 = sycl::vec<uint32_t, 1>(%2).template as<sycl::vec<uint16_t, 2>>()[0];
+    // %1 = sycl::vec<uint32_t, 1>(%2).template as<sycl::vec<uint16_t, 2>>()[1];
+    if (const auto *VE = dyn_cast<InlineAsmVectorExpr>(I->getOutputOperand())) {
+      const auto *Type =
+          llvm::dyn_cast_or_null<InlineAsmBuiltinType>(I->getType(0));
+      if (!Type || !Type->isBitSize())
+        return SYCLGenError();
+      std::string OriginType, InputOp;
+      std::string UnpackType = unpackBitSizeType(Type, VE->getNumElements());
+      if (tryEmitType(OriginType, Type) ||
+          tryEmitStmt(InputOp, I->getInputOperand(0)))
+        return SYCLGenError();
+      std::string SYCLVec;
+      {
+        llvm::raw_string_ostream TmpOS(SYCLVec);
+        TmpOS << MapNames::getClNamespace() << "vec<" << OriginType << ", 1>("
+              << InputOp << ").template as<" << MapNames::getClNamespace()
+              << "vec<" << UnpackType << ", " << VE->getNumElements() << ">>()";
+      }
+      for (unsigned I = 0, E = VE->getNumElements(); I != E; ++I) {
+        if (isa<InlineAsmDiscardExpr>(VE->getElement(I)))
+          continue;
+        if (I > 0)
+          indent();
+        if (emitStmt(VE->getElement(I)))
+          return SYCLGenError();
+        OS() << " = " << SYCLVec << '[' << I << ']';
+        endstmt();
+      }
+    } else if (const auto *VE =
+                   dyn_cast<InlineAsmVectorExpr>(I->getInputOperand(0))) {
+      // Handle data pack ov.
+      // mov.b32 %0, {%1, %2};
+      // %0 = sycl::vec<uint16_t, 2>{%1, %2}.template as<sycl::vec<uint32_t,
+      // 1>>()[0];
+      const auto *Type =
+          llvm::dyn_cast_or_null<InlineAsmBuiltinType>(I->getType(0));
+      if (!Type || !Type->isBitSize())
+        return SYCLGenError();
+      std::string PackType, OutputOp;
+      std::string OriginType = unpackBitSizeType(Type, VE->getNumElements());
+      if (tryEmitType(PackType, Type))
+        return SYCLGenError();
+      if (emitStmt(I->getOutputOperand()))
+        return SYCLGenError();
+      OS() << " = " << MapNames::getClNamespace() << "vec<" << OriginType
+           << ", " << VE->getNumElements() << ">(";
+      if (emitStmt(VE))
+        return SYCLGenError();
+      OS() << ").template as<" << MapNames::getClNamespace() << "vec<"
+           << PackType << ", 1>>()[0]";
+      endstmt();
+    } else {
+      if (emitStmt(I->getOutputOperand()))
+        return SYCLGenError();
+      OS() << " = ";
+      if (emitStmt(I->getInputOperand(0)))
+        return SYCLGenError();
+      endstmt();
+    }
     return SYCLGenSuccess();
   }
 
@@ -1487,7 +1575,7 @@ protected:
     if (Inst->hasAttr(InstAttr::sat))
       OS() << "_sat";
     if (Inst->is(asmtok::op_vshl, asmtok::op_vshr))
-      OS() << (Inst->hasAttr(InstAttr::clamp) ? "_clamp" : "_mask31");
+      OS() << (Inst->hasAttr(InstAttr::clamp) ? "_clamp" : "_wrap");
     OS() << "<";
     if (emitType(Inst->getType(0)))
       return SYCLGenError();
