@@ -364,12 +364,12 @@ Use 64 bits as memory_bus_width default value."
 
   prop.set_max_work_items_per_compute_unit(
       dev.get_info<sycl::info::device::max_work_group_size>());
-  int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
 #ifdef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
   prop.set_max_nd_range_size(
       dev.get_info<
           sycl::ext::oneapi::experimental::info::device::max_work_groups<3>>());
 #else
+  int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
   prop.set_max_nd_range_size(max_nd_range_size);
 #endif
 
