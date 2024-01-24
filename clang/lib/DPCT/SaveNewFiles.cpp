@@ -259,6 +259,8 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     Out << In.rdbuf();
     Out.close();
     In.close();
+
+    OutFilePath2InFilePath[OutputFile.getCanonicalPath().str()] = File;
   }
 }
 
