@@ -220,12 +220,20 @@ public:
   set_max_work_items_per_compute_unit(int max_work_items_per_compute_unit) {
     _max_work_items_per_compute_unit = max_work_items_per_compute_unit;
   }
-  void set_max_nd_range_size(const sycl::id<3> max_nd_range_size) {
+  void set_max_nd_range_size(int max_nd_range_size[]) {
     for (int i = 0; i < 3; i++) {
       _max_nd_range_size[i] = max_nd_range_size[i];
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
+#ifdef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
+  void set_max_nd_range_size(sycl::id<3> max_nd_range_size) {
+    for (int i = 0; i < 3; i++) {
+      _max_nd_range_size[i] = max_nd_range_size[i];
+      _max_nd_range_size_i[i] = max_nd_range_size[i];
+    }
+  }
+#endif
   void set_memory_clock_rate(unsigned int memory_clock_rate) {
     _memory_clock_rate = memory_clock_rate;
   }
