@@ -27,7 +27,6 @@ target_link_libraries(dpct-binary
 add_clang_symlink(c2s dpct-binary)
 if(UNIX)
   set(dpct_autocomplete_script bash-autocomplete.sh)
-  set(dpct_setvars_script setvars.sh)
 endif()
 
 if(UNIX)
@@ -51,6 +50,32 @@ if(UNIX)
                              COMPONENT dpct-setvars)
   endif()
 endif()
+
+if(UNIX)
+  set(dpct_vars_script vars.sh_2023_style)
+else()
+  set(dpct_vars_script vars.bat_2023_style)
+endif()
+
+if(UNIX)
+  install(
+    FILES ${dpct_vars_script}
+    COMPONENT dpct-setvars
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    DESTINATION ./
+    RENAME "setvars.sh")
+else()
+  install(
+    FILES ${dpct_vars_script}
+    COMPONENT dpct-setvars
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    DESTINATION ./
+    RENAME "setvars.bat")
+endif()
+
+if (NOT CMAKE_CONFIGURATION_TYPES)
+    add_llvm_install_targets(install-dpct-setvars
+                             COMPONENT dpct-setvars)
 
 add_subdirectory(DpctOptRules)
 

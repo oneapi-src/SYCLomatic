@@ -93,14 +93,14 @@ elif [ "dash" = "$vars_script_shell" ] ; then # dash
   vars_script_name="$(expr "${vars_script_name:-}" : '^.*dash: [0-9]*: \(.*\):')" ;
 elif [ "sh" = "$vars_script_shell" ] ; then   # could be dash masquerading as /bin/sh
   # force a shell error msg; which should contain this script's path/filename
-  # sample error msg shown; assume this file is named "setvars.sh"
+  # sample error msg shown; assume this file is named "setvars.sh";
   vars_script_name="$( (echo "${.sh.file}") 2>&1 )" || : ;
   if [ "$(printf "%s" "$vars_script_name" | grep -Eq "sh: [0-9]+: .*setvars\.sh: " ; echo $?)" -eq 0 ] ; then # dash as sh
     vars_script_name="$(expr "${vars_script_name:-}" : '^.*sh: [0-9]*: \(.*\):')" ;
   fi
 else  # unrecognized shell or dash being sourced from within a user's script
   # force a shell error msg; which should contain this script's path/filename
-  # sample error msg shown; assume this file is named "setvars.sh"
+  # sample error msg shown; assume this file is named "setvars.sh";
   vars_script_name="$( (echo "${.sh.file}") 2>&1 )" || : ;
   if [ "$(printf "%s" "$vars_script_name" | grep -Eq "^.+: [0-9]+: .*setvars\.sh: " ; echo $?)" -eq 0 ] ; then # dash
     vars_script_name="$(expr "${vars_script_name:-}" : '^.*: [0-9]*: \(.*\):')" ;
@@ -119,7 +119,8 @@ if [ "" = "$vars_script_name" ] ; then
 fi
 
 # ############################################################################
-component_root=$(get_script_path "${vars_script_name:-}")
+my_script_path=$(get_script_path "${vars_script_name:-}")
+component_root=$(dirname -- "${my_script_path}")
 
 # Export required env vars for dpct package.
 
