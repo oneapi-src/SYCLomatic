@@ -783,6 +783,15 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                                 Entry.first.getCanonicalPath().str()))
         continue;
 
+      // If the file needs no replacement and it already exist, don't
+      // make any changes
+      if (fs::exists(FilePath.getCanonicalPath())) {
+        // A header file with this name already exists.
+        llvm::errs() << "File '" << FilePath
+                     << "' already exists; skipping it.\n";
+        continue;
+      }
+
       std::error_code EC;
       EC = fs::create_directories(
           path::parent_path(FilePath.getCanonicalPath()));
