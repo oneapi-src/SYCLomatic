@@ -65,6 +65,11 @@ shows an example of migrating a Make/CMake project, using a compilation database
 
 For detailed instructions on how to use the Needleman-Wunsch sample, refer to the sample README.
 
+.. include:: /_include_files/ide_linux_dgr.rst
+
+.. include:: /_include_files/ide_ms_dgr.rst
+
+
 Code Samples
 ------------
 
