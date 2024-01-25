@@ -67,12 +67,6 @@ The following table lists |tool_name| command line options in alphabetical order
           :start-after: desc-cuda-include-path:
           :end-before: end-cuda-include-path:
    * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-custom-helper-name:
-          :end-before: desc-custom-helper-name:
-     - .. include:: /_include_files/options_def.rst
-          :start-after: desc-custom-helper-name:
-          :end-before: end-custom-helper-name:
-   * - .. include:: /_include_files/options_def.rst
           :start-after: opt-enable-ctad:
           :end-before: desc-enable-ctad:
      - .. include:: /_include_files/options_def.rst
@@ -156,12 +150,6 @@ The following table lists |tool_name| command line options in alphabetical order
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-keep-original-code:
           :end-before: end-keep-original-code:
-   * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-no-cl-namespace-inline:
-          :end-before: desc-no-cl-namespace-inline:
-     - .. include:: /_include_files/options_def.rst
-          :start-after: desc-no-cl-namespace-inline:
-          :end-before: end-no-cl-namespace-inline:
    * - .. include:: /_include_files/options_def.rst
           :start-after: opt-no-dpcpp-extensions:
           :end-before: desc-no-dpcpp-extensions:
@@ -276,12 +264,6 @@ The following table lists |tool_name| command line options in alphabetical order
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-sycl-named-lambda:
           :end-before: end-sycl-named-lambda:
-   * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-use-custom-helper:
-          :end-before: desc-use-custom-helper:
-     - .. include:: /_include_files/options_def.rst
-          :start-after: desc-use-custom-helper:
-          :end-before: end-use-custom-helper:
    * - .. include:: /_include_files/options_def.rst
           :start-after: opt-use-dpcpp-extensions:
           :end-before: desc-use-dpcpp-extensions:

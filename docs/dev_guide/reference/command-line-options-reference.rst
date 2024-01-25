@@ -16,10 +16,8 @@ section provides:
   * :ref:`build_script_opt`
   * :ref:`help_opt`
 * A list of :ref:`intercept-build options <intercept_opt>`
-* A list of :ref:`deprecated options <dep_opt>`
 
 .. toctree::
-   :glob:
    :hidden:
 
    command-line-options-ref/migration-basic

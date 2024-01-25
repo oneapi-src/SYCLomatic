@@ -108,19 +108,6 @@ The directory path of the CUDA\* header files.
 
 
 
-.. _opt-custom-helper-name:
-
-``--custom-helper-name=<name>``
-
-.. _desc-custom-helper-name:
-
-DEPRECATED: Specifies the helper headers folder name and main helper header file
-name. Default: ``dpct``.
-
-.. _end-custom-helper-name:
-
-
-
 .. _opt-enable-ctad:
 
 ``--enable-ctad``
@@ -322,20 +309,6 @@ Excludes the specified directory or file from processing.
 Keeps the original code in the comments of generated SYCL files. Default: ``off``.
 
 .. _end-keep-original-code:
-
-
-
-.. _opt-no-cl-namespace-inline:
-
-``--no-cl-namespace-inline``
-
-.. _desc-no-cl-namespace-inline:
-
-DEPRECATED: Do not use ``cl::`` namespace inline. Default: ``off``. This
-option will be ignored if the replacement option ``--use-explicit-namespace``
-is used.
-
-.. _end-no-cl-namespace-inline:
 
 
 
@@ -644,26 +617,6 @@ Suppresses all migration warnings. Default: ``off``.
 Generates kernels with the kernel name. Default: ``off``.
 
 .. _end-sycl-named-lambda:
-
-
-
-.. _opt-use-custom-helper:
-
-``--use-custom-helper=<value>``
-
-.. _desc-use-custom-helper:
-
-DEPRECATED: Customize the helper header files for migrated code. The values are:
-
-- ``=all``: Generate a complete set of helper header files and place them
-  in the ``--out-root`` directory.
-- ``=api``: Limit helper header files to only the necessary APIs for the
-  migrated code and place them in the ``--out-root`` directory.
-- ``=file``: Limit helper header files to only the necessary files for the
-  migrated code and place them in the ``--out-root`` directory.
-- ``=none``: No customization (default).
-
-.. _end-use-custom-helper:
 
 
 
