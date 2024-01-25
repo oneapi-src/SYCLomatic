@@ -4755,7 +4755,7 @@ matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
 }
 int isArgumentInitialized(
     const clang::Expr *Arg,
-    std::vector<const clang::VarDecl *> &DeclsNeedToBeInitialized) {
+    std::vector<const clang::VarDecl *> &DeclsRequireInit) {
   auto isInitBeforeArg = [](const CompoundStmt *Context,
                             const clang::DeclRefExpr *DRE,
                             const clang::Expr *Arg) -> bool {
@@ -4817,12 +4817,12 @@ int isArgumentInitialized(
     if (HasInitBeforeArg)
       continue;
     else if (VD->getType()->isFundamentalType())
-      DeclsNeedToBeInitialized.push_back(VD);
+      DeclsRequireInit.push_back(VD);
     else
       return -1;
   }
 
-  return DeclsNeedToBeInitialized.empty();
+  return DeclsRequireInit.empty();
 }
 } // namespace dpct
 } // namespace clang

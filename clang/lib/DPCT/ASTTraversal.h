@@ -259,14 +259,17 @@ protected:
     emplaceTransformation(std::move(SIT));
   }
 
+  /// @brief If necessary, initialize an argument or emit warning.
+  /// @param Call Function CallExpr
+  /// @param Arg An argument (may be an expression) of \p Call .
   void analyzeUninitializedDeviceVar(const clang::Expr *Call,
                                      const clang::Expr *Arg) {
     if (!Call || !Arg)
       return;
-    std::vector<const clang::VarDecl *> DeclsNeedToBeInitialized;
-    int Res = isArgumentInitialized(Arg, DeclsNeedToBeInitialized);
+    std::vector<const clang::VarDecl *> DeclsRequireInit;
+    int Res = isArgumentInitialized(Arg, DeclsRequireInit);
     if (Res == 0) {
-      for (const auto D : DeclsNeedToBeInitialized) {
+      for (const auto D : DeclsRequireInit) {
         emplaceTransformation(new InsertText(
             D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
                 D->getEndLoc(), DpctGlobalInfo::getSourceManager(),

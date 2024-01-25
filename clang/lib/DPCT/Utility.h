@@ -585,15 +585,14 @@ std::set<const clang::DeclRefExpr *>
 matchTargetDREInScope(const clang::VarDecl *TargetDecl,
                       const clang::Stmt *Range);
 /// @brief Check if an argument is initialized.
-/// @param Arg Function call argument.
-/// @param DeclsNeedToBeInitialized UnInitialized VarDecl(s). Only can be used
-/// when return 0.
+/// @param Arg Function call argument (may be an expression).
+/// @param DeclsRequireInit UnInitialized VarDecl(s).
 /// @return  1: Initialized
 ///          0: Not initialized.
 ///         -1: Cannot deduce.
 int isArgumentInitialized(
     const clang::Expr *Arg,
-    std::vector<const clang::VarDecl *> &DeclsNeedToBeInitialized);
+    std::vector<const clang::VarDecl *> &DeclsRequireInit);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

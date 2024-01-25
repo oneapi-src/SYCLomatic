@@ -267,21 +267,21 @@ class AnalyzeUninitializedDeviceVarRewriterFactory
   using BaseT = CallExprRewriterFactory<
       UnsupportFunctionRewriter<std::function<const Expr *(const CallExpr *C)>>,
       Diagnostics, std::function<const Expr *(const CallExpr *C)>>;
-  std::shared_ptr<CallExprRewriterFactoryBase> First;
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
   int Idx = 0;
 
 public:
   AnalyzeUninitializedDeviceVarRewriterFactory(
-      std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory, int Idx)
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory, int Idx)
       : BaseT(
             "", Diagnostics::UNINITIALIZED_DEVICE_VAR,
             [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); }),
-        First(FirstFactory), Idx(Idx) {}
+        Inner(InnerFactory), Idx(Idx) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
-    std::vector<const clang::VarDecl *> DeclsNeedToBeInitialized;
-    int Res = isArgumentInitialized(C->getArg(Idx), DeclsNeedToBeInitialized);
+    std::vector<const clang::VarDecl *> DeclsRequireInit;
+    int Res = isArgumentInitialized(C->getArg(Idx), DeclsRequireInit);
     if (Res == 0) {
-      for (const auto D : DeclsNeedToBeInitialized) {
+      for (const auto D : DeclsRequireInit) {
         SourceLocation InsertLoc =
             D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
                 D->getEndLoc(), DpctGlobalInfo::getSourceManager(),
@@ -292,9 +292,11 @@ public:
                                              InsertLoc, 0, Repl, nullptr));
       }
     } else if (Res == -1) {
+      // Create rewriter for emitting warning
       BaseT::create(C);
     }
-    return First->create(C);
+    // Create rewriter for migrating API
+    return Inner->create(C);
   }
 };
 

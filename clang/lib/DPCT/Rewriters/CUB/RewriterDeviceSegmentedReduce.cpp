@@ -30,6 +30,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                           FEATURE_REQUEST_FACTORY(
                               HelperFeatureEnum::device_ext,
                               ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                                  8,
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL(TEMPLATED_CALLEE_WITH_ARGS(
@@ -39,13 +40,13 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                                    "reduce",
                                                LITERAL("128")),
                                            STREAM(9), ARG(2), ARG(3), ARG(4),
-                                           ARG(5), ARG(6), ARG(7), ARG(8))),
-                                  8)),
+                                           ARG(5), ARG(6), ARG(7), ARG(8))))),
                           FEATURE_REQUEST_FACTORY(
                               HelperFeatureEnum::device_ext,
                               CONDITIONAL_FACTORY_ENTRY(
                                   checkArgCanMappingToSyclNativeBinaryOp(7),
                                   ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                                      8,
                                       CALL_FACTORY_ENTRY(
                                           "cub::DeviceSegmentedReduce::Reduce",
                                           CALL(
@@ -55,11 +56,11 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                                       "reduce",
                                                   LITERAL("128")),
                                               STREAM(9), ARG(2), ARG(3), ARG(4),
-                                              ARG(5), ARG(6), ARG(7), ARG(8))),
-                                      8),
+                                              ARG(5), ARG(6), ARG(7), ARG(8)))),
                                   WARNING_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                                          8,
                                           CALL_FACTORY_ENTRY(
                                               "cub::DeviceSegmentedReduce::"
                                               "Reduce",
@@ -73,8 +74,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                                   STREAM(9), ARG(2), ARG(3),
                                                   ARG(4), ARG(5), ARG(6),
                                                   LITERAL("dpct_placeholder"),
-                                                  ARG(8))),
-                                          8),
+                                                  ARG(8)))),
                                       Diagnostics::
                                           UNSUPPORTED_BINARY_OPERATION)))),
                       CONDITIONAL_FACTORY_ENTRY(
@@ -82,6 +82,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                           FEATURE_REQUEST_FACTORY(
                               HelperFeatureEnum::device_ext,
                               ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                                  8,
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL(TEMPLATED_CALLEE_WITH_ARGS(
@@ -91,13 +92,13 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                                    "reduce",
                                                LITERAL("128")),
                                            QUEUESTR, ARG(2), ARG(3), ARG(4),
-                                           ARG(5), ARG(6), ARG(7), ARG(8))),
-                                  8)),
+                                           ARG(5), ARG(6), ARG(7), ARG(8))))),
                           FEATURE_REQUEST_FACTORY(
                               HelperFeatureEnum::device_ext,
                               CONDITIONAL_FACTORY_ENTRY(
                                   checkArgCanMappingToSyclNativeBinaryOp(7),
                                   ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                                      8,
                                       CALL_FACTORY_ENTRY(
                                           "cub::DeviceSegmentedReduce::Reduce",
                                           CALL(
@@ -107,11 +108,11 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                                       "reduce",
                                                   LITERAL("128")),
                                               QUEUESTR, ARG(2), ARG(3), ARG(4),
-                                              ARG(5), ARG(6), ARG(7), ARG(8))),
-                                      8),
+                                              ARG(5), ARG(6), ARG(7), ARG(8)))),
                                   WARNING_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                                          8,
                                           CALL_FACTORY_ENTRY(
                                               "cub::DeviceSegmentedReduce::"
                                               "Reduce",
@@ -125,8 +126,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                                   QUEUESTR, ARG(2), ARG(3),
                                                   ARG(4), ARG(5), ARG(6),
                                                   LITERAL("dpct_placeholder"),
-                                                  ARG(8))),
-                                          8),
+                                                  ARG(8)))),
                                       Diagnostics::
                                           UNSUPPORTED_BINARY_OPERATION))))),
                   Diagnostics::REDUCE_PERFORMANCE_TUNE))))
