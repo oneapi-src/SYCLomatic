@@ -156,6 +156,11 @@ TYPE_REWRITE_ENTRY(
     "thrust::less_equal",
     TYPE_FACTORY(STR("std::less_equal"), TEMPLATE_ARG(0)))
 
+// thrust::device_allocator
+TYPE_REWRITE_ENTRY(
+    "thrust::device_allocator",
+    TYPE_FACTORY(STR("dpct::deprecated::usm_device_allocator"), TEMPLATE_ARG(0)))
+
 // logical_and
 TYPE_REWRITE_ENTRY(
     "thrust::logical_and",
