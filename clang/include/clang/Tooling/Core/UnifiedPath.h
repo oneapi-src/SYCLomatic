@@ -23,22 +23,36 @@ namespace tooling {
 class UnifiedPath {
 public:
   UnifiedPath() = default;
-  UnifiedPath(const std::string &Path) : _Path(Path) { makeCanonical(); }
-  UnifiedPath(const llvm::StringRef Path) : _Path(Path.str()) { makeCanonical(); }
-  UnifiedPath(const llvm::Twine &Path) : _Path(Path.str()) { makeCanonical(); }
-  UnifiedPath(const llvm::SmallVectorImpl<char> &Path) {
-    _Path = std::string(Path.data(), Path.size());
-    makeCanonical();
+  UnifiedPath(const std::string &Path, const std::string &CWD = ".")
+      : _Path(Path) {
+    makeCanonical(CWD);
   }
-  UnifiedPath(const char *Path) {
+  UnifiedPath(const llvm::StringRef Path, const std::string &CWD = ".")
+      : _Path(Path.str()) {
+    makeCanonical(CWD);
+  }
+  UnifiedPath(const llvm::Twine &Path, const std::string &CWD = ".")
+      : _Path(Path.str()) {
+    makeCanonical(CWD);
+  }
+  UnifiedPath(const llvm::SmallVectorImpl<char> &Path,
+              const std::string &CWD = ".") {
+    _Path = std::string(Path.data(), Path.size());
+    makeCanonical(CWD);
+  }
+  UnifiedPath(const char *Path, const std::string &CWD = ".") {
     _Path = std::string(Path);
-    makeCanonical();
+    makeCanonical(CWD);
   }
   bool equalsTo(const std::string &RHS) {
     return this->equalsTo(UnifiedPath(RHS));
   }
-  bool equalsTo(const llvm::StringRef RHS) { return this->equalsTo(UnifiedPath(RHS)); }
-  bool equalsTo(const llvm::Twine &RHS) { return this->equalsTo(UnifiedPath(RHS)); }
+  bool equalsTo(const llvm::StringRef RHS) {
+    return this->equalsTo(UnifiedPath(RHS));
+  }
+  bool equalsTo(const llvm::Twine &RHS) {
+    return this->equalsTo(UnifiedPath(RHS));
+  }
   bool equalsTo(const llvm::SmallVectorImpl<char> &RHS) {
     return this->equalsTo(UnifiedPath(RHS));
   }
@@ -54,7 +68,7 @@ public:
   }
 
 private:
-  void makeCanonical();
+  void makeCanonical(const std::string &CWD = ".");
   std::string _Path;
   std::string _CanonicalPath;
   static std::unordered_map<std::string, std::string> CanonicalPathCache;

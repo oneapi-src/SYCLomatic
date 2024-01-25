@@ -11,15 +11,15 @@
 #include "SaveNewFiles.h"
 #include "ValidateArguments.h"
 
+#include "clang/Tooling/Refactoring.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
-
-#include "clang/Tooling/Refactoring.h"
-
 #include "llvm/Support/raw_os_ostream.h"
+
 #include <fstream>
+#include <string>
 #include <unordered_map>
 
 using namespace clang::dpct;
@@ -53,7 +53,7 @@ static std::string getCustomBaseName(const clang::tooling::UnifiedPath &Path) {
   if (Pos != std::string::npos) {
     std::string BaseName = Filename.substr(0, Pos);
     return BaseName;
-  } 
+  }
   return Filename;
 }
 
@@ -74,7 +74,7 @@ static void getCompileInfo(
     clang::tooling::UnifiedPath FileName = Entry.first;
 
     // Get value of key "directory" from compilation database
-    const clang::tooling::UnifiedPath Directory = Entry.second[0];
+    const std::string Directory = Entry.second[0];
 
     if (path::filename(FileName.getCanonicalPath())
             .starts_with("LinkerEntry")) {
@@ -100,12 +100,9 @@ static void getCompileInfo(
           Tool = "$(CC) -fsycl -o"; // use 'icpx -fsycl' to link the target file
                                     // in the generated Makefile.
         } else if (llvm::StringRef(Obj).ends_with(".o")) {
-          clang::tooling::UnifiedPath FilePathAbs(Obj);
-
-          if (!llvm::sys::path::is_absolute(Obj))
-            FilePathAbs = dpct::appendPath(Directory.getCanonicalPath().str(), Obj);
-
-          ObjsInLKOrARCmd.push_back(std::string(FilePathAbs.getCanonicalPath()));
+          clang::tooling::UnifiedPath FilePathAbs(Obj, Directory);
+          ObjsInLKOrARCmd.push_back(
+              std::string(FilePathAbs.getCanonicalPath()));
         } else if (Obj == "ar") {
           IsArCommand = true;
         } else if (IsArCommand) {
@@ -125,11 +122,12 @@ static void getCompileInfo(
         continue;
       }
 
-      clang::tooling::UnifiedPath OutDirectory = dpct::appendPath(
-          Directory.getCanonicalPath().str(), TargetName);
+      clang::tooling::UnifiedPath OutDirectory =
+          dpct::appendPath(Directory, TargetName);
       // Use relative path to out-root directory.
       SmallString<512> OutDirectoryStr(OutDirectory.getCanonicalPath());
-      llvm::sys::path::replace_path_prefix(OutDirectoryStr, InRoot.getCanonicalPath(), ".");
+      llvm::sys::path::replace_path_prefix(OutDirectoryStr,
+                                           InRoot.getCanonicalPath(), ".");
       TargetName = OutDirectoryStr.str().str();
 
       for (auto &Obj : ObjsInLKOrARCmd) {
@@ -141,7 +139,8 @@ static void getCompileInfo(
     }
   }
 
-  std::unordered_map<clang::tooling::UnifiedPath /*origname*/, clang::tooling::UnifiedPath /*objname*/>
+  std::unordered_map<clang::tooling::UnifiedPath /*origname*/,
+                     clang::tooling::UnifiedPath /*objname*/>
       Orig2ObjMap;
 
   for (const auto &Entry : CompileTargetsMap) {
@@ -162,7 +161,7 @@ static void getCompileInfo(
     // To parse option "-I <space> <path>"
     bool IsIncludeWithWhitespace = false;
 
-    const clang::tooling::UnifiedPath Directory = Entry.second[0];
+    const std::string Directory = Entry.second[0];
 
     bool HasCudaSemantics = false;
     if (IncludeFileMap.count(FileName) && IncludeFileMap.at(FileName)) {
@@ -179,7 +178,8 @@ static void getCompileInfo(
 
         NewOptions += "-isystem ";
         SmallString<512> OutDirectory(IncPath.getCanonicalPath());
-        llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot.getCanonicalPath(), ".");
+        llvm::sys::path::replace_path_prefix(OutDirectory,
+                                             OutRoot.getCanonicalPath(), ".");
         NewOptions += OutDirectory.c_str();
         NewOptions += " ";
         continue;
@@ -266,7 +266,7 @@ static void getCompileInfo(
         IsObjName = true;
         IsObjSpecified = true;
       } else if (IsObjName) {
-        clang::tooling::UnifiedPath FilePathAbs(Option);
+        clang::tooling::UnifiedPath FilePathAbs(Option, Directory);
         Orig2ObjMap[FileName] = FilePathAbs;
         IsObjName = false;
       } else if (llvm::StringRef(Option).starts_with("-O")) {
@@ -281,9 +281,8 @@ static void getCompileInfo(
       // For the case that "-o" is not specified in the compile command, the
       // default obj file is generated in the directory where the compile
       // command runs.
-      Orig2ObjMap[FileName] = dpct::appendPath(
-          Directory.getCanonicalPath().str(),
-          getCustomBaseName(FileName) + ".o");
+      Orig2ObjMap[FileName] =
+          dpct::appendPath(Directory, getCustomBaseName(FileName) + ".o");
     }
 
     // if option "--use-custom-helper=<value>" is used to customize the helper
@@ -313,7 +312,8 @@ static void getCompileInfo(
 
     if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
       SmallString<512> OutDirectory(FileName.getCanonicalPath());
-      llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot.getCanonicalPath(), ".");
+      llvm::sys::path::replace_path_prefix(OutDirectory,
+                                           OutRoot.getCanonicalPath(), ".");
       clang::tooling::CompilationInfo CmpInfo;
       CmpInfo.MigratedFileName = OutDirectory.c_str();
       CmpInfo.CompileOptions = NewOptions;
@@ -321,7 +321,8 @@ static void getCompileInfo(
       CmdsMap[Orig2ObjMap[OrigFileName]] = CmpInfo;
     } else {
       SmallString<512> OutDirectory(OrigFileName.getCanonicalPath());
-      llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot.getCanonicalPath(), ".");
+      llvm::sys::path::replace_path_prefix(OutDirectory,
+                                           OutRoot.getCanonicalPath(), ".");
       clang::tooling::CompilationInfo CmpInfo;
       CmpInfo.MigratedFileName = OutDirectory.c_str();
       CmpInfo.CompileOptions = NewOptions;
@@ -348,12 +349,13 @@ static void getCompileInfo(
   }
 }
 
-static void
-genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath OutRoot,
-            const std::string &BuildScriptName,
-            std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
-                &CmdsPerTarget,
-            std::unordered_map<clang::tooling::UnifiedPath, std::string> &ToolPerTarget) {
+static void genMakefile(
+    clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath OutRoot,
+    const std::string &BuildScriptName,
+    std::map<clang::tooling::UnifiedPath,
+             std::vector<clang::tooling::CompilationInfo>> &CmdsPerTarget,
+    std::unordered_map<clang::tooling::UnifiedPath, std::string>
+        &ToolPerTarget) {
   std::string Buf;
   llvm::raw_string_ostream OS(Buf);
   clang::tooling::UnifiedPath TargetName;
@@ -376,6 +378,12 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
 
   std::map<clang::tooling::UnifiedPath, std::string> ObjsPerTarget;
 
+  std::map<std::string /*Source*/, std::string /*VariableName*/>
+      SrcFilesBufferMap;
+  std::map<std::string /*Object*/, std::string /*VariableName*/>
+      ObjFilesBufferMap;
+  std::map<std::string /*Flag*/, std::string /*VariableName*/> FlagsBufferMap;
+
   int TargetIdx = 0;
   for (const auto &Entry : CmdsPerTarget) {
     TargetName = Entry.first;
@@ -396,6 +404,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
 
     auto CmpInfos = Entry.second;
     int Count = 0;
+    // Create compile commands for each source file
     for (const auto &CmpInfo : CmpInfos) {
       std::string MigratedFileName = CmpInfo.MigratedFileName;
       SmallString<512> MigratedName(MigratedFileName);
@@ -406,22 +415,36 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
         path::replace_path_prefix(MigratedName, CWD, ".");
       }
 
+      SmallString<512> FilePath = StringRef(MigratedName);
+      path::replace_extension(FilePath, "o");
+
       std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) + "_SRC_" +
                                std::to_string(Count);
       std::string ObjStrName = "TARGET_" + std::to_string(TargetIdx) + "_OBJ_" +
                                std::to_string(Count);
       std::string FlagStrName = "TARGET_" + std::to_string(TargetIdx) +
                                 "_FLAG_" + std::to_string(Count);
-      OS << buildString(SrcStrName, " = ", MigratedName, "\n");
-      SmallString<512> FilePath = StringRef(MigratedName);
-      path::replace_extension(FilePath, "o");
-      OS << buildString(ObjStrName, " = ", FilePath, "\n");
-      OS << buildString(FlagStrName, " = ", CmpInfo.CompileOptions,
-                        "${FLAGS}\n\n");
+
+      auto Iter = SrcFilesBufferMap.find(MigratedName.c_str());
+      if (Iter != SrcFilesBufferMap.end()) {
+        SrcStrName = SrcFilesBufferMap[MigratedName.c_str()];
+        ObjStrName = ObjFilesBufferMap[FilePath.c_str()];
+        FlagStrName = FlagsBufferMap[CmpInfo.CompileOptions.c_str()];
+      } else {
+        SrcFilesBufferMap[MigratedName.c_str()] = SrcStrName;
+        ObjFilesBufferMap[FilePath.c_str()] = ObjStrName;
+        FlagsBufferMap[CmpInfo.CompileOptions.c_str()] = FlagStrName;
+
+        OS << buildString(SrcStrName, " = ", MigratedName, "\n");
+        OS << buildString(ObjStrName, " = ", FilePath, "\n");
+        OS << buildString(FlagStrName, " = ", CmpInfo.CompileOptions,
+                          "${FLAGS}\n\n");
+
+        Count++;
+      }
 
       ObjsPerTarget[TargetName] +=
           buildString(" ${", buildString(ObjStrName), "}");
-      Count++;
     }
     TargetIdx++;
   }
@@ -470,12 +493,16 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
     for (const auto &Entry : CmdsPerTarget) {
 
       for (unsigned Idx = 0; Idx < Entry.second.size(); Idx++) {
-        std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) +
-                                 "_SRC_" + std::to_string(Idx);
-        std::string ObjStrName = "TARGET_" + std::to_string(TargetIdx) +
-                                 "_OBJ_" + std::to_string(Idx);
-        std::string FlagStrName = "TARGET_" + std::to_string(TargetIdx) +
-                                  "_FLAG_" + std::to_string(Idx);
+
+        SmallString<512> Source = StringRef(Entry.second[Idx].MigratedFileName);
+        auto Option = Entry.second[Idx].CompileOptions;
+        SmallString<512> Obj = StringRef(Source);
+        path::replace_extension(Obj, "o");
+
+        std::string SrcStrName = SrcFilesBufferMap[Source.c_str()];
+        std::string ObjStrName = ObjFilesBufferMap[Obj.str().str()];
+        std::string FlagStrName = FlagsBufferMap[Option];
+
         OS << buildString("$(", ObjStrName, "):$(", SrcStrName, ")\n");
 
         // Use 'icpx -fsycl' to compile all the migrated SYCL file.
@@ -506,12 +533,22 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
       }
 
       for (unsigned Idx = 0; Idx < Entry.second.size(); Idx++) {
-        std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) +
-                                 "_SRC_" + std::to_string(Idx);
-        std::string ObjStrName = "TARGET_" + std::to_string(TargetIdx) +
-                                 "_OBJ_" + std::to_string(Idx);
-        std::string FlagStrName = "TARGET_" + std::to_string(TargetIdx) +
-                                  "_FLAG_" + std::to_string(Idx);
+
+        SmallString<512> Source = StringRef(Entry.second[Idx].MigratedFileName);
+        if (path::is_absolute(Source)) {
+          SmallString<512> CWD;
+          llvm::sys::fs::current_path(CWD);
+          path::replace_path_prefix(Source, CWD, ".");
+        }
+
+        auto Option = Entry.second[Idx].CompileOptions;
+        SmallString<512> Obj = StringRef(Source);
+        path::replace_extension(Obj, "o");
+
+        std::string SrcStrName = SrcFilesBufferMap[Source.c_str()];
+        std::string ObjStrName = ObjFilesBufferMap[Obj.str().str()];
+        std::string FlagStrName = FlagsBufferMap[Option];
+
         OS << buildString("$(", ObjStrName, "):$(", SrcStrName, ")\n");
 
         std::string Compiler = "$(CC) -fsycl";
