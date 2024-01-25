@@ -174,7 +174,7 @@ public:
         _capacity(v.capacity()) {}
 
   template <typename OtherAllocator>
-  device_vector(::std::vector<T, OtherAllocator> &v)
+  device_vector(const ::std::vector<T, OtherAllocator> &v)
       : _alloc(get_default_queue()), _size(v.size()) {
     _set_capacity_and_alloc();
     if (_size > 0) {
