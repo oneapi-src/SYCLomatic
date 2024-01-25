@@ -119,8 +119,7 @@ if [ "" = "$vars_script_name" ] ; then
 fi
 
 # ############################################################################
-my_script_path=$(get_script_path "${vars_script_name:-}")
-component_root=$(dirname -- "${my_script_path}")
+component_root=$(get_script_path "${vars_script_name:-}")
 
 # Export required env vars for dpct package.
 
