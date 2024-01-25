@@ -12327,7 +12327,6 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       ReplStr += MapNames::getClNamespace() + "reduce_over_group(";
     }
-    analyzeUninitializedDeviceVar(CE, CE->getArg(0));
     ReplStr += DpctGlobalInfo::getGroup(CE) + ", ";
     if (FuncName == "__syncthreads_count") {
       ReplStr += ExprAnalysis::ref(CE->getArg(0)) + " == 0 ? 0 : 1, " +

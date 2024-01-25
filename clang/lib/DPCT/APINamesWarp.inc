@@ -9,86 +9,79 @@
 // __all_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "all_of_group",
-    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-        1, CALL_FACTORY_ENTRY(
-               "__all_sync",
-               CALL(MapNames::getClNamespace() + "all_of_group", SUBGROUP,
+    CALL_FACTORY_ENTRY(
+        "__all_sync",
+        CALL(
+            MapNames::getClNamespace() + "all_of_group", SUBGROUP,
+            makeCombinedArg(
+                ARG("(~"),
+                makeCombinedArg(
+                    makeCallArgCreatorWithCall(0),
                     makeCombinedArg(
-                        ARG("(~"),
                         makeCombinedArg(
-                            makeCallArgCreatorWithCall(0),
+                            ARG(" & (0x1 << "),
                             makeCombinedArg(
-                                makeCombinedArg(
-                                    ARG(" & (0x1 << "),
-                                    makeCombinedArg(
-                                        SUBGROUP,
-                                        ARG(".get_local_linear_id())) || "))),
-                                makeCallArgCreatorWithCall(1))))))))
+                                SUBGROUP, ARG(".get_local_linear_id())) || "))),
+                        makeCallArgCreatorWithCall(1)))))))
 
 // __all
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "all_of_group",
-    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-        0, CALL_FACTORY_ENTRY("__all",
-                              CALL(MapNames::getClNamespace() + "all_of_group",
-                                   SUBGROUP, makeCallArgCreatorWithCall(0)))))
+    CALL_FACTORY_ENTRY("__all",
+                       CALL(MapNames::getClNamespace() + "all_of_group",
+                            SUBGROUP, makeCallArgCreatorWithCall(0))))
 
 // __any_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "any_of_group",
-    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-        1, CALL_FACTORY_ENTRY(
-               "__any_sync",
-               CALL(MapNames::getClNamespace() + "any_of_group", SUBGROUP,
+    CALL_FACTORY_ENTRY(
+        "__any_sync",
+        CALL(
+            MapNames::getClNamespace() + "any_of_group", SUBGROUP,
+            makeCombinedArg(
+                ARG("("),
+                makeCombinedArg(
+                    makeCallArgCreatorWithCall(0),
                     makeCombinedArg(
-                        ARG("("),
                         makeCombinedArg(
-                            makeCallArgCreatorWithCall(0),
+                            ARG(" & (0x1 << "),
                             makeCombinedArg(
-                                makeCombinedArg(
-                                    ARG(" & (0x1 << "),
-                                    makeCombinedArg(
-                                        SUBGROUP,
-                                        ARG(".get_local_linear_id())) && "))),
-                                makeCallArgCreatorWithCall(1))))))))
+                                SUBGROUP, ARG(".get_local_linear_id())) && "))),
+                        makeCallArgCreatorWithCall(1)))))))
 
 // __any
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "any_of_group",
-    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-        0, CALL_FACTORY_ENTRY("__any",
-                              CALL(MapNames::getClNamespace() + "any_of_group",
-                                   SUBGROUP, makeCallArgCreatorWithCall(0)))))
+    CALL_FACTORY_ENTRY("__any",
+                       CALL(MapNames::getClNamespace() + "any_of_group",
+                            SUBGROUP, makeCallArgCreatorWithCall(0))))
 
 // __match_any_sync
-SUBGROUPSIZE_FACTORY(
-    UINT_MAX, MapNames::getDpctNamespace() + "match_any_over_sub_group",
-    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-        1, CALL_FACTORY_ENTRY("__match_any_sync",
-                              CALL(MapNames::getDpctNamespace() +
-                                       "match_any_over_sub_group",
-                                   SUBGROUP, ARG_WC(0), ARG_WC(1)))))
+SUBGROUPSIZE_FACTORY(UINT_MAX,
+                     MapNames::getDpctNamespace() + "match_any_over_sub_group",
+                     CALL_FACTORY_ENTRY("__match_any_sync",
+                                        CALL(MapNames::getDpctNamespace() +
+                                                 "match_any_over_sub_group",
+                                             SUBGROUP, ARG_WC(0), ARG_WC(1))))
 
 // __match_all_sync
-SUBGROUPSIZE_FACTORY(
-    UINT_MAX, MapNames::getDpctNamespace() + "match_all_over_sub_group",
-    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-        1, CALL_FACTORY_ENTRY("__match_all_sync",
-                              CALL(MapNames::getDpctNamespace() +
-                                       "match_all_over_sub_group",
-                                   SUBGROUP, ARG_WC(0), ARG_WC(1), ARG_WC(2)))))
+SUBGROUPSIZE_FACTORY(UINT_MAX,
+                     MapNames::getDpctNamespace() + "match_all_over_sub_group",
+                     CALL_FACTORY_ENTRY("__match_all_sync",
+                                        CALL(MapNames::getDpctNamespace() +
+                                                 "match_all_over_sub_group",
+                                             SUBGROUP, ARG_WC(0), ARG_WC(1),
+                                             ARG_WC(2))))
 
 // __reduce_add_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
     WARNING_FACTORY_ENTRY(
         "__reduce_add_sync",
-        ANALYZE_UNINIT_DEV_VAR_FACTORY(
-            1, CALL_FACTORY_ENTRY(
-                   "__reduce_add_sync",
-                   CALL(MapNames::getClNamespace() + "reduce_over_group",
-                        SUBGROUP, ARG(1),
-                        LITERAL(MapNames::getClNamespace() + "plus<>()")))),
+        CALL_FACTORY_ENTRY(
+            "__reduce_add_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "plus<>()"))),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -97,12 +90,10 @@ SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
     WARNING_FACTORY_ENTRY(
         "__reduce_min_sync",
-        ANALYZE_UNINIT_DEV_VAR_FACTORY(
-            1, CALL_FACTORY_ENTRY(
-                   "__reduce_min_sync",
-                   CALL(MapNames::getClNamespace() + "reduce_over_group",
-                        SUBGROUP, ARG(1),
-                        LITERAL(MapNames::getClNamespace() + "minimum()")))),
+        CALL_FACTORY_ENTRY(
+            "__reduce_min_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "minimum()"))),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -111,12 +102,10 @@ SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
     WARNING_FACTORY_ENTRY(
         "__reduce_max_sync",
-        ANALYZE_UNINIT_DEV_VAR_FACTORY(
-            1, CALL_FACTORY_ENTRY(
-                   "__reduce_max_sync",
-                   CALL(MapNames::getClNamespace() + "reduce_over_group",
-                        SUBGROUP, ARG(1),
-                        LITERAL(MapNames::getClNamespace() + "maximum()")))),
+        CALL_FACTORY_ENTRY(
+            "__reduce_max_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "maximum()"))),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -125,12 +114,10 @@ SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
     WARNING_FACTORY_ENTRY(
         "__reduce_and_sync",
-        ANALYZE_UNINIT_DEV_VAR_FACTORY(
-            1, CALL_FACTORY_ENTRY(
-                   "__reduce_and_sync",
-                   CALL(MapNames::getClNamespace() + "reduce_over_group",
-                        SUBGROUP, ARG(1),
-                        LITERAL(MapNames::getClNamespace() + "bit_and<>()")))),
+        CALL_FACTORY_ENTRY(
+            "__reduce_and_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "bit_and<>()"))),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -139,12 +126,10 @@ SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
     WARNING_FACTORY_ENTRY(
         "__reduce_or_sync",
-        ANALYZE_UNINIT_DEV_VAR_FACTORY(
-            1, CALL_FACTORY_ENTRY(
-                   "__reduce_or_sync",
-                   CALL(MapNames::getClNamespace() + "reduce_over_group",
-                        SUBGROUP, ARG(1),
-                        LITERAL(MapNames::getClNamespace() + "bit_or<>()")))),
+        CALL_FACTORY_ENTRY(
+            "__reduce_or_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "bit_or<>()"))),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -153,12 +138,10 @@ SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
     WARNING_FACTORY_ENTRY(
         "__reduce_xor_sync",
-        ANALYZE_UNINIT_DEV_VAR_FACTORY(
-            1, CALL_FACTORY_ENTRY(
-                   "__reduce_xor_sync",
-                   CALL(MapNames::getClNamespace() + "reduce_over_group",
-                        SUBGROUP, ARG(1),
-                        LITERAL(MapNames::getClNamespace() + "bit_xor<>()")))),
+        CALL_FACTORY_ENTRY(
+            "__reduce_xor_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "bit_xor<>()"))),
         Diagnostics::MASK_UNSUPPORTED,
         ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
@@ -603,15 +586,13 @@ CONDITIONAL_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-                        1,
-                        CALL_FACTORY_ENTRY(
-                            "__shfl_xor_sync",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "experimental::permute_sub_group_by_xor",
-                                 makeCallArgCreatorWithCall(0), SUBGROUP,
-                                 makeCallArgCreatorWithCall(1),
-                                 makeCallArgCreatorWithCall(2))))),
+                    CALL_FACTORY_ENTRY(
+                        "__shfl_xor_sync",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "experimental::permute_sub_group_by_xor",
+                             makeCallArgCreatorWithCall(0), SUBGROUP,
+                             makeCallArgCreatorWithCall(1),
+                             makeCallArgCreatorWithCall(2)))),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_xor_sync"),
                 ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
@@ -622,16 +603,14 @@ CONDITIONAL_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-                        1,
-                        CALL_FACTORY_ENTRY(
-                            "__shfl_xor_sync",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "experimental::permute_sub_group_by_xor",
-                                 makeCallArgCreatorWithCall(0), SUBGROUP,
-                                 makeCallArgCreatorWithCall(1),
-                                 makeCallArgCreatorWithCall(2),
-                                 makeCallArgCreatorWithCall(3))))),
+                    CALL_FACTORY_ENTRY(
+                        "__shfl_xor_sync",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "experimental::permute_sub_group_by_xor",
+                             makeCallArgCreatorWithCall(0), SUBGROUP,
+                             makeCallArgCreatorWithCall(1),
+                             makeCallArgCreatorWithCall(2),
+                             makeCallArgCreatorWithCall(3)))),
                 Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_xor_sync"),
                 ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
@@ -643,13 +622,12 @@ CONDITIONAL_FACTORY_ENTRY(
                 MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-                        1, CALL_FACTORY_ENTRY(
-                               "__shfl_xor_sync",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "permute_sub_group_by_xor",
-                                    SUBGROUP, makeCallArgCreatorWithCall(1),
-                                    makeCallArgCreatorWithCall(2)))))),
+                    CALL_FACTORY_ENTRY("__shfl_xor_sync",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "permute_sub_group_by_xor",
+                                            SUBGROUP,
+                                            makeCallArgCreatorWithCall(1),
+                                            makeCallArgCreatorWithCall(2))))),
             SUBGROUPSIZE_FACTORY(
                 UINT_MAX,
                 MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
@@ -672,13 +650,12 @@ CONDITIONAL_FACTORY_ENTRY(
                     "__shfl_xor_sync",
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        ANALYZE_UNINIT_DEV_VAR_FACTORY(
-                            1, CALL_FACTORY_ENTRY(
-                                   "__shfl_xor_sync",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "permute_sub_group_by_xor",
-                                        SUBGROUP, makeCallArgCreatorWithCall(1),
-                                        makeCallArgCreatorWithCall(2))))),
+                        CALL_FACTORY_ENTRY(
+                            "__shfl_xor_sync",
+                            CALL(MapNames::getDpctNamespace() +
+                                     "permute_sub_group_by_xor",
+                                 SUBGROUP, makeCallArgCreatorWithCall(1),
+                                 makeCallArgCreatorWithCall(2)))),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "permute_sub_group_by_xor." +
@@ -694,14 +671,13 @@ CONDITIONAL_FACTORY_ENTRY(
                     "__shfl_xor_sync",
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        ANALYZE_UNINIT_DEV_VAR_FACTORY(
-                            1, CALL_FACTORY_ENTRY(
-                                   "__shfl_xor_sync",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "permute_sub_group_by_xor",
-                                        SUBGROUP, makeCallArgCreatorWithCall(1),
-                                        makeCallArgCreatorWithCall(2),
-                                        makeCallArgCreatorWithCall(3))))),
+                        CALL_FACTORY_ENTRY(
+                            "__shfl_xor_sync",
+                            CALL(MapNames::getDpctNamespace() +
+                                     "permute_sub_group_by_xor",
+                                 SUBGROUP, makeCallArgCreatorWithCall(1),
+                                 makeCallArgCreatorWithCall(2),
+                                 makeCallArgCreatorWithCall(3)))),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "permute_sub_group_by_xor." +
@@ -718,25 +694,21 @@ CONDITIONAL_FACTORY_ENTRY(
         UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
-            ANALYZE_UNINIT_DEV_VAR_FACTORY(
-                0,
-                CALL_FACTORY_ENTRY("__shfl_xor",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "permute_sub_group_by_xor",
-                                        SUBGROUP, makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))),
+            CALL_FACTORY_ENTRY("__shfl_xor",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "permute_sub_group_by_xor",
+                                    SUBGROUP, makeCallArgCreatorWithCall(0),
+                                    makeCallArgCreatorWithCall(1))))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
-            ANALYZE_UNINIT_DEV_VAR_FACTORY(
-                0,
-                CALL_FACTORY_ENTRY("__shfl_xor",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "permute_sub_group_by_xor",
-                                        SUBGROUP, makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1),
-                                        makeCallArgCreatorWithCall(2)))))))
+            CALL_FACTORY_ENTRY("__shfl_xor",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "permute_sub_group_by_xor",
+                                    SUBGROUP, makeCallArgCreatorWithCall(0),
+                                    makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2))))))
 
 WARNING_FACTORY_ENTRY("__activemask",
                       TOSTRING_FACTORY_ENTRY("__activemask",
@@ -761,24 +733,21 @@ SUBGROUPSIZE_FACTORY(
 // __ballot_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
-    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-        1,
-        CALL_FACTORY_ENTRY(
-            "__ballot_sync",
-            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+    CALL_FACTORY_ENTRY(
+        "__ballot_sync",
+        CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+             makeCombinedArg(
+                 ARG("("),
                  makeCombinedArg(
-                     ARG("("),
+                     ARG(0),
                      makeCombinedArg(
-                         ARG(0),
+                         makeCombinedArg(makeCombinedArg(ARG(" & (0x1 << "),
+                                                         SUBGROUP),
+                                         ARG(".get_local_linear_id())) && ")),
                          makeCombinedArg(
+                             ARG(1),
                              makeCombinedArg(
-                                 makeCombinedArg(ARG(" & (0x1 << "), SUBGROUP),
-                                 ARG(".get_local_linear_id())) && ")),
-                             makeCombinedArg(
-                                 ARG(1),
-                                 makeCombinedArg(
-                                     makeCombinedArg(ARG(" ? (0x1 << "),
-                                                     SUBGROUP),
-                                     ARG(".get_local_linear_id()) : 0, " +
-                                         MapNames::getClNamespace() +
-                                         "ext::oneapi::plus<>()"))))))))))
+                                 makeCombinedArg(ARG(" ? (0x1 << "), SUBGROUP),
+                                 ARG(".get_local_linear_id()) : 0, " +
+                                     MapNames::getClNamespace() +
+                                     "ext::oneapi::plus<>()")))))))))

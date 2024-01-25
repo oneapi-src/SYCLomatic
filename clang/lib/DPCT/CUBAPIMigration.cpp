@@ -969,8 +969,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                                                        HT_DPCT_DPL_Utils);
           }
         }
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(0));
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(2));
       } else if (NumArgs == 5) {
         if (!BlockMC->getMethodDecl()
                  ->getParamDecl(0)
@@ -991,9 +989,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                  "cub::" + FuncName);
           return;
         }
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(0));
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(2));
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(4));
       }
     } else if (FuncName == "InclusiveScan") {
       if (NumArgs == 3) {
@@ -1013,7 +1008,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           NewFuncName =
               MapNames::getClNamespace() + "inclusive_scan_over_group";
         }
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(0));
       } else if (NumArgs == 4) {
         if (BlockMC->getMethodDecl()
                 ->getParamDecl(0)
@@ -1031,8 +1025,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
         requestFeature(HelperFeatureEnum::device_ext);
         DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                    HT_DPCT_DPL_Utils);
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(0));
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(3));
       }
     } else if (FuncName == "ExclusiveSum") {
       if (NumArgs == 2) {
@@ -1052,7 +1044,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           NewFuncName =
               MapNames::getClNamespace() + "exclusive_scan_over_group";
         }
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(0));
       } else if (NumArgs == 3) {
         if (!BlockMC->getMethodDecl()
                  ->getParamDecl(0)
@@ -1080,8 +1071,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                  "cub::" + FuncName);
           return;
         }
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(0));
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(2));
       }
     } else if (FuncName == "InclusiveSum") {
       if (NumArgs == 2) {
@@ -1101,7 +1090,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           NewFuncName =
               MapNames::getClNamespace() + "inclusive_scan_over_group";
         }
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(0));
       } else if (NumArgs == 3) {
         if (BlockMC->getMethodDecl()
                 ->getParamDecl(0)
@@ -1119,8 +1107,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
         requestFeature(HelperFeatureEnum::device_ext);
         DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                    HT_DPCT_DPL_Utils);
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(0));
-        analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(2));
       }
     } else {
       report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
@@ -1152,7 +1138,6 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     } else {
       NewFuncName = MapNames::getClNamespace() + "reduce_over_group";
     }
-    analyzeUninitializedDeviceVar(BlockMC, BlockMC->getArg(0));
     const Expr *InData = FuncArgs[0];
     ExprAnalysis InEA(InData);
     if (FuncName == "Reduce" && NumArgs == 2) {
@@ -1209,7 +1194,6 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
     if (FuncName == "ExclusiveScan") {
       if (NumArgs == 3) {
         OpRepl = getOpRepl(FuncArgs[2]);
-        analyzeUninitializedDeviceVar(WarpMC, WarpMC->getArg(0));
       } else if (NumArgs == 4 &&
                  WarpMC->getMethodDecl()
                          ->getParamDecl(0)
@@ -1223,8 +1207,6 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
         ExprAnalysis InitEA(FuncArgs[2]);
         InitRepl = ", " + InitEA.getReplacedString();
         OpRepl = getOpRepl(FuncArgs[3]);
-        analyzeUninitializedDeviceVar(WarpMC, WarpMC->getArg(0));
-        analyzeUninitializedDeviceVar(WarpMC, WarpMC->getArg(2));
       } else {
         report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
                "cub::" + FuncName);
@@ -1234,15 +1216,12 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
     } else if (FuncName == "InclusiveScan" && NumArgs == 3) {
       OpRepl = getOpRepl(FuncArgs[2]);
       NewFuncName = "inclusive_scan_over_group";
-      analyzeUninitializedDeviceVar(WarpMC, WarpMC->getArg(0));
     } else if (FuncName == "ExclusiveSum" && NumArgs == 2) {
       OpRepl = getOpRepl(nullptr);
       NewFuncName = "exclusive_scan_over_group";
-      analyzeUninitializedDeviceVar(WarpMC, WarpMC->getArg(0));
     } else if (FuncName == "InclusiveSum" && NumArgs == 2) {
       OpRepl = getOpRepl(nullptr);
       NewFuncName = "inclusive_scan_over_group";
-      analyzeUninitializedDeviceVar(WarpMC, WarpMC->getArg(0));
     } else {
       report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              "cub::" + FuncName);
@@ -1295,7 +1274,6 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
       return;
     }
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
-    analyzeUninitializedDeviceVar(WarpMC, WarpMC->getArg(0));
   } else if (FuncName == "Sum") {
     const auto *FuncArgs = WarpMC->getArgs();
     const auto *InData = FuncArgs[0];
@@ -1322,7 +1300,6 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
       return;
     }
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
-    analyzeUninitializedDeviceVar(WarpMC, InData);
   }
 
   if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
