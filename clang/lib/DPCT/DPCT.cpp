@@ -366,7 +366,12 @@ static void saveApisReport(void) {
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".apis.csv"
                                 : ".apis.log"));
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
+    std::error_code EC =
+        llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
+    if (EC == llvm::errc::no_space_on_device) {
+      ShowStatus(MigrationErrorCannotWrite, RFile);
+      dpctExit(MigrationErrorCannotWrite);
+    }
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
     std::ofstream File(RFile, std::ios::binary);
@@ -389,6 +394,10 @@ static void saveApisReport(void) {
         OS << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
         File << OS.str();
       }
+    }
+    if (File.fail()) {
+      ShowStatus(MigrationErrorCannotWrite, RFile);
+      dpctExit(MigrationErrorCannotWrite);
     }
   }
 }
@@ -797,6 +806,11 @@ int runDPCT(int argc, const char **argv) {
   } else if (SDKPathRes == 0) {
     RealSDKPath = SDKPath.getCanonicalPath();
     HasSDKPathOption = true;
+  }
+
+  if (!llvm::sys::fs::can_write(OutRoot.getCanonicalPath())) {
+    ShowStatus(MigrationErrorCannotWrite);
+    dpctExit(MigrationErrorCannotWrite);
   }
 
   bool GenReport = false;

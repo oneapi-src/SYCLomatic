@@ -85,6 +85,9 @@ void ShowStatus(int Status, std::string Message) {
                    std::to_string(PATH_MAX) + ")";
 #endif
     break;
+  case MigrationErrorCannotWrite:
+    StatusString = "Error: Could not create" + Message + ". Disk may be full or write-protected.";
+    break;
   case MigrationErrorFileParseError:
     StatusString = "Error: Cannot parse input file(s)";
     break;
