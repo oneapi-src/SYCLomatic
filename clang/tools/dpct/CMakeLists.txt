@@ -76,6 +76,7 @@ endif()
 if (NOT CMAKE_CONFIGURATION_TYPES)
     add_llvm_install_targets(install-dpct-setvars
                              COMPONENT dpct-setvars)
+endif()
 
 add_subdirectory(DpctOptRules)
 
