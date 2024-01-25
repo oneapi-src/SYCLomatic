@@ -861,7 +861,7 @@ int runDPCT(int argc, const char **argv) {
   if (QueryAPIMapping.getNumOccurrences()) {
     if (QueryAPIMapping.getNumOccurrences() > 1) {
       llvm::outs()
-          << "Warning: Option --query-api-mapping is specified multi time, "
+          << "Warning: Option --query-api-mapping is specified multi times, "
              "only the last one is used, all other are ignored.\n";
     }
     if (hasOptConflictWithQuery(argc, argv)) {

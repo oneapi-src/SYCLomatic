@@ -29,7 +29,7 @@
 // NO_CUDA_HEADER: dpct exited with code: -45 (Error: Cannot find 'ncclBroadcast' in current CUDA header file: {{(.+)}}. Please specify the header file for 'ncclBroadcast' with option "--extra-arg".)
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__hadd --query-api-mapping=__hfma 2>&1 | FileCheck %s -check-prefix=MULTI_QUERY
-// MULTI_QUERY: Warning: Option --query-api-mapping is specified multi time, only the last one is used, all other are ignored.
+// MULTI_QUERY: Warning: Option --query-api-mapping is specified multi times, only the last one is used, all other are ignored.
 // MULTI_QUERY-NEXT: CUDA API:
 // MULTI_QUERY-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // MULTI_QUERY-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
