@@ -1,15 +1,27 @@
+# ===------------------------ vars.bat_SYCLomatic -------------------------=== #
+#
+# Copyright (C) Intel Corporation
+#
+# Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+#
+# ===----------------------------------------------------------------------=== #
+
+# run this file to export DPCT env
+
 @echo off
 
-set /A ERRORSTATE=0
+# determine the installtion directory of DPCT
+set DPCT_ROOT=%~dp0
 
-IF NOT EXIST "%~dp0\bin\dpct.exe" set ERRORSTATE=1
-
-if /I "%ERRORSTATE%" NEQ "0" (
-    echo  Error: Cannot find neccessary dpct binary.
+# export the env vars for bin and include paths
+IF EXIST "%DPCT_ROOT%bin\dpct.exe" (
+    set "PATH=%DPCT_ROOT%bin;%PATH%"
+    set "INCLUDE=%DPCT_ROOT%include;%INCLUDE%"
+    set "CPATH=%DPCT_ROOT%include;%CPATH%"
+) ELSE (
+    echo Error: DPCT binary not found.
 )
-
-set "PATH=%~dp0bin;%PATH%"
-set "INCLUDE=%~dp0include;%INCLUDE%"
-set "CPATH=%~dp0include;%CPATH%"
 
 goto :EOF
