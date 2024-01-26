@@ -52,7 +52,7 @@ enum class CudaVersion {
 };
 const char *CudaVersionToString(CudaVersion V);
 #ifdef SYCLomatic_CUSTOMIZATION
-std::string CudaVersionToMacroDefStr(CudaVersion V);
+std::pair<unsigned int, unsigned int> getCudaVersionPair(CudaVersion V);
 #endif // SYCLomatic_CUSTOMIZATION
 // Input is "Major.Minor"
 CudaVersion CudaStringToVersion(const llvm::Twine &S);

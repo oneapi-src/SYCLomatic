@@ -1,18 +1,15 @@
 .. _mig_proj:
 
-Migrate a Project
-=================
+Migration
+=========
 
 .. toctree::
    :hidden:
 
-   migrate-a-project/before-you-begin
-   migrate-a-project/migrate-a-project-on-linux
-   migrate-a-project/migrate-a-project-on-windows
-   migrate-a-project/generate-compilation-db
-   migrate-a-project/incremental-migration
-   migrate-a-project/user-defined-migration-rules
-
+   migration/generate-compilation-db
+   migration/incremental-migration
+   migration/migration-rules
+   migration/API-Mapping-query-guide
 
 
 |tool_name| ports CUDA\* language kernels and library API calls to
