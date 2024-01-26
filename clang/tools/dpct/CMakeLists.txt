@@ -42,26 +42,19 @@ if(UNIX)
 endif()
 
 if(UNIX)
-  set(dpct_vars_script vars.sh_2023_style)
+  set(dpct_vars_script vars.sh_SYCLomatic)
+  set(dpct_setvars_script "setvars.sh")
 else()
-  set(dpct_vars_script vars.bat_2023_style)
+  set(dpct_vars_script vars.bat_SYCLomatic)
+  set(dpct_setvars_script "setvars.bat")
 endif()
 
-if(UNIX)
-  install(
-    FILES ${dpct_vars_script}
-    COMPONENT dpct-setvars
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION ./
-    RENAME "setvars.sh")
-else()
-  install(
-    FILES ${dpct_vars_script}
-    COMPONENT dpct-setvars
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION ./
-    RENAME "setvars.bat")
-endif()
+install(
+  FILES ${dpct_vars_script}
+  COMPONENT dpct-setvars
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+  DESTINATION ./
+  RENAME ${dpct_setvars_script})
 
 if (NOT CMAKE_CONFIGURATION_TYPES)
     add_llvm_install_targets(install-dpct-setvars

@@ -1,0 +1,15 @@
+@echo off
+
+set /A ERRORSTATE=0
+
+IF NOT EXIST "%~dp0\bin\dpct.exe" set ERRORSTATE=1
+
+if /I "%ERRORSTATE%" NEQ "0" (
+    echo  Error: Cannot find neccessary dpct binary.
+)
+
+set "PATH=%~dp0bin;%PATH%"
+set "INCLUDE=%~dp0include;%INCLUDE%"
+set "CPATH=%~dp0include;%CPATH%"
+
+goto :EOF
