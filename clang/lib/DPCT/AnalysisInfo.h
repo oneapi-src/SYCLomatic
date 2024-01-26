@@ -1253,6 +1253,10 @@ public:
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
   }
+  std::shared_ptr<DpctFileInfo>
+  findFile(const clang::tooling::UnifiedPath &FilePath) {
+    return findObject(FileMap, FilePath);
+  }
   std::shared_ptr<DpctFileInfo> getMainFile() const { return MainFile; }
   void setMainFile(std::shared_ptr<DpctFileInfo> Main) { MainFile = Main; }
   void recordIncludingRelationship(
@@ -1335,6 +1339,7 @@ public:
   static std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
     return VarUsedByRuntimeSymbolAPISet;
   }
+  static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
   }
@@ -1549,6 +1554,7 @@ private:
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
+  static IncludeMapSetTy IncludeMapSet;
   static std::unordered_set<std::string> NeedParenAPISet;
 };
 
