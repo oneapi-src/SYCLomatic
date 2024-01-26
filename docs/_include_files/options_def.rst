@@ -804,26 +804,28 @@ Intercept build tool to generate a compilation database.
 .. _end-intercept-build:
 
 
-.. _opt-migrate-cmake-script:
+.. _opt-migrate-build-script:
 
-``--migrate-cmake-script``
+``--migrate-build-script=<value>``
 
-.. _desc-migrate-cmake-script:
+.. _desc-migrate-build-script:
 
-EXPERIMENTAL: Migrate the CMake file(s). Default: ``off``.
+EXPERIMENTAL: Migrate build script(s).
 
-.. _end-migrate-cmake-script:
+- ``=CMake``: Migrate the CMake file(s).
+
+.. _end-migrate-build-script:
 
 
-.. _opt-migrate-cmake-script-only:
+.. _opt-migrate-build-script-only:
 
-``--migrate-cmake-script-only``
+``--migrate-build-script-only``
 
-.. _desc-migrate-cmake-script-only:
+.. _desc-migrate-build-script-only:
 
-EXPERIMENTAL: Only migrate the CMake file(s). Default: ``off``.
+EXPERIMENTAL: Only migrate the build script(s). Default: ``off``.
 
-.. _end-migrate-cmake-script-only:
+.. _end-migrate-build-script-only:
 
 
 .. _opt-sycl-file-extension:

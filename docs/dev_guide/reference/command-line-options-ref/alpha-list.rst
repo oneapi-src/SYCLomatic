@@ -169,17 +169,17 @@ The following table lists |tool_name| command line options in alphabetical order
           :start-after: desc-keep-original-code:
           :end-before: end-keep-original-code:
    * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-migrate-cmake-script:
-          :end-before: desc-migrate-cmake-script:
+          :start-after: opt-migrate-build-script:
+          :end-before: desc-migrate-build-script:
      - .. include:: /_include_files/options_def.rst
-          :start-after: desc-migrate-cmake-script:
-          :end-before: end-migrate-cmake-script:
+          :start-after: desc-migrate-build-script:
+          :end-before: end-migrate-build-script:
    * - .. include:: /_include_files/options_def.rst
-          :start-after: opt-migrate-cmake-script-only:
-          :end-before: desc-migrate-cmake-script-only:
+          :start-after: opt-migrate-build-script-only:
+          :end-before: desc-migrate-build-script-only:
      - .. include:: /_include_files/options_def.rst
-          :start-after: desc-migrate-cmake-script-only:
-          :end-before: end-migrate-cmake-script-only:
+          :start-after: desc-migrate-build-script-only:
+          :end-before: end-migrate-build-script-only:
    * - .. include:: /_include_files/options_def.rst
           :start-after: opt-no-dpcpp-extensions:
           :end-before: desc-no-dpcpp-extensions:
