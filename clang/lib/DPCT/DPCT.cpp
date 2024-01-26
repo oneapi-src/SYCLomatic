@@ -281,7 +281,10 @@ bool hasOptConflictWithQuery(int argc, const char **argv) {
   return false;
 }
 
-static bool isCUDAHeaderRequired() { return !MigrateBuildScriptOnly; }
+static bool isCUDAHeaderRequired() {
+  return !MigrateBuildScriptOnly &&
+         (QueryAPIMapping.empty() || !CudaIncludePathOpt.empty());
+}
 
 UnifiedPath getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPathStr(invokeCommand);
@@ -930,14 +933,17 @@ int runDPCT(int argc, const char **argv) {
       APIMapping::printAll();
       dpctExit(MigrationSucceeded);
     }
+    if (CudaIncludePathOpt.empty()) {
+      auto Mapping = APIMapping::getAPIMapping(QueryAPIMapping);
+      if (!Mapping.empty()) {
+        llvm::outs() << Mapping;
+        dpctExit(MigrationSucceeded);
+      }
+    }
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       ShowStatus(MigrationErrorNoAPIMapping);
       dpctExit(MigrationErrorNoAPIMapping);
-    }
-    if (APIMapping::isFastMode()) {
-      llvm::outs() << SourceCode;
-      dpctExit(MigrationSucceeded);
     }
 
     Tool.mapVirtualFile(SourcePathList[0], SourceCode);
@@ -1285,15 +1291,12 @@ int runDPCT(int argc, const char **argv) {
           if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
                        QueryAPIMapping);
-            llvm::dbgs() << Err << "\n";
             return MigrationErrorAPIMappingWrongCUDAHeader;
           } else if (ErrStr.contains("file not found")) {
             ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
-            llvm::dbgs() << Err << "\n";
             return MigrationErrorAPIMappingNoCUDAHeader;
           }
           ShowStatus(MigrationErrorNoAPIMapping);
-          llvm::dbgs() << Err << "\n";
           dpctExit(MigrationErrorNoAPIMapping);
         }
         ShowStatus(MigrationErrorFileParseError);

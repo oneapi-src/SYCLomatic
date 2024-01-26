@@ -11,8 +11,6 @@
 namespace clang {
 namespace dpct {
 
-bool APIMapping::FastMode = false;
-
 void APIMapping::initEntryMap() {
 #include "APIMappingRegisterSlow.def"
 }

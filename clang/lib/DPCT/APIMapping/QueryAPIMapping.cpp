@@ -13,10 +13,12 @@
 namespace clang {
 namespace dpct {
 
-std::unordered_map<std::string, size_t> APIMapping::EntryMap;
+std::unordered_map<std::string, size_t> APIMapping::EntryMapSlow;
+std::unordered_map<std::string, size_t> APIMapping::EntryMapFast;
 std::vector<llvm::StringRef> APIMapping::EntryArray;
 std::set<std::string> APIMapping::EntrySet;
 bool APIMapping::PrintAll;
+bool APIMapping::FastMode = false;
 
 void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
   std::replace(Name.begin(), Name.end(), '$', ':');
@@ -24,6 +26,7 @@ void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
     EntrySet.insert(Name);
     return;
   }
+  auto &EntryMap = FastMode ? EntryMapFast : EntryMapSlow;
   const auto TargetIndex = EntryArray.size();
   EntryMap[Name] = TargetIndex; // Set the entry whether it exist or not.
   // Try to fuzz the original API name (only when the entry not exist):
@@ -62,12 +65,25 @@ void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
 llvm::StringRef APIMapping::getAPISourceCode(std::string Key) {
   Key.erase(0, Key.find_first_not_of(" "));
   Key.erase(Key.find_last_not_of(" ") + 1);
-  auto Iter = EntryMap.find(Key);
-  if (Iter == EntryMap.end()) {
+  auto Iter = EntryMapSlow.find(Key);
+  if (Iter == EntryMapSlow.end()) {
     std::transform(Key.begin(), Key.end(), Key.begin(), ::tolower);
-    Iter = EntryMap.find(Key);
+    Iter = EntryMapSlow.find(Key);
   }
-  if (Iter == EntryMap.end())
+  if (Iter == EntryMapSlow.end())
+    return llvm::StringRef{};
+  return EntryArray[Iter->second];
+}
+
+llvm::StringRef APIMapping::getAPIMapping(std::string Key) {
+  Key.erase(0, Key.find_first_not_of(" "));
+  Key.erase(Key.find_last_not_of(" ") + 1);
+  auto Iter = EntryMapFast.find(Key);
+  if (Iter == EntryMapFast.end()) {
+    std::transform(Key.begin(), Key.end(), Key.begin(), ::tolower);
+    Iter = EntryMapFast.find(Key);
+  }
+  if (Iter == EntryMapFast.end())
     return llvm::StringRef{};
   return EntryArray[Iter->second];
 }

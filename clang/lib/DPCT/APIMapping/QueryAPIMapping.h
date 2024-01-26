@@ -19,7 +19,8 @@ namespace clang {
 namespace dpct {
 
 class APIMapping {
-  static std::unordered_map<std::string, size_t> EntryMap;
+  static std::unordered_map<std::string, size_t> EntryMapSlow;
+  static std::unordered_map<std::string, size_t> EntryMapFast;
   static std::vector<llvm::StringRef> EntryArray;
   static std::set<std::string> EntrySet;
   static bool PrintAll;
@@ -31,11 +32,11 @@ public:
   static void initEntryMap();
 
   static llvm::StringRef getAPISourceCode(std::string Key);
+  static llvm::StringRef getAPIMapping(std::string Key);
 
   inline static void setPrintAll(bool Flag) { PrintAll = Flag; }
   inline static bool getPrintAll() { return PrintAll; }
   static void printAll();
-  inline static bool isFastMode() { return FastMode; }
 };
 
 } // namespace dpct

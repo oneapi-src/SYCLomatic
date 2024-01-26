@@ -1,19 +1,27 @@
+set(TARGET ${CMAKE_CURRENT_SOURCE_DIR}/../../include/clang/DPCT/APIMappingRegisterFast${LIB_NAME}Part${INDEX}.def)
 file(WRITE ${TARGET} "")
-file(GLOB SRC_FILES ${SRC_DIRECTORY}*/*.cu)
-message("generating " ${TARGET})
-message("--cuda-include-path" $ENV{CUDA_PATH}/include)
-message("CMAKE_BINARY_DIR " ${CMAKE_BINARY_DIR})
-message("CMAKE_CURRENT_SOURCE_DIR " ${CMAKE_CURRENT_SOURCE_DIR})
+file(GLOB SRC_FILES ${EXAMPLE_DIR}${LIB_NAME}/*.cu)
+if(WIN32 AND (${LIB_NAME} STREQUAL "Thrust" OR ${LIB_NAME} STREQUAL "CUB"))
+  # now CUB and Thrust cannot run on windows
+  return()
+endif()
+set(I 0)
+string(TIMESTAMP t0 "%s")
 foreach(FILE ${SRC_FILES})
-  string(REGEX REPLACE ".*/(.*).cu$" "\\1" API_NAME ${FILE})
-  string(REPLACE "$" ":" QUERY_NAME ${API_NAME})
-  execute_process(
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../../../../bin/dpct-tmp --cuda-include-path=$ENV{CUDA_PATH}/include --query-api-mapping=${QUERY_NAME}
-    OUTPUT_VARIABLE QUERY_STR
-    ERROR_VARIABLE QUERY_STR
-    OUTPUT_QUIET
-    ERROR_QUIET)
-  message(${CMAKE_CURRENT_SOURCE_DIR}/../../../../bin/dpct-tmp --cuda-include-path=$ENV{CUDA_PATH}/include --query-api-mapping=${QUERY_NAME})
-  message("QUERY_STR: " ${QUERY_STR})
-  file(APPEND ${TARGET} "registerEntry(\"" "${API_NAME}" "\",\nR\"(" "${QUERY_STR}" ")\");\n")
+  math(EXPR I "${I} + 1")
+  if(${I} EQUAL ${INDEX})
+    string(REGEX REPLACE ".*/(.*).cu$" "\\1" API_NAME ${FILE})
+    string(REPLACE "$" ":" QUERY_NAME ${API_NAME})
+    execute_process(
+      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../../../../bin/dpct-tmp --cuda-include-path=$ENV{CUDA_PATH}/include --query-api-mapping=${QUERY_NAME}
+      OUTPUT_VARIABLE QUERY_STR
+      ERROR_VARIABLE ERROR_STR)
+    if("${ERROR_STR}" STREQUAL "")
+      file(APPEND ${TARGET} "registerEntry(\"" "${API_NAME}" "\",\nR\"(" "${QUERY_STR}" ")\");\n")
+    endif()
+  endif()
+  math(EXPR I "${I} % ${SPLIT_NUM}")
 endforeach()
+string(TIMESTAMP t1 "%s")
+math(EXPR elapsed "${t1} - ${t0}")
+message(STATUS "${LIB_NAME} ${INDEX}/${SPLIT_NUM} generating time: ${elapsed}s")

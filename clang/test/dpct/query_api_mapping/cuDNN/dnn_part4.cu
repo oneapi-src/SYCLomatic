@@ -1,7 +1,7 @@
 // UNSUPPORTED: system-windows
 // UNSUPPORTED: cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardDataAlgorithm | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardDataAlgorithm
+// RUN: dpct --query-api-mapping=cudnnGetConvolutionBackwardDataAlgorithm | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardDataAlgorithm
 // cudnnGetConvolutionBackwardDataAlgorithm: CUDA API:
 // cudnnGetConvolutionBackwardDataAlgorithm-NEXT:   cudnnHandle_t h;
 // cudnnGetConvolutionBackwardDataAlgorithm-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -17,7 +17,7 @@
 // cudnnGetConvolutionBackwardDataAlgorithm-NEXT:   h.create_engine();
 // cudnnGetConvolutionBackwardDataAlgorithm-NEXT:   *alg = dnnl::algorithm::convolution_auto;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardFilterAlgorithm | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardFilterAlgorithm
+// RUN: dpct --query-api-mapping=cudnnGetConvolutionBackwardFilterAlgorithm | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardFilterAlgorithm
 // cudnnGetConvolutionBackwardFilterAlgorithm: CUDA API:
 // cudnnGetConvolutionBackwardFilterAlgorithm-NEXT:   cudnnHandle_t h;
 // cudnnGetConvolutionBackwardFilterAlgorithm-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -33,7 +33,7 @@
 // cudnnGetConvolutionBackwardFilterAlgorithm-NEXT:   h.create_engine();
 // cudnnGetConvolutionBackwardFilterAlgorithm-NEXT:   *alg = dnnl::algorithm::convolution_auto;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionForwardAlgorithm | FileCheck %s -check-prefix=cudnnGetConvolutionForwardAlgorithm
+// RUN: dpct --query-api-mapping=cudnnGetConvolutionForwardAlgorithm | FileCheck %s -check-prefix=cudnnGetConvolutionForwardAlgorithm
 // cudnnGetConvolutionForwardAlgorithm: CUDA API:
 // cudnnGetConvolutionForwardAlgorithm-NEXT:   cudnnHandle_t h;
 // cudnnGetConvolutionForwardAlgorithm-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
