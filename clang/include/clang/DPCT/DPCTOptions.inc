@@ -69,9 +69,9 @@ DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ReportFilePrefix,
     "report-file-prefix",
     llvm::cl::desc(
-        "Prefix for the migration report file names. The full file name will "
+        "Specify the prefix for the migration report file names. The full file name will "
         "have a suffix derived\n"
-        "from the report-type and an extension derived from the report-format. "
+        "from the report-type, and an extension derived from the report-format. "
         "For\n"
         "example: <prefix>.apis.csv or <prefix>.stats.log. If this option is "
         "not\n"
@@ -81,8 +81,7 @@ DPCT_NON_ENUM_OPTION(
     llvm::cl::value_desc("prefix"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ReportOnly, "report-only",
-    llvm::cl::desc("Only migration reports are generated. No SYCL code is "
-                   "generated. Default: off."),
+    llvm::cl::desc("Generate migration reports only. No SYCL code will be generated. Default: off."),
     llvm::cl::cat(DPCTCat), llvm::cl::location(ReportOnlyFlag))
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>),
                      ShowOrigCode, "keep-original-code",
@@ -151,16 +150,15 @@ DPCT_ENUM_OPTION(
     DPCT_OPTION_VALUES(
         DPCT_OPT_ENUM(
             "csv", int(ReportFormatEnum::RFE_CSV),
-            "Output is lines of comma-separated values. The report file "
+            "Output will be lines of comma-separated values. The report file "
             "name extension will\n"
             "be .csv. (default)",
             false),
         DPCT_OPT_ENUM("formatted", int(ReportFormatEnum::RFE_Formatted),
-                      "Output is formatted to be easier to read for "
-                      "human eyes. Report file name\n"
+                      "Output will be formatted for easier readability. Report file name\n"
                       "extension will be log.",
                       false)),
-    llvm::cl::desc("Format of the migration reports:\n"),
+    llvm::cl::desc("Specify the format of the migration reports:\n"),
     llvm::cl::init(ReportFormatEnum::RFE_NotSetFormat),
     llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
@@ -267,7 +265,7 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ProcessAll
            llvm::cl::cat(DPCTCat), llvm::cl::location(ProcessAllFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCodePin, "enable-codepin",
-           llvm::cl::desc("EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verification purpose."),
+           llvm::cl::desc("EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verification purposes."),
            llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCTAD, "enable-ctad",
@@ -307,7 +305,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
                                      "Generate code with dpct:: namespace.",
                                      false),
              DPCT_OPT_ENUM("none", int(ExplicitNamespace::EN_None),
-                                     "Generate code without namespaces. Cannot "
+                                     "Generate code without any namespaces. Cannot "
                                      "be used with other values.",
                                      false),
              DPCT_OPT_ENUM("sycl", int(ExplicitNamespace::EN_SYCL),
@@ -319,7 +317,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
                "Cannot be used with cl or sycl values.",
                false)
            ),
-           llvm::cl::desc("Defines the namespaces to use explicitly in generated code. The value is a comma\n"
+           llvm::cl::desc("Defines the namespaces to use explicitly in generated code. The <value> is a comma\n"
            "separated list. Default: dpct, sycl.\n"
            "Possible values are:"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
@@ -332,15 +330,15 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
                                      false),
              DPCT_OPT_ENUM("device_info",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo),
-                                     "Use the Intel extensions for device information if supported by the compiler and the backend.",
+                                     "Use the Intel extensions for device information, if supported by the compiler and the backend.",
                                      false),
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
-                                     "Enqueued barriers extension.",
+                                     "Use the enqueued barriers extension.",
                                      false),
              DPCT_OPT_ENUM("peer_access",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess),
-                                     "Peer access extension.",
+                                     "Use the peer access extension.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
@@ -502,13 +500,13 @@ DPCT_ENUM_OPTION(
 
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), AnalysisMode, "analysis-mode",
-    llvm::cl::desc("Only generate report for porting effort. Default: off."),
+    llvm::cl::desc("Only generate a report for porting effort. Default: off."),
     llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisModeOutputFile,
     "analysis-mode-output-file",
-    llvm::cl::desc("The file to store analysis mode report. Default: "
+    llvm::cl::desc("Specifies the file where the analysis mode report is saved. Default: "
                    "Output to stdout."),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat))
 

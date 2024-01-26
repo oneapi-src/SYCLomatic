@@ -285,14 +285,6 @@ static void getCompileInfo(
           dpct::appendPath(Directory, getCustomBaseName(FileName) + ".o");
     }
 
-    // if option "--use-custom-helper=<value>" is used to customize the helper
-    // header files for migrated code, the path of the helper header files
-    // should be included.
-    if (llvm::sys::fs::exists(
-            dpct::appendPath(OutRoot.getCanonicalPath().str(), "include"))) {
-      NewOptions += "-I ./include ";
-    }
-
     // Add SYCL head file path to the including path in the generated Makefile
     // for source files which originally has CUDA Semantics and compiled by
     // non-nvcc compiler
