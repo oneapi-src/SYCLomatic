@@ -507,3 +507,15 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct1118.rst
           :start-after: msg-1118-start:
           :end-before: msg-1118-end:
+   * - :ref:`DPCT1119`
+     - .. include:: diagnostic_ref/dpct1119.rst
+          :start-after: msg-1119-start:
+          :end-before: msg-1119-end:
+   * - :ref:`DPCT1120`
+     - .. include:: diagnostic_ref/dpct1120.rst
+          :start-after: msg-1120-start:
+          :end-before: msg-1120-end:
+   * - :ref:`DPCT1121`
+     - .. include:: diagnostic_ref/dpct1121.rst
+          :start-after: msg-1121-start:
+          :end-before: msg-1121-end:

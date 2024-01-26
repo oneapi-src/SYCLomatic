@@ -323,10 +323,11 @@ By default, these extensions are used in migrated code.
 
 The values are:
 
-- ``=bfloat16``: The SYCL extensions for bfloat16.
-- ``=device_info``: The Intel extensions for device information if supported
+- ``=bfloat16``: Use the SYCL extensions for bfloat16.
+- ``=device_info``: Use the Intel extensions for device information, if supported
   by the compiler and the backend.
-- ``=enqueued_barriers``: The enqueued barriers extension.
+- ``=enqueued_barriers``: Use the enqueued barriers extension.
+- ``=peer_access``: Use the peer access extension.
 
 .. _end-no-dpcpp-extensions:
 
@@ -498,8 +499,8 @@ Query functionally-compatible SYCL API to migrate CUDA API.
 
 .. _desc-report-file-prefix:
 
-Prefix for the report file names. The full file name will have a suffix
-derived from the ``report-type`` and an extension derived from the
+Specify the prefix for the migration report file names. The full file name will have a suffix
+derived from the ``report-type``, and an extension derived from the
 ``report-format``. For example: ``<prefix>.apis.csv`` or ``<prefix>.stats.log``.
 If this option is not specified, the report goes to ``stdout``. The report
 files are created in the directory, specified by ``-out-root``.
@@ -514,12 +515,12 @@ files are created in the directory, specified by ``-out-root``.
 
 .. _desc-report-format:
 
-Format of the reports:
+Specify the format of the reports:
 
-- ``=csv``: The output is lines of comma-separated values. The report name
-  extension will be ``.csv`` (default).
-- ``=formatted``: The output is formatted for easier human readability.
-  The report file name extension is ``log``.
+- ``=csv``: Output will be lines of comma-separated values. The report file
+  name extension will ``.csv`` (default).
+- ``=formatted``: Output will be formatted for easier readability.
+  Report file name extension will be ``log``.
 
 .. _end-report-format:
 
@@ -531,7 +532,7 @@ Format of the reports:
 
 .. _desc-report-only:
 
-Only reports are generated. No SYCL code is generated. Default: ``off``.
+Generate migration reports only. No SYCL code will be generated. Default: ``off``.
 
 .. _end-report-only:
 
@@ -543,9 +544,9 @@ Only reports are generated. No SYCL code is generated. Default: ``off``.
 
 .. _desc-report-type:
 
-Specifies the type of report. Values are:
+Specifies the type of migration report. Values are:
 
-- ``=all``: All reports.
+- ``=all``: All of the migration reports.
 - ``=apis``: Information about API signatures that need migration and the
   number of times they were encountered. The report file name has the
   ``.apis`` suffix added.
@@ -589,7 +590,7 @@ Stop migration and generation of reports if parsing errors happened. Default: ``
 .. _desc-suppress-warnings:
 
 A comma-separated list of migration warnings to suppress. Valid warning IDs
-range from 1000 to 1118. Hyphen-separated ranges are also allowed. For
+range from 1000 to 1121. Hyphen-separated ranges are also allowed. For
 example: ``-suppress-warnings=1000-1010,1011``.
 
 .. _end-suppress-warnings:
@@ -653,6 +654,7 @@ By default, experimental features will not be used in migrated code.
 The values are:
 
 - ``=bfloat16_math_functions``: Experimental extension that allows use of bfloat16 math functions.
+- ``=bindless_images``: Experimental extension that allows use of bindless images APIs.
 - ``=dpl-experimental-api``: Experimental extension that allows use of experimental
   oneDPL APIs.
 - ``=free-function-queries``: Experimental extension that allows getting
@@ -685,10 +687,8 @@ a comma-separated list. Default: ``dpct, sycl``.
 
 Possible values are:
 
-- ``=cl``: DEPRECATED. Generate code with ``cl::sycl::`` namespace. Cannot be
-  used with ``sycl`` or ``sycl-math`` values.
 - ``=dpct``: Generate code with ``dpct::`` namespace.
-- ``=none``: Generate code without namespaces. Cannot be used with other values.
+- ``=none``: Generate code without any namespaces. Cannot be used with other values.
 - ``=sycl``: Generate code with ``sycl::`` namespace. Cannot be used with ``cl``
   or ``sycl-math`` values.
 - ``=sycl-math``: Generate code with ``sycl::`` namespace, applied only for SYCL
@@ -760,6 +760,86 @@ Generates helper function files in the ``--out-root`` directory. Default: ``off`
 .. _end-gen-helper-func:
 
 
+.. _opt-analysis-mode:
+
+``--analysis-mode``
+
+.. _desc-analysis-mode:
+
+Only generate a report for porting effort. Default: ``off``.
+
+.. _end-analysis-mode:
+
+
+.. _opt-analysis-mode-output-file:
+
+``--analysis-mode-output-file``
+
+.. _desc-analysis-mode-output-file:
+
+Specifies the file where the analysis mode report is saved. Default: Output to ``stdout``.
+
+.. _end-analysis-mode-output-file:
+
+
+.. _opt-enable-codepin:
+
+``--enable-codepin``
+
+.. _desc-enable-codepin:
+
+EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verification purposes.
+
+.. _end-enable-codepin:
+
+
+.. _opt-intercept-build:
+
+``--intercept-build``
+
+.. _desc-intercept-build:
+
+Intercept build tool to generate a compilation database.
+
+.. _end-intercept-build:
+
+
+.. _opt-migrate-cmake-script:
+
+``--migrate-cmake-script``
+
+.. _desc-migrate-cmake-script:
+
+EXPERIMENTAL: Migrate the CMake file(s). Default: ``off``.
+
+.. _end-migrate-cmake-script:
+
+
+.. _opt-migrate-cmake-script-only:
+
+``--migrate-cmake-script-only``
+
+.. _desc-migrate-cmake-script-only:
+
+EXPERIMENTAL: Only migrate the CMake file(s). Default: ``off``.
+
+.. _end-migrate-cmake-script-only:
+
+
+.. _opt-sycl-file-extension:
+
+``--sycl-file-extension=<value>``
+
+.. _desc-sycl-file-extension:
+
+Specifies the extension of migrated source file(s).
+The values are:
+
+- ``=dp-cpp``: Use extension '.dp.cpp' and '.dp.hpp' (default).
+- ``=sycl-cpp``: Use extension '.sycl.cpp' and '.sycl.hpp'.
+- ``=cpp``: Use extension '.cpp' and '.hpp'.
+
+.. _end-sycl-file-extension:
 
 
 .. _opt-intercept-build-block:
