@@ -38,4 +38,4 @@
 // MULTI_QUERY-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
 
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMalloc --usm-level=none 2>&1 | FileCheck %s -check-prefix=CONFLICT_OPT
-// CONFLICT_OPT: Warning: For API mapping query function triggered by option --query-api-mapping, only "--extra-arg" and "--cuda-include-path" option can be set.
+// CONFLICT_OPT: Warning: For API mapping query, only option --extra-arg and --cuda-include-path can be used together with option --query-api-mapping.

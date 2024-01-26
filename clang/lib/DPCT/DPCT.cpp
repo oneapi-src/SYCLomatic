@@ -865,10 +865,9 @@ int runDPCT(int argc, const char **argv) {
              "only the last one is used, all other are ignored.\n";
     }
     if (hasOptConflictWithQuery(argc, argv)) {
-      llvm::outs()
-          << "Warning: For API mapping query function triggered by option "
-             "--query-api-mapping, only \"--extra-arg\" and "
-             "\"--cuda-include-path\" option can be set.\n";
+      llvm::outs() << "Warning: For API mapping query, only option --extra-arg "
+                      "and --cuda-include-path can be used together with "
+                      "option --query-api-mapping.\n";
       ShowStatus(MigrationErrorConflictOptions);
       dpctExit(MigrationErrorConflictOptions);
     }
