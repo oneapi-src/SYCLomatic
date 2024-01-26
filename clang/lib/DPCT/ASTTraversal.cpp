@@ -8406,7 +8406,7 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
   DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
                              KCallSpellingRange.first.printToString(SM)) +
                          "(SYCL)\", ";
-  std::string StramStr = "0";
+  std::string StreamStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
     Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -8414,16 +8414,17 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
   std::string QueueStr = "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
   if (auto *Config = KCall->getConfig()) {
     if (Config->getNumArgs() > 3) {
-      auto StramStrSpell = getStmtSpelling(Config->getArg(3));
-      if (!StramStrSpell.empty()) {
-        StramStr = StramStrSpell;
-        QueueStr = StramStrSpell;
+      auto StreamStrSpell = getStmtSpelling(Config->getArg(3));
+      if (!StreamStrSpell.empty()) {
+        StreamStr = StreamStrSpell;
+      } else if (!isDefaultStream(Config->getArg(3))) {
+        QueueStr = StreamStrSpell;
       }
     }
   }
 
   buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
-  DebugArgsString += StramStr;
+  DebugArgsString += StreamStr;
   DebugArgsStringSYCL += QueueStr;
   for (auto *Arg : KCall->arguments()) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
