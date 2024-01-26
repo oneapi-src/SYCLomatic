@@ -324,7 +324,7 @@
     value:
       In: cxx_std_${ver}
       Out: cxx_std_17
-      RuleId: "adjust cxx_ver"
+      RuleId: "adjust_cxx_ver"
 
 # Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
 # A more flexible mapping logic should be implemented in implicit rules
@@ -339,7 +339,7 @@
     value:
       In: cuda_std_${ver}
       Out: cxx_std_17
-      RuleId: "adjust cuda_ver"
+      RuleId: "adjust_cuda_ver"
 
 - Rule: rule_header_file
   Kind: CMakeRule
@@ -353,7 +353,7 @@
       In: ${arg}.cuh
       Out: ${arg}.dp.hpp
       MatchMode: Full
-      RuleId: "adjust CUDA header file extension"
+      RuleId: "adjust_CUDA_header_file_extension"
 
 - Rule: rule_src_file
   Kind: CMakeRule
@@ -367,7 +367,7 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
       MatchMode: Full
-      RuleId: "adjust CUDA src file extension"
+      RuleId: "adjust_CUDA_src_file_extension"
 
 - Rule: rule_set_property
   Kind: CMakeRule
@@ -639,3 +639,16 @@
   CmakeSyntax: cuda_add_cufft_to_target
   In: cuda_add_cufft_to_target(${target})
   Out: dpct_helper_add_mkl_to_target(${target})
+
+- Rule: rule_include_directories
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: include_directories
+  MatchMode: Partial
+  In: include_directories(${value})
+  Out: include_directories(${value})
+  Subrules:
+    value:
+      In: CUDA_INCLUDE_DIRS
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
