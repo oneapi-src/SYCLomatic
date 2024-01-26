@@ -244,7 +244,7 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ProcessAll
            llvm::cl::cat(DPCTCat), llvm::cl::location(ProcessAllFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCodePin, "enable-codepin",
-           llvm::cl::desc("EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verification purpose."),
+           llvm::cl::desc("EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verification purposes."),
            llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCTAD, "enable-ctad",
@@ -284,7 +284,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
                                      "Generate code with dpct:: namespace.",
                                      false),
              DPCT_OPT_ENUM("none", int(ExplicitNamespace::EN_None),
-                                     "Generate code without namespaces. Cannot "
+                                     "Generate code without any namespaces. Cannot "
                                      "be used with other values.",
                                      false),
              DPCT_OPT_ENUM("sycl", int(ExplicitNamespace::EN_SYCL),
@@ -296,7 +296,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
                "Cannot be used with cl or sycl values.",
                false)
            ),
-           llvm::cl::desc("Defines the namespaces to use explicitly in generated code. The value is a comma\n"
+           llvm::cl::desc("Defines the namespaces to use explicitly in generated code. The <value> is a comma\n"
            "separated list. Default: dpct, sycl.\n"
            "Possible values are:"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
@@ -309,15 +309,15 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
                                      false),
              DPCT_OPT_ENUM("device_info",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo),
-                                     "Use the Intel extensions for device information if supported by the compiler and the backend.",
+                                     "Use the Intel extensions for device information, if supported by the compiler and the backend.",
                                      false),
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
-                                     "Enqueued barriers extension.",
+                                     "Use the enqueued barriers extension.",
                                      false),
              DPCT_OPT_ENUM("peer_access",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess),
-                                     "Peer access extension.",
+                                     "Use the peer access extension.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
@@ -479,7 +479,7 @@ DPCT_ENUM_OPTION(
 
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), AnalysisMode, "analysis-mode",
-    llvm::cl::desc("Only generate report for porting effort. Default: off."),
+    llvm::cl::desc("Only generate a report for porting effort. Default: off."),
     llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT
