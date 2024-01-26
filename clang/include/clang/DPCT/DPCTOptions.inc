@@ -65,10 +65,12 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), CudaInclu
            llvm::cl::desc("The directory path of the CUDA header files."),
            llvm::cl::value_desc("dir"), cat(DPCTCat),
            llvm::cl::Optional)
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ReportFilePrefix, "report-file-prefix",
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ReportFilePrefix,
+    "report-file-prefix",
     llvm::cl::desc(
-        "Prefix for the report file names. The full file name will have a "
-        "suffix derived\n"
+        "Prefix for the migration report file names. The full file name will "
+        "have a suffix derived\n"
         "from the report-type and an extension derived from the report-format. "
         "For\n"
         "example: <prefix>.apis.csv or <prefix>.stats.log. If this option is "
@@ -76,70 +78,91 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ReportFil
         "specified, the report will go to stdout. The report files are created "
         "in the\n"
         "directory, specified by -out-root."),
-           llvm::cl::value_desc("prefix"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ReportOnly, "report-only",
-           llvm::cl::desc("Only reports are generated. No SYCL code is "
-                              "generated. Default: off."),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(ReportOnlyFlag))
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ShowOrigCode, "keep-original-code",
-           llvm::cl::desc("Keeps the original code in comments of "
-                                "generated SYCL files. Default: off.\n"),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(KeepOriginalCodeFlag))
+    llvm::cl::value_desc("prefix"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ReportOnly, "report-only",
+    llvm::cl::desc("Only migration reports are generated. No SYCL code is "
+                   "generated. Default: off."),
+    llvm::cl::cat(DPCTCat), llvm::cl::location(ReportOnlyFlag))
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>),
+                     ShowOrigCode, "keep-original-code",
+                     llvm::cl::desc("Keeps the original code in comments of "
+                                    "generated SYCL files. Default: off.\n"),
+                     llvm::cl::cat(DPCTCat),
+                     llvm::cl::location(KeepOriginalCodeFlag))
 
 #ifdef DPCT_DEBUG_BUILD
-DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<ReportTypeEnum>), ReportType, "report-type",
-           DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("all", int(ReportTypeEnum::RTE_All),
-                  "All of the reports.", false),
-             DPCT_OPT_ENUM("apis", int(ReportTypeEnum::RTE_APIs),
-            "Information about API signatures that need migration and the number of times\n"
-            "they were encountered. The report file name will have .apis suffix added.", false),
-             DPCT_OPT_ENUM("stats", int(ReportTypeEnum::RTE_Stats),
-                  "High level migration statistics: Lines Of Code (LOC) that are migrated to\n"
-                  "SYCL, LOC migrated to SYCL with helper functions, LOC not needing migration,\n"
-                  "LOC needing migration but are not migrated. The report file name has the .stats\n"
-                  "suffix added (default)", false),
-             DPCT_OPT_ENUM("diags", int(ReportTypeEnum::RTE_Diags),
-                  "diags information", true)
-           ),
-           llvm::cl::desc("Specifies the type of report. Values are:\n"),
-           llvm::cl::init(ReportTypeEnum::RTE_NotSetType), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
+DPCT_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<ReportTypeEnum>), ReportType,
+    "report-type",
+    DPCT_OPTION_VALUES(
+        DPCT_OPT_ENUM("all", int(ReportTypeEnum::RTE_All),
+                      "All of the migration reports.", false),
+        DPCT_OPT_ENUM("apis", int(ReportTypeEnum::RTE_APIs),
+                      "Information about API signatures that need migration "
+                      "and the number of times\n"
+                      "they were encountered. The report file name will have "
+                      ".apis suffix added.",
+                      false),
+        DPCT_OPT_ENUM("stats", int(ReportTypeEnum::RTE_Stats),
+                      "High level migration statistics: Lines Of Code (LOC) "
+                      "that are migrated to\n"
+                      "SYCL, LOC migrated to SYCL with helper functions, LOC "
+                      "not needing migration,\n"
+                      "LOC needing migration but are not migrated. The report "
+                      "file name has the .stats\n"
+                      "suffix added (default)",
+                      false),
+        DPCT_OPT_ENUM("diags", int(ReportTypeEnum::RTE_Diags),
+                      "diags information", true)),
+    llvm::cl::desc("Specifies the type of migration report. Values are:\n"),
+    llvm::cl::init(ReportTypeEnum::RTE_NotSetType),
+    llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 #else
-DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<ReportTypeEnum>), ReportType, "report-type",
-           DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("apis", int(ReportTypeEnum::RTE_APIs),
-            "Information about API signatures that need migration and the number of times\n"
-            "they were encountered. The report file name will have .apis suffix added.", false),
-             DPCT_OPT_ENUM("stats", int(ReportTypeEnum::RTE_Stats),
-                  "High level migration statistics: Lines Of Code (LOC) that are migrated to\n"
-                  "SYCL, LOC migrated to SYCL with helper functions, LOC not needing migration,\n"
-                  "LOC needing migration but are not migrated. The report file name has the .stats\n"
-                  "suffix added (default)", false),
-             DPCT_OPT_ENUM("all", int(ReportTypeEnum::RTE_All),
-                  "All of the reports.", false)
-           ),
-           llvm::cl::desc("Specifies the type of report. Values are:\n"),
-           llvm::cl::init(ReportTypeEnum::RTE_NotSetType), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
+DPCT_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<ReportTypeEnum>), ReportType,
+    "report-type",
+    DPCT_OPTION_VALUES(
+        DPCT_OPT_ENUM("apis", int(ReportTypeEnum::RTE_APIs),
+                      "Information about API signatures that need migration "
+                      "and the number of times\n"
+                      "they were encountered. The report file name will have "
+                      ".apis suffix added.",
+                      false),
+        DPCT_OPT_ENUM("stats", int(ReportTypeEnum::RTE_Stats),
+                      "High level migration statistics: Lines Of Code (LOC) "
+                      "that are migrated to\n"
+                      "SYCL, LOC migrated to SYCL with helper functions, LOC "
+                      "not needing migration,\n"
+                      "LOC needing migration but are not migrated. The report "
+                      "file name has the .stats\n"
+                      "suffix added (default)",
+                      false),
+        DPCT_OPT_ENUM("all", int(ReportTypeEnum::RTE_All),
+                      "All of the migration reports.", false)),
+    llvm::cl::desc("Specifies the type of migration report. Values are:\n"),
+    llvm::cl::init(ReportTypeEnum::RTE_NotSetType),
+    llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 #endif
 
-DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<ReportFormatEnum>), ReportFormat, "report-format",
-           DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("csv", int(ReportFormatEnum::RFE_CSV),
-                  "Output is lines of comma-separated values. The report file "
-                  "name extension will\n"
-                  "be .csv. (default)", false),
-             DPCT_OPT_ENUM("formatted", int(ReportFormatEnum::RFE_Formatted),
-                  "Output is formatted to be easier to read for "
-                  "human eyes. Report file name\n"
-                  "extension will be log.",
-                  false)
-           ),
-           llvm::cl::desc("Format of the reports:\n"),
-           llvm::cl::init(ReportFormatEnum::RFE_NotSetFormat), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
+DPCT_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<ReportFormatEnum>), ReportFormat,
+    "report-format",
+    DPCT_OPTION_VALUES(
+        DPCT_OPT_ENUM(
+            "csv", int(ReportFormatEnum::RFE_CSV),
+            "Output is lines of comma-separated values. The report file "
+            "name extension will\n"
+            "be .csv. (default)",
+            false),
+        DPCT_OPT_ENUM("formatted", int(ReportFormatEnum::RFE_Formatted),
+                      "Output is formatted to be easier to read for "
+                      "human eyes. Report file name\n"
+                      "extension will be log.",
+                      false)),
+    llvm::cl::desc("Format of the migration reports:\n"),
+    llvm::cl::init(ReportFormatEnum::RFE_NotSetFormat),
+    llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), SuppressWarnings, "suppress-warnings",
            llvm::cl::desc(SuppressWarningsMessage),
@@ -481,5 +504,12 @@ DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), AnalysisMode, "analysis-mode",
     llvm::cl::desc("Only generate report for porting effort. Default: off."),
     llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisModeOutputFile,
+    "analysis-mode-output-file",
+    llvm::cl::desc("The file to store analysis mode report. Default: "
+                   "Output to stdout."),
+    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT
