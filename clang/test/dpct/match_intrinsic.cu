@@ -14,6 +14,13 @@ __global__ void match_any() {
   __match_any_sync(mask, val);
 }
 
+__global__ void match_any2() {
+  unsigned mask;
+  int * val;
+  // CHECK: dpct::match_any_over_sub_group(item_ct1.get_sub_group(), mask, (unsigned long long)val);
+  __match_any_sync(mask, (unsigned long long)val);
+}
+
 __global__ void match_all() {
   unsigned mask;
   int val;
