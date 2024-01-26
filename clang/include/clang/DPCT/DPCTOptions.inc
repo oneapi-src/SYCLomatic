@@ -69,9 +69,9 @@ DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ReportFilePrefix,
     "report-file-prefix",
     llvm::cl::desc(
-        "Prefix for the migration report file names. The full file name will "
+        "Specify the prefix for the migration report file names. The full file name will "
         "have a suffix derived\n"
-        "from the report-type and an extension derived from the report-format. "
+        "from the report-type, and an extension derived from the report-format. "
         "For\n"
         "example: <prefix>.apis.csv or <prefix>.stats.log. If this option is "
         "not\n"
@@ -81,8 +81,7 @@ DPCT_NON_ENUM_OPTION(
     llvm::cl::value_desc("prefix"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ReportOnly, "report-only",
-    llvm::cl::desc("Only migration reports are generated. No SYCL code is "
-                   "generated. Default: off."),
+    llvm::cl::desc("Generate migration reports only. No SYCL code will be generated. Default: off."),
     llvm::cl::cat(DPCTCat), llvm::cl::location(ReportOnlyFlag))
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>),
                      ShowOrigCode, "keep-original-code",
@@ -151,16 +150,15 @@ DPCT_ENUM_OPTION(
     DPCT_OPTION_VALUES(
         DPCT_OPT_ENUM(
             "csv", int(ReportFormatEnum::RFE_CSV),
-            "Output is lines of comma-separated values. The report file "
+            "Output will be lines of comma-separated values. The report file "
             "name extension will\n"
             "be .csv. (default)",
             false),
         DPCT_OPT_ENUM("formatted", int(ReportFormatEnum::RFE_Formatted),
-                      "Output is formatted to be easier to read for "
-                      "human eyes. Report file name\n"
+                      "Output will be formatted for easier readability. Report file name\n"
                       "extension will be log.",
                       false)),
-    llvm::cl::desc("Format of the migration reports:\n"),
+    llvm::cl::desc("Specify the format of the migration reports:\n"),
     llvm::cl::init(ReportFormatEnum::RFE_NotSetFormat),
     llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
@@ -508,7 +506,7 @@ DPCT_NON_ENUM_OPTION(
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisModeOutputFile,
     "analysis-mode-output-file",
-    llvm::cl::desc("The file to store analysis mode report. Default: "
+    llvm::cl::desc("Specifies the file where the analysis mode report is saved. Default: "
                    "Output to stdout."),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat))
 
