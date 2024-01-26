@@ -108,19 +108,6 @@ The directory path of the CUDA\* header files.
 
 
 
-.. _opt-custom-helper-name:
-
-``--custom-helper-name=<name>``
-
-.. _desc-custom-helper-name:
-
-DEPRECATED: Specifies the helper headers folder name and main helper header file
-name. Default: ``dpct``.
-
-.. _end-custom-helper-name:
-
-
-
 .. _opt-enable-ctad:
 
 ``--enable-ctad``
@@ -322,20 +309,6 @@ Excludes the specified directory or file from processing.
 Keeps the original code in the comments of generated SYCL files. Default: ``off``.
 
 .. _end-keep-original-code:
-
-
-
-.. _opt-no-cl-namespace-inline:
-
-``--no-cl-namespace-inline``
-
-.. _desc-no-cl-namespace-inline:
-
-DEPRECATED: Do not use ``cl::`` namespace inline. Default: ``off``. This
-option will be ignored if the replacement option ``--use-explicit-namespace``
-is used.
-
-.. _end-no-cl-namespace-inline:
 
 
 
@@ -647,26 +620,6 @@ Generates kernels with the kernel name. Default: ``off``.
 
 
 
-.. _opt-use-custom-helper:
-
-``--use-custom-helper=<value>``
-
-.. _desc-use-custom-helper:
-
-DEPRECATED: Customize the helper header files for migrated code. The values are:
-
-- ``=all``: Generate a complete set of helper header files and place them
-  in the ``--out-root`` directory.
-- ``=api``: Limit helper header files to only the necessary APIs for the
-  migrated code and place them in the ``--out-root`` directory.
-- ``=file``: Limit helper header files to only the necessary files for the
-  migrated code and place them in the ``--out-root`` directory.
-- ``=none``: No customization (default).
-
-.. _end-use-custom-helper:
-
-
-
 .. _opt-use-dpcpp-extensions:
 
 ``--use-dpcpp-extensions=<value>``
@@ -814,8 +767,9 @@ Generates helper function files in the ``--out-root`` directory. Default: ``off`
 intercept-build Options
 -----------------------
 
-The following table lists all current `intercept-build` tool command line options
-in alphabetical order.
+The `intercept-build` tool is available for Linux\* only. It is available as part of |tool_name| installation.
+
+The following table lists `intercept-build` tool command line options.
 
 .. list-table::
    :widths: 30 70
@@ -829,6 +783,8 @@ in alphabetical order.
        updated; it's done when the build command finished. Default: disabled.
    * - `--cdb <file>`
      - The JSON compilation database. Default name: `compile_commands.json`.
+   * - `--intercept-build`
+     - Invoke the `intercept-build` tool to generate a compilation database.
    * - `--linker-entry`
      - Generate linker entry in compilation database if the `--linker-entry` option
        is present. Default: enabled.
@@ -848,13 +804,4 @@ in alphabetical order.
 .. _end-intercept-build-block:
 
 
-.. _report-opt-block:
 
-Specifying any of the following options will trigger report generation:
-
--  ``--report-file-prefix``
--  ``--report-type``
--  ``--report-format``
--  ``--report-only``
-
-.. _end-report-opt-block:
