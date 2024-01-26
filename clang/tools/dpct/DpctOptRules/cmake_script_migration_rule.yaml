@@ -208,11 +208,11 @@
 
 # ${CUDA_LIBRARIES} is cmake reserved variable for static version of the CUDA runtime library.
 # In SYCL side, SYCL runtime is default auto-loaded when option "-fsycl" is specified, so we remove it in SYCL side.
-- Rule: rule_user_defined_function_cuda_libraries
+- Rule: CUDA_LIBRARIES_removed
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
-  CmakeSyntax: cuda_files_in_user_defined_function_cuda_libraries
+  CmakeSyntax: CUDA_LIBRARIES
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
@@ -467,21 +467,6 @@
       Out: ""
       MatchMode: Full
       RuleId: "remove_cuda_reserved_variable_CUDA_cudadevrt_LIBRARY"
-
-# CUDA_LIBRARIES is cmake cuda reverved list variable, should be removed in SYCL
-- Rule: rule_target_link_libraries_CUDA_LIBRARIES
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
-  In: ${prefix}link_libraries(${CULibraries})
-  Out: ${prefix}link_libraries(${CULibraries})
-  Subrules:
-    CULibraries:
-      In: |
-        \${CUDA_LIBRARIES}
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_cuda_reserved_variable_CUDA_LIBRARIES"
 
 - Rule: rule_target_link_libraries_cuda
   Kind: CMakeRule
