@@ -710,7 +710,8 @@ these exceptions. For example:
             ptr = sycl::malloc_device<int>(1, q);
           }
           catch (sycl::exception const &exc) {
-            std::cerr << exc.what() << "Exception caught at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+            std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+                      << ", line:" << __LINE__ << std::endl;
             std::exit(1);
           }
 

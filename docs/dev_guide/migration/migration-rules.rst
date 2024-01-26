@@ -1,5 +1,5 @@
-User-defined Migration Rules
-============================
+Migration Rules
+===============
 
 |tool_name| uses migration rules to migrate CUDA\* code to SYCL\* code.
 There are three categories of migration rules used by the tool:
@@ -13,6 +13,7 @@ There are three categories of migration rules used by the tool:
   User-defined migration rules extend the migration capability of |tool_name|
   and can be used to target the migration of specific CUDA syntax to specific
   SYCL syntax.
+
 
 Specify Migration Rule Files
 ----------------------------

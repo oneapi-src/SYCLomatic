@@ -1,5 +1,5 @@
-DPCT Namespace Usage Guide
-==========================
+DPCT Namespace Reference
+========================
 
 The DPCT namespace provides helper functions and macros to assist the migration
 of input source code. DPCT namespace helper functions are implemented in header
