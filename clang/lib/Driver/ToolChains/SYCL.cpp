@@ -1366,7 +1366,11 @@ void SYCLToolChain::AddImpliedTargetArgs(const llvm::Triple &Triple,
     Args.AddLastArg(BeArgs, options::OPT_ftarget_compile_fast);
   }
   if (IsGen) {
+#ifdef SYCLomatic_CUSTOMIZATION
+    for (auto &[DeviceName, BackendArgStr] : PerDeviceArgs) {
+#else
     for (auto [DeviceName, BackendArgStr] : PerDeviceArgs) {
+#endif //SYCLomatic_CUSTOMIZATION
       CmdArgs.push_back("-device_options");
       CmdArgs.push_back(Args.MakeArgString(DeviceName));
       CmdArgs.push_back(Args.MakeArgString(BackendArgStr));

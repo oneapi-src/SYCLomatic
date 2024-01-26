@@ -484,7 +484,11 @@ ParsedType Sema::getTypeName(const IdentifierInfo &II, SourceLocation NameLoc,
     Result.suppressDiagnostics();
     return nullptr;
   case LookupResult::NotFoundInCurrentInstantiation:
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (SS && AllowImplicitTypename == ImplicitTypenameContext::Yes) {
+#else
     if (AllowImplicitTypename == ImplicitTypenameContext::Yes) {
+#endif //SYCLomatic_CUSTOMIZATION
       QualType T = Context.getDependentNameType(ElaboratedTypeKeyword::None,
                                                 SS->getScopeRep(), &II);
       TypeLocBuilder TLB;
