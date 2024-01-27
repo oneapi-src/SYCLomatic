@@ -1023,7 +1023,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setCodePinEnabled(EnableCodePin);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
-  //DpctGlobalInfo::setMigrateCmakeScriptEnabled(MigrateCmakeScript);
   DpctGlobalInfo::setMigrateBuildScriptOnlyEnabled(MigrateBuildScriptOnly);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
@@ -1138,10 +1137,6 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScopeOpt.getNumOccurrences());
-
-    //printf(" ###################### [%d]\n", static_cast<unsigned int>(DpctGlobalInfo::getBuildScript()));
-
-
     if (!MigrateBuildScriptOnly &&
         clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
