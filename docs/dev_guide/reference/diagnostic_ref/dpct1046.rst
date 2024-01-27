@@ -69,30 +69,30 @@ which is rewritten to:
     void foo(dpct::queue_ptr handle, float alpha, float beta, void *a, void *b,
              void *c, dpct::library_data_t type) {
       switch (type) {
-      case dpct::library_data_t::real_bfloat16: {
-        oneapi::mkl::blas::column_major::gemm(
-            *handle, oneapi::mkl::transpose::conjtrans,
-            oneapi::mkl::transpose::conjtrans, 2, 2, 2, alpha,
-            (oneapi::mkl::bfloat16 *)a, 2, (oneapi::mkl::bfloat16 *)b, 2, beta,
-            (oneapi::mkl::bfloat16 *)c, 2);
-        break;
-      }
-      case dpct::library_data_t::real_half: {
-        oneapi::mkl::blas::column_major::gemm(
-            *handle, oneapi::mkl::transpose::conjtrans,
-            oneapi::mkl::transpose::conjtrans, 2, 2, 2, alpha, (sycl::half *)a, 2,
-            (sycl::half *)b, 2, beta, (sycl::half *)c, 2);
-        break;
-      }
-      case dpct::library_data_t::real_float: {
-        oneapi::mkl::blas::column_major::gemm(
-            *handle, oneapi::mkl::transpose::conjtrans,
-            oneapi::mkl::transpose::conjtrans, 2, 2, 2, alpha, (float *)a, 2,
-            (float *)b, 2, beta, (float *)c, 2);
-        break;
-      }
-      default:
-        throw std::runtime_error("the data type is unsupported");
+        case dpct::library_data_t::real_bfloat16: {
+          oneapi::mkl::blas::column_major::gemm(
+              *handle, oneapi::mkl::transpose::conjtrans,
+              oneapi::mkl::transpose::conjtrans, 2, 2, 2, alpha,
+              (oneapi::mkl::bfloat16 *)a, 2, (oneapi::mkl::bfloat16 *)b, 2, beta,
+              (oneapi::mkl::bfloat16 *)c, 2);
+          break;
+        }
+        case dpct::library_data_t::real_half: {
+          oneapi::mkl::blas::column_major::gemm(
+              *handle, oneapi::mkl::transpose::conjtrans,
+              oneapi::mkl::transpose::conjtrans, 2, 2, 2, alpha, (sycl::half *)a, 2,
+              (sycl::half *)b, 2, beta, (sycl::half *)c, 2);
+          break;
+        }
+        case dpct::library_data_t::real_float: {
+          oneapi::mkl::blas::column_major::gemm(
+              *handle, oneapi::mkl::transpose::conjtrans,
+              oneapi::mkl::transpose::conjtrans, 2, 2, 2, alpha, (float *)a, 2,
+              (float *)b, 2, beta, (float *)c, 2);
+          break;
+        }
+        default:
+          throw std::runtime_error("the data type is unsupported");
       }
     }
 

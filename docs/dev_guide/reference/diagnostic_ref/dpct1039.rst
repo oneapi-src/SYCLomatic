@@ -42,7 +42,7 @@ For example, this original CUDA\* code:
     __device__ void d(int* s) {
       atomicAdd(s, 1);
     }
-    
+
     __global__ void k() {
       __shared__ int shared;
       d(&shared);
@@ -62,9 +62,8 @@ results in the following migrated SYCL\* code:
       */
       dpct::atomic_fetch_add(s, 1);
     }
-    
+
     void k(int &shared) {
-    
       d(&shared);
     }
 
@@ -72,12 +71,12 @@ which is rewritten to:
 
 .. code-block:: cpp
    :linenos:
-   
+
     template<sycl::access::address_space as>
     void d(int* s) {
       dpct::atomic_fetch_add<as>(s, 1);
     }
-    
+
     void k(int &shared) {
       d<sycl::access::address_space::local_space>(&shared);
     }
