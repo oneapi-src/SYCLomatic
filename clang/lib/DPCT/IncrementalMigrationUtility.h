@@ -37,6 +37,7 @@ const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";
 const std::string OPTION_HelperFuncPreferenceFlag = "HelperFuncPreferenceFlag";
 const std::string OPTION_ExplicitNamespace = "ExplicitNamespace";
 const std::string OPTION_UsmLevel = "UsmLevel";
+const std::string OPTION_BuildScript = "BuildScript";
 const std::string OPTION_OptimizeMigration = "OptimizeMigration";
 const std::string OPTION_EnablepProfiling = "EnablepProfiling";
 const std::string OPTION_RuleFile = "RuleFile";
