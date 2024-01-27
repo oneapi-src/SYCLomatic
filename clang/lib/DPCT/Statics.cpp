@@ -297,7 +297,7 @@ class AnalysisModeStats {
 
   AnalysisModeSummary getSummary(StringRef Name) const {
     AnalysisModeSummary Summary(Name);
-    for (auto Entry : FileEffortsMap) {
+    for (auto &Entry : FileEffortsMap) {
       ++Summary.Counter[Entry.second];
       ++Summary.Total;
     }

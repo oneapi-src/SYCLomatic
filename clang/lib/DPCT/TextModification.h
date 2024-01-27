@@ -21,11 +21,10 @@ namespace dpct {
 
 class KernelCallExpr;
 class TextModification;
+class ExtReplacement;
 using TransformSetTy = std::vector<std::shared_ptr<TextModification>>;
-
-class ReplaceInclude;
-using IncludeMapSetTy =
-    std::map<clang::tooling::UnifiedPath, std::vector<std::unique_ptr<ReplaceInclude>>>;
+using IncludeMapSetTy = std::vector<
+    std::pair<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacement>>>;
 
 enum InsertPosition {
   IP_AlwaysLeft = 0,

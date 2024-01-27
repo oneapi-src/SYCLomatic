@@ -92,8 +92,8 @@ DEF_WARNING(DEVICE_LIMIT_NOT_SUPPORTED, 1029, HIGH_LEVEL, "SYCL currently does n
 DEF_COMMENT(DEVICE_LIMIT_NOT_SUPPORTED, 1029, HIGH_LEVEL, "SYCL currently does not support getting device resource limits. The output parameter(s) are set to 0.")
 DEF_WARNING(IPC_NOT_SUPPORTED, 1030, HIGH_LEVEL, "SYCL currently does not support inter-process communication (IPC) operations. You may need to rewrite the code.")
 DEF_COMMENT(IPC_NOT_SUPPORTED, 1030, HIGH_LEVEL, "SYCL currently does not support inter-process communication (IPC) operations. You may need to rewrite the code.")
-DEF_WARNING(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory access across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.")
-DEF_COMMENT(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory access across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.")
+DEF_WARNING(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory access across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension if you do not specify -no-dpcpp-extensions=peer_access.")
+DEF_COMMENT(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory access across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension if you do not specify -no-dpcpp-extensions=peer_access.")
 DEF_WARNING(DIFFERENT_GENERATOR, 1032, LOW_LEVEL, "A different random number generator is used. You may need to adjust the code.")
 DEF_COMMENT(DIFFERENT_GENERATOR, 1032, LOW_LEVEL, "A different random number generator is used. You may need to adjust the code.")
 DEF_WARNING(DIFFERENT_BASIC_GENERATOR, 1033, LOW_LEVEL, "Migrated code uses a basic Sobol generator. Initialize oneapi::mkl::rng::sobol generator with user-defined direction numbers to use it as Scrambled Sobol generator.")
@@ -266,8 +266,10 @@ DEF_WARNING(CALL_GROUP_FUNC_IN_COND, 1118, MEDIUM_LEVEL, "SYCL group functions a
 DEF_COMMENT(CALL_GROUP_FUNC_IN_COND, 1118, MEDIUM_LEVEL, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
 DEF_WARNING(TRY_EXPERIMENTAL_FEATURE, 1119, MEDIUM_LEVEL, "Migration of '%0' is not supported, please try to remigrate with option: '%1'.")
 DEF_COMMENT(TRY_EXPERIMENTAL_FEATURE, 1119, MEDIUM_LEVEL, "Migration of {0} is not supported, please try to remigrate with option: {1}.")
-DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed into device functions as extra arguments. As here %0 is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
-DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as extra arguments. As here {0} is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
+DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed into device functions as an extra arguments. As %0 is a template variable here, then the declaration of an extra parameter in device functions, the variable referenced in command group, and device functions may be incorrect as a result. You may need to adjust the code.")
+DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as an extra arguments. As {0} is a template variable here, then the declaration of an extra parameter in device functions, the variable referenced in command group, and device functions may be incorrect as a result. You may need to adjust the code.")
+DEF_WARNING(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"%0\" which is used in the SYCL group function/algorithm is initialized.")
+DEF_COMMENT(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"{0}\" which is used in the SYCL group function/algorithm is initialized.")
 // clang-format on
 
 #undef DEF_COMMENT

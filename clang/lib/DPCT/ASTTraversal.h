@@ -36,7 +36,6 @@ enum class PassKind : unsigned { PK_Analysis = 0, PK_Migration, PK_End };
 /// including directives rewriting.
 class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
-  IncludeMapSetTy &IncludeMapSet;
   SourceManager &SM;
   RuleGroups &Groups;
 
@@ -44,11 +43,9 @@ class IncludesCallbacks : public PPCallbacks {
   bool IsFileInCmd = true;
 
 public:
-  IncludesCallbacks(TransformSetTy &TransformSet,
-                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
+  IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM,
                     RuleGroups &G)
-      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
-        Groups(G) {}
+      : TransformSet(TransformSet), SM(SM), Groups(G) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange,

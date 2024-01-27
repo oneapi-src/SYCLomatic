@@ -9,6 +9,7 @@
 // in SYCLomatic-test repo too.
 // DASH: --always-use-async-handler
 // DASH-NEXT: --analysis-mode
+// DASH-NEXT: --analysis-mode-output-file
 // DASH-NEXT: --analysis-scope-path
 // DASH-NEXT: --assume-nd-range-dim=
 // DASH-NEXT: --build-script-file

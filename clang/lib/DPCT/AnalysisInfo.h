@@ -491,6 +491,11 @@ public:
   }
   void setRTVersionValue(std::string Value) { RTVersionValue = Value; }
   std::string getRTVersionValue() { return RTVersionValue; }
+  void setMajorVersionValue(std::string Value) { MajorVersionValue = Value; }
+  std::string getMajorVersionValue() { return MajorVersionValue; }
+  void setMinorVersionValue(std::string Value) { MinorVersionValue = Value; }
+  std::string getMinorVersionValue() { return MinorVersionValue; }
+
   void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
   std::string getCCLVerValue() { return CCLVerValue; }
   bool hasCUDASyntax() { return HeaderInsertedBitMap[HeaderType::HT_SYCL]; }
@@ -547,6 +552,7 @@ private:
 
   unsigned FirstIncludeOffset = 0;
   unsigned LastIncludeOffset = 0;
+  const unsigned FileBeginOffset = 0;
   bool HasInclusionDirective = false;
   std::vector<std::string> InsertedHeaders;
   std::vector<std::string> InsertedHeadersCUDA;
@@ -557,6 +563,8 @@ private:
   std::vector<std::pair<unsigned int, unsigned int>> ExternCRanges;
   std::vector<RnnBackwardFuncInfo> RBFuncInfo;
   std::string RTVersionValue = "";
+  std::string MajorVersionValue = "";
+  std::string MinorVersionValue = "";
   std::string CCLVerValue = "";
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
@@ -1245,6 +1253,10 @@ public:
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
   }
+  std::shared_ptr<DpctFileInfo>
+  findFile(const clang::tooling::UnifiedPath &FilePath) {
+    return findObject(FileMap, FilePath);
+  }
   std::shared_ptr<DpctFileInfo> getMainFile() const { return MainFile; }
   void setMainFile(std::shared_ptr<DpctFileInfo> Main) { MainFile = Main; }
   void recordIncludingRelationship(
@@ -1327,6 +1339,7 @@ public:
   static std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
     return VarUsedByRuntimeSymbolAPISet;
   }
+  static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
   }
@@ -1541,6 +1554,7 @@ private:
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
+  static IncludeMapSetTy IncludeMapSet;
   static std::unordered_set<std::string> NeedParenAPISet;
 };
 

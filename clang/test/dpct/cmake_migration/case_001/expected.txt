@@ -20,7 +20,7 @@ set(SOURCES
 )
 include_directories(
     ${CMAKE_SOURCE_DIR}/foo/bar
-    ${CUDA_INCLUDE_DIRS}
+    ${SYCL_INCLUDE_DIR}
 )
 add_executable(foo-bar ${SOURCES})
 project(foo )

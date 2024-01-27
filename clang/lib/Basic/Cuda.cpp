@@ -55,13 +55,13 @@ const char *CudaVersionToString(CudaVersion V) {
 }
 
 #ifdef SYCLomatic_CUSTOMIZATION
-std::string CudaVersionToMacroDefStr(CudaVersion V) {
+std::pair<unsigned int, unsigned int> getCudaVersionPair(CudaVersion V) {
   for (auto *I = CudaNameVersionMap; I->Version != CudaVersion::UNKNOWN; ++I)
     if (I->Version == V) {
-      return std::to_string(I->TVersion.getMajor() * 1000 +
-                            I->TVersion.getMinor().value() * 10);
+      return std::pair<unsigned int, unsigned int>(
+          I->TVersion.getMajor(), I->TVersion.getMinor().value());
     }
-  return "";
+  return std::pair<unsigned int, unsigned int>(0, 0);
 }
 #endif // SYCLomatic_CUSTOMIZATION
 

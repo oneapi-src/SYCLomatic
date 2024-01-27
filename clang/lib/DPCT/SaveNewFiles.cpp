@@ -176,11 +176,12 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
                               DpctGlobalInfo::getSYCLSourceExtension());
     } else if (FileType & SPT_CppSource) {
       if (Extension == ".c") {
-        auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FileName);
-        if (FileInfo->hasCUDASyntax()) {
-          path::replace_extension(CanonicalPathStr,
-                                  Extension +
-                                      DpctGlobalInfo::getSYCLSourceExtension());
+        if (auto FileInfo = DpctGlobalInfo::getInstance().findFile(FileName)) {
+          if (FileInfo->hasCUDASyntax()) {
+            path::replace_extension(
+                CanonicalPathStr,
+                Extension + DpctGlobalInfo::getSYCLSourceExtension());
+          }
         }
       } else {
         path::replace_extension(CanonicalPathStr,

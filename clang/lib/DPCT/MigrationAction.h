@@ -23,7 +23,6 @@ class DpctFileInfo;
 struct TranslationUnitInfo {
   std::unique_ptr<ASTUnit> AST;
   TransformSetTy Transforms;
-  IncludeMapSetTy IncludeMapSet;
   std::shared_ptr<DpctFileInfo> MainFile;
   RuleGroups Groups;
 };

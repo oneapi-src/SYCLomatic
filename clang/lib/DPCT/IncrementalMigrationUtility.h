@@ -21,7 +21,6 @@ namespace dpct {
 const std::string OPTION_AsyncHandler = "AsyncHandler";
 const std::string OPTION_NDRangeDim = "NDRangeDim";
 const std::string OPTION_CommentsEnabled = "CommentsEnabled";
-const std::string OPTION_CustomHelperFileName = "CustomHelperFileName";
 const std::string OPTION_CtadEnabled = "CtadEnabled";
 const std::string OPTION_CodePinEnabled = "CodePinEnabled";
 const std::string OPTION_ExtensionDEFlag = "ExtensionDEFlag";

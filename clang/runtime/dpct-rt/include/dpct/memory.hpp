@@ -659,6 +659,7 @@ public:
   };
 
   usm_allocator() : _impl(dpct::get_default_queue()) {}
+  usm_allocator(sycl::queue &q) : _impl(q) {}
   ~usm_allocator() {}
   usm_allocator(const usm_allocator &other) : _impl(other._impl) {}
   usm_allocator(usm_allocator &&other) : _impl(std::move(other._impl)) {}

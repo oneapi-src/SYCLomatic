@@ -300,7 +300,8 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 template <typename T>
 unsigned int match_any_over_sub_group(sycl::sub_group g, unsigned member_mask,
                                       T value) {
-  static_assert(std::is_arithmetic_v<T>, "Value type must be arithmetic type.");                    
+  static_assert(std::is_trivially_copyable_v<T>,
+                "Value type must be trivially copyable type.");
   if (!member_mask) {
     return 0;
   }
@@ -339,7 +340,8 @@ unsigned int match_any_over_sub_group(sycl::sub_group g, unsigned member_mask,
 template <typename T>
 unsigned int match_all_over_sub_group(sycl::sub_group g, unsigned member_mask,
                                       T value, int *pred) {
-  static_assert(std::is_arithmetic_v<T>, "Value type must be arithmetic type."); 
+  static_assert(std::is_trivially_copyable_v<T>,
+                "Value type must be trivially copyable type.");
   if (!member_mask) {
     return 0;
   }

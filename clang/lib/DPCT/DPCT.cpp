@@ -978,6 +978,17 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
+  if (DefineCUDAVerMajorMinor) {
+    std::string CUDAVerMajor =
+        "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+        CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
+    std::string CUDAVerMinor =
+        "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+        CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
+  }
+
   SetSDKIncludePath(CudaPath.getCanonicalPath().str());
 
 #ifdef _WIN32
@@ -990,9 +1001,6 @@ int runDPCT(int argc, const char **argv) {
 
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-Xclang", ArgumentInsertPosition::BEGIN));
-
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      "-fgpu-exclude-wrong-side-overloads", ArgumentInsertPosition::BEGIN));
 
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-Wno-c++11-narrowing", ArgumentInsertPosition::BEGIN));
@@ -1270,6 +1278,17 @@ int runDPCT(int argc, const char **argv) {
     return MigrationSucceeded;
   }
 
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    if (AnalysisModeOutputFile.empty()) {
+      dumpAnalysisModeStatics(llvm::outs());
+    } else {
+      std::error_code EC;
+      llvm::raw_fd_stream Out(AnalysisModeOutputFile, EC);
+      dumpAnalysisModeStatics(Out);
+    }
+    return MigrationSucceeded;
+  }
+
   if (GenReport) {
     // report: apis, stats, all, diags
     if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
@@ -1290,11 +1309,6 @@ int runDPCT(int argc, const char **argv) {
       DumpOutputFile();
       return MigrationSucceeded;
     }
-  }
-
-  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
-    dumpAnalysisModeStatics(llvm::outs());
-    return MigrationSucceeded;
   }
 
   // if run was successful

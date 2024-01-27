@@ -116,7 +116,8 @@ in the build directory:
    CMake 3.10 or higher is recommended as it provides better support for CUDA source code.
 
 Generate a Compilation Database for Setuptools-Based Projects
---------------------------------------------------------
+-------------------------------------------------------------
+
 Setuptools is a package development library in Python for facilitating packaging, distribution and installation of Python projects. For projects with setuptools as their build system, the steps to generate a compilation database are as follows:
 
 #. Generate a build log for the setuptools project by using the ``-v`` or ``--verbose`` flag with the Python build command.

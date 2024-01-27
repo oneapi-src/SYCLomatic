@@ -1,5 +1,5 @@
-CUDA API Migration Support Status
-=================================
+CUDA API Migration Support
+==========================
 
 The following tables provide the current status for CUDA\* API migration support.
 
