@@ -1124,9 +1124,10 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
                      USMLevel.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_BuildScript,
-                     static_cast<unsigned int>(DpctGlobalInfo::getBuildScript()),
-                     BuildScript.getNumOccurrences());
+    setValueToOptMap(
+        clang::dpct::OPTION_BuildScript,
+        static_cast<unsigned int>(DpctGlobalInfo::getBuildScript()),
+        BuildScript.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());

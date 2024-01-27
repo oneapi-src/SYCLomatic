@@ -189,8 +189,9 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Path of CMake Script is invalid.";
     break;
   case MigrateCmakeScriptOnlyNotSpecifed:
-    StatusString = "Error: option '-migrate-build-script-only' is not specified "
-                   "for CMake script migartion.";
+    StatusString =
+        "Error: option '-migrate-build-script-only' is not specified "
+        "for CMake script migartion.";
     break;
   case MigarteBuildScriptIncorrectUse:
     StatusString = "Error: option '-migrate-build-script' is only used for "
