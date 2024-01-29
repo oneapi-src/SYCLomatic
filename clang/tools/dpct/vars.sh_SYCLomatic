@@ -1,0 +1,31 @@
+# ===------------------------- vars.sh_SYCLomatic -------------------------=== #
+#
+# Copyright (C) Intel Corporation
+#
+# Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+#
+# ===----------------------------------------------------------------------=== #
+
+# source this file to export SYCLomatic env and enable autocomplete feature
+
+# determine the installtion directory of SYCLomatic
+SYCLomatic_ROOT=$(readlink -f $(dirname $BASH_SOURCE))
+
+# export the env vars for bin and include paths
+SYCLomatic_BIN_PATH="${SYCLomatic_ROOT}/bin"
+PATH="${SYCLomatic_BIN_PATH}:${PATH}"
+export PATH
+
+SYCLomatic_INC_PATH="${SYCLomatic_ROOT}/include"
+CPATH="${SYCLomatic_INC_PATH}:${CPATH}"
+export CPATH
+
+# source autocomplete script
+if [[ -n "${BASH}" ]] ; then
+  BASH_AUTOCOMPLETE_SCRIPT=${SYCLomatic_ROOT}/env/bash-autocomplete.sh
+  if [[ -f "$BASH_AUTOCOMPLETE_SCRIPT" ]]; then
+    source "${BASH_AUTOCOMPLETE_SCRIPT}"
+  fi
+fi
