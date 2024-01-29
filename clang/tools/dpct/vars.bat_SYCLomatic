@@ -12,8 +12,8 @@
 
 @echo off
 
-# determine the installtion directory of DPCT
-set DPCT_ROOT=%~dp0
+# determine the installtion directory of SYCLomatic
+set SYCLomatic_ROOT=%~dp0
 
 # export the env vars for bin and include paths
 IF EXIST "%DPCT_ROOT%bin\dpct.exe" (
@@ -21,7 +21,7 @@ IF EXIST "%DPCT_ROOT%bin\dpct.exe" (
     set "INCLUDE=%DPCT_ROOT%include;%INCLUDE%"
     set "CPATH=%DPCT_ROOT%include;%CPATH%"
 ) ELSE (
-    echo Error: DPCT binary not found.
+    echo Error: dpct/c2s binary not found.
 )
 
 goto :EOF
