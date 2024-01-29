@@ -37,8 +37,8 @@
 
 #include <algorithm>
 #include <cassert>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 
 using namespace clang::dpct;
 using namespace llvm;
