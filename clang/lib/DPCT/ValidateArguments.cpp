@@ -102,8 +102,6 @@ bool makeOutRootCanonicalOrSetDefaults(clang::tooling::UnifiedPath &OutRoot) {
   if (OutRoot.getPath().empty()) {
     if (!getDefaultOutRoot(OutRoot))
       return false;
-  } else {
-
   }
   return true;
 }

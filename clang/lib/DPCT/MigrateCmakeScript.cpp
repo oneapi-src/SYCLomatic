@@ -18,7 +18,6 @@
 #include <algorithm>
 #include <cstring>
 #include <fstream>
-#include <ios>
 #include <string>
 
 using namespace clang::dpct;
@@ -643,7 +642,7 @@ static void storeBufferToFile() {
     auto &FileName = Entry.first;
     auto &Buffer = Entry.second;
     CheckedOfstream Out(FileName.getCanonicalPath().str(),
-                                 std::ios_base::binary);
+                        std::ios_base::binary);
     llvm::raw_os_ostream Stream(Out);
 
     // Restore original endline format

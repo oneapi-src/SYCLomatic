@@ -9,7 +9,6 @@
 #ifndef DPCT_UTILITY_H
 #define DPCT_UTILITY_H
 
-#include <bits/types/FILE.h>
 #include <functional>
 #include <ios>
 #include <iostream>
@@ -33,7 +32,6 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Frontend/CompilerInstance.h"
-#include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"

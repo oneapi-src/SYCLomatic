@@ -393,10 +393,6 @@ static void saveApisReport(void) {
         File << OS.str();
       }
     }
-    if (File.fail()) {
-      ShowStatus(MigrationErrorCannotWrite, RFile);
-      dpctExit(MigrationErrorCannotWrite);
-    }
   }
 }
 
@@ -795,11 +791,6 @@ int runDPCT(int argc, const char **argv) {
     HasSDKPathOption = true;
   }
 
-  if (!llvm::sys::fs::can_write(OutRoot.getCanonicalPath())) {
-    ShowStatus(MigrationErrorCannotWrite);
-    dpctExit(MigrationErrorCannotWrite);
-  }
-
   bool GenReport = false;
 #ifdef DPCT_DEBUG_BUILD
   std::string &DVerbose = DiagsContent;
@@ -944,9 +935,6 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
-    auto EC = createDirectories(OutRoot);
-    if ((bool)EC)
-      dpctExit(MigrationErrorCannotWrite);
     dpct::DpctGlobalInfo::setOutRoot(OutRoot);
   }
 

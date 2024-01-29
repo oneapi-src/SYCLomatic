@@ -411,7 +411,8 @@ int writeReplacementsToFiles(
     }
     // std::ios::binary prevents ofstream::operator<< from converting \n to
     // \r\n on windows.
-    clang::dpct::CheckedOfstream OutFile(OutPath.getCanonicalPath().str(), std::ios::binary);
+    clang::dpct::CheckedOfstream OutFile(OutPath.getCanonicalPath().str(),
+                                         std::ios::binary);
     llvm::raw_os_ostream OutStream(OutFile);
     if (!OutFile) {
       std::string ErrMsg =
@@ -710,7 +711,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
-      clang::dpct::CheckedOfstream File(FilePath.getCanonicalPath().str(), std::ios::binary);
+      clang::dpct::CheckedOfstream File(FilePath.getCanonicalPath().str(),
+                                        std::ios::binary);
 
       llvm::raw_os_ostream Stream(File);
       std::string OutputString;
@@ -754,7 +756,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     if ((bool)EC) {
       return MigrationSaveOutFail;
     }
-    clang::dpct::CheckedOfstream SchemaFileCUDA(SchemaPathCUDA, std::ios::binary);
+    clang::dpct::CheckedOfstream SchemaFileCUDA(SchemaPathCUDA,
+                                                std::ios::binary);
 
     llvm::raw_os_ostream SchemaStreamCUDA(SchemaFileCUDA);
 
@@ -776,7 +779,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     EC = createDirectories(path::parent_path(SchemaPathSYCL));
     if ((bool)EC)
       return MigrationSaveOutFail;
-    clang::dpct::CheckedOfstream SchemaFileSYCL(SchemaPathSYCL, std::ios::binary);
+    clang::dpct::CheckedOfstream SchemaFileSYCL(SchemaPathSYCL,
+                                                std::ios::binary);
     llvm::raw_os_ostream SchemaStreamSYCL(SchemaFileSYCL);
     SchemaStreamSYCL
         << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()

@@ -9,7 +9,6 @@
 #include "GenHelperFunction.h"
 #include "Utility.h"
 
-#include "clang/Tooling/Core/UnifiedPath.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -137,18 +136,24 @@ void replaceEndOfLine(std::string &StrNeedProcess) {
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   if (!llvm::sys::fs::is_directory(OutRoot.getCanonicalPath()))
     createDirectories(OutRoot);
-  clang::tooling::UnifiedPath ToPath = appendPath(OutRoot.getCanonicalPath().str(), "include");
+  clang::tooling::UnifiedPath ToPath =
+      appendPath(OutRoot.getCanonicalPath().str(), "include");
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath()))
     createDirectories(ToPath);
   ToPath = appendPath(ToPath.getCanonicalPath().str(), "dpct");
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath()))
     createDirectories(ToPath);
-  if (!llvm::sys::fs::is_directory(appendPath(ToPath.getCanonicalPath().str(), "dpl_extras")))
-    createDirectories(appendPath(ToPath.getCanonicalPath().str(), "dpl_extras"));
-  if (!llvm::sys::fs::is_directory(appendPath(ToPath.getCanonicalPath().str(), "codepin")))
+  if (!llvm::sys::fs::is_directory(
+          appendPath(ToPath.getCanonicalPath().str(), "dpl_extras")))
+    createDirectories(
+        appendPath(ToPath.getCanonicalPath().str(), "dpl_extras"));
+  if (!llvm::sys::fs::is_directory(
+          appendPath(ToPath.getCanonicalPath().str(), "codepin")))
     createDirectories(appendPath(ToPath.getCanonicalPath().str(), "codepin"));
-  if (!llvm::sys::fs::is_directory(appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail")))
-    createDirectories(appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail"));
+  if (!llvm::sys::fs::is_directory(appendPath(
+          appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail")))
+    createDirectories(appendPath(
+        appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail"));
 
 #define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)                         \
   {                                                                            \

@@ -28,7 +28,6 @@
 #include "llvm/Support/Path.h"
 #include <algorithm>
 #include <fstream>
-#include <ios>
 
 using namespace llvm;
 using namespace clang;
