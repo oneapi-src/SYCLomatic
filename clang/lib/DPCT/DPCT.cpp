@@ -253,7 +253,7 @@ UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
-static bool isCUDAHeaderRequired() { return !MigrateCmakeScriptOnly; }
+static bool isCUDAHeaderRequired() { return !MigrateBuildScriptOnly; }
 
 UnifiedPath getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPathStr(invokeCommand);
@@ -730,7 +730,7 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationErrorNoExplicitInRoot);
   }
 
-  if (MigrateCmakeScriptOnly) {
+  if (MigrateBuildScriptOnly) {
     if (InRoot.getPath().empty() &&
         !cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
       ShowStatus(MigrationErrorNoExplicitInRootAndCMakeScript);
@@ -744,7 +744,7 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationErrorInvalidInRootOrOutRoot);
   }
 
-  if (!MigrateCmakeScriptOnly) {
+  if (!MigrateBuildScriptOnly) {
     int ValidPath = validatePaths(InRoot, OptParser->getSourcePathList());
     if (ValidPath == -1) {
       ShowStatus(MigrationErrorInvalidInRootPath);
@@ -772,13 +772,15 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if (MigrateCmakeScript && !OptParser->getSourcePathList().empty()) {
-    ShowStatus(MigarteCmakeScriptIncorrectUse);
-    dpctExit(MigarteCmakeScriptIncorrectUse);
+  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake &&
+      !OptParser->getSourcePathList().empty()) {
+    ShowStatus(MigarteBuildScriptIncorrectUse);
+    dpctExit(MigarteBuildScriptIncorrectUse);
   }
-  if (MigrateCmakeScript && MigrateCmakeScriptOnly) {
-    ShowStatus(MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse);
-    dpctExit(MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse);
+  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake &&
+      MigrateBuildScriptOnly) {
+    ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
+    dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
   }
 
   int SDKIncPathRes = checkSDKPathOrIncludePath(CudaIncludePath);
@@ -978,6 +980,17 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
+  if (DefineCUDAVerMajorMinor) {
+    std::string CUDAVerMajor =
+        "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+        CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
+    std::string CUDAVerMinor =
+        "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+        CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
+  }
+
   SetSDKIncludePath(CudaPath.getCanonicalPath().str());
 
 #ifdef _WIN32
@@ -992,9 +1005,6 @@ int runDPCT(int argc, const char **argv) {
       getInsertArgumentAdjuster("-Xclang", ArgumentInsertPosition::BEGIN));
 
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      "-fgpu-exclude-wrong-side-overloads", ArgumentInsertPosition::BEGIN));
-
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-Wno-c++11-narrowing", ArgumentInsertPosition::BEGIN));
 
   DpctGlobalInfo::setInRoot(InRoot);
@@ -1004,6 +1014,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
+  DpctGlobalInfo::setBuildScript(BuildScript);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
@@ -1012,8 +1023,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setCodePinEnabled(EnableCodePin);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
-  DpctGlobalInfo::setMigrateCmakeScriptEnabled(MigrateCmakeScript);
-  DpctGlobalInfo::setMigrateCmakeScriptOnlyEnabled(MigrateCmakeScriptOnly);
+  DpctGlobalInfo::setMigrateBuildScriptOnlyEnabled(MigrateBuildScriptOnly);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
@@ -1045,7 +1055,8 @@ int runDPCT(int argc, const char **argv) {
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   clang::dpct::initHeaderSpellings();
 
-  if (MigrateCmakeScriptOnly || MigrateCmakeScript) {
+  if (MigrateBuildScriptOnly ||
+      DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake) {
     SmallString<128> CmakeRuleFilePath(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(CmakeRuleFilePath,
                             Twine("extensions/cmake_rules/"
@@ -1113,6 +1124,10 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
                      USMLevel.getNumOccurrences());
+    setValueToOptMap(
+        clang::dpct::OPTION_BuildScript,
+        static_cast<unsigned int>(DpctGlobalInfo::getBuildScript()),
+        BuildScript.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
@@ -1123,8 +1138,7 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScopeOpt.getNumOccurrences());
-
-    if (!MigrateCmakeScriptOnly &&
+    if (!MigrateBuildScriptOnly &&
         clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
       if (!canContinueMigration(Msg)) {
@@ -1153,7 +1167,7 @@ int runDPCT(int argc, const char **argv) {
     parseFormatStyle();
   }
 
-  if (MigrateCmakeScriptOnly) {
+  if (MigrateBuildScriptOnly) {
     loadMainSrcFileInfo(OutRoot);
     collectCmakeScriptsSpecified(OptParser, InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
@@ -1270,6 +1284,17 @@ int runDPCT(int argc, const char **argv) {
     return MigrationSucceeded;
   }
 
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    if (AnalysisModeOutputFile.empty()) {
+      dumpAnalysisModeStatics(llvm::outs());
+    } else {
+      std::error_code EC;
+      llvm::raw_fd_stream Out(AnalysisModeOutputFile, EC);
+      dumpAnalysisModeStatics(Out);
+    }
+    return MigrationSucceeded;
+  }
+
   if (GenReport) {
     // report: apis, stats, all, diags
     if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
@@ -1292,16 +1317,11 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
-    dumpAnalysisModeStatics(llvm::outs());
-    return MigrationSucceeded;
-  }
-
   // if run was successful
   int Status = saveNewFiles(Tool, InRoot, OutRoot, ReplCUDA, ReplSYCL);
   ShowStatus(Status);
 
-  if (MigrateCmakeScript) {
+  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake) {
     loadMainSrcFileInfo(OutRoot);
     collectCmakeScripts(InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
