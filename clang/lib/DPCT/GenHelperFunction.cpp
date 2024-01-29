@@ -9,6 +9,7 @@
 #include "GenHelperFunction.h"
 #include "Utility.h"
 
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -135,19 +136,19 @@ void replaceEndOfLine(std::string &StrNeedProcess) {
 
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   if (!llvm::sys::fs::is_directory(OutRoot.getCanonicalPath()))
-    llvm::sys::fs::create_directory(OutRoot.getCanonicalPath());
-  clang::tooling::UnifiedPath ToPath = OutRoot.getCanonicalPath() + "/include";
+    createDirectories(OutRoot);
+  clang::tooling::UnifiedPath ToPath = appendPath(OutRoot.getCanonicalPath().str(), "include");
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath()))
-    llvm::sys::fs::create_directory(ToPath.getCanonicalPath());
-  ToPath = ToPath.getCanonicalPath() + "/dpct";
+    createDirectories(ToPath);
+  ToPath = appendPath(ToPath.getCanonicalPath().str(), "dpct");
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath()))
-    llvm::sys::fs::create_directory(ToPath.getCanonicalPath());
-  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/dpl_extras"))
-    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/dpl_extras");
-  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/codepin"))
-    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/codepin");
-  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/codepin/detail"))
-    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/codepin/detail");
+    createDirectories(ToPath);
+  if (!llvm::sys::fs::is_directory(appendPath(ToPath.getCanonicalPath().str(), "dpl_extras")))
+    createDirectories(appendPath(ToPath.getCanonicalPath().str(), "dpl_extras"));
+  if (!llvm::sys::fs::is_directory(appendPath(ToPath.getCanonicalPath().str(), "codepin")))
+    createDirectories(appendPath(ToPath.getCanonicalPath().str(), "codepin"));
+  if (!llvm::sys::fs::is_directory(appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail")))
+    createDirectories(appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail"));
 
 #define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)                         \
   {                                                                            \

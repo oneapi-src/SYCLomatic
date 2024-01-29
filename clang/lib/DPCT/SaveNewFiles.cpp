@@ -210,22 +210,9 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
-    auto Parent = path::parent_path(OutputFile.getCanonicalPath());
-    std::error_code EC;
-    EC = fs::create_directories(Parent);
-    if ((bool)EC) {
-      std::string ErrMsg = "[ERROR] Create Directory : " + Parent.str() +
-                           " fail: " + EC.message() + "\n";
-      PrintMsg(ErrMsg);
-    }
+    createDirectories(path::parent_path(OutputFile.getCanonicalPath()));
 
-    std::ofstream Out(OutputFile.getCanonicalPath().str());
-    if (Out.fail()) {
-      std::string ErrMsg =
-          "[ERROR] Create file : " + OutputFile.getCanonicalPath().str() +
-          " failure!\n";
-      PrintMsg(ErrMsg);
-    }
+    clang::dpct::CheckedOfstream Out(OutputFile.getCanonicalPath().str());
     Out << In.rdbuf();
     Out.close();
     In.close();
@@ -298,14 +285,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
       if (fs::exists(OutDirectory.getCanonicalPath()))
         continue;
 
-      std::error_code EC;
-      EC = fs::create_directories(OutDirectory.getCanonicalPath());
-      if ((bool)EC) {
-        std::string ErrMsg = "[ERROR] Create Directory : " +
-                             OutDirectory.getCanonicalPath().str() +
-                             " fail: " + EC.message() + "\n";
-        PrintMsg(ErrMsg);
-      }
+      createDirectories(OutDirectory.getCanonicalPath());
     }
   }
 }
@@ -423,18 +403,14 @@ int writeReplacementsToFiles(
 
     std::error_code EC;
 
-    EC = fs::create_directories(path::parent_path(OutPath.getCanonicalPath()));
+    EC = createDirectories(path::parent_path(OutPath.getCanonicalPath()));
     if ((bool)EC) {
-      std::string ErrMsg = "[ERROR] Create file : " +
-                           std::string(OutPath.getCanonicalPath().str()) +
-                           " fail: " + EC.message() + "\n";
       status = MigrationSaveOutFail;
-      PrintMsg(ErrMsg);
       return status;
     }
     // std::ios::binary prevents ofstream::operator<< from converting \n to
     // \r\n on windows.
-    std::ofstream OutFile(OutPath.getCanonicalPath().str(), std::ios::binary);
+    clang::dpct::CheckedOfstream OutFile(OutPath.getCanonicalPath().str(), std::ios::binary);
     llvm::raw_os_ostream OutStream(OutFile);
     if (!OutFile) {
       std::string ErrMsg =
@@ -727,27 +703,14 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
 
       std::error_code EC;
-      EC = fs::create_directories(path::parent_path(FilePath.getCanonicalPath()));
+      EC = createDirectories(path::parent_path(FilePath.getCanonicalPath()));
       if ((bool)EC) {
-        std::string ErrMsg =
-            "[ERROR] Create file: " + FilePath.getCanonicalPath().str() +
-            " fail: " + EC.message() + "\n";
-        status = MigrationSaveOutFail;
-        PrintMsg(ErrMsg);
-        return status;
+        return MigrationSaveOutFail;
       }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
-      std::ofstream File(FilePath.getCanonicalPath().str(), std::ios::binary);
+      clang::dpct::CheckedOfstream File(FilePath.getCanonicalPath().str(), std::ios::binary);
 
-      if (!File) {
-        std::string ErrMsg =
-            "[ERROR] Create file: " + FilePath.getCanonicalPath().str() +
-            " failed.\n";
-        status = MigrationSaveOutFail;
-        PrintMsg(ErrMsg);
-        return status;
-      }
       llvm::raw_os_ostream Stream(File);
       std::string OutputString;
       llvm::raw_string_ostream RSW(OutputString);
@@ -786,23 +749,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     std::string SchemaPathSYCL =
         OutRoot.getCanonicalPath().str() + "/generated_schema.hpp";
     std::error_code EC;
-    EC = fs::create_directories(path::parent_path(SchemaPathCUDA));
+    EC = createDirectories(path::parent_path(SchemaPathCUDA));
     if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Create file: " + std::string(SchemaPathCUDA) +
-          " fail: " + EC.message() + "\n";
-      status = MigrationSaveOutFail;
-      PrintMsg(ErrMsg);
-      return status;
+      return MigrationSaveOutFail;
     }
-    std::ofstream SchemaFileCUDA(SchemaPathCUDA, std::ios::binary);
-    if (!SchemaFileCUDA) {
-      std::string ErrMsg =
-          "[ERROR] Create file: " + std::string(SchemaPathCUDA) + " failed.\n";
-      status = MigrationSaveOutFail;
-      PrintMsg(ErrMsg);
-      return status;
-    }
+    clang::dpct::CheckedOfstream SchemaFileCUDA(SchemaPathCUDA, std::ios::binary);
+
     llvm::raw_os_ostream SchemaStreamCUDA(SchemaFileCUDA);
 
     SchemaStreamCUDA
@@ -820,23 +772,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         << getNL() << "  }" << getNL() << "};" << getNL() << "static Init init;"
         << getNL() << "#endif" << getNL();
 
-    EC = fs::create_directories(path::parent_path(SchemaPathSYCL));
-    if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Create file: " + std::string(SchemaPathSYCL) +
-          " fail: " + EC.message() + "\n";
-      status = MigrationSaveOutFail;
-      PrintMsg(ErrMsg);
-      return status;
-    }
-    std::ofstream SchemaFileSYCL(SchemaPathSYCL, std::ios::binary);
-    if (!SchemaFileSYCL) {
-      std::string ErrMsg =
-          "[ERROR] Create file: " + std::string(SchemaPathSYCL) + " failed.\n";
-      status = MigrationSaveOutFail;
-      PrintMsg(ErrMsg);
-      return status;
-    }
+    EC = createDirectories(path::parent_path(SchemaPathSYCL));
+    if ((bool)EC)
+      return MigrationSaveOutFail;
+    clang::dpct::CheckedOfstream SchemaFileSYCL(SchemaPathSYCL, std::ios::binary);
     llvm::raw_os_ostream SchemaStreamSYCL(SchemaFileSYCL);
     SchemaStreamSYCL
         << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()

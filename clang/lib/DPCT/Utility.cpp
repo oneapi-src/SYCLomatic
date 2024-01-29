@@ -28,6 +28,7 @@
 #include "llvm/Support/Path.h"
 #include <algorithm>
 #include <fstream>
+#include <ios>
 
 using namespace llvm;
 using namespace clang;
@@ -4735,6 +4736,56 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
   SmallString<512> TempPath(P1);
   llvm::sys::path::append(TempPath, P2);
   return TempPath.str().str();
+}
+
+std::error_code createDirectories(const clang::tooling::UnifiedPath &FilePath,
+                                  bool IgnoreExisting) {
+  std::error_code EC = llvm::sys::fs::create_directories(
+      FilePath.getCanonicalPath(), IgnoreExisting);
+  if ((bool)EC) {
+    std::string ErrMsg =
+        "[ERROR] Create Directory : " + FilePath.getPath().str() +
+        " fail: " + EC.message() + "\n";
+    clang::dpct::PrintMsg(ErrMsg);
+  }
+  return EC;
+}
+
+// std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
+// on windows.
+bool writeDataToFile(const std::string &FileName, const std::string &Data) {
+  auto FileStream =
+      std::make_unique<CheckedOfstream>(FileName, std::ios::binary);
+  *FileStream << Data;
+  FileStream->close();
+  if (FileStream->fail()) {
+    std::string ErrMsg = "[ERROR] Cannot write data to " + FileName + " !\n";
+    dpct::PrintMsg(ErrMsg);
+    return false;
+  }
+  return true;
+}
+
+bool appendDataToFile(const std::string &FileName, const std::string &Data) {
+  auto FileStream = std::make_unique<CheckedOfstream>(FileName, std::ios::app);
+  *FileStream << Data;
+  FileStream->close();
+  if (FileStream->fail()) {
+    std::string ErrMsg = "[ERROR] Cannot append data to " + FileName + " !\n";
+    dpct::PrintMsg(ErrMsg);
+    return false;
+  }
+  return true;
+}
+
+CheckedOfstream::~CheckedOfstream() {
+  if (this->fail()) {
+    std::string ErrMsg = "[ERROR] Cannot write data to " + FileName + " !\n";
+    dpct::PrintMsg(ErrMsg);
+  }
+  if (this->is_open()) {
+    this->close();
+  }
 }
 } // namespace dpct
 } // namespace clang

@@ -9,6 +9,7 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "SaveNewFiles.h"
+#include "Utility.h"
 #include "ValidateArguments.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -385,13 +386,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
                          path::parent_path(TargetName.getPath()).str());
 
     if (!llvm::sys::fs::exists(Parent)) {
-      std::error_code EC;
-      EC = llvm::sys::fs::create_directories(Parent);
-      if ((bool)EC) {
-        std::string ErrMsg = "[ERROR] Create Directory : " + Parent +
-                             " fail: " + EC.message() + "\n";
-        PrintMsg(ErrMsg);
-      }
+      createDirectories(Parent);
     }
 
     auto CmpInfos = Entry.second;
@@ -531,12 +526,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, clang::tooling::UnifiedPath O
 
   std::string FileOut =
       dpct::appendPath(OutRoot.getCanonicalPath().str(), BuildScriptName);
-  std::ofstream File;
-  File.open(FileOut, std::ios::binary);
-  if (File) {
-    File << OS.str();
-    File.close();
-  }
+  writeDataToFile(FileOut, OS.str());
 }
 
 void genBuildScript(clang::tooling::RefactoringTool &Tool,

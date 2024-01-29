@@ -366,15 +366,13 @@ static void saveApisReport(void) {
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".apis.csv"
                                 : ".apis.log"));
-    std::error_code EC =
-        llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    if (EC == llvm::errc::no_space_on_device) {
-      ShowStatus(MigrationErrorCannotWrite, RFile);
+    auto EC = createDirectories(llvm::sys::path::parent_path(RFile));
+    if ((bool)EC) {
       dpctExit(MigrationErrorCannotWrite);
     }
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
-    std::ofstream File(RFile, std::ios::binary);
+    clang::dpct::CheckedOfstream File(RFile, std::ios::binary);
 
     std::string Str;
     llvm::raw_string_ostream Title(Str);
@@ -421,11 +419,11 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".stats.csv"
                                 : ".stats.log"));
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
-    File << getDpctStatsStr() << "\n";
+    auto EC = createDirectories(llvm::sys::path::parent_path(RFile));
+    if ((bool)EC) {
+      dpctExit(MigrationErrorCannotWrite);
+    }
+    writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }
 
@@ -442,11 +440,12 @@ static void saveDiagsReport() {
   } else {
     std::string RFile = appendPath(OutRoot.getCanonicalPath().str(),
                                    ReportFilePrefix + ".diags.log");
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
-    File << getDpctDiagsStr() << "\n";
+    auto EC = createDirectories(llvm::sys::path::parent_path(RFile));
+    if ((bool)EC) {
+      dpctExit(MigrationErrorCannotWrite);
+    }
+
+    writeDataToFile(RFile, getDpctDiagsStr() + "\n");
   }
 }
 
@@ -475,11 +474,8 @@ static void DumpOutputFile(void) {
   // Redirect stdout/stderr output to <file> if option "-output-file" is set
   if (!OutputFile.empty()) {
     std::string FilePath = appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(FilePath));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(FilePath, std::ios::binary);
-    File << getDpctTermStr() << "\n";
+    createDirectories(llvm::sys::path::parent_path(FilePath));
+    writeDataToFile(FilePath, getDpctTermStr() + "\n");
   }
 }
 
@@ -499,19 +495,8 @@ void PrintReportOnFault(const std::string &FaultMsg) {
   std::string FileDiags = appendPath(OutRoot.getCanonicalPath().str(),
                                      ReportFilePrefix + ".diags.log");
 
-  std::ofstream File;
-  File.open(FileApis, std::ios::app);
-  if (File) {
-    File << FaultMsg;
-    File.close();
-  }
-
-  File.open(FileDiags, std::ios::app);
-  if (File) {
-    File << FaultMsg;
-    File.close();
-  }
-
+  appendDataToFile(FileApis, FaultMsg);
+  appendDataToFile(FileDiags, FaultMsg);
   DumpOutputFile();
 }
 
@@ -957,6 +942,9 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
+    auto EC = createDirectories(OutRoot);
+    if ((bool)EC)
+      dpctExit(MigrationErrorCannotWrite);
     dpct::DpctGlobalInfo::setOutRoot(OutRoot);
   }
 

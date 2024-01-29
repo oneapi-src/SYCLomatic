@@ -75,11 +75,7 @@ int save2Yaml(
 
   YAMLOut << TUR;
   YamlContentStream.flush();
-  // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-  // on windows.
-  std::ofstream File(YamlFile.getCanonicalPath().str(), std::ios::binary);
-  llvm::raw_os_ostream Stream(File);
-  Stream << YamlContent;
+  clang::dpct::writeDataToFile(YamlFile.getCanonicalPath().str(), YamlContent);
   return 0;
 }
 

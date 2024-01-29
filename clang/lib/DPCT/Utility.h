@@ -9,6 +9,7 @@
 #ifndef DPCT_UTILITY_H
 #define DPCT_UTILITY_H
 
+#include <bits/types/FILE.h>
 #include <functional>
 #include <ios>
 #include <iostream>
@@ -18,10 +19,12 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <fstream>
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
@@ -30,6 +33,7 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
@@ -581,6 +585,20 @@ public:
   ~PairedPrinter() { OS << Postfix; }
 };
 std::string appendPath(const std::string &P1, const std::string &P2);
+class CheckedOfstream : public std::ofstream {
+  std::string FileName;
+
+public:
+  CheckedOfstream(const std::string &FileName,
+                  ios_base::openmode Mode = ios_base::out)
+      : std::ofstream(FileName, Mode), FileName(FileName) {}
+
+  ~CheckedOfstream();
+};
+bool writeDataToFile(const std::string &FileName, const std::string &Data);
+bool appendDataToFile(const std::string &FileName, const std::string &Data);
+std::error_code createDirectories(const clang::tooling::UnifiedPath &FilePath,
+                                  bool IgnoreExisting = true);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {
