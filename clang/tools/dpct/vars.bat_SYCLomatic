@@ -8,7 +8,7 @@
 #
 # ===----------------------------------------------------------------------=== #
 
-# run this file to export DPCT env
+# run this file to export SYCLomatic env
 
 @echo off
 
@@ -16,10 +16,10 @@
 set SYCLomatic_ROOT=%~dp0
 
 # export the env vars for bin and include paths
-IF EXIST "%DPCT_ROOT%bin\dpct.exe" (
-    set "PATH=%DPCT_ROOT%bin;%PATH%"
-    set "INCLUDE=%DPCT_ROOT%include;%INCLUDE%"
-    set "CPATH=%DPCT_ROOT%include;%CPATH%"
+IF EXIST "%SYCLomatic_ROOT%bin\dpct.exe" (
+    set "PATH=%SYCLomatic_ROOT%bin;%PATH%"
+    set "INCLUDE=%SYCLomatic_ROOT%include;%INCLUDE%"
+    set "CPATH=%SYCLomatic_ROOT%include;%CPATH%"
 ) ELSE (
     echo Error: dpct/c2s binary not found.
 )

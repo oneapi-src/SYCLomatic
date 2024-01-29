@@ -14,17 +14,17 @@
 SYCLomatic_ROOT=$(readlink -f $(dirname $BASH_SOURCE))
 
 # export the env vars for bin and include paths
-DPCT_BIN_PATH="${DPCT_ROOT}/bin"
-PATH="${DPCT_BIN_PATH}:${PATH}"
+SYCLomatic_BIN_PATH="${SYCLomatic_ROOT}/bin"
+PATH="${SYCLomatic_BIN_PATH}:${PATH}"
 export PATH
 
-DPCT_INC_PATH="${DPCT_ROOT}/include"
-CPATH="${DPCT_INC_PATH}:${CPATH}"
+SYCLomatic_INC_PATH="${SYCLomatic_ROOT}/include"
+CPATH="${SYCLomatic_INC_PATH}:${CPATH}"
 export CPATH
 
 # source autocomplete script
 if [[ -n "${BASH}" ]] ; then
-  BASH_AUTOCOMPLETE_SCRIPT=${DPCT_ROOT}/env/bash-autocomplete.sh
+  BASH_AUTOCOMPLETE_SCRIPT=${SYCLomatic_ROOT}/env/bash-autocomplete.sh
   if [[ -f "$BASH_AUTOCOMPLETE_SCRIPT" ]]; then
     source "${BASH_AUTOCOMPLETE_SCRIPT}"
   fi
