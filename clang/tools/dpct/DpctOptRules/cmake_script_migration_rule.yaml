@@ -439,6 +439,21 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
+# CUDA_cudadevrt_LIBRARY is cmake cuda reverved list variable, should be removed in SYCL
+- Rule: rule_target_link_libraries_CUDA_cudadevrt_LIBRARY
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_cudadevrt_LIBRARY_target_link_libraries
+  In: ${prefix}link_libraries(${CULibraries})
+  Out: ${prefix}link_libraries(${CULibraries})
+  Subrules:
+    CULibraries:
+      In: |
+        \${CUDA_cudadevrt_LIBRARY}
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_cuda_reserved_variable_CUDA_cudadevrt_LIBRARY"
+
 # CUDA_LIBRARIES is cmake cuda reverved list variable, should be removed in SYCL
 - Rule: rule_target_link_libraries_CUDA_LIBRARIES
   Kind: CMakeRule
@@ -454,6 +469,18 @@
       MatchMode: Full
       RuleId: "remove_cuda_reserved_variable_CUDA_LIBRARIES"
 
+- Rule: rule_target_link_libraries_cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_target_link_libraries
+  In: ${prefix}link_libraries(${CULibraries})
+  Out: ${prefix}link_libraries(${CULibraries})
+  Subrules:
+    CULibraries:
+      In: cuda
+      Out: ""
+      MatchMode: Full
+
 - Rule: rule_target_link_libraries_cublas
   Kind: CMakeRule
   Priority: Fallback
@@ -463,7 +490,7 @@
   Subrules:
     CUDALibraries:
       In: cublas
-      Out: MKL::MKL_SYCL
+      Out: -qmkl
       MatchMode: Full
       RuleId: "replace_cublas_with_MKL_target"
 

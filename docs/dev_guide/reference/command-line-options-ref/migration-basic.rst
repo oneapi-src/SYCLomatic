@@ -84,3 +84,15 @@ The following table lists command line options for basic migration.
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-vcxprojfile:
           :end-before: end-vcxprojfile:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-intercept-build:
+          :end-before: desc-intercept-build:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-intercept-build:
+          :end-before: end-intercept-build:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-sycl-file-extension:
+          :end-before: desc-sycl-file-extension:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-sycl-file-extension:
+          :end-before: end-sycl-file-extension:

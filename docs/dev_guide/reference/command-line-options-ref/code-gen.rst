@@ -101,4 +101,10 @@ The following table lists command line options to customize how your code is mig
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-usm-level:
           :end-before: end-usm-level:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-enable-codepin:
+          :end-before: desc-enable-codepin:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-enable-codepin:
+          :end-before: end-enable-codepin:
 

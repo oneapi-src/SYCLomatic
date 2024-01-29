@@ -228,6 +228,14 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<UsmLevel>), USMLevel, "usm-level",
            llvm::cl::init(UsmLevel::UL_Restricted), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
            llvm::cl::Optional)
 
+DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<BuildScript>), BuildScript, "migrate-build-script",
+           DPCT_OPTION_VALUES(
+             DPCT_OPT_ENUM("CMake", int(BuildScript::BS_Cmake),
+                     "Migrate the CMake file(s).", false)),
+           llvm::cl::desc("EXPERIMENTAL: Migrate build script(s).\n"),
+           llvm::cl::init(BuildScript::BS_None), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
+           llvm::cl::Optional)
+
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<format::FormatRange>), FormatRng, "format-range",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("all", int(format::FormatRange::all),
@@ -416,11 +424,8 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), BuildScriptFile,
                     "Default name: Makefile.dpct."),
         llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScript, "migrate-cmake-script",
-        llvm::cl::desc("EXPERIMENTAL: Migrate the CMake file(s). Default: off."),
-        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateCmakeScriptOnly, "migrate-cmake-script-only",
-        llvm::cl::desc("EXPERIMENTAL: Only migrate the CMake file(s). Default: off."),
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateBuildScriptOnly, "migrate-build-script-only",
+        llvm::cl::desc("EXPERIMENTAL: Only migrate the build script(s). Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ExcludePathList, "in-root-exclude",

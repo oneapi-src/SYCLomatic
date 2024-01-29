@@ -39,7 +39,7 @@ For example, this original CUDA\* code:
      a.y += b.y;
      return a;
    }
-   
+
    void foo(double2 &a, double2 &b) {
      a += b;
    }
@@ -56,14 +56,13 @@ results in the following migrated SYCL code:
    standard operators instead.
    */
    namespace dpct_operator_overloading {
-   
-   sycl::double2 &operator+=(sycl::double2 &a, const sycl::double2 &b) {
-     a.x() += b.x();
-     a.y() += b.y();
-     return a;
-   }
+     sycl::double2 &operator+=(sycl::double2 &a, const sycl::double2 &b) {
+       a.x() += b.x();
+       a.y() += b.y();
+       return a;
+     }
    } // namespace dpct_operator_overloading
-   
+
    void foo(sycl::double2 &a, sycl::double2 &b) {
      dpct_operator_overloading::operator+=(a, b);
    }
@@ -74,7 +73,7 @@ which is rewritten to:
    :linenos:
 
    void foo(sycl::double2 &a, sycl::double2 &b) {
-     // In this case, the user-defined overloading of `+=` has been supported by sycl::double2, so we can use the operator `+=` directly.  
+     // In this case, the user-defined overloading of `+=` has been supported by sycl::double2, so we can use the operator `+=` directly.
      a += b;
    }
 
