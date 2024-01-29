@@ -23,15 +23,15 @@ int main() {
   size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_dest;
   unsigned int flag;
   cudaExtent e;
-  // CHECK: dpct::experimental::image_mem_handle_wrapper_ptr pArr, pArr_src;
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr pArr, pArr_src;
   cudaArray_t pArr, pArr_src;
   // TODO: need support.
   // cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
   cudaChannelFormatDesc desc;
-  // CHECK: pArr = new dpct::experimental::image_mem_handle_wrapper(e, desc, q_ct1);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(e, desc, q_ct1);
   cudaMalloc3DArray(&pArr, &desc, e);
-  // CHECK: pArr = new dpct::experimental::image_mem_handle_wrapper(sycl::range<2>{w, h}, desc, q_ct1);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(sycl::range<2>{w, h}, desc, q_ct1);
   cudaMallocArray(&pArr, &desc, w, h);
   // CHECK: desc = pArr->get_channel();
   // CHECK-NEXT: e = pArr->get_range();

@@ -10105,7 +10105,7 @@ void MemoryMigrationRule::mallocMigration(
       llvm::raw_string_ostream OS(Replacement);
       DerefExpr(C->getArg(0), C).print(OS);
       OS << " = new " << MapNames::getDpctNamespace()
-         << "experimental::image_mem_handle_wrapper("
+         << "experimental::image_mem_wrapper("
          << ExprAnalysis::ref(C->getArg(2)) << ", ";
       DerefExpr(C->getArg(1), C).print(OS);
       OS << ", ";
@@ -10121,9 +10121,8 @@ void MemoryMigrationRule::mallocMigration(
       llvm::raw_string_ostream OS(Replacement);
       DerefExpr(C->getArg(0), C).print(OS);
       OS << " = new " << MapNames::getDpctNamespace()
-         << "experimental::image_mem_handle_wrapper("
-         << MapNames::getClNamespace() << "range<2>{"
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << "experimental::image_mem_wrapper(" << MapNames::getClNamespace()
+         << "range<2>{" << ExprAnalysis::ref(C->getArg(2)) << ", "
          << ExprAnalysis::ref(C->getArg(3)) << "}, ";
       DerefExpr(C->getArg(1), C).print(OS);
       OS << ", ";
