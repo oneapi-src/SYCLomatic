@@ -9,6 +9,7 @@
 #ifndef DPCT_UTILITY_H
 #define DPCT_UTILITY_H
 
+#include <fstream>
 #include <functional>
 #include <ios>
 #include <iostream>
@@ -23,7 +24,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <fstream>
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"

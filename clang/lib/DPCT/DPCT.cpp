@@ -419,7 +419,9 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
     if ((bool)EC) {
       dpctExit(MigrationErrorCannotWrite);
     }
-    writeDataToFile(RFile, getDpctStatsStr() + "\n");
+    if (writeDataToFile(RFile, getDpctStatsStr() + "\n")) {
+      dpctExit(MigrationErrorCannotWrite);
+    }
   }
 }
 
