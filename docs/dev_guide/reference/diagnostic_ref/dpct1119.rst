@@ -46,7 +46,7 @@ results in the following migrated SYCL\* code:
      cg::thread_block_tile<16> tile16 = cg::tiled_partition<16>(cta);
    }
 
-which need be re-migrated with "--use-experimental-features=logical-group":
+which needs to be re-migrated with "--use-experimental-features=logical-group":
 
 .. code-block:: cpp
    :linenos:
