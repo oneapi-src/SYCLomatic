@@ -43,8 +43,7 @@ struct MatchResult {
   std::unordered_map<std::string, std::string> Bindings;
 };
 
-extern llvm::cl::opt<bool> MigrateCmakeScriptOnly;
-extern llvm::cl::opt<bool> MigrateCmakeScript;
+extern llvm::cl::opt<bool> MigrateBuildScriptOnly;
 
 static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
@@ -486,7 +485,8 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       std::string ElementContents =
           dedent(Input.substr(Index, Next - Index), Indentation);
 
-      if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
+      if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
+          MigrateBuildScriptOnly) {
         updateExtentionName(Input, Next, Result.Bindings);
       }
 
@@ -683,7 +683,8 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   int Index = 0;
   while (Index < Size) {
 
-    if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
+    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
+        MigrateBuildScriptOnly) {
       if (skipCmakeComments(OutputStream, Input, Index)) {
         continue;
       }

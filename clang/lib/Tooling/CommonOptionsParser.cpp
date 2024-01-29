@@ -182,8 +182,8 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #ifdef SYCLomatic_CUSTOMIZATION
   bool IsMigrateCmakeScriptOnlySpecified = false;
   for (auto i = 0; i < argc; i++) {
-    int Res1 = strcmp(argv[i], "--migrate-cmake-script-only");
-    int Res2 = strcmp(argv[i], "-migrate-cmake-script-only");
+    int Res1 = strcmp(argv[i], "--migrate-build-script-only");
+    int Res2 = strcmp(argv[i], "-migrate-build-script-only");
     if (Res1 == 0 || Res2 == 0) {
       IsMigrateCmakeScriptOnlySpecified = true;
       break;

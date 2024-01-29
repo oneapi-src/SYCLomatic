@@ -1939,6 +1939,13 @@ void DpctGlobalInfo::postProcess() {
   if (!ReProcessFile.empty() && isFirstPass) {
     DpctGlobalInfo::setNeedRunAgain(true);
   }
+  for (const auto &R : IncludeMapSet) {
+    if (auto F = findFile(R.first)) {
+      if (!F->getReplsSYCL()->empty()) {
+        addReplacement(R.second);
+      }
+    }
+  }
   for (auto &File : FileMap) {
     auto &S = File.second->getConstantMacroTMSet();
     auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
@@ -2330,6 +2337,7 @@ std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();
 clang::tooling::UnifiedPath DpctGlobalInfo::CudaPath;
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+BuildScript DpctGlobalInfo::BuildScriptVal = BuildScript::BS_None;
 clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
@@ -2342,8 +2350,7 @@ bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::EnableCodePin = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 bool DpctGlobalInfo::GenBuildScript = false;
-bool DpctGlobalInfo::MigrateCmakeScript = false;
-bool DpctGlobalInfo::MigrateCmakeScriptOnly = false;
+bool DpctGlobalInfo::MigrateBuildScriptOnly = false;
 bool DpctGlobalInfo::EnableComments = false;
 std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
@@ -2443,6 +2450,7 @@ std::unordered_map<std::string, bool> DpctGlobalInfo::MallocHostInfoMap;
 std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
 std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
+IncludeMapSetTy DpctGlobalInfo::IncludeMapSet;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
