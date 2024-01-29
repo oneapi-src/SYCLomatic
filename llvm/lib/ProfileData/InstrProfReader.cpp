@@ -871,11 +871,17 @@ data_type InstrProfLookupTrait::ReadData(StringRef K, const unsigned char *D,
     return data_type();
 
   DataBuffer.clear();
+#ifndef SYCLomatic_CUSTOMIZATION
+    std::vector<uint64_t> CounterBuffer;
+    std::vector<uint8_t> BitmapByteBuffer;
+#endif // SYCLomatic_CUSTOMIZATION
 
   const unsigned char *End = D + N;
   while (D < End) {
-    std::vector<uint64_t> CounterBuffer;   // INTEL
-    std::vector<uint8_t> BitmapByteBuffer; // INTEL
+#ifdef SYCLomatic_CUSTOMIZATION
+    std::vector<uint64_t> CounterBuffer;
+    std::vector<uint8_t> BitmapByteBuffer;
+#endif // SYCLomatic_CUSTOMIZATION
     // Read hash.
     if (D + sizeof(uint64_t) >= End)
       return data_type();
