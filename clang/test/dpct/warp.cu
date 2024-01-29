@@ -327,7 +327,7 @@ __global__ void kernel34() {
 }
 
 __global__ void kernel35() {
-  // CHECK: int val = 0;
+  // CHECK: int val;
   // CHECK-NEXT: int laneMask;
   // CHECK-NEXT: int WS;
   // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, WS);
@@ -337,19 +337,18 @@ __global__ void kernel35() {
   __shfl_xor_sync(0xFFFFFFFF, val, laneMask, WS);
 }
 
-__device__ void device36(int val, int laneMask, int WS) {
+__device__ void device36(int val, int src) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1121:{{[0-9]+}}: Make sure that the "val" which is used in the SYCL group function/algorithm is initialized.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_ct1.get_sub_group(), val, laneMask, WS);
-  __shfl_xor_sync(0xFFFFFFFF, val, laneMask, WS);
+  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, src);
+  __shfl(val, src, 32);
 }
 
 __global__ void kernel36() {
   int val;
-  int laneMask;
-  int WS;
-  device36(val, laneMask, WS);
+  int src;
+  device36(val, src);
 }
 
 __device__ int device37() {
@@ -358,42 +357,48 @@ __device__ int device37() {
 
 __global__ void kernel37() {
   // CHECK: int val = device37();
-  // CHECK-NEXT: int laneMask;
-  // CHECK-NEXT: int WS;
-  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, WS);
+  // CHECK-NEXT: int src;
+  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, src);
   int val = device37();
-  int laneMask;
-  int WS;
-  __shfl_xor_sync(0xFFFFFFFF, val, laneMask, WS);
+  int src;
+  __shfl(val, src, 32);
 }
 
-__device__ void device38(int a, int b, int laneMask, int WS) {
+__device__ void device38(int a, int b, int src) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1121:{{[0-9]+}}: Make sure that the "a + b" which is used in the SYCL group function/algorithm is initialized.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_ct1.get_sub_group(), a + b, laneMask, WS);
-  __shfl_xor_sync(0xFFFFFFFF, a + b, laneMask, WS);
+  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), a + b, src);
+  __shfl(a + b, src, 32);
 }
 
 __global__ void kernel38() {
   int a;
   int b;
-  int laneMask;
-  int WS;
-  device38(a, b, laneMask, WS);
+  int src;
+  device38(a, b, src);
 }
 
 __global__ void kernel39() {
   // CHECK: int a = 0;
   // CHECK-NEXT: int b = 0;
-  // CHECK-NEXT: int laneMask;
-  // CHECK-NEXT: int WS;
-  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), a + b, laneMask, WS);
+  // CHECK-NEXT: int src;
+  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), a + b, src);
   int a = 0;
   int b = 0;
-  int laneMask;
-  int WS;
-  __shfl_xor_sync(0xFFFFFFFF, a + b, laneMask, WS);
+  int src;
+  __shfl(a + b, src, 32);
+}
+
+__global__ void kernel40() {
+  // CHECK: int a = 0;
+  // CHECK-NEXT: int b = 0;
+  // CHECK-NEXT: int src;
+  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), a + b, src);
+  int a;
+  int b;
+  int src;
+  __shfl(a + b, src, 32);
 }
 
 int main() {

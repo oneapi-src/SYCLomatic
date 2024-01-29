@@ -633,14 +633,13 @@ CONDITIONAL_FACTORY_ENTRY(
                 MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-                        1, CALL_FACTORY_ENTRY(
-                               "__shfl_xor_sync",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "permute_sub_group_by_xor",
-                                    SUBGROUP, makeCallArgCreatorWithCall(1),
-                                    makeCallArgCreatorWithCall(2),
-                                    makeCallArgCreatorWithCall(3))))))),
+                    CALL_FACTORY_ENTRY("__shfl_xor_sync",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "permute_sub_group_by_xor",
+                                            SUBGROUP,
+                                            makeCallArgCreatorWithCall(1),
+                                            makeCallArgCreatorWithCall(2),
+                                            makeCallArgCreatorWithCall(3)))))),
         CONDITIONAL_FACTORY_ENTRY(
             CheckArgIsConstantIntWithValue(3, 32),
             SUBGROUPSIZE_FACTORY(
@@ -718,17 +717,15 @@ WARNING_FACTORY_ENTRY("__activemask",
 // __ballot
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
-    ANALYZE_UNINIT_DEV_VAR_FACTORY(
-        0, CALL_FACTORY_ENTRY(
-               "__ballot",
-               CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
-                    makeCombinedArg(
-                        ARG(0),
-                        makeCombinedArg(makeCombinedArg(ARG(" ? (0x1 << "),
-                                                        SUBGROUP),
-                                        ARG(".get_local_linear_id()) : 0, " +
-                                            MapNames::getClNamespace() +
-                                            "ext::oneapi::plus<>()")))))))
+    CALL_FACTORY_ENTRY(
+        "__ballot",
+        CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+             makeCombinedArg(
+                 ARG(0),
+                 makeCombinedArg(makeCombinedArg(ARG(" ? (0x1 << "), SUBGROUP),
+                                 ARG(".get_local_linear_id()) : 0, " +
+                                     MapNames::getClNamespace() +
+                                     "ext::oneapi::plus<>()"))))))
 
 // __ballot_sync
 SUBGROUPSIZE_FACTORY(
