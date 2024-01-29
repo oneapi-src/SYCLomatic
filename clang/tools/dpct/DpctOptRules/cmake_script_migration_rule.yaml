@@ -667,6 +667,13 @@
   In: cuda_add_cufft_to_target(${target})
   Out: dpct_helper_add_mkl_to_target(${target})
 
+- Rule: rule_cuda_add_cublas_to_target
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_add_cublas_to_target
+  In: cuda_add_cublas_to_target(${target})
+  Out: dpct_helper_add_mkl_to_target(${target})
+
 - Rule: rule_include_directories
   Kind: CMakeRule
   Priority: Fallback
