@@ -701,6 +701,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   // "-out-root" directory.
   for (const auto &Entry : IncludeFileMap) {
     clang::tooling::UnifiedPath FilePath = Entry.first;
+    clang::tooling::UnifiedPath DebugFilePath = Entry.first;
+    clang::tooling::UnifiedPath OriginalFilePath = Entry.first;
     if (!Entry.second) {
       bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
       if (IsExcluded) {
@@ -718,6 +720,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       FilePath = TempFilePath;
 
       if (!rewriteDir(FilePath, InRoot, OutRoot)) {
+        continue;
+      }
+      if (!rewriteDir(DebugFilePath, InRoot, DebugCUDAFolder)) {
         continue;
       }
       if (fs::exists(FilePath.getCanonicalPath())) {
@@ -770,6 +775,42 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                 *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
+      }
+      if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
+        // Copy non-replacement CUDA files into debug folder
+        int FD = 0;
+        std::error_code EC1 =
+            fs::openFile(DebugFilePath.getCanonicalPath(), FD,
+                         fs::CD_CreateAlways, fs::FA_Write, fs::OF_None, 0664);
+        if ((bool)EC1) {
+          std::string ErrMsg =
+              "[ERROR] Open file: " + DebugFilePath.getCanonicalPath().str() +
+              " fail: " + EC1.message() + "\n";
+          status = MigrationSaveOutFail;
+          PrintMsg(ErrMsg);
+          return status;
+        }
+
+        std::error_code EC2 =
+            fs::copy_file(OriginalFilePath.getCanonicalPath(), FD);
+        if ((bool)EC2) {
+          std::string ErrMsg =
+              "[ERROR] Open file: " + DebugFilePath.getCanonicalPath().str() +
+              " fail: " + EC2.message() + "\n";
+          status = MigrationSaveOutFail;
+          PrintMsg(ErrMsg);
+          return status;
+        }
+
+        std::error_code EC3 = fs::closeFile(FD);
+        if ((bool)EC3) {
+          std::string ErrMsg =
+              "[ERROR] Close file: " + DebugFilePath.getCanonicalPath().str() +
+              " fail: " + EC3.message() + "\n";
+          status = MigrationSaveOutFail;
+          PrintMsg(ErrMsg);
+          return status;
+        }
       }
     }
   }
