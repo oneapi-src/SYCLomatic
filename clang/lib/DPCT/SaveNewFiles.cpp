@@ -778,7 +778,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
         // Copy non-replacement CUDA files into debug folder
-        int FD = 0;
+        fs::file_t FD = 0;
         std::error_code EC1 =
             fs::openFile(DebugFilePath.getCanonicalPath(), FD,
                          fs::CD_CreateAlways, fs::FA_Write, fs::OF_None, 0664);
