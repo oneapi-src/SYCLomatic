@@ -3018,7 +3018,8 @@ ParameterStream &MemVarInfo::getKernelArg(ParameterStream &PS) {
     if (AccMode == Pointer) {
       if (!getType()->isWritten())
         PS << "(" << getAccessorDataType(false, true) << " *)";
-      PS << getAccessorName() << ".get_pointer()";
+      PS << getAccessorName()
+         << ".get_multi_ptr<sycl::access::decorated::no>().get()";
     } else {
       PS << getAccessorName();
     }
