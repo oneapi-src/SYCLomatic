@@ -207,9 +207,11 @@ static bool checkOverwriteAndWarn(const std::string &OutFilePath,
   // file.
   if (SrcFilePath != OutFilePath2InFilePath.end() &&
       SrcFilePath->second != InFilePath) {
-    llvm::errs() << "[WARNING]: Due to name collusion with another file, skip "
-                    "writing file '"
-                 << OutFilePath << "'\n";
+    llvm::errs() << "[WARNING]: The output file of '" << InFilePath << "' and '"
+                 << SrcFilePath->second << "' have same name '" << OutFilePath
+                 << "'. To avoid overwrite, the migration of '" << InFilePath
+                 << "' is skipped. Please change the output file extension "
+                    "with option '--sycl-file-extension'.\n";
     Overwrites = true;
   }
   return Overwrites;
