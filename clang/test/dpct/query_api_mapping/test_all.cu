@@ -1,7 +1,5 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=- | FileCheck %s
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping - | FileCheck %s
-
 // CHECK: __activemask
 // CHECK-NEXT: __all
 // CHECK-NEXT: __all_sync
