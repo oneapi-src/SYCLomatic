@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <cassert>
 #include <fstream>
+#include <filesystem>
 
 using namespace clang::dpct;
 using namespace llvm;
@@ -778,39 +779,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
         // Copy non-replacement CUDA files into debug folder
-        fs::file_t FD = 0;
-        std::error_code EC1 =
-            fs::openFile(DebugFilePath.getCanonicalPath(), FD,
-                         fs::CD_CreateAlways, fs::FA_Write, fs::OF_None, 0664);
-        if ((bool)EC1) {
-          std::string ErrMsg =
-              "[ERROR] Open file: " + DebugFilePath.getCanonicalPath().str() +
-              " fail: " + EC1.message() + "\n";
-          status = MigrationSaveOutFail;
-          PrintMsg(ErrMsg);
-          return status;
-        }
-
-        std::error_code EC2 =
-            fs::copy_file(OriginalFilePath.getCanonicalPath(), FD);
-        if ((bool)EC2) {
-          std::string ErrMsg =
-              "[ERROR] Open file: " + DebugFilePath.getCanonicalPath().str() +
-              " fail: " + EC2.message() + "\n";
-          status = MigrationSaveOutFail;
-          PrintMsg(ErrMsg);
-          return status;
-        }
-
-        std::error_code EC3 = fs::closeFile(FD);
-        if ((bool)EC3) {
-          std::string ErrMsg =
-              "[ERROR] Close file: " + DebugFilePath.getCanonicalPath().str() +
-              " fail: " + EC3.message() + "\n";
-          status = MigrationSaveOutFail;
-          PrintMsg(ErrMsg);
-          return status;
-        }
+        std::filesystem::copy(OriginalFilePath.getCanonicalPath().str(),
+                              DebugFilePath.getCanonicalPath().str());
       }
     }
   }
