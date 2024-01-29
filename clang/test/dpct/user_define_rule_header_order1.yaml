@@ -3,6 +3,8 @@
   Priority: Takeover
   In: cub::DeviceScan::InclusiveSum
   Out: cub::DeviceScan::InclusiveSum
+  Attributes:                                                                    
+    ReplaceCalleeNameOnly: true
   Includes: [
     '<oneapi/dpl/execution>',
     '<oneapi/dpl/algorithm>'

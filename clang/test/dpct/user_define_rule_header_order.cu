@@ -18,7 +18,7 @@
 #ifdef BUILD_TEST
 namespace cub {
 struct DeviceScan {
-void InclusiveSum(void *, size_t &, int *, int *, int) {}
+static void InclusiveSum(void *, size_t &, int *, int *, int) {}
 };
 } // namespace cub
 #endif // BUILD_TEST
