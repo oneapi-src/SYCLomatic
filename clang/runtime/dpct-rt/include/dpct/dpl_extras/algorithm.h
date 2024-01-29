@@ -2539,13 +2539,14 @@ unique_count(ExecutionPolicy &&policy, InputIterator begin, InputIterator end,
     return 0;
   if (n == 1)
     return 1;
-  auto zip_beg = dpl::make_zip_iterator(begin, begin + 1);
+  auto zip_beg = oneapi::dpl::make_zip_iterator(begin, begin + 1);
   auto zip_end = zip_beg + n - 1;
-  return 1 + dpl::count_if(::std::forward<ExecutionPolicy>(policy), zip_beg,
-                           zip_end, [binary_pred](const auto &e) {
-                             using ::std::get;
-                             return !binary_pred(get<0>(e), get<1>(e));
-                           });
+  return 1 + oneapi::dpl::count_if(::std::forward<ExecutionPolicy>(policy),
+                                   zip_beg, zip_end,
+                                   [binary_pred](const auto &e) {
+                                     using ::std::get;
+                                     return !binary_pred(get<0>(e), get<1>(e));
+                                   });
 }
 
 template <typename ExecutionPolicy, typename InputIterator>
