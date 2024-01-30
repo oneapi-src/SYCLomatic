@@ -80,8 +80,6 @@ public:
 
 private:
   enum class AccessMode : int { Read = 0, Write, ReadWrite };
-  std::set<const DeclRefExpr *> matchAllDRE(const VarDecl *TargetDecl,
-                                            const Stmt *Range);
   std::pair<std::set<const DeclRefExpr *>, std::set<const VarDecl *>>
   isAssignedToAnotherDREOrVD(const DeclRefExpr *);
   bool isAccessingMemory(const DeclRefExpr *);

@@ -352,11 +352,11 @@ public:
       : DataBuffer(std::move(DataBuffer)),
         Correlator(dyn_cast_or_null<const InstrProfCorrelatorImpl<IntPtrT>>(
             Correlator)),
-        ShouldSwapBytes(false), Version(0), CountersDelta(0), NamesDelta(0),
-        Data(nullptr), DataEnd(nullptr), CountersStart(nullptr),
-        CountersEnd(nullptr), NamesStart(nullptr), NamesEnd(nullptr),
-        ValueDataStart(nullptr), ValueKindLast(0), CurValueDataSize(0),
-        BinaryIds({}), Warn(Warn) {}
+        ShouldSwapBytes(false), Version(0), CountersDelta(0), BitmapDelta(0),
+        NamesDelta(0), Data(nullptr), DataEnd(nullptr), CountersStart(nullptr),
+        CountersEnd(nullptr), BitmapStart(nullptr), BitmapEnd(nullptr),
+        NamesStart(nullptr), NamesEnd(nullptr), ValueDataStart(nullptr),
+        ValueKindLast(0), CurValueDataSize(0), BinaryIds({}), Warn(Warn) {}
 #else
   RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
                      const InstrProfCorrelator *Correlator,
