@@ -1205,7 +1205,9 @@ public:
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
   accessor(const accessor_t &acc, const sycl::range<3> &in_range)
-      : accessor(acc.get_pointer(), in_range) {}
+      : accessor(
+            acc.template get_multi_ptr<sycl::access::decorated::no>().get(),
+            in_range) {}
   accessor<T, Memory, 2> operator[](size_t index) const {
     sycl::range<2> sub(_range.get(1), _range.get(2));
     return accessor<T, Memory, 2>(_data + index * sub.size(), sub);
@@ -1229,7 +1231,9 @@ public:
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
   accessor(const accessor_t &acc, const sycl::range<2> &in_range)
-      : accessor(acc.get_pointer(), in_range) {}
+      : accessor(
+            acc.template get_multi_ptr<sycl::access::decorated::no>().get(),
+            in_range) {}
 
   pointer_t operator[](size_t index) const {
     return _data + _range.get(1) * index;
