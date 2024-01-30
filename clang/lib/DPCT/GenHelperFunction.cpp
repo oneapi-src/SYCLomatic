@@ -130,7 +130,7 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
     std::ofstream VAR_NAME##File(                                              \
         appendPath(appendPath(ToPath.getCanonicalPath().str(), FOLDER_NAME),   \
                    #FILE_NAME),                                                \
-        std::ios_base::out | std::ios_base::trunc);                            \
+        std::ios::out | std::ios::trunc);                                      \
     std::string Code = VAR_NAME##AllContentStr;                                \
     VAR_NAME##File << Code;                                                    \
     VAR_NAME##File.flush();                                                    \
