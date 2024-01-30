@@ -19,3 +19,5 @@ target_link_libraries(${PROJECT_NAME}
    
    
 )
+
+target_link_libraries(cublas-cudnn-test -qmkl ${DNN_LIB})

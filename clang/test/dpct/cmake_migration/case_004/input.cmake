@@ -19,3 +19,5 @@ target_link_libraries(${PROJECT_NAME}
    libnvinfer.so
    libnvonnxparser.so
 )
+
+target_link_libraries(cublas-cudnn-test cublas cudnn)
