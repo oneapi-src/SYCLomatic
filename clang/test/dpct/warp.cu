@@ -364,43 +364,6 @@ __global__ void kernel37() {
   __shfl(val, src, 32);
 }
 
-__device__ void device38(int a, int b, int src) {
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1121:{{[0-9]+}}: Make sure that the "a + b" which is used in the SYCL group function/algorithm is initialized.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), a + b, src);
-  __shfl(a + b, src, 32);
-}
-
-__global__ void kernel38() {
-  int a;
-  int b;
-  int src;
-  device38(a, b, src);
-}
-
-__global__ void kernel39() {
-  // CHECK: int a = 0;
-  // CHECK-NEXT: int b = 0;
-  // CHECK-NEXT: int src;
-  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), a + b, src);
-  int a = 0;
-  int b = 0;
-  int src;
-  __shfl(a + b, src, 32);
-}
-
-__global__ void kernel40() {
-  // CHECK: int a = 0;
-  // CHECK-NEXT: int b = 0;
-  // CHECK-NEXT: int src;
-  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), a + b, src);
-  int a;
-  int b;
-  int src;
-  __shfl(a + b, src, 32);
-}
-
 int main() {
 
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();

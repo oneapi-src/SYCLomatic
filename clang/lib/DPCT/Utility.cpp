@@ -4774,6 +4774,11 @@ int isArgumentInitialized(
     return SM.getExpansionLoc(DRE->getEndLoc()).getRawEncoding() <
            SM.getExpansionLoc(Arg->getBeginLoc()).getRawEncoding();
   };
+
+  // TODO: Currently we only emit warning/analyze DRE argument.
+  if (!isa<DeclRefExpr>(Arg->IgnoreCasts()))
+    return 1;
+
   // 1. Find the DRE(s) used in the Arg.
   // 2. Find the Decl(s) of the DRE(s).
   // 3. Check each Decl:
