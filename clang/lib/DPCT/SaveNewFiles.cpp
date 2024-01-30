@@ -198,9 +198,9 @@ static std::vector<std::string> FilesNotInCompilationDB;
 
 std::map<std::string, std::string> OutFilePath2InFilePath;
 
-static bool checkOverwriteAndWarn(const std::string &OutFilePath,
-                                  const std::string &InFilePath) {
-  auto SrcFilePath = OutFilePath2InFilePath.find(OutFilePath);
+static bool checkOverwriteAndWarn(StringRef OutFilePath,
+                                  StringRef InFilePath) {
+  auto SrcFilePath = OutFilePath2InFilePath.find(OutFilePath.str());
 
   bool Overwrites = false;
   // Make sure that the output file corresponds to a single and unique input
@@ -240,7 +240,7 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
 
     // Make sure that the output file corresponds to a single and unique input
     // file.
-    if (checkOverwriteAndWarn(OutputFile.getCanonicalPath().str(), File))
+    if (checkOverwriteAndWarn(OutputFile.getCanonicalPath(), File))
       continue;
 
     auto Parent = path::parent_path(OutputFile.getCanonicalPath());
@@ -467,7 +467,7 @@ int writeReplacementsToFiles(
     // After migration we will end up replacing src.cpp with migrated src.cu
     // when the --sycl-file-extension is cpp
     // In such a case warn the user.
-    if (checkOverwriteAndWarn(OutPath.getCanonicalPath().str(), Entry.first))
+    if (checkOverwriteAndWarn(OutPath.getCanonicalPath(), Entry.first))
       continue;
 
     std::error_code EC;
@@ -782,8 +782,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       // After migration we will end up replacing src.cpp with migrated src.cu
       // when the --sycl-file-extension is cpp
       // In such a case warn the user.
-      if (checkOverwriteAndWarn(FilePath.getCanonicalPath().str(),
-                                Entry.first.getCanonicalPath().str()))
+      if (checkOverwriteAndWarn(FilePath.getCanonicalPath(),
+                                Entry.first.getCanonicalPath()))
         continue;
 
       // If the file needs no replacement and it already exist, don't
