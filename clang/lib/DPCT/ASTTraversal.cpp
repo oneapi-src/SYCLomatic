@@ -199,12 +199,30 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
         return false;
       }
     }
-    if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
-      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
-      DpctGlobalInfo::getInstance()
-          .insertFile(LocInfo.first)
-          ->setRTVersionValue(
-              clang::CudaVersionToMacroDefStr(DpctGlobalInfo::getSDKVersion()));
+    if (DpctGlobalInfo::getContext().getLangOpts().CUDA) {
+      if (MacroName == "CUDART_VERSION" ||
+          MacroName == "__CUDART_API_VERSION") {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+        auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+        DpctGlobalInfo::getInstance()
+            .insertFile(LocInfo.first)
+            ->setRTVersionValue(
+                std::to_string(Ver.first * 1000 + Ver.second * 10));
+      }
+      if (MacroName == "__CUDACC_VER_MAJOR__") {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+        auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+        DpctGlobalInfo::getInstance()
+            .insertFile(LocInfo.first)
+            ->setMajorVersionValue(std::to_string(Ver.first));
+      }
+      if (MacroName == "__CUDACC_VER_MINOR__") {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+        auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+        DpctGlobalInfo::getInstance()
+            .insertFile(LocInfo.first)
+            ->setMinorVersionValue(std::to_string(Ver.second));
+      }
     }
     TransformSet.emplace_back(Repl);
     return true;
@@ -8754,7 +8772,7 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
   DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
                              KCallSpellingRange.first.printToString(SM)) +
                          "(SYCL)\", ";
-  std::string StramStr = "0";
+  std::string StreamStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
     Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -8762,16 +8780,17 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
   std::string QueueStr = "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
   if (auto *Config = KCall->getConfig()) {
     if (Config->getNumArgs() > 3) {
-      auto StramStrSpell = getStmtSpelling(Config->getArg(3));
-      if (!StramStrSpell.empty()) {
-        StramStr = StramStrSpell;
-        QueueStr = StramStrSpell;
+      auto StreamStrSpell = getStmtSpelling(Config->getArg(3));
+      if (!StreamStrSpell.empty()) {
+        StreamStr = StreamStrSpell;
+      } else if (!isDefaultStream(Config->getArg(3))) {
+        QueueStr = StreamStrSpell;
       }
     }
   }
 
   buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
-  DebugArgsString += StramStr;
+  DebugArgsString += StreamStr;
   DebugArgsStringSYCL += QueueStr;
   for (auto *Arg : KCall->arguments()) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {

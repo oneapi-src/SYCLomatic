@@ -60,8 +60,8 @@ enum ProcessStatus {
   InterceptBuildError = -47,
   MigrationErrorCMakeScriptPathInvalid = -48,
   MigrateCmakeScriptOnlyNotSpecifed = -49,
-  MigarteCmakeScriptIncorrectUse = -50,
-  MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse = -51,
+  MigarteBuildScriptIncorrectUse = -50,
+  MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse = -51,
   MigrationErrorNoExplicitInRootAndCMakeScript = -52,
 };
 
