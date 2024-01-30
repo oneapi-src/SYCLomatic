@@ -19,6 +19,18 @@ The following table lists |tool_name| command line options in alphabetical order
           :start-after: desc-always-use-async-handler:
           :end-before: end-always-use-async-handler:
    * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-analysis-mode:
+          :end-before: desc-analysis-mode:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-analysis-mode:
+          :end-before: end-analysis-mode:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-analysis-mode-output-file:
+          :end-before: desc-analysis-mode-output-file:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-analysis-mode-output-file:
+          :end-before: end-analysis-mode-output-file:
+   * - .. include:: /_include_files/options_def.rst
           :start-after: opt-analysis-scope-path:
           :end-before: desc-analysis-scope-path:
      - .. include:: /_include_files/options_def.rst
@@ -66,6 +78,12 @@ The following table lists |tool_name| command line options in alphabetical order
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-cuda-include-path:
           :end-before: end-cuda-include-path:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-enable-codepin:
+          :end-before: desc-enable-codepin:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-enable-codepin:
+          :end-before: end-enable-codepin:
    * - .. include:: /_include_files/options_def.rst
           :start-after: opt-enable-ctad:
           :end-before: desc-enable-ctad:
@@ -150,6 +168,18 @@ The following table lists |tool_name| command line options in alphabetical order
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-keep-original-code:
           :end-before: end-keep-original-code:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-migrate-build-script:
+          :end-before: desc-migrate-build-script:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-migrate-build-script:
+          :end-before: end-migrate-build-script:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-migrate-build-script-only:
+          :end-before: desc-migrate-build-script-only:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-migrate-build-script-only:
+          :end-before: end-migrate-build-script-only:
    * - .. include:: /_include_files/options_def.rst
           :start-after: opt-no-dpcpp-extensions:
           :end-before: desc-no-dpcpp-extensions:
@@ -258,6 +288,12 @@ The following table lists |tool_name| command line options in alphabetical order
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-suppress-warnings-all:
           :end-before: end-suppress-warnings-all:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-sycl-file-extension:
+          :end-before: desc-sycl-file-extension:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-sycl-file-extension:
+          :end-before: end-sycl-file-extension:
    * - .. include:: /_include_files/options_def.rst
           :start-after: opt-sycl-named-lambda:
           :end-before: desc-sycl-named-lambda:

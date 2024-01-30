@@ -11,3 +11,5 @@ LANGUAGES CXX CUDA
 project(foo
 VERSION 1.1.0
 LANGUAGES)
+
+project(foo)
