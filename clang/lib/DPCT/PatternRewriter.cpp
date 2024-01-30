@@ -432,6 +432,12 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
   int PatternIndex = 0;
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
+  bool CodeElementExist = false;
+  for (const auto &Element : Pattern) {
+    if (std::holds_alternative<CodeElement>(Element)) {
+      CodeElementExist = true;
+    }
+  }
 
   while (PatternIndex < PatternSize && Index < Size) {
     const auto &Element = Pattern[PatternIndex];
@@ -453,12 +459,6 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      bool CodeElementExist = false;
-      for (const auto &Element : Pattern) {
-        if (std::holds_alternative<CodeElement>(Element)) {
-          CodeElementExist = true;
-        }
-      }
       // To fully match pattern string without code element.
       if (!CodeElementExist && Index - PatternSize >= 0 &&
           PatternIndex == PatternSize - 1 &&
