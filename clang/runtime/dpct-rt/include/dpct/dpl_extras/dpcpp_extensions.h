@@ -584,7 +584,7 @@ __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_THREAD]) {
 #pragma unroll
   for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    if((linear_tid + (ITEM * ITEMS_PER_THREAD) < GROUP_THREADS){
+    if(linear_tid + (ITEM * ITEMS_PER_THREAD) < GROUP_THREADS){
       items[ITEM] = block_itr[linear_tid + (ITEM * ITEMS_PER_THREAD)];
     }
   }
