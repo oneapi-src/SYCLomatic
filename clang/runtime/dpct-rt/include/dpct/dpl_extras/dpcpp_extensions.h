@@ -592,7 +592,7 @@ __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
 
 template <int GROUP_THREADS, typename InputT, int ITEMS_PER_THREAD,
           typename InputIteratorT>
-__dpct_inline__ void load_warp_striped(size_t linear_tid, InputIteratorT block_itr,
+__dpct_inline__ void load_subgroup_striped(size_t linear_tid, InputIteratorT block_itr,
                                        InputT (&items)[ITEMS_PER_THREAD]) {
 
   //int tid = linear_tid & 1;
