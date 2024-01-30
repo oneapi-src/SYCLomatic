@@ -138,7 +138,7 @@ bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
   auto PathDiff = std::mismatch(path::begin(FilePath.getCanonicalPath()),
                                 path::end(FilePath.getCanonicalPath()),
                                 path::begin(InRoot.getCanonicalPath()));
-  SmallString<512> NewFilePath = SmallString<512>(OutRoot.getCanonicalPath());
+  SmallString<512> NewFilePath = OutRoot.getCanonicalPath();
   path::append(NewFilePath, PathDiff.first,
                path::end(FilePath.getCanonicalPath()));
 #if defined(_WIN64)
