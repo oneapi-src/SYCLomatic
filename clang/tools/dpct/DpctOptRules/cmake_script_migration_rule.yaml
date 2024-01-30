@@ -694,3 +694,10 @@
       In: CUDA_INCLUDE_DIRS
       Out: SYCL_INCLUDE_DIR
       MatchMode: Full
+
+- Rule: rule_cuda_add_library
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_add_library
+  In: cuda_add_library(${arg})
+  Out: add_library(${arg})
