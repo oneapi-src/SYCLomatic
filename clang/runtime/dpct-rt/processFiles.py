@@ -8,6 +8,16 @@
 #
 #===------------------------------------------------------------------------===#
 
+# This script converts header files to literal `std::string`s.
+# Each header file is converted to a `std::string`.
+# Simply put, the work is add "R\"Delimiter(" and ")Delimiter\"\n" around each header file.
+# But on Windows, there are some length limitation about literal string,
+# so this script will split a long string into some shorter ones.
+# 
+# Usage:
+# python3 processFiles.py build-folder
+# Note: This file (processFiles.py) can only be moved to other locations.
+
 import os
 import sys
 import re

@@ -107,32 +107,6 @@ const std::string CodePinDetailJsonAllContentStr =
 #include "clang/DPCT/codepin/detail/json.hpp.inc"
     ;
 
-
-void replaceAllOccurredStrsInStr(std::string &StrNeedProcess,
-                                 const std::string &Pattern,
-                                 const std::string &Repl) {
-  if (StrNeedProcess.empty() || Pattern.empty()) {
-    return;
-  }
-
-  size_t PatternLen = Pattern.size();
-  size_t ReplLen = Repl.size();
-  size_t Offset = 0;
-  Offset = StrNeedProcess.find(Pattern, Offset);
-
-  while (Offset != std::string::npos) {
-    StrNeedProcess.replace(Offset, PatternLen, Repl);
-    Offset = Offset + ReplLen;
-    Offset = StrNeedProcess.find(Pattern, Offset);
-  }
-}
-
-void replaceEndOfLine(std::string &StrNeedProcess) {
-#ifdef _WIN64
-  replaceAllOccurredStrsInStr(StrNeedProcess, "\n", "\r\n");
-#endif
-}
-
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   if (!llvm::sys::fs::is_directory(OutRoot.getCanonicalPath()))
     llvm::sys::fs::create_directory(OutRoot.getCanonicalPath());
@@ -146,83 +120,51 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
     llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/dpl_extras");
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/codepin"))
     llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/codepin");
-  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/codepin/detail"))
-    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/codepin/detail");
+  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() +
+                                   "/codepin/detail"))
+    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() +
+                                    "/codepin/detail");
 
-#define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)                         \
+#define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FOLDER_NAME, FILE_NAME)            \
   {                                                                            \
     std::ofstream VAR_NAME##File(                                              \
-        appendPath(ToPath.getCanonicalPath().str(), #FILE_NAME),               \
-        std::ios::binary);                                                     \
-    std::string Code = VAR_NAME##AllContentStr;                                \
-    replaceEndOfLine(Code);                                                    \
-    VAR_NAME##File << Code;                                                    \
-    VAR_NAME##File.flush();                                                    \
-  }
-#define GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)              \
-  {                                                                            \
-    std::ofstream VAR_NAME##File(                                              \
-        appendPath(appendPath(ToPath.getCanonicalPath().str(), "dpl_extras"),  \
+        appendPath(appendPath(ToPath.getCanonicalPath().str(), FOLDER_NAME),   \
                    #FILE_NAME),                                                \
-        std::ios::binary);                                                     \
+        std::ios_base::out | std::ios_base::trunc);                            \
     std::string Code = VAR_NAME##AllContentStr;                                \
-    replaceEndOfLine(Code);                                                    \
     VAR_NAME##File << Code;                                                    \
     VAR_NAME##File.flush();                                                    \
   }
-#define GENERATE_CODEPIN_CONTENT(VAR_NAME, FILE_NAME)                          \
-  {                                                                            \
-    std::ofstream VAR_NAME##File(                                              \
-        appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"),  \
-                   #FILE_NAME),                                                \
-        std::ios::binary);                                                     \
-    std::string Code = VAR_NAME##AllContentStr;                                \
-    replaceEndOfLine(Code);                                                    \
-    VAR_NAME##File << Code;                                                    \
-    VAR_NAME##File.flush();                                                    \
-  }
-#define GENERATE_CODEPIN_DETAIL_CONTENT(VAR_NAME, FILE_NAME)                   \
-  {                                                                            \
-    std::ofstream VAR_NAME##File(                                              \
-        appendPath(appendPath(                                                 \
-            appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail"), \
-                   #FILE_NAME),                                                \
-        std::ios::binary);                                                     \
-    std::string Code = VAR_NAME##AllContentStr;                                \
-    replaceEndOfLine(Code);                                                    \
-    VAR_NAME##File << Code;                                                    \
-    VAR_NAME##File.flush();                                                    \
-  }
-  GENERATE_ALL_FILE_CONTENT(Atomic, atomic.hpp)
-  GENERATE_ALL_FILE_CONTENT(BindlessImage, bindless_images.hpp)
-  GENERATE_ALL_FILE_CONTENT(BlasUtils, blas_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(Device, device.hpp)
-  GENERATE_ALL_FILE_CONTENT(Dpct, dpct.hpp)
-  GENERATE_ALL_FILE_CONTENT(DplUtils, dpl_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(DnnlUtils, dnnl_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(Image, image.hpp)
-  GENERATE_ALL_FILE_CONTENT(Kernel, kernel.hpp)
-  GENERATE_ALL_FILE_CONTENT(Math, math.hpp)
-  GENERATE_ALL_FILE_CONTENT(Memory, memory.hpp)
-  GENERATE_ALL_FILE_CONTENT(Util, util.hpp)
-  GENERATE_ALL_FILE_CONTENT(RngUtils, rng_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(LibCommonUtils, lib_common_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(CclUtils, ccl_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(SparseUtils, sparse_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(FftUtils, fft_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(LapackUtils, lapack_utils.hpp)
-  GENERATE_CODEPIN_CONTENT(CodePin, codepin.hpp)
-  GENERATE_CODEPIN_DETAIL_CONTENT(CodePinDetailSchema, schema.hpp)
-  GENERATE_CODEPIN_DETAIL_CONTENT(CodePinDetailJson, json.hpp)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasAlgorithm, algorithm.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasFunctional, functional.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasIterators, iterators.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasMemory, memory.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasNumeric, numeric.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasVector, vector.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasDpcppExtensions, dpcpp_extensions.h)
+  GENERATE_ALL_FILE_CONTENT(Atomic, ".", atomic.hpp)
+  GENERATE_ALL_FILE_CONTENT(BindlessImage, ".", bindless_images.hpp)
+  GENERATE_ALL_FILE_CONTENT(BlasUtils, ".", blas_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(Device, ".", device.hpp)
+  GENERATE_ALL_FILE_CONTENT(Dpct, ".", dpct.hpp)
+  GENERATE_ALL_FILE_CONTENT(DplUtils, ".", dpl_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(DnnlUtils, ".", dnnl_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(Image, ".", image.hpp)
+  GENERATE_ALL_FILE_CONTENT(Kernel, ".", kernel.hpp)
+  GENERATE_ALL_FILE_CONTENT(Math, ".", math.hpp)
+  GENERATE_ALL_FILE_CONTENT(Memory, ".", memory.hpp)
+  GENERATE_ALL_FILE_CONTENT(Util, ".", util.hpp)
+  GENERATE_ALL_FILE_CONTENT(RngUtils, ".", rng_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(LibCommonUtils, ".", lib_common_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(CclUtils, ".", ccl_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(SparseUtils, ".", sparse_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(FftUtils, ".", fft_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(LapackUtils, ".", lapack_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
+  GENERATE_ALL_FILE_CONTENT(CodePinDetailSchema, "codepin/detail", schema.hpp)
+  GENERATE_ALL_FILE_CONTENT(CodePinDetailJson, "codepin/detail", json.hpp)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasAlgorithm, "dpl_extras", algorithm.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasFunctional, "dpl_extras", functional.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasIterators, "dpl_extras", iterators.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasMemory, "dpl_extras", memory.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasNumeric, "dpl_extras", numeric.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasVector, "dpl_extras", vector.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasDpcppExtensions, "dpl_extras",
+                            dpcpp_extensions.h)
 #undef GENERATE_ALL_FILE_CONTENT
-#undef GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT
 }
 
 } // namespace dpct
