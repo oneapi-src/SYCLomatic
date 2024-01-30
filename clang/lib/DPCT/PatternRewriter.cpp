@@ -695,6 +695,11 @@ bool skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
       OutputStream << "\n";
     }
     Index++;
+    if (Index < Size && isWhitespace(Input[Index])) {
+      for (; Index < Size && isWhitespace(Input[Index]); Index++) {
+        OutputStream << Input[Index];
+      }
+    }
   }
   return CommentFound;
 }
