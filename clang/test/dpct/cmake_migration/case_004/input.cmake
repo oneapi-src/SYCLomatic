@@ -19,3 +19,4 @@ target_link_libraries(${PROJECT_NAME}
    libnvinfer.so
    libnvonnxparser.so
 )
+target_link_libraries(nlm_cuda  ${OpenCV_LIBS} stdc++ stdc++fs)

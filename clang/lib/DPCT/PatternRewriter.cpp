@@ -453,6 +453,52 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
+      bool CodeElementExist = false;
+      for (const auto &Element : Pattern) {
+        if (std::holds_alternative<CodeElement>(Element)) {
+          CodeElementExist = true;
+        }
+      }
+
+      printf("Input:[%s]\n", Input.c_str());
+      printf("[%d][%c]\n", Index, Input[Index]);
+      printf("pattern [%d][%c]\n", PatternIndex, Literal.Value);
+      if (!CodeElementExist && Index - PatternSize >= 0 &&
+          PatternIndex == PatternSize - 1 &&
+          isIdentifiedChar(Input[Index - PatternSize]) &&
+          Input[Index - PatternSize + 1 ] != '.') {
+
+        printf("Hit ################################\n");
+        printf("[%d][%c]\n", Index, Input[Index]);
+        printf("[%d][%c]\n", Index - PatternSize, Input[Index - PatternSize]);
+        printf("Pattern:[%d]\n", PatternSize);
+        printf("Input:[%s]\n", Input.c_str());
+        printf("################################\n\n");
+
+#if 1 // use for debug print
+        int Count = 0;
+        printf("Pattern start:\n");
+        for (auto Element : Pattern) {
+          if (std::holds_alternative<CodeElement>(Element)) {
+            auto &Code = std::get<CodeElement>(Element);
+            printf("\t[%d]->[%s]:[%d]\n", Count, Code.Name.c_str(),
+                   Code.SuffixLength);
+          }
+          if (std::holds_alternative<LiteralElement>(Element)) {
+            const auto &Literal = std::get<LiteralElement>(Element);
+            printf("\t[%d]->[%c]\n", Count, Literal.Value);
+          }
+          if (std::holds_alternative<SpacingElement>(Element)) {
+            printf("\t[%d]->[%s]\n", Count, "space");
+          }
+          Count++;
+        }
+        printf("Pattern end.\n\n");
+#endif
+
+        return {};
+      }
+
       // If input value has been matched to the end but match pattern still has
       // value, it is considered not matched case.
       if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
@@ -507,6 +553,10 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
 
   Result.Start = Start;
   Result.End = Index;
+  printf("Pattern:[%d]\n", PatternSize);
+  printf("Input:[%s]\n", Input.c_str());
+  printf("[%d][%d] -- > [%c][%c]\n", Result.Start, Result.End, Input[Result.Start], Input[Result.End]);
+
   return Result;
 }
 
