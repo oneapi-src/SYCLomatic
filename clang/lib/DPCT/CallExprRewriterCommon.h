@@ -1049,6 +1049,17 @@ createFactoryWithSubGroupSizeRequest(
                                                    std::move(Inner));
 }
 
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAnalyzeUninitializedDeviceVarRewriterFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Factory,
+    int Idx) {
+  return std::make_pair(
+      std::move(Factory.first),
+      std::make_shared<AnalyzeUninitializedDeviceVarRewriterFactory>(
+          Factory.second, Idx));
+}
+
 template <class... StmtPrinters>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMultiStmtsRewriterFactory(
@@ -2069,6 +2080,8 @@ public:
 #define HEADER_INSERT_FACTORY(HEADER, x) createInsertHeaderFactory(HEADER, x 0),
 #define SUBGROUPSIZE_FACTORY(IDX, NEWFUNCNAME, x)                              \
   createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
+#define ANALYZE_UNINIT_DEV_VAR_FACTORY(Idx, Factory)                           \
+  createAnalyzeUninitializedDeviceVarRewriterFactory(Factory Idx),
 #define STREAM(x) makeDerefStreamExprCreator(x)
 #define ADDROF(x) makeAddrOfExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
