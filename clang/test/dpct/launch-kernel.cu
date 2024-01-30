@@ -72,7 +72,7 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         template_kernel<int>(d_acc_ct0.get_raw_pointer(), item_ct1, dpct_local_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
+  // CHECK-NEXT:         template_kernel<int>(d_acc_ct0.get_raw_pointer(), item_ct1, dpct_local_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   cudaLaunchKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);

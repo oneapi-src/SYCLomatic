@@ -1245,6 +1245,7 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
            ")";
     NewFuncName = "group_broadcast";
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
+    analyzeUninitializedDeviceVar(WarpMC, InData);
   } else if (FuncName == "Reduce") {
     ExprAnalysis InDateEA(WarpMC->getArg(0));
     switch (NumArgs) {
@@ -1378,4 +1379,5 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processTypeLoc(TL);
   }
 }
+
 REGISTER_RULE(CubRule, PassKind::PK_Analysis)

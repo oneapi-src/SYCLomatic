@@ -259,6 +259,47 @@ public:
   }
 };
 
+class AnalyzeUninitializedDeviceVarRewriterFactory
+    : public CallExprRewriterFactory<
+          UnsupportFunctionRewriter<
+              std::function<const Expr *(const CallExpr *C)>>,
+          Diagnostics, std::function<const Expr *(const CallExpr *C)>> {
+  using BaseT = CallExprRewriterFactory<
+      UnsupportFunctionRewriter<std::function<const Expr *(const CallExpr *C)>>,
+      Diagnostics, std::function<const Expr *(const CallExpr *C)>>;
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+  int Idx = 0;
+
+public:
+  AnalyzeUninitializedDeviceVarRewriterFactory(
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory, int Idx)
+      : BaseT(
+            "", Diagnostics::UNINITIALIZED_DEVICE_VAR,
+            [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); }),
+        Inner(InnerFactory), Idx(Idx) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    std::vector<const clang::VarDecl *> DeclsRequireInit;
+    int Res = isArgumentInitialized(C->getArg(Idx), DeclsRequireInit);
+    if (Res == 0) {
+      for (const auto D : DeclsRequireInit) {
+        SourceLocation InsertLoc =
+            D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+                D->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+                DpctGlobalInfo::getContext().getLangOpts()));
+        std::string Repl = " = 0";
+        DpctGlobalInfo::getInstance().addReplacement(
+            std::make_shared<ExtReplacement>(DpctGlobalInfo::getSourceManager(),
+                                             InsertLoc, 0, Repl, nullptr));
+      }
+    } else if (Res == -1) {
+      // Create rewriter for emitting warning
+      BaseT::create(C);
+    }
+    // Create rewriter for migrating API
+    return Inner->create(C);
+  }
+};
+
 class AssignableRewriter : public CallExprRewriter {
   std::shared_ptr<CallExprRewriter> Inner;
   bool IsAssigned;
