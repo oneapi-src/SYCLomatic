@@ -126,7 +126,7 @@ source $PATH_TO_C2S_INSTALL_FOLDER/setvars.sh
 
 **Windows (64-bit)**:
 ```bat
-.\$PATH_TO_C2S_INSTALL_FOLDER\setvars.bat
+.\%PATH_TO_C2S_INSTALL_FOLDER%\setvars.bat
 ```
 
 ### Verify the Installation
