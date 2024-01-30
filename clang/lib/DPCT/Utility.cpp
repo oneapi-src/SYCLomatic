@@ -4775,7 +4775,7 @@ int isArgumentInitialized(
            SM.getExpansionLoc(Arg->getBeginLoc()).getRawEncoding();
   };
 
-  // TODO: Currently we only emit warning/analyze DRE argument.
+  // TODO: Currently we only emit warning/analyze for DRE argument.
   if (!isa<DeclRefExpr>(Arg->IgnoreCasts()))
     return 1;
 
