@@ -4779,6 +4779,7 @@ CheckedOfstream::~CheckedOfstream() {
   if (this->is_open()) {
     this->close();
   }
+}
 std::set<const clang::DeclRefExpr *>
 matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
   std::set<const DeclRefExpr *> Set;
