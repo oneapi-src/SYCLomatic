@@ -5,7 +5,7 @@ find_program(dpct_bin_path NAMES dpct PATHS)
 get_filename_component(bin_path_of_dpct ${dpct_bin_path} DIRECTORY)
 set(dpct_cmake_file_path "${bin_path_of_dpct}/../cmake/dpct.cmake")
 include(${dpct_cmake_file_path})
-cuda_add_library(target_one MODULE nosrc1.dp.cpp)
+add_library(target_one MODULE nosrc1.dp.cpp)
 
 # Test C++ 99 standard
 set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
@@ -48,7 +48,7 @@ set_target_properties(target_one
                       PROPERTIES
                       cuda_architechtures All)
 
-cuda_add_library(target_two MODULE nosrc2.dp.cpp)
+add_library(target_two MODULE nosrc2.dp.cpp)
 
 # Test two target specs
 #[[
