@@ -4753,8 +4753,7 @@ std::error_code createDirectories(const clang::tooling::UnifiedPath &FilePath,
 // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
 // on windows.
 bool writeDataToFile(const std::string &FileName, const std::string &Data) {
-  auto FileStream =
-      std::make_unique<CheckedOfstream>(FileName, std::ios::binary);
+  auto FileStream = std::make_unique<std::ofstream>(FileName, std::ios::binary);
   *FileStream << Data;
   FileStream->close();
   if (FileStream->fail()) {
@@ -4766,7 +4765,7 @@ bool writeDataToFile(const std::string &FileName, const std::string &Data) {
 }
 
 bool appendDataToFile(const std::string &FileName, const std::string &Data) {
-  auto FileStream = std::make_unique<CheckedOfstream>(FileName, std::ios::app);
+  auto FileStream = std::make_unique<std::ofstream>(FileName, std::ios::app);
   *FileStream << Data;
   FileStream->close();
   if (FileStream->fail()) {

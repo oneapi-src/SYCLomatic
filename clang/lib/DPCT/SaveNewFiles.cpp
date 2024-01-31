@@ -211,7 +211,8 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
-    createDirectories(path::parent_path(OutputFile.getCanonicalPath()));
+    if (createDirectories(path::parent_path(OutputFile.getCanonicalPath())))
+      dpctExit(MigrationErrorCannotWrite);
 
     clang::dpct::CheckedOfstream Out(OutputFile.getCanonicalPath().str());
     Out << In.rdbuf();
@@ -286,7 +287,8 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
       if (fs::exists(OutDirectory.getCanonicalPath()))
         continue;
 
-      createDirectories(OutDirectory.getCanonicalPath());
+      if (createDirectories(OutDirectory.getCanonicalPath()))
+        dpctExit(MigrationErrorCannotWrite);
     }
   }
 }

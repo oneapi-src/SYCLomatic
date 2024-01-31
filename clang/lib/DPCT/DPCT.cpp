@@ -443,7 +443,9 @@ static void saveDiagsReport() {
       dpctExit(MigrationErrorCannotWrite);
     }
 
-    writeDataToFile(RFile, getDpctDiagsStr() + "\n");
+    if (writeDataToFile(RFile, getDpctStatsStr() + "\n")) {
+      dpctExit(MigrationErrorCannotWrite);
+    }
   }
 }
 
@@ -471,9 +473,12 @@ std::string printCTVersion() {
 static void DumpOutputFile(void) {
   // Redirect stdout/stderr output to <file> if option "-output-file" is set
   if (!OutputFile.empty()) {
-    std::string FilePath = appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
-    createDirectories(llvm::sys::path::parent_path(FilePath));
-    writeDataToFile(FilePath, getDpctTermStr() + "\n");
+    std::string FilePath =
+        appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
+    if (createDirectories(llvm::sys::path::parent_path(FilePath)))
+      dpctExit(MigrationErrorCannotWrite);
+    if (writeDataToFile(FilePath, getDpctTermStr() + "\n"))
+      dpctExit(MigrationErrorCannotWrite);
   }
 }
 
@@ -493,8 +498,10 @@ void PrintReportOnFault(const std::string &FaultMsg) {
   std::string FileDiags = appendPath(OutRoot.getCanonicalPath().str(),
                                      ReportFilePrefix + ".diags.log");
 
-  appendDataToFile(FileApis, FaultMsg);
-  appendDataToFile(FileDiags, FaultMsg);
+  if (appendDataToFile(FileApis, FaultMsg))
+    dpctExit(MigrationErrorCannotWrite);
+  if (appendDataToFile(FileDiags, FaultMsg))
+    dpctExit(MigrationErrorCannotWrite);
   DumpOutputFile();
 }
 

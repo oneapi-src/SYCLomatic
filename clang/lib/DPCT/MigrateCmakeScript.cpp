@@ -247,7 +247,8 @@ bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
   if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
     return false;
   }
-  createDirectories(path::parent_path(OutFileName.getCanonicalPath()));
+  if (createDirectories(path::parent_path(OutFileName.getCanonicalPath())))
+    dpctExit(MigrationErrorCannotWrite);
   CmakeScriptFileBufferMap[OutFileName] = readFile(InFileName);
   return true;
 }
