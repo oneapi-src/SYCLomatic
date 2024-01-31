@@ -347,7 +347,7 @@ __device__ void device36(int val, int src) {
 
 __global__ void kernel36() {
   int val;
-  int src;
+  int src = 0;
   device36(val, src);
 }
 
@@ -357,10 +357,23 @@ __device__ int device37() {
 
 __global__ void kernel37() {
   // CHECK: int val = device37();
-  // CHECK-NEXT: int src;
+  // CHECK-NEXT: int src = 0;
   // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, src);
   int val = device37();
-  int src;
+  int src = 0;
+  __shfl(val, src, 32);
+}
+
+__global__ void kernel38() {
+  // CHECK: int val = 0;
+  // CHECK-NEXT: int src = 0;
+  // CHECK-NEXT: if (item_ct1.get_local_id(2) == 0)
+  // CHECK-NEXT:   val = 123;
+  // CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), val, src);
+  int val;
+  int src = 0;
+  if (threadIdx.x == 0)
+    val = 123;
   __shfl(val, src, 32);
 }
 
