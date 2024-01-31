@@ -36,11 +36,11 @@ For example, this original CUDA code:
      cudaDeviceProp prop;
      cudaGetDeviceProperties(&prop, 0);
      if (prop.maxGridSize[0] >= TASK_SIZE) {
-   // submit the task on one kernel
-   ...
+       // submit the task on one kernel
+       ...
      } else {
-   // split the task into multi kernels
-   ...
+       // split the task into multi kernels
+       ...
      }
    }
 

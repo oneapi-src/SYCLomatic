@@ -946,6 +946,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-clang-resource-headers
       install-dpct-binary
       install-dpct-autocomplete
+      install-dpct-setvars
       install-dpct-opt-rules
       install-dpct-cmake-rules
       install-dpct-cmake-file

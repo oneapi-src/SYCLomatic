@@ -112,7 +112,7 @@ which is rewritten to:
    void k(sycl::nd_item<3> item_ct1) {
      // workload
    }
-   
+
    int main() {
      dpct::device_ext &dev_ct1 = dpct::get_current_device();
      sycl::queue &q_ct1 = dev_ct1.default_queue();
@@ -134,4 +134,3 @@ which is rewritten to:
               ->get_profiling_info<sycl::info::event_profiling::command_start>()) /
          1000000.0f;  return 0;
    }
-   

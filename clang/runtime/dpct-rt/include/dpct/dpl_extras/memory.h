@@ -221,20 +221,17 @@ public:
       : buffer(in.buffer), idx(in.idx) {}
   pointer get() const {
     auto res =
-        (const_cast<device_pointer_base *>(this)
-             ->buffer.template get_access<sycl::access_mode::read_write>())
+        (const_cast<device_pointer_base *>(this)->buffer.get_host_access())
             .get_pointer();
     return res + idx;
   }
   operator ValueType *() {
-    auto res = (buffer.template get_access<sycl::access_mode::read_write>())
-                   .get_pointer();
+    auto res = (buffer.get_host_access()).get_pointer();
     return res + idx;
   }
   operator ValueType *() const {
     auto res =
-        (const_cast<device_pointer_base *>(this)
-             ->buffer.template get_access<sycl::access_mode::read_write>())
+        (const_cast<device_pointer_base *>(this)->buffer.get_host_access())
             .get_pointer();
     return res + idx;
   }

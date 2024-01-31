@@ -260,7 +260,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}, T>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_pointer(), bbb_acc_ct1);
+// CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), bbb_acc_ct1);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:  }

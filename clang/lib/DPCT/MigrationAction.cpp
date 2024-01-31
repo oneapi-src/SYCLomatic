@@ -82,9 +82,8 @@ bool canCacheMoreTranslateUnit() {
 
 DpctConsumer::DpctConsumer(TranslationUnitInfo *TUI, Preprocessor &PP)
     : Info(TUI) {
-  PP.addPPCallbacks(
-      std::make_unique<IncludesCallbacks>(Info->Transforms, Info->IncludeMapSet,
-                                          PP.getSourceManager(), Info->Groups));
+  PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
+      Info->Transforms, PP.getSourceManager(), Info->Groups));
   if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
     Handler =
         std::make_unique<MisleadingBidirectionalHandler>(Info->Transforms);
@@ -219,7 +218,6 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
                                             TranslationUnitInfo &Info) {
   auto &Context = Info.AST->getASTContext();
   auto &Transforms = Info.Transforms;
-  auto &IncludeMap = Info.IncludeMapSet;
   Info.AST->getDiagnostics().getClient()->BeginSourceFile(
       Context.getLangOpts());
   DpctGlobalInfo::setContext(Context);
@@ -239,13 +237,7 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
     // If a file has replacement, all include statement need change, so we add
     // them to global replacement here.
     const auto FilePath = Repl->getFilePath().str();
-    auto Find = IncludeMap.find(FilePath);
-    if (Find != IncludeMap.end()) {
-      for (const auto &Entry : Find->second) {
-        Global.addReplacement(Entry->getReplacement(Context));
-      }
-      IncludeMap.erase(FilePath);
-    }
+
     Global.addReplacement(Repl);
 
     StaticsInfo::printReplacements(Transforms, Context);

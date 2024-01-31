@@ -25,7 +25,7 @@ For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
-  
+
      _global_ void kernel(int WarpSize) {   int Input, Output, Lane;   ...   Output = __shfl(Input, Lane, WarpSize); }
      ...
      if(condition)
@@ -37,41 +37,44 @@ results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
-  
-     void kernel(int WarpSize, sycl::nd_item<3> item_ct1)
-     {   int Input, Output, Lane;   ...   Output = Item_ct1.get_sub_group().shuffle(Input, Lane); }
+
+     void kernel(int WarpSize, sycl::nd_item<3> item_ct1) {
+       int Input, Output, Lane;   ...   Output = Item_ct1.get_sub_group().shuffle(Input, Lane);
+     }
      ...
      if(condition) {
-     /* DPCT1089 */
-     q_ct1.parallel_for(
+       /* DPCT1089 */
+       q_ct1.parallel_for(
          sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
          [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(dpct_placeholder)]] {       kernel(16, item_ct1); });
      } else {
-     /* DPCT1089 */
-     q_ct1.parallel_for(
+       /* DPCT1089 */
+       q_ct1.parallel_for(
          sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
          [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(dpct_placeholder)]] {       kernel(32, item_ct1); }
+     }
 
 which is manually adjusted to:
 
 .. code-block:: cpp
    :linenos:
-  
+
      void kernel(int WarpSize, sycl::nd_item<3> item_ct1) {   int Input, Output, Lane;   ...   Output = Item_ct1.get_sub_group().shuffle(Input, Lane); }
      ...
      if(condition) {
-     /* DPCT1089 */
-     q_ct1.parallel_for(
+       /* DPCT1089 */
+       q_ct1.parallel_for(
          sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
          [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(16)]]
-     {       kernel(16, item_ct1); }
-     );
+       {       kernel(16, item_ct1); }
+       );
      } else {
-     /* DPCT1089 */
-     q_ct1.parallel_for(
+       /* DPCT1089 */
+       q_ct1.parallel_for(
          sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
          [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
-     {       kernel(32, item_ct1); }
+       {       kernel(32, item_ct1); }
+     }
 
 Suggestions to Fix
 ------------------

@@ -58,7 +58,6 @@ results in the following migrated SYCL\* code:
          ...
        }
      }
-   }
 
 which is rewritten to:
 
@@ -81,5 +80,4 @@ which is rewritten to:
          ...
        }
      }
-   }
 

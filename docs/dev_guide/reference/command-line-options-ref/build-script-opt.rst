@@ -23,4 +23,16 @@ The following table lists command line options to migrate build scripts.
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-gen-build-script:
           :end-before: end-gen-build-script:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-migrate-build-script:
+          :end-before: desc-migrate-build-script:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-migrate-build-script:
+          :end-before: end-migrate-build-script:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-migrate-build-script-only:
+          :end-before: desc-migrate-build-script-only:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-migrate-build-script-only:
+          :end-before: end-migrate-build-script-only:
 

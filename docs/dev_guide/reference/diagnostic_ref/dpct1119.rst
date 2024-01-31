@@ -1,0 +1,58 @@
+.. _DPCT1119:
+
+DPCT1119
+========
+
+Message
+-------
+
+.. _msg-1119-start:
+
+Migration of *<type or API>* is not supported, please try to remigrate with option: *<option name>*.
+
+.. _msg-1119-end:
+
+Detailed Help
+-------------
+
+The default behavior of |tool_name| does not apply the experimental extension in the migration, you need to re-migrate with the recommend option in order to get the workable code.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ void testReduce(const cg::thread_block &cta) {
+     cg::thread_block_tile<16> tile16 = cg::tiled_partition<16>(cta);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void testReduce(const sycl::group<3> &cta, const sycl::nd_item<3> &item_ct1) {
+     /*
+     DPCT1007:0: Migration of tiled_partition is not supported.
+     */
+     /*
+     DPCT1119:1: Migration of cooperative_groups::__v1::thread_block_tile<16> is not
+     supported, please try to remigrate with option:
+     --use-experimental-features=logical-group.
+     */
+     cg::thread_block_tile<16> tile16 = cg::tiled_partition<16>(cta);
+   }
+
+which needs to be re-migrated with "--use-experimental-features=logical-group":
+
+.. code-block:: cpp
+   :linenos:
+
+   void testReduce(const sycl::group<3> &cta, const sycl::nd_item<3> &item_ct1) {
+     dpct::experimental::logical_group tile16 =
+         dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+   }
+
