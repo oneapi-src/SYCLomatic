@@ -312,7 +312,13 @@ clang::SourceRange
 getScopeInsertRange(const clang::Expr *CE,
                     const clang::SourceLocation &FuncNameBegin,
                     const clang::SourceLocation &FuncCallEnd);
-const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E);
+const clang::DynTypedNode
+findNearestNonExprNonDeclAncestorNode(const clang::DynTypedNode &N);
+template <typename T>
+const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const T *SD) {
+  return findNearestNonExprNonDeclAncestorNode(clang::DynTypedNode::create(*SD))
+      .template get<clang::Stmt>();
+}
 std::string getCanonicalPath(clang::SourceLocation Loc);
 bool containOnlyDigits(const std::string &str);
 void replaceSubStr(std::string &Str, const std::string &SubStr,
