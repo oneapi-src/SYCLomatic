@@ -9,6 +9,7 @@
 // in SYCLomatic-test repo too.
 // DASH: --always-use-async-handler
 // DASH-NEXT: --analysis-mode
+// DASH-NEXT: --analysis-mode-output-file
 // DASH-NEXT: --analysis-scope-path
 // DASH-NEXT: --assume-nd-range-dim=
 // DASH-NEXT: --build-script-file
@@ -32,8 +33,8 @@
 // DASH-NEXT: --in-root-exclude
 // DASH-NEXT: --intercept-build
 // DASH-NEXT: --keep-original-code
-// DASH-NEXT: --migrate-cmake-script
-// DASH-NEXT: --migrate-cmake-script-only
+// DASH-NEXT: --migrate-build-script-only
+// DASH-NEXT: --migrate-build-script=
 // DASH-NEXT: --no-dpcpp-extensions=
 // DASH-NEXT: --no-dry-pattern
 // DASH-NEXT: --no-incremental-migration

@@ -199,12 +199,30 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
         return false;
       }
     }
-    if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
-      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
-      DpctGlobalInfo::getInstance()
-          .insertFile(LocInfo.first)
-          ->setRTVersionValue(
-              clang::CudaVersionToMacroDefStr(DpctGlobalInfo::getSDKVersion()));
+    if (DpctGlobalInfo::getContext().getLangOpts().CUDA) {
+      if (MacroName == "CUDART_VERSION" ||
+          MacroName == "__CUDART_API_VERSION") {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+        auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+        DpctGlobalInfo::getInstance()
+            .insertFile(LocInfo.first)
+            ->setRTVersionValue(
+                std::to_string(Ver.first * 1000 + Ver.second * 10));
+      }
+      if (MacroName == "__CUDACC_VER_MAJOR__") {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+        auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+        DpctGlobalInfo::getInstance()
+            .insertFile(LocInfo.first)
+            ->setMajorVersionValue(std::to_string(Ver.first));
+      }
+      if (MacroName == "__CUDACC_VER_MINOR__") {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+        auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+        DpctGlobalInfo::getInstance()
+            .insertFile(LocInfo.first)
+            ->setMinorVersionValue(std::to_string(Ver.second));
+      }
     }
     TransformSet.emplace_back(Repl);
     return true;
@@ -8375,7 +8393,9 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
   const auto &SM = DpctGlobalInfo::getSourceManager();
   auto KCallSpellingRange = getTheLastCompleteImmediateRange(
       KCall->getBeginLoc(), KCall->getEndLoc());
-
+if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
+      CodePinInstrumentation.end()) 
+      return ;
   llvm::SmallString<512> RelativePath;
 
   std::string DebugArgsString = "(\"";
@@ -8386,7 +8406,7 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
   DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
                              KCallSpellingRange.first.printToString(SM)) +
                          "(SYCL)\", ";
-  std::string StramStr = "0";
+  std::string StreamStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
     Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -8394,16 +8414,17 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
   std::string QueueStr = "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
   if (auto *Config = KCall->getConfig()) {
     if (Config->getNumArgs() > 3) {
-      auto StramStrSpell = getStmtSpelling(Config->getArg(3));
-      if (!StramStrSpell.empty()) {
-        StramStr = StramStrSpell;
-        QueueStr = StramStrSpell;
+      auto StreamStrSpell = getStmtSpelling(Config->getArg(3));
+      if (!StreamStrSpell.empty()) {
+        StreamStr = StreamStrSpell;
+      } else if (!isDefaultStream(Config->getArg(3))) {
+        QueueStr = StreamStrSpell;
       }
     }
   }
 
   buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
-  DebugArgsString += StramStr;
+  DebugArgsString += StreamStr;
   DebugArgsStringSYCL += QueueStr;
   for (auto *Arg : KCall->arguments()) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
@@ -8435,7 +8456,7 @@ void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KC
                                        "dpct::experimental::gen_epilog_API_CP" +
                                            DebugArgsStringSYCL,
                                        0, RT_ForSYCLMigration));
-
+  CodePinInstrumentation.insert(KCallSpellingRange.first);
   DpctGlobalInfo::getInstance().insertHeader(
       KCall->getBeginLoc(), HT_DPCT_CodePin_SYCL, RT_ForSYCLMigration);
   DpctGlobalInfo::getInstance().insertHeader(
@@ -12020,7 +12041,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
   // For CUDA file, nvcc can include math header files implicitly.
   // So we need add the cmath header file if the API is not from SDK
   // header.
-  bool NeedInsertCmath = false;
+  bool NeedInsertCmath = DpctGlobalInfo::getContext().getLangOpts().CUDA;
   if (FD) {
     std::string Name = FD->getNameInfo().getName().getAsString();
     if (Name == "__brev" || Name == "__brevll") {
@@ -12030,11 +12051,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
     } else if (Name == "__ffs" || Name == "__ffsll") {
       requestFeature(HelperFeatureEnum::device_ext);
     }
-    if (!math::IsDefinedInCUDA()(CE)) {
-      NeedInsertCmath = true;
-    }
-  } else {
-    NeedInsertCmath = true;
+    NeedInsertCmath = NeedInsertCmath && !math::IsDefinedInCUDA()(CE);
   }
   if (NeedInsertCmath) {
     DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Math);

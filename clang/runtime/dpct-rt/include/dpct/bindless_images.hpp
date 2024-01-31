@@ -207,9 +207,7 @@ create_bindless_image(image_data data, sampling_info info,
     detail::get_img_mem_map(img) = mem;
     auto ptr = data.get_data_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
-    ptr = get_buffer(ptr)
-              .template get_access<sycl::access_mode::read_write>()
-              .get_pointer();
+    ptr = get_buffer(ptr).get_host_access().get_pointer();
 #endif
     q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
     q.wait_and_throw();
@@ -227,9 +225,7 @@ create_bindless_image(image_data data, sampling_info info,
     auto img =
         sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
     detail::get_img_mem_map(img) = mem;
-    auto ptr = get_buffer(data.get_data_ptr())
-                   .template get_access<sycl::access_mode::read_write>()
-                   .get_pointer();
+    auto ptr = get_buffer(data.get_data_ptr()).get_host_access().get_pointer();
     q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
     q.wait_and_throw();
 #else
@@ -334,9 +330,7 @@ public:
     detail::get_img_mem_map(_img) = mem;
     auto ptr = data;
 #ifdef DPCT_USM_LEVEL_NONE
-    ptr = get_buffer(data)
-              .template get_access<sycl::access_mode::read_write>()
-              .get_pointer();
+    ptr = get_buffer(data).get_host_access().get_pointer();
 #endif
     q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
     q.wait_and_throw();
@@ -370,9 +364,7 @@ public:
     auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
     _img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
     detail::get_img_mem_map(_img) = mem;
-    auto ptr = get_buffer(data)
-                   .template get_access<sycl::access_mode::read_write>()
-                   .get_pointer();
+    auto ptr = get_buffer(data).get_host_access().get_pointer();
     q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
     q.wait_and_throw();
 #else

@@ -369,7 +369,7 @@ void scatter_if(Policy &&policy, InputIter1 first, InputIter1 last,
               typename std::iterator_traits<OutputIter>::iterator_category,
               std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
-  transform_if(
+  dpct::transform_if(
       ::std::forward<Policy>(policy), first, last, mask,
       oneapi::dpl::make_permutation_iterator(result, map),
       [=](auto &&v) { return v; }, [=](auto &&m) { return pred(m); });
@@ -405,7 +405,7 @@ OutputIter gather_if(Policy &&policy, InputIter1 map_first, InputIter1 map_last,
       oneapi::dpl::make_permutation_iterator(input_first, map_first);
   const int n = std::distance(map_first, map_last);
 
-  return transform_if(
+  return dpct::transform_if(
       ::std::forward<Policy>(policy), perm_begin, perm_begin + n, mask, result,
       [=](auto &&v) { return v; }, [=](auto &&m) { return pred(m); });
 }
@@ -2528,6 +2528,33 @@ void partition_flagged(ExecutionPolicy &&policy, InputIterator input,
   }
   dpl::fill(::std::forward<ExecutionPolicy>(policy), num_true, num_true + 1,
             num_true_items);
+}
+
+template <typename ExecutionPolicy, typename InputIterator, typename BinaryPred>
+typename ::std::iterator_traits<InputIterator>::difference_type
+unique_count(ExecutionPolicy &&policy, InputIterator begin, InputIterator end,
+             BinaryPred binary_pred) {
+  auto n = ::std::distance(begin, end);
+  if (n == 0)
+    return 0;
+  if (n == 1)
+    return 1;
+  auto zip_beg = oneapi::dpl::make_zip_iterator(begin, begin + 1);
+  auto zip_end = zip_beg + n - 1;
+  return 1 + oneapi::dpl::count_if(::std::forward<ExecutionPolicy>(policy),
+                                   zip_beg, zip_end,
+                                   [binary_pred](const auto &e) {
+                                     using ::std::get;
+                                     return !binary_pred(get<0>(e), get<1>(e));
+                                   });
+}
+
+template <typename ExecutionPolicy, typename InputIterator>
+typename ::std::iterator_traits<InputIterator>::difference_type
+unique_count(ExecutionPolicy &&policy, InputIterator begin, InputIterator end) {
+  using T = typename ::std::iterator_traits<InputIterator>::value_type;
+  return dpct::unique_count(::std::forward<ExecutionPolicy>(policy), begin, end,
+                            ::std::equal_to<T>());
 }
 
 } // end namespace dpct

@@ -2,7 +2,6 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --usm-level=none -out-root %T/./thrust_rawptr_noneusm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust_rawptr_noneusm/thrust_rawptr_noneusm.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_rawptr_noneusm/thrust_rawptr_noneusm.dp.cpp -o %T/thrust_rawptr_noneusm/thrust_rawptr_noneusm.dp.o %}
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/logical.h>

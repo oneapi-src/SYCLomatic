@@ -11,7 +11,7 @@
 
 namespace clang {
 namespace tooling {
-void UnifiedPath::makeCanonical() {
+void UnifiedPath::makeCanonical(const std::string &CWD) {
   if (_Path.empty()) {
     return;
   }
@@ -34,7 +34,12 @@ void UnifiedPath::makeCanonical() {
   llvm::sys::fs::expand_tilde(Path, Path);
   if (!llvm::sys::path::is_absolute(Path)) {
     llvm::SmallString<512> TempPath;
-    llvm::sys::fs::current_path(TempPath);
+    if (CWD == ".") {
+      llvm::sys::fs::current_path(TempPath);
+    } else {
+      UnifiedPath UnifiedCWD(CWD);
+      TempPath = UnifiedCWD.getCanonicalPath();
+    }
     llvm::sys::path::append(TempPath, llvm::sys::path::Style::native, Path);
     Path = TempPath;
   }

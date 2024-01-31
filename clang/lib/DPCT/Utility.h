@@ -312,7 +312,13 @@ clang::SourceRange
 getScopeInsertRange(const clang::Expr *CE,
                     const clang::SourceLocation &FuncNameBegin,
                     const clang::SourceLocation &FuncCallEnd);
-const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E);
+const clang::DynTypedNode
+findNearestNonExprNonDeclAncestorNode(const clang::DynTypedNode &N);
+template <typename T>
+const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const T *SD) {
+  return findNearestNonExprNonDeclAncestorNode(clang::DynTypedNode::create(*SD))
+      .template get<clang::Stmt>();
+}
 std::string getCanonicalPath(clang::SourceLocation Loc);
 bool containOnlyDigits(const std::string &str);
 void replaceSubStr(std::string &Str, const std::string &SubStr,
@@ -581,6 +587,18 @@ public:
   ~PairedPrinter() { OS << Postfix; }
 };
 std::string appendPath(const std::string &P1, const std::string &P2);
+std::set<const clang::DeclRefExpr *>
+matchTargetDREInScope(const clang::VarDecl *TargetDecl,
+                      const clang::Stmt *Range);
+/// @brief Check if an argument is initialized.
+/// @param Arg Function call argument (may be an expression).
+/// @param DeclsRequireInit UnInitialized VarDecl(s).
+/// @return  1: Initialized
+///          0: Not initialized.
+///         -1: Cannot deduce.
+int isArgumentInitialized(
+    const clang::Expr *Arg,
+    std::vector<const clang::VarDecl *> &DeclsRequireInit);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

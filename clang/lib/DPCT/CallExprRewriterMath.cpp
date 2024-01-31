@@ -347,7 +347,9 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       // SourceCalleeName.
       if (!SourceCalleeName.starts_with("make_")) {
         // Insert "#include <cmath>" to migrated code
-        DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
+        if (DpctGlobalInfo::getContext().getLangOpts().CUDA)
+          DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(),
+                                                     HT_Math);
         NewFuncName = SourceCalleeName.str();
       }
 

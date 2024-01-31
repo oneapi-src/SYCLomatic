@@ -36,7 +36,6 @@ enum class PassKind : unsigned { PK_Analysis = 0, PK_Migration, PK_End };
 /// including directives rewriting.
 class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
-  IncludeMapSetTy &IncludeMapSet;
   SourceManager &SM;
   RuleGroups &Groups;
 
@@ -44,11 +43,9 @@ class IncludesCallbacks : public PPCallbacks {
   bool IsFileInCmd = true;
 
 public:
-  IncludesCallbacks(TransformSetTy &TransformSet,
-                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
+  IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM,
                     RuleGroups &G)
-      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
-        Groups(G) {}
+      : TransformSet(TransformSet), SM(SM), Groups(G) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange,
@@ -257,6 +254,29 @@ protected:
     }
     emplaceTransformation(std::move(PIT));
     emplaceTransformation(std::move(SIT));
+  }
+
+  /// @brief If necessary, initialize an argument or emit warning.
+  /// @param Call Function CallExpr
+  /// @param Arg An argument (may be an expression) of \p Call .
+  void analyzeUninitializedDeviceVar(const clang::Expr *Call,
+                                     const clang::Expr *Arg) {
+    if (!Call || !Arg)
+      return;
+    std::vector<const clang::VarDecl *> DeclsRequireInit;
+    int Res = isArgumentInitialized(Arg, DeclsRequireInit);
+    if (Res == 0) {
+      for (const auto D : DeclsRequireInit) {
+        emplaceTransformation(new InsertText(
+            D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+                D->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+                DpctGlobalInfo::getContext().getLangOpts())),
+            " = 0"));
+      }
+    } else if (Res == -1) {
+      report(Call->getBeginLoc(), Diagnostics::UNINITIALIZED_DEVICE_VAR, false,
+             ExprAnalysis::ref(Arg));
+    }
   }
 
   void addReplacementForLibraryAPI(LibraryMigrationFlags Flags,
@@ -1301,7 +1321,8 @@ public:
 /// Migration rule for kernel API calls
 class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
-
+  std::set<clang::SourceLocation> CodePinInstrumentation;
+  
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

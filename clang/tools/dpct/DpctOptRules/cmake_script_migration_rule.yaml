@@ -12,14 +12,22 @@
   MatchMode: Partial
   Priority: Fallback
   CmakeSyntax: project
-  In: project(${arg0} ${argN})
+  In: project(${arg0})
   Out: |
-   project(${arg0} ${argN})
+   project(${arg0})
    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fsycl")
    find_program(dpct_bin_path NAMES dpct PATHS)
    get_filename_component(bin_path_of_dpct \${dpct_bin_path} DIRECTORY)
    set(dpct_cmake_file_path "\${bin_path_of_dpct}/../cmake/dpct.cmake")
    include(\${dpct_cmake_file_path})
+
+- Rule: rule_project-remove_cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: project-remove_cuda
+  In: project(${arg0} ${argN})
+  Out: |
+   project(${arg0} ${argN})
   Subrules:
     argN:
       In: CUDA
@@ -206,6 +214,20 @@
       In: ${arg}.cu
       Out: ${arg}.${rewrite_extention_name}
 
+# ${CUDA_LIBRARIES} is cmake reserved variable for static version of the CUDA runtime library.
+# In SYCL side, SYCL runtime is default auto-loaded when option "-fsycl" is specified, so we remove it in SYCL side.
+- Rule: CUDA_LIBRARIES_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_LIBRARIES
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_LIBRARIES}
+      Out: ""
 
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
@@ -324,7 +346,7 @@
     value:
       In: cxx_std_${ver}
       Out: cxx_std_17
-      RuleId: "adjust cxx_ver"
+      RuleId: "adjust_cxx_ver"
 
 # Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
 # A more flexible mapping logic should be implemented in implicit rules
@@ -339,7 +361,7 @@
     value:
       In: cuda_std_${ver}
       Out: cxx_std_17
-      RuleId: "adjust cuda_ver"
+      RuleId: "adjust_cuda_ver"
 
 - Rule: rule_header_file
   Kind: CMakeRule
@@ -353,7 +375,7 @@
       In: ${arg}.cuh
       Out: ${arg}.dp.hpp
       MatchMode: Full
-      RuleId: "adjust CUDA header file extension"
+      RuleId: "adjust_CUDA_header_file_extension"
 
 - Rule: rule_src_file
   Kind: CMakeRule
@@ -367,7 +389,7 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
       MatchMode: Full
-      RuleId: "adjust CUDA src file extension"
+      RuleId: "adjust_CUDA_src_file_extension"
 
 - Rule: rule_set_property
   Kind: CMakeRule
@@ -439,27 +461,52 @@
       In: ${arg}.cu
       Out: ${arg}.dp.cpp
 
-# CUDA_LIBRARIES is cmake cuda reverved list variable, should be removed in SYCL
-- Rule: rule_target_link_libraries_CUDA_LIBRARIES
+# CUDA_cudadevrt_LIBRARY is cmake cuda reverved list variable, should be removed in SYCL
+- Rule: rule_target_link_libraries_CUDA_cudadevrt_LIBRARY
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
-  In: target_link_libraries(${CULibraries})
-  Out: target_link_libraries(${CULibraries})
+  CmakeSyntax: CUDA_cudadevrt_LIBRARY_target_link_libraries
+  In: ${prefix}link_libraries(${CULibraries})
+  Out: ${prefix}link_libraries(${CULibraries})
   Subrules:
     CULibraries:
       In: |
-        \${CUDA_LIBRARIES}
+        \${CUDA_cudadevrt_LIBRARY}
       Out: ""
       MatchMode: Full
-      RuleId: "remove_cuda_reserved_variable_CUDA_LIBRARIES"
+      RuleId: "remove_cuda_reserved_variable_CUDA_cudadevrt_LIBRARY"
+
+- Rule: rule_target_link_libraries_cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_target_link_libraries
+  In: ${prefix}link_libraries(${CULibraries})
+  Out: ${prefix}link_libraries(${CULibraries})
+  Subrules:
+    CULibraries:
+      In: cuda
+      Out: ""
+      MatchMode: Full
+
+- Rule: rule_target_link_libraries_cublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cublas_target_link_libraries
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
+  Subrules:
+    CUDALibraries:
+      In: cublas
+      Out: -qmkl
+      MatchMode: Full
+      RuleId: "replace_cublas_with_MKL_target"
 
 - Rule: rule_target_link_libraries_-lcublas
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: -lcublas_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: -lcublas
@@ -471,8 +518,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: CUDA_cublas_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::cublas"
@@ -485,8 +532,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuda_driver_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::cuda_driver"
@@ -499,8 +546,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cudart_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::cudart"
@@ -512,8 +559,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cudnn_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "cudnn"
@@ -527,8 +574,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: nvrtc_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::nvrtc"
@@ -541,8 +588,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: nvToolsExt_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: "CUDA::nvToolsExt"
@@ -555,8 +602,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvinfer_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: libnvinfer.so
@@ -569,8 +616,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvonnxparser_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${CUDALibraries})
+  Out: ${prefix}link_libraries(${CUDALibraries})
   Subrules:
     CUDALibraries:
       In: libnvonnxparser.so
@@ -583,8 +630,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libstdc++_target_link_libraries
-  In: target_link_libraries(${StaticLibraries})
-  Out: target_link_libraries(${StaticLibraries})
+  In: ${prefix}link_libraries(${StaticLibraries})
+  Out: ${prefix}link_libraries(${StaticLibraries})
   Subrules:
     StaticLibraries:
       In: -static-libstdc++
@@ -626,3 +673,30 @@
   CmakeSyntax: cuda_add_cufft_to_target
   In: cuda_add_cufft_to_target(${target})
   Out: dpct_helper_add_mkl_to_target(${target})
+
+- Rule: rule_cuda_add_cublas_to_target
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_add_cublas_to_target
+  In: cuda_add_cublas_to_target(${target})
+  Out: dpct_helper_add_mkl_to_target(${target})
+
+- Rule: rule_include_directories
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: include_directories
+  MatchMode: Partial
+  In: include_directories(${value})
+  Out: include_directories(${value})
+  Subrules:
+    value:
+      In: CUDA_INCLUDE_DIRS
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+
+- Rule: rule_cuda_add_library
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_add_library
+  In: cuda_add_library(${arg})
+  Out: add_library(${arg})

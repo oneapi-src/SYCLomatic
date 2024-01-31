@@ -59,6 +59,7 @@ extern int SDKVersionMajor;
 extern int SDKVersionMinor;
 namespace clang {
 namespace tooling {
+bool DefineCUDAVerMajorMinor = false;
 #ifdef _WIN32
 UnifiedPath VcxprojFilePath;
 #endif
@@ -181,8 +182,8 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #ifdef SYCLomatic_CUSTOMIZATION
   bool IsMigrateCmakeScriptOnlySpecified = false;
   for (auto i = 0; i < argc; i++) {
-    int Res1 = strcmp(argv[i], "--migrate-cmake-script-only");
-    int Res2 = strcmp(argv[i], "-migrate-cmake-script-only");
+    int Res1 = strcmp(argv[i], "--migrate-build-script-only");
+    int Res2 = strcmp(argv[i], "-migrate-build-script-only");
     if (Res1 == 0 || Res2 == 0) {
       IsMigrateCmakeScriptOnlySpecified = true;
       break;
@@ -442,27 +443,13 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
     Adjuster = combineAdjusters(
         std::move(Adjuster),
         getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
-
-    std::string CUDAVerMajorDefine = std::string("-D") +
-                                     "__CUDACC_VER_MAJOR__" + "=" +
-                                     std::to_string(SDKVersionMajor);
+    DefineCUDAVerMajorMinor = true;
     Adjuster = combineAdjusters(
         std::move(Adjuster),
-        getInsertArgumentAdjuster(CUDAVerMajorDefine.c_str(),
-                                  ArgumentInsertPosition::BEGIN));
-
-    std::string CUDAVerMinorDefine = std::string("-D") +
-                                     "__CUDACC_VER_MINOR__" + "=" +
-                                     std::to_string(SDKVersionMinor);
+        getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
     Adjuster = combineAdjusters(
         std::move(Adjuster),
-        getInsertArgumentAdjuster(CUDAVerMinorDefine.c_str(),
-                                  ArgumentInsertPosition::BEGIN));
-
-    std::string NVCCDefine = std::string("-D") + "__NVCC__";
-    Adjuster = combineAdjusters(
-        std::move(Adjuster),
-        getInsertArgumentAdjuster(NVCCDefine.c_str(),
+        getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
                                   ArgumentInsertPosition::BEGIN));
   }
 #endif // SYCLomatic_CUSTOMIZATION

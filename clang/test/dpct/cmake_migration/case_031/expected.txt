@@ -1,0 +1,2 @@
+include_directories(${SYCL_INCLUDE_DIR})
+include_directories(${somePath} ../)

@@ -28,7 +28,7 @@ __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2]
 __constant__ double2 vec_d;
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1120:{{[0-9]+}}: template_a is in device memory and passed into device functions as extra arguments. As here template_a is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.
+// CHECK-NEXT: DPCT1120:{{[0-9]+}}: template_a is in device memory and passed into device functions as an extra argument. As template_a is a template variable here, then the declaration of an extra parameter in device functions, the variable referenced in command group, and device functions may be incorrect as a result. You may need to adjust the code.
 // CHECK-NEXT: */
 template<class T>
 __constant__ T template_a;
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           simple_kernel((float *)(&d_array_acc_ct0[0]), item_ct1, const_angle_acc_ct1.get_pointer(), const_ptr_acc_ct1.get_pointer());
+  // CHECK-NEXT:           simple_kernel((float *)(&d_array_acc_ct0[0]), item_ct1, const_angle_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), const_ptr_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -269,7 +269,7 @@ __device__ void foo() {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          kernel1(aaa_acc_ct1.get_pointer());
+//CHECK-NEXT:          kernel1(aaa_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}

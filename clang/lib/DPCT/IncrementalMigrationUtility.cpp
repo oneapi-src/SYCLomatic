@@ -173,9 +173,6 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--comments");
     }
-    if (Key == clang::dpct::OPTION_CustomHelperFileName && Specified) {
-      Opts.emplace_back("--custom-helper-name=" + Value);
-    }
     if (Key == clang::dpct::OPTION_CtadEnabled) {
       if ("true" == Value)
         Opts.emplace_back("--enable-ctad");

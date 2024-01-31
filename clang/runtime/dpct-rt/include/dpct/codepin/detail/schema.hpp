@@ -337,6 +337,8 @@ inline bool is_dev_ptr(void *p) {
 
 inline void get_val_from_addr(std::string &dump_json,
                               std::shared_ptr<Schema> schema, void *addr) {
+  if (schema->get_type_size() == 0)
+    return;
   void *host_addr = addr;
   size_t mem_size = get_var_size(schema, addr);
   if (is_dev_ptr(addr)) {
