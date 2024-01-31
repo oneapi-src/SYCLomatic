@@ -26,9 +26,14 @@ public:
   queue_ptr get_queue_ptr() { return _queue_ptr; }
   void set_queue_ptr(queue_ptr q_ptr) { _queue_ptr = q_ptr; }
   sycl::queue &get_queue() { return *_queue_ptr; }
+  static inline void set_saved_queue_ptr(queue_ptr q_ptr) {
+    _saved_queue_ptr = q;
+  }
+  static inline queue_ptr get_saved_queue_ptr() { return _saved_queue_ptr; }
 
 private:
-  sycl::queue *_queue_ptr = &dpct::get_default_queue();
+  queue_ptr _queue_ptr = &dpct::get_default_queue();
+  static queue_ptr _saved_queue_ptr = &dpct::get_default_queue();
 };
 
 using descriptor_ptr = std::shared_ptr<descriptor>;

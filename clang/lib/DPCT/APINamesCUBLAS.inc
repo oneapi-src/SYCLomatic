@@ -33,6 +33,11 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasGetStream_v2", DEREF(1),
                                                     "get_queue_ptr")))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasSetKernelStream",
+    CALL(MapNames::getDpctNamespace() + "blas::descriptor::set_saved_queue_ptr",
+         ARG(0))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSgemm_v2",
     CALL("oneapi::mkl::blas::column_major::gemm",
          MEMBER_CALL(ARG(0), true, "get_queue"),
