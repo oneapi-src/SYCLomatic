@@ -461,9 +461,9 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      if (Index < Size - 1 && PatternIndex == PatternSize - 1) {
-        if (Index - PatternSize >= 0 && !CodeElementExist &&
-            !isIdentifiedChar(Input[Index - PatternSize]) &&
+      if (!CodeElementExist && Index - PatternSize >= 0 && Index < Size - 1 &&
+          PatternIndex == PatternSize - 1) {
+        if (!isIdentifiedChar(Input[Index - PatternSize]) &&
             !isIdentifiedChar(Input[Index + 1])) {
 
           if (Input[Index - PatternSize] != '{' && Input[Index + 1] != '}' &&
@@ -473,14 +473,11 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
             return {};
           }
         }
-      }
 
-      // To fully match pattern string without code element.
-      if (!CodeElementExist && Index - PatternSize >= 0 &&
-          PatternIndex == PatternSize - 1 &&
-          isIdentifiedChar(Input[Index - PatternSize]) &&
-          Input[Index - PatternSize + 1] != '.') {
-        return {};
+        if (isIdentifiedChar(Input[Index - PatternSize]) &&
+            Input[Index - PatternSize + 1] != '.') {
+          return {};
+        }
       }
 
       // If input value has been matched to the end but match pattern still has
