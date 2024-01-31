@@ -20,4 +20,6 @@ target_link_libraries(${PROJECT_NAME}
    
 )
 
+target_link_libraries(nlm_cuda  ${OpenCV_LIBS} stdc++ stdc++fs)
+
 target_link_libraries(cublas-cudnn-test -qmkl ${DNN_LIB})

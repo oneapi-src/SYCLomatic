@@ -665,9 +665,7 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
 
     if (detail::get_pointer_attribute(q, ptr) == detail::pointer_access_attribute::device_only) {
 #ifdef DPCT_USM_LEVEL_NONE
-      ptr = get_buffer(ptr)
-                .template get_access<sycl::access_mode::read_write>()
-                .get_pointer();
+      ptr = get_buffer(ptr).get_host_access().get_pointer();
 #else
       auto sz = data.get_x();
       if (data.get_data_type() == image_data_type::pitch)
