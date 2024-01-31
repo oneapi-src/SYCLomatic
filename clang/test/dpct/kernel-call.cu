@@ -399,7 +399,7 @@ void run_foo4(dim3 c, dim3 d) {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          my_kernel(result_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:          my_kernel(result_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", result[10]);
@@ -425,7 +425,7 @@ int run_foo5 () {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          my_kernel(result2_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:          my_kernel(result2_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", result2[10]);
@@ -446,7 +446,7 @@ int run_foo6 () {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          my_kernel(result3_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:          my_kernel(result3_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", result3[0]);
@@ -581,7 +581,7 @@ int run_foo9() {
 //CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class cuda_pme_forces_dev_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:         cuda_pme_forces_dev(afn_s_acc_ct1.get_pointer());
+//CHECK-NEXT:         cuda_pme_forces_dev(afn_s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:       });
 //CHECK-NEXT:   });
 //CHECK-NEXT:}
@@ -648,7 +648,7 @@ void test_ctor() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ctor_{{[0-9a-z]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         kernel_ctor(item_ct1, s1_acc_ct1.get_pointer(), s2_acc_ct1, s3_acc_ct1);
+  // CHECK-NEXT:         kernel_ctor(item_ct1, s1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), s2_acc_ct1, s3_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
 
@@ -682,7 +682,7 @@ void test_ctor() {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k11_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          k11<TT>(a, temp_ct1_acc_ct1.get_pointer(), temp2_ct1_acc_ct1.get_pointer());
+//CHECK-NEXT:          k11<TT>(a, temp_ct1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), temp2_ct1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
@@ -731,7 +731,7 @@ void foo11() {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k12_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          k12<TT>(a, temp_ct1_acc_ct1.get_pointer(), temp2_ct1_acc_ct1.get_pointer());
+//CHECK-NEXT:          k12<TT>(a, temp_ct1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), temp2_ct1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}

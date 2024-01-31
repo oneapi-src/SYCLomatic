@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <filesystem>
 #include <fstream>
 
 using namespace clang::dpct;
@@ -751,7 +752,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   // The necessary header files which have no replacements will be copied to
   // "-out-root" directory.
   for (const auto &Entry : IncludeFileMap) {
+    // Generated SYCL file in outroot. E.g., /path/to/outroot/a.dp.cpp
     clang::tooling::UnifiedPath FilePath = Entry.first;
+    // Generated CUDA file in outroot_debug. E.g., /path/to/outroot_debug/a.cu
+    clang::tooling::UnifiedPath DebugFilePath = Entry.first;
+    // Original CUDA file in inroot. E.g., /path/to/inroot/a.cu
+    clang::tooling::UnifiedPath OriginalFilePath = Entry.first;
     if (!Entry.second) {
       bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
       if (IsExcluded) {
@@ -774,6 +780,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         continue;
       }
 
+      if (dpct::DpctGlobalInfo::isCodePinEnabled() &&
+          !rewriteDir(DebugFilePath, InRoot, DebugCUDAFolder)) {
+        continue;
+      }
+      
       // Check for another file with SYCL extension. For example
       // In in-root we have
       //  * src.cpp
@@ -784,7 +795,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       if (checkOverwriteAndWarn(FilePath.getCanonicalPath(),
                                 Entry.first.getCanonicalPath()))
         continue;
-
+  
       // If the file needs no replacement and it already exist, don't
       // make any changes
       if (fs::exists(FilePath.getCanonicalPath())) {
@@ -839,8 +850,17 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
       }
+
+      // This will help us to detect the same output filename
+      // for two different input files
       OutFilePath2InFilePath[FilePath.getCanonicalPath().str()] =
           Entry.first.getCanonicalPath().str();
+      
+      if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
+        // Copy non-replacement CUDA files into debug folder
+        std::filesystem::copy(OriginalFilePath.getCanonicalPath().str(),
+                              DebugFilePath.getCanonicalPath().str());
+      }
     }
   }
 

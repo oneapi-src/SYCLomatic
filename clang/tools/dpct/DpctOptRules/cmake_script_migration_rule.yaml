@@ -214,6 +214,20 @@
       In: ${arg}.cu
       Out: ${arg}.${rewrite_extention_name}
 
+# ${CUDA_LIBRARIES} is cmake reserved variable for static version of the CUDA runtime library.
+# In SYCL side, SYCL runtime is default auto-loaded when option "-fsycl" is specified, so we remove it in SYCL side.
+- Rule: CUDA_LIBRARIES_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_LIBRARIES
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_LIBRARIES}
+      Out: ""
 
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
@@ -462,21 +476,6 @@
       MatchMode: Full
       RuleId: "remove_cuda_reserved_variable_CUDA_cudadevrt_LIBRARY"
 
-# CUDA_LIBRARIES is cmake cuda reverved list variable, should be removed in SYCL
-- Rule: rule_target_link_libraries_CUDA_LIBRARIES
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
-  In: ${prefix}link_libraries(${CULibraries})
-  Out: ${prefix}link_libraries(${CULibraries})
-  Subrules:
-    CULibraries:
-      In: |
-        \${CUDA_LIBRARIES}
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_cuda_reserved_variable_CUDA_LIBRARIES"
-
 - Rule: rule_target_link_libraries_cuda
   Kind: CMakeRule
   Priority: Fallback
@@ -694,3 +693,10 @@
       In: CUDA_INCLUDE_DIRS
       Out: SYCL_INCLUDE_DIR
       MatchMode: Full
+
+- Rule: rule_cuda_add_library
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_add_library
+  In: cuda_add_library(${arg})
+  Out: add_library(${arg})
