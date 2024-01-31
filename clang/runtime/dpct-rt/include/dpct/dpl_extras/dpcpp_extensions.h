@@ -602,7 +602,7 @@ __dpct_inline__ void load_subgroup_striped(const Item &item,
   // int warp_offset = wid * ITEMS_PER_THREAD;
 #pragma unroll
   for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    new (&items[ITEM]) InputT(block_itr[item.get_sub_group().get_local_range()[0]] + linear_tid + (ITEM * ITEMS_PER_THREAD)]);
+    new (&items[ITEM]) InputT(block_itr[item.get_sub_group().get_local_range()[0] + linear_tid + (ITEM * ITEMS_PER_THREAD)]);
   }
 }
 
