@@ -1580,7 +1580,8 @@ csrgemm_nnz_estimate(sycl::queue queue, oneapi::mkl::transpose trans_a,
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_c Matrix info of the matrix C.
-/// \param [out] val_c An array containing the non-zero elements of the matrix C.
+/// \param [out] val_c An array containing the non-zero elements of the matrix
+/// C.
 /// \param [in] row_ptr_c An array of length row number + 1.
 /// \param [out] col_ind_c An array containing the column indices in index-based
 /// numbering.
