@@ -4754,5 +4754,98 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
   llvm::sys::path::append(TempPath, P2);
   return TempPath.str().str();
 }
+std::set<const clang::DeclRefExpr *>
+matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
+  std::set<const DeclRefExpr *> Set;
+  if (!TargetDecl || !Range) {
+    return Set;
+  }
+  auto DREMatcher = ast_matchers::findAll(
+      ast_matchers::declRefExpr(ast_matchers::isDeclSameAs(TargetDecl))
+          .bind("DRE"));
+  auto MatchedResults =
+      ast_matchers::match(DREMatcher, *Range, DpctGlobalInfo::getContext());
+  for (auto &Node : MatchedResults) {
+    if (auto DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
+      Set.insert(DRE);
+  }
+  return Set;
+}
+int isArgumentInitialized(
+    const clang::Expr *Arg,
+    std::vector<const clang::VarDecl *> &DeclsRequireInit) {
+  auto isInitBeforeArg = [](const CompoundStmt *Context,
+                            const clang::DeclRefExpr *DRE,
+                            const clang::Expr *Arg) -> bool {
+    const auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(DRE);
+    if (ICE && ICE->getCastKind() == CastKind::CK_LValueToRValue)
+      return false;
+    const CompoundStmt *DREContext =
+        DpctGlobalInfo::findAncestor<CompoundStmt>(DRE);
+    if (!DREContext || DREContext != Context)
+      return false;
+    const CompoundStmt *ArgContext =
+        DpctGlobalInfo::findAncestor<CompoundStmt>(Arg);
+    if (!ArgContext || ArgContext != Context)
+      return false;
+    const auto &SM = DpctGlobalInfo::getSourceManager();
+    return SM.getExpansionLoc(DRE->getEndLoc()).getRawEncoding() <
+           SM.getExpansionLoc(Arg->getBeginLoc()).getRawEncoding();
+  };
+
+  // TODO: Currently we only emit warning/analyze for DRE argument.
+  if (!isa<DeclRefExpr>(Arg->IgnoreCasts()))
+    return 1;
+
+  // 1. Find the DRE(s) used in the Arg.
+  // 2. Find the Decl(s) of the DRE(s).
+  // 3. Check each Decl:
+  //   3.1 if Decl is VarDecl:
+  //     3.2.1 If not local defined, return -1.
+  //     3.2.2 If local defined, check:
+  //       (1) has inited? or (2) find other ref locations to see if inited?
+  //       If has init in the same context as usage, return 1;
+  //       Else if T is fundimental, return 0;
+  //       Else return -1.
+  //   3.2 Else return -1.
+  std::set<const clang::DeclRefExpr *> DRESet;
+  bool HasCallExpr = false;
+  findDREs(Arg, DRESet, HasCallExpr);
+  std::set<const clang::VarDecl *> DeclSet;
+  for (const auto &DRE : DRESet) {
+    const auto ValueD = DRE->getDecl();
+    if (!ValueD)
+      return -1;
+    const VarDecl *VarD = dyn_cast<VarDecl>(ValueD);
+    if (!VarD)
+      return -1;
+    DeclSet.insert(VarD);
+  }
+
+  for (const auto &VD : DeclSet) {
+    if (!VD->isLocalVarDecl())
+      return -1;
+    if (VD->hasInit())
+      continue;
+    const CompoundStmt *CS = DpctGlobalInfo::findAncestor<CompoundStmt>(VD);
+    if (!CS)
+      return -1;
+    std::set<const clang::DeclRefExpr *> DRERefSet =
+        matchTargetDREInScope(VD, CS);
+    bool HasInitBeforeArg = false;
+    for (const auto DRERef : DRERefSet) {
+      if (HasInitBeforeArg = isInitBeforeArg(CS, DRERef, Arg))
+        break;
+    }
+    if (HasInitBeforeArg)
+      continue;
+    else if (VD->getType()->isFundamentalType())
+      DeclsRequireInit.push_back(VD);
+    else
+      return -1;
+  }
+
+  return DeclsRequireInit.empty();
+}
 } // namespace dpct
 } // namespace clang

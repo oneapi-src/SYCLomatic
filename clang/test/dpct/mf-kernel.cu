@@ -80,7 +80,7 @@ __global__ void constAdd(float *C) {
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class constAdd_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 3)),
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:            constAdd(d_C_acc_ct0.get_raw_pointer(), item_ct1, A_acc_ct1.get_pointer());
+// CHECK-NEXT:            constAdd(d_C_acc_ct0.get_raw_pointer(), item_ct1, A_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:          });
 // CHECK-NEXT:      });
 // CHECK-NEXT:  }

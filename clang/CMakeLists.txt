@@ -951,6 +951,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-syscheck
       install-dpct-modulefiles
       install-dpct-autocomplete
+      install-dpct-setvars
       install-dpct-opt-rules
       install-dpct-cmake-rules
       install-dpct-cmake-file
