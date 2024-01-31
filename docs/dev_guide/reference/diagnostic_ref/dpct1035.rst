@@ -51,16 +51,16 @@ results in the following migrated SYCL code:
       */
       if (true) {
         ... // code path 1
-      /*
-      DPCT1035:1: All SYCL devices can be used by the host to submit tasks. You may
-      need to adjust this code.
-      */
+        /*
+        DPCT1035:1: All SYCL devices can be used by the host to submit tasks. You may
+        need to adjust this code.
+        */
       } else if (false) {
         ... // code path 2
-      /*
-      DPCT1035:2: All SYCL devices can be used by the host to submit tasks. You may
-      need to adjust this code.
-      */
+        /*
+        DPCT1035:2: All SYCL devices can be used by the host to submit tasks. You may
+        need to adjust this code.
+        */
       } else if (false) {
         ... // code path 3
       }

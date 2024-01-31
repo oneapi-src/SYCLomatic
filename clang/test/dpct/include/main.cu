@@ -37,9 +37,9 @@
 // RUN: echo "    }" >> %T/compile_commands.json
 // RUN: echo "]" >> %T/compile_commands.json
 
-// RUN: dpct -in-root=%S -p=%T --out-root=%T --cuda-include-path="%cuda-path/include"
-// RUN: FileCheck %s --match-full-lines --input-file %T/main.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/main.dp.cpp -o %T/main.dp.o %}
+// RUN: dpct -in-root=%S -p=%T --out-root=%T/main --cuda-include-path="%cuda-path/include"
+// RUN: FileCheck %s --match-full-lines --input-file %T/main/main.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/main/main.dp.cpp -o %T/main/main.dp.o %}
 
 // case 1: cu file in database.
 // CHECK: #include "test1.dp.cpp"

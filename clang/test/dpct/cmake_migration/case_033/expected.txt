@@ -1,0 +1,3 @@
+dpct_helper_add_mkl_to_target(${PROJECT_NAME})
+
+dpct_helper_add_mkl_to_target(foo)
