@@ -10,6 +10,7 @@
 #include "SaveNewFiles.h"
 #include "Statics.h"
 #include "Utility.h"
+#include "Error.h"
 
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
