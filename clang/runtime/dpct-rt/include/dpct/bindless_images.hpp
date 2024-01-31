@@ -19,20 +19,25 @@ class image_mem_wrapper {
 public:
   /// Create bindless image memory wrapper.
   /// \tparam dimensions The dimensions of image memory.
-  /// \param [in] range The sizes of each dimension of bindless image memory.
   /// \param [in] channel The image channel used to create bindless image
+  /// \param [in] range The sizes of each dimension of bindless image memory.
   /// memory.
-  /// \param [in] q The queue where the image memory creation be executed.
   template <int dimensions>
-  image_mem_wrapper(sycl::range<dimensions> range, image_channel channel,
-                    sycl::queue q)
+  image_mem_wrapper(image_channel channel, sycl::range<dimensions> range)
       : _channel(channel),
         _desc(sycl::ext::oneapi::experimental::image_descriptor(
             range, _channel.get_channel_order(), _channel.get_channel_type())) {
     // Make sure that singleton class dev_mgr will destruct later than this.
     dev_mgr::instance();
-    _handle = alloc_image_mem(_desc, q);
+    _handle = alloc_image_mem(_desc, get_default_queue());
   }
+  /// Create bindless image memory wrapper.
+  /// \param [in] channel The image channel used to create bindless image
+  /// \param [in] size The sizes of each dimension of bindless image memory.
+  /// memory.
+  template <typename... Args>
+  image_mem_wrapper(image_channel channel, Args... size)
+      : image_mem_wrapper(channel, sycl::range{size...}) {}
   image_mem_wrapper(const image_mem_wrapper &) = delete;
   image_mem_wrapper &operator=(const image_mem_wrapper &) = delete;
   /// Destroy bindless image memory wrapper.
@@ -248,8 +253,7 @@ create_bindless_image(image_data data, sampling_info info,
     samp.filtering = sycl::filtering_mode::nearest;
     // TODO: Use pointer to create image when bindless image support.
     auto mem = new image_mem_wrapper(
-        sycl::range<1>{data.get_x() / data.get_channel().get_total_size()},
-        data.get_channel(), q);
+        data.get_channel(), data.get_x() / data.get_channel().get_total_size());
     auto img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(img) = mem;
@@ -265,8 +269,7 @@ create_bindless_image(image_data data, sampling_info info,
   case image_data_type::pitch: {
 #ifdef DPCT_USM_LEVEL_NONE
     auto mem = new image_mem_wrapper(
-        sycl::range<1>{data.get_x() / data.get_channel().get_total_size()},
-        data.get_channel(), q);
+        data.get_channel(), data.get_x() / data.get_channel().get_total_size());
     auto img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(img) = mem;
@@ -357,7 +360,7 @@ public:
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
     // TODO: Use pointer to create image when bindless image support.
-    auto mem = new image_mem_wrapper(sycl::range<1>{size}, channel, q);
+    auto mem = new image_mem_wrapper(channel, size);
     _img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(_img) = mem;
@@ -391,7 +394,7 @@ public:
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
 #ifdef DPCT_USM_LEVEL_NONE
-    auto mem = new image_mem_wrapper(sycl::range<2>{width, height}, channel, q);
+    auto mem = new image_mem_wrapper(channel, width, height);
     _img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(_img) = mem;

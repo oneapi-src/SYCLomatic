@@ -10105,13 +10105,9 @@ void MemoryMigrationRule::mallocMigration(
       llvm::raw_string_ostream OS(Replacement);
       DerefExpr(C->getArg(0), C).print(OS);
       OS << " = new " << MapNames::getDpctNamespace()
-         << "experimental::image_mem_wrapper("
-         << ExprAnalysis::ref(C->getArg(2)) << ", ";
+         << "experimental::image_mem_wrapper(";
       DerefExpr(C->getArg(1), C).print(OS);
-      OS << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
     mallocArrayMigration(C, Name, 3, *Result.SourceManager);
@@ -10121,14 +10117,10 @@ void MemoryMigrationRule::mallocMigration(
       llvm::raw_string_ostream OS(Replacement);
       DerefExpr(C->getArg(0), C).print(OS);
       OS << " = new " << MapNames::getDpctNamespace()
-         << "experimental::image_mem_wrapper(" << MapNames::getClNamespace()
-         << "range<2>{" << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(3)) << "}, ";
+         << "experimental::image_mem_wrapper(";
       DerefExpr(C->getArg(1), C).print(OS);
-      OS << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(3)) << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
     mallocArrayMigration(C, Name, 4, *Result.SourceManager);
