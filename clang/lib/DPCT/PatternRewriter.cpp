@@ -441,28 +441,6 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
     }
   }
 
-#if 1 // use for debug print
-        int Count = 0;
-        printf("Pattern start:\n");
-        for (auto Element : Pattern) {
-          if (std::holds_alternative<CodeElement>(Element)) {
-            auto &Code = std::get<CodeElement>(Element);
-            printf("\t[%d]->[%s]:[%d]\n", Count, Code.Name.c_str(),
-                   Code.SuffixLength);
-          }
-          if (std::holds_alternative<LiteralElement>(Element)) {
-            const auto &Literal = std::get<LiteralElement>(Element);
-            printf("\t[%d]->[%c]\n", Count, Literal.Value);
-          }
-          if (std::holds_alternative<SpacingElement>(Element)) {
-            printf("\t[%d]->[%s]\n", Count, "space");
-          }
-          Count++;
-        }
-        printf("Pattern end.\n\n");
-#endif
-
-
   while (PatternIndex < PatternSize && Index < Size) {
     const auto &Element = Pattern[PatternIndex];
 
@@ -484,26 +462,9 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       }
 
       if (Index < Size - 1 && PatternIndex == PatternSize - 1) {
-
-        // printf("0000 Input: [%s]\n", Input.c_str());
-        // printf("1111 [%d %d] --> [%c %c]\n", Index, PatternSize,
-        // Input[Index],
-        //        Input[Index - PatternSize]);
-        // printf("2222 [%d %d] --> [%c %c]\n", Index - PatternSize, Index +1,
-        // Input[Index - PatternSize], Input[Index +1]);
-
         if (Index - PatternSize >= 0 && !CodeElementExist &&
             !isIdentifiedChar(Input[Index - PatternSize]) &&
             !isIdentifiedChar(Input[Index + 1])) {
-          printf("00 Input: [%s]\n", Input.c_str());
-          printf("11 [%d %d] --> [%c %c]\n", Index, PatternSize, Input[Index],
-                 Input[Index - PatternSize]);
-
-          printf("0000 Input: [%s]\n", Input.c_str());
-          printf("1111 [%d %d] --> [%c %c]\n", Index, PatternSize, Input[Index],
-                 Input[Index - PatternSize]);
-          printf("2222 [%d %d] --> [%c %c]\n", Index - PatternSize, Index + 1,
-                 Input[Index - PatternSize], Input[Index + 1]);
 
           if (Input[Index - PatternSize] != '{' && Input[Index + 1] != '}' &&
               !isWhitespace(Input[Index - PatternSize]) &&
@@ -511,11 +472,6 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
               Input[Index - PatternSize] != '*') {
             return {};
           }
-
-          // if(!isWhitespace(Input[Index - PatternSize]) &&
-          // !isWhitespace(Input[Index +1])) {
-          //      return {};
-          // }
         }
       }
 
@@ -579,12 +535,8 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
     throw std::runtime_error("Internal error: invalid pattern element");
   }
 
-
   Result.Start = Start;
   Result.End = Index;
-
-  printf("Input: [%s]\n", Input.c_str());
-  printf("[%d %d] --> [%c %c]\n", Result.Start, Result.End, Input[Result.Start], Input[Result.End]);
   return Result;
 }
 
