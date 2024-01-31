@@ -76,8 +76,7 @@ class Replacements;
 } // namespace clang
 
 extern bool IsUsingDefaultOutRoot;
-void removeDefaultOutRootFolder(
-    const clang::tooling::UnifiedPath &DefaultOutRoot);
+void removeDefaultOutRootFolder(const clang::tooling::UnifiedPath &DefaultOutRoot);
 void dpctExit(int ExitCode, bool NeedCleanUp = true);
 
 // classes for keeping track of Stmt->String mappings
@@ -116,7 +115,7 @@ public:
   ~CurlyBracketsPrinter() { OS << "}"; }
 };
 
-// extern std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
+//extern std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 extern std::unordered_map<std::string, bool> IsDirectoryCache;
 extern std::unordered_map<std::string, bool> ChildPathCache;
 extern std::unordered_map<std::string, bool> ChildOrSameCache;
@@ -257,8 +256,7 @@ enum SourceProcessType {
   SPT_CppHeader = 8,
 };
 
-SourceProcessType
-GetSourceFileType(const clang::tooling::UnifiedPath &SourcePath);
+SourceProcessType GetSourceFileType(const clang::tooling::UnifiedPath &SourcePath);
 
 const std::string &getFmtEndStatement(void);
 const std::string &getFmtStatementIndent(std::string &BaseIndent);
@@ -299,8 +297,7 @@ const clang::CUDAKernelCallExpr *getParentKernelCall(const clang::Expr *E);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 const clang::Stmt *getParentStmt(clang::DynTypedNode Node);
-const clang::Stmt *getParentStmt(const clang::Stmt *S,
-                                 bool SkipNonWritten = false);
+const clang::Stmt *getParentStmt(const clang::Stmt *S, bool SkipNonWritten = false);
 const clang::Stmt *getParentStmt(const clang::Decl *D);
 const clang::Decl *getParentDecl(const clang::Decl *D);
 const clang::Stmt *getNonImplicitCastParentStmt(const clang::Stmt *S);
@@ -360,7 +357,7 @@ StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum) {
 }
 template <class StreamTy, class FirstArg, class... RestArgs>
 StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum,
-                                FirstArg &&First, RestArgs &&... Rest) {
+                                FirstArg &&First, RestArgs &&...Rest) {
   if (PrintingArgsNum) {
     Stream << std::forward<FirstArg>(First);
     if (--PrintingArgsNum) {
@@ -372,7 +369,7 @@ StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum,
   return Stream;
 }
 template <class StreamTy, class... Args>
-StreamTy &printArguments(StreamTy &Stream, Args &&... Arguments) {
+StreamTy &printArguments(StreamTy &Stream, Args &&...Arguments) {
   return printPartialArguments(Stream, sizeof...(Args),
                                std::forward<Args>(Arguments)...);
 }
@@ -391,11 +388,11 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
 
 bool isAssigned(const clang::Stmt *S);
 bool isInRetStmt(const clang::Stmt *S);
-std::string
-getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
-                   bool KeepLastUnderline = true, bool IsInMacroDefine = false,
-                   clang::SourceLocation CallBegin = clang::SourceLocation(),
-                   clang::SourceLocation CallEnd = clang::SourceLocation());
+std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
+                               bool KeepLastUnderline = true,
+                               bool IsInMacroDefine = false,
+                               clang::SourceLocation CallBegin = clang::SourceLocation(),
+                               clang::SourceLocation CallEnd = clang::SourceLocation());
 bool isOuterMostMacro(const clang::Stmt *E);
 bool isSameLocation(const clang::SourceLocation L1,
                     const clang::SourceLocation L2);
@@ -557,8 +554,8 @@ bool isLambda(const clang::FunctionDecl *FD);
 const clang::LambdaExpr *
 getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl);
 bool typeIsPostfix(clang::QualType QT);
-bool isPointerHostAccessOnly(const clang::ValueDecl *VD);
-std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr *ME);
+bool isPointerHostAccessOnly(const clang::ValueDecl* VD);
+std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
