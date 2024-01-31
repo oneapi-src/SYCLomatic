@@ -198,8 +198,7 @@ static std::vector<std::string> FilesNotInCompilationDB;
 
 std::map<std::string, std::string> OutFilePath2InFilePath;
 
-static bool checkOverwriteAndWarn(StringRef OutFilePath,
-                                  StringRef InFilePath) {
+static bool checkOverwriteAndWarn(StringRef OutFilePath, StringRef InFilePath) {
   auto SrcFilePath = OutFilePath2InFilePath.find(OutFilePath.str());
 
   bool Overwrites = false;
@@ -784,7 +783,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
           !rewriteDir(DebugFilePath, InRoot, DebugCUDAFolder)) {
         continue;
       }
-      
+
       // Check for another file with SYCL extension. For example
       // In in-root we have
       //  * src.cpp
@@ -795,7 +794,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       if (checkOverwriteAndWarn(FilePath.getCanonicalPath(),
                                 Entry.first.getCanonicalPath()))
         continue;
-  
+
       // If the file needs no replacement and it already exist, don't
       // make any changes
       if (fs::exists(FilePath.getCanonicalPath())) {
@@ -855,7 +854,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       // for two different input files
       OutFilePath2InFilePath[FilePath.getCanonicalPath().str()] =
           Entry.first.getCanonicalPath().str();
-      
+
       if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
         // Copy non-replacement CUDA files into debug folder
         std::filesystem::copy(OriginalFilePath.getCanonicalPath().str(),
