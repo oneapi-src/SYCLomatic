@@ -383,10 +383,12 @@ static int parseCodeElement(const MatchPattern &Suffix,
   return Suffix.size() == 0 ? Index : -1;
 }
 
+// Add '-' as a valid identified char, as cmake target name including '-' is
+// valid
 static bool isIdentifiedChar(char Char) {
 
   if ((Char >= 'a' && Char <= 'z') || (Char >= 'A' && Char <= 'Z') ||
-      (Char >= '0' && Char <= '9') || (Char == '_')) {
+      (Char >= '0' && Char <= '9') || (Char == '_') || (Char == '-')) {
     return true;
   }
 
@@ -432,6 +434,12 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
   int PatternIndex = 0;
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
+  bool CodeElementExist = false;
+  for (const auto &Element : Pattern) {
+    if (std::holds_alternative<CodeElement>(Element)) {
+      CodeElementExist = true;
+    }
+  }
 
   while (PatternIndex < PatternSize && Index < Size) {
     const auto &Element = Pattern[PatternIndex];
@@ -451,6 +459,25 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       const auto &Literal = std::get<LiteralElement>(Element);
       if (Input[Index] != Literal.Value) {
         return {};
+      }
+
+      if (!CodeElementExist && Index - PatternSize >= 0 && Index < Size - 1 &&
+          PatternIndex == PatternSize - 1) {
+        if (!isIdentifiedChar(Input[Index - PatternSize]) &&
+            !isIdentifiedChar(Input[Index + 1])) {
+
+          if (Input[Index - PatternSize] != '{' && Input[Index + 1] != '}' &&
+              !isWhitespace(Input[Index - PatternSize]) &&
+              !isWhitespace(Input[Index + 1]) &&
+              Input[Index - PatternSize] != '*') {
+            return {};
+          }
+        }
+
+        if (isIdentifiedChar(Input[Index - PatternSize]) &&
+            Input[Index - PatternSize + 1] != '.') {
+          return {};
+        }
       }
 
       // If input value has been matched to the end but match pattern still has
