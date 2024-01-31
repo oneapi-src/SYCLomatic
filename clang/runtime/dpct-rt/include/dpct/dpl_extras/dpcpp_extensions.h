@@ -566,33 +566,34 @@ private:
 
 /// Load linear segment items into block format across threads
 /// Helper for Block Load
-template <int GROUP_THREADS, typename InputT, int ITEMS_PER_THREAD,
+template <size_t GROUP_WORK_ITEMS, typename InputT, int ITEMS_PER_THREAD,
           typename InputIteratorT>
 __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_THREAD]) {
 #pragma unroll
   for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    if ((linear_tid * ITEMS_PER_THREAD) + ITEM < GROUP_THREADS) {
+    if ((linear_tid * ITEMS_PER_THREAD) + ITEM < GROUP_WORK_ITEMS) {
       items[ITEM] = block_itr[(linear_tid * ITEMS_PER_THREAD) + ITEM];
     }
   }
 }
 
-template <int GROUP_THREADS, typename InputT, int ITEMS_PER_THREAD,
+template <size_t GROUP_WORK_ITEMS, typename InputT, int ITEMS_PER_THREAD,
           typename InputIteratorT>
 __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_THREAD]) {
 #pragma unroll
   for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    if (linear_tid + (ITEM * ITEMS_PER_THREAD) < GROUP_THREADS) {
+    if (linear_tid + (ITEM * ITEMS_PER_THREAD) < GROUP_WORK_ITEMS) {
       items[ITEM] = block_itr[linear_tid + (ITEM * ITEMS_PER_THREAD)];
     }
   }
 }
 
-template <int GROUP_THREADS, typename InputT, int ITEMS_PER_THREAD,
+template <size_t GROUP_WORK_ITEMS, typename Item, typename InputT, int ITEMS_PER_THREAD,
           typename InputIteratorT>
-__dpct_inline__ void load_subgroup_striped(size_t linear_tid,
+__dpct_inline__ void load_subgroup_striped(const Item &item,
+                                           size_t linear_tid,
                                            InputIteratorT block_itr,
                                            InputT (&items)[ITEMS_PER_THREAD]) {
 
@@ -601,7 +602,7 @@ __dpct_inline__ void load_subgroup_striped(size_t linear_tid,
   // int warp_offset = wid * ITEMS_PER_THREAD;
 #pragma unroll
   for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    new (&items[ITEM]) InputT(block_itr[&items[ITEM].get_sub_group().get_local_range()[0]] + linear_tid + (ITEM * ITEMS_PER_THREAD)]);
+    new (&items[ITEM]) InputT(block_itr[item.get_sub_group().get_local_range()[0]] + linear_tid + (ITEM * ITEMS_PER_THREAD)]);
   }
 }
 
