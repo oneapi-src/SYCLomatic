@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <filesystem>
 #include <fstream>
 
 using namespace clang::dpct;
@@ -679,7 +680,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   // The necessary header files which have no replacements will be copied to
   // "-out-root" directory.
   for (const auto &Entry : IncludeFileMap) {
+    // Generated SYCL file in outroot. E.g., /path/to/outroot/a.dp.cpp
     clang::tooling::UnifiedPath FilePath = Entry.first;
+    // Generated CUDA file in outroot_debug. E.g., /path/to/outroot_debug/a.cu
+    clang::tooling::UnifiedPath DebugFilePath = Entry.first;
+    // Original CUDA file in inroot. E.g., /path/to/inroot/a.cu
+    clang::tooling::UnifiedPath OriginalFilePath = Entry.first;
     if (!Entry.second) {
       bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
       if (IsExcluded) {
@@ -697,6 +703,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       FilePath = TempFilePath;
 
       if (!rewriteDir(FilePath, InRoot, OutRoot)) {
+        continue;
+      }
+      if (dpct::DpctGlobalInfo::isCodePinEnabled() &&
+          !rewriteDir(DebugFilePath, InRoot, DebugCUDAFolder)) {
         continue;
       }
       if (fs::exists(FilePath.getCanonicalPath())) {
@@ -737,6 +747,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                 *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
+      }
+      if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
+        // Copy non-replacement CUDA files into debug folder
+        std::filesystem::copy(OriginalFilePath.getCanonicalPath().str(),
+                              DebugFilePath.getCanonicalPath().str());
       }
     }
   }

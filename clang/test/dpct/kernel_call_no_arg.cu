@@ -38,7 +38,7 @@ int main() {
   // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK:         [=](sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           kernel1([[ITEM]], out_acc_ct1.get_pointer());
+  // CHECK:           kernel1([[ITEM]], out_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK:         });
   // CHECK:     });
   kernel1<<<1, threads_per_block>>>();
