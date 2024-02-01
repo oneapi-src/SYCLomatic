@@ -37,13 +37,6 @@
 
 #include <algorithm>
 #include <cassert>
-#if defined(__has_include) && __has_include(<filesystem>)
-#include <filesystem>
-#elif defined(__has_include) && __has_include(<experimental/filesystem>)
-#include <experimental/filesystem>
-#else
-#error "Build requires C++ filesystem support"
-#endif
 #include <fstream>
 
 using namespace clang::dpct;
@@ -789,13 +782,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
         // Copy non-replacement CUDA files into debug folder
-#if defined(__has_include) && __has_include(<filesystem>)
-        std::filesystem::
-#else
-        std::experimental::filesystem::
-#endif
-            copy(OriginalFilePath.getCanonicalPath().str(),
-                 DebugFilePath.getCanonicalPath().str());
+        fs::copy_file(OriginalFilePath.getCanonicalPath(),
+                      DebugFilePath.getCanonicalPath());
       }
     }
   }
