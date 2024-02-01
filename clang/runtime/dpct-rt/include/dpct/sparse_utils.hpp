@@ -374,7 +374,7 @@ template <typename T> struct csrsv_impl {
     using Ty = typename dpct::DataType<T>::T2;
     auto alpha_value =
         dpct::detail::get_value(static_cast<const Ty *>(alpha), queue);
-    auto data_x = dpct::detail::get_memory<Ty>(X);
+    auto data_x = dpct::detail::get_memory<Ty>(x);
     auto data_y = dpct::detail::get_memory<Ty>(y);
     SPARSE_CALL(oneapi::mkl::sparse::trsv(queue, info->get_uplo(), trans,
                                           info->get_diag(), alpha_value,
