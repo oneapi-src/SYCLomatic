@@ -786,13 +786,12 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake &&
+  if (BuildScript == BuildScript::BS_Cmake &&
       !OptParser->getSourcePathList().empty()) {
     ShowStatus(MigarteBuildScriptIncorrectUse);
     dpctExit(MigarteBuildScriptIncorrectUse);
   }
-  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake &&
-      MigrateBuildScriptOnly) {
+  if (BuildScript == BuildScript::BS_Cmake && MigrateBuildScriptOnly) {
     ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
     dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
   }

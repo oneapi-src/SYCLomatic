@@ -670,12 +670,12 @@ bool IsSingleLineStatement(const clang::Stmt *S) {
          ParentStmtClass == Stmt::StmtClass::ForStmtClass;
 }
 
-// Find the nearest non-Expr non-Decl ancestor node of Expr E
-// Assumes: E != nullptr
-const DynTypedNode findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
+// Find the nearest non-Expr non-Decl ancestor node of Node N
+const DynTypedNode
+findNearestNonExprNonDeclAncestorNode(const DynTypedNode &N) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto ParentNodes = Context.getParents(*E);
-  DynTypedNode LastNode = DynTypedNode::create(*E), ParentNode;
+  auto ParentNodes = Context.getParents(N);
+  DynTypedNode LastNode = N, ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
     bool IsSingleStmt = ParentNode.get<CompoundStmt>() ||
@@ -688,12 +688,6 @@ const DynTypedNode findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
     ParentNodes = Context.getParents(LastNode);
   }
   return LastNode;
-}
-
-// Find the nearest non-Expr non-Decl ancestor statement of Expr E
-// Assumes: E != nullptr
-const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E) {
-  return findNearestNonExprNonDeclAncestorNode(E).get<Stmt>();
 }
 
 SourceRange getScopeInsertRange(const MemberExpr *ME) {
@@ -716,7 +710,8 @@ SourceRange getScopeInsertRange(const Expr *E,
     StmtBegin = FuncNameBegin;
     StmtEnd = FuncCallEnd;
   } else {
-    AncestorStmt = findNearestNonExprNonDeclAncestorNode(E);
+    AncestorStmt =
+        findNearestNonExprNonDeclAncestorNode(DynTypedNode::create(*E));
     StmtBegin = AncestorStmt.getSourceRange().getBegin();
     StmtEnd = AncestorStmt.getSourceRange().getEnd();
     if (StmtBegin.isMacroID())
@@ -4756,18 +4751,15 @@ matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
 int isArgumentInitialized(
     const clang::Expr *Arg,
     std::vector<const clang::VarDecl *> &DeclsRequireInit) {
-  auto isInitBeforeArg = [](const CompoundStmt *Context,
-                            const clang::DeclRefExpr *DRE,
+  auto isInitBeforeArg = [](const Stmt *Context, const clang::DeclRefExpr *DRE,
                             const clang::Expr *Arg) -> bool {
     const auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(DRE);
     if (ICE && ICE->getCastKind() == CastKind::CK_LValueToRValue)
       return false;
-    const CompoundStmt *DREContext =
-        DpctGlobalInfo::findAncestor<CompoundStmt>(DRE);
+    const Stmt *DREContext = findNearestNonExprNonDeclAncestorStmt(DRE);
     if (!DREContext || DREContext != Context)
       return false;
-    const CompoundStmt *ArgContext =
-        DpctGlobalInfo::findAncestor<CompoundStmt>(Arg);
+    const Stmt *ArgContext = findNearestNonExprNonDeclAncestorStmt(Arg);
     if (!ArgContext || ArgContext != Context)
       return false;
     const auto &SM = DpctGlobalInfo::getSourceManager();
@@ -4809,7 +4801,7 @@ int isArgumentInitialized(
       return -1;
     if (VD->hasInit())
       continue;
-    const CompoundStmt *CS = DpctGlobalInfo::findAncestor<CompoundStmt>(VD);
+    const Stmt *CS = findNearestNonExprNonDeclAncestorStmt(VD);
     if (!CS)
       return -1;
     std::set<const clang::DeclRefExpr *> DRERefSet =
