@@ -14,6 +14,61 @@ namespace experimental {
 
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
 
+/// The wrapper class of bindless image memory handle.
+class image_mem_wrapper {
+public:
+  /// Create bindless image memory wrapper.
+  /// \tparam dimensions The dimensions of image memory.
+  /// \param [in] channel The image channel used to create bindless image
+  /// \param [in] range The sizes of each dimension of bindless image memory.
+  /// memory.
+  template <int dimensions>
+  image_mem_wrapper(image_channel channel, sycl::range<dimensions> range)
+      : _channel(channel),
+        _desc(sycl::ext::oneapi::experimental::image_descriptor(
+            range, _channel.get_channel_order(), _channel.get_channel_type())) {
+    // Make sure that singleton class dev_mgr will destruct later than this.
+    dev_mgr::instance();
+    _handle = alloc_image_mem(_desc, get_default_queue());
+  }
+  /// Create bindless image memory wrapper.
+  /// \param [in] channel The image channel used to create bindless image
+  /// \param [in] size The sizes of each dimension of bindless image memory.
+  /// memory.
+  template <typename... Args>
+  image_mem_wrapper(image_channel channel, Args... size)
+      : image_mem_wrapper(channel, sycl::range{size...}) {}
+  image_mem_wrapper(const image_mem_wrapper &) = delete;
+  image_mem_wrapper &operator=(const image_mem_wrapper &) = delete;
+  /// Destroy bindless image memory wrapper.
+  ~image_mem_wrapper() {
+    free_image_mem(_handle, _desc.type, get_default_queue());
+  }
+  /// Get the image channel of the bindless image memory.
+  /// \returns The image channel of bindless image memory.
+  image_channel get_channel() const { return _channel; }
+  /// Get the sizes of each dimension of the bindless image memory.
+  /// \returns The sizes of each dimension of bindless image memory.
+  sycl::range<3> get_range() const {
+    return {_desc.width, _desc.height, _desc.depth};
+  }
+  /// Get the image descriptor of the bindless image memory.
+  /// \returns The image descriptor of bindless image memory.
+  const sycl::ext::oneapi::experimental::image_descriptor &get_desc() const {
+    return _desc;
+  }
+  /// Get the image handle of the bindless image memory.
+  /// \returns The image handle of bindless image memory.
+  sycl::ext::oneapi::experimental::image_mem_handle get_handle() const {
+    return _handle;
+  }
+
+private:
+  const image_channel _channel;
+  const sycl::ext::oneapi::experimental::image_descriptor _desc;
+  sycl::ext::oneapi::experimental::image_mem_handle _handle;
+};
+
 namespace detail {
 struct sampled_image_handle_compare {
   bool
@@ -32,11 +87,10 @@ inline std::pair<image_data, sampling_info> &get_img_info_map(
   return img_info_map[handle];
 }
 
-inline sycl::ext::oneapi::experimental::image_mem *&get_img_mem_map(
+inline image_mem_wrapper *&get_img_mem_map(
     const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
   static std::map<sycl::ext::oneapi::experimental::sampled_image_handle,
-                  sycl::ext::oneapi::experimental::image_mem *,
-                  sampled_image_handle_compare>
+                  image_mem_wrapper *, sampled_image_handle_compare>
       img_mem_map;
   return img_mem_map[handle];
 }
@@ -84,26 +138,28 @@ get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
 }
 
 static inline sycl::event
-dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
+dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
+            const sycl::ext::oneapi::experimental::image_descriptor &desc_src,
             size_t w_offset_src, size_t h_offset_src, void *dest, size_t p,
             size_t w, size_t h, sycl::queue q) {
-  const auto ele_size = get_ele_size(src->get_descriptor());
+  const auto ele_size = get_ele_size(desc_src);
   const auto src_offset =
       sycl::range<3>(w_offset_src / ele_size, h_offset_src, 0);
   const auto dest_offset = sycl::range<3>(0, 0, 0);
   const auto dest_extend = sycl::range<3>(p / ele_size, 0, 0);
   const auto copy_extend = sycl::range<3>(w / ele_size, h, 0);
-  return q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_descriptor(),
-                           dest, dest_offset, dest_extend, copy_extend);
+  return q.ext_oneapi_copy(src, src_offset, desc_src, dest, dest_offset,
+                           dest_extend, copy_extend);
 }
 
 static inline std::vector<sycl::event>
-dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
+dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
+            const sycl::ext::oneapi::experimental::image_descriptor &desc_src,
             size_t w_offset_src, size_t h_offset_src, void *dest, size_t s,
             sycl::queue q) {
   std::vector<sycl::event> event_list;
-  const auto ele_size = get_ele_size(src->get_descriptor());
-  const auto w = src->get_descriptor().width * ele_size;
+  const auto ele_size = get_ele_size(desc_src);
+  const auto w = desc_src.width * ele_size;
   size_t offset_dest = 0;
   while (s - offset_dest > w - w_offset_src) {
     const auto src_offset =
@@ -112,9 +168,9 @@ dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
     const auto dest_extend = sycl::range<3>(0, 0, 0);
     const auto copy_extend =
         sycl::range<3>((w - w_offset_src) / ele_size, 1, 0);
-    event_list.push_back(
-        q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_descriptor(),
-                          dest, dest_offset, dest_extend, copy_extend));
+    event_list.push_back(q.ext_oneapi_copy(src, src_offset, desc_src, dest,
+                                           dest_offset, dest_extend,
+                                           copy_extend));
     offset_dest += w - w_offset_src;
     w_offset_src = 0;
     ++h_offset_src;
@@ -124,33 +180,34 @@ dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
   const auto dest_offset = sycl::range<3>(offset_dest / ele_size, 0, 0);
   const auto dest_extend = sycl::range<3>(0, 0, 0);
   const auto copy_extend = sycl::range<3>((s - w_offset_src) / ele_size, 1, 0);
-  event_list.push_back(
-      q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_descriptor(),
-                        dest, dest_offset, dest_extend, copy_extend));
+  event_list.push_back(q.ext_oneapi_copy(
+      src, src_offset, desc_src, dest, dest_offset, dest_extend, copy_extend));
   return event_list;
 }
 
 static inline sycl::event
-dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem *dest,
+dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
+            const sycl::ext::oneapi::experimental::image_descriptor &desc_dest,
             size_t w_offset_dest, size_t h_offset_dest, size_t p, size_t w,
             size_t h, sycl::queue q) {
-  const auto ele_size = get_ele_size(dest->get_descriptor());
+  const auto ele_size = get_ele_size(desc_dest);
   const auto src_offset = sycl::range<3>(0, 0, 0);
   const auto src_extend = sycl::range<3>(p / ele_size, 0, 0);
   const auto dest_offset =
       sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
   const auto copy_extend = sycl::range<3>(w / ele_size, h, 0);
-  return q.ext_oneapi_copy(src, src_offset, src_extend, dest->get_handle(),
-                           dest_offset, dest->get_descriptor(), copy_extend);
+  return q.ext_oneapi_copy(src, src_offset, src_extend, dest, dest_offset,
+                           desc_dest, copy_extend);
 }
 
 static inline std::vector<sycl::event>
-dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem *dest,
+dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
+            const sycl::ext::oneapi::experimental::image_descriptor &desc_dest,
             size_t w_offset_dest, size_t h_offset_dest, size_t s,
             sycl::queue q = get_default_queue()) {
   std::vector<sycl::event> event_list;
-  const auto ele_size = get_ele_size(dest->get_descriptor());
-  const auto w = dest->get_descriptor().width * ele_size;
+  const auto ele_size = get_ele_size(desc_dest);
+  const auto w = desc_dest.width * ele_size;
   size_t offset_src = 0;
   while (s - offset_src >= w - w_offset_dest) {
     const auto src_offset = sycl::range<3>(offset_src / ele_size, 0, 0);
@@ -159,9 +216,9 @@ dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem *dest,
         sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
     const auto copy_extend =
         sycl::range<3>((w - w_offset_dest) / ele_size, 1, 0);
-    event_list.push_back(
-        q.ext_oneapi_copy(src, src_offset, src_extend, dest->get_handle(),
-                          dest_offset, dest->get_descriptor(), copy_extend));
+    event_list.push_back(q.ext_oneapi_copy(src, src_offset, src_extend, dest,
+                                           dest_offset, desc_dest,
+                                           copy_extend));
     offset_src += w - w_offset_dest;
     w_offset_dest = 0;
     ++h_offset_dest;
@@ -172,9 +229,8 @@ dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem *dest,
       sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
   const auto copy_extend =
       sycl::range<3>((s - offset_src - w_offset_dest) / ele_size, 1, 0);
-  event_list.push_back(q.ext_oneapi_copy(src, src_offset, src_extend,
-                                         dest->get_handle(), dest_offset,
-                                         dest->get_descriptor(), copy_extend));
+  event_list.push_back(q.ext_oneapi_copy(src, src_offset, src_extend, dest,
+                                         dest_offset, desc_dest, copy_extend));
   return event_list;
 }
 } // namespace detail
@@ -187,48 +243,43 @@ dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem *dest,
 static inline sycl::ext::oneapi::experimental::sampled_image_handle
 create_bindless_image(image_data data, sampling_info info,
                       sycl::queue q = get_default_queue()) {
-  auto desc = sycl::ext::oneapi::experimental::image_descriptor();
   auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
       info.get_addressing_mode(), info.get_coordinate_normalization_mode(),
       info.get_filtering_mode());
 
   switch (data.get_data_type()) {
   case image_data_type::linear: {
-    desc.width = data.get_x() / data.get_channel().get_total_size();
-    desc.channel_order = data.get_channel().get_channel_order();
-    desc.channel_type = data.get_channel_type();
-    desc.num_levels = 1;
     // linear memory only use sycl::filtering_mode::nearest.
     samp.filtering = sycl::filtering_mode::nearest;
     // TODO: Use pointer to create image when bindless image support.
-    auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    auto img =
-        sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
+    auto mem = new image_mem_wrapper(
+        data.get_channel(), data.get_x() / data.get_channel().get_total_size());
+    auto img = sycl::ext::oneapi::experimental::create_image(
+        mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(img) = mem;
     auto ptr = data.get_data_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
     ptr = get_buffer(ptr).get_host_access().get_pointer();
 #endif
-    q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
+    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
     q.wait_and_throw();
     detail::get_img_info_map(img) = {data, info};
     return img;
   }
   case image_data_type::pitch: {
-    desc.width = data.get_x();
-    desc.height = data.get_y();
-    desc.channel_order = data.get_channel().get_channel_order();
-    desc.channel_type = data.get_channel_type();
-    desc.num_levels = 1;
 #ifdef DPCT_USM_LEVEL_NONE
-    auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    auto img =
-        sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
+    auto mem =
+        new image_mem_wrapper(data.get_channel(), data.get_x(), data.get_y());
+    auto img = sycl::ext::oneapi::experimental::create_image(
+        mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(img) = mem;
     auto ptr = get_buffer(data.get_data_ptr()).get_host_access().get_pointer();
-    q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
+    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
     q.wait_and_throw();
 #else
+    auto desc = sycl::ext::oneapi::experimental::image_descriptor(
+        {data.get_x(), data.get_y()}, data.get_channel().get_channel_order(),
+        data.get_channel_type());
     auto img = sycl::ext::oneapi::experimental::create_image(
         data.get_data_ptr(), data.get_pitch(), samp, desc, q);
     detail::get_img_mem_map(img) = nullptr;
@@ -237,10 +288,9 @@ create_bindless_image(image_data data, sampling_info info,
     return img;
   }
   case image_data_type::matrix: {
-    const auto mem = static_cast<sycl::ext::oneapi::experimental::image_mem *>(
-        data.get_data_ptr());
+    const auto mem = static_cast<image_mem_wrapper *>(data.get_data_ptr());
     auto img = sycl::ext::oneapi::experimental::create_image(
-        *mem, samp, mem->get_descriptor(), q);
+        mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(img) = nullptr;
     detail::get_img_info_map(img) = {data, info};
     return img;
@@ -251,8 +301,7 @@ create_bindless_image(image_data data, sampling_info info,
     break;
   }
   // Must not reach here.
-  return sycl::ext::oneapi::experimental::create_image(data.get_data_ptr(), 0,
-                                                       samp, desc, q);
+  return sycl::ext::oneapi::experimental::sampled_image_handle();
 }
 
 /// Destroy bindless image.
@@ -263,9 +312,7 @@ static inline void destroy_bindless_image(
     sycl::queue q = get_default_queue()) {
   auto &mem = detail::get_img_mem_map(handle);
   if (mem) {
-    sycl::ext::oneapi::experimental::free_image_mem(
-        mem->get_handle(),
-        sycl::ext::oneapi::experimental::image_type::standard, q);
+    delete mem;
     mem = nullptr;
   }
   sycl::ext::oneapi::experimental::destroy_image_handle(handle, q);
@@ -285,17 +332,6 @@ get_data(const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
 static inline sampling_info get_sampling_info(
     const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
   return detail::get_img_info_map(handle).second;
-}
-
-/// Get the image channel according to image memory.
-/// \param [in] mem The image memory pointer.
-/// \returns The image channel of image memory.
-static inline image_channel
-get_channel(const sycl::ext::oneapi::experimental::image_mem *mem) {
-  image_channel channel;
-  channel.set_channel_num(mem->get_num_channels());
-  channel.set_channel_type(mem->get_channel_type());
-  return channel;
 }
 
 /// The wrapper class of bindless image.
@@ -320,19 +356,18 @@ public:
   void attach(void *data, size_t size, const image_channel &channel,
               sycl::queue q = get_default_queue()) {
     detach(q);
-    auto desc = sycl::ext::oneapi::experimental::image_descriptor(
-        {size}, channel.get_channel_order(), channel.get_channel_type());
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
     // TODO: Use pointer to create image when bindless image support.
-    auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    _img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
+    auto mem = new image_mem_wrapper(channel, size);
+    _img = sycl::ext::oneapi::experimental::create_image(
+        mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(_img) = mem;
     auto ptr = data;
 #ifdef DPCT_USM_LEVEL_NONE
     ptr = get_buffer(data).get_host_access().get_pointer();
 #endif
-    q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
+    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
     q.wait_and_throw();
   }
 
@@ -355,19 +390,20 @@ public:
               const image_channel &channel,
               sycl::queue q = get_default_queue()) {
     detach(q);
-    auto desc = sycl::ext::oneapi::experimental::image_descriptor(
-        {width, height}, channel.get_channel_order(),
-        channel.get_channel_type());
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
 #ifdef DPCT_USM_LEVEL_NONE
-    auto mem = new sycl::ext::oneapi::experimental::image_mem(desc, q);
-    _img = sycl::ext::oneapi::experimental::create_image(*mem, samp, desc, q);
+    auto mem = new image_mem_wrapper(channel, width, height);
+    _img = sycl::ext::oneapi::experimental::create_image(
+        mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(_img) = mem;
     auto ptr = get_buffer(data).get_host_access().get_pointer();
-    q.ext_oneapi_copy(ptr, mem->get_handle(), desc);
+    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
     q.wait_and_throw();
 #else
+    auto desc = sycl::ext::oneapi::experimental::image_descriptor(
+        {width, height}, channel.get_channel_order(),
+        channel.get_channel_type());
     _img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp,
                                                          desc, q);
     detail::get_img_mem_map(_img) = nullptr;
@@ -387,24 +423,21 @@ public:
 
   /// Attach image memory to bindless image.
   /// \param [in] mem The image memory used to create bindless image.
-  /// \param [in] channel The image channel used to create bindless image.
   /// \param [in] q The queue where the image creation be executed.
-  void attach(sycl::ext::oneapi::experimental::image_mem *mem,
-              const image_channel &channel,
+  void attach(image_mem_wrapper *mem, const image_channel &channel,
               sycl::queue q = get_default_queue()) {
     detach(q);
     auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
     _img = sycl::ext::oneapi::experimental::create_image(
-        *mem, samp, mem->get_descriptor(), q);
+        mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(_img) = nullptr;
   }
 
   /// Attach image memory to bindless image.
   /// \param [in] mem The image memory used to create bindless image.
   /// \param [in] q The queue where the image creation be executed.
-  void attach(sycl::ext::oneapi::experimental::image_mem *mem,
-              sycl::queue q = get_default_queue()) {
+  void attach(image_mem_wrapper *mem, sycl::queue q = get_default_queue()) {
     attach(mem, _channel, q);
   }
 
@@ -499,12 +532,12 @@ private:
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void
-async_dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
-                  size_t w_offset_src, size_t h_offset_src, void *dest,
-                  size_t p, size_t w, size_t h,
-                  sycl::queue q = get_default_queue()) {
-  detail::dpct_memcpy(src, w_offset_src, h_offset_src, dest, p, w, h, q);
+static inline void async_dpct_memcpy(image_mem_wrapper *src,
+                                     size_t w_offset_src, size_t h_offset_src,
+                                     void *dest, size_t p, size_t w, size_t h,
+                                     sycl::queue q = get_default_queue()) {
+  detail::dpct_memcpy(src->get_handle(), src->get_desc(), w_offset_src,
+                      h_offset_src, dest, p, w, h, q);
 }
 
 /// Synchronously copies from the image memory to memory specified by a
@@ -517,11 +550,13 @@ async_dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
-                               size_t w_offset_src, size_t h_offset_src,
-                               void *dest, size_t p, size_t w, size_t h,
+static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
+                               size_t h_offset_src, void *dest, size_t p,
+                               size_t w, size_t h,
                                sycl::queue q = get_default_queue()) {
-  detail::dpct_memcpy(src, w_offset_src, h_offset_src, dest, p, w, h, q).wait();
+  detail::dpct_memcpy(src->get_handle(), src->get_desc(), w_offset_src,
+                      h_offset_src, dest, p, w, h, q)
+      .wait();
 }
 
 /// Asynchronously copies from the image memory to memory specified by a
@@ -533,11 +568,12 @@ static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
 /// \param [in] dest The destination memory address.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void
-async_dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
-                  size_t w_offset_src, size_t h_offset_src, void *dest,
-                  size_t s, sycl::queue q = get_default_queue()) {
-  detail::dpct_memcpy(src, w_offset_src, h_offset_src, dest, s, q);
+static inline void async_dpct_memcpy(image_mem_wrapper *src,
+                                     size_t w_offset_src, size_t h_offset_src,
+                                     void *dest, size_t s,
+                                     sycl::queue q = get_default_queue()) {
+  detail::dpct_memcpy(src->get_handle(), src->get_desc(), w_offset_src,
+                      h_offset_src, dest, s, q);
 }
 
 /// Synchronously copies from the image memory to memory specified by a
@@ -548,12 +584,12 @@ async_dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
 /// \param [in] dest The destination memory address.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
-                               size_t w_offset_src, size_t h_offset_src,
-                               void *dest, size_t s,
+static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
+                               size_t h_offset_src, void *dest, size_t s,
                                sycl::queue q = get_default_queue()) {
-  sycl::event::wait(
-      detail::dpct_memcpy(src, w_offset_src, h_offset_src, dest, s, q));
+  sycl::event::wait(detail::dpct_memcpy(src->get_handle(), src->get_desc(),
+                                        w_offset_src, h_offset_src, dest, s,
+                                        q));
 }
 
 /// Asynchronously copies from memory specified by a pointer to the image
@@ -566,11 +602,12 @@ static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void
-async_dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem *dest,
-                  size_t w_offset_dest, size_t h_offset_dest, size_t p,
-                  size_t w, size_t h, sycl::queue q = get_default_queue()) {
-  detail::dpct_memcpy(src, dest, w_offset_dest, h_offset_dest, p, w, h, q);
+static inline void async_dpct_memcpy(void *src, image_mem_wrapper *dest,
+                                     size_t w_offset_dest, size_t h_offset_dest,
+                                     size_t p, size_t w, size_t h,
+                                     sycl::queue q = get_default_queue()) {
+  detail::dpct_memcpy(src, dest->get_handle(), dest->get_desc(), w_offset_dest,
+                      h_offset_dest, p, w, h, q);
 }
 
 /// Synchronously copies from memory specified by a pointer to the image
@@ -583,12 +620,12 @@ async_dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem *dest,
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(void *src,
-                               sycl::ext::oneapi::experimental::image_mem *dest,
+static inline void dpct_memcpy(void *src, image_mem_wrapper *dest,
                                size_t w_offset_dest, size_t h_offset_dest,
                                size_t p, size_t w, size_t h,
                                sycl::queue q = get_default_queue()) {
-  detail::dpct_memcpy(src, dest, w_offset_dest, h_offset_dest, p, w, h, q)
+  detail::dpct_memcpy(src, dest->get_handle(), dest->get_desc(), w_offset_dest,
+                      h_offset_dest, p, w, h, q)
       .wait();
 }
 
@@ -600,11 +637,12 @@ static inline void dpct_memcpy(void *src,
 /// \param [in] h_offset_dest The y offset of destination image memory.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void
-async_dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem *dest,
-                  size_t w_offset_dest, size_t h_offset_dest, size_t s,
-                  sycl::queue q = get_default_queue()) {
-  detail::dpct_memcpy(src, dest, w_offset_dest, h_offset_dest, s, q);
+static inline void async_dpct_memcpy(void *src, image_mem_wrapper *dest,
+                                     size_t w_offset_dest, size_t h_offset_dest,
+                                     size_t s,
+                                     sycl::queue q = get_default_queue()) {
+  detail::dpct_memcpy(src, dest->get_handle(), dest->get_desc(), w_offset_dest,
+                      h_offset_dest, s, q);
 }
 
 /// Synchronously copies from memory specified by a pointer to the image
@@ -615,12 +653,12 @@ async_dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem *dest,
 /// \param [in] h_offset_dest The y offset of destination image memory.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(void *src,
-                               sycl::ext::oneapi::experimental::image_mem *dest,
+static inline void dpct_memcpy(void *src, image_mem_wrapper *dest,
                                size_t w_offset_dest, size_t h_offset_dest,
                                size_t s, sycl::queue q = get_default_queue()) {
-  sycl::event::wait(
-      detail::dpct_memcpy(src, dest, w_offset_dest, h_offset_dest, s, q));
+  sycl::event::wait(detail::dpct_memcpy(src, dest->get_handle(),
+                                        dest->get_desc(), w_offset_dest,
+                                        h_offset_dest, s, q));
 }
 
 /// Synchronously copies from image memory to the image memory, The function
@@ -634,9 +672,8 @@ static inline void dpct_memcpy(void *src,
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
-                               size_t w_offset_src, size_t h_offset_src,
-                               sycl::ext::oneapi::experimental::image_mem *dest,
+static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
+                               size_t h_offset_src, image_mem_wrapper *dest,
                                size_t w_offset_dest, size_t h_offset_dest,
                                size_t w, size_t h,
                                sycl::queue q = get_default_queue()) {
@@ -657,9 +694,8 @@ static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
 /// \param [in] h_offset_dest The y offset of destination image memory.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
-                               size_t w_offset_src, size_t h_offset_src,
-                               sycl::ext::oneapi::experimental::image_mem *dest,
+static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
+                               size_t h_offset_src, image_mem_wrapper *dest,
                                size_t w_offset_dest, size_t h_offset_dest,
                                size_t s, sycl::queue q = get_default_queue()) {
   auto temp = (void *)sycl::malloc_device(s, q);
@@ -669,7 +705,7 @@ static inline void dpct_memcpy(sycl::ext::oneapi::experimental::image_mem *src,
   sycl::free(temp, q);
 }
 
-using image_mem_ptr = sycl::ext::oneapi::experimental::image_mem *;
+using image_mem_wrapper_ptr = image_mem_wrapper *;
 
 #endif
 

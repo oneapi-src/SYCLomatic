@@ -10104,18 +10104,10 @@ void MemoryMigrationRule::mallocMigration(
       std::string Replacement;
       llvm::raw_string_ostream OS(Replacement);
       DerefExpr(C->getArg(0), C).print(OS);
-      OS << " = new " << MapNames::getClNamespace()
-         << "ext::oneapi::experimental::image_mem("
-         << MapNames::getClNamespace()
-         << "ext::oneapi::experimental::image_descriptor("
-         << ExprAnalysis::ref(C->getArg(2)) << ", ";
+      OS << " = new " << MapNames::getDpctNamespace()
+         << "experimental::image_mem_wrapper(";
       DerefExpr(C->getArg(1), C).print(OS);
-      OS << ".get_channel_order(), ";
-      DerefExpr(C->getArg(1), C).print(OS);
-      OS << ".get_channel_type()), ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
     mallocArrayMigration(C, Name, 3, *Result.SourceManager);
@@ -10124,19 +10116,11 @@ void MemoryMigrationRule::mallocMigration(
       std::string Replacement;
       llvm::raw_string_ostream OS(Replacement);
       DerefExpr(C->getArg(0), C).print(OS);
-      OS << " = new " << MapNames::getClNamespace()
-         << "ext::oneapi::experimental::image_mem("
-         << MapNames::getClNamespace()
-         << "ext::oneapi::experimental::image_descriptor({"
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(3)) << "}, ";
+      OS << " = new " << MapNames::getDpctNamespace()
+         << "experimental::image_mem_wrapper(";
       DerefExpr(C->getArg(1), C).print(OS);
-      OS << ".get_channel_order(), ";
-      DerefExpr(C->getArg(1), C).print(OS);
-      OS << ".get_channel_type()), ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << ExprAnalysis::ref(C->getArg(3)) << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
     mallocArrayMigration(C, Name, 4, *Result.SourceManager);
@@ -10935,12 +10919,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
   } else if (Name == "cudaGetChannelDesc") {
     std::ostringstream OS;
     printDerefOp(OS, C->getArg(0));
-    OS << " = ";
-    if (DpctGlobalInfo::useExtBindlessImages())
-      OS << MapNames::getDpctNamespace() << "experimental::get_channel("
-         << ExprAnalysis::ref(C->getArg(1)) << ")";
-    else
-      OS << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
+    OS << " = " << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
     requestFeature(HelperFeatureEnum::device_ext);
   } else if (Name == "cuMemGetInfo_v2" || Name == "cudaMemGetInfo") {
@@ -11023,13 +11002,7 @@ void MemoryMigrationRule::cudaArrayGetInfo(
   std::ostringstream OS;
   std::string Arg3Str = ExprAnalysis::ref(C->getArg(3));
   printDerefOp(OS, C->getArg(0));
-  OS << " = ";
-  if (DpctGlobalInfo::useExtBindlessImages())
-    OS << MapNames::getDpctNamespace() << "experimental::get_channel("
-       << Arg3Str << ");";
-  else
-    OS << Arg3Str << "->get_channel();";
-  OS << getNL() << IndentStr;
+  OS << " = " << Arg3Str << "->get_channel();" << getNL() << IndentStr;
   printDerefOp(OS, C->getArg(1));
   OS << " = " << Arg3Str << "->get_range();" << getNL() << IndentStr;
   printDerefOp(OS, C->getArg(2));
