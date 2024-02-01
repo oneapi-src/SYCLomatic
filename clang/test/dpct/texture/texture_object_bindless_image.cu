@@ -23,17 +23,17 @@ int main() {
   size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_dest;
   unsigned int flag;
   cudaExtent e;
-  // CHECK: dpct::experimental::image_mem_ptr pArr, pArr_src;
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr pArr, pArr_src;
   cudaArray_t pArr, pArr_src;
   // TODO: need support.
   // cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
   cudaChannelFormatDesc desc;
-  // CHECK: pArr = new sycl::ext::oneapi::experimental::image_mem(sycl::ext::oneapi::experimental::image_descriptor(e, desc.get_channel_order(), desc.get_channel_type()), q_ct1);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e);
   cudaMalloc3DArray(&pArr, &desc, e);
-  // CHECK: pArr = new sycl::ext::oneapi::experimental::image_mem(sycl::ext::oneapi::experimental::image_descriptor({w, h}, desc.get_channel_order(), desc.get_channel_type()), q_ct1);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, w, h);
   cudaMallocArray(&pArr, &desc, w, h);
-  // CHECK: desc = dpct::experimental::get_channel(pArr);
+  // CHECK: desc = pArr->get_channel();
   // CHECK-NEXT: e = pArr->get_range();
   // CHECK-NEXT: flag = 0;
   cudaArrayGetInfo(&desc, &e, &flag, pArr);
@@ -150,7 +150,7 @@ int main() {
   cudaTextureObject_t tex;
   // CHECK: tex = dpct::experimental::create_bindless_image(resDesc1, texDesc1);
   cudaCreateTextureObject(&tex, &resDesc1, &texDesc1, NULL);
-  // CHECK: desc = dpct::experimental::get_channel(pArr);
+  // CHECK: desc = pArr->get_channel();
   cudaGetChannelDesc(&desc, pArr);
   // CHECK: resDesc1 = dpct::experimental::get_data(tex);
   cudaGetTextureObjectResourceDesc(&resDesc1, tex);
