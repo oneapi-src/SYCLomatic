@@ -199,16 +199,17 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
         return false;
       }
     }
+    if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
+      // These two macros are defined by CUDA header file
+      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+      auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+      DpctGlobalInfo::getInstance()
+          .insertFile(LocInfo.first)
+          ->setRTVersionValue(
+              std::to_string(Ver.first * 1000 + Ver.second * 10));
+    }
     if (DpctGlobalInfo::getContext().getLangOpts().CUDA) {
-      if (MacroName == "CUDART_VERSION" ||
-          MacroName == "__CUDART_API_VERSION") {
-        auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
-        auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
-        DpctGlobalInfo::getInstance()
-            .insertFile(LocInfo.first)
-            ->setRTVersionValue(
-                std::to_string(Ver.first * 1000 + Ver.second * 10));
-      }
+      // These two macros are defined by CUDA compiler
       if (MacroName == "__CUDACC_VER_MAJOR__") {
         auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
         auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
