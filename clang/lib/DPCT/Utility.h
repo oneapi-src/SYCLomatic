@@ -36,6 +36,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
+#include "Error.h"
 namespace path = llvm::sys::path;
 
 using namespace clang;
@@ -589,20 +590,31 @@ public:
   ~PairedPrinter() { OS << Postfix; }
 };
 std::string appendPath(const std::string &P1, const std::string &P2);
-class CheckedOfstream : public std::ofstream {
-  std::string FileName;
 
-public:
-  CheckedOfstream(const std::string &FileName,
-                  ios_base::openmode Mode = ios_base::out)
-      : std::ofstream(FileName, Mode), FileName(FileName) {}
-
-  ~CheckedOfstream();
-};
 void writeDataToFile(const std::string &FileName, const std::string &Data);
 void appendDataToFile(const std::string &FileName, const std::string &Data);
 void createDirectories(const clang::tooling::UnifiedPath &FilePath,
                                   bool IgnoreExisting = true);
+void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
+class RawFDOStream : public llvm::raw_fd_ostream {
+  StringRef FileName;
+  std::error_code EC;
+public:
+  RawFDOStream(StringRef FileName);
+  RawFDOStream(StringRef FileName, llvm::sys::fs::OpenFlags OF);
+
+  template <class T> RawFDOStream &operator<<(T &&var) {
+  llvm::raw_fd_ostream::operator<<(std::forward<T>(var));
+  if ((bool)this->error()) {
+    std::string ErrMsg = "[ERROR] Write data to " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+  return *this;
+  }
+  ~RawFDOStream();
+};
+
 std::set<const clang::DeclRefExpr *>
 matchTargetDREInScope(const clang::VarDecl *TargetDecl,
                       const clang::Stmt *Range);

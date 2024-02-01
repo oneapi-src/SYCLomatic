@@ -213,10 +213,8 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
       continue;
     }
     createDirectories(path::parent_path(OutputFile.getCanonicalPath()));
-
-    clang::dpct::CheckedOfstream Out(OutputFile.getCanonicalPath().str());
+    clang::dpct::RawFDOStream Out(OutputFile.getCanonicalPath().str());
     Out << In.rdbuf();
-    Out.close();
     In.close();
   }
 }
@@ -340,7 +338,7 @@ static void saveUpdatedMigrationDataIntoYAML(
 }
 
 void applyPatternRewriter(const std::string &InputString,
-                          llvm::raw_os_ostream &Stream) {
+                          llvm::raw_fd_ostream &Stream) {
   std::string LineEndingString;
   // pattern_rewriter require the input file to be LF
   bool IsCRLF = fixLineEndings(InputString, LineEndingString);
@@ -407,19 +405,7 @@ int writeReplacementsToFiles(
 
     createDirectories(path::parent_path(OutPath.getCanonicalPath()));
   
-    // std::ios::binary prevents ofstream::operator<< from converting \n to
-    // \r\n on windows.
-    clang::dpct::CheckedOfstream OutFile(OutPath.getCanonicalPath().str(),
-                                         std::ios::binary);
-    llvm::raw_os_ostream OutStream(OutFile);
-    if (!OutFile) {
-      std::string ErrMsg =
-          "[ERROR] Create file: " + OutPath.getCanonicalPath().str() +
-          " fail.\n";
-      PrintMsg(ErrMsg);
-      status = MigrationSaveOutFail;
-      return status;
-    }
+    dpct::RawFDOStream OutStream(OutPath.getCanonicalPath());
 
     // For header file, as it can be included from different file, it needs
     // merge the migration triggered by each including.
@@ -711,15 +697,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         continue;
       }
 
-     createDirectories(path::parent_path(FilePath.getCanonicalPath()));
-      // std::ios::binary prevents ofstream::operator<< from converting \n to
-      // \r\n on windows.
-      clang::dpct::CheckedOfstream File(FilePath.getCanonicalPath().str(),
-                                        std::ios::binary);
-
-      llvm::raw_os_ostream Stream(File);
-      std::string OutputString;
-      llvm::raw_string_ostream RSW(OutputString);
+      createDirectories(path::parent_path(FilePath.getCanonicalPath()));
+      dpct::RawFDOStream Stream(FilePath.getCanonicalPath());
       llvm::Expected<FileEntryRef> Result =
           Tool.getFiles().getFileRef(Entry.first.getCanonicalPath());
       if (auto E = Result.takeError()) {
@@ -761,10 +740,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         OutRoot.getCanonicalPath().str() + "/generated_schema.hpp";
     std::error_code EC;
     createDirectories(path::parent_path(SchemaPathCUDA));
-    clang::dpct::CheckedOfstream SchemaFileCUDA(SchemaPathCUDA,
-                                                std::ios::binary);
-
-    llvm::raw_os_ostream SchemaStreamCUDA(SchemaFileCUDA);
+    dpct::RawFDOStream SchemaStreamCUDA(SchemaPathCUDA);
 
     SchemaStreamCUDA
         << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
@@ -782,9 +758,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         << getNL() << "#endif" << getNL();
 
     createDirectories(path::parent_path(SchemaPathSYCL));
-    clang::dpct::CheckedOfstream SchemaFileSYCL(SchemaPathSYCL,
-                                                std::ios::binary);
-    llvm::raw_os_ostream SchemaStreamSYCL(SchemaFileSYCL);
+    clang::dpct::RawFDOStream SchemaStreamSYCL(SchemaPathSYCL);
     SchemaStreamSYCL
         << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
         << "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()

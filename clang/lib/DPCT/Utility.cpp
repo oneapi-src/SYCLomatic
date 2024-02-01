@@ -4747,36 +4747,42 @@ void createDirectories(const clang::tooling::UnifiedPath &FilePath,
 // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
 // on windows.
 void writeDataToFile(const std::string &FileName, const std::string &Data) {
-  auto FileStream = std::make_unique<std::ofstream>(FileName, std::ios::binary);
-  *FileStream << Data;
-  FileStream->close();
-  if (FileStream->fail()) {
-    std::string ErrMsg = "[ERROR] Cannot write data to " + FileName + " !\n";
-    dpct::PrintMsg(ErrMsg);
-    dpctExit(MigrationErrorCannotWrite);
-  }
+  RawFDOStream File(FileName);
+  File << Data;
 }
 
 void appendDataToFile(const std::string &FileName, const std::string &Data) {
-  auto FileStream = std::make_unique<std::ofstream>(FileName, std::ios::app);
-  *FileStream << Data;
-  FileStream->close();
-  if (FileStream->fail()) {
-    std::string ErrMsg = "[ERROR] Cannot append data to " + FileName + " !\n";
+  std::error_code EC;
+  RawFDOStream File(FileName, llvm::sys::fs::OpenFlags::OF_Append);
+  File << Data;
+}
+
+RawFDOStream::RawFDOStream(StringRef FileName)
+    : llvm::raw_fd_ostream(FileName, EC), FileName(FileName) {
+  if ((bool)EC) {
+    std::string ErrMsg = "[ERROR] Open: " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+RawFDOStream::RawFDOStream(StringRef FileName, llvm::sys::fs::OpenFlags OF)
+    : llvm::raw_fd_ostream(FileName, EC, OF), FileName(FileName) {
+  if ((bool)EC) {
+    std::string ErrMsg = "[ERROR] Open: " + FileName.str() + " Fail!\n";
     dpct::PrintMsg(ErrMsg);
     dpctExit(MigrationErrorCannotWrite);
   }
 }
 
-CheckedOfstream::~CheckedOfstream() {
-  if (this->fail()) {
-    std::string ErrMsg = "[ERROR] Cannot write data to " + FileName + " !\n";
+RawFDOStream::~RawFDOStream() {
+  this->close();
+  if ((bool)this->error()) {
+    std::string ErrMsg = "[ERROR] Close " + FileName.str() + " Fail!\n";
     dpct::PrintMsg(ErrMsg);
-  }
-  if (this->is_open()) {
-    this->close();
+    dpctExit(MigrationErrorCannotWrite);
   }
 }
+
 std::set<const clang::DeclRefExpr *>
 matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
   std::set<const DeclRefExpr *> Set;

@@ -642,10 +642,8 @@ static void storeBufferToFile() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &FileName = Entry.first;
     auto &Buffer = Entry.second;
-    CheckedOfstream Out(FileName.getCanonicalPath().str(),
-                        std::ios_base::binary);
-    llvm::raw_os_ostream Stream(Out);
 
+    dpct::RawFDOStream Stream(FileName.getCanonicalPath().str());
     // Restore original endline format
     auto IsCRLF = ScriptFileCRLFMap[FileName];
     if (IsCRLF) {

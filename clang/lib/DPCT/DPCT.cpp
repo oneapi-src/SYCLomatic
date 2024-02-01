@@ -382,27 +382,20 @@ static void saveApisReport(void) {
                                 : ".apis.log"));
 
     createDirectories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    clang::dpct::CheckedOfstream File(RFile, std::ios::binary);
+    RawFDOStream File(RFile);
 
-    std::string Str;
-    llvm::raw_string_ostream Title(Str);
-    Title << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+    File << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                   ? " API name, Frequency "
                   : "API name\t\t\t\tFrequency");
 
-    File << Title.str() << std::endl;
+    File << "\n";
     for (const auto &Elem : SrcAPIStaticsMap) {
       std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
       if (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV) {
-        File << "\"" << APIName << "\"," << std::to_string(Count) << std::endl;
+        File << "\"" << APIName << "\"," << std::to_string(Count) << "\n";
       } else {
-        std::string Str;
-        llvm::raw_string_ostream OS(Str);
-        OS << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
-        File << OS.str();
+        File << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
       }
     }
   }
