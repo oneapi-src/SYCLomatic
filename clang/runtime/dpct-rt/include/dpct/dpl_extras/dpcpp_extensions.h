@@ -592,10 +592,9 @@ __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
   }
 }
 
-template <size_t GROUP_WORK_ITEMS, typename Item, typename InputT, int ITEMS_PER_THREAD,
-          typename InputIteratorT>
-__dpct_inline__ void load_subgroup_striped(const Item &item,
-                                           size_t linear_tid,
+template <size_t GROUP_WORK_ITEMS, typename Item, typename InputT,
+          int ITEMS_PER_THREAD, typename InputIteratorT>
+__dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
                                            InputIteratorT block_itr,
                                            InputT (&items)[ITEMS_PER_THREAD]) {
 
@@ -604,7 +603,9 @@ __dpct_inline__ void load_subgroup_striped(const Item &item,
   // int warp_offset = wid * ITEMS_PER_THREAD;
 #pragma unroll
   for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    new (&items[ITEM]) InputT(block_itr[item.get_sub_group().get_local_range()[0] + linear_tid + (ITEM * ITEMS_PER_THREAD)]);
+    new (&items[ITEM])
+        InputT(block_itr[item.get_sub_group().get_local_range()[0] +
+                         linear_tid + (ITEM * ITEMS_PER_THREAD)]);
   }
 }
 
