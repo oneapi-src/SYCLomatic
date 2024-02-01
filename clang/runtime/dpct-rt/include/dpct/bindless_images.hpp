@@ -268,8 +268,8 @@ create_bindless_image(image_data data, sampling_info info,
   }
   case image_data_type::pitch: {
 #ifdef DPCT_USM_LEVEL_NONE
-    auto mem = new image_mem_wrapper(
-        data.get_channel(), data.get_x() / data.get_channel().get_total_size());
+    auto mem =
+        new image_mem_wrapper(data.get_channel(), data.get_x(), data.get_y());
     auto img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(img) = mem;
@@ -312,8 +312,7 @@ static inline void destroy_bindless_image(
     sycl::queue q = get_default_queue()) {
   auto &mem = detail::get_img_mem_map(handle);
   if (mem) {
-    sycl::ext::oneapi::experimental::free_image_mem(mem->get_handle(),
-                                                    mem->get_desc().type, q);
+    delete mem;
     mem = nullptr;
   }
   sycl::ext::oneapi::experimental::destroy_image_handle(handle, q);
