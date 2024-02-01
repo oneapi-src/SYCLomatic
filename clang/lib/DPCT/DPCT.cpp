@@ -263,6 +263,10 @@ bool hasOptConflictWithQuery(int argc, const char **argv) {
         !Opt.starts_with("--extra-arg")) {
       return true;
     }
+    if (Opt == "--query-api-mapping" || Opt == "--cuda-include-path" ||
+        Opt == "--extra-arg") {
+      ++I; // Skip option value when using option without '='.
+    }
   }
   return false;
 }
