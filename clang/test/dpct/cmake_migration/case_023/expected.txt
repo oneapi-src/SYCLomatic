@@ -2,6 +2,6 @@
  # testd;
  # teste) for test
  #
- # SPDX-License-Identifier: BSD-3-Clause
+ # Just for test
  #
 dpct_helper_compile_sycl_code(cuda_ptx_file kernel.dp.cpp)

@@ -2,6 +2,6 @@
  # testd;
  # teste) for test
  #
- # SPDX-License-Identifier: BSD-3-Clause
+ # Just for test
  #
 cuda_compile_ptx(cuda_ptx_file kernel.cu)
