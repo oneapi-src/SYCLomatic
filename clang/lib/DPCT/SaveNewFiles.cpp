@@ -210,7 +210,7 @@ static bool checkOverwriteAndWarn(StringRef OutFilePath, StringRef InFilePath) {
                  << SrcFilePath->second << "' have same name '" << OutFilePath
                  << "'. To avoid overwrite, the migration of '" << InFilePath
                  << "' is skipped. Please change the output file extension "
-                    "with option '--sycl-file-extension'.\n";
+                    "with option '--sycl-file-extension'." << getNL();
     Overwrites = true;
   }
   return Overwrites;
