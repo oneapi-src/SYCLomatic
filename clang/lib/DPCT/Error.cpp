@@ -206,9 +206,6 @@ void ShowStatus(int Status, std::string Message) {
         "Error: The option -migrate-build-script-only requires that either "
         "the option '--in-root' or the CMake file(s) be specified explicitly.";
     break;
-  case MigrationErrorOptionConflict:
-    StatusString = "An error has occured when parsing options.";
-    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

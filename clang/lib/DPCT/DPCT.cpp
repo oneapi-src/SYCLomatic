@@ -635,21 +635,24 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (AnalysisMode) {
-    if (hasOption(argc, argv, "migrate-cmake-script-only") ||
+    if (hasOption(argc, argv, "migrate-build-script-only") ||
         hasOption(argc, argv, "query-api-mapping")) {
       llvm::outs() << "Error: option \"--analysis-mode\", "
-                      "\"--migrate-cmake-script-only\" and "
+                      "\"--migrate-build-script-only\" and "
                       "\"--query-api-mapping\" can not be used together.\n";
-      ShowStatus(MigrationErrorOptionConflict);
-      dpctExit(MigrationErrorOptionConflict);
+      ShowStatus(MigrationErrorConflictOptions);
+      dpctExit(MigrationErrorConflictOptions);
     }
     DpctGlobalInfo::enableAnalysisMode();
     static std::vector<std::string> IgnoreOpts = {
         "change-cuda-files-extension-only",
         "sycl-file-extension",
         "gen-helper-function",
+        "gen-build-script",
+        "build-script-file",
         "format-range",
         "format-style",
+        "migrate-build-script",
         "report-file-prefix",
         "report-format",
         "report-only",
@@ -666,7 +669,7 @@ int runDPCT(int argc, const char **argv) {
                      << "\"will be ignored when analysis mode is enabled.\n";
       }
     }
-    BuildScript = false;
+    BuildScript = BuildScript::BS_None;
     LimitChangeExtension = false;
     GenBuildScript = false;
     GenHelperFunction = false;
@@ -678,8 +681,8 @@ int runDPCT(int argc, const char **argv) {
   } else if (!AnalysisModeOutputFile.empty()) {
     llvm::outs() << "Error: \"--analysis-mode-out-file\" only available when "
                     "analysis mode is enabled.\n";
-    ShowStatus(MigrationErrorOptionConflict);
-    dpctExit((MigrationErrorOptionConflict);)
+    ShowStatus(MigrationErrorConflictOptions);
+    dpctExit(MigrationErrorConflictOptions);
   }
 
   if (!OutputFile.empty()) {
@@ -879,7 +882,6 @@ int runDPCT(int argc, const char **argv) {
 
     PrintMsg(OS.str());
   }
-}
 
   ExtraIncPaths = OptParser->getExtraIncPathList();
 
@@ -1348,6 +1350,7 @@ int runDPCT(int argc, const char **argv) {
       dumpAnalysisModeStatics(llvm::outs());
     } else {
       dpct::RawFDOStream Out(AnalysisModeOutputFile);
+      Out.enable_colors(false);
       dumpAnalysisModeStatics(Out);
     }
     return MigrationSucceeded;
