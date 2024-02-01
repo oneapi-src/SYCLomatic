@@ -445,11 +445,7 @@ static void saveDiagsReport() {
   } else {
     std::string RFile = appendPath(OutRoot.getCanonicalPath().str(),
                                    ReportFilePrefix + ".diags.log");
-    auto EC = createDirectories(llvm::sys::path::parent_path(RFile));
-    if ((bool)EC) {
-      dpctExit(MigrationErrorCannotWrite);
-    }
-
+    createDirectories(llvm::sys::path::parent_path(RFile));
     writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }

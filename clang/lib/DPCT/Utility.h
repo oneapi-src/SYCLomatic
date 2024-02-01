@@ -599,9 +599,9 @@ public:
 
   ~CheckedOfstream();
 };
-bool writeDataToFile(const std::string &FileName, const std::string &Data);
-bool appendDataToFile(const std::string &FileName, const std::string &Data);
-std::error_code createDirectories(const clang::tooling::UnifiedPath &FilePath,
+void writeDataToFile(const std::string &FileName, const std::string &Data);
+void appendDataToFile(const std::string &FileName, const std::string &Data);
+void createDirectories(const clang::tooling::UnifiedPath &FilePath,
                                   bool IgnoreExisting = true);
 std::set<const clang::DeclRefExpr *>
 matchTargetDREInScope(const clang::VarDecl *TargetDecl,

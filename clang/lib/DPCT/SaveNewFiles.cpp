@@ -711,11 +711,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         continue;
       }
 
-      std::error_code EC;
-      EC = createDirectories(path::parent_path(FilePath.getCanonicalPath()));
-      if ((bool)EC) {
-        return MigrationSaveOutFail;
-      }
+     createDirectories(path::parent_path(FilePath.getCanonicalPath()));
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
       clang::dpct::CheckedOfstream File(FilePath.getCanonicalPath().str(),

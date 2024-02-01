@@ -4732,23 +4732,21 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
   return TempPath.str().str();
 }
 
-std::error_code createDirectories(const clang::tooling::UnifiedPath &FilePath,
-                                  bool IgnoreExisting) {
-  std::error_code EC;
-  if (EC = llvm::sys::fs::create_directories(FilePath.getCanonicalPath(),
-                                             IgnoreExisting)) {
+void createDirectories(const clang::tooling::UnifiedPath &FilePath,
+                       bool IgnoreExisting) {
+  if (std::error_code EC = llvm::sys::fs::create_directories(
+          FilePath.getCanonicalPath(), IgnoreExisting)) {
     std::string ErrMsg =
         "[ERROR] Create Directory : " + FilePath.getPath().str() +
         " fail: " + EC.message() + "\n";
     clang::dpct::PrintMsg(ErrMsg);
     dpctExit(MigrationErrorCannotWrite); // Exit the execution directly.
   }
-  return EC;
 }
 
 // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
 // on windows.
-bool writeDataToFile(const std::string &FileName, const std::string &Data) {
+void writeDataToFile(const std::string &FileName, const std::string &Data) {
   auto FileStream = std::make_unique<std::ofstream>(FileName, std::ios::binary);
   *FileStream << Data;
   FileStream->close();
@@ -4757,10 +4755,9 @@ bool writeDataToFile(const std::string &FileName, const std::string &Data) {
     dpct::PrintMsg(ErrMsg);
     dpctExit(MigrationErrorCannotWrite);
   }
-  return true;
 }
 
-bool appendDataToFile(const std::string &FileName, const std::string &Data) {
+void appendDataToFile(const std::string &FileName, const std::string &Data) {
   auto FileStream = std::make_unique<std::ofstream>(FileName, std::ios::app);
   *FileStream << Data;
   FileStream->close();
@@ -4769,7 +4766,6 @@ bool appendDataToFile(const std::string &FileName, const std::string &Data) {
     dpct::PrintMsg(ErrMsg);
     dpctExit(MigrationErrorCannotWrite);
   }
-  return true;
 }
 
 CheckedOfstream::~CheckedOfstream() {
