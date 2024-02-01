@@ -42,7 +42,6 @@ extern const std::string DplExtrasDpcppExtensionsAllContentStr;
 extern const std::string CodePinAllContentStr;
 extern const std::string CodePinDetailSchemaAllContentStr;
 extern const std::string CodePinDetailJsonAllContentStr;
-void replaceEndOfLine(std::string &StrNeedProcess);
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot);
 }
 } // namespace clang
