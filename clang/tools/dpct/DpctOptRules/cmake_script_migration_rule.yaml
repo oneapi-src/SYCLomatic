@@ -497,7 +497,8 @@
   Subrules:
     CUDALibraries:
       In: cublas
-      Out: -qmkl
+      Out: |
+        \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_cublas_with_MKL_target"
 
@@ -510,7 +511,8 @@
   Subrules:
     CUDALibraries:
       In: -lcublas
-      Out: -qmkl
+      Out: |
+        \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_-lcublas_with_qmkl"
 
@@ -523,9 +525,10 @@
   Subrules:
     CUDALibraries:
       In: "CUDA::cublas"
-      Out: -qmkl
+      Out: |
+        \${MKL_LIB}
       MatchMode: Full
-      RuleId: "replace_CUDA_cublas_with_qmkl"
+      RuleId: "replace_CUDA_cublas_with_MKL"
 
 # libsycl.so is linked by default as alternative to cuda_driver library, so removing here
 - Rule: rule_target_link_libraries_cuda_driver
