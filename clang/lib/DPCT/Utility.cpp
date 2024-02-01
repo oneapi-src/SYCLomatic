@@ -4744,15 +4744,12 @@ void createDirectories(const clang::tooling::UnifiedPath &FilePath,
   }
 }
 
-// std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-// on windows.
 void writeDataToFile(const std::string &FileName, const std::string &Data) {
   RawFDOStream File(FileName);
   File << Data;
 }
 
 void appendDataToFile(const std::string &FileName, const std::string &Data) {
-  std::error_code EC;
   RawFDOStream File(FileName, llvm::sys::fs::OpenFlags::OF_Append);
   File << Data;
 }

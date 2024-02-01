@@ -214,7 +214,9 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     }
     createDirectories(path::parent_path(OutputFile.getCanonicalPath()));
     clang::dpct::RawFDOStream Out(OutputFile.getCanonicalPath().str());
-    Out << In.rdbuf();
+    std::stringstream buffer;
+    buffer << In.rdbuf();
+    Out << buffer.str();
     In.close();
   }
 }
