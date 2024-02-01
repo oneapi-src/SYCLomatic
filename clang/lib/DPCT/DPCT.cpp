@@ -385,8 +385,8 @@ static void saveApisReport(void) {
     RawFDOStream File(RFile);
 
     File << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
-                  ? " API name, Frequency "
-                  : "API name\t\t\t\tFrequency");
+                 ? " API name, Frequency "
+                 : "API name\t\t\t\tFrequency");
 
     File << "\n";
     for (const auto &Elem : SrcAPIStaticsMap) {

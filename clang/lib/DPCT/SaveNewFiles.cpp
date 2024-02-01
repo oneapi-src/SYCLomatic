@@ -403,10 +403,7 @@ int writeReplacementsToFiles(
       continue;
     }
 
-    std::error_code EC;
-
     createDirectories(path::parent_path(OutPath.getCanonicalPath()));
-  
     dpct::RawFDOStream OutStream(OutPath.getCanonicalPath());
 
     // For header file, as it can be included from different file, it needs
