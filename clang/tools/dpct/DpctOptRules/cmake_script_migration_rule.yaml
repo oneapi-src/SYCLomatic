@@ -560,7 +560,6 @@
       MatchMode: Full
       RuleId: "replace_CUDA_CUFFT_LIBRARIES_with_MKL"
 
-# SYCL does not have mapping for cuparse currently, so removing here
 - Rule: rule_target_link_libraries_CUDA_cusparse_LIBRARY
   Kind: CMakeRule
   Priority: Fallback
@@ -571,9 +570,10 @@
     CUDALibraries:
       In: |
         \${CUDA_cusparse_LIBRARY}
-      Out: ""
+      Out: |
+        \${MKL_LIB}
       MatchMode: Full
-      RuleId: "remove_CUDA_cusparse_LIBRARY"
+      RuleId: "replace_CUDA_cusparse_LIBRARY_with_MKL"
 
 # libsycl.so is linked by default as alternative to cuda_driver library, so removing here
 - Rule: rule_target_link_libraries_cuda_driver
