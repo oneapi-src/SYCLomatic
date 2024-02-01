@@ -11,6 +11,8 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=" __HfMa " | FileCheck %s
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping hfma | FileCheck %s
+
 // CHECK: CUDA API:
 // CHECK-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // CHECK-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
