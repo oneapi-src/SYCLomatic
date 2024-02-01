@@ -386,8 +386,7 @@ static void genMakefile(
                          path::parent_path(TargetName.getPath()).str());
 
     if (!llvm::sys::fs::exists(Parent)) {
-      if(clang::dpct::createDirectories(Parent))
-        dpctExit(MigrationErrorCannotWrite);
+      clang::dpct::createDirectories(Parent);
     }
 
     auto CmpInfos = Entry.second;
@@ -556,8 +555,7 @@ static void genMakefile(
 
   std::string FileOut =
       dpct::appendPath(OutRoot.getCanonicalPath().str(), BuildScriptName);
-  if (writeDataToFile(FileOut, OS.str()))
-    dpctExit(MigrationErrorCannotWrite);
+  writeDataToFile(FileOut, OS.str());
 }
 
 void genBuildScript(clang::tooling::RefactoringTool &Tool,

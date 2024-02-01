@@ -380,10 +380,8 @@ static void saveApisReport(void) {
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".apis.csv"
                                 : ".apis.log"));
-    auto EC = createDirectories(llvm::sys::path::parent_path(RFile));
-    if ((bool)EC) {
-      dpctExit(MigrationErrorCannotWrite);
-    }
+
+    createDirectories(llvm::sys::path::parent_path(RFile));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
     clang::dpct::CheckedOfstream File(RFile, std::ios::binary);
@@ -429,13 +427,8 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".stats.csv"
                                 : ".stats.log"));
-    auto EC = createDirectories(llvm::sys::path::parent_path(RFile));
-    if ((bool)EC) {
-      dpctExit(MigrationErrorCannotWrite);
-    }
-    if (writeDataToFile(RFile, getDpctStatsStr() + "\n")) {
-      dpctExit(MigrationErrorCannotWrite);
-    }
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }
 
@@ -457,9 +450,7 @@ static void saveDiagsReport() {
       dpctExit(MigrationErrorCannotWrite);
     }
 
-    if (writeDataToFile(RFile, getDpctStatsStr() + "\n")) {
-      dpctExit(MigrationErrorCannotWrite);
-    }
+    writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }
 
@@ -489,10 +480,8 @@ static void DumpOutputFile(void) {
   if (!OutputFile.empty()) {
     std::string FilePath =
         appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
-    if (createDirectories(llvm::sys::path::parent_path(FilePath)))
-      dpctExit(MigrationErrorCannotWrite);
-    if (writeDataToFile(FilePath, getDpctTermStr() + "\n"))
-      dpctExit(MigrationErrorCannotWrite);
+    createDirectories(llvm::sys::path::parent_path(FilePath));
+    writeDataToFile(FilePath, getDpctTermStr() + "\n");
   }
 }
 
@@ -512,10 +501,8 @@ void PrintReportOnFault(const std::string &FaultMsg) {
   std::string FileDiags = appendPath(OutRoot.getCanonicalPath().str(),
                                      ReportFilePrefix + ".diags.log");
 
-  if (appendDataToFile(FileApis, FaultMsg))
-    dpctExit(MigrationErrorCannotWrite);
-  if (appendDataToFile(FileDiags, FaultMsg))
-    dpctExit(MigrationErrorCannotWrite);
+  appendDataToFile(FileApis, FaultMsg);
+  appendDataToFile(FileDiags, FaultMsg);
   DumpOutputFile();
 }
 

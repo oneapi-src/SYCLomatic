@@ -75,9 +75,7 @@ int save2Yaml(
 
   YAMLOut << TUR;
   YamlContentStream.flush();
-  if (clang::dpct::writeDataToFile(YamlFile.getCanonicalPath().str(),
-                                   YamlContent))
-    dpctExit(MigrationErrorCannotWrite);
+  clang::dpct::writeDataToFile(YamlFile.getCanonicalPath().str(), YamlContent);
   return 0;
 }
 

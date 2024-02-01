@@ -6,11 +6,11 @@
 //
 //===----------------------------------------------------------------------===//
 #include "MigrateCmakeScript.h"
+#include "Error.h"
 #include "PatternRewriter.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
 #include "Utility.h"
-#include "Error.h"
 
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -248,8 +248,7 @@ bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
   if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
     return false;
   }
-  if (createDirectories(path::parent_path(OutFileName.getCanonicalPath())))
-    dpctExit(MigrationErrorCannotWrite);
+  createDirectories(path::parent_path(OutFileName.getCanonicalPath()));
   CmakeScriptFileBufferMap[OutFileName] = readFile(InFileName);
   return true;
 }

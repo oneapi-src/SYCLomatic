@@ -212,8 +212,7 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
-    if (createDirectories(path::parent_path(OutputFile.getCanonicalPath())))
-      dpctExit(MigrationErrorCannotWrite);
+    createDirectories(path::parent_path(OutputFile.getCanonicalPath()));
 
     clang::dpct::CheckedOfstream Out(OutputFile.getCanonicalPath().str());
     Out << In.rdbuf();
@@ -288,8 +287,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
       if (fs::exists(OutDirectory.getCanonicalPath()))
         continue;
 
-      if (createDirectories(OutDirectory.getCanonicalPath()))
-        dpctExit(MigrationErrorCannotWrite);
+      createDirectories(OutDirectory.getCanonicalPath());
     }
   }
 }
@@ -407,11 +405,8 @@ int writeReplacementsToFiles(
 
     std::error_code EC;
 
-    EC = createDirectories(path::parent_path(OutPath.getCanonicalPath()));
-    if ((bool)EC) {
-      status = MigrationSaveOutFail;
-      return status;
-    }
+    createDirectories(path::parent_path(OutPath.getCanonicalPath()));
+  
     // std::ios::binary prevents ofstream::operator<< from converting \n to
     // \r\n on windows.
     clang::dpct::CheckedOfstream OutFile(OutPath.getCanonicalPath().str(),
@@ -769,10 +764,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     std::string SchemaPathSYCL =
         OutRoot.getCanonicalPath().str() + "/generated_schema.hpp";
     std::error_code EC;
-    EC = createDirectories(path::parent_path(SchemaPathCUDA));
-    if ((bool)EC) {
-      return MigrationSaveOutFail;
-    }
+    createDirectories(path::parent_path(SchemaPathCUDA));
     clang::dpct::CheckedOfstream SchemaFileCUDA(SchemaPathCUDA,
                                                 std::ios::binary);
 
@@ -793,9 +785,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         << getNL() << "  }" << getNL() << "};" << getNL() << "static Init init;"
         << getNL() << "#endif" << getNL();
 
-    EC = createDirectories(path::parent_path(SchemaPathSYCL));
-    if ((bool)EC)
-      return MigrationSaveOutFail;
+    createDirectories(path::parent_path(SchemaPathSYCL));
     clang::dpct::CheckedOfstream SchemaFileSYCL(SchemaPathSYCL,
                                                 std::ios::binary);
     llvm::raw_os_ostream SchemaStreamSYCL(SchemaFileSYCL);

@@ -4734,13 +4734,14 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
 
 std::error_code createDirectories(const clang::tooling::UnifiedPath &FilePath,
                                   bool IgnoreExisting) {
-  std::error_code EC = llvm::sys::fs::create_directories(
-      FilePath.getCanonicalPath(), IgnoreExisting);
-  if ((bool)EC) {
+  std::error_code EC;
+  if (EC = llvm::sys::fs::create_directories(FilePath.getCanonicalPath(),
+                                             IgnoreExisting)) {
     std::string ErrMsg =
         "[ERROR] Create Directory : " + FilePath.getPath().str() +
         " fail: " + EC.message() + "\n";
     clang::dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite); // Exit the execution directly.
   }
   return EC;
 }
@@ -4754,7 +4755,7 @@ bool writeDataToFile(const std::string &FileName, const std::string &Data) {
   if (FileStream->fail()) {
     std::string ErrMsg = "[ERROR] Cannot write data to " + FileName + " !\n";
     dpct::PrintMsg(ErrMsg);
-    return false;
+    dpctExit(MigrationErrorCannotWrite);
   }
   return true;
 }
@@ -4766,7 +4767,7 @@ bool appendDataToFile(const std::string &FileName, const std::string &Data) {
   if (FileStream->fail()) {
     std::string ErrMsg = "[ERROR] Cannot append data to " + FileName + " !\n";
     dpct::PrintMsg(ErrMsg);
-    return false;
+    dpctExit(MigrationErrorCannotWrite);
   }
   return true;
 }
