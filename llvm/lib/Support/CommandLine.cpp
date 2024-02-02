@@ -2353,6 +2353,7 @@ sortSubCommands(const SmallPtrSetImpl<SubCommand *> &SubMap,
 
 namespace {
 
+#ifdef SYCLomatic_CUSTOMIZATION
 /// HelpCategory defines various category groups for dpct options
 enum class HelpCategory {
   HC_All,
@@ -2366,6 +2367,7 @@ enum class HelpCategory {
   HC_HelpInfo,
   HC_InterceptBuild
 };
+#endif // SYCLomatic_CUSTOMIZATION
 
 class HelpPrinter {
 protected:
@@ -2490,45 +2492,49 @@ public:
     return (*A)->getName().compare((*B)->getName());
   }
 
-  bool isSameCategory(OptionCategory *lhs, OptionCategory *rhs) {
-    return (lhs->getName() == rhs->getName());
-  }
-
+#ifdef SYCLomatic_CUSTOMIZATION
   // Return the user requested category
   OptionCategory &getReqCategory(HelpCategory reqCatEnumVal) {
-    if (reqCatEnumVal == HelpCategory::HC_All) {
+    switch (reqCatEnumVal)
+    {
+    case HelpCategory::HC_All:
       return cl::getDPCTCategory();
-    }
-    else if (reqCatEnumVal == HelpCategory::HC_Basic) {
+      break;
+    case HelpCategory::HC_Basic:
       return cl::getDPCTBasicCategory();
-    }
-    else if (reqCatEnumVal == HelpCategory::HC_Advanced) {
+      break;
+    case HelpCategory::HC_Advanced:
       return cl::getDPCTAdvancedCategory();
-    }
-    else if (reqCatEnumVal == HelpCategory::HC_CodeGen) {
+      break;
+    case HelpCategory::HC_CodeGen:
       return cl::getDPCTCodeGenCategory();
-    }
-    else if (reqCatEnumVal == HelpCategory::HC_ReportGen) {
+      break;
+    case HelpCategory::HC_ReportGen:
       return cl::getDPCTReportGenCategory();
-    }
-    else if (reqCatEnumVal == HelpCategory::HC_BuildScript) {
+      break;
+    case HelpCategory::HC_BuildScript:
       return cl::getDPCTBuildScriptCategory();
-    }
-    else if (reqCatEnumVal == HelpCategory::HC_QueryAPI) {
+      break;
+    case HelpCategory::HC_QueryAPI:
       return cl::getDPCTQueryAPICategory();
-    }
-    else if (reqCatEnumVal == HelpCategory::HC_Warnings) {
+      break;
+    case HelpCategory::HC_Warnings:
       return cl::getDPCTWarningsCategory();
-    }
-    else if (reqCatEnumVal == HelpCategory::HC_HelpInfo) {
+      break;
+    case HelpCategory::HC_HelpInfo:
       return cl::getDPCTHelpInfoCategory();
-    }
-    else if (reqCatEnumVal == HelpCategory::HC_InterceptBuild) {
+      break;
+    case HelpCategory::HC_InterceptBuild:
       return cl::getDPCTInterceptBuildCategory();
+      break;
+    default:
+      return cl::getDPCTCategory();
+      break;
     }
 
     return cl::getDPCTCategory();
   }
+#endif // SYCLomatic_CUSTOMIZATION
 
   // Make sure we inherit our base class's operator=()
   using HelpPrinter::operator=;
@@ -2560,13 +2566,15 @@ protected:
       }
     }
 
-    OptionCategory &reqCat(getReqCategory(helpCatEnum));
+#ifdef SYCLomatic_CUSTOMIZATION
+    OptionCategory &requestedCat(getReqCategory(helpCatEnum));
+#endif // SYCLomatic_CUSTOMIZATION
 
     // Now do printing.
     for (OptionCategory *Category : SortedCategories) {
       // Hide empty categories for --help, but show for --help-hidden.
       const auto &CategoryOptions = CategorizedOptions[Category];
-      bool IsReqCat = isSameCategory(&reqCat, Category);
+      bool IsReqCat = (&requestedCat == Category);
       if (CategoryOptions.empty() || !IsReqCat)
         continue;
 
@@ -2731,12 +2739,12 @@ struct CommandLineCommonOptions {
                                    false},
               cl::OptionEnumValue{"report-gen",
                                    int(HelpCategory::HC_ReportGen),
-                                   "List options to control report generation "
+                                   "List option(s) to control report generation "
                                    "during migration",
                                    false},
               cl::OptionEnumValue{"build-script",
                                    int(HelpCategory::HC_BuildScript),
-                                   "List options to migrate build scripts",
+                                   "List options to migrate build script(s)",
                                    false},
               cl::OptionEnumValue{"query-api",
                                    int(HelpCategory::HC_QueryAPI),
@@ -2753,7 +2761,7 @@ struct CommandLineCommonOptions {
                                    false},
               cl::OptionEnumValue{"intercept-build",
                                    int(HelpCategory::HC_InterceptBuild),
-                                   "Lists options of intercept-build tool",
+                                   "List options of intercept-build tool",
                                    false}
           ),
           cl::desc("Provides a list of all the available options or "
@@ -2921,11 +2929,13 @@ void HelpPrinterWrapper::operator=(bool Value) {
     UncategorizedPrinter = true; // Invoke uncategorized printer
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
 void HelpPrinterWrapper::operator=(HelpCategory Value) {
   CategorizedPrinter.helpCatEnum = Value;
 
   *this = true;
 }
+#endif // SYCLomatic_CUSTOMIZATION
 
 // Print the value of each option.
 void cl::PrintOptionValues() { GlobalParser->printOptionValues(); }
