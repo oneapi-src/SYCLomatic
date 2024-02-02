@@ -4734,6 +4734,11 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
 
 void createDirectories(const clang::tooling::UnifiedPath &FilePath,
                        bool IgnoreExisting) {
+  if (sys::fs::exists(FilePath.getCanonicalPath()) &&
+      !sys::fs::is_directory(FilePath.getCanonicalPath())) {
+    ShowStatus(MigrationSaveOutFail);
+    dpctExit(MigrationSaveOutFail);
+  }
   if (std::error_code EC = llvm::sys::fs::create_directories(
           FilePath.getCanonicalPath(), IgnoreExisting)) {
     std::string ErrMsg =
