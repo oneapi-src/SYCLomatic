@@ -134,12 +134,7 @@ int checkDpctOptionSet(
       }
 #endif
     } else {
-      if (CurrentOpt.first == OPTION_NoUseGenericSpace) {
-        if (CurrentOpt.second.Value == "true")
-          return -1;
-      } else {
-        return -2;
-      }
+      return -2;
     }
   }
   return 0;
@@ -233,10 +228,6 @@ bool printOptions(
     if (Key == clang::dpct::OPTION_NoDRYPattern) {
       if ("true" == Value)
         Opts.emplace_back("--no-dry-pattern");
-    }
-    if (Key == clang::dpct::OPTION_NoUseGenericSpace) {
-      if ("true" == Value)
-        Opts.emplace_back("--no-use-generic-space");
     }
     if (Key == clang::dpct::OPTION_CompilationsDir && Specified) {
       Opts.emplace_back("--compilation-database=\"" + Value + "\"");
