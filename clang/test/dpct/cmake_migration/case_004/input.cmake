@@ -21,3 +21,5 @@ target_link_libraries(${PROJECT_NAME}
 )
 target_link_libraries(nlm_cuda  ${OpenCV_LIBS} stdc++ stdc++fs)
 target_link_libraries(cublas-cudnn-test cublas cudnn)
+
+target_link_libraries(tsne  ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES} ${CUDA_cusparse_LIBRARY})
