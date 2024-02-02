@@ -37,7 +37,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <filesystem>
 #include <fstream>
 
 using namespace clang::dpct;
@@ -783,8 +782,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
         // Copy non-replacement CUDA files into debug folder
-        std::filesystem::copy(OriginalFilePath.getCanonicalPath().str(),
-                              DebugFilePath.getCanonicalPath().str());
+        fs::copy_file(OriginalFilePath.getCanonicalPath(),
+                      DebugFilePath.getCanonicalPath());
       }
     }
   }
