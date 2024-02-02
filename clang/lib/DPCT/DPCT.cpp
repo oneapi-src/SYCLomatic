@@ -384,28 +384,22 @@ static void saveApisReport(void) {
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".apis.csv"
                                 : ".apis.log"));
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
 
-    std::string Str;
-    llvm::raw_string_ostream Title(Str);
-    Title << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
-                  ? " API name, Frequency "
-                  : "API name\t\t\t\tFrequency");
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    RawFDOStream File(RFile);
 
-    File << Title.str() << std::endl;
+    File << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+                 ? " API name, Frequency "
+                 : "API name\t\t\t\tFrequency");
+
+    File << "\n";
     for (const auto &Elem : SrcAPIStaticsMap) {
       std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
       if (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV) {
-        File << "\"" << APIName << "\"," << std::to_string(Count) << std::endl;
+        File << "\"" << APIName << "\"," << std::to_string(Count) << "\n";
       } else {
-        std::string Str;
-        llvm::raw_string_ostream OS(Str);
-        OS << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
-        File << OS.str();
+        File << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
       }
     }
   }
@@ -430,11 +424,8 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".stats.csv"
                                 : ".stats.log"));
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
-    File << getDpctStatsStr() << "\n";
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }
 
@@ -451,11 +442,8 @@ static void saveDiagsReport() {
   } else {
     std::string RFile = appendPath(OutRoot.getCanonicalPath().str(),
                                    ReportFilePrefix + ".diags.log");
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
-    File << getDpctDiagsStr() << "\n";
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }
 
@@ -483,12 +471,10 @@ std::string printCTVersion() {
 static void DumpOutputFile(void) {
   // Redirect stdout/stderr output to <file> if option "-output-file" is set
   if (!OutputFile.empty()) {
-    std::string FilePath = appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(FilePath));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(FilePath, std::ios::binary);
-    File << getDpctTermStr() << "\n";
+    std::string FilePath =
+        appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
+    createDirectories(llvm::sys::path::parent_path(FilePath));
+    writeDataToFile(FilePath, getDpctTermStr() + "\n");
   }
 }
 
@@ -508,19 +494,8 @@ void PrintReportOnFault(const std::string &FaultMsg) {
   std::string FileDiags = appendPath(OutRoot.getCanonicalPath().str(),
                                      ReportFilePrefix + ".diags.log");
 
-  std::ofstream File;
-  File.open(FileApis, std::ios::app);
-  if (File) {
-    File << FaultMsg;
-    File.close();
-  }
-
-  File.open(FileDiags, std::ios::app);
-  if (File) {
-    File << FaultMsg;
-    File.close();
-  }
-
+  appendDataToFile(FileApis, FaultMsg);
+  appendDataToFile(FileDiags, FaultMsg);
   DumpOutputFile();
 }
 
@@ -1317,8 +1292,7 @@ int runDPCT(int argc, const char **argv) {
     if (AnalysisModeOutputFile.empty()) {
       dumpAnalysisModeStatics(llvm::outs());
     } else {
-      std::error_code EC;
-      llvm::raw_fd_stream Out(AnalysisModeOutputFile, EC);
+      dpct::RawFDOStream Out(AnalysisModeOutputFile);
       dumpAnalysisModeStatics(Out);
     }
     return MigrationSucceeded;

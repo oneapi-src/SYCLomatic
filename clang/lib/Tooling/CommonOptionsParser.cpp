@@ -273,7 +273,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 
     if (!Compilations) {
 #ifdef SYCLomatic_CUSTOMIZATION
-      if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()){
+      if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()) {
         std::string buf;
         llvm::raw_string_ostream OS(buf);
         OS << "Error while trying to load a compilation database:\n";

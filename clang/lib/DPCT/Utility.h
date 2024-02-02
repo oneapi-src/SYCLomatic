@@ -9,6 +9,7 @@
 #ifndef DPCT_UTILITY_H
 #define DPCT_UTILITY_H
 
+#include <fstream>
 #include <functional>
 #include <ios>
 #include <iostream>
@@ -18,11 +19,13 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "Error.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
@@ -587,6 +590,33 @@ public:
   ~PairedPrinter() { OS << Postfix; }
 };
 std::string appendPath(const std::string &P1, const std::string &P2);
+
+void writeDataToFile(const std::string &FileName, const std::string &Data);
+void appendDataToFile(const std::string &FileName, const std::string &Data);
+void createDirectories(const clang::tooling::UnifiedPath &FilePath,
+                       bool IgnoreExisting = true);
+void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
+class RawFDOStream : public llvm::raw_fd_ostream {
+  StringRef FileName;
+  std::error_code EC;
+
+public:
+  RawFDOStream(StringRef FileName);
+  RawFDOStream(StringRef FileName, llvm::sys::fs::OpenFlags OF);
+
+  template <class T> RawFDOStream &operator<<(T &&var) {
+    llvm::raw_fd_ostream::operator<<(std::forward<T>(var));
+    if ((bool)this->error()) {
+      std::string ErrMsg =
+          "[ERROR] Write data to " + FileName.str() + " Fail!\n";
+      dpct::PrintMsg(ErrMsg);
+      dpctExit(MigrationErrorCannotWrite);
+    }
+    return *this;
+  }
+  ~RawFDOStream();
+};
+
 std::set<const clang::DeclRefExpr *>
 matchTargetDREInScope(const clang::VarDecl *TargetDecl,
                       const clang::Stmt *Range);
