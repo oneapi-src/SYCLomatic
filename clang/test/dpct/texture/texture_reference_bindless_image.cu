@@ -71,7 +71,7 @@ int main() {
   cudaBindTexture(0, tex, dataPtr, pitch * h);
   // CHECK: tex.attach(dataPtr, w, h, pitch);
   cudaBindTexture2D(0, tex, dataPtr, w, h, pitch);
-  // CHECK: dpct::experimental::image_mem_ptr pArr;
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr pArr;
   cudaArray_t pArr;
   // CHECK: tex.attach(pArr);
   cudaBindTextureToArray(tex, pArr);
