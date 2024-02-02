@@ -1289,8 +1289,7 @@ int runDPCT(int argc, const char **argv) {
     if (AnalysisModeOutputFile.empty()) {
       dumpAnalysisModeStatics(llvm::outs());
     } else {
-      std::error_code EC;
-      llvm::raw_fd_stream Out(AnalysisModeOutputFile, EC);
+      dpct::RawFDOStream Out(AnalysisModeOutputFile);
       dumpAnalysisModeStatics(Out);
     }
     return MigrationSucceeded;
