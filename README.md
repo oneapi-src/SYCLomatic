@@ -121,12 +121,15 @@ After a successful build, you should be able to see following message in the ter
 
 **Linux**:
 ```bash
-source $PATH_TO_C2S_INSTALL_FOLDER/setvars.sh
+export PATH=$PATH_TO_C2S_INSTALL_FOLDER/bin:$PATH
+export CPATH=$PATH_TO_C2S_INSTALL_FOLDER/include:$CPATH
 ```
 
 **Windows (64-bit)**:
 ```bat
-.\%PATH_TO_C2S_INSTALL_FOLDER%\setvars.bat
+SET PATH=%PATH_TO_C2S_INSTALL_FOLDER%\bin;%PATH%
+SET INCLUDE=%PATH_TO_C2S_INSTALL_FOLDER%\include;%INCLUDE%
+SET CPATH=%PATH_TO_C2S_INSTALL_FOLDER%\include;%CPATH%
 ```
 
 ### Verify the Installation
