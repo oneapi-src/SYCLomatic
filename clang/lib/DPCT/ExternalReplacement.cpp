@@ -67,12 +67,6 @@ int save2Yaml(
   TUR.DpctVersion = clang::dpct::getDpctVersionStr();
   TUR.OptionMap = clang::dpct::DpctGlobalInfo::getCurrentOptMap();
 
-  // For really hidden options, do not add it in yaml file if it is not
-  // specified.
-  if (TUR.OptionMap[clang::dpct::OPTION_NoUseGenericSpace].Value == "false") {
-    TUR.OptionMap.erase(clang::dpct::OPTION_NoUseGenericSpace);
-  }
-
   YAMLOut << TUR;
   YamlContentStream.flush();
   clang::dpct::writeDataToFile(YamlFile.getCanonicalPath().str(), YamlContent);

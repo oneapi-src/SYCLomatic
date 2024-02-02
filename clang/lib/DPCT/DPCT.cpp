@@ -263,6 +263,10 @@ bool hasOptConflictWithQuery(int argc, const char **argv) {
         !Opt.starts_with("--extra-arg")) {
       return true;
     }
+    if (Opt == "--query-api-mapping" || Opt == "--cuda-include-path" ||
+        Opt == "--extra-arg") {
+      ++I; // Skip option value when using option without '='.
+    }
   }
   return false;
 }
@@ -761,13 +765,12 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake &&
+  if (BuildScript == BuildScript::BS_Cmake &&
       !OptParser->getSourcePathList().empty()) {
     ShowStatus(MigarteBuildScriptIncorrectUse);
     dpctExit(MigarteBuildScriptIncorrectUse);
   }
-  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake &&
-      MigrateBuildScriptOnly) {
+  if (BuildScript == BuildScript::BS_Cmake && MigrateBuildScriptOnly) {
     ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
     dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
   }
