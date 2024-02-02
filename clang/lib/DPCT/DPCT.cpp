@@ -609,6 +609,8 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationOptionParsingError);
   }
 
+  DpctInstallPath = getInstallPath(argv[0]);
+
   InRoot = InRootOpt;
   OutRoot = OutRootOpt;
   CudaIncludePath = CudaIncludePathOpt;
@@ -690,8 +692,6 @@ int runDPCT(int argc, const char **argv) {
     clang::tooling::SetDiagnosticOutput(DpctTerm());
   }
   initWarningIDs();
-
-  DpctInstallPath = getInstallPath(argv[0]);
 
 #ifndef _WIN32
   if (InterceptBuildCommand) {
