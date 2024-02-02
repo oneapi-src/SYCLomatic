@@ -93,8 +93,10 @@ endmacro()
 
 if(WIN32)
     set(DNN_LIB "dnnl.lib")
+    set(MKL_LIB "-Qmkl")
 else()
     set(DNN_LIB "dnnl")
+    set(MKL_LIB "-qmkl")
 endif()
 
 # Link MKL library to target

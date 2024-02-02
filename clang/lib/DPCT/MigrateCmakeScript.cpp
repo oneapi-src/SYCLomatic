@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 #include "MigrateCmakeScript.h"
+#include "Error.h"
 #include "PatternRewriter.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
@@ -247,15 +248,7 @@ bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
   if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
     return false;
   }
-  auto Parent = path::parent_path(OutFileName.getCanonicalPath());
-  std::error_code EC;
-  EC = fs::create_directories(Parent);
-  if ((bool)EC) {
-    std::string ErrMsg = "[ERROR] Create Directory : " + Parent.str() +
-                         " fail: " + EC.message() + "\n";
-    PrintMsg(ErrMsg);
-  }
-
+  createDirectories(path::parent_path(OutFileName.getCanonicalPath()));
   CmakeScriptFileBufferMap[OutFileName] = readFile(InFileName);
   return true;
 }
@@ -649,16 +642,8 @@ static void storeBufferToFile() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &FileName = Entry.first;
     auto &Buffer = Entry.second;
-    std::ofstream Out(FileName.getCanonicalPath().str(), std::ios::binary);
-    if (Out.fail()) {
-      std::string ErrMsg =
-          "[ERROR] Create file : " + std::string(FileName.getCanonicalPath()) +
-          " failure!\n";
-      PrintMsg(ErrMsg);
-    }
 
-    llvm::raw_os_ostream Stream(Out);
-
+    dpct::RawFDOStream Stream(FileName.getCanonicalPath().str());
     // Restore original endline format
     auto IsCRLF = ScriptFileCRLFMap[FileName];
     if (IsCRLF) {
