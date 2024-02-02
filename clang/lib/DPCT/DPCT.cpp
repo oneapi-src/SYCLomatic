@@ -681,7 +681,7 @@ int runDPCT(int argc, const char **argv) {
     OutRoot = "";
     FormatRng = format::FormatRange::none;
   } else if (!AnalysisModeOutputFile.empty()) {
-    llvm::outs() << "Error: \"--analysis-mode-out-file\" only available when "
+    llvm::outs() << "Error: \"--analysis-mode-output-file\" only available when "
                     "analysis mode is enabled.\n";
     ShowStatus(MigrationErrorConflictOptions);
     dpctExit(MigrationErrorConflictOptions);
