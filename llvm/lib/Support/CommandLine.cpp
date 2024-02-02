@@ -2353,6 +2353,20 @@ sortSubCommands(const SmallPtrSetImpl<SubCommand *> &SubMap,
 
 namespace {
 
+/// HelpCategory defines various category groups for dpct options
+enum class HelpCategory {
+  HC_All,
+  HC_Basic,
+  HC_Advanced,
+  HC_CodeGen,
+  HC_ReportGen,
+  HC_BuildScript,
+  HC_QueryAPI,
+  HC_Warnings,
+  HC_HelpInfo,
+  HC_InterceptBuild
+};
+
 class HelpPrinter {
 protected:
   const bool ShowHidden;
@@ -2464,6 +2478,7 @@ public:
 
 class CategorizedHelpPrinter : public HelpPrinter {
 public:
+  HelpCategory helpCatEnum = HelpCategory::HC_All;
   explicit CategorizedHelpPrinter(bool showHidden) : HelpPrinter(showHidden) {}
 
   // Helper function for printOptions().
@@ -2473,6 +2488,46 @@ public:
   static int OptionCategoryCompare(OptionCategory *const *A,
                                    OptionCategory *const *B) {
     return (*A)->getName().compare((*B)->getName());
+  }
+
+  bool isSameCategory(OptionCategory *lhs, OptionCategory *rhs) {
+    return (lhs->getName() == rhs->getName());
+  }
+
+  // Return the user requested category
+  OptionCategory &getReqCategory(HelpCategory reqCatEnumVal) {
+    if (reqCatEnumVal == HelpCategory::HC_All) {
+      return cl::getDPCTCategory();
+    }
+    else if (reqCatEnumVal == HelpCategory::HC_Basic) {
+      return cl::getDPCTBasicCategory();
+    }
+    else if (reqCatEnumVal == HelpCategory::HC_Advanced) {
+      return cl::getDPCTAdvancedCategory();
+    }
+    else if (reqCatEnumVal == HelpCategory::HC_CodeGen) {
+      return cl::getDPCTCodeGenCategory();
+    }
+    else if (reqCatEnumVal == HelpCategory::HC_ReportGen) {
+      return cl::getDPCTReportGenCategory();
+    }
+    else if (reqCatEnumVal == HelpCategory::HC_BuildScript) {
+      return cl::getDPCTBuildScriptCategory();
+    }
+    else if (reqCatEnumVal == HelpCategory::HC_QueryAPI) {
+      return cl::getDPCTQueryAPICategory();
+    }
+    else if (reqCatEnumVal == HelpCategory::HC_Warnings) {
+      return cl::getDPCTWarningsCategory();
+    }
+    else if (reqCatEnumVal == HelpCategory::HC_HelpInfo) {
+      return cl::getDPCTHelpInfoCategory();
+    }
+    else if (reqCatEnumVal == HelpCategory::HC_InterceptBuild) {
+      return cl::getDPCTInterceptBuildCategory();
+    }
+
+    return cl::getDPCTCategory();
   }
 
   // Make sure we inherit our base class's operator=()
@@ -2505,11 +2560,14 @@ protected:
       }
     }
 
+    OptionCategory &reqCat(getReqCategory(helpCatEnum));
+
     // Now do printing.
     for (OptionCategory *Category : SortedCategories) {
       // Hide empty categories for --help, but show for --help-hidden.
       const auto &CategoryOptions = CategorizedOptions[Category];
-      if (CategoryOptions.empty())
+      bool IsReqCat = isSameCategory(&reqCat, Category);
+      if (CategoryOptions.empty() || !IsReqCat)
         continue;
 
       // Print category information.
@@ -2549,6 +2607,7 @@ public:
 
   // Invoke the printer.
   void operator=(bool Value);
+  void operator=(HelpCategory Value);
 };
 
 } // End anonymous namespace
@@ -2648,11 +2707,61 @@ struct CommandLineCommonOptions {
   // behaviour at runtime depending on whether one or more Option categories
   // have been declared.
 #ifdef SYCLomatic_CUSTOMIZATION
-  cl::opt<HelpPrinterWrapper, true, parser<bool>>
+  cl::opt<HelpPrinterWrapper, true, cl::parser<HelpCategory>>
       HOp{"help",
-          cl::desc("Provides a list of available options."),
-          cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
-          cl::cat(cl::getDPCTCategory()), cl::sub(*AllSubCommands)};
+          cl::values(
+              cl::OptionEnumValue{"",
+                                   int(HelpCategory::HC_All),
+                                   "List all options in alphabetical order",
+                                   true},
+              cl::OptionEnumValue{"basic",
+                                   int(HelpCategory::HC_Basic),
+                                   "List options for basic migration",
+                                   false},
+              cl::OptionEnumValue{"advanced",
+                                   int(HelpCategory::HC_Advanced),
+                                   "List options to control migrated source, "
+                                   "generate reports, query API mapping, "
+                                   "sycl extensions and exprerimental features",
+                                   false},
+              cl::OptionEnumValue{"code-gen",
+                                   int(HelpCategory::HC_CodeGen),
+                                   "List options to customize "
+                                   "how code is migrated",
+                                   false},
+              cl::OptionEnumValue{"report-gen",
+                                   int(HelpCategory::HC_ReportGen),
+                                   "List options to control report generation "
+                                   "during migration",
+                                   false},
+              cl::OptionEnumValue{"build-script",
+                                   int(HelpCategory::HC_BuildScript),
+                                   "List options to migrate build scripts",
+                                   false},
+              cl::OptionEnumValue{"query-api",
+                                   int(HelpCategory::HC_QueryAPI),
+                                   "List options to query API mapping support",
+                                   false},
+              cl::OptionEnumValue{"warnings",
+                                   int(HelpCategory::HC_Warnings),
+                                   "List options to manage warnings "
+                                   "generated by the tool",
+                                   false},
+              cl::OptionEnumValue{"help-info",
+                                   int(HelpCategory::HC_HelpInfo),
+                                   "List options to display tool information",
+                                   false},
+              cl::OptionEnumValue{"intercept-build",
+                                   int(HelpCategory::HC_InterceptBuild),
+                                   "Lists options of intercept-build tool",
+                                   false}
+          ),
+          cl::desc("Provides a list of all the available options or "
+              "of a category below:\n"), cl::value_desc("value"),
+          cl::location(WrappedNormalPrinter), cl::ValueOptional,
+          cl::cat(cl::getDPCTCategory()),
+          cl::cat(cl::getDPCTHelpInfoCategory()),
+          cl::sub(*AllSubCommands)};
 #else
   cl::opt<HelpPrinterWrapper, true, parser<bool>> HOp{
       "help",
@@ -2702,7 +2811,8 @@ struct CommandLineCommonOptions {
   cl::opt<VersionPrinter, true, parser<bool>>
       VersOp{"version", cl::desc("Shows the version of the tool."),
              cl::location(VersionPrinterInstance), cl::ValueDisallowed,
-             cl::cat(cl::getDPCTCategory())};
+             cl::cat(cl::getDPCTCategory()),
+             cl::cat(cl::getDPCTHelpInfoCategory())};
 #else
   cl::opt<VersionPrinter, true, parser<bool>>
       VersOp{"version", cl::desc("Display the version of this program"),
@@ -2739,6 +2849,42 @@ OptionCategory &cl::getDPCTCategory() {
   static OptionCategory DPCTCat{"dpct"};
   return DPCTCat;
 }
+OptionCategory &cl::getDPCTBasicCategory() {
+  static OptionCategory DPCTBasicCat{"basic"};
+  return DPCTBasicCat;
+}
+OptionCategory &cl::getDPCTAdvancedCategory() {
+  static OptionCategory DPCTAdvancedCat{"advanced"};
+  return DPCTAdvancedCat;
+}
+OptionCategory &cl::getDPCTCodeGenCategory() {
+  static OptionCategory DPCTCodeGenCat{"code-gen"};
+  return DPCTCodeGenCat;
+}
+OptionCategory &cl::getDPCTReportGenCategory() {
+  static OptionCategory DPCTReportGenCat{"report-gen"};
+  return DPCTReportGenCat;
+}
+OptionCategory &cl::getDPCTBuildScriptCategory() {
+  static OptionCategory DPCTTBuildScriptCat{"build-script"};
+  return DPCTTBuildScriptCat;
+}
+OptionCategory &cl::getDPCTQueryAPICategory() {
+  static OptionCategory DPCTQueryAPICat{"query-api"};
+  return DPCTQueryAPICat;
+}
+OptionCategory &cl::getDPCTWarningsCategory() {
+  static OptionCategory DPCTWarningsCat{"warnings"};
+  return DPCTWarningsCat;
+}
+OptionCategory &cl::getDPCTHelpInfoCategory() {
+  static OptionCategory DPCTHelpInfoCat{"help-info"};
+  return DPCTHelpInfoCat;
+}
+OptionCategory &cl::getDPCTInterceptBuildCategory() {
+  static OptionCategory DPCTInterceptBuildCat{"intercept-build"};
+  return DPCTInterceptBuildCat;
+}
 #endif // SYCLomatic_CUSTOMIZATION
 
 void VersionPrinter::operator=(bool OptionWasSpecified) {
@@ -2773,6 +2919,12 @@ void HelpPrinterWrapper::operator=(bool Value) {
     CategorizedPrinter = true; // Invoke categorized printer
   } else
     UncategorizedPrinter = true; // Invoke uncategorized printer
+}
+
+void HelpPrinterWrapper::operator=(HelpCategory Value) {
+  CategorizedPrinter.helpCatEnum = Value;
+
+  *this = true;
 }
 
 // Print the value of each option.
