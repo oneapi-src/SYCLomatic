@@ -253,6 +253,17 @@ UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
+bool hasOption(int argc, const char **argv, StringRef Opt) {
+  for (auto i = 1; i < argc; ++i) {
+    if (argv[i][0] == '-') {
+      auto O = StringRef(argv[i]);
+      O = O.drop_while([](char input) { return input == '-'; });
+      if (Opt == O)
+        return true;
+    }
+  }
+  return false;
+}
 // Check if there are any options conflicting with '--query-api-mapping'.
 // Now only '--cuda-include-path' and '--extra-arg' are allowed.
 bool hasOptConflictWithQuery(int argc, const char **argv) {
@@ -598,6 +609,8 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationOptionParsingError);
   }
 
+  DpctInstallPath = getInstallPath(argv[0]);
+
   InRoot = InRootOpt;
   OutRoot = OutRootOpt;
   CudaIncludePath = CudaIncludePathOpt;
@@ -608,19 +621,6 @@ int runDPCT(int argc, const char **argv) {
           RuleFile),
       [](const std::string &Str) { return clang::tooling::UnifiedPath(Str); });
   AnalysisScope = AnalysisScopeOpt;
-
-  if (!OutputFile.empty()) {
-    // Set handle for libclangTooling to redirect warning message to DpctTerm
-    clang::tooling::SetDiagnosticOutput(DpctTerm());
-  }
-
-  if (AnalysisMode) {
-    DpctGlobalInfo::enableAnalysisMode();
-    SuppressWarningsAllFlag = true;
-  }
-  initWarningIDs();
-
-  DpctInstallPath = getInstallPath(argv[0]);
 
   if (PathToHelperFunction) {
     SmallString<512> HelperFunctionPathStr(DpctInstallPath.getCanonicalPath());
@@ -635,6 +635,63 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationSucceeded);
     dpctExit(MigrationSucceeded);
   }
+
+  if (AnalysisMode) {
+    if (hasOption(argc, argv, "migrate-build-script-only") ||
+        hasOption(argc, argv, "query-api-mapping")) {
+      llvm::outs() << "Error: option \"--analysis-mode\", "
+                      "\"--migrate-build-script-only\" and "
+                      "\"--query-api-mapping\" can not be used together.\n";
+      ShowStatus(MigrationErrorConflictOptions);
+      dpctExit(MigrationErrorConflictOptions);
+    }
+    DpctGlobalInfo::enableAnalysisMode();
+    static std::vector<std::string> IgnoreOpts = {
+        "change-cuda-files-extension-only",
+        "sycl-file-extension",
+        "gen-helper-function",
+        "gen-build-script",
+        "build-script-file",
+        "format-range",
+        "format-style",
+        "migrate-build-script",
+        "report-file-prefix",
+        "report-format",
+        "report-only",
+        "report-type",
+        "enable-codepin",
+        "output-file",
+        "output-verbosity",
+        "suppress-warnings",
+        "suppress-warnings-all",
+    };
+    for (auto Opt : IgnoreOpts) {
+      if (hasOption(argc, argv, Opt)) {
+        llvm::outs() << "Warning: \"--" << Opt
+                     << "\"will be ignored when analysis mode is enabled.\n";
+      }
+    }
+    BuildScript = BuildScript::BS_None;
+    LimitChangeExtension = false;
+    GenBuildScript = false;
+    GenHelperFunction = false;
+    EnableCodePin = false;
+    SuppressWarningsAllFlag = true;
+    OutputFile = "";
+    OutRoot = "";
+    FormatRng = format::FormatRange::none;
+  } else if (!AnalysisModeOutputFile.empty()) {
+    llvm::outs() << "Error: \"--analysis-mode-output-file\" only available when "
+                    "analysis mode is enabled.\n";
+    ShowStatus(MigrationErrorConflictOptions);
+    dpctExit(MigrationErrorConflictOptions);
+  }
+
+  if (!OutputFile.empty()) {
+    // Set handle for libclangTooling to redirect warning message to DpctTerm
+    clang::tooling::SetDiagnosticOutput(DpctTerm());
+  }
+  initWarningIDs();
 
 #ifndef _WIN32
   if (InterceptBuildCommand) {
@@ -799,9 +856,9 @@ int runDPCT(int argc, const char **argv) {
 #else
   std::string DVerbose = "";
 #endif
-  if (checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
-                      ReportFilePrefix, ReportOnlyFlag, GenReport,
-                      DVerbose) == false) {
+  if (!DpctGlobalInfo::isAnalysisModeEnabled() &&
+      !checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
+                       ReportFilePrefix, ReportOnlyFlag, GenReport, DVerbose)) {
     ShowStatus(MigrationErrorInvalidReportArgs);
     dpctExit(MigrationErrorInvalidReportArgs);
   }
@@ -944,8 +1001,8 @@ int runDPCT(int argc, const char **argv) {
     StopOnParseErr = true;
     Tool.setPrintErrorMessage(false);
   } else {
-    IsUsingDefaultOutRoot = OutRoot.getPath().empty();
-    if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+    if (!DpctGlobalInfo::isAnalysisModeEnabled() &&
+        !makeOutRootCanonicalOrSetDefaults(OutRoot)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
@@ -1293,6 +1350,7 @@ int runDPCT(int argc, const char **argv) {
       dumpAnalysisModeStatics(llvm::outs());
     } else {
       dpct::RawFDOStream Out(AnalysisModeOutputFile);
+      Out.enable_colors(false);
       dumpAnalysisModeStatics(Out);
     }
     return MigrationSucceeded;
