@@ -48,11 +48,7 @@ static bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar) {
           "The directory \"dpct_output\" is used as \"out-root\"\n");
     }
   } else {
-    std::error_code EC = fs::create_directory(OutRoot, false);
-    if ((bool)EC) {
-      llvm::errs() << "Could not create dpct_output directory.\n";
-      return false;
-    }
+    clang::dpct::createDirectories(OutRoot, false);
     clang::dpct::PrintMsg(
         "The directory \"dpct_output\" is used as \"out-root\"\n");
   }

@@ -253,6 +253,17 @@ UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
+bool hasOption(int argc, const char **argv, StringRef Opt) {
+  for (auto i = 1; i < argc; ++i) {
+    if (argv[i][0] == '-') {
+      auto O = StringRef(argv[i]);
+      O = O.drop_while([](char input) { return input == '-'; });
+      if (Opt == O)
+        return true;
+    }
+  }
+  return false;
+}
 // Check if there are any options conflicting with '--query-api-mapping'.
 // Now only '--cuda-include-path' and '--extra-arg' are allowed.
 bool hasOptConflictWithQuery(int argc, const char **argv) {
@@ -262,6 +273,10 @@ bool hasOptConflictWithQuery(int argc, const char **argv) {
         !Opt.starts_with("--cuda-include-path") &&
         !Opt.starts_with("--extra-arg")) {
       return true;
+    }
+    if (Opt == "--query-api-mapping" || Opt == "--cuda-include-path" ||
+        Opt == "--extra-arg") {
+      ++I; // Skip option value when using option without '='.
     }
   }
   return false;
@@ -380,28 +395,22 @@ static void saveApisReport(void) {
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".apis.csv"
                                 : ".apis.log"));
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
 
-    std::string Str;
-    llvm::raw_string_ostream Title(Str);
-    Title << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
-                  ? " API name, Frequency "
-                  : "API name\t\t\t\tFrequency");
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    RawFDOStream File(RFile);
 
-    File << Title.str() << std::endl;
+    File << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+                 ? " API name, Frequency "
+                 : "API name\t\t\t\tFrequency");
+
+    File << "\n";
     for (const auto &Elem : SrcAPIStaticsMap) {
       std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
       if (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV) {
-        File << "\"" << APIName << "\"," << std::to_string(Count) << std::endl;
+        File << "\"" << APIName << "\"," << std::to_string(Count) << "\n";
       } else {
-        std::string Str;
-        llvm::raw_string_ostream OS(Str);
-        OS << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
-        File << OS.str();
+        File << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
       }
     }
   }
@@ -426,11 +435,8 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".stats.csv"
                                 : ".stats.log"));
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
-    File << getDpctStatsStr() << "\n";
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }
 
@@ -447,11 +453,8 @@ static void saveDiagsReport() {
   } else {
     std::string RFile = appendPath(OutRoot.getCanonicalPath().str(),
                                    ReportFilePrefix + ".diags.log");
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
-    File << getDpctDiagsStr() << "\n";
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }
 
@@ -479,12 +482,10 @@ std::string printCTVersion() {
 static void DumpOutputFile(void) {
   // Redirect stdout/stderr output to <file> if option "-output-file" is set
   if (!OutputFile.empty()) {
-    std::string FilePath = appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(FilePath));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(FilePath, std::ios::binary);
-    File << getDpctTermStr() << "\n";
+    std::string FilePath =
+        appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
+    createDirectories(llvm::sys::path::parent_path(FilePath));
+    writeDataToFile(FilePath, getDpctTermStr() + "\n");
   }
 }
 
@@ -504,19 +505,8 @@ void PrintReportOnFault(const std::string &FaultMsg) {
   std::string FileDiags = appendPath(OutRoot.getCanonicalPath().str(),
                                      ReportFilePrefix + ".diags.log");
 
-  std::ofstream File;
-  File.open(FileApis, std::ios::app);
-  if (File) {
-    File << FaultMsg;
-    File.close();
-  }
-
-  File.open(FileDiags, std::ios::app);
-  if (File) {
-    File << FaultMsg;
-    File.close();
-  }
-
+  appendDataToFile(FileApis, FaultMsg);
+  appendDataToFile(FileDiags, FaultMsg);
   DumpOutputFile();
 }
 
@@ -619,6 +609,8 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationOptionParsingError);
   }
 
+  DpctInstallPath = getInstallPath(argv[0]);
+
   InRoot = InRootOpt;
   OutRoot = OutRootOpt;
   CudaIncludePath = CudaIncludePathOpt;
@@ -629,19 +621,6 @@ int runDPCT(int argc, const char **argv) {
           RuleFile),
       [](const std::string &Str) { return clang::tooling::UnifiedPath(Str); });
   AnalysisScope = AnalysisScopeOpt;
-
-  if (!OutputFile.empty()) {
-    // Set handle for libclangTooling to redirect warning message to DpctTerm
-    clang::tooling::SetDiagnosticOutput(DpctTerm());
-  }
-
-  if (AnalysisMode) {
-    DpctGlobalInfo::enableAnalysisMode();
-    SuppressWarningsAllFlag = true;
-  }
-  initWarningIDs();
-
-  DpctInstallPath = getInstallPath(argv[0]);
 
   if (PathToHelperFunction) {
     SmallString<512> HelperFunctionPathStr(DpctInstallPath.getCanonicalPath());
@@ -656,6 +635,63 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationSucceeded);
     dpctExit(MigrationSucceeded);
   }
+
+  if (AnalysisMode) {
+    if (hasOption(argc, argv, "migrate-build-script-only") ||
+        hasOption(argc, argv, "query-api-mapping")) {
+      llvm::outs() << "Error: option \"--analysis-mode\", "
+                      "\"--migrate-build-script-only\" and "
+                      "\"--query-api-mapping\" can not be used together.\n";
+      ShowStatus(MigrationErrorConflictOptions);
+      dpctExit(MigrationErrorConflictOptions);
+    }
+    DpctGlobalInfo::enableAnalysisMode();
+    static std::vector<std::string> IgnoreOpts = {
+        "change-cuda-files-extension-only",
+        "sycl-file-extension",
+        "gen-helper-function",
+        "gen-build-script",
+        "build-script-file",
+        "format-range",
+        "format-style",
+        "migrate-build-script",
+        "report-file-prefix",
+        "report-format",
+        "report-only",
+        "report-type",
+        "enable-codepin",
+        "output-file",
+        "output-verbosity",
+        "suppress-warnings",
+        "suppress-warnings-all",
+    };
+    for (auto Opt : IgnoreOpts) {
+      if (hasOption(argc, argv, Opt)) {
+        llvm::outs() << "Warning: \"--" << Opt
+                     << "\"will be ignored when analysis mode is enabled.\n";
+      }
+    }
+    BuildScript = BuildScript::BS_None;
+    LimitChangeExtension = false;
+    GenBuildScript = false;
+    GenHelperFunction = false;
+    EnableCodePin = false;
+    SuppressWarningsAllFlag = true;
+    OutputFile = "";
+    OutRoot = "";
+    FormatRng = format::FormatRange::none;
+  } else if (!AnalysisModeOutputFile.empty()) {
+    llvm::outs() << "Error: \"--analysis-mode-output-file\" only available when "
+                    "analysis mode is enabled.\n";
+    ShowStatus(MigrationErrorConflictOptions);
+    dpctExit(MigrationErrorConflictOptions);
+  }
+
+  if (!OutputFile.empty()) {
+    // Set handle for libclangTooling to redirect warning message to DpctTerm
+    clang::tooling::SetDiagnosticOutput(DpctTerm());
+  }
+  initWarningIDs();
 
 #ifndef _WIN32
   if (InterceptBuildCommand) {
@@ -786,13 +822,12 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake &&
+  if (BuildScript == BuildScript::BS_Cmake &&
       !OptParser->getSourcePathList().empty()) {
     ShowStatus(MigarteBuildScriptIncorrectUse);
     dpctExit(MigarteBuildScriptIncorrectUse);
   }
-  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake &&
-      MigrateBuildScriptOnly) {
+  if (BuildScript == BuildScript::BS_Cmake && MigrateBuildScriptOnly) {
     ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
     dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
   }
@@ -821,9 +856,9 @@ int runDPCT(int argc, const char **argv) {
 #else
   std::string DVerbose = "";
 #endif
-  if (checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
-                      ReportFilePrefix, ReportOnlyFlag, GenReport,
-                      DVerbose) == false) {
+  if (!DpctGlobalInfo::isAnalysisModeEnabled() &&
+      !checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
+                       ReportFilePrefix, ReportOnlyFlag, GenReport, DVerbose)) {
     ShowStatus(MigrationErrorInvalidReportArgs);
     dpctExit(MigrationErrorInvalidReportArgs);
   }
@@ -966,8 +1001,8 @@ int runDPCT(int argc, const char **argv) {
     StopOnParseErr = true;
     Tool.setPrintErrorMessage(false);
   } else {
-    IsUsingDefaultOutRoot = OutRoot.getPath().empty();
-    if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+    if (!DpctGlobalInfo::isAnalysisModeEnabled() &&
+        !makeOutRootCanonicalOrSetDefaults(OutRoot)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
@@ -1314,8 +1349,8 @@ int runDPCT(int argc, const char **argv) {
     if (AnalysisModeOutputFile.empty()) {
       dumpAnalysisModeStatics(llvm::outs());
     } else {
-      std::error_code EC;
-      llvm::raw_fd_stream Out(AnalysisModeOutputFile, EC);
+      dpct::RawFDOStream Out(AnalysisModeOutputFile);
+      Out.enable_colors(false);
       dumpAnalysisModeStatics(Out);
     }
     return MigrationSucceeded;

@@ -374,33 +374,13 @@ template <typename T> struct csrsv_impl {
     using Ty = typename dpct::DataType<T>::T2;
     auto alpha_value =
         dpct::detail::get_value(static_cast<const Ty *>(alpha), queue);
-    Ty *new_x_ptr = nullptr;
-    if (alpha_value != Ty(1.0f)) {
-      new_x_ptr = (Ty *)dpct::dpct_malloc(row_col * sizeof(Ty));
-      dpct::detail::dpct_memcpy(queue, new_x_ptr, x, row_col * sizeof(Ty),
-                                dpct::memcpy_direction::automatic);
-      auto data_new_x = dpct::detail::get_memory<Ty>(new_x_ptr);
-      oneapi::mkl::blas::column_major::scal(queue, row_col, alpha_value,
-                                            data_new_x, 1);
-    } else {
-      new_x_ptr = const_cast<Ty *>(static_cast<const Ty *>(x));
-    }
-    auto data_new_x = dpct::detail::get_memory<Ty>(new_x_ptr);
+    auto data_x = dpct::detail::get_memory<Ty>(x);
     auto data_y = dpct::detail::get_memory<Ty>(y);
-
-    SPARSE_CALL(oneapi::mkl::sparse::trsv(
-                    queue, info->get_uplo(), trans, info->get_diag(),
-                    optimize_info->get_matrix_handle(), data_new_x, data_y),
+    SPARSE_CALL(oneapi::mkl::sparse::trsv(queue, info->get_uplo(), trans,
+                                          info->get_diag(), alpha_value,
+                                          optimize_info->get_matrix_handle(),
+                                          data_x, data_y),
                 optimize_info);
-    if (alpha_value != Ty(1.0f)) {
-      dpct::async_dpct_free({new_x_ptr},
-                            {
-#ifndef DPCT_USM_LEVEL_NONE
-                                e
-#endif
-                            },
-                            queue);
-    }
   }
 };
 } // namespace detail
@@ -1215,25 +1195,10 @@ template <typename T> struct spsv_impl {
                   std::shared_ptr<dense_vector_desc> y) {
     auto alpha_value =
         dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
-    T *new_x_ptr = nullptr;
-    if (alpha_value != T(1.0f)) {
-      new_x_ptr = (T *)dpct::dpct_malloc(x->get_ele_num() * sizeof(T));
-      dpct::dpct_memcpy(new_x_ptr, x->get_value(),
-                        x->get_ele_num() * sizeof(T));
-      auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
-      oneapi::mkl::blas::column_major::scal(queue, x->get_ele_num(),
-                                            alpha_value, data_new_x, 1);
-    } else {
-      new_x_ptr = static_cast<T *>(x->get_value());
-    }
-    auto data_new_x = dpct::detail::get_memory<T>(new_x_ptr);
+    auto data_x = dpct::detail::get_memory<T>(x->get_value());
     auto data_y = dpct::detail::get_memory<T>(y->get_value());
-    oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
-                              a->get_matrix_handle(), data_new_x, data_y);
-    if (alpha_value != T(1.0f)) {
-      queue.wait();
-      dpct::dpct_free(new_x_ptr);
-    }
+    oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag, alpha_value,
+                              a->get_matrix_handle(), data_x, data_y);
   }
 };
 } // namespace detail

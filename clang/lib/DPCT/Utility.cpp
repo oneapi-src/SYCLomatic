@@ -670,12 +670,12 @@ bool IsSingleLineStatement(const clang::Stmt *S) {
          ParentStmtClass == Stmt::StmtClass::ForStmtClass;
 }
 
-// Find the nearest non-Expr non-Decl ancestor node of Expr E
-// Assumes: E != nullptr
-const DynTypedNode findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
+// Find the nearest non-Expr non-Decl ancestor node of Node N
+const DynTypedNode
+findNearestNonExprNonDeclAncestorNode(const DynTypedNode &N) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto ParentNodes = Context.getParents(*E);
-  DynTypedNode LastNode = DynTypedNode::create(*E), ParentNode;
+  auto ParentNodes = Context.getParents(N);
+  DynTypedNode LastNode = N, ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
     bool IsSingleStmt = ParentNode.get<CompoundStmt>() ||
@@ -688,12 +688,6 @@ const DynTypedNode findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
     ParentNodes = Context.getParents(LastNode);
   }
   return LastNode;
-}
-
-// Find the nearest non-Expr non-Decl ancestor statement of Expr E
-// Assumes: E != nullptr
-const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E) {
-  return findNearestNonExprNonDeclAncestorNode(E).get<Stmt>();
 }
 
 SourceRange getScopeInsertRange(const MemberExpr *ME) {
@@ -716,7 +710,8 @@ SourceRange getScopeInsertRange(const Expr *E,
     StmtBegin = FuncNameBegin;
     StmtEnd = FuncCallEnd;
   } else {
-    AncestorStmt = findNearestNonExprNonDeclAncestorNode(E);
+    AncestorStmt =
+        findNearestNonExprNonDeclAncestorNode(DynTypedNode::create(*E));
     StmtBegin = AncestorStmt.getSourceRange().getBegin();
     StmtEnd = AncestorStmt.getSourceRange().getEnd();
     if (StmtBegin.isMacroID())
@@ -4736,6 +4731,60 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
   llvm::sys::path::append(TempPath, P2);
   return TempPath.str().str();
 }
+
+void createDirectories(const clang::tooling::UnifiedPath &FilePath,
+                       bool IgnoreExisting) {
+  if (sys::fs::exists(FilePath.getCanonicalPath()) &&
+      !sys::fs::is_directory(FilePath.getCanonicalPath())) {
+    ShowStatus(MigrationSaveOutFail);
+    dpctExit(MigrationSaveOutFail);
+  }
+  if (std::error_code EC = llvm::sys::fs::create_directories(
+          FilePath.getCanonicalPath(), IgnoreExisting)) {
+    std::string ErrMsg =
+        "[ERROR] Create Directory : " + FilePath.getPath().str() +
+        " fail: " + EC.message() + "\n";
+    clang::dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite); // Exit the execution directly.
+  }
+}
+
+void writeDataToFile(const std::string &FileName, const std::string &Data) {
+  RawFDOStream File(FileName);
+  File << Data;
+}
+
+void appendDataToFile(const std::string &FileName, const std::string &Data) {
+  RawFDOStream File(FileName, llvm::sys::fs::OpenFlags::OF_Append);
+  File << Data;
+}
+
+RawFDOStream::RawFDOStream(StringRef FileName)
+    : llvm::raw_fd_ostream(FileName, EC), FileName(FileName) {
+  if ((bool)EC) {
+    std::string ErrMsg = "[ERROR] Open: " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+RawFDOStream::RawFDOStream(StringRef FileName, llvm::sys::fs::OpenFlags OF)
+    : llvm::raw_fd_ostream(FileName, EC, OF), FileName(FileName) {
+  if ((bool)EC) {
+    std::string ErrMsg = "[ERROR] Open: " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+
+RawFDOStream::~RawFDOStream() {
+  this->close();
+  if ((bool)this->error()) {
+    std::string ErrMsg = "[ERROR] Close " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+
 std::set<const clang::DeclRefExpr *>
 matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
   std::set<const DeclRefExpr *> Set;
@@ -4756,18 +4805,15 @@ matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
 int isArgumentInitialized(
     const clang::Expr *Arg,
     std::vector<const clang::VarDecl *> &DeclsRequireInit) {
-  auto isInitBeforeArg = [](const CompoundStmt *Context,
-                            const clang::DeclRefExpr *DRE,
+  auto isInitBeforeArg = [](const Stmt *Context, const clang::DeclRefExpr *DRE,
                             const clang::Expr *Arg) -> bool {
     const auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(DRE);
     if (ICE && ICE->getCastKind() == CastKind::CK_LValueToRValue)
       return false;
-    const CompoundStmt *DREContext =
-        DpctGlobalInfo::findAncestor<CompoundStmt>(DRE);
+    const Stmt *DREContext = findNearestNonExprNonDeclAncestorStmt(DRE);
     if (!DREContext || DREContext != Context)
       return false;
-    const CompoundStmt *ArgContext =
-        DpctGlobalInfo::findAncestor<CompoundStmt>(Arg);
+    const Stmt *ArgContext = findNearestNonExprNonDeclAncestorStmt(Arg);
     if (!ArgContext || ArgContext != Context)
       return false;
     const auto &SM = DpctGlobalInfo::getSourceManager();
@@ -4809,7 +4855,7 @@ int isArgumentInitialized(
       return -1;
     if (VD->hasInit())
       continue;
-    const CompoundStmt *CS = DpctGlobalInfo::findAncestor<CompoundStmt>(VD);
+    const Stmt *CS = findNearestNonExprNonDeclAncestorStmt(VD);
     if (!CS)
       return -1;
     std::set<const clang::DeclRefExpr *> DRERefSet =
