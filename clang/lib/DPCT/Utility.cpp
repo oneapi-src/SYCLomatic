@@ -4734,11 +4734,15 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
 
 void createDirectories(const clang::tooling::UnifiedPath &FilePath,
                        bool IgnoreExisting) {
-  auto perm = sys::fs::getPermissions(FilePath.getCanonicalPath());
-  if (sys::fs::exists(FilePath.getCanonicalPath()) &&
-      !(perm.get() & sys::fs::perms::owner_all & sys::fs::perms::owner_write)) {
-    ShowStatus(MigrationSaveOutFail);
-    dpctExit(MigrationSaveOutFail);
+  if (sys::fs::exists(FilePath.getCanonicalPath())) {
+    auto perm = sys::fs::getPermissions(FilePath.getCanonicalPath());
+    auto owner_perm = perm.get() & sys::fs::perms::owner_all;
+    if (!(owner_perm & sys::fs::perms::owner_write) ||
+        !(owner_perm & sys::fs::perms::owner_read) ||
+        !llvm::sys::fs::is_directory(FilePath.getCanonicalPath())) {
+      ShowStatus(MigrationSaveOutFail);
+      dpctExit(MigrationSaveOutFail);
+    }
   }
   if (std::error_code EC = llvm::sys::fs::create_directories(
           FilePath.getCanonicalPath(), IgnoreExisting)) {
