@@ -243,8 +243,8 @@ private:
     LineStream(OS, Indent) << '+'
                            << llvm::format_decimal(ClassifyNum, NumberWidth)
                            << " lines of code ("
-                           << llvm::format_decimal((ClassifyNum * 100) / Total,
-                                                   3)
+                           << llvm::format_decimal(
+                                  Total ? (ClassifyNum * 100) / Total : 0, 3)
                            << "%) " << ClassifyMsg << '.';
   }
   template <class... LevelTys>
