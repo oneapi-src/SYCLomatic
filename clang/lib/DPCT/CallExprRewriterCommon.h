@@ -1801,6 +1801,10 @@ inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
 };
 
+inline auto UseExtBindlessImages = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExtBindlessImages();
+};
+
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
   std::string TypeName;

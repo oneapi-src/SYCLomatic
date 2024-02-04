@@ -312,6 +312,16 @@ void MapNames::setExplicitNamespaceMap() {
                ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
                : getDpctNamespace() + "image_matrix_p",
            HelperFeatureEnum::device_ext)},
+      {"cudaMipmappedArray",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper"
+               : "cudaMipmappedArray")},
+      {"cudaMipmappedArray_t",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
+               : "cudaMipmappedArray_t")},
       {"cudaTextureDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::device_ext)},
@@ -959,6 +969,10 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       // enum Resource Type
       {"cudaResourceTypeArray",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                          "image_data_type::matrix",
+                                      HelperFeatureEnum::device_ext)},
+      {"cudaResourceTypeMipmappedArray",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                           "image_data_type::matrix",
                                       HelperFeatureEnum::device_ext)},
@@ -4348,6 +4362,10 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
     {"Width", "x"},
     {"Height", "y"},
     {"flags", "coordinate_normalization_mode"},
+    {"maxAnisotropy", "max_anisotropy"},
+    {"mipmapFilterMode", "mipmap_filtering"},
+    {"minMipmapLevelClamp", "min_mipmap_level_clamp"},
+    {"maxMipmapLevelClamp", "max_mipmap_level_clamp"},
 };
 
 // DeviceProp names mapping.
@@ -4462,6 +4480,7 @@ std::map<std::string, bool> &MigrationStatistics::GetTypeTable(void) {
 MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},
                                                {"desc", "channel"},
                                                {"array", "data_ptr"},
+                                               {"mipmap", "data_ptr"},
                                                {"width", "x"},
                                                {"height", "y"},
                                                {"pitchInBytes", "pitch"},

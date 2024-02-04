@@ -471,6 +471,10 @@ class sampling_info {
   sycl::filtering_mode _filtering_mode = sycl::filtering_mode::nearest;
   sycl::coordinate_normalization_mode _coordinate_normalization_mode =
       sycl::coordinate_normalization_mode::unnormalized;
+  sycl::filtering_mode _mipmap_filtering = sycl::filtering_mode::nearest;
+  float _min_mipmap_level_clamp = 0.f;
+  float _max_mipmap_level_clamp = 0.f;
+  float _max_anisotropy = 0.f;
 
 public:
   sycl::addressing_mode get_addressing_mode() { return _addressing_mode; }
@@ -495,6 +499,27 @@ public:
         is_normalized ? sycl::coordinate_normalization_mode::normalized
                       : sycl::coordinate_normalization_mode::unnormalized;
   }
+
+  sycl::filtering_mode get_mipmap_filtering() { return _mipmap_filtering; }
+  void set_mipmap_filtering(sycl::filtering_mode filtering_mode) {
+    _mipmap_filtering = filtering_mode;
+  }
+
+  float get_min_mipmap_level_clamp() { return _min_mipmap_level_clamp; }
+  void set_min_mipmap_level_clamp(float min_mipmap_level_clamp) {
+    _min_mipmap_level_clamp = min_mipmap_level_clamp;
+  }
+
+  float get_max_mipmap_level_clamp() { return _max_mipmap_level_clamp; }
+  void set_max_mipmap_level_clamp(float max_mipmap_level_clamp) {
+    _max_mipmap_level_clamp = max_mipmap_level_clamp;
+  }
+
+  float get_max_anisotropy() { return _max_anisotropy; }
+  void set_max_anisotropy(float max_anisotropy) {
+    _max_anisotropy = max_anisotropy;
+  }
+
   void
   set(sycl::addressing_mode addressing_mode,
       sycl::filtering_mode filtering_mode,

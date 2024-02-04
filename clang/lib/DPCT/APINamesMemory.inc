@@ -171,6 +171,48 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                  CALL(MapNames::getClNamespace() + "malloc_shared",
                       getSizeForMalloc(0, 1), QUEUESTR))))))
 
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+        "cudaFreeMipmappedArray",
+        CALL(MapNames::getClNamespace() +
+                 "ext::oneapi::experimental::free_image_mem",
+             MEMBER_CALL(ARG(0), true, "get_handle"),
+             LITERAL(MapNames::getClNamespace() +
+                     "ext::oneapi::experimental::image_type::mipmap"),
+             QUEUESTR))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+        "cudaFreeMipmappedArray",
+        "SYCL currently does not support mipmap image type. You "
+        "can migrate the code with bindless images by specifying "
+        "--use-experimental-features=bindless_images."))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGetMipmappedArrayLevel", DEREF(makeCallArgCreatorWithCall(0)),
+        MEMBER_CALL(ARG(1), true, "get_mip_level", ARG(2)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+        "cudaGetMipmappedArrayLevel",
+        "SYCL currently does not support mipmap image type. You "
+        "can migrate the code with bindless images by specifying "
+        "--use-experimental-features=bindless_images."))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaMallocMipmappedArray", DEREF(makeCallArgCreatorWithCall(0)),
+        NEW(MapNames::getDpctNamespace() + "experimental::image_mem_wrapper",
+            DEREF(1), ARG(2),
+            LITERAL(MapNames::getClNamespace() +
+                    "ext::oneapi::experimental::image_type::mipmap"),
+            ARG(3)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+        "cudaMallocMipmappedArray",
+        "SYCL currently does not support mipmap image type. You "
+        "can migrate the code with bindless images by specifying "
+        "--use-experimental-features=bindless_images."))
+
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CheckCanUseTemplateMalloc(0, 1),
     ASSIGN_FACTORY_ENTRY("cuMemAllocManaged", DEREF(makeDerefArgCreatorWithCall(0)),

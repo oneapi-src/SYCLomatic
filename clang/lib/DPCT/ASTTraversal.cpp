@@ -10022,7 +10022,8 @@ void MemoryMigrationRule::mallocMigration(
     instrumentAddressToSizeRecordForCodePin(C,0,1);
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
-             Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch") {
+             Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch" ||
+             Name == "cudaMallocMipmappedArray") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -10315,7 +10316,7 @@ void MemoryMigrationRule::arrayMigration(
   if (NameRef == "cuMemcpyAtoH_v2" || NameRef == "cuMemcpyHtoA_v2" ||
       NameRef == "cuMemcpyAtoHAsync_v2" || NameRef == "cuMemcpyHtoAAsync_v2" ||
       NameRef == "cuMemcpyAtoD_v2" || NameRef == "cuMemcpyDtoA_v2" ||
-      NameRef == "cuMemcpyAtoA_v2") {
+      NameRef == "cuMemcpyAtoA_v2" || NameRef == "cudaGetMipmappedArrayLevel") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -11120,11 +11121,12 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemHostGetFlags", "cuMemHostRegister_v2", "cuMemHostUnregister",
         "cuMemcpy", "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
         "cuMemcpyHtoAAsync_v2", "cuMemcpyAtoHAsync_v2", "cuMemcpyDtoA_v2",
-        "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2", "cuMemsetD16_v2", "cuMemsetD16Async",
-        "cuMemsetD2D16_v2", "cuMemsetD2D16Async", "cuMemsetD2D32_v2",
-        "cuMemsetD2D32Async", "cuMemsetD2D8_v2", "cuMemsetD2D8Async",
-        "cuMemsetD32_v2", "cuMemsetD32Async", "cuMemsetD8_v2",
-        "cuMemsetD8Async");
+        "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2", "cuMemsetD16_v2",
+        "cuMemsetD16Async", "cuMemsetD2D16_v2", "cuMemsetD2D16Async",
+        "cuMemsetD2D32_v2", "cuMemsetD2D32Async", "cuMemsetD2D8_v2",
+        "cuMemsetD2D8Async", "cuMemsetD32_v2", "cuMemsetD32Async",
+        "cuMemsetD8_v2", "cuMemsetD8Async", "cudaMallocMipmappedArray",
+        "cudaGetMipmappedArrayLevel", "cudaFreeMipmappedArray");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -11211,7 +11213,10 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemHostRegister_v2") &&
         Name.compare("cudaHostGetFlags") && Name.compare("cuMemHostGetFlags") &&
         Name.compare("cuMemcpy") && Name.compare("cuMemcpyAsync") &&
-        Name.compare("cuMemAllocPitch_v2")) {
+        Name.compare("cuMemAllocPitch_v2") &&
+        Name.compare("cudaMallocMipmappedArray") &&
+        Name.compare("cudaGetMipmappedArrayLevel") &&
+        Name.compare("cudaFreeMipmappedArray")) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, "DPCT_CHECK_ERROR(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -11284,6 +11289,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMallocPitch", &MemoryMigrationRule::mallocMigration},
           {"cudaMalloc3D", &MemoryMigrationRule::mallocMigration},
           {"cudaMallocArray", &MemoryMigrationRule::mallocMigration},
+          {"cudaMallocMipmappedArray", &MemoryMigrationRule::mallocMigration},
           {"cudaMalloc3DArray", &MemoryMigrationRule::mallocMigration},
           {"cudaMemcpy", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpyHtoD_v2", &MemoryMigrationRule::memcpyMigration},
@@ -11307,6 +11313,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemcpy3DAsync_v2", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy2DAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3DAsync", &MemoryMigrationRule::memcpyMigration},
+          {"cudaGetMipmappedArrayLevel", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DArrayToArray", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DFromArray", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DFromArrayAsync", &MemoryMigrationRule::arrayMigration},
@@ -11327,6 +11334,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaFree", &MemoryMigrationRule::freeMigration},
           {"cuMemFree_v2", &MemoryMigrationRule::freeMigration},
           {"cudaFreeArray", &MemoryMigrationRule::freeMigration},
+          {"cudaFreeMipmappedArray", &MemoryMigrationRule::freeMigration},
           {"cudaFreeHost", &MemoryMigrationRule::freeMigration},
           {"cuMemFreeHost", &MemoryMigrationRule::freeMigration},
           {"cublasFree", &MemoryMigrationRule::freeMigration},
@@ -12820,6 +12828,26 @@ void TextureMemberSetRule::registerMatcher(MatchFinder &MF) {
                       has(AssignResLinearSize.bind("AssignResLinearSize")),
                       has(AssignResLinearDesc.bind("AssignResLinearDesc")))))));
   MF.addMatcher(LinearSetCompound.bind("LinearSetCompound"), this);
+  // myres.res.mipmap.mipmap = m;
+  auto AssignResMipmapMipmap = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(
+                member(hasName("mipmap")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("mipmap")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("MipmapArrayMember"))))))))));
+  // myres.resType = cudaResourceTypeMipmappedArray;
+  auto MipmapArraySetCompound = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(ObjectType, member(hasName("resType"))))
+                       .bind("ResTypeMemberExpr")),
+            hasRHS(declRefExpr(hasDeclaration(
+                enumConstantDecl(hasName("cudaResourceTypeMipmappedArray"))))),
+            hasParent(compoundStmt(
+                has(AssignResMipmapMipmap.bind("AssignResMipmapMipmap"))))));
+  MF.addMatcher(MipmapArraySetCompound.bind("MipmapArraySetCompound"), this);
 }
 
 void TextureMemberSetRule::removeRange(SourceRange R) {
@@ -13115,6 +13143,66 @@ void TextureMemberSetRule::runRule(const MatchFinder::MatchResult &Result) {
     removeRange(AssignArrayRange);
 
     emplaceTransformation(new InsertText(LastPos, std::move(InsertStr)));
+  } else if (auto BO = getNodeAsType<BinaryOperator>(
+                 Result, "MipmapArraySetCompound")) {
+    auto AssignArrayExpr =
+        getNodeAsType<BinaryOperator>(Result, "AssignResMipmapMipmap");
+    auto ResTypeMemberExpr =
+        getNodeAsType<MemberExpr>(Result, "ResTypeMemberExpr");
+    auto ArrayMemberExpr =
+        getNodeAsType<MemberExpr>(Result, "MipmapArrayMember");
+
+    if (!BO || !AssignArrayExpr || !ResTypeMemberExpr || !ArrayMemberExpr)
+      return;
+
+    // Compare the name of all resource obj
+    std::string ResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(ResTypeMemberExpr->getBase())) {
+      ResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string ArrayResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(ArrayMemberExpr->getBase())) {
+      ArrayResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+
+    if (ResName.compare(ArrayResName)) {
+      // Won't do pretty code if the resource name is different
+      return;
+    }
+    // Calculate insert location
+    std::string MemberOpt = ResTypeMemberExpr->isArrow() ? "->" : ".";
+    auto BORange = getStmtExpansionSourceRange(BO);
+    auto AssignArrayRange = getStmtExpansionSourceRange(AssignArrayExpr);
+
+    auto LastPos = BORange.getEnd();
+    if (SM.getDecomposedLoc(LastPos).second <
+        SM.getDecomposedLoc(AssignArrayRange.getEnd()).second) {
+      LastPos = AssignArrayRange.getEnd();
+    }
+
+    // Skip the last token
+    LastPos =
+        LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
+    // Skip ";"
+    LastPos =
+        LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
+    // Generate insert str
+    ExprAnalysis EA;
+    EA.analyze(AssignArrayExpr->getRHS());
+    std::string AssignArrayRHS = EA.getReplacedString();
+    std::string IndentStr = getIndent(AssignArrayExpr->getBeginLoc(), SM).str();
+    std::string InsertStr = getNL() + IndentStr + ResName + MemberOpt +
+                            "set_data(" + AssignArrayRHS + ");";
+    requestFeature(HelperFeatureEnum::device_ext);
+    // Remove all the assign expr
+    removeRange(BORange);
+    removeRange(AssignArrayRange);
+
+    emplaceTransformation(new InsertText(LastPos, std::move(InsertStr)));
   }
 }
 
@@ -13163,7 +13251,8 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
               "CUarray_format_enum", "CUdeviceptr", "CUresourcetype",
               "CUresourcetype_enum", "CUaddress_mode", "CUaddress_mode_enum",
               "CUfilter_mode", "CUfilter_mode_enum", "CUDA_RESOURCE_DESC",
-              "CUDA_TEXTURE_DESC", "CUtexref", "textureReference"))))))
+              "CUDA_TEXTURE_DESC", "CUtexref", "textureReference",
+              "cudaMipmappedArray", "cudaMipmappedArray_t"))))))
           .bind("texType"),
       this);
 
@@ -13187,8 +13276,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaBindTexture",
       "cudaBindTexture2D",
       "tex1D",
+      "tex1DLod",
       "tex2D",
+      "tex2DLod",
       "tex3D",
+      "tex3DLod",
       "tex1Dfetch",
       "tex1DLayered",
       "tex2DLayered",
@@ -13617,20 +13709,7 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
   }
 
   if (AssignedBO) {
-    static const std::unordered_map<std::string, HelperFeatureEnum>
-        ResourceTypeNameToSetFeature = {
-            {"devPtr", HelperFeatureEnum::device_ext},
-            {"desc", HelperFeatureEnum::device_ext},
-            {"array", HelperFeatureEnum::device_ext},
-            {"width", HelperFeatureEnum::device_ext},
-            {"height", HelperFeatureEnum::device_ext},
-            {"pitchInBytes", HelperFeatureEnum::device_ext},
-            {"sizeInBytes", HelperFeatureEnum::device_ext},
-            {"hArray", HelperFeatureEnum::device_ext},
-            {"format", HelperFeatureEnum::device_ext},
-            {"numChannels", HelperFeatureEnum::device_ext}};
-    requestFeature(ResourceTypeNameToSetFeature.at(
-                       TopMember->getMemberNameInfo().getAsString()));
+    requestFeature(HelperFeatureEnum::device_ext);
     emplaceTransformation(
         ReplaceMemberAssignAsSetMethod(AssignedBO, TopMember, FieldName));
   } else {
@@ -13819,6 +13898,14 @@ std::string TextureRule::getMemberAssignedValue(const Stmt *AssignStmt,
       return getTextureFlagsSetterInfo(RHS, SetMethodName);
     } else if (MemberName == "channelDesc") {
       SetMethodName = "channel";
+    } else if (MemberName == "maxAnisotropy") {
+      SetMethodName = "max_anisotropy";
+    } else if (MemberName == "mipmapFilterMode") {
+      SetMethodName = "mipmap_filtering";
+    } else if (MemberName == "minMipmapLevelClamp") {
+      SetMethodName = "min_mipmap_level_clamp";
+    } else if (MemberName == "maxMipmapLevelClamp") {
+      SetMethodName = "max_mipmap_level_clamp";
     }
     return ExprAnalysis::ref(RHS);
   } else {
