@@ -828,13 +828,19 @@ ENTRY_RENAMED("make_ulong3", MapNames::getClNamespace(false, false) + "ulong3")
 ENTRY_RENAMED("make_ulong4", MapNames::getClNamespace(false, false) + "ulong4")
 
 ENTRY_RENAMED("make_longlong1", "int64_t")
-ENTRY_RENAMED("make_longlong2", MapNames::getClNamespace(false, false) + "long2")
-ENTRY_RENAMED("make_longlong3", MapNames::getClNamespace(false, false) + "long3")
-ENTRY_RENAMED("make_longlong4", MapNames::getClNamespace(false, false) + "long4")
+ENTRY_RENAMED("make_longlong2",
+              MapNames::getClNamespace(false, false) + "vec<long long, 2>")
+ENTRY_RENAMED("make_longlong3",
+              MapNames::getClNamespace(false, false) + "vec<long long, 3>")
+ENTRY_RENAMED("make_longlong4",
+              MapNames::getClNamespace(false, false) + "vec<long long, 4>")
 ENTRY_RENAMED("make_ulonglong1", "uint64_t")
-ENTRY_RENAMED("make_ulonglong2", MapNames::getClNamespace(false, false) + "ulong2")
-ENTRY_RENAMED("make_ulonglong3", MapNames::getClNamespace(false, false) + "ulong3")
-ENTRY_RENAMED("make_ulonglong4", MapNames::getClNamespace(false, false) + "ulong4")
+ENTRY_RENAMED("make_ulonglong2", MapNames::getClNamespace(false, false) +
+                                     "vec<unsigned long long, 2>")
+ENTRY_RENAMED("make_ulonglong3", MapNames::getClNamespace(false, false) +
+                                     "vec<unsigned long long, 3>")
+ENTRY_RENAMED("make_ulonglong4", MapNames::getClNamespace(false, false) +
+                                     "vec<unsigned long long, 4>")
 
 ENTRY_RENAMED("make_float1", "float")
 ENTRY_RENAMED("make_float2", MapNames::getClNamespace(false, false) + "float2")

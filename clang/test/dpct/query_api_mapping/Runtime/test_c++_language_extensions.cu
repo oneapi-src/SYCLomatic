@@ -209,20 +209,20 @@
 // MAKE_LONGLONG2: CUDA API:
 // MAKE_LONGLONG2-NEXT:   make_longlong2(l1 /*long long*/, l2 /*long long*/);
 // MAKE_LONGLONG2-NEXT: Is migrated to:
-// MAKE_LONGLONG2-NEXT:   sycl::long2(l1, l2);
+// MAKE_LONGLONG2-NEXT:   sycl::vec<long long, 2>(l1, l2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_longlong3 | FileCheck %s -check-prefix=MAKE_LONGLONG3
 // MAKE_LONGLONG3: CUDA API:
 // MAKE_LONGLONG3-NEXT:   make_longlong3(l1 /*long long*/, l2 /*long long*/, l3 /*long long*/);
 // MAKE_LONGLONG3-NEXT: Is migrated to:
-// MAKE_LONGLONG3-NEXT:   sycl::long3(l1, l2, l3);
+// MAKE_LONGLONG3-NEXT:   sycl::vec<long long, 3>(l1, l2, l3);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_longlong4 | FileCheck %s -check-prefix=MAKE_LONGLONG4
 // MAKE_LONGLONG4: CUDA API:
 // MAKE_LONGLONG4-NEXT:   make_longlong4(l1 /*long long*/, l2 /*long long*/, l3 /*long long*/,
 // MAKE_LONGLONG4-NEXT:                  l4 /*long long*/);
 // MAKE_LONGLONG4-NEXT: Is migrated to:
-// MAKE_LONGLONG4-NEXT:   sycl::long4(l1, l2, l3, l4);
+// MAKE_LONGLONG4-NEXT:   sycl::vec<long long, 4>(l1, l2, l3, l4);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_ulonglong1 | FileCheck %s -check-prefix=MAKE_ULONGLONG1
 // MAKE_ULONGLONG1: CUDA API:
@@ -234,21 +234,21 @@
 // MAKE_ULONGLONG2: CUDA API:
 // MAKE_ULONGLONG2-NEXT:   make_ulonglong2(u1 /*unsigned long long*/, u2 /*unsigned long long*/);
 // MAKE_ULONGLONG2-NEXT: Is migrated to:
-// MAKE_ULONGLONG2-NEXT:   sycl::ulong2(u1, u2);
+// MAKE_ULONGLONG2-NEXT:   sycl::vec<unsigned long long, 2>(u1, u2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_ulonglong3 | FileCheck %s -check-prefix=MAKE_ULONGLONG3
 // MAKE_ULONGLONG3: CUDA API:
 // MAKE_ULONGLONG3-NEXT:   make_ulonglong3(u1 /*unsigned long long*/, u2 /*unsigned long long*/,
 // MAKE_ULONGLONG3-NEXT:                   u3 /*unsigned long long*/);
 // MAKE_ULONGLONG3-NEXT: Is migrated to:
-// MAKE_ULONGLONG3-NEXT:   sycl::ulong3(u1, u2, u3);
+// MAKE_ULONGLONG3-NEXT:   sycl::vec<unsigned long long, 3>(u1, u2, u3);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_ulonglong4 | FileCheck %s -check-prefix=MAKE_ULONGLONG4
 // MAKE_ULONGLONG4: CUDA API:
 // MAKE_ULONGLONG4-NEXT:   make_ulonglong4(u1 /*unsigned long long*/, u2 /*unsigned long long*/,
 // MAKE_ULONGLONG4-NEXT:                   u3 /*unsigned long long*/, u4 /*unsigned long long*/);
 // MAKE_ULONGLONG4-NEXT: Is migrated to:
-// MAKE_ULONGLONG4-NEXT:   sycl::ulong4(u1, u2, u3, u4);
+// MAKE_ULONGLONG4-NEXT:   sycl::vec<unsigned long long, 4>(u1, u2, u3, u4);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_float1 | FileCheck %s -check-prefix=MAKE_FLOAT1
 // MAKE_FLOAT1: CUDA API:
