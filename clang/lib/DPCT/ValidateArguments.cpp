@@ -96,14 +96,6 @@ bool makeInRootCanonicalOrSetDefaults(
   return true;
 }
 
-bool makeOutRootCanonicalOrSetDefaults(clang::tooling::UnifiedPath &OutRoot) {
-  if (OutRoot.getPath().empty()) {
-    if (!getDefaultOutRoot(OutRoot))
-      return false;
-  }
-  return true;
-}
-
 bool makeAnalysisScopeCanonicalOrSetDefaults(
     clang::tooling::UnifiedPath &AnalysisScope,
     const clang::tooling::UnifiedPath &InRoot) {
