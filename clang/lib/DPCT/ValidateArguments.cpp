@@ -24,7 +24,7 @@ namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
 // Set OutRoot to the current working directory.
-static bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar) {
+bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar) {
   SmallString<256> OutRoot;
   if (fs::current_path(OutRoot) != std::error_code()) {
     llvm::errs() << "Could not get current path.\n";
@@ -92,14 +92,6 @@ bool makeInRootCanonicalOrSetDefaults(
     llvm::errs() << "Error: '" << InRoot.getCanonicalPath()
                  << "' is not a directory.\n";
     return false;
-  }
-  return true;
-}
-
-bool makeOutRootCanonicalOrSetDefaults(clang::tooling::UnifiedPath &OutRoot) {
-  if (OutRoot.getPath().empty()) {
-    if (!getDefaultOutRoot(OutRoot))
-      return false;
   }
   return true;
 }

@@ -1001,8 +1001,9 @@ int runDPCT(int argc, const char **argv) {
     StopOnParseErr = true;
     Tool.setPrintErrorMessage(false);
   } else {
-    if (!DpctGlobalInfo::isAnalysisModeEnabled() &&
-        !makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+    IsUsingDefaultOutRoot = OutRoot.getPath().empty();
+    if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
+        !getDefaultOutRoot(OutRoot)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
