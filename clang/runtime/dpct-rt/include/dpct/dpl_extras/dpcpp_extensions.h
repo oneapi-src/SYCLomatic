@@ -570,8 +570,8 @@ private:
 /// Helper for Block Load
 enum load_algorithm{
 
-  subgroup_load;
-  workgroup_load;
+  subgroup_load,
+  workgroup_load
 
 };
 
@@ -584,9 +584,9 @@ class load {
 public:
   template <typename Item, load_algorithm ALGORITHM>
   __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
-                                    InputT (&items)[ITEMS_PER_THREAD]) {
+                                    InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
-  uint32_t workgroup_offset = linear_tid * ITEMS_PER_THREAD;  
+  uint32_t workgroup_offset = linear_tid * ITEMS_PER_WORK_ITEM;  
   #pragma unroll
     for (uint32_t idx = 0; workgroup_offset + idx < GROUP_WORK_ITEMS; idx++) {
       items[idx] = block_itr[workgroup_offset + idx];
@@ -598,7 +598,7 @@ public:
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
   #pragma unroll
-    for (uint32_t idx = 0, uint32_t workgroup_offset = linear_tid + (idx  * ITEMS_PER_WORK_ITEM); workgroup_offset < GROUP_WORK_ITEMS; idx++) {
+    for (uint32_t idx = 0, uint32_t workgroup_offset = (linear_tid + (idx  * ITEMS_PER_WORK_ITEM)); idx < GROUP_WORK_ITEMS; idx++) {
       items[idx] = block_itr[workgroup_offset];
     }
   }
@@ -610,7 +610,7 @@ public:
   
     size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
   #pragma unroll
-    for (uint32_t idx = 0, uint32_t workgroup_offset = linear_tid + (idx * ITEMS_PER_WORK_ITEM); idx < ITEMS_PER_WORK_ITEM; idx++) {
+    for (uint32_t idx = 0, uint32_t workgroup_offset = (linear_tid + (idx * ITEMS_PER_WORK_ITEM)); idx < ITEMS_PER_WORK_ITEM; idx++) {
       new (&items[idx])
           InputT(block_itr[subgroup_offset + workgroup_offset]);
     }
