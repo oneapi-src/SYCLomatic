@@ -572,11 +572,11 @@ template <size_t GROUP_WORK_ITEMS, int ITEMS_PER_THREAD, typename InputT,
           typename InputIteratorT>
 __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_THREAD]) {
+
+uint32_t workgroup_offset = linear_tid * ITEMS_PER_THREAD;  
 #pragma unroll
-  for (uint32_t idx = 0; idx < ITEMS_PER_THREAD; idx++) {
-    if ((linear_tid * ITEMS_PER_THREAD) + idx < GROUP_WORK_ITEMS) {
-      items[idx] = block_itr[(linear_tid * ITEMS_PER_THREAD) + idx];
-    }
+  for (uint32_t idx = 0; workgroup_offset + idx < GROUP_WORK_ITEMS; idx++) {
+    items[idx] = block_itr[workgroup_offset + idx];
   }
 }
 
@@ -584,11 +584,11 @@ template <size_t GROUP_WORK_ITEMS, int ITEMS_PER_WORK_ITEM, typename InputT,
           typename InputIteratorT>
 __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+
 #pragma unroll
-  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
-    if (linear_tid + (idx * ITEMS_PER_WORK_ITEM) < GROUP_WORK_ITEMS) {
-      items[idx] = block_itr[linear_tid + (idx * ITEMS_PER_WORK_ITEM)];
-    }
+  for (uint32_t idx = 0, uint32_t workgroup_offset = linear_tid + (idx  * ITEMS_PER_WORK_ITEM); workgroup_offset < GROUP_WORK_ITEMS; idx++) {
+    items[idx] = block_itr[workgroup_offset];
   }
 }
 
@@ -600,10 +600,9 @@ __dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
 
   size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
 #pragma unroll
-  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+  for (uint32_t idx = 0, uint32_t workgroup_offset = linear_tid + (idx * ITEMS_PER_WORK_ITEM); idx < ITEMS_PER_WORK_ITEM; idx++) {
     new (&items[idx])
-        InputT(block_itr[subgroup_offset +
-                         linear_tid + (idx * ITEMS_PER_WORK_ITEM)]);
+        InputT(block_itr[subgroup_offset + workgroup_offset]);
   }
 }
 
