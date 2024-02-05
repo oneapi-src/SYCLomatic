@@ -41,7 +41,7 @@
 // RUN: make clean
 // RUN: not dpct intercept-build make
 // RUN: FileCheck --match-full-lines --input-file %T/compile_commands.json %T/compile_commands.json_ref
-// RUN: dpct -in-root ./ -out-root out -p ./ --gen-build-script
+// RUN: dpct -in-root ./ -out-root out -p ./ --gen-build-script --cuda-include-path="%cuda-path/include"
 // RUN: cat %S/Makefile.dpct.ref  >%T/Makefile.dpct.check
 // RUN: cat %T/out/Makefile.dpct >> %T/Makefile.dpct.check
 // RUN: FileCheck --match-full-lines --input-file %T/Makefile.dpct.check %T/Makefile.dpct.check
