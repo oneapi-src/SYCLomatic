@@ -4731,6 +4731,60 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
   llvm::sys::path::append(TempPath, P2);
   return TempPath.str().str();
 }
+
+void createDirectories(const clang::tooling::UnifiedPath &FilePath,
+                       bool IgnoreExisting) {
+  if (sys::fs::exists(FilePath.getCanonicalPath()) &&
+      !sys::fs::is_directory(FilePath.getCanonicalPath())) {
+    ShowStatus(MigrationSaveOutFail);
+    dpctExit(MigrationSaveOutFail);
+  }
+  if (std::error_code EC = llvm::sys::fs::create_directories(
+          FilePath.getCanonicalPath(), IgnoreExisting)) {
+    std::string ErrMsg =
+        "[ERROR] Create Directory : " + FilePath.getPath().str() +
+        " fail: " + EC.message() + "\n";
+    clang::dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite); // Exit the execution directly.
+  }
+}
+
+void writeDataToFile(const std::string &FileName, const std::string &Data) {
+  RawFDOStream File(FileName);
+  File << Data;
+}
+
+void appendDataToFile(const std::string &FileName, const std::string &Data) {
+  RawFDOStream File(FileName, llvm::sys::fs::OpenFlags::OF_Append);
+  File << Data;
+}
+
+RawFDOStream::RawFDOStream(StringRef FileName)
+    : llvm::raw_fd_ostream(FileName, EC), FileName(FileName) {
+  if ((bool)EC) {
+    std::string ErrMsg = "[ERROR] Open: " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+RawFDOStream::RawFDOStream(StringRef FileName, llvm::sys::fs::OpenFlags OF)
+    : llvm::raw_fd_ostream(FileName, EC, OF), FileName(FileName) {
+  if ((bool)EC) {
+    std::string ErrMsg = "[ERROR] Open: " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+
+RawFDOStream::~RawFDOStream() {
+  this->close();
+  if ((bool)this->error()) {
+    std::string ErrMsg = "[ERROR] Close " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+
 std::set<const clang::DeclRefExpr *>
 matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
   std::set<const DeclRefExpr *> Set;

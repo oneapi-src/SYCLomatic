@@ -369,6 +369,12 @@ using image_matrix_p = image_matrix *;
 
 enum class image_data_type { matrix, linear, pitch, unsupport };
 
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+namespace experimental {
+class image_mem_wrapper;
+}
+#endif
+
 /// Image data info.
 class image_data {
 public:
@@ -387,7 +393,7 @@ public:
     _channel = matrix_data->get_channel();
   }
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
-  void set_data(sycl::ext::oneapi::experimental::image_mem *image_mem) {
+  void set_data(experimental::image_mem_wrapper *image_mem) {
     _type = image_data_type::matrix;
     _data = image_mem;
   }

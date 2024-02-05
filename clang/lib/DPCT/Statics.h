@@ -62,7 +62,7 @@ enum VerboseLevel {
 
 enum class EffortLevel : unsigned { EL_High = 0, EL_Medium, EL_Low, EL_NUM };
 
-void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
+void PrintMsg(const std::string &Msg, bool IsPrintOnNormal);
 
 void dumpAnalysisModeStatics(llvm::raw_ostream& OS);
 
