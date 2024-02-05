@@ -568,44 +568,56 @@ private:
 
 /// Load linear segment items into block format across threads
 /// Helper for Block Load
-template <size_t GROUP_WORK_ITEMS, int ITEMS_PER_THREAD, typename InputT,
+enum load_algorithm{
+
+  subgroup_load;
+  workgroup_load;
+
+};
+
+template <size_t GROUP_WORK_ITEMS,
+          size_t ITEMS_PER_WORK_ITEM,
+          load_algorithm ALGORITHM,
+          typename InputT,
           typename InputIteratorT>
-__dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
-                                  InputT (&items)[ITEMS_PER_THREAD]) {
-
-uint32_t workgroup_offset = linear_tid * ITEMS_PER_THREAD;  
-#pragma unroll
-  for (uint32_t idx = 0; workgroup_offset + idx < GROUP_WORK_ITEMS; idx++) {
-    items[idx] = block_itr[workgroup_offset + idx];
+class load {
+public:
+  template <typename Item, load_algorithm ALGORITHM>
+  __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
+                                    InputT (&items)[ITEMS_PER_THREAD]) {
+  
+  uint32_t workgroup_offset = linear_tid * ITEMS_PER_THREAD;  
+  #pragma unroll
+    for (uint32_t idx = 0; workgroup_offset + idx < GROUP_WORK_ITEMS; idx++) {
+      items[idx] = block_itr[workgroup_offset + idx];
+    }
   }
+  
+  template <typename Item, load_algorithm ALGORITHM>
+  __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
+                                    InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+  
+  #pragma unroll
+    for (uint32_t idx = 0, uint32_t workgroup_offset = linear_tid + (idx  * ITEMS_PER_WORK_ITEM); workgroup_offset < GROUP_WORK_ITEMS; idx++) {
+      items[idx] = block_itr[workgroup_offset];
+    }
+  }
+  
+  template <typename Item, load_algorithm ALGORITHM>
+  __dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
+                                             InputIteratorT block_itr,
+                                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+  
+    size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
+  #pragma unroll
+    for (uint32_t idx = 0, uint32_t workgroup_offset = linear_tid + (idx * ITEMS_PER_WORK_ITEM); idx < ITEMS_PER_WORK_ITEM; idx++) {
+      new (&items[idx])
+          InputT(block_itr[subgroup_offset + workgroup_offset]);
+    }
 }
 
-template <size_t GROUP_WORK_ITEMS, int ITEMS_PER_WORK_ITEM, typename InputT,
-          typename InputIteratorT>
-__dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
-                                  InputT (&items)[ITEMS_PER_WORK_ITEM]) {
-
-
-#pragma unroll
-  for (uint32_t idx = 0, uint32_t workgroup_offset = linear_tid + (idx  * ITEMS_PER_WORK_ITEM); workgroup_offset < GROUP_WORK_ITEMS; idx++) {
-    items[idx] = block_itr[workgroup_offset];
-  }
-}
-
-template <size_t GROUP_WORK_ITEMS,   int ITEMS_PER_WORK_ITEM, typename Item,
-          typename InputT, typename InputIteratorT>
-__dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
-                                           InputIteratorT block_itr,
-                                           InputT (&items)[ITEMS_PER_WORK_ITEM]) {
-
-  size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
-#pragma unroll
-  for (uint32_t idx = 0, uint32_t workgroup_offset = linear_tid + (idx * ITEMS_PER_WORK_ITEM); idx < ITEMS_PER_WORK_ITEM; idx++) {
-    new (&items[idx])
-        InputT(block_itr[subgroup_offset + workgroup_offset]);
-  }
-}
-
+private:
+};
 /// Perform a reduction of the data elements assigned to all threads in the
 /// group.
 ///
