@@ -301,20 +301,12 @@ static void getCompileInfo(
     // needs to be a existing file path passed to DpctFileInfo referred in
     // rewriteFileName() to avoid potential crash issue.
     rewriteFileName(FileName);
-
-    printf("FileName: [%s]\n", FileName.getCanonicalPath().str().c_str());
-    printf("InRoot: [%s]\n", InRoot.getCanonicalPath().str().c_str());
-    printf("OutRoot: [%s]\n", OutRoot.getCanonicalPath().str().c_str());
     rewriteDir(FileName, InRoot, OutRoot);
-    printf("New FileName: [%s]\n", FileName.getCanonicalPath().str().c_str());
-
 
     if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
       SmallString<512> OutDirectory(FileName.getCanonicalPath());
-      printf("00: OutDirectory: [%s]\n", OutDirectory.c_str());
       llvm::sys::path::replace_path_prefix(OutDirectory,
                                            OutRoot.getCanonicalPath(), ".");
-      printf("11: OutDirectory: [%s]\n", OutDirectory.c_str());
       clang::tooling::CompilationInfo CmpInfo;
       CmpInfo.MigratedFileName = OutDirectory.c_str();
       CmpInfo.CompileOptions = NewOptions;
@@ -322,11 +314,8 @@ static void getCompileInfo(
       CmdsMap[Orig2ObjMap[OrigFileName]] = CmpInfo;
     } else {
       SmallString<512> OutDirectory(OrigFileName.getCanonicalPath());
-      printf("22: OutDirectory: [%s]\n", OutDirectory.c_str());
-      printf("22: OutRoot: [%s]\n", OutRoot.getCanonicalPath().str().c_str());
       llvm::sys::path::replace_path_prefix(OutDirectory,
                                            InRoot.getCanonicalPath(), ".");
-      printf("33: OutDirectory: [%s]\n", OutDirectory.c_str());
       clang::tooling::CompilationInfo CmpInfo;
       CmpInfo.MigratedFileName = OutDirectory.c_str();
       CmpInfo.CompileOptions = NewOptions;
@@ -612,32 +601,6 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool,
 
   if (!NeedMergetYaml)
     CompileCmdsPerTarget = NewCompileCmdsMap;
-
- printf("666666666666666666666666666666666666666\n");
-  for (const auto &Entry : CompileTargetsMap) {
-    printf("FilePath [%s]\n", Entry.first.getCanonicalPath().str().c_str());
-    printf("FilePath  getPath [%s]\n", Entry.first.getPath().str().c_str());
-    for(auto &cmd: Entry.second) {
-      printf("\t-->[%s]\n", cmd.c_str());
-    }
-    printf("\n");
-  }
-+  printf("666666666666666666666666666666666666666\n");
-
-
-
-  printf("\n\n\n***********************************************\n");
-  for (const auto &Entry : CompileCmdsPerTarget) {
-    std::string FileName = Entry.first.getCanonicalPath().str();
-    printf("CompileCmdsPerTarget target: %s\n", FileName.c_str());
-    for (const auto &Option : Entry.second) {
-      printf("  ->MigratedFileName:%s\n", Option.MigratedFileName.c_str());
-      printf("  ->CompileOptions:%s\n", Option.CompileOptions.c_str());
-      printf("  ->Compiler:%s\n", Option.Compiler.c_str());
-    }
-    printf("\n");
-  }
-  printf("***************************************************\n\n");
 
   genMakefile(Tool, OutRoot, BuildScriptName, CompileCmdsPerTarget,
               ToolPerTarget);
