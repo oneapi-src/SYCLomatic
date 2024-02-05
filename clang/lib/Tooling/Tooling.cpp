@@ -909,6 +909,10 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
                                       ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster =
+            combineAdjusters(std::move(CudaArgsAdjuster),
+                             getInsertArgumentAdjuster(
+                                 "-D__NVCC__", ArgumentInsertPosition::BEGIN));
       }
 
       CommandLine = getInsertArgumentAdjuster(
