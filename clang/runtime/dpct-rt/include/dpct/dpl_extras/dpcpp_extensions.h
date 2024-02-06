@@ -586,20 +586,36 @@ public:
   __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
-  uint32_t workgroup_offset = linear_tid * ITEMS_PER_WORK_ITEM;  
-  #pragma unroll
-    for (uint32_t idx = 0; workgroup_offset + idx < GROUP_WORK_ITEMS; idx++) {
-      items[idx] = block_itr[workgroup_offset + idx];
+  uint32_t workgroup_offset = linear_tid * ITEMS_PER_WORK_ITEM;
+  if (workgroup_offset > GROUP_WORK_ITEMS){
+      uint32_t final_idx = (GROUP_WORK_ITEMS - workgroup_offset);
+      for (uint32_t idx = 0; idx < final_idx ; idx++) {
+        items[idx] = block_itr[workgroup_offset + idx];
+      }
+    }
+    else{
+    #pragma unroll
+      for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+        items[idx] = block_itr[workgroup_offset + idx];
+      }
     }
   }
   
   template <typename Item>
   __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
-  
-  #pragma unroll
-    for (uint32_t idx = 0; linear_tid + (idx  * ITEMS_PER_WORK_ITEM) < GROUP_WORK_ITEMS; idx++) {
-      items[idx] = block_itr[linear_tid + (idx  * ITEMS_PER_WORK_ITEM)];
+
+    if (linear_tid + ((ITEMS_PER_WORK_ITEM - 1)*ITEMS_PER_WORK_ITEM) > GROUP_WORK_ITEMS){
+      uint32_t final_idx = (GROUP_WORK_ITEMS - linear_tid)/ITEMS_PER_WORK_ITEM;
+      for (uint32_t idx = 0; idx < final_idx ; idx++) {
+        items[idx] = block_itr[linear_tid + (idx  * ITEMS_PER_WORK_ITEM)];
+      }
+    }
+    else{
+    #pragma unroll
+      for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+        items[idx] = block_itr[linear_tid + (idx  * GROUP_WORK_ITEMS)];
+      }
     }
   }
   
@@ -609,12 +625,21 @@ public:
                                              InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
     size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
-  #pragma unroll
-    for (uint32_t idx = 0; linear_tid + (idx * ITEMS_PER_WORK_ITEM) < ITEMS_PER_WORK_ITEM; idx++) {
-      new (&items[idx])
+    if (linear_tid + ((ITEMS_PER_WORK_ITEM - 1)*ITEMS_PER_WORK_ITEM) > GROUP_WORK_ITEMS){
+      uint32_t final_idx = (GROUP_WORK_ITEMS - linear_tid)/ITEMS_PER_WORK_ITEM;
+      for (uint32_t idx = 0; idx < final_idx ; idx++) {
+        new (&items[idx])
           InputT(block_itr[subgroup_offset + linear_tid + (idx * ITEMS_PER_WORK_ITEM)]);
+      }
     }
-}
+    else{
+    #pragma unroll
+      for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+        new (&items[idx])
+          InputT(block_itr[subgroup_offset + linear_tid + (idx * GROUP_WORK_ITEMS)]);
+      }
+    }
+ }
 
 private:
 };
