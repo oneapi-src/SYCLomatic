@@ -570,8 +570,8 @@ private:
 /// Helper for Block Load
 enum load_algorithm{
 
-  subgroup_load,
-  workgroup_load
+  blocked,
+  striped
 
 };
 
@@ -580,7 +580,7 @@ template <size_t GROUP_WORK_ITEMS,
           load_algorithm ALGORITHM,
           typename InputT,
           typename InputIteratorT>
-class load {
+class workgroup_load {
 public:
   template <typename Item>
   __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
@@ -600,7 +600,17 @@ public:
       }
     }
   }
-  
+
+private:
+};
+
+template <size_t GROUP_WORK_ITEMS,
+          size_t ITEMS_PER_WORK_ITEM,
+          load_algorithm ALGORITHM,
+          typename InputT,
+          typename InputIteratorT>
+class subgroup_load {
+public:
   template <typename Item>
   __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
@@ -618,7 +628,7 @@ public:
       }
     }
   }
-  
+
   template <typename Item>
   __dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
                                              InputIteratorT block_itr,
