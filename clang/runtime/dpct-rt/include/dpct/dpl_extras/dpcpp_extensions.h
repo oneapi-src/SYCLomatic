@@ -571,7 +571,8 @@ private:
 enum load_algorithm{
 
   blocked,
-  striped
+  striped,
+  warp_striped
 
 };
 
@@ -582,7 +583,7 @@ template <size_t GROUP_WORK_ITEMS,
           typename InputIteratorT>
 class workgroup_load {
 public:
-  template <typename Item>
+  
   __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
@@ -608,10 +609,10 @@ template <size_t GROUP_WORK_ITEMS,
           size_t ITEMS_PER_WORK_ITEM,
           load_algorithm ALGORITHM,
           typename InputT,
-          typename InputIteratorT>
+          typename InputIteratorT,
+          typename Item>
 class subgroup_load {
 public:
-  template <typename Item>
   __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
@@ -629,7 +630,7 @@ public:
     }
   }
 
-  template <typename Item>
+  
   __dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
                                              InputIteratorT block_itr,
                                              InputT (&items)[ITEMS_PER_WORK_ITEM]) {
@@ -653,6 +654,28 @@ public:
 
 private:
 };
+
+ __dpct_inline__ void load(size_t GROUP_WORK_ITEMS,
+                           size_t ITEMS_PER_WORK_ITEM,
+                           load_algorithm ALGORITHM,
+                           InputT (&items)[ITEMS_PER_WORK_ITEM],
+                           InputIteratorT block_itr,
+                           Item &item){
+
+   if (ALGORITHM == blocked){
+      workgroup_load<GROUP_WORK_ITEMS, ITEMS_PER_WORK_ITEM, blocked> wg_load;
+      wg_load.load_blocked(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+   }
+   else if(ALGORITHM == striped){
+      subgroup_load<GROUP_WORK_ITEMS, ITEMS_PER_WORK_ITEM, blocked, item> sg_load;
+      sg_load.load_striped(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);  
+   }
+   else{
+      subgroup_load<GROUP_WORK_ITEMS, ITEMS_PER_WORK_ITEM, warp_striped, item> sg_load;
+      sg_load.load_subgroup_striped(item, linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]); 
+   }
+}
+
 /// Perform a reduction of the data elements assigned to all threads in the
 /// group.
 ///
