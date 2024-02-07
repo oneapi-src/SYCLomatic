@@ -17,6 +17,7 @@
 #include "Statics.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
@@ -24,6 +25,7 @@
 #include "clang/Tooling/Core/Replacement.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Errc.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
@@ -4752,18 +4754,25 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
 
 void createDirectories(const clang::tooling::UnifiedPath &FilePath,
                        bool IgnoreExisting) {
-  if (sys::fs::exists(FilePath.getCanonicalPath()) &&
-      !sys::fs::is_directory(FilePath.getCanonicalPath())) {
-    ShowStatus(MigrationSaveOutFail);
-    dpctExit(MigrationSaveOutFail);
-  }
   if (std::error_code EC = llvm::sys::fs::create_directories(
-          FilePath.getCanonicalPath(), IgnoreExisting)) {
-    std::string ErrMsg =
-        "[ERROR] Create Directory : " + FilePath.getPath().str() +
-        " fail: " + EC.message() + "\n";
-    clang::dpct::PrintMsg(ErrMsg);
-    dpctExit(MigrationErrorCannotWrite); // Exit the execution directly.
+          FilePath.getCanonicalPath(), false)) {
+    if (EC == llvm::errc::file_exists) {
+      if (IgnoreExisting &&
+          llvm::sys::fs::is_directory(FilePath.getCanonicalPath())) {
+        auto perm = sys::fs::getPermissions(FilePath.getCanonicalPath());
+        if (perm && (perm.get() & sys::fs::perms::owner_all)) {
+          return;
+        }
+      }
+      ShowStatus(MigrationSaveOutFail);
+      dpctExit(MigrationSaveOutFail);
+    } else {
+      std::string ErrMsg =
+          "[ERROR] Create Directory : " + FilePath.getPath().str() +
+          " fail: " + EC.message() + "\n";
+      clang::dpct::PrintMsg(ErrMsg);
+      dpctExit(MigrationErrorCannotWrite); // Exit the execution directly.
+    }
   }
 }
 
