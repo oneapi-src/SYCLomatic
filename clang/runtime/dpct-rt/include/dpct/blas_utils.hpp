@@ -24,11 +24,11 @@ namespace blas {
 class descriptor {
 public:
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
-  const sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
+  sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
   static inline void set_saved_queue(queue_ptr q_ptr) noexcept {
     _saved_queue_ptr = q_ptr;
   }
-  static inline const sycl::queue &get_saved_queue() const noexcept {
+  static inline sycl::queue &get_saved_queue() noexcept {
     return *_saved_queue_ptr;
   }
 
