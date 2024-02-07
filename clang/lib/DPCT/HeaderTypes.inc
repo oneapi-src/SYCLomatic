@@ -41,6 +41,8 @@ STD_HEADER(Functional, "<functional>")
 STD_HEADER(Array, "<array>")
 STD_HEADER(Tuple, "<tuple>")
 STD_HEADER(SYCL_Math, "<sycl/ext/intel/math.hpp>")
+STD_HEADER(SYCL_Experimental_CUDA_Builtins, "<sycl/ext/oneapi/experimental/cuda/builtins.hpp>")
+
 #ifdef _WIN32
 STD_HEADER(DL, "<libloaderapi.h>")
 #else

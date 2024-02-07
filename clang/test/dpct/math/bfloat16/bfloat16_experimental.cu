@@ -5,6 +5,7 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/math/bfloat16/bfloat16_experimental/bfloat16_experimental.dp.cpp -o %T/math/bfloat16/bfloat16_experimental/bfloat16_experimental.dp.o %}
 
 #include "cuda_bf16.h"
+// CHECK: #include <sycl/ext/oneapi/experimental/cuda/builtins.hpp>
 
 __global__ void kernelFuncBfloat16Arithmetic() {
   // CHECK: sycl::ext::oneapi::bfloat16 bf16, bf16_1, bf16_2, bf16_3;
@@ -252,6 +253,20 @@ __global__ void kernelFuncBfloat162Math() {
   bf162_1 = h2sqrt(bf162);
   // CHECK: bf162_1 = sycl::ext::oneapi::experimental::trunc(bf162);
   bf162_1 = h2trunc(bf162);
+}
+
+// CHECK: void test_ldg_tex_cache_read(sycl::ext::oneapi::bfloat16 *deviceArrayBFloat16){
+// CHECK-NEXT:   sycl::ext::oneapi::bfloat16 bf16, bf16_2;
+__global__ void test_ldg_tex_cache_read(__nv_bfloat16 *deviceArrayBFloat16){
+  __nv_bfloat16 bf16, bf16_2;
+  double d;
+
+  // CHECK: bf16 = sycl::ext::oneapi::bfloat16(d);
+  bf16 = __double2bfloat16(d);
+  //CHECK: bf16_2 =  sycl::ext::oneapi::experimental::cuda::ldg(deviceArrayBFloat16);
+  bf16_2 = __ldg(deviceArrayBFloat16);
+  //CHECK: bf16_2 =  sycl::ext::oneapi::experimental::cuda::ldg(&bf16);
+  bf16_2 = __ldg(&bf16);
 }
 
 int main() { return 0; }

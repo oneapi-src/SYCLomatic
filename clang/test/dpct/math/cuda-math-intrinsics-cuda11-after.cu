@@ -112,18 +112,6 @@ __global__ void kernelFuncHalf(__half *deviceArrayHalf) {
   // CHECK-NEXT: */
   // CHECK-NEXT: h2_2 = h2;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: h_2 = *deviceArrayHalf;
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: h_2 = h;
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: h2_2 = h2;
-  // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldlu call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
   // CHECK-NEXT: */
   // CHECK-NEXT: h_2 = *deviceArrayHalf;
@@ -147,9 +135,6 @@ __global__ void kernelFuncHalf(__half *deviceArrayHalf) {
   h_2 = __ldcv(deviceArrayHalf);
   h_2 = __ldcv(&h);
   h2_2 = __ldcv(&h2);
-  h_2 = __ldg(deviceArrayHalf);
-  h_2 = __ldg(&h);
-  h2_2 = __ldg(&h2);
   h_2 = __ldlu(deviceArrayHalf);
   h_2 = __ldlu(&h);
   h2_2 = __ldlu(&h2);

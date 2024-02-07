@@ -3,29 +3,18 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/cpp_lang_extensions/cpp_lang_extensions.dp.cpp -o %T/cpp_lang_extensions/cpp_lang_extensions.dp.o %}
 
 #include "cpp_lang_extensions.cuh"
+// CHECK: #include <sycl/ext/oneapi/experimental/cuda/builtins.hpp>
 
 __device__ float df(float f) {
   float a[23];
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: f;
+  // CHECK: sycl::ext::oneapi::experimental::cuda::ldg(&f);
   __ldg(&f);
   int *pi;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: *pi;
+  // CHECK: sycl::ext::oneapi::experimental::cuda::ldg(pi);
   __ldg(pi);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: *(pi + 2);
+  // CHECK: sycl::ext::oneapi::experimental::cuda::ldg(pi + 2);
   __ldg(pi + 2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: return 45 * a[23] * f * 23;
+  // CHECK: return 45 * sycl::ext::oneapi::experimental::cuda::ldg(&a[23]) * f * 23;
   return 45 * __ldg(&a[23]) * f * 23;
 }
 

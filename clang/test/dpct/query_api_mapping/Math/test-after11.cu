@@ -264,10 +264,10 @@
 // LDG-NEXT:   /* 3 */ __ldg(b /*__nv_bfloat16 **/);
 // LDG-NEXT:   /* 4 */ __ldg(b2 /*__nv_bfloat162 **/);
 // LDG-NEXT: Is migrated to:
-// LDG-NEXT:   /* 1 */ *h;
-// LDG-NEXT:   /* 2 */ *h2;
-// LDG-NEXT:   /* 3 */ *b;
-// LDG-NEXT:   /* 4 */ *b2;
+// LDG-NEXT:   /* 1 */ sycl::ext::oneapi::experimental::cuda::ldg(h);
+// LDG-NEXT:   /* 2 */ sycl::ext::oneapi::experimental::cuda::ldg(h2);
+// LDG-NEXT:   /* 3 */ sycl::ext::oneapi::experimental::cuda::ldg(b);
+// LDG-NEXT:   /* 4 */ sycl::ext::oneapi::experimental::cuda::ldg(b2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__ldlu | FileCheck %s -check-prefix=LDLU
 // LDLU: CUDA API:

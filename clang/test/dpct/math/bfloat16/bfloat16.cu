@@ -483,18 +483,6 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   // CHECK-NEXT:   */
   // CHECK-NEXT:   bf162_2 = bf162;
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT:   */
-  // CHECK-NEXT:   bf16_2 = *deviceArrayBFloat16;
-  // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT:   */
-  // CHECK-NEXT:   bf16_2 = bf16;
-  // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
-  // CHECK-NEXT:   */
-  // CHECK-NEXT:   bf162_2 = bf162;
-  // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldlu call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   bf16_2 = *deviceArrayBFloat16;
@@ -518,9 +506,6 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   bf16_2 = __ldcv(deviceArrayBFloat16);
   bf16_2 = __ldcv(&bf16);
   bf162_2 = __ldcv(&bf162);
-  bf16_2 = __ldg(deviceArrayBFloat16);
-  bf16_2 = __ldg(&bf16);
-  bf162_2 = __ldg(&bf162);
   bf16_2 = __ldlu(deviceArrayBFloat16);
   bf16_2 = __ldlu(&bf16);
   bf162_2 = __ldlu(&bf162);
