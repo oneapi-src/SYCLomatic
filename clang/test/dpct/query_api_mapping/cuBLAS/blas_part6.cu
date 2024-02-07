@@ -61,7 +61,7 @@
 // cublasSetStream: CUDA API:
 // cublasSetStream-NEXT:   cublasSetStream(handle /*cublasHandle_t*/, stream /*cudaStream_t*/);
 // cublasSetStream-NEXT: Is migrated to:
-// cublasSetStream-NEXT:   handle->set_queue_ptr(stream);
+// cublasSetStream-NEXT:   handle->set_queue(stream);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZdgmm | FileCheck %s -check-prefix=cublasZdgmm
 // cublasZdgmm: CUDA API:

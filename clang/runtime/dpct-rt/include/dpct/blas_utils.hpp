@@ -23,13 +23,14 @@ namespace dpct {
 namespace blas {
 class descriptor {
 public:
-  queue_ptr get_queue_ptr() { return _queue_ptr; }
-  void set_queue_ptr(queue_ptr q_ptr) { _queue_ptr = q_ptr; }
-  sycl::queue &get_queue() { return *_queue_ptr; }
-  static inline void set_saved_queue_ptr(queue_ptr q_ptr) {
+  void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
+  const sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
+  static inline void set_saved_queue(queue_ptr q_ptr) noexcept {
     _saved_queue_ptr = q_ptr;
   }
-  static inline queue_ptr get_saved_queue_ptr() { return _saved_queue_ptr; }
+  static inline const sycl::queue &get_saved_queue() const noexcept {
+    return *_saved_queue_ptr;
+  }
 
 private:
   queue_ptr _queue_ptr = &dpct::get_default_queue();

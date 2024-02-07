@@ -1092,6 +1092,17 @@ public:
   }
 };
 
+template <class ET> class ParenExprPrinter {
+  ET E;
+
+public:
+  ParenExprPrinter(ET &&E) : E(std::forward<ET>(E)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    PairedPrinter PP(Stream, "(", ")");
+    dpct::print(Stream, E);
+  }
+};
+
 template <UnaryOperatorKind UO, class ArgValueT>
 class UnaryOperatorPrinter {
   ArgValueT ArgValue;

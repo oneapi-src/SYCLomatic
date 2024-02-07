@@ -160,7 +160,7 @@
 // cublasGetStream: CUDA API:
 // cublasGetStream-NEXT:   cublasGetStream(handle /*cublasHandle_t*/, stream /*cudaStream_t **/);
 // cublasGetStream-NEXT: Is migrated to:
-// cublasGetStream-NEXT:   *stream = handle->get_queue_ptr();
+// cublasGetStream-NEXT:   *stream = &(handle->get_queue());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasScopy | FileCheck %s -check-prefix=cublasScopy
 // cublasScopy: CUDA API:

@@ -27,14 +27,15 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasDestroy_v2", ARG(0), false,
                                              "reset"))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasSetStream_v2", ARG(0), true,
-                                             "set_queue_ptr", ARG(1)))
+                                             "set_queue", ARG(1)))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasGetStream_v2", DEREF(1),
-                                        MEMBER_CALL(ARG(0), true,
-                                                    "get_queue_ptr")))
+                                        UO(UnaryOperatorKind::UO_AddrOf,
+                                           PAREN(MEMBER_CALL(ARG(0), true,
+                                                             "get_queue")))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSetKernelStream",
-    CALL(MapNames::getDpctNamespace() + "blas::descriptor::set_saved_queue_ptr",
+    CALL(MapNames::getDpctNamespace() + "blas::descriptor::set_saved_queue",
          ARG(0))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(

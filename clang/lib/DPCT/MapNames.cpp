@@ -1714,7 +1714,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasSetStream_v2", "handle = s"},
       {"cublasGetStream_v2", "s = handle"},
       {"cublasSetKernelStream",
-       getDpctNamespace() + "blas::descriptor::set_saved_queue_ptr"},
+       getDpctNamespace() + "blas::descriptor::set_saved_queue"},
       {"cublasSgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasDgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasCgemm_v2", "oneapi::mkl::blas::column_major::gemm"},

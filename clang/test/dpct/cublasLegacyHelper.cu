@@ -83,8 +83,8 @@ int main() {
 
   // CHECK: dpct::queue_ptr stream1;
   // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
-  // CHECK-NEXT: dpct::blas::descriptor::set_saved_queue_ptr(stream1);
-  // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(dpct::blas::descriptor::set_saved_queue_ptr(stream1)));
+  // CHECK-NEXT: dpct::blas::descriptor::set_saved_queue(stream1);
+  // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(dpct::blas::descriptor::set_saved_queue(stream1)));
   cudaStream_t stream1;
   cudaStreamCreate(&stream1);
   cublasSetKernelStream(stream1);
