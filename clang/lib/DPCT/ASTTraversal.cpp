@@ -28,7 +28,6 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
-#include "Schema.h"
 #include "WMMAAPIMigration.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
@@ -8432,9 +8431,9 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       if (DRE->isLValue()) {
         DebugArgsString += ", ";
         DebugArgsStringSYCL += ", ";
-        std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
-        DebugArgsString += SchemaStr + ", ";
-        DebugArgsStringSYCL += SchemaStr + ", ";
+        std::string VarNameStr = DRE->getNameInfo().getAsString();
+        DebugArgsString += VarNameStr + ", ";
+        DebugArgsStringSYCL += VarNameStr + ", ";
         DebugArgsString += "(long *)&" + getStmtSpelling(Arg);
         DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg);
       }

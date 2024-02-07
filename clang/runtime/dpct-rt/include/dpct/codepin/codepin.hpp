@@ -8,8 +8,7 @@
 #ifndef __DPCT_CODEPIN_HPP__
 #define __DPCT_CODEPIN_HPP__
 
-#include "detail/json.hpp"
-#include "detail/schema.hpp"
+#include "detail/dispatcher.hpp"
 #include <memory>
 #ifdef __NVCC__
 #include <cuda_runtime.h>
@@ -26,7 +25,7 @@ inline void synchronize(cudaStream_t stream) { cudaStreamSynchronize(stream); }
 /// Generate API check point prolog.
 /// \param api_name The UID of the function call.
 /// \param stream The CUDA stream to synchronize the command execution.
-/// \param args The schema string and variable value pair list.
+/// \param args The var name string and variable value pair list.
 template <class... Args>
 void gen_prolog_API_CP(const std::string &api_name, cudaStream_t stream,
                        Args... args) {
@@ -37,7 +36,7 @@ void gen_prolog_API_CP(const std::string &api_name, cudaStream_t stream,
 /// Generate API check point epilog.
 /// \param api_name The UID of the function call.
 /// \param stream The CUDA stream to synchronize the command execution.
-/// \param args The schema string and variable value pair list.
+/// \param args The var name string and variable value pair list.
 template <class... Args>
 void gen_epilog_API_CP(const std::string &api_name, cudaStream_t stream,
                        Args... args) {
@@ -49,7 +48,7 @@ inline void synchronize(sycl::queue *q) { q->wait(); }
 /// Generate API check point prolog.
 /// \param api_name The UID of the function call.
 /// \param queue The sycl queue to synchronize the command execution.
-/// \param args The schema string and variable value pair list.
+/// \param args The var name string and variable value pair list.
 template <class... Args>
 void gen_prolog_API_CP(const std::string &api_name, sycl::queue *queue,
                        Args... args) {
@@ -60,7 +59,7 @@ void gen_prolog_API_CP(const std::string &api_name, sycl::queue *queue,
 /// Generate API check point epilog.
 /// \param api_name The UID of the function call.
 /// \param stream The sycl queue to synchronize the command execution.
-/// \param args The schema string and variable value pair list.
+/// \param args The var name string and variable value pair list.
 template <class... Args>
 void gen_epilog_API_CP(const std::string &api_name, sycl::queue *queue,
                        Args... args) {
@@ -72,11 +71,6 @@ inline std::map<void *, uint32_t> &get_ptr_size_map() {
   return dpct::experimental::detail::get_ptr_size_map();
 }
 
-inline uint32_t get_pointer_size_in_bytes_from_map(void *ptr) {
-  const std::map<void *, uint32_t> &ptr_size_map = get_ptr_size_map();
-  const auto &it = ptr_size_map.find(ptr);
-  return (it != ptr_size_map.end()) ? it->second : 0;
-}
 
 } // namespace experimental
 } // namespace dpct
