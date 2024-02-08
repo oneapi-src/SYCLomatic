@@ -703,6 +703,15 @@ makeNewExprCreator(std::string TypeName,
                                                                    Args...);
 }
 
+template <class... ArgsT>
+inline std::function<DeclPrinter<ArgsT...>(const CallExpr *)>
+makeDeclCreator(std::string Type, std::string Var,
+                std::function<ArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<DeclPrinter<ArgsT...>, std::string, std::string,
+                        std::function<ArgsT(const CallExpr *)>...>(Type, Var,
+                                                                   Args...);
+}
+
 template <class SubExprT>
 inline std::function<TypenameExprPrinter<SubExprT>(const CallExpr *)>
 makeTypenameExprCreator(
@@ -2131,6 +2140,7 @@ public:
                                         DOES_BASE_VALUE_NEED_CONST,            \
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
+#define DECL(TYPE, VAR, ...) makeDeclCreator(TYPE, VAR, __VA_ARGS__)
 #define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
 #define ZERO_INITIALIZER(SUBEXPR) makeZeroInitializerCreator(SUBEXPR)
 #define SUBGROUP                                                               \

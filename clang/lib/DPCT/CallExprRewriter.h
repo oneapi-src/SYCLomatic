@@ -1162,6 +1162,20 @@ public:
   }
 };
 
+template <class... ArgsT>
+class DeclPrinter : CallExprPrinter<StringRef, ArgsT...> {
+  std::string Type;
+  using Base = CallExprPrinter<StringRef, ArgsT...>;
+
+public:
+  DeclPrinter(StringRef Type, StringRef Var, ArgsT &&...Args)
+      : Base(Var, std::forward<ArgsT>(Args)...), Type(Type.str()) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << Type << " ";
+    Base::print(Stream);
+  }
+};
+
 template<class SubExprT>
 class TypenameExprPrinter {
   SubExprT SubExpr;

@@ -1393,22 +1393,6 @@ void MapNames::setExplicitNamespaceMap() {
   // BLAS functions names and parameters replacements information mapping
   BLASFuncReplInfoMap = {
       /*BLAS level 1*/
-      {"cublasIsamax_v2",
-       {std::vector<int>{2, 4}, std::vector<int>{},
-        std::vector<std::string>{"float", "int"}, std::vector<int>{}, -1, -1,
-        -1, "oneapi::mkl::blas::column_major::iamax"}},
-      {"cublasIdamax_v2",
-       {std::vector<int>{2, 4}, std::vector<int>{},
-        std::vector<std::string>{"double", "int"}, std::vector<int>{}, -1, -1,
-        -1, "oneapi::mkl::blas::column_major::iamax"}},
-      {"cublasIsamin_v2",
-       {std::vector<int>{2, 4}, std::vector<int>{},
-        std::vector<std::string>{"float", "int"}, std::vector<int>{}, -1, -1,
-        -1, "oneapi::mkl::blas::column_major::iamin"}},
-      {"cublasIdamin_v2",
-       {std::vector<int>{2, 4}, std::vector<int>{},
-        std::vector<std::string>{"double", "int"}, std::vector<int>{}, -1, -1,
-        -1, "oneapi::mkl::blas::column_major::iamin"}},
       {"cublasSasum_v2",
        {std::vector<int>{2, 4}, std::vector<int>{},
         std::vector<std::string>{"float", "float"}, std::vector<int>{}, -1, -1,
@@ -1832,6 +1816,21 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCdgmm_64", "oneapi::mkl::blas::column_major::dgmm"},
       {"cublasZdgmm_64", "oneapi::mkl::blas::column_major::dgmm"},
       {"cublasIsamax_v2_64", "oneapi::mkl::blas::column_major::imax"},
+      {"cublasIdamax_v2_64", "oneapi::mkl::blas::column_major::imax"},
+      {"cublasIcamax_v2_64", "oneapi::mkl::blas::column_major::imax"},
+      {"cublasIzamax_v2_64", "oneapi::mkl::blas::column_major::imax"},
+      {"cublasIsamin_v2_64", "oneapi::mkl::blas::column_major::imin"},
+      {"cublasIdamin_v2_64", "oneapi::mkl::blas::column_major::imin"},
+      {"cublasIcamin_v2_64", "oneapi::mkl::blas::column_major::imin"},
+      {"cublasIzamin_v2_64", "oneapi::mkl::blas::column_major::imin"},
+      {"cublasIsamax_v2", "oneapi::mkl::blas::column_major::imax"},
+      {"cublasIdamax_v2", "oneapi::mkl::blas::column_major::imax"},
+      {"cublasIcamax_v2", "oneapi::mkl::blas::column_major::imax"},
+      {"cublasIzamax_v2", "oneapi::mkl::blas::column_major::imax"},
+      {"cublasIsamin_v2", "oneapi::mkl::blas::column_major::imin"},
+      {"cublasIdamin_v2", "oneapi::mkl::blas::column_major::imin"},
+      {"cublasIcamin_v2", "oneapi::mkl::blas::column_major::imin"},
+      {"cublasIzamin_v2", "oneapi::mkl::blas::column_major::imin"},
   };
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
@@ -2146,26 +2145,6 @@ const MapNames::MapTy MapNames::SOLVEREnumsMap{
 const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
     MapNames::BLASFuncComplexReplInfoMap{
         /*BLAS level 1*/
-        {"cublasIcamax_v2",
-         {std::vector<int>{2, 4}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<float>", "int"},
-          std::vector<std::string>{}, std::vector<int>{}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::iamax"}},
-        {"cublasIzamax_v2",
-         {std::vector<int>{2, 4}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<double>", "int"},
-          std::vector<std::string>{}, std::vector<int>{}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::iamax"}},
-        {"cublasIcamin_v2",
-         {std::vector<int>{2, 4}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<float>", "int"},
-          std::vector<std::string>{}, std::vector<int>{}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::iamin"}},
-        {"cublasIzamin_v2",
-         {std::vector<int>{2, 4}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<double>", "int"},
-          std::vector<std::string>{}, std::vector<int>{}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::iamin"}},
         {"cublasScasum_v2",
          {std::vector<int>{2, 4}, std::vector<int>{},
           std::vector<std::string>{"std::complex<float>", "float"},
@@ -3476,10 +3455,6 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"std::complex<double>"}, std::vector<int>{2},
           1, 0, 3, "oneapi::mkl::blas::column_major::trmm"}},
     };
-
-const std::set<std::string> MapNames::MustSyncBLASFunc{
-    "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2", "cublasIzamax_v2",
-    "cublasIsamin_v2", "cublasIdamin_v2", "cublasIcamin_v2", "cublasIzamin_v2"};
 
 const std::map<std::string, std::pair<std::string, int>>
     MapNames::MaySyncBLASFunc{{"cublasSasum_v2", {"float", 4}},

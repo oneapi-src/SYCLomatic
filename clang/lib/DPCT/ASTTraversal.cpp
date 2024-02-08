@@ -4600,11 +4600,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
     }
 
-    if (FuncName == "cublasIsamax_v2" || FuncName == "cublasIdamax_v2" ||
-        FuncName == "cublasIsamin_v2" || FuncName == "cublasIdamin_v2") {
-      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
-    }
-
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       if (FuncName == "cublasSrotm_v2") {
         CallExprArguReplVec[6] =
@@ -4614,9 +4609,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             "const_cast<double*>(" + CallExprArguReplVec[6] + ")";
       }
       addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
-      if (MapNames::MustSyncBLASFunc.find(FuncName) !=
-          MapNames::MustSyncBLASFunc.end())
-        NeedWaitAPICall = true;
     } else {
       printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
     }
@@ -4754,16 +4746,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
     }
 
-    if (FuncName == "cublasIcamax_v2" || FuncName == "cublasIzamax_v2" ||
-        FuncName == "cublasIcamin_v2" || FuncName == "cublasIzamin_v2") {
-      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
-    }
-
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
-      if (MapNames::MustSyncBLASFunc.find(FuncName) !=
-          MapNames::MustSyncBLASFunc.end())
-        NeedWaitAPICall = true;
     } else {
       printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
     }

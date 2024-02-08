@@ -19,6 +19,55 @@
 #include <thread>
 
 namespace dpct {
+namespace blas {
+template <typename target_t, typename input_t = target_t>
+class result_memory_t {
+  // TODO: need support input scalar value copy for API like `rot`
+public:
+  result_memory_t(sycl::queue q, input_t *input) : _q(q), _input(input) {
+    if constexpr (std::is_same_v<target_t, input_t>) {
+#ifdef DPCT_USM_LEVEL_NONE
+      if (dpct::is_device_ptr(_input))
+#else
+      if (sycl::get_pointer_type(_input, _q.get_context()) !=
+          sycl::usm::alloc::unknown)
+#endif
+      {
+        _target = _input;
+        _need_free = false;
+        return;
+      }
+    }
+#ifdef DPCT_USM_LEVEL_NONE
+    _target = (target_t *)dpct::dpct_malloc(sizeof(target_t), _q);
+#else
+    _target = sycl::malloc_shared<target_t>(1, _q);
+#endif
+  }
+  target_t *get_memory() { return _target; }
+
+  ~result_memory_t() {
+    if (!_need_free)
+      return;
+#ifdef DPCT_USM_LEVEL_NONE
+    target_t temp1;
+    dpct::dpct_memcpy(&temp1, _target, sizeof(target_t), automatic, _q);
+    input_t temp2 = temp1;
+    dpct::dpct_memcpy(_input, &temp2, sizeof(input_t), automatic, _q);
+#else
+    _q.wait();
+    input_t temp = *_target;
+    _q.memcpy(_input, &temp, sizeof(input_t)).wait();
+#endif
+  }
+
+private:
+  sycl::queue _q;
+  input_t *_input = nullptr;
+  target_t *_target = nullptr;
+  bool _need_free = true;
+};
+} // namespace blas
 
 /// Get the value of \p s.
 /// Copy the data to host synchronously, then return the data.
