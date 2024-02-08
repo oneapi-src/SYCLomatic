@@ -50,20 +50,9 @@ int main() {
     // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N)));
     cublasErrCheck(cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: cublasErrCheck([&](){
-    // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-    // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
-    // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-    // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
-    // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
-    // CHECK-NEXT: } else {
-    // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
-    // CHECK-NEXT: }
-    // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, N, x_S_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
-    // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+    // CHECK: cublasErrCheck([&]() {
+    // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::imax(*handle, N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), N, res.get_memory(), oneapi::mkl::index_base::one);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasIsamax(handle, N, x_S, N, result));
@@ -92,22 +81,11 @@ int main() {
     // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_C, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_A_C)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_B_C)), N, dpct::get_value(&beta_C, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_C_C)), N)));
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT:cublasErrCheck([&](){
-    // CHECK-NEXT:auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
-    // CHECK-NEXT:auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
-    // CHECK-NEXT:sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-    // CHECK-NEXT:if (dpct::is_device_ptr(result)) {
-    // CHECK-NEXT:  result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
-    // CHECK-NEXT:} else {
-    // CHECK-NEXT:  result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
-    // CHECK-NEXT:}
-    // CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(*handle, N, x_C_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
-    // CHECK-NEXT:result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
-    // CHECK-NEXT:return 0;
-    // CHECK-NEXT:}());
+    // CHECK: cublasErrCheck([&]() {
+    // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::imax(*handle, N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_C)), N, res.get_memory(), oneapi::mkl::index_base::one);
+    // CHECK-NEXT: return 0;
+    // CHECK-NEXT: }());
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));
 
     // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N)));

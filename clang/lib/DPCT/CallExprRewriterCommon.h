@@ -425,11 +425,17 @@ makeLambdaCreator(bool IsCaptureRef, bool IsExecuteInplace,
                         std::function<std::string(const CallExpr *)>,
                         std::function<bool(const CallExpr *)>,
                         std::function<bool(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
                         std::function<StmtT(const CallExpr *)>...>(
       [](const CallExpr *) { return std::string(" "); },
       [](const CallExpr *) { return std::string(""); },
       [=](const CallExpr *) { return IsCaptureRef; },
-      [=](const CallExpr *) { return IsExecuteInplace; }, Stmts...);
+      [=](const CallExpr *) { return IsExecuteInplace; },
+      [](const CallExpr *C) {
+        return isInMacroDefinition(C->getBeginLoc(), C->getBeginLoc()) &&
+               isInMacroDefinition(C->getEndLoc(), C->getEndLoc());
+      },
+      Stmts...);
 }
 
 inline std::vector<TemplateArgumentInfo>
@@ -1105,11 +1111,27 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createLambdaRewriterFactory(
     std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
   return std::make_shared<CallExprRewriterFactory<
       PrinterRewriter<LambdaPrinter<StmtPrinters...>>,
+      std::function<std::string(const CallExpr *)>,
+      std::function<std::string(const CallExpr *)>,
+      std::function<bool(const CallExpr *)>,
       std::function<bool(const CallExpr *)>,
       std::function<bool(const CallExpr *)>,
       std::function<StmtPrinters(const CallExpr *)>...>>(
-      SourceName, [](const CallExpr *) { return true; },
-      [](const CallExpr *) { return true; }, Creators...);
+      SourceName,
+      [](const CallExpr *C) {
+        const auto &SM = DpctGlobalInfo::getSourceManager();
+        std::string Indent =
+            getIndent(SM.getExpansionLoc(C->getBeginLoc()), SM).str();
+        return Indent;
+      },
+      [](const CallExpr *) { return std::string(getNL()); },
+      [](const CallExpr *) { return true; },
+      [](const CallExpr *) { return true; },
+      [](const CallExpr *C) {
+        return isInMacroDefinition(C->getBeginLoc(), C->getBeginLoc()) &&
+               isInMacroDefinition(C->getEndLoc(), C->getEndLoc());
+      },
+      Creators...);
 }
 
 /// Create UnaryOpRewriterFactory with given arguments.

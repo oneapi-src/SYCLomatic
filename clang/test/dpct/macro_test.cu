@@ -1233,7 +1233,13 @@ void foo34() {
 //CHECK: #define ReturnErrorFunction                                                    \
 //CHECK-NEXT:   int amax(dpct::queue_ptr handle, const int n, const float *X,                \
 //CHECK-NEXT:            const int incX, int &result) try {                                  \
-//CHECK-NEXT:     return cublasIsamax(handle, n, (const float *)X, incX, &result);           \
+//CHECK-NEXT:     return [&]() {                                                             \
+//CHECK-NEXT:       dpct::blas::result_memory_t<std::int64_t, int> res(&result);             \
+//CHECK-NEXT:       oneapi::mkl::blas::column_major::imax(*handle, n, X, incX,               \
+//CHECK-NEXT:                                             res.get_memory(),                  \
+//CHECK-NEXT:                                             oneapi::mkl::index_base::one);     \
+//CHECK-NEXT:       return 0;                                                                \
+//CHECK-NEXT:     }();                                                                       \
 //CHECK-NEXT:   }                                                                            \
 //CHECK-NEXT:   catch (sycl::exception const &exc) {                                         \
 //CHECK-NEXT:     std::cerr << exc.what() << "Exception caught at file:" << __FILE__         \
