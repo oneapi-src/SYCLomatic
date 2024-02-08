@@ -1831,6 +1831,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDdgmm_64", "oneapi::mkl::blas::column_major::dgmm"},
       {"cublasCdgmm_64", "oneapi::mkl::blas::column_major::dgmm"},
       {"cublasZdgmm_64", "oneapi::mkl::blas::column_major::dgmm"},
+      {"cublasIsamax_v2_64", "oneapi::mkl::blas::column_major::imax"},
   };
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",

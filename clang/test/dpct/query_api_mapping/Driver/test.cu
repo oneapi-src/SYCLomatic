@@ -379,7 +379,7 @@
 // CUSTREAMADDCALLBACK-NEXT:                       u /*unsigned int*/);
 // CUSTREAMADDCALLBACK-NEXT: Is migrated to:
 // CUSTREAMADDCALLBACK-NEXT:   dpct::queue_ptr s;
-// CUSTREAMADDCALLBACK-NEXT:   std::async([&](){s->wait(); sc(s, 0, pData);});
+// CUSTREAMADDCALLBACK-NEXT:   std::async([&]() { s->wait(); sc(s, 0, pData); });
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuStreamAttachMemAsync | FileCheck %s -check-prefix=CUSTREAMATTACHMEMASYNC
 // CUSTREAMATTACHMEMASYNC: CUDA API:

@@ -1198,6 +1198,10 @@ public:
   MultiStmtsPrinter(FirstPrinter &&First, RestPrinter &&...Rest)
       : Base(std::move(Rest)...), First(std::move(First)) {}
 
+  MultiStmtsPrinter(std::string Indent, std::string NL, FirstPrinter &&First,
+                    RestPrinter &&...Rest)
+      : Base(Indent, NL, std::move(Rest)...), First(std::move(First)) {}
+
   template <class StreamT> void print(StreamT &Stream) const {
     Base::printStmt(Stream, First);
     Base::print(Stream);
@@ -1206,8 +1210,8 @@ public:
 
 template <class LastPrinter> class MultiStmtsPrinter<LastPrinter> {
   LastPrinter Last;
-  StringRef Indent;
-  StringRef NL;
+  std::string Indent;
+  std::string NL;
   bool isInMacroDef;
 
 protected:
@@ -1215,42 +1219,55 @@ protected:
   void printStmt(StreamT &Stream, const PrinterT &Printer) const {
     dpct::print(Stream, Printer);
     if (isInMacroDef) {
-      Stream << "; \\" << NL << Indent;
+      Stream << ";\\" << NL << Indent;
     } else {
-      Stream << "; " << NL << Indent;
+      Stream << ";" << NL << Indent;
     }
   }
 
 public:
   MultiStmtsPrinter(SourceRange Range, SourceManager &SM, LastPrinter &&Last)
-      : Last(std::move(Last)), Indent(getIndent(Range.getBegin(), SM)),
+      : Last(std::move(Last)), Indent(getIndent(Range.getBegin(), SM).str()),
         NL(getNL(Range.getBegin(), SM)),
         isInMacroDef(isInMacroDefinition(Range.getBegin(), Range.getBegin()) &&
                      isInMacroDefinition(Range.getEnd(), Range.getEnd())) {}
 
   MultiStmtsPrinter(LastPrinter &&Last)
-      : Last(std::move(Last)), Indent(" "), NL(""), isInMacroDef(false) {}
+      : Last(std::move(Last)), Indent("  "), NL(getNL()), isInMacroDef(false) {}
+
+  MultiStmtsPrinter(std::string Indent, std::string NL, LastPrinter &&Last)
+      : Last(std::move(Last)), Indent(Indent), NL(NL), isInMacroDef(false) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Last);
   }
 };
 
-template <class... StmtPrinter>
-class LambdaPrinter {
+template <class... StmtPrinter> class LambdaPrinter {
+  std::string Indent = "  ";
+  std::string NL = getNL();
   bool IsCaptureRef;
+  bool IsExecuteInplace;
   MultiStmtsPrinter<StmtPrinter...> MultiStmts;
 
 public:
-  LambdaPrinter(bool IsCaptureRef, StmtPrinter &&...Printer)
-      : IsCaptureRef(IsCaptureRef), MultiStmts(std::move(Printer)...) {}
+  LambdaPrinter(bool IsCaptureRef, bool IsExecuteInplace,
+                StmtPrinter &&...Printer)
+      : IsCaptureRef(IsCaptureRef), IsExecuteInplace(IsExecuteInplace),
+        MultiStmts(std::move(Printer)...) {}
+  LambdaPrinter(std::string Indent, std::string NL, bool IsCaptureRef,
+                bool IsExecuteInplace, StmtPrinter &&...Printer)
+      : Indent(Indent), NL(NL), IsCaptureRef(IsCaptureRef),
+        IsExecuteInplace(IsExecuteInplace),
+        MultiStmts(Indent, NL, std::move(Printer)...) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
     printCapture(Stream, IsCaptureRef);
-    Stream << "()";
-    CurlyBracketsPrinter<StreamT> CurlyBracket(Stream);
+    Stream << "() {" << NL << Indent;
     MultiStmts.print(Stream);
-    Stream << ";";
+    Stream << ";" << NL << Indent << "}";
+    if (IsExecuteInplace)
+      Stream << "()";
   }
 };
 

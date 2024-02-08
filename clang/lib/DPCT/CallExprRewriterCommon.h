@@ -416,15 +416,20 @@ makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                                               Member);
 }
 
-
 template <class... StmtT>
-inline std::function<
-    LambdaPrinter<StmtT...>(const CallExpr *)>
-makeLambdaCreator(bool IsCaptureRef,
-                      std::function<StmtT(const CallExpr *)>... Stmts) {
-  return PrinterCreator<LambdaPrinter<StmtT...>, bool,
+inline std::function<LambdaPrinter<StmtT...>(const CallExpr *)>
+makeLambdaCreator(bool IsCaptureRef, bool IsExecuteInplace,
+                  std::function<StmtT(const CallExpr *)>... Stmts) {
+  return PrinterCreator<LambdaPrinter<StmtT...>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
                         std::function<StmtT(const CallExpr *)>...>(
-                        IsCaptureRef, Stmts...);
+      [](const CallExpr *) { return std::string(" "); },
+      [](const CallExpr *) { return std::string(""); },
+      [=](const CallExpr *) { return IsCaptureRef; },
+      [=](const CallExpr *) { return IsExecuteInplace; }, Stmts...);
 }
 
 inline std::vector<TemplateArgumentInfo>
@@ -1083,6 +1088,19 @@ createMultiStmtsRewriterFactory(
           PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
           std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
                                                              Creators...));
+}
+
+template <class... StmtPrinters>
+inline std::shared_ptr<CallExprRewriterFactoryBase> createLambdaRewriterFactory(
+    const std::string &SourceName,
+    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
+  return std::make_shared<CallExprRewriterFactory<
+      PrinterRewriter<LambdaPrinter<StmtPrinters...>>,
+      std::function<bool(const CallExpr *)>,
+      std::function<bool(const CallExpr *)>,
+      std::function<StmtPrinters(const CallExpr *)>...>>(
+      SourceName, [](const CallExpr *) { return true; },
+      [](const CallExpr *) { return true; }, Creators...);
 }
 
 /// Create UnaryOpRewriterFactory with given arguments.
@@ -2159,6 +2177,8 @@ public:
   {FuncName, createUnsupportRewriterFactory(FuncName, MsgID, __VA_ARGS__)},
 #define MULTI_STMTS_FACTORY_ENTRY(FuncName, ...)                               \
   {FuncName, createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)},
+#define LAMBDA_FACTORY_ENTRY(FuncName, ...)                                    \
+  {FuncName, createLambdaRewriterFactory(FuncName, __VA_ARGS__)},
 #define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
   {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
 #define TOSTRING_FACTORY_ENTRY(FuncName, ...)                                  \

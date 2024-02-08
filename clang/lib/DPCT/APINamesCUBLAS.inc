@@ -1236,3 +1236,10 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
          ARG(2), ARG(3), BUFFER_OR_USM_PTR(4, "std::complex<double>"), ARG(5),
          BUFFER_OR_USM_PTR(6, "std::complex<double>"), ARG(7),
          BUFFER_OR_USM_PTR(8, "std::complex<double>"), ARG(9))))
+
+LAMBDA_FACTORY_ENTRY(
+    "cublasIsamax_v2_64",
+    ARG("return 0"),
+    CALL("oneapi::mkl::blas::column_major::imax", ARG(0)),
+    CALL("oneapi::mkl::blas::column_major::imax111", ARG(0))
+)
