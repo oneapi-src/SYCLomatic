@@ -19,15 +19,15 @@ from the CUDA and SYCL program helps identify the point of divergent behavior.
 Command Line Option
 ----------------------------
 CodePin can be enabled with |tool_name| command line option ``–enable-codepin``.
-If ``–out-root`` is specified, the instrumented CUDA program will be put into a new folder
-``out_root_folder``_debug. Otherwise, the instrumented CUDA program will be put into
-the default folder ``dpct_output_debug``.
+If ``–out-root`` is specified, the instrumented CUDA program will be put into a 
+folder with ``_debug`` postfix beside the out-root folder. Otherwise, the 
+instrumented CUDA program will be put in the default folder ``dpct_output_debug``.
 
 Example
 ----------------------------
 The following example demonstrates how CodePin works.
 
-.. code-block:: none
+.. code-block:: c++
 
     #include <iostream>
     __global__ void vectorAdd(int3 *a, int3 *result) {
