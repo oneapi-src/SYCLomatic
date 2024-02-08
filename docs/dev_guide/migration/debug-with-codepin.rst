@@ -28,7 +28,7 @@ Example
 The following example demonstrates how CodePin works.
 
 .. code-block:: c++
-    
+
     //example.cu
     #include <iostream>
     __global__ void vectorAdd(int3 *a, int3 *result) {
@@ -218,6 +218,7 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
     */
 
 After building and executing ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``, following report will be generated.
+
 .. figure:: /_images/codepin_example_report.png
 
 The report helps the user to identify where the runtime behaivor of the CUDA and the SYCL version start diverge.
