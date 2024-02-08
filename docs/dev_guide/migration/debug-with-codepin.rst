@@ -28,6 +28,7 @@ Example
 The following example demonstrates how CodePin works.
 
 .. code-block:: c++
+    
     //example.cu
     #include <iostream>
     __global__ void vectorAdd(int3 *a, int3 *result) {
@@ -86,6 +87,7 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
 ``dpct_output/example.dp.cpp`` is the migrated and instrumented SYCL program:
 
 .. code-block:: c++
+
     //dpct_output/example.dp.cpp
     #include <dpct/dpct.hpp>
     #include <sycl/sycl.hpp>
@@ -155,7 +157,9 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
     */
 
 ``dpct_output_debug/example.cu`` is the instrumented CUDA program:
+
 .. code-block:: c++
+
     //dpct_output_debug/example.cu
     #include "generated_schema.hpp"
     #include <dpct/codepin/codepin.hpp>
