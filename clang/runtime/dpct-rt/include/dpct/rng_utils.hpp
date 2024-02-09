@@ -301,11 +301,14 @@ protected:
 };
 
 /// The random number generator on host.
-template <typename engine_t = oneapi::mkl::rng::philox4x32x10>
+template <bool work_on_cpu, typename engine_t = oneapi::mkl::rng::philox4x32x10>
 class rng_generator : public rng_generator_base {
 public:
   /// Constructor of rng_generator.
-  rng_generator() : _engine(create_engine(_queue, _seed, _dimensions)) {}
+  rng_generator() : _engine(create_engine(_queue, _seed, _dimensions)) {
+    if constexpr (work_on_cpu)
+      set_queue(&dpct::cpu_device().default_queue());
+  }
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
@@ -502,30 +505,31 @@ typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
 /// Create a host random number generator.
 /// \param type The random engine type.
 /// \return The pointer of random number generator.
+template <bool work_on_cpu = false>
 inline host_rng_ptr create_host_rng(const random_engine_type type) {
   switch (type) {
   case random_engine_type::philox4x32x10:
-    return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::philox4x32x10>>();
+    return std::make_shared<rng::host::detail::rng_generator<
+        work_on_cpu, oneapi::mkl::rng::philox4x32x10>>();
   case random_engine_type::mrg32k3a:
-    return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::mrg32k3a>>();
+    return std::make_shared<rng::host::detail::rng_generator<
+        work_on_cpu, oneapi::mkl::rng::mrg32k3a>>();
 #ifndef __INTEL_MKL__
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
 #else
   case random_engine_type::mt2203:
-    return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::mt2203>>();
+    return std::make_shared<rng::host::detail::rng_generator<
+        work_on_cpu, oneapi::mkl::rng::mt2203>>();
   case random_engine_type::mt19937:
-    return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::mt19937>>();
+    return std::make_shared<rng::host::detail::rng_generator<
+        work_on_cpu, oneapi::mkl::rng::mt19937>>();
   case random_engine_type::sobol:
-    return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::sobol>>();
+    return std::make_shared<rng::host::detail::rng_generator<
+        work_on_cpu, oneapi::mkl::rng::sobol>>();
   case random_engine_type::mcg59:
-    return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::mcg59>>();
+    return std::make_shared<rng::host::detail::rng_generator<
+        work_on_cpu, oneapi::mkl::rng::mcg59>>();
 #endif
   }
 }

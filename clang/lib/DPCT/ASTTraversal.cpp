@@ -3947,6 +3947,9 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   if (FuncName == "curandCreateGenerator" ||
       FuncName == "curandCreateGeneratorHost") {
+    std::string NewFuncName = "create_host_rng";
+    if (FuncName == "curandCreateGeneratorHost")
+      NewFuncName = "create_host_rng<true>";
     const auto *const Arg0 = CE->getArg(0);
     requestFeature(HelperFeatureEnum::device_ext);
     if (Arg0->getStmtClass() == Stmt::UnaryOperatorClass) {
@@ -3959,7 +3962,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             CE, false,
             buildString(ExprAnalysis::ref(SE),
                         " = " + MapNames::getDpctNamespace() +
-                            "rng::create_host_rng(",
+                            "rng::" + NewFuncName + "(",
                         ExprAnalysis::ref(CE->getArg(1)), ")")));
       }
     }
@@ -3967,7 +3970,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         new ReplaceStmt(CE, false,
                         buildString("*(", ExprAnalysis::ref(CE->getArg(0)),
                                     ") = " + MapNames::getDpctNamespace() +
-                                        "rng::create_host_rng(",
+                                        "rng::" + NewFuncName + "(",
                                     ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
   if (FuncName == "curandDestroyGenerator") {
