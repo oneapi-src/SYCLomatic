@@ -43,47 +43,47 @@ void foo() {
   std::int64_t result;
 
   //      CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, &result);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_t res(*handle, &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, &result);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_t res(*handle, &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, &result);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_t res(*handle, &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, &result);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_t res(*handle, &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  status = cublasIsamax(handle, n, A_s, lda, &result);
-  status = cublasIdamax(handle, n, A_d, lda, &result);
-  status = cublasIcamax(handle, n, A_c, lda, &result);
-  status = cublasIzamax(handle, n, A_z, lda, &result);
+  status = cublasIsamax_64(handle, n, A_s, lda, &result);
+  status = cublasIdamax_64(handle, n, A_d, lda, &result);
+  status = cublasIcamax_64(handle, n, A_c, lda, &result);
+  status = cublasIzamax_64(handle, n, A_z, lda, &result);
 
   //      CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, &result);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_t res(*handle, &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, &result);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_t res(*handle, &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, &result);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_t res(*handle, &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, &result);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_t res(*handle, &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
