@@ -248,7 +248,7 @@
 // cublasIzamin-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIzamin-NEXT:   [&]() {
 // cublasIzamin-NEXT:   dpct::blas::result_memory_t<std::int64_t, int> res(res);
-// cublasIzamin-NEXT:   oneapi::mkl::blas::column_major::imin(*handle, n, (std::complex<double>*)x, incx, res.get_memory(), oneapi::mkl::index_base::one);
+// cublasIzamin-NEXT:   oneapi::mkl::blas::column_major::iamin(*handle, n, (std::complex<double>*)x, incx, res.get_memory(), oneapi::mkl::index_base::one);
 // cublasIzamin-NEXT:   return 0;
 // cublasIzamin-NEXT:   }();
 

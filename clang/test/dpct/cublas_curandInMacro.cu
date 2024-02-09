@@ -52,7 +52,7 @@ int main() {
 
     // CHECK: cublasErrCheck([&]() {
     // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
-    // CHECK-NEXT: oneapi::mkl::blas::column_major::imax(*handle, N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), N, res.get_memory(), oneapi::mkl::index_base::one);
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), N, res.get_memory(), oneapi::mkl::index_base::one);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasIsamax(handle, N, x_S, N, result));
@@ -83,7 +83,7 @@ int main() {
 
     // CHECK: cublasErrCheck([&]() {
     // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
-    // CHECK-NEXT: oneapi::mkl::blas::column_major::imax(*handle, N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_C)), N, res.get_memory(), oneapi::mkl::index_base::one);
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_C)), N, res.get_memory(), oneapi::mkl::index_base::one);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));

@@ -14,7 +14,7 @@
 // cublasIdamin-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIdamin-NEXT:   [&]() {
 // cublasIdamin-NEXT:   dpct::blas::result_memory_t<std::int64_t, int> res(res);
-// cublasIdamin-NEXT:   oneapi::mkl::blas::column_major::imin(*handle, n, x, incx, res.get_memory(), oneapi::mkl::index_base::one);
+// cublasIdamin-NEXT:   oneapi::mkl::blas::column_major::iamin(*handle, n, x, incx, res.get_memory(), oneapi::mkl::index_base::one);
 // cublasIdamin-NEXT:   return 0;
 // cublasIdamin-NEXT:   }();
 
@@ -141,7 +141,7 @@
 // cublasIdamax-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIdamax-NEXT:   [&]() {
 // cublasIdamax-NEXT:   dpct::blas::result_memory_t<std::int64_t, int> res(res);
-// cublasIdamax-NEXT:   oneapi::mkl::blas::column_major::imax(*handle, n, x, incx, res.get_memory(), oneapi::mkl::index_base::one);
+// cublasIdamax-NEXT:   oneapi::mkl::blas::column_major::iamax(*handle, n, x, incx, res.get_memory(), oneapi::mkl::index_base::one);
 // cublasIdamax-NEXT:   return 0;
 // cublasIdamax-NEXT:   }();
 
@@ -163,7 +163,7 @@
 // cublasIsamin-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIsamin-NEXT:   [&]() {
 // cublasIsamin-NEXT:   dpct::blas::result_memory_t<std::int64_t, int> res(res);
-// cublasIsamin-NEXT:   oneapi::mkl::blas::column_major::imin(*handle, n, x, incx, res.get_memory(), oneapi::mkl::index_base::one);
+// cublasIsamin-NEXT:   oneapi::mkl::blas::column_major::iamin(*handle, n, x, incx, res.get_memory(), oneapi::mkl::index_base::one);
 // cublasIsamin-NEXT:   return 0;
 // cublasIsamin-NEXT:   }();
 

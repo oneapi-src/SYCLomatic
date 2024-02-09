@@ -1235,7 +1235,7 @@ void foo34() {
 //CHECK-NEXT:            const int incX, int &result) try {                                  \
 //CHECK-NEXT:     return [&]() {                                                             \
 //CHECK-NEXT:       dpct::blas::result_memory_t<std::int64_t, int> res(&result);             \
-//CHECK-NEXT:       oneapi::mkl::blas::column_major::imax(*handle, n, X, incX,               \
+//CHECK-NEXT:       oneapi::mkl::blas::column_major::iamax(*handle, n, X, incX,              \
 //CHECK-NEXT:                                             res.get_memory(),                  \
 //CHECK-NEXT:                                             oneapi::mkl::index_base::one);     \
 //CHECK-NEXT:       return 0;                                                                \
