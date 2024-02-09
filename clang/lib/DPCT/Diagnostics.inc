@@ -270,6 +270,8 @@ DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed
 DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as an extra argument. As {0} is a template variable here, then the declaration of an extra parameter in device functions, the variable referenced in command group, and device functions may be incorrect as a result. You may need to adjust the code.")
 DEF_WARNING(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"%0\" which is used in the SYCL group function/algorithm is initialized.")
 DEF_COMMENT(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"{0}\" which is used in the SYCL group function/algorithm is initialized.")
+DEF_WARNING(TEX_CACHE_READ_BFLOAT16, 1122, LOW_LEVEL, "SYCL API call for ldg does not support %0 type. You may need to adjust this code.")
+DEF_COMMENT(TEX_CACHE_READ_BFLOAT16, 1122, LOW_LEVEL, "SYCL API call for ldg does not support {0} type. You may need to adjust this code.")
 // clang-format on
 
 #undef DEF_COMMENT

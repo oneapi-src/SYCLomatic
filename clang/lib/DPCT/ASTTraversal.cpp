@@ -6693,10 +6693,17 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     auto Loc = CE->getBeginLoc();
     DpctGlobalInfo::getInstance().insertHeader(
         Loc, HT_SYCL_Experimental_CUDA_Builtins);
-    emplaceTransformation(
-        new ReplaceStmt(CE, MapNames::getClNamespace() +
-                                "ext::oneapi::experimental::cuda::ldg(" +
-                                ExprAnalysis::ref(CE->getArg(0)) + ")"));
+    auto varType =
+        DpctGlobalInfo::getTypeName(CE->getArg(0)->getType()->getPointeeType());
+    if (varType == "__nv_bfloat16" || varType == "__nv_bfloat162") {
+      report(CE->getBeginLoc(), Diagnostics::TEX_CACHE_READ_BFLOAT16, false,
+             varType);
+    } else {
+      emplaceTransformation(
+          new ReplaceStmt(CE, MapNames::getClNamespace() +
+                                  "ext::oneapi::experimental::cuda::ldg(" +
+                                  ExprAnalysis::ref(CE->getArg(0)) + ")"));
+    }
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
