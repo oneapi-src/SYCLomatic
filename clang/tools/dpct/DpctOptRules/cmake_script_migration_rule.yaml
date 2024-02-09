@@ -137,13 +137,6 @@
   In: set (CMAKE_CXX_COMPILER ${version})
   Out: set (CMAKE_CXX_COMPILER icpx)
 
-- Rule: rule_set_property_cxx_standard
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: set_property_cxx_standard
-  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
-
 - Rule: rule_set_property_cuda_seprarable_only
   Kind: CMakeRule
   Priority: Fallback
@@ -300,36 +293,6 @@
       MatchMode: Full
       In: CUDA_HAS_FP16
       Out: SYCL_HAS_FP16
-
-# Current Yaml based rule hard-code to map "cxx_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
-- Rule: rule_cxx_target_compile_features
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cxx_target_compile_features
-  MatchMode: Partial
-  In: target_compile_features(${value})
-  Out: target_compile_features(${value})
-  Subrules:
-    value:
-      In: cxx_std_${ver}
-      Out: cxx_std_17
-      RuleId: "adjust_cxx_ver"
-
-# Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
-- Rule: rule_cuda_target_compile_features
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cuda_target_compile_features
-  MatchMode: Partial
-  In: target_compile_features(${value})
-  Out: target_compile_features(${value})
-  Subrules:
-    value:
-      In: cuda_std_${ver}
-      Out: cxx_std_17
-      RuleId: "adjust_cuda_ver"
 
 - Rule: rule_header_file
   Kind: CMakeRule
@@ -821,3 +784,63 @@
       In: CUDA::cublasLt_static
       Out: |
         \${DNN_LIB}
+
+- Rule: rule_target_compile_features-cuda_std_version
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_compile_features_cuda_std-version
+  MatchMode: Partial
+  In: target_compile_features(${arg})
+  Out: target_compile_features(${arg})
+  Subrules:
+    arg:
+      In: cuda_std_${version}
+      Out: cxx_std_17
+      RuleId: "replace_cuda_std_version_with_cxx_std_17"
+
+- Rule: rule_set_property_cuda_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property_cuda_standard
+  In: set_property(${target} PROPERTY CUDA_STANDARD ${version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+
+- Rule: rule_set_property_cxx_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property_cxx_standard
+  In: set_property(${target} PROPERTY CXX_STANDARD ${version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+
+- Rule: rule_set_target_properties_cxx_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cxx_target_properties
+  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
+  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
+
+- Rule: rule_set_target_properties_cuda_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_target_properties_cuda_standard
+  In: set_target_properties(${targets} PROPERTIES ${properties})
+  Out: set_target_properties(${targets} PROPERTIES ${properties})
+  Subrules:
+    properties:
+      In: CUDA_STANDARD ${version} ${other_properties}
+      Out: CXX_STANDARD 17 ${other_properties}
+      MatchMode: Full
+
+- Rule: rule_set_target_properties_cuda_standard-only
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_target_properties_cuda_standard-only
+  In: set_target_properties(${targets} PROPERTIES${properties}CUDA_STANDARD ${version})
+  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD 17)
+
+- Rule: rule_set_cmake_cuda_required
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cmake_cuda_required
+  In: set(CMAKE_CUDA_STANDARD_REQUIRED ${value})
+  Out: set(CMAKE_CXX_STANDARD_REQUIRED ${value})
