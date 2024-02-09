@@ -583,26 +583,25 @@ template <size_t GROUP_WORK_ITEMS,
           typename InputIteratorT>
 class workgroup_load {
 public:
+  __dpct_inline__ void load(load_algorithm ALGORITHM){
+     
+  if (ALGORITHM == blocked){
+      load_blocked(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+   }
+ }  
   
+private:
+
   __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
   uint32_t workgroup_offset = linear_tid * ITEMS_PER_WORK_ITEM;
-  if (workgroup_offset > GROUP_WORK_ITEMS){
-      uint32_t final_idx = (GROUP_WORK_ITEMS - workgroup_offset);
-      for (uint32_t idx = 0; idx < final_idx ; idx++) {
-        items[idx] = block_itr[workgroup_offset + idx];
-      }
-    }
-    else{
-    #pragma unroll
-      for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
-        items[idx] = block_itr[workgroup_offset + idx];
-      }
+  #pragma unroll
+    for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+      items[idx] = block_itr[workgroup_offset + idx];
     }
   }
 
-private:
 };
 
 template <size_t GROUP_WORK_ITEMS,
@@ -613,10 +612,22 @@ template <size_t GROUP_WORK_ITEMS,
           typename Item>
 class subgroup_load {
 public:
-  __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
+  __dpct_inline__ void load(load_algorithm ALGORITHM){
+
+  if(ALGORITHM == striped){
+    load_striped(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);  
+  }
+  else if(ALGORITHM == warp_striped){
+    load_subgroup_striped(item, linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]); 
+  }
+}
+
+private:
+
+    __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
-    if (linear_tid + ((ITEMS_PER_WORK_ITEM - 1)*ITEMS_PER_WORK_ITEM) > GROUP_WORK_ITEMS){
+    if (linear_tid + ((ITEMS_PER_WORK_ITEM - 1)*ITEMS_PER_WORK_ITEM) >= GROUP_WORK_ITEMS){
       uint32_t final_idx = (GROUP_WORK_ITEMS - linear_tid)/ITEMS_PER_WORK_ITEM;
       for (uint32_t idx = 0; idx < final_idx ; idx++) {
         items[idx] = block_itr[linear_tid + (idx  * ITEMS_PER_WORK_ITEM)];
@@ -631,12 +642,12 @@ public:
   }
 
   
-  __dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
+    __dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
                                              InputIteratorT block_itr,
                                              InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
     size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
-    if (linear_tid + ((ITEMS_PER_WORK_ITEM - 1)*ITEMS_PER_WORK_ITEM) > GROUP_WORK_ITEMS){
+    if (linear_tid + ((ITEMS_PER_WORK_ITEM - 1)*ITEMS_PER_WORK_ITEM) >= GROUP_WORK_ITEMS){
       uint32_t final_idx = (GROUP_WORK_ITEMS - linear_tid)/ITEMS_PER_WORK_ITEM;
       for (uint32_t idx = 0; idx < final_idx ; idx++) {
         new (&items[idx])
@@ -651,30 +662,7 @@ public:
       }
     }
  }
-
-private:
 };
-
- __dpct_inline__ void load(size_t GROUP_WORK_ITEMS,
-                           size_t ITEMS_PER_WORK_ITEM,
-                           load_algorithm ALGORITHM,
-                           InputT (&items)[ITEMS_PER_WORK_ITEM],
-                           InputIteratorT block_itr,
-                           Item &item){
-
-   if (ALGORITHM == blocked){
-      workgroup_load<GROUP_WORK_ITEMS, ITEMS_PER_WORK_ITEM, blocked> wg_load;
-      wg_load.load_blocked(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
-   }
-   else if(ALGORITHM == striped){
-      subgroup_load<GROUP_WORK_ITEMS, ITEMS_PER_WORK_ITEM, blocked, item> sg_load;
-      sg_load.load_striped(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);  
-   }
-   else{
-      subgroup_load<GROUP_WORK_ITEMS, ITEMS_PER_WORK_ITEM, warp_striped, item> sg_load;
-      sg_load.load_subgroup_striped(item, linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]); 
-   }
-}
 
 /// Perform a reduction of the data elements assigned to all threads in the
 /// group.
