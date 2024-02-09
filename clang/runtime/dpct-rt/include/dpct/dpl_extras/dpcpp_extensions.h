@@ -583,7 +583,8 @@ template <size_t GROUP_WORK_ITEMS,
           typename InputIteratorT>
 class workgroup_load {
 public:
-  __dpct_inline__ void load(load_algorithm ALGORITHM){
+  __dpct_inline__ void load(size_t linear_tid, InputIteratorT block_itr,
+                            InputT (&items)[ITEMS_PER_WORK_ITEM]){
      
   if (ALGORITHM == blocked){
       load_blocked(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
@@ -612,7 +613,9 @@ template <size_t GROUP_WORK_ITEMS,
           typename Item>
 class subgroup_load {
 public:
-  __dpct_inline__ void load(load_algorithm ALGORITHM){
+  __dpct_inline__ void load(const Item &item, size_t linear_tid,
+                            InputIteratorT block_itr,
+                            InputT (&items)[ITEMS_PER_WORK_ITEM]){
 
   if(ALGORITHM == striped){
     load_striped(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);  
