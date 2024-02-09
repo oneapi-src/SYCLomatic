@@ -22,12 +22,12 @@ int main(){
 
   //level 1
   // CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(*handle, result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: [&]() {
-  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(*handle, result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
@@ -35,12 +35,12 @@ int main(){
   cublasIcamax(handle, n, x_c, incx, result);
 
   // CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(*handle, result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: [&]() {
-  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(*handle, result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
@@ -48,12 +48,12 @@ int main(){
   cublasIzamax(handle, n, x_z, incx, result);
 
   // CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(*handle, result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: [&]() {
-  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(*handle, result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
@@ -61,12 +61,12 @@ int main(){
   cublasIcamin(handle, n, x_c, incx, result);
 
   // CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(*handle, result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: [&]() {
-  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(result);
+  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(*handle, result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();

@@ -177,7 +177,7 @@
 // cublasIsamax-NEXT:                incx /*int*/, res /*int **/);
 // cublasIsamax-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIsamax-NEXT:   [&]() {
-// cublasIsamax-NEXT:   dpct::blas::result_memory_t<std::int64_t, int> res(res);
+// cublasIsamax-NEXT:   dpct::blas::result_memory_t<std::int64_t, int> res(*handle, res);
 // cublasIsamax-NEXT:   oneapi::mkl::blas::column_major::iamax(*handle, n, x, incx, res.get_memory(), oneapi::mkl::index_base::one);
 // cublasIsamax-NEXT:   return 0;
 // cublasIsamax-NEXT:   }();
