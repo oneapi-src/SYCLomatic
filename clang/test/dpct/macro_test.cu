@@ -1234,7 +1234,7 @@ void foo34() {
 //CHECK-NEXT:   int amax(dpct::queue_ptr handle, const int n, const float *X,                \
 //CHECK-NEXT:            const int incX, int &result) try {                                  \
 //CHECK-NEXT:     return [&]() {                                                             \
-//CHECK-NEXT:       dpct::blas::result_memory_t<std::int64_t, int> res(*handle, &result);    \
+//CHECK-NEXT:       dpct::blas::result_memory_int_t res(*handle, &result);                   \
 //CHECK-NEXT:       oneapi::mkl::blas::column_major::iamax(*handle, n, X, incX,              \
 //CHECK-NEXT:                                             res.get_memory(),                  \
 //CHECK-NEXT:                                             oneapi::mkl::index_base::one);     \
