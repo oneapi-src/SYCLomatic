@@ -124,7 +124,7 @@
 // cublasIcamin-NEXT:                incx /*int*/, res /*int **/);
 // cublasIcamin-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIcamin-NEXT:   [&]() {
-// cublasIcamin-NEXT:   dpct::blas::result_memory_int_t res(*handle, res);
+// cublasIcamin-NEXT:   dpct::blas::out_mem_int_t res(*handle, res);
 // cublasIcamin-NEXT:   oneapi::mkl::blas::column_major::iamin(*handle, n, (std::complex<float>*)x, incx, res.get_memory(), oneapi::mkl::index_base::one);
 // cublasIcamin-NEXT:   return 0;
 // cublasIcamin-NEXT:   }();
@@ -135,7 +135,7 @@
 // cublasIcamax-NEXT:                incx /*int*/, res /*int **/);
 // cublasIcamax-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIcamax-NEXT:   [&]() {
-// cublasIcamax-NEXT:   dpct::blas::result_memory_int_t res(*handle, res);
+// cublasIcamax-NEXT:   dpct::blas::out_mem_int_t res(*handle, res);
 // cublasIcamax-NEXT:   oneapi::mkl::blas::column_major::iamax(*handle, n, (std::complex<float>*)x, incx, res.get_memory(), oneapi::mkl::index_base::one);
 // cublasIcamax-NEXT:   return 0;
 // cublasIcamax-NEXT:   }();

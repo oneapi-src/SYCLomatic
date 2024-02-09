@@ -1239,7 +1239,7 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
 
 LAMBDA_FACTORY_ENTRY(
     "cublasIsamax_v2_64",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int64_t", "res",
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_t", "res",
          DEREF(0), ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
@@ -1249,7 +1249,7 @@ LAMBDA_FACTORY_ENTRY(
     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIdamax_v2_64",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int64_t", "res",
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_t", "res",
          DEREF(0), ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
@@ -1259,7 +1259,7 @@ LAMBDA_FACTORY_ENTRY(
     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIcamax_v2_64",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int64_t", "res",
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_t", "res",
          DEREF(0), ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
@@ -1269,7 +1269,7 @@ LAMBDA_FACTORY_ENTRY(
     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIzamax_v2_64",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int64_t", "res",
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_t", "res",
          DEREF(0), ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
@@ -1280,7 +1280,7 @@ LAMBDA_FACTORY_ENTRY(
 
 LAMBDA_FACTORY_ENTRY(
     "cublasIsamin_v2_64",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int64_t", "res",
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_t", "res",
          DEREF(0), ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
@@ -1290,7 +1290,7 @@ LAMBDA_FACTORY_ENTRY(
     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIdamin_v2_64",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int64_t", "res",
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_t", "res",
          DEREF(0), ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
@@ -1300,7 +1300,7 @@ LAMBDA_FACTORY_ENTRY(
     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIcamin_v2_64",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int64_t", "res",
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_t", "res",
          DEREF(0), ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
@@ -1310,7 +1310,7 @@ LAMBDA_FACTORY_ENTRY(
     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIzamin_v2_64",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int64_t", "res",
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_t", "res",
          DEREF(0), ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
@@ -1319,30 +1319,30 @@ LAMBDA_FACTORY_ENTRY(
          ARG("oneapi::mkl::index_base::one")),
     LITERAL("return 0"))
 
-LAMBDA_FACTORY_ENTRY(
-    "cublasIsamax_v2",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int_t", "res",
-         DEREF(0), ARG(4)),
-    CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0), ARG(1),
-         BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
-         BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                           "std::int64_t"),
-         ARG("oneapi::mkl::index_base::one")),
-    LITERAL("return 0"))
-LAMBDA_FACTORY_ENTRY(
-    "cublasIdamax_v2",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int_t", "res",
-         DEREF(0), ARG(4)),
-    CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0), ARG(1),
-         BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
-         BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                           "std::int64_t"),
-         ARG("oneapi::mkl::index_base::one")),
-    LITERAL("return 0"))
+LAMBDA_FACTORY_ENTRY("cublasIsamax_v2",
+                     DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t",
+                          "res", DEREF(0), ARG(4)),
+                     CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0),
+                          ARG(1), BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
+                          BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false,
+                                                        "get_memory"),
+                                            "std::int64_t"),
+                          ARG("oneapi::mkl::index_base::one")),
+                     LITERAL("return 0"))
+LAMBDA_FACTORY_ENTRY("cublasIdamax_v2",
+                     DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t",
+                          "res", DEREF(0), ARG(4)),
+                     CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0),
+                          ARG(1), BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
+                          BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false,
+                                                        "get_memory"),
+                                            "std::int64_t"),
+                          ARG("oneapi::mkl::index_base::one")),
+                     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIcamax_v2",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int_t", "res",
-         DEREF(0), ARG(4)),
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res", DEREF(0),
+         ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
          BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
@@ -1351,8 +1351,8 @@ LAMBDA_FACTORY_ENTRY(
     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIzamax_v2",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int_t", "res",
-         DEREF(0), ARG(4)),
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res", DEREF(0),
+         ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamax", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
          BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
@@ -1360,30 +1360,30 @@ LAMBDA_FACTORY_ENTRY(
          ARG("oneapi::mkl::index_base::one")),
     LITERAL("return 0"))
 
-LAMBDA_FACTORY_ENTRY(
-    "cublasIsamin_v2",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int_t", "res",
-         DEREF(0), ARG(4)),
-    CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0), ARG(1),
-         BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
-         BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                           "std::int64_t"),
-         ARG("oneapi::mkl::index_base::one")),
-    LITERAL("return 0"))
-LAMBDA_FACTORY_ENTRY(
-    "cublasIdamin_v2",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int_t", "res",
-         DEREF(0), ARG(4)),
-    CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0), ARG(1),
-         BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
-         BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                           "std::int64_t"),
-         ARG("oneapi::mkl::index_base::one")),
-    LITERAL("return 0"))
+LAMBDA_FACTORY_ENTRY("cublasIsamin_v2",
+                     DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t",
+                          "res", DEREF(0), ARG(4)),
+                     CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0),
+                          ARG(1), BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
+                          BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false,
+                                                        "get_memory"),
+                                            "std::int64_t"),
+                          ARG("oneapi::mkl::index_base::one")),
+                     LITERAL("return 0"))
+LAMBDA_FACTORY_ENTRY("cublasIdamin_v2",
+                     DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t",
+                          "res", DEREF(0), ARG(4)),
+                     CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0),
+                          ARG(1), BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
+                          BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false,
+                                                        "get_memory"),
+                                            "std::int64_t"),
+                          ARG("oneapi::mkl::index_base::one")),
+                     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIcamin_v2",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int_t", "res",
-         DEREF(0), ARG(4)),
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res", DEREF(0),
+         ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
          BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
@@ -1392,8 +1392,8 @@ LAMBDA_FACTORY_ENTRY(
     LITERAL("return 0"))
 LAMBDA_FACTORY_ENTRY(
     "cublasIzamin_v2",
-    DECL(MapNames::getDpctNamespace() + "blas::result_memory_int_t", "res",
-         DEREF(0), ARG(4)),
+    DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res", DEREF(0),
+         ARG(4)),
     CALL("oneapi::mkl::blas::column_major::iamin", DEREF(0), ARG(1),
          BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
          BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),

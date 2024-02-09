@@ -67,8 +67,8 @@ __host__ void foo4(){
   int incx=1;
   int* result =0;
   // CHECK: [&]() {
-  // CHECK-NEXT: dpct::blas::result_memory_t<std::int64_t, int> res(*handle, result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, res.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   cublasIsamax(handle, n, x_S, incx, result);

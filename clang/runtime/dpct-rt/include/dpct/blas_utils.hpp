@@ -20,10 +20,10 @@
 
 namespace dpct {
 namespace blas {
-template <typename target_t, typename input_t> class result_memory_t {
-  // TODO: need support input scalar value copy for API like `rot`
+template <typename target_t, typename input_t, bool has_input>
+class scalar_memory_t {
 public:
-  result_memory_t(sycl::queue q, input_t *input) : _q(q), _input(input) {
+  scalar_memory_t(sycl::queue q, input_t *input) : _q(q), _input(input) {
     if constexpr (std::is_same_v<target_t, input_t>) {
 #ifdef DPCT_USM_LEVEL_NONE
       if (dpct::is_device_ptr(_input))
@@ -39,13 +39,24 @@ public:
     }
 #ifdef DPCT_USM_LEVEL_NONE
     _target = (target_t *)dpct::dpct_malloc(sizeof(target_t), _q);
+    if constexpr (has_input) {
+      input_t temp1;
+      dpct::dpct_memcpy(&temp1, _input, sizeof(input_t), automatic, _q);
+      target_t temp2 = temp1;
+      dpct::dpct_memcpy(_target, &temp2, sizeof(target_t), automatic, _q);
+    }
 #else
     _target = sycl::malloc_shared<target_t>(1, _q);
+    if constexpr (has_input) {
+      input_t temp;
+      _q.memcpy(&temp, _input, sizeof(input_t)).wait();
+      *_target = temp;
+    }
 #endif
   }
   target_t *get_memory() { return _target; }
 
-  ~result_memory_t() {
+  ~scalar_memory_t() {
     if (!_need_free)
       return;
 #ifdef DPCT_USM_LEVEL_NONE
@@ -66,8 +77,12 @@ private:
   target_t *_target = nullptr;
   bool _need_free = true;
 };
-using result_memory_int_t = result_memory_t<std::int64_t, int>;
-using result_memory_int64_t = result_memory_t<std::int64_t, std::int64_t>;
+using out_mem_int_t = scalar_memory_t<std::int64_t, int, false>;
+using out_mem_int64_t = scalar_memory_t<std::int64_t, std::int64_t, false>;
+using inout_mem_float_t = scalar_memory_t<float, float, true>;
+using inout_mem_double_t = scalar_memory_t<double, double, true>;
+using inout_mem_float2_t = scalar_memory_t<sycl::float2, sycl::float2, true>;
+using inout_mem_double2_t = scalar_memory_t<sycl::double2, sycl::double2, true>;
 } // namespace blas
 
 /// Get the value of \p s.
