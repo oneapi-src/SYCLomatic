@@ -87,10 +87,10 @@ void foo() {
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  status = cublasIsamin(handle, n, A_s, lda, &result);
-  status = cublasIdamin(handle, n, A_d, lda, &result);
-  status = cublasIcamin(handle, n, A_c, lda, &result);
-  status = cublasIzamin(handle, n, A_z, lda, &result);
+  status = cublasIsamin_64(handle, n, A_s, lda, &result);
+  status = cublasIdamin_64(handle, n, A_d, lda, &result);
+  status = cublasIcamin_64(handle, n, A_c, lda, &result);
+  status = cublasIzamin_64(handle, n, A_z, lda, &result);
 
   //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_s, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(B_s)), ldb, dpct::get_value(beta_s, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(C_s)), ldc));
   // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_d, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(B_d)), ldb, dpct::get_value(beta_d, *handle), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_d)), ldc));
