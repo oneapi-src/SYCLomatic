@@ -20,7 +20,7 @@
 
 namespace dpct {
 namespace blas {
-template <typename target_t, typename input_t = target_t>
+template <typename target_t, typename input_t>
 class result_memory_t {
   // TODO: need support input scalar value copy for API like `rot`
 public:
@@ -67,6 +67,8 @@ private:
   target_t *_target = nullptr;
   bool _need_free = true;
 };
+using result_memory_int_t = result_memory_t<std::int64_t, int>;
+using result_memory_int64_t = result_memory_t<std::int64_t, std::int64_t>;
 } // namespace blas
 
 /// Get the value of \p s.
