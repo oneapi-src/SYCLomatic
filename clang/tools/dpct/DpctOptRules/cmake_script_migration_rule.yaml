@@ -748,3 +748,28 @@
   CmakeSyntax: cuda_add_library
   In: cuda_add_library(${arg})
   Out: add_library(${arg})
+
+- Rule: rule_cuda_64_bit_device_code-on
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cuda_64_bit_device_code-on
+  In: set(CUDA_64_BIT_DEVICE_CODE ON)
+  Out: |
+    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m64")
+
+- Rule: rule_cuda_64_bit_device_code-off
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cuda_64_bit_device_code-off
+  In: set(CUDA_64_BIT_DEVICE_CODE OFF)
+  Out: |
+    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m32")
+
+- Rule: rule_if_cuda_64_bit_device_code
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: if_cuda_64_bit_device_code
+  In: if(${conditions}CUDA_64_BIT_DEVICE_CODE${other_conditions})
+  Out: |
+    set(SYCL_64_BIT_DEVICE_CODE "\${${CMAKE_CXX_FLAGS}:MATCHES "-m64"}")
+    if(${conditions}\${SYCL_64_BIT_DEVICE_CODE}${other_conditions})
