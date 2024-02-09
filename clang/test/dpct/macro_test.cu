@@ -1296,4 +1296,11 @@ void foo36() {
   CALLTEMPLATEFOO;
   CALLTEMPLATEFOO2;
 }
+
+template<typename T>void foo37(const T* t){}
+#define FOO37(T)  template void foo37(const T* t)
+//CHECK: FOO37(sycl::half);
+FOO37(half);
 #endif
+
+
