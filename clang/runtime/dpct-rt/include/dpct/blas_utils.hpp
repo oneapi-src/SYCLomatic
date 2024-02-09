@@ -20,8 +20,7 @@
 
 namespace dpct {
 namespace blas {
-template <typename target_t, typename input_t>
-class result_memory_t {
+template <typename target_t, typename input_t> class result_memory_t {
   // TODO: need support input scalar value copy for API like `rot`
 public:
   result_memory_t(sycl::queue q, input_t *input) : _q(q), _input(input) {
