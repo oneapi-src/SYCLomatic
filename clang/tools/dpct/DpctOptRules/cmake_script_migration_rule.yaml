@@ -770,6 +770,4 @@
   Priority: Fallback
   CmakeSyntax: if_cuda_64_bit_device_code
   In: if(${conditions}CUDA_64_BIT_DEVICE_CODE${other_conditions})
-  Out: |
-    set(SYCL_64_BIT_DEVICE_CODE "\${${CMAKE_CXX_FLAGS}:MATCHES "-m64"}")
-    if(${conditions}\${SYCL_64_BIT_DEVICE_CODE}${other_conditions})
+  Out: if(${conditions}\${CMAKE_CXX_FLAGS} MATCHES "-m64"${other_conditions})
