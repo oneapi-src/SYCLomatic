@@ -580,7 +580,8 @@ template <size_t GROUP_WORK_ITEMS,
           size_t ITEMS_PER_WORK_ITEM,
           load_algorithm ALGORITHM,
           typename InputT,
-          typename InputIteratorT>
+          typename InputIteratorT,
+          typename Item>
 class workgroup_load {
 public:
   
@@ -645,7 +646,8 @@ public:
    }
 
 private:
-  
+
+uint8_t *_local_memory;
 };
 
 /// Perform a reduction of the data elements assigned to all threads in the
