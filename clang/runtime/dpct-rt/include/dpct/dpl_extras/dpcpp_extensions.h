@@ -590,13 +590,13 @@ public:
                             InputIteratorT block_itr,
                             InputT (&items)[ITEMS_PER_WORK_ITEM]){
      
-  if (ALGORITHM == blocked){
+  if constexpr (ALGORITHM == blocked){
       load_blocked(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
   }  
-  else if(ALGORITHM == striped){
+  if constexpr (ALGORITHM == striped){
     load_striped(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);  
   }
-  else if(ALGORITHM == warp_striped){
+  if constexpr (ALGORITHM == warp_striped){
     load_subgroup_striped(item, linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]); 
   }
    
@@ -623,7 +623,7 @@ public:
   }
 
   
-    __dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
+  __dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
                                              InputIteratorT block_itr,
                                              InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
