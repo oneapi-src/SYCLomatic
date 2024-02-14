@@ -601,20 +601,26 @@ public:
   }
    
  } 
-
+   //loads a linear segment of workgroup items into a blocked arrangement.
   __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
-  
+
+  //This implementation does not take in account range loading across workgroup items
+  //To-do: Decide whether range loading is required for group loading  
+    
   uint32_t workgroup_offset = linear_tid * ITEMS_PER_WORK_ITEM;
   #pragma unroll
     for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
       items[idx] = block_itr[workgroup_offset + idx];
     }
   }
-  
+    //loads a linear segment of workgroup items into a striped arrangement.
    __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
+    //This implementation does not take in account range loading across workgroup items
+    //To-do: Decide whether range loading is required for group loading  
+  
     #pragma unroll
      for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
         items[idx] = block_itr[linear_tid + (idx  * GROUP_WORK_ITEMS)];
@@ -622,11 +628,14 @@ public:
     
   }
 
-  
+   //loads a linear segment of workgroup items into a subgroup striped arrangement.
   __dpct_inline__ void load_subgroup_striped(const Item &item, size_t linear_tid,
                                              InputIteratorT block_itr,
                                              InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
+    //This implementation does not take in account range loading across workgroup items
+    //To-do: Decide whether range loading is required for group loading  
+    
     size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
     #pragma unroll
       for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
