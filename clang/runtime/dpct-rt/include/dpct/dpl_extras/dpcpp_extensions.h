@@ -583,15 +583,24 @@ template <size_t GROUP_WORK_ITEMS,
           typename InputIteratorT>
 class workgroup_load {
 public:
-  __dpct_inline__ void load(size_t linear_tid, InputIteratorT block_itr,
+  
+  workgroup_load(uint8_t *local_memory) : _local_memory(local_memory) {}
+
+  __dpct_inline__ void load(const Item &item, size_t linear_tid,
+                            InputIteratorT block_itr,
                             InputT (&items)[ITEMS_PER_WORK_ITEM]){
      
   if (ALGORITHM == blocked){
       load_blocked(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
-   }
- }  
-  
-private:
+  }  
+  else if(ALGORITHM == striped){
+    load_striped(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);  
+  }
+  else if(ALGORITHM == warp_striped){
+    load_subgroup_striped(item, linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]); 
+  }
+   
+ } 
 
   __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
@@ -602,46 +611,15 @@ private:
       items[idx] = block_itr[workgroup_offset + idx];
     }
   }
-
-};
-
-template <size_t GROUP_WORK_ITEMS,
-          size_t ITEMS_PER_WORK_ITEM,
-          load_algorithm ALGORITHM,
-          typename InputT,
-          typename InputIteratorT,
-          typename Item>
-class subgroup_load {
-public:
-  __dpct_inline__ void load(const Item &item, size_t linear_tid,
-                            InputIteratorT block_itr,
-                            InputT (&items)[ITEMS_PER_WORK_ITEM]){
-
-  if(ALGORITHM == striped){
-    load_striped(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);  
-  }
-  else if(ALGORITHM == warp_striped){
-    load_subgroup_striped(item, linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]); 
-  }
-}
-
-private:
-
-    __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
+  
+   __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
-    if (linear_tid + ((ITEMS_PER_WORK_ITEM - 1)*ITEMS_PER_WORK_ITEM) >= GROUP_WORK_ITEMS){
-      uint32_t final_idx = (GROUP_WORK_ITEMS - linear_tid)/ITEMS_PER_WORK_ITEM;
-      for (uint32_t idx = 0; idx < final_idx ; idx++) {
-        items[idx] = block_itr[linear_tid + (idx  * ITEMS_PER_WORK_ITEM)];
-      }
-    }
-    else{
     #pragma unroll
-      for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+     for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
         items[idx] = block_itr[linear_tid + (idx  * GROUP_WORK_ITEMS)];
       }
-    }
+    
   }
 
   
@@ -650,21 +628,15 @@ private:
                                              InputT (&items)[ITEMS_PER_WORK_ITEM]) {
   
     size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
-    if (linear_tid + ((ITEMS_PER_WORK_ITEM - 1)*ITEMS_PER_WORK_ITEM) >= GROUP_WORK_ITEMS){
-      uint32_t final_idx = (GROUP_WORK_ITEMS - linear_tid)/ITEMS_PER_WORK_ITEM;
-      for (uint32_t idx = 0; idx < final_idx ; idx++) {
-        new (&items[idx])
-          InputT(block_itr[subgroup_offset + linear_tid + (idx * ITEMS_PER_WORK_ITEM)]);
-      }
-    }
-    else{
     #pragma unroll
       for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
         new (&items[idx])
           InputT(block_itr[subgroup_offset + linear_tid + (idx * GROUP_WORK_ITEMS)]);
       }
-    }
- }
+   }
+
+private:
+  
 };
 
 /// Perform a reduction of the data elements assigned to all threads in the
