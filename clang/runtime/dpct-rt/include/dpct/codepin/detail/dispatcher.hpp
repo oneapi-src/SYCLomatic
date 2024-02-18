@@ -32,10 +32,14 @@ namespace dpct {
 namespace experimental {
 namespace detail {
 
+inline static std::map<std::string, int> api_index;
+inline static std::vector<std::string> dump_json;
+inline static std::string dump_file = "dump_log.json";
+
 class Logger {
 public:
-  Logger(const std::string &dump_file)
-      : dump_file(dump_file), ipf(dump_file, std::ios::in) {
+  Logger(const std::string &dumpFile)
+      : dump_file(dumpFile), ipf(dumpFile, std::ios::in) {
     if (ipf.is_open()) {
       std::getline(ipf, data);
       ipf.close();
@@ -78,20 +82,40 @@ inline uint32_t get_pointer_size_in_bytes_from_map(void *ptr) {
   return (it != ptr_size_map.end()) ? it->second : 0;
 }
 
-void dump(const char *value) {
+// Add faker dump for pass lit test
+#ifdef __NVCC__
+void dump(std::string &log, const int3 &value) {
   // plcaeholder
 }
 
-void dump(const std::string &value) {
+void dump(std::string &log, const float3 &value) {
+  // plcaeholder
+}
+#else
+void dump(std::string &log, const sycl::int3 &value) {
   // plcaeholder
 }
 
-template <class T> void dump(const T &value) {
-  if (std::is_arithmetic<T>::value) {
-    // plcaeholder
-  } else {
-    dump(value);
-  }
+void dump(std::string &log, const sycl::float3 &value) {
+  // plcaeholder
+}
+#endif
+
+void dump(std::string &log, const char *value) {
+  // plcaeholder
+  log = log + '\t' + std::string(value);
+}
+
+void dump(std::string &log, const std::string &value) {
+  // plcaeholder
+  log = log + '\t' + std::string(value);
+}
+
+template <class T>
+typename std::enable_if<std::is_arithmetic<T>::value>::type
+dump(std::string &log, const T &value) {
+  // plcaeholder
+  log = log + '\t' + std::to_string(value);
 }
 
 inline bool is_dev_ptr(void *p) {
@@ -167,10 +191,6 @@ void process_var(std::string log, dpct::queue_ptr stream,
   dispatchOutputCodePin(log, var, stream);
   process_var(log, stream, args...);
 }
-
-inline static std::map<std::string, int> api_index;
-inline static std::vector<std::string> dump_json;
-inline static std::string dump_file = "dump_log.json";
 
 inline void dump_data(const std::string &name, const std::string &data) {
   std::string data_str = "\"" + name + "\" : " + "{" + data + "}";

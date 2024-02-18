@@ -40,8 +40,8 @@
 #include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/Cuda.h"
-#include "clang/Lex/MacroArgs.h"
 #include "clang/Basic/SourceLocation.h"
+#include "clang/Lex/MacroArgs.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/SmallString.h"
@@ -8431,11 +8431,11 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       if (DRE->isLValue()) {
         DebugArgsString += ", ";
         DebugArgsStringSYCL += ", ";
-        std::string VarNameStr = DRE->getNameInfo().getAsString();
+        std::string VarNameStr = "\"" + DRE->getNameInfo().getAsString() + "\"";
         DebugArgsString += VarNameStr + ", ";
         DebugArgsStringSYCL += VarNameStr + ", ";
-        DebugArgsString += "(long *)&" + getStmtSpelling(Arg);
-        DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg);
+        DebugArgsString += getStmtSpelling(Arg);
+        DebugArgsStringSYCL += getStmtSpelling(Arg);
       }
     }
   }

@@ -30,10 +30,9 @@ int main() {
   cudaMalloc(&d_B, VECTOR_SIZE * sizeof(float));
   //CHECK: dpct::experimental::get_ptr_size_map()[d_C] = VECTOR_SIZE * sizeof(float);
   cudaMalloc(&d_C, VECTOR_SIZE * sizeof(float));
-  //CHECK: dpct::experimental::gen_prolog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, VAR_SCHEMA_0, (long *)&d_A, VAR_SCHEMA_1, (long *)&d_B, VAR_SCHEMA_2, (long *)&d_C);
+  //CHECK: dpct::experimental::gen_prolog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, "d_A", d_A, "d_B", d_B, "d_C", d_C);
   VectorAddKernel<<<1, VECTOR_SIZE>>>(d_A, d_B, d_C);
-  //CHECK: dpct::experimental::gen_epilog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, VAR_SCHEMA_0, (long *)&d_A, VAR_SCHEMA_1, (long *)&d_B, VAR_SCHEMA_2, (long *)&d_C);
-
+  //CHECK: dpct::experimental::gen_epilog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, "d_A", d_A, "d_B", d_B, "d_C", d_C);
   float Result[VECTOR_SIZE] = {};
  
   status = cudaMemcpy(Result, d_C, VECTOR_SIZE * sizeof(float), cudaMemcpyDeviceToHost);

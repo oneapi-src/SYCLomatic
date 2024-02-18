@@ -28,9 +28,8 @@ inline void synchronize(cudaStream_t stream) { cudaStreamSynchronize(stream); }
 /// \param args The var name string and variable value pair list.
 template <class... Args>
 void gen_prolog_API_CP(const std::string &api_name, cudaStream_t stream,
-                       Args... args) {
-  synchronize(stream);
-  dpct::experimental::detail::gen_log_API_CP(api_name, args...);
+                       Args... args) synchronize(stream);
+dpct::experimental::detail::gen_log_API_CP(api_name, stream, args...);
 }
 
 /// Generate API check point epilog.
@@ -53,7 +52,7 @@ template <class... Args>
 void gen_prolog_API_CP(const std::string &api_name, sycl::queue *queue,
                        Args... args) {
   synchronize(queue);
-  dpct::experimental::detail::gen_log_API_CP(api_name, args...);
+  dpct::experimental::detail::gen_log_API_CP(api_name, queue, args...);
 }
 
 /// Generate API check point epilog.
@@ -70,7 +69,6 @@ void gen_epilog_API_CP(const std::string &api_name, sycl::queue *queue,
 inline std::map<void *, uint32_t> &get_ptr_size_map() {
   return dpct::experimental::detail::get_ptr_size_map();
 }
-
 
 } // namespace experimental
 } // namespace dpct
