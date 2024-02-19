@@ -20,6 +20,7 @@
 
 namespace dpct {
 namespace blas {
+namespace detail {
 template <typename target_t, typename input_t, bool has_input>
 class scalar_memory_t {
 public:
@@ -77,12 +78,10 @@ private:
   target_t *_target = nullptr;
   bool _need_free = true;
 };
-using out_mem_int_t = scalar_memory_t<std::int64_t, int, false>;
-using out_mem_int64_t = scalar_memory_t<std::int64_t, std::int64_t, false>;
-using inout_mem_float_t = scalar_memory_t<float, float, true>;
-using inout_mem_double_t = scalar_memory_t<double, double, true>;
-using inout_mem_float2_t = scalar_memory_t<sycl::float2, sycl::float2, true>;
-using inout_mem_double2_t = scalar_memory_t<sycl::double2, sycl::double2, true>;
+} // namespace detail
+using out_mem_int_t = detail::scalar_memory_t<std::int64_t, int, false>;
+using out_mem_int64_t =
+    detail::scalar_memory_t<std::int64_t, std::int64_t, false>;
 } // namespace blas
 
 /// Get the value of \p s.
