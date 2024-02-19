@@ -503,6 +503,7 @@ enum class random_engine_type {
 typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
 
 /// Create a host random number generator.
+/// \tparam work_on_cpu Whether the work is offloaded to CPU.
 /// \param type The random engine type.
 /// \return The pointer of random number generator.
 template <bool work_on_cpu = false>
