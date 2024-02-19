@@ -115,6 +115,7 @@ add_clang_library(DPCT
   Rewriters/CUB/RewriterDeviceSegmentedSort.cpp
   Rewriters/CUB/RewriterDeviceSelect.cpp
   Rewriters/CUB/RewriterUtilityFunctions.cpp
+  Rewriters/CUB/RewriterDevicePartition.cpp
   CallExprRewriter.cpp
   CallExprRewriterAtomic.cpp
   CallExprRewriterCUFFT.cpp
