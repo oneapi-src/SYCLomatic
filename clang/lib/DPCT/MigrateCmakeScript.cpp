@@ -497,6 +497,62 @@ void processCmakeMinimumRequired(std::string &Input, size_t &Size,
   Index = Begin + ReplStr.size(); // Update index
 }
 
+void processExecuteProcess(std::string &Input, size_t &Size, size_t &Index) {
+  std::string VarName;
+  std::string Value;
+  size_t Begin, End;
+
+  // Get the begin of firt argument of cmake_minimum_required
+  Index = skipWhiteSpaces(Input, Index);
+  Begin = Index;
+
+  // Get the end of the first argument of cmake_minimum_required
+  Index = gotoEndOfCmakeWord(Input, Index, ')');
+  End = Index;
+
+  // Get the name of the first argument
+  VarName = Input.substr(Begin, End - Begin);
+
+  printf("\t#########000000 VarName: [%s]\n", VarName.c_str());
+
+  // Get the begin of the second argument
+  Index = skipWhiteSpaces(Input, End + 1);
+  Begin = Index;
+
+  Index = gotoEndOfCmakeCommandStmt(Input, Index);
+  End = Index;
+
+  // Get the name of the second argument
+  Value = Input.substr(Begin, End - Begin);
+
+  printf("\t#########000000 Value: [%s]\n", Value.c_str());
+  size_t Pos = Value.find("-Xcompiler");
+  if (Pos != std::string::npos) {
+
+    size_t NextPos = Pos + strlen("-Xcompiler");
+    NextPos = skipWhiteSpaces(Value, NextPos);
+    printf("Find string litera### [%c]\n", Value[NextPos]);
+
+    // To check if the value of opition "-Xcompiler" is a string literal, if it
+    // is a string literal, just remove '"' for the value.
+    if (Value[NextPos] == '"') {
+      printf("String litera found ###########################\n");
+      Value[NextPos] = ' ';
+      size_t Size = Value.size();
+      size_t Idx = NextPos;
+      for (; Idx < Size && Value[Idx] != '"'; Idx++) {
+      }
+      Value[Idx] = ' ';
+    }
+
+    printf("\t#########11111 Value: [%s]\n", Value.c_str());
+  }
+
+  Input.replace(Begin, End - Begin, Value);
+  Size = Input.size();          // Update string size
+  Index = Begin + Value.size(); // Update index
+}
+
 // Implicit migration rule is used when the migration logic is difficult to be
 // described with yaml based rule syntax. Currently only migration of
 // cmake_minimum_required() is implemented by implicit migration rule.
@@ -528,6 +584,11 @@ void applyImplicitMigrationRule(std::string &Input,
 
     if (Index < Size && Input[Index] == '(') {
       std::string Command = Input.substr(Begin, End - Begin);
+
+      printf("##### Command: [%s]\n", Command.c_str());
+      if (Command == "execute_process") {
+        processExecuteProcess(Input, Size, Index);
+      }
 
       // Process implict cmake syntax
       if (Command == CmakeSyntax) {

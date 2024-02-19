@@ -771,3 +771,29 @@
   CmakeSyntax: if_cuda_64_bit_device_code
   In: if(${conditions}CUDA_64_BIT_DEVICE_CODE${other_conditions})
   Out: if(${conditions}(\${CMAKE_CXX_FLAGS} MATCHES "-m64")${other_conditions})
+
+- Rule: rule_CMAKE_CUDA_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_COMPILER
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_COMPILER
+      Out: CMAKE_SYCL_COMPILER
+
+- Rule: rule_CMAKE_CUDA_HOST_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_HOST_COMPILER
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_HOST_COMPILER
+      Out: CMAKE_SYCL_HOST_COMPILER
