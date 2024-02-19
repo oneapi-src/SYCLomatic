@@ -24,7 +24,7 @@ __half beta_H = 0.0f;
 int main() {
   cublasStatus_t status;
   cublasHandle_t handle;
-  // CHECK: handle = std::make_shared<dpct::blas::descriptor>();
+  // CHECK: handle = new dpct::blas::descriptor();
   cublasCreate(&handle);
 
   // CHECK: {

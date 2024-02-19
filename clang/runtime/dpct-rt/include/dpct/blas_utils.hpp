@@ -37,7 +37,7 @@ private:
   static inline queue_ptr _saved_queue_ptr = &dpct::get_default_queue();
 };
 
-using descriptor_ptr = std::shared_ptr<descriptor>;
+using descriptor_ptr = descriptor *;
 } // namespace blas
 
 /// Get the value of \p s.

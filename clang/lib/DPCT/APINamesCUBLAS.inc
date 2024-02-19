@@ -21,11 +21,9 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGN_FACTORY_ENTRY("cublasCreate_v2", DEREF(0),
-                         CALL("std::make_shared<" +
-                              MapNames::getDpctNamespace() +
-                              "blas::descriptor>"))))
-ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasDestroy_v2", ARG(0), false,
-                                             "reset"))
+                         NEW(MapNames::getDpctNamespace() +
+                             "blas::descriptor"))))
+ASSIGNABLE_FACTORY(DELETE_FACTORY_ENTRY("cublasDestroy_v2", ARG(0)))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasSetStream_v2", ARG(0), true,
                                              "set_queue", ARG(1)))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasGetStream_v2", DEREF(1),

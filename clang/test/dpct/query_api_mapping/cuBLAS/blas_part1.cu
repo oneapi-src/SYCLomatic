@@ -201,7 +201,7 @@
 // cublasDestroy: CUDA API:
 // cublasDestroy-NEXT:   cublasDestroy(handle /*cublasHandle_t*/);
 // cublasDestroy-NEXT: Is migrated to:
-// cublasDestroy-NEXT:   handle.reset();
+// cublasDestroy-NEXT:   delete (handle);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGetAtomicsMode | FileCheck %s -check-prefix=cublasGetAtomicsMode
 // cublasGetAtomicsMode: CUDA API:

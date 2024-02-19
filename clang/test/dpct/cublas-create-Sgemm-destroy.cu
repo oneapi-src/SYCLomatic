@@ -23,8 +23,8 @@ extern cublasHandle_t handle2;
 int foo2(cudaDataType DT) {
   // CHECK: int status;
   // CHECK-NEXT: dpct::blas::descriptor_ptr handle;
-  // CHECK-NEXT: handle = std::make_shared<dpct::blas::descriptor>();
-  // CHECK: status = DPCT_CHECK_ERROR(handle = std::make_shared<dpct::blas::descriptor>());
+  // CHECK-NEXT: handle = new dpct::blas::descriptor();
+  // CHECK: status = DPCT_CHECK_ERROR(handle = new dpct::blas::descriptor());
   // CHECK-NEXT: if (status != 0) {
   cublasStatus_t status;
   cublasHandle_t handle;
@@ -171,8 +171,8 @@ int foo2(cudaDataType DT) {
   cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, &dA(10, 20), N, d_B_S, N, &beta_S, d_C_S, N);
 #undef dA(i, j)
 
-  // CHECK: status = DPCT_CHECK_ERROR(handle.reset());
-  // CHECK-NEXT: handle.reset();
+  // CHECK: status = DPCT_CHECK_ERROR(delete (handle));
+  // CHECK-NEXT: delete (handle);
   // CHECK-NEXT: return 0;
   status = cublasDestroy(handle);
   cublasDestroy(handle);
@@ -215,8 +215,8 @@ void foo() {
 #define CHECK(err) CHECK_INTERNAL(err)
 
 void foo2(cublasHandle_t *handles, int i, cudaStream_t s) {
-  // CHECK: CHECK(DPCT_CHECK_ERROR(handles[i] = std::make_shared<dpct::blas::descriptor>()));
-  // CHECK-NEXT: CHECK(DPCT_CHECK_ERROR(handles[i].reset()));
+  // CHECK: CHECK(DPCT_CHECK_ERROR(handles[i] = new dpct::blas::descriptor()));
+  // CHECK-NEXT: CHECK(DPCT_CHECK_ERROR(delete (handles[i])));
   // CHECK-NEXT: CHECK(DPCT_CHECK_ERROR(handles[i]->set_queue(s)));
   // CHECK-NEXT: CHECK(DPCT_CHECK_ERROR(s = &(handles[i]->get_queue())));
   CHECK(cublasCreate(&handles[i]));

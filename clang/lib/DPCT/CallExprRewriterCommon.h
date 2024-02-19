@@ -704,12 +704,15 @@ makeDoublePointerConstCastExprCreator(
 }
 
 template <class... ArgsT>
-inline std::function<NewExprPrinter<ArgsT...>(const CallExpr *)>
-makeNewExprCreator(std::string TypeName,
-                   std::function<ArgsT(const CallExpr *)>... Args) {
-  return PrinterCreator<NewExprPrinter<ArgsT...>, std::string,
-                        std::function<ArgsT(const CallExpr *)>...>(TypeName,
-                                                                   Args...);
+inline std::function<NewDeleteExprPrinter<ArgsT...>(const CallExpr *)>
+makeNewDeleteExprCreator(bool IsNew, std::string TypeName,
+                         std::function<ArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<NewDeleteExprPrinter<ArgsT...>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
+                        std::function<ArgsT(const CallExpr *)>...>(
+      [=](const CallExpr *) { return TypeName; },
+      [=](const CallExpr *) { return IsNew; }, Args...);
 }
 
 template <class SubExprT>
@@ -1133,6 +1136,17 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createBinaryOpRewriterFactor
       std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
 }
 
+template <class Value>
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createNewDeleteRewriterFactory(
+    bool IsNew, const std::string &SourceName, const std::string &TypeName,
+    std::function<Value(const CallExpr *)> &&ValueCreator) {
+  return std::make_shared<
+      CallExprRewriterFactory<NewDeleteRewriter<Value>, std::string, bool,
+                              std::function<Value(const CallExpr *)>>>(
+      SourceName, TypeName, IsNew,
+      std::forward<std::function<Value(const CallExpr *)>>(ValueCreator));
+}
 
 template <class BaseT, class MemberT>
 inline std::shared_ptr<CallExprRewriterFactoryBase> createMemberExprRewriterFactory(
@@ -2128,7 +2142,8 @@ public:
   makeDoublePointerConstCastExprCreator(BASE_VALUE_TYPE, EXPR,                 \
                                         DOES_BASE_VALUE_NEED_CONST,            \
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
-#define NEW(...) makeNewExprCreator(__VA_ARGS__)
+#define NEW(...) makeNewDeleteExprCreator(true, __VA_ARGS__)
+#define DELETE(...) makeNewDeleteExprCreator(false, __VA_ARGS__)
 #define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
 #define ZERO_INITIALIZER(SUBEXPR) makeZeroInitializerCreator(SUBEXPR)
 #define SUBGROUP                                                               \
@@ -2154,6 +2169,8 @@ public:
   {FuncName, createIfElseRewriterFactory(FuncName, Pred IfBlock ElseBlock 0)},
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
   {FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__)},
+#define DELETE_FACTORY_ENTRY(FuncName, E)                                      \
+  {FuncName, createNewDeleteRewriterFactory(false, FuncName, "", E)},
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
   {FuncName, createBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(      \
                  FuncName, L, R)},
