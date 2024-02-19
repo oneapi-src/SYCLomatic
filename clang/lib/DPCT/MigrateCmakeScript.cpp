@@ -502,50 +502,33 @@ void processExecuteProcess(std::string &Input, size_t &Size, size_t &Index) {
   std::string Value;
   size_t Begin, End;
 
-  // Get the begin of firt argument of cmake_minimum_required
+  // Get the begin of firt argument
   Index = skipWhiteSpaces(Input, Index);
-  Begin = Index;
-
-  // Get the end of the first argument of cmake_minimum_required
-  Index = gotoEndOfCmakeWord(Input, Index, ')');
-  End = Index;
-
-  // Get the name of the first argument
-  VarName = Input.substr(Begin, End - Begin);
-
-  printf("\t#########000000 VarName: [%s]\n", VarName.c_str());
-
-  // Get the begin of the second argument
-  Index = skipWhiteSpaces(Input, End + 1);
   Begin = Index;
 
   Index = gotoEndOfCmakeCommandStmt(Input, Index);
   End = Index;
 
-  // Get the name of the second argument
+  // Get the value of the second argument
   Value = Input.substr(Begin, End - Begin);
 
-  printf("\t#########000000 Value: [%s]\n", Value.c_str());
   size_t Pos = Value.find("-Xcompiler");
   if (Pos != std::string::npos) {
 
     size_t NextPos = Pos + strlen("-Xcompiler");
     NextPos = skipWhiteSpaces(Value, NextPos);
-    printf("Find string litera### [%c]\n", Value[NextPos]);
 
     // To check if the value of opition "-Xcompiler" is a string literal, if it
     // is a string literal, just remove '"' for the value.
     if (Value[NextPos] == '"') {
-      printf("String litera found ###########################\n");
       Value[NextPos] = ' ';
       size_t Size = Value.size();
       size_t Idx = NextPos;
       for (; Idx < Size && Value[Idx] != '"'; Idx++) {
       }
+      assert(Value[Idx] == '"' && "Invlid option for -Xcompiler.");
       Value[Idx] = ' ';
     }
-
-    printf("\t#########11111 Value: [%s]\n", Value.c_str());
   }
 
   Input.replace(Begin, End - Begin, Value);
@@ -585,10 +568,10 @@ void applyImplicitMigrationRule(std::string &Input,
     if (Index < Size && Input[Index] == '(') {
       std::string Command = Input.substr(Begin, End - Begin);
 
-      printf("##### Command: [%s]\n", Command.c_str());
-      if (Command == "execute_process") {
-        processExecuteProcess(Input, Size, Index);
-      }
+      // printf("##### Command: [%s]\n", Command.c_str());
+      // if (Command == "execute_process") {
+      //   processExecuteProcess(Input, Size, Index);
+      // }
 
       // Process implict cmake syntax
       if (Command == CmakeSyntax) {
@@ -667,6 +650,7 @@ static void applyCmakeMigrationRules() {
                         void (*)(std::string &, size_t &, size_t &)>
       DispatchTable = {
           {"cmake_minimum_required", processCmakeMinimumRequired},
+          {"execute_process", processExecuteProcess},
       };
 
   for (auto &Entry : CmakeScriptFileBufferMap) {
@@ -724,7 +708,7 @@ static void storeBufferToFile() {
 // cmake systaxes need to be processed by implicit migration rules, as they are
 // difficult to be described with yaml based rule syntax.
 static const std::vector<std::string> ImplicitMigrationRules = {
-    "cmake_minimum_required"};
+    "cmake_minimum_required", "execute_process"};
 
 static void reserveImplicitMigrationRules() {
   for (const auto &Rule : ImplicitMigrationRules) {
