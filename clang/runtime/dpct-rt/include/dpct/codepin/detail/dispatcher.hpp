@@ -1,11 +1,10 @@
-//==---- dispatcher.hpp -------------------------------*- C++
-//-*----------------==//
+//==---- dispatcher.hpp -----------------------------*-C++-*-------------==//
 //
 // Copyright (C) Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // See https://llvm.org/LICENSE.txt for license information.
 //
-//===--------------------------------------------------------------------------===//
+//===--------------------------------------------------------------------===//
 #ifndef __DPCT_CODEPIN_DISPATCHER_HPP__
 #define __DPCT_CODEPIN_DISPATCHER_HPP__
 
@@ -82,22 +81,29 @@ inline uint32_t get_pointer_size_in_bytes_from_map(void *ptr) {
   return (it != ptr_size_map.end()) ? it->second : 0;
 }
 
-// Add faker dump for pass lit test
 #ifdef __NVCC__
 void dump(std::string &log, const int3 &value) {
-  // plcaeholder
+  log = log + '\t' + std::to_string(value.x);
+  log = log + '\t' + std::to_string(value.y);
+  log = log + '\t' + std::to_string(value.z);
 }
 
 void dump(std::string &log, const float3 &value) {
-  // plcaeholder
+  log = log + '\t' + std::to_string(value.x);
+  log = log + '\t' + std::to_string(value.y);
+  log = log + '\t' + std::to_string(value.z);
 }
 #else
 void dump(std::string &log, const sycl::int3 &value) {
-  // plcaeholder
+  log = log + '\t' + std::to_string(value.x());
+  log = log + '\t' + std::to_string(value.y());
+  log = log + '\t' + std::to_string(value.z());
 }
 
 void dump(std::string &log, const sycl::float3 &value) {
-  // plcaeholder
+  log = log + '\t' + std::to_string(value.x());
+  log = log + '\t' + std::to_string(value.y());
+  log = log + '\t' + std::to_string(value.z());
 }
 #endif
 
@@ -136,9 +142,9 @@ inline bool is_dev_ptr(void *p) {
 
 template <class T>
 #ifdef __NVCC__
-void dispatchOutputCodePin(std::string &log, T a, cudaStream_t stream) {
+void dispatch_codePin(std::string &log, T a, cudaStream_t stream) {
 #else
-void dispatchOutputCodePin(std::string &log, T a, dpct::queue_ptr stream) {
+void dispatch_codePin(std::string &log, T a, dpct::queue_ptr stream) {
 #endif
   if constexpr (std::is_pointer_v<T>) {
     int size = get_pointer_size_in_bytes_from_map(a);
@@ -155,18 +161,18 @@ void dispatchOutputCodePin(std::string &log, T a, dpct::queue_ptr stream) {
       stream->memcpy(hData, a, size * sizeof(PointedType)).wait();
 #endif
       for (int i = 0; i < size; ++i) {
-        dispatchOutputCodePin(log, *(hData + i), stream);
+        dispatch_codePin(log, *(hData + i), stream);
       }
       delete[] hData;
     } else {
       for (int i = 0; i < size; ++i) {
-        dispatchOutputCodePin(log, *(a + i), stream);
+        dispatch_codePin(log, *(a + i), stream);
       }
     }
 
   } else if constexpr (std::is_array_v<T>) {
     for (auto tmp : a) {
-      dispatchOutputCodePin(log, tmp, stream);
+      dispatch_codePin(log, tmp, stream);
     }
   } else {
     dump(log, a);
@@ -181,14 +187,14 @@ inline void process_var(std::string log, dpct::queue_ptr stream) { ; }
 
 template <class T, class... Args>
 #ifdef __NVCC__
-void process_var(std::string log, cudaStream_t stream,
+void process_var(std::string &log, cudaStream_t stream,
                  const std::string &varName, T var, Args... args) {
 #else
-void process_var(std::string log, dpct::queue_ptr stream,
+void process_var(std::string &log, dpct::queue_ptr stream,
                  const std::string &varName, T var, Args... args) {
 #endif
   log += "\"" + varName + "\":\"";
-  dispatchOutputCodePin(log, var, stream);
+  dispatch_codePin(log, var, stream);
   process_var(log, stream, args...);
 }
 

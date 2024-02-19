@@ -1,10 +1,10 @@
-//==---- codepin.hpp -------------------------*- C++ -*---------------------==//
+//==---- codepin.hpp -------------------------*- C++ -*------------------==//
 //
 // Copyright (C) Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // See https://llvm.org/LICENSE.txt for license information.
 //
-//===----------------------------------------------------------------------===//
+//===-------------------------------------------------------------------===//
 #ifndef __DPCT_CODEPIN_HPP__
 #define __DPCT_CODEPIN_HPP__
 
@@ -28,8 +28,9 @@ inline void synchronize(cudaStream_t stream) { cudaStreamSynchronize(stream); }
 /// \param args The var name string and variable value pair list.
 template <class... Args>
 void gen_prolog_API_CP(const std::string &api_name, cudaStream_t stream,
-                       Args... args) synchronize(stream);
-dpct::experimental::detail::gen_log_API_CP(api_name, stream, args...);
+                       Args... args) {
+  synchronize(stream);
+  dpct::experimental::detail::gen_log_API_CP(api_name, stream, args...);
 }
 
 /// Generate API check point epilog.
