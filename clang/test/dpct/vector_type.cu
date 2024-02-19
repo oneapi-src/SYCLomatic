@@ -3692,7 +3692,7 @@ void test2() {
 
 template <typename T> struct C { T a; };
 // CHECK: /*
-// CHECK-NEXT: DPCT1122:{{[0-9]+}}: Vector type used in template argument may cause redefinition problem. Please verify.
+// CHECK-NEXT: DPCT1122:{{[0-9]+}}: The element type of vector type in the migrated code may be different from the original code. Please verify whether it will cause redefinition problem when used in template argument.
 // CHECK-NEXT: */
 // CHECK-NEXT: template <> struct C<sycl::long4> { sycl::long4 a; };
 template <> struct C<longlong4> { longlong4 a; };
@@ -3702,7 +3702,7 @@ template <typename T> T f() {
   return a;
 }
 // CHECK: /*
-// CHECK-NEXT: DPCT1122:{{[0-9]+}}: Vector type used in template argument may cause redefinition problem. Please verify.
+// CHECK-NEXT: DPCT1122:{{[0-9]+}}: The element type of vector type in the migrated code may be different from the original code. Please verify whether it will cause redefinition problem when used in template argument.
 // CHECK-NEXT: */
 // CHECK-NEXT: template <> sycl::long4 f<sycl::long4>() {
 // CHECK-NEXT:   sycl::long4 a;

@@ -2533,10 +2533,10 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                    "ulonglong1", "ulonglong2", "ulonglong3", "ulonglong4")))));
   };
   MF.addMatcher(classTemplateSpecializationDecl(HasLongLongVecTypeArg())
-                    .bind("vectorTypeInClassTemplateArg"),
+                    .bind("vectorTypeInTemplateArg"),
                 this);
   MF.addMatcher(
-      functionDecl(HasLongLongVecTypeArg()).bind("vectorTypeInFuncTemplateArg"),
+      functionDecl(HasLongLongVecTypeArg()).bind("vectorTypeInTemplateArg"),
       this);
 }
 
@@ -2693,13 +2693,8 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(DRE, Replacement));
     return;
   }
-  if (const auto *CTSD = getNodeAsType<ClassTemplateSpecializationDecl>(
-          Result, "vectorTypeInClassTemplateArg")) {
-    report(CTSD->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false);
-  }
-  if (const auto *FD =
-          getNodeAsType<FunctionDecl>(Result, "vectorTypeInFuncTemplateArg")) {
-    report(FD->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false);
+  if (const auto *D = getNodeAsType<Decl>(Result, "vectorTypeInTemplateArg")) {
+    report(D->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false);
   }
 }
 
