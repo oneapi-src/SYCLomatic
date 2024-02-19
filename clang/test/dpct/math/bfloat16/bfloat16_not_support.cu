@@ -44,6 +44,14 @@ __global__ void f() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __float2bfloat16 is not supported.
   // CHECK-NEXT: */
   bf16 = __float2bfloat16(f);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1122:{{[0-9]+}}: SYCL API call for ldg does not support __nv_bfloat16 type. You may need to adjust this code.
+  // CHECK-NEXT: */
+  __ldg(&bf16);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1122:{{[0-9]+}}: SYCL API call for ldg does not support __nv_bfloat162 type. You may need to adjust this code.
+  // CHECK-NEXT: */
+  __ldg(&bf162);
 }
 
 int main() { return 0; }

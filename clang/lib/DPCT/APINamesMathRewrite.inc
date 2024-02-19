@@ -2615,15 +2615,6 @@ MATH_API_REWRITER_DEVICE(
                               std::string("__ldcv"), std::string("'*'"))))
 
 MATH_API_REWRITER_DEVICE(
-    "__ldg",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__ldg"), EMPTY_FACTORY_ENTRY("__ldg"),
-        EMPTY_FACTORY_ENTRY("__ldg"),
-        WARNING_FACTORY_ENTRY("__ldg", DEREF_FACTORY_ENTRY("__ldg", ARG(0)),
-                              Diagnostics::MATH_EMULATION_EXPRESSION,
-                              std::string("__ldg"), std::string("'*'"))))
-
-MATH_API_REWRITER_DEVICE(
     "__ldlu",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__ldlu"), EMPTY_FACTORY_ENTRY("__ldlu"),
