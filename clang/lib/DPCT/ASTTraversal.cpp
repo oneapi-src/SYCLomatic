@@ -2526,6 +2526,18 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                         hasParent(implicitCastExpr())))
           .bind("halfRawExpr"),
       this);
+
+  auto HasLongLongVecTypeArg = [&]() {
+    return hasAnyTemplateArgument(refersToType(hasDeclaration(namedDecl(
+        hasAnyName("longlong1", "longlong2", "longlong3", "longlong4",
+                   "ulonglong1", "ulonglong2", "ulonglong3", "ulonglong4")))));
+  };
+  MF.addMatcher(classTemplateSpecializationDecl(HasLongLongVecTypeArg())
+                    .bind("vectorTypeInClassTemplateArg"),
+                this);
+  MF.addMatcher(
+      functionDecl(HasLongLongVecTypeArg()).bind("vectorTypeInFuncTemplateArg"),
+      this);
 }
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -2680,6 +2692,14 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     OS.flush();
     emplaceTransformation(new ReplaceStmt(DRE, Replacement));
     return;
+  }
+  if (const auto *CTSD = getNodeAsType<ClassTemplateSpecializationDecl>(
+          Result, "vectorTypeInClassTemplateArg")) {
+    report(CTSD->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false);
+  }
+  if (const auto *FD =
+          getNodeAsType<FunctionDecl>(Result, "vectorTypeInFuncTemplateArg")) {
+    report(FD->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false);
   }
 }
 
