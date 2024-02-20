@@ -42,22 +42,25 @@ void foo() {
   cublasDiagType_t diag;
   std::int64_t result;
 
-  //      CHECK: status = [&]() {
+  //      CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int64_t res(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, A_s, lda, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: status = [&]() {
+  //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int64_t res(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, A_d, lda, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: status = [&]() {
+  //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int64_t res(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, (std::complex<float>*)A_c, lda, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: status = [&]() {
+  //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int64_t res(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, (std::complex<double>*)A_z, lda, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
@@ -67,22 +70,25 @@ void foo() {
   status = cublasIcamax_64(handle, n, A_c, lda, &result);
   status = cublasIzamax_64(handle, n, A_z, lda, &result);
 
-  //      CHECK: status = [&]() {
+  //      CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int64_t res(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, A_s, lda, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: status = [&]() {
+  //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int64_t res(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, A_d, lda, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: status = [&]() {
+  //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int64_t res(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<float>*)A_c, lda, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: status = [&]() {
+  //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int64_t res(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<double>*)A_z, lda, res.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;

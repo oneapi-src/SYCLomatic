@@ -42,7 +42,7 @@ int main() {
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: [&]() {
+  // CHECK: [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int_t res(handle->get_queue(), result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
@@ -55,7 +55,7 @@ int main() {
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: [&]() {
+  // CHECK: [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int_t res(handle->get_queue(), result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
@@ -69,7 +69,7 @@ int main() {
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: [&]() {
+  // CHECK: [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int_t res(handle->get_queue(), result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
@@ -82,7 +82,7 @@ int main() {
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
-  // CHECK-NEXT: [&]() {
+  // CHECK: [&]() {
   // CHECK-NEXT: dpct::blas::out_mem_int_t res(handle->get_queue(), result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
