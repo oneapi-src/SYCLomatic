@@ -1,20 +1,16 @@
 CodePin
 ===============
 
-There are cases that the migrated SYCL program has different runtime behavior to
-the original CUDA program. The reason of the inconsistency could be:
+There are some cases where the migrated SYCL program may have runtime behavior that differs from the original CUDA program. Reasons for this inconsistency include:
 * Difference in arithmetic precision between hardware.
 * Semantic difference between the CUDA and SYCL APIs
 * Errors introduced during the automatic migration
 
-CodePin is introduced as a sub-feature of |tool_name| to reduce the effort of
-debugging such inconsist runtime behavior. When CodePin is enabled, |tool_name|
-will not only migrate the CUDA program to SYCL but also generate instrumented
-CUDA program.
+CodePin is introduced as a sub-feature of |tool_name| in order to reduce the effort of debugging such inconsistencies in runtime behavior.
+When CodePin is enabled, |tool_name| will migrate the CUDA program to SYCL, but will also generate an instrumented version of the CUDA program.
 
-The instrumented code will dump the data of related variables before/after
-kernel calls or selected API calls into a report. Comparing the reports generated
-from the CUDA and SYCL program helps identify the point of divergent behavior.
+The instrumented code will dump the data of related variables, before/after selected API or kernel calls, into a report.
+Comparing the reports generated from the CUDA and SYCL program can help identify the source of divergent runtime behavior.
 
 Command Line Option
 ----------------------------
@@ -28,7 +24,7 @@ Example
 The following example demonstrates how CodePin works.
 
 .. code-block:: c++
-
+    :linenos:
     //example.cu
     #include <iostream>
     __global__ void vectorAdd(int3 *a, int3 *result) {
@@ -74,12 +70,12 @@ The following example demonstrates how CodePin works.
     Result[3]: (2, 3, 4)
     */
 
-The example CUDA code has an issue in the cudaMemcpy() before the vectorAdd kernel call,
+The example CUDA code has an issue in the cudaMemcpy() before the vectorAdd kernel call:
 the size to be copied is hard coded as ``vectorSize * 12`` instead of ``vectorSize * sizeof(int3)``
-which causes incorrect behavior of the migrated SYCL program because ``int3`` will be
-migrated to ``sycl::int3`` and the size of ``sycl::int3`` is 16 bytes not 12 bytes.
+, which causes incorrect behavior of the migrated SYCL program. This is because ``int3`` will be
+migrated to ``sycl::int3`` and the size of ``sycl::int3`` is 16 bytes, not 12 bytes.
 
-To debug the issue, user can migrate the CUDA program with CodePin enabled.
+To debug the issue, the user can migrate the CUDA program with CodePin enabled.
 .. code-block:: bash
    dpct example.cu --enable-codepin
 
@@ -217,8 +213,8 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
     Result[3]: (2, 3, 4)
     */
 
-After building and executing ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``, following report will be generated.
+After building and executing ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``, the following report will be generated.
 
 .. figure:: /_images/codepin_example_report.png
 
-The report helps the user to identify where the runtime behaivor of the CUDA and the SYCL version start diverge.
+The report helps the user to identify where the runtime behavior of the CUDA and the SYCL version start to diverge from one another.
