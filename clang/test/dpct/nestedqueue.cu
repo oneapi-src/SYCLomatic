@@ -60,15 +60,15 @@ __global__ void foo3(){
 }
 
 __host__ void foo4(){
-  // CHECK: dpct::queue_ptr handle;
+  // CHECK: dpct::blas::descriptor_ptr handle;
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;
   int incx=1;
   int* result =0;
   // CHECK: [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int_t res(*handle, result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int_t res(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   cublasIsamax(handle, n, x_S, incx, result);

@@ -248,6 +248,7 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
         std::make_shared<ExtReplacement>(SM, &TL, EA.getReplacedString(),
                                          nullptr));
   }
+  EA.applyAllSubExprRepl();
 }
 const DeclRefExpr *getAddressedRef(const Expr *E) {
   E = E->IgnoreImplicitAsWritten();

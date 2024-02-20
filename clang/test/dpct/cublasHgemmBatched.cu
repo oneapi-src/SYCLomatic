@@ -20,7 +20,7 @@ int main() {
 
 
   cublasOperation_t trans3 = CUBLAS_OP_N;
-  // CHECK: dpct::gemm_batch(*handle, trans3, trans3, N, N, N, &alpha_H, (const void**)d_A_H, dpct::library_data_t::real_half, N, (const void**)d_B_H, dpct::library_data_t::real_half, N, &beta_H, (void**)d_C_H, dpct::library_data_t::real_half, N, 10, dpct::library_data_t::real_half);
+  // CHECK: dpct::gemm_batch(handle->get_queue(), trans3, trans3, N, N, N, &alpha_H, (const void**)d_A_H, dpct::library_data_t::real_half, N, (const void**)d_B_H, dpct::library_data_t::real_half, N, &beta_H, (void**)d_C_H, dpct::library_data_t::real_half, N, 10, dpct::library_data_t::real_half);
   cublasHgemmBatched(handle, trans3, trans3, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N, 10);
 }
 

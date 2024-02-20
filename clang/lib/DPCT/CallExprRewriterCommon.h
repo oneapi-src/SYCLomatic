@@ -528,6 +528,13 @@ makeTemplatedCalleeWithArgsCreator(
       });
 }
 
+template <UnaryOperatorKind Op, class ET>
+inline std::function<UnaryOperatorPrinter<Op, ET>(const CallExpr *)>
+makeUnaryOperatorCreator(std::function<ET(const CallExpr *)> E) {
+  return PrinterCreator<UnaryOperatorPrinter<Op, ET>,
+                        std::function<ET(const CallExpr *)>>(std::move(E));
+}
+
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
 inline std::function<BinaryOperatorPrinter<Op, LValueT, RValueT>(const CallExpr *)>
 makeBinaryOperatorCreator(std::function<LValueT(const CallExpr *)> L,
@@ -536,6 +543,13 @@ makeBinaryOperatorCreator(std::function<LValueT(const CallExpr *)> L,
                         std::function<LValueT(const CallExpr *)>,
                         std::function<RValueT(const CallExpr *)>>(std::move(L),
                                                                   std::move(R));
+}
+
+template <class ET>
+inline std::function<ParenExprPrinter<ET>(const CallExpr *)>
+makeParenExprCreator(std::function<ET(const CallExpr *)> E) {
+  return PrinterCreator<ParenExprPrinter<ET>,
+                        std::function<ET(const CallExpr *)>>(std::move(E));
 }
 
 template <class CalleeT, class... CallArgsT>
@@ -701,12 +715,15 @@ makeDoublePointerConstCastExprCreator(
 }
 
 template <class... ArgsT>
-inline std::function<NewExprPrinter<ArgsT...>(const CallExpr *)>
-makeNewExprCreator(std::string TypeName,
-                   std::function<ArgsT(const CallExpr *)>... Args) {
-  return PrinterCreator<NewExprPrinter<ArgsT...>, std::string,
-                        std::function<ArgsT(const CallExpr *)>...>(TypeName,
-                                                                   Args...);
+inline std::function<NewDeleteExprPrinter<ArgsT...>(const CallExpr *)>
+makeNewDeleteExprCreator(bool IsNew, std::string TypeName,
+                         std::function<ArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<NewDeleteExprPrinter<ArgsT...>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
+                        std::function<ArgsT(const CallExpr *)>...>(
+      [=](const CallExpr *) { return TypeName; },
+      [=](const CallExpr *) { return IsNew; }, Args...);
 }
 
 template <class... ArgsT>
@@ -1168,6 +1185,17 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createBinaryOpRewriterFactor
       std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
 }
 
+template <class Value>
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createNewDeleteRewriterFactory(
+    bool IsNew, const std::string &SourceName, const std::string &TypeName,
+    std::function<Value(const CallExpr *)> &&ValueCreator) {
+  return std::make_shared<
+      CallExprRewriterFactory<NewDeleteRewriter<Value>, std::string, bool,
+                              std::function<Value(const CallExpr *)>>>(
+      SourceName, TypeName, IsNew,
+      std::forward<std::function<Value(const CallExpr *)>>(ValueCreator));
+}
 
 template <class BaseT, class MemberT>
 inline std::shared_ptr<CallExprRewriterFactoryBase> createMemberExprRewriterFactory(
@@ -2145,7 +2173,9 @@ public:
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
 #define QUEUESTR makeQueueStr()
 #define QUEUEPTRSTR makeQueuePtrStr()
+#define UO(Op, E) makeUnaryOperatorCreator<Op>(E)
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
+#define PAREN(E) makeParenExprCreator(E)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define MEMBER_EXPR(...) makeMemberExprCreator(__VA_ARGS__)
 #define STATIC_MEMBER_EXPR(...) makeStaticMemberExprCreator(__VA_ARGS__)
@@ -2161,7 +2191,8 @@ public:
   makeDoublePointerConstCastExprCreator(BASE_VALUE_TYPE, EXPR,                 \
                                         DOES_BASE_VALUE_NEED_CONST,            \
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
-#define NEW(...) makeNewExprCreator(__VA_ARGS__)
+#define NEW(...) makeNewDeleteExprCreator(true, __VA_ARGS__)
+#define DELETE(...) makeNewDeleteExprCreator(false, __VA_ARGS__)
 #define DECL(TYPE, VAR, ...) makeDeclCreator(TYPE, VAR, __VA_ARGS__)
 #define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
 #define ZERO_INITIALIZER(SUBEXPR) makeZeroInitializerCreator(SUBEXPR)
@@ -2188,6 +2219,8 @@ public:
   {FuncName, createIfElseRewriterFactory(FuncName, Pred IfBlock ElseBlock 0)},
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
   {FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__)},
+#define DELETE_FACTORY_ENTRY(FuncName, E)                                      \
+  {FuncName, createNewDeleteRewriterFactory(false, FuncName, "", E)},
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
   {FuncName, createBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(      \
                  FuncName, L, R)},

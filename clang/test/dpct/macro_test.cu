@@ -1231,7 +1231,7 @@ void foo34() {
 
 
 //CHECK: #define ReturnErrorFunction                                                    \
-//CHECK-NEXT:   int amax(dpct::queue_ptr handle, const int n, const float *X,                \
+//CHECK-NEXT:   int amax(dpct::blas::descriptor_ptr handle, const int n, const float *X,     \
 //CHECK-NEXT:            const int incX, int &result) try {                                  \
 //CHECK-NEXT:     return [&]() {                                                             \
 //CHECK-NEXT:       dpct::blas::out_mem_int_t res(*handle, &result);                         \
@@ -1302,4 +1302,11 @@ void foo36() {
   CALLTEMPLATEFOO;
   CALLTEMPLATEFOO2;
 }
+
+template<typename T>void foo37(const T* t){}
+#define FOO37(T)  template void foo37(const T* t)
+//CHECK: FOO37(sycl::half);
+FOO37(half);
 #endif
+
+

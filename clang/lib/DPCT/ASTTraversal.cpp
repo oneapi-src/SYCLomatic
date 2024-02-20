@@ -3767,7 +3767,7 @@ std::string getValueStr(const Expr *Expr, std::string ExprStr,
     }
   }
   requestFeature(HelperFeatureEnum::device_ext);
-  return MapNames::getDpctNamespace() + "get_value(" + ExprStr + ", *" +
+  return MapNames::getDpctNamespace() + "get_value(" + ExprStr + ", " +
          QueueStr + ")";
 }
 
@@ -4592,6 +4592,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,
                                       CurrentArgumentRepl);
+      } else if (i == 0) {
+        CurrentArgumentRepl =
+            ExprAnalysis::ref(CE->getArg(0)) + "->get_queue()";
       } else {
         ExprAnalysis EA;
         EA.analyze(CE->getArg(i));
@@ -4737,6 +4740,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,
                                       CurrentArgumentRepl);
+      } else if (i == 0) {
+        CurrentArgumentRepl =
+            ExprAnalysis::ref(CE->getArg(0)) + "->get_queue()";
       } else {
         ExprAnalysis EA;
         EA.analyze(CE->getArg(i));
@@ -4772,9 +4778,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     auto ReplInfoPair = MapNames::LegacyBLASFuncReplInfoMap.find(FuncName);
     MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
     requestFeature(HelperFeatureEnum::device_ext);
-    CallExprReplStr = CallExprReplStr + ReplInfo.ReplName + "(*" +
+    CallExprReplStr = CallExprReplStr + ReplInfo.ReplName + "(" +
                       MapNames::getDpctNamespace() +
-                      "get_current_device().get_saved_queue()";
+                      "blas::descriptor::get_saved_queue()";
     std::string IndentStr =
         getIndent(PrefixInsertLoc, (Result.Context)->getSourceManager()).str();
 
@@ -5135,41 +5141,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             insertAroundRange(PrefixInsertLoc, SuffixInsertLoc,
                               std::move(PrefixInsertStr), "");
         }
-      }
-    }
-  } else if (FuncName == "cublasSetKernelStream") {
-    SourceRange SR = getFunctionRange(CE);
-    auto Len = SM->getDecomposedLoc(SR.getEnd()).second -
-               SM->getDecomposedLoc(SR.getBegin()).second;
-
-    std::string Repl;
-
-    dpct::ExprAnalysis EA(CE->getArg(0));
-    if (isPlaceholderIdxDuplicated(CE))
-      return;
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
-    requestFeature(HelperFeatureEnum::device_ext);
-    Repl = "{{NEEDREPLACED" + std::to_string(Index) + "}}.set_saved_queue(" +
-           EA.getReplacedString() + ")";
-
-    if (SM->isMacroArgExpansion(CE->getBeginLoc()) &&
-        SM->isMacroArgExpansion(CE->getEndLoc())) {
-      if (IsAssigned) {
-        requestFeature(HelperFeatureEnum::device_ext);
-        emplaceTransformation(new ReplaceText(
-            SR.getBegin(), Len, "DPCT_CHECK_ERROR(" + Repl + ")"));
-      } else {
-        emplaceTransformation(
-            new ReplaceText(SR.getBegin(), Len, std::move(Repl)));
-      }
-    } else {
-      if (IsAssigned) {
-        requestFeature(HelperFeatureEnum::device_ext);
-        emplaceTransformation(
-            new ReplaceStmt(CE, true, "DPCT_CHECK_ERROR(" + Repl + ")"));
-      } else {
-        emplaceTransformation(new ReplaceStmt(CE, true, Repl));
       }
     }
   } else if (FuncName == "cublasInit" || FuncName == "cublasShutdown" ||

@@ -84,6 +84,26 @@ using out_mem_int64_t =
     detail::scalar_memory_t<std::int64_t, std::int64_t, false>;
 } // namespace blas
 
+namespace blas {
+class descriptor {
+public:
+  void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
+  sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
+  static inline void set_saved_queue(queue_ptr q_ptr) noexcept {
+    _saved_queue_ptr = q_ptr;
+  }
+  static inline sycl::queue &get_saved_queue() noexcept {
+    return *_saved_queue_ptr;
+  }
+
+private:
+  queue_ptr _queue_ptr = &dpct::get_default_queue();
+  static inline queue_ptr _saved_queue_ptr = &dpct::get_default_queue();
+};
+
+using descriptor_ptr = descriptor *;
+} // namespace blas
+
 /// Get the value of \p s.
 /// Copy the data to host synchronously, then return the data.
 /// \param [in] p The pointer points the data.
