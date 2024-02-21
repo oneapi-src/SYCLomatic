@@ -665,7 +665,7 @@ int runDPCT(int argc, const char **argv) {
         "suppress-warnings",
         "suppress-warnings-all",
     };
-    for (auto Opt : IgnoreOpts) {
+    for (const auto &Opt : IgnoreOpts) {
       if (hasOption(argc, argv, Opt)) {
         llvm::outs() << "Warning: \"--" << Opt
                      << "\"will be ignored when analysis mode is enabled.\n";
