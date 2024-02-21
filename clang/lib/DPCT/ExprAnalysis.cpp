@@ -1246,9 +1246,9 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     break;
   }
   case TypeLoc::FunctionProto: {
-    auto FuncProtoType = TYPELOC_CAST(FunctionProtoTypeLoc);
+    auto FuncProtoType = TYPELOC_CAST(FunctionTypeLoc);
     analyzeType(FuncProtoType.getReturnLoc(), CSCE);
-    for (const auto &Param : FuncProtoType.getParams()) {
+    for (auto *const Param : FuncProtoType.getParams()) {
       analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), CSCE);
     }
     return;

@@ -9,6 +9,3 @@ template <typename T> void f(const std::function<T(T)> f) {}
 
 // CHECK: template void f<sycl::half>(const std::function<sycl::half(sycl::half)> f);
 template void f<__half>(const std::function<__half(__half)> f);
-
-// template void f<std::function<__half()>>(
-//     const std::function<std::function<__half()>(std::function<__half()>)> f);
