@@ -452,20 +452,6 @@
       MatchMode: Full
       RuleId: "replace_-lcublas_with_qmkl"
 
-- Rule: rule_target_link_libraries_CUDA_cublas
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: CUDA_cublas_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::cublas"
-      Out: |
-        \${MKL_LIB}
-      MatchMode: Full
-      RuleId: "replace_CUDA_cublas_with_MKL"
-
 - Rule: rule_target_link_libraries_CUDA_CUBLAS_LIBRARIES
   Kind: CMakeRule
   Priority: Fallback
@@ -510,34 +496,6 @@
         \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_CUDA_cusparse_LIBRARY_with_MKL"
-
-# libsycl.so is linked by default as alternative to cuda_driver library, so removing here
-- Rule: rule_target_link_libraries_cuda_driver
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cuda_driver_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::cuda_driver"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_CUDA_driver"
-
-# libsycl.so is linked by default as alternative to cuda_driver library, so removing here
-- Rule: rule_target_link_libraries_cuda_rt
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cudart_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::cudart"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_CUDA_cudart"
 
 - Rule: rule_target_link_libraries_cudnn
   Kind: CMakeRule
@@ -753,3 +711,113 @@
       MatchMode: Full
       In: CMAKE_CUDA_FLAGS
       Out: CMAKE_SYCL_FLAGS
+
+- Rule: rule_enable_language
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: enable_language
+  MatchMode: Partial
+  In: enable_language(${value})
+  Out: enable_language(${value})
+  Subrules:
+    value:
+      In: CUDA
+      Out: CXX
+      MatchMode: Full
+
+- Rule: cudart_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudart_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cudart_static
+      Out: ""
+
+# libsycl.so is linked by default as alternative to cuda runtime library, so removing here
+- Rule: cudart_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudart
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cudart
+      Out: ""
+
+# libsycl.so is linked by default as alternative to cuda river library, so removing here
+- Rule: cuda_driver_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_driver
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cuda_driver
+      Out: ""
+
+- Rule: cublas_rule
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublas
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      In: CUDA::cublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+
+- Rule: cublas_static_rule
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublas_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cublas_static
+      Out: |
+        \${MKL_LIB}
+
+- Rule: cublasLt_rule
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublasLt
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cublasLt
+      Out: |
+        \${DNN_LIB}
+
+- Rule: cublasLt_static_rule
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublasLt_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cublasLt_static
+      Out: |
+        \${DNN_LIB}
