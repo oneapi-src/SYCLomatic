@@ -12,373 +12,381 @@ using namespace clang::dpct;
 
 RewriterMap dpct::createHalf2ArithmeticFunctionsRewriterMap() {
   return RewriterMap{
-
-      // __heq
+      // __h2div
       MATH_API_REWRITER_DEVICE(
-          "__heq",
+          "__h2div",
           MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__heq"),
+              EMPTY_FACTORY_ENTRY("__h2div"),
               MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
+                  CheckArgType(0, "__half2"),
                   HEADER_INSERT_FACTORY(
                       HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__heq",
+                      CALL_FACTORY_ENTRY("__h2div",
                                          CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::heq",
+                                                  "ext::intel::math::h2div",
                                               ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__heq"),
-              BINARY_OP_FACTORY_ENTRY("__heq", BinaryOperatorKind::BO_EQ,
+              EMPTY_FACTORY_ENTRY("__h2div"),
+              BINARY_OP_FACTORY_ENTRY("__h2div", BinaryOperatorKind::BO_Div,
                                       makeCallArgCreatorWithCall(0),
                                       makeCallArgCreatorWithCall(1))))
-      // __hequ
-      MATH_API_REWRITER_DEVICE(
-          "__hequ",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hequ"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hequ",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hequ",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hequ"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__hequ",
-                      CALL(MapNames::getDpctNamespace() + "unordered_compare",
-                           ARG(0), ARG(1), LITERAL("std::equal_to<>()"))))))
-      // __hge
-      MATH_API_REWRITER_DEVICE(
-          "__hge",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hge"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hge",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hge",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hge"),
-              BINARY_OP_FACTORY_ENTRY("__hge", BinaryOperatorKind::BO_GE,
-                                      makeCallArgCreatorWithCall(0),
-                                      makeCallArgCreatorWithCall(1))))
-      // __hgeu
-      MATH_API_REWRITER_DEVICE(
-          "__hgeu",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hgeu"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hgeu",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hgeu",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hgeu"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__hgeu",
-                      CALL(MapNames::getDpctNamespace() + "unordered_compare",
-                           ARG(0), ARG(1),
-                           LITERAL("std::greater_equal<>()"))))))
-      // __hgt
-      MATH_API_REWRITER_DEVICE(
-          "__hgt",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hgt"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hgt",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hgt",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hgt"),
-              BINARY_OP_FACTORY_ENTRY("__hgt", BinaryOperatorKind::BO_GT,
-                                      makeCallArgCreatorWithCall(0),
-                                      makeCallArgCreatorWithCall(1))))
-      // __hgtu
-      MATH_API_REWRITER_DEVICE(
-          "__hgtu",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hgtu"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hgtu",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hgtu",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hgtu"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__hgtu",
-                      CALL(MapNames::getDpctNamespace() + "unordered_compare",
-                           ARG(0), ARG(1), LITERAL("std::greater<>()"))))))
-      // __hisinf
-      MATH_API_REWRITER_DEVICE(
-          "__hisinf",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hisinf"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hisinf",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hisinf",
-                                              ARG(0))))),
-              EMPTY_FACTORY_ENTRY("__hisinf"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  CheckArgType(0, "__half"),
-                  CALL_FACTORY_ENTRY(
-                      "__hisinf",
-                      CALL(MapNames::getClNamespace(false, true) + "isinf",
-                           ARG(0))),
-                  CALL_FACTORY_ENTRY(
-                      "__hisinf",
-                      CALL(MapNames::getClNamespace(false, true) + "isinf",
-                           CALL("float", ARG(0)))))))
-      // __hisnan
+      // __habs2
       MATH_API_REWRITER_DEVICE_OVERLOAD(
-          CheckArgType(0, "__half"),
+          CheckArgType(0, "__half2"),
           MATH_API_REWRITER_DEVICE(
-              "__hisnan",
+              "__habs2",
               MATH_API_DEVICE_NODES(
-                  EMPTY_FACTORY_ENTRY("__hisnan"),
+                  EMPTY_FACTORY_ENTRY("__habs2"),
                   HEADER_INSERT_FACTORY(
                       HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hisnan",
+                      CALL_FACTORY_ENTRY("__habs2",
                                          CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hisnan",
+                                                  "ext::intel::math::habs2",
                                               ARG(0)))),
-                  EMPTY_FACTORY_ENTRY("__hisnan"),
+                  EMPTY_FACTORY_ENTRY("__habs2"),
                   CALL_FACTORY_ENTRY(
-                      "__hisnan",
-                      CALL(MapNames::getClNamespace(false, true) + "isnan",
+                      "__habs2",
+                      CALL(MapNames::getClNamespace(false, true) + "fabs",
                            ARG(0))))),
           MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
-              "__hisnan",
-              CALL_FACTORY_ENTRY("__hisnan",
+              "__habs2",
+              CALL_FACTORY_ENTRY("__habs2",
                                  CALL(MapNames::getClNamespace(false, true) +
-                                          "ext::oneapi::experimental::isnan",
+                                          "ext::oneapi::experimental::fabs",
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
-                  "__hisnan",
-                  CALL(MapNames::getClNamespace(false, true) + "isnan",
-                       CALL("float", ARG(0))))))
-      // __hle
+                  "__habs2",
+                  CALL(MapNames::getClNamespace() + "marray<" +
+                           MapNames::getClNamespace() +
+                           "ext::oneapi::bfloat16, 2>",
+                       CALL(MapNames::getClNamespace(false, true) + "fabs",
+                            CALL("float",
+                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                       CALL(MapNames::getClNamespace(false, true) + "fabs",
+                            CALL("float",
+                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+      // __hadd2
       MATH_API_REWRITER_DEVICE(
-          "__hle",
+          "__hadd2",
           MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hle"),
+              EMPTY_FACTORY_ENTRY("__hadd2"),
               MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
+                  CheckArgType(0, "__half2"),
                   HEADER_INSERT_FACTORY(
                       HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hle",
+                      CALL_FACTORY_ENTRY("__hadd2",
                                          CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hle",
+                                                  "ext::intel::math::hadd2",
                                               ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hle"),
-              BINARY_OP_FACTORY_ENTRY("__hle", BinaryOperatorKind::BO_LE,
+              EMPTY_FACTORY_ENTRY("__hadd2"),
+              BINARY_OP_FACTORY_ENTRY("__hadd2", BinaryOperatorKind::BO_Add,
                                       makeCallArgCreatorWithCall(0),
                                       makeCallArgCreatorWithCall(1))))
-      // __hleu
+      // __hadd2_rn
       MATH_API_REWRITER_DEVICE(
-          "__hleu",
+          "__hadd2_rn",
           MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hleu"),
+              EMPTY_FACTORY_ENTRY("__hadd2_rn"),
               MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
+                  CheckArgType(0, "__half2"),
                   HEADER_INSERT_FACTORY(
                       HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hleu",
+                      CALL_FACTORY_ENTRY("__hadd2_rn",
                                          CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hleu",
+                                                  "ext::intel::math::hadd2",
                                               ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hleu"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
+              EMPTY_FACTORY_ENTRY("__hadd2_rn"),
+              BINARY_OP_FACTORY_ENTRY("__hadd2_rn", BinaryOperatorKind::BO_Add,
+                                      ARG(0), ARG(1))))
+      // __hadd2_sat
+      MATH_API_REWRITER_DEVICE(
+          "__hadd2_sat",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("__hadd2_sat"),
+              MATH_API_SPECIFIC_ELSE_EMU(
+                  CheckArgType(0, "__half2"),
+                  HEADER_INSERT_FACTORY(
+                      HeaderType::HT_SYCL_Math,
+                      CALL_FACTORY_ENTRY("__hadd2_sat",
+                                         CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hadd2_sat",
+                                              ARG(0), ARG(1))))),
+              EMPTY_FACTORY_ENTRY("__hadd2_sat"),
+              CONDITIONAL_FACTORY_ENTRY(
+                  CheckArgType(0, "__half2"),
                   CALL_FACTORY_ENTRY(
-                      "__hleu",
-                      CALL(MapNames::getDpctNamespace() + "unordered_compare",
-                           ARG(0), ARG(1), LITERAL("std::less_equal<>()"))))))
-      // __hlt
+                      "__hadd2_sat",
+                      CALL(MapNames::getDpctNamespace() + "clamp<" +
+                               MapNames::getClNamespace() + "half2>",
+                           BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                           LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))),
+                  CALL_FACTORY_ENTRY(
+                      "__hadd2_sat",
+                      CALL(MapNames::getDpctNamespace() + "clamp",
+                           BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                           LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))))))
+      // __hcmadd
       MATH_API_REWRITER_DEVICE(
-          "__hlt",
+          "__hcmadd",
           MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hlt"),
+              EMPTY_FACTORY_ENTRY("__hcmadd"),
               MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
+                  CheckArgType(0, "__half2"),
                   HEADER_INSERT_FACTORY(
                       HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hlt",
+                      CALL_FACTORY_ENTRY("__hcmadd",
                                          CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hlt",
+                                                  "ext::intel::math::hcmadd",
+                                              ARG(0), ARG(1), ARG(2))))),
+              EMPTY_FACTORY_ENTRY("__hcmadd"),
+              CALL_FACTORY_ENTRY("__hcmadd", CALL(MapNames::getDpctNamespace() +
+                                                      "complex_mul_add",
+                                                  ARG(0), ARG(1), ARG(2)))))
+      // __hfma2
+      MATH_API_REWRITER_DEVICE_OVERLOAD(
+          CheckArgType(0, "__half2"),
+          MATH_API_REWRITER_DEVICE(
+              "__hfma2",
+              MATH_API_DEVICE_NODES(
+                  EMPTY_FACTORY_ENTRY("__hfma2"),
+                  HEADER_INSERT_FACTORY(
+                      HeaderType::HT_SYCL_Math,
+                      CALL_FACTORY_ENTRY("__hfma2",
+                                         CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hfma2",
+                                              ARG(0), ARG(1), ARG(2)))),
+                  EMPTY_FACTORY_ENTRY("__hfma2"),
+                  CALL_FACTORY_ENTRY(
+                      "__hfma2",
+                      CALL(MapNames::getClNamespace(false, true) + "fma",
+                           ARG(0), ARG(1), ARG(2))))),
+          MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
+              "__hfma2",
+              CALL_FACTORY_ENTRY("__hfma2",
+                                 CALL(MapNames::getClNamespace(false, true) +
+                                          "ext::oneapi::experimental::fma",
+                                      ARG(0), ARG(1), ARG(2))),
+              BINARY_OP_FACTORY_ENTRY("__hfma2", BinaryOperatorKind::BO_Add,
+                                      BO(BinaryOperatorKind::BO_Mul,
+                                         makeCallArgCreatorWithCall(0),
+                                         makeCallArgCreatorWithCall(1)),
+                                      makeCallArgCreatorWithCall(2))))
+      // __hfma2_relu
+      MATH_API_REWRITER_DEVICE_OVERLOAD(
+          CheckArgType(0, "__half2"),
+          MATH_API_REWRITER_DEVICE(
+              "__hfma2_relu",
+              MATH_API_DEVICE_NODES(
+                  EMPTY_FACTORY_ENTRY("__hfma2_relu"),
+                  HEADER_INSERT_FACTORY(
+                      HeaderType::HT_SYCL_Math,
+                      CALL_FACTORY_ENTRY(
+                          "__hfma2_relu",
+                          CALL(MapNames::getClNamespace() +
+                                   "ext::intel::math::hfma2_relu",
+                               ARG(0), ARG(1), ARG(2)))),
+                  EMPTY_FACTORY_ENTRY("__hfma2_relu"),
+                  CALL_FACTORY_ENTRY(
+                      "__hfma2_relu",
+                      CALL(MapNames::getDpctNamespace() + "relu",
+                           CALL(MapNames::getClNamespace() + "fma", ARG(0),
+                                ARG(1), ARG(2)))))),
+          MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
+              "__hfma2_relu",
+              CALL_FACTORY_ENTRY(
+                  "__hfma2_relu",
+                  CALL(MapNames::getDpctNamespace() + "relu",
+                       CALL(MapNames::getClNamespace(false, true) +
+                                "ext::oneapi::experimental::fma",
+                            ARG(0), ARG(1), ARG(2)))),
+              EMPTY_FACTORY_ENTRY("__hfma2_relu")))
+      // __hfma2_sat
+      MATH_API_REWRITER_DEVICE_OVERLOAD(
+          CheckArgType(0, "__half2"),
+          MATH_API_REWRITER_DEVICE(
+              "__hfma2_sat",
+              MATH_API_DEVICE_NODES(
+                  EMPTY_FACTORY_ENTRY("__hfma2_sat"),
+                  HEADER_INSERT_FACTORY(
+                      HeaderType::HT_SYCL_Math,
+                      CALL_FACTORY_ENTRY("__hfma2_sat",
+                                         CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hfma2_sat",
+                                              ARG(0), ARG(1), ARG(2)))),
+                  EMPTY_FACTORY_ENTRY("__hfma2_sat"),
+                  CALL_FACTORY_ENTRY(
+                      "__hfma2_sat",
+                      CALL(MapNames::getDpctNamespace() + "clamp<" +
+                               MapNames::getClNamespace() + "half2>",
+                           CALL(MapNames::getClNamespace() + "fma", ARG(0),
+                                ARG(1), ARG(2)),
+                           LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))))),
+          MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
+              "__hfma2_sat",
+              CALL_FACTORY_ENTRY(
+                  "__hfma2_sat",
+                  CALL(MapNames::getDpctNamespace() + "clamp",
+                       CALL(MapNames::getClNamespace(false, true) +
+                                "ext::oneapi::experimental::fma",
+                            ARG(0), ARG(1), ARG(2)),
+                       LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))),
+              CALL_FACTORY_ENTRY("__hfma2_sat",
+                                 CALL(MapNames::getDpctNamespace() + "clamp",
+                                      BO(BinaryOperatorKind::BO_Add,
+                                         BO(BinaryOperatorKind::BO_Mul,
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1)),
+                                         makeCallArgCreatorWithCall(2)),
+                                      LITERAL("{0.f, 0.f}"),
+                                      LITERAL("{1.f, 1.f}")))))
+      // __hmul2
+      MATH_API_REWRITER_DEVICE(
+          "__hmul2",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("__hmul2"),
+              MATH_API_SPECIFIC_ELSE_EMU(
+                  CheckArgType(0, "__half2"),
+                  HEADER_INSERT_FACTORY(
+                      HeaderType::HT_SYCL_Math,
+                      CALL_FACTORY_ENTRY("__hmul2",
+                                         CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hmul2",
                                               ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hlt"),
-              BINARY_OP_FACTORY_ENTRY("__hlt", BinaryOperatorKind::BO_LT,
+              EMPTY_FACTORY_ENTRY("__hmul2"),
+              BINARY_OP_FACTORY_ENTRY("__hmul2", BinaryOperatorKind::BO_Mul,
                                       makeCallArgCreatorWithCall(0),
                                       makeCallArgCreatorWithCall(1))))
-      // __hltu
+      // __hmul2_rn
       MATH_API_REWRITER_DEVICE(
-          "__hltu",
+          "__hmul2_rn",
           MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hltu"),
+              EMPTY_FACTORY_ENTRY("__hmul2_rn"),
               MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
+                  CheckArgType(0, "__half2"),
                   HEADER_INSERT_FACTORY(
                       HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hltu",
+                      CALL_FACTORY_ENTRY("__hmul2_rn",
                                          CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hltu",
+                                                  "ext::intel::math::hmul2",
                                               ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hltu"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
+              EMPTY_FACTORY_ENTRY("__hmul2_rn"),
+              BINARY_OP_FACTORY_ENTRY("__hmul2_rn", BinaryOperatorKind::BO_Mul,
+                                      ARG(0), ARG(1))))
+      // __hmul2_sat
+      MATH_API_REWRITER_DEVICE(
+          "__hmul2_sat",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("__hmul2_sat"),
+              MATH_API_SPECIFIC_ELSE_EMU(
+                  CheckArgType(0, "__half2"),
+                  HEADER_INSERT_FACTORY(
+                      HeaderType::HT_SYCL_Math,
+                      CALL_FACTORY_ENTRY("__hmul2_sat",
+                                         CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hmul2_sat",
+                                              ARG(0), ARG(1))))),
+              EMPTY_FACTORY_ENTRY("__hmul2_sat"),
+              CONDITIONAL_FACTORY_ENTRY(
+                  CheckArgType(0, "__half2"),
                   CALL_FACTORY_ENTRY(
-                      "__hltu",
-                      CALL(MapNames::getDpctNamespace() + "unordered_compare",
-                           ARG(0), ARG(1), LITERAL("std::less<>()"))))))
-      // __hmax
-      MATH_API_REWRITER_DEVICE_OVERLOAD(
-          CheckArgType(0, "__half"),
-          MATH_API_REWRITER_DEVICE(
-              "__hmax",
-              MATH_API_DEVICE_NODES(
-                  EMPTY_FACTORY_ENTRY("__hmax"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hmax",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hmax",
-                                              ARG(0), ARG(1)))),
-                  EMPTY_FACTORY_ENTRY("__hmax"),
-                  CALL_FACTORY_ENTRY("__hmax",
-                                     CALL(MapNames::getClNamespace() + "fmax",
-                                          ARG(0), ARG(1))))),
-          MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
-              "__hmax",
-              CALL_FACTORY_ENTRY("__hmax",
-                                 CALL(MapNames::getClNamespace(false, true) +
-                                          "ext::oneapi::experimental::fmax",
-                                      ARG(0), ARG(1))),
-              CALL_FACTORY_ENTRY(
-                  "__hmax",
-                  CALL(MapNames::getClNamespace(false, true) + "fmax",
-                       CALL("float", ARG(0)), CALL("float", ARG(1))))))
-      // __hmax_nan
-      MATH_API_REWRITER_DEVICE(
-          "__hmax_nan",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hmax_nan"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hmax_nan",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hmax_nan",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hmax_nan"),
-              CALL_FACTORY_ENTRY("__hmax_nan",
-                                 CALL(MapNames::getDpctNamespace() + "fmax_nan",
-                                      ARG(0), ARG(1)))))
-      // __hmin
-      MATH_API_REWRITER_DEVICE_OVERLOAD(
-          CheckArgType(0, "__half"),
-          MATH_API_REWRITER_DEVICE(
-              "__hmin",
-              MATH_API_DEVICE_NODES(
-                  EMPTY_FACTORY_ENTRY("__hmin"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hmin",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hmin",
-                                              ARG(0), ARG(1)))),
-                  EMPTY_FACTORY_ENTRY("__hmin"),
-                  CALL_FACTORY_ENTRY("__hmin",
-                                     CALL(MapNames::getClNamespace() + "fmin",
-                                          ARG(0), ARG(1))))),
-          MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
-              "__hmin",
-              CALL_FACTORY_ENTRY("__hmin",
-                                 CALL(MapNames::getClNamespace(false, true) +
-                                          "ext::oneapi::experimental::fmin",
-                                      ARG(0), ARG(1))),
-              CALL_FACTORY_ENTRY(
-                  "__hmin",
-                  CALL(MapNames::getClNamespace(false, true) + "fmin",
-                       CALL("float", ARG(0)), CALL("float", ARG(1))))))
-      // __hmin_nan
-      MATH_API_REWRITER_DEVICE(
-          "__hmin_nan",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hmin_nan"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hmin_nan",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hmin_nan",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hmin_nan"),
-              CALL_FACTORY_ENTRY("__hmin_nan",
-                                 CALL(MapNames::getDpctNamespace() + "fmin_nan",
-                                      ARG(0), ARG(1)))))
-      // __hne
-      MATH_API_REWRITER_DEVICE(
-          "__hne",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hne"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hne",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hne",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hne"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  // Notice: not equal compare need consider 'isnan'.
+                      "__hmul2_sat",
+                      CALL(MapNames::getDpctNamespace() + "clamp<" +
+                               MapNames::getClNamespace() + "half2>",
+                           BO(BinaryOperatorKind::BO_Mul, ARG(0), ARG(1)),
+                           LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))),
                   CALL_FACTORY_ENTRY(
-                      "__hne",
-                      CALL(MapNames::getDpctNamespace() + "compare", ARG(0),
-                           ARG(1), LITERAL("std::not_equal_to<>()"))))))
-      // __hneu
+                      "__hmul2_sat",
+                      CALL(MapNames::getDpctNamespace() + "clamp",
+                           BO(BinaryOperatorKind::BO_Mul, ARG(0), ARG(1)),
+                           LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))))))
+      // __hneg2
       MATH_API_REWRITER_DEVICE(
-          "__hneu",
+          "__hneg2",
           MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hneu"),
+              EMPTY_FACTORY_ENTRY("__hneg2"),
               MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
+                  CheckArgType(0, "__half2"),
                   HEADER_INSERT_FACTORY(
                       HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hneu",
+                      CALL_FACTORY_ENTRY("__hneg2",
                                          CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hneu",
+                                                  "ext::intel::math::hneg2",
+                                              ARG(0))))),
+              EMPTY_FACTORY_ENTRY("__hneg2"),
+              UNARY_OP_FACTORY_ENTRY("__hneg2", UnaryOperatorKind::UO_Minus,
+                                     makeCallArgCreatorWithCall(0))))
+      // __hsub2
+      MATH_API_REWRITER_DEVICE(
+          "__hsub2",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("__hsub2"),
+              MATH_API_SPECIFIC_ELSE_EMU(
+                  CheckArgType(0, "__half2"),
+                  HEADER_INSERT_FACTORY(
+                      HeaderType::HT_SYCL_Math,
+                      CALL_FACTORY_ENTRY("__hsub2",
+                                         CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hsub2",
                                               ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hneu"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
+              EMPTY_FACTORY_ENTRY("__hsub2"),
+              BINARY_OP_FACTORY_ENTRY("__hsub2", BinaryOperatorKind::BO_Sub,
+                                      makeCallArgCreatorWithCall(0),
+                                      makeCallArgCreatorWithCall(1))))
+      // __hsub2_rn
+      MATH_API_REWRITER_DEVICE(
+          "__hsub2_rn",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("__hsub2_rn"),
+              MATH_API_SPECIFIC_ELSE_EMU(
+                  CheckArgType(0, "__half2"),
+                  HEADER_INSERT_FACTORY(
+                      HeaderType::HT_SYCL_Math,
+                      CALL_FACTORY_ENTRY("__hsub2_rn",
+                                         CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hsub2",
+                                              ARG(0), ARG(1))))),
+              EMPTY_FACTORY_ENTRY("__hsub2_rn"),
+              BINARY_OP_FACTORY_ENTRY("__hsub2_rn", BinaryOperatorKind::BO_Sub,
+                                      ARG(0), ARG(1))))
+      // __hsub2_sat
+      MATH_API_REWRITER_DEVICE(
+          "__hsub2_sat",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("__hsub2_sat"),
+              MATH_API_SPECIFIC_ELSE_EMU(
+                  CheckArgType(0, "__half2"),
+                  HEADER_INSERT_FACTORY(
+                      HeaderType::HT_SYCL_Math,
+                      CALL_FACTORY_ENTRY("__hsub2_sat",
+                                         CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hsub2_sat",
+                                              ARG(0), ARG(1))))),
+              EMPTY_FACTORY_ENTRY("__hsub2_sat"),
+              CONDITIONAL_FACTORY_ENTRY(
+                  CheckArgType(0, "__half2"),
                   CALL_FACTORY_ENTRY(
-                      "__hneu",
-                      CALL(MapNames::getDpctNamespace() + "unordered_compare",
-                           ARG(0), ARG(1),
-                           LITERAL("std::not_equal_to<>()"))))))};
+                      "__hsub2_sat",
+                      CALL(MapNames::getDpctNamespace() + "clamp<" +
+                               MapNames::getClNamespace() + "half2>",
+                           BO(BinaryOperatorKind::BO_Sub, ARG(0), ARG(1)),
+                           LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))),
+                  CALL_FACTORY_ENTRY(
+                      "__hsub2_sat",
+                      CALL(MapNames::getDpctNamespace() + "clamp",
+                           BO(BinaryOperatorKind::BO_Sub, ARG(0), ARG(1)),
+                           LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))))))
+      // h2div
+      MATH_API_REWRITER_DEVICE(
+          "h2div",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("h2div"),
+              HEADER_INSERT_FACTORY(
+                  HeaderType::HT_SYCL_Math,
+                  CALL_FACTORY_ENTRY("h2div",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::h2div",
+                                          ARG(0), ARG(1)))),
+              EMPTY_FACTORY_ENTRY("h2div"),
+              BINARY_OP_FACTORY_ENTRY("h2div", BinaryOperatorKind::BO_Div,
+                                      makeCallArgCreatorWithCall(0),
+                                      makeCallArgCreatorWithCall(1))))};
 }

@@ -393,12 +393,9 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     return Base::rewrite();
 
   // Do not need to report warnings for pow, funnelshift, or drcp migrations
-  if (SourceCalleeName != "pow"                     && 
-      SourceCalleeName != "powf"                    &&
-      SourceCalleeName != "__powf"                  && 
-      SourceCalleeName != "__drcp_rd"               &&
-      SourceCalleeName != "__drcp_rn"               &&
-      SourceCalleeName != "__drcp_ru"               &&
+  if (SourceCalleeName != "pow" && SourceCalleeName != "powf" &&
+      SourceCalleeName != "__powf" && SourceCalleeName != "__drcp_rd" &&
+      SourceCalleeName != "__drcp_rn" && SourceCalleeName != "__drcp_ru" &&
       SourceCalleeName != "__drcp_rz")
     report(Diagnostics::MATH_EMULATION, false,
            MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
@@ -641,19 +638,53 @@ std::optional<std::string> MathBinaryOperatorRewriter::rewrite() {
 }
 
 void CallExprRewriterFactoryBase::initRewriterMapMath() {
-  RewriterMap->merge(createBfloat16PrecisionConversionAndDataMovementRewriterMap());
+  RewriterMap->merge(
+      createBfloat16PrecisionConversionAndDataMovementRewriterMap());
   RewriterMap->merge(createCXXAPIRoutinesRewriterMap());
   RewriterMap->merge(createDoublePrecisionIntrinsicsRewriterMap());
   RewriterMap->merge(createDoublePrecisionMathematicalFunctionsRewriterMap());
   RewriterMap->merge(createHalf2ArithmeticFunctionsRewriterMap());
   RewriterMap->merge(createHalf2ComparisonFunctionsRewriterMap());
-  RewriterMap->merge(());
-  RewriterMap->merge(());
-  RewriterMap->merge(());
-  RewriterMap->merge(());
-  RewriterMap->merge(());
-  RewriterMap->merge(());
-  RewriterMap->merge(());
+  RewriterMap->merge(createHalf2MathFunctionsRewriterMap());
+  RewriterMap->merge(createHalfArithmeticFunctionsRewriterMap());
+  RewriterMap->merge(createHalfComparisonFunctionsRewriterMap());
+  RewriterMap->merge(createHalfMathFunctionsRewriterMap());
+  RewriterMap->merge(createHalfPrecisionConversionAndDataMovementRewriterMap());
+  RewriterMap->merge(createIntegerIntrinsicsRewriterMap());
+  RewriterMap->merge(createIntegerMathematicalFunctionsRewriterMap());
+  RewriterMap->merge(createOverloadRewriterMap());
+  RewriterMap->merge(createSIMDIntrinsicsRewriterMap());
+  RewriterMap->merge(createSinglePrecisionIntrinsicsRewriterMap());
+  RewriterMap->merge(createSinglePrecisionMathematicalFunctionsRewriterMap());
+  RewriterMap->merge(createSTDFunctionsRewriterMap());
+  RewriterMap->merge(
+      std::unordered_map<std::string,
+                         std::shared_ptr<CallExprRewriterFactoryBase>>({
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
+  MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)                 \
+  NO_REWRITE_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)                     \
+  MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)                     \
+  MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)                           \
+  MATH_SIMULATED_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_OPERATOR(APINAME, OPKIND) MATH_BO_FACTORY_ENTRY(APINAME, OPKIND)
+#define ENTRY_TYPECAST(APINAME) MATH_TYPECAST_FACTORY_ENTRY(APINAME)
+#define ENTRY_UNSUPPORTED(APINAME) MATH_UNSUPPORTED_FUNC_FACTORY_ENTRY(APINAME)
+#define ENTRY_REWRITE(APINAME)
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_NO_REWRITE
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
+      }));
 }
 
 const std::vector<std::string> MathFuncNameRewriter::SingleFunctions = {

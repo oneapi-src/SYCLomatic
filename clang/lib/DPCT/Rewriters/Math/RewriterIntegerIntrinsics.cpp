@@ -10,12 +10,35 @@
 
 using namespace clang::dpct;
 
-RewriterMap
-dpct::createCXXAPIRoutinesRewriterMap() {
+RewriterMap dpct::createIntegerIntrinsicsRewriterMap() {
   return RewriterMap{
-
-              
-              
-              
-    };
+      // __dp2a_lo
+      MATH_API_REWRITER_DEVICE(
+          "__dp2a_lo",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("__dp2a_lo"),
+              EMPTY_FACTORY_ENTRY("__dp2a_lo"),
+              EMPTY_FACTORY_ENTRY("__dp2a_lo"),
+              CALL_FACTORY_ENTRY("__dp2a_lo",
+                                 CALL(MapNames::getDpctNamespace() + "dp2a_lo",
+                                      ARG(0), ARG(1), ARG(2)))))
+      // __dp2a_hi
+      MATH_API_REWRITER_DEVICE(
+          "__dp2a_hi",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("__dp2a_hi"),
+              EMPTY_FACTORY_ENTRY("__dp2a_hi"),
+              EMPTY_FACTORY_ENTRY("__dp2a_hi"),
+              CALL_FACTORY_ENTRY("__dp2a_hi",
+                                 CALL(MapNames::getDpctNamespace() + "dp2a_hi",
+                                      ARG(0), ARG(1), ARG(2)))))
+      // __dp4a
+      MATH_API_REWRITER_DEVICE(
+          "__dp4a",
+          MATH_API_DEVICE_NODES(
+              EMPTY_FACTORY_ENTRY("__dp4a"), EMPTY_FACTORY_ENTRY("__dp4a"),
+              EMPTY_FACTORY_ENTRY("__dp4a"),
+              CALL_FACTORY_ENTRY("__dp4a",
+                                 CALL(MapNames::getDpctNamespace() + "dp4a",
+                                      ARG(0), ARG(1), ARG(2)))))};
 }

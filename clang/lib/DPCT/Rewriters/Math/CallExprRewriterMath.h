@@ -498,15 +498,18 @@ RewriterMap createDoublePrecisionIntrinsicsRewriterMap();
 RewriterMap createDoublePrecisionMathematicalFunctionsRewriterMap();
 RewriterMap createHalf2ArithmeticFunctionsRewriterMap();
 RewriterMap createHalf2ComparisonFunctionsRewriterMap();
-RewriterMap ();
-RewriterMap ();
-RewriterMap ();
-RewriterMap ();
-RewriterMap ();
-RewriterMap ();
-RewriterMap ();
-RewriterMap ();
-RewriterMap ();
+RewriterMap createHalf2MathFunctionsRewriterMap();
+RewriterMap createHalfArithmeticFunctionsRewriterMap();
+RewriterMap createHalfComparisonFunctionsRewriterMap();
+RewriterMap createHalfMathFunctionsRewriterMap();
+RewriterMap createHalfPrecisionConversionAndDataMovementRewriterMap();
+RewriterMap createIntegerIntrinsicsRewriterMap();
+RewriterMap createIntegerMathematicalFunctionsRewriterMap();
+RewriterMap createOverloadRewriterMap();
+RewriterMap createSIMDIntrinsicsRewriterMap();
+RewriterMap createSinglePrecisionIntrinsicsRewriterMap();
+RewriterMap createSinglePrecisionMathematicalFunctionsRewriterMap();
+RewriterMap createSTDFunctionsRewriterMap();
 
 } // namespace dpct
 } // namespace clang
