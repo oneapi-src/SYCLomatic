@@ -114,3 +114,5 @@ endmacro()
 
 set(CMAKE_SYCL_HOST_COMPILER "icpx")
 set(CMAKE_SYCL_COMPILER "icpx")
+set(CMAKE_SYCL_ARCHITECTURES "")
+set(CMAKE_SYCL_FLAGS "")

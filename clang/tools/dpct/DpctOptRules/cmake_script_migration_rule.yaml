@@ -727,3 +727,29 @@
       MatchMode: Full
       In: CMAKE_CUDA_HOST_COMPILER
       Out: CMAKE_SYCL_HOST_COMPILER
+
+- Rule: rule_CMAKE_CUDA_ARCHITECTURES
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_ARCHITECTURES
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_ARCHITECTURES
+      Out: CMAKE_SYCL_ARCHITECTURES
+
+- Rule: rule_CMAKE_CUDA_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_FLAGS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_FLAGS
+      Out: CMAKE_SYCL_FLAGS
