@@ -1,0 +1,9 @@
+# this doesn't provide pkg-config
+# suggest to assign BLAS_INCLUDE_DIRS on your own
+set(GGML_HEADERS_CUDA ggml-cuda.h)
+set(GGML_SOURCES_CUDA ggml-cuda.cu)
+target_compile_features(llama PUBLIC cxx_std_17) # don't bump
+target_link_libraries(llama PRIVATE
+    ggml
+    ${LLAMA_EXTRA_LIBS}
+    )

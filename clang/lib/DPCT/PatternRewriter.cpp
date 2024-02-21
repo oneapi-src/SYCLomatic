@@ -282,6 +282,15 @@ static int parseCodeElement(const MatchPattern &Suffix,
   int Index = Start;
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
+
+    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
+        MigrateBuildScriptOnly) {
+      if (Input[Index] == '#') {
+        for (; Index < Size && Input[Index] != '\n'; Index++) {
+        }
+      }
+    }
+
     const auto Character = Input[Index];
 
     if (Suffix.size() > 0) {
@@ -442,6 +451,15 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
   }
 
   while (PatternIndex < PatternSize && Index < Size) {
+
+    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
+        MigrateBuildScriptOnly) {
+      if (Input[Index] == '#') {
+        for (; Index < Size && Input[Index] != '\n'; Index++) {
+        }
+      }
+    }
+
     const auto &Element = Pattern[PatternIndex];
 
     if (std::holds_alternative<SpacingElement>(Element)) {
@@ -547,6 +565,15 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
   while (PatternIndex < PatternSize && Index < Size) {
+
+    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
+        MigrateBuildScriptOnly) {
+      if (Input[Index] == '#') {
+        for (; Index < Size && Input[Index] != '\n'; Index++) {
+        }
+      }
+    }
+
     const auto &Element = Pattern[PatternIndex];
 
     if (std::holds_alternative<SpacingElement>(Element)) {

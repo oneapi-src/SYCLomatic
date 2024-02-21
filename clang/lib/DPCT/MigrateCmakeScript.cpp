@@ -568,11 +568,6 @@ void applyImplicitMigrationRule(std::string &Input,
     if (Index < Size && Input[Index] == '(') {
       std::string Command = Input.substr(Begin, End - Begin);
 
-      // printf("##### Command: [%s]\n", Command.c_str());
-      // if (Command == "execute_process") {
-      //   processExecuteProcess(Input, Size, Index);
-      // }
-
       // Process implict cmake syntax
       if (Command == CmakeSyntax) {
         (*Func)(Input, Size, Index);
