@@ -288,6 +288,7 @@ static int parseCodeElement(const MatchPattern &Suffix,
       if (Input[Index] == '#') {
         for (; Index < Size && Input[Index] != '\n'; Index++) {
         }
+        continue;
       }
     }
 

@@ -7,3 +7,4 @@ target_link_libraries(llama PRIVATE
     ggml
     ${LLAMA_EXTRA_LIBS}
     )
+message("Here just a test msg.\n")
