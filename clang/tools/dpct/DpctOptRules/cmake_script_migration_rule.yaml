@@ -772,22 +772,15 @@
   In: if(${conditions}CUDA_64_BIT_DEVICE_CODE${other_conditions})
   Out: if(${conditions}(\${CMAKE_CXX_FLAGS} MATCHES "-m64")${other_conditions})
 
-- Rule: rule_set_cmake_cuda_flags
+- Rule: rule_CMAKE_CUDA_FLAGS
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: set_cmake_cuda_flags
-  In: set(CMAKE_CUDA_FLAGS ${flags})
-  Out: set(CMAKE_SYCL_FLAGS ${flags})
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_FLAGS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
   Subrules:
-    flags:
-      In: |
-        \${CMAKE_CUDA_FLAGS}
-      Out: |
-        \${CMAKE_SYCL_FLAGS}
-
-- Rule: rule_list_cmake_cuda_flags
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: list_cmake_cuda_flags
-  In: list(${operation} CMAKE_CUDA_FLAGS ${args})
-  Out: list(${operation} CMAKE_SYCL_FLAGS ${args})
+    value:
+      In: CMAKE_CUDA_FLAGS
+      Out: CMAKE_SYCL_FLAGS
+      MatchMode: Full
