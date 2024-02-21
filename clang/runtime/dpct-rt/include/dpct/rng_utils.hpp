@@ -211,7 +211,7 @@ class rng_generator_base {
 public:
   /// Construct the host rng_generator.
   /// \param queue The queue where the generator should be executed.
-  rng_generator_base(sycl::queue *queue): _queue(queue) {}
+  rng_generator_base(sycl::queue *queue) : _queue(queue) {}
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.

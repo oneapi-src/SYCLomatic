@@ -3949,9 +3949,9 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       FuncName == "curandCreateGeneratorHost") {
     const auto *const Arg0 = CE->getArg(0);
     requestFeature(HelperFeatureEnum::device_ext);
-    std::string RHS = buildString(" = ", MapNames::getDpctNamespace(),
-                                  "rng::create_host_rng(",
-                                  ExprAnalysis::ref(CE->getArg(1)));
+    std::string RHS =
+        buildString(" = ", MapNames::getDpctNamespace(),
+                    "rng::create_host_rng(", ExprAnalysis::ref(CE->getArg(1)));
     if (FuncName == "curandCreateGeneratorHost") {
       RHS = buildString(RHS, ", &", MapNames::getDpctNamespace(),
                         "cpu_device().default_queue()");
@@ -3964,8 +3964,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           (SE->getStmtClass() == Stmt::DeclRefExprClass ||
            SE->getStmtClass() == Stmt::MemberExprClass)) {
         return emplaceTransformation(new ReplaceStmt(
-            CE, false,
-            buildString(ExprAnalysis::ref(SE), RHS)));
+            CE, false, buildString(ExprAnalysis::ref(SE), RHS)));
       }
     }
     return emplaceTransformation(new ReplaceStmt(
