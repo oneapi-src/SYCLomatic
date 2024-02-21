@@ -1,0 +1,7 @@
+set(CMAKE_SYCL_FLAGS "${CMAKE_SYCL_FLAGS} --compiler-options \"-fvisibility=hidden -Wno-free-nonheap-object\" --Wno-deprecated-gpu-targets -Xfatbin -compress-all")
+
+set(CMAKE_SYCL_FLAGS "${CMAKE_SYCL_FLAGS} -w")
+
+set(CMAKE_SYCL_FLAGS "${CMAKE_SYCL_FLAGS} -Xcompiler -msse -Xcompiler -msse2 -Xcompiler -msse3")
+
+list(APPEND CMAKE_SYCL_FLAGS "--threads 4")
