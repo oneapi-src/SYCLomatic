@@ -21,40 +21,37 @@
 namespace dpct {
 namespace blas {
 namespace detail {
-template <typename target_t, typename input_t, bool has_input>
+template <typename target_t, typename source_t, bool has_input>
 class scalar_memory_t {
 public:
-  scalar_memory_t(sycl::queue q, input_t *input) : _q(q), _input(input) {
-    if constexpr (std::is_same_v<target_t, input_t>) {
-#ifdef DPCT_USM_LEVEL_NONE
-      if (dpct::is_device_ptr(_input))
-#else
-      if (sycl::get_pointer_type(_input, _q.get_context()) !=
-          sycl::usm::alloc::unknown)
-#endif
-      {
-        _target = _input;
+  scalar_memory_t(sycl::queue q, source_t *source) : _q(q), _source(source) {
+    if constexpr (std::is_same_v<target_t, source_t>) {
+      if (dpct::detail::get_pointer_attribute(_q, _source) !=
+          dpct::detail::pointer_access_attribute::host_only) {
+        _target = _source;
         _need_free = false;
         return;
       }
     }
+
 #ifdef DPCT_USM_LEVEL_NONE
     _target = (target_t *)dpct::dpct_malloc(sizeof(target_t), _q);
     if constexpr (has_input) {
-      input_t temp1;
-      dpct::dpct_memcpy(&temp1, _input, sizeof(input_t), automatic, _q);
-      target_t temp2 = temp1;
+      source_t temp1;
+      dpct::dpct_memcpy(&temp1, _source, sizeof(source_t), automatic, _q);
+      target_t temp2 = static_cast<target_t>(temp1);
       dpct::dpct_memcpy(_target, &temp2, sizeof(target_t), automatic, _q);
     }
 #else
     _target = sycl::malloc_shared<target_t>(1, _q);
     if constexpr (has_input) {
-      input_t temp;
-      _q.memcpy(&temp, _input, sizeof(input_t)).wait();
-      *_target = temp;
+      source_t temp;
+      _q.memcpy(&temp, _source, sizeof(source_t)).wait();
+      *_target = static_cast<target_t>(temp);
     }
 #endif
   }
+
   target_t *get_memory() { return _target; }
 
   ~scalar_memory_t() {
@@ -63,18 +60,18 @@ public:
 #ifdef DPCT_USM_LEVEL_NONE
     target_t temp1;
     dpct::dpct_memcpy(&temp1, _target, sizeof(target_t), automatic, _q);
-    input_t temp2 = temp1;
-    dpct::dpct_memcpy(_input, &temp2, sizeof(input_t), automatic, _q);
+    source_t temp2 = static_cast<source_t>(temp1);
+    dpct::dpct_memcpy(_source, &temp2, sizeof(source_t), automatic, _q);
 #else
     _q.wait();
-    input_t temp = *_target;
-    _q.memcpy(_input, &temp, sizeof(input_t)).wait();
+    source_t temp = static_cast<source_t>(*_target);
+    _q.memcpy(_source, &temp, sizeof(source_t)).wait();
 #endif
   }
 
 private:
   sycl::queue _q;
-  input_t *_input = nullptr;
+  source_t *_source = nullptr;
   target_t *_target = nullptr;
   bool _need_free = true;
 };
@@ -82,9 +79,7 @@ private:
 using out_mem_int_t = detail::scalar_memory_t<std::int64_t, int, false>;
 using out_mem_int64_t =
     detail::scalar_memory_t<std::int64_t, std::int64_t, false>;
-} // namespace blas
 
-namespace blas {
 class descriptor {
 public:
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
@@ -860,8 +855,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
   dpct_memcpy(host_b, b, batch_size * sizeof(T *));
 
   for (std::int64_t i = 0; i < batch_size; ++i) {
-    // Need to create a copy of input matrices "a" to keep them unchanged.
-    // Matrices "b" (copy of matrices "a") will be used as input and output
+    // Need to create a copy of source matrices "a" to keep them unchanged.
+    // Matrices "b" (copy of matrices "a") will be used as source and output
     // parameter in oneapi::mkl::lapack::getri_batch call.
     matrix_mem_copy(b_buffer_ptr + i * stride_b, host_a[i], ldb, lda, n, n,
                     dpct::device_to_device, exec_queue);
@@ -930,8 +925,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
   exec_queue.memcpy(b_shared, b, batch_size * sizeof(T *)).wait();
   for (std::int64_t i = 0; i < batch_size; ++i) {
     ipiv_int64_ptr[i] = ipiv_int64 + n * i;
-    // Need to create a copy of input matrices "a" to keep them unchanged.
-    // Matrices "b" (copy of matrices "a") will be used as input and output
+    // Need to create a copy of source matrices "a" to keep them unchanged.
+    // Matrices "b" (copy of matrices "a") will be used as source and output
     // parameter in oneapi::mkl::lapack::getri_batch call.
     matrix_mem_copy(b_shared[i], a_shared[i], ldb, lda, n, n, dpct::device_to_device,
                     exec_queue);
