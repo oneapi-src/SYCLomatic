@@ -954,6 +954,19 @@ bool raw_fd_stream::classof(const raw_ostream *OS) {
   return OS->get_kind() == OStreamKind::OK_FDStream;
 }
 
+#if SYCLomatic_CUSTOMIZATION
+// This was originally here upstream. It got moved to raw_socket_stream.cpp
+// but we need to move it back since we're not building socket support.
+
+//===----------------------------------------------------------------------===//
+//  raw_string_ostream
+//===----------------------------------------------------------------------===//
+
+void raw_string_ostream::write_impl(const char *Ptr, size_t Size) {
+  OS.append(Ptr, Size);
+}
+#endif // SYCLomatic_CUSTOMIZATION
+
 //===----------------------------------------------------------------------===//
 //  raw_svector_ostream
 //===----------------------------------------------------------------------===//

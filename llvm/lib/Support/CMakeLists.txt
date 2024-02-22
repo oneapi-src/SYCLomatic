@@ -41,6 +41,12 @@ if( MSVC OR MINGW )
   # libuuid required for FOLDERID_Profile usage in lib/Support/Windows/Path.inc.
   # advapi32 required for CryptAcquireContextW in lib/Support/Windows/Path.inc.
   set(system_libs ${system_libs} psapi shell32 ole32 uuid advapi32 ws2_32)
+
+  # SYCLomatic_CUSTOMIZATION
+  # Remove ws2_32 since we are excluding sockets in xmain -- CMPLRLLVM-55472
+  set(system_libs ${system_libs} psapi shell32 ole32 uuid advapi32)
+  # end SYCLomatic_CUSTOMIZATION
+
 elseif( CMAKE_HOST_UNIX )
   if( HAVE_LIBRT )
     set(system_libs ${system_libs} rt)
@@ -128,6 +134,11 @@ if (UNIX AND ${CMAKE_SYSTEM_NAME} MATCHES "AIX")
 endif()
 
 add_subdirectory(BLAKE3)
+
+# SYCLomatic_CUSTOMIZATION
+# Exclude socket support in xmain -- CMPLRLLVM-55472
+set(LLVM_OPTIONAL_SOURCES raw_socket_stream.cpp)
+# end SYCLomatic_CUSTOMIZATION
 
 add_llvm_component_library(LLVMSupport
   ABIBreak.cpp
@@ -254,7 +265,9 @@ add_llvm_component_library(LLVMSupport
   YAMLTraits.cpp
   raw_os_ostream.cpp
   raw_ostream.cpp
-  raw_socket_stream.cpp
+# SYCLomatic_CUSTOMIZATION 
+#  raw_socket_stream.cpp
+# end SYCLomatic_CUSTOMIZATION
   regcomp.c
   regerror.c
   regexec.c

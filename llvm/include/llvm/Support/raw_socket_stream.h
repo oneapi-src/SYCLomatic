@@ -1,4 +1,27 @@
 //===-- llvm/Support/raw_socket_stream.h - Socket streams --*- C++ -*-===//
+// SYCLomatic_CUSTOMIZATION
+//
+// INTEL CONFIDENTIAL
+//
+// Modifications, Copyright (C) 2024 Intel Corporation
+//
+// This software and the related documents are Intel copyrighted materials, and
+// your use of them is governed by the express license under which they were
+// provided to you ("License"). Unless the License provides otherwise, you may
+// not use, modify, copy, publish, distribute, disclose or transmit this
+// software or the related documents without Intel's prior written permission.
+//
+// This software and the related documents are provided as is, with no express
+// or implied warranties, other than those that are expressly stated in the
+// License.
+//
+// end SYCLomatic_CUSTOMIZATION
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -13,6 +36,14 @@
 
 #ifndef LLVM_SUPPORT_RAW_SOCKET_STREAM_H
 #define LLVM_SUPPORT_RAW_SOCKET_STREAM_H
+
+#if SYCLomatic_CUSTOMIZATION
+
+// This is here to trigger failures when pulling down any changes that
+// try to use sockets. See CMPLRLLVM-55472.
+#error "Socket support is disabled for Intel builds."
+
+#else // SYCLomatic_CUSTOMIZATION
 
 #include "llvm/Support/Threading.h"
 #include "llvm/Support/raw_ostream.h"
@@ -62,5 +93,7 @@ public:
 };
 
 } // end namespace llvm
+
+#endif // SYCLomatic_CUSTOMIZATION
 
 #endif

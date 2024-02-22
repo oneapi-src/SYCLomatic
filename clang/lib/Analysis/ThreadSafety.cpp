@@ -1008,7 +1008,7 @@ class ThreadSafetyAnalyzer {
   threadSafety::SExprBuilder SxBuilder;
 
   ThreadSafetyHandler &Handler;
-  const FunctionDecl *CurrentFunction;
+  const FunctionDecl *CurrentFunction = nullptr;
   LocalVariableMap LocalVarMap;
   // Maps constructed objects to `this` placeholder prior to initialization.
   llvm::SmallDenseMap<const Expr *, til::LiteralPtr *> ConstructedObjects;

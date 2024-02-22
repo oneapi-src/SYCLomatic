@@ -2,6 +2,9 @@ RUN: llvm-config --link-static --system-libs Support 2>&1 | FileCheck %s
 REQUIRES: static-libs
 REQUIRES: host={{.*-windows-msvc}}
 CHECK-NOT: -l
-CHECK: psapi.lib shell32.lib ole32.lib uuid.lib advapi32.lib ws2_32.lib
+; SYCLomatic_CUSTOMIZATION
+; Remove ws2_32.lib since socket support is disabled -- CMPLRLLVM-55472
+CHECK: psapi.lib shell32.lib ole32.lib uuid.lib advapi32.lib
+; end SYCLomatic_CUSTOMIZATION
 CHECK-NOT: error
 CHECK-NOT: warning

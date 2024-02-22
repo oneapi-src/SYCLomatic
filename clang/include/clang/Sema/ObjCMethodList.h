@@ -37,6 +37,10 @@ struct ObjCMethodList {
         NextAndExtraBits(L.NextAndExtraBits) {}
 
   ObjCMethodList &operator=(const ObjCMethodList &L) {
+#ifdef SYCLomatic_CUSTOMIZATION
+    if(this == &L)
+      return *this;
+#endif // SYCLomatic_CUSTOMIZATION
     MethodAndHasMoreThanOneDecl = L.MethodAndHasMoreThanOneDecl;
     NextAndExtraBits = L.NextAndExtraBits;
     return *this;

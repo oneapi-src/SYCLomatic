@@ -78,13 +78,19 @@ public:
     return V.sge(RHS.V);
   }
   bool operator<(IntegralAP RHS) const {
+#ifdef SYCLomatic_CUSTOMIZATION
+#else
     if constexpr (Signed)
       return V.slt(RHS.V);
+#endif // SYCLomatic_CUSTOMIZATION
     return V.slt(RHS.V);
   }
   bool operator<=(IntegralAP RHS) const {
+#ifdef SYCLomatic_CUSTOMIZATION
+#else
     if constexpr (Signed)
       return V.ult(RHS.V);
+#endif // SYCLomatic_CUSTOMIZATION
     return V.ult(RHS.V);
   }
 

@@ -3,6 +3,11 @@ set(LLVM_LINK_COMPONENTS
   TargetParser
   )
 
+# SYCLomatic_CUSTOMIZATION
+# Exclude socket support in xmain -- CMPLRLLVM-55472
+set(LLVM_OPTIONAL_SOURCES raw_socket_stream_test.cpp)
+# end SYCLomatic_CUSTOMIZATION
+
 add_llvm_unittest(SupportTests
   AddressRangeTest.cpp
   AlignmentTest.cpp
@@ -105,7 +110,9 @@ add_llvm_unittest(SupportTests
   raw_ostream_test.cpp
   raw_pwrite_stream_test.cpp
   raw_sha1_ostream_test.cpp
-  raw_socket_stream_test.cpp
+# SYCLomatic_CUSTOMIZATION
+#  raw_socket_stream_test.cpp
+# end SYCLomatic_CUSTOMIZATION
   xxhashTest.cpp
 
   DEPENDS

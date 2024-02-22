@@ -6240,10 +6240,10 @@ class OffloadingActionBuilder final {
                                                      const StringRef &Input) {
       SmallVector<std::string, 4> Sections(getOffloadSections(C, Input));
       SmallVector<std::string, 4> FinalDeviceSections;
-      for (auto S : Sections) {
+      for (auto &S : Sections) {
         SmallVector<std::string, 3> ArchList = {"spir64_gen", "spir64_fpga",
                                                 "spir64_x86_64"};
-        for (auto A : ArchList) {
+        for (auto &A : ArchList) {
           std::string Arch("sycl-" + A + "_image");
           if (S.find(Arch) != std::string::npos)
             FinalDeviceSections.push_back(S);
