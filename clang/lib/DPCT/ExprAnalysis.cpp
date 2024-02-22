@@ -270,7 +270,6 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    SrcBeginLoc = BeginLoc;
     auto LastTokenLength = End.second;
     if(ApplyGreaterTokenWorkAround)
       LastTokenLength = 0;
@@ -401,6 +400,7 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
   if (Range.getBegin().isValid()) {
     std::tie(SrcBegin, SrcLength) =
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
+    SrcBeginLoc = Range.getBegin();
     if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
       ReplSet.init(std::string(
           FileBuffer.value().getBuffer().data() + SrcBegin, SrcLength));
@@ -1232,9 +1232,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
       SR.setEnd(TSTL.getTemplateNameLoc());
     }
     analyzeTemplateSpecializationType(TSTL);
-    // Need reset the SrcBeginLoc to the beginning of TemplateSpecializationType
-    // after analyse the type inside the TemplateSpecializationType.
-    SrcBeginLoc = SR.getBegin();
     break;
   }
   case TypeLoc::DependentTemplateSpecialization:
