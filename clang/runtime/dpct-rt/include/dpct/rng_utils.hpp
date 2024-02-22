@@ -209,10 +209,6 @@ namespace host {
 namespace detail {
 class rng_generator_base {
 public:
-  /// Construct the host rng_generator.
-  /// \param queue The queue where the generator should be executed.
-  rng_generator_base(sycl::queue *queue) : _queue(queue) {}
-
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
   virtual void set_seed(const std::uint64_t seed) = 0;
@@ -298,6 +294,10 @@ public:
       const std::vector<std::uint32_t> &direction_numbers) = 0;
 
 protected:
+  /// Construct the host rng_generator.
+  /// \param queue The queue where the generator should be executed.
+  rng_generator_base(sycl::queue *queue) : _queue(queue) {}
+
   sycl::queue *_queue = nullptr;
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
@@ -310,8 +310,9 @@ class rng_generator : public rng_generator_base {
 public:
   /// Constructor of rng_generator.
   /// \param q The queue where the generator should be executed.
-  rng_generator(sycl::queue *q = &dpct::get_default_queue())
-      : rng_generator_base(q), _engine(create_engine(q, _seed, _dimensions)) {}
+  rng_generator(sycl::queue &q = dpct::get_default_queue())
+      : rng_generator_base(&q), _engine(create_engine(&q, _seed, _dimensions)) {
+  }
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
@@ -512,7 +513,7 @@ typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
 /// \return The pointer of random number generator.
 inline host_rng_ptr
 create_host_rng(const random_engine_type type,
-                sycl::queue *q = &dpct::get_default_queue()) {
+                sycl::queue &q = dpct::get_default_queue()) {
   switch (type) {
   case random_engine_type::philox4x32x10:
     return std::make_shared<
