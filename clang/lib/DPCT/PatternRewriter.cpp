@@ -43,6 +43,8 @@ struct MatchResult {
   std::unordered_map<std::string, std::string> Bindings;
 };
 
+static SourceFileType SrcFileType = SourceFileType::SFT_CAndCXXSource;
+
 extern llvm::cl::opt<bool> MigrateBuildScriptOnly;
 
 static bool isWhitespace(char Character) {
@@ -283,8 +285,7 @@ static int parseCodeElement(const MatchPattern &Suffix,
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
 
-    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
-        MigrateBuildScriptOnly) {
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
       if (Input[Index] == '#') {
         for (; Index < Size && Input[Index] != '\n'; Index++) {
         }
@@ -453,8 +454,7 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
 
   while (PatternIndex < PatternSize && Index < Size) {
 
-    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
-        MigrateBuildScriptOnly) {
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
       if (Input[Index] == '#') {
         for (; Index < Size && Input[Index] != '\n'; Index++) {
         }
@@ -531,8 +531,7 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       std::string ElementContents =
           dedent(Input.substr(Index, Next - Index), Indentation);
 
-      if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
-          MigrateBuildScriptOnly) {
+      if (SrcFileType == SourceFileType::SFT_CMakeScript) {
         updateExtentionName(Input, Next, Result.Bindings);
       }
 
@@ -567,8 +566,7 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
   const int Size = Input.size();
   while (PatternIndex < PatternSize && Index < Size) {
 
-    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
-        MigrateBuildScriptOnly) {
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
       if (Input[Index] == '#') {
         for (; Index < Size && Input[Index] != '\n'; Index++) {
         }
@@ -732,6 +730,10 @@ bool skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
   return CommentFound;
 }
 
+void setFileTypeProcessed(enum SourceFileType FileType) {
+  SrcFileType = FileType;
+}
+
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input) {
   std::stringstream OutputStream;
@@ -745,8 +747,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   int Index = 0;
   while (Index < Size) {
 
-    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake ||
-        MigrateBuildScriptOnly) {
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
       if (skipCmakeComments(OutputStream, Input, Index)) {
         continue;
       }

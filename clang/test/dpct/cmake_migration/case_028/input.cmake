@@ -1,10 +1,10 @@
-# this doesn't provide pkg-config
-# suggest to assign BLAS_INCLUDE_DIRS on your own
-set(GGML_HEADERS_CUDA ggml-cuda.h)
-set(GGML_SOURCES_CUDA ggml-cuda.cu)
-target_compile_features(llama PUBLIC cxx_std_17) # don't bump
-target_link_libraries(llama PRIVATE
-    ggml
-    ${LLAMA_EXTRA_LIBS}
+# this doesn't provide foo
+# suggest to assign bar on your own
+set(FOO_HEADERS_CUDA foo.h)
+set(FOO_SOURCES_CUDA foo.cu)
+target_compile_features(bar PUBLIC cxx_std_17) # don't bump
+target_link_libraries(bar PRIVATE
+    FOO
+    ${bar_EXTRA_LIBS}
     )
 message("###Here just a test msg.\n")

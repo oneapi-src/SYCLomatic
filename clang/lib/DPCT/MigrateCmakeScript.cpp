@@ -375,7 +375,7 @@ static void parseVariable(const std::string &Input) {
         std::string VarName;
         std::string Value;
 
-        // Get the begin of firt argument of set
+        // Get the begin of first argument of set
         Index = skipWhiteSpaces(Input, Index);
         Begin = Index;
 
@@ -468,7 +468,7 @@ void processCmakeMinimumRequired(std::string &Input, size_t &Size,
   std::string Value;
   size_t Begin, End;
 
-  // Get the begin of firt argument of cmake_minimum_required
+  // Get the begin of first argument of cmake_minimum_required
   Index = skipWhiteSpaces(Input, Index);
   Begin = Index;
 
@@ -502,7 +502,7 @@ void processExecuteProcess(std::string &Input, size_t &Size, size_t &Index) {
   std::string Value;
   size_t Begin, End;
 
-  // Get the begin of firt argument
+  // Get the begin of first argument
   Index = skipWhiteSpaces(Input, Index);
   Begin = Index;
 
@@ -514,20 +514,26 @@ void processExecuteProcess(std::string &Input, size_t &Size, size_t &Index) {
 
   size_t Pos = Value.find("-Xcompiler");
   if (Pos != std::string::npos) {
-
     size_t NextPos = Pos + strlen("-Xcompiler");
     NextPos = skipWhiteSpaces(Value, NextPos);
 
+    // clang-format off
     // To check if the value of opition "-Xcompiler" is a string literal, if it
-    // is a string literal, just remove '"' for the value.
+    // is a string literal, just remove '"' for outmost '"' and '\\' for inner string, like:
+    // -Xcompiler "-dumpfullversion" -> -Xcompiler -dumpfullversion
+    // -Xcompiler "\"-dumpfullversion \"" -> -Xcompiler -dumpfullversion
+    // clang-format on
     if (Value[NextPos] == '"') {
       Value[NextPos] = ' ';
       size_t Size = Value.size();
       size_t Idx = NextPos;
-      for (; Idx < Size && Value[Idx] != '"'; Idx++) {
+      for (; Idx < Size; Idx++) {
+        if (Value[Idx] == '\\') {
+          Value[Idx] = ' ';
+        } else if (Value[Idx] == '"') {
+          Value[Idx] = ' ';
+        }
       }
-      assert(Value[Idx] == '"' && "Invlid option for -Xcompiler.");
-      Value[Idx] = ' ';
     }
   }
 
@@ -647,6 +653,8 @@ static void applyCmakeMigrationRules() {
           {"cmake_minimum_required", processCmakeMinimumRequired},
           {"execute_process", processExecuteProcess},
       };
+
+  setFileTypeProcessed(SourceFileType::SFT_CMakeScript);
 
   for (auto &Entry : CmakeScriptFileBufferMap) {
     llvm::outs() << "Processing: " + Entry.first.getPath() + "\n";
