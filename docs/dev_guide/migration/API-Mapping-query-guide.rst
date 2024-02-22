@@ -1,8 +1,8 @@
-API-Mapping Query Guide
-=======================
+Query CUDA* to SYCL* API Mapping
+================================
 
-Use the ``--query-api-mapping`` option to discover which SYCL API is functionally
-compatible with a specified CUDA API. The API query functionality can assist users
+Use the ``--query-api-mapping`` option to discover which SYCL\* API is functionally
+compatible with a specified CUDA\* API. The API query functionality can assist users
 on manual code migration and help users understand the SYCL API.
 
 The following example queries the functionally compatible SYCL API for the
