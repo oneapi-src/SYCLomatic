@@ -138,3 +138,13 @@ __global__ void kernel(int *) {
   int b = blockDim.x;
 }
 
+template <typename T> void f() {}
+template <typename T> class CCCCCCCCCCC {};
+// CHECK: template void f<CCCCCCCCCCC<CCCCCCCCCCC<CCCCCCCCCCC<sycl::int3>>>>();
+template void f<CCCCCCCCCCC<CCCCCCCCCCC<CCCCCCCCCCC<int3>>>>();
+// CHECK: template void f<CCCCCCCCCCC<CCCCCCCCCCC<sycl::int3>>>();
+template void f<CCCCCCCCCCC<CCCCCCCCCCC<int3>>>();
+// CHECK: template void f<CCCCCCCCCCC<sycl::int3>>();
+template void f<CCCCCCCCCCC<int3>>();
+// CHECK: template void f<sycl::int3>();
+template void f<int3>();
