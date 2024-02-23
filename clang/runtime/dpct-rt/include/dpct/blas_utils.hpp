@@ -22,41 +22,15 @@ namespace dpct {
 namespace blas {
 namespace detail {
 template <typename target_t, typename source_t, bool has_input>
-class scalar_memory_t {
+class scalar_memory_base_t {
 public:
-  scalar_memory_t(sycl::queue q, source_t *source)
+  scalar_memory_base_t(sycl::queue q, source_t *source)
       : _q(q), _source(source)
 #ifdef DPCT_USM_LEVEL_NONE
         ,
         _target(sycl::buffer<target_t>(sycl::range<1>(1)))
 #endif
   {
-    if constexpr (std::is_same_v<target_t, source_t>) {
-      if (dpct::detail::get_pointer_attribute(_q, _source) !=
-          dpct::detail::pointer_access_attribute::host_only) {
-#ifdef DPCT_USM_LEVEL_NONE
-        _target = dpct::get_buffer<target_t>(_source);
-#else
-        _target = _source;
-#endif
-        _need_free = false;
-        return;
-      }
-    }
-
-#ifdef DPCT_USM_LEVEL_NONE
-    if constexpr (has_input) {
-      _target.get_host_access()[0] =
-          static_cast<target_t>(dpct::detail::get_value(_source, _q));
-    }
-#else
-    _target = sycl::malloc_shared<target_t>(1, _q);
-    if constexpr (has_input) {
-      source_t temp;
-      _q.memcpy(&temp, _source, sizeof(source_t)).wait();
-      *_target = static_cast<target_t>(temp);
-    }
-#endif
   }
 
 #ifdef DPCT_USM_LEVEL_NONE
@@ -65,20 +39,7 @@ public:
   target_t *get_memory() { return _target; }
 #endif
 
-  ~scalar_memory_t() {
-    if (!_need_free)
-      return;
-#ifdef DPCT_USM_LEVEL_NONE
-    source_t temp = static_cast<source_t>(_target.get_host_access()[0]);
-    dpct::dpct_memcpy(_source, &temp, sizeof(source_t), automatic, _q);
-#else
-    _q.wait();
-    source_t temp = static_cast<source_t>(*_target);
-    _q.memcpy(_source, &temp, sizeof(source_t)).wait();
-#endif
-  }
-
-private:
+protected:
   sycl::queue _q;
   source_t *_source = nullptr;
 #ifdef DPCT_USM_LEVEL_NONE
@@ -88,6 +49,97 @@ private:
 #endif
   bool _need_free = true;
 };
+
+template <typename target_t, typename source_t, bool has_input>
+class scalar_memory_t
+    : public scalar_memory_base_t<target_t, source_t, has_input> {
+  using Base = scalar_memory_base_t<target_t, source_t, has_input>;
+
+public:
+  scalar_memory_t(sycl::queue q, source_t *source) : Base(q, source) {
+    if constexpr (std::is_same_v<target_t, source_t>) {
+      if (dpct::detail::get_pointer_attribute(Base::_q, Base::_source) !=
+          dpct::detail::pointer_access_attribute::host_only) {
+#ifdef DPCT_USM_LEVEL_NONE
+        Base::_target = dpct::get_buffer<target_t>(Base::_source);
+#else
+        Base::_target = Base::_source;
+#endif
+        Base::_need_free = false;
+        return;
+      }
+    }
+
+#ifdef DPCT_USM_LEVEL_NONE
+    if constexpr (has_input) {
+      Base::_target.get_host_access()[0] = static_cast<target_t>(
+          dpct::detail::get_value(Base::_source, Base::_q));
+    }
+#else
+    Base::_target = sycl::malloc_shared<target_t>(1, Base::_q);
+    if constexpr (has_input) {
+      source_t temp;
+      Base::_q.memcpy(&temp, Base::_source, sizeof(source_t)).wait();
+      *Base::_target = static_cast<target_t>(temp);
+    }
+#endif
+  }
+
+  ~scalar_memory_t() {
+    if (!Base::_need_free)
+      return;
+#ifdef DPCT_USM_LEVEL_NONE
+    source_t temp = static_cast<source_t>(Base::_target.get_host_access()[0]);
+    dpct::dpct_memcpy(Base::_source, &temp, sizeof(source_t), automatic,
+                      Base::_q);
+#else
+    Base::_q.wait();
+    source_t temp = static_cast<source_t>(*Base::_target);
+    Base::_q.memcpy(Base::_source, &temp, sizeof(source_t)).wait();
+    sycl::free(Base::_target, Base::_q);
+#endif
+  }
+};
+
+template <typename target_t, bool has_input>
+class scalar_memory_t<target_t, target_t, has_input>
+    : public scalar_memory_base_t<target_t, target_t, has_input> {
+  using Base = scalar_memory_base_t<target_t, target_t, has_input>;
+
+public:
+  scalar_memory_t(sycl::queue q, target_t *source) : Base(q, source) {
+    if (dpct::detail::get_pointer_attribute(Base::_q, Base::_source) !=
+        dpct::detail::pointer_access_attribute::host_only) {
+#ifdef DPCT_USM_LEVEL_NONE
+      Base::_target = dpct::get_buffer<target_t>(Base::_source);
+#else
+      Base::_target = Base::_source;
+#endif
+      Base::_need_free = false;
+      return;
+    }
+
+#ifdef DPCT_USM_LEVEL_NONE
+    Base::_target = sycl::buffer<target_t>(Base::_source, sycl::range<1>(1));
+#else
+    Base::_target = sycl::malloc_shared<target_t>(1, Base::_q);
+    if constexpr (has_input) {
+      Base::_q.memcpy(Base::_target, Base::_source, sizeof(target_t)).wait();
+    }
+#endif
+  }
+
+  ~scalar_memory_t() {
+    if (!Base::_need_free)
+      return;
+#ifndef DPCT_USM_LEVEL_NONE
+    Base::_q.wait();
+    Base::_q.memcpy(Base::_source, Base::_target, sizeof(target_t)).wait();
+    sycl::free(Base::_target, Base::_q);
+#endif
+  }
+};
+
 } // namespace detail
 using out_mem_int_t = detail::scalar_memory_t<std::int64_t, int, false>;
 using out_mem_int64_t =
