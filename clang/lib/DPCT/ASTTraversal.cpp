@@ -8106,6 +8106,39 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
 
 REGISTER_RULE(EventAPICallRule, PassKind::PK_Migration)
 
+void ProfilingEnableOnDemandRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(hasName("cudaEventElapsedTime"))),
+                     parentStmt()))
+          .bind("cudaEventElapsedTimeCall"),
+      this);
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(hasName("cudaEventElapsedTime"))),
+                               unless(parentStmt())))
+                    .bind("cudaEventElapsedTimeUsed"),
+                this);
+}
+
+extern bool EnablepProfilingFlag;
+void ProfilingEnableOnDemandRule::runRule(
+    const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE =
+      getNodeAsType<CallExpr>(Result, "cudaEventElapsedTimeCall");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "cudaEventElapsedTimeUsed")))
+      return;
+  }
+
+  if (!CE->getDirectCallee())
+    return;
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+
+  printf("######## FuncName [%s]\n", FuncName.c_str());
+  EnablepProfilingFlag = true;
+}
+
+REGISTER_RULE(ProfilingEnableOnDemandRule, PassKind::PK_Analysis)
+
 void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
   auto streamFunctionName = [&]() {
     return hasAnyName("cudaStreamCreate", "cudaStreamCreateWithFlags",
