@@ -4,7 +4,6 @@
 // RUN: FileCheck --input-file %T/cuda-stream-api/cuda-stream-api.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cuda-stream-api/cuda-stream-api.dp.cpp -o %T/cuda-stream-api/cuda-stream-api.dp.o %}
 
-#ifndef BUILD_TEST
 #include <list>
 #include <functional>
 
@@ -172,7 +171,7 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
   // CHECK-NEXT: */
-  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*(&priority_low) = 0, *(&priority_hi) = 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR((*(&priority_low) = 0, *(&priority_hi) = 0)));
   MY_ERROR_CHECKER(cudaDeviceGetStreamPriorityRange(&priority_low, &priority_hi));
 
   int priority;
@@ -327,4 +326,3 @@ class C {
     streams2 = INIT_STREAM;
   }
 };
-#endif

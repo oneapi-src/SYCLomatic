@@ -8256,7 +8256,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     ReplStr += StmtStr1;
     ReplStr += ") = 0";
     if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = "DPCT_CHECK_ERROR((" + ReplStr + "))";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     const std::string Name =
