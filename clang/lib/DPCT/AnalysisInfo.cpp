@@ -870,8 +870,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
   case HT_SYCL:
-    if (DpctGlobalInfo::getEnablepProfilingFlag())
-      OS << "#define DPCT_PROFILING_ENABLED" << getNL();
+    // Add post replacement to enable event profiling macro
+    // "DPCT_PROFILING_ENABLED".
+    OS << "{{NEEDREPLACEP0}}";
+
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
@@ -1399,6 +1401,7 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // F: free queries function migration, such as this_nd_item, this_group,
   //    this_sub_group.
   // E: extension, used for c source file migration
+  // P: profiling enable or disable for time measurement.
   switch (Method) {
   case 'R':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
@@ -1441,6 +1444,13 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
     return Vec[Index]->hasCUDASyntax()
                ? ("c" + DpctGlobalInfo::getSYCLSourceExtension())
                : "c";
+  }
+  case 'P': {
+    std::string ReplStr;
+    if (DpctGlobalInfo::getEnablepProfilingFlag())
+      ReplStr = std::string("#define DPCT_PROFILING_ENABLED");
+    ReplStr += getNL();
+    return ReplStr;
   }
   case FreeQueriesInfo::FreeQueriesRegexCh:
     return FreeQueriesInfo::getReplaceString(Index);

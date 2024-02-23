@@ -8118,7 +8118,6 @@ void ProfilingEnableOnDemandRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-extern bool EnablepProfilingFlag;
 // When cudaEventElapsedTimeCall() is called in the source code, event profiling
 // opton "--enable-profiling" is enabled to measure the execution time of a
 // specific kernel or command in SYCL device.
@@ -8133,7 +8132,8 @@ void ProfilingEnableOnDemandRule::runRule(
 
   if (!CE->getDirectCallee())
     return;
-  EnablepProfilingFlag = true;
+
+  DpctGlobalInfo::setEnablepProfilingFlag(true);
 }
 
 REGISTER_RULE(ProfilingEnableOnDemandRule, PassKind::PK_Analysis)
