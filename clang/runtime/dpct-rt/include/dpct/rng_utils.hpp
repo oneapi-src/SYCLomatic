@@ -294,7 +294,11 @@ public:
       const std::vector<std::uint32_t> &direction_numbers) = 0;
 
 protected:
-  sycl::queue *_queue{&dpct::get_default_queue()};
+  /// Construct the host rng_generator.
+  /// \param queue The queue where the generator should be executed.
+  rng_generator_base(sycl::queue *queue) : _queue(queue) {}
+
+  sycl::queue *_queue = nullptr;
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
   std::vector<std::uint32_t> _direction_numbers;
@@ -305,7 +309,10 @@ template <typename engine_t = oneapi::mkl::rng::philox4x32x10>
 class rng_generator : public rng_generator_base {
 public:
   /// Constructor of rng_generator.
-  rng_generator() : _engine(create_engine(_queue, _seed, _dimensions)) {}
+  /// \param q The queue where the generator should be executed.
+  rng_generator(sycl::queue &q = dpct::get_default_queue())
+      : rng_generator_base(&q), _engine(create_engine(&q, _seed, _dimensions)) {
+  }
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
@@ -500,32 +507,36 @@ enum class random_engine_type {
 typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
 
 /// Create a host random number generator.
+/// \tparam work_on_cpu Whether the work is offloaded to CPU.
 /// \param type The random engine type.
+/// \param q The queue where the generator should be executed.
 /// \return The pointer of random number generator.
-inline host_rng_ptr create_host_rng(const random_engine_type type) {
+inline host_rng_ptr
+create_host_rng(const random_engine_type type,
+                sycl::queue &q = dpct::get_default_queue()) {
   switch (type) {
   case random_engine_type::philox4x32x10:
     return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::philox4x32x10>>();
+        rng::host::detail::rng_generator<oneapi::mkl::rng::philox4x32x10>>(q);
   case random_engine_type::mrg32k3a:
     return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::mrg32k3a>>();
+        rng::host::detail::rng_generator<oneapi::mkl::rng::mrg32k3a>>(q);
 #ifndef __INTEL_MKL__
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
 #else
   case random_engine_type::mt2203:
     return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::mt2203>>();
+        rng::host::detail::rng_generator<oneapi::mkl::rng::mt2203>>(q);
   case random_engine_type::mt19937:
     return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::mt19937>>();
+        rng::host::detail::rng_generator<oneapi::mkl::rng::mt19937>>(q);
   case random_engine_type::sobol:
     return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::sobol>>();
+        rng::host::detail::rng_generator<oneapi::mkl::rng::sobol>>(q);
   case random_engine_type::mcg59:
     return std::make_shared<
-        rng::host::detail::rng_generator<oneapi::mkl::rng::mcg59>>();
+        rng::host::detail::rng_generator<oneapi::mkl::rng::mcg59>>(q);
 #endif
   }
 }
