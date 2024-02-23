@@ -24,23 +24,30 @@ namespace detail {
 template <typename target_t, typename source_t, bool has_input>
 class scalar_memory_t {
 public:
-  scalar_memory_t(sycl::queue q, source_t *source) : _q(q), _source(source) {
+  scalar_memory_t(sycl::queue q, source_t *source)
+      : _q(q), _source(source)
+#ifdef DPCT_USM_LEVEL_NONE
+        ,
+        _target(sycl::buffer<target_t>(sycl::range<1>(1)))
+#endif
+  {
     if constexpr (std::is_same_v<target_t, source_t>) {
       if (dpct::detail::get_pointer_attribute(_q, _source) !=
           dpct::detail::pointer_access_attribute::host_only) {
+#ifdef DPCT_USM_LEVEL_NONE
+        _target = dpct::get_buffer<target_t>(_source);
+#else
         _target = _source;
+#endif
         _need_free = false;
         return;
       }
     }
 
 #ifdef DPCT_USM_LEVEL_NONE
-    _target = (target_t *)dpct::dpct_malloc(sizeof(target_t), _q);
     if constexpr (has_input) {
-      source_t temp1;
-      dpct::dpct_memcpy(&temp1, _source, sizeof(source_t), automatic, _q);
-      target_t temp2 = static_cast<target_t>(temp1);
-      dpct::dpct_memcpy(_target, &temp2, sizeof(target_t), automatic, _q);
+      _target.get_host_access()[0] =
+          static_cast<target_t>(dpct::detail::get_value(_source, _q));
     }
 #else
     _target = sycl::malloc_shared<target_t>(1, _q);
@@ -52,16 +59,18 @@ public:
 #endif
   }
 
+#ifdef DPCT_USM_LEVEL_NONE
+  sycl::buffer<target_t> &get_memory() { return _target; }
+#else
   target_t *get_memory() { return _target; }
+#endif
 
   ~scalar_memory_t() {
     if (!_need_free)
       return;
 #ifdef DPCT_USM_LEVEL_NONE
-    target_t temp1;
-    dpct::dpct_memcpy(&temp1, _target, sizeof(target_t), automatic, _q);
-    source_t temp2 = static_cast<source_t>(temp1);
-    dpct::dpct_memcpy(_source, &temp2, sizeof(source_t), automatic, _q);
+    source_t temp = static_cast<source_t>(_target.get_host_access()[0]);
+    dpct::dpct_memcpy(_source, &temp, sizeof(source_t), automatic, _q);
 #else
     _q.wait();
     source_t temp = static_cast<source_t>(*_target);
@@ -72,7 +81,11 @@ public:
 private:
   sycl::queue _q;
   source_t *_source = nullptr;
+#ifdef DPCT_USM_LEVEL_NONE
+  sycl::buffer<target_t> _target;
+#else
   target_t *_target = nullptr;
+#endif
   bool _need_free = true;
 };
 } // namespace detail

@@ -1428,8 +1428,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1442,8 +1441,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1456,8 +1454,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1470,8 +1467,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1485,8 +1481,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1499,8 +1494,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1513,8 +1507,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1527,8 +1520,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1542,8 +1534,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1556,8 +1547,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1570,8 +1560,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1584,8 +1573,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1599,8 +1587,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1613,8 +1600,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1627,8 +1613,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1641,8 +1626,7 @@ WARNING_FACTORY_ENTRY(
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
-             BUFFER_OR_USM_PTR(MEMBER_CALL(ARG("res"), false, "get_memory"),
-                               "std::int64_t"),
+             MEMBER_CALL(ARG("res"), false, "get_memory"),
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
