@@ -238,6 +238,183 @@ inline auto UsingDpctMinMax = [](const CallExpr *C) -> bool {
 };
 } // namespace math
 
+enum class Tag {
+  device_perf = 0,
+  device_normal,
+  math_libdevice,
+  device_std,
+  device_emu,
+  ext_experimental,
+  host_perf,
+  host_normal,
+  unsupported_warning,
+  no_rewrite = 999
+};
+
+inline std::function<bool(const CallExpr *)> TrueFunctor =
+    [](const CallExpr *) { return true; };
+
+class MathRewriterFactory final : public CallExprRewriterFactoryBase {
+  std::string Name;
+  std::unordered_map<
+      Tag, std::tuple<std::function<bool(const CallExpr *)>,
+                      std::pair<std::string,
+                                std::shared_ptr<CallExprRewriterFactoryBase>>,
+                      int>>
+      MathAPIRewriters;
+
+  std::shared_ptr<CallExprRewriter> getDeviceRewriter(const CallExpr *C) const {
+    if (MathAPIRewriters.count(Tag::device_perf) && math::IsPerf(C) &&
+        std::get<0>(MathAPIRewriters.at(Tag::device_perf))(C))
+      return std::get<1>(MathAPIRewriters.at(Tag::device_perf))
+          .second->create(C);
+
+    if (MathAPIRewriters.count(Tag::device_normal) &&
+        std::get<0>(MathAPIRewriters.at(Tag::device_normal))(C))
+      return std::get<1>(MathAPIRewriters.at(Tag::device_normal))
+          .second->create(C);
+
+    if (MathAPIRewriters.count(Tag::ext_experimental) &&
+        math::useExtBFloat16Math() &&
+        std::get<0>(MathAPIRewriters.at(Tag::ext_experimental))(C))
+      return std::get<1>(MathAPIRewriters.at(Tag::ext_experimental))
+          .second->create(C);
+
+    if (MathAPIRewriters.count(Tag::math_libdevice) &&
+        math::useMathLibdevice() &&
+        std::get<0>(MathAPIRewriters.at(Tag::math_libdevice))(C)) {
+      DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
+                                                 HeaderType::HT_SYCL_Math);
+      return std::get<1>(MathAPIRewriters.at(Tag::math_libdevice))
+          .second->create(C);
+    }
+
+    if (MathAPIRewriters.count(Tag::device_std) && math::useStdLibdevice() &&
+        std::get<0>(MathAPIRewriters.at(Tag::device_std))(C))
+      return std::get<1>(MathAPIRewriters.at(Tag::device_std))
+          .second->create(C);
+
+    if (MathAPIRewriters.count(Tag::device_emu) &&
+        std::get<0>(MathAPIRewriters.at(Tag::device_emu))(C))
+      return std::get<1>(MathAPIRewriters.at(Tag::device_emu))
+          .second->create(C);
+
+    if (MathAPIRewriters.count(Tag::unsupported_warning) &&
+        std::get<0>(MathAPIRewriters.at(Tag::unsupported_warning))(C))
+      return std::get<1>(MathAPIRewriters.at(Tag::unsupported_warning))
+          .second->create(C);
+
+    return std::get<1>(MathAPIRewriters.at(Tag::no_rewrite)).second->create(C);
+  }
+
+public:
+  MathRewriterFactory(
+      const std::string &Name,
+      const std::unordered_map<
+          Tag,
+          std::tuple<std::function<bool(const CallExpr *)>,
+                     std::pair<std::string,
+                               std::shared_ptr<CallExprRewriterFactoryBase>>,
+                     int>> &MathAPIRewritersInput)
+      : Name(Name), MathAPIRewriters(MathAPIRewritersInput) {
+    MathAPIRewriters.emplace(
+        Tag::no_rewrite,
+        std::make_tuple(
+            TrueFunctor,
+            std::make_pair(
+                Name, std::dynamic_pointer_cast<CallExprRewriterFactoryBase>(
+                          std::make_shared<NoRewriteFuncNameRewriterFactory>(
+                              Name, Name))),
+            0));
+  }
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    if (math::IsPureHost(C)) {
+      // HOST
+      if (math::IsDefinedInCUDA()(C)) {
+        if (MathAPIRewriters.count(Tag::host_perf) && math::IsPerf(C) &&
+            std::get<0>(MathAPIRewriters.at(Tag::host_perf))(C))
+          return std::get<1>(MathAPIRewriters.at(Tag::host_perf))
+              .second->create(C);
+        if (MathAPIRewriters.count(Tag::host_normal) &&
+            std::get<0>(MathAPIRewriters.at(Tag::host_normal))(C))
+          return std::get<1>(MathAPIRewriters.at(Tag::host_normal))
+              .second->create(C);
+        return std::get<1>(MathAPIRewriters.at(Tag::no_rewrite))
+            .second->create(C);
+      } else {
+        return std::get<1>(MathAPIRewriters.at(Tag::no_rewrite))
+            .second->create(C);
+      }
+    } else {
+      // DEVICE
+      if (math::IsPureDevice(C)) {
+        if (math::IsDefinedInCUDA()(C)) {
+          return getDeviceRewriter(C);
+        } else {
+          return std::get<1>(MathAPIRewriters.at(Tag::no_rewrite))
+              .second->create(C);
+        }
+      } else {
+        if (math::IsUnresolvedLookupExpr(C)) {
+          if (math::IsDirectCallerPureDevice(C)) {
+            return getDeviceRewriter(C);
+          } else {
+            return std::get<1>(MathAPIRewriters.at(Tag::no_rewrite))
+                .second->create(C);
+          }
+        } else {
+          if (math::IsDefinedInCUDA()(C)) {
+            return getDeviceRewriter(C);
+          } else {
+            return std::get<1>(MathAPIRewriters.at(Tag::no_rewrite))
+                .second->create(C);
+          }
+        }
+      }
+    }
+  }
+};
+
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathRewriterFactory(
+    const std::string &Name,
+    const std::unordered_map<
+        Tag, std::tuple<std::function<bool(const CallExpr *)>,
+                        std::pair<std::string,
+                                  std::shared_ptr<CallExprRewriterFactoryBase>>,
+                        int>> &MathAPIRewriters) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      Name, std::make_shared<MathRewriterFactory>(Name, MathAPIRewriters));
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathRewriterFactory(
+    const std::string &Name,
+    const std::unordered_map<
+        Tag, std::tuple<std::function<bool(const CallExpr *)>,
+                        std::pair<std::string,
+                                  std::shared_ptr<CallExprRewriterFactoryBase>>,
+                        int>> &MathAPIRewriters,
+    T) {
+  return createMathRewriterFactory(std::move(Name),
+                                   std::move(MathAPIRewriters));
+}
+
+#define MATH_API_REWRITERS_V2(NAME, ...)                                       \
+  createMathRewriterFactory(                                                   \
+      NAME,                                                                    \
+      std::unordered_map<                                                      \
+          Tag,                                                                 \
+          std::tuple<std::function<bool(const CallExpr *)>,                    \
+                     std::pair<std::string,                                    \
+                               std::shared_ptr<CallExprRewriterFactoryBase>>,  \
+                     int>>{__VA_ARGS__}),
+#define MATH_API_REWRITER_PAIR(TAG, REWRITER)                                  \
+  { TAG, std::make_tuple(TrueFunctor, REWRITER 0) }
+#define MATH_API_REWRITER_PAIR_WITH_COND(TAG, COND, REWRITER)                  \
+  { TAG, std::make_tuple(COND, REWRITER 0) }
+
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createMathAPIRewriterDeviceImpl(
     const std::string &Name, std::function<bool(const CallExpr *)> PerfPred,
