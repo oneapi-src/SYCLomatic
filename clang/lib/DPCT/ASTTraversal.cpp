@@ -8123,6 +8123,10 @@ void ProfilingEnableOnDemandRule::registerMatcher(MatchFinder &MF) {
 // specific kernel or command in SYCL device.
 void ProfilingEnableOnDemandRule::runRule(
     const MatchFinder::MatchResult &Result) {
+
+  if (DpctGlobalInfo::getEnablepProfilingFlag())
+    return;
+
   const CallExpr *CE =
       getNodeAsType<CallExpr>(Result, "cudaEventElapsedTimeCall");
   if (!CE) {

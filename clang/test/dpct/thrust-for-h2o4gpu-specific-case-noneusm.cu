@@ -5,6 +5,7 @@
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT:#include <oneapi/dpl/algorithm>
+// CHECK-EMPTY:
 // CHECK-NEXT:#define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT:#include <sycl/sycl.hpp>
 // CHECK-NEXT:#include <dpct/dpct.hpp>

@@ -870,8 +870,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
   case HT_SYCL:
-    // Add post replacement to enable event profiling macro
-    // "DPCT_PROFILING_ENABLED".
+
+    // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
+    // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
+    // replacement.
     OS << "{{NEEDREPLACEP0}}";
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
