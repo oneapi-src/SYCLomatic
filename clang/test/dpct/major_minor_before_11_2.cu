@@ -6,7 +6,6 @@
 
 // CHECK: #define DPCT_COMPAT_RT_MAJOR_VERSION {{8|9|10|11}}
 // CHECK-NEXT: #define DPCT_COMPAT_RT_MINOR_VERSION {{[0-2]}}
-// CHECK-EMPTY:
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 
