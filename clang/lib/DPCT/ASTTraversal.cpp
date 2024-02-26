@@ -8107,15 +8107,17 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
 REGISTER_RULE(EventAPICallRule, PassKind::PK_Migration)
 
 void ProfilingEnableOnDemandRule::registerMatcher(MatchFinder &MF) {
+
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(hasAnyName(
+                                   "cudaEventElapsedTime", "cudaEventRecord"))),
+                               parentStmt()))
+                    .bind("cudaEventElapsedTimeCall"),
+                this);
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasName("cudaEventElapsedTime"))),
-                     parentStmt()))
-          .bind("cudaEventElapsedTimeCall"),
+                     unless(parentStmt())))
+          .bind("cudaEventElapsedTimeUsed"),
       this);
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(hasName("cudaEventElapsedTime"))),
-                               unless(parentStmt())))
-                    .bind("cudaEventElapsedTimeUsed"),
-                this);
 }
 
 // When cudaEventElapsedTimeCall() is called in the source code, event profiling
