@@ -77,6 +77,7 @@ the size to be copied is hard coded as ``vectorSize * 12`` instead of ``vectorSi
 migrated to ``sycl::int3`` and the size of ``sycl::int3`` is 16 bytes, not 12 bytes.
 
 To debug the issue, the user can migrate the CUDA program with CodePin enabled.
+
 .. code-block:: bash
    dpct example.cu --enable-codepin
 
@@ -84,8 +85,16 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
 
 .. code-block:: bash
     workspace
+    ├── example.cu
+    ├── dpct_output
+    │   ├── example.dp.cpp
+    │   ├── generated_schema.hpp
+    │   └── MainSourceFiles.yaml
+    ├── dpct_output_debug
+    │   ├── example.cu
+    │   └── generated_schema.hpp
 
-The files are 
+
 ``dpct_output/example.dp.cpp`` is the migrated and instrumented SYCL program:
 
 .. code-block:: c++
