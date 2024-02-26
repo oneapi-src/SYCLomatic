@@ -81,8 +81,7 @@ To debug the issue, the user can migrate the CUDA program with CodePin enabled.
    dpct example.cu --enable-codepin
 
 After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``.
-
-    ``
+    ```
     .
     ├── example.cu
     ├── dpct_output
@@ -92,7 +91,7 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
     ├── dpct_output_debug
     │  ├── example.cu
     │  └── generated_schema.hpp
-    ``
+    ```
 
 ``dpct_output/example.dp.cpp`` is the migrated and instrumented SYCL program:
 
