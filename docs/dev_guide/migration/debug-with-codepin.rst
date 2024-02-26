@@ -26,6 +26,7 @@ The following example demonstrates how CodePin works.
 
 .. code-block:: c++
     :linenos:
+
     //example.cu
     #include <iostream>
     __global__ void vectorAdd(int3 *a, int3 *result) {
@@ -79,11 +80,13 @@ migrated to ``sycl::int3`` and the size of ``sycl::int3`` is 16 bytes, not 12 by
 To debug the issue, the user can migrate the CUDA program with CodePin enabled.
 
 .. code-block:: c++
-   dpct example.cu --enable-codepin
+
+    dpct example.cu --enable-codepin
 
 After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``.
 
 .. code-block:: c++
+
     workspace
     ├── example.cu
     ├── dpct_output
@@ -98,6 +101,7 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
 ``dpct_output/example.dp.cpp`` is the migrated and instrumented SYCL program:
 
 .. code-block:: c++
+    :linenos:
 
     //dpct_output/example.dp.cpp
     #include <dpct/dpct.hpp>
@@ -170,6 +174,7 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
 ``dpct_output_debug/example.cu`` is the instrumented CUDA program:
 
 .. code-block:: c++
+    :linenos:
 
     //dpct_output_debug/example.cu
     #include "generated_schema.hpp"
