@@ -82,17 +82,17 @@ To debug the issue, the user can migrate the CUDA program with CodePin enabled.
 
 After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``.
 
-```
-    workspace
-    ├── example.cu
-    ├── dpct_output
-    │  ├── example.dp.cpp
-    │  ├── generated_schema.hpp
-    │  └── MainSourceFiles.yaml
-    ├── dpct_output_debug
-    │  ├── example.cu
-    │  └── generated_schema.hpp
-```
+    ```sh
+        workspace
+        ├── example.cu
+        ├── dpct_output
+        │  ├── example.dp.cpp
+        │  ├── generated_schema.hpp
+        │  └── MainSourceFiles.yaml
+        ├── dpct_output_debug
+        │  ├── example.cu
+        │  └── generated_schema.hpp
+    ```
 
 ``dpct_output/example.dp.cpp`` is the migrated and instrumented SYCL program:
 
