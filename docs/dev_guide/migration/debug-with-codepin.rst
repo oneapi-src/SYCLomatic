@@ -84,14 +84,6 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
 
 .. code-block:: bash
     workspace
-    ├── example.cu
-    ├── dpct_output
-    │   ├── example.dp.cpp
-    │   ├── generated_schema.hpp
-    │   └── MainSourceFiles.yaml
-    ├── dpct_output_debug
-    │   ├── example.cu
-    │   └── generated_schema.hpp
 
 
 ``dpct_output/example.dp.cpp`` is the migrated and instrumented SYCL program:
