@@ -19,5 +19,8 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
 
 bool fixLineEndings(const std::string &Input, std::string &Output);
 
+enum SourceFileType { SFT_CAndCXXSource, SFT_CMakeScript };
+void setFileTypeProcessed(enum SourceFileType FileType);
+
 extern std::set<std::string> MainSrcFilesHasCudaSyntex;
 #endif // DPCT_PATTERN_REWRITER_H
