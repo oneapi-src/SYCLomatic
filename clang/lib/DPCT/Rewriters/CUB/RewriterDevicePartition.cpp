@@ -51,7 +51,7 @@ RewriterMap dpct::createDevicePartitionRewriterMap() {
                                 CALL("oneapi::dpl::execution::device_policy",
                                      STREAM(10)),
                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
-                                ARG(8), ARG(9)))),
+                                ARG(8), ARG(9), LITERAL("false")))),
                   CASE(CheckArgCount(10, std::greater_equal<>(),
                                      /* IncludeDefaultArg */ false),
                        CALL_FACTORY_ENTRY(
@@ -60,7 +60,7 @@ RewriterMap dpct::createDevicePartitionRewriterMap() {
                                 CALL("oneapi::dpl::execution::device_policy",
                                      QUEUESTR),
                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
-                                ARG(8), ARG(9)))),
+                                ARG(8), ARG(9), LITERAL("false")))),
                   CASE(CheckArgCount(8, std::greater_equal<>(),
                                      /* IncludeDefaultArg */ false),
                        CALL_FACTORY_ENTRY(

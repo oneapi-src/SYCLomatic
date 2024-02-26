@@ -85,7 +85,7 @@ void test() {
     // CHECK: DPCT1026:4: The call to cub::DevicePartition::If was removed because this functionality is redundant in SYCL.
     cub::DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_large_out, d_small_out, d_unselected_out, d_num_selected_out, num_items, large_items_selector, small_items_selector);
     cudaMalloc(&d_temp_storage, temp_storage_bytes);
-    // CHECK: dpct::partition_if(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_large_out, d_small_out, d_unselected_out, d_num_selected_out, num_items, large_items_selector, small_items_selector);
+    // CHECK: dpct::partition_if(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_large_out, d_small_out, d_unselected_out, d_num_selected_out, num_items, large_items_selector, small_items_selector, false);
     cub::DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_large_out, d_small_out, d_unselected_out, d_num_selected_out, num_items, large_items_selector, small_items_selector);
   }
   {
@@ -96,7 +96,7 @@ void test() {
     // CHECK: DPCT1026:5: The call to cub::DevicePartition::If was removed because this functionality is redundant in SYCL.
     cub::DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_large_out, d_small_out, d_unselected_out, d_num_selected_out, num_items, large_items_selector, small_items_selector, s);
     cudaMalloc(&d_temp_storage, temp_storage_bytes);
-    // CHECK: dpct::partition_if(oneapi::dpl::execution::device_policy(*s), d_in, d_large_out, d_small_out, d_unselected_out, d_num_selected_out, num_items, large_items_selector, small_items_selector);
+    // CHECK: dpct::partition_if(oneapi::dpl::execution::device_policy(*s), d_in, d_large_out, d_small_out, d_unselected_out, d_num_selected_out, num_items, large_items_selector, small_items_selector, false);
     cub::DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_large_out, d_small_out, d_unselected_out, d_num_selected_out, num_items, large_items_selector, small_items_selector, s);
   }
 }
