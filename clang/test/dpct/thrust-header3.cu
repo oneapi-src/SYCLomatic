@@ -6,7 +6,6 @@
 
 //CHECK: #include <oneapi/dpl/execution>
 //CHECK: #include <oneapi/dpl/algorithm>
-// CHECK-EMPTY:
 //CHECK: #include <sycl/sycl.hpp>
 //CHECK: #include <dpct/dpct.hpp>
 //CHECK: #include <dpct/dpl_utils.hpp>

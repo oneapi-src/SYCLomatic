@@ -5,7 +5,6 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/thrust-for-each-nosync/thrust-for-each-nosync.dp.cpp -o %T/thrust-for-each-nosync/thrust-for-each-nosync.dp.o %}
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-EMPTY:
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <chrono>

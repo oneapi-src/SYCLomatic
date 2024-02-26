@@ -3,7 +3,6 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/inc_loc_and_name_conflict/test.dp.cpp -o %T/debug_test/inc_loc_and_name_conflict/test.dp.o %}
 
 // CHECK: #define DEVICE ""
-// CHECK-EMPTY:
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-EMPTY: 

@@ -1450,8 +1450,8 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'P': {
     std::string ReplStr;
     if (DpctGlobalInfo::getEnablepProfilingFlag())
-      ReplStr = std::string("#define DPCT_PROFILING_ENABLED");
-    ReplStr += getNL();
+      ReplStr = std::string("#define DPCT_PROFILING_ENABLED") + getNL();
+
     return ReplStr;
   }
   case FreeQueriesInfo::FreeQueriesRegexCh:

@@ -3,7 +3,6 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/extern_c/extern_c.dp.cpp -o %T/extern_c/extern_c.dp.o %}
 
 //     CHECK:#ifdef __cplusplus
-// CHECK-EMPTY:
 //CHECK-NEXT:#define DPCT_USM_LEVEL_NONE
 //CHECK-NEXT:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>

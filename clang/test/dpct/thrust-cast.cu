@@ -5,7 +5,6 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/thrust-cast/thrust-cast.dp.cpp -o %T/thrust-cast/thrust-cast.dp.o %}
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-EMPTY:
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <complex>

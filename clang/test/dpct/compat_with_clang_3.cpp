@@ -11,7 +11,6 @@
 // CHECK-NEXT: #include <mma.h>
 // CHECK-NEXT: using Type = nvcuda::wmma::col_major;
 // CHECK-NEXT: #endif
-// CHECK-EMPTY:
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #ifdef WMMA_ENABLED

@@ -12,6 +12,7 @@
 #include "Statics.h"
 
 #include <assert.h>
+#include <optional>
 #include <regex>
 
 namespace clang {
@@ -364,20 +365,25 @@ void ExtReplacements::postProcess() {
     StringRef OriginalText = R.second->getReplacementText();
     std::regex RE("\\{\\{NEEDREPLACE[DQVRFCGEP][0-9]*\\}\\}");
     std::match_results<StringRef::const_iterator> Result;
-    std::string NewText;
+    std::optional<std::string> NewText;
     auto Begin = OriginalText.begin(), End = OriginalText.end();
     while (std::regex_search(Begin, End, Result, RE)) {
-      NewText.append(Result.prefix().first, Result.prefix().length());
-      NewText += DpctGlobalInfo::getStringForRegexReplacement(
+      if (NewText) {
+        NewText.value().append(Result.prefix().first, Result.prefix().length());
+      } else {
+        NewText = std::string(Result.prefix().first, Result.prefix().length());
+      }
+
+      NewText.value() += DpctGlobalInfo::getStringForRegexReplacement(
           StringRef(Result[0].first, Result[0].length()));
       Begin = Result.suffix().first;
     }
-    if (NewText.size()) {
-      NewText.append(Begin, End);
+    if (NewText) {
+      NewText.value().append(Begin, End);
       auto &Old = R.second;
-      auto New =
-          std::make_shared<ExtReplacement>(Old->getFilePath(), Old->getOffset(),
-                                           Old->getLength(), NewText, nullptr);
+      auto New = std::make_shared<ExtReplacement>(
+          Old->getFilePath(), Old->getOffset(), Old->getLength(),
+          NewText.value(), nullptr);
       New->setBlockLevelFormatFlag(Old->getBlockLevelFormatFlag());
       New->setInsertPosition(
           static_cast<dpct::InsertPosition>(Old->getInsertPosition()));

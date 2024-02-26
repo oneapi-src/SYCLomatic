@@ -5,7 +5,6 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/dup_using_namespace/dup_using_namespace.dp.cpp -o %T/dup_using_namespace/dup_using_namespace.dp.o %}
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-EMPTY:
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: using namespace dpct;
