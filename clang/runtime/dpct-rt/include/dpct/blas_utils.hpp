@@ -47,56 +47,62 @@ protected:
 #else
   target_t *_target = nullptr;
 #endif
-  bool _need_free = true;
 };
 
 template <typename target_t, typename source_t, bool has_input>
 class scalar_memory_t
     : public scalar_memory_base_t<target_t, source_t, has_input> {
-  using Base = scalar_memory_base_t<target_t, source_t, has_input>;
+  using base_t = scalar_memory_base_t<target_t, source_t, has_input>;
+  using base_t::_q;
+  using base_t::_source;
+  using base_t::_target;
 
 public:
-  scalar_memory_t(sycl::queue q, source_t *source) : Base(q, source) {
-    if constexpr (std::is_same_v<target_t, source_t>) {
-      if (dpct::detail::get_pointer_attribute(Base::_q, Base::_source) !=
-          dpct::detail::pointer_access_attribute::host_only) {
+  scalar_memory_t(sycl::queue q, source_t *source) : base_t(q, source) {
 #ifdef DPCT_USM_LEVEL_NONE
-        Base::_target = dpct::get_buffer<target_t>(Base::_source);
-#else
-        Base::_target = Base::_source;
-#endif
-        Base::_need_free = false;
-        return;
+    if constexpr (has_input) {
+      if (dpct::detail::get_pointer_attribute(_q, _source) ==
+          dpct::detail::pointer_access_attribute::device_only) {
+        _target.get_host_access()[0] = static_cast<target_t>(
+            dpct::get_buffer<source_t>(_source).get_host_access()[0]);
+      } else {
+        _target.get_host_access()[0] = static_cast<target_t>(_source);
       }
     }
-
-#ifdef DPCT_USM_LEVEL_NONE
-    if constexpr (has_input) {
-      Base::_target.get_host_access()[0] = static_cast<target_t>(
-          dpct::detail::get_value(Base::_source, Base::_q));
-    }
 #else
-    Base::_target = sycl::malloc_shared<target_t>(1, Base::_q);
+    _target = sycl::malloc_shared<target_t>(1, _q);
     if constexpr (has_input) {
       source_t temp;
-      Base::_q.memcpy(&temp, Base::_source, sizeof(source_t)).wait();
-      *Base::_target = static_cast<target_t>(temp);
+      if (dpct::detail::get_pointer_attribute(_q, _source) ==
+          dpct::detail::pointer_access_attribute::device_only) {
+        _q.memcpy(&temp, _source, sizeof(source_t)).wait();
+      } else {
+        temp = *_source;
+      }
+      *_target = static_cast<target_t>(temp);
     }
 #endif
   }
 
   ~scalar_memory_t() {
-    if (!Base::_need_free)
-      return;
 #ifdef DPCT_USM_LEVEL_NONE
-    source_t temp = static_cast<source_t>(Base::_target.get_host_access()[0]);
-    dpct::dpct_memcpy(Base::_source, &temp, sizeof(source_t), automatic,
-                      Base::_q);
+    source_t temp = static_cast<source_t>(_target.get_host_access()[0]);
+    if (dpct::detail::get_pointer_attribute(_q, _source) ==
+        dpct::detail::pointer_access_attribute::device_only) {
+      dpct::dpct_memcpy(_source, &temp, sizeof(source_t), automatic, _q);
+    } else {
+      *_source = temp;
+    }
 #else
-    Base::_q.wait();
-    source_t temp = static_cast<source_t>(*Base::_target);
-    Base::_q.memcpy(Base::_source, &temp, sizeof(source_t)).wait();
-    sycl::free(Base::_target, Base::_q);
+    _q.wait();
+    source_t temp = static_cast<source_t>(*_target);
+    if (dpct::detail::get_pointer_attribute(_q, _source) ==
+        dpct::detail::pointer_access_attribute::device_only) {
+      _q.memcpy(_source, &temp, sizeof(source_t)).wait();
+    } else {
+      *_source = temp;
+    }
+    sycl::free(_target, _q);
 #endif
   }
 };
@@ -104,42 +110,55 @@ public:
 template <typename target_t, bool has_input>
 class scalar_memory_t<target_t, target_t, has_input>
     : public scalar_memory_base_t<target_t, target_t, has_input> {
-  using Base = scalar_memory_base_t<target_t, target_t, has_input>;
+  using base_t = scalar_memory_base_t<target_t, target_t, has_input>;
+  using base_t::_q;
+  using base_t::_source;
+  using base_t::_target;
+  bool _need_free = true;
 
 public:
-  scalar_memory_t(sycl::queue q, target_t *source) : Base(q, source) {
-    if (dpct::detail::get_pointer_attribute(Base::_q, Base::_source) !=
+  scalar_memory_t(sycl::queue q, target_t *source) : base_t(q, source) {
+    if (dpct::detail::get_pointer_attribute(_q, _source) !=
         dpct::detail::pointer_access_attribute::host_only) {
 #ifdef DPCT_USM_LEVEL_NONE
-      Base::_target = dpct::get_buffer<target_t>(Base::_source);
+      _target = dpct::get_buffer<target_t>(_source);
 #else
-      Base::_target = Base::_source;
+      _target = _source;
 #endif
-      Base::_need_free = false;
+      _need_free = false;
       return;
     }
 
 #ifdef DPCT_USM_LEVEL_NONE
-    Base::_target = sycl::buffer<target_t>(Base::_source, sycl::range<1>(1));
+    _target = sycl::buffer<target_t>(_source, sycl::range<1>(1));
 #else
-    Base::_target = sycl::malloc_shared<target_t>(1, Base::_q);
+    _target = sycl::malloc_shared<target_t>(1, _q);
     if constexpr (has_input) {
-      Base::_q.memcpy(Base::_target, Base::_source, sizeof(target_t)).wait();
+      if (dpct::detail::get_pointer_attribute(_q, _source) ==
+          dpct::detail::pointer_access_attribute::device_only) {
+        _q.memcpy(_target, _source, sizeof(target_t)).wait();
+      } else {
+        *_target = *_source;
+      }
     }
 #endif
   }
 
   ~scalar_memory_t() {
-    if (!Base::_need_free)
-      return;
 #ifndef DPCT_USM_LEVEL_NONE
-    Base::_q.wait();
-    Base::_q.memcpy(Base::_source, Base::_target, sizeof(target_t)).wait();
-    sycl::free(Base::_target, Base::_q);
+    if (!_need_free)
+      return;
+    if (dpct::detail::get_pointer_attribute(_q, _source) ==
+        dpct::detail::pointer_access_attribute::device_only) {
+      _q.memcpy(_source, _target, sizeof(target_t)).wait();
+    } else {
+      _q.wait();
+      *_source = *_target;
+    }
+    sycl::free(_target, _q);
 #endif
   }
 };
-
 } // namespace detail
 using out_mem_int_t = detail::scalar_memory_t<std::int64_t, int, false>;
 using out_mem_int64_t =
@@ -920,8 +939,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
   dpct_memcpy(host_b, b, batch_size * sizeof(T *));
 
   for (std::int64_t i = 0; i < batch_size; ++i) {
-    // Need to create a copy of source matrices "a" to keep them unchanged.
-    // Matrices "b" (copy of matrices "a") will be used as source and output
+    // Need to create a copy of input matrices "a" to keep them unchanged.
+    // Matrices "b" (copy of matrices "a") will be used as input and output
     // parameter in oneapi::mkl::lapack::getri_batch call.
     matrix_mem_copy(b_buffer_ptr + i * stride_b, host_a[i], ldb, lda, n, n,
                     dpct::device_to_device, exec_queue);
@@ -990,8 +1009,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
   exec_queue.memcpy(b_shared, b, batch_size * sizeof(T *)).wait();
   for (std::int64_t i = 0; i < batch_size; ++i) {
     ipiv_int64_ptr[i] = ipiv_int64 + n * i;
-    // Need to create a copy of source matrices "a" to keep them unchanged.
-    // Matrices "b" (copy of matrices "a") will be used as source and output
+    // Need to create a copy of input matrices "a" to keep them unchanged.
+    // Matrices "b" (copy of matrices "a") will be used as input and output
     // parameter in oneapi::mkl::lapack::getri_batch call.
     matrix_mem_copy(b_shared[i], a_shared[i], ldb, lda, n, n, dpct::device_to_device,
                     exec_queue);
