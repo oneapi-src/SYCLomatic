@@ -577,12 +577,11 @@ enum load_algorithm {
 };
 
 // loads a linear segment of workgroup items into a subgroup striped
-// arrangement. Created as free function until exchange mechanism is 
+// arrangement. Created as free function until exchange mechanism is
 // implemented.
 // To-do: inline this function with BLOCK_LOAD_WARP_TRANSPOSE mechanism
-template <size_t GROUP_WORK_ITEMS, size_t ITEMS_PER_WORK_ITEM,
-          typename InputT, typename InputIteratorT,
-          typename Item>
+template <size_t GROUP_WORK_ITEMS, size_t ITEMS_PER_WORK_ITEM, typename InputT,
+          typename InputIteratorT, typename Item>
 __dpct_inline__ void
 load_subgroup_striped(const Item &item, size_t linear_tid,
                       InputIteratorT block_itr,
