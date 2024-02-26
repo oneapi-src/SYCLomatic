@@ -28,7 +28,7 @@ int CUBLAS_GEMM_EX(cublasHandle_t handle,
                    cublasGemmAlgo_t algo) {
 
   constexpr auto cublas_dtype_16 = std::is_same<T, __half>::value ? CUDA_R_16F : CUDA_R_16BF;
-  // CHECK: int status = DPCT_CHECK_ERROR(dpct::gemm(*handle, transa, transb, m, n, k, (const void *)alpha, (const void *)A, cublas_dtype_16, (transa == oneapi::mkl::transpose::nontrans) ? m : k, (const void *)B, cublas_dtype_16, (transb == oneapi::mkl::transpose::nontrans) ? k : n, (const void *)beta, (void *)C, cublas_dtype_16, m, dpct::library_data_t::real_float));
+  // CHECK: int status = DPCT_CHECK_ERROR(dpct::gemm(handle->get_queue(), transa, transb, m, n, k, (const void *)alpha, (const void *)A, cublas_dtype_16, (transa == oneapi::mkl::transpose::nontrans) ? m : k, (const void *)B, cublas_dtype_16, (transb == oneapi::mkl::transpose::nontrans) ? k : n, (const void *)beta, (void *)C, cublas_dtype_16, m, dpct::library_data_t::real_float));
   cublasStatus_t status = cublasGemmEx(handle,
                                        transa,
                                        transb,
