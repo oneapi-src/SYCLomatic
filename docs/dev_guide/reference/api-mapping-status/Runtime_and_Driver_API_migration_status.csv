@@ -92,11 +92,11 @@ cudaFuncSetSharedMemConfig,YES,:ref:`DPCT1026`
 cudaGetParameterBuffer,NO,
 cudaGetParameterBufferV2,NO,
 cudaGridDependencySynchronize,NO,
-cudaLaunchCooperativeKernel,YES,
+cudaLaunchCooperativeKernel,YES, Partial
 cudaLaunchCooperativeKernelMultiDevice,NO,
 cudaLaunchDevice,NO,
 cudaLaunchHostFunc,NO,
-cudaLaunchKernel,YES,
+cudaLaunchKernel,YES, Partial
 cudaLaunchKernelExC,NO,
 cudaSetDoubleForDevice,NO,
 cudaSetDoubleForHost,NO,
@@ -121,7 +121,7 @@ cudaGetMipmappedArrayLevel,NO,
 cudaGetSymbolAddress,YES,
 cudaGetSymbolSize,YES,
 cudaHostAlloc,YES,
-cudaHostGetDevicePointer,YES,
+cudaHostGetDevicePointer,YES, Partial
 cudaHostGetFlags,YES,
 cudaHostRegister,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaHostUnregister,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -133,10 +133,10 @@ cudaMallocHost,YES,
 cudaMallocManaged,YES,
 cudaMallocMipmappedArray,NO,
 cudaMallocPitch,YES,
-cudaMemAdvise,YES,:ref:`DPCT1063`
+cudaMemAdvise,YES,:ref:`DPCT1063` Partial
 cudaMemAdvise_v2,NO,
 cudaMemGetInfo,YES,:ref:`DPCT1072` / :ref:`DPCT1106`
-cudaMemPrefetchAsync,YES,
+cudaMemPrefetchAsync,YES, Partial
 cudaMemRangeGetAttribute,NO,
 cudaMemRangeGetAttributes,NO,
 cudaMemcpy,YES,
@@ -1568,8 +1568,8 @@ cuTexRefSetMipmapLevelClamp,NO,
 cuTexRefSetMipmappedArray,NO,
 cuTexRefCreate,NO,
 cuTexRefDestroy,NO,
-cuMemAdvise,YES,:ref:`DPCT1063`
-cuMemPrefetchAsync,YES,
+cuMemAdvise,YES,:ref:`DPCT1063` Partial
+cuMemPrefetchAsync,YES, Partial
 cuMemRangeGetAttribute,NO,
 cuMemRangeGetAttributes,NO,
 cuPointerGetAttribute,NO,

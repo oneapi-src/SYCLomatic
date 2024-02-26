@@ -199,7 +199,8 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
         return false;
       }
     }
-    if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
+    if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION" ||
+        MacroName == "CUDA_VERSION") {
       // These two macros are defined by CUDA header file
       auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
       auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
@@ -3949,6 +3950,14 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       FuncName == "curandCreateGeneratorHost") {
     const auto *const Arg0 = CE->getArg(0);
     requestFeature(HelperFeatureEnum::device_ext);
+    std::string RHS =
+        buildString(" = ", MapNames::getDpctNamespace(),
+                    "rng::create_host_rng(", ExprAnalysis::ref(CE->getArg(1)));
+    if (FuncName == "curandCreateGeneratorHost") {
+      RHS = buildString(RHS, ", ", MapNames::getDpctNamespace(),
+                        "cpu_device().default_queue()");
+    }
+    RHS = buildString(RHS, ")");
     if (Arg0->getStmtClass() == Stmt::UnaryOperatorClass) {
       const auto *const UO = cast<const UnaryOperator>(Arg0);
       auto SE = UO->getSubExpr();
@@ -3956,19 +3965,12 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           (SE->getStmtClass() == Stmt::DeclRefExprClass ||
            SE->getStmtClass() == Stmt::MemberExprClass)) {
         return emplaceTransformation(new ReplaceStmt(
-            CE, false,
-            buildString(ExprAnalysis::ref(SE),
-                        " = " + MapNames::getDpctNamespace() +
-                            "rng::create_host_rng(",
-                        ExprAnalysis::ref(CE->getArg(1)), ")")));
+            CE, false, buildString(ExprAnalysis::ref(SE), RHS)));
       }
     }
-    return emplaceTransformation(
-        new ReplaceStmt(CE, false,
-                        buildString("*(", ExprAnalysis::ref(CE->getArg(0)),
-                                    ") = " + MapNames::getDpctNamespace() +
-                                        "rng::create_host_rng(",
-                                    ExprAnalysis::ref(CE->getArg(1)), ")")));
+    return emplaceTransformation(new ReplaceStmt(
+        CE, false,
+        buildString("*(", ExprAnalysis::ref(CE->getArg(0)), ")", RHS)));
   }
   if (FuncName == "curandDestroyGenerator") {
     return emplaceTransformation(new ReplaceStmt(
