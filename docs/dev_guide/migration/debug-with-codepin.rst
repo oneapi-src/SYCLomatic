@@ -2,6 +2,7 @@ CodePin
 ===============
 
 There are some cases where the migrated SYCL program may have runtime behavior that differs from the original CUDA program. Reasons for this inconsistency include:
+
 * Difference in arithmetic precision between hardware.
 * Semantic difference between the CUDA and SYCL APIs
 * Errors introduced during the automatic migration
@@ -80,6 +81,17 @@ To debug the issue, the user can migrate the CUDA program with CodePin enabled.
    dpct example.cu --enable-codepin
 
 After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``.
+.. code-block:: bash
+    .
+    ├── example.cu
+    ├── dpct_output
+    │  ├── example.dp.cpp
+    │  ├── generated_schema.hpp
+    │  └── MainSourceFiles.yaml
+    ├── dpct_output_debug
+    │  ├── example.cu
+    │  └── generated_schema.hpp
+
 ``dpct_output/example.dp.cpp`` is the migrated and instrumented SYCL program:
 
 .. code-block:: c++
