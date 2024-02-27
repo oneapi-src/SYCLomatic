@@ -31,15 +31,16 @@ public:
         _desc(sycl::ext::oneapi::experimental::image_descriptor(
             range, _channel.get_channel_order(), _channel.get_channel_type(),
             type, num_levels)) {
-    // Make sure that singleton class dev_mgr will destruct later than this.
-    dev_mgr::instance();
-    _handle = alloc_image_mem(_desc, get_default_queue());
-    for (unsigned i = 0; i < num_levels; ++i)
-      _sub_wrappers.emplace_back(image_mem_wrapper(
-          _channel, _desc.get_mip_level_desc(i),
-          sycl::ext::oneapi::experimental::get_mip_level_mem_handle(
-              _handle, i, get_default_queue().get_device(),
-              get_default_queue().get_context())));
+    auto q = get_default_queue();
+    _handle = alloc_image_mem(_desc, q);
+    if (num_levels > 1) {
+      _sub_wrappers.reserve(num_levels);
+      for (unsigned i = 0; i < num_levels; ++i)
+        _sub_wrappers.emplace_back(image_mem_wrapper(
+            _channel, _desc.get_mip_level_desc(i),
+            sycl::ext::oneapi::experimental::get_mip_level_mem_handle(
+                _handle, i, q.get_device(), q.get_context())));
+    }
   }
   /// Create bindless image memory wrapper.
   /// \param [in] channel The image channel used to create bindless image
@@ -49,8 +50,19 @@ public:
   image_mem_wrapper(image_channel channel, Args... size)
       : image_mem_wrapper(channel, sycl::range{size...}) {}
   image_mem_wrapper(const image_mem_wrapper &) = delete;
-  image_mem_wrapper(image_mem_wrapper &&) = default;
   image_mem_wrapper &operator=(const image_mem_wrapper &) = delete;
+  image_mem_wrapper(image_mem_wrapper &&wrapper)
+      : image_mem_wrapper(wrapper._channel, wrapper._desc, wrapper._handle) {
+    wrapper._handle = sycl::ext::oneapi::experimental::image_mem_handle();
+  }
+  image_mem_wrapper &operator=(image_mem_wrapper &&wrapper) {
+    if (this != &wrapper) {
+      *this =
+          image_mem_wrapper(wrapper._channel, wrapper._desc, wrapper._handle);
+      wrapper._handle = sycl::ext::oneapi::experimental::image_mem_handle();
+    }
+    return *this;
+  }
   /// Destroy bindless image memory wrapper.
   ~image_mem_wrapper() {
     free_image_mem(_handle, _desc.type, get_default_queue());
