@@ -250,19 +250,20 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
   }
   EA.applyAllSubExprRepl();
 }
-const DeclRefExpr *getAddressedRef(const Expr *E) {
+const DeclRefExpr *getAddressedRef(const Expr *E, bool &NotFunctionDecl) {
   E = E->IgnoreImplicitAsWritten();
   if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
-    if (DRE->getDecl()->getKind() == Decl::Function) {
-      return DRE;
+    if (DRE->getDecl()->getKind() != Decl::Function) {
+      NotFunctionDecl = true;
     }
+    return DRE;
   } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
-    return getAddressedRef(Paren->getSubExpr());
+    return getAddressedRef(Paren->getSubExpr(), NotFunctionDecl);
   } else if (auto Cast = dyn_cast<CastExpr>(E)) {
-    return getAddressedRef(Cast->getSubExprAsWritten());
+    return getAddressedRef(Cast->getSubExprAsWritten(), NotFunctionDecl);
   } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == UO_AddrOf) {
-      return getAddressedRef(UO->getSubExpr());
+      return getAddressedRef(UO->getSubExpr(), NotFunctionDecl);
     }
   }
   return nullptr;
@@ -4136,6 +4137,8 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   } else if (auto DSDRE = dyn_cast<DependentScopeDeclRefExpr>(Callee)) {
     Name = DSDRE->getDeclName().getAsString();
     buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
+  } else if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
+    Name = DRE->getNameInfo().getAsString();
   }
 }
 std::string CallFunctionExpr::getName(const NamedDecl *D) {
@@ -5400,7 +5403,14 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
                     LaunchFD->getName() != "cudaLaunchCooperativeKernel")) {
     return std::shared_ptr<KernelCallExpr>();
   }
-  if (auto Callee = getAddressedRef(CE->getArg(0))) {
+  bool NotFunctionDecl = false;
+  if (auto Callee = getAddressedRef(CE->getArg(0), NotFunctionDecl)) {
+    if (NotFunctionDecl) {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
+      DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                               Diagnostics::UNDEDUCED_KERNEL_FUNCTION_POINTER,
+                               true, false);
+    }
     auto Kernel = std::shared_ptr<KernelCallExpr>(
         new KernelCallExpr(LocInfo.second, LocInfo.first));
     Kernel->buildCalleeInfo(Callee);

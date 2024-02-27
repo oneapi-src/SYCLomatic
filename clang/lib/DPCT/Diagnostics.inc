@@ -270,6 +270,8 @@ DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed
 DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as an extra argument. As {0} is a template variable here, then the declaration of an extra parameter in device functions, the variable referenced in command group, and device functions may be incorrect as a result. You may need to adjust the code.")
 DEF_WARNING(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"%0\" which is used in the SYCL group function/algorithm is initialized.")
 DEF_COMMENT(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"{0}\" which is used in the SYCL group function/algorithm is initialized.")
+DEF_WARNING(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1122, MEDIUM_LEVEL, "The kernel function pointer cannot be deduced correctly. You need add the kernel function argument(s) manually.")
+DEF_COMMENT(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1122, MEDIUM_LEVEL, "The kernel function pointer cannot be deduced correctly. You need add the kernel function argument(s) manually.")
 // clang-format on
 
 #undef DEF_COMMENT
