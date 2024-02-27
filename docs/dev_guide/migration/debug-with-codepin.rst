@@ -3,7 +3,7 @@ CodePin
 
 There are some cases where the migrated SYCL program may have runtime behavior that differs from the original CUDA program. Reasons for this inconsistency include:
 
-* Difference in arithmetic precision between hardware.
+* Difference in arithmetic precision between hardware
 * Semantic difference between the CUDA and SYCL APIs
 * Errors introduced during the automatic migration
 
