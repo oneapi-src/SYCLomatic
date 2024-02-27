@@ -785,7 +785,7 @@
       Out: |
         \${DNN_LIB}
 
-- Rule: rule_target_compile_features-cuda_std_version
+- Rule: rule_target_compile_features_cuda_std_version
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: target_compile_features_cuda_std-version
