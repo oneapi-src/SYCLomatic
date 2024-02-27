@@ -49,6 +49,10 @@
 // CHECK-NEXT:     _p_q[4] = a <= b;
 // CHECK-NEXT:     _p_q[5] = a > b;
 // CHECK-NEXT:     _p_q[6] = a >= b;
+// CHECK-NEXT:     _p_q[3] = a < b;
+// CHECK-NEXT:     _p_q[4] = a <= b;
+// CHECK-NEXT:     _p_q[5] = a > b;
+// CHECK-NEXT:     _p_q[6] = a >= b;
 // CHECK-NEXT:     if (_p_p[0]) {
 // CHECK-NEXT:       y = fp;
 // CHECK-NEXT:     }
@@ -95,6 +99,10 @@ __device__ void setp() {
       " setp.le.s32 %%q4, %2, %3;\n\t"
       " setp.gt.s32 %%q5, %2, %3;\n\t"
       " setp.ge.s32 %%q6, %2, %3;\n\t"
+      " setp.lt.u32 %%q3, %2, %3;\n\t"
+      " setp.le.u32 %%q4, %2, %3;\n\t"
+      " setp.gt.u32 %%q5, %2, %3;\n\t"
+      " setp.ge.u32 %%q6, %2, %3;\n\t"
       " @%%p mov.f32 %0, fp;\n\t"
       "}"
       : "=f"(y) : "f"(x), "r"(a), "r"(b));

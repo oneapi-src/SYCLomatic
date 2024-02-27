@@ -695,7 +695,7 @@ protected:
           return SYCLGenError();
         break;
       case InstAttr::lt:
-        if (T->isSignedInt())
+        if (IsInteger)
           ExprCmp("<");
         else if (T->isFloating())
           DpctCmp("compare<{0}>({1}, {2}, std::less<>())");
@@ -703,7 +703,7 @@ protected:
           return SYCLGenError();
         break;
       case InstAttr::le:
-        if (T->isSignedInt())
+        if (IsInteger)
           ExprCmp("<=");
         else if (T->isFloating())
           DpctCmp("compare<{0}>({1}, {2}, std::less_equal<>())");
@@ -711,7 +711,7 @@ protected:
           return SYCLGenError();
         break;
       case InstAttr::gt:
-        if (T->isSignedInt())
+        if (IsInteger)
           ExprCmp(">");
         else if (T->isFloating())
           DpctCmp("compare<{0}>({1}, {2}, std::greater<>())");
@@ -719,7 +719,7 @@ protected:
           return SYCLGenError();
         break;
       case InstAttr::ge:
-        if (T->isSignedInt())
+        if (IsInteger)
           ExprCmp(">=");
         else if (T->isFloating())
           DpctCmp("compare<{0}>({1}, {2}, std::greater_equal<>())");
