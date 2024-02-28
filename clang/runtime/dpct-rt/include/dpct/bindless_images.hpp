@@ -33,7 +33,8 @@ public:
             type, num_levels)) {
     auto q = get_default_queue();
     _handle = alloc_image_mem(_desc, q);
-    if (num_levels > 1) {
+    if (type == sycl::ext::oneapi::experimental::image_type::mipmap) {
+      assert(num_levels > 1);
       _sub_wrappers.reserve(num_levels);
       for (unsigned i = 0; i < num_levels; ++i)
         _sub_wrappers.emplace_back(image_mem_wrapper(
@@ -91,6 +92,7 @@ public:
   /// Get the image mip level of the bindless image memory.
   /// \returns The image mip level of the bindless image memory.
   image_mem_wrapper *get_mip_level(unsigned int level) {
+    assert(_desc.type == sycl::ext::oneapi::experimental::image_type::mipmap);
     return &_sub_wrappers[level];
   }
 

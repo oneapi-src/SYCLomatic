@@ -126,8 +126,9 @@ int main() {
   {
     // CHECK: dpct::image_data resDesc;
     cudaResourceDesc resDesc;
-    // CHECK: resDesc.set_data(pMipMapArr);
+    // CHECK: resDesc.set_data_type(dpct::image_data_type::matrix);
     resDesc.resType = cudaResourceTypeMipmappedArray;
+    // CHECK: resDesc.set_data_ptr(pMipMapArr);
     resDesc.res.mipmap.mipmap = pMipMapArr;
   }
   {

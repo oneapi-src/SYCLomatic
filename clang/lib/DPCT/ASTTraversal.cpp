@@ -13133,66 +13133,6 @@ void TextureMemberSetRule::runRule(const MatchFinder::MatchResult &Result) {
     removeRange(AssignArrayRange);
 
     emplaceTransformation(new InsertText(LastPos, std::move(InsertStr)));
-  } else if (auto BO = getNodeAsType<BinaryOperator>(
-                 Result, "MipmapArraySetCompound")) {
-    auto AssignArrayExpr =
-        getNodeAsType<BinaryOperator>(Result, "AssignResMipmapMipmap");
-    auto ResTypeMemberExpr =
-        getNodeAsType<MemberExpr>(Result, "ResTypeMemberExpr");
-    auto ArrayMemberExpr =
-        getNodeAsType<MemberExpr>(Result, "MipmapArrayMember");
-
-    if (!BO || !AssignArrayExpr || !ResTypeMemberExpr || !ArrayMemberExpr)
-      return;
-
-    // Compare the name of all resource obj
-    std::string ResName = "";
-    if (auto DRE = dyn_cast<DeclRefExpr>(ResTypeMemberExpr->getBase())) {
-      ResName = DRE->getDecl()->getNameAsString();
-    } else {
-      return;
-    }
-    std::string ArrayResName = "";
-    if (auto DRE = dyn_cast<DeclRefExpr>(ArrayMemberExpr->getBase())) {
-      ArrayResName = DRE->getDecl()->getNameAsString();
-    } else {
-      return;
-    }
-
-    if (ResName.compare(ArrayResName)) {
-      // Won't do pretty code if the resource name is different
-      return;
-    }
-    // Calculate insert location
-    std::string MemberOpt = ResTypeMemberExpr->isArrow() ? "->" : ".";
-    auto BORange = getStmtExpansionSourceRange(BO);
-    auto AssignArrayRange = getStmtExpansionSourceRange(AssignArrayExpr);
-
-    auto LastPos = BORange.getEnd();
-    if (SM.getDecomposedLoc(LastPos).second <
-        SM.getDecomposedLoc(AssignArrayRange.getEnd()).second) {
-      LastPos = AssignArrayRange.getEnd();
-    }
-
-    // Skip the last token
-    LastPos =
-        LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
-    // Skip ";"
-    LastPos =
-        LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
-    // Generate insert str
-    ExprAnalysis EA;
-    EA.analyze(AssignArrayExpr->getRHS());
-    std::string AssignArrayRHS = EA.getReplacedString();
-    std::string IndentStr = getIndent(AssignArrayExpr->getBeginLoc(), SM).str();
-    std::string InsertStr = getNL() + IndentStr + ResName + MemberOpt +
-                            "set_data(" + AssignArrayRHS + ");";
-    requestFeature(HelperFeatureEnum::device_ext);
-    // Remove all the assign expr
-    removeRange(BORange);
-    removeRange(AssignArrayRange);
-
-    emplaceTransformation(new InsertText(LastPos, std::move(InsertStr)));
   }
 }
 
