@@ -1233,6 +1233,7 @@ int runDPCT(int argc, const char **argv) {
     loadMainSrcFileInfo(OutRoot);
     collectCmakeScriptsSpecified(OptParser, InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
+    ShowStatus(MigrationCmakeScriptCompleted);
     return MigrationSucceeded;
   }
   ReplTy ReplCUDA, ReplSYCL;
@@ -1389,7 +1390,6 @@ int runDPCT(int argc, const char **argv) {
   }
 
   ShowStatus(Status);
-
   DumpOutputFile();
   return Status;
 }

@@ -23,10 +23,13 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Migration process completed";
     break;
   case MigrationNoCodeChangeHappen:
-    StatusString = "No CUDA source code detected";
+    StatusString = "Migration not necessary; no CUDA code detected";
     break;
   case MigrationSkipped:
     StatusString = "Some migration rules were skipped";
+    break;
+  case MigrationCmakeScriptCompleted:
+    StatusString = "Migration of CMake script completed";
     break;
   case MigrationError:
     StatusString = "An error has occurred during migration";
