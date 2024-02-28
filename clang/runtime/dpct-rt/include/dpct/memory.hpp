@@ -727,8 +727,13 @@ template <typename T> static sycl::buffer<T> get_buffer(const void *ptr) {
   if (!ptr)
     return sycl::buffer<T>(sycl::range<1>(0));
   auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
-  return alloc.buffer.reinterpret<T>(
-      sycl::range<1>(alloc.size / sizeof(T)));
+  size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
+  auto buf = alloc.buffer;
+  if (offset) {
+    buf = sycl::buffer<byte_t>(buf, sycl::id<1>(offset),
+                               sycl::range<1>(alloc.size - offset));
+  }
+  return buf.reinterpret<T>(sycl::range<1>(buf.size() / sizeof(T)));
 }
 
 /// Get the buffer of a piece of memory pointed to by \p ptr.
@@ -736,7 +741,14 @@ template <typename T> static sycl::buffer<T> get_buffer(const void *ptr) {
 /// \param ptr Pointer to a piece of memory.
 /// \returns the buffer.
 static buffer_t get_buffer(const void *ptr) {
-  return detail::mem_mgr::instance().translate_ptr(ptr).buffer;
+  auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
+  size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
+  auto buf = alloc.buffer;
+  if (offset) {
+    return sycl::buffer<byte_t>(buf, sycl::id<1>(offset),
+                                sycl::range<1>(alloc.size - offset));
+  }
+  return buf;
 }
 
 /// A wrapper class contains an accessor and an offset.
