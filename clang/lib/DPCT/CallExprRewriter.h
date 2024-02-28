@@ -923,13 +923,23 @@ public:
 template <class StreamT>
 void printBase(StreamT &Stream, std::pair<const CallExpr *, const Expr *> P,
                bool IsArrow) {
-  printWithParens(Stream, P);
+  {
+    std::unique_ptr<ParensPrinter<StreamT>> Paren;
+    if (needExtraParensInMemberExpr(P.second))
+      Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
+    print(Stream, P);
+  }
   printMemberOp(Stream, IsArrow);
 }
 
 template <class StreamT>
 void printBase(StreamT &Stream, const Expr *E, bool IsArrow) {
-  printWithParens(Stream, E);
+  {
+    std::unique_ptr<ParensPrinter<StreamT>> Paren;
+    if (needExtraParensInMemberExpr(E))
+      Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
+    print(Stream, E);
+  }
   printMemberOp(Stream, IsArrow);
 }
 template <class StreamT>
