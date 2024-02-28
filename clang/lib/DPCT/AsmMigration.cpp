@@ -1880,7 +1880,7 @@ protected:
     // Only support bar.warp.sync membermask
     if (Inst->getNumInputOperands() != 1 || !Inst->hasAttr(InstAttr::warp) ||
         !Inst->hasAttr(InstAttr::sync) ||
-        !DpctGlobalInfo::useNonUniformGroups())
+        !DpctGlobalInfo::useExpNonUniformGroups())
       return SYCLGenError();
 
     std::string MemberMask;

@@ -411,7 +411,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         "Experimental extension that allows use of bindless images APIs.\n",
         false),
              DPCT_OPT_ENUM("non-uniform-groups", int(ExperimentalFeatures::Exp_NonUniformGroups),
-        "Experimental extension that allows non-uniform groups.\n",
+        "Experimental extension that allows use of non-uniform groups.\n",
         false)
            ),
            llvm::cl::desc("Comma-separated list of experimental features to be used in migrated "
