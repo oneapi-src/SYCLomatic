@@ -1381,13 +1381,14 @@ int runDPCT(int argc, const char **argv) {
 
   // if run was successful
   int Status = saveNewFiles(Tool, InRoot, OutRoot, ReplCUDA, ReplSYCL);
-  ShowStatus(Status);
 
   if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake) {
     loadMainSrcFileInfo(OutRoot);
     collectCmakeScripts(InRoot, OutRoot);
     doCmakeScriptMigration(InRoot, OutRoot);
   }
+
+  ShowStatus(Status);
 
   DumpOutputFile();
   return Status;

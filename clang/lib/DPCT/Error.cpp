@@ -23,7 +23,7 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Migration process completed";
     break;
   case MigrationNoCodeChangeHappen:
-    StatusString = "Migration not necessary; no CUDA code detected";
+    StatusString = "No CUDA source code detected";
     break;
   case MigrationSkipped:
     StatusString = "Some migration rules were skipped";
