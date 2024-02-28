@@ -198,9 +198,9 @@ int main() {
   kernel<<<1, 1>>>(tex);
   // CHECK: dpct::experimental::destroy_bindless_image(tex, q_ct1);
   cudaDestroyTextureObject(tex);
-  // CHECK: sycl::ext::oneapi::experimental::free_image_mem(pArr->get_handle(), sycl::ext::oneapi::experimental::image_type::standard, dpct::get_in_order_queue());
+  // CHECK: delete pArr;
   cudaFreeArray(pArr);
-  // CHECK: sycl::ext::oneapi::experimental::free_image_mem(pMipMapArr->get_handle(), sycl::ext::oneapi::experimental::image_type::mipmap, q_ct1);
+  // CHECK: delete pMipMapArr;
   cudaFreeMipmappedArray(pMipMapArr);
   return 0;
 }

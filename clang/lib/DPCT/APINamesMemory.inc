@@ -173,14 +173,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-        "cudaFreeMipmappedArray",
-        CALL(MapNames::getClNamespace() +
-                 "ext::oneapi::experimental::free_image_mem",
-             MEMBER_CALL(ARG(0), true, "get_handle"),
-             LITERAL(MapNames::getClNamespace() +
-                     "ext::oneapi::experimental::image_type::mipmap"),
-             QUEUESTR))),
+    ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cudaFreeMipmappedArray", ARG(0))),
     REMOVE_API_FACTORY_ENTRY_WITH_MSG(
         "cudaFreeMipmappedArray",
         "SYCL currently does not support mipmap image type. You "

@@ -57,8 +57,9 @@ public:
   }
   image_mem_wrapper &operator=(image_mem_wrapper &&wrapper) {
     if (this != &wrapper) {
-      *this =
-          image_mem_wrapper(wrapper._channel, wrapper._desc, wrapper._handle);
+      _channel = wrapper._channel;
+      _desc = wrapper._desc;
+      _handle = wrapper._handle;
       wrapper._handle = sycl::ext::oneapi::experimental::image_mem_handle();
     }
     return *this;
@@ -99,8 +100,8 @@ private:
                     sycl::ext::oneapi::experimental::image_mem_handle handle)
       : _channel(channel), _desc(desc), _handle(handle) {}
 
-  const image_channel _channel;
-  const sycl::ext::oneapi::experimental::image_descriptor _desc;
+  image_channel _channel;
+  sycl::ext::oneapi::experimental::image_descriptor _desc;
   sycl::ext::oneapi::experimental::image_mem_handle _handle;
   std::vector<image_mem_wrapper> _sub_wrappers;
 };
