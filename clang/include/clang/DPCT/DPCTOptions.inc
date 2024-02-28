@@ -184,8 +184,8 @@ DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), EnablepProfiling,
     "enable-profiling",
     llvm::cl::desc("Enable SYCL queue profiling in helper functions. default: "
-                   "auto\n(auto: mean off: if tool concludes profiling is not "
-                   "required, on: if tool concludes profiling is required).\n"),
+                   "auto (enable-profiling if\nthe tool deduces that "
+                   "profiling is required during migration, else not).\n"),
     llvm::cl::cat(DPCTCat), llvm::cl::location(EnablepProfilingFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SyclNamedLambda, "sycl-named-lambda",
