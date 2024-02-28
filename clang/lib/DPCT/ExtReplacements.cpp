@@ -363,7 +363,7 @@ void ExtReplacements::postProcess() {
     // G: group dim size, used for cg::thread_block migration
     // E: extension, used for c source file migration
     StringRef OriginalText = R.second->getReplacementText();
-    std::regex RE("\\{\\{NEEDREPLACE[DQVRFCGEP][0-9]*\\}\\}");
+    std::regex RE("\\{\\{NEEDREPLACE[DQVRFCGEPI][0-9]*\\}\\}");
     std::match_results<StringRef::const_iterator> Result;
     std::optional<std::string> NewText;
     auto Begin = OriginalText.begin(), End = OriginalText.end();

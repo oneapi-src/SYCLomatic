@@ -870,7 +870,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
   case HT_SYCL:
-
     // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
     // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
     // replacement.
@@ -904,10 +903,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
            << DpctGlobalInfo::getGlobalDeviceName() << ", "
            << MapNames::getClNamespace() << "property_list{"
            << MapNames::getClNamespace() << "property::queue::in_order()";
-        if (DpctGlobalInfo::getEnablepProfilingFlag()) {
-          OS << ", " << MapNames::getClNamespace()
-             << "property::queue::enable_profiling()";
-        }
+
+        // replaced to insert "property::queue::enable_profiling()" or not
+        // in the post replacement.
+        OS << "{{NEEDREPLACEI0}}";
         OS << "});" << getNL();
         Flag = false;
       } else {
@@ -1454,6 +1453,14 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
 
     return ReplStr;
   }
+  case 'I': {
+    std::string ReplStr;
+    if (DpctGlobalInfo::getEnablepProfilingFlag())
+      ReplStr = ", " + MapNames::getClNamespace() +
+                "property::queue::enable_profiling()";
+
+    return ReplStr;
+  }
   case FreeQueriesInfo::FreeQueriesRegexCh:
     return FreeQueriesInfo::getReplaceString(Index);
   default:
@@ -1625,10 +1632,10 @@ void DpctGlobalInfo::buildReplacements() {
     // Now the UsmLevel must not be UL_None here.
     QDecl << "q_ct1(dev_ct1, " << MapNames::getClNamespace() << "property_list{"
           << MapNames::getClNamespace() << "property::queue::in_order()";
-    if (DpctGlobalInfo::getEnablepProfilingFlag()) {
-      QDecl << ", " << MapNames::getClNamespace()
-            << "property::queue::enable_profiling()";
-    }
+
+    // replaced to insert of "property::queue::enable_profiling()" or not in
+    // the post replacement.
+    QDecl << "{{NEEDREPLACEI0}}";
     QDecl << "});";
   }
 
