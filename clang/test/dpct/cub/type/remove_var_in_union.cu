@@ -1,0 +1,24 @@
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
+// RUN: dpct --format-range=none -in-root %S -out-root %T/type/remove_var_in_union %S/remove_var_in_union.cu --cuda-include-path="%cuda-path/include" -- -std=c++17 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/type/remove_var_in_union/remove_var_in_union.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/type/remove_var_in_union/remove_var_in_union.dp.cpp -o %T/type/remove_var_in_union/remove_var_in_union.dp.o %}
+
+#include <cub/cub.cuh>
+
+// CHECK: template<int NUM_THREADS_PER_BLOCK>
+// CHECK-NEXT: void some_kernel() {
+// CHECK-NEXT: }
+template <int NUM_THREADS_PER_BLOCK>
+__global__ void some_kernel() {
+  typedef cub::BlockScan<int, NUM_THREADS_PER_BLOCK> BlockScan;
+  typedef cub::BlockReduce<int, NUM_THREADS_PER_BLOCK> BlockReduce1;
+  typedef cub::BlockReduce<double4, NUM_THREADS_PER_BLOCK> BlockReduce4;
+
+  union TempStorage {
+    typename BlockScan ::TempStorage for_scan;
+    typename BlockReduce1::TempStorage for_reduce1;
+    typename BlockReduce4::TempStorage for_reduce4;
+  };
+  __shared__ TempStorage smem_storage;
+}

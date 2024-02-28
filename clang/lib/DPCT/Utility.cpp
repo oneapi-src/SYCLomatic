@@ -17,6 +17,7 @@
 #include "Statics.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
@@ -25,9 +26,11 @@
 #include "clang/Tooling/Core/Replacement.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Casting.h"
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <fstream>
 
@@ -4182,6 +4185,39 @@ bool isCubVar(const VarDecl *VD) {
       return Result;
     }
     return false;
+  }
+
+  // 3. Handle situations like the following. Several CUB TempStorage object are
+  // in a union.
+  //
+  // template< int NUM_THREADS_PER_BLOCK>
+  // __global__ void some_kernel() {
+  //   typedef cub::BlockScan<int, NUM_THREADS_PER_BLOCK> BlockScan;
+  //   typedef cub::BlockReduce<int,     NUM_THREADS_PER_BLOCK> BlockReduce1;
+  //   typedef cub::BlockReduce<double4, NUM_THREADS_PER_BLOCK> BlockReduce4;
+  //   union TempStorage {
+  //     typename BlockScan   ::TempStorage for_scan;
+  //     typename BlockReduce1::TempStorage for_reduce1;
+  //     typename BlockReduce4::TempStorage for_reduce4;
+  //   };
+  //   __shared__ TempStorage smem_storage;
+  // }
+  if (VD->getType()->isUnionType()) {
+    const TagDecl *RD =
+        VD->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
+
+    // If all the field in this union are cub type, we think this union also is
+    // a cub type.
+    for (const auto *D : RD->decls()) {
+      if (const auto *FD = dyn_cast<FieldDecl>(D)) {
+        QualType FT = FD->getType().getCanonicalType();
+        std::string FTStr = FT.getAsString();
+        if (!StringRef(FTStr).contains("::TempStorage") ||
+            !maybeDependentCubType(FD->getTypeSourceInfo()))
+          return false;
+      }
+    }
+    return true;
   }
   return false;
 }

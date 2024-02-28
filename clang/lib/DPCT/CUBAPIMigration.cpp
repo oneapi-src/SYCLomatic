@@ -11,6 +11,8 @@
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "MigrationRuleManager.h"
+#include "TextModification.h"
+#include "clang/AST/Attrs.inc"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
@@ -582,15 +584,16 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("TypeDefDecl"),
       this);
 
-  MF.addMatcher(
-      declStmt(
-          has(varDecl(anyOf(
-              hasType(hasCanonicalType(qualType(
-                  hasDeclaration(namedDecl(hasAnyName("TempStorage")))))),
-              hasType(arrayType(hasElementType(hasCanonicalType(qualType(
-                  hasDeclaration(namedDecl(hasAnyName("TempStorage"))))))))))))
-          .bind("DeclStmt"),
-      this);
+  auto isTempStorage = hasDeclaration(namedDecl(hasAnyName("TempStorage")));
+
+  MF.addMatcher(declStmt(has(varDecl(anyOf(
+                             hasType(hasCanonicalType(qualType(isTempStorage))),
+                             hasType(arrayType(hasElementType(
+                                 hasCanonicalType(qualType(isTempStorage))))),
+                             hasType(hasCanonicalType(qualType(hasDeclaration(
+                                 recordDecl(isUnion(), has(fieldDecl()))))))))))
+                    .bind("DeclStmt"),
+                this);
 
   MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
                                       "InclusiveSum", "ExclusiveSum",
@@ -674,6 +677,13 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
     if (!isCubVar(VDecl)) {
       return;
     }
+
+    if (VDecl->getType()->isUnionType()) {
+      const TagDecl *RD =
+          VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
+      emplaceTransformation(new ReplaceDecl(RD, ""));
+    }
+
     // always remove TempStorage variable declaration
     emplaceTransformation(new ReplaceStmt(DS, ""));
 
