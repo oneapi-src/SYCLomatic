@@ -12,7 +12,9 @@ WARNING_FACTORY_ENTRY(
                                              CALL("cudnnGetErrorString",
                                                   ARG_WC(0))),
                           "\"cudnnGetErrorString is not supported\"/*", "*/"),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The original code was commented out and a warning string was "
+        "inserted"))
 
 WARNING_FACTORY_ENTRY(
     "cudaGetErrorString",
@@ -20,7 +22,9 @@ WARNING_FACTORY_ENTRY(
                                              CALL("cudaGetErrorString",
                                                   ARG_WC(0))),
                           "\"cudaGetErrorString is not supported\"/*", "*/"),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The original code was commented out and a warning string was "
+        "inserted"))
 
 WARNING_FACTORY_ENTRY(
     "cudaGetErrorName",
@@ -28,7 +32,9 @@ WARNING_FACTORY_ENTRY(
                                              CALL("cudaGetErrorName",
                                                   ARG_WC(0))),
                           "\"cudaGetErrorName is not supported\"/*", "*/"),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The original code was commented out and a warning string was "
+        "inserted"))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),
@@ -60,7 +66,9 @@ WARNING_FACTORY_ENTRY(
                                              CALL("ncclGetErrorString",
                                                   ARG_WC(0))),
                           "\"ncclGetErrorString is not supported\"/*", "*/"),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The original code was commented out and a warning string was "
+        "inserted"))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),

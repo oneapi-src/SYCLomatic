@@ -321,14 +321,18 @@ WARNING_FACTORY_ENTRY(
         CALL_FACTORY_ENTRY("cusparseGetErrorString",
                            CALL("cusparseGetErrorString", ARG_WC(0))),
         "\"cusparseGetErrorString is not supported\"/*", "*/"),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The original code was commented out and a warning string was "
+        "inserted"))
 WARNING_FACTORY_ENTRY(
     "cusparseGetErrorName",
     INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cusparseGetErrorName",
                                              CALL("cusparseGetErrorName",
                                                   ARG_WC(0))),
                           "\"cusparseGetErrorName is not supported\"/*", "*/"),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The original code was commented out and a warning string was "
+        "inserted"))
 
 ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY("cusparseSpGEMM_createDescr",

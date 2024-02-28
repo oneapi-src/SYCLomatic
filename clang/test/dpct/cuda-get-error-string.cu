@@ -127,6 +127,13 @@ const char *test_function() {
 //CHECK-NEXT:*/
 //CHECK-NEXT:printf("%s\n", "cudaGetErrorName is not supported"/*cudaGetErrorName(cudaSuccess)*/);
   printf("%s\n", cudaGetErrorName(cudaSuccess));
+  CUresult e;
+  const char *err_s;
+//CHECK:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with warning string assignment expression. You need to rewrite this code.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  err_s = "cuGetErrorString is not supported";
+  cuGetErrorString(e, &err_s);
 
 //CHECK:/*
 //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
