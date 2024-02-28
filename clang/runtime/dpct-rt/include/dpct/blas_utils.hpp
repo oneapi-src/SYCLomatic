@@ -55,6 +55,9 @@ protected:
 template <typename target_t, typename source_t, bool has_input>
 class scalar_memory_t
     : public scalar_memory_base_t<target_t, source_t, has_input> {
+  static_assert(
+      !has_input &&
+      "input is not supported if target_t and source_t are not same.");
   using base_t = scalar_memory_base_t<target_t, source_t, has_input>;
   using base_t::_q;
   using base_t::_source;
@@ -70,26 +73,6 @@ public:
                sycl::malloc_shared<target_t>(1, q)
 #endif
         ) {
-    if constexpr (has_input) {
-#ifdef DPCT_USM_LEVEL_NONE
-      if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::device_only) {
-        _target.get_host_access()[0] = static_cast<target_t>(
-            dpct::get_buffer<source_t>(_source).get_host_access()[0]);
-      } else {
-        _target.get_host_access()[0] = static_cast<target_t>(_source);
-      }
-#else
-      source_t temp;
-      if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::device_only) {
-        _q.memcpy(&temp, _source, sizeof(source_t)).wait();
-      } else {
-        temp = *_source;
-      }
-      *_target = static_cast<target_t>(temp);
-#endif
-    }
   }
 
   ~scalar_memory_t() {
@@ -123,7 +106,9 @@ class scalar_memory_t<target_t, target_t, has_input>
   using base_t::_source;
   using base_t::_source_attribute;
   using base_t::_target;
-  bool _need_copyback = true;
+#ifndef DPCT_USM_LEVEL_NONE
+  bool _need_free = true;
+#endif
 
 public:
   scalar_memory_t(sycl::queue q, target_t *source)
@@ -145,16 +130,16 @@ public:
         ) {
     if (_source_attribute !=
         dpct::detail::pointer_access_attribute::host_only) {
-      _need_copyback = false;
+#ifndef DPCT_USM_LEVEL_NONE
+      _need_free = false;
+#endif
       return;
     }
 
 #ifndef DPCT_USM_LEVEL_NONE
     if constexpr (has_input) {
       if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::device_only) {
-        _q.memcpy(_target, _source, sizeof(target_t)).wait();
-      } else {
+          dpct::detail::pointer_access_attribute::host_only) {
         *_target = *_source;
       }
     }
@@ -163,14 +148,11 @@ public:
 
   ~scalar_memory_t() {
 #ifndef DPCT_USM_LEVEL_NONE
-    if (!_need_copyback) {
-      sycl::free(_target, _q);
+    if (!_need_free) {
       return;
     }
     if (_source_attribute ==
-        dpct::detail::pointer_access_attribute::device_only) {
-      _q.memcpy(_source, _target, sizeof(target_t)).wait();
-    } else {
+        dpct::detail::pointer_access_attribute::host_only) {
       _q.wait();
       *_source = *_target;
     }
