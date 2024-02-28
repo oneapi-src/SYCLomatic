@@ -2066,6 +2066,42 @@ bool needExtraParens(const Expr *E) {
   }
 }
 
+bool needExtraParensInMemberExpr(const Expr *E) {
+  E = E->IgnoreUnlessSpelledInSource();
+  switch (E->getStmtClass()) {
+  case Stmt::CallExprClass: {
+    const CallExpr *CE = static_cast<const CallExpr *>(E);
+    if (const FunctionDecl *FD = CE->getDirectCallee()) {
+      std::string Name = FD->getNameAsString();
+      if (!dpct::DpctGlobalInfo::useIntelDeviceMath() &&
+          (Name == "__h2div" || Name == "__hadd2" || Name == "__hadd2_rn" ||
+           Name == "__hfma2" || Name == "__hmul2" || Name == "__hmul2_rn" ||
+           Name == "__hsub2" || Name == "__hsub2_rn" || Name == "h2div" ||
+           Name == "__hadd_rn" || Name == "__hdiv" || Name == "__hfma" ||
+           Name == "__hmul" || Name == "__hmul_rn" || Name == "__hsub" ||
+           Name == "__hsub_rn" || Name == "hdiv")) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case Stmt::ArraySubscriptExprClass:
+  case Stmt::ParenExprClass:
+  case Stmt::DeclRefExprClass:
+  case Stmt::CXXConstructExprClass:
+    return false;
+  case Stmt::UnaryOperatorClass: {
+    const UnaryOperator *UO = static_cast<const UnaryOperator *>(E);
+    if (UO->getOpcode() == UnaryOperator::Opcode::UO_PostInc ||
+        UO->getOpcode() == UnaryOperator::Opcode::UO_PostDec)
+      return false;
+    return true;
+  }
+  default:
+    return true;
+  }
+}
+
 // Get the range of an Expr in the largest (the outermost) macro definition
 // e.g.
 // line 1: #define MACRO_A 3

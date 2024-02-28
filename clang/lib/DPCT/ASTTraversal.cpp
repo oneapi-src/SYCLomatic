@@ -4511,7 +4511,12 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       int IndexTemp = -1;
       std::string CurrentArgumentRepl;
       const CStyleCastExpr *CSCE = nullptr;
-      if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
+      if (i == 0) {
+        CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(0));
+        if (needExtraParensInMemberExpr(CE->getArg(0)))
+          CurrentArgumentRepl = "(" + CurrentArgumentRepl + ")";
+        CurrentArgumentRepl += "->get_queue()";
+      } else if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
           if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
             requestFeature(HelperFeatureEnum::device_ext);
@@ -4594,9 +4599,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,
                                       CurrentArgumentRepl);
-      } else if (i == 0) {
-        CurrentArgumentRepl =
-            ExprAnalysis::ref(CE->getArg(0)) + "->get_queue()";
       } else {
         ExprAnalysis EA;
         EA.analyze(CE->getArg(i));
@@ -4652,7 +4654,12 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       int IndexTemp = -1;
       std::string CurrentArgumentRepl;
       const CStyleCastExpr *CSCE = nullptr;
-      if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
+      if (i == 0) {
+        CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(0));
+        if (needExtraParensInMemberExpr(CE->getArg(0)))
+          CurrentArgumentRepl = "(" + CurrentArgumentRepl + ")";
+        CurrentArgumentRepl += "->get_queue()";
+      } else if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
           if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
             auto DefaultQueue = DpctGlobalInfo::getDefaultQueue(CE->getArg(i));
@@ -4742,9 +4749,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,
                                       CurrentArgumentRepl);
-      } else if (i == 0) {
-        CurrentArgumentRepl =
-            ExprAnalysis::ref(CE->getArg(0)) + "->get_queue()";
       } else {
         ExprAnalysis EA;
         EA.analyze(CE->getArg(i));

@@ -760,3 +760,21 @@ void foo3() {
   cublasZgeam(handle, CUBLAS_OP_C, CUBLAS_OP_T, m, n, alpha_z, a_z, lda, beta_z, b_z, ldb, c_z, ldc);
 }
 
+void foo4() {
+  void *handle;
+  cublasOperation_t trans, transa, transb;
+  int m, n, k, lda, ldb, ldc;
+  const float *alpha;
+  const float *beta;
+  const float *a;
+  const float *b;
+  float *c;
+  // CHECK: oneapi::mkl::blas::column_major::gemm(((dpct::blas::descriptor_ptr)handle)->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, ((dpct::blas::descriptor_ptr)handle)->get_queue()), a, lda, b, ldb, dpct::get_value(beta, ((dpct::blas::descriptor_ptr)handle)->get_queue()), c, ldc);
+  cublasSgemm((cublasHandle_t)handle, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+
+  int incx, incy;
+  const float *x;
+  float *y;
+  // CHECK: oneapi::mkl::blas::column_major::gemv(((dpct::blas::descriptor_ptr)handle)->get_queue(), trans, m, n, dpct::get_value(alpha, ((dpct::blas::descriptor_ptr)handle)->get_queue()), a, lda, x, incx, dpct::get_value(beta, ((dpct::blas::descriptor_ptr)handle)->get_queue()), y, incy);
+  cublasSgemv((cublasHandle_t)handle, trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+}
