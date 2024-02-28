@@ -672,13 +672,26 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
     std::string VarType =
         VDecl->getTypeSourceInfo()->getType().getCanonicalType().getAsString();
     std::string VarName = VDecl->getNameAsString();
-
+    bool isUnion = VDecl->getType()->isUnionType();
     auto MatcherScope = DpctGlobalInfo::findAncestor<CompoundStmt>(Decl);
     if (!isCubVar(VDecl)) {
+      if (isUnion) {
+        const TagDecl *RD =
+            VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
+        for (const auto *D : RD->decls()) {
+          if (const auto *FD = dyn_cast<FieldDecl>(D)) {
+            QualType FT = FD->getType().getCanonicalType();
+            std::string FTStr = FT.getAsString();
+            if (StringRef(FTStr).contains("::TempStorage") &&
+                maybeDependentCubType(FD->getTypeSourceInfo()))
+              emplaceTransformation(new ReplaceDecl(FD, ""));
+          }
+        }
+      }
       return;
     }
 
-    if (VDecl->getType()->isUnionType()) {
+    if (isUnion) {
       const TagDecl *RD =
           VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
       emplaceTransformation(new ReplaceDecl(RD, ""));
