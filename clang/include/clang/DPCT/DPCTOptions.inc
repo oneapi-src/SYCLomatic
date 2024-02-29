@@ -180,9 +180,13 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), CheckUnico
                    "bi-directional formatting codes and homoglyphs in identifiers. Default: off.\n"),
            llvm::cl::cat(DPCTCat), llvm::cl::location(CheckUnicodeSecurityFlag))
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), EnablepProfiling, "enable-profiling",
-           llvm::cl::desc("Enable SYCL queue profiling in helper functions. Default: off.\n"),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(EnablepProfilingFlag))
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), EnablepProfiling,
+    "enable-profiling",
+    llvm::cl::desc("Enable SYCL queue profiling in helper functions. default: "
+                   "auto (enable-profiling if\nthe tool deduces that "
+                   "profiling is required during migration, else not).\n"),
+    llvm::cl::cat(DPCTCat), llvm::cl::location(EnablepProfilingFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SyclNamedLambda, "sycl-named-lambda",
            llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
