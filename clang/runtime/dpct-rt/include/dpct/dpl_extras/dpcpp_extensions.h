@@ -577,6 +577,8 @@ enum load_algorithm {
 };
 
 // loads a linear segment of workgroup items into a blocked arrangement.
+template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM,
+          typename InputT, typename InputIteratorT>
 __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
@@ -592,6 +594,8 @@ __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
   }
   
 // loads a linear segment of workgroup items into a striped arrangement.
+template <size_t GROUP_WORK_ITEMS, size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM,
+          typename InputT, typename InputIteratorT>
 __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                     InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
@@ -624,7 +628,7 @@ load_subgroup_striped(const Item &item, size_t linear_tid,
   size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
   size_t subgroup_size = item.get_sub_group().get_local_linear_range();
   size_t subgroup_idx = item.get_sub_group().get_global_range();
-  size_t inital_offset = (subgroup_id * ITEMS_PER_WORK_ITEM * subgroup_size) + subgroup_offset; 
+  size_t initial_offset = (subgroup_idx * ITEMS_PER_WORK_ITEM * subgroup_size) + subgroup_offset; 
 #pragma unroll
   for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
     new (&items[idx]) InputT(
