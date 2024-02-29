@@ -37,13 +37,11 @@ public:
       assert(num_levels > 1);
       _sub_wrappers = (image_mem_wrapper *)std::malloc(
           sizeof(image_mem_wrapper) * num_levels);
-      for (unsigned i = 0; i < num_levels; ++i) {
-        (_sub_wrappers + i)->_channel = _channel;
-        (_sub_wrappers + i)->_desc = _desc.get_mip_level_desc(i);
-        (_sub_wrappers + i)->_handle =
+      for (unsigned i = 0; i < num_levels; ++i)
+        new (_sub_wrappers + i) image_mem_wrapper(
+            _channel, _desc.get_mip_level_desc(i),
             sycl::ext::oneapi::experimental::get_mip_level_mem_handle(
-                _handle, i, q.get_device(), q.get_context());
-      }
+                _handle, i, q.get_device(), q.get_context()));
     }
   }
   /// Create bindless image memory wrapper.
@@ -91,8 +89,14 @@ public:
   }
 
 private:
-  image_channel _channel;
-  sycl::ext::oneapi::experimental::image_descriptor _desc;
+  image_mem_wrapper(
+      const image_channel &channel,
+      const sycl::ext::oneapi::experimental::image_descriptor &desc,
+      const sycl::ext::oneapi::experimental::image_mem_handle &handle)
+      : _channel(channel), _desc(desc), _handle(handle) {}
+
+  const image_channel _channel;
+  const sycl::ext::oneapi::experimental::image_descriptor _desc;
   sycl::ext::oneapi::experimental::image_mem_handle _handle;
   image_mem_wrapper *_sub_wrappers{nullptr};
 };
