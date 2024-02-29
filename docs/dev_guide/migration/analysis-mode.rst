@@ -1,9 +1,9 @@
 Analysis Mode Guide
 =======================
 
-Analysis Mode generates a summary report that shows how many lines of code are migrated with confidence and how many lines of code are not migrated perfectly due to the language gap between CUDA and SYCL, also it provides estimation of human efforts required to complete the code migration based on the effort levels. Three levels are defined for effort: low, medium, and high. All migration issues are classified into them. Effort required for each level: Typically, low effort level means developer can solve the issues in minutes, medium effort level issues take hours and if high effort level issue is reported, unfortunately, it means there is no equivalent functionality provided yet in SYCL or SYCL ecosystem libraries for the CUDA API or the CUDA library API, developer need manual rewrite the functionality.
+Analysis Mode generates a summary report showing how many lines of code are migrated with confidence, and how many lines of code are migrated imperfectly due to the language gap between CUDA and SYCL. The report also provides an estimation of how much human effort will be required to complete the code migration. Three "effort levels" have been defined: low effort, medium effort, and high effort. All migration issues are classified into these levels. Typically, a low effort level indicates issues that the developer can solve in minutes, whereas a medium effort level indicates an issue that may take hours to solve. If a high effort level issue is reports, this unfortunately means that there is not yet an equivalent functionality provided in SYCL or SYCL ecosystem libraries for the CUDA API or the CUDA library API. In these cases, the developer will need to manually rewrite the functionality.
 
-Following is an example of analysis report:
+An example analysis report can be seen as follows:
 
 .. code-block:: none
     
