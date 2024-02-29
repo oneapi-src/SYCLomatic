@@ -408,4 +408,28 @@ void mipmap() {
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaGetMipmappedArrayLevel was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   cudaGetMipmappedArrayLevel(&pArr, pMipMapArr, 0);
+
+  cudaResourceDesc resDesc;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of union (unnamed union at {{.*}})::mipmap is not supported.
+  // CHECK-NEXT: */
+  resDesc.res.mipmap.mipmap = pMipMapArr;
+
+  cudaTextureDesc texDesc;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::maxAnisotropy is not supported.
+  // CHECK-NEXT: */
+  texDesc.maxAnisotropy = 1;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::mipmapFilterMode is not supported.
+  // CHECK-NEXT: */
+  texDesc.mipmapFilterMode = cudaFilterModePoint;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::minMipmapLevelClamp is not supported.
+  // CHECK-NEXT: */
+  texDesc.minMipmapLevelClamp = 1;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::maxMipmapLevelClamp is not supported.
+  // CHECK-NEXT: */
+  texDesc.maxMipmapLevelClamp = 1;
 }

@@ -12818,26 +12818,6 @@ void TextureMemberSetRule::registerMatcher(MatchFinder &MF) {
                       has(AssignResLinearSize.bind("AssignResLinearSize")),
                       has(AssignResLinearDesc.bind("AssignResLinearDesc")))))));
   MF.addMatcher(LinearSetCompound.bind("LinearSetCompound"), this);
-  // myres.res.mipmap.mipmap = m;
-  auto AssignResMipmapMipmap = binaryOperator(
-      allOf(isAssignmentOperator(),
-            hasLHS(memberExpr(allOf(
-                member(hasName("mipmap")),
-                hasObjectExpression(memberExpr(allOf(
-                    member(hasName("mipmap")),
-                    hasObjectExpression(
-                        memberExpr(allOf(ObjectType, member(hasName("res"))))
-                            .bind("MipmapArrayMember"))))))))));
-  // myres.resType = cudaResourceTypeMipmappedArray;
-  auto MipmapArraySetCompound = binaryOperator(
-      allOf(isAssignmentOperator(),
-            hasLHS(memberExpr(allOf(ObjectType, member(hasName("resType"))))
-                       .bind("ResTypeMemberExpr")),
-            hasRHS(declRefExpr(hasDeclaration(
-                enumConstantDecl(hasName("cudaResourceTypeMipmappedArray"))))),
-            hasParent(compoundStmt(
-                has(AssignResMipmapMipmap.bind("AssignResMipmapMipmap"))))));
-  MF.addMatcher(MipmapArraySetCompound.bind("MipmapArraySetCompound"), this);
 }
 
 void TextureMemberSetRule::removeRange(SourceRange R) {
@@ -13288,8 +13268,12 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     if (removeExtraMemberAccess(ME))
       return;
   }
+  auto IsMipmapMember =
+      Field == "maxAnisotropy" || Field == "mipmapFilterMode" ||
+      Field == "minMipmapLevelClamp" || Field == "maxMipmapLevelClamp";
   auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
-  if (ReplField.empty()) {
+  if (ReplField.empty() ||
+      (!DpctGlobalInfo::useExtBindlessImages() && IsMipmapMember)) {
     report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                "::" + Field);
@@ -13627,7 +13611,9 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
   auto AssignedBO = getParentAsAssignedBO(TopMember, Context);
   auto FieldName =
       ResourceTypeNames[TopMember->getMemberNameInfo().getAsString()];
-  if (FieldName.empty()) {
+  if (FieldName.empty() ||
+      !DpctGlobalInfo::useExtBindlessImages() &&
+          TopMember->getMemberNameInfo().getAsString() == "mipmap") {
     report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                "::" + ME->getMemberDecl()->getName().str());
