@@ -13,6 +13,7 @@
 #include <thrust/partition.h>
 #include <thrust/set_operations.h>
 #include <thrust/sort.h>
+#include <thrust/unique.h>
 
 void all_of() {
 
@@ -279,4 +280,37 @@ void reverse_copy() {
   thrust::reverse_copy(device_data.begin(), device_data.end(), device_result.begin());
   thrust::reverse_copy(host_data.begin(), host_data.end(), host_result.begin());
   thrust::reverse_copy(data, data + N, result);
+}
+
+void unique_count() {
+  const int N = 7;
+  int count;
+  int A[N] = {1, 3, 3, 3, 2, 2, 1};
+  thrust::host_vector<int> h_A(A, A + N);
+  thrust::device_vector<int> d_A(A, A + N);
+
+  // CHECK:  count = dpct::unique_count(oneapi::dpl::execution::seq, A, A + N, oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::seq, A, A + N, oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::seq, A, A + N);
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::seq, A, A + N);
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + N, oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + N, oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + N, oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + N, oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + N);
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + N);
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + N);
+  // CHECK-NEXT:  count = dpct::unique_count(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + N);
+  count = thrust::unique_count(thrust::host, A, A + N, thrust::equal_to<int>());
+  count = thrust::unique_count(A, A + N, thrust::equal_to<int>());
+  count = thrust::unique_count(thrust::host, A, A + N);
+  count = thrust::unique_count(A, A + N);
+  count = thrust::unique_count(thrust::host, h_A.begin(), h_A.begin() + N, thrust::equal_to<int>());
+  count = thrust::unique_count(thrust::device, d_A.begin(), d_A.begin() + N, thrust::equal_to<int>());
+  count = thrust::unique_count(h_A.begin(), h_A.begin() + N, thrust::equal_to<int>());
+  count = thrust::unique_count(d_A.begin(), d_A.begin() + N, thrust::equal_to<int>());
+  count = thrust::unique_count(thrust::host, h_A.begin(), h_A.begin() + N);
+  count = thrust::unique_count(thrust::device, d_A.begin(), d_A.begin() + N);
+  count = thrust::unique_count(h_A.begin(), h_A.begin() + N);
+  count = thrust::unique_count(d_A.begin(), d_A.begin() + N);
 }
