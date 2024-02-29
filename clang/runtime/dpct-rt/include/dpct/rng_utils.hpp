@@ -221,6 +221,10 @@ public:
   /// \param queue The engine queue.
   virtual void set_queue(sycl::queue *queue) = 0;
 
+  /// Set the custom of host rng_generator.
+  /// \param custom The engine custom.
+  virtual void set_custom(const std::uint32_t custom) = 0;
+
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -306,6 +310,7 @@ protected:
   sycl::queue *_queue = nullptr;
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
+  std::uint32_t _custom{81920};
   std::vector<std::uint32_t> _direction_numbers;
   std::uint32_t _engine_idx{0};
 };
@@ -317,8 +322,8 @@ public:
   /// Constructor of rng_generator.
   /// \param q The queue where the generator should be executed.
   rng_generator(sycl::queue &q = dpct::get_default_queue())
-      : rng_generator_base(&q), _engine(create_engine(&q, _seed, _dimensions)) {
-  }
+      : rng_generator_base(&q),
+        _engine(create_engine(&q, _seed, _dimensions, _custom)) {}
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
@@ -327,7 +332,7 @@ public:
       return;
     }
     _seed = seed;
-    _engine = create_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions, _custom);
   }
 
   /// Set the dimensions of host rng_generator.
@@ -337,7 +342,7 @@ public:
       return;
     }
     _dimensions = dimensions;
-    _engine = create_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions, _custom);
   }
 
   /// Set the queue of host rng_generator.
@@ -347,7 +352,22 @@ public:
       return;
     }
     _queue = queue;
-    _engine = create_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions, _custom);
+  }
+
+  /// Set the custom of host rng_generator.
+  /// \param custom The engine custom.
+  void set_custom(const std::uint32_t custom) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
+    if (custom == _custom) {
+      return;
+    }
+    _custom = custom;
+    _engine = create_engine(_queue, _seed, _dimensions, _custom);
+#endif
   }
 
   /// Set the direction numbers of Sobol host rng_generator.
@@ -498,8 +518,15 @@ public:
 private:
   static inline engine_t create_engine(sycl::queue *queue,
                                        const std::uint64_t seed,
-                                       const std::uint32_t dimensions) {
+                                       const std::uint32_t dimensions,
+                                       const std::uint32_t custom) {
 #ifdef __INTEL_MKL__
+    if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mrg32k3a>) {
+      if (custom)
+        return engine_t(*queue, seed,
+                        oneapi::mkl::rng::mrg32k3a_mode::custom{custom});
+      return engine_t(*queue, seed, oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
+    }
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
                : engine_t(*queue, seed);

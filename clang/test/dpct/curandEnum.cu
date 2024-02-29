@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 //RUN: dpct --out-root %T/curandEnum --format-range=none --cuda-include-path="%cuda-path/include" %s -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curandEnum/curandEnum.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/curandEnum/curandEnum.dp.cpp -o %T/curandEnum/curandEnum.dp.o %}
@@ -34,6 +36,23 @@ curandStatus_t foo(
   curandStatus_t a11,
   curandStatus_t a12,
   curandStatus_t a13) {}
+
+// CHECK:uint32_t goo(
+// CHECK-NEXT:uint32_t b1,
+// CHECK-NEXT:uint32_t b2,
+// CHECK-NEXT:// curandOrdering_t b3,
+// CHECK-NEXT:uint32_t b4,
+// CHECK-NEXT:uint32_t b5
+// CHECK-NEXT:// , curandOrdering_t b6
+// CHECK-NEXT:) { return b1; }
+curandOrdering_t goo(
+    curandOrdering_t b1,
+    curandOrdering_t b2,
+    // curandOrdering_t b3,
+    curandOrdering_t b4,
+    curandOrdering_t b5
+    // , curandOrdering_t b6
+) { return b1; }
 
 int main() {
   // CHECK:int a1 = 0;
@@ -92,5 +111,34 @@ int main() {
     CURAND_STATUS_INITIALIZATION_FAILED,
     CURAND_STATUS_ARCH_MISMATCH,
     CURAND_STATUS_INTERNAL_ERROR);
-}
 
+  // CHECK:uint32_t b1 = 81920;
+  // CHECK-NEXT:uint32_t b2 = 81920;
+  // CHECK-NEXT:// curandOrdering_t b3 = CURAND_ORDERING_PSEUDO_SEEDED;
+  // CHECK-NEXT:uint32_t b4 = 4096;
+  // CHECK-NEXT:uint32_t b5 = 0;
+  // CHECK-NEXT:// curandOrdering_t b6 = CURAND_ORDERING_QUASI_DEFAULT;
+  curandOrdering_t b1 = CURAND_ORDERING_PSEUDO_BEST;
+  curandOrdering_t b2 = CURAND_ORDERING_PSEUDO_DEFAULT;
+  // curandOrdering_t b3 = CURAND_ORDERING_PSEUDO_SEEDED;
+  curandOrdering_t b4 = CURAND_ORDERING_PSEUDO_LEGACY;
+  curandOrdering_t b5 = CURAND_ORDERING_PSEUDO_DYNAMIC;
+  // curandOrdering_t b6 = CURAND_ORDERING_QUASI_DEFAULT;
+
+  // CHECK:goo(
+  // CHECK-NEXT:  81920,
+  // CHECK-NEXT:  81920,
+  // CHECK-NEXT:  // CURAND_ORDERING_PSEUDO_SEEDED,
+  // CHECK-NEXT:  4096,
+  // CHECK-NEXT:  0
+  // CHECK-NEXT:  // , CURAND_ORDERING_QUASI_DEFAULT
+  // CHECK-NEXT:);
+  goo(
+      CURAND_ORDERING_PSEUDO_BEST,
+      CURAND_ORDERING_PSEUDO_DEFAULT,
+      // CURAND_ORDERING_PSEUDO_SEEDED,
+      CURAND_ORDERING_PSEUDO_LEGACY,
+      CURAND_ORDERING_PSEUDO_DYNAMIC
+      // , CURAND_ORDERING_QUASI_DEFAULT
+  );
+}

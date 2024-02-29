@@ -33,6 +33,7 @@ std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
     MapNames::ClassFieldMap;
 MapNames::MapTy MapNames::RandomEngineTypeMap;
+MapNames::MapTy MapNames::RandomOrderingTypeMap;
 MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap;
 std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::CuDNNTypeNamesMap;
@@ -353,6 +354,7 @@ void MapNames::setExplicitNamespaceMap() {
                             HelperFeatureEnum::device_ext)},
       {"curandStatus_t", std::make_shared<TypeNameRule>("int")},
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
+      {"curandOrdering_t", std::make_shared<TypeNameRule>("uint32_t")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseMatDescr_t",
        std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
@@ -522,6 +524,16 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "rng::random_engine_type::sobol"},
       {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64",
        getDpctNamespace() + "rng::random_engine_type::sobol"},
+  };
+
+  // Random Ordering Type mapping
+  RandomOrderingTypeMap = {
+      {"CURAND_ORDERING_PSEUDO_DEFAULT", "81920"},
+      {"CURAND_ORDERING_PSEUDO_BEST", "81920"},
+      // CURAND_ORDERING_PSEUDO_SEEDED not support now.
+      {"CURAND_ORDERING_PSEUDO_LEGACY", "4096"},
+      {"CURAND_ORDERING_PSEUDO_DYNAMIC", "0"},
+      // CURAND_ORDERING_QUASI_DEFAULT not support now.
   };
 
   // Device Random Generator Type mapping
