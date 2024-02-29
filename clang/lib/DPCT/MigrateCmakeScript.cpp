@@ -234,7 +234,12 @@ void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
     if (Iter->type() == fs::file_type::regular_file) {
       llvm::StringRef Name =
           llvm::sys::path::filename(FilePath.getCanonicalPath());
+#ifdef _WIN32
+      if (Name.lower() == "cmakelists.txt" ||
+          llvm::StringRef(Name.lower()).ends_with(".cmake")) {
+#else
       if (Name == "CMakeLists.txt" || Name.ends_with(".cmake")) {
+#endif
         CmakeScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
       }
     }
