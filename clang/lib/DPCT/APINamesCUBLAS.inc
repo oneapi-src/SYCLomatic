@@ -1529,7 +1529,7 @@ WARNING_FACTORY_ENTRY(
     "cublasIsamax_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIsamax_v2",
-        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res",
+        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_int_t", "res",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
@@ -1542,7 +1542,7 @@ WARNING_FACTORY_ENTRY(
     "cublasIdamax_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIdamax_v2",
-        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res",
+        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_int_t", "res",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
@@ -1555,7 +1555,7 @@ WARNING_FACTORY_ENTRY(
     "cublasIcamax_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIcamax_v2",
-        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res",
+        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_int_t", "res",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
@@ -1568,7 +1568,7 @@ WARNING_FACTORY_ENTRY(
     "cublasIzamax_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIzamax_v2",
-        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res",
+        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_int_t", "res",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
@@ -1582,7 +1582,7 @@ WARNING_FACTORY_ENTRY(
     "cublasIsamin_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIsamin_v2",
-        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res",
+        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_int_t", "res",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
@@ -1595,7 +1595,7 @@ WARNING_FACTORY_ENTRY(
     "cublasIdamin_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIdamin_v2",
-        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res",
+        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_int_t", "res",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
@@ -1608,7 +1608,7 @@ WARNING_FACTORY_ENTRY(
     "cublasIcamin_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIcamin_v2",
-        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res",
+        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_int_t", "res",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
@@ -1621,7 +1621,7 @@ WARNING_FACTORY_ENTRY(
     "cublasIzamin_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIzamin_v2",
-        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int_t", "res",
+        DECL(MapNames::getDpctNamespace() + "blas::out_mem_int64_int_t", "res",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),

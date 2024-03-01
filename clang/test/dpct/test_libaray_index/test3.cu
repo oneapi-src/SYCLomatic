@@ -12,7 +12,7 @@ int foo () {
   int *result;
 
   //CHECK:[&]() {
-  //CHECK-NEXT:dpct::blas::out_mem_int_t res(handle->get_queue(), result);
+  //CHECK-NEXT:dpct::blas::out_mem_int64_int_t res(handle->get_queue(), result);
   //CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(handle->get_queue(), N, x1, N, res.get_memory(), oneapi::mkl::index_base::one);
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}();
