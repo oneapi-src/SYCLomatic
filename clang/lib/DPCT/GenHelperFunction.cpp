@@ -99,8 +99,8 @@ const std::string CodePinAllContentStr =
 #include "clang/DPCT/codepin/codepin.hpp.inc"
     ;
 
-const std::string CodePinDetailDispatcherAllContentStr =
-#include "clang/DPCT/codepin/detail/dispatcher.hpp.inc"
+const std::string CodePinSerializationSerialBasicAllContentStr =
+#include "clang/DPCT/codepin/serialization/serial_basic.hpp.inc"
     ;
 
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
@@ -120,10 +120,12 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   if (!llvm::sys::fs::is_directory(
           appendPath(ToPath.getCanonicalPath().str(), "codepin")))
     createDirectories(appendPath(ToPath.getCanonicalPath().str(), "codepin"));
-  if (!llvm::sys::fs::is_directory(appendPath(
-          appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail")))
-    createDirectories(appendPath(
-        appendPath(ToPath.getCanonicalPath().str(), "codepin"), "detail"));
+  if (!llvm::sys::fs::is_directory(
+          appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"),
+                     "serialization")))
+    createDirectories(
+        appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"),
+                   "serialization"));
 
 #define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FOLDER_NAME, FILE_NAME)            \
   {                                                                            \
@@ -154,8 +156,8 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(FftUtils, ".", fft_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(LapackUtils, ".", lapack_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
-  GENERATE_ALL_FILE_CONTENT(CodePinDetailDispatcher, "codepin/detail",
-                            dispatcher.hpp)
+  GENERATE_ALL_FILE_CONTENT(CodePinSerializationSerialBasic,
+                            "codepin/serialization", serial_basic.hpp)
   GENERATE_ALL_FILE_CONTENT(DplExtrasAlgorithm, "dpl_extras", algorithm.h)
   GENERATE_ALL_FILE_CONTENT(DplExtrasFunctional, "dpl_extras", functional.h)
   GENERATE_ALL_FILE_CONTENT(DplExtrasIterators, "dpl_extras", iterators.h)

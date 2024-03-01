@@ -1,0 +1,108 @@
+//==---- serial_basic.hpp ----------------------------*-C++-*-------------==//
+//
+// Copyright (C) Intel Corporation
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// See https://llvm.org/LICENSE.txt for license information.
+//
+//===--------------------------------------------------------------------===//
+#ifndef __DPCT_CODEPIN_SERIAL_BASIC_HPP__
+#define __DPCT_CODEPIN_SERIAL_BASIC_HPP__
+
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#ifdef __NVCC__
+#include <cuda_runtime.h>
+#else
+#include <dpct/dpct.hpp>
+#include <sycl/sycl.hpp>
+#endif
+
+namespace dpct {
+namespace experimental {
+
+#ifdef __NVCC__
+typedef cudaStream_t StreamType;
+#else
+typedef dpct::queue_ptr StreamType;
+#endif
+
+namespace detail {
+
+template <class T, class T2 = void> class TT {
+public:
+  static void dump(std::ostream &ss, T value,
+                   dpct::experimental::StreamType stream) {
+    ss << "Unable to find the corresponding serialization function for the "
+          "class. Please report this issue to SYCLomatic/DPCT, or manually add "
+          "the serialization function."
+       << std::endl;
+  }
+};
+
+template <class T>
+class TT<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
+public:
+  static void dump(std::ostream &ss, T value,
+                   dpct::experimental::StreamType stream) {
+    ss << value << ",\t";
+  }
+};
+
+#ifdef __NVCC__
+template <> class TT<int3> {
+public:
+  static void dump(std::ostream &ss, const int3 &value,
+                   dpct::experimental::StreamType stream) {
+    ss << value.x << '\t' << value.y << '\t' << value.z << ",\t";
+  }
+};
+
+template <> class TT<float3> {
+public:
+  static void dump(std::ostream &ss, const float3 &value,
+                   dpct::experimental::StreamType stream) {
+    ss << value.x << '\t' << value.y << '\t' << value.z << ",\t";
+  }
+};
+
+#else
+template <> class TT<sycl::int3> {
+public:
+  static void dump(std::ostream &ss, const sycl::int3 &value,
+                   dpct::experimental::StreamType stream) {
+    ss << value.x() << '\t' << value.y() << '\t' << value.z() << ",\t";
+  }
+};
+
+template <> class TT<sycl::float3> {
+public:
+  static void dump(std::ostream &ss, const sycl::float3 &value,
+                   dpct::experimental::StreamType stream) {
+    ss << value.x() << '\t' << value.y() << '\t' << value.z() << ",\t";
+  }
+};
+#endif
+
+template <> class TT<char *> {
+public:
+  static void dump(std::ostream &ss, const char *value,
+                   dpct::experimental::StreamType stream) {
+    ss << std::string(value) << ",\t";
+  }
+};
+
+template <> class TT<std::string> {
+public:
+  static void dump(std::ostream &ss, const std::string &value,
+                   dpct::experimental::StreamType stream) {
+    ss << value << ",\t";
+  }
+};
+
+} // namespace detail
+} // namespace experimental
+} // namespace dpct
+
+#endif

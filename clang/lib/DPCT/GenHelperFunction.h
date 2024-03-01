@@ -40,7 +40,7 @@ extern const std::string DplExtrasNumericAllContentStr;
 extern const std::string DplExtrasVectorAllContentStr;
 extern const std::string DplExtrasDpcppExtensionsAllContentStr;
 extern const std::string CodePinAllContentStr;
-extern const std::string CodePinDetailDispatcherAllContentStr;
+extern const std::string CodePinSerializationSerialBasicAllContentStr;
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot);
 } // namespace dpct
 } // namespace clang

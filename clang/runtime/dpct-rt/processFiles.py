@@ -36,12 +36,6 @@ def get_file_paths(runtime_src_file, inc_files_dir):
     inc_files_all_dir_result = os.path.join(inc_files_dir, runtime_src_file.split(split_str)[1]) + ".inc"
     return [runtime_src_file, inc_files_all_dir_result]
 
-def create_dir(inc_files_dir):
-    if (not os.path.exists(os.path.join(inc_files_dir))):
-        os.makedirs(os.path.join(inc_files_dir))
-    if (not os.path.exists(os.path.join(inc_files_dir, "dpl_extras/"))):
-        os.makedirs(os.path.join(inc_files_dir, "dpl_extras/"))
-
 def convert_to_cxx_code(line_code):
     return bytes("R\"Delimiter(", 'utf-8') + line_code + bytes(")Delimiter\"\n", 'utf-8')
 
@@ -112,8 +106,6 @@ def main():
     else:
         print("Error: build-dir is empty.")
         exit_script()
-
-    create_dir(inc_files_dir)
 
     helper_files_list = get_header_files(runtime_header_src_files_dir)
 
