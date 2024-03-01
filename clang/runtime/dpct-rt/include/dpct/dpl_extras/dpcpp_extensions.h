@@ -624,7 +624,8 @@ load_subgroup_striped(const Item &item, size_t linear_tid,
   // This implementation does not take in account range loading across
   // workgroup items To-do: Decide whether range loading is required for group
   // loading
-
+  // This implementation uses unintialized memory for loading linear segments
+  // into warp striped arrangement.
   size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
   size_t subgroup_size = item.get_sub_group().get_local_linear_range();
   size_t subgroup_idx = item.get_sub_group().get_global_range();
@@ -652,7 +653,7 @@ public:
     if constexpr (ALGORITHM == BLOCK_LOAD_DIRECT) {
       load_blocked(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     }
-    if constexpr (ALGORITHM == BLOCK_LOAD_STRIPED) {
+    else if constexpr (ALGORITHM == BLOCK_LOAD_STRIPED) {
       load_striped(linear_tid, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     }
   }
