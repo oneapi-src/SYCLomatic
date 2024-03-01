@@ -2,7 +2,6 @@
 // RUN: FileCheck --input-file %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.cpp -o %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.o %}
 
-#ifndef BUILD_TEST
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT: #define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT: #include <sycl/sycl.hpp>
@@ -10,6 +9,7 @@
 // CHECK-NEXT: #include <stdio.h>
 #include <stdio.h>
 
+#ifndef BUILD_TEST
 template <typename T>
 void my_error_checker(T ReturnValue, char const *const FuncName) {
 }
