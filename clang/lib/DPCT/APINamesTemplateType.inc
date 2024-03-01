@@ -76,6 +76,9 @@ TYPE_REWRITE_ENTRY(
     HEADER_INSERTION_FACTORY(HeaderType::HT_DPL_Iterator,
                              TYPE_FACTORY(STR("oneapi::dpl::discard_iterator"))))
 
+TYPE_REWRITE_ENTRY("cub::BlockRadixSort", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "group::radix_sort"), TEMPLATE_ARG(0), TEMPLATE_ARG(1)))
+
+
 TYPE_REWRITE_ENTRY("cub::Sum",
                    TYPE_FACTORY(STR(MapNames::getClNamespace() + "plus"),
                                 STR("")))

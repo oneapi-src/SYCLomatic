@@ -577,9 +577,9 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 
   MF.addMatcher(
-      typedefDecl(
-          hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasAnyName(
-              "WarpScan", "WarpReduce", "BlockScan", "BlockReduce")))))))
+      typedefDecl(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(
+                      hasAnyName("WarpScan", "WarpReduce", "BlockScan",
+                                 "BlockReduce", "BlockRadixSort")))))))
           .bind("TypeDefDecl"),
       this);
 
@@ -593,12 +593,13 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("DeclStmt"),
       this);
 
-  MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
-                                      "InclusiveSum", "ExclusiveSum",
-                                      "InclusiveScan", "ExclusiveScan",
-                                      "Reduce", "Sum", "Broadcast", "Scan")))))
-                    .bind("MemberCall"),
-                this);
+  MF.addMatcher(
+      cxxMemberCallExpr(
+          has(memberExpr(member(hasAnyName(
+              "InclusiveSum", "ExclusiveSum", "InclusiveScan", "ExclusiveScan",
+              "Reduce", "Sum", "Broadcast", "Scan", "Sort")))))
+          .bind("MemberCall"),
+      this);
 
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName(
@@ -676,8 +677,13 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
       return;
     }
     // always remove TempStorage variable declaration
+    if (VDecl.find("cub::BlockRadixSort")!=std::string::npos){
+      emplaceTransformation( new ReplaceStmt(DS, "uint8_t* _local_memory = sycl::ext::oneapi::group_local_memory_for_overwrite<uint8_t*> \
+                                                  (dpct::group::radix_sort::get_local_memory_size())"))
+    }
+    else{
     emplaceTransformation(new ReplaceStmt(DS, ""));
-
+    }
     // process TempStorage used in class constructor
     auto TempVarMatcher = compoundStmt(forEachDescendant(
         declRefExpr(to(varDecl(hasName(VarName)))).bind("TempVar")));
@@ -698,7 +704,8 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
                  ObjTypeStr.find("class cub::WarpReduce") == 0) {
         Repl = DpctGlobalInfo::getSubGroup(DRE);
       } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
-                 ObjTypeStr.find("class cub::BlockReduce") == 0) {
+                 ObjTypeStr.find("class cub::BlockReduce") == 0 ||
+                 ObjTypeStr.find("class cub::BlockRadixSort") == 0) {
         Repl = DpctGlobalInfo::getGroup(DRE);
       } else {
         continue;
@@ -716,7 +723,7 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   std::string CanonicalTypeStr = CanonicalType.getAsString();
   if (isTypeInAnalysisScope(CanonicalType.getTypePtr()))
     return;
-  
+
   if (maybeDependentCubType(TD->getTypeSourceInfo())) {
     emplaceTransformation(new ReplaceDecl(TD, ""));
     return;
@@ -763,7 +770,8 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
               !(ObjTypeStr.find("class cub::WarpScan") == 0 ||
                 ObjTypeStr.find("class cub::WarpReduce") == 0 ||
                 ObjTypeStr.find("class cub::BlockScan") == 0 ||
-                ObjTypeStr.find("class cub::BlockReduce") == 0)) {
+                ObjTypeStr.find("class cub::BlockReduce") == 0 ||
+                ObjTypeStr.find("class cub::BlockRadixSort") == 0)) {
             DeleteFlag = false;
             break;
           }
@@ -1153,6 +1161,35 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
     Repl = NewFuncName + "(" + ParamList + ")";
     emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
+  }else if (FuncName == "Sort" || FuncName == "SortDescending") {
+    if (BlockMC->getMethodDecl()
+            ->getParamDecl(0)
+            ->getType()
+            ->isLValueReferenceType()) {
+      GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
+      if (FuncName == "Sort") {
+        NewFuncName = MapNames::getDpctNamespace() + "group::radix_sort().sort";
+      } else if (FuncName == "SortDescending") {
+        NewFuncName = MapNames::getDpctNamespace() +
+                      "group::radix_sort<DESCENDING=true>().sort";
+      }
+      requestFeature(HelperFeatureEnum::device_ext);
+      DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
+                                                 HT_DPCT_DPL_Utils);
+      const Expr *InData = FuncArgs[0];
+      ExprAnalysis InEA(InData);
+      OpRepl = getOpRepl(nullptr);
+      // Func Signature : sort(const Item &item, T (&keys)[VALUES_PER_THREAD],
+      // int begin_bit = 0, int end_bit = 8 * sizeof(T))
+      if ((FuncName == "Sort" || FuncName == "SortDescending") && NumArgs < 2) {
+        report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               "cub::" + FuncName);
+        return;
+      }
+      CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
+      Repl = NewFuncName + "(" + ParamList + ")";
+      emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
+    }
   }
 }
 
@@ -1319,7 +1356,8 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
              ObjTypeStr.find("class cub::WarpReduce") == 0) {
     processWarpLevelMemberCall(MC);
   } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
-             ObjTypeStr.find("class cub::BlockReduce") == 0) {
+             ObjTypeStr.find("class cub::BlockReduce") == 0 ||
+             ObjTypeStr.find("class cub::BlockRadixSort") == 0) {
     processBlockLevelMemberCall(MC);
   } else {
     report(MC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, ObjTypeStr);
@@ -1343,7 +1381,8 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
                                       MapNames::getClNamespace() + "sub_group",
                                       SM));
   } else if (TypeName.find("class cub::BlockScan") == 0 ||
-             TypeName.find("class cub::BlockReduce") == 0) {
+             TypeName.find("class cub::BlockReduce") == 0 ||
+             TypeName.find("class cub::BlockRadixSort") == 0) {
     auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
     if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
                            DeviceFuncDecl->hasAttr<CUDAGlobalAttr>())) {
