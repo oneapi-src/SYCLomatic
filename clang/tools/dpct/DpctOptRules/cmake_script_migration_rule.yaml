@@ -861,3 +861,28 @@
   CmakeSyntax: set_cmake_cuda_required
   In: set(CMAKE_CUDA_STANDARD_REQUIRED ${value})
   Out: set(CMAKE_CXX_STANDARD_REQUIRED ${value})
+
+- Rule: rule_target_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_link_options
+  In: target_link_options(${arg})
+  Out: target_link_options(${arg})
+  Subrules:
+    arg:
+      In: $<$<CUDA_COMPILER_ID:${any}>:${flags}>
+      Out: ""
+      RuleId: "target_link_options_cuda_arg"
+
+- Rule: rule_target_link_directories
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_link_directories
+  MatchMode: Partial
+  In: target_link_directories(${value})
+  Out: target_link_directories(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_LIBRARY_DIR
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
