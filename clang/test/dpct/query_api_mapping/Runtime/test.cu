@@ -215,7 +215,7 @@
 // CUDAEVENTELAPSEDTIME: CUDA API:
 // CUDAEVENTELAPSEDTIME-NEXT:   cudaEventElapsedTime(pf /*float **/, e1 /*cudaEvent_t*/, e2 /*cudaEvent_t*/);
 // CUDAEVENTELAPSEDTIME-NEXT: Is migrated to:
-// CUDAEVENTELAPSEDTIME-NEXT:   *(pf) = std::chrono::duration<float, std::milli>(e2_ct1 - e1_ct1).count();
+// CUDAEVENTELAPSEDTIME-NEXT:   *(pf) = (e2->get_profiling_info<sycl::info::event_profiling::command_end>() - e1->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventQuery | FileCheck %s -check-prefix=CUDAEVENTQUERY
 // CUDAEVENTQUERY: CUDA API:
