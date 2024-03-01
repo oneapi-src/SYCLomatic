@@ -347,3 +347,24 @@ void foo2(Node *n) {
   }
 }
 #endif
+
+typedef struct foo_stream {
+  uint64_t count;
+  volatile uint64_t pos_wp;
+} foo_stream_t;
+
+typedef struct foo__io_stream_t {
+  cudaEvent_t *end_events;
+} foo__io_stream_t;
+
+// CHECK:static int cuda_stream_decode_ioinstruction(foo_stream_t *ios) {
+// CHECK-NEXT:  foo__io_stream_t *cios = (foo__io_stream_t *)ios;
+// CHECK-NEXT:  dpct::queue_ptr *stream = 0;
+// CHECK-NEXT:  *cios->end_events[ios->pos_wp % ios->count] = (*stream)->ext_oneapi_submit_barrier();
+// CHECK-NEXT:}
+static int cuda_stream_decode_ioinstruction(foo_stream_t *ios) {
+  foo__io_stream_t *cios = (foo__io_stream_t *)ios;
+  cudaStream_t *stream = 0;
+  cudaEventRecord(cios->end_events[ios->pos_wp % ios->count], *stream);
+}
+
