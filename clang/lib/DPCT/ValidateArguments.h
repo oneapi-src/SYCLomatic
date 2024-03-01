@@ -84,6 +84,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_Matrix,
   Exp_BFloat16Math,
   Exp_BindlessImages,
+  Exp_NonUniformGroups,
   Exp_ExperimentalFeaturesEnumSize
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
