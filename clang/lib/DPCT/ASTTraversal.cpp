@@ -7222,9 +7222,8 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
   auto IndentLoc = CE->getBeginLoc();
   auto &SM = DpctGlobalInfo::getSourceManager();
 
-  if (const auto *UO = dyn_cast<UnaryOperator>(StreamArg->IgnoreImpCasts())) {
-    if (UO->getOpcode() == UO_Deref)
-      StreamName = "(" + StreamName + ")";
+  if (needExtraParensInMemberExpr(StreamArg)) {
+    StreamName = "(" + StreamName + ")";
   }
 
   if (IndentLoc.isMacroID())
