@@ -28,9 +28,10 @@ public:
   using data_t = target_t *;
 #endif
 
-  mem_base_t(sycl::queue q, source_t *source, data_t target)
-      : _q(q), _source(source), _target(target),
-        _source_attribute(dpct::detail::get_pointer_attribute(_q, _source)) {}
+  mem_base_t(sycl::queue q, source_t *source, size_t ele_num)
+      : _source_attribute(dpct::detail::get_pointer_attribute(q, source)),
+        _q(q), _source(source), _ele_num(ele_num),
+        _target(construct_member_variable_target()) {}
 
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<target_t> &get_memory() { return _target; }
@@ -39,10 +40,35 @@ public:
 #endif
 
 protected:
+  dpct::detail::pointer_access_attribute _source_attribute;
   sycl::queue _q;
   source_t *_source = nullptr;
   data_t _target;
-  dpct::detail::pointer_access_attribute _source_attribute;
+  size_t _ele_num;
+
+private:
+  data_t construct_member_variable_target() {
+#ifdef DPCT_USM_LEVEL_NONE
+    if constexpr (!std::is_same_v<target_t, source_t>) {
+      return sycl::buffer<target_t>(sycl::range<1>(_ele_num));
+    } else if (_source_attribute !=
+               dpct::detail::pointer_access_attribute::host_only) {
+      target_t *host_ptr = dpct::get_host_ptr<target_t>(_source);
+      return sycl::buffer<target_t>(host_ptr, sycl::range<1>(_ele_num));
+    } else {
+      return sycl::buffer<target_t>(_source, sycl::range<1>(_ele_num));
+    }
+#else
+    if constexpr (std::is_same_v<target_t, source_t>) {
+      if (_source_attribute ==
+          dpct::detail::pointer_access_attribute::host_only)
+        return sycl::malloc_shared<target_t>(_ele_num, _q);
+      return _source;
+    } else {
+      return sycl::malloc_shared<target_t>(_ele_num, _q);
+    }
+#endif
+  }
 };
 
 enum class mem_inout { in, out, inout };
@@ -58,15 +84,7 @@ class mem_t : public mem_base_t<target_t, source_t> {
   using base_t::_target;
 
 public:
-  mem_t(sycl::queue q, source_t *source)
-      : base_t(q, source,
-#ifdef DPCT_USM_LEVEL_NONE
-               sycl::buffer<target_t>(sycl::range<1>(1))
-#else
-               sycl::malloc_shared<target_t>(1, q)
-#endif
-        ) {
-  }
+  mem_t(sycl::queue q, source_t *source) : base_t(q, source, 1) {}
 
   ~mem_t() {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -94,40 +112,19 @@ public:
 template <typename target_t, mem_inout io>
 class mem_t<target_t, target_t, io> : public mem_base_t<target_t, target_t> {
   using base_t = mem_base_t<target_t, target_t>;
+  using base_t::_ele_num;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
   using base_t::_target;
   using typename base_t::data_t;
-  size_t _ele_num;
 #ifndef DPCT_USM_LEVEL_NONE
   bool _need_free = true;
 #endif
 
-  data_t construct_member_variable_target(sycl::queue q, target_t *source,
-                                          size_t ele_num) {
-#ifdef DPCT_USM_LEVEL_NONE
-    if (dpct::detail::get_pointer_attribute(q, source) !=
-        dpct::detail::pointer_access_attribute::host_only) {
-      target_t *host_ptr = dpct::get_host_ptr<target_t>(source);
-      return sycl::buffer<target_t>(host_ptr, sycl::range<1>(ele_num));
-    } else {
-      return sycl::buffer<target_t>(source, sycl::range<1>(ele_num));
-    }
-#else
-    if (dpct::detail::get_pointer_attribute(q, source) !=
-        dpct::detail::pointer_access_attribute::host_only) {
-      return source;
-    } else {
-      return sycl::malloc_shared<target_t>(ele_num, q);
-    }
-#endif
-  }
-
 public:
   mem_t(sycl::queue q, target_t *source, size_t ele_num = 1)
-      : base_t(q, source, construct_member_variable_target(q, source, ele_num)),
-        _ele_num(ele_num) {
+      : base_t(q, source, ele_num) {
 #ifndef DPCT_USM_LEVEL_NONE
     if (_source_attribute !=
         dpct::detail::pointer_access_attribute::host_only) {
