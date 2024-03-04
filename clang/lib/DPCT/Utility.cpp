@@ -4034,7 +4034,8 @@ bool checkIfContainSizeofTypeRecursively(
 // cub::BlockScan
 // ...
 bool isCubCollectiveRecordType(const clang::Type *T) {
-  if (!T) return false;
+  if (!T)
+    return false;
   T = T->getUnqualifiedDesugaredType();
   const NamespaceDecl *CubNS = nullptr;
   if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
