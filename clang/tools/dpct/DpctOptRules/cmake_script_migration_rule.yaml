@@ -137,13 +137,6 @@
   In: set (CMAKE_CXX_COMPILER ${version})
   Out: set (CMAKE_CXX_COMPILER icpx)
 
-- Rule: rule_set_property_cxx_standard
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: set_property_cxx_standard
-  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
-
 - Rule: rule_set_property_cuda_seprarable_only
   Kind: CMakeRule
   Priority: Fallback
@@ -821,3 +814,50 @@
       In: CUDA::cublasLt_static
       Out: |
         \${DNN_LIB}
+
+- Rule: rule_set_property_cuda_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property_cuda_standard
+  In: set_property(${target} PROPERTY CUDA_STANDARD ${version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+
+- Rule: rule_set_property_cxx_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property_cxx_standard
+  In: set_property(${target} PROPERTY CXX_STANDARD ${version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+
+- Rule: rule_set_target_properties_cxx_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cxx_target_properties
+  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
+  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
+
+- Rule: rule_set_target_properties_cuda_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_target_properties_cuda_standard
+  In: set_target_properties(${targets} PROPERTIES ${properties})
+  Out: set_target_properties(${targets} PROPERTIES ${properties})
+  Subrules:
+    properties:
+      In: CUDA_STANDARD ${version} ${other_properties}
+      Out: CXX_STANDARD 17 ${other_properties}
+      MatchMode: Full
+
+- Rule: rule_set_target_properties_cuda_standard-only
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_target_properties_cuda_standard-only
+  In: set_target_properties(${targets} PROPERTIES${properties}CUDA_STANDARD ${version})
+  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD 17)
+
+- Rule: rule_set_cmake_cuda_required
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cmake_cuda_required
+  In: set(CMAKE_CUDA_STANDARD_REQUIRED ${value})
+  Out: set(CMAKE_CXX_STANDARD_REQUIRED ${value})

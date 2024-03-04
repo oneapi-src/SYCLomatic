@@ -1371,6 +1371,13 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class ProfilingEnableOnDemandRule
+    : public NamedMigrationRule<ProfilingEnableOnDemandRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for memory management routine.
 /// Current implementation is intentionally simplistic. The following things
 /// need a more detailed design:

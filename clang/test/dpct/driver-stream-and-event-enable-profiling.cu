@@ -49,3 +49,14 @@ void foo(){
   float result_time;
   cuEventElapsedTime(&result_time, start, end);
 }
+
+// CHECK: std::vector<dpct::event_ptr> cuda_gpu_benchmark_stop_times;
+// CHECK-NEXT:void foo(int idx) {
+// CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+// CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+// CHECK-NEXT:  *cuda_gpu_benchmark_stop_times[idx] = q_ct1.ext_oneapi_submit_barrier();
+// CHECK-NEXT:}
+std::vector<cudaEvent_t> cuda_gpu_benchmark_stop_times;
+void foo(int idx) {
+  cudaEventRecord(cuda_gpu_benchmark_stop_times[idx], 0);
+}
