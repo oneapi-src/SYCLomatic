@@ -20,19 +20,17 @@
 
 namespace dpct {
 namespace blas {
-enum class mem_inout { in, out, inout };
-template <typename target_t, typename source_t, mem_inout io> class mem_base_t {
+template <typename target_t, typename source_t> class mem_base_t {
 public:
-  mem_base_t(sycl::queue q, source_t *source,
 #ifdef DPCT_USM_LEVEL_NONE
-             sycl::buffer<target_t> target
+  using data_t = sycl::buffer<target_t>;
 #else
-             target_t *target
+  using data_t = target_t *;
 #endif
-             )
+
+  mem_base_t(sycl::queue q, source_t *source, data_t target)
       : _q(q), _source(source), _target(target),
-        _source_attribute(dpct::detail::get_pointer_attribute(_q, _source)) {
-  }
+        _source_attribute(dpct::detail::get_pointer_attribute(_q, _source)) {}
 
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<target_t> &get_memory() { return _target; }
@@ -43,19 +41,17 @@ public:
 protected:
   sycl::queue _q;
   source_t *_source = nullptr;
-#ifdef DPCT_USM_LEVEL_NONE
-  sycl::buffer<target_t> _target;
-#else
-  target_t *_target = nullptr;
-#endif
+  data_t _target;
   dpct::detail::pointer_access_attribute _source_attribute;
 };
 
+enum class mem_inout { in, out, inout };
+
 template <typename target_t, typename source_t, mem_inout io>
-class mem_t : public mem_base_t<target_t, source_t, io> {
+class mem_t : public mem_base_t<target_t, source_t> {
   static_assert(io == mem_inout::out && "Only mem_inout::out is supported if "
                                         "target_t and source_t are not same.");
-  using base_t = mem_base_t<target_t, source_t, io>;
+  using base_t = mem_base_t<target_t, source_t>;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
@@ -77,7 +73,7 @@ public:
     source_t temp = static_cast<source_t>(_target.get_host_access()[0]);
     if (_source_attribute ==
         dpct::detail::pointer_access_attribute::device_only) {
-      dpct::get_buffer<source_t>(_source).get_host_access()[0] = temp;
+      dpct::get_host_ptr<source_t>(_source)[0] = temp;
     } else {
       *_source = temp;
     }
@@ -96,25 +92,20 @@ public:
 };
 
 template <typename target_t, mem_inout io>
-class mem_t<target_t, target_t, io>
-    : public mem_base_t<target_t, target_t, io> {
-  using base_t = mem_base_t<target_t, target_t, io>;
+class mem_t<target_t, target_t, io> : public mem_base_t<target_t, target_t> {
+  using base_t = mem_base_t<target_t, target_t>;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
   using base_t::_target;
+  using typename base_t::data_t;
   size_t _ele_num;
 #ifndef DPCT_USM_LEVEL_NONE
   bool _need_free = true;
 #endif
 
-#ifdef DPCT_USM_LEVEL_NONE
-  sycl::buffer<target_t>
-#else
-  target_t *
-#endif
-  construct_member_variable_target(sycl::queue q, target_t *source,
-                                   size_t ele_num) {
+  data_t construct_member_variable_target(sycl::queue q, target_t *source,
+                                          size_t ele_num) {
 #ifdef DPCT_USM_LEVEL_NONE
     if (dpct::detail::get_pointer_attribute(q, source) !=
         dpct::detail::pointer_access_attribute::host_only) {
@@ -137,19 +128,16 @@ public:
   mem_t(sycl::queue q, target_t *source, size_t ele_num = 1)
       : base_t(q, source, construct_member_variable_target(q, source, ele_num)),
         _ele_num(ele_num) {
+#ifndef DPCT_USM_LEVEL_NONE
     if (_source_attribute !=
         dpct::detail::pointer_access_attribute::host_only) {
-#ifndef DPCT_USM_LEVEL_NONE
       _need_free = false;
-#endif
       return;
     }
-
-#ifndef DPCT_USM_LEVEL_NONE
     if constexpr (io != mem_inout::out) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
-        _q.memcpy(_target, _source, sizeof(target_t) * _ele_num).wait();
+        _q.memcpy(_target, _source, sizeof(target_t) * _ele_num);
       }
     }
 #endif
@@ -163,7 +151,6 @@ public:
     if constexpr (io != mem_inout::in) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
-        _q.wait();
         _q.memcpy(_source, _target, sizeof(target_t) * _ele_num).wait();
       }
     }
