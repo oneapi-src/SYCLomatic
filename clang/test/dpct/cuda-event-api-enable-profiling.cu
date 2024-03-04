@@ -310,26 +310,26 @@ void foo2(Node *n) {
   }
 
   {
-  // CHECK: **node.ev[0] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*node.ev[0]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[0]);
-  // CHECK: **node.ev[0] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*node.ev[0]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[0]);
-  // CHECK: **node.ev[23] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*node.ev[23]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[23]);
-  // CHECK: **node.ev[23] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*node.ev[23]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[23]);
   // CHECK: elapsed_time = (*node.ev[23]->get_profiling_info<sycl::info::event_profiling::command_end>() - *node.ev[0]->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(&elapsed_time, *node.ev[0], *node.ev[23]);
   }
 
   {
-  // CHECK: **(&node)->ev[0] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*(&node)->ev[0]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[0]);
-  // CHECK: **(&node)->ev[0] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*(&node)->ev[0]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[0]);
-  // CHECK: **(&node)->ev[23] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*(&node)->ev[23]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[23]);
-  // CHECK: **(&node)->ev[23] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*(&node)->ev[23]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[23]);
   // CHECK:  elapsed_time = (*(&node)->ev[23]->get_profiling_info<sycl::info::event_profiling::command_end>() - *(&node)->ev[0]->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(&elapsed_time, *(&node)->ev[0], *(&node)->ev[23]);
