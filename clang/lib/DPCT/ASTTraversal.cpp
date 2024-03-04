@@ -2528,9 +2528,11 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
       this);
 
   auto HasLongLongVecTypeArg = [&]() {
-    return hasAnyTemplateArgument(refersToType(hasDeclaration(namedDecl(
-        hasAnyName("longlong1", "longlong2", "longlong3", "longlong4",
-                   "ulonglong1", "ulonglong2", "ulonglong3", "ulonglong4")))));
+    return hasAnyTemplateArgument(refersToType(hasDeclaration(
+        namedDecl(hasAnyName("longlong1", "longlong2", "longlong3", "longlong4",
+                             "ulonglong1", "ulonglong2", "ulonglong3",
+                             "ulonglong4"))
+            .bind("vectorDecl"))));
   };
   MF.addMatcher(classTemplateSpecializationDecl(HasLongLongVecTypeArg())
                     .bind("vectorTypeInTemplateArg"),
@@ -2694,7 +2696,11 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   }
   if (const auto *D = getNodeAsType<Decl>(Result, "vectorTypeInTemplateArg")) {
-    report(D->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false);
+    if (const auto *VD = getAssistNodeAsType<NamedDecl>(Result, "vectorDecl")) {
+      auto TypeStr = VD->getNameAsString();
+      report(D->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false, TypeStr,
+             MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr));
+    }
   }
 }
 
