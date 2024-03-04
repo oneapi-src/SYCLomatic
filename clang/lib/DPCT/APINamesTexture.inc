@@ -155,10 +155,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                       "ext::oneapi::experimental::read_mipmap",
                                   0),
                  ARG(0), CAST_IF_NOT_SAME(LITERAL("float"), ARG(1)), ARG(2)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
-        "tex1DLod", "SYCL currently does not support mipmap image type. You "
-                    "can migrate the code with bindless images by specifying "
-                    "--use-experimental-features=bindless_images."))
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("tex1DLod", MipmapNeedBindlessImage))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
@@ -231,10 +228,7 @@ CONDITIONAL_FACTORY_ENTRY(
                  ARG(0),
                  CALL(MapNames::getClNamespace() + "float2", ARG(1), ARG(2)),
                  ARG(3)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
-        "tex2DLod", "SYCL currently does not support mipmap image type. You "
-                    "can migrate the code with bindless images by specifying "
-                    "--use-experimental-features=bindless_images."))
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("tex2DLod", MipmapNeedBindlessImage))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex3D", 0x03, 1, 2, 3))
@@ -276,10 +270,7 @@ CONDITIONAL_FACTORY_ENTRY(
                  CALL(MapNames::getClNamespace() + "float4", ARG(1), ARG(2),
                       ARG(3), LITERAL("0")),
                  ARG(4)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
-        "tex3DLod", "SYCL currently does not support mipmap image type. You "
-                    "can migrate the code with bindless images by specifying "
-                    "--use-experimental-features=bindless_images."))
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("tex3DLod", MipmapNeedBindlessImage))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,

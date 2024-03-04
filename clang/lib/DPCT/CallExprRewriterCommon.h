@@ -2100,6 +2100,11 @@ public:
 };
 } // namespace math
 } // namespace dpct
+
+const std::string MipmapNeedBindlessImage =
+    "SYCL currently does not support mipmap image type. You "
+    "can migrate the code with bindless images by specifying "
+    "--use-experimental-features=bindless_images.";
 } // namespace clang
 
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),

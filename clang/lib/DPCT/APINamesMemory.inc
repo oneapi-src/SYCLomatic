@@ -174,22 +174,16 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cudaFreeMipmappedArray", ARG(0))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
-        "cudaFreeMipmappedArray",
-        "SYCL currently does not support mipmap image type. You "
-        "can migrate the code with bindless images by specifying "
-        "--use-experimental-features=bindless_images."))
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaFreeMipmappedArray",
+                                      MipmapNeedBindlessImage))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaGetMipmappedArrayLevel", DEREF(makeCallArgCreatorWithCall(0)),
         MEMBER_CALL(ARG(1), true, "get_mip_level", ARG(2)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
-        "cudaGetMipmappedArrayLevel",
-        "SYCL currently does not support mipmap image type. You "
-        "can migrate the code with bindless images by specifying "
-        "--use-experimental-features=bindless_images."))
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaGetMipmappedArrayLevel",
+                                      MipmapNeedBindlessImage))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
@@ -200,11 +194,8 @@ CONDITIONAL_FACTORY_ENTRY(
             LITERAL(MapNames::getClNamespace() +
                     "ext::oneapi::experimental::image_type::mipmap"),
             ARG(3)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
-        "cudaMallocMipmappedArray",
-        "SYCL currently does not support mipmap image type. You "
-        "can migrate the code with bindless images by specifying "
-        "--use-experimental-features=bindless_images."))
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaMallocMipmappedArray",
+                                      MipmapNeedBindlessImage))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CheckCanUseTemplateMalloc(0, 1),
