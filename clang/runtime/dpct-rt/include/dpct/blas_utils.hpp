@@ -43,8 +43,8 @@ protected:
   dpct::detail::pointer_access_attribute _source_attribute;
   sycl::queue _q;
   source_t *_source = nullptr;
-  data_t _target;
   size_t _ele_num;
+  data_t _target;
 
 private:
   data_t construct_member_variable_target() {
