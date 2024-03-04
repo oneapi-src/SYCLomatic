@@ -3754,24 +3754,17 @@ void TokenAnnotator::calculateFormattingInformation(AnnotatedLine &Line) const {
   for (AnnotatedLine *ChildLine : Line.Children)
     calculateFormattingInformation(*ChildLine);
 
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
   if (formatRangeGetter() == FormatRange::migrated) {
     if (Line.First && !Line.InPPDirective)
       Line.First->MustBreakBefore = true;
   }
 #endif // SYCLomatic_CUSTOMIZATION
-  Line.First->TotalLength =
-      Line.First->IsMultiline ? Style.ColumnLimit
-                              : Line.FirstStartColumn + Line.First->ColumnWidth;
-  FormatToken *Current = Line.First->Next;
-=======
   auto *First = Line.First;
   First->TotalLength = First->IsMultiline
                            ? Style.ColumnLimit
                            : Line.FirstStartColumn + First->ColumnWidth;
   FormatToken *Current = First->Next;
->>>>>>> upstream/sycl
   bool InFunctionDecl = Line.MightBeFunctionDecl;
   bool AlignArrayOfStructures =
       (Style.AlignArrayOfStructures != FormatStyle::AIAS_None &&

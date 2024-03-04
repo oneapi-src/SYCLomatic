@@ -10038,9 +10038,18 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
           NewFD->setInvalidDecl();
           // Function template with explicit template arguments.
         } else if (TemplateId) {
+#ifdef SYCLomatic_CUSTOMIZATION
+          if (getLangOpts().CUDA) {
+            NewFD->setDuplicatedExplicitlySpecifiedTemplateArgumentsRange(
+                SourceRange(TemplateId->LAngleLoc, TemplateId->RAngleLoc));
+          } else {
+#endif
           Diag(D.getIdentifierLoc(), diag::err_function_template_partial_spec)
               << SourceRange(TemplateId->LAngleLoc, TemplateId->RAngleLoc);
           NewFD->setInvalidDecl();
+#ifdef SYCLomatic_CUSTOMIZATION
+          }
+#endif
         }
 
         // If we're adding a template to a dependent context, we may need to
@@ -10590,55 +10599,6 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
            diag::ext_operator_new_delete_declared_inline)
         << NewFD->getDeclName();
 
-<<<<<<< HEAD
-    // If the declarator is a template-id, translate the parser's template
-    // argument list into our AST format.
-    if (D.getName().getKind() == UnqualifiedIdKind::IK_TemplateId) {
-      TemplateIdAnnotation *TemplateId = D.getName().TemplateId;
-      TemplateArgs.setLAngleLoc(TemplateId->LAngleLoc);
-      TemplateArgs.setRAngleLoc(TemplateId->RAngleLoc);
-      ASTTemplateArgsPtr TemplateArgsPtr(TemplateId->getTemplateArgs(),
-                                         TemplateId->NumArgs);
-      translateTemplateArguments(TemplateArgsPtr,
-                                 TemplateArgs);
-
-      HasExplicitTemplateArgs = true;
-
-      if (NewFD->isInvalidDecl()) {
-        HasExplicitTemplateArgs = false;
-      } else if (FunctionTemplate) {
-        // Function template with explicit template arguments.
-#ifdef SYCLomatic_CUSTOMIZATION
-        if (getLangOpts().CUDA) {
-          NewFD->setDuplicatedExplicitlySpecifiedTemplateArgumentsRange(
-              SourceRange(TemplateId->LAngleLoc, TemplateId->RAngleLoc));
-        } else {
-#endif
-        Diag(D.getIdentifierLoc(), diag::err_function_template_partial_spec)
-          << SourceRange(TemplateId->LAngleLoc, TemplateId->RAngleLoc);
-#ifdef SYCLomatic_CUSTOMIZATION
-        }
-#endif
-
-        HasExplicitTemplateArgs = false;
-      } else if (isFriend) {
-        // "friend void foo<>(int);" is an implicit specialization decl.
-        isFunctionTemplateSpecialization = true;
-      } else {
-        assert(isFunctionTemplateSpecialization &&
-               "should have a 'template<>' for this decl");
-      }
-    } else if (isFriend && isFunctionTemplateSpecialization) {
-      // This combination is only possible in a recovery case;  the user
-      // wrote something like:
-      //   template <> friend void foo(int);
-      // which we're recovering from as if the user had written:
-      //   friend void foo<>(int);
-      // Go ahead and fake up a template id.
-      HasExplicitTemplateArgs = true;
-      TemplateArgs.setLAngleLoc(D.getIdentifierLoc());
-      TemplateArgs.setRAngleLoc(D.getIdentifierLoc());
-=======
     if (Expr *TRC = NewFD->getTrailingRequiresClause()) {
       // C++20 [dcl.decl.general]p4:
       //   The optional requires-clause in an init-declarator or
@@ -10691,7 +10651,6 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
                diag::err_constrained_non_templated_function);
         }
       }
->>>>>>> upstream/sycl
     }
 
     // We do not add HD attributes to specializations here because

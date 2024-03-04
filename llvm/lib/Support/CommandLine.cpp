@@ -2500,16 +2500,7 @@ protected:
     for (OptionCategory *Category : SortedCategories) {
       // Hide empty categories for --help, but show for --help-hidden.
       const auto &CategoryOptions = CategorizedOptions[Category];
-<<<<<<< HEAD
-      bool IsEmptyCategory = CategoryOptions.empty();
-#ifdef SYCLomatic_CUSTOMIZATION
-      if (IsEmptyCategory)
-#else
-      if (!ShowHidden && IsEmptyCategory)
-#endif // SYCLomatic_CUSTOMIZATION
-=======
       if (CategoryOptions.empty())
->>>>>>> upstream/sycl
         continue;
 
       // Print category information.

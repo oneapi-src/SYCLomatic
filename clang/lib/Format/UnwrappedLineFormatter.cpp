@@ -99,15 +99,11 @@ public:
   /// level to the same indent.
   /// Note that \c nextLine must have been called before this method.
   void adjustToUnmodifiedLine(const AnnotatedLine &Line) {
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() != FormatRange::all)
       return;
 #endif // SYCLomatic_CUSTOMIZATION
-    if (Line.InPPDirective)
-=======
     if (Line.InPPDirective || Line.IsContinuation)
->>>>>>> upstream/sycl
       return;
     assert(Line.Level < IndentForLevel.size());
     if (Line.First->is(tok::comment) && IndentForLevel[Line.Level] != -1)

@@ -45,8 +45,7 @@ namespace {
     static char ID; // Pass identification, replacement for typeid
 #ifdef SYCLomatic_CUSTOMIZATION
     WriteBitcodePass()
-        : ModulePass(ID), OS(dbgs()), ShouldPreserveUseListOrder(false),
-          EmitSummaryIndex(false), EmitModuleHash(false) {
+        : ModulePass(ID), OS(dbgs()), ShouldPreserveUseListOrder(false) {
       initializeWriteBitcodePassPass(*PassRegistry::getPassRegistry());
     }
 #else
@@ -54,7 +53,6 @@ namespace {
       initializeWriteBitcodePassPass(*PassRegistry::getPassRegistry());
     }
 #endif // SYCLomatic_CUSTOMIZATION
-
 
     explicit WriteBitcodePass(raw_ostream &o, bool ShouldPreserveUseListOrder)
         : ModulePass(ID), OS(o),

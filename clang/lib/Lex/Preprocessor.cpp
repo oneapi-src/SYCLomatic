@@ -71,7 +71,6 @@
 #include <vector>
 
 using namespace clang;
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
   inline void recordTokenSplit(SourceLocation, unsigned) {}
@@ -80,12 +79,10 @@ namespace clang {
   std::function<void(SourceLocation, unsigned)> RecordTokenSplit = recordTokenSplit;
 }
 #endif // SYCLomatic_CUSTOMIZATION
-=======
 
 /// Minimum distance between two check points, in tokens.
 static constexpr unsigned CheckPointStepSize = 1024;
 
->>>>>>> upstream/sycl
 LLVM_INSTANTIATE_REGISTRY(PragmaHandlerRegistry)
 
 ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;

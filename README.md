@@ -15,12 +15,7 @@ SYCLomatic is a project to assist developers in migrating their existing code wr
 
 Use `c2s`(SYCLomatic binary) command to make it as easy as possible to migrate existing CUDA\* codebases to SYCL, which is an industry standard. Once code is migrated to SYCL, it can be compiled and executed by any compiler that implements the SYCL specification as shown here:  https://www.khronos.org/sycl/
 
-<<<<<<< HEAD
 ## Releases
-=======
-[![SYCL Post Commit](https://github.com/intel/llvm/actions/workflows/sycl-post-commit.yml/badge.svg?branch=sycl)](https://github.com/intel/llvm/actions/workflows/sycl-post-commit.yml)
-[![Generate Doxygen documentation](https://github.com/intel/llvm/actions/workflows/sycl-docs.yml/badge.svg?branch=sycl)](https://github.com/intel/llvm/actions/workflows/sycl-docs.yml)
->>>>>>> upstream/sycl
 
 The development is in the SYCLomatic branch. Daily builds of the SYCLomatic branch on Linux and Windows* are available at
 [releases](/../../releases).
