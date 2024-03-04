@@ -99,11 +99,15 @@ public:
   /// level to the same indent.
   /// Note that \c nextLine must have been called before this method.
   void adjustToUnmodifiedLine(const AnnotatedLine &Line) {
+<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() != FormatRange::all)
       return;
 #endif // SYCLomatic_CUSTOMIZATION
     if (Line.InPPDirective)
+=======
+    if (Line.InPPDirective || Line.IsContinuation)
+>>>>>>> upstream/sycl
       return;
     assert(Line.Level < IndentForLevel.size());
     if (Line.First->is(tok::comment) && IndentForLevel[Line.Level] != -1)
@@ -994,13 +998,15 @@ static void markFinalized(FormatToken *Tok) {
       // will be modified as unexpanded arguments (as part of the macro call
       // formatting) in the next pass.
       Tok->MacroCtx->Role = MR_UnexpandedArg;
-      // Reset whether spaces are required before this token, as that is context
-      // dependent, and that context may change when formatting the macro call.
-      // For example, given M(x) -> 2 * x, and the macro call M(var),
-      // the token 'var' will have SpacesRequiredBefore = 1 after being
+      // Reset whether spaces or a line break are required before this token, as
+      // that is context dependent, and that context may change when formatting
+      // the macro call.  For example, given M(x) -> 2 * x, and the macro call
+      // M(var), the token 'var' will have SpacesRequiredBefore = 1 after being
       // formatted as part of the expanded macro, but SpacesRequiredBefore = 0
       // for its position within the macro call.
       Tok->SpacesRequiredBefore = 0;
+      if (!Tok->MustBreakBeforeFinalized)
+        Tok->MustBreakBefore = 0;
     } else {
       Tok->Finalized = true;
     }
