@@ -679,8 +679,7 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
             VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
         for (const auto *D : RD->decls())
           if (const auto *FD = dyn_cast<FieldDecl>(D))
-            if (isCubTempStorageType(
-                    FD->getType().getCanonicalType().getTypePtr()))
+            if (isCubTempStorageType(FD->getType()))
               emplaceTransformation(new ReplaceDecl(FD, ""));
       }
       return;
@@ -733,14 +732,10 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   std::string CanonicalTypeStr = CanonicalType.getAsString();
   if (isTypeInAnalysisScope(CanonicalType.getTypePtr()))
     return;
-  if (isCubCollectiveRecordType(TD->getUnderlyingType().getTypePtr())) {
-    emplaceTransformation(new ReplaceDecl(TD, ""));
+  if (!isCubCollectiveRecordType(TD->getUnderlyingType().getDesugaredType(
+          DpctGlobalInfo::getContext())) &&
+      CanonicalTypeStr.find("class cub::") != 0)
     return;
-  }
-
-  if (CanonicalTypeStr.find("class cub::") != 0) {
-    return;
-  }
 
   std::string TypeName = TD->getNameAsString();
   auto &Context = dpct::DpctGlobalInfo::getContext();
@@ -788,6 +783,11 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
       else if (auto AncestorTD =
                    DpctGlobalInfo::findAncestor<TypedefDecl>(TL)) {
         if (AncestorTD != TD) {
+          DeleteFlag = false;
+          break;
+        }
+      } else if (auto *FD = DpctGlobalInfo::findAncestor<FieldDecl>(TL)) {
+        if (!isCubTempStorageType(FD->getType())) {
           DeleteFlag = false;
           break;
         }

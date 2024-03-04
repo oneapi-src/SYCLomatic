@@ -4033,10 +4033,9 @@ bool checkIfContainSizeofTypeRecursively(
 // cub::BlockReduce
 // cub::BlockScan
 // ...
-bool isCubCollectiveRecordType(const clang::Type *T) {
+static bool isCubCollectiveRecordType(const clang::Type *T) {
   if (!T)
     return false;
-  T = T->getUnqualifiedDesugaredType();
   const NamespaceDecl *CubNS = nullptr;
   if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
     auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
@@ -4057,12 +4056,11 @@ bool isCubCollectiveRecordType(const clang::Type *T) {
   return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
 }
 
-bool isCubTempStorageType(const clang::Type *T) {
+static bool isCubTempStorageType(const clang::Type *T) {
   if (!T)
     return false;
-  T = T->getUnqualifiedDesugaredType();
-  const clang::Type *DeclContextType;
 
+  const clang::Type *DeclContextType;
   // cub::{BlockReduce, BlockScan, WarpScan, ...}::TempStorage;
   if (auto *RT = dyn_cast<RecordType>(T)) {
     if (RT->getDecl()->getName() != "TempStorage")
@@ -4071,6 +4069,7 @@ bool isCubTempStorageType(const clang::Type *T) {
     if (DC && DC->isRecord()) {
       auto *RD = dyn_cast<RecordDecl>(DC);
       DeclContextType = RD->getTypeForDecl();
+      dpct::DpctGlobalInfo::getContext().getTagDeclType(RD);
     } else
       return false;
   }
@@ -4090,6 +4089,18 @@ bool isCubTempStorageType(const clang::Type *T) {
   return isCubCollectiveRecordType(DeclContextType);
 }
 
+bool isCubTempStorageType(QualType T) {
+  if (T.isNull())
+    return false;
+  return isCubTempStorageType(T.getCanonicalType().getTypePtrOrNull());
+}
+
+bool isCubCollectiveRecordType(QualType T) {
+  if (T.isNull())
+    return false;
+  return isCubCollectiveRecordType(T.getCanonicalType().getTypePtrOrNull());
+}
+
 bool isCubVar(const VarDecl *VD) {
   QualType CanType = VD->getType().getCanonicalType();
   std::string CanonicalTypeStr = CanType.getAsString();
@@ -4100,7 +4111,7 @@ bool isCubVar(const VarDecl *VD) {
     return true;
   }
 
-  if (isCubTempStorageType(VD->getType().getCanonicalType().getTypePtrOrNull()))
+  if (isCubTempStorageType(VD->getType()))
     return true;
 
   // 2.process template cases
