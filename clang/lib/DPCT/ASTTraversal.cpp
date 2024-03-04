@@ -6479,6 +6479,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       ReplStr += Search->second->NewName;
       ReplStr += "()";
       requestFeature(HelperFeatureEnum::device_ext);
+
+      if (AttributeName == "cudaDevAttrTextureAlignment") {
+        report(CE->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+               AttributeName, Search->second->NewName);
+      }
     }
     if (IsAssigned)
       ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
