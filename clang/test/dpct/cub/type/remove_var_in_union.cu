@@ -7,10 +7,10 @@
 #include <cub/cub.cuh>
 
 // CHECK: template<int NUM_THREADS_PER_BLOCK>
-// CHECK-NEXT: void some_kernel() {
-// CHECK-NEXT: }
+// CHECK-NEXT: void kernel_dependent() {
+// CHECK: }
 template <int NUM_THREADS_PER_BLOCK>
-__global__ void some_kernel() {
+__global__ void kernel_dependent() {
   typedef cub::BlockScan<int, NUM_THREADS_PER_BLOCK> BlockScan;
   typedef cub::BlockReduce<int, NUM_THREADS_PER_BLOCK> BlockReduce1;
   typedef cub::BlockReduce<double4, NUM_THREADS_PER_BLOCK> BlockReduce4;
@@ -22,14 +22,29 @@ __global__ void some_kernel() {
   __shared__ TempStorage smem_storage;
 }
 
-// CHECK: void other_kernel(uint8_t *smem_storage_ct1) {
+// CHECK: void kernel_no_dependent() {
+// CHECK: }
+__global__ void kernel_no_dependent() {
+  typedef cub::BlockScan<int, 4> BlockScan;
+  typedef cub::BlockReduce<int, 4> BlockReduce1;
+  typedef cub::BlockReduce<double4, 4> BlockReduce4;
+
+  union TempStorage {
+    typename BlockScan ::TempStorage for_scan;
+    typename BlockReduce1::TempStorage for_reduce1;
+    typename BlockReduce4::TempStorage for_reduce4;
+  };
+  __shared__ TempStorage smem_storage;
+}
+
+// CHECK: void kernel_union_has_non_cubtype(uint8_t *smem_storage_ct1) {
 // CHECK:  union TempStorage {
-// CHECK-NEXT:    int main;
-// CHECK-NEXT:  };
-// CHECK-NEXT:  TempStorage &smem_storage = *(TempStorage *)smem_storage_ct1;
-// CHECK-NEXT: }
+// CHECK:    int main;
+// CHECK:  };
+// CHECK:  TempStorage &smem_storage = *(TempStorage *)smem_storage_ct1;
+// CHECK: }
 template <int NUM_THREADS_PER_BLOCK>
-__global__ void other_kernel() {
+__global__ void kernel_union_has_non_cubtype() {
   typedef cub::BlockScan<int, NUM_THREADS_PER_BLOCK> BlockScan;
   typedef cub::BlockReduce<int, NUM_THREADS_PER_BLOCK> BlockReduce1;
   typedef cub::BlockReduce<double4, NUM_THREADS_PER_BLOCK> BlockReduce4;
@@ -42,10 +57,10 @@ __global__ void other_kernel() {
   __shared__ TempStorage smem_storage;
 }
 
-// CHECK: void other_kernel1() {
-// CHECK-NEXT: }
+// CHECK: void kernel_union_name_not_tempstorage() {
+// CHECK: }
 template <int NUM_THREADS_PER_BLOCK>
-__global__ void other_kernel1() {
+__global__ void kernel_union_name_not_tempstorage() {
   typedef cub::BlockScan<int, NUM_THREADS_PER_BLOCK> BlockScan;
   typedef cub::BlockReduce<int, NUM_THREADS_PER_BLOCK> BlockReduce1;
   typedef cub::BlockReduce<double4, NUM_THREADS_PER_BLOCK> BlockReduce4;

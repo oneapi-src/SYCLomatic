@@ -20,6 +20,7 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/Type.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
@@ -4028,45 +4029,64 @@ bool checkIfContainSizeofTypeRecursively(
   return false;
 }
 
-bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
-  QualType CanType = TInfo->getType().getCanonicalType();
-  auto *CanTyPtr = CanType.split().Ty;
-
-  // template <int THREADS_PER_BLOCK>
-  //  __global__ void Kernel() {
-  //  1.  typedef cub::BlockScan<int, THREADS_PER_BLOCK> BlockScan;
-  //  2.  __shared__ typename BlockScan::TempStorage temp1;
-  //  }
-
-  // Handle 1
-  auto isCubRecordType = [&](const clang::Type *T) -> bool {
-    if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
-      auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
-      auto *Ctx = TemplateDecl->getDeclContext();
-      auto *CubNS = dyn_cast<NamespaceDecl>(Ctx);
-      while (CubNS) {
-        if (CubNS->isInlineNamespace()) {
-          CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
-          continue;
-        }
-        break;
-      }
-      return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
-    }
+// Wether the type is a cub collective record type
+// cub::BlockReduce
+// cub::BlockScan
+// ...
+bool isCubCollectiveRecordType(const clang::Type *T) {
+  if (!T) return false;
+  T = T->getUnqualifiedDesugaredType();
+  const NamespaceDecl *CubNS = nullptr;
+  if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
+    auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
+    auto *Ctx = TemplateDecl->getDeclContext();
+    CubNS = dyn_cast<NamespaceDecl>(Ctx);
+  } else if (auto *CD = dyn_cast<RecordType>(T))
+    CubNS = dyn_cast<NamespaceDecl>(CD->getDecl()->getDeclContext());
+  if (!CubNS)
     return false;
-  };
 
-  // Handle 2
-  if (const auto *DNT = dyn_cast<DependentNameType>(CanTyPtr)) {
-    auto *QNNS = DNT->getQualifier();
-    // *::TempStorage must be a type.
-    if (QNNS->getKind() == NestedNameSpecifier::TypeSpec) {
-      auto *QNNSType = QNNS->getAsType();
-      return isCubRecordType(QNNSType);
+  while (CubNS) {
+    if (CubNS->isInlineNamespace()) {
+      CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
+      continue;
     }
+    break;
+  }
+  return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
+}
+
+bool isCubTempStorageType(const clang::Type *T) {
+  if (!T)
+    return false;
+  T = T->getUnqualifiedDesugaredType();
+  const clang::Type *DeclContextType;
+
+  // cub::{BlockReduce, BlockScan, WarpScan, ...}::TempStorage;
+  if (auto *RT = dyn_cast<RecordType>(T)) {
+    if (RT->getDecl()->getName() != "TempStorage")
+      return false;
+    auto *DC = RT->getDecl()->getDeclContext();
+    if (DC && DC->isRecord()) {
+      auto *RD = dyn_cast<RecordDecl>(DC);
+      DeclContextType = RD->getTypeForDecl();
+    } else
+      return false;
   }
 
-  return isCubRecordType(CanTyPtr);
+  // cub::{BlockReduce, BlockScan, WarpScan, ...}::TempStorage;
+  // But TempStorage is a dependent type.
+  if (auto *DNT = dyn_cast<DependentNameType>(T)) {
+    if (DNT->getIdentifier()->getName() != "TempStorage")
+      return false;
+    auto *QNNS = DNT->getQualifier();
+    if (QNNS->getKind() == NestedNameSpecifier::TypeSpec) {
+      DeclContextType = QNNS->getAsType();
+    } else
+      return false;
+  }
+
+  return isCubCollectiveRecordType(DeclContextType);
 }
 
 bool isCubVar(const VarDecl *VD) {
@@ -4078,11 +4098,12 @@ bool isCubVar(const VarDecl *VD) {
        CanonicalTypeStr.find("class cub::") == 0)) {
     return true;
   }
+
+  if (isCubTempStorageType(VD->getType().getCanonicalType().getTypePtrOrNull()))
+    return true;
+
   // 2.process template cases
   if (CanonicalTypeStr.find("::TempStorage") != std::string::npos) {
-    if (maybeDependentCubType(VD->getTypeSourceInfo()))
-      return true;
-
     std::string TypeParameterName;
     auto findTypeParameterName = [&](DependentNameTypeLoc DNT) {
       std::string Name;
@@ -4208,15 +4229,11 @@ bool isCubVar(const VarDecl *VD) {
 
     // If all the field in this union are cub type, we think this union also is
     // a cub type.
-    for (const auto *D : RD->decls()) {
-      if (const auto *FD = dyn_cast<FieldDecl>(D)) {
-        QualType FT = FD->getType().getCanonicalType();
-        std::string FTStr = FT.getAsString();
-        if (!StringRef(FTStr).contains("::TempStorage") ||
-            !maybeDependentCubType(FD->getTypeSourceInfo()))
+    for (const auto *D : RD->decls())
+      if (const auto *FD = dyn_cast<FieldDecl>(D))
+        if (!isCubTempStorageType(
+                FD->getType().getCanonicalType().getTypePtrOrNull()))
           return false;
-      }
-    }
     return true;
   }
   return false;
