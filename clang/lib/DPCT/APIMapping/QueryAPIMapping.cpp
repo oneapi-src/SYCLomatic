@@ -13,22 +13,21 @@
 namespace clang {
 namespace dpct {
 
-std::unordered_map<std::string, size_t> APIMapping::EntryMapSlow;
-std::unordered_map<std::string, size_t> APIMapping::EntryMapFast;
+std::unordered_map<std::string, size_t> APIMapping::EntryMap;
+std::unordered_map<std::string, size_t> APIMapping::EntryMapBuffer;
 std::vector<llvm::StringRef> APIMapping::EntryArray;
 std::set<std::string> APIMapping::EntrySet;
 bool APIMapping::PrintAll;
-bool APIMapping::FastMode = false;
 
-void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
+void APIMapping::registerEntry(std::string Name, llvm::StringRef Str,
+                               std::unordered_map<std::string, size_t> &Map) {
   std::replace(Name.begin(), Name.end(), '$', ':');
   if (getPrintAll()) {
     EntrySet.insert(Name);
     return;
   }
-  auto &EntryMap = FastMode ? EntryMapFast : EntryMapSlow;
   const auto TargetIndex = EntryArray.size();
-  EntryMap[Name] = TargetIndex; // Set the entry whether it exist or not.
+  Map[Name] = TargetIndex; // Set the entry whether it exist or not.
   // Try to fuzz the original API name (only when the entry not exist):
   // 1. Remove partial or all leading '_'.
   // 2. For each name got by step 1, put 4 kind of fuzzed name into the map
@@ -43,49 +42,55 @@ void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
     std::string Suffix = "_v2";
     if (TempName.size() > Suffix.length() &&
         TempName.substr(TempName.size() - Suffix.length()) == Suffix) {
-      EntryMap.try_emplace(TempName.substr(0, TempName.size() - 3),
-                           TargetIndex);
+      Map.try_emplace(TempName.substr(0, TempName.size() - 3), TargetIndex);
     } else {
-      EntryMap.try_emplace(TempName + Suffix, TargetIndex);
+      Map.try_emplace(TempName + Suffix, TargetIndex);
     }
     TempName[i] = std::toupper(TempName[i]);
-    EntryMap.try_emplace(TempName, TargetIndex);
+    Map.try_emplace(TempName, TargetIndex);
     std::transform(TempName.begin(), TempName.end(), TempName.begin(),
                    ::toupper);
-    EntryMap.try_emplace(TempName, TargetIndex);
+    Map.try_emplace(TempName, TargetIndex);
     std::transform(TempName.begin(), TempName.end(), TempName.begin(),
                    ::tolower);
-    EntryMap.try_emplace(TempName, TargetIndex);
+    Map.try_emplace(TempName, TargetIndex);
     Name.erase(0, 1);
-    EntryMap.try_emplace(Name, TargetIndex);
+    Map.try_emplace(Name, TargetIndex);
   }
-  EntryArray.emplace_back(SourceCode);
+  EntryArray.emplace_back(Str);
+}
+
+void APIMapping::initEntryMap() {
+#define REGIST(API_NAME, FILE_STR)                                             \
+  registerEntry(API_NAME, FILE_STR, EntryMapBuffer);
+#include "APIMappingRegisterBuffer.def"
+#undef REGIST
+#define REGIST(API_NAME, FILE_STR) registerEntry(API_NAME, FILE_STR, EntryMap);
+#include "APIMappingRegister.def"
+#undef REGIST
+}
+
+llvm::StringRef
+APIMapping::getAPIStr(std::string &Key,
+                      const std::unordered_map<std::string, size_t> &Map) {
+  Key.erase(0, Key.find_first_not_of(" "));
+  Key.erase(Key.find_last_not_of(" ") + 1);
+  auto Iter = Map.find(Key);
+  if (Iter == Map.end()) {
+    std::transform(Key.begin(), Key.end(), Key.begin(), ::tolower);
+    Iter = Map.find(Key);
+  }
+  if (Iter == Map.end())
+    return llvm::StringRef{};
+  return EntryArray[Iter->second];
 }
 
 llvm::StringRef APIMapping::getAPISourceCode(std::string Key) {
-  Key.erase(0, Key.find_first_not_of(" "));
-  Key.erase(Key.find_last_not_of(" ") + 1);
-  auto Iter = EntryMapSlow.find(Key);
-  if (Iter == EntryMapSlow.end()) {
-    std::transform(Key.begin(), Key.end(), Key.begin(), ::tolower);
-    Iter = EntryMapSlow.find(Key);
-  }
-  if (Iter == EntryMapSlow.end())
-    return llvm::StringRef{};
-  return EntryArray[Iter->second];
+  return getAPIStr(Key, EntryMap);
 }
 
 llvm::StringRef APIMapping::getAPIMapping(std::string Key) {
-  Key.erase(0, Key.find_first_not_of(" "));
-  Key.erase(Key.find_last_not_of(" ") + 1);
-  auto Iter = EntryMapFast.find(Key);
-  if (Iter == EntryMapFast.end()) {
-    std::transform(Key.begin(), Key.end(), Key.begin(), ::tolower);
-    Iter = EntryMapFast.find(Key);
-  }
-  if (Iter == EntryMapFast.end())
-    return llvm::StringRef{};
-  return EntryArray[Iter->second];
+  return getAPIStr(Key, EntryMapBuffer);
 }
 
 void APIMapping::printAll() {

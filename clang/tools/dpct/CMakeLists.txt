@@ -10,14 +10,16 @@ set(LLVM_LINK_COMPONENTS
   support
   )
 
-add_clang_tool(dpct-binary-tmp
-  DPCT.cpp NO_INSTALL_RPATH
-  )
-set_target_properties(dpct-binary-tmp PROPERTIES OUTPUT_NAME "dpct-tmp")
-target_link_libraries(dpct-binary-tmp
-  PRIVATE
-  DPCT_TMP
-  )
+if (NOT DPCT_NO_MAPPING_BUFFER)
+  add_clang_tool(dpct-binary-tmp
+    DPCT.cpp NO_INSTALL_RPATH
+    )
+  set_target_properties(dpct-binary-tmp PROPERTIES OUTPUT_NAME "dpct-tmp")
+  target_link_libraries(dpct-binary-tmp
+    PRIVATE
+    DPCT_TMP
+    )
+endif()
 
 add_clang_tool(dpct-binary
   DPCT.cpp NO_INSTALL_RPATH

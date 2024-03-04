@@ -80,13 +80,13 @@ add_custom_target(dpct_helper_headers_and_inc
   )
 
 # Handle API mapping cases header
-set(API_MAPPING_REGISTER_FOLDER ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/)
+set(API_MAPPING_REGISTER_FOLDER ${CMAKE_BINARY_DIR}/tools/clang/lib/DPCT/)
 file(GLOB SRC_FILES ../../examples/DPCT/*/*.cu)
 add_custom_target(gen_mapping_register
   COMMAND "${CMAKE_COMMAND}"
-    -DTARGET="${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterSlow.def"
+    -DTARGET="${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def"
     -DSRC_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/APIMapping/GenerateRegisterSlow.cmake
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/APIMapping/GenerateRegister.cmake
   DEPENDS ${SRC_FILES})
 include_directories(
   ${API_MAPPING_REGISTER_FOLDER}
@@ -206,7 +206,7 @@ set(DPCT_SRC
   SpBLASAPIMigration.cpp
   )
 
-set(DPCT_DEPENDS
+set(DPCT_TMP_DEPENDS
   ClangDriverOptions
   DeviceConfigFile
   dpct_helper_headers_and_inc
@@ -232,169 +232,56 @@ set(DPCT_LINK_LIBS
   clangToolingCore
   )
 
-add_clang_library(DPCT_TMP
-  ${DPCT_SRC}
-  APIMapping/QueryAPIMappingSlow.cpp
+set(DPCT_DEPENDS ${DPCT_TMP_DEPENDS})
 
-  DEPENDS
-  ${DPCT_DEPENDS}
+if (NOT DPCT_NO_MAPPING_BUFFER)
+  add_clang_library(DPCT_TMP
+    ${DPCT_SRC}
 
-  LINK_LIBS
-  ${DPCT_LINK_LIBS}
-)
+    DEPENDS
+    ${DPCT_TMP_DEPENDS}
+
+    LINK_LIBS
+    ${DPCT_LINK_LIBS}
+  )
+
+  file(GLOB LIB_PATHS ../../examples/DPCT/*)
+  list(REMOVE_ITEM LIB_PATHS "README.md")
+  if(WIN32)
+    list(REMOVE_ITEM LIB_PATHS "Thrust" "CUB")
+  endif()
+  file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer.def "")
+  foreach(LIB_PATH ${LIB_PATHS})
+    string(REGEX REPLACE ".*/(.*)$" "\\1" LIB_NAME ${LIB_PATH})
+    file(GLOB SRC_FILES ${LIB_PATH}/*.cu)
+    list(LENGTH SRC_FILES API_NUM)
+    set(BEGIN 0)
+    set(STEP 50)
+    while(${BEGIN} LESS ${API_NUM})
+      file(APPEND ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer.def "#include \"APIMappingRegisterBuffer${LIB_NAME}${BEGIN}.def\"\n")
+      file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer${LIB_NAME}${BEGIN}.def "")
+      add_custom_target(gen_mapping_str_${LIB_NAME}${BEGIN}
+        COMMAND "${CMAKE_COMMAND}"
+          -DTARGET_FOLDER="${API_MAPPING_REGISTER_FOLDER}"
+          -DLIB_PATH="${LIB_PATH}"
+          -DBEGIN="${BEGIN}"
+          -DSTEP="${STEP}"
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterBuffer.cmake
+        DEPENDS dpct-binary-tmp)
+      list(APPEND DPCT_DEPENDS gen_mapping_str_${LIB_NAME}${BEGIN})
+      math(EXPR BEGIN "${BEGIN} + ${STEP}")
+    endwhile()
+  endforeach()
+  file(READ ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer.def TJJ) # TODO: need delete.
+  message(STATUS "APIMappingRegisterBuffer.def: \n${TJJ}") # TODO: need delete.
+endif()
 
 add_clang_library(DPCT
   ${DPCT_SRC}
-  APIMapping/QueryAPIMappingFast.cpp
 
   DEPENDS
   ${DPCT_DEPENDS}
-  gen_mapping_str_CUB1
-  gen_mapping_str_Driver1
-  gen_mapping_str_Math1
-  gen_mapping_str_Math2
-  gen_mapping_str_Math3
-  gen_mapping_str_Math4
-  gen_mapping_str_NCCL1
-  gen_mapping_str_Runtime1
-  gen_mapping_str_Thrust1
-  gen_mapping_str_cuBLAS1
-  gen_mapping_str_cuBLAS2
-  gen_mapping_str_cuDNN1
-  gen_mapping_str_cuFFT1
-  gen_mapping_str_cuRAND1
-  gen_mapping_str_cuSPARSE1
-  gen_mapping_str_cuSolver1
 
   LINK_LIBS
   ${DPCT_LINK_LIBS}
 )
-
-add_custom_target(gen_mapping_str_CUB1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="CUB"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_Driver1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="Driver"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_Math1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="Math"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=4
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_Math2
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="Math"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=2
-    -DSPLIT_NUM=4
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_Math3
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="Math"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=3
-    -DSPLIT_NUM=4
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_Math4
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="Math"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=4
-    -DSPLIT_NUM=4
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_NCCL1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="NCCL"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_Runtime1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="Runtime"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_Thrust1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="Thrust"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_cuBLAS1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="cuBLAS"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=2
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_cuBLAS2
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="cuBLAS"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=2
-    -DSPLIT_NUM=2
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_cuDNN1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="cuDNN"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_cuFFT1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="cuFFT"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_cuRAND1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="cuRAND"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_cuSolver1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="cuSolver"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)
-add_custom_target(gen_mapping_str_cuSPARSE1
-  COMMAND "${CMAKE_COMMAND}"
-    -DLIB_NAME="cuSPARSE"
-    -DEXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -DINDEX=1
-    -DSPLIT_NUM=1
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterFast.cmake
-  DEPENDS dpct-binary-tmp)

@@ -19,14 +19,17 @@ namespace clang {
 namespace dpct {
 
 class APIMapping {
-  static std::unordered_map<std::string, size_t> EntryMapSlow;
-  static std::unordered_map<std::string, size_t> EntryMapFast;
+  static std::unordered_map<std::string, size_t> EntryMap;
+  static std::unordered_map<std::string, size_t> EntryMapBuffer;
   static std::vector<llvm::StringRef> EntryArray;
   static std::set<std::string> EntrySet;
   static bool PrintAll;
-  static bool FastMode;
 
-  static void registerEntry(std::string Name, llvm::StringRef Description);
+  static void registerEntry(std::string Name, llvm::StringRef Description,
+                            std::unordered_map<std::string, size_t> &Map);
+  static llvm::StringRef
+  getAPIStr(std::string &Key,
+            const std::unordered_map<std::string, size_t> &Map);
 
 public:
   static void initEntryMap();

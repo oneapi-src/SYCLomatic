@@ -3,7 +3,7 @@
 
 /// Half Arithmetic Functions
 
-// RUN: dpct --query-api-mapping=hdiv | FileCheck %s -check-prefix=HDIV2
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hdiv | FileCheck %s -check-prefix=HDIV2
 // HDIV2: CUDA API:
 // HDIV2-NEXT:   hdiv(h1 /*__half*/, h2 /*__half*/);
 // HDIV2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
@@ -11,7 +11,7 @@
 
 /// Half2 Arithmetic Functions
 
-// RUN: dpct --query-api-mapping=h2div | FileCheck %s -check-prefix=H2DIV2
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2div | FileCheck %s -check-prefix=H2DIV2
 // H2DIV2: CUDA API:
 // H2DIV2-NEXT:   h2div(h1 /*__half*/, h2 /*__half*/);
 // H2DIV2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
