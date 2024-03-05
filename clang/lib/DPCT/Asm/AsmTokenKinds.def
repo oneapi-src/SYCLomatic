@@ -60,6 +60,10 @@
 #define BIN_OP(X, Y) KEYWORD(X, Y)
 #endif
 
+#ifndef SYNC_OP
+#define SYNC_OP(X, Y) KEYWORD(X, Y)
+#endif
+
 #ifndef BUILTIN_ID
 #define BUILTIN_ID(X, Y, Z) TOK(bi_ ## X)
 #endif
@@ -318,7 +322,7 @@ SAT_MOD(sat, ".sat")
 SAT_MOD(satfinite, ".satfinite")
 SAT_MOD(relu, ".relu")
 SAT_MOD(clamp, ".clamp")
-SAT_MOD(warp, ".wrap")
+SAT_MOD(wrap, ".wrap")
 
 MUL_MOD(wide, ".wide")
 
@@ -351,7 +355,11 @@ BIN_OP(add, ".add")
 BIN_OP(min, ".min")
 BIN_OP(max, ".max")
 
+SYNC_OP(sync, ".sync")
+SYNC_OP(warp, ".warp")
+
 #undef BUILTIN_ID
+#undef SYNC_OP
 #undef BIN_OP
 #undef CMP_OP
 #undef MUL_MOD

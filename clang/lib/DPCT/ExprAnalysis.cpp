@@ -270,7 +270,6 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    SrcBeginLoc = BeginLoc;
     auto LastTokenLength = End.second;
     if(ApplyGreaterTokenWorkAround)
       LastTokenLength = 0;
@@ -401,6 +400,7 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
   if (Range.getBegin().isValid()) {
     std::tie(SrcBegin, SrcLength) =
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
+    SrcBeginLoc = Range.getBegin();
     if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
       ReplSet.init(std::string(
           FileBuffer.value().getBuffer().data() + SrcBegin, SrcLength));
@@ -785,6 +785,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
               dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreParenImpCasts());
           if (!Callee)
             return false;
+          if (CE->getDirectCallee()->isTemplateInstantiation())
+            return true;
           if (!Callee->getQualifier())
             return false;
           if (Callee->getQualifier()->getKind() !=

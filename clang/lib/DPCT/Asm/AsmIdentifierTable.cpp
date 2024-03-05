@@ -36,5 +36,7 @@ void InlineAsmIdentifierTable::AddKeywords() {
   get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
 #define BIN_OP(X, Y)                                                           \
   get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
+#define SYNC_OP(X, Y)                                                          \
+  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
 #include "AsmTokenKinds.def"
 }
