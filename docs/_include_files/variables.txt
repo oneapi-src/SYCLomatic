@@ -57,8 +57,3 @@
 .. |sycl_forum| replace:: Migrating to SYCL forum
 .. _sycl_forum: https://community.intel.com/t5/Migrating-to-SYCL/bd-p/migrating-sycl
 
-
-.. |br| raw:: html
-
-   <br/>
-

@@ -1,9 +1,10 @@
+.. _mig_workflow:
 
 Migration Workflow Guidelines
 =============================
 
-Introduction
-------------
+Overview
+--------
 
 The CUDA* to SYCL* code migration workflow consists of the following high-level
 stages:
@@ -22,28 +23,7 @@ optional steps.
 Prerequisites
 -------------
 
-[Compatibility Tool]
-
-* Install |tool_name|. |tool_name| is included in the |base_kit_long|. If you
-  have not installed the |base_kit|, follow the instructions in
-  `Install Intel® oneAPI Toolkits and Components <https://www.intel.com/content/www/us/en/developer/articles/guide/installation-guide-for-oneapi-toolkits.html>`_.
-
-  |br|
-  |tool_name| is also available as a stand-alone download.
-  `Download the stand-alone tool <https://www.intel.com/content/www/us/en/developer/articles/tool/oneapi-standalone-components.html#compatibility>`_.
-
-* Set up the tool environment. Refer to `Get Started with Intel® DPC++ Compatibility
-  Tool <https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/get-started-guide/current/overview.html>`_ for setup instructions.
-
-[SYCLomatic]
-
-* Install |tool_name|. The latest prebuild of |tool_name| is available from
-  https://github.com/oneapi-src/SYCLomatic/releases.
-
-  |br|
-  You can also review the repo README for build and installation instructions.
-* Set up the tool environment. Refer to :ref:`get_started` for setup
-  instructions.
+.. include:: /_include_files/prereq_mig_flow.rst
 
 Stage 1: Prepare for Migration
 ------------------------------
@@ -92,7 +72,6 @@ migration. For example:
 * The Clang parser may need additional forward class declarations where nvcc
   does not require them.
 
-  |br|
   Space within the triple brackets of kernel invocation is tolerated by nvcc but
   not Clang. For example, ``cuda_kernel<< <num_blocks, threads_per_block>> >(args…)``
   is ok for nvcc, but the Clang parser requires the spaces to be removed.
@@ -112,7 +91,8 @@ Configure the Tool
 
 CUDA header files used by your project must be accessible to the tool. If you have
 not already done so, configure the tool and ensure header files are available.
-Refer to :ref:`Before You Begin <get_started>` for detailed information.
+
+.. include:: /_include_files/before_begin_intro_dgr.rst
 
 Record Compilation Commands
 ***************************
@@ -241,9 +221,7 @@ Run Migration
 After reviewing the available migration tool functionality and options, run your
 migration.
 
-[CONDITIONALIZe]
-You can run the tool from the command line or within the Microsoft Visual Studio
-or Eclipse IDEs.
+.. include:: /_include_files/run_migration.rst
 
 If your project uses a Makefile or CMake file, use the corresponding option to
 automatically migrate the file to work with the migrated code:
