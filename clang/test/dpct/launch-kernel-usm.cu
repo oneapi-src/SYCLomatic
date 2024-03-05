@@ -79,7 +79,7 @@ int main() {
 
   void *kernel_func = (void *)&kernel;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1122:{{[0-9]+}}: The kernel function pointer cannot be deduced correctly. You need add the kernel function argument(s) manually.
+  // CHECK-NEXT: DPCT1122:{{[0-9]+}}: The kernel function pointer cannot be deduced correctly. You need cast "kernel_func" to a function pointer, and may adjust the kernel function argument(s) and the dimension of the sycl::nd_item type manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)), 
@@ -87,6 +87,18 @@ int main() {
   // CHECK-NEXT:     kernel_func();
   // CHECK-NEXT:   });
   cudaLaunchKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
+
+  void *kernel_array[100];
+  kernel_array[10] = (void *)&kernel;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1122:{{[0-9]+}}: The kernel function pointer cannot be deduced correctly. You need cast "kernel_array[10]" to a function pointer, and may adjust the kernel function argument(s) and the dimension of the sycl::nd_item type manually.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: q_ct1.parallel_for(
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)), 
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:     (kernel_array[10])();
+  // CHECK-NEXT:   });
+  cudaLaunchKernel(kernel_array[10], dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);
   cudaDestroyTextureObject(tex);
