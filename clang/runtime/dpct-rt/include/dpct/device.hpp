@@ -410,6 +410,10 @@ public:
     return get_info<sycl::info::device::mem_base_addr_align>();
   }
 
+  int get_mem_base_addr_align_in_bytes() const {
+    return get_info<sycl::info::device::mem_base_addr_align>() / 8;
+  }
+
   size_t get_global_mem_size() const {
     return get_device_info().get_global_mem_size();
   }
