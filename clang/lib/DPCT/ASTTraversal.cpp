@@ -6479,6 +6479,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       ReplStr += Search->second->NewName;
       ReplStr += "()";
       requestFeature(HelperFeatureEnum::device_ext);
+
+      if (AttributeName == "cudaDevAttrTextureAlignment") {
+        report(CE->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+               AttributeName, Search->second->NewName);
+      }
     }
     if (IsAssigned)
       ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
@@ -7216,11 +7221,20 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
     const CallExpr *CE, const MatchFinder::MatchResult &Result,
     bool IsAssigned) {
   auto StreamArg = CE->getArg(CE->getNumArgs() - 1);
+  auto Arg0 = CE->getArg(0);
   auto StreamName = getStmtSpelling(StreamArg);
-  auto ArgName = getStmtSpelling(CE->getArg(0));
+  auto ArgName = getStmtSpelling(Arg0);
   bool IsDefaultStream = isDefaultStream(StreamArg);
   auto IndentLoc = CE->getBeginLoc();
   auto &SM = DpctGlobalInfo::getSourceManager();
+
+  if (needExtraParens(Arg0)) {
+    ArgName = "(" + ArgName + ")";
+  }
+
+  if (needExtraParensInMemberExpr(StreamArg)) {
+    StreamName = "(" + StreamName + ")";
+  }
 
   if (IndentLoc.isMacroID())
     IndentLoc = SM.getExpansionLoc(IndentLoc);

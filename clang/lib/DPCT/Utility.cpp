@@ -4778,9 +4778,7 @@ void createDirectories(const clang::tooling::UnifiedPath &FilePath,
       if (IgnoreExisting &&
           llvm::sys::fs::is_directory(FilePath.getCanonicalPath())) {
         auto perm = sys::fs::getPermissions(FilePath.getCanonicalPath());
-        static const auto owner_perm =
-            sys::fs::perms::owner_write | sys::fs::perms::owner_read;
-        if (perm && (perm.get() & owner_perm)) {
+        if (perm && (perm.get() & sys::fs::perms::owner_all)) {
           return;
         }
       }
