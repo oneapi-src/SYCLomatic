@@ -2,7 +2,6 @@
 // RUN: FileCheck --input-file %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.cpp -o %T/cuda-event-api-enable-profiling/cuda-event-api-enable-profiling.dp.o %}
 
-#ifndef BUILD_TEST
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT: #define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT: #include <sycl/sycl.hpp>
@@ -10,6 +9,7 @@
 // CHECK-NEXT: #include <stdio.h>
 #include <stdio.h>
 
+#ifndef BUILD_TEST
 template <typename T>
 void my_error_checker(T ReturnValue, char const *const FuncName) {
 }
@@ -310,26 +310,26 @@ void foo2(Node *n) {
   }
 
   {
-  // CHECK: **node.ev[0] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*node.ev[0]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[0]);
-  // CHECK: **node.ev[0] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*node.ev[0]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[0]);
-  // CHECK: **node.ev[23] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*node.ev[23]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[23]);
-  // CHECK: **node.ev[23] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*node.ev[23]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[23]);
   // CHECK: elapsed_time = (*node.ev[23]->get_profiling_info<sycl::info::event_profiling::command_end>() - *node.ev[0]->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(&elapsed_time, *node.ev[0], *node.ev[23]);
   }
 
   {
-  // CHECK: **(&node)->ev[0] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*(&node)->ev[0]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[0]);
-  // CHECK: **(&node)->ev[0] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*(&node)->ev[0]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[0]);
-  // CHECK: **(&node)->ev[23] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*(&node)->ev[23]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[23]);
-  // CHECK: **(&node)->ev[23] = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK: *(*(&node)->ev[23]) = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[23]);
   // CHECK:  elapsed_time = (*(&node)->ev[23]->get_profiling_info<sycl::info::event_profiling::command_end>() - *(&node)->ev[0]->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(&elapsed_time, *(&node)->ev[0], *(&node)->ev[23]);
@@ -347,3 +347,24 @@ void foo2(Node *n) {
   }
 }
 #endif
+
+typedef struct foo_stream {
+  uint64_t count;
+  volatile uint64_t pos_wp;
+} foo_stream_t;
+
+typedef struct foo__io_stream_t {
+  cudaEvent_t *end_events;
+} foo__io_stream_t;
+
+// CHECK:static int cuda_stream_decode_ioinstruction(foo_stream_t *ios) {
+// CHECK-NEXT:  foo__io_stream_t *cios = (foo__io_stream_t *)ios;
+// CHECK-NEXT:  dpct::queue_ptr *stream = 0;
+// CHECK-NEXT:  *cios->end_events[ios->pos_wp % ios->count] = (*stream)->ext_oneapi_submit_barrier();
+// CHECK-NEXT:}
+static int cuda_stream_decode_ioinstruction(foo_stream_t *ios) {
+  foo__io_stream_t *cios = (foo__io_stream_t *)ios;
+  cudaStream_t *stream = 0;
+  cudaEventRecord(cios->end_events[ios->pos_wp % ios->count], *stream);
+}
+

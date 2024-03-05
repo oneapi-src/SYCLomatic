@@ -88,7 +88,7 @@ jobs:
       - name: Pack Results
         run: tar -cJf c2s_obj.tar.xz -C $GITHUB_WORKSPACE/c2s.obj ./
       - name: Upload Results 
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: SYCLomatic_linux_${{ github.sha }}
           path: c2s_obj.tar.xz
@@ -185,7 +185,7 @@ jobs:
         run: |
           git clone https://$FACELESS_TOKEN@github.com/oneapi-src/SYCLomatic-test.git test_repo -b SYCLomatic
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: SYCLomatic_linux_${{ github.sha }}
 
