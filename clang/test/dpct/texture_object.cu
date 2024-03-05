@@ -152,7 +152,7 @@ int main() {
   // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: texDesc21.set(sycl::filtering_mode::linear);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::readMode is not supported.
+  // CHECK-NEXT: DPCT1062:{{[0-9]+}}: SYCL Image doesn't support normalized read mode.
   // CHECK-NEXT: */
   // CHECK-NEXT: tex21 = dpct::create_image_wrapper(res21, texDesc21);
   uint2 *d_data21;

@@ -13306,9 +13306,13 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
   auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
   if (ReplField.empty() ||
       (!DpctGlobalInfo::useExtBindlessImages() && IsMipmapMember)) {
-    report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
-               "::" + Field);
+    if (Field == "readMode")
+      report(ME->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_NORM_READ_MODE,
+             false);
+    else
+      report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
+                 "::" + Field);
     if (AssignedBO) {
       emplaceTransformation(new ReplaceStmt(AssignedBO, ""));
     } else {
