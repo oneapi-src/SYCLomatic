@@ -900,6 +900,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDevAttrConcurrentManagedAccess",
        std::make_shared<EnumNameRule>(
            "get_info<sycl::info::device::usm_shared_allocations>")},
+      {"cudaDevAttrTextureAlignment",
+       std::make_shared<EnumNameRule>("get_mem_base_addr_align_in_bytes",
+                                      HelperFeatureEnum::device_ext)},
       // enum Memcpy Kind
       {"cudaMemcpyHostToHost",
        std::make_shared<EnumNameRule>(getDpctNamespace() + "host_to_host")},
@@ -1008,7 +1011,7 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>("get_max_work_group_size",
                                       HelperFeatureEnum::device_ext)},
       {"CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT",
-       std::make_shared<EnumNameRule>("get_mem_base_addr_align",
+       std::make_shared<EnumNameRule>("get_mem_base_addr_align_in_bytes",
                                       HelperFeatureEnum::device_ext)},
       {"CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY",
        std::make_shared<EnumNameRule>("get_global_mem_size",
