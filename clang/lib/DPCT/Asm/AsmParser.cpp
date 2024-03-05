@@ -273,6 +273,9 @@ static inline InstAttr ConvertToInstAttr(asmtok::TokenKind Kind) {
 #define BIN_OP(X, Y)                                                           \
   case asmtok::kw_##X:                                                         \
     return InstAttr::X;
+#define SYNC_OP(X, Y)                                                          \
+  case asmtok::kw_##X:                                                         \
+    return InstAttr::X;
 #include "Asm/AsmTokenKinds.def"
   default:
     llvm_unreachable("Kind is not an instruction attribute");
@@ -286,7 +289,6 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   InlineAsmIdentifierInfo *Opcode = Tok.getIdentifier();
   ConsumeToken();
 
-  unsigned OpIndex = 0;
   SmallVector<InstAttr, 4> Attrs;
   SmallVector<InlineAsmType *, 4> Types;
   SmallVector<InlineAsmExpr *, 4> Ops;
@@ -305,32 +307,30 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
     ConsumeToken(); // consume instruction attribute
   }
 
-  auto ParseOperand = [&]() {
-    InlineAsmExprResult E = ParseExpression();
-    if (E.isInvalid() || OpIndex >= Types.size())
-      return AsmExprError();
-    Ops.push_back(E.get());
-    return InlineAsmExprResult();
-  };
-
-  if (ParseOperand().isInvalid())
+  InlineAsmExprResult Pred, Out;
+  if ((Out = ParseExpression()).isInvalid())
     return AsmStmtError();
-
-  bool HasPredOutput = TryConsumeToken(asmtok::pipe);
-  InlineAsmExprResult PredOutput;
-  if (HasPredOutput && ParseOperand().isInvalid())
+  if (TryConsumeToken(asmtok::pipe) && (Pred = ParseExpression()).isInvalid())
     return AsmStmtError();
 
   while (TryConsumeToken(asmtok::comma)) {
-    if (ParseOperand().isInvalid())
+    InlineAsmExprResult E = ParseExpression();
+    if (E.isInvalid())
       return AsmStmtError();
+    Ops.push_back(E.get());
   }
 
   if (!TryConsumeToken(asmtok::semi))
     return AsmStmtError();
 
+  // bar.warp.sync only has one input operand.
+  if (Opcode->getTokenID() == asmtok::op_bar) {
+    Ops.push_back(Out.get());
+    Out = nullptr;
+  }
+
   return ::new (Context)
-      InlineAsmInstruction(Opcode, Attrs, Types, Ops, HasPredOutput);
+      InlineAsmInstruction(Opcode, Attrs, Types, Out.get(), Pred.get(), Ops);
 }
 
 InlineAsmExprResult InlineAsmParser::ParseExpression() {

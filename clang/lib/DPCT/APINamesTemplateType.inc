@@ -206,6 +206,11 @@ TYPE_REWRITE_ENTRY(
     "thrust::modulus",
     TYPE_FACTORY(STR("std::modulus"), TEMPLATE_ARG(0)))
 
+//thrust::reverse_iterator
+TYPE_REWRITE_ENTRY(
+    "thrust::reverse_iterator",
+    TYPE_FACTORY(STR("oneapi::dpl::reverse_iterator"), TEMPLATE_ARG(0)))
+
 TYPE_REWRITE_ENTRY(
     "cub::DoubleBuffer",
     TYPE_CONDITIONAL_FACTORY(

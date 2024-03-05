@@ -870,8 +870,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
   case HT_SYCL:
-    if (DpctGlobalInfo::getEnablepProfilingFlag())
-      OS << "#define DPCT_PROFILING_ENABLED" << getNL();
+    // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
+    // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
+    // replacement.
+    OS << "{{NEEDREPLACEP0}}";
+
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
@@ -900,10 +903,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
            << DpctGlobalInfo::getGlobalDeviceName() << ", "
            << MapNames::getClNamespace() << "property_list{"
            << MapNames::getClNamespace() << "property::queue::in_order()";
-        if (DpctGlobalInfo::getEnablepProfilingFlag()) {
-          OS << ", " << MapNames::getClNamespace()
-             << "property::queue::enable_profiling()";
-        }
+
+        // replaced to insert "property::queue::enable_profiling()" or not
+        // in the post replacement.
+        OS << "{{NEEDREPLACEI0}}";
         OS << "});" << getNL();
         Flag = false;
       } else {
@@ -1399,6 +1402,7 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // F: free queries function migration, such as this_nd_item, this_group,
   //    this_sub_group.
   // E: extension, used for c source file migration
+  // P: profiling enable or disable for time measurement.
   switch (Method) {
   case 'R':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
@@ -1441,6 +1445,21 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
     return Vec[Index]->hasCUDASyntax()
                ? ("c" + DpctGlobalInfo::getSYCLSourceExtension())
                : "c";
+  }
+  case 'P': {
+    std::string ReplStr;
+    if (DpctGlobalInfo::getEnablepProfilingFlag())
+      ReplStr = std::string("#define DPCT_PROFILING_ENABLED") + getNL();
+
+    return ReplStr;
+  }
+  case 'I': {
+    std::string ReplStr;
+    if (DpctGlobalInfo::getEnablepProfilingFlag())
+      ReplStr = ", " + MapNames::getClNamespace() +
+                "property::queue::enable_profiling()";
+
+    return ReplStr;
   }
   case FreeQueriesInfo::FreeQueriesRegexCh:
     return FreeQueriesInfo::getReplaceString(Index);
@@ -1613,10 +1632,10 @@ void DpctGlobalInfo::buildReplacements() {
     // Now the UsmLevel must not be UL_None here.
     QDecl << "q_ct1(dev_ct1, " << MapNames::getClNamespace() << "property_list{"
           << MapNames::getClNamespace() << "property::queue::in_order()";
-    if (DpctGlobalInfo::getEnablepProfilingFlag()) {
-      QDecl << ", " << MapNames::getClNamespace()
-            << "property::queue::enable_profiling()";
-    }
+
+    // replaced to insert of "property::queue::enable_profiling()" or not in
+    // the post replacement.
+    QDecl << "{{NEEDREPLACEI0}}";
     QDecl << "});";
   }
 

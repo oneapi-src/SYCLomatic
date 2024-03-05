@@ -7216,11 +7216,20 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
     const CallExpr *CE, const MatchFinder::MatchResult &Result,
     bool IsAssigned) {
   auto StreamArg = CE->getArg(CE->getNumArgs() - 1);
+  auto Arg0 = CE->getArg(0);
   auto StreamName = getStmtSpelling(StreamArg);
-  auto ArgName = getStmtSpelling(CE->getArg(0));
+  auto ArgName = getStmtSpelling(Arg0);
   bool IsDefaultStream = isDefaultStream(StreamArg);
   auto IndentLoc = CE->getBeginLoc();
   auto &SM = DpctGlobalInfo::getSourceManager();
+
+  if (needExtraParens(Arg0)) {
+    ArgName = "(" + ArgName + ")";
+  }
+
+  if (needExtraParensInMemberExpr(StreamArg)) {
+    StreamName = "(" + StreamName + ")";
+  }
 
   if (IndentLoc.isMacroID())
     IndentLoc = SM.getExpansionLoc(IndentLoc);
@@ -7520,9 +7529,6 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
 void EventAPICallRule::handleEventRecord(const CallExpr *CE,
                                          const MatchFinder::MatchResult &Result,
                                          bool IsAssigned) {
-  if (!getDecl(CE->getArg(0)))
-    return;
-
   if (DpctGlobalInfo::getEnablepProfilingFlag()) {
     // Option '--enable-profiling' is enabled
     handleEventRecordWithProfilingEnabled(CE, Result, IsAssigned);
@@ -8110,6 +8116,43 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
 }
 
 REGISTER_RULE(EventAPICallRule, PassKind::PK_Migration)
+
+void ProfilingEnableOnDemandRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(hasAnyName(
+                                   "cudaEventElapsedTime", "cudaEventRecord"))),
+                               parentStmt()))
+                    .bind("cudaEventElapsedTimeCall"),
+                this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(hasName("cudaEventElapsedTime"))),
+                     unless(parentStmt())))
+          .bind("cudaEventElapsedTimeUsed"),
+      this);
+}
+
+// When cudaEventElapsedTimeCall() is called in the source code, event profiling
+// opton "--enable-profiling" is enabled to measure the execution time of a
+// specific kernel or command in SYCL device.
+void ProfilingEnableOnDemandRule::runRule(
+    const MatchFinder::MatchResult &Result) {
+
+  if (DpctGlobalInfo::getEnablepProfilingFlag())
+    return;
+
+  const CallExpr *CE =
+      getNodeAsType<CallExpr>(Result, "cudaEventElapsedTimeCall");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "cudaEventElapsedTimeUsed")))
+      return;
+  }
+
+  if (!CE->getDirectCallee())
+    return;
+
+  DpctGlobalInfo::setEnablepProfilingFlag(true);
+}
+
+REGISTER_RULE(ProfilingEnableOnDemandRule, PassKind::PK_Analysis)
 
 void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
   auto streamFunctionName = [&]() {
