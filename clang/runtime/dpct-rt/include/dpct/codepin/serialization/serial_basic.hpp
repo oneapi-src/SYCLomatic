@@ -34,19 +34,22 @@ template <class T, class T2 = void> class TT {
 public:
   static void dump(std::ostream &ss, T value,
                    dpct::experimental::StreamType stream) {
+    ss << "{\"Type\":\"" << typeid(T).name() << "\",\"Data\":[";
     ss << "Unable to find the corresponding serialization function for the "
           "class. Please report this issue to SYCLomatic/DPCT, or manually add "
-          "the serialization function."
-       << std::endl;
+          "the serialization function.";
+    ss << "]}";
   }
 };
 
 template <class T>
 class TT<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 public:
-  static void dump(std::ostream &ss, T value,
+  static void dump(std::ostream &ss, const T &value,
                    dpct::experimental::StreamType stream) {
-    ss << value << ",\t";
+    ss << "{\"Type\":\"" << typeid(T).name() << "\",\"Data\":[";
+    ss << value;
+    ss << "]}";
   }
 };
 
@@ -55,7 +58,17 @@ template <> class TT<int3> {
 public:
   static void dump(std::ostream &ss, const int3 &value,
                    dpct::experimental::StreamType stream) {
-    ss << value.x << '\t' << value.y << '\t' << value.z << ",\t";
+    ss << "{\"Type\":\"int3\",\"Data\":[";
+    ss << "{\"x\":";
+    dpct::experimental::detail::TT<int>::dump(ss, value.x, stream);
+    ss << "},";
+    ss << "{\"y\":";
+    dpct::experimental::detail::TT<int>::dump(ss, value.y, stream);
+    ss << "},";
+    ss << "{\"z\":";
+    dpct::experimental::detail::TT<int>::dump(ss, value.z, stream);
+    ss << "}";
+    ss << "]}";
   }
 };
 
@@ -63,7 +76,17 @@ template <> class TT<float3> {
 public:
   static void dump(std::ostream &ss, const float3 &value,
                    dpct::experimental::StreamType stream) {
-    ss << value.x << '\t' << value.y << '\t' << value.z << ",\t";
+    ss << "{\"Type\":\"float3\",\"Data\":[";
+    ss << "{\"x\":";
+    dpct::experimental::detail::TT<float>::dump(ss, value.x, stream);
+    ss << "},";
+    ss << "{\"y\":";
+    dpct::experimental::detail::TT<float>::dump(ss, value.y, stream);
+    ss << "},";
+    ss << "{\"z\":";
+    dpct::experimental::detail::TT<float>::dump(ss, value.z, stream);
+    ss << "}";
+    ss << "]}";
   }
 };
 
@@ -72,7 +95,17 @@ template <> class TT<sycl::int3> {
 public:
   static void dump(std::ostream &ss, const sycl::int3 &value,
                    dpct::experimental::StreamType stream) {
-    ss << value.x() << '\t' << value.y() << '\t' << value.z() << ",\t";
+    ss << "{\"Type\":\"sycl::int3\",\"Data\":[";
+    ss << "{\"x\":";
+    dpct::experimental::detail::TT<int>::dump(ss, value.x(), stream);
+    ss << "},";
+    ss << "{\"y\":";
+    dpct::experimental::detail::TT<int>::dump(ss, value.y(), stream);
+    ss << "},";
+    ss << "{\"z\":";
+    dpct::experimental::detail::TT<int>::dump(ss, value.z(), stream);
+    ss << "}";
+    ss << "]}";
   }
 };
 
@@ -80,7 +113,17 @@ template <> class TT<sycl::float3> {
 public:
   static void dump(std::ostream &ss, const sycl::float3 &value,
                    dpct::experimental::StreamType stream) {
-    ss << value.x() << '\t' << value.y() << '\t' << value.z() << ",\t";
+    ss << "{\"Type\":\"sycl::float3\",\"Data\":[";
+    ss << "{\"x\":";
+    dpct::experimental::detail::TT<float>::dump(ss, value.x(), stream);
+    ss << "},";
+    ss << "{\"y\":";
+    dpct::experimental::detail::TT<float>::dump(ss, value.y(), stream);
+    ss << "},";
+    ss << "{\"z\":";
+    dpct::experimental::detail::TT<float>::dump(ss, value.z(), stream);
+    ss << "}";
+    ss << "]}";
   }
 };
 #endif
@@ -89,7 +132,9 @@ template <> class TT<char *> {
 public:
   static void dump(std::ostream &ss, const char *value,
                    dpct::experimental::StreamType stream) {
-    ss << std::string(value) << ",\t";
+    ss << "{\"Type\":\"char *\",\"Data\":[";
+    ss << std::string(value);
+    ss << "]}";
   }
 };
 
@@ -97,7 +142,9 @@ template <> class TT<std::string> {
 public:
   static void dump(std::ostream &ss, const std::string &value,
                    dpct::experimental::StreamType stream) {
-    ss << value << ",\t";
+    ss << "{\"Type\":\"char *\",\"Data\":[";
+    ss << value;
+    ss << "]}";
   }
 };
 

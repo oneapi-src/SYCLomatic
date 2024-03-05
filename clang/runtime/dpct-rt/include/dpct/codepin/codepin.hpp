@@ -17,13 +17,14 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 namespace dpct {
 namespace experimental {
 
 namespace detail {
-
+inline static std::unordered_set<void *> ptr_unique;
 inline static std::map<std::string, int> api_index;
 inline static std::string dump_file = "dump_log.json";
 
@@ -35,12 +36,19 @@ public:
   }
 
   ~Logger() {
+    this->remove_lastchar_stream();
     ss << "]";
     opf << ss.str();
     opf.close();
   }
 
   std::stringstream &get_outputstream() { return this->ss; }
+
+  void remove_lastchar_stream() {
+    std::streampos pos = ss.tellp();
+    ss.seekp(pos - std::streamoff(1));
+    ss << "";
+  }
 
 private:
   std::string dst_output;
@@ -55,7 +63,7 @@ inline std::map<void *, uint32_t> &get_ptr_size_map() {
   return ptr_size_map;
 }
 
-inline uint32_t get_pointer_size_in_bytes_from_map(void *ptr) {
+inline uint32_t get_ptr_size_in_bytes_from_map(void *ptr) {
   const std::map<void *, uint32_t> &ptr_size_map = get_ptr_size_map();
   const auto &it = ptr_size_map.find(ptr);
   return (it != ptr_size_map.end()) ? it->second : 0;
@@ -82,30 +90,41 @@ class TT<T, typename std::enable_if<std::is_pointer<T>::value>::type> {
 public:
   static void dump(std::ostream &ss, T value,
                    dpct::experimental::StreamType stream) {
-    int size = get_pointer_size_in_bytes_from_map(value);
+    if (ptr_unique.find(value) != ptr_unique.end()) {
+      return;
+    }
+    ptr_unique.insert(value);
+    ss << "{\"Type\":\"Pointer\",\"Data\":[";
+    int size = get_ptr_size_in_bytes_from_map(value);
     size = size == 0 ? 1 : size / sizeof(*value);
     using PointedType =
         std::remove_reference_t<std::remove_cv_t<std::remove_pointer_t<T>>>;
     if (is_dev_ptr(value)) {
-      PointedType *hData = new PointedType[size];
+      PointedType *h_data = new PointedType[size];
 #ifdef __NVCC__
-      cudaMemcpyAsync(hData, value, size * sizeof(PointedType),
+      cudaMemcpyAsync(h_data, value, size * sizeof(PointedType),
                       cudaMemcpyDeviceToHost, stream);
       cudaStreamSynchronize(stream);
 #else
-      stream->memcpy(hData, value, size * sizeof(PointedType)).wait();
+      stream->memcpy(h_data, value, size * sizeof(PointedType)).wait();
 #endif
       for (int i = 0; i < size; ++i) {
-        dpct::experimental::detail::TT<PointedType>::dump(ss, *(hData + i),
+        dpct::experimental::detail::TT<PointedType>::dump(ss, *(h_data + i),
                                                           stream);
+        if (i != size - 1)
+          ss << ",";
       }
-      delete[] hData;
+      delete[] h_data;
     } else {
       for (int i = 0; i < size; ++i) {
         dpct::experimental::detail::TT<PointedType>::dump(ss, *(value + i),
                                                           stream);
+        if (i != size - 1)
+          ss << ",";
       }
     }
+
+    ss << "]}";
   }
 };
 
@@ -114,10 +133,13 @@ class TT<T, typename std::enable_if<std::is_array<T>::value>::type> {
 public:
   static void dump(std::ostream &ss, T value,
                    dpct::experimental::StreamType stream) {
+    ss << "{\"Type\":\"Array\",\"Data\":[";
     for (auto tmp : value) {
       dpct::experimental::detail::TT<std::remove_extent_t<T>>::dump(ss, tmp,
                                                                     stream);
+      ss << ",";
     }
+    ss << "]}";
   }
 };
 
@@ -129,10 +151,10 @@ inline void process_var(std::ostream &ss,
 template <class T, class... Args>
 void process_var(std::ostream &ss, dpct::experimental::StreamType stream,
                  const std::string &var_name, T var, Args... args) {
-  ss << "\"" << var_name << "\":{\"Type\":\"" << typeid(T).name() << "\",";
-  ss << "\"Data\":[";
+  ss << "\"" << var_name << "\":";
+  ptr_unique.clear();
   dpct::experimental::detail::TT<T>::dump(ss, var, stream);
-  ss << "]},";
+  ss << ",";
   process_var(ss, stream, args...);
 }
 
@@ -149,7 +171,8 @@ void gen_log_API_CP(const std::string &api_name,
   log.get_outputstream() << "{\"ID\":"
                          << "\"" << new_api_name << "\",\"CheckPoint\":{";
   process_var(log.get_outputstream(), stream, args...);
-  log.get_outputstream() << "}}";
+  log.remove_lastchar_stream();
+  log.get_outputstream() << "}},";
 }
 } // namespace detail
 

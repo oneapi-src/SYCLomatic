@@ -8405,7 +8405,7 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
                      "\", ";
   DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
                              KCallSpellingRange.first.printToString(SM)) +
-                         "(SYCL)\", ";
+                         "\", ";
   std::string StreamStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
