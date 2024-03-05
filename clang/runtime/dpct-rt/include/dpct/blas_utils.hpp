@@ -20,7 +20,10 @@
 
 namespace dpct {
 namespace blas {
-template <typename target_t, typename source_t> class mem_base_t {
+namespace detail {
+enum class mem_inout { in, out, inout };
+
+template <typename target_t, typename source_t, mem_inout io> class mem_base_t {
 public:
 #ifdef DPCT_USM_LEVEL_NONE
   using data_t = sycl::buffer<target_t>;
@@ -32,6 +35,43 @@ public:
       : _source_attribute(dpct::detail::get_pointer_attribute(q, source)),
         _q(q), _source(source), _ele_num(ele_num),
         _target(construct_member_variable_target()) {}
+
+  ~mem_base_t() {
+    if constexpr (!std::is_same_v<target_t, source_t>) {
+#ifdef DPCT_USM_LEVEL_NONE
+      source_t temp = static_cast<source_t>(_target.get_host_access()[0]);
+      if (_source_attribute ==
+          dpct::detail::pointer_access_attribute::device_only) {
+        dpct::get_host_ptr<source_t>(_source)[0] = temp;
+      } else {
+        *_source = temp;
+      }
+#else
+      _q.wait();
+      source_t temp = static_cast<source_t>(*_target);
+      if (_source_attribute ==
+          dpct::detail::pointer_access_attribute::device_only) {
+        _q.memcpy(_source, &temp, sizeof(source_t)).wait();
+      } else {
+        *_source = temp;
+      }
+      sycl::free(_target, _q);
+#endif
+    } else {
+#ifndef DPCT_USM_LEVEL_NONE
+      if (!_need_free) {
+        return;
+      }
+      if constexpr (io != mem_inout::in) {
+        if (_source_attribute ==
+            dpct::detail::pointer_access_attribute::host_only) {
+          _q.memcpy(_source, _target, sizeof(target_t) * _ele_num).wait();
+        }
+      }
+      sycl::free(_target, _q);
+#endif
+    }
+  }
 
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<target_t> &get_memory() { return _target; }
@@ -45,6 +85,9 @@ protected:
   source_t *_source = nullptr;
   size_t _ele_num;
   data_t _target;
+#ifndef DPCT_USM_LEVEL_NONE
+  bool _need_free = true;
+#endif
 
 private:
   data_t construct_member_variable_target() {
@@ -71,13 +114,11 @@ private:
   }
 };
 
-enum class mem_inout { in, out, inout };
-
 template <typename target_t, typename source_t, mem_inout io>
-class mem_t : public mem_base_t<target_t, source_t> {
+class mem_t : public mem_base_t<target_t, source_t, io> {
   static_assert(io == mem_inout::out && "Only mem_inout::out is supported if "
                                         "target_t and source_t are not same.");
-  using base_t = mem_base_t<target_t, source_t>;
+  using base_t = mem_base_t<target_t, source_t, io>;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
@@ -85,33 +126,12 @@ class mem_t : public mem_base_t<target_t, source_t> {
 
 public:
   mem_t(sycl::queue q, source_t *source) : base_t(q, source, 1) {}
-
-  ~mem_t() {
-#ifdef DPCT_USM_LEVEL_NONE
-    source_t temp = static_cast<source_t>(_target.get_host_access()[0]);
-    if (_source_attribute ==
-        dpct::detail::pointer_access_attribute::device_only) {
-      dpct::get_host_ptr<source_t>(_source)[0] = temp;
-    } else {
-      *_source = temp;
-    }
-#else
-    _q.wait();
-    source_t temp = static_cast<source_t>(*_target);
-    if (_source_attribute ==
-        dpct::detail::pointer_access_attribute::device_only) {
-      _q.memcpy(_source, &temp, sizeof(source_t)).wait();
-    } else {
-      *_source = temp;
-    }
-    sycl::free(_target, _q);
-#endif
-  }
 };
 
 template <typename target_t, mem_inout io>
-class mem_t<target_t, target_t, io> : public mem_base_t<target_t, target_t> {
-  using base_t = mem_base_t<target_t, target_t>;
+class mem_t<target_t, target_t, io>
+    : public mem_base_t<target_t, target_t, io> {
+  using base_t = mem_base_t<target_t, target_t, io>;
   using base_t::_ele_num;
   using base_t::_q;
   using base_t::_source;
@@ -119,7 +139,7 @@ class mem_t<target_t, target_t, io> : public mem_base_t<target_t, target_t> {
   using base_t::_target;
   using typename base_t::data_t;
 #ifndef DPCT_USM_LEVEL_NONE
-  bool _need_free = true;
+  using base_t::_need_free;
 #endif
 
 public:
@@ -139,27 +159,15 @@ public:
     }
 #endif
   }
-
-  ~mem_t() {
-#ifndef DPCT_USM_LEVEL_NONE
-    if (!_need_free) {
-      return;
-    }
-    if constexpr (io != mem_inout::in) {
-      if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::host_only) {
-        _q.memcpy(_source, _target, sizeof(target_t) * _ele_num).wait();
-      }
-    }
-    sycl::free(_target, _q);
-#endif
-  }
 };
-using out_mem_int64_int_t = mem_t<std::int64_t, int, mem_inout::out>;
-using out_mem_int64_t = mem_t<std::int64_t, std::int64_t, mem_inout::out>;
-using out_mem_float_t = mem_t<float, float, mem_inout::out>;
-using inout_mem_float_t = mem_t<float, float, mem_inout::inout>;
-using in_mem_float_t = mem_t<float, float, mem_inout::in>;
+} // namespace detail
+using out_mem_int64_int_t =
+    detail::mem_t<std::int64_t, int, detail::mem_inout::out>;
+using out_mem_int64_t =
+    detail::mem_t<std::int64_t, std::int64_t, detail::mem_inout::out>;
+using out_mem_float_t = detail::mem_t<float, float, detail::mem_inout::out>;
+using inout_mem_float_t = detail::mem_t<float, float, detail::mem_inout::inout>;
+using in_mem_float_t = detail::mem_t<float, float, detail::mem_inout::in>;
 
 class descriptor {
 public:
