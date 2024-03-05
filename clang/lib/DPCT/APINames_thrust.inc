@@ -185,7 +185,7 @@ ENTRY(thrust::unique_by_key, thrust::unique_by_key, true, NO_FLAG, P4, "comment"
 ENTRY(thrust::unique_by_key_copy, thrust::unique_by_key_copy, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::unique_copy, thrust::unique_copy, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::upper_bound, thrust::upper_bound, true, NO_FLAG, P4, "Successful")
-ENTRY(thrust::unique_count, thrust::unique_count, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::unique_count, thrust::unique_count, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::detail::vector_equal, thrust::detail::vector_equal, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::system::system_category, thrust::system::system_category, true, NO_FLAG, P4, "comment")
 ENTRY_MEMBER_FUNCTION(thrust::uniform_int_distribution, thrust::random::uniform_int_distribution, min, min, true, NO_FLAG, P4, "Successful")

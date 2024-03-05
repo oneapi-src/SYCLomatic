@@ -137,13 +137,6 @@
   In: set (CMAKE_CXX_COMPILER ${version})
   Out: set (CMAKE_CXX_COMPILER icpx)
 
-- Rule: rule_set_property_cxx_standard
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: set_property_cxx_standard
-  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
-
 - Rule: rule_set_property_cuda_seprarable_only
   Kind: CMakeRule
   Priority: Fallback
@@ -182,11 +175,6 @@
   CmakeSyntax: cuda_compile_ptx
   In: cuda_compile_ptx(${device} ${value})
   Out: dpct_helper_compile_sycl_code(${device} ${value})
-  Subrules:
-    value:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 - Rule: rule_user_defined_function_cpp
   Kind: CMakeRule
@@ -236,11 +224,6 @@
   CmakeSyntax: rule_cuda_compile_01
   In: cuda_compile(${libname} ${srcs} STATIC OPTIONS ${opts})
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
@@ -249,12 +232,6 @@
   CmakeSyntax: rule_cuda_compile_02
   In: cuda_compile(${libname} ${srcs} SHARED OPTIONS ${opts})
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-
 
 - Rule: rule_cuda_compile_with_lib_type
   Kind: CMakeRule
@@ -263,11 +240,6 @@
   CmakeSyntax: rule_cuda_compile_03
   In: cuda_compile(${libname} ${srcs} STATIC)
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 - Rule: rule_cuda_compile_with_lib_type
   Kind: CMakeRule
@@ -276,12 +248,6 @@
   CmakeSyntax: rule_cuda_compile_04
   In: cuda_compile(${libname} ${srcs} SHARED)
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-
 
 - Rule: rule_cuda_compile_with_no_opts
   Kind: CMakeRule
@@ -290,11 +256,6 @@
   CmakeSyntax: rule_cuda_compile_05
   In: cuda_compile(${libname} ${srcs})
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 - Rule: rule_add_compile_options
   Kind: CMakeRule
@@ -384,12 +345,6 @@
   MatchMode: Partial
   In: file(${value})
   Out: file(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Full
-      RuleId: "adjust_CUDA_src_file_extension"
 
 - Rule: rule_set_property
   Kind: CMakeRule
@@ -397,12 +352,6 @@
   CmakeSyntax: set_property
   In: set_property(${value})
   Out: set_property(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Partial
-      RuleId: "replace_set_property_cu_extension_with_dp_cpp"
 
 - Rule: rule_cuda_add_executable
   Kind: CMakeRule
@@ -410,12 +359,6 @@
   CmakeSyntax: cuda_add_executable
   In: cuda_add_executable(${value})
   Out: add_executable(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Partial
-      RuleId: "replace_cuda_add_executable_cu_extension_with_dp_cpp"
 
 - Rule: rule_add_executable
   Kind: CMakeRule
@@ -423,12 +366,6 @@
   CmakeSyntax: add_executable
   In: add_executable(${value} OPTIONS {options})
   Out: add_executable(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Partial
-      RuleId: "replace_add_executable_cu_extension_with_dp_cpp"
 
 - Rule: rule_add_executable_remove_opts
   Kind: CMakeRule
@@ -444,10 +381,6 @@
   MatchMode: Partial
   In: cuda_compile_cubin(${device} ${value})
   Out: dpct_helper_compile_sycl_code(${device} ${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 - Rule: rule_cuda_compile_cubin
   Kind: CMakeRule
@@ -456,10 +389,6 @@
   MatchMode: Partial
   In: cuda_compile_cubin(${device} ${value} OPTIONS ${opts})
   Out: dpct_helper_compile_sycl_code(${device} ${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 # CUDA_cudadevrt_LIBRARY is cmake cuda reverved list variable, should be removed in SYCL
 - Rule: rule_target_link_libraries_CUDA_cudadevrt_LIBRARY
@@ -516,20 +445,6 @@
       MatchMode: Full
       RuleId: "replace_-lcublas_with_qmkl"
 
-- Rule: rule_target_link_libraries_CUDA_cublas
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: CUDA_cublas_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::cublas"
-      Out: |
-        \${MKL_LIB}
-      MatchMode: Full
-      RuleId: "replace_CUDA_cublas_with_MKL"
-
 - Rule: rule_target_link_libraries_CUDA_CUBLAS_LIBRARIES
   Kind: CMakeRule
   Priority: Fallback
@@ -574,34 +489,6 @@
         \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_CUDA_cusparse_LIBRARY_with_MKL"
-
-# libsycl.so is linked by default as alternative to cuda_driver library, so removing here
-- Rule: rule_target_link_libraries_cuda_driver
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cuda_driver_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::cuda_driver"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_CUDA_driver"
-
-# libsycl.so is linked by default as alternative to cuda_driver library, so removing here
-- Rule: rule_target_link_libraries_cuda_rt
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cudart_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::cudart"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_CUDA_cudart"
 
 - Rule: rule_target_link_libraries_cudnn
   Kind: CMakeRule
@@ -693,12 +580,6 @@
   CmakeSyntax: cuda_compile_fatbin
   In: cuda_compile_fatbin(${value})
   Out: dpct_helper_compile_sycl_code(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Partial
-      RuleId: "replace_source_extension_with_dp_cpp"
 
 - Rule: rule_cuda_compile_fatbin_remove_opts
   Kind: CMakeRule
@@ -748,3 +629,235 @@
   CmakeSyntax: cuda_add_library
   In: cuda_add_library(${arg})
   Out: add_library(${arg})
+
+- Rule: rule_cuda_64_bit_device_code-on
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cuda_64_bit_device_code-on
+  In: set(CUDA_64_BIT_DEVICE_CODE ON)
+  Out: |
+    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m64")
+
+- Rule: rule_cuda_64_bit_device_code-off
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cuda_64_bit_device_code-off
+  In: set(CUDA_64_BIT_DEVICE_CODE OFF)
+  Out: |
+    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m32")
+
+- Rule: rule_if_cuda_64_bit_device_code
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: if_cuda_64_bit_device_code
+  In: if(${conditions}CUDA_64_BIT_DEVICE_CODE${other_conditions})
+  Out: if(${conditions}(\${CMAKE_CXX_FLAGS} MATCHES "-m64")${other_conditions})
+
+- Rule: rule_CMAKE_CUDA_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_COMPILER
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_COMPILER
+      Out: CMAKE_SYCL_COMPILER
+
+- Rule: rule_CMAKE_CUDA_HOST_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_HOST_COMPILER
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_HOST_COMPILER
+      Out: CMAKE_SYCL_HOST_COMPILER
+
+- Rule: rule_CMAKE_CUDA_ARCHITECTURES
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_ARCHITECTURES
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_ARCHITECTURES
+      Out: CMAKE_SYCL_ARCHITECTURES
+
+- Rule: rule_CMAKE_CUDA_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_FLAGS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_FLAGS
+      Out: CMAKE_SYCL_FLAGS
+
+- Rule: rule_enable_language
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: enable_language
+  MatchMode: Partial
+  In: enable_language(${value})
+  Out: enable_language(${value})
+  Subrules:
+    value:
+      In: CUDA
+      Out: CXX
+      MatchMode: Full
+
+- Rule: cudart_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudart_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cudart_static
+      Out: ""
+
+# libsycl.so is linked by default as alternative to cuda runtime library, so removing here
+- Rule: cudart_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudart
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cudart
+      Out: ""
+
+# libsycl.so is linked by default as alternative to cuda river library, so removing here
+- Rule: cuda_driver_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_driver
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cuda_driver
+      Out: ""
+
+- Rule: cublas_rule
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublas
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      In: CUDA::cublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+
+- Rule: cublas_static_rule
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublas_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cublas_static
+      Out: |
+        \${MKL_LIB}
+
+- Rule: cublasLt_rule
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublasLt
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cublasLt
+      Out: |
+        \${DNN_LIB}
+
+- Rule: cublasLt_static_rule
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublasLt_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cublasLt_static
+      Out: |
+        \${DNN_LIB}
+
+- Rule: rule_set_property_cuda_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property_cuda_standard
+  In: set_property(${target} PROPERTY CUDA_STANDARD ${version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+
+- Rule: rule_set_property_cxx_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property_cxx_standard
+  In: set_property(${target} PROPERTY CXX_STANDARD ${version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+
+- Rule: rule_set_target_properties_cxx_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cxx_target_properties
+  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
+  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
+
+- Rule: rule_set_target_properties_cuda_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_target_properties_cuda_standard
+  In: set_target_properties(${targets} PROPERTIES ${properties})
+  Out: set_target_properties(${targets} PROPERTIES ${properties})
+  Subrules:
+    properties:
+      In: CUDA_STANDARD ${version} ${other_properties}
+      Out: CXX_STANDARD 17 ${other_properties}
+      MatchMode: Full
+
+- Rule: rule_set_target_properties_cuda_standard-only
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_target_properties_cuda_standard-only
+  In: set_target_properties(${targets} PROPERTIES${properties}CUDA_STANDARD ${version})
+  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD 17)
+
+- Rule: rule_set_cmake_cuda_required
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cmake_cuda_required
+  In: set(CMAKE_CUDA_STANDARD_REQUIRED ${value})
+  Out: set(CMAKE_CXX_STANDARD_REQUIRED ${value})

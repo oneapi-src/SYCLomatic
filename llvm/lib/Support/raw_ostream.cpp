@@ -968,6 +968,14 @@ void raw_string_ostream::write_impl(const char *Ptr, size_t Size) {
 #endif // SYCLomatic_CUSTOMIZATION
 
 //===----------------------------------------------------------------------===//
+//  raw_string_ostream
+//===----------------------------------------------------------------------===//
+
+void raw_string_ostream::write_impl(const char *Ptr, size_t Size) {
+  OS.append(Ptr, Size);
+}
+
+//===----------------------------------------------------------------------===//
 //  raw_svector_ostream
 //===----------------------------------------------------------------------===//
 

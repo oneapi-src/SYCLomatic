@@ -111,3 +111,8 @@ macro(DPCT_HELPER_ADD_MKL_TO_TARGET target)
     message(FATAL_ERROR "Unsupported platform")
   endif()
 endmacro()
+
+set(CMAKE_SYCL_HOST_COMPILER "icpx")
+set(CMAKE_SYCL_COMPILER "icpx")
+set(CMAKE_SYCL_ARCHITECTURES "")
+set(CMAKE_SYCL_FLAGS "")

@@ -13,7 +13,7 @@
 // CURANDCREATEGENERATORHOST: CUDA API:
 // CURANDCREATEGENERATORHOST-NEXT:   curandCreateGeneratorHost(pg /*curandGenerator_t **/, r /*curandRngType_t*/);
 // CURANDCREATEGENERATORHOST-NEXT: Is migrated to:
-// CURANDCREATEGENERATORHOST-NEXT:   *(pg) = dpct::rng::create_host_rng(r);
+// CURANDCREATEGENERATORHOST-NEXT:   *(pg) = dpct::rng::create_host_rng(r, dpct::cpu_device().default_queue());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandDestroyGenerator | FileCheck %s -check-prefix=CURANDDESTROYGENERATOR
 // CURANDDESTROYGENERATOR: CUDA API:
