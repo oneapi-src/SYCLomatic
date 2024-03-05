@@ -1,4 +1,4 @@
-
+// RUN: echo "Empty command."
 #include "test.hpp"
 
 // A host function to launch the CUDA kernel
