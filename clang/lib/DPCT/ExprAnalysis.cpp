@@ -785,6 +785,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
               dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreParenImpCasts());
           if (!Callee)
             return false;
+          if (CE->getDirectCallee()->isTemplateInstantiation())
+            return true;
           if (!Callee->getQualifier())
             return false;
           if (Callee->getQualifier()->getKind() !=
