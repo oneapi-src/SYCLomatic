@@ -923,13 +923,23 @@ public:
 template <class StreamT>
 void printBase(StreamT &Stream, std::pair<const CallExpr *, const Expr *> P,
                bool IsArrow) {
-  printWithParens(Stream, P);
+  {
+    std::unique_ptr<ParensPrinter<StreamT>> Paren;
+    if (needExtraParensInMemberExpr(P.second))
+      Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
+    print(Stream, P);
+  }
   printMemberOp(Stream, IsArrow);
 }
 
 template <class StreamT>
 void printBase(StreamT &Stream, const Expr *E, bool IsArrow) {
-  printWithParens(Stream, E);
+  {
+    std::unique_ptr<ParensPrinter<StreamT>> Paren;
+    if (needExtraParensInMemberExpr(E))
+      Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
+    print(Stream, E);
+  }
   printMemberOp(Stream, IsArrow);
 }
 template <class StreamT>
@@ -1092,6 +1102,17 @@ public:
   }
 };
 
+template <class ET> class ParenExprPrinter {
+  ET E;
+
+public:
+  ParenExprPrinter(ET &&E) : E(std::forward<ET>(E)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    PairedPrinter PP(Stream, "(", ")");
+    dpct::print(Stream, E);
+  }
+};
+
 template <UnaryOperatorKind UO, class ArgValueT>
 class UnaryOperatorPrinter {
   ArgValueT ArgValue;
@@ -1150,14 +1171,18 @@ public:
 };
 
 template <class... ArgsT>
-class NewExprPrinter : CallExprPrinter<StringRef, ArgsT...> {
-  using Base = CallExprPrinter<StringRef, ArgsT...>;
+class NewDeleteExprPrinter : CallExprPrinter<std::string, ArgsT...> {
+  using Base = CallExprPrinter<std::string, ArgsT...>;
+  bool IsNew;
 
 public:
-  NewExprPrinter(StringRef TypeName, ArgsT &&...Args)
-      : Base(TypeName, std::forward<ArgsT>(Args)...) {}
+  NewDeleteExprPrinter(std::string TypeName, bool IsNew, ArgsT &&...Args)
+      : Base(TypeName, std::forward<ArgsT>(Args)...), IsNew(IsNew) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    Stream << "new ";
+    if (IsNew)
+      Stream << "new ";
+    else
+      Stream << "delete ";
     Base::print(Stream);
   }
 };
@@ -1407,6 +1432,16 @@ public:
                    const std::function<RValueT(const CallExpr *)> &RCreator)
       : PrinterRewriter<BinaryOperatorPrinter<BO, LValueT, RValueT>>(
             C, Source, LCreator(C), RCreator(C)) {}
+};
+
+template <class ValueT>
+class NewDeleteRewriter : public PrinterRewriter<NewDeleteExprPrinter<ValueT>> {
+public:
+  NewDeleteRewriter(const CallExpr *C, StringRef Source, std::string TypeName,
+                    bool IsNew,
+                    const std::function<ValueT(const CallExpr *)> &Creator)
+      : PrinterRewriter<NewDeleteExprPrinter<ValueT>>(C, Source, TypeName,
+                                                      IsNew, Creator(C)) {}
 };
 
 template <UnaryOperatorKind UO, class ArgValueT>

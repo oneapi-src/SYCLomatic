@@ -68,10 +68,10 @@ cudaEvent_t &&var4 = std::move(var1);
 }
 
 {
-// CHECK: dpct::queue_ptr var1;
-// CHECK-NEXT: dpct::queue_ptr *var2;
-// CHECK-NEXT: dpct::queue_ptr &var3 = var1;
-// CHECK-NEXT: dpct::queue_ptr &&var4 = std::move(var1);
+// CHECK: dpct::blas::descriptor_ptr var1;
+// CHECK-NEXT: dpct::blas::descriptor_ptr *var2;
+// CHECK-NEXT: dpct::blas::descriptor_ptr &var3 = var1;
+// CHECK-NEXT: dpct::blas::descriptor_ptr &&var4 = std::move(var1);
 cublasHandle_t var1;
 cublasHandle_t *var2;
 cublasHandle_t &var3 = var1;
@@ -276,8 +276,8 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new dpct::queue_ptr();
-// CHECK-NEXT:  new dpct::queue_ptr *();
+// CHECK:  new dpct::blas::descriptor_ptr();
+// CHECK-NEXT:  new dpct::blas::descriptor_ptr *();
   new cublasHandle_t();
   new cublasHandle_t *();
 }
@@ -422,9 +422,9 @@ cudaEvent_t foo12();
 cudaEvent_t *foo13();
 cudaEvent_t &foo14();
 
-// CHECK: dpct::queue_ptr foo15();
-// CHECK-NEXT: dpct::queue_ptr *foo16();
-// CHECK-NEXT: dpct::queue_ptr &foo17();
+// CHECK: dpct::blas::descriptor_ptr foo15();
+// CHECK-NEXT: dpct::blas::descriptor_ptr *foo16();
+// CHECK-NEXT: dpct::blas::descriptor_ptr &foo17();
 cublasHandle_t foo15();
 cublasHandle_t *foo16();
 cublasHandle_t &foo17();
@@ -572,10 +572,10 @@ template <> struct S<cudaEvent_t *> {};
 template <> struct S<cudaEvent_t &> {};
 template <> struct S<cudaEvent_t &&> {};
 
-// CHECK: template <> struct S<dpct::queue_ptr> {};
-// CHECK-NEXT: template <> struct S<dpct::queue_ptr *> {};
-// CHECK-NEXT: template <> struct S<dpct::queue_ptr &> {};
-// CHECK-NEXT: template <> struct S<dpct::queue_ptr &&> {};
+// CHECK: template <> struct S<dpct::blas::descriptor_ptr> {};
+// CHECK-NEXT: template <> struct S<dpct::blas::descriptor_ptr *> {};
+// CHECK-NEXT: template <> struct S<dpct::blas::descriptor_ptr &> {};
+// CHECK-NEXT: template <> struct S<dpct::blas::descriptor_ptr &&> {};
 template <> struct S<cublasHandle_t> {};
 template <> struct S<cublasHandle_t *> {};
 template <> struct S<cublasHandle_t &> {};
@@ -749,10 +749,10 @@ template_foo<cudaEvent_t *>();
 template_foo<cudaEvent_t &>();
 template_foo<cudaEvent_t &&>();
 
-// CHECK: template_foo<dpct::queue_ptr>();
-// CHECK-NEXT: template_foo<dpct::queue_ptr *>();
-// CHECK-NEXT: template_foo<dpct::queue_ptr &>();
-// CHECK-NEXT: template_foo<dpct::queue_ptr &&>();
+// CHECK: template_foo<dpct::blas::descriptor_ptr>();
+// CHECK-NEXT: template_foo<dpct::blas::descriptor_ptr *>();
+// CHECK-NEXT: template_foo<dpct::blas::descriptor_ptr &>();
+// CHECK-NEXT: template_foo<dpct::blas::descriptor_ptr &&>();
 template_foo<cublasHandle_t>();
 template_foo<cublasHandle_t *>();
 template_foo<cublasHandle_t &>();
@@ -942,10 +942,10 @@ using UT17 = cudaEvent_t *;
 using UT18 = cudaEvent_t &;
 using UT19 = cudaEvent_t &&;
 
-// CHECK: using UT20 = dpct::queue_ptr;
-// CHECK-NEXT: using UT21 = dpct::queue_ptr *;
-// CHECK-NEXT: using UT22 = dpct::queue_ptr &;
-// CHECK-NEXT: using UT23 = dpct::queue_ptr &&;
+// CHECK: using UT20 = dpct::blas::descriptor_ptr;
+// CHECK-NEXT: using UT21 = dpct::blas::descriptor_ptr *;
+// CHECK-NEXT: using UT22 = dpct::blas::descriptor_ptr &;
+// CHECK-NEXT: using UT23 = dpct::blas::descriptor_ptr &&;
 using UT20 = cublasHandle_t;
 using UT21 = cublasHandle_t *;
 using UT22 = cublasHandle_t &;
@@ -1134,10 +1134,10 @@ typedef cudaEvent_t* T17;
 typedef cudaEvent_t& T18;
 typedef cudaEvent_t&& T19;
 
-// CHECK: typedef dpct::queue_ptr T20;
-// CHECK-NEXT: typedef dpct::queue_ptr* T21;
-// CHECK-NEXT: typedef dpct::queue_ptr& T22;
-// CHECK-NEXT: typedef dpct::queue_ptr&& T23;
+// CHECK: typedef dpct::blas::descriptor_ptr T20;
+// CHECK-NEXT: typedef dpct::blas::descriptor_ptr* T21;
+// CHECK-NEXT: typedef dpct::blas::descriptor_ptr& T22;
+// CHECK-NEXT: typedef dpct::blas::descriptor_ptr&& T23;
 typedef cublasHandle_t T20;
 typedef cublasHandle_t* T21;
 typedef cublasHandle_t& T22;
@@ -1746,10 +1746,10 @@ template <> void foo2(cudaEvent_t){}
 template <> void foo3(cudaEvent_t){}
 template <> void foo4(cudaEvent_t){}
 
-// CHECK: template <> void foo1(dpct::queue_ptr){}
-// CHECK-NEXT: template <> void foo2(dpct::queue_ptr){}
-// CHECK-NEXT: template <> void foo3(dpct::queue_ptr){}
-// CHECK-NEXT: template <> void foo4(dpct::queue_ptr){}
+// CHECK: template <> void foo1(dpct::blas::descriptor_ptr){}
+// CHECK-NEXT: template <> void foo2(dpct::blas::descriptor_ptr){}
+// CHECK-NEXT: template <> void foo3(dpct::blas::descriptor_ptr){}
+// CHECK-NEXT: template <> void foo4(dpct::blas::descriptor_ptr){}
 template <> void foo1(cublasHandle_t){}
 template <> void foo2(cublasHandle_t){}
 template <> void foo3(cublasHandle_t){}

@@ -425,6 +425,7 @@ std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
 
 bool needExtraParens(const clang::Expr *);
+bool needExtraParensInMemberExpr(const clang::Expr *);
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
                                        const clang::SourceLocation End);

@@ -259,9 +259,11 @@ create_bindless_image(image_data data, sampling_info info,
     detail::get_img_mem_map(img) = mem;
     auto ptr = data.get_data_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
-    ptr = get_buffer(ptr).get_host_access().get_pointer();
-#endif
+    q.ext_oneapi_copy(get_buffer(ptr).get_host_access().get_pointer(),
+                      mem->get_handle(), mem->get_desc());
+#else
     q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
+#endif
     q.wait_and_throw();
     detail::get_img_info_map(img) = {data, info};
     return img;
@@ -273,8 +275,9 @@ create_bindless_image(image_data data, sampling_info info,
     auto img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(img) = mem;
-    auto ptr = get_buffer(data.get_data_ptr()).get_host_access().get_pointer();
-    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
+    q.ext_oneapi_copy(
+        get_buffer(data.get_data_ptr()).get_host_access().get_pointer(),
+        mem->get_handle(), mem->get_desc());
     q.wait_and_throw();
 #else
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
@@ -365,9 +368,11 @@ public:
     detail::get_img_mem_map(_img) = mem;
     auto ptr = data;
 #ifdef DPCT_USM_LEVEL_NONE
-    ptr = get_buffer(data).get_host_access().get_pointer();
-#endif
+    q.ext_oneapi_copy(get_buffer(data).get_host_access().get_pointer(),
+                      mem->get_handle(), mem->get_desc());
+#else
     q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
+#endif
     q.wait_and_throw();
   }
 
@@ -397,8 +402,8 @@ public:
     _img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(_img) = mem;
-    auto ptr = get_buffer(data).get_host_access().get_pointer();
-    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
+    q.ext_oneapi_copy(get_buffer(data).get_host_access().get_pointer(),
+                      mem->get_handle(), mem->get_desc());
     q.wait_and_throw();
 #else
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
