@@ -31,3 +31,29 @@
 .. |dpcpp_compiler| replace:: Intel® oneAPI DPC++/C++ Compiler
 .. _dpcpp_compiler: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html
 
+.. |oneapi_dpcpp_compiler| replace:: oneAPI DPC++ Compiler
+.. _oneapi_dpcpp_compiler: https://github.com/intel/llvm
+
+.. |compiler_dev_guide| replace:: Intel® oneAPI DPC++/C++ Compiler Developer Guide and Reference
+.. _compiler_dev_guide: https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/current/overview.html
+
+.. |vtune| replace:: Intel® VTune™ Profiler
+.. _vtune: https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler.html
+
+.. |advisor| replace:: Intel® Advisor
+.. _advisor: https://www.intel.com/content/www/us/en/developer/tools/oneapi/advisor.html
+
+.. |base_kit_long| replace:: Intel® oneAPI Base Toolkit (Base Kit)
+.. _base_kit_long: https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html
+
+.. |base_kit| replace:: Base Kit
+
+.. |convo_sep_sample| replace:: convolutionSeparable Sample
+.. _convo_sep_sample: https://github.com/oneapi-src/oneAPI-samples/tree/master/DirectProgramming/C%2B%2BSYCL/guided_convolutionSeparable_SYCLmigration
+
+.. |conc_kern_sample| replace:: Concurrent Kernels Sample
+.. _conc_kern_sample: https://github.com/oneapi-src/oneAPI-samples/tree/master/DirectProgramming/C%2B%2BSYCL/guided_concurrentKernels_SYCLMigration
+
+.. |sycl_forum| replace:: Migrating to SYCL forum
+.. _sycl_forum: https://community.intel.com/t5/Migrating-to-SYCL/bd-p/migrating-sycl
+
