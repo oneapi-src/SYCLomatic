@@ -5447,10 +5447,10 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       }
     }
   } else {
+    Kernel->buildCalleeInfo(CE->getArg(0));
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                              Diagnostics::UNDEDUCED_KERNEL_FUNCTION_POINTER,
-                             true, false, ExprAnalysis::ref(CE->getArg(0)));
-    Kernel->buildCalleeInfo(CE->getArg(0));
+                             true, false, Kernel->getName());
   }
   return Kernel;
 }
