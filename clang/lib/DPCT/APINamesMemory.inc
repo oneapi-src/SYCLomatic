@@ -171,6 +171,32 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                  CALL(MapNames::getClNamespace() + "malloc_shared",
                       getSizeForMalloc(0, 1), QUEUESTR))))))
 
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cudaFreeMipmappedArray", ARG(0))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaFreeMipmappedArray",
+                                      MipmapNeedBindlessImage))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGetMipmappedArrayLevel", DEREF(makeCallArgCreatorWithCall(0)),
+        MEMBER_CALL(ARG(1), true, "get_mip_level", ARG(2)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaGetMipmappedArrayLevel",
+                                      MipmapNeedBindlessImage))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaMallocMipmappedArray", DEREF(makeCallArgCreatorWithCall(0)),
+        NEW(MapNames::getDpctNamespace() + "experimental::image_mem_wrapper",
+            DEREF(1), ARG(2),
+            LITERAL(MapNames::getClNamespace() +
+                    "ext::oneapi::experimental::image_type::mipmap"),
+            ARG(3)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaMallocMipmappedArray",
+                                      MipmapNeedBindlessImage))
+
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CheckCanUseTemplateMalloc(0, 1),
     ASSIGN_FACTORY_ENTRY("cuMemAllocManaged", DEREF(makeDerefArgCreatorWithCall(0)),
