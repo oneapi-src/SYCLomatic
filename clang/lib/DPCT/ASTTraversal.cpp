@@ -6247,7 +6247,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
         "cudaStreamSetAttribute", "cudaStreamGetAttribute",
-        "cudaFuncSetAttribute");
+        "cudaFuncSetAttribute", "__trap");
   };
 
   MF.addMatcher(
@@ -6671,6 +6671,13 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaIpcCloseMemHandle") {
     report(CE->getBeginLoc(), Diagnostics::IPC_NOT_SUPPORTED, false,
            MapNames::ITFName.at(FuncName));
+  } else if (FuncName == "__trap") {
+    if (DpctGlobalInfo::useAssert()) {
+      emplaceTransformation(new ReplaceStmt(CE, "assert(0)"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::EXPLICIT_EXTENSION_DISABLE, false,
+             FuncName, "assert");
+    }
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
