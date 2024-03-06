@@ -11,7 +11,6 @@ mapping CUDA* concepts and APIs to SYCL*.
    reference/command-line-options-reference
    reference/diagnostics-reference
    reference/dpct-namespace-reference
-   reference/api-mapping-status
    reference/compare-prog-models
    reference/term-mapping-quick-ref
 

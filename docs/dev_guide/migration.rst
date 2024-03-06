@@ -3,47 +3,44 @@
 Migration
 =========
 
+This section contains information about migration workflow, planning a migration,
+and migration tool features.
+
+Migration Workflow
+------------------
+
+The migration workflow guidelines describe the CUDA* to SYCL* code migration workflow, with
+detailed information about how to prepare your code for migration, how to use
+tool features to configure your migration, and how to build and optimize your
+migrated code.
+
+Review :ref:`mig_workflow`.
+
+Features to Support Migration
+-----------------------------
+
+|tool_name| provides multiple features to aid migration preparation and customization.
+
+* :ref:`gen_comp_db`
+* :ref:`inc_mig`
+* :ref:`migration_rules`
+* :ref:`debug_codepin`
+
+
+Query CUDA to SYCL API Mapping
+------------------------------
+
+You can query which SYCL\* API is functionally compatible with a specified CUDA\* API.
+
+Learn how to :ref:`query_map`.
+
 .. toctree::
    :hidden:
 
+   migration/migration-workflow
    migration/generate-compilation-db
    migration/incremental-migration
    migration/migration-rules
+   migration/debug-with-codepin
    migration/API-Mapping-query-guide
-
-
-|tool_name| ports CUDA\* language kernels and library API calls to
-SYCL\* for the |dpcpp_compiler|_. Typically, 90%-95% of CUDA code automatically
-migrates to SYCL. The tool inserts inline comments during migration to
-help you complete the remaining code migration.
-
-**CUDA‡ to SYCL‡ Code Migration & Development Workflow**
-
-.. figure:: /_images/cuda-sycl-migration-workflow.png
-
-The |tool_name| migration workflow follows four high-level steps:
-
-#. **Prepare your CUDA source for migration**
-
-   Start with a running CUDA project that can be built and run. |tool_name|
-   looks for CUDA headers, so make sure the headers are accessible to the tool.
-
-#. **Migrate your project**
-
-   Run |tool_name| with the original source as input to the tool to generate
-   annotated SYCL code.
-
-   You can use file-to-file migration for simple projects or a
-   :ref:`compilation database <gen_comp_db>` for more complex projects.
-
-#. **Review the converted code**
-
-   Output files contain annotations to mark code that could not be automatically
-   migrated. Review the annotations and manually convert any unmigrated code.
-   Also look for potential code improvements.
-
-#. **Build your project**
-
-   To make sure your newly migrated project compiles successfully, build the
-   project with the |dpcpp_compiler|_.
 

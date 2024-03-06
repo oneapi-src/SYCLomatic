@@ -1,0 +1,32 @@
+# In the following cases no change is expected but due to limitations of
+# pattern-rewriter the C++ standard is updated to C++17. This will be fixed in
+# future.
+target_compile_features(foo PUBLIC cxx_std_17)
+
+target_compile_features(foo PUBLIC cxx_std_17)
+
+target_compile_features(foo PUBLIC cxx_std_17)
+
+# In the following cases no change is expected but due to limitations of
+# pattern-rewriter the C++ standard is updated to C++17. This will be fixed in
+# future.
+set_property(TARGET cuda_project PROPERTY CXX_STANDARD 17)
+
+set_property(TARGET cuda_project PROPERTY CXX_STANDARD 17)
+
+set_property(TARGET cuda_project PROPERTY CXX_STANDARD 17)
+
+# In the following cases no change is expected but due to limitations of
+# pattern-rewriter the C++ standard is updated to C++17. This will be fixed in
+# future.
+set_target_properties(${TARGETS} PROPERTIES CXX_STANDARD 17)
+
+set_target_properties(${TARGETS} PROPERTIES CXX_STANDARD 17 INCLUDE_DIRECTORIES ${INC_DIR})
+
+set_target_properties(${TARGETS} PROPERTIES INCLUDE_DIRECTORIES ${INC_DIR} CXX_STANDARD 17)
+
+set_target_properties(${TARGETS} PROPERTIES INCLUDE_DIRECTORIES ${INC_DIR} CXX_STANDARD 17 COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})
+
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_CXX_STANDARD_REQUIRED OFF)

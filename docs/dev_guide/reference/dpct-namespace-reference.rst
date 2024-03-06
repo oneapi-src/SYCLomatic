@@ -1,3 +1,5 @@
+.. _dpct_name_ref:
+
 DPCT Namespace Reference
 ========================
 

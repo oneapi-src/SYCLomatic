@@ -358,3 +358,78 @@ void texlist(TexList list, TexList list1) {
   texlist_kernel<<<1, 1>>>(list, list1);
 }
 
+// CHECK: /*
+// CHECK-NEXT: DPCT1050:{{[0-9]+}}: The template argument of the image_accessor_ext could not be deduced. You need to update this code.
+// CHECK-NEXT: */
+__global__ void mipmap_kernel(cudaTextureObject_t tex) {
+  int i;
+  float j, k, l, m;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex1DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex1DLod<short2>(tex, j, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex1DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex1DLod(&i, tex, j, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex2DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex2DLod<short2>(tex, j, k, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex2DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex2DLod(&i, tex, j, k, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex3DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex3DLod<short2>(tex, j, k, m, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex3DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex3DLod(&i, tex, j, k, m, l);
+}
+
+void mipmap() {
+  unsigned int flag, l;
+  cudaExtent e;
+  cudaChannelFormatDesc desc;
+  cudaArray_t pArr;
+  cudaMipmappedArray_t pMipMapArr;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFreeMipmappedArray was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cudaFreeMipmappedArray(pMipMapArr);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaMallocMipmappedArray was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cudaMallocMipmappedArray(&pMipMapArr, &desc, e, l, flag);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaGetMipmappedArrayLevel was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cudaGetMipmappedArrayLevel(&pArr, pMipMapArr, 0);
+
+  cudaResourceDesc resDesc;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of union (unnamed union at {{.*}})::mipmap is not supported.
+  // CHECK-NEXT: */
+  resDesc.res.mipmap.mipmap = pMipMapArr;
+
+  cudaTextureDesc texDesc;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::maxAnisotropy is not supported.
+  // CHECK-NEXT: */
+  texDesc.maxAnisotropy = 1;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::mipmapFilterMode is not supported.
+  // CHECK-NEXT: */
+  texDesc.mipmapFilterMode = cudaFilterModePoint;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::minMipmapLevelClamp is not supported.
+  // CHECK-NEXT: */
+  texDesc.minMipmapLevelClamp = 1;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::maxMipmapLevelClamp is not supported.
+  // CHECK-NEXT: */
+  texDesc.maxMipmapLevelClamp = 1;
+}

@@ -1875,6 +1875,34 @@ protected:
     insertHeader(HeaderType::HT_DPCT_Math);
     return SYCLGenSuccess();
   }
+
+  bool handle_bar(const InlineAsmInstruction *Inst) override {
+    // Only support bar.warp.sync membermask
+    if (Inst->getNumInputOperands() != 1 || !Inst->hasAttr(InstAttr::warp) ||
+        !Inst->hasAttr(InstAttr::sync) ||
+        !DpctGlobalInfo::useExpNonUniformGroups())
+      return SYCLGenError();
+
+    std::string MemberMask;
+    if (tryEmitStmt(MemberMask, Inst->getInputOperand(0)))
+      return SYCLGenError();
+
+    OS() << MapNames::getClNamespace() << "group_barrier("
+         << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::get_ballot_group("
+         << DpctGlobalInfo::getItem(GAS) << ".get_sub_group(), " << MemberMask
+         << " & (1 << " << DpctGlobalInfo::getItem(GAS)
+         << ".get_local_linear_id())))";
+    const auto *KernelDecl = getImmediateOuterFuncDecl(GAS);
+    if (KernelDecl) {
+      auto FuncInfo = DeviceFunctionDecl::LinkRedecls(KernelDecl);
+      if (FuncInfo)
+        FuncInfo->addSubGroupSizeRequest(32, GAS->getBeginLoc(),
+                                         DpctGlobalInfo::getSubGroup(GAS));
+    }
+    endstmt();
+    return SYCLGenSuccess();
+  }
 };
 } // namespace
 

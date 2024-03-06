@@ -1223,6 +1223,9 @@ public:
   static bool useExtBindlessImages() {
     return getUsingExperimental<ExperimentalFeatures::Exp_BindlessImages>();
   }
+  static bool useExpNonUniformGroups() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_NonUniformGroups>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
