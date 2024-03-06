@@ -1,21 +1,16 @@
 #include <cuda.h>
 
-template<bool haveFreshList>
-__global__ void nbnxn_kernel_prune_cuda(int numParts)
+template <bool isTrue>
+__global__ void foo(int parm)
 #ifdef TEST
-	;
-// CHECK: extern template void nbnxn_kernel_prune_cuda<true>(int,
-// CHECK:                                                             const sycl::nd_item<3> &item_ct1);
-// CHECK: extern template void nbnxn_kernel_prune_cuda<false>(int,
-// CHECK:                                                             const sycl::nd_item<3> &item_ct1);
-extern template __global__ void nbnxn_kernel_prune_cuda<true>(int);
-extern template __global__ void nbnxn_kernel_prune_cuda<false>(int);
-#else 
-{    if (haveFreshList) {
-bool a=	    blockIdx.x > numParts;
-        // Code specific to having a fresh list
-    } else {
-        // Code for when there isn't a fresh list
-    }
+    ;
+// CHECK: extern template void foo<true>(int, const sycl::nd_item<3> &item_ct1);
+// CHECK: extern template void foo<false>(int, const sycl::nd_item<3> &item_ct1);
+extern template __global__ void foo<true>(int);
+extern template __global__ void foo<false>(int);
+#else
+{
+  if (isTrue)
+    blockIdx.x > parm;
 }
 #endif
