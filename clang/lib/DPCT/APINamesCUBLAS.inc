@@ -589,13 +589,10 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 
 WARNING_FACTORY_ENTRY(
     "cublasGetStatusString",
-    INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cublasGetStatusString",
-                                             CALL("cublasGetStatusString",
-                                                  ARG_WC(0))),
-                          "\"cublasGetStatusString is not supported\"/*", "*/"),
+    TOSTRING_FACTORY_ENTRY("cublasGetStatusString",
+                           LITERAL("\"<Placeholder string>\"")),
     Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
-    ARG("The original code was commented out and a warning string was "
-        "inserted"))
+    ARG("The call was replaced by a placeholder string"))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
