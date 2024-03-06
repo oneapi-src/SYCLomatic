@@ -133,7 +133,7 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       {"CUstream_st",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue")},
-      {"char1", std::make_shared<TypeNameRule>("char")},
+      {"char1", std::make_shared<TypeNameRule>("int8_t")},
       {"char2", std::make_shared<TypeNameRule>(getClNamespace() + "char2")},
       {"char3", std::make_shared<TypeNameRule>(getClNamespace() + "char3")},
       {"char4", std::make_shared<TypeNameRule>(getClNamespace() + "char4")},
@@ -145,11 +145,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"float2", std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
       {"float3", std::make_shared<TypeNameRule>(getClNamespace() + "float3")},
       {"float4", std::make_shared<TypeNameRule>(getClNamespace() + "float4")},
-      {"int1", std::make_shared<TypeNameRule>("int")},
+      {"int1", std::make_shared<TypeNameRule>("int32_t")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"int3", std::make_shared<TypeNameRule>(getClNamespace() + "int3")},
       {"int4", std::make_shared<TypeNameRule>(getClNamespace() + "int4")},
-      {"long1", std::make_shared<TypeNameRule>("long")},
+      {"long1", std::make_shared<TypeNameRule>("int64_t")},
       {"long2", std::make_shared<TypeNameRule>(getClNamespace() + "long2")},
       {"long3", std::make_shared<TypeNameRule>(getClNamespace() + "long3")},
       {"long4", std::make_shared<TypeNameRule>(getClNamespace() + "long4")},
@@ -157,7 +157,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"longlong2", std::make_shared<TypeNameRule>(getClNamespace() + "long2")},
       {"longlong3", std::make_shared<TypeNameRule>(getClNamespace() + "long3")},
       {"longlong4", std::make_shared<TypeNameRule>(getClNamespace() + "long4")},
-      {"short1", std::make_shared<TypeNameRule>("short")},
+      {"short1", std::make_shared<TypeNameRule>("int16_t")},
       {"short2", std::make_shared<TypeNameRule>(getClNamespace() + "short2")},
       {"short3", std::make_shared<TypeNameRule>(getClNamespace() + "short3")},
       {"short4", std::make_shared<TypeNameRule>(getClNamespace() + "short4")},
@@ -312,6 +312,16 @@ void MapNames::setExplicitNamespaceMap() {
                ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
                : getDpctNamespace() + "image_matrix_p",
            HelperFeatureEnum::device_ext)},
+      {"cudaMipmappedArray",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper"
+               : "cudaMipmappedArray")},
+      {"cudaMipmappedArray_t",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
+               : "cudaMipmappedArray_t")},
       {"cudaTextureDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::device_ext)},
@@ -962,6 +972,10 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       // enum Resource Type
       {"cudaResourceTypeArray",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                          "image_data_type::matrix",
+                                      HelperFeatureEnum::device_ext)},
+      {"cudaResourceTypeMipmappedArray",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                           "image_data_type::matrix",
                                       HelperFeatureEnum::device_ext)},
@@ -4327,6 +4341,10 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
     {"Width", "x"},
     {"Height", "y"},
     {"flags", "coordinate_normalization_mode"},
+    {"maxAnisotropy", "max_anisotropy"},
+    {"mipmapFilterMode", "mipmap_filtering"},
+    {"minMipmapLevelClamp", "min_mipmap_level_clamp"},
+    {"maxMipmapLevelClamp", "max_mipmap_level_clamp"},
 };
 
 // DeviceProp names mapping.
@@ -4441,6 +4459,7 @@ std::map<std::string, bool> &MigrationStatistics::GetTypeTable(void) {
 MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},
                                                {"desc", "channel"},
                                                {"array", "data_ptr"},
+                                               {"mipmap", "data_ptr"},
                                                {"width", "x"},
                                                {"height", "y"},
                                                {"pitchInBytes", "pitch"},
