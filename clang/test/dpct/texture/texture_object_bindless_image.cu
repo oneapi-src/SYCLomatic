@@ -69,12 +69,15 @@ void driver() {
 }
 
 int main() {
-  void *input;
+  const void *input;
+  void *output;
   size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_dest;
   unsigned int flag, l;
   cudaExtent e;
-  // CHECK: dpct::experimental::image_mem_wrapper_ptr pArr, pArr_src;
-  cudaArray_t pArr, pArr_src;
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr pArr;
+  cudaArray_t pArr;
+  // CHECK: const dpct::experimental::image_mem_wrapper *pArr_src;
+  const cudaArray *pArr_src;
   // CHECK: dpct::experimental::image_mem_wrapper_ptr pMipMapArr;
   cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
@@ -83,6 +86,8 @@ int main() {
   cudaMalloc3DArray(&pArr, &desc, e);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, w, h);
   cudaMallocArray(&pArr, &desc, w, h);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, 1, 0.1);
+  cudaMallocArray(&pArr, &desc, 1, 0.1);
   // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::mipmap, l);
   cudaMallocMipmappedArray(&pMipMapArr, &desc, e, l, flag);
   // CHECK: pArr = pMipMapArr->get_mip_level(0);
@@ -95,11 +100,11 @@ int main() {
   cudaMemcpy2DArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
                            w_offest_src, h_offest_src, w, h,
                            cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w, w, h, q_ct1);
-  cudaMemcpy2DFromArray(input, w, pArr, w_offest_src, h_offest_src, w, h,
+  // CHECK: dpct::experimental::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, output, w, w, h, q_ct1);
+  cudaMemcpy2DFromArray(output, w, pArr_src, w_offest_src, h_offest_src, w, h,
                         cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w, w, h, q_ct1);
-  cudaMemcpy2DFromArrayAsync(input, w, pArr, w_offest_src, h_offest_src, w, h,
+  // CHECK: dpct::experimental::async_dpct_memcpy(pArr_src, w_offest_src, h_offest_src, output, w, w, h, q_ct1);
+  cudaMemcpy2DFromArrayAsync(output, w, pArr_src, w_offest_src, h_offest_src, w, h,
                              cudaMemcpyHostToDevice);
   // CHECK: dpct::experimental::dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w, w, h, q_ct1);
   cudaMemcpy2DToArray(pArr, w_offest_dest, h_offest_dest, input, w, w, h,
@@ -111,11 +116,11 @@ int main() {
   cudaMemcpyArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
                          w_offest_src, h_offest_src, w * h,
                          cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w * h, q_ct1);
-  cudaMemcpyFromArray(input, pArr, w_offest_src, h_offest_src, w * h,
+  // CHECK: dpct::experimental::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, output, w * h, q_ct1);
+  cudaMemcpyFromArray(output, pArr_src, w_offest_src, h_offest_src, w * h,
                       cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w * h, q_ct1);
-  cudaMemcpyFromArrayAsync(input, pArr, w_offest_src, h_offest_src, w * h,
+  // CHECK: dpct::experimental::async_dpct_memcpy(pArr_src, w_offest_src, h_offest_src, output, w * h, q_ct1);
+  cudaMemcpyFromArrayAsync(output, pArr_src, w_offest_src, h_offest_src, w * h,
                            cudaMemcpyHostToDevice);
   // CHECK: dpct::experimental::dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
   cudaMemcpyToArray(pArr, w_offest_dest, h_offest_dest, input, w * h,
@@ -215,16 +220,16 @@ int main() {
   resDesc2.res.mipmap.mipmap = pMipMapArr;
   // CHECK: resDesc0.set_data_type(dpct::image_data_type::linear);
   resDesc0.resType = cudaResourceTypeLinear;
-  // CHECK: resDesc3.set_data_ptr(input);
-  resDesc3.res.linear.devPtr = input;
+  // CHECK: resDesc3.set_data_ptr(output);
+  resDesc3.res.linear.devPtr = output;
   // CHECK: resDesc3.set_channel(desc);
   resDesc3.res.linear.desc = desc;
   // CHECK: resDesc3.set_x(sizeInBytes);
   resDesc3.res.linear.sizeInBytes = sizeInBytes;
   // CHECK: resDesc0.set_data_type(dpct::image_data_type::pitch);
   resDesc0.resType = cudaResourceTypePitch2D;
-  // CHECK: resDesc4.set_data_ptr(input);
-  resDesc4.res.pitch2D.devPtr = input;
+  // CHECK: resDesc4.set_data_ptr(output);
+  resDesc4.res.pitch2D.devPtr = output;
   // CHECK: resDesc4.set_channel(desc);
   resDesc4.res.pitch2D.desc = desc;
   // CHECK: resDesc4.set_x(w);
@@ -251,18 +256,18 @@ int main() {
   {
     // CHECK: dpct::image_data resDesc;
     cudaResourceDesc resDesc;
-    // CHECK: resDesc.set_data(input, sizeInBytes, desc);
+    // CHECK: resDesc.set_data(output, sizeInBytes, desc);
     resDesc.resType = cudaResourceTypeLinear;
-    resDesc.res.linear.devPtr = input;
+    resDesc.res.linear.devPtr = output;
     resDesc.res.linear.desc = desc;
     resDesc.res.linear.sizeInBytes = sizeInBytes;
   }
   {
     // CHECK: dpct::image_data resDesc;
     cudaResourceDesc resDesc;
-    // CHECK: resDesc.set_data(input, w, h, sizeInBytes, desc);
+    // CHECK: resDesc.set_data(output, w, h, sizeInBytes, desc);
     resDesc.resType = cudaResourceTypePitch2D;
-    resDesc.res.pitch2D.devPtr = input;
+    resDesc.res.pitch2D.devPtr = output;
     resDesc.res.pitch2D.desc = desc;
     resDesc.res.pitch2D.width = w;
     resDesc.res.pitch2D.height = h;
