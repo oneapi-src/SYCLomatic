@@ -1,3 +1,5 @@
+.. _migration_rules:
+
 Migration Rules
 ===============
 
