@@ -38,9 +38,7 @@ public:
 
   ~mem_base_t() {
 #ifndef DPCT_USM_LEVEL_NONE
-    if constexpr (!std::is_same_v<target_t, source_t>) {
-      sycl::free(_target, _q);
-    } else if (_need_free) {
+    if (_need_free) {
       sycl::free(_target, _q);
     }
 #endif
@@ -57,10 +55,10 @@ protected:
   sycl::queue _q;
   source_t *_source = nullptr;
   size_t _ele_num;
-  data_t _target;
 #ifndef DPCT_USM_LEVEL_NONE
   bool _need_free = true;
 #endif
+  data_t _target;
 
 private:
   data_t construct_member_variable_target() {
@@ -79,6 +77,7 @@ private:
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only)
         return sycl::malloc_shared<target_t>(_ele_num, _q);
+      _need_free = false;
       return _source;
     } else {
       return sycl::malloc_shared<target_t>(_ele_num, _q);
@@ -130,19 +129,11 @@ class mem_t<target_t, target_t, io> : public mem_base_t<target_t, target_t> {
   using base_t::_source_attribute;
   using base_t::_target;
   using typename base_t::data_t;
-#ifndef DPCT_USM_LEVEL_NONE
-  using base_t::_need_free;
-#endif
 
 public:
   mem_t(sycl::queue q, target_t *source, size_t ele_num = 1)
       : base_t(q, source, ele_num) {
 #ifndef DPCT_USM_LEVEL_NONE
-    if (_source_attribute !=
-        dpct::detail::pointer_access_attribute::host_only) {
-      _need_free = false;
-      return;
-    }
     if constexpr (io != mem_inout::out) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
@@ -153,8 +144,6 @@ public:
   }
   ~mem_t() {
 #ifndef DPCT_USM_LEVEL_NONE
-    if (!_need_free)
-      return;
     if constexpr (io != mem_inout::in) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
