@@ -79,8 +79,8 @@ int main(){
   curandSetGeneratorOffset(rng, 100);
   s1 = curandSetGeneratorOffset(rng2, 200);
 
-  //CHECK:rng->set_custom(81920);
-  //CHECK-NEXT:s1 = DPCT_CHECK_ERROR(rng2->set_custom(81920));
+  //CHECK:rng->set_mode(dpct::rng::random_mode::best);
+  //CHECK-NEXT:s1 = DPCT_CHECK_ERROR(rng2->set_mode(dpct::rng::random_mode::best));
   curandSetGeneratorOrdering(rng, CURAND_ORDERING_PSEUDO_BEST);
   s1 = curandSetGeneratorOrdering(rng2, CURAND_ORDERING_PSEUDO_DEFAULT);
 

@@ -37,12 +37,12 @@ curandStatus_t foo(
   curandStatus_t a12,
   curandStatus_t a13) {}
 
-// CHECK:uint32_t goo(
-// CHECK-NEXT:uint32_t b1,
-// CHECK-NEXT:uint32_t b2,
+// CHECK:dpct::rng::random_mode goo(
+// CHECK-NEXT:dpct::rng::random_mode b1,
+// CHECK-NEXT:dpct::rng::random_mode b2,
 // CHECK-NEXT:// curandOrdering_t b3,
-// CHECK-NEXT:uint32_t b4,
-// CHECK-NEXT:uint32_t b5
+// CHECK-NEXT:dpct::rng::random_mode b4,
+// CHECK-NEXT:dpct::rng::random_mode b5
 // CHECK-NEXT:// , curandOrdering_t b6
 // CHECK-NEXT:) { return b1; }
 curandOrdering_t goo(
@@ -112,11 +112,11 @@ int main() {
     CURAND_STATUS_ARCH_MISMATCH,
     CURAND_STATUS_INTERNAL_ERROR);
 
-  // CHECK:uint32_t b1 = 81920;
-  // CHECK-NEXT:uint32_t b2 = 81920;
+  // CHECK:dpct::rng::random_mode b1 = dpct::rng::random_mode::best;
+  // CHECK-NEXT:dpct::rng::random_mode b2 = dpct::rng::random_mode::best;
   // CHECK-NEXT:// curandOrdering_t b3 = CURAND_ORDERING_PSEUDO_SEEDED;
-  // CHECK-NEXT:uint32_t b4 = 4096;
-  // CHECK-NEXT:uint32_t b5 = 0;
+  // CHECK-NEXT:dpct::rng::random_mode b4 = dpct::rng::random_mode::legacy;
+  // CHECK-NEXT:dpct::rng::random_mode b5 = dpct::rng::random_mode::optimal;
   // CHECK-NEXT:// curandOrdering_t b6 = CURAND_ORDERING_QUASI_DEFAULT;
   curandOrdering_t b1 = CURAND_ORDERING_PSEUDO_BEST;
   curandOrdering_t b2 = CURAND_ORDERING_PSEUDO_DEFAULT;
@@ -126,11 +126,11 @@ int main() {
   // curandOrdering_t b6 = CURAND_ORDERING_QUASI_DEFAULT;
 
   // CHECK:goo(
-  // CHECK-NEXT:  81920,
-  // CHECK-NEXT:  81920,
+  // CHECK-NEXT:  dpct::rng::random_mode::best,
+  // CHECK-NEXT:  dpct::rng::random_mode::best,
   // CHECK-NEXT:  // CURAND_ORDERING_PSEUDO_SEEDED,
-  // CHECK-NEXT:  4096,
-  // CHECK-NEXT:  0
+  // CHECK-NEXT:  dpct::rng::random_mode::legacy,
+  // CHECK-NEXT:  dpct::rng::random_mode::optimal
   // CHECK-NEXT:  // , CURAND_ORDERING_QUASI_DEFAULT
   // CHECK-NEXT:);
   goo(

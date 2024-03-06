@@ -354,7 +354,8 @@ void MapNames::setExplicitNamespaceMap() {
                             HelperFeatureEnum::device_ext)},
       {"curandStatus_t", std::make_shared<TypeNameRule>("int")},
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
-      {"curandOrdering_t", std::make_shared<TypeNameRule>("uint32_t")},
+      {"curandOrdering_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "rng::random_mode")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseMatDescr_t",
        std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
@@ -528,11 +529,15 @@ void MapNames::setExplicitNamespaceMap() {
 
   // Random Ordering Type mapping
   RandomOrderingTypeMap = {
-      {"CURAND_ORDERING_PSEUDO_DEFAULT", "81920"},
-      {"CURAND_ORDERING_PSEUDO_BEST", "81920"},
+      {"CURAND_ORDERING_PSEUDO_DEFAULT",
+       getDpctNamespace() + "rng::random_mode::best"},
+      {"CURAND_ORDERING_PSEUDO_BEST",
+       getDpctNamespace() + "rng::random_mode::best"},
       // CURAND_ORDERING_PSEUDO_SEEDED not support now.
-      {"CURAND_ORDERING_PSEUDO_LEGACY", "4096"},
-      {"CURAND_ORDERING_PSEUDO_DYNAMIC", "0"},
+      {"CURAND_ORDERING_PSEUDO_LEGACY",
+       getDpctNamespace() + "rng::random_mode::legacy"},
+      {"CURAND_ORDERING_PSEUDO_DYNAMIC",
+       getDpctNamespace() + "rng::random_mode::optimal"},
       // CURAND_ORDERING_QUASI_DEFAULT not support now.
   };
 

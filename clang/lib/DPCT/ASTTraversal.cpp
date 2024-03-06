@@ -4050,12 +4050,9 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         buildString(ExprAnalysis::ref(CE->getArg(0)), "->set_queue(",
                     ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
-  if (FuncName == "curandSetGeneratorOrdering") {
-    return emplaceTransformation(new ReplaceStmt(
-        CE, false,
-        buildString(ExprAnalysis::ref(CE->getArg(0)), "->set_custom(",
-                    ExprAnalysis::ref(CE->getArg(1)), ")")));
-  }
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,

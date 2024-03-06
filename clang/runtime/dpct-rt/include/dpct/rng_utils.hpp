@@ -205,6 +205,12 @@ private:
 } // namespace device
 #endif
 
+enum class random_mode {
+  best,
+  legacy,
+  optimal,
+};
+
 namespace host {
 namespace detail {
 class rng_generator_base {
@@ -221,9 +227,9 @@ public:
   /// \param queue The engine queue.
   virtual void set_queue(sycl::queue *queue) = 0;
 
-  /// Set the custom of host rng_generator.
-  /// \param custom The engine custom.
-  virtual void set_custom(const std::uint32_t custom) = 0;
+  /// Set the mode of host rng_generator.
+  /// \param mode The engine mode.
+  virtual void set_mode(const random_mode mode) = 0;
 
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
   /// \param output The pointer of the first random number.
@@ -310,7 +316,7 @@ protected:
   sycl::queue *_queue = nullptr;
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
-  std::uint32_t _custom{81920};
+  random_mode _mode{random_mode::best};
   std::vector<std::uint32_t> _direction_numbers;
   std::uint32_t _engine_idx{0};
 };
@@ -323,7 +329,7 @@ public:
   /// \param q The queue where the generator should be executed.
   rng_generator(sycl::queue &q = dpct::get_default_queue())
       : rng_generator_base(&q),
-        _engine(create_engine(&q, _seed, _dimensions, _custom)) {}
+        _engine(create_engine(&q, _seed, _dimensions, _mode)) {}
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
@@ -332,7 +338,7 @@ public:
       return;
     }
     _seed = seed;
-    _engine = create_engine(_queue, _seed, _dimensions, _custom);
+    _engine = create_engine(_queue, _seed, _dimensions, _mode);
   }
 
   /// Set the dimensions of host rng_generator.
@@ -342,7 +348,7 @@ public:
       return;
     }
     _dimensions = dimensions;
-    _engine = create_engine(_queue, _seed, _dimensions, _custom);
+    _engine = create_engine(_queue, _seed, _dimensions, _mode);
   }
 
   /// Set the queue of host rng_generator.
@@ -352,21 +358,25 @@ public:
       return;
     }
     _queue = queue;
-    _engine = create_engine(_queue, _seed, _dimensions, _custom);
+    _engine = create_engine(_queue, _seed, _dimensions, _mode);
   }
 
-  /// Set the custom of host rng_generator.
-  /// \param custom The engine custom.
-  void set_custom(const std::uint32_t custom) {
+  /// Set the mode of host rng_generator.
+  /// \param mode The engine mode.
+  void set_mode(const random_mode mode) {
 #ifndef __INTEL_MKL__
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
 #else
-    if (custom == _custom) {
+    if constexpr (!std::is_same_v<engine_t, oneapi::mkl::rng::mrg32k3a>) {
+      std::cerr << "Currently, only mrg32k3a support random_mode." << std::endl;
       return;
     }
-    _custom = custom;
-    _engine = create_engine(_queue, _seed, _dimensions, _custom);
+    if (mode == _mode) {
+      return;
+    }
+    _mode = mode;
+    _engine = create_engine(_queue, _seed, _dimensions, _mode);
 #endif
   }
 
@@ -519,13 +529,20 @@ private:
   static inline engine_t create_engine(sycl::queue *queue,
                                        const std::uint64_t seed,
                                        const std::uint32_t dimensions,
-                                       const std::uint32_t custom) {
+                                       const random_mode mode) {
 #ifdef __INTEL_MKL__
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mrg32k3a>) {
-      if (custom)
+      switch (mode) {
+      case random_mode::best:
         return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::custom{custom});
-      return engine_t(*queue, seed, oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
+                        oneapi::mkl::rng::mrg32k3a_mode::custom{81920});
+      case random_mode::legacy:
+        return engine_t(*queue, seed,
+                        oneapi::mkl::rng::mrg32k3a_mode::custom{4096});
+      case random_mode::optimal:
+        return engine_t(*queue, seed,
+                        oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
+      }
     }
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
