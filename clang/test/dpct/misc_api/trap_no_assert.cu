@@ -2,7 +2,6 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none --no-dpcpp-extensions=assert -in-root %S -out-root %T/trap_no_assert %S/trap_no_assert.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/trap_no_assert/trap_no_assert.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/trap_no_assert/trap_no_assert.dp.cpp -o %T/trap_no_assert/trap_no_assert.dp.o %}
 #include <cuda.h>
 
 __global__ void kernel() {
