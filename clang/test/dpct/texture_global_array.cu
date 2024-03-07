@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/texture_global_array %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
+// RUN: dpct --format-range=none -out-root %T/texture_global_array %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture_global_array/texture_global_array.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/texture_global_array/texture_global_array.dp.cpp -o %T/texture_global_array/texture_global_array.dp.o %}
 
