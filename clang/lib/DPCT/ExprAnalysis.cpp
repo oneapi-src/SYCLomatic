@@ -1683,6 +1683,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CallExpr)
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
@@ -1783,15 +1784,12 @@ void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
   IsRedeclareRequired = false;
 }
 
-
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
-  if (UO->getOpcode() == UO_Deref) {
+  if (UO->getOpcode() != UO_AddrOf) {
     IsRedeclareRequired = true;
     return;
   }
-  if (UO->getOpcode() == UO_AddrOf) {
-    IsAddrOf = true;
-  }
+  IsAddrOf = true;
   dispatch(UO->getSubExpr());
   /// If subexpr is variable defined on device, remove operator '&'.
   if (IsAddrOf && IsDefinedOnDevice) {
@@ -1800,6 +1798,10 @@ void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
   /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
   IsDefinedOnDevice = false;
   IsAddrOf = false;
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const BinaryOperator *) {
+  IsRedeclareRequired = true;
 }
 
 void KernelArgumentAnalysis::analyze(const Expr *Expression) {
