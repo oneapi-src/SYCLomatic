@@ -213,6 +213,9 @@ enum class random_mode {
 
 namespace host {
 namespace detail {
+static const std::string OneMKLNotSupport =
+    "The oneAPI Math Kernel Library (oneMKL) Interfaces Project does not "
+    "support this API.";
 class rng_generator_base {
 public:
   /// Set the seed of host rng_generator.
@@ -365,12 +368,10 @@ public:
   /// \param mode The engine mode.
   void set_mode(const random_mode mode) {
 #ifndef __INTEL_MKL__
-    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
-                             "Interfaces Project does not support this API.");
+    throw std::runtime_error(OneMKLNotSupport);
 #else
     if constexpr (!std::is_same_v<engine_t, oneapi::mkl::rng::mrg32k3a>) {
-      std::cerr << "Currently, only mrg32k3a support random_mode." << std::endl;
-      return;
+      throw std::runtime_error("Only mrg32k3a engine support this method.");
     }
     if (mode == _mode) {
       return;
@@ -385,8 +386,7 @@ public:
   void
   set_direction_numbers(const std::vector<std::uint32_t> &direction_numbers) {
 #ifndef __INTEL_MKL__
-    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
-                             "Interfaces Project does not support this API.");
+    throw std::runtime_error(OneMKLNotSupport);
 #else
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::sobol>) {
       if (direction_numbers == _direction_numbers) {
@@ -424,8 +424,7 @@ public:
   /// \param n The number of random numbers.
   inline void generate_uniform_bits(unsigned int *output, std::int64_t n) {
 #ifndef __INTEL_MKL__
-    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
-                             "Interfaces Project does not support this API.");
+    throw std::runtime_error(OneMKLNotSupport);
 #else
     static_assert(sizeof(unsigned int) == sizeof(std::uint32_t));
     generate<oneapi::mkl::rng::uniform_bits<std::uint32_t>>(
@@ -440,8 +439,7 @@ public:
   inline void generate_uniform_bits(unsigned long long *output,
                                     std::int64_t n) {
 #ifndef __INTEL_MKL__
-    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
-                             "Interfaces Project does not support this API.");
+    throw std::runtime_error(OneMKLNotSupport);
 #else
     static_assert(sizeof(unsigned long long) == sizeof(std::uint64_t));
     generate<oneapi::mkl::rng::uniform_bits<std::uint64_t>>(
@@ -591,8 +589,7 @@ create_host_rng(const random_engine_type type,
     return std::make_shared<
         rng::host::detail::rng_generator<oneapi::mkl::rng::mrg32k3a>>(q);
 #ifndef __INTEL_MKL__
-    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
-                             "Interfaces Project does not support this API.");
+    throw std::runtime_error(host::detail::OneMKLNotSupport);
 #else
   case random_engine_type::mt2203:
     return std::make_shared<
