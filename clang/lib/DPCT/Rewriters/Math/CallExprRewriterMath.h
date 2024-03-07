@@ -322,10 +322,8 @@ private:
   }
 
 public:
-  MathRewriterFactory(
-      const std::string &Name,
-      const array_t
-          &MathAPIRewritersInput)
+  MathRewriterFactory(const std::string &Name,
+                      const array_t &MathAPIRewritersInput)
       : Name(Name), MathAPIRewriters(MathAPIRewritersInput) {
     NoRewriteRewriter = std::make_pair(
         TrueFunctor,
