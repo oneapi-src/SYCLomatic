@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0
 // UNSUPPORTED: v8.0, v9.0
-// RUN: dpct --format-range=none --use-experimental-features=dpl-experimental-api -out-root %T/thrust-for-each-nosync %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing -ferror-limit=50
+// RUN: dpct --format-range=none --use-experimental-features=dpl-experimental-api -out-root %T/thrust-for-each-nosync %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -ferror-limit=50
 // RUN: FileCheck --input-file %T/thrust-for-each-nosync/thrust-for-each-nosync.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/thrust-for-each-nosync/thrust-for-each-nosync.dp.cpp -o %T/thrust-for-each-nosync/thrust-for-each-nosync.dp.o %}
 // CHECK: #include <oneapi/dpl/execution>

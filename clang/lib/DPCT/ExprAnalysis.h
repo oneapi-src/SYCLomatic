@@ -824,6 +824,7 @@ private:
     ExprAnalysis::analyzeExpr(Arg);
   }
   inline void analyzeExpr(const UnaryOperator *Arg);
+  inline void analyzeExpr(const BinaryOperator *);
   inline void analyzeExpr(const CXXTemporaryObjectExpr *Temp);
   inline void analyzeExpr(const CXXDependentScopeMemberExpr *Arg);
   inline void analyzeExpr(const MaterializeTemporaryExpr *MTE);

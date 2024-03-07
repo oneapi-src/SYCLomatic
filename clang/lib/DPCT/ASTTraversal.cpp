@@ -12031,10 +12031,14 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
             DpctGlobalInfo::getUnqualifiedTypeName(ME->getType());
         if (QualName == "cudaArray_t" || QualName == "CUarray") {
           requestFeature(HelperFeatureEnum::device_ext);
+          if (needExtraParensInMemberExpr(BO->getRHS()))
+            insertAroundStmt(BO->getRHS(), "(", ")");
           emplaceTransformation(
               new InsertAfterStmt(BO->getRHS(), "->to_pitched_data()"));
         } else if (QualName == "CUarray_st") {
           requestFeature(HelperFeatureEnum::device_ext);
+          if (needExtraParensInMemberExpr(BO->getRHS()))
+            insertAroundStmt(BO->getRHS(), "(", ")");
           emplaceTransformation(
               new InsertAfterStmt(BO->getRHS(), ".to_pitched_data()"));
         } else if (auto DRE = dyn_cast<DeclRefExpr>(
@@ -13677,9 +13681,13 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
   auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
   if (ReplField.empty() ||
       (!DpctGlobalInfo::useExtBindlessImages() && IsMipmapMember)) {
-    report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
-               "::" + Field);
+    if (Field == "readMode")
+      report(ME->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_NORM_READ_MODE,
+             false);
+    else
+      report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
+                 "::" + Field);
     if (AssignedBO) {
       emplaceTransformation(new ReplaceStmt(AssignedBO, ""));
     } else {
