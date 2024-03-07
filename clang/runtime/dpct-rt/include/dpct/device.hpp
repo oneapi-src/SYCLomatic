@@ -610,6 +610,10 @@ public:
     return DEFAULT_DEVICE_ID;
   }
 
+  // std::map<event_ptr, sycl::queue> &get_event2queue_map() {
+  //   return _event2queue_map;
+  // }
+
 /// Select device with a device ID.
 /// \param [in] id The id of the device which can
 /// be obtained through get_device_id(const sycl::device).
@@ -685,6 +689,11 @@ private:
   /// thread-id to device-id map.
   std::map<unsigned int, unsigned int> _thread2dev_map;
   int _cpu_device = -1;
+
+  // SYCL event to queue map.
+  std::map<event_ptr, sycl::queue> _event2queue_map;
+  friend void sycl_event_record(dpct::event_ptr event_ptr, sycl::queue &queue);
+  friend void sycl_event_synchronize(dpct::event_ptr event_ptr);
 };
 
 /// Util function to get the default queue of current selected device depends on

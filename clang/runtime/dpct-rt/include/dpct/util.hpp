@@ -956,6 +956,27 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
   : reinterpret_cast<queue_ptr>(x);
 }
 
+/// Stores current event into memory pointed by event_ptr and records the queue
+/// related to current event.
+void sycl_event_record(dpct::event_ptr event_ptr, sycl::queue &queue) {
+  auto &event2queue_map = dev_mgr::instance()._event2queue_map;
+  event2queue_map[event_ptr] = queue;
+  *event_ptr = get_out_of_order_queue().ext_oneapi_submit_barrier();
+}
+
+/// If current event relates to default queue, waits all the kernel tasks in
+/// different queues of current device completed. If current event does not
+/// relate to default queue, just wait kernel tasks in current queue of current
+/// device completed.
+void sycl_event_synchronize(dpct::event_ptr event_ptr) {
+  auto &event2queue_map = dev_mgr::instance()._event2queue_map;
+  if (event2queue_map[event_ptr] == get_default_queue()) {
+    get_current_device().queues_wait_and_throw();
+  } else {
+    event_ptr->wait_and_throw();
+  }
+}
+
 template <int n_nondefault_params, int n_default_params, typename T>
 class args_selector;
 
