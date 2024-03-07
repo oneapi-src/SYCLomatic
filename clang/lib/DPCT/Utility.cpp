@@ -4060,7 +4060,7 @@ static bool isCubTempStorageType(const clang::Type *T) {
   if (!T)
     return false;
 
-  const clang::Type *DeclContextType;
+  const clang::Type *DeclContextType = nullptr;
   // cub::{BlockReduce, BlockScan, WarpScan, ...}::TempStorage;
   if (auto *RT = dyn_cast<RecordType>(T)) {
     if (RT->getDecl()->getName() != "TempStorage")
@@ -4086,7 +4086,7 @@ static bool isCubTempStorageType(const clang::Type *T) {
       return false;
   }
 
-  return isCubCollectiveRecordType(DeclContextType);
+  return DeclContextType && isCubCollectiveRecordType(DeclContextType);
 }
 
 bool isCubTempStorageType(QualType T) {
