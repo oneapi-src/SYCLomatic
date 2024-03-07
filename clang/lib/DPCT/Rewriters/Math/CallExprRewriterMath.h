@@ -257,12 +257,15 @@ inline std::function<bool(const CallExpr *)> TrueFunctor =
     [](const CallExpr *) { return true; };
 
 class MathRewriterFactory final : public CallExprRewriterFactoryBase {
+public:
   using element_t = std::optional<std::pair<
       std::function<bool(const CallExpr *)>,
       std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>>;
+  using array_t = std::array<element_t, static_cast<size_t>(Tag::tag_size)>;
 
+private:
   std::string Name;
-  std::array<element_t, static_cast<size_t>(Tag::tag_size)> MathAPIRewriters;
+  array_t MathAPIRewriters;
 
   element_t &DevicePerfRewriter =
       MathAPIRewriters[static_cast<size_t>(Tag::device_perf)];
@@ -321,7 +324,7 @@ class MathRewriterFactory final : public CallExprRewriterFactoryBase {
 public:
   MathRewriterFactory(
       const std::string &Name,
-      const std::array<element_t, static_cast<size_t>(Tag::tag_size)>
+      const array_t
           &MathAPIRewritersInput)
       : Name(Name), MathAPIRewriters(MathAPIRewritersInput) {
     NoRewriteRewriter = std::make_pair(
@@ -364,45 +367,40 @@ public:
   }
 };
 
+template <typename... Ts>
+inline void createMathRewriterFactoryImpl(
+    MathRewriterFactory::array_t &Rewriters, Tag Tag,
+    std::function<bool(const CallExpr *)> Cond,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Rewriter,
+    int, Ts... Args) {
+  createMathRewriterFactoryImpl(Rewriters, Args...);
+  Rewriters[static_cast<size_t>(Tag)] = std::make_pair(Cond, Rewriter);
+}
+
+inline void createMathRewriterFactoryImpl(
+    MathRewriterFactory::array_t &Rewriters, Tag Tag,
+    std::function<bool(const CallExpr *)> Cond,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Rewriter,
+    int) {
+  Rewriters[static_cast<size_t>(Tag)] = std::make_pair(Cond, Rewriter);
+}
+
+template <typename... Ts>
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-createMathRewriterFactory(
-    const std::string &Name,
-    const std::unordered_map<
-        Tag, std::tuple<std::function<bool(const CallExpr *)>,
-                        std::pair<std::string,
-                                  std::shared_ptr<CallExprRewriterFactoryBase>>,
-                        int>> &MathAPIRewriters) {
+createMathRewriterFactory(const std::string &Name, Ts... Args) {
+  MathRewriterFactory::array_t Rewriters;
+  createMathRewriterFactoryImpl(Rewriters, Args...);
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
-      Name, std::make_shared<MathRewriterFactory>(Name, MathAPIRewriters));
+      Name, std::make_shared<MathRewriterFactory>(Name, Rewriters));
 }
 
-template <class T>
-inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-createMathRewriterFactory(
-    const std::string &Name,
-    const std::unordered_map<
-        Tag, std::tuple<std::function<bool(const CallExpr *)>,
-                        std::pair<std::string,
-                                  std::shared_ptr<CallExprRewriterFactoryBase>>,
-                        int>> &MathAPIRewriters,
-    T) {
-  return createMathRewriterFactory(std::move(Name),
-                                   std::move(MathAPIRewriters));
-}
+#define MATH_API_REWRITERS_V2(...) createMathRewriterFactory(__VA_ARGS__),
 
-#define MATH_API_REWRITERS_V2(NAME, ...)                                       \
-  createMathRewriterFactory(                                                   \
-      NAME, std::array<                                                        \
-                std::optional<std::pair<                                       \
-                    std::function<bool(const CallExpr *)>,                     \
-                    std::pair<std::string,                                     \
-                              std::shared_ptr<CallExprRewriterFactoryBase>>>>, \
-                static_cast<size_t>(Tag::tag_size)>{__VA_ARGS__}),
-
-#define MATH_API_REWRITER_PAIR(TAG, REWRITER)                                  \
-  { TAG, TrueFunctor, REWRITER 0 }
+#define MATH_API_REWRITER_PAIR(TAG, REWRITER) TAG, TrueFunctor, REWRITER 0
 #define MATH_API_REWRITER_PAIR_WITH_COND(TAG, COND, REWRITER)                  \
-  { TAG, COND, REWRITER 0 }
+  TAG, COND, REWRITER 0
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createMathAPIRewriterDeviceImpl(
