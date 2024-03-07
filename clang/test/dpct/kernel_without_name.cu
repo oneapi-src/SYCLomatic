@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_without_name %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_without_name %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/kernel_without_name/kernel_without_name.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/kernel_without_name/kernel_without_name.dp.cpp -o %T/kernel_without_name/kernel_without_name.dp.o %}
 
@@ -195,3 +195,23 @@ void run_foo4(dim3 c, dim3 d) {
    foo_kernel3<<<c, 1>>>(g_a);
 }
 
+template <class T> struct A {
+  T *ptr;
+  T *operator~() { return ptr; }
+};
+
+template <class T> __global__ void foo_kernel4(T *t) {}
+
+template <class T> void run_foo5(A<T> &a) {
+  //CHECK:dpct::get_out_of_order_queue().submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    auto a_ct0 = ~a;
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        foo_kernel4(a_ct0);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  foo_kernel4<<<1, 1>>>(~a);
+}

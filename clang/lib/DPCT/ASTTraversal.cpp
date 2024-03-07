@@ -11651,10 +11651,14 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
             DpctGlobalInfo::getUnqualifiedTypeName(ME->getType());
         if (QualName == "cudaArray_t" || QualName == "CUarray") {
           requestFeature(HelperFeatureEnum::device_ext);
+          if (needExtraParensInMemberExpr(BO->getRHS()))
+            insertAroundStmt(BO->getRHS(), "(", ")");
           emplaceTransformation(
               new InsertAfterStmt(BO->getRHS(), "->to_pitched_data()"));
         } else if (QualName == "CUarray_st") {
           requestFeature(HelperFeatureEnum::device_ext);
+          if (needExtraParensInMemberExpr(BO->getRHS()))
+            insertAroundStmt(BO->getRHS(), "(", ")");
           emplaceTransformation(
               new InsertAfterStmt(BO->getRHS(), ".to_pitched_data()"));
         } else if (auto DRE = dyn_cast<DeclRefExpr>(
