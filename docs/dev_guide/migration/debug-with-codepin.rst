@@ -3,6 +3,8 @@
 Debug Migrated Code: Runtime Behavior
 =====================================
 
+.. note:: The CodePin feature is experimental and will be finalized in a future release.
+
 In some cases, the migrated SYCL\* program may have runtime behavior that differs
 from the original CUDA\* program. Reasons for this inconsistency may include:
 
