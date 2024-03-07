@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/same_func_name %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct -out-root %T/same_func_name %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/same_func_name/same_func_name.dp.cpp %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/same_func_name/same_func_name.dp.cpp -o %T/same_func_name/same_func_name.dp.o %}
 

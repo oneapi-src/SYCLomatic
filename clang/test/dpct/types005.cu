@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/types005 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct -out-root %T/types005 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/types005/types005.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/types005/types005.dp.cpp -o %T/types005/types005.dp.o %}
 
