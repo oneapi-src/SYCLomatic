@@ -129,6 +129,7 @@ const char *test_function() {
   printf("%s\n", cudaGetErrorName(cudaSuccess));
   CUresult e;
   const char *err_s;
+
 //CHECK:  /*
 //CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
 //CHECK-NEXT:  */
