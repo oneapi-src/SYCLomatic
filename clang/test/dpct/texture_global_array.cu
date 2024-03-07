@@ -124,10 +124,12 @@ void test(float *d_Out, int rSize, int pSize, int pPitch) {
   //CHECK-EMPTY:
   //CHECK-NEXT:     auto tex_Input_0_smpl = tex_Input[0]->get_sampler();
   //CHECK-EMPTY:
+  //CHECK-NEXT:     int pPitch_sizeof_float_ct2 = pPitch / sizeof(float);
+  //CHECK-EMPTY:
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(gridSz * blockSz, blockSz),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         test_Kernel(dpct::image_accessor_ext<float, 2>(tex_Input_0_smpl, tex_Input_0_acc), d_Out, pPitch / sizeof(float), item_ct1);
+  //CHECK-NEXT:         test_Kernel(dpct::image_accessor_ext<float, 2>(tex_Input_0_smpl, tex_Input_0_acc), d_Out, pPitch_sizeof_float_ct2, item_ct1);
   //CHECK-NEXT:       });
   //CHECK-NEXT:   });
   test_Kernel<<<gridSz, blockSz>>>(tex_Input[0], d_Out, pPitch / sizeof(float));

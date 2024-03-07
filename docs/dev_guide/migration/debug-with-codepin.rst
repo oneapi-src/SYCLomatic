@@ -1,28 +1,41 @@
-CodePin
-===============
+.. _debug_codepin:
 
-There are some cases where the migrated SYCL program may have runtime behavior that differs from the original CUDA program. Reasons for this inconsistency include:
+Debug Migrated Code: Runtime Behavior
+=====================================
+
+In some cases, the migrated SYCL\* program may have runtime behavior that differs
+from the original CUDA\* program. Reasons for this inconsistency may include:
 
 * Difference in arithmetic precision between hardware
 * Semantic difference between the CUDA and SYCL APIs
 * Errors introduced during the automatic migration
 
-CodePin is introduced as a sub-feature of |tool_name| in order to reduce the effort of debugging such inconsistencies in runtime behavior.
-When CodePin is enabled, |tool_name| will migrate the CUDA program to SYCL, but will also generate an instrumented version of the CUDA program.
+CodePin is feature of |tool_name| that helps reduce the effort of debugging such
+inconsistencies in runtime behavior. When CodePin is enabled, |tool_name| will
+migrate the CUDA program to SYCL, but will also generate an instrumented version
+of the CUDA program.
 
-The instrumented code will dump the data of related variables, before/after selected API or kernel calls, into a report.
-Comparing the reports generated from the CUDA and SYCL program can help identify the source of divergent runtime behavior.
+The instrumented code will dump the data of related variables, before and after
+selected API or kernel calls, into a report. Compare the reports generated from
+the CUDA and SYCL programs to help identify the source of divergent runtime behavior.
 
-Command Line Option
-----------------------------
-CodePin can be enabled with |tool_name| command line option ``–enable-codepin``.
-If ``–out-root`` is specified, the instrumented CUDA program will be put into a 
-folder with ``_debug`` postfix beside the out-root folder. Otherwise, the 
-instrumented CUDA program will be put in the default folder ``dpct_output_debug``.
+Enable CodePin
+--------------
+
+Enable CodePin with the ``–enable-codepin`` option. If ``–out-root`` is specified,
+the instrumented CUDA program will be put into a folder with a ``_debug`` postfix
+beside the out-root folder. Otherwise, the instrumented CUDA program will be put
+in the default folder ``dpct_output_debug``.
 
 Example
-----------------------------
-The following example demonstrates how CodePin works.
+-------
+
+The following example CUDA code has an issue in the cudaMemcpy() before the
+vectorAdd kernel call: the size to be copied is hard coded as ``vectorSize * 12``
+instead of ``vectorSize * sizeof(int3)``, which causes incorrect behavior of the
+migrated SYCL program. This is because ``int3`` will be migrated to ``sycl::int3``
+and the size of ``sycl::int3`` is 16 bytes, not 12 bytes.
+
 
 .. code-block:: c++
 
@@ -71,18 +84,14 @@ The following example demonstrates how CodePin works.
     Result[3]: (2, 3, 4)
     */
 
-The example CUDA code has an issue in the cudaMemcpy() before the vectorAdd kernel call:
-the size to be copied is hard coded as ``vectorSize * 12`` instead of ``vectorSize * sizeof(int3)``
-, which causes incorrect behavior of the migrated SYCL program. This is because ``int3`` will be
-migrated to ``sycl::int3`` and the size of ``sycl::int3`` is 16 bytes, not 12 bytes.
 
-To debug the issue, the user can migrate the CUDA program with CodePin enabled.
+To debug the issue, the migrate the CUDA program with CodePin enabled:
 
 .. code-block:: bash
 
     dpct example.cu --enable-codepin
 
-After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``.
+After migration, there will be two files: ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``.
 
 .. code-block:: bash
 
@@ -230,8 +239,57 @@ After the migration, there will be 2 files ``dpct_output/example.dp.cpp`` and ``
     Result[3]: (2, 3, 4)
     */
 
-After building and executing ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``, the following report will be generated.
+After building and executing ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``, the following reports will be generated. Line number 13 shows the point of divergence.
 
-.. figure:: /_images/codepin_example_report.png
+.. list-table::
+   :widths: 50 50
+   :header-rows: 1
 
-The report helps the user to identify where the runtime behavior of the CUDA and the SYCL version start to diverge from one another.
+   * - Report for the instrumented CUDA program
+     - Report for the instrumented migrated SYCL program
+   * - .. code-block::
+          :linenos:
+
+          {
+             "example.cu:23:3:0": {
+                "d_a[0]": {
+                   "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
+                },
+                "d_a[1]": {
+                   "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
+                },
+                "d_a[2]": {
+                   "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
+                },
+                "d_a[3]": {
+                   "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
+                },
+                "d_result[0]": {
+                   "m_Data": "00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00"
+                },
+          ...
+
+     - .. code-block::
+           :linenos:
+
+           {
+              "example.cu:23:3(SYCL):0": {
+                 "d_a[0]": {
+                    "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
+                 },
+                 "d_a[1]": {
+                    "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
+                 },
+                 "d_a[2]": {
+                    "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
+                 },
+                 "d_a[3]": {
+                    "m_Data": "00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00"
+                 },
+                 "d_result[0]": {
+                    "m_Data": "00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00"
+                 },
+            ...
+
+The report helps identify where the runtime behavior of the CUDA and the SYCL
+programs start to diverge from one another.

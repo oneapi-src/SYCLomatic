@@ -2527,6 +2527,20 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                         hasParent(implicitCastExpr())))
           .bind("halfRawExpr"),
       this);
+
+  auto HasLongLongVecTypeArg = [&]() {
+    return hasAnyTemplateArgument(refersToType(hasDeclaration(
+        namedDecl(hasAnyName("longlong1", "longlong2", "longlong3", "longlong4",
+                             "ulonglong1", "ulonglong2", "ulonglong3",
+                             "ulonglong4"))
+            .bind("vectorDecl"))));
+  };
+  MF.addMatcher(classTemplateSpecializationDecl(HasLongLongVecTypeArg())
+                    .bind("vectorTypeInTemplateArg"),
+                this);
+  MF.addMatcher(
+      functionDecl(HasLongLongVecTypeArg()).bind("vectorTypeInTemplateArg"),
+      this);
 }
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -2681,6 +2695,13 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     OS.flush();
     emplaceTransformation(new ReplaceStmt(DRE, Replacement));
     return;
+  }
+  if (const auto *D = getNodeAsType<Decl>(Result, "vectorTypeInTemplateArg")) {
+    if (const auto *VD = getAssistNodeAsType<NamedDecl>(Result, "vectorDecl")) {
+      auto TypeStr = VD->getNameAsString();
+      report(D->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false, TypeStr,
+             MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr));
+    }
   }
 }
 
@@ -10033,7 +10054,8 @@ void MemoryMigrationRule::mallocMigration(
     instrumentAddressToSizeRecordForCodePin(C,0,1);
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
-             Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch") {
+             Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch" ||
+             Name == "cudaMallocMipmappedArray") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -10326,7 +10348,7 @@ void MemoryMigrationRule::arrayMigration(
   if (NameRef == "cuMemcpyAtoH_v2" || NameRef == "cuMemcpyHtoA_v2" ||
       NameRef == "cuMemcpyAtoHAsync_v2" || NameRef == "cuMemcpyHtoAAsync_v2" ||
       NameRef == "cuMemcpyAtoD_v2" || NameRef == "cuMemcpyDtoA_v2" ||
-      NameRef == "cuMemcpyAtoA_v2") {
+      NameRef == "cuMemcpyAtoA_v2" || NameRef == "cudaGetMipmappedArrayLevel") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -10735,16 +10757,6 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       emplaceTransformation(new ReplaceCalleeName(C, "free"));
     }
   } else if (Name == "cudaFreeArray") {
-    if (DpctGlobalInfo::useExtBindlessImages()) {
-      return emplaceTransformation(
-          new ReplaceStmt(C, MapNames::getClNamespace() +
-                                 "ext::oneapi::experimental::free_image_mem(" +
-                                 ExprAnalysis::ref(C->getArg(0)) +
-                                 "->get_handle(), "
-                                 "sycl::ext::oneapi::experimental::image_type::"
-                                 "standard, {{NEEDREPLACEQ" +
-                                 std::to_string(Index) + "}})"));
-    }
     ExprAnalysis EA(C->getArg(0));
     EA.analyze();
     emplaceTransformation(
@@ -11131,11 +11143,12 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemHostGetFlags", "cuMemHostRegister_v2", "cuMemHostUnregister",
         "cuMemcpy", "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
         "cuMemcpyHtoAAsync_v2", "cuMemcpyAtoHAsync_v2", "cuMemcpyDtoA_v2",
-        "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2", "cuMemsetD16_v2", "cuMemsetD16Async",
-        "cuMemsetD2D16_v2", "cuMemsetD2D16Async", "cuMemsetD2D32_v2",
-        "cuMemsetD2D32Async", "cuMemsetD2D8_v2", "cuMemsetD2D8Async",
-        "cuMemsetD32_v2", "cuMemsetD32Async", "cuMemsetD8_v2",
-        "cuMemsetD8Async");
+        "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2", "cuMemsetD16_v2",
+        "cuMemsetD16Async", "cuMemsetD2D16_v2", "cuMemsetD2D16Async",
+        "cuMemsetD2D32_v2", "cuMemsetD2D32Async", "cuMemsetD2D8_v2",
+        "cuMemsetD2D8Async", "cuMemsetD32_v2", "cuMemsetD32Async",
+        "cuMemsetD8_v2", "cuMemsetD8Async", "cudaMallocMipmappedArray",
+        "cudaGetMipmappedArrayLevel", "cudaFreeMipmappedArray");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -11222,7 +11235,10 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemHostRegister_v2") &&
         Name.compare("cudaHostGetFlags") && Name.compare("cuMemHostGetFlags") &&
         Name.compare("cuMemcpy") && Name.compare("cuMemcpyAsync") &&
-        Name.compare("cuMemAllocPitch_v2")) {
+        Name.compare("cuMemAllocPitch_v2") &&
+        Name.compare("cudaMallocMipmappedArray") &&
+        Name.compare("cudaGetMipmappedArrayLevel") &&
+        Name.compare("cudaFreeMipmappedArray")) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, "DPCT_CHECK_ERROR(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -11295,6 +11311,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMallocPitch", &MemoryMigrationRule::mallocMigration},
           {"cudaMalloc3D", &MemoryMigrationRule::mallocMigration},
           {"cudaMallocArray", &MemoryMigrationRule::mallocMigration},
+          {"cudaMallocMipmappedArray", &MemoryMigrationRule::mallocMigration},
           {"cudaMalloc3DArray", &MemoryMigrationRule::mallocMigration},
           {"cudaMemcpy", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpyHtoD_v2", &MemoryMigrationRule::memcpyMigration},
@@ -11318,6 +11335,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemcpy3DAsync_v2", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy2DAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3DAsync", &MemoryMigrationRule::memcpyMigration},
+          {"cudaGetMipmappedArrayLevel", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DArrayToArray", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DFromArray", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DFromArrayAsync", &MemoryMigrationRule::arrayMigration},
@@ -11338,6 +11356,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaFree", &MemoryMigrationRule::freeMigration},
           {"cuMemFree_v2", &MemoryMigrationRule::freeMigration},
           {"cudaFreeArray", &MemoryMigrationRule::freeMigration},
+          {"cudaFreeMipmappedArray", &MemoryMigrationRule::freeMigration},
           {"cudaFreeHost", &MemoryMigrationRule::freeMigration},
           {"cuMemFreeHost", &MemoryMigrationRule::freeMigration},
           {"cublasFree", &MemoryMigrationRule::freeMigration},
@@ -11641,10 +11660,14 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
             DpctGlobalInfo::getUnqualifiedTypeName(ME->getType());
         if (QualName == "cudaArray_t" || QualName == "CUarray") {
           requestFeature(HelperFeatureEnum::device_ext);
+          if (needExtraParensInMemberExpr(BO->getRHS()))
+            insertAroundStmt(BO->getRHS(), "(", ")");
           emplaceTransformation(
               new InsertAfterStmt(BO->getRHS(), "->to_pitched_data()"));
         } else if (QualName == "CUarray_st") {
           requestFeature(HelperFeatureEnum::device_ext);
+          if (needExtraParensInMemberExpr(BO->getRHS()))
+            insertAroundStmt(BO->getRHS(), "(", ")");
           emplaceTransformation(
               new InsertAfterStmt(BO->getRHS(), ".to_pitched_data()"));
         } else if (auto DRE = dyn_cast<DeclRefExpr>(
@@ -13174,7 +13197,8 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
               "CUarray_format_enum", "CUdeviceptr", "CUresourcetype",
               "CUresourcetype_enum", "CUaddress_mode", "CUaddress_mode_enum",
               "CUfilter_mode", "CUfilter_mode_enum", "CUDA_RESOURCE_DESC",
-              "CUDA_TEXTURE_DESC", "CUtexref", "textureReference"))))))
+              "CUDA_TEXTURE_DESC", "CUtexref", "textureReference",
+              "cudaMipmappedArray", "cudaMipmappedArray_t"))))))
           .bind("texType"),
       this);
 
@@ -13198,8 +13222,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaBindTexture",
       "cudaBindTexture2D",
       "tex1D",
+      "tex1DLod",
       "tex2D",
+      "tex2DLod",
       "tex3D",
+      "tex3DLod",
       "tex1Dfetch",
       "tex1DLayered",
       "tex2DLayered",
@@ -13277,8 +13304,12 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     if (removeExtraMemberAccess(ME))
       return;
   }
+  auto IsMipmapMember =
+      Field == "maxAnisotropy" || Field == "mipmapFilterMode" ||
+      Field == "minMipmapLevelClamp" || Field == "maxMipmapLevelClamp";
   auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
-  if (ReplField.empty()) {
+  if (ReplField.empty() ||
+      (!DpctGlobalInfo::useExtBindlessImages() && IsMipmapMember)) {
     report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                "::" + Field);
@@ -13616,7 +13647,9 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
   auto AssignedBO = getParentAsAssignedBO(TopMember, Context);
   auto FieldName =
       ResourceTypeNames[TopMember->getMemberNameInfo().getAsString()];
-  if (FieldName.empty()) {
+  if (FieldName.empty() ||
+      !DpctGlobalInfo::useExtBindlessImages() &&
+          TopMember->getMemberNameInfo().getAsString() == "mipmap") {
     report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                "::" + ME->getMemberDecl()->getName().str());
@@ -13628,20 +13661,7 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
   }
 
   if (AssignedBO) {
-    static const std::unordered_map<std::string, HelperFeatureEnum>
-        ResourceTypeNameToSetFeature = {
-            {"devPtr", HelperFeatureEnum::device_ext},
-            {"desc", HelperFeatureEnum::device_ext},
-            {"array", HelperFeatureEnum::device_ext},
-            {"width", HelperFeatureEnum::device_ext},
-            {"height", HelperFeatureEnum::device_ext},
-            {"pitchInBytes", HelperFeatureEnum::device_ext},
-            {"sizeInBytes", HelperFeatureEnum::device_ext},
-            {"hArray", HelperFeatureEnum::device_ext},
-            {"format", HelperFeatureEnum::device_ext},
-            {"numChannels", HelperFeatureEnum::device_ext}};
-    requestFeature(ResourceTypeNameToSetFeature.at(
-                       TopMember->getMemberNameInfo().getAsString()));
+    requestFeature(HelperFeatureEnum::device_ext);
     emplaceTransformation(
         ReplaceMemberAssignAsSetMethod(AssignedBO, TopMember, FieldName));
   } else {
@@ -13830,6 +13850,14 @@ std::string TextureRule::getMemberAssignedValue(const Stmt *AssignStmt,
       return getTextureFlagsSetterInfo(RHS, SetMethodName);
     } else if (MemberName == "channelDesc") {
       SetMethodName = "channel";
+    } else if (MemberName == "maxAnisotropy") {
+      SetMethodName = "max_anisotropy";
+    } else if (MemberName == "mipmapFilterMode") {
+      SetMethodName = "mipmap_filtering";
+    } else if (MemberName == "minMipmapLevelClamp") {
+      SetMethodName = "min_mipmap_level_clamp";
+    } else if (MemberName == "maxMipmapLevelClamp") {
+      SetMethodName = "max_mipmap_level_clamp";
     }
     return ExprAnalysis::ref(RHS);
   } else {
