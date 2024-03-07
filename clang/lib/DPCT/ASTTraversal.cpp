@@ -7101,6 +7101,17 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuEventSynchronize") {
     if(DpctGlobalInfo::getEnablepProfilingFlag()) {
       // Option '--enable-profiling' is enabled
+#if 1
+      std::string ReplStr;
+      ReplStr = MapNames::getDpctNamespace() + "sycl_event_synchronize";
+      if (IsAssigned) {
+        emplaceTransformation(new InsertBeforeStmt(CE, "DPCT_CHECK_ERROR("));
+      }
+      emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplStr)));
+      if (IsAssigned) {
+        emplaceTransformation(new InsertAfterStmt(CE, ")"));
+      }
+#else
       std::string ReplStr{getStmtSpelling(CE->getArg(0))};
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
@@ -7108,6 +7119,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         requestFeature(HelperFeatureEnum::device_ext);
       }
       emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+#endif
     } else {
       // Option '--enable-profiling' is not enabled
       bool NeedReport = false;
@@ -7301,8 +7313,18 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
+#if 1
+        std::string ReplaceStr;
+        ReplaceStr = MapNames::getDpctNamespace() + "sycl_event_record";
+        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+        emplaceTransformation(new InsertBeforeStmt(CE, "DPCT_CHECK_ERROR("));
+        emplaceTransformation(new InsertAfterStmt(CE, ")"));
+
+        return;
+#else
         Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
               "}}.ext_oneapi_submit_barrier()";
+#endif
       }
       StmtStr = "*" + ArgName + " = " + Str;
     } else {
@@ -7372,8 +7394,15 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
+#if 1
+        std::string ReplaceStr;
+        ReplaceStr = MapNames::getDpctNamespace() + "sycl_event_record";
+        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+        return;
+#else
         Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
               "}}.ext_oneapi_submit_barrier()";
+#endif
       }
       ReplStr += Str;
     } else {

@@ -692,7 +692,7 @@ private:
 
   // SYCL event to queue map.
   std::map<event_ptr, sycl::queue> _event2queue_map;
-  friend void sycl_event_record(dpct::event_ptr event_ptr, sycl::queue &queue);
+  friend void sycl_event_record(dpct::event_ptr event_ptr, sycl::queue *queue);
   friend void sycl_event_synchronize(dpct::event_ptr event_ptr);
 };
 

@@ -958,9 +958,9 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
 
 /// Stores current event into memory pointed by event_ptr and records the queue
 /// related to current event.
-void sycl_event_record(dpct::event_ptr event_ptr, sycl::queue &queue) {
+void sycl_event_record(dpct::event_ptr event_ptr, sycl::queue *queue) {
   auto &event2queue_map = dev_mgr::instance()._event2queue_map;
-  event2queue_map[event_ptr] = queue;
+  event2queue_map[event_ptr] = *queue;
   *event_ptr = get_out_of_order_queue().ext_oneapi_submit_barrier();
 }
 
