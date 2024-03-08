@@ -11,8 +11,6 @@
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "MigrationRuleManager.h"
-#include "TextModification.h"
-#include "clang/AST/Attrs.inc"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
