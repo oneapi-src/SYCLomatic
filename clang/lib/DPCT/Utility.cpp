@@ -4065,7 +4065,6 @@ static bool isCubTempStorageType(const clang::Type *T) {
     if (DC && DC->isRecord()) {
       auto *RD = dyn_cast<RecordDecl>(DC);
       DeclContextType = RD->getTypeForDecl();
-      dpct::DpctGlobalInfo::getContext().getTagDeclType(RD);
     } else
       return false;
   }
