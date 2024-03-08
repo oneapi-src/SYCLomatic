@@ -12,7 +12,7 @@ Migration a Project
 |dpcpp_compiler|_ or |oneapi_dpcpp_compiler|_. The tool provides multiple options
 and features to customize and control your migration.
 
-The migration workflow guidelines provides detailed information about how to prepare
+The migration workflow guidelines provide detailed information about how to prepare
 your code for migration, how to use tool features to configure your migration,
 and how to build and optimize your migrated code.
 
