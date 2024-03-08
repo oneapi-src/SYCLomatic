@@ -24,6 +24,7 @@ Features to Support Migration
 * :ref:`gen_comp_db`
 * :ref:`inc_mig`
 * :ref:`migration_rules`
+* :ref:`mig_cmake`
 * :ref:`debug_codepin`
 
 
@@ -41,6 +42,7 @@ Learn how to :ref:`query_map`.
    migration/generate-compilation-db
    migration/incremental-migration
    migration/migration-rules
+   migration/migrate-cmake-build
    migration/debug-with-codepin
    migration/API-Mapping-query-guide
 

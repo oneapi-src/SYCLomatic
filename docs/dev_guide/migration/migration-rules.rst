@@ -33,6 +33,8 @@ specify multiple migration rule files. For example:
 
 See the :ref:`cmd_opt_ref` for additional information.
 
+.. _user-def-rules:
+
 Write User-defined Migration Rules
 ----------------------------------
 
