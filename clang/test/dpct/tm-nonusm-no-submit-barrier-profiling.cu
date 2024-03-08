@@ -70,7 +70,7 @@ int main() {
     // CHECK:    dpct::get_current_device().queues_wait_and_throw();
     // CHECK-NEXT:    *stop = q_ct1.single_task([=](){});
     // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
-    // CHECK-NEXT:    stop->wait_and_throw();
+    // CHECK-NEXT:     dpct::sycl_event_synchronize(stop);
     // CHECK-NEXT:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
@@ -119,7 +119,7 @@ void foo_test_1() {
 // CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    *stop = q_ct1.single_task([=](){});
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw() ;
-// CHECK-NEXT:    stop->wait_and_throw() ;
+// CHECK-NEXT:    dpct::sycl_event_synchronize( stop ) ;
 // CHECK-NEXT:    float   elapsedTime;
 // CHECK-NEXT:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f ;
     cudaEventRecord( stop, 0 ) ;
@@ -236,7 +236,7 @@ void foo_test_3() {
   // CHECK-NEXT:  *stop = q_ct1.single_task([=](){});
   // CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  return 0;}());
-  // CHECK-NEXT:  CHECK(DPCT_CHECK_ERROR(stop->wait_and_throw()));
+  // CHECK-NEXT:  CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
   CHECK(cudaEventRecord(stop, 0));
   CHECK(cudaEventSynchronize(stop));
   float execution_time;
@@ -267,7 +267,7 @@ void foo_usm() {
   // CHECK-NEXT:  *stop = q_ct1.single_task([=](){});
   // CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  return 0;}());
-  // CHECK-NEXT:  SAFE_CALL(DPCT_CHECK_ERROR(stop->wait_and_throw()));
+  // CHECK-NEXT:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
   // CHECK-NEXT:  float Time = 0.0f;
   // CHECK-NEXT:  Time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   SAFE_CALL(cudaEventRecord(stop, 0));
@@ -344,7 +344,7 @@ void foo()
 // CHECK:             dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            *stop = q_ct1.single_task([=](){});
 // CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:            stop->wait_and_throw();
+// CHECK-NEXT:            dpct::sycl_event_synchronize(stop);
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -364,7 +364,7 @@ void foo()
                 readTexelsFoo1<<<gridSize, blockSize>>> (kernelRepFactor, d_out);
             }
 
-// CHECK:            stop->wait_and_throw();
+// CHECK:            dpct::sycl_event_synchronize(stop);
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventSynchronize(stop);
             cudaEventElapsedTime(&t, start, stop);
@@ -387,7 +387,7 @@ void foo()
 // CHECK:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            *stop = q_ct1.single_task([=](){});
 // CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:            stop->wait_and_throw();
+// CHECK-NEXT:            dpct::sycl_event_synchronize(stop);
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -470,7 +470,7 @@ int foo_test_4()
 // CHECK-NEXT:    *stop = q_ct1.single_task([=](){});
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    return 0;}());
-// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(stop->wait_and_throw()));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
 // CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f));
     CHECK(cudaEventRecord(stop, 0));
     CHECK(cudaEventSynchronize(stop));

@@ -102,7 +102,7 @@ int main(int argc, char **argv)
     }
 
     // record start event
-    // CHECK:     *start = dpct::get_in_order_queue().ext_oneapi_submit_barrier();
+    // CHECK:     dpct::sycl_event_record(start, &dpct::get_in_order_queue());
     cudaEventRecord(start, 0);
 
     // dispatch job with depth first ordering
@@ -113,15 +113,15 @@ int main(int argc, char **argv)
         kernel_3<<<grid, block, 0, streams[i]>>>();
         kernel_4<<<grid, block, 0, streams[i]>>>();
 
-        // CHECK:        *kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier();
+        // CHECK:        dpct::sycl_event_record(kernelEvent[i], streams[i]);
         cudaEventRecord(kernelEvent[i], streams[i]);
         // CHECK:         streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
 
     // record stop event
-    // CHECK:    *stop = dpct::get_in_order_queue().ext_oneapi_submit_barrier();
-    // CHECK-NEXT:    stop->wait_and_throw();
+    // CHECK:    dpct::sycl_event_record(stop, &dpct::get_in_order_queue());
+    // CHECK-NEXT:    dpct::sycl_event_synchronize(stop);
     // CHECK-NEXT:    elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
@@ -178,14 +178,14 @@ void foo_test_1() {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:  CHECK_FOO(DPCT_CHECK_ERROR(*stop = dpct::get_in_order_queue().ext_oneapi_submit_barrier()));
-// CHECK-NEXT:  stop->wait_and_throw();
-// CHECK-NEXT:  MY_ERROR_CHECKER(DPCT_CHECK_ERROR(stop->wait_and_throw()));
-// CHECK-NEXT:  MY_CHECKER(DPCT_CHECK_ERROR(stop->wait_and_throw()));
-// CHECK-NEXT:  (DPCT_CHECK_ERROR(stop->wait_and_throw()));
+// CHECK-NEXT:  CHECK_FOO(DPCT_CHECK_ERROR(dpct::sycl_event_record(stop)));
+// CHECK-NEXT:  dpct::sycl_event_synchronize(stop);
+// CHECK-NEXT:  MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
+// CHECK-NEXT:  MY_CHECKER(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
+// CHECK-NEXT:  (DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
 // CHECK-NEXT:  int ret;
-// CHECK-NEXT:  ret = (DPCT_CHECK_ERROR(stop->wait_and_throw()));
-// CHECK-NEXT:  int a = (DPCT_CHECK_ERROR(stop->wait_and_throw()));
+// CHECK-NEXT:  ret = (DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
+// CHECK-NEXT:  int a = (DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
 // CHECK-NEXT:  et = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   kernel_1<<<1, 1>>>();
   CHECK_FOO(cudaEventRecord(stop));
@@ -245,7 +245,7 @@ int foo_test_2()
 // CHECK:    /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(*start = dpct::get_in_order_queue().ext_oneapi_submit_barrier()));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_record(start, &dpct::get_in_order_queue())));
     CHECK(cudaEventRecord(start, 0));
 
     // dispatch job with depth first ordering
@@ -307,7 +307,7 @@ void foo_test_3()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(*stop = dpct::get_in_order_queue().ext_oneapi_submit_barrier()));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_record(stop)));
     CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
     kernel<<<grid, block>>>(d_a, value);
     CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
@@ -369,7 +369,7 @@ void foo_test_4() {
   cudaEventCreate(&stop);
 
   for (k = 0; k < NTIMES; k++) {
-    // CHECK:    *start = dpct::get_in_order_queue().ext_oneapi_submit_barrier();
+    // CHECK:    dpct::sycl_event_record(start, &dpct::get_in_order_queue());
     // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
     // CHECK-NEXT:    */
@@ -382,8 +382,8 @@ void foo_test_4() {
     // CHECK-NEXT:                        STREAM_Copy(d_a, d_c, N);
     // CHECK-NEXT:                    });
     // CHECK-NEXT:    }
-    // CHECK-NEXT:    *stop = dpct::get_in_order_queue().ext_oneapi_submit_barrier();
-    // CHECK-NEXT:stop->wait_and_throw();
+    // CHECK-NEXT:    dpct::sycl_event_record(stop, &dpct::get_in_order_queue());
+    // CHECK-NEXT:    dpct::sycl_event_synchronize(stop);
     // CHECK-NEXT:    times[0][k] = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(start, 0);
     STREAM_Copy<<<dimGrid, dimBlock>>>(d_a, d_c, N);
@@ -391,7 +391,7 @@ void foo_test_4() {
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&times[0][k], start, stop);
 
-    // CHECK:    *start = dpct::get_in_order_queue().ext_oneapi_submit_barrier();
+    // CHECK:    dpct::sycl_event_record(start, &dpct::get_in_order_queue());
     // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
     // CHECK-NEXT:    */
@@ -404,8 +404,8 @@ void foo_test_4() {
     // CHECK-NEXT:                        STREAM_Copy_Optimized(d_a, d_c, N);
     // CHECK-NEXT:                    });
     // CHECK-NEXT:    }
-    // CHECK-NEXT:    *stop = dpct::get_in_order_queue().ext_oneapi_submit_barrier();
-    // CHECK-NEXT:    stop->wait_and_throw();
+    // CHECK-NEXT:    dpct::sycl_event_record(stop, &dpct::get_in_order_queue());
+    // CHECK-NEXT:    dpct::sycl_event_synchronize(stop);
     // CHECK-NEXT:    times[1][k] = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(start, 0);
     STREAM_Copy_Optimized<<<dimGrid, dimBlock>>>(d_a, d_c, N);
@@ -432,13 +432,13 @@ void foo_test_2184() {
   CHECK(cudaEventCreate(&start));
   CHECK(cudaEventCreate(&stop));
 
-  // CHECK:  CHECK(DPCT_CHECK_ERROR(*start = dpct::get_in_order_queue().ext_oneapi_submit_barrier()));
+  // CHECK:  CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_record(start)));
   CHECK(cudaEventRecord(start));
   CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
   kernel_test_2184<<<1, 1>>>();
   CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
 
-  // CHECK: CHECK(DPCT_CHECK_ERROR(*stop = dpct::get_in_order_queue().ext_oneapi_submit_barrier()));
+  // CHECK: CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_record(stop)));
   CHECK(cudaEventRecord(stop));
 
   unsigned long int counter = 0;

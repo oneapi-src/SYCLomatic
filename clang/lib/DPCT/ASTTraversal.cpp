@@ -7319,7 +7319,7 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
         emplaceTransformation(new InsertBeforeStmt(CE, "DPCT_CHECK_ERROR("));
         emplaceTransformation(new InsertAfterStmt(CE, ")"));
-
+        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
         return;
 #else
         Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
@@ -7430,8 +7430,15 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
+#if 1
+        std::string ReplaceStr;
+        ReplaceStr = MapNames::getDpctNamespace() + "sycl_event_record";
+        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+        return;
+#else
         Str = "*" + ArgName + " = " + StreamName +
               "->ext_oneapi_submit_barrier()";
+#endif
       }
       ReplStr += Str;
     }

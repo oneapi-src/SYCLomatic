@@ -24,8 +24,8 @@ void foo(){
   cuEventCreate(&e, CU_EVENT_DEFAULT);
   cuStreamWaitEvent(s, e, 0);
 
-// CHECK: *e = s->ext_oneapi_submit_barrier();
-// CHECK-NEXT: e->wait_and_throw();
+// CHECK: dpct::sycl_event_record(e, s);
+// CHECK-NEXT: dpct::sycl_event_synchronize(e);
   cuEventRecord(e, s);
   cuEventSynchronize(e);
 
@@ -35,10 +35,10 @@ void foo(){
   r = cuEventQuery(e);
 
 // CHECK: dpct::event_ptr start, end;
-// CHECK: *start = s->ext_oneapi_submit_barrier();
-// CHECK: *end = s->ext_oneapi_submit_barrier();
-// CHECK: start->wait_and_throw();
-// CHECK: end->wait_and_throw();
+// CHECK: dpct::sycl_event_record(start, s);
+// CHECK: dpct::sycl_event_record(end, s);
+// CHECK: dpct::sycl_event_synchronize(start);
+// CHECK: dpct::sycl_event_synchronize(end);
 // CHECK: float result_time;
 // CHECK: result_time = (end->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   CUevent start, end;
@@ -54,7 +54,7 @@ void foo(){
 // CHECK-NEXT:void foo(int idx) {
 // CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
 // CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-// CHECK-NEXT:  *cuda_gpu_benchmark_stop_times[idx] = q_ct1.ext_oneapi_submit_barrier();
+// CHECK-NEXT:  dpct::sycl_event_record(cuda_gpu_benchmark_stop_times[idx], &q_ct1);
 // CHECK-NEXT:}
 std::vector<cudaEvent_t> cuda_gpu_benchmark_stop_times;
 void foo(int idx) {

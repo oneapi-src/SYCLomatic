@@ -815,7 +815,7 @@ typedef CONCATE(Event_t) event_t2;
 //CHECK: void foo18() {
 //CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 //CHECK-NEXT:   dpct::event_ptr event;
-//CHECK-NEXT:   event->wait_and_throw();
+//CHECK-NEXT:   dpct::sycl_event_synchronize(EventSynchronize)(event);
 //CHECK-NEXT:   stream_t2 *stream;
 //CHECK-NEXT:   stream_t2 stream2;
 //CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
@@ -862,7 +862,7 @@ static const cudaStream_t streamDefault4 = CALL(cudaStreamDefault);
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    start = new sycl::event();                                                 \
 //CHECK-NEXT:    stop = new sycl::event();                                                  \
-//CHECK-NEXT:    *start = q_ct1.ext_oneapi_submit_barrier();                                \
+//CHECK-NEXT:    dpct::sycl_event_record(start);                                            \
 //CHECK-NEXT:  }
 #define CMC_PROFILING_BEGIN()                                                                                      \
   cudaEvent_t start;                                                                                               \
@@ -878,8 +878,8 @@ static const cudaStream_t streamDefault4 = CALL(cudaStreamDefault);
 //     CHECK:#define CMC_PROFILING_END(lineno)                                              \
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
-//CHECK-NEXT:    *stop = q_ct1.ext_oneapi_submit_barrier();                                 \
-//CHECK-NEXT:    stop->wait_and_throw();                                                    \
+//CHECK-NEXT:    dpct::sycl_event_record(stop);                                             \
+//CHECK-NEXT:    dpct::sycl_event_synchronize(stop);                                        \
 //CHECK-NEXT:    float time = 0.0f;                                                         \
 //CHECK-NEXT:    time = (stop->get_profiling_info<                                          \
 //CHECK-NEXT:                sycl::info::event_profiling::command_end>() -                  \
