@@ -5,8 +5,8 @@
 
 This guide describes |tool_name| features, workflow, and use.
 
-Migration a Project
--------------------
+Migrate a Project
+-----------------
 
 |tool_name| ports CUDA* language kernels and library API calls to SYCL* for the
 |dpcpp_compiler|_ or |oneapi_dpcpp_compiler|_. The tool provides multiple options
