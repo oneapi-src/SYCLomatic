@@ -7101,7 +7101,6 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuEventSynchronize") {
     if(DpctGlobalInfo::getEnablepProfilingFlag()) {
       // Option '--enable-profiling' is enabled
-#if 1
       std::string ReplStr;
       ReplStr = MapNames::getDpctNamespace() + "sycl_event_synchronize";
       if (IsAssigned) {
@@ -7111,15 +7110,6 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (IsAssigned) {
         emplaceTransformation(new InsertAfterStmt(CE, ")"));
       }
-#else
-      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
-      ReplStr += "->wait_and_throw()";
-      if (IsAssigned) {
-        ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
-        requestFeature(HelperFeatureEnum::device_ext);
-      }
-      emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
-#endif
     } else {
       // Option '--enable-profiling' is not enabled
       bool NeedReport = false;
@@ -7313,7 +7303,6 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
-#if 1
         std::string ReplaceStr;
         ReplaceStr = MapNames::getDpctNamespace() + "sycl_event_record";
         emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
@@ -7321,10 +7310,6 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         emplaceTransformation(new InsertAfterStmt(CE, ")"));
         report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
         return;
-#else
-        Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
-              "}}.ext_oneapi_submit_barrier()";
-#endif
       }
       StmtStr = "*" + ArgName + " = " + Str;
     } else {
@@ -7394,15 +7379,10 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
-#if 1
         std::string ReplaceStr;
         ReplaceStr = MapNames::getDpctNamespace() + "sycl_event_record";
         emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
         return;
-#else
-        Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
-              "}}.ext_oneapi_submit_barrier()";
-#endif
       }
       ReplStr += Str;
     } else {
@@ -7430,15 +7410,10 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
-#if 1
         std::string ReplaceStr;
         ReplaceStr = MapNames::getDpctNamespace() + "sycl_event_record";
         emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
         return;
-#else
-        Str = "*" + ArgName + " = " + StreamName +
-              "->ext_oneapi_submit_barrier()";
-#endif
       }
       ReplStr += Str;
     }

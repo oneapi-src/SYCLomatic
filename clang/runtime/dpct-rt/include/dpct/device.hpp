@@ -610,10 +610,6 @@ public:
     return DEFAULT_DEVICE_ID;
   }
 
-  // std::map<event_ptr, sycl::queue> &get_event2queue_map() {
-  //   return _event2queue_map;
-  // }
-
 /// Select device with a device ID.
 /// \param [in] id The id of the device which can
 /// be obtained through get_device_id(const sycl::device).
