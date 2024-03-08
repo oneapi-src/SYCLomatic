@@ -162,6 +162,9 @@ public:
   unsigned int get_global_mem_cache_size() const {
     return _global_mem_cache_size;
   }
+  int get_image1d_max() const { return _image1d_max; }
+  auto get_image2d_max() const { return _image2d_max; }
+  auto get_image3d_max() const { return _image3d_max; }
 
   // set interface
   void set_name(const char* name) {
@@ -234,6 +237,19 @@ public:
   void set_global_mem_cache_size(unsigned int global_mem_cache_size) {
     _global_mem_cache_size = global_mem_cache_size;
   }
+  void set_image1d_max(size_t image_max_buffer_size) {
+    _image1d_max = image_max_buffer_size;
+  }
+  void set_image2d_max(size_t image2d_max_width, size_t image2d_max_height) {
+    _image2d_max[0] = image2d_max_width;
+    _image2d_max[1] = image2d_max_height;
+  }
+  void set_image3d_max(size_t image3d_max_width, size_t image3d_max_height,
+                       size_t image3d_max_depth) {
+    _image3d_max[0] = image3d_max_width;
+    _image3d_max[1] = image3d_max_height;
+    _image3d_max[2] = image3d_max_depth;
+  }
 
 private:
   char _name[256];
@@ -259,6 +275,9 @@ private:
   int _max_nd_range_size_i[3];
   uint32_t _device_id;
   std::array<unsigned char, 16> _uuid;
+  int _image1d_max;
+  int _image2d_max[2];
+  int _image3d_max[3];
 };
 
 static int get_major_version(const sycl::device &dev) {
@@ -356,6 +375,14 @@ Use 64 bits as memory_bus_width default value."
 
   prop.set_global_mem_cache_size(
       dev.get_info<sycl::info::device::global_mem_cache_size>());
+
+  prop.set_image1d_max(
+      dev.get_info<sycl::info::device::image_max_buffer_size>());
+  prop.set_image2d_max(dev.get_info<sycl::info::device::image2d_max_width>(),
+                       dev.get_info<sycl::info::device::image2d_max_height>());
+  prop.set_image3d_max(dev.get_info<sycl::info::device::image3d_max_width>(),
+                       dev.get_info<sycl::info::device::image3d_max_height>(),
+                       dev.get_info<sycl::info::device::image3d_max_depth>());
   out = prop;
 }
 
