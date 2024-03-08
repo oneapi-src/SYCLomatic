@@ -4025,7 +4025,7 @@ bool checkIfContainSizeofTypeRecursively(
   return false;
 }
 
-// Wether the type is a cub collective record type
+// Whether the type is a cub collective record type
 // cub::BlockReduce
 // cub::BlockScan
 // ...
