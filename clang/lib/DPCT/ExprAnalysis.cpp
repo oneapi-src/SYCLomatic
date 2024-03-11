@@ -1815,23 +1815,26 @@ void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
 }
 
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
-  if (UO->getOpcode() != UO_AddrOf) {
-    IsRedeclareRequired = true;
-    return;
+  IsRedeclareRequired = true;
+  if (UO->getOpcode() == UO_AddrOf) {
+    IsAddrOf = true;
+    dispatch(UO->getSubExpr());
+    /// If subexpr is variable defined on device, remove operator '&'.
+    if (IsAddrOf && IsDefinedOnDevice) {
+      addReplacement(UO->getOperatorLoc(), "");
+    }
+    /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
+    IsDefinedOnDevice = false;
+    IsAddrOf = false;
+  } else {
+    dispatch(UO->getSubExpr());
   }
-  IsAddrOf = true;
-  dispatch(UO->getSubExpr());
-  /// If subexpr is variable defined on device, remove operator '&'.
-  if (IsAddrOf && IsDefinedOnDevice) {
-    addReplacement(UO->getOperatorLoc(), "");
-  }
-  /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
-  IsDefinedOnDevice = false;
-  IsAddrOf = false;
 }
 
-void KernelArgumentAnalysis::analyzeExpr(const BinaryOperator *) {
+void KernelArgumentAnalysis::analyzeExpr(const BinaryOperator *BO) {
   IsRedeclareRequired = true;
+  dispatch(BO->getLHS());
+  dispatch(BO->getRHS());
 }
 
 void KernelArgumentAnalysis::analyze(const Expr *Expression) {
