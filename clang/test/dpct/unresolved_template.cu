@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/unresolved_template %s --cuda-include-path="%cuda-path/include" --extra-arg="-fno-delayed-template-parsing" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/unresolved_template %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/unresolved_template/unresolved_template.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/unresolved_template/unresolved_template.dp.cpp -o %T/unresolved_template/unresolved_template.dp.o %}
 

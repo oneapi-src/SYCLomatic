@@ -1722,17 +1722,18 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
               "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
               "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
-              "cusparseIndexBase_t", "cusparseMatrixType_t", "cusparseAlgMode_t",
-              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
-              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
-              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
-              "cublasDataType_t", "curandState_t", "curandState",
-              "curandStateXORWOW_t", "curandStateXORWOW",
-              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
-              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
-              "thrust::negate", "thrust::logical_or", "thrust::equal_to",
-              "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
-              "curandRngType_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
+              "cusparseIndexBase_t", "cusparseMatrixType_t",
+              "cusparseAlgMode_t", "cusparseOperation_t", "cusparseMatDescr_t",
+              "cusparseHandle_t", "CUcontext", "cublasPointerMode_t",
+              "cusparsePointerMode_t", "cublasGemmAlgo_t",
+              "cusparseSolveAnalysisInfo_t", "cudaDataType", "cublasDataType_t",
+              "curandState_t", "curandState", "curandStateXORWOW_t",
+              "curandStateXORWOW", "curandStatePhilox4_32_10_t",
+              "curandStatePhilox4_32_10", "curandStateMRG32k3a_t",
+              "curandStateMRG32k3a", "thrust::minus", "thrust::negate",
+              "thrust::logical_or", "thrust::equal_to", "thrust::less",
+              "cudaSharedMemConfig", "curandGenerator_t", "curandRngType_t",
+              "curandOrdering_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
               "cufftComplex", "cufftDoubleComplex", "cufftResult_t",
               "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
               "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
@@ -1750,7 +1751,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
               "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t", "CUuuid",
-              "cusparseSpSVAlg_t", "cudaFuncAttributes", "cudaLaunchAttributeValue"))))))
+              "cusparseSpSVAlg_t", "cudaFuncAttributes",
+              "cudaLaunchAttributeValue"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3677,6 +3679,10 @@ void RandomEnumsRule::registerMatcher(MatchFinder &MF) {
       declRefExpr(to(enumConstantDecl(matchesName("CURAND_STATUS.*"))))
           .bind("RANDOMStatusConstants"),
       this);
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName("CURAND_ORDERING.*"))))
+          .bind("RANDOMOrderingConstants"),
+      this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CURAND_RNG.*"))))
                     .bind("RandomTypeEnum"),
                 this);
@@ -3687,6 +3693,16 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "RANDOMStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
+  }
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "RANDOMOrderingConstants")) {
+    std::string EnumStr = DE->getNameInfo().getName().getAsString();
+    auto Search = MapNames::RandomOrderingTypeMap.find(EnumStr);
+    if (Search == MapNames::RandomOrderingTypeMap.end()) {
+      report(DE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumStr);
+      return;
+    }
+    emplaceTransformation(new ReplaceStmt(DE, Search->second));
   }
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "RandomTypeEnum")) {
@@ -3909,7 +3925,7 @@ void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "curandGenerateNormal", "curandGenerateNormalDouble",
         "curandGeneratePoisson", "curandGenerateUniform",
         "curandGenerateUniformDouble", "curandSetStream",
-        "curandCreateGeneratorHost");
+        "curandCreateGeneratorHost", "curandSetGeneratorOrdering");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -4034,6 +4050,9 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         buildString(ExprAnalysis::ref(CE->getArg(0)), "->set_queue(",
                     ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,
@@ -11667,10 +11686,14 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
             DpctGlobalInfo::getUnqualifiedTypeName(ME->getType());
         if (QualName == "cudaArray_t" || QualName == "CUarray") {
           requestFeature(HelperFeatureEnum::device_ext);
+          if (needExtraParensInMemberExpr(BO->getRHS()))
+            insertAroundStmt(BO->getRHS(), "(", ")");
           emplaceTransformation(
               new InsertAfterStmt(BO->getRHS(), "->to_pitched_data()"));
         } else if (QualName == "CUarray_st") {
           requestFeature(HelperFeatureEnum::device_ext);
+          if (needExtraParensInMemberExpr(BO->getRHS()))
+            insertAroundStmt(BO->getRHS(), "(", ")");
           emplaceTransformation(
               new InsertAfterStmt(BO->getRHS(), ".to_pitched_data()"));
         } else if (auto DRE = dyn_cast<DeclRefExpr>(
@@ -13313,9 +13336,13 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
   auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
   if (ReplField.empty() ||
       (!DpctGlobalInfo::useExtBindlessImages() && IsMipmapMember)) {
-    report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
-               "::" + Field);
+    if (Field == "readMode")
+      report(ME->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_NORM_READ_MODE,
+             false);
+    else
+      report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
+                 "::" + Field);
     if (AssignedBO) {
       emplaceTransformation(new ReplaceStmt(AssignedBO, ""));
     } else {
