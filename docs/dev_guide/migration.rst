@@ -25,6 +25,7 @@ Features to Support Migration
 * :ref:`inc_mig`
 * :ref:`migration_rules`
 * :ref:`debug_codepin`
+* :ref:`analysis_mode`
 
 
 Query CUDA to SYCL API Mapping
@@ -43,4 +44,5 @@ Learn how to :ref:`query_map`.
    migration/migration-rules
    migration/debug-with-codepin
    migration/API-Mapping-query-guide
+   migration/analysis-mode
 
