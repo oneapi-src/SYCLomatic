@@ -14358,10 +14358,10 @@ REGISTER_RULE(DriverModuleAPIRule, PassKind::PK_Migration)
 void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   auto DriverDeviceAPI = [&]() {
-    return hasAnyName("cuDeviceGet", "cuDeviceComputeCapability",
-                      "cuDriverGetVersion", "cuDeviceGetCount",
-                      "cuDeviceGetAttribute", "cuDeviceGetName",
-                      "cuDeviceGetUuid", "cuDeviceGetUuid_v2");
+    return hasAnyName(
+        "cuDeviceGet", "cuDeviceComputeCapability", "cuDriverGetVersion",
+        "cuDeviceGetCount", "cuDeviceGetAttribute", "cuDeviceGetName",
+        "cuDeviceGetUuid", "cuDeviceGetUuid_v2", "cuGetErrorString");
   };
 
   MF.addMatcher(

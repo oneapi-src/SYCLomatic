@@ -60,7 +60,7 @@ public:
 //CHECK-NEXT:  do {                                                                         \
 //CHECK-NEXT:    dpct::err0 e = ARG;                                                       \
 //CHECK-NEXT:    if (e != 0) {                                                    \
-//CHECK-NEXT:      throw MY_EXCEPTION(uint32_t(__LINE__), "cudaGetErrorString is not supported"/*cudaGetErrorString(e)*/);           \
+//CHECK-NEXT:      throw MY_EXCEPTION(uint32_t(__LINE__), "<Placeholder string>");           \
 //CHECK-NEXT:    }                                                                          \
 //CHECK-NEXT:  } while (0)
 

@@ -9,7 +9,7 @@ void foo() {}
 
 // CHECK: #define MACRO_B \
 // CHECK-NEXT: foo();\
-// CHECK-NEXT: MACRO("cudaGetErrorString is not supported"/*cudaGetErrorString(cudaErrorInvalidValue)*/);
+// CHECK-NEXT: MACRO("<Placeholder string>");
 #define MACRO_B \
 foo();\
 MACRO(cudaGetErrorString(cudaErrorInvalidValue));

@@ -1578,7 +1578,7 @@ ENTRY(cuEGLStreamProducerReturnFrame, cuEGLStreamProducerReturnFrame, false, NO_
 ENTRY(cuGraphicsEGLRegisterImage, cuGraphicsEGLRegisterImage, false, NO_FLAG, P4, "comment")
 ENTRY(cuGraphicsResourceGetMappedEglFrame, cuGraphicsResourceGetMappedEglFrame, false, NO_FLAG, P4, "comment")
 ENTRY(cuGetErrorName, cuGetErrorName, false, NO_FLAG, P4, "comment")
-ENTRY(cuGetErrorString, cuGetErrorString, false, NO_FLAG, P4, "comment")
+ENTRY(cuGetErrorString, cuGetErrorString, true, NO_FLAG, P4, "comment")
 ENTRY(cuEventCreate, cuEventCreate, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(cuEventDestroy, cuEventDestroy_v2, true, API_CALL_REMOVED, P4, "DPCT1026/DPCT1027")
 ENTRY(cuEventElapsedTime, cuEventElapsedTime, true, NO_FLAG, P4, "DPCT1012")
