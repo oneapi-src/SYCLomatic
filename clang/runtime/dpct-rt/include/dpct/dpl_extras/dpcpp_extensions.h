@@ -577,8 +577,8 @@ enum load_algorithm {
 };
 
 // loads a linear segment of workgroup items into a blocked arrangement.
-template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM, typename InputT,
-          typename InputIteratorT>
+template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM,
+          typename InputT, typename InputIteratorT>
 __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
@@ -594,15 +594,15 @@ __dpct_inline__ void load_blocked(size_t linear_tid, InputIteratorT block_itr,
 }
 
 // loads a linear segment of workgroup items into a striped arrangement.
-template <size_t GROUP_WORK_ITEMS, size_t ITEMS_PER_WORK_ITEM,
-          load_algorithm ALGORITHM, typename InputT, typename InputIteratorT>
+template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM,
+          typename InputT, typename InputIteratorT>
 __dpct_inline__ void load_striped(size_t linear_tid, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
   // This implementation does not take in account range loading across
   // workgroup items To-do: Decide whether range loading is required for group
   // loading
-
+  size_t GROUP_WORK_ITEMS = item.get_global_range();
 #pragma unroll
   for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
     items[idx] = block_itr[linear_tid + (idx * GROUP_WORK_ITEMS)];
@@ -636,8 +636,8 @@ load_subgroup_striped(const Item &item, size_t linear_tid,
   }
 }
 
-template <size_t GROUP_WORK_ITEMS, size_t ITEMS_PER_WORK_ITEM,
-          load_algorithm ALGORITHM, typename InputT, typename InputIteratorT,
+template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM,
+          typename InputT, typename InputIteratorT,
           typename Item>
 class workgroup_load {
 public:
