@@ -1,3 +1,5 @@
+.. _mapping_status:
+
 CUDA API Migration Support
 ==========================
 

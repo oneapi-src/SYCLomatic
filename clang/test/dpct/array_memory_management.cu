@@ -230,3 +230,32 @@ void foo() {
   CHECK_ERR(cudaFreeArray(a1));
 }
 
+void foo2() {
+  // CHECK: dpct::pitched_data p1_from_data_ct1, p1_to_data_ct1;
+  // CHECK-NEXT: sycl::id<3> p1_from_pos_ct1(0, 0, 0), p1_to_pos_ct1(0, 0, 0);
+  // CHECK-NEXT: sycl::range<3> p1_size_ct1(1, 1, 1);
+  // CHECK-NEXT: dpct::memcpy_direction p1_direction_ct1;
+  // CHECK-NEXT: dpct::image_matrix_p *a1;
+  // CHECK-NEXT: p1_to_data_ct1 = (*a1)->to_pitched_data();
+  cudaMemcpy3DParms p1 = {0};
+  cudaArray_t *a1;
+  p1.dstArray = *a1;
+
+  // CHECK: dpct::pitched_data p2_from_data_ct1, p2_to_data_ct1;
+  // CHECK-NEXT: sycl::id<3> p2_from_pos_ct1(0, 0, 0), p2_to_pos_ct1(0, 0, 0);
+  // CHECK-NEXT: sycl::range<3> p2_size_ct1(1, 1, 1);
+  // CHECK-NEXT: dpct::image_matrix_p *a2;
+  // CHECK-NEXT: p2_to_data_ct1 = (*a2)->to_pitched_data();
+  CUDA_MEMCPY3D p2 = {0};
+  CUarray *a2;
+  p2.dstArray = *a2;
+
+  // CHECK: dpct::pitched_data p3_from_data_ct1, p3_to_data_ct1;
+  // CHECK-NEXT: sycl::id<3> p3_from_pos_ct1(0, 0, 0), p3_to_pos_ct1(0, 0, 0);
+  // CHECK-NEXT: sycl::range<3> p3_size_ct1(1, 1, 1);
+  // CHECK-NEXT: dpct::image_matrix **a3;
+  // CHECK-NEXT: p3_to_data_ct1 = (*a3)->to_pitched_data();
+  CUDA_MEMCPY3D p3 = {0};
+  CUarray_st **a3;
+  p3.dstArray = *a3;
+}

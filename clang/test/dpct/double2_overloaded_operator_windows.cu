@@ -1,5 +1,5 @@
 // UNSUPPORTED: system-linux
-// RUN: dpct --format-range=none -out-root %T/double2_overloaded_operator_windows %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none -out-root %T/double2_overloaded_operator_windows %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/double2_overloaded_operator_windows/double2_overloaded_operator_windows.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/double2_overloaded_operator_windows/double2_overloaded_operator_windows.dp.cpp -o %T/double2_overloaded_operator_windows/double2_overloaded_operator_windows.dp.o %}
 

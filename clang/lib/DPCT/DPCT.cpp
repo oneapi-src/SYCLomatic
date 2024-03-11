@@ -1053,6 +1053,9 @@ int runDPCT(int argc, const char **argv) {
         CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
   }
 
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-fno-delayed-template-parsing", ArgumentInsertPosition::END));
+
   SetSDKIncludePath(CudaPath.getCanonicalPath().str());
 
 #ifdef _WIN32

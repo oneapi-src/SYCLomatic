@@ -17,6 +17,66 @@ section provides:
   * :ref:`help_opt`
 * A list of :ref:`intercept-build options <intercept_opt>`
 
+Auto complete command line options for |tool_name|
+--------------------------------------------------
+
+This tool supports auto-completion of command line options. You can auto complete the option name and option value (for enumeration options only)
+by using <tab>.
+
+This feature can be enabled via the following command:
+
+.. code-block::
+
+   source /path/to/SYCLomatic/install/folder/setvars.sh
+
+.. note:: 
+  
+   Note that the auto-complete feature will not work if <tab> is used after <space>.
+
+.. note::
+
+   This feature is only supported for Bash on Linux platform.
+
+Example 1:
+
+.. code-block::
+
+   dpct --<tab><tab>
+
+This usage will show all dpct options.
+
+Example 2:
+
+.. code-block::
+
+   dpct --ver<tab>
+
+This usage will auto complete the command line to:
+
+.. code-block::
+
+   dpct --version
+
+Example 3:
+
+.. code-block::
+
+   dpct --use-experimental-features=<tab><tab>
+
+This usage will show all available values of this option.
+
+Example 4:
+
+.. code-block::
+
+   dpct --use-experimental-features=logical-group,mat<tab>
+
+This usage will auto complete the command line to:
+
+.. code-block::
+
+   dpct --use-experimental-features=logical-group,matrix
+
 .. toctree::
    :hidden:
 

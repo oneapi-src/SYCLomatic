@@ -8,6 +8,14 @@
 
 // clang-format off
 
+WARNING_FACTORY_ENTRY(
+    "cuGetErrorString",
+    ASSIGNABLE_FACTORY(
+        ASSIGN_FACTORY_ENTRY("cuGetErrorString", DEREF(1),
+                             ARG("\"<Placeholder string>\""))),
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The call was replaced by a placeholder string"))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(

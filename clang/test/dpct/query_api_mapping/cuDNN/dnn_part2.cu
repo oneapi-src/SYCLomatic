@@ -236,7 +236,7 @@
 // cudnnGetErrorString: CUDA API:
 // cudnnGetErrorString-NEXT:   r = cudnnGetErrorString(s /*cudnnStatus_t*/);
 // cudnnGetErrorString-NEXT: Is migrated to:
-// cudnnGetErrorString-NEXT:   r = "cudnnGetErrorString is not supported"/*cudnnGetErrorString(s)*/;
+// cudnnGetErrorString-NEXT:   r = "<Placeholder string>";
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetFilter4dDescriptor | FileCheck %s -check-prefix=cudnnGetFilter4dDescriptor
 // cudnnGetFilter4dDescriptor: CUDA API:

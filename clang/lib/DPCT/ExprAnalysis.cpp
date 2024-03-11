@@ -564,6 +564,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::FunctionAttrMap);
       REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
       REPLACE_ENUM(MapNames::RandomEngineTypeMap);
+      REPLACE_ENUM(MapNames::RandomOrderingTypeMap);
       REPLACE_ENUM(MapNames::SOLVEREnumsMap);
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
 #undef REPLACE_ENUM
@@ -1683,6 +1684,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CallExpr)
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
@@ -1783,23 +1785,27 @@ void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
   IsRedeclareRequired = false;
 }
 
-
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
-  if (UO->getOpcode() == UO_Deref) {
-    IsRedeclareRequired = true;
-    return;
-  }
+  IsRedeclareRequired = true;
   if (UO->getOpcode() == UO_AddrOf) {
     IsAddrOf = true;
+    dispatch(UO->getSubExpr());
+    /// If subexpr is variable defined on device, remove operator '&'.
+    if (IsAddrOf && IsDefinedOnDevice) {
+      addReplacement(UO->getOperatorLoc(), "");
+    }
+    /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
+    IsDefinedOnDevice = false;
+    IsAddrOf = false;
+  } else {
+    dispatch(UO->getSubExpr());
   }
-  dispatch(UO->getSubExpr());
-  /// If subexpr is variable defined on device, remove operator '&'.
-  if (IsAddrOf && IsDefinedOnDevice) {
-    addReplacement(UO->getOperatorLoc(), "");
-  }
-  /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
-  IsDefinedOnDevice = false;
-  IsAddrOf = false;
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  IsRedeclareRequired = true;
+  dispatch(BO->getLHS());
+  dispatch(BO->getRHS());
 }
 
 void KernelArgumentAnalysis::analyze(const Expr *Expression) {

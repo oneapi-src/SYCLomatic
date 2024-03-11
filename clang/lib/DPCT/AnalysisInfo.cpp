@@ -4155,6 +4155,10 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   } else if (auto DSDRE = dyn_cast<DependentScopeDeclRefExpr>(Callee)) {
     Name = DSDRE->getDeclName().getAsString();
     buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
+  } else if (auto DRE = dyn_cast<DeclRefExpr>(Callee->IgnoreImpCasts())) {
+    Name = DRE->getNameInfo().getAsString();
+  } else {
+    Name = "(" + ExprAnalysis::ref(Callee) + ")";
   }
 }
 std::string CallFunctionExpr::getName(const NamedDecl *D) {
@@ -5419,16 +5423,16 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
                     LaunchFD->getName() != "cudaLaunchCooperativeKernel")) {
     return std::shared_ptr<KernelCallExpr>();
   }
+  auto Kernel = std::shared_ptr<KernelCallExpr>(
+      new KernelCallExpr(LocInfo.second, LocInfo.first));
+  Kernel->buildLocationInfo(CE);
+  Kernel->buildExecutionConfig(
+      ArrayRef<const Expr *>{CE->getArg(1), CE->getArg(2), CE->getArg(4),
+                             CE->getArg(5)},
+      CE);
+  Kernel->buildNeedBracesInfo(CE);
   if (auto Callee = getAddressedRef(CE->getArg(0))) {
-    auto Kernel = std::shared_ptr<KernelCallExpr>(
-        new KernelCallExpr(LocInfo.second, LocInfo.first));
     Kernel->buildCalleeInfo(Callee);
-    Kernel->buildLocationInfo(CE);
-    Kernel->buildExecutionConfig(
-        ArrayRef<const Expr *>{CE->getArg(1), CE->getArg(2), CE->getArg(4),
-                               CE->getArg(5)},
-        CE);
-    Kernel->buildNeedBracesInfo(CE);
     auto FD =
         dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());
     auto FuncInfo = Kernel->getFuncInfo();
@@ -5442,9 +5446,13 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
         Kernel->ArgsInfo.emplace_back(Parm, ArgsArray, Kernel.get());
       }
     }
-    return Kernel;
+  } else {
+    Kernel->buildCalleeInfo(CE->getArg(0));
+    DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                             Diagnostics::UNDEDUCED_KERNEL_FUNCTION_POINTER,
+                             true, false, Kernel->getName());
   }
-  return std::shared_ptr<KernelCallExpr>();
+  return Kernel;
 }
 std::shared_ptr<KernelCallExpr>
 KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath,
