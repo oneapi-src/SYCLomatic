@@ -7,7 +7,7 @@ alloca,NO,
 and,YES,
 applypriority,NO,
 atom,NO,
-bar,NO,
+bar,YES, Partial
 barrier,NO,
 bfe,YES,
 bfi,YES,
