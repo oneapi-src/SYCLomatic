@@ -625,10 +625,10 @@ load_subgroup_striped(const Item &item, size_t linear_tid,
   // loading
   // This implementation uses unintialized memory for loading linear segments
   // into warp striped arrangement.
-  size_t subgroup_offset = item.get_sub_group().get_local_range()[0];
-  size_t subgroup_size = item.get_sub_group().get_local_linear_range();
-  size_t subgroup_idx = item.get_sub_group().get_global_range();
-  size_t initial_offset =
+  auto subgroup_offset = item.get_sub_group().get_local_range()[0];
+  auto subgroup_size = item.get_sub_group().get_local_linear_range();
+  auto subgroup_idx = item.get_sub_group().get_global_range();
+  auto initial_offset =
       (subgroup_idx * ITEMS_PER_WORK_ITEM * subgroup_size) + subgroup_offset;
 #pragma unroll
   for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
