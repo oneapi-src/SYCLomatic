@@ -54,7 +54,8 @@ migration rules, or write a custom user-defined migration rule.
 Use Predefined Migration Rules for CMake Build Script
 *****************************************************
 
-The tool provides a set of predefined migration rules in the ``extensions/cmake``
+The tool provides a set of predefined migration rules in the ``extensions/cmake_rules``
+
 folder on the install path. These predefined rules may be helpful in migrating your
 CMake build script.
 
