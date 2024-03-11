@@ -22,52 +22,52 @@ int main(){
 
   //level 1
   // CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res(handle->get_queue(), result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK: [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res(handle->get_queue(), result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasIcamax(handle, n, x_c, incx, result);
   cublasIcamax(handle, n, x_c, incx, result);
 
   // CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res(handle->get_queue(), result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK: [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res(handle->get_queue(), result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasIzamax(handle, n, x_z, incx, result);
   cublasIzamax(handle, n, x_z, incx, result);
 
   // CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res(handle->get_queue(), result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK: [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res(handle->get_queue(), result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasIcamin(handle, n, x_c, incx, result);
   cublasIcamin(handle, n, x_c, incx, result);
 
   // CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res(handle->get_queue(), result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK: [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res(handle->get_queue(), result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasIzamin(handle, n, x_z, incx, result);

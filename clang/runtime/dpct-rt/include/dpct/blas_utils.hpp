@@ -21,34 +21,28 @@
 namespace dpct {
 namespace blas {
 namespace detail {
-enum class mem_inout { in, out, inout };
-
-template <typename target_t, typename source_t> class mem_base_t {
+template <typename target_t, typename source_t> class parameter_wrapper_base_t {
 public:
 #ifdef DPCT_USM_LEVEL_NONE
   using data_t = sycl::buffer<target_t>;
+  using get_memory_t = sycl::buffer<target_t> &;
 #else
   using data_t = target_t *;
+  using get_memory_t = target_t *;
 #endif
 
-  mem_base_t(sycl::queue q, source_t *source, size_t ele_num)
+  parameter_wrapper_base_t(sycl::queue q, source_t *source, size_t ele_num)
       : _source_attribute(dpct::detail::get_pointer_attribute(q, source)),
         _q(q), _source(source), _ele_num(ele_num),
         _target(construct_member_variable_target()) {}
 
-  ~mem_base_t() {
+  ~parameter_wrapper_base_t() {
 #ifndef DPCT_USM_LEVEL_NONE
     if (_need_free) {
       sycl::free(_target, _q);
     }
 #endif
   }
-
-#ifdef DPCT_USM_LEVEL_NONE
-  sycl::buffer<target_t> &get_memory() { return _target; }
-#else
-  target_t *get_memory() { return _target; }
-#endif
 
 protected:
   dpct::detail::pointer_access_attribute _source_attribute;
@@ -85,20 +79,45 @@ private:
 #endif
   }
 };
+} // namespace detail
 
-template <typename target_t, typename source_t, mem_inout io>
-class mem_t : public mem_base_t<target_t, source_t> {
-  static_assert(io == mem_inout::out && "Only mem_inout::out is supported if "
-                                        "target_t and source_t are not same.");
-  using base_t = mem_base_t<target_t, source_t>;
+/// Parameter input/output properties are:
+/// in: input parameter
+/// out: output parameter
+/// in_out: input and output parameter
+enum class parameter_inout_prop { in, out, in_out };
+
+/// \tparam target_t Data type of the return value of get_memory() interface.
+/// \tparam source_t Data type of the original parameter.
+/// \tparam inout_prop The input/output property of the parameter.
+/// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL interface.
+/// E.g.,
+/// void foo(sycl::queue q, int *res) {
+///   {
+///     parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out> res_wrapper(q, res);
+///     oneapi::mkl::...(q, ..., res_wrapper.get_memory());
+///   }
+/// }
+template <typename target_t, typename source_t, parameter_inout_prop inout_prop>
+class parameter_wrapper_t
+    : public detail::parameter_wrapper_base_t<target_t, source_t> {
+  static_assert(inout_prop == parameter_inout_prop::out &&
+                "Only parameter_inout_prop::out is supported if "
+                "target_t and source_t are not same.");
+  using base_t = detail::parameter_wrapper_base_t<target_t, source_t>;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
   using base_t::_target;
+  using typename base_t::get_memory_t;
 
 public:
-  mem_t(sycl::queue q, source_t *source) : base_t(q, source, 1) {}
-  ~mem_t() {
+  /// Constructor
+  /// \param q The queue the subsequent oneMKL routine working on
+  /// \param source The original parameter
+  parameter_wrapper_t(sycl::queue q, source_t *source) : base_t(q, source, 1) {}
+  /// Destructor
+  ~parameter_wrapper_t() {
 #ifdef DPCT_USM_LEVEL_NONE
     source_t temp = static_cast<source_t>(_target.get_host_access()[0]);
     if (_source_attribute ==
@@ -118,23 +137,41 @@ public:
     }
 #endif
   }
+  /// Get the working memory
+  get_memory_t get_memory() { return _target; }
 };
 
-template <typename target_t, mem_inout io>
-class mem_t<target_t, target_t, io> : public mem_base_t<target_t, target_t> {
-  using base_t = mem_base_t<target_t, target_t>;
+/// \tparam target_t Data type of the return value of get_memory() interface and the original parameter.
+/// \tparam inout_prop The input/output property of the parameter.
+/// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL interface.
+/// E.g.,
+/// void foo(sycl::queue q, int *params, int ele_num) {
+///   {
+///     parameter_wrapper_t<float, parameter_inout_prop::in_out> params_wrapper(q, params, ele_num);
+///     oneapi::mkl::...(q, ..., params_wrapper.get_memory());
+///   }
+/// }
+template <typename target_t, parameter_inout_prop inout_prop>
+class parameter_wrapper_t<target_t, target_t, inout_prop>
+    : public detail::parameter_wrapper_base_t<target_t, target_t> {
+  using base_t = detail::parameter_wrapper_base_t<target_t, target_t>;
   using base_t::_ele_num;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
   using base_t::_target;
   using typename base_t::data_t;
+  using typename base_t::get_memory_t;
 
 public:
-  mem_t(sycl::queue q, target_t *source, size_t ele_num = 1)
+  /// Constructor
+  /// \param q The queue the subsequent oneMKL routine working on
+  /// \param source The original parameter
+  /// \param ele_num Element number in \p source
+  parameter_wrapper_t(sycl::queue q, target_t *source, size_t ele_num = 1)
       : base_t(q, source, ele_num) {
 #ifndef DPCT_USM_LEVEL_NONE
-    if constexpr (io != mem_inout::out) {
+    if constexpr (inout_prop != parameter_inout_prop::out) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
         _q.memcpy(_target, _source, sizeof(target_t) * _ele_num);
@@ -142,9 +179,10 @@ public:
     }
 #endif
   }
-  ~mem_t() {
+  /// Destructor
+  ~parameter_wrapper_t() {
 #ifndef DPCT_USM_LEVEL_NONE
-    if constexpr (io != mem_inout::in) {
+    if constexpr (inout_prop != parameter_inout_prop::in) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
         _q.memcpy(_source, _target, sizeof(target_t) * _ele_num).wait();
@@ -152,15 +190,20 @@ public:
     }
 #endif
   }
+  /// Get the working memory
+  get_memory_t get_memory() { return _target; }
 };
-} // namespace detail
+
 using out_mem_int64_int_t =
-    detail::mem_t<std::int64_t, int, detail::mem_inout::out>;
+    parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out>;
 using out_mem_int64_t =
-    detail::mem_t<std::int64_t, std::int64_t, detail::mem_inout::out>;
-using out_mem_float_t = detail::mem_t<float, float, detail::mem_inout::out>;
-using inout_mem_float_t = detail::mem_t<float, float, detail::mem_inout::inout>;
-using in_mem_float_t = detail::mem_t<float, float, detail::mem_inout::in>;
+    parameter_wrapper_t<std::int64_t, std::int64_t, parameter_inout_prop::out>;
+using out_mem_float_t =
+    parameter_wrapper_t<float, float, parameter_inout_prop::out>;
+using inout_mem_float_t =
+    parameter_wrapper_t<float, float, parameter_inout_prop::in_out>;
+using in_mem_float_t =
+    parameter_wrapper_t<float, float, parameter_inout_prop::in>;
 
 class descriptor {
 public:
