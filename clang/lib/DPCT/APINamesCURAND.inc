@@ -210,3 +210,7 @@ FEATURE_REQUEST_FACTORY(
     MEMBER_CALL_FACTORY_ENTRY("curand_poisson4",
                               DEREF(makeDerefArgCreatorWithCall(0)), false,
                               "generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 4>", ARG(1)))
+
+// Host API
+MEMBER_CALL_FACTORY_ENTRY("curandSetGeneratorOrdering", ARG(0), true,
+                          "set_mode", ARG(1))

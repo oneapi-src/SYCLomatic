@@ -583,15 +583,15 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("TypeDefDecl"),
       this);
 
-  MF.addMatcher(
-      declStmt(
-          has(varDecl(anyOf(
-              hasType(hasCanonicalType(qualType(
-                  hasDeclaration(namedDecl(hasAnyName("TempStorage")))))),
-              hasType(arrayType(hasElementType(hasCanonicalType(qualType(
-                  hasDeclaration(namedDecl(hasAnyName("TempStorage"))))))))))))
-          .bind("DeclStmt"),
-      this);
+  auto isTempStorage = hasDeclaration(namedDecl(hasAnyName("TempStorage")));
+  MF.addMatcher(declStmt(has(varDecl(anyOf(
+                             hasType(hasCanonicalType(qualType(isTempStorage))),
+                             hasType(arrayType(hasElementType(
+                                 hasCanonicalType(qualType(isTempStorage))))),
+                             hasType(hasCanonicalType(qualType(hasDeclaration(
+                                 recordDecl(isUnion(), has(fieldDecl()))))))))))
+                    .bind("DeclStmt"),
+                this);
 
   MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
                                       "InclusiveSum", "ExclusiveSum",
@@ -670,11 +670,26 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
     std::string VarType =
         VDecl->getTypeSourceInfo()->getType().getCanonicalType().getAsString();
     std::string VarName = VDecl->getNameAsString();
-
+    bool isUnion = VDecl->getType()->isUnionType();
     auto MatcherScope = DpctGlobalInfo::findAncestor<CompoundStmt>(Decl);
     if (!isCubVar(VDecl)) {
+      if (isUnion) {
+        const TagDecl *RD =
+            VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
+        for (const auto *D : RD->decls())
+          if (const auto *FD = dyn_cast<FieldDecl>(D))
+            if (isCubTempStorageType(FD->getType()))
+              emplaceTransformation(new ReplaceDecl(FD, ""));
+      }
       return;
     }
+
+    if (isUnion) {
+      const TagDecl *RD =
+          VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
+      emplaceTransformation(new ReplaceDecl(RD, ""));
+    }
+
     // always remove TempStorage variable declaration
     emplaceTransformation(new ReplaceStmt(DS, ""));
 
@@ -716,15 +731,10 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   std::string CanonicalTypeStr = CanonicalType.getAsString();
   if (isTypeInAnalysisScope(CanonicalType.getTypePtr()))
     return;
-  
-  if (maybeDependentCubType(TD->getTypeSourceInfo())) {
-    emplaceTransformation(new ReplaceDecl(TD, ""));
+  if (!isCubCollectiveRecordType(TD->getUnderlyingType().getDesugaredType(
+          DpctGlobalInfo::getContext())) &&
+      CanonicalTypeStr.find("class cub::") != 0)
     return;
-  }
-
-  if (CanonicalTypeStr.find("class cub::") != 0) {
-    return;
-  }
 
   std::string TypeName = TD->getNameAsString();
   auto &Context = dpct::DpctGlobalInfo::getContext();
@@ -772,6 +782,11 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
       else if (auto AncestorTD =
                    DpctGlobalInfo::findAncestor<TypedefDecl>(TL)) {
         if (AncestorTD != TD) {
+          DeleteFlag = false;
+          break;
+        }
+      } else if (auto *FD = DpctGlobalInfo::findAncestor<FieldDecl>(TL)) {
+        if (!isCubTempStorageType(FD->getType())) {
           DeleteFlag = false;
           break;
         }
