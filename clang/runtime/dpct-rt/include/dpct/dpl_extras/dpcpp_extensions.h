@@ -617,7 +617,7 @@ __dpct_inline__ void load_striped(const Item &item, size_t linear_tid,
 template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename InputIteratorT,
           typename Item>
 __dpct_inline__ void
-load_subgroup_striped(const Item &item, size_t linear_tid,
+uninitialized_load_subgroup_striped(const Item &item, size_t linear_tid,
                       InputIteratorT block_itr,
                       InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
