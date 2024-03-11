@@ -253,27 +253,26 @@ if (NOT DPCT_NO_MAPPING_BUFFER)
   file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer.def "")
   foreach(LIB_PATH ${LIB_PATHS})
     string(REGEX REPLACE ".*/(.*)$" "\\1" LIB_NAME ${LIB_PATH})
-    file(GLOB SRC_FILES ${LIB_PATH}/*.cu)
+    file(GLOB SRC_FILES RELATIVE ${LIB_PATH} ${LIB_PATH}/*.cu)
     list(LENGTH SRC_FILES API_NUM)
     set(BEGIN 0)
     set(STEP 50)
     while(${BEGIN} LESS ${API_NUM})
-      file(APPEND ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer.def "#include \"APIMappingRegisterBuffer${LIB_NAME}${BEGIN}.def\"\n")
-      file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer${LIB_NAME}${BEGIN}.def "")
+      list(SUBLIST SRC_FILES ${BEGIN} ${STEP} FILE_LIST)
+      list(JOIN FILE_LIST "," FILE_LIST_STR)
+      set(TARGET APIMappingRegisterBuffer${LIB_NAME}${BEGIN}.def)
+      file(APPEND ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer.def "#include \"${TARGET}\"\n")
+      file(WRITE ${API_MAPPING_REGISTER_FOLDER}${TARGET} "")
       add_custom_target(gen_mapping_str_${LIB_NAME}${BEGIN}
         COMMAND "${CMAKE_COMMAND}"
-          -DTARGET_FOLDER="${API_MAPPING_REGISTER_FOLDER}"
-          -DLIB_PATH="${LIB_PATH}"
-          -DBEGIN="${BEGIN}"
-          -DSTEP="${STEP}"
+          -DTARGET="${API_MAPPING_REGISTER_FOLDER}${TARGET}"
+          -DFILE_LIST_STR="${FILE_LIST_STR}"
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/DPCT/APIMapping/GenerateRegisterBuffer.cmake
         DEPENDS dpct-binary-tmp)
       list(APPEND DPCT_DEPENDS gen_mapping_str_${LIB_NAME}${BEGIN})
       math(EXPR BEGIN "${BEGIN} + ${STEP}")
     endwhile()
   endforeach()
-  file(READ ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer.def TJJ) # TODO: need delete.
-  message(STATUS "APIMappingRegisterBuffer.def: \n${TJJ}") # TODO: need delete.
 endif()
 
 add_clang_library(DPCT
