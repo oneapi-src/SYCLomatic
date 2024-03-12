@@ -29,7 +29,7 @@ Enable this feature with the following command:
 
 .. note::
 
-   Auto-completion of command line options is only supported for Bash on Linux.
+   Auto-completion of command line options is only supported for Bash on Linux*.
 
    The auto-complete feature will not work if <tab> is used after <space>.
 
