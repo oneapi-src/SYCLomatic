@@ -629,7 +629,7 @@ __device__ void sincospi_1(double x, double *sptr, double *cptr) {
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  *fsptr = sycl::sincos((float)x * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(fcptr));
+  // CHECK-NEXT:  *fsptr = sycl::sincos((float)x * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(fcptr));
   ::sincospi(x, fsptr, fcptr);
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
