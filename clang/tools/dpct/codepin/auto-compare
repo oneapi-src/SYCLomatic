@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+from multiprocessing import freeze_support
+import argparse
+import json
+import os
+import sys
+from collections.abc import Container
+
+
+UUID = "ID"
+CODE_LOCATION = "code_location"
+CHECK_POINTS = "check_points"
+DATA = "Data"
+TYPE = "Type"
+
+
+class comparison_error(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
+def compare_data_value(literal_data1, literal_data2):
+    if literal_data1 != literal_data2:
+        raise comparison_error(
+            f" the CUDA value \"{literal_data1}\" differs from the SYCL value \"{literal_data2}\".")
+
+
+def is_container(obj):
+    return isinstance(obj, Container) and not isinstance(obj, str)
+
+def is_both_container(obj1, obj2):
+    return is_container(obj1) and is_container(obj2)
+
+def is_both_same_type_container(obj1, obj2, obj_type):
+    if is_both_container(obj1, obj2):
+        if type(obj1) == type(obj2) and type(obj1) == obj_type:
+            return True
+    return False
+
+
+def compare_list_value(cuda_list, sycl_list):
+    for i in range(len(cuda_list)):
+        if is_both_container(cuda_list[i], sycl_list[i]):
+            compare_container_value(cuda_list[i], sycl_list[i])
+        else:
+            try:
+                compare_data_value(cuda_list[i], sycl_list[i])
+            except comparison_error as e:
+                raise comparison_error(f"[{i}]. {e.message}")
+
+
+def compare_dict_value(cuda_dict, sycl_dict):
+    for name, data in cuda_dict.items():
+        if name not in sycl_dict:
+            raise comparison_error(f"Cannot find the {name} in SYCL dumped json.\n")
+        if is_both_container(data, sycl_dict[name]):
+            try:
+                compare_container_value(data, sycl_dict[name])
+            except comparison_error as e:
+                raise comparison_error(f".\"{name}\"{e.message}")
+        else:
+            if name == TYPE:                  # Check the Data only, ignore the key is 'Type'
+                continue
+            try:
+                compare_data_value(data, sycl_dict[name])
+            except comparison_error as e:
+                raise comparison_error(f".\"{name}\". {e.message}")
+
+
+def compare_container_value(cuda_value, sycl_value):
+    if len(cuda_value) != len(sycl_value):
+        raise comparison_error(
+            f"The size of items in CUDA data and SYCL data are not same.")
+
+    if is_both_same_type_container(cuda_value, sycl_value, list):
+        compare_list_value(cuda_value, sycl_value)
+    elif is_both_same_type_container(cuda_value, sycl_value, dict):
+        compare_dict_value(cuda_value, sycl_value)
+
+
+def compare_check_point(cuda_check_point, sycl_check_point):
+    for name, cuda_var in cuda_check_point.items():
+        sycl_var = sycl_check_point.get(name)
+        if cuda_var is not None and sycl_var is not None:
+            try:
+              compare_container_value(cuda_var, sycl_var)
+            except comparison_error as e:
+                raise comparison_error(f"\"{name}\"{e.message}")
+
+
+def parse_json(json_str):
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON: {e.msg}")
+        print(f"At line {e.lineno}, column {e.colno}")
+        return None
+
+
+def read_data_from_json_file(file_path):
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path}")
+        exit(2)
+    with open(file_path) as f:
+        return parse_json(f.read())
+
+
+def get_check_point_list_from_json_file(file_path):
+    check_point_list = {}
+    json_data_list = read_data_from_json_file(file_path)
+    for item in json_data_list:
+        id = item[UUID]
+        check_point_list[id] = item.get(CHECK_POINTS, {})
+    return check_point_list
+
+
+def compare_data_lists(cuda_list, sycl_list):
+    if len(cuda_list) != len(sycl_list):
+        print(
+            f"The size of CUDA and SYCL checkpoint lists is not equal.\n original codepin size: {len(cuda_list)}. \n migrated codepin size: {len(sycl_list)}.\n")
+        return False
+    for id, cuda_checkpoint in cuda_list.items():
+        if not sycl_list.get(id):
+            print(
+                f"Cannot find the checkpoint which 'ID' is {id} in the migrated sycl codepin dataset.\n")
+            return False
+        try:
+            compare_check_point(cuda_checkpoint, sycl_list.get(id))
+        except comparison_error as e:
+            print(
+                f"Failed checkpoint's ID is \"{id}\", and the key path of failed log is \"check_points\"." + e.message)
+            return False
+    return True
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Codepin automatically log comparing tool.\n')
+    parser.add_argument('--cuda-log', metavar='<file path>',
+                        required=True, help='The path of CUDA binary execution log.')
+    parser.add_argument('--sycl-log', metavar='<file path>', required=True,
+                        help='The path of migrated sycl binary execution log.')
+    args = parser.parse_args()
+
+    cuda_list = get_check_point_list_from_json_file(args.cuda_log)
+    sycl_list = get_check_point_list_from_json_file(args.sycl_log)
+    
+    if not compare_data_lists(cuda_list, sycl_list):
+        sys.exit(1)
+
+    print("Comparison succeeded, no differences found.")
+    sys.exit(0)
+
+
+if __name__ == '__main__':
+    freeze_support()
+    main()
