@@ -564,6 +564,10 @@ private:
   void get_version(int &major, int &minor) const {
     detail::get_version(*this, major, minor);
   }
+
+  friend void sycl_event_record(dpct::event_ptr event_ptr, sycl::queue *queue);
+  friend void sycl_event_synchronize(dpct::event_ptr event_ptr);
+
   sycl::queue *_q_in_order, *_q_out_of_order;
   sycl::queue *_saved_queue;
   sycl::context _ctx;
@@ -686,8 +690,6 @@ private:
   std::map<unsigned int, unsigned int> _thread2dev_map;
   int _cpu_device = -1;
 
-  // SYCL event to queue map.
-  std::map<event_ptr, sycl::queue> _event2queue_map;
   friend void sycl_event_record(dpct::event_ptr event_ptr, sycl::queue *queue);
   friend void sycl_event_synchronize(dpct::event_ptr event_ptr);
 };

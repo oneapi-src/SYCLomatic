@@ -956,26 +956,50 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
   : reinterpret_cast<queue_ptr>(x);
 }
 
-/// Stores current event into memory pointed by event_ptr and records the queue
-/// related to current event.
+/// For USM, if \p queue is the default queue, waits all the kernel tasks
+/// in different queues of current device completed, then stores the event of
+/// the queue specified by \p queue at the time of this call into the memory
+/// pointed by \p event_ptr. If \p queue is not the default queue, just stores
+/// the event of the queue specified by \p queue at the time of this call into
+/// the memory pointed by \p event_ptr.
+/// For usmnone, waits all the kernel tasks
+/// in all the queues of current device completed, then stores the event of the
+/// queue specified by \p queue at the time of this call into memory pointed by
+/// \p event_ptr.
 inline void sycl_event_record(dpct::event_ptr event_ptr,
                               sycl::queue *queue = &get_default_queue()) {
-  auto &event2queue_map = dev_mgr::instance()._event2queue_map;
-  event2queue_map[event_ptr] = *queue;
-  *event_ptr = get_out_of_order_queue().ext_oneapi_submit_barrier();
+#ifdef DPCT_USM_LEVEL_NONE
+  // For out of order queue, waits all the kernel tasks in current queue of
+  // current device completed.
+  dpct::get_current_device().queues_wait_and_throw();
+#else
+  // using in-order queue
+  if (*queue == get_default_queue()) {
+    auto event = queue->submit([&](sycl::handler &cgh) {
+      cgh.host_task([=] {
+        // dpct::get_current_device().queues_wait_and_throw();
+        for (auto &q :
+             dev_mgr::instance()._devs[get_current_device_id()]->_queues) {
+          if (*q != get_default_queue())
+            q->wait();
+        }
+      });
+    });
+    event.wait();
+  }
+#endif
+
+#ifdef DPCT_PROFILING_ENABLED
+  *event_ptr = queue->ext_oneapi_submit_barrier();
+#else
+  *event_ptr = queue->single_task([=]() {});
+#endif
 }
 
-/// If current event relates to default queue, waits all the kernel tasks in
-/// different queues of current device completed. If current event does not
-/// relate to default queue, just wait kernel tasks in current queue of current
-/// device completed.
+/// Waits kernel tasks in current queue before the event specifed by \p
+/// event_ptr completed.
 inline void sycl_event_synchronize(dpct::event_ptr event_ptr) {
-  auto &event2queue_map = dev_mgr::instance()._event2queue_map;
-  if (event2queue_map[event_ptr] == get_default_queue()) {
-    get_current_device().queues_wait_and_throw();
-  } else {
-    event_ptr->wait_and_throw();
-  }
+  event_ptr->wait_and_throw();
 }
 
 template <int n_nondefault_params, int n_default_params, typename T>
