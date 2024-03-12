@@ -90,14 +90,16 @@ enum class parameter_inout_prop { in, out, in_out };
 /// \tparam target_t Data type of the return value of get_memory() interface.
 /// \tparam source_t Data type of the original parameter.
 /// \tparam inout_prop The input/output property of the parameter.
-/// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL interface.
+/// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL
+/// interface.
 /// E.g.,
+/// \code
 /// void foo(sycl::queue q, int *res) {
-///   {
-///     parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out> res_wrapper(q, res);
-///     oneapi::mkl::...(q, ..., res_wrapper.get_memory());
-///   }
+///   parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out>
+///       res_wrapper(q, res);
+///   oneapi::mkl::...(q, ..., res_wrapper.get_memory());
 /// }
+/// \endcode
 template <typename target_t, typename source_t, parameter_inout_prop inout_prop>
 class parameter_wrapper_t
     : public detail::parameter_wrapper_base_t<target_t, source_t> {
@@ -141,16 +143,19 @@ public:
   get_memory_t get_memory() { return _target; }
 };
 
-/// \tparam target_t Data type of the return value of get_memory() interface and the original parameter.
+/// \tparam target_t Data type of the return value of get_memory() interface
+/// and the original parameter.
 /// \tparam inout_prop The input/output property of the parameter.
-/// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL interface.
+/// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL
+/// interface.
 /// E.g.,
+/// \code
 /// void foo(sycl::queue q, int *params, int ele_num) {
-///   {
-///     parameter_wrapper_t<float, parameter_inout_prop::in_out> params_wrapper(q, params, ele_num);
-///     oneapi::mkl::...(q, ..., params_wrapper.get_memory());
-///   }
+///   parameter_wrapper_t<float, parameter_inout_prop::in_out> params_wrapper(
+///       q, params, ele_num);
+///   oneapi::mkl::...(q, ..., params_wrapper.get_memory());
 /// }
+/// \endcode
 template <typename target_t, parameter_inout_prop inout_prop>
 class parameter_wrapper_t<target_t, target_t, inout_prop>
     : public detail::parameter_wrapper_base_t<target_t, target_t> {
@@ -182,6 +187,7 @@ public:
   /// Destructor
   ~parameter_wrapper_t() {
 #ifndef DPCT_USM_LEVEL_NONE
+    _q.wait();
     if constexpr (inout_prop != parameter_inout_prop::in) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
