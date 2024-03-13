@@ -234,7 +234,8 @@ set(DPCT_LINK_LIBS
 
 set(DPCT_DEPENDS ${DPCT_TMP_DEPENDS})
 
-if (NOT DPCT_NO_MAPPING_BUFFER)
+file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer.def "")
+if (SYCLomatic_OPT_FOR_QUERY)
   add_clang_library(DPCT_TMP
     ${DPCT_SRC}
 
@@ -250,7 +251,6 @@ if (NOT DPCT_NO_MAPPING_BUFFER)
   if(WIN32)
     list(REMOVE_ITEM LIB_PATHS "Thrust" "CUB")
   endif()
-  file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegisterBuffer.def "")
   foreach(LIB_PATH ${LIB_PATHS})
     string(REGEX REPLACE ".*/(.*)$" "\\1" LIB_NAME ${LIB_PATH})
     file(GLOB SRC_FILES RELATIVE ${LIB_PATH} ${LIB_PATH}/*.cu)

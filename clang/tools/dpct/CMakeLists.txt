@@ -10,7 +10,7 @@ set(LLVM_LINK_COMPONENTS
   support
   )
 
-if (NOT DPCT_NO_MAPPING_BUFFER)
+if (SYCLomatic_OPT_FOR_QUERY)
   add_clang_tool(dpct-binary-tmp
     DPCT.cpp NO_INSTALL_RPATH
     )

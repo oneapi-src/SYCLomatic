@@ -34,8 +34,7 @@ class APIMapping {
 public:
   static void initEntryMap();
 
-  static llvm::StringRef getAPISourceCode(std::string Key);
-  static llvm::StringRef getAPIMapping(std::string Key);
+  static llvm::StringRef getAPIStr(std::string Key);
 
   inline static void setPrintAll(bool Flag) { PrintAll = Flag; }
   inline static bool getPrintAll() { return PrintAll; }

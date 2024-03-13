@@ -85,12 +85,12 @@ APIMapping::getAPIStr(std::string &Key,
   return EntryArray[Iter->second];
 }
 
-llvm::StringRef APIMapping::getAPISourceCode(std::string Key) {
-  return getAPIStr(Key, EntryMap);
-}
-
-llvm::StringRef APIMapping::getAPIMapping(std::string Key) {
-  return getAPIStr(Key, EntryMapBuffer);
+llvm::StringRef APIMapping::getAPIStr(std::string Key) {
+  auto Str = getAPIStr(Key, EntryMapBuffer);
+  if (Str.empty()) {
+    Str = getAPIStr(Key, EntryMap);
+  }
+  return Str;
 }
 
 void APIMapping::printAll() {

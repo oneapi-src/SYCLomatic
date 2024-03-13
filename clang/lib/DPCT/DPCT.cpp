@@ -933,14 +933,11 @@ int runDPCT(int argc, const char **argv) {
       APIMapping::printAll();
       dpctExit(MigrationSucceeded);
     }
-    if (CudaIncludePathOpt.empty()) {
-      auto Mapping = APIMapping::getAPIMapping(QueryAPIMapping);
-      if (!Mapping.empty()) {
-        llvm::outs() << Mapping;
-        dpctExit(MigrationSucceeded);
-      }
+    auto SourceCode = APIMapping::getAPIStr(QueryAPIMapping);
+    if (SourceCode.contains("CUDA API:")) {
+      llvm::outs() << SourceCode;
+      dpctExit(MigrationSucceeded);
     }
-    auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       ShowStatus(MigrationErrorNoAPIMapping);
       dpctExit(MigrationErrorNoAPIMapping);

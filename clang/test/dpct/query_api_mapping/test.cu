@@ -41,9 +41,3 @@
 
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMalloc --usm-level=none 2>&1 | FileCheck %s -check-prefix=CONFLICT_OPT
 // CONFLICT_OPT: Warning: For API mapping query, only option --extra-arg and --cuda-include-path can be used together with option --query-api-mapping.
-
-// RUN: dpct --query-api-mapping=cudaMalloc | FileCheck %s -check-prefix=FAST_QUERY
-// FAST_QUERY: CUDA API:
-// FAST_QUERY-NEXT:   cudaMalloc(pDev /*void ***/, s /*size_t*/);
-// FAST_QUERY-NEXT: Is migrated to:
-// FAST_QUERY-NEXT:   *pDev = (void *)sycl::malloc_device(s, dpct::get_in_order_queue());
