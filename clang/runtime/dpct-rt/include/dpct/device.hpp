@@ -37,6 +37,7 @@ static void get_version(const sycl::device &dev, int &major, int &minor) {
   // Version string has the following format:
   // a. OpenCL<space><major.minor><space><vendor-specific-information>
   // b. <major.minor>
+  // c. <AmdGcnArchName> e.g gfx1030
   std::string ver;
   ver = dev.get_info<sycl::info::device::version>();
   std::string::size_type i = 0;
@@ -51,9 +52,14 @@ static void get_version(const sycl::device &dev, int &major, int &minor) {
       break;
     i++;
   }
-  i++;
-  minor = std::stoi(&(ver[i]));
-}
+  if (i < ver.size()) {
+    // a. and b.
+    i++;
+    minor = std::stoi(&(ver[i]));
+  } else {
+    // c.
+    minor = 0;
+  }
 } // namespace detail
 
 /// SYCL default exception handler
