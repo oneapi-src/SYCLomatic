@@ -23,25 +23,18 @@ namespace blas {
 namespace detail {
 template <typename target_t, typename source_t> class parameter_wrapper_base_t {
 public:
-#ifdef DPCT_USM_LEVEL_NONE
-  using data_t = sycl::buffer<target_t>;
-  using get_memory_t = sycl::buffer<target_t> &;
-#else
-  using data_t = target_t *;
-  using get_memory_t = target_t *;
-#endif
-
   parameter_wrapper_base_t(sycl::queue q, source_t *source, size_t ele_num)
       : _source_attribute(dpct::detail::get_pointer_attribute(q, source)),
         _q(q), _source(source), _ele_num(ele_num),
         _target(construct_member_variable_target()) {}
 
   ~parameter_wrapper_base_t() {
-#ifndef DPCT_USM_LEVEL_NONE
     if (_need_free) {
-      sycl::free(_target, _q);
+      _q.submit([&](sycl::handler &cgh) {
+        cgh.depends_on(_copyback);
+        cgh.host_task([t = _target, q = _q] { dpct::detail::dpct_free(t, q); });
+      });
     }
-#endif
   }
 
 protected:
@@ -49,22 +42,23 @@ protected:
   sycl::queue _q;
   source_t *_source = nullptr;
   size_t _ele_num;
-#ifndef DPCT_USM_LEVEL_NONE
   bool _need_free = true;
-#endif
-  data_t _target;
+  target_t *_target;
+  sycl::event _copyback;
 
 private:
-  data_t construct_member_variable_target() {
+  target_t *construct_member_variable_target() {
 #ifdef DPCT_USM_LEVEL_NONE
     if constexpr (!std::is_same_v<target_t, source_t>) {
-      return sycl::buffer<target_t>(sycl::range<1>(_ele_num));
+      return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
     } else if (_source_attribute !=
                dpct::detail::pointer_access_attribute::host_only) {
-      target_t *host_ptr = dpct::get_host_ptr<target_t>(_source);
-      return sycl::buffer<target_t>(host_ptr, sycl::range<1>(_ele_num));
+      _need_free = false;
+      return _source;
     } else {
-      return sycl::buffer<target_t>(_source, sycl::range<1>(_ele_num));
+      target_t *ptr =
+          (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
+      return ptr;
     }
 #else
     if constexpr (std::is_same_v<target_t, source_t>) {
@@ -107,11 +101,11 @@ class parameter_wrapper_t
                 "Only parameter_inout_prop::out is supported if "
                 "target_t and source_t are not same.");
   using base_t = detail::parameter_wrapper_base_t<target_t, source_t>;
+  using base_t::_copyback;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
   using base_t::_target;
-  using typename base_t::get_memory_t;
 
 public:
   /// Constructor
@@ -121,26 +115,35 @@ public:
   /// Destructor
   ~parameter_wrapper_t() {
 #ifdef DPCT_USM_LEVEL_NONE
-    source_t temp = static_cast<source_t>(_target.get_host_access()[0]);
     if (_source_attribute ==
         dpct::detail::pointer_access_attribute::device_only) {
-      dpct::get_host_ptr<source_t>(_source)[0] = temp;
+      _copyback = _q.submit([&](sycl::handler &cgh) {
+        auto from_acc = dpct::get_buffer<target_t>(_target)
+                            .template get_access<sycl::access_mode::read>(cgh);
+        auto to_acc = dpct::get_buffer<source_t>(_source)
+                          .template get_access<sycl::access_mode::write>(cgh);
+        cgh.single_task(
+            [=]() { to_acc[0] = static_cast<target_t>(from_acc[0]); });
+      });
     } else {
+      source_t temp =
+          static_cast<source_t>(dpct::get_host_ptr<target_t>(_target)[0]);
       *_source = temp;
     }
 #else
-    _q.wait();
-    source_t temp = static_cast<source_t>(*_target);
     if (_source_attribute ==
         dpct::detail::pointer_access_attribute::device_only) {
-      _q.memcpy(_source, &temp, sizeof(source_t)).wait();
+      _q.template single_task(
+          [t = _target, s = _source]() { *s = static_cast<source_t>(*t); });
     } else {
+      _q.wait();
+      source_t temp = static_cast<source_t>(*_target);
       *_source = temp;
     }
 #endif
   }
   /// Get the working memory
-  get_memory_t get_memory() { return _target; }
+  target_t *get_memory() { return _target; }
 };
 
 /// \tparam target_t Data type of the return value of get_memory() interface
@@ -165,8 +168,6 @@ class parameter_wrapper_t<target_t, target_t, inout_prop>
   using base_t::_source;
   using base_t::_source_attribute;
   using base_t::_target;
-  using typename base_t::data_t;
-  using typename base_t::get_memory_t;
 
 public:
   /// Constructor
@@ -175,29 +176,31 @@ public:
   /// \param ele_num Element number in \p source
   parameter_wrapper_t(sycl::queue q, target_t *source, size_t ele_num = 1)
       : base_t(q, source, ele_num) {
-#ifndef DPCT_USM_LEVEL_NONE
     if constexpr (inout_prop != parameter_inout_prop::out) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
+#ifdef DPCT_USM_LEVEL_NONE
+        dpct::detail::dpct_memcpy(_q, _target, _source,
+                                  sizeof(target_t) * _ele_num, automatic);
+#else
         _q.memcpy(_target, _source, sizeof(target_t) * _ele_num);
+#endif
       }
     }
-#endif
   }
   /// Destructor
   ~parameter_wrapper_t() {
-#ifndef DPCT_USM_LEVEL_NONE
-    _q.wait();
     if constexpr (inout_prop != parameter_inout_prop::in) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
-        _q.memcpy(_source, _target, sizeof(target_t) * _ele_num).wait();
+        _q.wait();
+        dpct::dpct_memcpy(_source, _target, sizeof(target_t) * _ele_num,
+                          automatic, _q);
       }
     }
-#endif
   }
   /// Get the working memory
-  get_memory_t get_memory() { return _target; }
+  target_t *get_memory() { return _target; }
 };
 
 using out_mem_int64_int_t =
