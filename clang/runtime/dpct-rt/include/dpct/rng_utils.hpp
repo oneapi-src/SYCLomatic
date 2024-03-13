@@ -205,17 +205,8 @@ private:
 } // namespace device
 #endif
 
-enum class random_mode {
-  best,
-  legacy,
-  optimal,
-};
-
 namespace host {
 namespace detail {
-static const std::string OneMKLNotSupport =
-    "The oneAPI Math Kernel Library (oneMKL) Interfaces Project does not "
-    "support this API.";
 class rng_generator_base {
 public:
   /// Set the seed of host rng_generator.
@@ -229,10 +220,6 @@ public:
   /// Set the queue of host rng_generator.
   /// \param queue The engine queue.
   virtual void set_queue(sycl::queue *queue) = 0;
-
-  /// Set the mode of host rng_generator.
-  /// \param mode The engine mode.
-  virtual void set_mode(const random_mode mode) = 0;
 
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
   /// \param output The pointer of the first random number.
@@ -319,7 +306,6 @@ protected:
   sycl::queue *_queue = nullptr;
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
-  random_mode _mode{random_mode::best};
   std::vector<std::uint32_t> _direction_numbers;
   std::uint32_t _engine_idx{0};
 };
@@ -331,8 +317,8 @@ public:
   /// Constructor of rng_generator.
   /// \param q The queue where the generator should be executed.
   rng_generator(sycl::queue &q = dpct::get_default_queue())
-      : rng_generator_base(&q),
-        _engine(create_engine(&q, _seed, _dimensions, _mode)) {}
+      : rng_generator_base(&q), _engine(create_engine(&q, _seed, _dimensions)) {
+  }
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
@@ -341,7 +327,7 @@ public:
       return;
     }
     _seed = seed;
-    _engine = create_engine(_queue, _seed, _dimensions, _mode);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 
   /// Set the dimensions of host rng_generator.
@@ -351,7 +337,7 @@ public:
       return;
     }
     _dimensions = dimensions;
-    _engine = create_engine(_queue, _seed, _dimensions, _mode);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 
   /// Set the queue of host rng_generator.
@@ -361,24 +347,7 @@ public:
       return;
     }
     _queue = queue;
-    _engine = create_engine(_queue, _seed, _dimensions, _mode);
-  }
-
-  /// Set the mode of host rng_generator.
-  /// \param mode The engine mode.
-  void set_mode(const random_mode mode) {
-#ifndef __INTEL_MKL__
-    throw std::runtime_error(OneMKLNotSupport);
-#else
-    if constexpr (!std::is_same_v<engine_t, oneapi::mkl::rng::mrg32k3a>) {
-      throw std::runtime_error("Only mrg32k3a engine support this method.");
-    }
-    if (mode == _mode) {
-      return;
-    }
-    _mode = mode;
-    _engine = create_engine(_queue, _seed, _dimensions, _mode);
-#endif
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 
   /// Set the direction numbers of Sobol host rng_generator.
@@ -386,7 +355,8 @@ public:
   void
   set_direction_numbers(const std::vector<std::uint32_t> &direction_numbers) {
 #ifndef __INTEL_MKL__
-    throw std::runtime_error(OneMKLNotSupport);
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
 #else
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::sobol>) {
       if (direction_numbers == _direction_numbers) {
@@ -424,7 +394,8 @@ public:
   /// \param n The number of random numbers.
   inline void generate_uniform_bits(unsigned int *output, std::int64_t n) {
 #ifndef __INTEL_MKL__
-    throw std::runtime_error(OneMKLNotSupport);
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
 #else
     static_assert(sizeof(unsigned int) == sizeof(std::uint32_t));
     generate<oneapi::mkl::rng::uniform_bits<std::uint32_t>>(
@@ -439,7 +410,8 @@ public:
   inline void generate_uniform_bits(unsigned long long *output,
                                     std::int64_t n) {
 #ifndef __INTEL_MKL__
-    throw std::runtime_error(OneMKLNotSupport);
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
 #else
     static_assert(sizeof(unsigned long long) == sizeof(std::uint64_t));
     generate<oneapi::mkl::rng::uniform_bits<std::uint64_t>>(
@@ -526,22 +498,8 @@ public:
 private:
   static inline engine_t create_engine(sycl::queue *queue,
                                        const std::uint64_t seed,
-                                       const std::uint32_t dimensions,
-                                       const random_mode mode) {
+                                       const std::uint32_t dimensions) {
 #ifdef __INTEL_MKL__
-    if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mrg32k3a>) {
-      switch (mode) {
-      case random_mode::best:
-        return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::custom{81920});
-      case random_mode::legacy:
-        return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::custom{4096});
-      case random_mode::optimal:
-        return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
-      }
-    }
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
                : engine_t(*queue, seed);
@@ -589,7 +547,8 @@ create_host_rng(const random_engine_type type,
     return std::make_shared<
         rng::host::detail::rng_generator<oneapi::mkl::rng::mrg32k3a>>(q);
 #ifndef __INTEL_MKL__
-    throw std::runtime_error(host::detail::OneMKLNotSupport);
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
 #else
   case random_engine_type::mt2203:
     return std::make_shared<
