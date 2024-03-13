@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
 // CHECK:  dpct::sycl_event_record(stop, &q_ct1);
-// CHECK-NEXT:  dpct::sycl_event_synchronize(stop);
+// CHECK-NEXT:  stop->wait_and_throw();
 // CHECK-NEXT:  elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   cudaEventRecord(stop, 0);
   cudaEventSynchronize(stop);

@@ -25,7 +25,7 @@ void foo(){
   cuStreamWaitEvent(s, e, 0);
 
 // CHECK: dpct::sycl_event_record(e, s);
-// CHECK-NEXT: dpct::sycl_event_synchronize(e);
+// CHECK-NEXT: e->wait_and_throw();
   cuEventRecord(e, s);
   cuEventSynchronize(e);
 
@@ -37,8 +37,8 @@ void foo(){
 // CHECK: dpct::event_ptr start, end;
 // CHECK: dpct::sycl_event_record(start, s);
 // CHECK: dpct::sycl_event_record(end, s);
-// CHECK: dpct::sycl_event_synchronize(start);
-// CHECK: dpct::sycl_event_synchronize(end);
+// CHECK: start->wait_and_throw();
+// CHECK: end->wait_and_throw();
 // CHECK: float result_time;
 // CHECK: result_time = (end->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   CUevent start, end;

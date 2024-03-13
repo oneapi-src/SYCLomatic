@@ -63,7 +63,7 @@
 //CHECK-NEXT:  if (CMC_profile)                                                                                                                                                        \
 //CHECK-NEXT:  {                                                                                                                                                                       \
 //CHECK-NEXT:    dpct::sycl_event_record(stop);                                                                                                                                        \
-//CHECK-NEXT:    dpct::sycl_event_synchronize(stop);                                                                                                                                   \
+//CHECK-NEXT:    stop->wait_and_throw();                                                                                                                                   \
 //CHECK-NEXT:    float time = 0.0f;                                                                                                                                                    \
 //CHECK-NEXT:    time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f; \
 //CHECK-NEXT:    dpct::destroy_event(start);                                                                                                                                           \

@@ -65,7 +65,7 @@ int main() {
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
     // CHECK:    dpct::sycl_event_record(stop, &q_ct1);
-    // CHECK:    dpct::sycl_event_synchronize(stop);
+    // CHECK:    stop->wait_and_throw();
     // CHECK:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
@@ -117,7 +117,7 @@ void foo_test_1() {
     cudaThreadSynchronize();
 
 // CHECK:    dpct::sycl_event_record( stop, &q_ct1 ) ;
-// CHECK-NEXT:    dpct::sycl_event_synchronize( stop ) ;
+// CHECK-NEXT:    stop->wait_and_throw() ;
 // CHECK-NEXT:    float   elapsedTime;
 // CHECK-NEXT:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f ;
     cudaEventRecord( stop, 0 ) ;
@@ -228,7 +228,7 @@ void foo_test_3() {
   // CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_record(stop, &q_ct1)));
-  // CHECK-NEXT:  CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
+  // CHECK-NEXT:  CHECK(DPCT_CHECK_ERROR(stop->wait_and_throw()));
   // CHECK-NEXT:  float execution_time;
   // CHECK-NEXT:  CHECK(DPCT_CHECK_ERROR(execution_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f));  
     CHECK(cudaEventRecord(stop, 0));
@@ -254,7 +254,7 @@ void foo_usm() {
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
   // CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::sycl_event_record(stop, &q_ct1)));
-  // CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
+  // CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(stop->wait_and_throw()));
   // CHECK:  float Time = 0.0f;
   // CHECK:  Time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   SAFE_CALL(cudaEventRecord(stop, 0));
@@ -269,7 +269,6 @@ __global__ void readTexelsFoo1(int n, float *d_out){
 }
 __global__ void readTexelsFoo2(int n, float *d_out, int width, int height){
 }
-texture<float4, 2, cudaReadModeElementType> texA;
 
 void foo()
 {
@@ -340,7 +339,7 @@ void foo()
             }
 
 // CHECK:            dpct::sycl_event_record(stop, &q_ct1);
-// CHECK-NEXT:             dpct::sycl_event_synchronize(stop);
+// CHECK-NEXT:             stop->wait_and_throw();
 // CHECK-NEXT:             t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -373,7 +372,7 @@ void foo()
             }
 
 // CHECK:             dpct::sycl_event_record(stop, &q_ct1);
-// CHECK-NEXT:            dpct::sycl_event_synchronize(stop);
+// CHECK-NEXT:            stop->wait_and_throw();
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -408,7 +407,7 @@ void foo()
 
 
 // CHECK:            dpct::sycl_event_record(stop, &q_ct1);
-// CHECK-NEXT:            dpct::sycl_event_synchronize(stop);
+// CHECK-NEXT:            stop->wait_and_throw();
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -487,7 +486,7 @@ int foo_test_4()
 
 
 // CHECK:    CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_record(stop, &q_ct1)));
-// CHECK:    CHECK(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(stop->wait_and_throw()));
     CHECK(cudaEventRecord(stop, 0));
     CHECK(cudaEventSynchronize(stop));
     CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
@@ -707,8 +706,8 @@ void foo_test_1983() {
     kernel<<<1, 1, 0, stream2>>>();
 
 // CHECK:    dpct::sycl_event_record(event2, stream2);
-// CHECK-NEXT:    dpct::sycl_event_synchronize(event1);
-// CHECK-NEXT:    dpct::sycl_event_synchronize(event2);
+// CHECK-NEXT:    event1->wait_and_throw();
+// CHECK-NEXT:    event2->wait_and_throw();
     cudaEventRecord(event2, stream2);
     cudaEventSynchronize(event1);
     cudaEventSynchronize(event2);
@@ -773,7 +772,7 @@ template <class T, class vecT> void foo_test_2131() {
 
 
     // CHECK:    SAFE_CALL(DPCT_CHECK_ERROR(dpct::sycl_event_record(stop, &q_ct1)));
-    // CHECK:    SAFE_CALL(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
+    // CHECK:    SAFE_CALL(DPCT_CHECK_ERROR(stop->wait_and_throw()));
     // CHECK:    totalScanTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     SAFE_CALL(cudaEventRecord(stop, 0));
     SAFE_CALL(cudaEventSynchronize(stop));

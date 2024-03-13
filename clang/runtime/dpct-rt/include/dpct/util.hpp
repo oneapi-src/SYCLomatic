@@ -956,39 +956,6 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
   : reinterpret_cast<queue_ptr>(x);
 }
 
-/// For USM, if \p queue is the default queue, waits all the kernel tasks
-/// in all the queues of current device completed, then stores the event of
-/// the queue specified by \p queue at the time of this call into the memory
-/// pointed by \p event_ptr. If \p queue is not the default queue, just stores
-/// the event of the queue specified by \p queue at the time of this call into
-/// the memory pointed by \p event_ptr.
-/// For usmnone, waits all the kernel tasks
-/// in all the queues of current device completed, then stores the event of the
-/// queue specified by \p queue at the time of this call into memory pointed by
-/// \p event_ptr.
-inline void sycl_event_record(dpct::event_ptr event_ptr,
-                              sycl::queue *queue = &get_default_queue()) {
-#ifdef DPCT_USM_LEVEL_NONE
-  dpct::get_current_device().queues_wait_and_throw();
-#else
-  if (*queue == get_default_queue()) {
-    dpct::get_current_device().queues_wait_and_throw();
-  }
-#endif
-
-#ifdef DPCT_PROFILING_ENABLED
-  *event_ptr = queue->ext_oneapi_submit_barrier();
-#else
-  *event_ptr = queue->single_task([=]() {});
-#endif
-}
-
-/// Waits kernel tasks in current queue before the event specifed by \p
-/// event_ptr completed.
-inline void sycl_event_synchronize(dpct::event_ptr event_ptr) {
-  event_ptr->wait_and_throw();
-}
-
 template <int n_nondefault_params, int n_default_params, typename T>
 class args_selector;
 

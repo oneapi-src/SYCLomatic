@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 
     // record stop event
     // CHECK:    dpct::sycl_event_record(stop, &dpct::get_in_order_queue());
-    // CHECK-NEXT:    dpct::sycl_event_synchronize(stop);
+    // CHECK-NEXT:    stop->wait_and_throw();
     // CHECK-NEXT:    elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
@@ -179,13 +179,13 @@ void foo_test_1() {
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:  CHECK_FOO(DPCT_CHECK_ERROR(dpct::sycl_event_record(stop)));
-// CHECK-NEXT:  dpct::sycl_event_synchronize(stop);
-// CHECK-NEXT:  MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
-// CHECK-NEXT:  MY_CHECKER(DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
-// CHECK-NEXT:  (DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
+// CHECK-NEXT:  stop->wait_and_throw();
+// CHECK-NEXT:  MY_ERROR_CHECKER(DPCT_CHECK_ERROR(stop->wait_and_throw()));
+// CHECK-NEXT:  MY_CHECKER(DPCT_CHECK_ERROR(stop->wait_and_throw()));
+// CHECK-NEXT:  (DPCT_CHECK_ERROR(stop->wait_and_throw()));
 // CHECK-NEXT:  int ret;
-// CHECK-NEXT:  ret = (DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
-// CHECK-NEXT:  int a = (DPCT_CHECK_ERROR(dpct::sycl_event_synchronize(stop)));
+// CHECK-NEXT:  ret = (DPCT_CHECK_ERROR(stop->wait_and_throw()));
+// CHECK-NEXT:  int a = (DPCT_CHECK_ERROR(stop->wait_and_throw()));
 // CHECK-NEXT:  et = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   kernel_1<<<1, 1>>>();
   CHECK_FOO(cudaEventRecord(stop));
@@ -383,7 +383,7 @@ void foo_test_4() {
     // CHECK-NEXT:                    });
     // CHECK-NEXT:    }
     // CHECK-NEXT:    dpct::sycl_event_record(stop, &dpct::get_in_order_queue());
-    // CHECK-NEXT:    dpct::sycl_event_synchronize(stop);
+    // CHECK-NEXT:    stop->wait_and_throw();
     // CHECK-NEXT:    times[0][k] = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(start, 0);
     STREAM_Copy<<<dimGrid, dimBlock>>>(d_a, d_c, N);
@@ -405,7 +405,7 @@ void foo_test_4() {
     // CHECK-NEXT:                    });
     // CHECK-NEXT:    }
     // CHECK-NEXT:    dpct::sycl_event_record(stop, &dpct::get_in_order_queue());
-    // CHECK-NEXT:    dpct::sycl_event_synchronize(stop);
+    // CHECK-NEXT:    stop->wait_and_throw();
     // CHECK-NEXT:    times[1][k] = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(start, 0);
     STREAM_Copy_Optimized<<<dimGrid, dimBlock>>>(d_a, d_c, N);

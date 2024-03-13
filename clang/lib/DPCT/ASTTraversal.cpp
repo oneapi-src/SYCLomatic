@@ -7101,15 +7101,13 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuEventSynchronize") {
     if(DpctGlobalInfo::getEnablepProfilingFlag()) {
       // Option '--enable-profiling' is enabled
-      std::string ReplStr;
-      ReplStr = MapNames::getDpctNamespace() + "sycl_event_synchronize";
+      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
+      ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
-        emplaceTransformation(new InsertBeforeStmt(CE, "DPCT_CHECK_ERROR("));
+        ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+        requestFeature(HelperFeatureEnum::device_ext);
       }
-      emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplStr)));
-      if (IsAssigned) {
-        emplaceTransformation(new InsertAfterStmt(CE, ")"));
-      }
+      emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
     } else {
       // Option '--enable-profiling' is not enabled
       bool NeedReport = false;
