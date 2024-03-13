@@ -60,6 +60,7 @@ static void get_version(const sycl::device &dev, int &major, int &minor) {
     // c.
     minor = 0;
   }
+ }
 } // namespace detail
 
 /// SYCL default exception handler
