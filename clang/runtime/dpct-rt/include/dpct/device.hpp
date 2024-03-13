@@ -410,6 +410,10 @@ public:
     return get_info<sycl::info::device::mem_base_addr_align>();
   }
 
+  int get_mem_base_addr_align_in_bytes() const {
+    return get_info<sycl::info::device::mem_base_addr_align>() / 8;
+  }
+
   size_t get_global_mem_size() const {
     return get_device_info().get_global_mem_size();
   }
@@ -505,11 +509,16 @@ public:
                    _queues.end());
     queue = nullptr;
   }
-  void set_saved_queue(sycl::queue* q) {
+  [[deprecated("set_saved_queue for device_ext is deprecated, please use "
+               "dpct::blas::descriptor::set_saved_queue instead")]] void
+  set_saved_queue(sycl::queue *q) {
     std::lock_guard<mutex_type> lock(m_mutex);
     _saved_queue = q;
   }
-  sycl::queue *get_saved_queue() const {
+  [[deprecated(
+      "get_saved_queue for device_ext is deprecated, please use "
+      "dpct::blas::descriptor::get_saved_queue instead")]] sycl::queue *
+  get_saved_queue() const {
     std::lock_guard<mutex_type> lock(m_mutex);
     return _saved_queue;
   }

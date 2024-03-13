@@ -425,6 +425,7 @@ std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
 
 bool needExtraParens(const clang::Expr *);
+bool needExtraParensInMemberExpr(const clang::Expr *);
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
                                        const clang::SourceLocation End);
@@ -535,8 +536,9 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE);
 bool checkIfContainSizeofTypeRecursively(
     const clang::Expr *E, const clang::Expr *&ExprContainSizeofType);
 bool containSizeOfType(const clang::Expr *E);
-bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo);
 bool isCubVar(const clang::VarDecl *VD);
+bool isCubTempStorageType(QualType T);
+bool isCubCollectiveRecordType(QualType T);
 void findAllVarRef(const clang::DeclRefExpr *DRE,
                    std::vector<const clang::DeclRefExpr *> &RefMatchResult,
                    bool IsGlobalScopeAllowed = false);

@@ -861,6 +861,14 @@ thrustFactory("thrust::equal_range",
                {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
                {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
                {4,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext}}),
+
+// thrust::unique_count
+thrustFactory("thrust::unique_count",
+              {{3,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext},
+               {2,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext},
+               {4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext}}),
+
 // thrust::sequence
 thrustFactory("thrust::sequence",
               {{3,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::device_ext},

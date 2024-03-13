@@ -99,6 +99,7 @@ tools = [
     "clang-offload-packager",
     "clang-tblgen",
     "clang-scan-deps",
+    "clang-installapi",
     "opt",
     "llvm-ifs",
     "yaml2obj",
@@ -106,6 +107,7 @@ tools = [
     "llvm-lto",
     "llvm-lto2",
     "llvm-profdata",
+    "llvm-readtapi",
     ToolSubst(
         "%clang_extdef_map",
         command=FindTool("clang-extdef-mapping"),

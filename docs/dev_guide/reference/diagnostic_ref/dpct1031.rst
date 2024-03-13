@@ -7,6 +7,7 @@ Message
 -------
 
 .. _msg-1031-start:
+
 Memory access across peer devices is an implementation-specific feature which
 may not be supported by some SYCL backends and compilers. The output parameter(s)
 are set to 0. You can migrate the code with peer access extension if you do not

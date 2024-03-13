@@ -79,7 +79,6 @@ template <typename T> struct device_reference {
     return *this;
   };
   pointer operator&() const { return pointer(&value); };
-  operator value_type() const { return T(value); }
   device_reference &operator++() {
     ++value;
     return *this;
@@ -138,6 +137,8 @@ template <typename T> struct device_reference {
     value >>= input;
     return *this;
   };
+  operator T &() { return value; }
+  operator const T &() const { return value; }
   void swap(device_reference &input) {
     T tmp = (*this);
     *this = (input);

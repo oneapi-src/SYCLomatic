@@ -5,7 +5,7 @@
 // RUN: cd %T
 // RUN: cp %s one.cu
 // RUN: cp %S/two.cu two.cu
-// RUN: cp %S/three.c three.c
+// RUN: cp %S/three.cpp three.cpp
 // RUN: cp %S/four.c four.c
 // RUN: cp %S/Makefile Makefile
 //
@@ -27,9 +27,9 @@
 // RUN: echo "// CHECK-NEXT:        \"file\": \"%/T/four.c\"" >> compile_commands.json_ref
 // RUN: echo "// CHECK-NEXT:    }," >> compile_commands.json_ref
 // RUN: echo "// CHECK-NEXT:    {" >> compile_commands.json_ref
-// RUN: echo "// CHECK-NEXT:        \"command\": \"nvcc -c  -std=c++14 -Wall --cuda-gpu-arch=sm_60 -O3 -D__CUDACC__=1 -o three.o three.c\"," >> compile_commands.json_ref
+// RUN: echo "// CHECK-NEXT:        \"command\": \"nvcc -c  -std=c++14 -Wall --cuda-gpu-arch=sm_60 -O3 -D__CUDACC__=1 -o three.o three.cpp\"," >> compile_commands.json_ref
 // RUN: echo "// CHECK-NEXT:        \"directory\": \"%/T\"," >> compile_commands.json_ref
-// RUN: echo "// CHECK-NEXT:        \"file\": \"%/T/three.c\"" >> compile_commands.json_ref
+// RUN: echo "// CHECK-NEXT:        \"file\": \"%/T/three.cpp\"" >> compile_commands.json_ref
 // RUN: echo "// CHECK-NEXT:    }," >> compile_commands.json_ref
 // RUN: echo "// CHECK-NEXT:    {" >> compile_commands.json_ref
 // RUN: echo "// CHECK-NEXT:        \"command\": \"nvcc  -std=c++14 -Wall --cuda-gpu-arch=sm_60 -O3 one.o two.o -o main -D__CUDACC__=1 four.o three.o\"," >> compile_commands.json_ref
@@ -41,6 +41,10 @@
 // RUN: make clean
 // RUN: not dpct intercept-build make
 // RUN: FileCheck --match-full-lines --input-file %T/compile_commands.json %T/compile_commands.json_ref
+// RUN: dpct -in-root ./ -out-root out -p ./ --gen-build-script --cuda-include-path="%cuda-path/include"
+// RUN: cat %S/Makefile.dpct.ref  >%T/Makefile.dpct.check
+// RUN: cat %T/out/Makefile.dpct >> %T/Makefile.dpct.check
+// RUN: FileCheck --match-full-lines --input-file %T/Makefile.dpct.check %T/Makefile.dpct.check
 
 #include <iostream>
 

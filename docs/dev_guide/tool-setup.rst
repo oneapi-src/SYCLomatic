@@ -4,6 +4,8 @@ Tool Setup and Basic Use
 Before You Begin
 ----------------
 
+Install and set up |tool_name|.
+
 .. include:: /_include_files/before_begin_intro_dgr.rst
 
 

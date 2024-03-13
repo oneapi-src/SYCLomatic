@@ -1,5 +1,5 @@
 // RUN: cd %T
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14 2>err.txt
+// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 2>err.txt
 // RUN: FileCheck --input-file %T/unique_id.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/unique_id.dp.cpp -o %T/unique_id.dp.o %}
 // RUN: FileCheck --input-file %T/err.txt --match-full-lines %S/ref.txt

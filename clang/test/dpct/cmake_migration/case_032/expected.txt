@@ -21,3 +21,11 @@ link_libraries(${PROJECT_NAME}
    
    
 )
+
+if (WIN32)
+    # As of 12.3.1 CUDA Tookit for Windows does not offer a static cublas library
+    set(LLAMA_EXTRA_LIBS ${LLAMA_EXTRA_LIBS}  ${MKL_LIB} ${DNN_LIB})
+else ()
+    set(LLAMA_EXTRA_LIBS ${LLAMA_EXTRA_LIBS}  ${MKL_LIB} ${DNN_LIB})
+endif()
+set(LLAMA_EXTRA_LIBS ${LLAMA_EXTRA_LIBS}  ${MKL_LIB} ${DNN_LIB})

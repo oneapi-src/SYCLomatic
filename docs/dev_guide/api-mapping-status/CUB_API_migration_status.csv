@@ -1,0 +1,168 @@
+Function,Migration Support,Diagnostic Message
+cub::ShuffleUp,NO,
+cub::ShuffleDown,NO,
+cub::ShuffleIndex,YES,
+cub::WarpScan::InclusiveSum,YES,
+cub::WarpScan::ExclusiveSum,YES,
+cub::WarpScan::InclusiveScan,YES,
+cub::WarpScan::ExclusiveScan,YES,
+cub::WarpScan::Scan,NO,
+cub::WarpScan::Broadcast,YES,
+cub::WarpReduce::Sum,YES,
+cub::WarpReduce::HeadSegmentedSum,NO,
+cub::WarpReduce::TailSegmentedSum,NO,
+cub::WarpReduce::Reduce,YES,
+cub::WarpReduce::HeadSegmentedReduce,NO,
+cub::WarpReduce::TailSegmentedReduce,NO,
+cub::WarpExchange::BlockedToStriped,NO,
+cub::WarpExchange::StripedToBlocked,NO,
+cub::WarpExchange::ScatterToStriped,NO,
+cub::WarpLoad::Load,NO,
+cub::WarpStore::Store,NO,
+cub::BlockAdjacentDifference::SubtractLeft,NO,
+cub::BlockAdjacentDifference::SubtractLeftPartialTile,NO,
+cub::BlockAdjacentDifference::SubtractRight,NO,
+cub::BlockAdjacentDifference::SubtractRightPartialTile,NO,
+cub::BlockAdjacentDifference::FlagHeads,NO,
+cub::BlockAdjacentDifference::FlagTails,NO,
+cub::BlockAdjacentDifference::FlagHeadsAndTails,NO,
+cub::BlockDiscontinuity::FlagHeads,NO,
+cub::BlockDiscontinuity::FlagTails,NO,
+cub::BlockDiscontinuity::FlagHeadsAndTails,NO,
+cub::BlockExchange::StripedToBlocked,NO,
+cub::BlockExchange::BlockedToStriped,NO,
+cub::BlockExchange::WarpStripedToBlocked,NO,
+cub::BlockExchange::BlockedToWarpStriped,NO,
+cub::BlockExchange::ScatterToBlocked,NO,
+cub::BlockExchange::ScatterToStriped,NO,
+cub::BlockExchange::ScatterToStripedGuarded,NO,
+cub::BlockExchange::ScatterToStripedFlagged,NO,
+cub::BlockHistogram::InitHistogram,NO,
+cub::BlockHistogram::Histogram,NO,
+cub::BlockHistogram::Composite,NO,
+cub::BlockLoad::Load,NO,
+cub::BlockStore::Store,NO,
+cub::BlockRadixSort::Sort,NO,
+cub::BlockRadixSort::SortDescending,NO,
+cub::BlockRadixSort::SortBlockedToStriped,NO,
+cub::BlockRadixSort::SortDescendingBlockedToStriped,NO,
+cub::BlockReduce::Reduce,YES,
+cub::BlockReduce::Sum,YES,
+cub::BlockScan::ExclusiveSum,YES,
+cub::BlockScan::ExclusiveScan,YES,
+cub::BlockScan::InclusiveSum,YES,
+cub::BlockScan::InclusiveScan,YES,
+cub::BlockShuffle::Offset,NO,
+cub::BlockShuffle::Rotate,NO,
+cub::BlockShuffle::Up,NO,
+cub::BlockShuffle::Down,NO,
+cub::DeviceAdjacentDifference::SubtractLeftCopy,NO,
+cub::DeviceAdjacentDifference::SubtractLeft,NO,
+cub::DeviceAdjacentDifference::SubtractRightCopy,NO,
+cub::DeviceAdjacentDifference::SubtractRight,NO,
+cub::DeviceHistogram::HistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceHistogram::MultiHistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceHistogram::HistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceHistogram::MultiHistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DevicePartition::Flagged,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DevicePartition::If,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::SortPairsCopy,NO,
+cub::DeviceMergeSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::SortKeysCopy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::StableSortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::StableSortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRadixSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRadixSort::SortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::Reduce,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::Sum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::Min,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::ArgMin,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::Max,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::ArgMax,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::ReduceByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRunLengthEncode::Encode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRunLengthEncode::NonTrivialRuns,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::ExclusiveSum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::ExclusiveScan,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::InclusiveSum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::InclusiveScan,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::InclusiveSumByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::ExclusiveSumByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::InclusiveScanByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::ExclusiveScanByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSelect::Flagged,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSelect::If,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSelect::Unique,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSelect::UniqueByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSpmv::CsrMV,NO,
+cub::DeviceSegmentedRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedRadixSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedRadixSort::SortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedReduce::Reduce,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1091` / :ref:`DPCT1092`
+cub::DeviceSegmentedReduce::Sum,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
+cub::DeviceSegmentedReduce::Min,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
+cub::DeviceSegmentedReduce::ArgMin,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedReduce::Max,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
+cub::DeviceSegmentedReduce::ArgMax,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::SortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::StableSortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::StableSortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::StableSortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::StableSortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::ThreadLoad,YES,
+cub::ThreadStore,YES,
+cub::LoadDirectBlocked,NO,
+cub::LoadDirectBlockedVectorized,NO,
+cub::StoreDirectBlocked,NO,
+cub::StoreDirectBlockedVectorized,NO,
+cub::LoadDirectStriped,NO,
+cub::StoreDirectStriped,NO,
+cub::LoadDirectWarpStriped,NO,
+cub::StoreDirectWarpStriped,NO,
+cub::SHR_ADD,YES,
+cub::SHL_ADD,YES,
+cub::BFE,YES,
+cub::BFI,YES,
+cub::IADD3,YES,
+cub::PRMT,NO,
+cub::ThreadExit,NO,
+cub::ThreadTrap,NO,
+cub::RowMajorTid,NO,
+cub::LaneId,YES,
+cub::WarpId,YES,
+cub::LaneMaskLt,NO,
+cub::LaneMaskLe,NO,
+cub::LaneMaskGt,NO,
+cub::LaneMaskGe,NO,
+cub::CachingDeviceAllocator::SetMaxCachedBytes,NO,
+cub::CachingDeviceAllocator::DeviceAllocate,NO,
+cub::CachingDeviceAllocator::DeviceFree,NO,
+cub::CachingDeviceAllocator::FreeAllCached,NO,
+cub::ChainedPolicy::Invoke,NO,
+cub::Debug,NO,
+cub::MaxSmOccupancy,NO,
+cub::PtxVersion,YES,
+cub::SmVersion,NO,
+cub::CurrentDevice,YES,
+cub::DeviceCount,YES,
+cub::DeviceCountUncached,YES,
+cub::DeviceCountCachedValue,YES,
+cub::PtxVersionUncached,YES,
+cub::SmVersionUncached,NO,
+cub::SyncStream,YES,
+cub::ArgIndexInputIterator::normalize,YES,
+cub::TexObjInputIterator::BindTexture,NO,
+cub::TexObjInputIterator::UnbindTexture,NO,
+cub::TexRefInputIterator::BindTexture,NO,
+cub::TexRefInputIterator::UnbindTexture,NO,
+cub::CountingInputIterator,YES,
+cub::TransformInputIterator,YES,
+cub::ConstantInputIterator,YES,
+cub::DiscardOutputIterator,YES,

@@ -28,6 +28,9 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationSkipped:
     StatusString = "Some migration rules were skipped";
     break;
+  case MigrationCmakeScriptCompleted:
+    StatusString = "Migration of CMake script completed";
+    break;
   case MigrationError:
     StatusString = "An error has occurred during migration";
     break;

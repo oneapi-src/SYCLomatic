@@ -64,6 +64,10 @@ __global__ void kernel3(T *) {
 // CHECK: template void kernel3<20>(int *, const sycl::nd_item<3> &item_ct1, int *a);
 template __global__ void kernel3<20>(int *);
 
+template <typename T> void func_2_same_pram(T a, T b) {}
+
+template <typename T> T func_same_return(T a) { return a; }
+
 int main() {
     int *d;
     float2 *d1;
@@ -129,6 +133,15 @@ int main() {
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel3<20><<<1,1>>>(d);
+
+    unsigned u;
+    dim3 dim;
+    // CHECK: func_2_same_pram(u, (unsigned int)dim[1]);
+    func_2_same_pram(u, dim.y);
+    // CHECK: func_2_same_pram(u, (unsigned int)dim[1] + 1);
+    func_2_same_pram(u, dim.y + 1);
+    // CHECK: func_2_same_pram(u, func_same_return((unsigned int)dim[1]));
+    func_2_same_pram(u, func_same_return(dim.y));
 }
 
 // CHECK: void kernel(int *, const sycl::nd_item<3> &item_ct1, T *a) {
@@ -138,3 +151,13 @@ __global__ void kernel(int *) {
   int b = blockDim.x;
 }
 
+template <typename T> void f() {}
+template <typename T> class CCCCCCCCCCC {};
+// CHECK: template void f<CCCCCCCCCCC<CCCCCCCCCCC<CCCCCCCCCCC<sycl::int3>>>>();
+template void f<CCCCCCCCCCC<CCCCCCCCCCC<CCCCCCCCCCC<int3>>>>();
+// CHECK: template void f<CCCCCCCCCCC<CCCCCCCCCCC<sycl::int3>>>();
+template void f<CCCCCCCCCCC<CCCCCCCCCCC<int3>>>();
+// CHECK: template void f<CCCCCCCCCCC<sycl::int3>>();
+template void f<CCCCCCCCCCC<int3>>();
+// CHECK: template void f<sycl::int3>();
+template void f<int3>();

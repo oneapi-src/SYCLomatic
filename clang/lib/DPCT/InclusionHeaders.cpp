@@ -115,8 +115,8 @@ const DpctInclusionInfo *findInStartwithMode(StringRef Filename) {
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
     bool IsAngled, CharSourceRange FilenameRange, OptionalFileEntryRef File,
-    StringRef SearchPath, StringRef RelativePath, const Module *Imported,
-    SrcMgr::CharacteristicKind FileType) {
+    StringRef SearchPath, StringRef RelativePath, const Module *SuggestedModule,
+    bool ModuleImported, SrcMgr::CharacteristicKind FileType) {
 
   // If the header file included cannot be found, just return.
   if (!File) {
@@ -175,6 +175,14 @@ void IncludesCallbacks::InclusionDirective(
     }
 
     if (NewFileName != FileName) {
+      // Although file names are different, sometimes we still need using the
+      // old name. For example, the original code is "../folder//file.h". The
+      // path is not a canonical path so the new code will be
+      // "../folder/file.h". But it isn't a CUDA syntax change, so we prefer to
+      // keep old code.
+      if (clang::tooling::UnifiedPath(NewFileName) ==
+          clang::tooling::UnifiedPath(FileName))
+        return;
       std::string ReplacedStr;
       if (IsAngled) {
         ReplacedStr = buildString("#include <", NewFileName, ">");

@@ -48,8 +48,8 @@ DEF_WARNING(API_NOT_MIGRATED, 1007, HIGH_LEVEL, "Migration of %0 is not supporte
 DEF_COMMENT(API_NOT_MIGRATED, 1007, HIGH_LEVEL, "Migration of {0} is not supported.")
 DEF_WARNING(API_NOT_MIGRATED_SYCL_UNDEF, 1008, HIGH_LEVEL, "%0 function is not defined in SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.")
 DEF_COMMENT(API_NOT_MIGRATED_SYCL_UNDEF, 1008, HIGH_LEVEL, "{0} function is not defined in SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.")
-DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.")
-DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.")
+DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. %0. You need to rewrite this code.")
+DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. {0}. You need to rewrite this code.")
 DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.")
 DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.")
 DEF_WARNING(TRNA_WARNING_OVERLOADED_API_FOUND, 1011, LOW_LEVEL, "The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 2020 standard operators (see 4.14.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 2020 standard operators instead.")
@@ -270,6 +270,10 @@ DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed
 DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as an extra argument. As {0} is a template variable here, then the declaration of an extra parameter in device functions, the variable referenced in command group, and device functions may be incorrect as a result. You may need to adjust the code.")
 DEF_WARNING(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"%0\" which is used in the SYCL group function/algorithm is initialized.")
 DEF_COMMENT(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"{0}\" which is used in the SYCL group function/algorithm is initialized.")
+DEF_WARNING(VEC_IN_TEMPLATE_ARG, 1122, LOW_LEVEL, "'{0}' is migrated to '{1}' in template declare, it may cause template function or class redefinition, please adjust the code.")
+DEF_COMMENT(VEC_IN_TEMPLATE_ARG, 1122, LOW_LEVEL, "'{0}' is migrated to '{1}' in template declare, it may cause template function or class redefinition, please adjust the code.")
+DEF_WARNING(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1123, MEDIUM_LEVEL, "The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.")
+DEF_COMMENT(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1123, MEDIUM_LEVEL, "The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.")
 // clang-format on
 
 #undef DEF_COMMENT

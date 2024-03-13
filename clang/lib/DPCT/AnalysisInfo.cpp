@@ -247,6 +247,7 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
         std::make_shared<ExtReplacement>(SM, &TL, EA.getReplacedString(),
                                          nullptr));
   }
+  EA.applyAllSubExprRepl();
 }
 const DeclRefExpr *getAddressedRef(const Expr *E) {
   E = E->IgnoreImplicitAsWritten();
@@ -868,8 +869,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
   case HT_SYCL:
-    if (DpctGlobalInfo::getEnablepProfilingFlag())
-      OS << "#define DPCT_PROFILING_ENABLED" << getNL();
+    // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
+    // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
+    // replacement.
+    OS << "{{NEEDREPLACEP0}}";
+
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
@@ -898,10 +902,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
            << DpctGlobalInfo::getGlobalDeviceName() << ", "
            << MapNames::getClNamespace() << "property_list{"
            << MapNames::getClNamespace() << "property::queue::in_order()";
-        if (DpctGlobalInfo::getEnablepProfilingFlag()) {
-          OS << ", " << MapNames::getClNamespace()
-             << "property::queue::enable_profiling()";
-        }
+
+        // replaced to insert "property::queue::enable_profiling()" or not
+        // in the post replacement.
+        OS << "{{NEEDREPLACEI0}}";
         OS << "});" << getNL();
         Flag = false;
       } else {
@@ -1381,6 +1385,7 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // F: free queries function migration, such as this_nd_item, this_group,
   //    this_sub_group.
   // E: extension, used for c source file migration
+  // P: profiling enable or disable for time measurement.
   switch (Method) {
   case 'R':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
@@ -1423,6 +1428,21 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
     return Vec[Index]->hasCUDASyntax()
                ? ("c" + DpctGlobalInfo::getSYCLSourceExtension())
                : "c";
+  }
+  case 'P': {
+    std::string ReplStr;
+    if (DpctGlobalInfo::getEnablepProfilingFlag())
+      ReplStr = std::string("#define DPCT_PROFILING_ENABLED") + getNL();
+
+    return ReplStr;
+  }
+  case 'I': {
+    std::string ReplStr;
+    if (DpctGlobalInfo::getEnablepProfilingFlag())
+      ReplStr = ", " + MapNames::getClNamespace() +
+                "property::queue::enable_profiling()";
+
+    return ReplStr;
   }
   case FreeQueriesInfo::FreeQueriesRegexCh:
     return FreeQueriesInfo::getReplaceString(Index);
@@ -1595,10 +1615,10 @@ void DpctGlobalInfo::buildReplacements() {
     // Now the UsmLevel must not be UL_None here.
     QDecl << "q_ct1(dev_ct1, " << MapNames::getClNamespace() << "property_list{"
           << MapNames::getClNamespace() << "property::queue::in_order()";
-    if (DpctGlobalInfo::getEnablepProfilingFlag()) {
-      QDecl << ", " << MapNames::getClNamespace()
-            << "property::queue::enable_profiling()";
-    }
+
+    // replaced to insert of "property::queue::enable_profiling()" or not in
+    // the post replacement.
+    QDecl << "{{NEEDREPLACEI0}}";
     QDecl << "});";
   }
 
@@ -4115,6 +4135,10 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   } else if (auto DSDRE = dyn_cast<DependentScopeDeclRefExpr>(Callee)) {
     Name = DSDRE->getDeclName().getAsString();
     buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
+  } else if (auto DRE = dyn_cast<DeclRefExpr>(Callee->IgnoreImpCasts())) {
+    Name = DRE->getNameInfo().getAsString();
+  } else {
+    Name = "(" + ExprAnalysis::ref(Callee) + ")";
   }
 }
 std::string CallFunctionExpr::getName(const NamedDecl *D) {
@@ -5379,16 +5403,16 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
                     LaunchFD->getName() != "cudaLaunchCooperativeKernel")) {
     return std::shared_ptr<KernelCallExpr>();
   }
+  auto Kernel = std::shared_ptr<KernelCallExpr>(
+      new KernelCallExpr(LocInfo.second, LocInfo.first));
+  Kernel->buildLocationInfo(CE);
+  Kernel->buildExecutionConfig(
+      ArrayRef<const Expr *>{CE->getArg(1), CE->getArg(2), CE->getArg(4),
+                             CE->getArg(5)},
+      CE);
+  Kernel->buildNeedBracesInfo(CE);
   if (auto Callee = getAddressedRef(CE->getArg(0))) {
-    auto Kernel = std::shared_ptr<KernelCallExpr>(
-        new KernelCallExpr(LocInfo.second, LocInfo.first));
     Kernel->buildCalleeInfo(Callee);
-    Kernel->buildLocationInfo(CE);
-    Kernel->buildExecutionConfig(
-        ArrayRef<const Expr *>{CE->getArg(1), CE->getArg(2), CE->getArg(4),
-                               CE->getArg(5)},
-        CE);
-    Kernel->buildNeedBracesInfo(CE);
     auto FD =
         dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());
     auto FuncInfo = Kernel->getFuncInfo();
@@ -5402,9 +5426,13 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
         Kernel->ArgsInfo.emplace_back(Parm, ArgsArray, Kernel.get());
       }
     }
-    return Kernel;
+  } else {
+    Kernel->buildCalleeInfo(CE->getArg(0));
+    DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                             Diagnostics::UNDEDUCED_KERNEL_FUNCTION_POINTER,
+                             true, false, Kernel->getName());
   }
-  return std::shared_ptr<KernelCallExpr>();
+  return Kernel;
 }
 std::shared_ptr<KernelCallExpr>
 KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath,

@@ -251,6 +251,6 @@ void bar7() {
   curandRngType_t rngT9 = CURAND_RNG_QUASI_SCRAMBLED_SOBOL32;
   curandRngType_t rngT10 = CURAND_RNG_QUASI_SOBOL64;
   curandRngType_t rngT11 = CURAND_RNG_QUASI_SCRAMBLED_SOBOL64;
-  // CHECK: rng = dpct::rng::create_host_rng(rngT);
+  // CHECK: rng = dpct::rng::create_host_rng(rngT, dpct::cpu_device().default_queue());
   curandCreateGeneratorHost(&rng, rngT);
 }

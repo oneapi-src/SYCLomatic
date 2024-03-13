@@ -5,7 +5,7 @@
 // CHECK: void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex) {
 __global__ void kernel(cudaTextureObject_t tex) {
   int i;
-  float j, k;
+  float j, k, l, m;
   // CHECK: sycl::ext::oneapi::experimental::read_image<sycl::short2>(tex, (float)i);
   tex1Dfetch<short2>(tex, i);
   // CHECK: sycl::ext::oneapi::experimental::read_image<sycl::short2>(tex, (float)i);
@@ -16,23 +16,39 @@ __global__ void kernel(cudaTextureObject_t tex) {
   tex2D<short2>(tex, j, k);
   // CHECK: i = sycl::ext::oneapi::experimental::read_image<int>(tex, sycl::float2(j, k));
   tex2D(&i, tex, j, k);
+  // CHECK: sycl::ext::oneapi::experimental::read_mipmap<sycl::short2>(tex, j, l);
+  tex1DLod<short2>(tex, j, l);
+  // CHECK: i = sycl::ext::oneapi::experimental::read_mipmap<int>(tex, j, l);
+  tex1DLod(&i, tex, j, l);
+  // CHECK: sycl::ext::oneapi::experimental::read_mipmap<sycl::short2>(tex, sycl::float2(j, k), l);
+  tex2DLod<short2>(tex, j, k, l);
+  // CHECK: i = sycl::ext::oneapi::experimental::read_mipmap<int>(tex, sycl::float2(j, k), l);
+  tex2DLod(&i, tex, j, k, l);
+  // CHECK: sycl::ext::oneapi::experimental::read_mipmap<sycl::short2>(tex, sycl::float4(j, k, m, 0), l);
+  tex3DLod<short2>(tex, j, k, m, l);
+  // CHECK: i = sycl::ext::oneapi::experimental::read_mipmap<int>(tex, sycl::float4(j, k, m, 0), l);
+  tex3DLod(&i, tex, j, k, m, l);
 }
 
 int main() {
   void *input;
   size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_dest;
-  unsigned int flag;
+  unsigned int flag, l;
   cudaExtent e;
   // CHECK: dpct::experimental::image_mem_wrapper_ptr pArr, pArr_src;
   cudaArray_t pArr, pArr_src;
-  // TODO: need support.
-  // cudaMipmappedArray_t pMipMapArr;
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr pMipMapArr;
+  cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
   cudaChannelFormatDesc desc;
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e);
   cudaMalloc3DArray(&pArr, &desc, e);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, w, h);
   cudaMallocArray(&pArr, &desc, w, h);
+  // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::mipmap, l);
+  cudaMallocMipmappedArray(&pMipMapArr, &desc, e, l, flag);
+  // CHECK: pArr = pMipMapArr->get_mip_level(0);
+  cudaGetMipmappedArrayLevel(&pArr, pMipMapArr, 0);
   // CHECK: desc = pArr->get_channel();
   // CHECK-NEXT: e = pArr->get_range();
   // CHECK-NEXT: flag = 0;
@@ -76,9 +92,10 @@ int main() {
   resDesc0.resType = cudaResourceTypeArray;
   // CHECK: resDesc1.set_data_ptr(pArr);
   resDesc1.res.array.array = pArr;
-  // TODO: need support.
-  // resDesc0.resType = cudaResourceTypeMipmappedArray;
-  // resDesc2.res.mipmap.mipmap = pMipMapArr;
+  // CHECK: resDesc0.set_data_type(dpct::image_data_type::matrix);
+  resDesc0.resType = cudaResourceTypeMipmappedArray;
+  // CHECK: resDesc2.set_data_ptr(pMipMapArr);
+  resDesc2.res.mipmap.mipmap = pMipMapArr;
   // CHECK: resDesc0.set_data_type(dpct::image_data_type::linear);
   resDesc0.resType = cudaResourceTypeLinear;
   // CHECK: resDesc3.set_data_ptr(input);
@@ -105,6 +122,14 @@ int main() {
     // CHECK: resDesc.set_data(pArr);
     resDesc.resType = cudaResourceTypeArray;
     resDesc.res.array.array = pArr;
+  }
+  {
+    // CHECK: dpct::image_data resDesc;
+    cudaResourceDesc resDesc;
+    // CHECK: resDesc.set_data_type(dpct::image_data_type::matrix);
+    resDesc.resType = cudaResourceTypeMipmappedArray;
+    // CHECK: resDesc.set_data_ptr(pMipMapArr);
+    resDesc.res.mipmap.mipmap = pMipMapArr;
   }
   {
     // CHECK: dpct::image_data resDesc;
@@ -145,6 +170,16 @@ int main() {
   texDesc3.normalizedCoords = 0;
   // CHECK: texDesc4.set(sycl::coordinate_normalization_mode::normalized);
   texDesc4.normalizedCoords = 1;
+  // CHECK: texDesc1.set_max_anisotropy(1);
+  texDesc1.maxAnisotropy = 1;
+  // CHECK: texDesc1.set_mipmap_filtering(sycl::filtering_mode::nearest);
+  texDesc1.mipmapFilterMode = cudaFilterModePoint;
+  // CHECK: texDesc2.set_mipmap_filtering(sycl::filtering_mode::linear);
+  texDesc2.mipmapFilterMode = cudaFilterModeLinear;
+  // CHECK: texDesc1.set_min_mipmap_level_clamp(1);
+  texDesc1.minMipmapLevelClamp = 1;
+  // CHECK:  texDesc1.set_max_mipmap_level_clamp(1);
+  texDesc1.maxMipmapLevelClamp = 1;
 
   // CHECK: sycl::ext::oneapi::experimental::sampled_image_handle tex;
   cudaTextureObject_t tex;
@@ -164,7 +199,9 @@ int main() {
   kernel<<<1, 1>>>(tex);
   // CHECK: dpct::experimental::destroy_bindless_image(tex, q_ct1);
   cudaDestroyTextureObject(tex);
-  // CHECK: sycl::ext::oneapi::experimental::free_image_mem(pArr->get_handle(), sycl::ext::oneapi::experimental::image_type::standard, dpct::get_in_order_queue());
+  // CHECK: delete pArr;
   cudaFreeArray(pArr);
+  // CHECK: delete pMipMapArr;
+  cudaFreeMipmappedArray(pMipMapArr);
   return 0;
 }

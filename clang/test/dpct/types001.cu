@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/types001 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct -out-root %T/types001 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/types001/types001.dp.cpp
 
 #include <cuda.h>
@@ -363,8 +363,8 @@ int main(int argc, char **argv) {
   a = sizeof(event_st);
   a = sizeof event_st;
 
-  //CHECK:dpct::queue_ptr blashandle;
-  //CHECK-NEXT:a = sizeof(dpct::queue_ptr);
+  //CHECK:dpct::blas::descriptor_ptr blashandle;
+  //CHECK-NEXT:a = sizeof(dpct::blas::descriptor_ptr);
   //CHECK-NEXT:a = sizeof(blashandle);
   //CHECK-NEXT:a = sizeof blashandle;
   cublasHandle_t blashandle;

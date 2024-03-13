@@ -58,6 +58,7 @@ enum class InstAttr {
 #define MUL_MOD(X, Y) X,
 #define CMP_OP(X, Y) X,
 #define BIN_OP(X, Y) X,
+#define SYNC_OP(X, Y) X,
 #include "Asm/AsmTokenKinds.def"
 };
 
@@ -311,22 +312,25 @@ class InlineAsmInstruction : public InlineAsmStmt {
   /// This represents types in instruction, e.g. mov.u32.
   SmallVector<InlineAsmType *, 4> Types;
 
-  /// The operands of instruction. Operands[0] is output operand,
+  // The output operand of instruction.
+  InlineAsmExpr *OutputOp = nullptr;
+
+  // The predicate output operand of instruction.
+  // e.g. given shfl.sync.up.b32  Ry|p, Rx, 0x1,  0x0,
+  // 0xffffffff; p is a predicate output.
+  InlineAsmExpr *PredOutputOp = nullptr;
+
+  /// The input operands of instruction. Operands[0] is output operand,
   /// If HasPredOutput is true, Operands[1] is pred output operand,
   /// therest are input operands.
-  SmallVector<InlineAsmExpr *, 4> Operands;
-
-  // Predicate output, e.g. given shfl.sync.up.b32  Ry|p, Rx, 0x1,  0x0,
-  // 0xffffffff; p is a predicate output.
-  bool HasPredOutput = false;
+  SmallVector<InlineAsmExpr *, 4> InputOps;
 
 public:
   InlineAsmInstruction(InlineAsmIdentifierInfo *Op, ArrayRef<InstAttr> Attrs,
-                       ArrayRef<InlineAsmType *> Types,
-                       ArrayRef<InlineAsmExpr *> Ops, bool HasPred = false)
+                       ArrayRef<InlineAsmType *> Types, InlineAsmExpr *Out,
+                       InlineAsmExpr *Pred, ArrayRef<InlineAsmExpr *> InOps)
       : InlineAsmStmt(InstructionClass), Opcode(Op), Types(Types),
-        Operands(Ops), HasPredOutput(HasPred) {
-    assert(Operands.size() >= 1U + HasPredOutput);
+        OutputOp(Out), PredOutputOp(Pred), InputOps(InOps) {
     Attributes.insert(Attrs.begin(), Attrs.end());
   }
 
@@ -345,46 +349,26 @@ public:
     return is(OpKind) || (is(OpKinds) || ...);
   }
 
-  template <typename... Ts>
-  bool hasAttr(Ts... Attrs) const { return (Attributes.contains(Attrs) || ...); }
+  template <typename... Ts> bool hasAttr(Ts... Attrs) const {
+    return (Attributes.contains(Attrs) || ...);
+  }
   const InlineAsmIdentifierInfo *getOpcodeID() const { return Opcode; }
   asmtok::TokenKind getOpcode() const { return Opcode->getTokenID(); }
   ArrayRef<InlineAsmType *> getTypes() const { return Types; }
   const InlineAsmType *getType(unsigned I) const { return Types[I]; }
   unsigned getNumTypes() const { return Types.size(); }
-
-  const InlineAsmExpr *getOutputOperand() const {
-    assert(!Operands.empty());
-    return Operands.front();
-  }
-
-  const InlineAsmExpr *getPredOutputOperand() const {
-    assert(HasPredOutput && Operands.size() >= 2U);
-    return Operands[1];
-  }
-
-  ArrayRef<InlineAsmExpr *> getInputOperands() const {
-    assert(Operands.size() > 1U + HasPredOutput);
-    return ArrayRef<InlineAsmExpr *>(Operands.begin() + 1 + HasPredOutput,
-                                     Operands.end());
-  }
-
+  const InlineAsmExpr *getOutputOperand() const { return OutputOp; }
+  const InlineAsmExpr *getPredOutputOperand() const { return PredOutputOp; }
+  ArrayRef<InlineAsmExpr *> getInputOperands() const { return InputOps; }
   const InlineAsmExpr *getInputOperand(unsigned I) const {
     return getInputOperands()[I];
   }
-
-  size_t getNumInputOperands() const {
-    return Operands.size() - 1 - HasPredOutput;
-  }
-
+  size_t getNumInputOperands() const { return InputOps.size(); }
   attr_range attrs() const {
     return attr_range(Attributes.begin(), Attributes.end());
   }
-
   type_range types() const { return type_range(Types.begin(), Types.end()); }
-
   op_range input_operands() const { return op_range(getInputOperands()); }
-
   static bool classof(const InlineAsmStmt *S) {
     return InstructionClass <= S->getStmtClass();
   }

@@ -60,13 +60,13 @@ __global__ void foo3(){
 }
 
 __host__ void foo4(){
-  // CHECK: dpct::queue_ptr handle;
+  // CHECK: dpct::blas::descriptor_ptr handle;
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;
   int incx=1;
   int* result =0;
-  // CHECK: oneapi::mkl::blas::column_major::iamax(*handle, n, x_S_buf_ct1, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
+  // CHECK: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, x_S_buf_ct1, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   cublasIsamax(handle, n, x_S, incx, result);
 }
 

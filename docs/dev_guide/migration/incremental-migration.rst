@@ -1,5 +1,9 @@
+.. _inc_mig:
+
 Incremental Migration
 =====================
+
+.. _inc-mig-intro:
 
 |tool_name| provides incremental migration, which automatically
 merges the results from multiple migrations into a single migrated project.
@@ -12,6 +16,8 @@ Incremental migration can be used to
 
 Incremental migration is enabled by default. Disable incremental migration using
 the ``--no-incremental-migration`` option.
+
+.. _inc-mig-intro-end:
 
 Example 1: Migrate a File with Conditional Compilation Code
 -----------------------------------------------------------

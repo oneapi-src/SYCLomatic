@@ -454,7 +454,7 @@ llvm::Expected<std::string> getAbsolutePath(llvm::vfs::FileSystem &FS,
   if (auto EC = FS.makeAbsolute(AbsolutePath))
     return llvm::errorCodeToError(EC);
   llvm::sys::path::native(AbsolutePath);
-  return std::string(AbsolutePath.str());
+  return std::string(AbsolutePath);
 }
 
 std::string getAbsolutePath(StringRef File) {
@@ -909,6 +909,10 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
                                       ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster =
+            combineAdjusters(std::move(CudaArgsAdjuster),
+                             getInsertArgumentAdjuster(
+                                 "-D__NVCC__", ArgumentInsertPosition::BEGIN));
       }
 
       CommandLine = getInsertArgumentAdjuster(

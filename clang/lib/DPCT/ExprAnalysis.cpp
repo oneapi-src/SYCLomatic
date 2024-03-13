@@ -270,7 +270,6 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    SrcBeginLoc = BeginLoc;
     auto LastTokenLength = End.second;
     if(ApplyGreaterTokenWorkAround)
       LastTokenLength = 0;
@@ -401,6 +400,7 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
   if (Range.getBegin().isValid()) {
     std::tie(SrcBegin, SrcLength) =
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
+    SrcBeginLoc = Range.getBegin();
     if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
       ReplSet.init(std::string(
           FileBuffer.value().getBuffer().data() + SrcBegin, SrcLength));
@@ -785,6 +785,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
               dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreParenImpCasts());
           if (!Callee)
             return false;
+          if (CE->getDirectCallee()->isTemplateInstantiation())
+            return true;
           if (!Callee->getQualifier())
             return false;
           if (Callee->getQualifier()->getKind() !=
@@ -1245,6 +1247,14 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     break;
   }
+  case TypeLoc::FunctionProto: {
+    auto FuncProtoType = TYPELOC_CAST(FunctionTypeLoc);
+    analyzeType(FuncProtoType.getReturnLoc(), CSCE);
+    for (auto *const Param : FuncProtoType.getParams()) {
+      analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), CSCE);
+    }
+    return;
+  }
   default:
     return;
   }
@@ -1673,6 +1683,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CallExpr)
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
@@ -1773,23 +1784,27 @@ void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
   IsRedeclareRequired = false;
 }
 
-
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
-  if (UO->getOpcode() == UO_Deref) {
-    IsRedeclareRequired = true;
-    return;
-  }
+  IsRedeclareRequired = true;
   if (UO->getOpcode() == UO_AddrOf) {
     IsAddrOf = true;
+    dispatch(UO->getSubExpr());
+    /// If subexpr is variable defined on device, remove operator '&'.
+    if (IsAddrOf && IsDefinedOnDevice) {
+      addReplacement(UO->getOperatorLoc(), "");
+    }
+    /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
+    IsDefinedOnDevice = false;
+    IsAddrOf = false;
+  } else {
+    dispatch(UO->getSubExpr());
   }
-  dispatch(UO->getSubExpr());
-  /// If subexpr is variable defined on device, remove operator '&'.
-  if (IsAddrOf && IsDefinedOnDevice) {
-    addReplacement(UO->getOperatorLoc(), "");
-  }
-  /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
-  IsDefinedOnDevice = false;
-  IsAddrOf = false;
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  IsRedeclareRequired = true;
+  dispatch(BO->getLHS());
+  dispatch(BO->getRHS());
 }
 
 void KernelArgumentAnalysis::analyze(const Expr *Expression) {

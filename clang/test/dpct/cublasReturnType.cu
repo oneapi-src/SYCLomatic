@@ -11,7 +11,7 @@ cublasStatus_t foo(int m, int n) {
   return CUBLAS_STATUS_SUCCESS;
 }
 
-// CHECK: dpct::queue_ptr foo1(int m) {
+// CHECK: dpct::blas::descriptor_ptr foo1(int m) {
 cublasHandle_t foo1(int m) {
   return 0;
 }
