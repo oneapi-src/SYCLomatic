@@ -11,7 +11,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-
+#include <memory>
+#include <cxxabi.h>
 #ifdef __NVCC__
 #include <cuda_runtime.h>
 #else
@@ -30,12 +31,28 @@ typedef dpct::queue_ptr StreamType;
 
 namespace detail {
 
+template <typename T> void demangle_name(std::ostream &ss) {
+  int s;
+  auto mangle_name = typeid(T).name();
+  auto demangle_name = abi::__cxa_demangle(mangle_name, NULL, NULL, &s);
+  if (s != 0) {
+    ss << "CODEPIN:0: Unable to demangle symbol " << mangle_name
+       << ". Please report this issue to SYCLomatic/DPCT.";
+  } else {
+    ss << demangle_name;
+    std::free(demangle_name);
+  }
+}
+
 template <class T, class T2 = void> class TT {
 public:
   static void dump(std::ostream &ss, T value,
                    dpct::experimental::StreamType stream) {
-    ss << "{\"Type\":\"" << typeid(T).name() << "\",\"Data\":[";
-    ss << "Unable to find the corresponding serialization function for the "
+    ss << "{\"Type\":\"";
+    demangle_name<T>(ss);
+    ss << "\",\"Data\":[";
+    ss << "CODEPIN:1: Unable to find the corresponding serialization function "
+          "for the "
           "class. Please report this issue to SYCLomatic/DPCT, or manually add "
           "the serialization function.";
     ss << "]}";
@@ -47,9 +64,9 @@ class TT<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 public:
   static void dump(std::ostream &ss, const T &value,
                    dpct::experimental::StreamType stream) {
-    ss << "{\"Type\":\"" << typeid(T).name() << "\",\"Data\":[";
-    ss << value;
-    ss << "]}";
+    ss << "{\"Type\":\"";
+    demangle_name<T>(ss);
+    ss << "\",\"Data\":[" << value << "]}";
   }
 };
 
