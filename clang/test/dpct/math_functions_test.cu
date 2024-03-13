@@ -1,5 +1,4 @@
 // UNSUPPORTED: system-windows
-// UNSUPPORTED: system-linux
 // RUN: dpct --format-range=none -out-root %T/math_functions_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math_functions_test/math_functions_test.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/math_functions_test/math_functions_test.dp.cpp -o %T/math_functions_test/math_functions_test.dp.o %}
