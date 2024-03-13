@@ -11,7 +11,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <memory>
 #include <cxxabi.h>
 #ifdef __NVCC__
 #include <cuda_runtime.h>
