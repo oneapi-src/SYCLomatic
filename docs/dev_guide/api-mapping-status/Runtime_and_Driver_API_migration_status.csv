@@ -116,8 +116,8 @@ cudaArrayGetSparseProperties,NO,
 cudaFree,YES,
 cudaFreeArray,YES,
 cudaFreeHost,YES,
-cudaFreeMipmappedArray,NO,
-cudaGetMipmappedArrayLevel,NO,
+cudaFreeMipmappedArray,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cudaGetMipmappedArrayLevel,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaGetSymbolAddress,YES,
 cudaGetSymbolSize,YES,
 cudaHostAlloc,YES,
@@ -131,7 +131,7 @@ cudaMalloc3DArray,YES,
 cudaMallocArray,YES,
 cudaMallocHost,YES,
 cudaMallocManaged,YES,
-cudaMallocMipmappedArray,NO,
+cudaMallocMipmappedArray,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaMallocPitch,YES,
 cudaMemAdvise,YES,:ref:`DPCT1063` Partial
 cudaMemAdvise_v2,NO,
@@ -1236,13 +1236,13 @@ __syncthreads_and,YES,:ref:`DPCT1078`
 __syncthreads_or,YES,:ref:`DPCT1078`
 tex1Dfetch,YES,
 tex1D,YES,
-tex1DLod,NO,
+tex1DLod,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 tex1DGrad,NO,
 tex2D,YES,
-tex2DLod,NO,
+tex2DLod,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 tex2DGrad,NO,
 tex3D,YES,
-tex3DLod,NO,
+tex3DLod,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 tex3DGrad,NO,
 tex1DLayered,YES,
 tex1DLayeredLod,NO,
@@ -1382,7 +1382,7 @@ cuEGLStreamProducerReturnFrame,NO,
 cuGraphicsEGLRegisterImage,NO,
 cuGraphicsResourceGetMappedEglFrame,NO,
 cuGetErrorName,NO,
-cuGetErrorString,NO,
+cuGetErrorString,YES,
 cuEventCreate,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuEventDestroy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuEventElapsedTime,YES,:ref:`DPCT1012`
