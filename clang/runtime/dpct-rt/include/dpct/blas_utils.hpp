@@ -48,29 +48,15 @@ protected:
 
 private:
   target_t *construct_member_variable_target() {
-#ifdef DPCT_USM_LEVEL_NONE
-    if constexpr (!std::is_same_v<target_t, source_t>) {
-      return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
-    } else if (_source_attribute !=
-               dpct::detail::pointer_access_attribute::host_only) {
-      _need_free = false;
-      return _source;
-    } else {
-      target_t *ptr =
-          (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
-      return ptr;
-    }
-#else
     if constexpr (std::is_same_v<target_t, source_t>) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only)
-        return sycl::malloc_shared<target_t>(_ele_num, _q);
+        return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
       _need_free = false;
       return _source;
     } else {
-      return sycl::malloc_shared<target_t>(_ele_num, _q);
+      return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
     }
-#endif
   }
 };
 } // namespace detail
@@ -136,9 +122,9 @@ public:
       _q.template single_task(
           [t = _target, s = _source]() { *s = static_cast<source_t>(*t); });
     } else {
-      _q.wait();
-      source_t temp = static_cast<source_t>(*_target);
-      *_source = temp;
+      target_t temp;
+      _q.memcpy(&temp, _target, sizeof(target_t)).wait();
+      *_source = static_cast<source_t>(temp);
     }
 #endif
   }
@@ -179,12 +165,8 @@ public:
     if constexpr (inout_prop != parameter_inout_prop::out) {
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only) {
-#ifdef DPCT_USM_LEVEL_NONE
         dpct::detail::dpct_memcpy(_q, _target, _source,
                                   sizeof(target_t) * _ele_num, automatic);
-#else
-        _q.memcpy(_target, _source, sizeof(target_t) * _ele_num);
-#endif
       }
     }
   }
