@@ -247,7 +247,7 @@
 // cublasIzamin-NEXT:                x /*const cuDoubleComplex **/, incx /*int*/, res /*int **/);
 // cublasIzamin-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIzamin-NEXT:   [&]() {
-// cublasIzamin-NEXT:   dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), res);
+// cublasIzamin-NEXT:   dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), res);
 // cublasIzamin-NEXT:   oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<double>*)x, incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
 // cublasIzamin-NEXT:   return 0;
 // cublasIzamin-NEXT:   }();

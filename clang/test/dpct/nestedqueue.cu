@@ -67,7 +67,7 @@ __host__ void foo4(){
   int incx=1;
   int* result =0;
   // CHECK: [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();

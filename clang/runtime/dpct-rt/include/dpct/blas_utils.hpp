@@ -52,6 +52,7 @@ private:
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only)
         return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
+      // If data type is same and it is device pointer, it can be used directly.
       _need_free = false;
       return _source;
     } else {
@@ -67,19 +68,25 @@ private:
 /// in_out: input and output parameter
 enum class parameter_inout_prop { in, out, in_out };
 
-/// \tparam target_t Data type of the return value of get_memory() interface.
-/// \tparam source_t Data type of the original parameter.
-/// \tparam inout_prop The input/output property of the parameter.
 /// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL
 /// interface.
 /// E.g.,
 /// \code
 /// void foo(sycl::queue q, int *res) {
+///   // Prepare the wrapper memory
 ///   parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out>
 ///       res_wrapper(q, res);
+///   // Computation result is saved in the wrapper memory
 ///   oneapi::mkl::...(q, ..., res_wrapper.get_memory());
+///   // Computation result is copied back to "res" when descructing the wrapper
+///   // memory
 /// }
 /// \endcode
+/// \tparam target_t Data type to fit oneMKL parameter data type. E.g.,
+/// get_memory() returns \tparam target_t data type and can be used as oneMKL
+/// parameter with USM configration.
+/// \tparam source_t Data type of the original parameter.
+/// \tparam inout_prop The input/output property of the parameter.
 template <typename target_t, typename source_t, parameter_inout_prop inout_prop>
 class parameter_wrapper_t
     : public detail::parameter_wrapper_base_t<target_t, source_t> {
@@ -94,11 +101,11 @@ class parameter_wrapper_t
   using base_t::_target;
 
 public:
-  /// Constructor
-  /// \param q The queue the subsequent oneMKL routine working on
+  /// Constructor. Malloc the wrapper memory.
+  /// \param q The queue used for internal malloc and memcpy
   /// \param source The original parameter
   parameter_wrapper_t(sycl::queue q, source_t *source) : base_t(q, source, 1) {}
-  /// Destructor
+  /// Destructor. Copy back content from wrapper memory to original memory
   ~parameter_wrapper_t() {
 #ifdef DPCT_USM_LEVEL_NONE
     if (_source_attribute ==
@@ -128,23 +135,28 @@ public:
     }
 #endif
   }
-  /// Get the working memory
+  /// Get the wrapper memory
   target_t *get_memory() { return _target; }
 };
 
-/// \tparam target_t Data type of the return value of get_memory() interface
-/// and the original parameter.
-/// \tparam inout_prop The input/output property of the parameter.
 /// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL
 /// interface.
 /// E.g.,
 /// \code
 /// void foo(sycl::queue q, int *params, int ele_num) {
+///   // Prepare the wrapper memory
 ///   parameter_wrapper_t<float, parameter_inout_prop::in_out> params_wrapper(
 ///       q, params, ele_num);
+///   // Computation result is saved in the wrapper memory
 ///   oneapi::mkl::...(q, ..., params_wrapper.get_memory());
+///   // Computation result is copied back to "res" when descructing the wrapper
+///   // memory
 /// }
 /// \endcode
+/// \tparam target_t Data type to fit oneMKL parameter data type. E.g.,
+/// get_memory() returns \tparam target_t data type and can be used as oneMKL
+/// parameter with USM configration.
+/// \tparam inout_prop The input/output property of the parameter.
 template <typename target_t, parameter_inout_prop inout_prop>
 class parameter_wrapper_t<target_t, target_t, inout_prop>
     : public detail::parameter_wrapper_base_t<target_t, target_t> {
@@ -156,8 +168,8 @@ class parameter_wrapper_t<target_t, target_t, inout_prop>
   using base_t::_target;
 
 public:
-  /// Constructor
-  /// \param q The queue the subsequent oneMKL routine working on
+  /// Constructor. Malloc the wrapper memory.
+  /// \param q The queue used for internal malloc and memcpy
   /// \param source The original parameter
   /// \param ele_num Element number in \p source
   parameter_wrapper_t(sycl::queue q, target_t *source, size_t ele_num = 1)
@@ -170,7 +182,7 @@ public:
       }
     }
   }
-  /// Destructor
+  /// Destructor. Copy back content from wrapper memory to original memory
   ~parameter_wrapper_t() {
     if constexpr (inout_prop != parameter_inout_prop::in) {
       if (_source_attribute ==
@@ -181,19 +193,19 @@ public:
       }
     }
   }
-  /// Get the working memory
+  /// Get the wrapper memory
   target_t *get_memory() { return _target; }
 };
 
-using out_mem_int64_int_t =
+using wrapper_int_to_int64_out =
     parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out>;
-using out_mem_int64_t =
+using wrapper_int64_out =
     parameter_wrapper_t<std::int64_t, std::int64_t, parameter_inout_prop::out>;
-using out_mem_float_t =
+using wrapper_float_out =
     parameter_wrapper_t<float, float, parameter_inout_prop::out>;
-using inout_mem_float_t =
+using wrapper_float_inout =
     parameter_wrapper_t<float, float, parameter_inout_prop::in_out>;
-using in_mem_float_t =
+using wrapper_float_in =
     parameter_wrapper_t<float, float, parameter_inout_prop::in>;
 
 class descriptor {

@@ -219,7 +219,7 @@
 // cublasIzamax-NEXT:                x /*const cuDoubleComplex **/, incx /*int*/, res /*int **/);
 // cublasIzamax-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIzamax-NEXT:   [&]() {
-// cublasIzamax-NEXT:   dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), res);
+// cublasIzamax-NEXT:   dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), res);
 // cublasIzamax-NEXT:   oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, (std::complex<double>*)x, incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
 // cublasIzamax-NEXT:   return 0;
 // cublasIzamax-NEXT:   }();

@@ -51,7 +51,7 @@ int main() {
     cublasErrCheck(cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
     // CHECK: cublasErrCheck([&]() {
-    // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+    // CHECK-NEXT: dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), result);
     // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
@@ -82,7 +82,7 @@ int main() {
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
 
     // CHECK: cublasErrCheck([&]() {
-    // CHECK-NEXT: dpct::blas::out_mem_int64_int_t res_wrapper_ct4(handle->get_queue(), result);
+    // CHECK-NEXT: dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), result);
     // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_C)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());

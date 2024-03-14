@@ -46,22 +46,22 @@ void foo() {
   // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_t res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_t res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_t res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_t res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
@@ -74,22 +74,22 @@ void foo() {
   // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_t res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_t res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_t res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
-  // CHECK-NEXT: dpct::blas::out_mem_int64_t res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_memory())), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
