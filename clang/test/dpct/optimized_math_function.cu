@@ -17,6 +17,6 @@ __device__ void sincos_2(double x, double* sptr, double* cptr) {
 }
 
 void sincos_3(float a, float *sptr, float *cptr) {
-    // CHECK:  return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(cptr)); }();
+    // CHECK:  return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(cptr)); }();
     return sincos(a, sptr, cptr);
 }

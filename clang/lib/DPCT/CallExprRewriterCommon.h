@@ -632,8 +632,7 @@ makeArgWithAddressSpaceCast(int ArgIdx) {
     ExprAnalysis EA(E);
     std::string Result =
         MapNames::getClNamespace() + "address_space_cast<" +
-        MapNames::getClNamespace() +
-        "access::address_space::" + getAddressSpace(C, ArgIdx) + ", " +
+        MapNames::getClNamespace() + "access::address_space::generic_space, " +
         MapNames::getClNamespace() + "access::decorated::yes>(" +
         EA.getReplacedString() + ")";
     return Result;
