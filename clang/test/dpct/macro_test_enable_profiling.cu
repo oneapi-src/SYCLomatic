@@ -46,7 +46,7 @@
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    start = new sycl::event();                                                 \
 //CHECK-NEXT:    stop = new sycl::event();                                                  \
-//CHECK-NEXT:    dpct::sycl_event_record(start);                                            \
+//CHECK-NEXT:    dpct::sync_barrier(start);                                            \
 //CHECK-NEXT:  }
 #define CMC_PROFILING_BEGIN()                                                                                      \
   cudaEvent_t start;                                                                                               \
@@ -62,7 +62,7 @@
 //     CHECK:#define CMC_PROFILING_END(lineno)                                                                                                                                         \
 //CHECK-NEXT:  if (CMC_profile)                                                                                                                                                        \
 //CHECK-NEXT:  {                                                                                                                                                                       \
-//CHECK-NEXT:    dpct::sycl_event_record(stop);                                                                                                                                        \
+//CHECK-NEXT:    dpct::sync_barrier(stop);                                                                                                                                        \
 //CHECK-NEXT:    stop->wait_and_throw();                                                                                                                                   \
 //CHECK-NEXT:    float time = 0.0f;                                                                                                                                                    \
 //CHECK-NEXT:    time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f; \

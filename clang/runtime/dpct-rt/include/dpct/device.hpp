@@ -792,26 +792,27 @@ has_capability_or_fail(const sycl::device &dev,
   }
 }
 
-/// For USM, if \p queue is the default queue, waits all the kernel tasks
-/// in all the queues of current device completed, then stores the event of
-/// the queue specified by \p queue at the time of this call into the memory
-/// pointed by \p event_ptr. If \p queue is not the default queue, just stores
-/// the event of the queue specified by \p queue at the time of this call into
-/// the memory pointed by \p event_ptr.
-/// For usmnone, waits all the kernel tasks
-/// in all the queues of current device completed, then stores the event of the
-/// queue specified by \p queue at the time of this call into memory pointed by
-/// \p event_ptr.
-inline void sycl_event_record(dpct::event_ptr event_ptr,
-                              sycl::queue *queue = &get_default_queue()) {
-#ifdef DPCT_USM_LEVEL_NONE
-  dpct::get_current_device().queues_wait_and_throw();
-#else
+/// Util function to synchronize all the queues of current device with default
+/// queue and store the event of the specified queue at the time of this call.
+/// \param [out] event_ptr The memory to store the event.
+/// \param [in] queue The queue specified to do synchronization.
+inline void sync_barrier(dpct::event_ptr event_ptr,
+                         sycl::queue *queue = &get_default_queue()) {
   if (*queue == get_default_queue()) {
+    // Wait all the kernel tasks in all the queues of current device completed.
     dpct::get_current_device().queues_wait_and_throw();
+  }
+
+#ifdef DPCT_USM_LEVEL_NONE
+  if (*queue != get_default_queue()) {
+    // For out-of-ordered queue, wait all the kernel tasks in \p queue
+    // completed.
+    queue->wait();
   }
 #endif
 
+// Store the event of the specified queue at the time of this call into memory
+// pointed by \p event_ptr.
 #ifdef DPCT_PROFILING_ENABLED
   *event_ptr = queue->ext_oneapi_submit_barrier();
 #else

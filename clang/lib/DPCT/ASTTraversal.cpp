@@ -7302,7 +7302,7 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
       } else {
         std::string ReplaceStr;
-        ReplaceStr = MapNames::getDpctNamespace() + "sycl_event_record";
+        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
         emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
         emplaceTransformation(new InsertBeforeStmt(CE, "DPCT_CHECK_ERROR("));
         emplaceTransformation(new InsertAfterStmt(CE, ")"));
@@ -7378,7 +7378,7 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
       } else {
         std::string ReplaceStr;
-        ReplaceStr = MapNames::getDpctNamespace() + "sycl_event_record";
+        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
         emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
         return;
       }
@@ -7409,7 +7409,7 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
       } else {
         std::string ReplaceStr;
-        ReplaceStr = MapNames::getDpctNamespace() + "sycl_event_record";
+        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
         emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
         return;
       }
