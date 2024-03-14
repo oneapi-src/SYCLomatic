@@ -250,18 +250,32 @@ RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
                        CALL(MapNames::getClNamespace() + "double4", ARG(0),
                             ARG(1), ARG(2), ARG(3))))))
       // sincospi
-      WARNING_FACTORY_ENTRY(
-          "sincospi",
-          MULTI_STMTS_FACTORY_ENTRY(
-              "sincospi", false, true, false, false,
-              BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),
-                 CALL(MapNames::getClNamespace() + "sincos",
-                      BO(BinaryOperatorKind::BO_Mul,
-                         CAST_IF_NOT_SAME(getDerefedType(1), ARG(0)),
-                         makeLiteral("DPCT_PI")),
-                      makeArgWithAddressSpaceCast(2)))),
-          Diagnostics::MATH_EMULATION, std::string("sincospi"),
-          MapNames::getClNamespace() + std::string("sincos"))
+      CONDITIONAL_FACTORY_ENTRY(
+          CheckParamType(1, "double *"),
+          WARNING_FACTORY_ENTRY(
+              "sincospi",
+              MULTI_STMTS_FACTORY_ENTRY(
+                  "sincospi", false, true, false, false,
+                  BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),
+                     CALL(MapNames::getClNamespace() + "sincos",
+                          BO(BinaryOperatorKind::BO_Mul,
+                             CAST_IF_NOT_SAME(getDerefedType(1), ARG(0)),
+                             makeLiteral("DPCT_PI")),
+                          makeArgWithAddressSpaceCast(2)))),
+              Diagnostics::MATH_EMULATION, std::string("sincospi"),
+              MapNames::getClNamespace() + std::string("sincos")),
+          WARNING_FACTORY_ENTRY(
+              "sincospi",
+              MULTI_STMTS_FACTORY_ENTRY(
+                  "sincospi", false, true, false, false,
+                  BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),
+                     CALL(MapNames::getClNamespace() + "sincos",
+                          BO(BinaryOperatorKind::BO_Mul,
+                             CAST_IF_NOT_SAME(getDerefedType(1), ARG(0)),
+                             makeLiteral("DPCT_PI_F")),
+                          makeArgWithAddressSpaceCast(2)))),
+              Diagnostics::MATH_EMULATION, std::string("sincospi"),
+              MapNames::getClNamespace() + std::string("sincos")))
       // sinpi
       CALL_FACTORY_ENTRY(
           "sinpi",
