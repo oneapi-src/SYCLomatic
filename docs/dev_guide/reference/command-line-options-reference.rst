@@ -17,65 +17,49 @@ section provides:
   * :ref:`help_opt`
 * A list of :ref:`intercept-build options <intercept_opt>`
 
-Auto complete command line options for |tool_name|
---------------------------------------------------
+Auto-Complete Command Line Options
+----------------------------------
 
-This tool supports auto-completion of command line options. You can auto complete the option name and option value (for enumeration options only)
-by using <tab>.
+The tool supports auto-completion of command line options. You can auto-complete
+the option name and option value (for enumeration options only) by using <tab>.
 
-This feature can be enabled via the following command:
+Enable this feature with the following command:
 
-.. code-block::
-
-   source /path/to/SYCLomatic/install/folder/setvars.sh
-
-.. note:: 
-  
-   Note that the auto-complete feature will not work if <tab> is used after <space>.
+.. include:: /_include_files/enable_opt_auto_comp_dgr.rst
 
 .. note::
 
-   This feature is only supported for Bash on Linux platform.
+   Auto-completion of command line options is only supported for Bash on Linux*.
 
-Example 1:
+   The auto-complete feature will not work if <tab> is used after <space>.
 
-.. code-block::
 
-   dpct --<tab><tab>
+The following examples show how to use the auto-complete feature:
 
-This usage will show all dpct options.
+* Show all tool options:
 
-Example 2:
+  .. code-block::
 
-.. code-block::
+     dpct --<tab><tab>
 
-   dpct --ver<tab>
+* Auto-complete the command to ``dpct --version``
 
-This usage will auto complete the command line to:
+  .. code-block::
 
-.. code-block::
+     dpct --ver<tab>
 
-   dpct --version
+* Show all available values of the ``--use-experimental-features`` option:
 
-Example 3:
+  .. code-block::
 
-.. code-block::
+     dpct --use-experimental-features=<tab><tab>
 
-   dpct --use-experimental-features=<tab><tab>
+* Auto-complete the command to ``dpct --use-experimental-features=logical-group,matrix``:
 
-This usage will show all available values of this option.
+  .. code-block::
 
-Example 4:
+     dpct --use-experimental-features=logical-group,mat<tab>
 
-.. code-block::
-
-   dpct --use-experimental-features=logical-group,mat<tab>
-
-This usage will auto complete the command line to:
-
-.. code-block::
-
-   dpct --use-experimental-features=logical-group,matrix
 
 .. toctree::
    :hidden:

@@ -2506,12 +2506,19 @@ void SizeInfo::setTemplateList(
     TDSI = TDSI->applyTemplateArguments(TemplateList);
 }
 ///// class CtTypeInfo /////
-CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
-    : PointerLevel(0), IsTemplate(false) {
+CtTypeInfo::CtTypeInfo() {
+  PointerLevel = 0;
+  IsReference = 0;
+  IsTemplate = 0;
+  TemplateDependentMacro = 0;
+  IsArray = 0;
+  ContainSizeofType = 0;
+  IsConstantQualified = 0;
+}
+CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold) : CtTypeInfo() {
   setTypeInfo(TL, NeedSizeFold);
 }
-CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold)
-    : PointerLevel(0), IsReference(false), IsTemplate(false) {
+CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold) : CtTypeInfo() {
   if (D && D->getTypeSourceInfo()) {
     auto TL = D->getTypeSourceInfo()->getTypeLoc();
     IsConstantQualified = D->hasAttr<CUDAConstantAttr>();
