@@ -99,8 +99,8 @@ const std::string CodePinAllContentStr =
 #include "clang/DPCT/codepin/codepin.hpp.inc"
     ;
 
-const std::string CodePinSerializationSerialBasicAllContentStr =
-#include "clang/DPCT/codepin/serialization/serial_basic.hpp.inc"
+const std::string CodePinSerializationBasicAllContentStr =
+#include "clang/DPCT/codepin/serialization/basic.hpp.inc"
     ;
 
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
@@ -156,8 +156,8 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(FftUtils, ".", fft_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(LapackUtils, ".", lapack_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
-  GENERATE_ALL_FILE_CONTENT(CodePinSerializationSerialBasic,
-                            "codepin/serialization", serial_basic.hpp)
+  GENERATE_ALL_FILE_CONTENT(CodePinSerializationBasic,
+                            "codepin/serialization", basic.hpp)
   GENERATE_ALL_FILE_CONTENT(DplExtrasAlgorithm, "dpl_extras", algorithm.h)
   GENERATE_ALL_FILE_CONTENT(DplExtrasFunctional, "dpl_extras", functional.h)
   GENERATE_ALL_FILE_CONTENT(DplExtrasIterators, "dpl_extras", iterators.h)

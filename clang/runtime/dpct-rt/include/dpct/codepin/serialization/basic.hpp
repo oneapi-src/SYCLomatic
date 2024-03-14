@@ -1,17 +1,17 @@
-//==---- serial_basic.hpp ----------------------------*-C++-*-------------==//
+//==----------- basic.hpp ----------------------------*-C++-*-------------==//
 //
 // Copyright (C) Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===--------------------------------------------------------------------===//
-#ifndef __DPCT_CODEPIN_SERIAL_BASIC_HPP__
-#define __DPCT_CODEPIN_SERIAL_BASIC_HPP__
+#ifndef __DPCT_CODEPIN_SER_BASIC_HPP__
+#define __DPCT_CODEPIN_SER_BASIC_HPP__
 
+#include <cxxabi.h>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <cxxabi.h>
 #ifdef __NVCC__
 #include <cuda_runtime.h>
 #else
@@ -43,7 +43,7 @@ template <typename T> void demangle_name(std::ostream &ss) {
   }
 }
 
-template <class T, class T2 = void> class TT {
+template <class T, class T2 = void> class DataSer {
 public:
   static void dump(std::ostream &ss, T value,
                    dpct::experimental::StreamType stream) {
@@ -59,7 +59,7 @@ public:
 };
 
 template <class T>
-class TT<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
+class DataSer<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 public:
   static void dump(std::ostream &ss, const T &value,
                    dpct::experimental::StreamType stream) {
@@ -70,7 +70,7 @@ public:
 };
 
 #ifdef __NVCC__
-template <> class TT<int3> {
+template <> class DataSer<int3> {
 public:
   static void dump(std::ostream &ss, const int3 &value,
                    dpct::experimental::StreamType stream) {
@@ -88,7 +88,7 @@ public:
   }
 };
 
-template <> class TT<float3> {
+template <> class DataSer<float3> {
 public:
   static void dump(std::ostream &ss, const float3 &value,
                    dpct::experimental::StreamType stream) {
@@ -107,7 +107,7 @@ public:
 };
 
 #else
-template <> class TT<sycl::int3> {
+template <> class DataSer<sycl::int3> {
 public:
   static void dump(std::ostream &ss, const sycl::int3 &value,
                    dpct::experimental::StreamType stream) {
@@ -125,7 +125,7 @@ public:
   }
 };
 
-template <> class TT<sycl::float3> {
+template <> class DataSer<sycl::float3> {
 public:
   static void dump(std::ostream &ss, const sycl::float3 &value,
                    dpct::experimental::StreamType stream) {
@@ -144,7 +144,7 @@ public:
 };
 #endif
 
-template <> class TT<char *> {
+template <> class DataSer<char *> {
 public:
   static void dump(std::ostream &ss, const char *value,
                    dpct::experimental::StreamType stream) {
@@ -154,7 +154,7 @@ public:
   }
 };
 
-template <> class TT<std::string> {
+template <> class DataSer<std::string> {
 public:
   static void dump(std::ostream &ss, const std::string &value,
                    dpct::experimental::StreamType stream) {

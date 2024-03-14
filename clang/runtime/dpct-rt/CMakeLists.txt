@@ -31,7 +31,7 @@ set(dpct_rt_dpstd_files
 
 set(dpct_rt_codepin_files
   include/dpct/codepin/codepin.hpp
-  include/dpct/codepin/serialization/serial_basic.hpp
+  include/dpct/codepin/serialization/basic.hpp
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)

@@ -8,7 +8,7 @@
 #ifndef __DPCT_CODEPIN_HPP__
 #define __DPCT_CODEPIN_HPP__
 
-#include "serialization/serial_basic.hpp"
+#include "serialization/basic.hpp"
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -24,9 +24,11 @@ namespace dpct {
 namespace experimental {
 
 namespace detail {
+class Logger;
 inline static std::unordered_set<void *> ptr_unique;
 inline static std::map<std::string, int> api_index;
-inline static std::string dump_file = "dump_log.json";
+inline static std::string data_file = "app_runtime_data_record.json";
+inline static Logger log(data_file);
 
 class Logger {
 public:
@@ -44,6 +46,11 @@ public:
 
   std::stringstream &get_outputstream() { return this->ss; }
 
+  /// This function is used to remove the last character from the stringstream
+  /// within the Logger class. When outputting JSON, commas are typically used
+  /// to separate key-value pairs. However, the last key-value pair does not
+  /// require a trailing comma. Therefore, after completing the output of the
+  /// last key-value pair, this function is called to remove the last comma.
   void remove_lastchar_stream() {
     std::streampos pos = ss.tellp();
     ss.seekp(pos - std::streamoff(1));
@@ -56,14 +63,12 @@ private:
   std::stringstream ss;
 };
 
-inline static Logger log(dump_file);
-
 inline std::map<void *, uint32_t> &get_ptr_size_map() {
   static std::map<void *, uint32_t> ptr_size_map;
   return ptr_size_map;
 }
 
-inline uint32_t get_ptr_size_in_bytes_from_map(void *ptr) {
+inline uint32_t get_ptr_size_in_bytes(void *ptr) {
   const std::map<void *, uint32_t> &ptr_size_map = get_ptr_size_map();
   const auto &it = ptr_size_map.find(ptr);
   return (it != ptr_size_map.end()) ? it->second : 0;
@@ -86,7 +91,7 @@ inline bool is_dev_ptr(void *p) {
 }
 
 template <class T>
-class TT<T, typename std::enable_if<std::is_pointer<T>::value>::type> {
+class DataSer<T, typename std::enable_if<std::is_pointer<T>::value>::type> {
 public:
   static void dump(std::ostream &ss, T value,
                    dpct::experimental::StreamType stream) {
@@ -95,7 +100,7 @@ public:
     }
     ptr_unique.insert(value);
     ss << "{\"Type\":\"Pointer\",\"Data\":[";
-    int size = get_ptr_size_in_bytes_from_map(value);
+    int size = get_ptr_size_in_bytes(value);
     size = size == 0 ? 1 : size / sizeof(*value);
     using PointedType =
         std::remove_reference_t<std::remove_cv_t<std::remove_pointer_t<T>>>;
@@ -129,7 +134,7 @@ public:
 };
 
 template <class T>
-class TT<T, typename std::enable_if<std::is_array<T>::value>::type> {
+class DataSer<T, typename std::enable_if<std::is_array<T>::value>::type> {
 public:
   static void dump(std::ostream &ss, T value,
                    dpct::experimental::StreamType stream) {
@@ -143,19 +148,19 @@ public:
   }
 };
 
-inline void process_var(std::ostream &ss,
-                        dpct::experimental::StreamType stream) {
+inline void serialize_var(std::ostream &ss,
+                          dpct::experimental::StreamType stream) {
   ;
 }
 
 template <class T, class... Args>
-void process_var(std::ostream &ss, dpct::experimental::StreamType stream,
-                 const std::string &var_name, T var, Args... args) {
+void serialize_var(std::ostream &ss, dpct::experimental::StreamType stream,
+                   const std::string &var_name, T var, Args... args) {
   ss << "\"" << var_name << "\":";
   ptr_unique.clear();
   dpct::experimental::detail::TT<T>::dump(ss, var, stream);
   ss << ",";
-  process_var(ss, stream, args...);
+  serialize_var(ss, stream, args...);
 }
 
 template <class... Args>
@@ -170,7 +175,7 @@ void gen_log_API_CP(const std::string &api_name,
       api_name + ":" + std::to_string(api_index[api_name]);
   log.get_outputstream() << "{\"ID\":"
                          << "\"" << new_api_name << "\",\"CheckPoint\":{";
-  process_var(log.get_outputstream(), stream, args...);
+  serialize_var(log.get_outputstream(), stream, args...);
   log.remove_lastchar_stream();
   log.get_outputstream() << "}},";
 }
