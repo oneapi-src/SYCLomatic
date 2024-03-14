@@ -24,11 +24,6 @@ namespace dpct {
 namespace experimental {
 
 namespace detail {
-class Logger;
-inline static std::unordered_set<void *> ptr_unique;
-inline static std::map<std::string, int> api_index;
-inline static std::string data_file = "app_runtime_data_record.json";
-inline static Logger log(data_file);
 
 class Logger {
 public:
@@ -62,6 +57,11 @@ private:
   std::ofstream opf;
   std::stringstream ss;
 };
+
+inline static std::unordered_set<void *> ptr_unique;
+inline static std::map<std::string, int> api_index;
+inline static std::string data_file = "app_runtime_data_record.json";
+inline static Logger log(data_file);
 
 inline std::map<void *, uint32_t> &get_ptr_size_map() {
   static std::map<void *, uint32_t> ptr_size_map;
@@ -114,7 +114,7 @@ public:
       stream->memcpy(h_data, value, size * sizeof(PointedType)).wait();
 #endif
       for (int i = 0; i < size; ++i) {
-        dpct::experimental::detail::TT<PointedType>::dump(ss, *(h_data + i),
+        dpct::experimental::detail::DataSer<PointedType>::dump(ss, *(h_data + i),
                                                           stream);
         if (i != size - 1)
           ss << ",";
@@ -122,7 +122,7 @@ public:
       delete[] h_data;
     } else {
       for (int i = 0; i < size; ++i) {
-        dpct::experimental::detail::TT<PointedType>::dump(ss, *(value + i),
+        dpct::experimental::detail::DataSer<PointedType>::dump(ss, *(value + i),
                                                           stream);
         if (i != size - 1)
           ss << ",";
@@ -140,7 +140,7 @@ public:
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"Array\",\"Data\":[";
     for (auto tmp : value) {
-      dpct::experimental::detail::TT<std::remove_extent_t<T>>::dump(ss, tmp,
+      dpct::experimental::detail::DataSer<std::remove_extent_t<T>>::dump(ss, tmp,
                                                                     stream);
       ss << ",";
     }
@@ -158,7 +158,7 @@ void serialize_var(std::ostream &ss, dpct::experimental::StreamType stream,
                    const std::string &var_name, T var, Args... args) {
   ss << "\"" << var_name << "\":";
   ptr_unique.clear();
-  dpct::experimental::detail::TT<T>::dump(ss, var, stream);
+  dpct::experimental::detail::DataSer<T>::dump(ss, var, stream);
   ss << ",";
   serialize_var(ss, stream, args...);
 }

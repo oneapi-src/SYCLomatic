@@ -35,8 +35,7 @@ template <typename T> void demangle_name(std::ostream &ss) {
   auto mangle_name = typeid(T).name();
   auto demangle_name = abi::__cxa_demangle(mangle_name, NULL, NULL, &s);
   if (s != 0) {
-    ss << "CODEPIN:0: Unable to demangle symbol " << mangle_name
-       << ". Please report this issue to SYCLomatic/DPCT.";
+    ss << "CODEPIN:ERROR:0: Unable to demangle symbol " << mangle_name << ".";
   } else {
     ss << demangle_name;
     std::free(demangle_name);
@@ -50,10 +49,8 @@ public:
     ss << "{\"Type\":\"";
     demangle_name<T>(ss);
     ss << "\",\"Data\":[";
-    ss << "CODEPIN:1: Unable to find the corresponding serialization function "
-          "for the "
-          "class. Please report this issue to SYCLomatic/DPCT, or manually add "
-          "the serialization function.";
+    ss << "CODEPIN:ERROR:1: Unable to find the corresponding serialization "
+          "function.";
     ss << "]}";
   }
 };
@@ -76,13 +73,13 @@ public:
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"int3\",\"Data\":[";
     ss << "{\"x\":";
-    dpct::experimental::detail::TT<int>::dump(ss, value.x, stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.x, stream);
     ss << "},";
     ss << "{\"y\":";
-    dpct::experimental::detail::TT<int>::dump(ss, value.y, stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.y, stream);
     ss << "},";
     ss << "{\"z\":";
-    dpct::experimental::detail::TT<int>::dump(ss, value.z, stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.z, stream);
     ss << "}";
     ss << "]}";
   }
@@ -94,13 +91,13 @@ public:
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"float3\",\"Data\":[";
     ss << "{\"x\":";
-    dpct::experimental::detail::TT<float>::dump(ss, value.x, stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.x, stream);
     ss << "},";
     ss << "{\"y\":";
-    dpct::experimental::detail::TT<float>::dump(ss, value.y, stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.y, stream);
     ss << "},";
     ss << "{\"z\":";
-    dpct::experimental::detail::TT<float>::dump(ss, value.z, stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.z, stream);
     ss << "}";
     ss << "]}";
   }
@@ -113,13 +110,13 @@ public:
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"sycl::int3\",\"Data\":[";
     ss << "{\"x\":";
-    dpct::experimental::detail::TT<int>::dump(ss, value.x(), stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.x(), stream);
     ss << "},";
     ss << "{\"y\":";
-    dpct::experimental::detail::TT<int>::dump(ss, value.y(), stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.y(), stream);
     ss << "},";
     ss << "{\"z\":";
-    dpct::experimental::detail::TT<int>::dump(ss, value.z(), stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.z(), stream);
     ss << "}";
     ss << "]}";
   }
@@ -131,13 +128,13 @@ public:
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"sycl::float3\",\"Data\":[";
     ss << "{\"x\":";
-    dpct::experimental::detail::TT<float>::dump(ss, value.x(), stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.x(), stream);
     ss << "},";
     ss << "{\"y\":";
-    dpct::experimental::detail::TT<float>::dump(ss, value.y(), stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.y(), stream);
     ss << "},";
     ss << "{\"z\":";
-    dpct::experimental::detail::TT<float>::dump(ss, value.z(), stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.z(), stream);
     ss << "}";
     ss << "]}";
   }
