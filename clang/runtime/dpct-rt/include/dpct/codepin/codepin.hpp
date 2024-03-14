@@ -114,8 +114,8 @@ public:
       stream->memcpy(h_data, value, size * sizeof(PointedType)).wait();
 #endif
       for (int i = 0; i < size; ++i) {
-        dpct::experimental::detail::DataSer<PointedType>::dump(ss, *(h_data + i),
-                                                          stream);
+        dpct::experimental::detail::DataSer<PointedType>::dump(
+            ss, *(h_data + i), stream);
         if (i != size - 1)
           ss << ",";
       }
@@ -123,7 +123,7 @@ public:
     } else {
       for (int i = 0; i < size; ++i) {
         dpct::experimental::detail::DataSer<PointedType>::dump(ss, *(value + i),
-                                                          stream);
+                                                               stream);
         if (i != size - 1)
           ss << ",";
       }
@@ -140,8 +140,8 @@ public:
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"Array\",\"Data\":[";
     for (auto tmp : value) {
-      dpct::experimental::detail::DataSer<std::remove_extent_t<T>>::dump(ss, tmp,
-                                                                    stream);
+      dpct::experimental::detail::DataSer<std::remove_extent_t<T>>::dump(
+          ss, tmp, stream);
       ss << ",";
     }
     ss << "]}";
