@@ -1232,6 +1232,10 @@ public:
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
+  static bool useQueueEmpty() {
+    return getUsingExtensionDE(
+        DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty);
+  }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(
         DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
