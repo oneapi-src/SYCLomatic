@@ -33,6 +33,8 @@ specify multiple migration rule files. For example:
 
 See the :ref:`cmd_opt_ref` for additional information.
 
+.. _user-def-rules:
+
 Write User-defined Migration Rules
 ----------------------------------
 
@@ -54,8 +56,14 @@ Migration rules are specified in YAML files. A single rule file may contain mult
      - Required. Specifies the priority of the rule: ``Takeover`` > ``Default`` > ``Fallback``.
        When there are rule conflicts, the rule with higher priority will take precedence.
    * - Kind
-     - ``Macro`` | ``API`` | ``Header`` | ``Type`` | ``Class`` | ``Enum`` | ``DisableAPIMigration`` | ``PatternRewriter``
+     - ``Macro`` | ``API`` | ``Header`` | ``Type`` | ``Class`` | ``Enum`` | ``DisableAPIMigration`` | ``PatternRewriter`` | ``CMakeRule``
      - Required. Specifies the rule type.
+   * - CmakeSyntax
+     - String value
+     - Required. Specify the CMake syntax name that will be migrated. Use the unique name for the CMake syntax.
+   * - MatchMode
+     - ``Partial`` | ``Full``
+     - Required. Specify the match mode with full word match or partial word match. If not specified, partial match mode will be used.
    * - In
      - String value
      - Required. Specifies the target name in the input source code.

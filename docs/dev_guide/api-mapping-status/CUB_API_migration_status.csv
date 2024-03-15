@@ -64,8 +64,8 @@ cub::DeviceHistogram::HistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::MultiHistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::HistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::MultiHistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DevicePartition::Flagged,NO,
-cub::DevicePartition::If,NO,
+cub::DevicePartition::Flagged,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DevicePartition::If,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceMergeSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceMergeSort::SortPairsCopy,NO,
 cub::DeviceMergeSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`

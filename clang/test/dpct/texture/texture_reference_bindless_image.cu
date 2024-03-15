@@ -15,15 +15,17 @@ static texture<float4, 3> tex3;
 // CHECK-NEXT:             sycl::ext::oneapi::experimental::sampled_image_handle tex2,
 // CHECK-NEXT:             sycl::ext::oneapi::experimental::sampled_image_handle tex3) {
 __global__ void kernel() {
-  // CHECK: sycl::ext::oneapi::experimental::read_image<sycl::short2>(tex1, (float)1);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image<sycl::short2>(tex1, float(1));
   tex1D(tex1, 1);
-  // CHECK: sycl::float4 f42 = sycl::ext::oneapi::experimental::read_image<sycl::float4>(tex2, sycl::float2(1.0f, 1.0f));
+  // CHECK: sycl::float4 f42 = sycl::ext::oneapi::experimental::sample_image<sycl::float4>(tex2, sycl::float2(1.0f, 1.0f));
   float4 f42 = tex2D(tex2, 1.0f, 1.0f);
-  // CHECK: sycl::ext::oneapi::experimental::read_mipmap<sycl::short2>(tex1, 1.0f, 2.0f);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image<sycl::float4>(tex3, sycl::float3(1.0f, 2.0f, 3.0f));
+  tex3D(tex3, 1.0f, 2.0f, 3.0f);
+  // CHECK: sycl::ext::oneapi::experimental::sample_mipmap<sycl::short2>(tex1, float(1.0f), 2.0f);
   tex1DLod(tex1, 1.0f, 2.0f);
-  // CHECK: sycl::ext::oneapi::experimental::read_mipmap<sycl::float4>(tex2, sycl::float2(1.0f, 2.0f), 3.0f);
+  // CHECK: sycl::ext::oneapi::experimental::sample_mipmap<sycl::float4>(tex2, sycl::float2(1.0f, 2.0f), 3.0f);
   tex2DLod(tex2, 1.0f, 2.0f, 3.0f);
-  // CHECK: sycl::ext::oneapi::experimental::read_mipmap<sycl::float4>(tex3, sycl::float4(1.0f, 2.0f, 3.0f, 0), 4.0f);
+  // CHECK: sycl::ext::oneapi::experimental::sample_mipmap<sycl::float4>(tex3, sycl::float3(1.0f, 2.0f, 3.0f), 4.0f);
   tex3DLod(tex3, 1.0f, 2.0f, 3.0f, 4.0f);
 }
 
