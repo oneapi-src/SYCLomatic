@@ -47,22 +47,22 @@ void foo() {
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, A_s, lda, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, A_s, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, A_d, lda, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, A_d, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, (std::complex<float>*)A_c, lda, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, (std::complex<float>*)A_c, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, (std::complex<double>*)A_z, lda, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, (std::complex<double>*)A_z, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasIsamax_64(handle, n, A_s, lda, &result);
@@ -75,22 +75,22 @@ void foo() {
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, A_s, lda, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, A_s, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, A_d, lda, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, A_d, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<float>*)A_c, lda, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<float>*)A_c, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   //      CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<double>*)A_z, lda, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<double>*)A_z, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasIsamin_64(handle, n, A_s, lda, &result);

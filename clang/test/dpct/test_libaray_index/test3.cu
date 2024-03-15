@@ -13,7 +13,7 @@ int foo () {
 
   //CHECK:[&]() {
   //CHECK-NEXT:dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), result);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(handle->get_queue(), N, x1, N, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(handle->get_queue(), N, x1, N, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}();
   cublasIsamax(handle, N, x1, N, result);
