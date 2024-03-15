@@ -215,3 +215,31 @@ template <class T> void run_foo5(A<T> &a) {
   //CHECK-NEXT:  });
   foo_kernel4<<<1, 1>>>(~a);
 }
+
+__global__ void foo_kernel5(unsigned int ui) {}
+
+void run_foo6() {
+  dim3 grid;
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    unsigned int grid_x_grid_y_ct0 = grid[2] * grid[1];
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        foo_kernel5(grid_x_grid_y_ct0);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  foo_kernel5<<<1, 1>>>(grid.x * grid.y);
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    unsigned int grid_x_ct0 = ++grid[2];
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        foo_kernel5(grid_x_ct0);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  foo_kernel5<<<1, 1>>>(++grid.x);
+}

@@ -1604,6 +1604,7 @@ public:
   // If NeedSizeFold is true, array size will be folded, but original expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
+  CtTypeInfo();
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
   CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false);
   const std::string &getBaseName() { return BaseName; }
@@ -1678,20 +1679,19 @@ private:
   void removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
 
 private:
+  unsigned PointerLevel : 16;
+  unsigned IsReference : 1;
+  unsigned IsTemplate : 1;
+  unsigned TemplateDependentMacro : 1;
+  unsigned IsArray : 1;
+  unsigned ContainSizeofType : 1;
+  unsigned IsConstantQualified : 1;
   std::string BaseName;
   std::string BaseNameWithoutQualifiers;
   std::vector<SizeInfo> Range;
-  unsigned PointerLevel;
-  bool IsReference;
-  bool IsTemplate;
-  bool TemplateDependentMacro = false;
-  bool IsArray = false;
-
-  std::shared_ptr<TemplateDependentStringInfo> TDSI;
-  std::set<HelperFeatureEnum> HelperFeatureSet;
-  bool ContainSizeofType = false;
   std::vector<std::string> ArraySizeOriginExprs{};
-  bool IsConstantQualified = false;
+  std::set<HelperFeatureEnum> HelperFeatureSet;
+  std::shared_ptr<TemplateDependentStringInfo> TDSI;
 };
 
 // variable info includes name, type and location.
