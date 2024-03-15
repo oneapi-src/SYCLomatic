@@ -45,14 +45,20 @@ static void get_version(const sycl::device &dev, int &major, int &minor) {
       break;
     i++;
   }
-  major = std::stoi(&(ver[i]));
+  if (i < ver.size())
+    major = std::stoi(&(ver[i]));
+  else
+    major = 0;
   while (i < ver.size()) {
     if (ver[i] == '.')
       break;
     i++;
   }
   i++;
-  minor = std::stoi(&(ver[i]));
+  if (i < ver.size())
+    minor = std::stoi(&(ver[i]));
+  else
+    minor = 0;
 }
 } // namespace detail
 
