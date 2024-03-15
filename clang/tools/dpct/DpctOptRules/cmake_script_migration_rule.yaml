@@ -2028,6 +2028,30 @@
       In:  -std=c++${version}
       Out: -std=c++17
 
+- Rule: rule_add_library
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_library
+  In: add_library(${name} ${sources})
+  Out: add_library(${name} ${sources})
+  Subrules:
+    sources:
+      In: ${src}.cu
+      Out: ${src}.dp.cpp
+      MatchMode: Full
+
+- Rule: rule_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    sources:
+      In: ${src}.cu
+      Out: ${src}.dp.cpp
+      MatchMode: Full
+
 - Rule: rule_add_link_options_add_arch
   Kind: CMakeRule
   Priority: Fallback
