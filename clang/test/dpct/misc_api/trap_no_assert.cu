@@ -6,7 +6,7 @@
 
 __global__ void kernel() {
 // CHECK:  /*
-// CHECK:  DPCT1124:{{[0-9]+}}: Migration of '__trap' is not supported if 'assert' extension is disabled. You can migrate the code with 'assert' extension by not specifying --no-dpcpp-extensions=assert.
+// CHECK:  DPCT1028:{{[0-9]+}}: The __trap was not migrated because assert extension is disabled. You can migrate the code with assert extension by not specifying --no-dpcpp-extensions=assert.
 // CHECK:  */
 // CHECK:  __trap();
       __trap();

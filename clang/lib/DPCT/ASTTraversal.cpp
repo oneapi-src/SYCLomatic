@@ -6696,8 +6696,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (DpctGlobalInfo::useAssert()) {
       emplaceTransformation(new ReplaceStmt(CE, "assert(0)"));
     } else {
-      report(CE->getBeginLoc(), Diagnostics::EXPLICIT_EXTENSION_DISABLE, false,
-             FuncName, "assert");
+      report(
+          CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+          FuncName,
+          "assert extension is disabled. You can migrate the code with assert "
+          "extension by not specifying --no-dpcpp-extensions=assert");
     }
   } else {
     llvm::dbgs() << "[" << getName()
