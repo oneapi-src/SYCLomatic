@@ -4025,45 +4025,75 @@ bool checkIfContainSizeofTypeRecursively(
   return false;
 }
 
-bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
-  QualType CanType = TInfo->getType().getCanonicalType();
-  auto *CanTyPtr = CanType.split().Ty;
-
-  // template <int THREADS_PER_BLOCK>
-  //  __global__ void Kernel() {
-  //  1.  typedef cub::BlockScan<int, THREADS_PER_BLOCK> BlockScan;
-  //  2.  __shared__ typename BlockScan::TempStorage temp1;
-  //  }
-
-  // Handle 1
-  auto isCubRecordType = [&](const clang::Type *T) -> bool {
-    if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
-      auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
-      auto *Ctx = TemplateDecl->getDeclContext();
-      auto *CubNS = dyn_cast<NamespaceDecl>(Ctx);
-      while (CubNS) {
-        if (CubNS->isInlineNamespace()) {
-          CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
-          continue;
-        }
-        break;
-      }
-      return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
-    }
+// Whether the type is a cub collective record type
+// cub::BlockReduce
+// cub::BlockScan
+// ...
+static bool isCubCollectiveRecordType(const clang::Type *T) {
+  if (!T)
     return false;
-  };
+  const NamespaceDecl *CubNS = nullptr;
+  if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
+    auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
+    auto *Ctx = TemplateDecl->getDeclContext();
+    CubNS = dyn_cast<NamespaceDecl>(Ctx);
+  } else if (auto *CD = dyn_cast<RecordType>(T))
+    CubNS = dyn_cast<NamespaceDecl>(CD->getDecl()->getDeclContext());
+  if (!CubNS)
+    return false;
 
-  // Handle 2
-  if (const auto *DNT = dyn_cast<DependentNameType>(CanTyPtr)) {
-    auto *QNNS = DNT->getQualifier();
-    // *::TempStorage must be a type.
-    if (QNNS->getKind() == NestedNameSpecifier::TypeSpec) {
-      auto *QNNSType = QNNS->getAsType();
-      return isCubRecordType(QNNSType);
+  while (CubNS) {
+    if (CubNS->isInlineNamespace()) {
+      CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
+      continue;
     }
+    break;
+  }
+  return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
+}
+
+static bool isCubTempStorageType(const clang::Type *T) {
+  if (!T)
+    return false;
+
+  const clang::Type *DeclContextType = nullptr;
+  // cub::{BlockReduce, BlockScan, WarpScan, ...}::TempStorage;
+  if (auto *RT = dyn_cast<RecordType>(T)) {
+    if (RT->getDecl()->getName() != "TempStorage")
+      return false;
+    auto *DC = RT->getDecl()->getDeclContext();
+    if (DC && DC->isRecord()) {
+      auto *RD = dyn_cast<RecordDecl>(DC);
+      DeclContextType = RD->getTypeForDecl();
+    } else
+      return false;
   }
 
-  return isCubRecordType(CanTyPtr);
+  // cub::{BlockReduce, BlockScan, WarpScan, ...}::TempStorage;
+  // But TempStorage is a dependent type.
+  if (auto *DNT = dyn_cast<DependentNameType>(T)) {
+    if (DNT->getIdentifier()->getName() != "TempStorage")
+      return false;
+    auto *QNNS = DNT->getQualifier();
+    if (QNNS->getKind() == NestedNameSpecifier::TypeSpec) {
+      DeclContextType = QNNS->getAsType();
+    } else
+      return false;
+  }
+
+  return DeclContextType && isCubCollectiveRecordType(DeclContextType);
+}
+
+bool isCubTempStorageType(QualType T) {
+  if (T.isNull())
+    return false;
+  return isCubTempStorageType(T.getCanonicalType().getTypePtrOrNull());
+}
+
+bool isCubCollectiveRecordType(QualType T) {
+  if (T.isNull())
+    return false;
+  return isCubCollectiveRecordType(T.getCanonicalType().getTypePtrOrNull());
 }
 
 bool isCubVar(const VarDecl *VD) {
@@ -4075,11 +4105,12 @@ bool isCubVar(const VarDecl *VD) {
        CanonicalTypeStr.find("class cub::") == 0)) {
     return true;
   }
+
+  if (isCubTempStorageType(VD->getType()))
+    return true;
+
   // 2.process template cases
   if (CanonicalTypeStr.find("::TempStorage") != std::string::npos) {
-    if (maybeDependentCubType(VD->getTypeSourceInfo()))
-      return true;
-
     std::string TypeParameterName;
     auto findTypeParameterName = [&](DependentNameTypeLoc DNT) {
       std::string Name;
@@ -4182,6 +4213,35 @@ bool isCubVar(const VarDecl *VD) {
       return Result;
     }
     return false;
+  }
+
+  // 3. Handle situations like the following. Several CUB TempStorage object are
+  // in a union.
+  //
+  // template< int NUM_THREADS_PER_BLOCK>
+  // __global__ void some_kernel() {
+  //   typedef cub::BlockScan<int, NUM_THREADS_PER_BLOCK> BlockScan;
+  //   typedef cub::BlockReduce<int,     NUM_THREADS_PER_BLOCK> BlockReduce1;
+  //   typedef cub::BlockReduce<double4, NUM_THREADS_PER_BLOCK> BlockReduce4;
+  //   union TempStorage {
+  //     typename BlockScan   ::TempStorage for_scan;
+  //     typename BlockReduce1::TempStorage for_reduce1;
+  //     typename BlockReduce4::TempStorage for_reduce4;
+  //   };
+  //   __shared__ TempStorage smem_storage;
+  // }
+  if (VD->getType()->isUnionType()) {
+    const TagDecl *RD =
+        VD->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
+
+    // If all the field in this union are cub type, we think this union also is
+    // a cub type.
+    for (const auto *D : RD->decls())
+      if (const auto *FD = dyn_cast<FieldDecl>(D))
+        if (!isCubTempStorageType(
+                FD->getType().getCanonicalType().getTypePtrOrNull()))
+          return false;
+    return true;
   }
   return false;
 }
@@ -4653,35 +4713,6 @@ bool isCapturedByLambda(const clang::TypeLoc *TL) {
       return true;
   }
   return false;
-}
-
-std::string getAddressSpace(const CallExpr *C, int ArgIdx) {
-  bool HasAttr = false;
-  bool NeedReport = false;
-  const Expr *Arg = C->getArg(ArgIdx);
-  if (!Arg) {
-    return "";
-  }
-  getShareAttrRecursive(Arg, HasAttr, NeedReport);
-  if (HasAttr && !NeedReport)
-    return "local_space";
-  LocalVarAddrSpaceEnum LocalVarCheckResult =
-      LocalVarAddrSpaceEnum::AS_CannotDeduce;
-  checkIsPrivateVar(Arg, LocalVarCheckResult);
-  if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
-    return "private_space";
-  } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
-    return "global_space";
-  } else {
-    clang::dpct::ExprAnalysis EA(Arg);
-    auto LocInfo =
-        dpct::DpctGlobalInfo::getInstance().getLocInfo(C->getBeginLoc());
-    clang::dpct::DiagnosticsUtils::report(
-        LocInfo.first, LocInfo.second,
-        clang::dpct::Diagnostics::UNDEDUCED_ADDRESS_SPACE, true, false,
-        EA.getReplacedString());
-    return "global_space";
-  }
 }
 
 std::string getNameSpace(const NamespaceDecl *NSD) {

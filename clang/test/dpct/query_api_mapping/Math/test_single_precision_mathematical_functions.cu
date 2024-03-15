@@ -198,7 +198,7 @@
 // FREXPF: CUDA API:
 // FREXPF-NEXT:   frexpf(f /*float*/, pi /*int **/);
 // FREXPF-NEXT: Is migrated to:
-// FREXPF-NEXT:   sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, int>(pi));
+// FREXPF-NEXT:   sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pi));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hypotf | FileCheck %s -check-prefix=HYPOTF
 // HYPOTF: CUDA API:
@@ -318,7 +318,7 @@
 // MODFF: CUDA API:
 // MODFF-NEXT:   modff(f /*float*/, pf /*float **/);
 // MODFF-NEXT: Is migrated to:
-// MODFF-NEXT:   sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pf));
+// MODFF-NEXT:   sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pf));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=nanf | FileCheck %s -check-prefix=NANF
 // NANF: CUDA API:
@@ -390,7 +390,7 @@
 // REMQUOF: CUDA API:
 // REMQUOF-NEXT:   remquof(f1 /*float*/, f2 /*float*/, pi /*int **/);
 // REMQUOF-NEXT: Is migrated to:
-// REMQUOF-NEXT:   sycl::remquo(f1, f2, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, int>(pi));
+// REMQUOF-NEXT:   sycl::remquo(f1, f2, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pi));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=rhypotf | FileCheck %s -check-prefix=RHYPOTF
 // RHYPOTF: CUDA API:
@@ -458,13 +458,13 @@
 // SINCOSF: CUDA API:
 // SINCOSF-NEXT:   sincosf(f /*float*/, pf1 /*float **/, pf2 /*float **/);
 // SINCOSF-NEXT: Is migrated to:
-// SINCOSF-NEXT:   *pf1 = sycl::sincos(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pf2));
+// SINCOSF-NEXT:   *pf1 = sycl::sincos(f, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pf2));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sincospif | FileCheck %s -check-prefix=SINCOSPIF
 // SINCOSPIF: CUDA API:
 // SINCOSPIF-NEXT:   sincospif(f /*float*/, pf1 /*float **/, pf2 /*float **/);
 // SINCOSPIF-NEXT: Is migrated to:
-// SINCOSPIF-NEXT:   *pf1 = sycl::sincos(f * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pf2));
+// SINCOSPIF-NEXT:   *pf1 = sycl::sincos(f * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pf2));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sinf | FileCheck %s -check-prefix=SINF
 // SINF: CUDA API:

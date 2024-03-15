@@ -5,4 +5,4 @@
 // cublasGetStatusString: CUDA API:
 // cublasGetStatusString-NEXT:   res /*const char **/ = cublasGetStatusString(status /*cublasStatus_t*/);
 // cublasGetStatusString-NEXT: Is migrated to:
-// cublasGetStatusString-NEXT:   res /*const char **/ = "cublasGetStatusString is not supported"/*cublasGetStatusString(status)*/;
+// cublasGetStatusString-NEXT:   res /*const char **/ = "<Placeholder string>";
