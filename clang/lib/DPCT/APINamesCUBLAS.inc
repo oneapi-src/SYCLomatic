@@ -1674,7 +1674,7 @@ WARNING_FACTORY_ENTRY(
                MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
                BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
                BUFFER_OR_USM_PTR(                                              \
-                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_memory"),   \
+                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),   \
                    #TYPE3)),                                                   \
           LITERAL("return 0")),                                                \
       Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1701,7 +1701,7 @@ NRM2(cublasDznrm2_v2_64, wrapper_double_out, std::complex<double>, double)
                BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
                BUFFER_OR_USM_PTR(ARG(4), #TYPE2), ARG(5),                      \
                BUFFER_OR_USM_PTR(                                              \
-                   MEMBER_CALL(ARG("res_wrapper_ct6"), false, "get_memory"),   \
+                   MEMBER_CALL(ARG("res_wrapper_ct6"), false, "get_ptr"),   \
                    #TYPE3)),                                                   \
           LITERAL("return 0")),                                                \
       Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1800,7 +1800,7 @@ SWAP(cublasZswap_v2_64, std::complex<double>)
                MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
                BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
                BUFFER_OR_USM_PTR(                                              \
-                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_memory"),   \
+                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),   \
                    #TYPE3)),                                                   \
           LITERAL("return 0")),                                                \
       Diagnostics::NOERROR_RETURN_LAMBDA)

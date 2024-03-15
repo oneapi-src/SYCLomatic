@@ -35,7 +35,7 @@
 // cublasScasum-NEXT: Is migrated to:
 // cublasScasum-NEXT:   [&]() {
 // cublasScasum-NEXT:   dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), res);
-// cublasScasum-NEXT:   oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, (std::complex<float>*)x, incx, res_wrapper_ct4.get_memory());
+// cublasScasum-NEXT:   oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, (std::complex<float>*)x, incx, res_wrapper_ct4.get_ptr());
 // cublasScasum-NEXT:   return 0;
 // cublasScasum-NEXT:   }();
 
@@ -84,7 +84,7 @@
 // cublasZdotu-NEXT: Is migrated to:
 // cublasZdotu-NEXT:   [&]() {
 // cublasZdotu-NEXT:   dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), res);
-// cublasZdotu-NEXT:   oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_wrapper_ct6.get_memory());
+// cublasZdotu-NEXT:   oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_wrapper_ct6.get_ptr());
 // cublasZdotu-NEXT:   return 0;
 // cublasZdotu-NEXT:   }();
 
@@ -97,7 +97,7 @@
 // cublasZdotc-NEXT: Is migrated to:
 // cublasZdotc-NEXT:   [&]() {
 // cublasZdotc-NEXT:   dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), res);
-// cublasZdotc-NEXT:   oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_wrapper_ct6.get_memory());
+// cublasZdotc-NEXT:   oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_wrapper_ct6.get_ptr());
 // cublasZdotc-NEXT:   return 0;
 // cublasZdotc-NEXT:   }();
 

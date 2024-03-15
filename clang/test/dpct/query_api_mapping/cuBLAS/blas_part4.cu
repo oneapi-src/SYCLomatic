@@ -36,7 +36,7 @@
 // cublasCdotc-NEXT: Is migrated to:
 // cublasCdotc-NEXT:   [&]() {
 // cublasCdotc-NEXT:   dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), res);
-// cublasCdotc-NEXT:   oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, (std::complex<float>*)x, incx, (std::complex<float>*)y, incy, (std::complex<float>*)res_wrapper_ct6.get_memory());
+// cublasCdotc-NEXT:   oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, (std::complex<float>*)x, incx, (std::complex<float>*)y, incy, (std::complex<float>*)res_wrapper_ct6.get_ptr());
 // cublasCdotc-NEXT:   return 0;
 // cublasCdotc-NEXT:   }();
 
@@ -141,7 +141,7 @@
 // cublasDnrm2-NEXT: Is migrated to:
 // cublasDnrm2-NEXT:   [&]() {
 // cublasDnrm2-NEXT:   dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), res);
-// cublasDnrm2-NEXT:   oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_memory());
+// cublasDnrm2-NEXT:   oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_ptr());
 // cublasDnrm2-NEXT:   return 0;
 // cublasDnrm2-NEXT:   }();
 
@@ -160,7 +160,7 @@
 // cublasDznrm2-NEXT: Is migrated to:
 // cublasDznrm2-NEXT:   [&]() {
 // cublasDznrm2-NEXT:   dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), res);
-// cublasDznrm2-NEXT:   oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, (std::complex<double>*)x, incx, res_wrapper_ct4.get_memory());
+// cublasDznrm2-NEXT:   oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, (std::complex<double>*)x, incx, res_wrapper_ct4.get_ptr());
 // cublasDznrm2-NEXT:   return 0;
 // cublasDznrm2-NEXT:   }();
 
@@ -207,7 +207,7 @@
 // cublasDasum-NEXT: Is migrated to:
 // cublasDasum-NEXT:   [&]() {
 // cublasDasum-NEXT:   dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), res);
-// cublasDasum-NEXT:   oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_memory());
+// cublasDasum-NEXT:   oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_ptr());
 // cublasDasum-NEXT:   return 0;
 // cublasDasum-NEXT:   }();
 

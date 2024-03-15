@@ -96,7 +96,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: /*
@@ -104,7 +104,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasSasum(handle, n, x_S, incx, result_S);
@@ -115,7 +115,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: /*
@@ -123,7 +123,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasDasum(handle, n, x_D, incx, result_D);
@@ -157,7 +157,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct6(handle->get_queue(), result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: /*
@@ -165,7 +165,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct6(handle->get_queue(), result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasSdot(handle, n, x_S, incx, y_S, incy, result_S);
@@ -176,7 +176,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct6(handle->get_queue(), result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: /*
@@ -184,7 +184,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct6(handle->get_queue(), result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasDdot(handle, n, x_D, incx, y_D, incy, result_D);
@@ -196,7 +196,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: /*
@@ -204,7 +204,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasSnrm2(handle, n, x_S, incx, result_S);
@@ -215,7 +215,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK-NEXT: /*
@@ -223,7 +223,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_memory())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasDnrm2(handle, n, x_D, incx, result_D);

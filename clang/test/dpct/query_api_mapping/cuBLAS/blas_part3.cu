@@ -75,7 +75,7 @@
 // cublasDzasum-NEXT: Is migrated to:
 // cublasDzasum-NEXT:   [&]() {
 // cublasDzasum-NEXT:   dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), res);
-// cublasDzasum-NEXT:   oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, (std::complex<double>*)x, incx, res_wrapper_ct4.get_memory());
+// cublasDzasum-NEXT:   oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, (std::complex<double>*)x, incx, res_wrapper_ct4.get_ptr());
 // cublasDzasum-NEXT:   return 0;
 // cublasDzasum-NEXT:   }();
 
@@ -182,7 +182,7 @@
 // cublasSnrm2-NEXT: Is migrated to:
 // cublasSnrm2-NEXT:   [&]() {
 // cublasSnrm2-NEXT:   dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), res);
-// cublasSnrm2-NEXT:   oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_memory());
+// cublasSnrm2-NEXT:   oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_ptr());
 // cublasSnrm2-NEXT:   return 0;
 // cublasSnrm2-NEXT:   }();
 

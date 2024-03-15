@@ -190,7 +190,7 @@
 // cublasDdot-NEXT: Is migrated to:
 // cublasDdot-NEXT:   [&]() {
 // cublasDdot-NEXT:   dpct::blas::wrapper_double_out res_wrapper_ct6(handle->get_queue(), res);
-// cublasDdot-NEXT:   oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_memory());
+// cublasDdot-NEXT:   oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_ptr());
 // cublasDdot-NEXT:   return 0;
 // cublasDdot-NEXT:   }();
 

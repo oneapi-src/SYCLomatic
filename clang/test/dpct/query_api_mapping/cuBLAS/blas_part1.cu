@@ -129,7 +129,7 @@
 // cublasSdot-NEXT: Is migrated to:
 // cublasSdot-NEXT:   [&]() {
 // cublasSdot-NEXT:   dpct::blas::wrapper_float_out res_wrapper_ct6(handle->get_queue(), res);
-// cublasSdot-NEXT:   oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_memory());
+// cublasSdot-NEXT:   oneapi::mkl::blas::column_major::dot(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_ptr());
 // cublasSdot-NEXT:   return 0;
 // cublasSdot-NEXT:   }();
 
@@ -231,7 +231,7 @@
 // cublasCdotu-NEXT: Is migrated to:
 // cublasCdotu-NEXT:   [&]() {
 // cublasCdotu-NEXT:   dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), res);
-// cublasCdotu-NEXT:   oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, (std::complex<float>*)x, incx, (std::complex<float>*)y, incy, (std::complex<float>*)res_wrapper_ct6.get_memory());
+// cublasCdotu-NEXT:   oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, (std::complex<float>*)x, incx, (std::complex<float>*)y, incy, (std::complex<float>*)res_wrapper_ct6.get_ptr());
 // cublasCdotu-NEXT:   return 0;
 // cublasCdotu-NEXT:   }();
 
