@@ -8,7 +8,9 @@
 #ifndef __DPCT_CODEPIN_SER_BASIC_HPP__
 #define __DPCT_CODEPIN_SER_BASIC_HPP__
 
+#if defined(__linux__)
 #include <cxxabi.h>
+#endif
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -31,6 +33,7 @@ typedef dpct::queue_ptr StreamType;
 namespace detail {
 
 template <typename T> void demangle_name(std::ostream &ss) {
+#if defined(__linux__)
   int s;
   auto mangle_name = typeid(T).name();
   auto demangle_name = abi::__cxa_demangle(mangle_name, NULL, NULL, &s);
@@ -40,6 +43,9 @@ template <typename T> void demangle_name(std::ostream &ss) {
     ss << demangle_name;
     std::free(demangle_name);
   }
+#else
+  ss << typeid(T).name();
+#endif
 }
 
 template <class T, class T2 = void> class DataSer {
