@@ -4316,7 +4316,18 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         /*level 1*/
         "cublasIsamax_v2_64", "cublasIdamax_v2_64", "cublasIcamax_v2_64",
         "cublasIzamax_v2_64", "cublasIsamin_v2_64", "cublasIdamin_v2_64",
-        "cublasIcamin_v2_64", "cublasIzamin_v2_64",
+        "cublasIcamin_v2_64", "cublasIzamin_v2_64", "cublasSnrm2_v2_64",
+        "cublasDnrm2_v2_64", "cublasScnrm2_v2_64", "cublasDznrm2_v2_64",
+        "cublasSdot_v2_64", "cublasDdot_v2_64", "cublasCdotu_v2_64",
+        "cublasCdotc_v2_64", "cublasZdotu_v2_64", "cublasZdotc_v2_64",
+        "cublasSscal_v2_64", "cublasDscal_v2_64", "cublasCscal_v2_64",
+        "cublasCsscal_v2_64", "cublasZscal_v2_64", "cublasZdscal_v2_64",
+        "cublasSaxpy_v2_64", "cublasDaxpy_v2_64", "cublasCaxpy_v2_64",
+        "cublasZaxpy_v2_64", "cublasScopy_v2_64", "cublasDcopy_v2_64",
+        "cublasCcopy_v2_64", "cublasZcopy_v2_64", "cublasSswap_v2_64",
+        "cublasDswap_v2_64", "cublasCswap_v2_64", "cublasZswap_v2_64",
+        "cublasSasum_v2_64", "cublasDasum_v2_64", "cublasScasum_v2_64",
+        "cublasDzasum_v2_64",
         /*level 3*/
         "cublasSgemm_v2_64", "cublasDgemm_v2_64", "cublasCgemm_v2_64",
         "cublasZgemm_v2_64", "cublasCgemm_v2_64", "cublasZgemm_v2_64",
@@ -4567,18 +4578,12 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         } else {
           std::string BufferDecl = "";
           std::string BufferName = "";
-          auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
           auto MaySyncAPIIWithMultiArgsIter =
               MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
-          if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
-              i == MaySyncAPIIter->second.second) {
-            BufferName = processSyncAPIBufferArg(
-                FuncName, CE, PrefixInsertStr, IndentStr,
-                MaySyncAPIIter->second.first, i);
-          } else if (MaySyncAPIIWithMultiArgsIter !=
-                         MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
-                     MaySyncAPIIWithMultiArgsIter->second.find(i) !=
-                         MaySyncAPIIWithMultiArgsIter->second.end()) {
+          if (MaySyncAPIIWithMultiArgsIter !=
+                  MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
+              MaySyncAPIIWithMultiArgsIter->second.find(i) !=
+                  MaySyncAPIIWithMultiArgsIter->second.end()) {
             auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
             BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
                                                  IndentStr, ArgIter->second, i);
@@ -4716,18 +4721,12 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         } else {
           std::string BufferDecl = "";
           std::string BufferName = "";
-          auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
           auto MaySyncAPIIWithMultiArgsIter =
               MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
-          if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
-              i == MaySyncAPIIter->second.second) {
-            BufferName = processSyncAPIBufferArg(
-                FuncName, CE, PrefixInsertStr, IndentStr,
-                MaySyncAPIIter->second.first, i);
-          } else if (MaySyncAPIIWithMultiArgsIter !=
-                         MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
-                     MaySyncAPIIWithMultiArgsIter->second.find(i) !=
-                         MaySyncAPIIWithMultiArgsIter->second.end()) {
+          if (MaySyncAPIIWithMultiArgsIter !=
+                  MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
+              MaySyncAPIIWithMultiArgsIter->second.find(i) !=
+                  MaySyncAPIIWithMultiArgsIter->second.end()) {
             auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
             BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
                                                  IndentStr, ArgIter->second, i);
