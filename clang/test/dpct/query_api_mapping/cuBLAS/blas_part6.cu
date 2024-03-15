@@ -14,7 +14,7 @@
 // cublasIdamin-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIdamin-NEXT:   [&]() {
 // cublasIdamin-NEXT:   dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), res);
-// cublasIdamin-NEXT:   oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+// cublasIdamin-NEXT:   oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
 // cublasIdamin-NEXT:   return 0;
 // cublasIdamin-NEXT:   }();
 
@@ -141,7 +141,7 @@
 // cublasIdamax-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIdamax-NEXT:   [&]() {
 // cublasIdamax-NEXT:   dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), res);
-// cublasIdamax-NEXT:   oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+// cublasIdamax-NEXT:   oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
 // cublasIdamax-NEXT:   return 0;
 // cublasIdamax-NEXT:   }();
 
@@ -163,7 +163,7 @@
 // cublasIsamin-NEXT: Is migrated to (with the option --no-dry-pattern):
 // cublasIsamin-NEXT:   [&]() {
 // cublasIsamin-NEXT:   dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), res);
-// cublasIsamin-NEXT:   oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_memory(), oneapi::mkl::index_base::one);
+// cublasIsamin-NEXT:   oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
 // cublasIsamin-NEXT:   return 0;
 // cublasIsamin-NEXT:   }();
 

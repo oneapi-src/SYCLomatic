@@ -73,13 +73,12 @@ enum class parameter_inout_prop { in, out, in_out };
 /// E.g.,
 /// \code
 /// void foo(sycl::queue q, int *res) {
-///   // Prepare the wrapper memory
+///   // Declare the wrapper
 ///   parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out>
 ///       res_wrapper(q, res);
-///   // Computation result is saved in the wrapper memory
+///   // Computation result is saved in the wrapper
 ///   oneapi::mkl::...(q, ..., res_wrapper.get_memory());
 ///   // Computation result is copied back to "res" when descructing the wrapper
-///   // memory
 /// }
 /// \endcode
 /// \tparam target_t Data type to fit oneMKL parameter data type. E.g.,
@@ -135,8 +134,8 @@ public:
     }
 #endif
   }
-  /// Get the wrapper memory
-  target_t *get_memory() { return _target; }
+  /// Get the target pointer
+  target_t *get_ptr() { return _target; }
 };
 
 /// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL
@@ -144,13 +143,12 @@ public:
 /// E.g.,
 /// \code
 /// void foo(sycl::queue q, int *params, int ele_num) {
-///   // Prepare the wrapper memory
+///   // Declare the wrapper
 ///   parameter_wrapper_t<float, parameter_inout_prop::in_out> params_wrapper(
 ///       q, params, ele_num);
-///   // Computation result is saved in the wrapper memory
+///   // Computation result is saved in the wrapper
 ///   oneapi::mkl::...(q, ..., params_wrapper.get_memory());
 ///   // Computation result is copied back to "res" when descructing the wrapper
-///   // memory
 /// }
 /// \endcode
 /// \tparam target_t Data type to fit oneMKL parameter data type. E.g.,
@@ -193,8 +191,8 @@ public:
       }
     }
   }
-  /// Get the wrapper memory
-  target_t *get_memory() { return _target; }
+  /// Get the target pointer
+  target_t *get_ptr() { return _target; }
 };
 
 using wrapper_int_to_int64_out =

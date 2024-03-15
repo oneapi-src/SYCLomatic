@@ -1234,7 +1234,7 @@ void foo34() {
 //CHECK-NEXT:       dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(                    \
 //CHECK-NEXT:           handle->get_queue(), &result);                                       \
 //CHECK-NEXT:       oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, X, incX,  \
-//CHECK-NEXT:                                              res_wrapper_ct4.get_memory(),     \
+//CHECK-NEXT:                                              res_wrapper_ct4.get_ptr(),        \
 //CHECK-NEXT:                                              oneapi::mkl::index_base::one);    \
 //CHECK-NEXT:       return 0;                                                                \
 //CHECK-NEXT:     }();                                                                       \
