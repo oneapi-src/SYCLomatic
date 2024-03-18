@@ -929,6 +929,10 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("AlignConsecutiveMacros", Style.AlignConsecutiveMacros);
     IO.mapOptional("AlignConsecutiveShortCaseStatements",
                    Style.AlignConsecutiveShortCaseStatements);
+    IO.mapOptional("AlignConsecutiveTableGenCondOperatorColons",
+                   Style.AlignConsecutiveTableGenCondOperatorColons);
+    IO.mapOptional("AlignConsecutiveTableGenDefinitionColons",
+                   Style.AlignConsecutiveTableGenDefinitionColons);
     IO.mapOptional("AlignEscapedNewlines", Style.AlignEscapedNewlines);
     IO.mapOptional("AlignOperands", Style.AlignOperands);
     IO.mapOptional("AlignTrailingComments", Style.AlignTrailingComments);
@@ -1434,6 +1438,8 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.AlignConsecutiveDeclarations = {};
   LLVMStyle.AlignConsecutiveMacros = {};
   LLVMStyle.AlignConsecutiveShortCaseStatements = {};
+  LLVMStyle.AlignConsecutiveTableGenCondOperatorColons = {};
+  LLVMStyle.AlignConsecutiveTableGenDefinitionColons = {};
   LLVMStyle.AlignEscapedNewlines = FormatStyle::ENAS_Right;
   LLVMStyle.AlignOperands = FormatStyle::OAS_Align;
   LLVMStyle.AlignTrailingComments = {};
@@ -1605,7 +1611,7 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.PenaltyBreakScopeResolution = 500;
   LLVMStyle.PenaltyBreakString = 1000;
   LLVMStyle.PenaltyBreakTemplateDeclaration = prec::Relational;
-  LLVMStyle.PenaltyExcessCharacter = 1000000;
+  LLVMStyle.PenaltyExcessCharacter = 1'000'000;
   LLVMStyle.PenaltyIndentedWhitespace = 0;
   LLVMStyle.PenaltyReturnTypeOnItsOwnLine = 60;
 
@@ -1928,9 +1934,12 @@ FormatStyle getClangFormatStyle() {
   FormatStyle Style = getLLVMStyle();
   Style.InsertBraces = true;
   Style.InsertNewlineAtEOF = true;
+  Style.IntegerLiteralSeparator.Decimal = 3;
+  Style.IntegerLiteralSeparator.DecimalMinDigits = 5;
   Style.LineEnding = FormatStyle::LE_LF;
   Style.RemoveBracesLLVM = true;
   Style.RemoveParentheses = FormatStyle::RPS_ReturnStatement;
+  Style.RemoveSemicolon = true;
   return Style;
 }
 
@@ -3938,7 +3947,7 @@ FormatStyle::LanguageKind guessLanguage(StringRef FileName, StringRef Code) {
     auto Extension = llvm::sys::path::extension(FileName);
     // If there's no file extension (or it's .h), we need to check the contents
     // of the code to see if it contains Objective-C.
-    if (Extension.empty() || Extension == ".h") {
+    if (!Code.empty() && (Extension.empty() || Extension == ".h")) {
       auto NonEmptyFileName = FileName.empty() ? "guess.h" : FileName;
       Environment Env(Code, NonEmptyFileName, /*Ranges=*/{});
       ObjCHeaderStyleGuesser Guesser(Env, getLLVMStyle());
