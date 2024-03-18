@@ -792,11 +792,11 @@ has_capability_or_fail(const sycl::device &dev,
   }
 }
 
-/// Util function to synchronize all the queues of current device with default
-/// queue and store the event of the specified queue at the time of this call.
+/// Util function to insert a synchronize barrier in the queue and return the
+/// event of the barrier.
 /// \param [out] event_ptr The memory to store the event.
 /// \param [in] queue The queue specified to do synchronization.
-inline void sync_barrier(dpct::event_ptr event_ptr,
+inline void sync_barrier(sycl::event *event_ptr,
                          sycl::queue *queue = &get_default_queue()) {
   if (*queue == get_default_queue()) {
     // Wait all the kernel tasks in all the queues of current device completed.
