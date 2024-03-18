@@ -3925,10 +3925,11 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
       0, SM, DpctGlobalInfo::getContext().getLangOpts()));
 }
 
-void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
+void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE,
+                                         std::optional<unsigned int> NumArgs) {
   if (!CE)
     return;
-  buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts());
+  buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), NumArgs);
   buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
   if (auto FD = CE->getDirectCallee()) {
@@ -4133,7 +4134,8 @@ void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   }
   FuncInfo = Info;
 }
-void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
+void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
+                                       std::optional<unsigned int> NumArgs) {
   if (auto CallDecl =
           dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
     Name = getNameWithNamespace(CallDecl, Callee);
@@ -4151,7 +4153,7 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
     if (Unresolved->getQualifier())
       Name = getNestedNameSpecifierString(Unresolved->getQualifier());
     Name += Unresolved->getName().getAsString();
-    setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved));
+    setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved, NumArgs));
     buildTemplateArguments(Unresolved->template_arguments(),
                            Callee->getSourceRange());
   } else if (auto DependentScope =
@@ -4344,8 +4346,39 @@ DeviceFunctionDecl::DeviceFunctionDecl(
   buildTextureObjectParamsInfo(FTL.getParams());
 }
 std::shared_ptr<DeviceFunctionInfo>
-DeviceFunctionDecl::LinkUnresolved(const UnresolvedLookupExpr *ULE) {
-  return LinkDeclRange(ULE->decls(), getFunctionName(ULE));
+DeviceFunctionDecl::LinkUnresolved(const UnresolvedLookupExpr *ULE,
+                                   std::optional<unsigned int> NumArgs) {
+  std::shared_ptr<DeviceFunctionInfo> Info;
+  DeclList List;
+
+  for (auto *D : ULE->decls()) {
+    if (NumArgs) {
+      if (const FunctionDecl *FD = dyn_cast<FunctionDecl>(D)) {
+        if (NumArgs.value() >= FD->getMinRequiredArguments() &&
+            NumArgs.value() <= FD->getNumParams()) {
+          LinkDecl(D, List, Info);
+        }
+      }
+      if (const FunctionTemplateDecl *FTD = dyn_cast<FunctionTemplateDecl>(D)) {
+        if (NumArgs.value() >=
+                FTD->getTemplatedDecl()->getMinRequiredArguments() &&
+            NumArgs.value() <= FTD->getTemplatedDecl()->getNumParams()) {
+          LinkDecl(D, List, Info);
+        }
+      }
+    } else {
+      LinkDecl(D, List, Info);
+    }
+  }
+
+  if (List.empty())
+    return Info;
+  if (!Info)
+    Info = std::make_shared<DeviceFunctionInfo>(
+        List[0]->ParamsNum, List[0]->NonDefaultParamNum, getFunctionName(ULE));
+  for (auto &D : List)
+    D->setFuncInfo(Info);
+  return Info;
 }
 std::shared_ptr<DeviceFunctionInfo>
 DeviceFunctionDecl::LinkRedecls(const FunctionDecl *FD) {
@@ -5321,7 +5354,7 @@ KernelCallExpr::KernelCallExpr(unsigned Offset,
     : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
   setIsInMacroDefine(KernelCall);
   setNeedAddLambda(KernelCall);
-  buildCallExprInfo(KernelCall);
+  buildCallExprInfo(KernelCall, KernelCall->getNumArgs());
   buildArgsInfo(KernelCall);
   buildKernelInfo(KernelCall);
 }
