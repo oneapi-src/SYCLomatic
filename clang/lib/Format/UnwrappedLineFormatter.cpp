@@ -1261,7 +1261,7 @@ private:
     // While not empty, take first element and follow edges.
     while (!Queue.empty()) {
       // Quit if we still haven't found a solution by now.
-      if (Count > 25000000)
+      if (Count > 25'000'000)
         return 0;
 
       Penalty = Queue.top().first.first;
@@ -1275,7 +1275,7 @@ private:
 
       // Cut off the analysis of certain solutions if the analysis gets too
       // complex. See description of IgnoreStackForComparison.
-      if (Count > 50000)
+      if (Count > 50'000)
         Node->State.IgnoreStackForComparison = true;
 
       if (!Seen.insert(&Node->State).second) {
