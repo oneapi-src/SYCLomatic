@@ -274,8 +274,6 @@ DEF_WARNING(VEC_IN_TEMPLATE_ARG, 1122, LOW_LEVEL, "'{0}' is migrated to '{1}' in
 DEF_COMMENT(VEC_IN_TEMPLATE_ARG, 1122, LOW_LEVEL, "'{0}' is migrated to '{1}' in template declare, it may cause template function or class redefinition, please adjust the code.")
 DEF_WARNING(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1123, MEDIUM_LEVEL, "The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.")
 DEF_COMMENT(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1123, MEDIUM_LEVEL, "The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.")
-DEF_WARNING(EXPLICIT_EXTENSION_DISABLE, 1124, LOW_LEVEL, "Migration of '%0' is not supported if '%1' extension is disabled. You can migrate the code with '%1' extension by not specifying --no-dpcpp-extensions=%1.")
-DEF_COMMENT(EXPLICIT_EXTENSION_DISABLE, 1124, LOW_LEVEL, "Migration of '{0}' is not supported if '{1}' extension is disabled. You can migrate the code with '{1}' extension by not specifying --no-dpcpp-extensions={1}.")
 // clang-format on
 
 #undef DEF_COMMENT
