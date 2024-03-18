@@ -73,17 +73,19 @@ enum class parameter_inout_prop { in, out, in_out };
 /// E.g.,
 /// \code
 /// void foo(sycl::queue q, int *res) {
-///   // Declare the wrapper
+///   // Declare the wrapper.
 ///   parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out>
 ///       res_wrapper(q, res);
-///   // Computation result is saved in the wrapper
-///   oneapi::mkl::...(q, ..., res_wrapper.get_memory());
-///   // Computation result is copied back to "res" when descructing the wrapper
+///   // parameter_wrapper_t::get_ptr() is passed as a parameter. The result is
+///   // saved into the wrapper.
+///   oneapi::mkl::...(q, ..., res_wrapper.get_ptr());
+///   // The action to copy the result in the wrapper to the original variable
+///   // is submitted when destructing the wrapper automatically.
 /// }
 /// \endcode
 /// \tparam target_t Data type to fit oneMKL parameter data type. E.g.,
-/// get_memory() returns \tparam target_t data type and can be used as oneMKL
-/// parameter with USM configration.
+/// get_ptr() returns \tparam target_t data type and can be used as oneMKL
+/// parameter with USM memory configuration.
 /// \tparam source_t Data type of the original parameter.
 /// \tparam inout_prop The input/output property of the parameter.
 template <typename target_t, typename source_t, parameter_inout_prop inout_prop>
@@ -134,7 +136,7 @@ public:
     }
 #endif
   }
-  /// Get the target pointer
+  /// Get the target memory of the wrapper to represent the wrapped variable
   target_t *get_ptr() { return _target; }
 };
 
@@ -143,17 +145,19 @@ public:
 /// E.g.,
 /// \code
 /// void foo(sycl::queue q, int *params, int ele_num) {
-///   // Declare the wrapper
+///   // Declare the wrapper.
 ///   parameter_wrapper_t<float, parameter_inout_prop::in_out> params_wrapper(
 ///       q, params, ele_num);
-///   // Computation result is saved in the wrapper
-///   oneapi::mkl::...(q, ..., params_wrapper.get_memory());
-///   // Computation result is copied back to "res" when descructing the wrapper
+///   // parameter_wrapper_t::get_ptr() is passed as a parameter. The result is
+///   // saved into the wrapper.
+///   oneapi::mkl::...(q, ..., params_wrapper.get_ptr());
+///   // The action to copy the result in the wrapper to the original variable
+///   // is submitted when destructing the wrapper automatically.
 /// }
 /// \endcode
 /// \tparam target_t Data type to fit oneMKL parameter data type. E.g.,
-/// get_memory() returns \tparam target_t data type and can be used as oneMKL
-/// parameter with USM configration.
+/// get_ptr() returns \tparam target_t data type and can be used as oneMKL
+/// parameter with USM memory configuration.
 /// \tparam inout_prop The input/output property of the parameter.
 template <typename target_t, parameter_inout_prop inout_prop>
 class parameter_wrapper_t<target_t, target_t, inout_prop>
@@ -191,7 +195,7 @@ public:
       }
     }
   }
-  /// Get the target pointer
+  /// Get the target memory of the wrapper to represent the wrapped variable
   target_t *get_ptr() { return _target; }
 };
 
