@@ -16,7 +16,7 @@ RewriterMap dpct::createSTDFunctionsRewriterMap() {
       MATH_API_REWRITERS_V2(
           "std::abs",
           MATH_API_REWRITER_PAIR(
-              Tag::host_normal,
+              math::Tag::host_normal,
               HEADER_INSERT_FACTORY(
                   HeaderType::HT_Stdlib,
                   HEADER_INSERT_FACTORY(
@@ -24,7 +24,7 @@ RewriterMap dpct::createSTDFunctionsRewriterMap() {
                       CALL_FACTORY_ENTRY("std::abs",
                                          CALL("std::abs", ARG(0)))))),
           MATH_API_REWRITER_PAIR(
-              Tag::device_normal,
+              math::Tag::device_normal,
               CONDITIONAL_FACTORY_ENTRY(
                   IsParameterIntegerType(0),
                   CALL_FACTORY_ENTRY(

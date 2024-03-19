@@ -237,21 +237,21 @@ inline auto UsingDpctMinMax = [](const CallExpr *C) -> bool {
   Arg1T.removeLocalFastQualifiers(Qualifiers::CVRMask);
   return Arg0T != Arg1T;
 };
-} // namespace math
 
 enum class Tag : size_t {
-  device_perf = 0,
-  device_normal,
-  math_libdevice,
-  device_std,
-  device_emu,
-  ext_experimental,
-  host_perf,
-  host_normal,
+  device_perf = 0,  // device API for performace
+  device_normal,    // device API
+  math_libdevice,   // device API using libdevice
+  device_std,       // device API using std namespace
+  device_emu,       // device API using emulation
+  ext_experimental, // device API using experimental feature
+  host_perf,        // host API for performace
+  host_normal,      // host API
   unsupported_warning,
   no_rewrite,
   tag_size
 };
+} // namespace math
 
 inline std::function<bool(const CallExpr *)> TrueFunctor =
     [](const CallExpr *) { return true; };
@@ -261,32 +261,32 @@ public:
   using element_t = std::optional<std::pair<
       std::function<bool(const CallExpr *)>,
       std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>>;
-  using array_t = std::array<element_t, static_cast<size_t>(Tag::tag_size)>;
+  using array_t = std::array<element_t, static_cast<size_t>(math::Tag::tag_size)>;
 
 private:
   std::string Name;
   array_t MathAPIRewriters;
 
   element_t &DevicePerfRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::device_perf)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::device_perf)];
   element_t &DeviceNormalRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::device_normal)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::device_normal)];
   element_t &MathLibdeviceRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::math_libdevice)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::math_libdevice)];
   element_t &DeviceStdRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::device_std)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::device_std)];
   element_t &DeviceEmuRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::device_emu)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::device_emu)];
   element_t &ExtExperimentalRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::ext_experimental)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::ext_experimental)];
   element_t &HostPerfRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::host_perf)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::host_perf)];
   element_t &HostNormalRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::host_normal)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::host_normal)];
   element_t &UnsupportedWarningRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::unsupported_warning)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::unsupported_warning)];
   element_t &NoRewriteRewriter =
-      MathAPIRewriters[static_cast<size_t>(Tag::no_rewrite)];
+      MathAPIRewriters[static_cast<size_t>(math::Tag::no_rewrite)];
 
   std::shared_ptr<CallExprRewriter> getDeviceRewriter(const CallExpr *C) const {
     if (DevicePerfRewriter && math::IsPerf(C) &&
@@ -332,6 +332,18 @@ public:
                            std::make_shared<NoRewriteFuncNameRewriterFactory>(
                                Name, Name))));
   }
+  // Host API priority:
+  //   1. host_perf
+  //   2. host_normal
+  //   3. unsupported_warning
+  // Device API priority:
+  //   1. device_perf
+  //   2. device_normal
+  //   3. ext_experimental
+  //   4. math_libdevice
+  //   5. device_std
+  //   6. device_emu
+  //   7. unsupported_warning
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     if (math::IsPureHost(C)) {
       // HOST
@@ -367,7 +379,7 @@ public:
 
 template <typename... Ts>
 inline void createMathRewriterFactoryImpl(
-    MathRewriterFactory::array_t &Rewriters, Tag Tag,
+    MathRewriterFactory::array_t &Rewriters, math::Tag Tag,
     std::function<bool(const CallExpr *)> Cond,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         Rewriter,
@@ -377,7 +389,7 @@ inline void createMathRewriterFactoryImpl(
 }
 
 inline void createMathRewriterFactoryImpl(
-    MathRewriterFactory::array_t &Rewriters, Tag Tag,
+    MathRewriterFactory::array_t &Rewriters, math::Tag Tag,
     std::function<bool(const CallExpr *)> Cond,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         Rewriter,
