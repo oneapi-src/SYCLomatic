@@ -28,7 +28,6 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
-#include "Schema.h"
 #include "WMMAAPIMigration.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
@@ -41,8 +40,8 @@
 #include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/Cuda.h"
-#include "clang/Lex/MacroArgs.h"
 #include "clang/Basic/SourceLocation.h"
+#include "clang/Lex/MacroArgs.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/SmallString.h"
@@ -8461,7 +8460,7 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
                      "\", ";
   DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
                              KCallSpellingRange.first.printToString(SM)) +
-                         "(SYCL)\", ";
+                         "\", ";
   std::string StreamStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
@@ -8487,11 +8486,11 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       if (DRE->isLValue()) {
         DebugArgsString += ", ";
         DebugArgsStringSYCL += ", ";
-        std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
-        DebugArgsString += SchemaStr + ", ";
-        DebugArgsStringSYCL += SchemaStr + ", ";
-        DebugArgsString += "(long *)&" + getStmtSpelling(Arg);
-        DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg);
+        std::string VarNameStr = "\"" + DRE->getNameInfo().getAsString() + "\"";
+        DebugArgsString += VarNameStr + ", ";
+        DebugArgsStringSYCL += VarNameStr + ", ";
+        DebugArgsString += getStmtSpelling(Arg);
+        DebugArgsStringSYCL += getStmtSpelling(Arg);
       }
     }
   }
