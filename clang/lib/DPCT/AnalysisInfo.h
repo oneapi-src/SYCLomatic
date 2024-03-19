@@ -1243,6 +1243,9 @@ public:
   static bool usePeerAccess() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess);
   }
+  static bool useAssert() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_Assert);
+  }
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
   }
