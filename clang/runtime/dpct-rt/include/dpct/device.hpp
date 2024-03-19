@@ -792,8 +792,13 @@ has_capability_or_fail(const sycl::device &dev,
   }
 }
 
-/// Util function to insert a synchronize barrier in the queue and return the
-/// event of the barrier.
+/// Util function to do implicit sync among queues of the same device then
+/// insert a synchronize barrier in the queue. For USM, If the queue is the
+/// default in-order queue, try to sync with all queues available in the current
+/// device before inserting a barrier. For USM-none, If the queue is the default
+/// out-of-order queue, try to sync with all queues available in the current
+/// device before inserting a barrier, else try to sync in the current queue
+/// before inserting a barrier.
 /// \param [out] event_ptr The memory to store the event.
 /// \param [in] queue The queue specified to do synchronization.
 inline void sync_barrier(sycl::event *event_ptr,
@@ -811,8 +816,6 @@ inline void sync_barrier(sycl::event *event_ptr,
   }
 #endif
 
-// Store the event of the specified queue at the time of this call into memory
-// pointed by \p event_ptr.
 #ifdef DPCT_PROFILING_ENABLED
   *event_ptr = queue->ext_oneapi_submit_barrier();
 #else
