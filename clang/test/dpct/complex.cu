@@ -27,6 +27,7 @@
 #define COMPLEX_D_SUB(a, b) cuCsub(a, b)
 #define COMPLEX_D_MUL(a, b) cuCmul(a, b)
 #define COMPLEX_D_DIV(a, b) cuCdiv(a, b)
+#define COMPLEX_D_FMA(a, b, c) cuCfma(a, b, c)
 #define COMPLEX_D_ABS(a) cuCabs(a)
 #define COMPLEX_D_ABS1(a) (fabs((a).x) + fabs((a).y))
 #define COMPLEX_D_CONJ(a) cuConj(a)
@@ -52,6 +53,7 @@
 #define COMPLEX_F_SUB(a, b) cuCsubf(a, b)
 #define COMPLEX_F_MUL(a, b) cuCmulf(a, b)
 #define COMPLEX_F_DIV(a, b) cuCdivf(a, b)
+#define COMPLEX_F_FMA(a, b, c) cuCfmaf(a, b, c)
 #define COMPLEX_F_ABS(a) cuCabsf(a)
 #define COMPLEX_F_ABS1(a) (fabsf((a).x) + fabsf((a).y))
 #define COMPLEX_F_CONJ(a) cuConjf(a)
@@ -81,27 +83,30 @@ __host__ __device__ bool check<double>(double x, float e[], int& index) {
 }
 
 __global__ void kernel(int *result) {
-    // CHECK: sycl::float2 f1, f2;
-    // CHECK: sycl::double2 d1, d2;
-    cuFloatComplex f1, f2;
-    cuDoubleComplex d1, d2;
+    // CHECK: sycl::float2 f1, f2, f3;
+    // CHECK: sycl::double2 d1, d2, d3;
+    cuFloatComplex f1, f2, f3;
+    cuDoubleComplex d1, d2, d3;
     // CHECK: f1 = COMPLEX_F_MAKE(1.8, -2.7);
     // CHECK: f2 = COMPLEX_F_MAKE(-3.6, 4.5);
+    // CHECK: f3 = COMPLEX_F_MAKE(4.9, 6.3);
     // CHECK: d1 = COMPLEX_D_MAKE(5.4, -6.3);
     // CHECK: d2 = COMPLEX_D_MAKE(-7.2, 8.1);
+    // CHECK: d3 = COMPLEX_D_MAKE(9.4, 9.9);
     f1 = COMPLEX_F_MAKE(1.8, -2.7);
     f2 = COMPLEX_F_MAKE(-3.6, 4.5);
+    f3 = COMPLEX_F_MAKE(4.9, 6.3);
     d1 = COMPLEX_D_MAKE(5.4, -6.3);
     d2 = COMPLEX_D_MAKE(-7.2, 8.1);
-   
+    d3 = COMPLEX_D_MAKE(9.4, 9.9);
     int index = 0;
     bool r = true;
-    float expect[32] = {5.400000,  -6.300000,
-        5.400000,  -6.300000, -1.800000, 1.800000, 12.600000, -14.400000, 12.150000,
-        89.100000, -0.765517, 0.013793,  8.297590, 11.700000, 5.400000,   6.300000,
-        1.800000,  -2.700000, -1.800000, 1.800000, 5.400000,  -7.200000,  5.670001,
-        17.820000, -0.560976, 0.048780,  3.244996, 4.500000,  1.800000,   2.700000,
-        1.800000,   -2.700000};
+    float expect[36] = {5.400000, -6.300000,
+                        5.400000, -6.300000, -1.800000, 1.800000, 12.600000, -14.400000, 12.150000,
+                        89.100000, -0.765517, 0.013793, 8.297590, 11.700000, 5.400000, 6.300000, 21.55, 99,
+                        1.800000, -2.700000, -1.800000, 1.800000, 5.400000, -7.200000, 5.670001,
+                        17.820000, -0.560976, 0.048780, 3.244996, 4.500000, 1.800000, 2.700000,
+                        1.800000, -2.700000, 10.57, 24.12};
     // CHECK: auto a1 = COMPLEX_D_FREAL(d1);
     auto a1 = COMPLEX_D_FREAL(d1);
     r = r && check(a1, expect, index);
@@ -135,6 +140,9 @@ __global__ void kernel(int *result) {
     // CHECK: auto a11 = COMPLEX_D_CONJ(d1);
     auto a11 = COMPLEX_D_CONJ(d1);
     r = r && check(a11, expect, index);
+    // CHECK: auto a12 = COMPLEX_D_FMA(d1, d2, d3);
+    auto a12 = COMPLEX_D_FMA(d1, d2, d3);
+    r = r && check(a12, expect, index);
 
     // CHECK: auto a13 = COMPLEX_F_REAL(f1);
     auto a13 = COMPLEX_F_REAL(f1);
@@ -169,30 +177,37 @@ __global__ void kernel(int *result) {
     // CHECK: auto a23 = COMPLEX_F_FIMAG(f1);
     auto a23 = COMPLEX_F_FIMAG(f1);
     r = r && check(a23, expect, index);
+    // CHECK: auto a24 = COMPLEX_F_FMA(f1, f2, f3);
+    auto a24 = COMPLEX_F_FMA(f1, f2, f3);
+    r = r && check(a24, expect, index);
     *result = r;
 }
 
 int main() {
-    // CHECK: sycl::float2 f1, f2;
-    // CHECK: sycl::double2 d1, d2;
-    cuFloatComplex f1, f2;
-    cuDoubleComplex d1, d2;
+    // CHECK: sycl::float2 f1, f2, f3;
+    // CHECK: sycl::double2 d1, d2, d3;
+    cuFloatComplex f1, f2, f3;
+    cuDoubleComplex d1, d2, d3;
     // CHECK: f1 = COMPLEX_F_MAKE(1.8, -2.7);
     // CHECK: f2 = COMPLEX_F_MAKE(-3.6, 4.5);
+    // CHECK: f3 = COMPLEX_F_MAKE(4.9, 6.3);
     // CHECK: d1 = COMPLEX_D_MAKE(5.4, -6.3);
     // CHECK: d2 = COMPLEX_D_MAKE(-7.2, 8.1);
+    // CHECK: d3 = COMPLEX_D_MAKE(9.4, 9.9);
     f1 = COMPLEX_F_MAKE(1.8, -2.7);
     f2 = COMPLEX_F_MAKE(-3.6, 4.5);
+    f3 = COMPLEX_F_MAKE(4.9, 6.3);
     d1 = COMPLEX_D_MAKE(5.4, -6.3);
     d2 = COMPLEX_D_MAKE(-7.2, 8.1);
+    d3 = COMPLEX_D_MAKE(9.4, 9.9);
     int index = 0;
     bool r = true;
-    float expect[32] = {5.400000,  -6.300000,
-        5.400000,  -6.300000, -1.800000, 1.800000, 12.600000, -14.400000, 12.150000,
-        89.100000, -0.765517, 0.013793,  8.297590, 11.700000, 5.400000,   6.300000,
-        1.800000,  -2.700000, -1.800000, 1.800000, 5.400000,  -7.200000,  5.670001,
-        17.820000, -0.560976, 0.048780,  3.244996, 4.500000,  1.800000,   2.700000,
-        1.800000,   -2.700000};
+    float expect[36] = {5.400000, -6.300000,
+                        5.400000, -6.300000, -1.800000, 1.800000, 12.600000, -14.400000, 12.150000,
+                        89.100000, -0.765517, 0.013793, 8.297590, 11.700000, 5.400000, 6.300000, 21.55, 99,
+                        1.800000, -2.700000, -1.800000, 1.800000, 5.400000, -7.200000, 5.670001,
+                        17.820000, -0.560976, 0.048780, 3.244996, 4.500000, 1.800000, 2.700000,
+                        1.800000, -2.700000, 10.57, 24.12};
     // CHECK: auto a1 = COMPLEX_D_FREAL(d1);
     auto a1 = COMPLEX_D_FREAL(d1);
     r = r && check(a1, expect, index);
@@ -226,6 +241,9 @@ int main() {
     // CHECK: auto a11 = COMPLEX_D_CONJ(d1);
     auto a11 = COMPLEX_D_CONJ(d1);
     r = r && check(a11, expect, index);
+    // CHECK: auto a12 = COMPLEX_D_FMA(d1, d2, d3);
+    auto a12 = COMPLEX_D_FMA(d1, d2, d3);
+    r = r && check(a12, expect, index);
 
     // CHECK: auto a13 = COMPLEX_F_REAL(f1);
     auto a13 = COMPLEX_F_REAL(f1);
@@ -260,6 +278,9 @@ int main() {
     // CHECK: auto a23 = COMPLEX_F_FIMAG(f1);
     auto a23 = COMPLEX_F_FIMAG(f1);
     r = r && check(a23, expect, index);
+    // CHECK: auto a24 = COMPLEX_F_FMA(f1, f2, f3);
+    auto a24 = COMPLEX_F_FMA(f1, f2, f3);
+    r = r && check(a24, expect, index);
 
     // CHECK: f1 = d1.convert<float>();
     f1 = cuComplexDoubleToFloat(d1);
