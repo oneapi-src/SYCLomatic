@@ -3296,29 +3296,26 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     TmplArg = "<int *>";
   }
   if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
-  // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
+    // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
     if (BO->getOpcode() == clang::BO_Assign) {
-      requestFeature(MapNames::PropToSetFeatureMap.at(MemberName));
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
       emplaceTransformation(new InsertAfterStmt(BO, ")"));
-      return ;
+      return;
     }
   } else if (auto *OCE = Parents[0].get<clang::CXXOperatorCallExpr>()) {
-  // migrate to set_XXX() for types with an overloaded = operator
+    // migrate to set_XXX() for types with an overloaded = operator
     if (OCE->getOperator() == clang::OverloadedOperatorKind::OO_Equal) {
-      requestFeature(MapNames::PropToSetFeatureMap.at(MemberName));
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(OCE->getOperatorLoc(), 1, "("));
       emplaceTransformation(new InsertAfterStmt(OCE, ")"));
-      return ;
+      return;
     }
   }
-  requestFeature(MapNames::PropToGetFeatureMap.at(MemberName));
   emplaceTransformation(new RenameFieldInMemberExpr(
-    ME, "get_" + Search->second + TmplArg + "()")); 
+      ME, "get_" + Search->second + TmplArg + "()"));
   return ;
 }
 
