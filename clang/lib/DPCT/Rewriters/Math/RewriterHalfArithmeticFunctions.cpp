@@ -24,7 +24,7 @@ RewriterMap dpct::createHalfArithmeticFunctionsRewriterMap() {
                                               "ext::intel::math::habs",
                                           ARG(0)))),
               MATH_API_REWRITER_PAIR(
-                  math::Tag::device_emu,
+                  math::Tag::emulation,
                   CALL_FACTORY_ENTRY(
                       "__habs",
                       CALL(MapNames::getClNamespace(false, true) + "fabs",
@@ -38,7 +38,7 @@ RewriterMap dpct::createHalfArithmeticFunctionsRewriterMap() {
                                          "ext::oneapi::experimental::fabs",
                                      ARG(0)))),
               MATH_API_REWRITER_PAIR(
-                  math::Tag::device_emu,
+                  math::Tag::emulation,
                   CALL_FACTORY_ENTRY(
                       "__habs",
                       CALL(MapNames::getClNamespace(false, true) + "fabs",
@@ -52,7 +52,7 @@ RewriterMap dpct::createHalfArithmeticFunctionsRewriterMap() {
                                                        "ext::intel::math::hadd",
                                                    ARG(0), ARG(1)))),
           MATH_API_REWRITER_PAIR(
-              math::Tag::device_emu,
+              math::Tag::emulation,
               BINARY_OP_FACTORY_ENTRY("__hadd_rn", BinaryOperatorKind::BO_Add,
                                       ARG(0), ARG(1))))
       // __hadd_sat
@@ -67,7 +67,7 @@ RewriterMap dpct::createHalfArithmeticFunctionsRewriterMap() {
                                               "ext::intel::math::hadd_sat",
                                           ARG(0), ARG(1)))),
               MATH_API_REWRITER_PAIR(
-                  math::Tag::device_emu,
+                  math::Tag::emulation,
                   CALL_FACTORY_ENTRY(
                       "__hadd_sat",
                       CALL(MapNames::getDpctNamespace() + "clamp<" +
@@ -77,7 +77,7 @@ RewriterMap dpct::createHalfArithmeticFunctionsRewriterMap() {
           MATH_API_REWRITERS_V2(
               "__hadd_sat",
               MATH_API_REWRITER_PAIR_WITH_COND(
-                  math::Tag::device_emu, math::UseBFloat16,
+                  math::Tag::emulation, math::UseBFloat16,
                   CALL_FACTORY_ENTRY(
                       "__hadd_sat",
                       CALL(MapNames::getDpctNamespace() + "clamp<" +
@@ -99,7 +99,7 @@ RewriterMap dpct::createHalfArithmeticFunctionsRewriterMap() {
                                                     "ext::intel::math::hdiv",
                                                 ARG(0), ARG(1)))),
           MATH_API_REWRITER_PAIR(
-              math::Tag::device_emu,
+              math::Tag::emulation,
               BINARY_OP_FACTORY_ENTRY("__hdiv", BinaryOperatorKind::BO_Div,
                                       makeCallArgCreatorWithCall(0),
                                       makeCallArgCreatorWithCall(1))))
