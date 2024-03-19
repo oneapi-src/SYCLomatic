@@ -116,7 +116,8 @@ public:
                             .template get_access<sycl::access_mode::read>(cgh);
         auto to_acc = dpct::get_buffer<source_t>(_source)
                           .template get_access<sycl::access_mode::write>(cgh);
-        cgh.single_task(
+        cgh.single_task<dpct_kernel_name<class parameter_wrapper_copyback,
+                                         target_t, source_t>>(
             [=]() { to_acc[0] = static_cast<target_t>(from_acc[0]); });
       });
     } else {
@@ -127,7 +128,8 @@ public:
 #else
     if (_source_attribute ==
         dpct::detail::pointer_access_attribute::device_only) {
-      _q.template single_task(
+      _q.template single_task<dpct_kernel_name<class parameter_wrapper_copyback,
+                                               target_t, source_t>>(
           [t = _target, s = _source]() { *s = static_cast<source_t>(*t); });
     } else {
       target_t temp;
