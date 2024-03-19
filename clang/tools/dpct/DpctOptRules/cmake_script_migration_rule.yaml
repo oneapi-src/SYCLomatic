@@ -884,5 +884,5 @@
   Subrules:
     value:
       In: CUDAToolkit_LIBRARY_DIR
-      Out: SYCL_INCLUDE_DIR
+      Out: ONEAPI_LIB_DIR
       MatchMode: Full
