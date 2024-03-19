@@ -791,6 +791,37 @@ has_capability_or_fail(const sycl::device &dev,
     break;
   }
 }
+
+/// Util function to do implicit sync among queues of the same device then
+/// insert a synchronize barrier in the queue. For USM, If the queue is the
+/// default in-order queue, try to sync with all queues available in the current
+/// device before inserting a barrier. For USM-none, If the queue is the default
+/// out-of-order queue, try to sync with all queues available in the current
+/// device before inserting a barrier, else try to sync in the current queue
+/// before inserting a barrier.
+/// \param [out] event_ptr The memory to store the event.
+/// \param [in] queue The queue specified to do synchronization.
+inline void sync_barrier(sycl::event *event_ptr,
+                         sycl::queue *queue = &get_default_queue()) {
+  if (*queue == get_default_queue()) {
+    // Wait all the kernel tasks in all the queues of current device completed.
+    dpct::get_current_device().queues_wait_and_throw();
+  }
+
+#ifdef DPCT_USM_LEVEL_NONE
+  if (*queue != get_default_queue()) {
+    // For out-of-ordered queue, wait all the kernel tasks in \p queue
+    // completed.
+    queue->wait();
+  }
+#endif
+
+#ifdef DPCT_PROFILING_ENABLED
+  *event_ptr = queue->ext_oneapi_submit_barrier();
+#else
+  *event_ptr = queue->single_task([=]() {});
+#endif
+}
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

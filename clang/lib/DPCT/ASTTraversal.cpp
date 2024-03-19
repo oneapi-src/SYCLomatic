@@ -7301,8 +7301,13 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
-        Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
-              "}}.ext_oneapi_submit_barrier()";
+        std::string ReplaceStr;
+        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
+        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+        emplaceTransformation(new InsertBeforeStmt(CE, "DPCT_CHECK_ERROR("));
+        emplaceTransformation(new InsertAfterStmt(CE, ")"));
+        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
+        return;
       }
       StmtStr = "*" + ArgName + " = " + Str;
     } else {
@@ -7372,8 +7377,10 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
-        Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
-              "}}.ext_oneapi_submit_barrier()";
+        std::string ReplaceStr;
+        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
+        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+        return;
       }
       ReplStr += Str;
     } else {
@@ -7401,8 +7408,10 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
-        Str = "*" + ArgName + " = " + StreamName +
-              "->ext_oneapi_submit_barrier()";
+        std::string ReplaceStr;
+        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
+        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+        return;
       }
       ReplStr += Str;
     }
