@@ -89,6 +89,21 @@ public:
             C, Source, BaseCreator(C), IsArrow, MemberCreator(C)) {}
 };
 
+class RewriterFactoryWithFeatureRequest : public MemberExprRewriterFactoryBase {
+  std::shared_ptr<MemberExprRewriterFactoryBase> Inner;
+  HelperFeatureEnum Feature;
+
+public:
+  RewriterFactoryWithFeatureRequest(
+      HelperFeatureEnum Feature,
+      std::shared_ptr<MemberExprRewriterFactoryBase> InnerFactory)
+      : Inner(InnerFactory), Feature(Feature) {}
+  std::shared_ptr<CallExprRewriter> create(const MemberExpr *C) const override {
+    requestFeature(Feature);
+    return Inner->create(C);
+  }
+};
+
 template <class BaseT, class... ArgsT>
 inline std::shared_ptr<MemberExprRewriterFactoryBase>
 createMemberCallExprRewriterFactory(
@@ -135,6 +150,27 @@ createMemberExprRewriterFactory(
       std::forward<std::function<MemberT(const MemberExpr *)>>(MemberCreator));
 }
 
+inline std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+createFeatureRequestFactory(
+    HelperFeatureEnum Feature,
+    std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<RewriterFactoryWithFeatureRequest>(Feature,
+                                                          Input.second));
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+createFeatureRequestFactory(
+    HelperFeatureEnum Feature,
+    std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createFeatureRequestFactory(Feature, std::move(Input));
+}
+
 inline std::function<const std::string(const MemberExpr *)> makeMemberBase() {
   return [=](const MemberExpr *ME) -> const std::string {
     auto *Base = ME->getBase()->IgnoreImpCasts();
@@ -164,6 +200,8 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
   {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define MEM_EXPR_ENTRY(FuncName, B, IsArrow, M)                                \
   {FuncName, createMemberExprRewriterFactory(FuncName, B, IsArrow, M)},
+#define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
+  createFeatureRequestFactory(FEATURE, x 0),
 #include "APINamesMemberExpr.inc"
 #undef MEMBER_CALL_FACTORY_ENTRY
 #undef MEM_BASE
