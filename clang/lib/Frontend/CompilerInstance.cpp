@@ -1068,38 +1068,11 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
     }
   }
 
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
 // don't show the message "3 errors generated during parsing".
 // it's duplicate with dpct summary in command line msg.
 #else
-  if (getDiagnosticOpts().ShowCarets) {
-    // We can have multiple diagnostics sharing one diagnostic client.
-    // Get the total number of warnings/errors from the client.
-    unsigned NumWarnings = getDiagnostics().getClient()->getNumWarnings();
-    unsigned NumErrors = getDiagnostics().getClient()->getNumErrors();
-
-    if (NumWarnings)
-      OS << NumWarnings << " warning" << (NumWarnings == 1 ? "" : "s");
-    if (NumWarnings && NumErrors)
-      OS << " and ";
-    if (NumErrors)
-      OS << NumErrors << " error" << (NumErrors == 1 ? "" : "s");
-    if (NumWarnings || NumErrors) {
-      OS << " generated";
-      if (getLangOpts().CUDA) {
-        if (!getLangOpts().CUDAIsDevice) {
-          OS << " when compiling for host";
-        } else {
-          OS << " when compiling for " << getTargetOpts().CPU;
-        }
-      }
-      OS << ".\n";
-    }
-  }
-=======
   printDiagnosticStats();
->>>>>>> upstream/sycl
 
   if (getFrontendOpts().ShowStats) {
     if (hasFileManager()) {
