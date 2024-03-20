@@ -35,8 +35,11 @@ MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.isManaged", MEM_BASE, false,
 //    std::string("get_global_mem_size"))
 //
 
-//MEM_EXPR_ENTRY("cudaPointerAttributes.d_buffers", MEM_BASE, false, "iter")
-//
-//MEM_EXPR_ENTRY("cudaPointerAttributes.Current", MEM_BASE, false, "first")
-//
-//MEM_EXPR_ENTRY("cudaPointerAttributes.Alternate", MEM_BASE, false, "second")
+MEM_EXPR_ENTRY("cudaPointerAttributes.d_buffers", MEM_BASE, false,
+               LITERAL("iter"))
+
+MEM_EXPR_ENTRY("cudaPointerAttributes.Current", MEM_BASE, false,
+               LITERAL("first"))
+
+MEM_EXPR_ENTRY("cudaPointerAttributes.Alternate", MEM_BASE, false,
+               LITERAL("second"))
