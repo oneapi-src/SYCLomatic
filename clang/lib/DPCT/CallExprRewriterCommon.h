@@ -1679,6 +1679,10 @@ inline auto UseExtBindlessImages = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExtBindlessImages();
 };
 
+inline auto UseNonUniformGroups = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExpNonUniformGroups();
+};
+
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
   std::string TypeName;
