@@ -24,7 +24,7 @@ void foo(){
   cuEventCreate(&e, CU_EVENT_DEFAULT);
   cuStreamWaitEvent(s, e, 0);
 
-// CHECK: *e = s->ext_oneapi_submit_barrier();
+// CHECK: dpct::sync_barrier(e, s);
 // CHECK-NEXT: e->wait_and_throw();
   cuEventRecord(e, s);
   cuEventSynchronize(e);
@@ -35,8 +35,8 @@ void foo(){
   r = cuEventQuery(e);
 
 // CHECK: dpct::event_ptr start, end;
-// CHECK: *start = s->ext_oneapi_submit_barrier();
-// CHECK: *end = s->ext_oneapi_submit_barrier();
+// CHECK: dpct::sync_barrier(start, s);
+// CHECK: dpct::sync_barrier(end, s);
 // CHECK: start->wait_and_throw();
 // CHECK: end->wait_and_throw();
 // CHECK: float result_time;
@@ -54,7 +54,7 @@ void foo(){
 // CHECK-NEXT:void foo(int idx) {
 // CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
 // CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-// CHECK-NEXT:  *cuda_gpu_benchmark_stop_times[idx] = q_ct1.ext_oneapi_submit_barrier();
+// CHECK-NEXT:  dpct::sync_barrier(cuda_gpu_benchmark_stop_times[idx], &q_ct1);
 // CHECK-NEXT:}
 std::vector<cudaEvent_t> cuda_gpu_benchmark_stop_times;
 void foo(int idx) {
