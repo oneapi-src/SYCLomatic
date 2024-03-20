@@ -2220,8 +2220,7 @@ public:
       : FilePath(FilePathIn), BeginLoc(Offset) {}
 
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
-  void buildCallExprInfo(const CallExpr *CE,
-                         std::optional<unsigned int> NumArgs = std::nullopt);
+  void buildCallExprInfo(const CallExpr *CE);
 
   const MemVarMap &getVarMap() { return VarMap; }
   const std::vector<std::shared_ptr<TextureObjectInfo>> &
@@ -2273,8 +2272,7 @@ protected:
   unsigned getBegin() { return BeginLoc; }
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
-  void buildCalleeInfo(const Expr *Callee,
-                       std::optional<unsigned int> NumArgs = std::nullopt);
+  void buildCalleeInfo(const Expr *Callee, std::optional<unsigned int> NumArgs);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
 
 private:
@@ -2322,7 +2320,7 @@ public:
                      const FunctionDecl *Specialization);
   static std::shared_ptr<DeviceFunctionInfo>
   LinkUnresolved(const UnresolvedLookupExpr *ULE,
-                 std::optional<unsigned int> NumArgs = std::nullopt);
+                 std::optional<unsigned int> NumArgs);
   static std::shared_ptr<DeviceFunctionInfo>
   LinkRedecls(const FunctionDecl *FD);
   static std::shared_ptr<DeviceFunctionInfo>
