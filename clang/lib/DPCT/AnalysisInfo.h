@@ -696,7 +696,6 @@ public:
   }
   // TODO: implement one of this for each source language.
   static const clang::tooling::UnifiedPath &getCudaPath() { return CudaPath; }
-  static const std::string getVarSchema(const clang::DeclRefExpr *);
   static const std::string getCudaVersion() {
     return clang::CudaVersionToString(SDKVersion);
   }
@@ -1244,6 +1243,9 @@ public:
   static bool usePeerAccess() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess);
   }
+  static bool useAssert() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_Assert);
+  }
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
   }
@@ -1353,8 +1355,11 @@ public:
   }
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
+<<<<<<< HEAD
   static std::string SchemaFileContentCUDA;
   static std::string SchemaFileContentSYCL;
+=======
+>>>>>>> upstream/SYCLomatic
 
 private:
   DpctGlobalInfo();
@@ -1498,7 +1503,6 @@ private:
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
   static std::set<clang::tooling::UnifiedPath> IncludingFileSet;
-  static int VarSchemaIndex;
   static std::set<std::string> FileSetInCompilationDB;
   static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;

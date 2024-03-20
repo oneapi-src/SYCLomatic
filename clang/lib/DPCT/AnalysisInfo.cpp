@@ -9,7 +9,6 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
-#include "Schema.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -1196,23 +1195,7 @@ void DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtensionEnum Extension) {
     break;
   }
 }
-const std::string DpctGlobalInfo::getVarSchema(const clang::DeclRefExpr *DRE) {
-  std::string MacroName =
-      "VAR_SCHEMA_" + std::to_string(DpctGlobalInfo::VarSchemaIndex);
-  DpctGlobalInfo::SchemaFileContentCUDA +=
-      "#define " + MacroName + " " +
-      jsonToString(
-          serializeVarSchemaToJson(dpct::constructCUDAVarSchema(DRE))) +
-      getNL();
-  DpctGlobalInfo::SchemaFileContentSYCL +=
-      "#define " + MacroName + " " +
-      jsonToString(serializeVarSchemaToJson(
-          constructSyclVarSchema(constructCUDAVarSchema(DRE)))) +
-      getNL();
 
-  DpctGlobalInfo::VarSchemaIndex += 1;
-  return MacroName;
-}
 void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
                                const FunctionDecl *FD) {
   FreeQueriesInfo::printImmediateText(OS, S, FD,
@@ -2323,8 +2306,6 @@ std::tuple<unsigned int, std::string, SourceRange>
     DpctGlobalInfo::LastMacroRecord =
         std::make_tuple<unsigned int, std::string, SourceRange>(0, "",
                                                                 SourceRange());
-std::string DpctGlobalInfo::SchemaFileContentCUDA = "";
-std::string DpctGlobalInfo::SchemaFileContentSYCL = "";
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInAnalysisScopeFunc = DpctGlobalInfo::checkInAnalysisScope;
   GetRunRound = DpctGlobalInfo::getRunRound;
@@ -2412,7 +2393,6 @@ std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 int DpctGlobalInfo::CurrentMaxIndex = 0;
 int DpctGlobalInfo::CurrentIndexInRule = 0;
 std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::IncludingFileSet;
-int DpctGlobalInfo::VarSchemaIndex = 0;
 std::set<std::string> DpctGlobalInfo::FileSetInCompilationDB;
 std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
 clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
