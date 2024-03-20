@@ -1233,8 +1233,7 @@ public:
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
   static bool useQueueEmpty() {
-    return getUsingExtensionDE(
-        DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty);
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty);
   }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(
