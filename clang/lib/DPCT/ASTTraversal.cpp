@@ -28,7 +28,6 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
-#include "Schema.h"
 #include "WMMAAPIMigration.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
@@ -41,8 +40,8 @@
 #include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/Cuda.h"
-#include "clang/Lex/MacroArgs.h"
 #include "clang/Basic/SourceLocation.h"
+#include "clang/Lex/MacroArgs.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/SmallString.h"
@@ -3297,29 +3296,26 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     TmplArg = "<int *>";
   }
   if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
-  // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
+    // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
     if (BO->getOpcode() == clang::BO_Assign) {
-      requestFeature(MapNames::PropToSetFeatureMap.at(MemberName));
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
       emplaceTransformation(new InsertAfterStmt(BO, ")"));
-      return ;
+      return;
     }
   } else if (auto *OCE = Parents[0].get<clang::CXXOperatorCallExpr>()) {
-  // migrate to set_XXX() for types with an overloaded = operator
+    // migrate to set_XXX() for types with an overloaded = operator
     if (OCE->getOperator() == clang::OverloadedOperatorKind::OO_Equal) {
-      requestFeature(MapNames::PropToSetFeatureMap.at(MemberName));
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(OCE->getOperatorLoc(), 1, "("));
       emplaceTransformation(new InsertAfterStmt(OCE, ")"));
-      return ;
+      return;
     }
   }
-  requestFeature(MapNames::PropToGetFeatureMap.at(MemberName));
   emplaceTransformation(new RenameFieldInMemberExpr(
-    ME, "get_" + Search->second + TmplArg + "()")); 
+      ME, "get_" + Search->second + TmplArg + "()"));
   return ;
 }
 
@@ -6268,7 +6264,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
         "cudaStreamSetAttribute", "cudaStreamGetAttribute",
-        "cudaFuncSetAttribute");
+        "cudaFuncSetAttribute", "__trap");
   };
 
   MF.addMatcher(
@@ -6692,6 +6688,16 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaIpcCloseMemHandle") {
     report(CE->getBeginLoc(), Diagnostics::IPC_NOT_SUPPORTED, false,
            MapNames::ITFName.at(FuncName));
+  } else if (FuncName == "__trap") {
+    if (DpctGlobalInfo::useAssert()) {
+      emplaceTransformation(new ReplaceStmt(CE, "assert(0)"));
+    } else {
+      report(
+          CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+          FuncName,
+          "assert extension is disabled. You can migrate the code with assert "
+          "extension by not specifying --no-dpcpp-extensions=assert");
+    }
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
@@ -7301,8 +7307,13 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
-        Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
-              "}}.ext_oneapi_submit_barrier()";
+        std::string ReplaceStr;
+        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
+        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+        emplaceTransformation(new InsertBeforeStmt(CE, "DPCT_CHECK_ERROR("));
+        emplaceTransformation(new InsertAfterStmt(CE, ")"));
+        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
+        return;
       }
       StmtStr = "*" + ArgName + " = " + Str;
     } else {
@@ -7372,8 +7383,10 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
-        Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
-              "}}.ext_oneapi_submit_barrier()";
+        std::string ReplaceStr;
+        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
+        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+        return;
       }
       ReplStr += Str;
     } else {
@@ -7401,8 +7414,10 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         }
 
       } else {
-        Str = "*" + ArgName + " = " + StreamName +
-              "->ext_oneapi_submit_barrier()";
+        std::string ReplaceStr;
+        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
+        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+        return;
       }
       ReplStr += Str;
     }
@@ -8452,7 +8467,7 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
                      "\", ";
   DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
                              KCallSpellingRange.first.printToString(SM)) +
-                         "(SYCL)\", ";
+                         "\", ";
   std::string StreamStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
@@ -8478,11 +8493,11 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       if (DRE->isLValue()) {
         DebugArgsString += ", ";
         DebugArgsStringSYCL += ", ";
-        std::string SchemaStr = DpctGlobalInfo::getVarSchema(DRE);
-        DebugArgsString += SchemaStr + ", ";
-        DebugArgsStringSYCL += SchemaStr + ", ";
-        DebugArgsString += "(long *)&" + getStmtSpelling(Arg);
-        DebugArgsStringSYCL += "(long *)&" + getStmtSpelling(Arg);
+        std::string VarNameStr = "\"" + DRE->getNameInfo().getAsString() + "\"";
+        DebugArgsString += VarNameStr + ", ";
+        DebugArgsStringSYCL += VarNameStr + ", ";
+        DebugArgsString += getStmtSpelling(Arg);
+        DebugArgsStringSYCL += getStmtSpelling(Arg);
       }
     }
   }
