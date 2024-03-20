@@ -9,8 +9,7 @@ from collections.abc import Container
 
 
 UUID = "ID"
-CODE_LOCATION = "code_location"
-CHECK_POINTS = "check_points"
+CHECK_POINT = "CheckPoint"
 DATA = "Data"
 TYPE = "Type"
 
@@ -112,7 +111,7 @@ def get_check_point_list_from_json_file(file_path):
     json_data_list = read_data_from_json_file(file_path)
     for item in json_data_list:
         id = item[UUID]
-        check_point_list[id] = item.get(CHECK_POINTS, {})
+        check_point_list[id] = item.get(CHECK_POINT, {})
     return check_point_list
 
 
@@ -130,7 +129,7 @@ def compare_data_lists(cuda_list, sycl_list):
             compare_check_point(cuda_checkpoint, sycl_list.get(id))
         except comparison_error as e:
             print(
-                f"Failed checkpoint's ID is \"{id}\", and the key path of failed log is \"check_points\"." + e.message)
+                f"Failed checkpoint's ID is \"{id}\", and the key path of failed log is \"CheckPoint\"." + e.message)
             return False
     return True
 
