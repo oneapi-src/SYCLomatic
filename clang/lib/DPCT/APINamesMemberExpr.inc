@@ -6,40 +6,35 @@
 //
 //===----------------------------------------------------------------------===//
 
-MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.device", MEM_BASE, false,
+MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.device", MEM_BASE,
                           "get_device_id")
 
-MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.hostPointer", MEM_BASE, false,
+MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.hostPointer", MEM_BASE,
                           "get_host_pointer")
 
 MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.devicePointer", MEM_BASE,
-                          false, "get_device_pointer")
+                          "get_device_pointer")
 
-MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.type", MEM_BASE, false,
+MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.type", MEM_BASE,
                           "get_memory_type")
 
-MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.memoryType", MEM_BASE, false,
+MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.memoryType", MEM_BASE,
                           "get_memory_type")
 
-MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.isManaged", MEM_BASE, false,
+MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.isManaged", MEM_BASE,
                           "is_memory_shared")
 
-//WARNING_FACTORY_ENTRY(
-//    "cudaDeviceProp.totalConstMem",
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    MEMBER_CALL_FACTORY_ENTRY("cudaDeviceProp.totalConstMem", MEM_BASE, false,
-                              "get_global_mem_size"))
-//,
-//    Diagnostics::UNCOMPATIBLE_DEVICE_PROP, std::string("totalConstMem"),
-//    std::string("get_global_mem_size"))
-//
+WARNING_FACTORY_ENTRY(
+    "cudaDeviceProp.totalConstMem",
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        MEMBER_CALL_FACTORY_ENTRY("cudaDeviceProp.totalConstMem", MEM_BASE,
+                                  "get_global_mem_size")),
+    Diagnostics::UNCOMPATIBLE_DEVICE_PROP, std::string("totalConstMem"),
+    std::string("get_global_mem_size"))
 
-MEM_EXPR_ENTRY("cudaPointerAttributes.d_buffers", MEM_BASE, false,
-               LITERAL("iter"))
+MEM_EXPR_ENTRY("cub::DoubleBuffer.d_buffers", MEM_BASE, LITERAL("iter"))
 
-MEM_EXPR_ENTRY("cudaPointerAttributes.Current", MEM_BASE, false,
-               LITERAL("first"))
+MEM_EXPR_ENTRY("cub::DoubleBuffer.Current", MEM_BASE, LITERAL("first"))
 
-MEM_EXPR_ENTRY("cudaPointerAttributes.Alternate", MEM_BASE, false,
-               LITERAL("second"))
+MEM_EXPR_ENTRY("cub::DoubleBuffer.Alternate", MEM_BASE, LITERAL("second"))

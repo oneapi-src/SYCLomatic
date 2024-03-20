@@ -1115,7 +1115,7 @@ int runDPCT(int argc, const char **argv) {
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
-  member_expr::MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
+  MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   clang::dpct::initHeaderSpellings();
 
   if (MigrateBuildScriptOnly ||

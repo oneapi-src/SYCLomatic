@@ -675,10 +675,10 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     FieldName = ME->getMemberDecl()->getName().str();
     auto MemberExprName = BaseType + "." + FieldName;
     auto ItFieldRule = MapNames::ClassFieldMap.find(MemberExprName);
-    if (!member_expr::MemberExprRewriterFactoryBase::MemberExprRewriterMap)
+    if (!MemberExprRewriterFactoryBase::MemberExprRewriterMap)
       return;
-    auto Itr = member_expr::MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName);
-    if (Itr != member_expr::MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
+    auto Itr = MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName);
+    if (Itr != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
       auto Rewriter = Itr->second->create(ME);
       auto Result = Rewriter->rewrite();
       if (Result.has_value()) {

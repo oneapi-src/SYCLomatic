@@ -3193,8 +3193,8 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string MemberExprName =
                       DpctGlobalInfo::getTypeName(BaseType.getCanonicalType())
                         + "." + MemberName;
-  if (member_expr::MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName)
-        != member_expr::MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
+  if (MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName)
+        != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
       ExprAnalysis EA;
       EA.analyze(ME);
       emplaceTransformation(EA.getReplacement());

@@ -10,19 +10,16 @@
 
 namespace clang {
 namespace dpct {
-namespace member_expr {
-
-template <class Printer>
-class PrinterRewriter : Printer, public CallExprRewriter {
+template <class Printer> class MEPrinterRewriter : Printer, public MERewriter {
 public:
   template <class... ArgsT>
-  PrinterRewriter(const MemberExpr *C, StringRef Source, ArgsT &&...Args)
-      : Printer(std::forward<ArgsT>(Args)...), CallExprRewriter(C, Source) {}
+  MEPrinterRewriter(const MemberExpr *ME, StringRef Source, ArgsT &&...Args)
+      : Printer(std::forward<ArgsT>(Args)...), MERewriter(ME, Source) {}
   template <class... ArgsT>
-  PrinterRewriter(
-      const MemberExpr *C, StringRef Source,
+  MEPrinterRewriter(
+      const MemberExpr *ME, StringRef Source,
       const std::function<ArgsT(const MemberExpr *)> &...ArgCreators)
-      : PrinterRewriter(C, Source, ArgCreators(C)...) {}
+      : MEPrinterRewriter(ME, Source, ArgCreators(ME)...) {}
   std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
@@ -31,25 +28,13 @@ public:
   }
 };
 
-template <class BaseT, class MemberT, class... CallArgsT>
-class MemberCallPrinter
-    : public CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...> {
-public:
-  MemberCallPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName,
-                    CallArgsT &&...Args)
-      : CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...>(
-            MemberExprPrinter<BaseT, MemberT>(std::move(Base), IsArrow,
-                                              std::move(MemberName)),
-            std::forward<CallArgsT>(Args)...) {}
-};
-
-template <class BaseT, class MemberT> class MemberExprPrinter {
+template <class BaseT, class MemberT> class MEMemberExprPrinter {
   BaseT Base;
   bool IsArrow;
   MemberT MemberName;
 
 public:
-  MemberExprPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName)
+  MEMemberExprPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName)
       : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
@@ -58,79 +43,147 @@ public:
   }
 };
 
-template <class BaseT, class... ArgsT>
-class MemberCallExprRewriter
-    : public PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>> {
+template <class BaseT, class MemberT, class... CallArgsT>
+class MEMemberCallPrinter
+    : public CallExprPrinter<MEMemberExprPrinter<BaseT, MemberT>,
+                             CallArgsT...> {
 public:
-  MemberCallExprRewriter(
-      const MemberExpr *C, StringRef Source,
-      const std::function<BaseT(const MemberExpr *)> &BaseCreator, bool IsArrow,
+  MEMemberCallPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName,
+                      CallArgsT &&...Args)
+      : CallExprPrinter<MEMemberExprPrinter<BaseT, MemberT>, CallArgsT...>(
+            MEMemberExprPrinter<BaseT, MemberT>(std::move(Base), IsArrow,
+                                                std::move(MemberName)),
+            std::forward<CallArgsT>(Args)...) {}
+};
+
+bool isArrow(const MemberExpr *ME) {
+  auto *Base = ME->getBase()->IgnoreImpCasts();
+  if (Base->getType()->isPointerType())
+    return true;
+  return false;
+}
+
+template <class BaseT, class... ArgsT>
+class MEMemberCallExprRewriter
+    : public MEPrinterRewriter<
+          MEMemberCallPrinter<BaseT, StringRef, ArgsT...>> {
+public:
+  MEMemberCallExprRewriter(
+      const MemberExpr *ME, StringRef Source,
+      const std::function<BaseT(const MemberExpr *)> &BaseCreator,
       StringRef Member,
       const std::function<ArgsT(const MemberExpr *)> &...ArgsCreator)
-      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
-            C, Source, BaseCreator(C), IsArrow, Member, ArgsCreator(C)...) {}
-  MemberCallExprRewriter(
-      const MemberExpr *C, StringRef Source, const BaseT &BaseCreator,
-      bool IsArrow, StringRef Member,
+      : MEPrinterRewriter<MEMemberCallPrinter<BaseT, StringRef, ArgsT...>>(
+            ME, Source, BaseCreator(ME), isArrow(ME), Member,
+            ArgsCreator(ME)...) {}
+  MEMemberCallExprRewriter(
+      const MemberExpr *ME, StringRef Source, const BaseT &BaseCreator,
+      StringRef Member,
       const std::function<ArgsT(const MemberExpr *)> &...ArgsCreator)
-      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
-            C, Source, BaseCreator, IsArrow, Member, ArgsCreator(C)...) {}
+      : MEPrinterRewriter<MEMemberCallPrinter<BaseT, StringRef, ArgsT...>>(
+            ME, Source, BaseCreator, isArrow(ME), Member, ArgsCreator(ME)...) {}
 };
 
 template <class BaseT, class MemberT>
-class MemberExprRewriter
-    : public PrinterRewriter<MemberExprPrinter<BaseT, MemberT>> {
+class MEMemberExprRewriter
+    : public MEPrinterRewriter<MEMemberExprPrinter<BaseT, MemberT>> {
 public:
-  MemberExprRewriter(
-      const MemberExpr *C, StringRef Source,
-      const std::function<BaseT(const MemberExpr *)> &BaseCreator, bool IsArrow,
+  MEMemberExprRewriter(
+      const MemberExpr *ME, StringRef Source,
+      const std::function<BaseT(const MemberExpr *)> &BaseCreator,
       const std::function<MemberT(const MemberExpr *)> &MemberCreator)
-      : PrinterRewriter<MemberExprPrinter<BaseT, MemberT>>(
-            C, Source, BaseCreator(C), IsArrow, MemberCreator(C)) {}
+      : MEPrinterRewriter<MEMemberExprPrinter<BaseT, MemberT>>(
+            ME, Source, BaseCreator(ME), isArrow(ME), MemberCreator(ME)) {}
 };
 
-class RewriterFactoryWithFeatureRequest : public MemberExprRewriterFactoryBase {
+class MERewriterFactoryWithFeatureRequest
+    : public MemberExprRewriterFactoryBase {
   std::shared_ptr<MemberExprRewriterFactoryBase> Inner;
   HelperFeatureEnum Feature;
 
 public:
-  RewriterFactoryWithFeatureRequest(
+  MERewriterFactoryWithFeatureRequest(
       HelperFeatureEnum Feature,
       std::shared_ptr<MemberExprRewriterFactoryBase> InnerFactory)
       : Inner(InnerFactory), Feature(Feature) {}
-  std::shared_ptr<CallExprRewriter> create(const MemberExpr *C) const override {
+  std::shared_ptr<MERewriter> create(const MemberExpr *ME) const override {
     requestFeature(Feature);
-    return Inner->create(C);
+    return Inner->create(ME);
+  }
+};
+
+template <class... MsgArgs>
+class MEUnsupportFunctionRewriter : public MERewriter {
+  template <class T>
+  std::string getMsgArg(const std::function<T(const MemberExpr *)> &Func,
+                        const MemberExpr *ME) {
+    return getMsgArg(Func(ME), ME);
+  }
+  template <class T>
+  static std::string getMsgArg(const T &InputArg, const MemberExpr *) {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    print(OS, InputArg);
+    return OS.str();
+  }
+
+public:
+  MEUnsupportFunctionRewriter(const MemberExpr *CE, StringRef CalleeName,
+                              Diagnostics MsgID, const MsgArgs &...Args)
+      : MERewriter(CE, CalleeName) {
+    report(MsgID, false, getMsgArg(Args, CE)...);
+  }
+
+  std::optional<std::string> rewrite() override { return std::nullopt; }
+};
+
+template <class... MsgArgs>
+class MEReportWarningRewriterFactory
+    : public MERewriterFactory<MEUnsupportFunctionRewriter<MsgArgs...>,
+                               Diagnostics, MsgArgs...> {
+  using BaseT = MERewriterFactory<MEUnsupportFunctionRewriter<MsgArgs...>,
+                                  Diagnostics, MsgArgs...>;
+  std::shared_ptr<MemberExprRewriterFactoryBase> First;
+
+public:
+  MEReportWarningRewriterFactory(
+      std::shared_ptr<MemberExprRewriterFactoryBase> FirstFactory,
+      std::string FuncName, Diagnostics MsgID, MsgArgs... Args)
+      : BaseT(FuncName, MsgID, Args...), First(FirstFactory) {}
+  std::shared_ptr<MERewriter> create(const MemberExpr *ME) const override {
+    auto R = BaseT::create(ME);
+    if (First)
+      return First->create(ME);
+    return R;
   }
 };
 
 template <class BaseT, class... ArgsT>
 inline std::shared_ptr<MemberExprRewriterFactoryBase>
-createMemberCallExprRewriterFactory(
+createMemberMERewriterFactory(
     const std::string &SourceName,
-    std::function<BaseT(const MemberExpr *)> BaseCreator, bool IsArrow,
+    std::function<BaseT(const MemberExpr *)> BaseCreator,
     std::string MemberName,
     std::function<ArgsT(const MemberExpr *)>... ArgsCreator) {
-  return std::make_shared<CallExprRewriterFactory<
-      MemberCallExprRewriter<BaseT, ArgsT...>,
-      std::function<BaseT(const MemberExpr *)>, bool, std::string,
-      std::function<ArgsT(const MemberExpr *)>...>>(
+  return std::make_shared<
+      MERewriterFactory<MEMemberCallExprRewriter<BaseT, ArgsT...>,
+                        std::function<BaseT(const MemberExpr *)>, std::string,
+                        std::function<ArgsT(const MemberExpr *)>...>>(
       SourceName,
       std::forward<std::function<BaseT(const MemberExpr *)>>(BaseCreator),
-      IsArrow, MemberName,
+      MemberName,
       std::forward<std::function<ArgsT(const MemberExpr *)>>(ArgsCreator)...);
 }
 
 template <class BaseT, class... ArgsT>
 inline std::shared_ptr<MemberExprRewriterFactoryBase>
-createMemberCallExprRewriterFactory(
-    const std::string &SourceName, BaseT BaseCreator, bool IsArrow,
-    std::string MemberName,
+createMemberMERewriterFactory(
+    const std::string &SourceName, BaseT BaseCreator, std::string MemberName,
     std::function<ArgsT(const MemberExpr *)>... ArgsCreator) {
-  return std::make_shared<CallExprRewriterFactory<
-      MemberCallExprRewriter<BaseT, ArgsT...>, BaseT, bool, std::string,
+  return std::make_shared<MERewriterFactory<
+      MEMemberCallExprRewriter<BaseT, ArgsT...>, BaseT, std::string,
       std::function<ArgsT(const MemberExpr *)>...>>(
-      SourceName, BaseCreator, IsArrow, MemberName,
+      SourceName, BaseCreator, MemberName,
       std::forward<std::function<ArgsT(const MemberExpr *)>>(ArgsCreator)...);
 }
 
@@ -138,15 +191,14 @@ template <class BaseT, class MemberT>
 inline std::shared_ptr<MemberExprRewriterFactoryBase>
 createMemberExprRewriterFactory(
     const std::string &SourceName,
-    std::function<BaseT(const MemberExpr *)> &&BaseCreator, bool IsArrow,
+    std::function<BaseT(const MemberExpr *)> &&BaseCreator,
     std::function<MemberT(const MemberExpr *)> &&MemberCreator) {
   return std::make_shared<
-      CallExprRewriterFactory<MemberExprRewriter<BaseT, MemberT>,
-                              std::function<BaseT(const MemberExpr *)>, bool,
-                              std::function<MemberT(const MemberExpr *)>>>(
+      MERewriterFactory<MEMemberExprRewriter<BaseT, MemberT>,
+                        std::function<BaseT(const MemberExpr *)>,
+                        std::function<MemberT(const MemberExpr *)>>>(
       SourceName,
       std::forward<std::function<BaseT(const MemberExpr *)>>(BaseCreator),
-      IsArrow,
       std::forward<std::function<MemberT(const MemberExpr *)>>(MemberCreator));
 }
 
@@ -157,8 +209,8 @@ createFeatureRequestFactory(
         &&Input) {
   return std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>(
       std::move(Input.first),
-      std::make_shared<RewriterFactoryWithFeatureRequest>(Feature,
-                                                          Input.second));
+      std::make_shared<MERewriterFactoryWithFeatureRequest>(Feature,
+                                                            Input.second));
 }
 
 template <class T>
@@ -169,6 +221,16 @@ createFeatureRequestFactory(
         &&Input,
     T) {
   return createFeatureRequestFactory(Feature, std::move(Input));
+}
+
+template <class... ArgsT>
+inline std::shared_ptr<MemberExprRewriterFactoryBase>
+createReportWarningRewriterFactory(
+    std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+        Factory,
+    const std::string &FuncName, Diagnostics MsgId, ArgsT... ArgsCreator) {
+  return std::make_shared<MEReportWarningRewriterFactory<ArgsT...>>(
+      Factory.second, FuncName, MsgId, ArgsCreator...);
 }
 
 inline std::function<const std::string(const MemberExpr *)> makeMemberBase() {
@@ -197,16 +259,17 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
 #define MEM_BASE makeMemberBase()
 #define LITERAL(x) makeLiteral(x)
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
-  {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
-#define MEM_EXPR_ENTRY(FuncName, B, IsArrow, M)                                \
-  {FuncName, createMemberExprRewriterFactory(FuncName, B, IsArrow, M)},
+  {FuncName, createMemberMERewriterFactory(FuncName, __VA_ARGS__)},
+#define MEM_EXPR_ENTRY(FuncName, B, M)                                         \
+  {FuncName, createMemberExprRewriterFactory(FuncName, B, M)},
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createFeatureRequestFactory(FEATURE, x 0),
+#define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
+  {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
 #include "APINamesMemberExpr.inc"
 #undef MEMBER_CALL_FACTORY_ENTRY
 #undef MEM_BASE
       }));
 }
-} // namespace member_expr
 } // namespace dpct
 } // namespace clang
