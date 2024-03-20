@@ -351,6 +351,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
              DPCT_OPT_ENUM("peer_access",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess),
                                      "Use the peer access extension.",
+                                     false),
+             DPCT_OPT_ENUM("assert",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_Assert),
+                                     "Use the assert extension.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
