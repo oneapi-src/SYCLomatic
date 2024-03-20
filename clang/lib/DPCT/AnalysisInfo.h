@@ -1355,12 +1355,6 @@ public:
   }
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
-<<<<<<< HEAD
-  static std::string SchemaFileContentCUDA;
-  static std::string SchemaFileContentSYCL;
-=======
->>>>>>> upstream/SYCLomatic
-
 private:
   DpctGlobalInfo();
 
