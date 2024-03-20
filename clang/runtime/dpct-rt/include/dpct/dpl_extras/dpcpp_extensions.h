@@ -578,7 +578,7 @@ enum load_algorithm {
 
 // loads a linear segment of workgroup items into a blocked arrangement.
 template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM, typename InputT,
-          typename InputIteratorT>
+          typename InputIteratorT, typename Item>
 __dpct_inline__ void load_blocked(const Item &item, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
