@@ -1410,22 +1410,6 @@ void MapNames::setExplicitNamespaceMap() {
   // BLAS functions names and parameters replacements information mapping
   BLASFuncReplInfoMap = {
       /*BLAS level 1*/
-      {"cublasIsamax_v2",
-       {std::vector<int>{2, 4}, std::vector<int>{},
-        std::vector<std::string>{"float", "int"}, std::vector<int>{}, -1, -1,
-        -1, "oneapi::mkl::blas::column_major::iamax"}},
-      {"cublasIdamax_v2",
-       {std::vector<int>{2, 4}, std::vector<int>{},
-        std::vector<std::string>{"double", "int"}, std::vector<int>{}, -1, -1,
-        -1, "oneapi::mkl::blas::column_major::iamax"}},
-      {"cublasIsamin_v2",
-       {std::vector<int>{2, 4}, std::vector<int>{},
-        std::vector<std::string>{"float", "int"}, std::vector<int>{}, -1, -1,
-        -1, "oneapi::mkl::blas::column_major::iamin"}},
-      {"cublasIdamin_v2",
-       {std::vector<int>{2, 4}, std::vector<int>{},
-        std::vector<std::string>{"double", "int"}, std::vector<int>{}, -1, -1,
-        -1, "oneapi::mkl::blas::column_major::iamin"}},
       {"cublasSasum_v2",
        {std::vector<int>{2, 4}, std::vector<int>{},
         std::vector<std::string>{"float", "float"}, std::vector<int>{}, -1, -1,
@@ -1850,6 +1834,22 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDdgmm_64", "oneapi::mkl::blas::column_major::dgmm"},
       {"cublasCdgmm_64", "oneapi::mkl::blas::column_major::dgmm"},
       {"cublasZdgmm_64", "oneapi::mkl::blas::column_major::dgmm"},
+      {"cublasIsamax_v2_64", "oneapi::mkl::blas::column_major::iamax"},
+      {"cublasIdamax_v2_64", "oneapi::mkl::blas::column_major::iamax"},
+      {"cublasIcamax_v2_64", "oneapi::mkl::blas::column_major::iamax"},
+      {"cublasIzamax_v2_64", "oneapi::mkl::blas::column_major::iamax"},
+      {"cublasIsamin_v2_64", "oneapi::mkl::blas::column_major::iamin"},
+      {"cublasIdamin_v2_64", "oneapi::mkl::blas::column_major::iamin"},
+      {"cublasIcamin_v2_64", "oneapi::mkl::blas::column_major::iamin"},
+      {"cublasIzamin_v2_64", "oneapi::mkl::blas::column_major::iamin"},
+      {"cublasIsamax_v2", "oneapi::mkl::blas::column_major::iamax"},
+      {"cublasIdamax_v2", "oneapi::mkl::blas::column_major::iamax"},
+      {"cublasIcamax_v2", "oneapi::mkl::blas::column_major::iamax"},
+      {"cublasIzamax_v2", "oneapi::mkl::blas::column_major::iamax"},
+      {"cublasIsamin_v2", "oneapi::mkl::blas::column_major::iamin"},
+      {"cublasIdamin_v2", "oneapi::mkl::blas::column_major::iamin"},
+      {"cublasIcamin_v2", "oneapi::mkl::blas::column_major::iamin"},
+      {"cublasIzamin_v2", "oneapi::mkl::blas::column_major::iamin"},
   };
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
@@ -2164,26 +2164,6 @@ const MapNames::MapTy MapNames::SOLVEREnumsMap{
 const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
     MapNames::BLASFuncComplexReplInfoMap{
         /*BLAS level 1*/
-        {"cublasIcamax_v2",
-         {std::vector<int>{2, 4}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<float>", "int"},
-          std::vector<std::string>{}, std::vector<int>{}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::iamax"}},
-        {"cublasIzamax_v2",
-         {std::vector<int>{2, 4}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<double>", "int"},
-          std::vector<std::string>{}, std::vector<int>{}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::iamax"}},
-        {"cublasIcamin_v2",
-         {std::vector<int>{2, 4}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<float>", "int"},
-          std::vector<std::string>{}, std::vector<int>{}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::iamin"}},
-        {"cublasIzamin_v2",
-         {std::vector<int>{2, 4}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<double>", "int"},
-          std::vector<std::string>{}, std::vector<int>{}, -1, -1, -1,
-          "oneapi::mkl::blas::column_major::iamin"}},
         {"cublasScasum_v2",
          {std::vector<int>{2, 4}, std::vector<int>{},
           std::vector<std::string>{"std::complex<float>", "float"},
@@ -3495,10 +3475,6 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           1, 0, 3, "oneapi::mkl::blas::column_major::trmm"}},
     };
 
-const std::set<std::string> MapNames::MustSyncBLASFunc{
-    "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2", "cublasIzamax_v2",
-    "cublasIsamin_v2", "cublasIdamin_v2", "cublasIcamin_v2", "cublasIzamin_v2"};
-
 const std::map<std::string, std::pair<std::string, int>>
     MapNames::MaySyncBLASFunc{{"cublasSasum_v2", {"float", 4}},
                               {"cublasDasum_v2", {"double", 4}},
@@ -4393,6 +4369,9 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"pciDeviceID", "device_id"},
     {"uuid", "uuid"},
     {"l2CacheSize", "global_mem_cache_size"},
+    {"maxTexture1D", "image1d_max"},
+    {"maxTexture2D", "image2d_max"},
+    {"maxTexture3D", "image3d_max"},
     // ...
 };
 
@@ -4564,53 +4543,6 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "group_index",
     "inclusive_scan",
     "exclusive_scan"};
-
-const std::unordered_map<std::string, HelperFeatureEnum>
-    MapNames::PropToGetFeatureMap = {
-        {"clockRate", HelperFeatureEnum::device_ext},
-        {"major", HelperFeatureEnum::device_ext},
-        {"minor", HelperFeatureEnum::device_ext},
-        {"integrated", HelperFeatureEnum::device_ext},
-        {"warpSize", HelperFeatureEnum::device_ext},
-        {"multiProcessorCount", HelperFeatureEnum::device_ext},
-        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
-        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
-        {"name", HelperFeatureEnum::device_ext},
-        {"totalGlobalMem", HelperFeatureEnum::device_ext},
-        {"sharedMemPerMultiprocessor", HelperFeatureEnum::device_ext},
-        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
-        {"sharedMemPerBlockOptin", HelperFeatureEnum::device_ext},
-        {"maxGridSize", HelperFeatureEnum::device_ext},
-        {"maxThreadsDim", HelperFeatureEnum::device_ext},
-        {"memoryClockRate", HelperFeatureEnum::device_ext},
-        {"memoryBusWidth", HelperFeatureEnum::device_ext},
-        {"pciDeviceID", HelperFeatureEnum::device_ext},
-        {"uuid", HelperFeatureEnum::device_ext},
-        {"l2CacheSize", HelperFeatureEnum::device_ext},
-};
-
-const std::unordered_map<std::string, HelperFeatureEnum>
-    MapNames::PropToSetFeatureMap = {
-        {"clockRate", HelperFeatureEnum::device_ext},
-        {"major", HelperFeatureEnum::device_ext},
-        {"minor", HelperFeatureEnum::device_ext},
-        {"integrated", HelperFeatureEnum::device_ext},
-        {"warpSize", HelperFeatureEnum::device_ext},
-        {"multiProcessorCount", HelperFeatureEnum::device_ext},
-        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
-        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
-        {"name", HelperFeatureEnum::device_ext},
-        {"totalGlobalMem", HelperFeatureEnum::device_ext},
-        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
-        {"sharedMemPerBlockOptin", HelperFeatureEnum::device_ext},
-        {"maxGridSize", HelperFeatureEnum::device_ext},
-        {"maxThreadsDim", HelperFeatureEnum::device_ext},
-        {"memoryClockRate", HelperFeatureEnum::device_ext},
-        {"memoryBusWidth", HelperFeatureEnum::device_ext},
-        {"pciDeviceID", HelperFeatureEnum::device_ext},
-        {"uuid", HelperFeatureEnum::device_ext},
-        {"l2CacheSize", HelperFeatureEnum::device_ext},
-};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::SamplingInfoToSetFeatureMap = {

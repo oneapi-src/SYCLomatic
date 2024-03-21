@@ -19,8 +19,199 @@
 #include <thread>
 
 namespace dpct {
-
 namespace blas {
+namespace detail {
+template <typename target_t, typename source_t> class parameter_wrapper_base_t {
+public:
+  parameter_wrapper_base_t(sycl::queue q, source_t *source, size_t ele_num)
+      : _source_attribute(dpct::detail::get_pointer_attribute(q, source)),
+        _q(q), _source(source), _ele_num(ele_num),
+        _target(construct_member_variable_target()) {}
+
+  ~parameter_wrapper_base_t() {
+    if (_need_free) {
+      _q.submit([&](sycl::handler &cgh) {
+        cgh.depends_on(_copyback);
+        cgh.host_task([t = _target, q = _q] { dpct::detail::dpct_free(t, q); });
+      });
+    }
+  }
+
+protected:
+  dpct::detail::pointer_access_attribute _source_attribute;
+  sycl::queue _q;
+  source_t *_source = nullptr;
+  size_t _ele_num;
+  bool _need_free = true;
+  target_t *_target;
+  sycl::event _copyback;
+
+private:
+  target_t *construct_member_variable_target() {
+    if constexpr (std::is_same_v<target_t, source_t>) {
+      if (_source_attribute ==
+          dpct::detail::pointer_access_attribute::host_only)
+        return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
+      // If data type is same and it is device pointer, it can be used directly.
+      _need_free = false;
+      return _source;
+    } else {
+      return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
+    }
+  }
+};
+} // namespace detail
+
+/// Parameter input/output properties are:
+/// in: input parameter
+/// out: output parameter
+/// in_out: input and output parameter
+enum class parameter_inout_prop { in, out, in_out };
+
+/// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL
+/// interface.
+/// E.g.,
+/// \code
+/// void foo(sycl::queue q, int *res) {
+///   // Declare the wrapper.
+///   parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out>
+///       res_wrapper(q, res);
+///   // parameter_wrapper_t::get_ptr() is passed as a parameter. The result is
+///   // saved into the wrapper.
+///   oneapi::mkl::...(q, ..., res_wrapper.get_ptr());
+///   // The action to copy the result in the wrapper to the original variable
+///   // is submitted when destructing the wrapper automatically.
+/// }
+/// \endcode
+/// \tparam target_t Data type to fit oneMKL parameter data type. E.g.,
+/// get_ptr() returns \tparam target_t data type and can be used as oneMKL
+/// parameter with USM memory configuration.
+/// \tparam source_t Data type of the original parameter.
+/// \tparam inout_prop The input/output property of the parameter.
+template <typename target_t, typename source_t, parameter_inout_prop inout_prop>
+class parameter_wrapper_t
+    : public detail::parameter_wrapper_base_t<target_t, source_t> {
+  static_assert(inout_prop == parameter_inout_prop::out &&
+                "Only parameter_inout_prop::out is supported if "
+                "target_t and source_t are not same.");
+  using base_t = detail::parameter_wrapper_base_t<target_t, source_t>;
+  using base_t::_copyback;
+  using base_t::_q;
+  using base_t::_source;
+  using base_t::_source_attribute;
+  using base_t::_target;
+
+public:
+  /// Constructor. Malloc the wrapper memory.
+  /// \param q The queue used for internal malloc and memcpy
+  /// \param source The original parameter
+  parameter_wrapper_t(sycl::queue q, source_t *source) : base_t(q, source, 1) {}
+  /// Destructor. Copy back content from wrapper memory to original memory
+  ~parameter_wrapper_t() {
+#ifdef DPCT_USM_LEVEL_NONE
+    if (_source_attribute ==
+        dpct::detail::pointer_access_attribute::device_only) {
+      _copyback = _q.submit([&](sycl::handler &cgh) {
+        auto from_acc = dpct::get_buffer<target_t>(_target)
+                            .template get_access<sycl::access_mode::read>(cgh);
+        auto to_acc = dpct::get_buffer<source_t>(_source)
+                          .template get_access<sycl::access_mode::write>(cgh);
+        cgh.single_task<dpct_kernel_name<class parameter_wrapper_copyback,
+                                         target_t, source_t>>(
+            [=]() { to_acc[0] = static_cast<target_t>(from_acc[0]); });
+      });
+    } else {
+      source_t temp =
+          static_cast<source_t>(dpct::get_host_ptr<target_t>(_target)[0]);
+      *_source = temp;
+    }
+#else
+    if (_source_attribute ==
+        dpct::detail::pointer_access_attribute::device_only) {
+      _q.template single_task<dpct_kernel_name<class parameter_wrapper_copyback,
+                                               target_t, source_t>>(
+          [t = _target, s = _source]() { *s = static_cast<source_t>(*t); });
+    } else {
+      target_t temp;
+      _q.memcpy(&temp, _target, sizeof(target_t)).wait();
+      *_source = static_cast<source_t>(temp);
+    }
+#endif
+  }
+  /// Get the target memory of the wrapper to represent the wrapped variable
+  target_t *get_ptr() { return _target; }
+};
+
+/// parameter_wrapper_t is a class to wrap the parameter to fit the oneMKL
+/// interface.
+/// E.g.,
+/// \code
+/// void foo(sycl::queue q, int *params, int ele_num) {
+///   // Declare the wrapper.
+///   parameter_wrapper_t<float, parameter_inout_prop::in_out> params_wrapper(
+///       q, params, ele_num);
+///   // parameter_wrapper_t::get_ptr() is passed as a parameter. The result is
+///   // saved into the wrapper.
+///   oneapi::mkl::...(q, ..., params_wrapper.get_ptr());
+///   // The action to copy the result in the wrapper to the original variable
+///   // is submitted when destructing the wrapper automatically.
+/// }
+/// \endcode
+/// \tparam target_t Data type to fit oneMKL parameter data type. E.g.,
+/// get_ptr() returns \tparam target_t data type and can be used as oneMKL
+/// parameter with USM memory configuration.
+/// \tparam inout_prop The input/output property of the parameter.
+template <typename target_t, parameter_inout_prop inout_prop>
+class parameter_wrapper_t<target_t, target_t, inout_prop>
+    : public detail::parameter_wrapper_base_t<target_t, target_t> {
+  using base_t = detail::parameter_wrapper_base_t<target_t, target_t>;
+  using base_t::_ele_num;
+  using base_t::_q;
+  using base_t::_source;
+  using base_t::_source_attribute;
+  using base_t::_target;
+
+public:
+  /// Constructor. Malloc the wrapper memory.
+  /// \param q The queue used for internal malloc and memcpy
+  /// \param source The original parameter
+  /// \param ele_num Element number in \p source
+  parameter_wrapper_t(sycl::queue q, target_t *source, size_t ele_num = 1)
+      : base_t(q, source, ele_num) {
+    if constexpr (inout_prop != parameter_inout_prop::out) {
+      if (_source_attribute ==
+          dpct::detail::pointer_access_attribute::host_only) {
+        dpct::detail::dpct_memcpy(_q, _target, _source,
+                                  sizeof(target_t) * _ele_num, automatic);
+      }
+    }
+  }
+  /// Destructor. Copy back content from wrapper memory to original memory
+  ~parameter_wrapper_t() {
+    if constexpr (inout_prop != parameter_inout_prop::in) {
+      if (_source_attribute ==
+          dpct::detail::pointer_access_attribute::host_only) {
+        _q.wait();
+        dpct::dpct_memcpy(_source, _target, sizeof(target_t) * _ele_num,
+                          automatic, _q);
+      }
+    }
+  }
+  /// Get the target memory of the wrapper to represent the wrapped variable
+  target_t *get_ptr() { return _target; }
+};
+
+using wrapper_int_to_int64_out =
+    parameter_wrapper_t<std::int64_t, int, parameter_inout_prop::out>;
+using wrapper_int64_out =
+    parameter_wrapper_t<std::int64_t, std::int64_t, parameter_inout_prop::out>;
+using wrapper_float_out =
+    parameter_wrapper_t<float, float, parameter_inout_prop::out>;
+using wrapper_float_inout =
+    parameter_wrapper_t<float, float, parameter_inout_prop::in_out>;
+using wrapper_float_in =
+    parameter_wrapper_t<float, float, parameter_inout_prop::in>;
+
 class descriptor {
 public:
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }

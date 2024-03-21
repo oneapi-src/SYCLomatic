@@ -40,6 +40,63 @@ void foo() {
   cublasFillMode_t uplo;
   cublasSideMode_t side;
   cublasDiagType_t diag;
+  std::int64_t result;
+
+  //      CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_ptr())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  //      CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_ptr())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  //      CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_ptr())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  //      CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_ptr())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  status = cublasIsamax_64(handle, n, A_s, lda, &result);
+  status = cublasIdamax_64(handle, n, A_d, lda, &result);
+  status = cublasIcamax_64(handle, n, A_c, lda, &result);
+  status = cublasIzamax_64(handle, n, A_z, lda, &result);
+
+  //      CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_ptr())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  //      CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_ptr())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  //      CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_ptr())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  //      CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_ptr())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  status = cublasIsamin_64(handle, n, A_s, lda, &result);
+  status = cublasIdamin_64(handle, n, A_d, lda, &result);
+  status = cublasIcamin_64(handle, n, A_c, lda, &result);
+  status = cublasIzamin_64(handle, n, A_z, lda, &result);
 
   //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha_s, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(B_s)), ldb, dpct::get_value(beta_s, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(C_s)), ldc));
   // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(A_d)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(B_d)), ldb, dpct::get_value(beta_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(C_d)), ldc));
