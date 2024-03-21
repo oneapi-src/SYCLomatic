@@ -1002,7 +1002,7 @@ public:
     };
 
     if (MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName) !=
-               MapNames::MaySyncBLASFuncWithMultiArgs.end()) {
+        MapNames::MaySyncBLASFuncWithMultiArgs.end()) {
       auto MaySyncAPIWithMultiArgsIter =
           MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
       PointerStr = ExprAnalysis::ref(
