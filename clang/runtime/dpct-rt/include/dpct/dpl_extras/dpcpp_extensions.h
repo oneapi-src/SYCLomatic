@@ -637,14 +637,12 @@ uninitialized_load_subgroup_striped(const Item &item, InputIteratorT block_itr,
 }
 
 template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM, typename InputT,
-          typename InputIteratorT, typename Item>
+          typename InputIteratorT, typename Item, typename T>
 class workgroup_load {
   static size_t get_local_memory_size(size_t group_threads) {
-    size_t ranks_size =
-        detail::radix_rank<RADIX_BITS>::get_local_memory_size(group_threads);
-    size_t exchange_size =
+    size_t group_size =
         exchange<T, VALUES_PER_THREAD>::get_local_memory_size(group_threads);
-    return sycl::max(ranks_size, exchange_size);
+    return group_size;
   }
   workgroup_load(uint8_t *local_memory) : _local_memory(local_memory) {}
 
