@@ -1059,10 +1059,6 @@ public:
       auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
       PointerStr = ExprAnalysis::ref(CE->getArg(MaySyncAPIIter->second.second));
       assembleIfStmt();
-    } else if (MapNames::MustSyncBLASFunc.find(FuncName) !=
-               MapNames::MustSyncBLASFunc.end()) {
-      PointerStr = ExprAnalysis::ref(CE->getArg(4));
-      assembleIfStmt();
     } else if (MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName) !=
                MapNames::MaySyncBLASFuncWithMultiArgs.end()) {
       auto MaySyncAPIWithMultiArgsIter =
