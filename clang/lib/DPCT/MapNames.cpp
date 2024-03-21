@@ -4258,6 +4258,9 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"pciDeviceID", "device_id"},
     {"uuid", "uuid"},
     {"l2CacheSize", "global_mem_cache_size"},
+    {"maxTexture1D", "image1d_max"},
+    {"maxTexture2D", "image2d_max"},
+    {"maxTexture3D", "image3d_max"},
     // ...
 };
 
@@ -4429,53 +4432,6 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "group_index",
     "inclusive_scan",
     "exclusive_scan"};
-
-const std::unordered_map<std::string, HelperFeatureEnum>
-    MapNames::PropToGetFeatureMap = {
-        {"clockRate", HelperFeatureEnum::device_ext},
-        {"major", HelperFeatureEnum::device_ext},
-        {"minor", HelperFeatureEnum::device_ext},
-        {"integrated", HelperFeatureEnum::device_ext},
-        {"warpSize", HelperFeatureEnum::device_ext},
-        {"multiProcessorCount", HelperFeatureEnum::device_ext},
-        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
-        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
-        {"name", HelperFeatureEnum::device_ext},
-        {"totalGlobalMem", HelperFeatureEnum::device_ext},
-        {"sharedMemPerMultiprocessor", HelperFeatureEnum::device_ext},
-        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
-        {"sharedMemPerBlockOptin", HelperFeatureEnum::device_ext},
-        {"maxGridSize", HelperFeatureEnum::device_ext},
-        {"maxThreadsDim", HelperFeatureEnum::device_ext},
-        {"memoryClockRate", HelperFeatureEnum::device_ext},
-        {"memoryBusWidth", HelperFeatureEnum::device_ext},
-        {"pciDeviceID", HelperFeatureEnum::device_ext},
-        {"uuid", HelperFeatureEnum::device_ext},
-        {"l2CacheSize", HelperFeatureEnum::device_ext},
-};
-
-const std::unordered_map<std::string, HelperFeatureEnum>
-    MapNames::PropToSetFeatureMap = {
-        {"clockRate", HelperFeatureEnum::device_ext},
-        {"major", HelperFeatureEnum::device_ext},
-        {"minor", HelperFeatureEnum::device_ext},
-        {"integrated", HelperFeatureEnum::device_ext},
-        {"warpSize", HelperFeatureEnum::device_ext},
-        {"multiProcessorCount", HelperFeatureEnum::device_ext},
-        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
-        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
-        {"name", HelperFeatureEnum::device_ext},
-        {"totalGlobalMem", HelperFeatureEnum::device_ext},
-        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
-        {"sharedMemPerBlockOptin", HelperFeatureEnum::device_ext},
-        {"maxGridSize", HelperFeatureEnum::device_ext},
-        {"maxThreadsDim", HelperFeatureEnum::device_ext},
-        {"memoryClockRate", HelperFeatureEnum::device_ext},
-        {"memoryBusWidth", HelperFeatureEnum::device_ext},
-        {"pciDeviceID", HelperFeatureEnum::device_ext},
-        {"uuid", HelperFeatureEnum::device_ext},
-        {"l2CacheSize", HelperFeatureEnum::device_ext},
-};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::SamplingInfoToSetFeatureMap = {

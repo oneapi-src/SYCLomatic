@@ -855,6 +855,14 @@ CALL_FACTORY_ENTRY("thrust::system_category", CALL("std::system_category"))
 // thrust::system::system_category
 CALL_FACTORY_ENTRY("thrust::system::system_category", CALL("std::system_category"))
 
+// thrust::advance
+CALL_FACTORY_ENTRY("thrust::advance", CALL("std::advance", ARG(0), ARG(1)))
+
+// thrust::make_transform_output_iterator
+CALL_FACTORY_ENTRY("thrust::make_transform_output_iterator",
+                   CALL(MapNames::getDpctNamespace() + "make_transform_output_iterator",
+                   ARG(0), ARG(1)))
+
 // thrust::equal_range
 thrustFactory("thrust::equal_range",
               {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},

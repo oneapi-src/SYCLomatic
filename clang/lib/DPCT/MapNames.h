@@ -367,10 +367,6 @@ public:
   static const std::unordered_set<std::string> CooperativeGroupsAPISet;
 
   static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
-      PropToGetFeatureMap;
-  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
-      PropToSetFeatureMap;
-  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
       SamplingInfoToSetFeatureMap;
   static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
       SamplingInfoToGetFeatureMap;

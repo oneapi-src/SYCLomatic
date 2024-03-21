@@ -55,7 +55,7 @@ void foo() {
   //      CHECK: /*
   // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
-  //      CHECK: status = [&]() {
+  // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, A_s, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
@@ -83,7 +83,7 @@ void foo() {
   //      CHECK: /*
   // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
-  //      CHECK: status = [&]() {
+  // CHECK-NEXT: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_int64_out res_wrapper_ct4(handle->get_queue(), &result);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, A_s, lda, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
   // CHECK-NEXT: return 0;
