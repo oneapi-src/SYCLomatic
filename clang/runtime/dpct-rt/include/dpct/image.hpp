@@ -14,8 +14,20 @@
 #include "memory.hpp"
 #include "util.hpp"
 
+/**
+ * @file
+ * @brief Helper functions to get/set the descriptor of image data and helper
+ * functions to fetch/store image data.
+ *
+ * @copyright Copyright (C) Intel Corporation
+ *
+ */
+
 namespace dpct {
 
+/**
+ * @brief Enum for image channel data type.
+ */
 enum class image_channel_data_type {
   signed_int,
   unsigned_int,
@@ -139,7 +151,10 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
 
 } // namespace detail
 
-/// Image channel info, include channel number, order, data width and type
+/**
+ * @class image_channel
+ * @brief Image channel info, including channel number, order, data width and type.
+ */
 class image_channel {
   image_channel_data_type _type = image_channel_data_type::signed_int;
   /// Number of channels.
@@ -150,7 +165,11 @@ class image_channel {
   unsigned _channel_size = 0;
 
 public:
-  /// Create image channel info according to template argument \p T.
+  /**
+   * @brief Create image channel info.
+   * @tparam T The data type of the image channel.
+   * @return The image_channel created.
+   */
   template <class T> static image_channel create() {
     image_channel channel;
     channel.set_channel_size(detail::image_trait<T>::channel_num,
@@ -159,7 +178,9 @@ public:
     channel.set_channel_data_type(detail::image_trait<T>::data_type);
     return channel;
   }
-
+  /**
+   * @brief The default constructor.
+   */
   image_channel() = default;
 
   image_channel_data_type get_channel_data_type() { return _type; }
@@ -172,13 +193,14 @@ public:
     _channel_num = channel_num;
     _total_size = _channel_size * _channel_num;
   }
-
-  /// image_channel constructor.
-  /// \param r Channel r width in bits.
-  /// \param g Channel g width in bits. Should be same with \p r, or zero.
-  /// \param b Channel b width in bits. Should be same with \p g, or zero.
-  /// \param a Channel a width in bits. Should be same with \p b, or zero.
-  /// \param data_type Image channel data type: signed_nt, unsigned_int or fp.
+  /**
+   * @brief Create image_channel constructor.
+   * @param r Channel r width in bits.
+   * @param g Channel g width in bits. Should be same with \p r, or zero.
+   * @param b Channel b width in bits. Should be same with \p g, or zero.
+   * @param a Channel a width in bits. Should be same with \p b, or zero.
+   * @param data_type Image channel data type: signed_nt, unsigned_int or fp.
+   */
   image_channel(int r, int g, int b, int a, image_channel_data_type data_type) {
     _type = data_type;
     if (a) {
@@ -197,7 +219,10 @@ public:
       set_channel_size(1, r);
     }
   }
-
+  /**
+   * @brief Gets the channel type of current image channel.
+   * @return Image channel data type: signed_nt, unsigned_int or fp.
+   */
   sycl::image_channel_type get_channel_type() const {
     if (_channel_size == 4) {
       if (_type == image_channel_data_type::signed_int)
@@ -222,6 +247,10 @@ public:
     assert(false && "unexpected channel data kind and channel size");
     return sycl::image_channel_type::signed_int32;
   }
+  /**
+   * @brief Sets the channel type of current image channel.
+   * @param type Image channel data type: signed_nt, unsigned_int or fp.
+   */
   void set_channel_type(sycl::image_channel_type type) {
     switch (type) {
     case sycl::image_channel_type::unsigned_int8:
@@ -261,7 +290,10 @@ public:
     }
     _total_size = _channel_size * _channel_num;
   }
-
+  /**
+   * @brief Gets the channel order of current image channel.
+   * @return Image channel order: r, rg, rgb, rgba.
+   */
   sycl::image_channel_order get_channel_order() const {
     switch (_channel_num) {
     case 1:
@@ -276,12 +308,16 @@ public:
       return sycl::image_channel_order::r;
     }
   }
-  /// Get the size for each channel in bits.
+  /**
+   * @brief Gets the size for each channel in bits.
+   * @return Image channel size.
+   */
   unsigned get_channel_size() const { return _channel_size * 8; }
-
-  /// Set channel size.
-  /// \param in_channel_num Channels number to set.
-  /// \param channel_size Size for each channel in bits.
+  /**
+   * @brief Sets the image channel size.
+   * @param in_channel_num The channels number to set.
+   * @param channel_size The size for each channel in bits.
+   */
   void set_channel_size(unsigned in_channel_num,
                         unsigned channel_size) {
     if (in_channel_num < _channel_num)
@@ -291,8 +327,10 @@ public:
     _total_size = _channel_size * _channel_num;
   }
 };
-
-/// 2D or 3D matrix data for image.
+/**
+ * @class image_matrix
+ * @brief Class to store 2D/3D matrix data in host.
+ */
 class image_matrix {
   image_channel _channel;
   int _range[3] = {1, 1, 1};
@@ -312,13 +350,25 @@ class image_matrix {
   }
 
 public:
-  /// Constructor with channel info and dimension size info.
+  /**
+   * @brief Constructor with channel info and dimension size info.
+   * @tparam dimensions The dimension of the data.
+   * @param image_channel The image channel information of the data.
+   * @param range The range of each dimension.
+   */
   template <int dimensions>
   image_matrix(image_channel channel, sycl::range<dimensions> range)
       : _channel(channel) {
     set_range(range);
     _host_data = std::malloc(range.size() * _channel.get_total_size());
   }
+  /**
+   * @brief Constructor for 2D image matrix.
+   * @param channel_type The image channel type of the data.
+   * @param channel_num The channel number of the data.
+   * @param x The width of the data.
+   * @param y The height of the data.
+   */
   image_matrix(sycl::image_channel_type channel_type, unsigned channel_num,
                size_t x, size_t y) {
     _channel.set_channel_type(channel_type);
@@ -331,12 +381,18 @@ public:
     }
     _host_data = std::malloc(_range[0] * _range[1] * _channel.get_total_size());
   }
-
-  /// Construct a new image class with the matrix data.
+  /**
+   * @brief Creates image with the matrix data.
+   * @return The created \a sycl::image.
+   */
   template <int dimensions> sycl::image<dimensions> *create_image() {
     return create_image<dimensions>(_channel);
   }
-  /// Construct a new image class with the matrix data.
+  /**
+   * @brief Creates image with the matrix data.
+   * @param channel The image channel to be used.
+   * @return The created \a sycl::image.
+   */
   template <int dimensions>
   sycl::image<dimensions> *create_image(image_channel channel) {
     return new sycl::image<dimensions>(
@@ -344,29 +400,49 @@ public:
         get_range(make_index_sequence<dimensions>()),
         sycl::property::image::use_host_ptr());
   }
-
-  /// Get channel info.
+  /**
+   * @brief Gets the channel info.
+   * @return The image channel info for current image.
+   */
   inline image_channel get_channel() { return _channel; }
-  /// Get range of the image.
+  /**
+   * @brief Gets the range of the image.
+   * @return The 3D range of the image.
+   */
   sycl::range<3> get_range() {
     return sycl::range<3>(_range[0], _range[1], _range[2]);
   }
-  /// Get matrix dims.
+  /**
+   * @brief Gets the matrix dimension of the image.
+   * @return The matrix dimension.
+   */
   inline int get_dims() { return _dims; }
-  /// Convert to pitched data.
+  /**
+   * @brief Gets a pitched data from the matrix data.
+   * @return The pitched data.
+   */
   pitched_data to_pitched_data() {
     return pitched_data(_host_data, _range[0] * _channel.get_total_size(),
                         _range[0], _range[1]);
   }
-
+  /**
+   * @brief The default destructor.
+   */
   ~image_matrix() {
     if (_host_data)
       std::free(_host_data);
     _host_data = nullptr;
   }
 };
-using image_matrix_p = image_matrix *;
 
+/**
+ * @class image_matrix_p
+ * @brief Pointer type of image_matrix.
+ */
+using image_matrix_p = image_matrix *;
+/**
+ * @brief Enum for image data type.
+ */
 enum class image_data_type { matrix, linear, pitch, unsupport };
 
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
@@ -375,18 +451,46 @@ class image_mem_wrapper;
 }
 #endif
 
-/// Image data info.
+/**
+ * @class image_data
+ * @brief Class to store image data with channel information.
+ */
 class image_data {
 public:
+  /**
+   * @brief The default constructor.
+   */
   image_data() { _type = image_data_type::unsupport; }
+  /**
+   * @brief The constructor with matrix_data.
+   * @param matrix_data The matrix data to be used.
+   */
   image_data(image_matrix_p matrix_data) { set_data(matrix_data); }
+  /**
+   * @brief The constructor for 1D data.
+   * @param data_ptr The pointer to the data.
+   * @param x_size The length of the data.
+   * @param channel The image channel to be used.
+   */
   image_data(void *data_ptr, size_t x_size, image_channel channel) {
     set_data(data_ptr, x_size, channel);
   }
+  /**
+   * @brief The constructor for 2D data.
+   * @param data_ptr The pointer to the data.
+   * @param x_size The width of the data.
+   * @param y_size The height of the data.
+   * @param pitch_size The pitch size of the data.
+   * @param channel The image channel to be used.
+   */
   image_data(void *data_ptr, size_t x_size, size_t y_size, size_t pitch_size,
              image_channel channel) {
     set_data(data_ptr, x_size, y_size, pitch_size, channel);
   }
+  /**
+   * @brief Sets the image data from matrix data.
+   * @param matrix_data The matrix data to be used.
+   */
   void set_data(image_matrix_p matrix_data) {
     _type = image_data_type::matrix;
     _data = matrix_data;
@@ -398,12 +502,24 @@ public:
     _data = image_mem;
   }
 #endif
+  /**
+   * @brief Sets the image data.
+   * @param matrix_data The matrix data to be used.
+   */
   void set_data(void *data_ptr, size_t x_size, image_channel channel) {
     _type = image_data_type::linear;
     _data = data_ptr;
     _x = x_size;
     _channel = channel;
   }
+  /**
+   * @brief Sets the image data.
+   * @param data_ptr The pointer to the data.
+   * @param x_size The width of the data.
+   * @param y_size The height of the data.
+   * @param pitch_size The pitch size of the data.
+   * @param channel The image channel to be used.
+   */
   void set_data(void *data_ptr, size_t x_size, size_t y_size, size_t pitch_size,
                 image_channel channel) {
     _type = image_data_type::pitch;
@@ -413,45 +529,123 @@ public:
     _pitch = pitch_size;
     _channel = channel;
   }
-
+  /**
+   * @brief Gets the data type of the image.
+   * @return The data type of the image.
+   */
   image_data_type get_data_type() const { return _type; }
+  /**
+   * @brief Sets the data type of the image.
+   * @param [in] type The data type of the image.
+   */
   void set_data_type(image_data_type type) { _type = type; }
 
+  /**
+   * @brief Gets the data pointer of the image.
+   * @return The data pointer of the image.
+   */
   void *get_data_ptr() const { return _data; }
+  /**
+   * @brief Sets the data pointer of the image.
+   * @param [in] type The data pointer of the image.
+   */
   void set_data_ptr(void *data) { _data = data; }
 
+  /**
+   * @brief Gets the data width of the image.
+   * @return The data width of the image.
+   */
   size_t get_x() const { return _x; }
+  /**
+   * @brief Sets the data width of the image.
+   * @param [in] x The data width of the image.
+   */
   void set_x(size_t x) { _x = x; }
-
+  /**
+   * @brief Gets the data height of the image.
+   * @return The data height of the image.
+   */
   size_t get_y() const { return _y; }
+  /**
+   * @brief Sets the data height of the image.
+   * @param [in] y The data height of the image.
+   */
   void set_y(size_t y) { _y = y; }
-
+  /**
+   * @brief Gets the pitch size of the image data.
+   * @return The pitch size of the image data.
+   */
   size_t get_pitch() const { return _pitch; }
+  /**
+   * @brief Sets the pitch size of the image data.
+   * @param [in] pitch The pitch size of the image data.
+   */
   void set_pitch(size_t pitch) { _pitch = pitch; }
 
+  /**
+   * @brief Gets the channel info of the image.
+   * @return The channel info of the image.
+   */
   image_channel get_channel() const { return _channel; }
+  /**
+   * @brief Sets the channel info of the image.
+   * @param [in] channel The channel info of the image.
+   */
   void set_channel(image_channel channel) { _channel = channel; }
 
+  /**
+   * @brief Gets the channel data type the image.
+   * @return The channel data type the image.
+   */
   image_channel_data_type get_channel_data_type() {
     return _channel.get_channel_data_type();
   }
+  /**
+   * @brief Sets the channel data type the image.
+   * @param [in] type The channel data type the image.
+   */
   void set_channel_data_type(image_channel_data_type type) {
     _channel.set_channel_data_type(type);
   }
 
+  /**
+   * @brief Gets the channel size of the image.
+   * @return The channel size of the image.
+   */
   unsigned get_channel_size() { return _channel.get_channel_size(); }
+  /**
+   * @brief Sets the channel size of the image.
+   * @param [in] channel_num The channel num of the image.
+   * @param [in] channel_size The channel size of the image.
+   */
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
     return _channel.set_channel_size(channel_num, channel_size);
   }
 
+  /**
+   * @brief Gets the channel number of the image.
+   * @return The channel number of the image.
+   */
   unsigned get_channel_num() { return _channel.get_channel_num(); }
+  /**
+   * @brief Sets the channel number of the image.
+   * @param [in] channel_num The channel number of the image.
+   */
   void set_channel_num(unsigned num) {
     return _channel.set_channel_num(num);
   }
 
+  /**
+   * @brief Gets the channel type of the image.
+   * @return The channel type of the image.
+   */
   sycl::image_channel_type get_channel_type() {
     return _channel.get_channel_type();
   }
+  /**
+   * @brief Sets the channel type of the image.
+   * @param [in] type The channel type of the image.
+   */
   void set_channel_type(sycl::image_channel_type type) {
     return _channel.set_channel_type(type);
   }
@@ -463,8 +657,11 @@ private:
   image_channel _channel;
 };
 
-/// Image sampling info, include addressing mode, filtering mode and
-/// normalization info.
+/**
+ * @class sampling_info
+ * @brief Class to store image sampling info, include addressing mode, filtering
+ * mode and normalization info.
+ */
 class sampling_info {
   sycl::addressing_mode _addressing_mode =
       sycl::addressing_mode::clamp_to_edge;
@@ -484,6 +681,7 @@ class sampling_info {
   float _max_anisotropy = 0.f;
 
 public:
+<<<<<<< HEAD:clang/runtime/dpct-rt/include/dpct/image.hpp
   sycl::addressing_mode get_addressing_mode() const noexcept {
     return _addressing_mode;
   }
@@ -512,10 +710,60 @@ public:
            sycl::coordinate_normalization_mode::normalized;
   }
   void set_coordinate_normalization_mode(int is_normalized) noexcept {
+=======
+  /**
+   * @brief Gets the addressing mode.
+   * @return The addressing mode.
+   */
+  sycl::addressing_mode get_addressing_mode() { return _addressing_mode; }
+  /**
+   * @brief Sets the addressing mode.
+   * @param addressing_mode The addressing mode.
+   */
+  void set(sycl::addressing_mode addressing_mode) { _addressing_mode = addressing_mode; }
+  /**
+   * @brief Gets the filtering mode.
+   * @return The filtering mode.
+   */
+  sycl::filtering_mode get_filtering_mode() { return _filtering_mode; }
+  /**
+   * @brief Sets the filtering mode.
+   * @param filtering_mode The filtering mode.
+   */
+  void set(sycl::filtering_mode filtering_mode) { _filtering_mode = filtering_mode; }
+  /**
+   * @brief Gets the coordinate normalization mode.
+   * @return The coordinate normalization mode.
+   */
+  sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
+    return _coordinate_normalization_mode;
+  }
+  /**
+   * @brief Sets the coordinate normalization mode.
+   * @param coordinate_normalization_mode The coordinate normalization mode.
+   */
+  void set(sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+    _coordinate_normalization_mode = coordinate_normalization_mode;
+  }
+  /**
+   * @brief Gets whether the coordinate normalization mode is normalized.
+   * @return true if the coordinate normalization mode is normalized.
+   */
+  bool is_coordinate_normalized() {
+    return _coordinate_normalization_mode ==
+           sycl::coordinate_normalization_mode::normalized;
+  }
+  /**
+   * @brief Sets whether the coordinate normalization mode is normalized.
+   * @param is_normalized Whether the coordinate normalization mode is normalized.
+   */
+  void set_coordinate_normalization_mode(int is_normalized) {
+>>>>>>> Add comment doxygen comments:clang/runtime/dpct-rt/include/image.hpp
     _coordinate_normalization_mode =
         is_normalized ? sycl::coordinate_normalization_mode::normalized
                       : sycl::coordinate_normalization_mode::unnormalized;
   }
+<<<<<<< HEAD:clang/runtime/dpct-rt/include/dpct/image.hpp
 
   /// Get the method in which sampling between mipmap levels is performed.
   /// \returns The method in which sampling between mipmap levels is performed.
@@ -570,115 +818,252 @@ public:
            sycl::filtering_mode filtering_mode,
            sycl::coordinate_normalization_mode
                coordinate_normalization_mode) noexcept {
+=======
+  /**
+   * @brief Sets the addressing mode, filtering mode and the coordinate
+   * normalization mode.
+   * @param addressing_mode The addressing mode.
+   * @param filtering_mode The filtering mode.
+   * @param coordinate_normalization_mode The coordinate normalization mode to
+   * be used.
+   */
+  void
+  set(sycl::addressing_mode addressing_mode,
+      sycl::filtering_mode filtering_mode,
+      sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+>>>>>>> Add comment doxygen comments:clang/runtime/dpct-rt/include/image.hpp
     set(addressing_mode);
     set(filtering_mode);
     set(coordinate_normalization_mode);
   }
+  /**
+   * @brief Sets the addressing mode, filtering mode.
+   * @param addressing_mode The addressing mode.
+   * @param filtering_mode The filtering mode.
+   * @param is_normalized Whether the coordinate normalization mode is
+   * normalized.
+   */
   void set(sycl::addressing_mode addressing_mode,
            sycl::filtering_mode filtering_mode, int is_normalized) noexcept {
     set(addressing_mode);
     set(filtering_mode);
     set_coordinate_normalization_mode(is_normalized);
   }
+<<<<<<< HEAD:clang/runtime/dpct-rt/include/dpct/image.hpp
 
   sycl::sampler get_sampler() const {
+=======
+  /**
+   * @brief Gets \a sycl::sampler with the stored info.
+   * @return The created \a sycl::sampler.
+   */
+  sycl::sampler get_sampler() {
+>>>>>>> Add comment doxygen comments:clang/runtime/dpct-rt/include/image.hpp
     return sycl::sampler(_coordinate_normalization_mode, _addressing_mode,
                          _filtering_mode);
   }
 };
 
-/// Image base class.
+/**
+ * @class image_wrapper_base
+ * @brief Base class for image wrapper which extend \a sycl::image
+ */
 class image_wrapper_base {
   sampling_info _sampling_info;
   image_data _data;
 
 public:
   virtual ~image_wrapper_base() = 0;
-
+  /**
+   * @brief Attaches image data to this class.
+   * @param data The image data to be used.
+   */
   void attach(image_data data) { set_data(data); }
-  /// Attach matrix data to this class.
+  /**
+   * @brief Attaches matrix data to this class.
+   * @param data The matrix data to be used.
+   */
   void attach(image_matrix *matrix) {
     detach();
     image_wrapper_base::set_data(image_data(matrix));
   }
-  /// Attach matrix data to this class.
+  /**
+   * @brief Attaches matrix data to this class.
+   * @param data The matrix data to be used.
+   * @param channel The channel information of the data.
+   */
   void attach(image_matrix *matrix, image_channel channel) {
     attach(matrix);
     image_wrapper_base::set_channel(channel);
   }
-  /// Attach linear data to this class.
+  /**
+   * @brief Attaches linear data to this class.
+   * @param ptr The pointer to the data.
+   * @param count The size of the data.
+   */
   void attach(const void *ptr, size_t count) {
     attach(ptr, count, get_channel());
   }
-  /// Attach linear data to this class.
+  /**
+   * @brief Attaches linear data to this class.
+   * @param ptr The pointer to the data.
+   * @param count The size of the data.
+   * @param channel The channel information of the data.
+   */
   void attach(const void *ptr, size_t count, image_channel channel) {
     detach();
     image_wrapper_base::set_data(image_data(const_cast<void *>(ptr), count, channel));
   }
-  /// Attach 2D data to this class.
+  /**
+   * @brief Attaches 2D data to this class.
+   * @param data The pointer to the data.
+   * @param x The width of the data.
+   * @param y The height of the data.
+   * @param pitch The pitch size of the data.
+   */
   void attach(const void *data, size_t x, size_t y, size_t pitch) {
     attach(data, x, y, pitch, get_channel());
   }
-  /// Attach 2D data to this class.
+  /**
+   * @brief Attaches 2D data to this class.
+   * @param data The pointer to the data.
+   * @param x The width of the data.
+   * @param y The height of the data.
+   * @param pitch The pitch size of the data.
+   * @param channel The channel information of the data.
+   */
   void attach(const void *data, size_t x, size_t y, size_t pitch,
               image_channel channel) {
     detach();
     image_wrapper_base::set_data(
         image_data(const_cast<void *>(data), x, y, pitch, channel));
   }
-  /// Detach data.
+  /**
+   * @brief Detaches data.
+   */
   virtual void detach() {}
 
+  /**
+   * @brief Gets the sampling information.
+   * @return The sampling information.
+   */
   sampling_info get_sampling_info() { return _sampling_info; }
   void set_sampling_info(sampling_info info) {
     _sampling_info = info;
   }
+  /**
+   * @brief Gets the image data.
+   * @return The reference to the image data.
+   */
   const image_data &get_data() { return _data; }
+  /**
+   * @brief Sets the image data.
+   * @param data The image data.
+   */
   void set_data(image_data data) { _data = data; }
-
+  /**
+   * @brief Gets the image channel information.
+   * @return The image channel information.
+   */
   image_channel get_channel() { return _data.get_channel(); }
+  /**
+   * @brief Sets the image channel information.
+   * @param channel The image channel information.
+   */
   void set_channel(image_channel channel) { _data.set_channel(channel); }
-
+  /**
+   * @brief Gets the image channel data type.
+   * @return The image channel data type.
+   */
   image_channel_data_type get_channel_data_type() {
     return _data.get_channel_data_type();
   }
+  /**
+   * @brief Sets the image channel data type.
+   * @param type The image channel data type.
+   */
   void set_channel_data_type(image_channel_data_type type) {
     _data.set_channel_data_type(type);
   }
-
+  /**
+   * @brief Gets the image channel size.
+   * @return The image channel size.
+   */
   unsigned get_channel_size() { return _data.get_channel_size(); }
+  /**
+   * @brief Sets the image channel size.
+   * @param channel_num The image channel number.
+   * @param channel_size The image channel size.
+   */
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
     return _data.set_channel_size(channel_num, channel_size);
   }
-
+  /**
+   * @brief Gets the image addressing mode.
+   * @return The image addressing mode.
+   */
   sycl::addressing_mode get_addressing_mode() {
     return _sampling_info.get_addressing_mode();
   }
+  /**
+   * @brief Sets the image addressing mode.
+   * @param addressing_mode The image addressing mode.
+   */
   void set(sycl::addressing_mode addressing_mode) {
     _sampling_info.set(addressing_mode);
   }
-
+  /**
+   * @brief Gets the image filtering mode.
+   * @return The image filtering mode.
+   */
   sycl::filtering_mode get_filtering_mode() {
     return _sampling_info.get_filtering_mode();
   }
+  /**
+   * @brief Sets the image filtering mode.
+   * @param filtering_mode The image filtering mode.
+   */
   void set(sycl::filtering_mode filtering_mode) {
     _sampling_info.set(filtering_mode);
   }
-
+  /**
+   * @brief Gets the image coordinate normalization mode.
+   * @return The image coordinate normalization mode.
+   */
   sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
     return _sampling_info.get_coordinate_normalization_mode();
   }
+  /**
+   * @brief Sets the image coordinate normalization mode.
+   * @param coordinate_normalization_mode The image coordinate normalization
+   * mode.
+   */
   void
   set(sycl::coordinate_normalization_mode coordinate_normalization_mode) {
     _sampling_info.set(coordinate_normalization_mode);
   }
-
+  /**
+   * @brief Gets whether the image is coordinate normalized.
+   * @return true if the image is coordinate normalized.
+   */
   bool is_coordinate_normalized() {
     return _sampling_info.is_coordinate_normalized();
   }
+  /**
+   * @brief Sets whether the image is coordinate normalized.
+   * @param is_normalized whether the image is coordinate normalized.
+   */
   void set_coordinate_normalization_mode(int is_normalized) {
     _sampling_info.set_coordinate_normalization_mode(is_normalized);
   }
+  /**
+   * @brief Sets the addressing mode, filtering mode and the coordinate
+   * normalization mode.
+   * @param addressing_mode The addressing mode.
+   * @param filtering_mode The filtering mode.
+   * @param coordinate_normalization_mode The coordinate normalization mode to
+   * be used.
+   */
   void
   set(sycl::addressing_mode addressing_mode,
       sycl::filtering_mode filtering_mode,
@@ -687,24 +1072,46 @@ public:
     set(filtering_mode);
     set(coordinate_normalization_mode);
   }
+  /**
+   * @brief Sets the addressing mode, filtering mode.
+   * @param addressing_mode The addressing mode.
+   * @param filtering_mode The filtering mode.
+   * @param is_normalized Whether the coordinate normalization mode is
+   * normalized.
+   */
   void set(sycl::addressing_mode addressing_mode,
            sycl::filtering_mode filtering_mode, int is_normalized) {
     set(addressing_mode);
     set(filtering_mode);
     set_coordinate_normalization_mode(is_normalized);
   }
-
+  /**
+   * @brief Gets the image channel number.
+   * @return The image channel number.
+   */
   unsigned get_channel_num() { return _data.get_channel_num(); }
+  /**
+   * @brief Sets the image channel number.
+   * @param num The image channel number.
+   */
   void set_channel_num(unsigned num) {
     return _data.set_channel_num(num);
   }
-
+  /**
+   * @brief Gets the image channel type.
+   * @return The image channel type.
+   */
   sycl::image_channel_type get_channel_type() {
     return _data.get_channel_type();
   }
+  /**
+   * @brief Sets the image channel type.
+   * @param type The image channel type.
+   */
   void set_channel_type(sycl::image_channel_type type) {
     return _data.set_channel_type(type);
   }
+<<<<<<< HEAD:clang/runtime/dpct-rt/include/dpct/image.hpp
 
   sycl::sampler get_sampler() {
     sycl::sampler smp = _sampling_info.get_sampler();
@@ -716,13 +1123,23 @@ public:
     }
     return smp;
   }
+=======
+  /**
+   * @brief Gets \a sycl::sampler with the stored info.
+   * @return The created \a sycl::sampler.
+   */
+  sycl::sampler get_sampler() { return _sampling_info.get_sampler(); }
+>>>>>>> Add comment doxygen comments:clang/runtime/dpct-rt/include/image.hpp
 };
 inline image_wrapper_base::~image_wrapper_base() {}
 using image_wrapper_base_p = image_wrapper_base *;
 
 template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 
-/// Image class, wrapper of sycl::image.
+/**
+ * @class image_wrapper
+ * @brief Image class, wrapper of sycl::image.
+ */
 template <class T, int dimensions, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
   sycl::image<dimensions> *_image = nullptr;
 
@@ -775,18 +1192,29 @@ public:
   using accessor_t =
       typename image_accessor_ext<T, IsImageArray ? (dimensions - 1) : dimensions,
                               IsImageArray>::accessor_t;
-
+  /**
+   * @brief The default constructor. Initializes the channel information.
+   */
   image_wrapper() { set_channel(image_channel::create<T>()); }
+  /**
+   * @brief The default destructor.
+   */
   ~image_wrapper() { detach(); }
 
-  /// Get image accessor.
+  /**
+   * @brief Gets the image accessor.
+   * @param [in] cgh The command group handler.
+   * @param [in] q The queue to create the \a sycl::image.
+   */
   accessor_t get_access(sycl::handler &cgh, sycl::queue &q = get_default_queue()) {
     if (!_image)
       create_image(q);
     return accessor_t(*_image, cgh);
   }
 
-  /// Detach data.
+  /**
+   * @brief Detaches the image data.
+   */
   void detach() override {
     if (_image)
       delete _image;
@@ -794,7 +1222,10 @@ public:
   }
 };
 
-/// Wrap sampler and image accessor together.
+/**
+ * @class image_accessor_ext
+ * @brief Wrap sampler and image accessor together.
+ */
 template <class T, int dimensions, bool IsImageArray = false>
 class image_accessor_ext {
 public:
@@ -805,17 +1236,23 @@ public:
   accessor_t _img_acc;
 
 public:
+  /**
+   * @brief The default constructor.
+   */
   image_accessor_ext(sycl::sampler sampler, accessor_t acc)
       : _sampler(sampler), _img_acc(acc) {}
-
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <bool Available = dimensions == 3>
   typename std::enable_if<Available, data_t>::type read(float x, float y,
                                                         float z) {
     return detail::fetch_data<T>()(
         _img_acc.read(sycl::float4(x, y, z, 0), _sampler));
   }
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <class Coord0, class Coord1, class Coord2,
             bool Available = dimensions == 3 &&
                              std::is_integral<Coord0>::value
@@ -826,13 +1263,17 @@ public:
     return detail::fetch_data<T>()(
         _img_acc.read(sycl::int4(x, y, z, 0), _sampler));
   }
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(float x, float y) {
     return detail::fetch_data<T>()(
         _img_acc.read(sycl::float2(x, y), _sampler));
   }
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <class Coord0, class Coord1,
             bool Available = dimensions == 2 &&
                              std::is_integral<Coord0>::value
@@ -841,12 +1282,16 @@ public:
     return detail::fetch_data<T>()(
         _img_acc.read(sycl::int2(x, y), _sampler));
   }
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <bool Available = dimensions == 1>
   typename std::enable_if<Available, data_t>::type read(float x) {
     return detail::fetch_data<T>()(_img_acc.read(x, _sampler));
   }
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <class CoordT,
             bool Available = dimensions == 1 && std::is_integral<CoordT>::value>
   typename std::enable_if<Available, data_t>::type read(CoordT x) {
@@ -854,6 +1299,10 @@ public:
   }
 };
 
+/**
+ * @class image_accessor_ext
+ * @brief Wrap sampler and image accessor together.
+ */
 template <class T, int dimensions> class image_accessor_ext<T, dimensions, true> {
 public:
   using accessor_t =
@@ -863,41 +1312,54 @@ public:
   accessor_t _img_acc;
 
 public:
+  /**
+   * @brief The constructor with sampler and accessor.
+   * @param [in] sampler The image sampler.
+   * @param [in] acc The image accessor.
+   */
   image_accessor_ext(sycl::sampler sampler, accessor_t acc)
       : _sampler(sampler), _img_acc(acc) {}
 
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(int index, float x,
                                                         float y) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(sycl::float2(x, y), _sampler));
   }
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(int index, int x, int y) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(sycl::int2(x, y), _sampler));
   }
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <bool Available = dimensions == 1>
   typename std::enable_if<Available, data_t>::type read(int index, float x) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(x, _sampler));
   }
-  /// Read data from accessor.
+  /**
+   * @brief Read data from accessor.
+   */
   template <bool Available = dimensions == 1>
   typename std::enable_if<Available, data_t>::type read(int index, int x) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(x, _sampler));
   }
 };
-
-/// Create image wrapper according to image data and sampling info.
-/// \return Pointer to image wrapper base class.
-/// \param data Image data used to create image wrapper.
-/// \param info Image sampling info used to create image wrapper.
-/// \returns Pointer to base class of created image wrapper object.
+/**
+ * @brief Creates image wrapper.
+ * @param data Image data used to create image wrapper.
+ * @param info Image sampling info used to create image wrapper.
+ * @return Pointer to base class of created image wrapper object.
+ */
 static inline image_wrapper_base *create_image_wrapper(image_data data,
                               sampling_info info) {
   image_channel channel;
@@ -922,7 +1384,12 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 }
 
 namespace detail {
-/// Create image according with given type \p T and \p dims.
+/**
+ * @brief Creates image wrapper.
+ * @tparam T The data type of the image.
+ * @param dims The dimension of the image.
+ * @return The created image_wrapper_base.
+ */
 template <class T> static image_wrapper_base *create_image_wrapper(int dims) {
   switch (dims) {
   case 1:
@@ -935,7 +1402,13 @@ template <class T> static image_wrapper_base *create_image_wrapper(int dims) {
     return nullptr;
   }
 }
-/// Create image with given data type \p T, channel order and dims
+/**
+ * @brief Creates image wrapper.
+ * @tparam T The data type of the image.
+ * @param channel_num The channel number of the image.
+ * @param dims The dimension of the image.
+ * @return The created image_wrapper_base.
+ */
 template <class T>
 static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims) {
   switch (channel_num) {
@@ -952,7 +1425,12 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims) 
   }
 }
 
-/// Create image with channel info and specified dimensions.
+/**
+ * @brief Creates image wrapper.
+ * @param channel The image channel to be used.
+ * @param dims The dimension of the image.
+ * @return The created image_wrapper_base.
+ */
 static image_wrapper_base *create_image_wrapper(image_channel channel, int dims) {
   switch (channel.get_channel_type()) {
   case sycl::image_channel_type::fp16:
