@@ -4307,18 +4307,25 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasSsymm", "cublasDsymm", "cublasCsymm", "cublasZsymm",
         "cublasChemm", "cublasZhemm", "cublasStrsm", "cublasDtrsm",
         "cublasCtrsm", "cublasZtrsm", "cublasStrmm", "cublasDtrmm",
-        "cublasCtrmm", "cublasZtrmm", "cublasSgemm_v2_64", "cublasDgemm_v2_64",
-        "cublasCgemm_v2_64", "cublasZgemm_v2_64", "cublasCgemm_v2_64",
-        "cublasZgemm_v2_64", "cublasSsyrk_v2_64", "cublasDsyrk_v2_64",
-        "cublasCsyrk_v2_64", "cublasZsyrk_v2_64", "cublasSsymm_v2_64",
-        "cublasDsymm_v2_64", "cublasCsymm_v2_64", "cublasZsymm_v2_64",
-        "cublasStrsm_v2_64", "cublasDtrsm_v2_64", "cublasCtrsm_v2_64",
-        "cublasZtrsm_v2_64", "cublasChemm_v2_64", "cublasZhemm_v2_64",
-        "cublasCherk_v2_64", "cublasZherk_v2_64", "cublasSsyr2k_v2_64",
-        "cublasDsyr2k_v2_64", "cublasCsyr2k_v2_64", "cublasZsyr2k_v2_64",
-        "cublasCher2k_v2_64", "cublasZher2k_v2_64", "cublasSgeam_64",
-        "cublasDgeam_64", "cublasCgeam_64", "cublasZgeam_64", "cublasSdgmm_64",
-        "cublasDdgmm_64", "cublasCdgmm_64", "cublasZdgmm_64");
+        "cublasCtrmm", "cublasZtrmm",
+        /*64-bit API*/
+        /*level 1*/
+        "cublasIsamax_v2_64", "cublasIdamax_v2_64", "cublasIcamax_v2_64",
+        "cublasIzamax_v2_64", "cublasIsamin_v2_64", "cublasIdamin_v2_64",
+        "cublasIcamin_v2_64", "cublasIzamin_v2_64",
+        /*level 3*/
+        "cublasSgemm_v2_64", "cublasDgemm_v2_64", "cublasCgemm_v2_64",
+        "cublasZgemm_v2_64", "cublasCgemm_v2_64", "cublasZgemm_v2_64",
+        "cublasSsyrk_v2_64", "cublasDsyrk_v2_64", "cublasCsyrk_v2_64",
+        "cublasZsyrk_v2_64", "cublasSsymm_v2_64", "cublasDsymm_v2_64",
+        "cublasCsymm_v2_64", "cublasZsymm_v2_64", "cublasStrsm_v2_64",
+        "cublasDtrsm_v2_64", "cublasCtrsm_v2_64", "cublasZtrsm_v2_64",
+        "cublasChemm_v2_64", "cublasZhemm_v2_64", "cublasCherk_v2_64",
+        "cublasZherk_v2_64", "cublasSsyr2k_v2_64", "cublasDsyr2k_v2_64",
+        "cublasCsyr2k_v2_64", "cublasZsyr2k_v2_64", "cublasCher2k_v2_64",
+        "cublasZher2k_v2_64", "cublasSgeam_64", "cublasDgeam_64",
+        "cublasCgeam_64", "cublasZgeam_64", "cublasSdgmm_64", "cublasDdgmm_64",
+        "cublasCdgmm_64", "cublasZdgmm_64");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -4617,11 +4624,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
     }
 
-    if (FuncName == "cublasIsamax_v2" || FuncName == "cublasIdamax_v2" ||
-        FuncName == "cublasIsamin_v2" || FuncName == "cublasIdamin_v2") {
-      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
-    }
-
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       if (FuncName == "cublasSrotm_v2") {
         CallExprArguReplVec[6] =
@@ -4631,9 +4633,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             "const_cast<double*>(" + CallExprArguReplVec[6] + ")";
       }
       addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
-      if (MapNames::MustSyncBLASFunc.find(FuncName) !=
-          MapNames::MustSyncBLASFunc.end())
-        NeedWaitAPICall = true;
     } else {
       printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
     }
@@ -4776,16 +4775,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
     }
 
-    if (FuncName == "cublasIcamax_v2" || FuncName == "cublasIzamax_v2" ||
-        FuncName == "cublasIcamin_v2" || FuncName == "cublasIzamin_v2") {
-      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
-    }
-
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
-      if (MapNames::MustSyncBLASFunc.find(FuncName) !=
-          MapNames::MustSyncBLASFunc.end())
-        NeedWaitAPICall = true;
     } else {
       printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
     }
