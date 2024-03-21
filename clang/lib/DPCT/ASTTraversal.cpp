@@ -8356,6 +8356,36 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
              FuncName == "cudaStreamQuery") {
+
+    // if extension feature sycl_ext_oneapi_queue_empty is used, member
+    // functions "ext_oneapi_empty" in SYCL queue is used to map
+    // cudaStreamQuery.
+    if (FuncName == "cudaStreamQuery" && DpctGlobalInfo::useQueueEmpty()) {
+      auto StreamArg = CE->getArg(0);
+      bool IsDefaultStream = isDefaultStream(StreamArg);
+      std::string StreamName;
+      std::string ReplStr;
+      if (IsDefaultStream) {
+        if (isPlaceholderIdxDuplicated(CE))
+          return;
+        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+        buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+        StreamName = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
+        ReplStr = StreamName + "ext_oneapi_empty()";
+      } else {
+        StreamName = getStmtSpelling(StreamArg);
+        if (needExtraParensInMemberExpr(StreamArg)) {
+          StreamName = "(" + StreamName + ")";
+        }
+        ReplStr = StreamName + "->" + "ext_oneapi_empty()";
+      }
+      if (IsAssigned) {
+        ReplStr = "DPCT_CHECK_ERROR((" + ReplStr + "))";
+      }
+      emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+      return;
+    }
+
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
