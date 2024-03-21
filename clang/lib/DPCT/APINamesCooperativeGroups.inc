@@ -186,6 +186,19 @@ CONDITIONAL_FACTORY_ENTRY(
         TOSTRING_FACTORY_ENTRY("tiled_partition", SUBGROUP)),
     UNSUPPORT_FACTORY_ENTRY("tiled_partition", Diagnostics::API_NOT_MIGRATED,
                             ARG("tiled_partition")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseNonUniformGroups,
+    CALL_FACTORY_ENTRY(
+        "coalesced_threads",
+        CALL(
+            MapNames::getClNamespace() +
+            "ext::oneapi::experimental::this_kernel::get_opportunistic_group")),
+    UNSUPPORT_FACTORY_ENTRY(
+        "coalesced_threads",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("coalesced_threads"),
+        ARG("--use-experimental-features=non-uniform-groups")))
 #endif
 
 #ifdef CLASS_METHOD_CALL
@@ -368,8 +381,8 @@ CASE_FACTORY_ENTRY(
   => if UseLogicalGroup then
      MemberBase().get_local_linear_id()
 */
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_rank", NDITEM,
-                          false, "get_local_linear_id")
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_rank",
+                          NDITEM, false, "get_local_linear_id")
 
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
@@ -961,4 +974,37 @@ MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.group_index", 
                           false, "get_group_id")
 MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_index", MemberExprBase(),
                           false, "get_local_id")
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseNonUniformGroups,
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cooperative_groups::__v1::coalesced_group.thread_rank",
+        MemberExprBase(), false, "get_local_linear_id"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::coalesced_group.thread_rank",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::coalesced_group.thread_rank"),
+        ARG("--use-experimental-features=non-uniform-groups")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseNonUniformGroups,
+    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::coalesced_group.size",
+                              MemberExprBase(), false, "get_local_linear_id"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::coalesced_group.size",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::coalesced_group.size"),
+        ARG("--use-experimental-features=non-uniform-groups")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseNonUniformGroups,
+    CALL_FACTORY_ENTRY("cooperative_groups::__v1::coalesced_group.shfl",
+                              CALL(MapNames::getClNamespace() +
+                                       "select_from_group",
+                                   MemberExprBase(), ARG(0), ARG(1))),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::coalesced_group.shfl",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::coalesced_group.shfl"),
+        ARG("--use-experimental-features=non-uniform-groups")))
 #endif
