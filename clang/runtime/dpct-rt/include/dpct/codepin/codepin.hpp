@@ -35,7 +35,11 @@ public:
   ~Logger() {
     this->remove_lastchar_stream();
     ss << "]";
-    opf << ss.str();
+    std::string json_str = ss.str();
+    json_format format_json(json_str);
+    std::string formatted_json = "";
+    format_json.generate_formatted_json(formatted_json);
+    opf << formatted_json;
     opf.close();
   }
 
