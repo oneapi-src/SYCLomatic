@@ -861,3 +861,10 @@
   CmakeSyntax: set_cmake_cuda_required
   In: set(CMAKE_CUDA_STANDARD_REQUIRED ${value})
   Out: set(CMAKE_CXX_STANDARD_REQUIRED ${value})
+
+- Rule: rule_CUDA_VERSION
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_VERSION
+  In: ${command_name}(CUDA_VERSION ${rest_args})
+  Out: ${command_name}(COMPATIBILITY_VERSION ${rest_args})
