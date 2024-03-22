@@ -152,7 +152,6 @@ def main():
     print("Comparison succeeded, no differences found.")
     sys.exit(0)
 
-
 if __name__ == '__main__':
     freeze_support()
     main()
