@@ -28,6 +28,8 @@ Suggestions to Fix
 
 You may need to rewrite this code.
 
+.. _example_dpct:
+
 For example, this original CUDA\* code:
 
 .. code-block:: cpp
@@ -55,6 +57,8 @@ results in the following migrated SYCL code:
      printf("%s\n",
             "cudaGetErrorString is not supported" /*cudaGetErrorString(err)*/);
    }
+
+.. _example_dpct_end:
 
 which is rewritten to:
 

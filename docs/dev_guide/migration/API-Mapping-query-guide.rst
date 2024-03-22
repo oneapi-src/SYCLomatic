@@ -1,3 +1,5 @@
+.. _query_map:
+
 Query CUDA* to SYCL* API Mapping
 ================================
 

@@ -1,6 +1,6 @@
 // FIXME:
 // UNSUPPORTED: system-windows
-// RUN: dpct --usm-level=none -out-root %T/cuda-stream-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none --no-dpcpp-extensions=queue_empty -out-root %T/cuda-stream-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-stream-api/cuda-stream-api.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cuda-stream-api/cuda-stream-api.dp.cpp -o %T/cuda-stream-api/cuda-stream-api.dp.o %}
 

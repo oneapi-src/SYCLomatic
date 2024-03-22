@@ -13,7 +13,6 @@
 #include "ExternalReplacement.h"
 #include "GenMakefile.h"
 #include "PatternRewriter.h"
-#include "Schema.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -816,37 +815,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     createDirectories(path::parent_path(SchemaPathCUDA));
     dpct::RawFDOStream SchemaStreamCUDA(SchemaPathCUDA);
 
-    SchemaStreamCUDA
-        << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
-        << "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
-        << "static std::string type_schema_array="
-        << jsonToString(serializeSchemaToJsonArray(CTypeSchemaMap)) << ";"
-        << getNL() << dpct::DpctGlobalInfo::getInstance().SchemaFileContentCUDA
-        << getNL() << "class Init {" << getNL() << "public:" << getNL()
-        << "  Init() {" << getNL()
-        << "    "
-           "dpct::experimental::detail::parse_type_schema_str(type_schema_"
-           "array)"
-           ";"
-        << getNL() << "  }" << getNL() << "};" << getNL() << "static Init init;"
-        << getNL() << "#endif" << getNL();
-
     createDirectories(path::parent_path(SchemaPathSYCL));
     clang::dpct::RawFDOStream SchemaStreamSYCL(SchemaPathSYCL);
-    SchemaStreamSYCL
-        << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
-        << "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
-        << "static std::string type_schema_array="
-        << jsonToString(serializeSchemaToJsonArray(STypeSchemaMap)) << ";"
-        << getNL() << dpct::DpctGlobalInfo::getInstance().SchemaFileContentSYCL
-        << getNL() << "class Init {" << getNL() << "public:" << getNL()
-        << "  Init() {" << getNL()
-        << "    "
-           "dpct::experimental::detail::parse_type_schema_str(type_schema_"
-           "array)"
-           ";"
-        << getNL() << "  }" << getNL() << "};" << getNL() << "static Init init;"
-        << getNL() << "#endif" << getNL();
   }
   processallOptionAction(InRoot, OutRoot);
 

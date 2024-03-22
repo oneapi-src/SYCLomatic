@@ -1,0 +1,3 @@
+if (CUDA_VERSION VERSION_LESS 10.2)
+	message(FATAL_ERROR "low version!.")
+endif()

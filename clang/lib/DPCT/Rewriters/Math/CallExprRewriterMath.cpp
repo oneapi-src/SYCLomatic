@@ -427,12 +427,9 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace(false, true) + "frexp(" << MigratedArg0
        << ", " + MapNames::getClNamespace() + "address_space_cast<"
-       << MapNames::getClNamespace() +
-              "access::address_space::" + getAddressSpace(Call, 1)
-       << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-       << ", "
-       << "int"
-       << ">(" << MigratedArg1 << "))";
+       << MapNames::getClNamespace() + "access::address_space::generic_space, "
+       << MapNames::getClNamespace() + "access::decorated::yes>("
+       << MigratedArg1 << "))";
   } else if (FuncName == "modf" || FuncName == "modff") {
     clang::QualType ParamType = Call->getArg(0)->getType().getCanonicalType();
     ParamType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
@@ -452,9 +449,8 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "modf(" << MigratedArg0;
 
     OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
-       << MapNames::getClNamespace() +
-              "access::address_space::" + getAddressSpace(Call, 1)
-       << ", " << MapNames::getClNamespace() + "access::decorated::yes>("
+       << MapNames::getClNamespace() + "access::address_space::generic_space, "
+       << MapNames::getClNamespace() + "access::decorated::yes>("
        << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
@@ -504,12 +500,9 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "remquo(" << MigratedArg0
        << ", " << MigratedArg1
        << ", " + MapNames::getClNamespace() + "address_space_cast<"
-       << MapNames::getClNamespace() +
-              "access::address_space::" + getAddressSpace(Call, 2)
-       << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-       << ", "
-       << "int"
-       << ">(" << MigratedArg2 << "))";
+       << MapNames::getClNamespace() + "access::address_space::generic_space, "
+       << MapNames::getClNamespace() + "access::decorated::yes>("
+       << MigratedArg2 << "))";
   } else if (FuncName == "nearbyint" || FuncName == "nearbyintf") {
     OS << MapNames::getClNamespace(false, true) + "floor(" << MigratedArg0
        << " + 0.5)";

@@ -171,8 +171,8 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamQuery | FileCheck %s -check-prefix=CUDASTREAMQUERY
 // CUDASTREAMQUERY: CUDA API:
 // CUDASTREAMQUERY-NEXT:   cudaStreamQuery(s /*cudaStream_t*/);
-// CUDASTREAMQUERY-NEXT: The API is Removed.
-// CUDASTREAMQUERY-EMPTY:
+// CUDASTREAMQUERY-NEXT: Is migrated to:
+// CUDASTREAMQUERY-NEXT:   s->ext_oneapi_empty();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamSynchronize | FileCheck %s -check-prefix=CUDASTREAMSYNCHRONIZE
 // CUDASTREAMSYNCHRONIZE: CUDA API:
@@ -231,7 +231,7 @@
 // CUDAEVENTRECORD-NEXT:   cudaEventRecord(e /*cudaEvent_t*/, s /*cudaStream_t*/);
 // CUDAEVENTRECORD-NEXT: Is migrated to:
 // CUDAEVENTRECORD-NEXT:   dpct::queue_ptr s;
-// CUDAEVENTRECORD-NEXT:   *e = s->ext_oneapi_submit_barrier();
+// CUDAEVENTRECORD-NEXT:   dpct::sync_barrier(e /*cudaEvent_t*/, s /*cudaStream_t*/);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventSynchronize | FileCheck %s -check-prefix=CUDAEVENTSYNCHRONIZE
 // CUDAEVENTSYNCHRONIZE: CUDA API:

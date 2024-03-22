@@ -13,3 +13,10 @@ VERSION 1.1.0
 LANGUAGES)
 
 project(foo)
+
+project(
+	tiny-cuda-nn
+	VERSION 1.7
+	DESCRIPTION "Lightning fast & tiny C++/CUDA neural network framework"
+	LANGUAGES CXX CUDA
+)

@@ -237,6 +237,7 @@ private:
     bool CollectChildren = Collect;
     switch (A->getKind()) {
     case driver::Action::CompileJobClass:
+    case driver::Action::PrecompileJobClass:
       CollectChildren = true;
       break;
 
@@ -296,7 +297,7 @@ std::string GetClangToolCommand() {
   SmallString<128> ClangToolPath;
   ClangToolPath = llvm::sys::path::parent_path(ClangExecutable);
   llvm::sys::path::append(ClangToolPath, "clang-tool");
-  return std::string(ClangToolPath.str());
+  return std::string(ClangToolPath);
 }
 
 } // namespace
@@ -374,7 +375,8 @@ static bool stripPositionalArgs(std::vector<const char *> Args,
     // -flto* flags make the BackendJobClass, which still needs analyzer.
     if (Cmd.getSource().getKind() == driver::Action::AssembleJobClass ||
         Cmd.getSource().getKind() == driver::Action::BackendJobClass ||
-        Cmd.getSource().getKind() == driver::Action::CompileJobClass) {
+        Cmd.getSource().getKind() == driver::Action::CompileJobClass ||
+        Cmd.getSource().getKind() == driver::Action::PrecompileJobClass) {
       CompileAnalyzer.run(&Cmd.getSource());
     }
   }

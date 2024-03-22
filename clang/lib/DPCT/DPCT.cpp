@@ -26,7 +26,6 @@
 #include "PatternRewriter.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
-#include "Schema.h"
 #include "Statics.h"
 #include "TypeLocRewriters.h"
 #include "Utility.h"
@@ -1053,6 +1052,9 @@ int runDPCT(int argc, const char **argv) {
         CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
   }
 
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-fno-delayed-template-parsing", ArgumentInsertPosition::END));
+
   SetSDKIncludePath(CudaPath.getCanonicalPath().str());
 
 #ifdef _WIN32
@@ -1111,7 +1113,6 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
 
   MapNames::setExplicitNamespaceMap();
-  clang::dpct::setSTypeSchemaMap();
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();

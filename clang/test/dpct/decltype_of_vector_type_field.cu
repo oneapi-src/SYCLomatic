@@ -9,7 +9,7 @@ void f() {
   using dim3_y_type = decltype(dim3::y);
   // CHECK: using dim3_z_type = size_t;
   using dim3_z_type = decltype(dim3::z);
-  // CHECK: using int1_x_type = int;
+  // CHECK: using int1_x_type = int32_t;
   using int1_x_type = decltype(int1::x);
   // CHECK: using uint3_x_type = sycl::uint3::element_type;
   using uint3_x_type = decltype(uint3::x);
@@ -17,7 +17,7 @@ void f() {
   using uint3_y_type = decltype(uint3::y);
   // CHECK: using uint3_z_type = sycl::uint3::element_type;
   using uint3_z_type = decltype(uint3::z);
-  // CHECK: using char1_x_type = char;
+  // CHECK: using char1_x_type = int8_t;
   using char1_x_type = decltype(char1::x);
   // CHECK: using char4_x_type = sycl::char4::element_type;
   using char4_x_type = decltype(char4::x);

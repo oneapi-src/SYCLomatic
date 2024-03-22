@@ -152,7 +152,7 @@ __device__ void sincos_1(double x, double* sptr, double* cptr) {
      //CHECK:  return [&]() {
 //CHECK-NEXT:                *sptr = sycl::sincos(
 //CHECK-NEXT:                    x, sycl::address_space_cast<
-//CHECK-NEXT:                           sycl::access::address_space::global_space,
+//CHECK-NEXT:                           sycl::access::address_space::generic_space,
 //CHECK-NEXT:                           sycl::access::decorated::yes>(cptr));
 //CHECK-NEXT:  }();
   return ::sincos(x, sptr, cptr);
@@ -162,7 +162,7 @@ __device__ void sincospi_1(double x, double* sptr, double* cptr) {
   //     CHECK:  return [&]() {
   //CHECK-NEXT:                *sptr = sycl::sincos(
   //CHECK-NEXT:                    x * DPCT_PI, sycl::address_space_cast<
-  //CHECK-NEXT:                                     sycl::access::address_space::global_space,
+  //CHECK-NEXT:                                     sycl::access::address_space::generic_space,
   //CHECK-NEXT:                                     sycl::access::decorated::yes>(cptr));
   //CHECK-NEXT:  }();
   return ::sincospi(x, sptr, cptr);

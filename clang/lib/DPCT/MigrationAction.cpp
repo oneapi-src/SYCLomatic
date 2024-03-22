@@ -109,7 +109,9 @@ void DpctConsumer::HandleCXXExplicitFunctionInstantiation(
   ExplicitInstantiationDecl::processFunctionTypeLoc(FTL);
   ExplicitInstantiationDecl::processTemplateArgumentList(TAList);
   if (Specialization->getTemplateSpecializationKind() !=
-      TSK_ExplicitInstantiationDefinition)
+          TSK_ExplicitInstantiationDefinition &&
+      Specialization->getTemplateSpecializationKind() !=
+          TSK_ExplicitInstantiationDeclaration)
     return;
   if (Specialization->hasAttr<CUDADeviceAttr>() ||
       Specialization->hasAttr<CUDAGlobalAttr>()) {

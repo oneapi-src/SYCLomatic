@@ -142,7 +142,7 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
     if (!FileEntry.tryGetRealPathName().empty()) {
       this->FilePath = clang::tooling::UnifiedPath(FileEntry.tryGetRealPathName()).getCanonicalPath();
     } else {
-      llvm::SmallString<512> FilePathAbs(FileEntry.getName());
+      llvm::SmallString<512> FilePathAbs(Entry->getName());
       Sources.getFileManager().makeAbsolutePath(FilePathAbs);
       this->FilePath = clang::tooling::UnifiedPath(FilePathAbs).getCanonicalPath();
     }

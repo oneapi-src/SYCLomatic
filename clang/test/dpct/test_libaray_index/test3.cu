@@ -11,10 +11,10 @@ int foo () {
   float *x1;
   int *result;
 
-  //CHECK:int64_t* res_temp_ptr_ct5 = sycl::malloc_shared<int64_t>(1, q_ct1);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(handle->get_queue(), N, x1, N, res_temp_ptr_ct5, oneapi::mkl::index_base::one).wait();
-  //CHECK-NEXT:int res_temp_host_ct6 = (int)*res_temp_ptr_ct5;
-  //CHECK-NEXT:dpct::dpct_memcpy(result, &res_temp_host_ct6, sizeof(int));
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct5, q_ct1);
+  //CHECK:[&]() {
+  //CHECK-NEXT:dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), result);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(handle->get_queue(), N, x1, N, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
+  //CHECK-NEXT:return 0;
+  //CHECK-NEXT:}();
   cublasIsamax(handle, N, x1, N, result);
 }

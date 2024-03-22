@@ -55,9 +55,9 @@ int main() {
     dim3 gridDim((vectorSize + blockDim.x - 1) / blockDim.x); // Sufficient blocks to cover the vector size
  
     // Launch the CUDA kernel
-    //CHECK: dpct::experimental::gen_prolog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, VAR_SCHEMA_0, (long *)&d_a, VAR_SCHEMA_1, (long *)&d_b, VAR_SCHEMA_2, (long *)&d_result, VAR_SCHEMA_3, (long *)&vectorSize);
+    //CHECK: dpct::experimental::gen_prolog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, "d_a", d_a, "d_b", d_b, "d_result", d_result, "vectorSize", vectorSize);
     vectorAdd<<<gridDim, blockDim, 0, 0>>>(d_a, d_b, d_result, vectorSize);
-    //CHECK: dpct::experimental::gen_epilog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, VAR_SCHEMA_0, (long *)&d_a, VAR_SCHEMA_1, (long *)&d_b, VAR_SCHEMA_2, (long *)&d_result, VAR_SCHEMA_3, (long *)&vectorSize);
+    //CHECK: dpct::experimental::gen_epilog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, "d_a", d_a, "d_b", d_b, "d_result", d_result, "vectorSize", vectorSize);
  
     // Copy result from device to host
     cudaMemcpy(h_result, d_result, vectorSize * 12, cudaMemcpyDeviceToHost);

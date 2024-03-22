@@ -8,14 +8,14 @@
 #include <cub/cub.cuh>
 
 __device__ char1 operator+(char1 a, char1 b) {
-  // CHECK: return char(a + b);
+  // CHECK: return int8_t(a + b);
   return make_char1(a.x + b.x);
 }
 
 __global__ void test_make_char1() {
   typedef cub::BlockReduce<char1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: char res = sycl::reduce_over_group({{.+}}, char(1.), {{.+}});
+  // CHECK: int8_t res = sycl::reduce_over_group({{.+}}, int8_t(1.), {{.+}});
   char1 res = BlockReduce(smem_storage).Sum(make_char1(1.));
 }
 
@@ -104,14 +104,14 @@ __global__ void test_make_uchar4() {
 }
 
 __device__ short1 operator+(short1 a, short1 b) {
-  // CHECK: return short(a + b);
+  // CHECK: return int16_t(a + b);
   return make_short1(a.x + b.x);
 }
 
 __global__ void test_make_short1() {
   typedef cub::BlockReduce<short1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: short res = sycl::reduce_over_group({{.+}}, short(1.), {{.+}});
+  // CHECK: int16_t res = sycl::reduce_over_group({{.+}}, int16_t(1.), {{.+}});
   short1 res = BlockReduce(smem_storage).Sum(make_short1(1.));
 }
 
@@ -200,14 +200,14 @@ __global__ void test_make_ushort4() {
 }
 
 __device__ int1 operator+(int1 a, int1 b) {
-  // CHECK: return int(a + b);
+  // CHECK: return int32_t(a + b);
   return make_int1(a.x + b.x);
 }
 
 __global__ void test_make_int1() {
   typedef cub::BlockReduce<int1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: int res = sycl::reduce_over_group({{.+}}, int(1.), {{.+}});
+  // CHECK: int32_t res = sycl::reduce_over_group({{.+}}, int32_t(1.), {{.+}});
   int1 res = BlockReduce(smem_storage).Sum(make_int1(1.));
 }
 
@@ -296,14 +296,14 @@ __global__ void test_make_uint4() {
 }
 
 __device__ long1 operator+(long1 a, long1 b) {
-  // CHECK: return long(a + b);
+  // CHECK: return int64_t(a + b);
   return make_long1(a.x + b.x);
 }
 
 __global__ void test_make_long1() {
   typedef cub::BlockReduce<long1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: long res = sycl::reduce_over_group({{.+}}, long(1.), {{.+}});
+  // CHECK: int64_t res = sycl::reduce_over_group({{.+}}, int64_t(1.), {{.+}});
   long1 res = BlockReduce(smem_storage).Sum(make_long1(1.));
 }
 

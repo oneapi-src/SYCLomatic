@@ -90,7 +90,7 @@ jobs:
         run: |
           C:\7-Zip\7z.exe a c2s_obj.7z c2s.obj
       - name: Upload Build
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: SYCLomatic_Win_${{ github.sha }}
           path: c2s_obj.7z 
@@ -201,7 +201,7 @@ jobs:
         shell: cmd
       
       - name: Download Build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: SYCLomatic_Win_${{ github.sha }}
 

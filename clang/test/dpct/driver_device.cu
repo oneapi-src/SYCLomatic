@@ -33,9 +33,9 @@ void test() {
   cuDeviceGetAttribute(&result2,CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
   std::cout << " result2 " << result2 << std::endl;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT. It was migrated to get_mem_base_addr_align. You may need to adjust the value of get_mem_base_addr_align for the specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT. It was migrated to get_mem_base_addr_align_in_bytes. You may need to adjust the value of get_mem_base_addr_align_in_bytes for the specific device.
   // CHECK-NEXT: */
-  // CHECK: result3 = dpct::dev_mgr::instance().get_device(device).get_mem_base_addr_align();
+  // CHECK: result3 = dpct::dev_mgr::instance().get_device(device).get_mem_base_addr_align_in_bytes();
   cuDeviceGetAttribute(&result3,CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, device);
   std::cout << " result3 " << result3 << std::endl;
   // CHECK: /*

@@ -785,6 +785,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
               dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreParenImpCasts());
           if (!Callee)
             return false;
+          if (CE->getDirectCallee()->isTemplateInstantiation())
+            return true;
           if (!Callee->getQualifier())
             return false;
           if (Callee->getQualifier()->getKind() !=
@@ -818,8 +820,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       }
       addReplacement(ME->getMemberLoc(),
                      "get_" + ReplacementStr + TmplArg + "()");
-      requestFeature(MapNames::PropToGetFeatureMap.at(
-          ME->getMemberNameInfo().getAsString()));
     }
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
@@ -1681,6 +1681,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CallExpr)
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
@@ -1781,23 +1782,27 @@ void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
   IsRedeclareRequired = false;
 }
 
-
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
-  if (UO->getOpcode() == UO_Deref) {
-    IsRedeclareRequired = true;
-    return;
-  }
+  IsRedeclareRequired = true;
   if (UO->getOpcode() == UO_AddrOf) {
     IsAddrOf = true;
+    dispatch(UO->getSubExpr());
+    /// If subexpr is variable defined on device, remove operator '&'.
+    if (IsAddrOf && IsDefinedOnDevice) {
+      addReplacement(UO->getOperatorLoc(), "");
+    }
+    /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
+    IsDefinedOnDevice = false;
+    IsAddrOf = false;
+  } else {
+    dispatch(UO->getSubExpr());
   }
-  dispatch(UO->getSubExpr());
-  /// If subexpr is variable defined on device, remove operator '&'.
-  if (IsAddrOf && IsDefinedOnDevice) {
-    addReplacement(UO->getOperatorLoc(), "");
-  }
-  /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
-  IsDefinedOnDevice = false;
-  IsAddrOf = false;
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  IsRedeclareRequired = true;
+  dispatch(BO->getLHS());
+  dispatch(BO->getRHS());
 }
 
 void KernelArgumentAnalysis::analyze(const Expr *Expression) {

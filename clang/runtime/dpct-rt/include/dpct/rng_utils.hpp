@@ -293,6 +293,11 @@ public:
   virtual void set_direction_numbers(
       const std::vector<std::uint32_t> &direction_numbers) = 0;
 
+  /// Set the engine index of host rng_generator. Only MT2203 engine
+  /// supports this method.
+  /// \param engine_idx The engine index.
+  virtual void set_engine_idx(std::uint32_t engine_idx) = 0;
+
 protected:
   /// Construct the host rng_generator.
   /// \param queue The queue where the generator should be executed.
@@ -302,6 +307,7 @@ protected:
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
   std::vector<std::uint32_t> _direction_numbers;
+  std::uint32_t _engine_idx{0};
 };
 
 /// The random number generator on host.
@@ -360,6 +366,25 @@ public:
       _engine = oneapi::mkl::rng::sobol(*_queue, _direction_numbers);
     } else {
       throw std::runtime_error("Only Sobol engine supports this method.");
+    }
+#endif
+  }
+
+  /// Set the engine index of MT2203 host rng_generator.
+  /// \param engine_idx The user-defined engine index.
+  void set_engine_idx(std::uint32_t engine_idx) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
+    if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mt2203>) {
+      if (engine_idx == _engine_idx) {
+        return;
+      }
+      _engine_idx = engine_idx;
+      _engine = oneapi::mkl::rng::mt2203(*_queue, _seed, _engine_idx);
+    } else {
+      throw std::runtime_error("Only MT2203 engine supports this method.");
     }
 #endif
   }

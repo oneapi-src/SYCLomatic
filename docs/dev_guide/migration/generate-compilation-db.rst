@@ -132,6 +132,8 @@ Setuptools is a package development library in Python for facilitating packaging
 
        intercept-build -–parse-build-log build.log
 
+.. _gen_db_other_sys:
+
 Generate a Compilation Database with Other Build Systems
 --------------------------------------------------------
 

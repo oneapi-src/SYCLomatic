@@ -1,10 +1,10 @@
 dpct_helper_compile_sycl_code(cubinfile_1 ${cufile})
 dpct_helper_compile_sycl_code( cubinfile_2 
-${cufile}
+  ${cufile}
 )
 
 dpct_helper_compile_sycl_code(cubinfiles_1 file1.dp.cpp file2.dp.cpp)
 dpct_helper_compile_sycl_code(cubinfiles_2 file1.dp.cpp 
-file2.dp.cpp)
+  file2.dp.cpp)
 
 dpct_helper_compile_sycl_code(cubinfile_1 file1.dp.cpp)

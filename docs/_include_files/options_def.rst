@@ -718,7 +718,9 @@ Sets the Unified Shared Memory (USM) level to use in source code generation:
 
 .. _desc-vcxprojfile:
 
-The file path of ``vcxproj``.
+The directory path for the C++ project file ``vcxproj`` of the Visual Studio
+project to migrate. Paths and build options described in the project file are
+used to guide the migration.
 
 .. _end-vcxprojfile:
 
@@ -742,9 +744,14 @@ Shows the version of the tool.
 
 .. _desc-compilation-db:
 
-The directory path for the compilation database (`compile_commands.json`). When no
-path is specified, a search for `compile_commands.json` is attempted through all
-parent directories of the first input source file. Same as ``-p``.
+The directory path for the compilation database (compile_commands.json) for
+the files to be migrated. Paths and build options described in the project
+file are used to guide the migration.
+
+When no path is specified, a search for compile_commands.json is attempted
+through all parent directories of the first input source file.
+
+Same as -p.
 
 .. _end-compilation-db:
 

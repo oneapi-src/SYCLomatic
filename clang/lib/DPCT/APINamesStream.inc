@@ -23,9 +23,10 @@ CONDITIONAL_FACTORY_ENTRY(
         Diagnostics::FUNC_CALL_REMOVED_0,
         std::string("cuStreamAttachMemAsync"), getRemovedAPIWarningMessage("cuStreamAttachMemAsync")))
 
-ASSIGNABLE_FACTORY(
-    HEADER_INSERT_FACTORY(HeaderType::HT_Future,
-    CALL_FACTORY_ENTRY(
-        "cuStreamAddCallback",
-        CALL("std::async", LAMBDA(true, MEMBER_CALL(ARG(0), true, "wait"),
-             CALL(ARG(1), ARG(0), ARG("0"), ARG(2)))))))
+ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
+    HeaderType::HT_Future,
+    CALL_FACTORY_ENTRY("cuStreamAddCallback",
+                       CALL("std::async",
+                            LAMBDA(true, false,
+                                   MEMBER_CALL(ARG(0), true, "wait"),
+                                   CALL(ARG(1), ARG(0), ARG("0"), ARG(2)))))))

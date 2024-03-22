@@ -195,3 +195,85 @@ void run_foo4(dim3 c, dim3 d) {
    foo_kernel3<<<c, 1>>>(g_a);
 }
 
+template <class T> struct A {
+  T *ptr;
+  T *operator~() { return ptr; }
+};
+
+template <class T> __global__ void foo_kernel4(T *t) {}
+
+template <class T> void run_foo5(A<T> &a) {
+  //CHECK:dpct::get_out_of_order_queue().submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    auto a_ct0 = ~a;
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        foo_kernel4(a_ct0);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  foo_kernel4<<<1, 1>>>(~a);
+}
+
+__global__ void foo_kernel5(unsigned int ui) {}
+
+void run_foo6() {
+  dim3 grid;
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    unsigned int grid_x_grid_y_ct0 = grid[2] * grid[1];
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        foo_kernel5(grid_x_grid_y_ct0);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  foo_kernel5<<<1, 1>>>(grid.x * grid.y);
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    unsigned int grid_x_ct0 = ++grid[2];
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        foo_kernel5(grid_x_ct0);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  foo_kernel5<<<1, 1>>>(++grid.x);
+}
+
+template <typename T>
+__global__ void foo_kernel6(T *a, const T *b, const T *c, const T *d,
+                            const T *e, const int f, const int g, const int h) {
+  const int index = threadIdx.x;
+}
+
+template <typename T>
+__global__ void foo_kernel6(T *a, const T *b, const T *c, const T *d,
+                            const int f, const int g, const int h) {
+  const int index = threadIdx.x;
+}
+
+template <typename T>
+void run_foo7(T *a, const T *b, const T *c, const T *d, const T *e, const int f,
+              const int g, const int h, cudaStream_t stream) {
+  dim3 grid(1);
+  dim3 block(1);
+  if (a == e) {
+    //CHECK:cgh.parallel_for(
+    //CHECK-NEXT:  sycl::nd_range<3>(grid * block, block), 
+    //CHECK-NEXT:  [=](sycl::nd_item<3> item_ct1) {
+    //CHECK-NEXT:    foo_kernel6(a_acc_ct0.get_raw_pointer(), b_acc_ct1.get_raw_pointer(), c_acc_ct2.get_raw_pointer(), d_acc_ct3.get_raw_pointer(), f, g, h, item_ct1);
+    //CHECK-NEXT:  });
+    foo_kernel6<<<grid, block, 0, stream>>>(a, b, c, d, f, g, h);
+  } else {
+    //CHECK:cgh.parallel_for(
+    //CHECK-NEXT:  sycl::nd_range<3>(grid * block, block), 
+    //CHECK-NEXT:  [=](sycl::nd_item<3> item_ct1) {
+    //CHECK-NEXT:    foo_kernel6(a_acc_ct0.get_raw_pointer(), b_acc_ct1.get_raw_pointer(), c_acc_ct2.get_raw_pointer(), d_acc_ct3.get_raw_pointer(), e_acc_ct4.get_raw_pointer(), f, g, h, item_ct1);
+    //CHECK-NEXT:  });
+    foo_kernel6<<<grid, block, 0, stream>>>(a, b, c, d, e, f, g, h);
+  }
+}

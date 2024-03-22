@@ -17,6 +17,50 @@ section provides:
   * :ref:`help_opt`
 * A list of :ref:`intercept-build options <intercept_opt>`
 
+Auto-Complete Command Line Options
+----------------------------------
+
+The tool supports auto-completion of command line options. You can auto-complete
+the option name and option value (for enumeration options only) by using <tab>.
+
+Enable this feature with the following command:
+
+.. include:: /_include_files/enable_opt_auto_comp_dgr.rst
+
+.. note::
+
+   Auto-completion of command line options is only supported for Bash on Linux*.
+
+   The auto-complete feature will not work if <tab> is used after <space>.
+
+
+The following examples show how to use the auto-complete feature:
+
+* Show all tool options:
+
+  .. code-block::
+
+     dpct --<tab><tab>
+
+* Auto-complete the command to ``dpct --version``
+
+  .. code-block::
+
+     dpct --ver<tab>
+
+* Show all available values of the ``--use-experimental-features`` option:
+
+  .. code-block::
+
+     dpct --use-experimental-features=<tab><tab>
+
+* Auto-complete the command to ``dpct --use-experimental-features=logical-group,matrix``:
+
+  .. code-block::
+
+     dpct --use-experimental-features=logical-group,mat<tab>
+
+
 .. toctree::
    :hidden:
 
