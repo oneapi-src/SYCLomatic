@@ -936,46 +936,6 @@ public:
       }
       PrefixInsertStr = Prefix + PrefixInsertStr;
       SuffixInsertStr = Suffix + SuffixInsertStr;
-    } else if (MapNames::MaySyncBLASFunc.find(FuncName) !=
-               MapNames::MaySyncBLASFunc.end()) {
-      auto MaySyncI = MapNames::MaySyncBLASFunc.find(FuncName);
-      int ArgIndex = MaySyncI->second.second;
-      std::string Type = MaySyncI->second.first;
-      ExprAnalysis EA(CE->getArg(ArgIndex));
-      std::string ResultTempPtr =
-          "res_temp_ptr_ct" +
-          std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-
-      std::string OriginType;
-      if (Type == "std::complex<float>") {
-        OriginType = MapNames::getClNamespace() + "float2";
-        CallExprArguReplVec[ArgIndex] =
-            "(std::complex<float>*)" + ResultTempPtr;
-      } else if (Type == "std::complex<double>") {
-        OriginType = MapNames::getClNamespace() + "double2";
-        CallExprArguReplVec[ArgIndex] =
-            "(std::complex<double>*)" + ResultTempPtr;
-      } else {
-        OriginType = Type;
-        CallExprArguReplVec[ArgIndex] = ResultTempPtr;
-      }
-
-      std::string IfStmtStr = getIfStmtStr(EA.getReplacedString());
-
-      requestFeature(HelperFeatureEnum::device_ext);
-      PrefixInsertStr = OriginType + "* " + ResultTempPtr + " = " +
-                        EA.getReplacedString() + ";" + getNL() + IndentStr +
-                        IfStmtStr + getNL() + IndentStr + "  " + ResultTempPtr +
-                        " = " + MapNames::getClNamespace() + "malloc_shared<" +
-                        OriginType + ">(1, " + DefaultQueue + ");" + getNL() +
-                        IndentStr + "}" + getNL() + IndentStr + PrefixInsertStr;
-      SuffixInsertStr = getNL() + IndentStr + IfStmtStr + getNL() + IndentStr +
-                        "  " + CallExprArguReplVec[0] + ".wait();" + getNL() +
-                        IndentStr + "  " + getDrefName(CE->getArg(ArgIndex)) +
-                        " = *" + ResultTempPtr + ";" + getNL() + IndentStr +
-                        "  " + MapNames::getClNamespace() + "free(" +
-                        ResultTempPtr + ", " + DefaultQueue + ");" + getNL() +
-                        IndentStr + "}" + SuffixInsertStr;
     }
   }
 
@@ -1041,13 +1001,8 @@ public:
       PrefixInsertStr = PrefixInsertStr + IfStmtStr;
     };
 
-    if (MapNames::MaySyncBLASFunc.find(FuncName) !=
-        MapNames::MaySyncBLASFunc.end()) {
-      auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
-      PointerStr = ExprAnalysis::ref(CE->getArg(MaySyncAPIIter->second.second));
-      assembleIfStmt();
-    } else if (MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName) !=
-               MapNames::MaySyncBLASFuncWithMultiArgs.end()) {
+    if (MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName) !=
+        MapNames::MaySyncBLASFuncWithMultiArgs.end()) {
       auto MaySyncAPIWithMultiArgsIter =
           MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
       PointerStr = ExprAnalysis::ref(

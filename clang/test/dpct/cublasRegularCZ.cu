@@ -73,49 +73,41 @@ int main(){
   status = cublasIzamin(handle, n, x_z, incx, result);
   cublasIzamin(handle, n, x_z, incx, result);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto result_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_f)) {
-  // CHECK-NEXT:   result_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_f);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_f, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, result_f_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto result_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_f)) {
-  // CHECK-NEXT:   result_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_f);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_f, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, result_f_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_f);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_f);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasScasum(handle, n, x_c, incx, result_f);
   cublasScasum(handle, n, x_c, incx, result_f);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto result_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_d)) {
-  // CHECK-NEXT:   result_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_d);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_d, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, result_d_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto result_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_d)) {
-  // CHECK-NEXT:   result_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_d);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_d, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, result_d_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_d);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_d);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasDzasum(handle, n, x_z, incx, result_d);
   cublasDzasum(handle, n, x_z, incx, result_d);
 
@@ -128,204 +120,140 @@ int main(){
   cuComplex* y_c = 0;
   cuDoubleComplex* y_z = 0;
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::axpy(handle->get_queue(), n, dpct::get_value(alpha_c, handle->get_queue()), x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::axpy(handle->get_queue(), n, dpct::get_value(alpha_c, handle->get_queue()), x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::axpy(handle->get_queue(), n, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::axpy(handle->get_queue(), n, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy);
   status = cublasCaxpy(handle, n, alpha_c, x_c, incx, y_c, incy);
   cublasCaxpy(handle, n, alpha_c, x_c, incx, y_c, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::axpy(handle->get_queue(), n, dpct::get_value(alpha_z, handle->get_queue()), x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::axpy(handle->get_queue(), n, dpct::get_value(alpha_z, handle->get_queue()), x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::axpy(handle->get_queue(), n, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::axpy(handle->get_queue(), n, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy);
   status = cublasZaxpy(handle, n, alpha_z, x_z, incx, y_z, incy);
   cublasZaxpy(handle, n, alpha_z, x_z, incx, y_z, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::copy(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::copy(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::copy(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::copy(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy);
   status = cublasCcopy(handle, n, x_c, incx, y_c, incy);
   cublasCcopy(handle, n, x_c, incx, y_c, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::copy(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::copy(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::copy(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::copy(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy);
   status = cublasZcopy(handle, n, x_z, incx, y_z, incy);
   cublasZcopy(handle, n, x_z, incx, y_z, incy);
 
   cuComplex* result_c = 0;
   cuDoubleComplex* result_z = 0;
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: auto result_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_c)) {
-  // CHECK-NEXT:   result_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_c);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)result_c, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy, result_c_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: auto result_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_c)) {
-  // CHECK-NEXT:   result_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_c);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)result_c, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy, result_c_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), result_c);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), result_c);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasCdotu(handle, n, x_c, incx, y_c, incy, result_c);
   cublasCdotu(handle, n, x_c, incx, y_c, incy, result_c);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: auto result_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_c)) {
-  // CHECK-NEXT:   result_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_c);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)result_c, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy, result_c_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: auto result_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_c)) {
-  // CHECK-NEXT:   result_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_c);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)result_c, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy, result_c_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), result_c);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), result_c);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasCdotc(handle, n, x_c, incx, y_c, incy, result_c);
   cublasCdotc(handle, n, x_c, incx, y_c, incy, result_c);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: auto result_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_z)) {
-  // CHECK-NEXT:   result_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_z);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)result_z, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy, result_z_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: auto result_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_z)) {
-  // CHECK-NEXT:   result_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_z);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)result_z, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy, result_z_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), result_z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), result_z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasZdotu(handle, n, x_z, incx, y_z, incy, result_z);
   cublasZdotu(handle, n, x_z, incx, y_z, incy, result_z);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: auto result_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_z)) {
-  // CHECK-NEXT:   result_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_z);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)result_z, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy, result_z_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: auto result_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_z)) {
-  // CHECK-NEXT:   result_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_z);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)result_z, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy, result_z_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), result_z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), result_z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasZdotc(handle, n, x_z, incx, y_z, incy, result_z);
   cublasZdotc(handle, n, x_z, incx, y_z, incy, result_z);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto result_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_f)) {
-  // CHECK-NEXT:   result_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_f);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_f, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, result_f_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto result_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_f)) {
-  // CHECK-NEXT:   result_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_f);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_f, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, result_f_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_f);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_f);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasScnrm2(handle, n, x_c, incx, result_f);
   cublasScnrm2(handle, n, x_c, incx, result_f);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto result_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_d)) {
-  // CHECK-NEXT:   result_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_d);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_d, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, result_d_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto result_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(result_d)) {
-  // CHECK-NEXT:   result_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_d);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   result_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_d, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, result_d_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_d);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_d);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasDznrm2(handle, n, x_z, incx, result_d);
   cublasDznrm2(handle, n, x_z, incx, result_d);
 
@@ -452,73 +380,33 @@ int main(){
   status = cublasZrotg(handle, x_z, y_z, c_d, s_z);
   cublasZrotg(handle, x_z, y_z, c_d, s_z);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_c, handle->get_queue()), x_c_buf_ct{{[0-9]+}}, incx));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_c, handle->get_queue()), x_c_buf_ct{{[0-9]+}}, incx);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx);
   status = cublasCscal(handle, n, alpha_c, x_c, incx);
   cublasCscal(handle, n, alpha_c, x_c, incx);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_z, handle->get_queue()), x_z_buf_ct{{[0-9]+}}, incx));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_z, handle->get_queue()), x_z_buf_ct{{[0-9]+}}, incx);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx);
   status = cublasZscal(handle, n, alpha_z, x_z, incx);
   cublasZscal(handle, n, alpha_z, x_z, incx);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_f, handle->get_queue()), x_c_buf_ct{{[0-9]+}}, incx));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_f, handle->get_queue()), x_c_buf_ct{{[0-9]+}}, incx);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_f, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_f, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx);
   status = cublasCsscal(handle, n, alpha_f, x_c, incx);
   cublasCsscal(handle, n, alpha_f, x_c, incx);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_d, handle->get_queue()), x_z_buf_ct{{[0-9]+}}, incx));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_d, handle->get_queue()), x_z_buf_ct{{[0-9]+}}, incx);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::scal(handle->get_queue(), n, dpct::get_value(alpha_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx);
   status = cublasZdscal(handle, n, alpha_d, x_z, incx);
   cublasZdscal(handle, n, alpha_d, x_z, incx);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::swap(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::swap(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::swap(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::swap(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy);
   status = cublasCswap(handle, n, x_c, incx, y_c, incy);
   cublasCswap(handle, n, x_c, incx, y_c, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::swap(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::swap(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::swap(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::swap(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy);
   status = cublasZswap(handle, n, x_z, incx, y_z, incy);
   cublasZswap(handle, n, x_z, incx, y_z, incy);
 
