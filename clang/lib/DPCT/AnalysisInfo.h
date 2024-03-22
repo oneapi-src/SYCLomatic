@@ -1232,6 +1232,9 @@ public:
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
+  static bool useQueueEmpty() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty);
+  }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(
         DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
@@ -2270,7 +2273,7 @@ protected:
   unsigned getBegin() { return BeginLoc; }
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
-  void buildCalleeInfo(const Expr *Callee);
+  void buildCalleeInfo(const Expr *Callee, std::optional<unsigned int> NumArgs);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
 
 private:
@@ -2317,7 +2320,8 @@ public:
                      const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
                      const FunctionDecl *Specialization);
   static std::shared_ptr<DeviceFunctionInfo>
-  LinkUnresolved(const UnresolvedLookupExpr *ULE);
+  LinkUnresolved(const UnresolvedLookupExpr *ULE,
+                 std::optional<unsigned int> NumArgs);
   static std::shared_ptr<DeviceFunctionInfo>
   LinkRedecls(const FunctionDecl *FD);
   static std::shared_ptr<DeviceFunctionInfo>

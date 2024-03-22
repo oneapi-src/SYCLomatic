@@ -123,22 +123,22 @@
 // cublasIcamin-NEXT:   cublasIcamin(handle /*cublasHandle_t*/, n /*int*/, x /*const cuComplex **/,
 // cublasIcamin-NEXT:                incx /*int*/, res /*int **/);
 // cublasIcamin-NEXT: Is migrated to (with the option --no-dry-pattern):
-// cublasIcamin-NEXT:   int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_in_order_queue());
-// cublasIcamin-NEXT:   oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<float>*)x, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
-// cublasIcamin-NEXT:   int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-// cublasIcamin-NEXT:   dpct::dpct_memcpy(res, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-// cublasIcamin-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
+// cublasIcamin-NEXT:   [&]() {
+// cublasIcamin-NEXT:   dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), res);
+// cublasIcamin-NEXT:   oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<float>*)x, incx, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
+// cublasIcamin-NEXT:   return 0;
+// cublasIcamin-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasIcamax | FileCheck %s -check-prefix=cublasIcamax
 // cublasIcamax: CUDA API:
 // cublasIcamax-NEXT:   cublasIcamax(handle /*cublasHandle_t*/, n /*int*/, x /*const cuComplex **/,
 // cublasIcamax-NEXT:                incx /*int*/, res /*int **/);
 // cublasIcamax-NEXT: Is migrated to (with the option --no-dry-pattern):
-// cublasIcamax-NEXT:   int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_in_order_queue());
-// cublasIcamax-NEXT:   oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, (std::complex<float>*)x, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
-// cublasIcamax-NEXT:   int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-// cublasIcamax-NEXT:   dpct::dpct_memcpy(res, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-// cublasIcamax-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
+// cublasIcamax-NEXT:   [&]() {
+// cublasIcamax-NEXT:   dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), res);
+// cublasIcamax-NEXT:   oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, (std::complex<float>*)x, incx, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
+// cublasIcamax-NEXT:   return 0;
+// cublasIcamax-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDdgmm | FileCheck %s -check-prefix=cublasDdgmm
 // cublasDdgmm: CUDA API:
