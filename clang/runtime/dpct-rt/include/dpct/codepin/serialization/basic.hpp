@@ -42,16 +42,22 @@ namespace detail {
 static std::string json_key = "";
 class json_format {
 private:
+  std::string json_str;
   const char *begin = nullptr;
   const char *cur_p = nullptr;
   const char *end = nullptr;
   unsigned ident_size = 0;
+  bool generate_formatted_json(std::string &formatted_json);
 
 public:
   json_format(const std::string &json)
-      : begin(json.c_str()), cur_p(json.c_str()),
-        end(json.c_str() + json.size()) {}
-  bool generate_formatted_json(std::string &formatted_json);
+      : json_str(json), begin(json_str.c_str()), cur_p(json_str.c_str()),
+        end(json_str.c_str() + json_str.size()) {}
+  std::string get_formatted_json() {
+    std::string formatted_json = "";
+    generate_formatted_json(formatted_json);
+    return formatted_json;
+  }
   bool parse_str(std::string &ret);
   bool parse_num(char first, std::string &out);
   void ignore_space() {
