@@ -6,7 +6,7 @@
 template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   int i;
   float j, k, l, m;
-  // CHECK: sycl::ext::oneapi::experimental::sample_image<T>(tex, (float)i);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image<T>(tex, float(i));
   tex1Dfetch<T>(tex, i);
   // CHECK: sycl::ext::oneapi::experimental::sample_image<sycl::short2>(tex, float(i));
   tex1D<short2>(tex, i);
@@ -32,6 +32,23 @@ template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   tex3DLod<T>(tex, j, k, m, l);
   // CHECK: i = sycl::ext::oneapi::experimental::sample_mipmap<int>(tex, sycl::float3(j, k, m), l);
   tex3DLod(&i, tex, j, k, m, l);
+#ifndef BUILD_TEST
+  T t;
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, float(i));
+  tex1Dfetch(&t, tex, i);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, float(i));
+  tex1D(&t, tex, i);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, sycl::float2(i, j));
+  tex2D(&t, tex, i, j);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, sycl::float3(i, j, k));
+  tex3D(&t, tex, i, j, k);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_mipmap<dpct_placeholder/*Fix the type mannually*/>(tex, float(i), l);
+  tex1DLod(&t, tex, i, l);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_mipmap<dpct_placeholder/*Fix the type mannually*/>(tex, sycl::float2(i, j), l);
+  tex2DLod(&t, tex, i, j, l);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_mipmap<dpct_placeholder/*Fix the type mannually*/>(tex, sycl::float3(i, j, k), l);
+  tex3DLod(&t, tex, i, j, k, l);
+#endif
 }
 
 int main() {

@@ -38,9 +38,10 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   }
 
   template <typename VecType>
-  std::shared_ptr<CallExprRewriter> createbindlessRewriterNormal(
-      const CallExpr *C, bool RetAssign, unsigned SourceIdx,
-      const TemplateArgumentInfo &TAI, const std::string &VecTypeName) const {
+  std::shared_ptr<CallExprRewriter>
+  createbindlessRewriterNormal(const CallExpr *C, bool RetAssign,
+                               const TemplateArgumentInfo &TAI,
+                               const std::string &VecTypeName) const {
     const static std::string FuncName =
         MapNames::getClNamespace() + "ext::oneapi::experimental::sample_image";
     using FuncNamePrinter =
@@ -53,20 +54,19 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(FuncName, {TAI}),
-              std::make_pair(C, C->getArg(SourceIdx)),
+              FuncNamePrinter(FuncName, {TAI}), std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...)));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
         C, Source, FuncNamePrinter(FuncName, {TAI}),
-        std::make_pair(C, C->getArg(SourceIdx)),
+        std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...));
   }
 
   template <typename VecType>
   std::shared_ptr<CallExprRewriter>
   createbindlessRewriterLod(const CallExpr *C, bool RetAssign,
-                            unsigned SourceIdx, const TemplateArgumentInfo &TAI,
+                            const TemplateArgumentInfo &TAI,
                             const std::string &VecTypeName) const {
     const static std::string FuncName =
         MapNames::getClNamespace() + "ext::oneapi::experimental::sample_mipmap";
@@ -81,20 +81,19 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(FuncName, {TAI}),
-              std::make_pair(C, C->getArg(SourceIdx)),
+              FuncNamePrinter(FuncName, {TAI}), std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...),
               std::make_pair(C, C->getArg(C->getNumArgs() - 1))));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
         C, Source, FuncNamePrinter(FuncName, {TAI}),
-        std::make_pair(C, C->getArg(SourceIdx)),
+        std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...),
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
   }
 
   std::shared_ptr<CallExprRewriter>
-  createbindlessRewriter(const CallExpr *C, bool RetAssign, unsigned SourceIdx,
+  createbindlessRewriter(const CallExpr *C, bool RetAssign,
                          QualType TargetType) const {
     TemplateArgumentInfo TAI;
     auto TAL = getTemplateArgsList(C);
@@ -105,6 +104,11 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
             ET->desugar().getDesugaredType(DpctGlobalInfo::getContext());
       }
       TAI.setAsType(TargetType);
+      if (TargetType->isDependentType()) {
+        // Texture read APIs without template arg must have the first argument
+        // as the return value.
+        RetAssign = true;
+      }
     } else {
       TAI = TAL[0];
     }
@@ -116,9 +120,8 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
         CallExprPrinter<std::string,
                         decltype(std::make_pair(C, C->getArg(Idx)))...>;
     if ((TexType & 0xf0) == 0x10)
-      return createbindlessRewriterLod<VecType>(C, RetAssign, SourceIdx, TAI,
-                                                VecTypeName);
-    return createbindlessRewriterNormal<VecType>(C, RetAssign, SourceIdx, TAI,
+      return createbindlessRewriterLod<VecType>(C, RetAssign, TAI, VecTypeName);
+    return createbindlessRewriterNormal<VecType>(C, RetAssign, TAI,
                                                  VecTypeName);
   }
 
@@ -144,7 +147,7 @@ public:
       }
     }
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      return createbindlessRewriter(Call, RetAssign, SourceIdx, TargetType);
+      return createbindlessRewriter(Call, RetAssign, TargetType);
     }
     SourceExpr = SourceExpr->IgnoreImpCasts();
     if (auto FD = DpctGlobalInfo::getParentFunction(Call)) {
