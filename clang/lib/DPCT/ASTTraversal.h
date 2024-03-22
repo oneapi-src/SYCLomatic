@@ -1347,6 +1347,12 @@ class MemVarAnalysisRule : public NamedMigrationRule<MemVarAnalysisRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class MemVarMigrationRule : public NamedMigrationRule<MemVarMigrationRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   void processTypeDeclaredLocal(const VarDecl *MemVar,

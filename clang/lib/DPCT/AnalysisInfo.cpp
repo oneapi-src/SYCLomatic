@@ -2471,6 +2471,7 @@ std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
 std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
 IncludeMapSetTy DpctGlobalInfo::IncludeMapSet;
+std::unordered_set<std::string> DpctGlobalInfo::UseDeviceGlobalVarSet;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
@@ -2912,7 +2913,7 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
     if (isShared())
       return "";
     if ((getAttr() == MemVarInfo::VarAttrKind::Constant) &&
-        !isUseHelperFunc()) {
+        !isUseHelperFunc() && !isUseDeviceGlobal()) {
       std::string Dims;
       const static std::string NullString;
       for (auto &Dim : getType()->getRange()) {
@@ -3112,6 +3113,10 @@ std::string MemVarInfo::getMemoryType() {
     requestFeature(HelperFeatureEnum::device_ext);
     static std::string DeviceMemory =
         MapNames::getDpctNamespace() + "global_memory";
+    if (isUseDeviceGlobal()) {
+      DeviceMemory = MapNames::getClNamespace() +
+                     "ext::oneapi::experimental::device_global";
+    }
     return getMemoryType(DeviceMemory, getType());
   }
   case clang::dpct::MemVarInfo::Constant: {
@@ -3119,7 +3124,12 @@ std::string MemVarInfo::getMemoryType() {
     std::string ConstantMemory =
         MapNames::getDpctNamespace() + "constant_memory";
     if (!isUseHelperFunc()) {
-      ConstantMemory = "const ";
+      if (isUseDeviceGlobal()) {
+        ConstantMemory = MapNames::getClNamespace() +
+                         "ext::oneapi::experimental::device_global";
+      } else {
+        ConstantMemory = "const ";
+      }
     }
     return getMemoryType(ConstantMemory, getType());
   }
@@ -3151,6 +3161,16 @@ std::string MemVarInfo::getMemoryType(const std::string &MemoryType,
   if (isUseHelperFunc()) {
     return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
                        VarType->getDimension(), ">");
+  } else if (isUseDeviceGlobal()) {
+    if (VarType->isArray()) {
+      std::string Dims;
+      for (auto &D : VarType->getRange()) {
+        Dims = Dims + "[" + D.getSize() + "]";
+      }
+      return buildString(MemoryType, "<", VarType->getBaseName(), Dims, ">");
+    } else {
+      return buildString(MemoryType, "<", VarType->getBaseName(), ">");
+    }
   } else {
     return buildString(MemoryType, VarType->getBaseName());
   }
@@ -3165,6 +3185,8 @@ std::string MemVarInfo::getInitArguments(const std::string &MemSize,
                          getType()->getRangeArgument(MemSize, true),
                          ", " + InitList, ")");
     return buildString("(", InitList, ")");
+  } else if (isUseDeviceGlobal()) {
+    return InitForDeviceGlobal;
   } else {
     return InitList.empty() ? "" : buildString(" = ", InitList);
   }

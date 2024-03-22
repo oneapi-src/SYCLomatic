@@ -8975,6 +8975,34 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     };
     const auto *Parent = getParentStmt(MemVarRef);
     bool HasTypeCasted = false;
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    std::string Key =
+        getHashStrFromLoc(SM.getExpansionLoc(Decl->getBeginLoc()));
+    auto Set = DpctGlobalInfo::getUseDeviceGlobalVarSet();
+    if (Set.find(Key) == Set.end()) {
+      if ((Decl->hasAttr<CUDADeviceAttr>() ||
+           Decl->hasAttr<CUDAConstantAttr>()) &&
+          !Decl->hasAttr<HIPManagedAttr>() &&
+          DpctGlobalInfo::useExpDeviceGlobal() &&
+          !IsVarUsedByRuntimeSymbolAPI(Decl)) {
+        auto Info = Global.findMemVarInfo(Decl);
+        if (Decl->hasInit()) {
+          auto InitStr = getInitForDeviceGlobal(Decl);
+          if (!InitStr.empty()) {
+            report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
+            Info->setInitForDeviceGlobal(InitStr);
+          }
+        }
+        Info->setUseHelperFuncFlag(false);
+        Info->setUseDeviceGlobalFlag(true);
+      }
+      Set.insert(Key);
+    }
+    if (!Decl->hasAttr<CUDASharedAttr>() &&
+        Global.findMemVarInfo(Decl)->isUseDeviceGlobal()) {
+      emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get()"));
+      return;
+    }
     // 1. Handle assigning a 2 or more dimensions array pointer to a variable.
     if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
       if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
@@ -9087,18 +9115,6 @@ void ConstantMemVarMigrationRule::registerMatcher(MatchFinder &MF) {
 void ConstantMemVarMigrationRule::runRule(
     const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
-  auto IsVarUsedByRuntimeSymbolAPI = [&](const VarDecl *VarD) {
-    auto &VarUsedByRuntimeSymbolAPISet =
-        DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
-    auto LocInfo = DpctGlobalInfo::getLocInfo(VarD->getBeginLoc());
-    std::string Key = LocInfo.first.getCanonicalPath().str() +
-                      std::to_string(LocInfo.second) + VarD->getNameAsString();
-    if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
-        VarUsedByRuntimeSymbolAPISet.end()) {
-      return false;
-    }
-    return true;
-  };
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
       return;
@@ -9472,31 +9488,16 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
 
 REGISTER_RULE(ConstantMemVarMigrationRule, PassKind::PK_Migration)
 
-/// __constant__/__shared__/__device__ var information collection
-void MemVarAnalysisRule::registerMatcher(MatchFinder &MF) {
+void MemVarMigrationRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DeclMatcherWithoutConstant =
       varDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAShared),
                     hasAttr(attr::HIPManaged)),
               unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
                                 "warpSize")));
-  auto DeclMatcherWithConstant =
-      varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
-                    hasAttr(attr::CUDAShared), hasAttr(attr::HIPManaged)),
-              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
-                                "warpSize")));
   MF.addMatcher(DeclMatcherWithoutConstant.bind("var"), this);
-  MF.addMatcher(
-      declRefExpr(anyOf(hasParent(implicitCastExpr(
-                                      unless(hasParent(arraySubscriptExpr())))
-                                      .bind("impl")),
-                        anything()),
-                  to(DeclMatcherWithConstant.bind("decl")),
-                  hasAncestor(functionDecl().bind("func")))
-          .bind("used"),
-      this);
 }
 
-void MemVarAnalysisRule::processTypeDeclaredLocal(
+void MemVarMigrationRule::processTypeDeclaredLocal(
     const VarDecl *MemVar, std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto DS = Info->getDeclStmtOfVarType();
@@ -9558,13 +9559,14 @@ void MemVarAnalysisRule::processTypeDeclaredLocal(
   }
 }
 
-void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
-  std::string CanonicalType;
+void MemVarMigrationRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
       return;
     }
-    CanonicalType = MemVar->getType().getCanonicalType().getAsString();
+    std::string CanonicalType =
+        MemVar->getType().getCanonicalType().getAsString();
     if (CanonicalType.find("block_tile_memory") != std::string::npos) {
       emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
       return;
@@ -9586,6 +9588,79 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
       }
       emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
           MemVar, Info->getDeclarationReplacement(MemVar)));
+    }
+    return;
+  }
+}
+
+REGISTER_RULE(MemVarMigrationRule, PassKind::PK_Migration)
+
+/// __constant__/__shared__/__device__ var information collection
+void MemVarAnalysisRule::registerMatcher(MatchFinder &MF) {
+  auto DeclMatcher =
+      varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
+                    hasAttr(attr::CUDAShared), hasAttr(attr::HIPManaged)),
+              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
+                                "warpSize")));
+  MF.addMatcher(DeclMatcher.bind("var"), this);
+  MF.addMatcher(
+      declRefExpr(anyOf(hasParent(implicitCastExpr(
+                                      unless(hasParent(arraySubscriptExpr())))
+                                      .bind("impl")),
+                        anything()),
+                  to(DeclMatcher.bind("decl")),
+                  hasAncestor(functionDecl().bind("func")))
+          .bind("used"),
+      this);
+}
+
+void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
+    if (isCubVar(MemVar)) {
+      return;
+    }
+    std::string CanonicalType =
+        MemVar->getType().getCanonicalType().getAsString();
+    if (CanonicalType.find("block_tile_memory") != std::string::npos) {
+      return;
+    }
+    auto FD = DpctGlobalInfo::getParentFunction(MemVar);
+    if (DpctGlobalInfo::useGroupLocalMemory() &&
+        !DpctGlobalInfo::useFreeQueries() &&
+        MemVar->hasAttr<CUDASharedAttr>()) {
+      if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD)) {
+        DFI->setItem();
+      }
+    }
+    auto Info = MemVarInfo::buildMemVarInfo(MemVar);
+    if (Info->isTypeDeclaredLocal() && !Info->isAnonymousType()) {
+      if (auto DS = Info->getDeclStmtOfVarType()) {
+        Info->setLocalTypeName(Info->getType()->getBaseName());
+      }
+    }
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    std::string Key =
+        getHashStrFromLoc(SM.getExpansionLoc(MemVar->getBeginLoc()));
+    auto Set = DpctGlobalInfo::getUseDeviceGlobalVarSet();
+    if (Set.find(Key) == Set.end()) {
+      if ((MemVar->hasAttr<CUDADeviceAttr>() ||
+           MemVar->hasAttr<CUDAConstantAttr>()) &&
+          !MemVar->hasAttr<HIPManagedAttr>() &&
+          !MemVar->hasAttr<CUDASharedAttr>() &&
+          DpctGlobalInfo::useExpDeviceGlobal() &&
+          !IsVarUsedByRuntimeSymbolAPI(MemVar)) {
+        if (MemVar->hasInit()) {
+          auto InitStr = getInitForDeviceGlobal(MemVar);
+          if (!InitStr.empty()) {
+            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
+                   false);
+            Info->setInitForDeviceGlobal(InitStr);
+          }
+        }
+        Info->setUseHelperFuncFlag(false);
+        Info->setUseDeviceGlobalFlag(true);
+      }
+      Set.insert(Key);
     }
     return;
   }
