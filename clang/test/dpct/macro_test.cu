@@ -862,7 +862,7 @@ static const cudaStream_t streamDefault4 = CALL(cudaStreamDefault);
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    start = new sycl::event();                                                 \
 //CHECK-NEXT:    stop = new sycl::event();                                                  \
-//CHECK-NEXT:    *start = q_ct1.ext_oneapi_submit_barrier();                                \
+//CHECK-NEXT:    dpct::sync_barrier(start);                                            \
 //CHECK-NEXT:  }
 #define CMC_PROFILING_BEGIN()                                                                                      \
   cudaEvent_t start;                                                                                               \
@@ -878,7 +878,7 @@ static const cudaStream_t streamDefault4 = CALL(cudaStreamDefault);
 //     CHECK:#define CMC_PROFILING_END(lineno)                                              \
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
-//CHECK-NEXT:    *stop = q_ct1.ext_oneapi_submit_barrier();                                 \
+//CHECK-NEXT:    dpct::sync_barrier(stop);                                             \
 //CHECK-NEXT:    stop->wait_and_throw();                                                    \
 //CHECK-NEXT:    float time = 0.0f;                                                         \
 //CHECK-NEXT:    time = (stop->get_profiling_info<                                          \
@@ -1230,7 +1230,14 @@ void foo34() {
 //CHECK: #define ReturnErrorFunction                                                    \
 //CHECK-NEXT:   int amax(dpct::blas::descriptor_ptr handle, const int n, const float *X,     \
 //CHECK-NEXT:            const int incX, int &result) try {                                  \
-//CHECK-NEXT:     return cublasIsamax(handle, n, (const float *)X, incX, &result);           \
+//CHECK-NEXT:     return [&]() {                                                             \
+//CHECK-NEXT:       dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(                    \
+//CHECK-NEXT:           handle->get_queue(), &result);                                       \
+//CHECK-NEXT:       oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, X, incX,  \
+//CHECK-NEXT:                                              res_wrapper_ct4.get_ptr(),        \
+//CHECK-NEXT:                                              oneapi::mkl::index_base::one);    \
+//CHECK-NEXT:       return 0;                                                                \
+//CHECK-NEXT:     }();                                                                       \
 //CHECK-NEXT:   }                                                                            \
 //CHECK-NEXT:   catch (sycl::exception const &exc) {                                         \
 //CHECK-NEXT:     std::cerr << exc.what() << "Exception caught at file:" << __FILE__         \

@@ -45,14 +45,20 @@ static void get_version(const sycl::device &dev, int &major, int &minor) {
       break;
     i++;
   }
-  major = std::stoi(&(ver[i]));
+  if (i < ver.size())
+    major = std::stoi(&(ver[i]));
+  else
+    major = 0;
   while (i < ver.size()) {
     if (ver[i] == '.')
       break;
     i++;
   }
   i++;
-  minor = std::stoi(&(ver[i]));
+  if (i < ver.size())
+    minor = std::stoi(&(ver[i]));
+  else
+    minor = 0;
 }
 } // namespace detail
 
@@ -162,6 +168,11 @@ public:
   unsigned int get_global_mem_cache_size() const {
     return _global_mem_cache_size;
   }
+  int get_image1d_max() const { return _image1d_max; }
+  auto get_image2d_max() const { return _image2d_max; }
+  auto get_image2d_max() { return _image2d_max; }
+  auto get_image3d_max() const { return _image3d_max; }
+  auto get_image3d_max() { return _image3d_max; }
 
   // set interface
   void set_name(const char* name) {
@@ -234,6 +245,9 @@ public:
   void set_global_mem_cache_size(unsigned int global_mem_cache_size) {
     _global_mem_cache_size = global_mem_cache_size;
   }
+  void set_image1d_max(size_t image_max_buffer_size) {
+    _image1d_max = image_max_buffer_size;
+  }
 
 private:
   char _name[256];
@@ -259,6 +273,9 @@ private:
   int _max_nd_range_size_i[3];
   uint32_t _device_id;
   std::array<unsigned char, 16> _uuid;
+  int _image1d_max;
+  int _image2d_max[2];
+  int _image3d_max[3];
 };
 
 static int get_major_version(const sycl::device &dev) {
@@ -356,6 +373,19 @@ Use 64 bits as memory_bus_width default value."
 
   prop.set_global_mem_cache_size(
       dev.get_info<sycl::info::device::global_mem_cache_size>());
+
+  prop.set_image1d_max(
+      dev.get_info<sycl::info::device::image_max_buffer_size>());
+  prop.get_image2d_max()[0] =
+      dev.get_info<sycl::info::device::image2d_max_width>();
+  prop.get_image2d_max()[1] =
+      dev.get_info<sycl::info::device::image2d_max_height>();
+  prop.get_image3d_max()[0] =
+      dev.get_info<sycl::info::device::image3d_max_width>();
+  prop.get_image3d_max()[1] =
+      dev.get_info<sycl::info::device::image3d_max_height>();
+  prop.get_image3d_max()[2] =
+      dev.get_info<sycl::info::device::image3d_max_depth>();
   out = prop;
 }
 
@@ -784,6 +814,37 @@ has_capability_or_fail(const sycl::device &dev,
     }
     break;
   }
+}
+
+/// Util function to do implicit sync among queues of the same device then
+/// insert a synchronize barrier in the queue. For USM, If the queue is the
+/// default in-order queue, try to sync with all queues available in the current
+/// device before inserting a barrier. For USM-none, If the queue is the default
+/// out-of-order queue, try to sync with all queues available in the current
+/// device before inserting a barrier, else try to sync in the current queue
+/// before inserting a barrier.
+/// \param [out] event_ptr The memory to store the event.
+/// \param [in] queue The queue specified to do synchronization.
+inline void sync_barrier(sycl::event *event_ptr,
+                         sycl::queue *queue = &get_default_queue()) {
+  if (*queue == get_default_queue()) {
+    // Wait all the kernel tasks in all the queues of current device completed.
+    dpct::get_current_device().queues_wait_and_throw();
+  }
+
+#ifdef DPCT_USM_LEVEL_NONE
+  if (*queue != get_default_queue()) {
+    // For out-of-ordered queue, wait all the kernel tasks in \p queue
+    // completed.
+    queue->wait();
+  }
+#endif
+
+#ifdef DPCT_PROFILING_ENABLED
+  *event_ptr = queue->ext_oneapi_submit_barrier();
+#else
+  *event_ptr = queue->single_task([=]() {});
+#endif
 }
 } // namespace dpct
 

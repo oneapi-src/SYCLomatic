@@ -234,7 +234,7 @@
 // __SINCOSF: CUDA API:
 // __SINCOSF-NEXT:   __sincosf(f /*float*/, pf1 /*float **/, pf2 /*float **/);
 // __SINCOSF-NEXT: Is migrated to:
-// __SINCOSF-NEXT:   *pf1 = sycl::sincos(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pf2));
+// __SINCOSF-NEXT:   *pf1 = sycl::sincos(f, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pf2));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__sinf | FileCheck %s -check-prefix=__SINF
 // __SINF: CUDA API:

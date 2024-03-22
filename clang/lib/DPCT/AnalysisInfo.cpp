@@ -9,7 +9,6 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
-#include "Schema.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -1195,23 +1194,7 @@ void DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtensionEnum Extension) {
     break;
   }
 }
-const std::string DpctGlobalInfo::getVarSchema(const clang::DeclRefExpr *DRE) {
-  std::string MacroName =
-      "VAR_SCHEMA_" + std::to_string(DpctGlobalInfo::VarSchemaIndex);
-  DpctGlobalInfo::SchemaFileContentCUDA +=
-      "#define " + MacroName + " " +
-      jsonToString(
-          serializeVarSchemaToJson(dpct::constructCUDAVarSchema(DRE))) +
-      getNL();
-  DpctGlobalInfo::SchemaFileContentSYCL +=
-      "#define " + MacroName + " " +
-      jsonToString(serializeVarSchemaToJson(
-          constructSyclVarSchema(constructCUDAVarSchema(DRE)))) +
-      getNL();
 
-  DpctGlobalInfo::VarSchemaIndex += 1;
-  return MacroName;
-}
 void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
                                const FunctionDecl *FD) {
   FreeQueriesInfo::printImmediateText(OS, S, FD,
@@ -2322,8 +2305,6 @@ std::tuple<unsigned int, std::string, SourceRange>
     DpctGlobalInfo::LastMacroRecord =
         std::make_tuple<unsigned int, std::string, SourceRange>(0, "",
                                                                 SourceRange());
-std::string DpctGlobalInfo::SchemaFileContentCUDA = "";
-std::string DpctGlobalInfo::SchemaFileContentSYCL = "";
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInAnalysisScopeFunc = DpctGlobalInfo::checkInAnalysisScope;
   GetRunRound = DpctGlobalInfo::getRunRound;
@@ -2411,7 +2392,6 @@ std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 int DpctGlobalInfo::CurrentMaxIndex = 0;
 int DpctGlobalInfo::CurrentIndexInRule = 0;
 std::set<clang::tooling::UnifiedPath> DpctGlobalInfo::IncludingFileSet;
-int DpctGlobalInfo::VarSchemaIndex = 0;
 std::set<std::string> DpctGlobalInfo::FileSetInCompilationDB;
 std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
 clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
@@ -2505,12 +2485,19 @@ void SizeInfo::setTemplateList(
     TDSI = TDSI->applyTemplateArguments(TemplateList);
 }
 ///// class CtTypeInfo /////
-CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
-    : PointerLevel(0), IsTemplate(false) {
+CtTypeInfo::CtTypeInfo() {
+  PointerLevel = 0;
+  IsReference = 0;
+  IsTemplate = 0;
+  TemplateDependentMacro = 0;
+  IsArray = 0;
+  ContainSizeofType = 0;
+  IsConstantQualified = 0;
+}
+CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold) : CtTypeInfo() {
   setTypeInfo(TL, NeedSizeFold);
 }
-CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold)
-    : PointerLevel(0), IsReference(false), IsTemplate(false) {
+CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold) : CtTypeInfo() {
   if (D && D->getTypeSourceInfo()) {
     auto TL = D->getTypeSourceInfo()->getTypeLoc();
     IsConstantQualified = D->hasAttr<CUDAConstantAttr>();
@@ -3921,7 +3908,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (!CE)
     return;
-  buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts());
+  buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
   buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
   if (auto FD = CE->getDirectCallee()) {
@@ -4126,7 +4113,8 @@ void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   }
   FuncInfo = Info;
 }
-void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
+void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
+                                       std::optional<unsigned int> NumArgs) {
   if (auto CallDecl =
           dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
     Name = getNameWithNamespace(CallDecl, Callee);
@@ -4144,7 +4132,7 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
     if (Unresolved->getQualifier())
       Name = getNestedNameSpecifierString(Unresolved->getQualifier());
     Name += Unresolved->getName().getAsString();
-    setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved));
+    setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved, NumArgs));
     buildTemplateArguments(Unresolved->template_arguments(),
                            Callee->getSourceRange());
   } else if (auto DependentScope =
@@ -4337,8 +4325,29 @@ DeviceFunctionDecl::DeviceFunctionDecl(
   buildTextureObjectParamsInfo(FTL.getParams());
 }
 std::shared_ptr<DeviceFunctionInfo>
-DeviceFunctionDecl::LinkUnresolved(const UnresolvedLookupExpr *ULE) {
-  return LinkDeclRange(ULE->decls(), getFunctionName(ULE));
+DeviceFunctionDecl::LinkUnresolved(const UnresolvedLookupExpr *ULE,
+                                   std::optional<unsigned int> NumArgs) {
+  std::vector<NamedDecl *> List;
+  for (auto *D : ULE->decls()) {
+    if (NumArgs) {
+      const FunctionDecl *FD = dyn_cast<FunctionDecl>(D);
+      if (!FD) {
+        if (const FunctionTemplateDecl *FTD =
+                dyn_cast<FunctionTemplateDecl>(D)) {
+          FD = FTD->getTemplatedDecl();
+        }
+      }
+      if (FD) {
+        if (NumArgs.value() >= FD->getMinRequiredArguments() &&
+            NumArgs.value() <= FD->getNumParams()) {
+          List.push_back(D);
+        }
+      }
+    } else {
+      List.push_back(D);
+    }
+  }
+  return LinkDeclRange(List, getFunctionName(ULE));
 }
 std::shared_ptr<DeviceFunctionInfo>
 DeviceFunctionDecl::LinkRedecls(const FunctionDecl *FD) {
@@ -5432,7 +5441,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       CE);
   Kernel->buildNeedBracesInfo(CE);
   if (auto Callee = getAddressedRef(CE->getArg(0))) {
-    Kernel->buildCalleeInfo(Callee);
+    Kernel->buildCalleeInfo(Callee, std::nullopt);
     auto FD =
         dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());
     auto FuncInfo = Kernel->getFuncInfo();
@@ -5447,7 +5456,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       }
     }
   } else {
-    Kernel->buildCalleeInfo(CE->getArg(0));
+    Kernel->buildCalleeInfo(CE->getArg(0), std::nullopt);
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                              Diagnostics::UNDEDUCED_KERNEL_FUNCTION_POINTER,
                              true, false, Kernel->getName());
