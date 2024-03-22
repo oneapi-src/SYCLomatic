@@ -165,94 +165,78 @@ int main() {
   // CHECK:oneapi::mkl::blas::column_major::scal(handle->get_queue(), N, std::complex<double>(alpha_Z.x(), alpha_Z.y()), (std::complex<double>*)result_Z, incx);
   cublasZscal(handle, N, &alpha_Z, result_Z, incx);
 
-  // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = result_S;
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, q_ct1);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), N, x_S, incx, res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), N, x_S, incx, res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasSnrm2(handle, N, x_S, incx, result_S);
-  // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = result_D;
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, q_ct1);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), N, x_D, incx, res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), N, x_D, incx, res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasDnrm2(handle, N, x_D, incx, result_D);
-  // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = result_S;
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, q_ct1);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), N, (std::complex<float>*)x_C, incx, res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), N, (std::complex<float>*)x_C, incx, res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasScnrm2(handle, N, x_C, incx, result_S);
-  // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = result_D;
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, q_ct1);
-  // CHECK-NEXT: }
-  // CHECK:oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasDznrm2(handle, N, x_Z, incx, result_D);
 
-  // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = result_S;
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, q_ct1);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::asum(handle->get_queue(), N, x_S, incx, res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), N, x_S, incx, res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasSasum(handle, N, x_S, incx, result_S);
-  // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = result_D;
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, q_ct1);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), N, x_D, incx, res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), N, x_D, incx, res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasDasum(handle, N, x_D, incx, result_D);
-  // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = result_S;
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, q_ct1);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::asum(handle->get_queue(), N, (std::complex<float>*)x_C, incx, res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), result_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), N, (std::complex<float>*)x_C, incx, res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasScasum(handle, N, x_C, incx, result_S);
-  // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = result_D;
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, q_ct1);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), result_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasDzasum(handle, N, x_Z, incx, result_D);
 
   float *a_S, *b_S, *c_S, *s_S;
@@ -408,142 +392,118 @@ int main() {
   // CHECK-NEXT: }
   cublasDrotmg(handle, a_D, b_D, c_D, y1_D, s_D);
 
-  // CHECK:float* res_temp_ptr_ct{{[0-9]+}} = result_S;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dot(handle->get_queue(), N, x_S, incx, y_S, incy, res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct6(handle->get_queue(), result_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), N, x_S, incx, y_S, incy, res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasSdot(handle, N, x_S, incx, y_S, incy, result_S);
-  // CHECK:double* res_temp_ptr_ct{{[0-9]+}} = result_D;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::dot(handle->get_queue(), N, x_D, incx, y_D, incy, res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct6(handle->get_queue(), result_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), N, x_D, incx, y_D, incy, res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasDdot(handle, N, x_D, incx, y_D, incy, result_D);
 
-  // CHECK:sycl::float2* res_temp_ptr_ct{{[0-9]+}} = result_C;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dotc(handle->get_queue(), N, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_C = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), result_C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), N, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasCdotc(handle, N, x_C, incx, y_C, incy, result_C);
-  // CHECK:sycl::double2* res_temp_ptr_ct{{[0-9]+}} = result_Z;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::dotc(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_Z = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), result_Z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasZdotc(handle, N, x_Z, incx, y_Z, incy, result_Z);
 
-  // CHECK:sycl::float2* res_temp_ptr_ct{{[0-9]+}} = result_C;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dotu(handle->get_queue(), N, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_C = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), result_C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), N, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasCdotu(handle, N, x_C, incx, y_C, incy, result_C);
-  // CHECK:sycl::double2* res_temp_ptr_ct{{[0-9]+}} = result_Z;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::dotu(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_Z = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), result_Z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasZdotu(handle, N, x_Z, incx, y_Z, incy, result_Z);
 
-  // CHECK:float* res_temp_ptr_ct{{[0-9]+}} = result_S;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dot(handle->get_queue(), N, x_S, incx, y_S, incy, res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct6(handle->get_queue(), result_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), N, x_S, incx, y_S, incy, res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasSdot(handle, N, x_S, incx, y_S, incy, result_S);
-  // CHECK:double* res_temp_ptr_ct{{[0-9]+}} = result_D;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::dot(handle->get_queue(), N, x_D, incx, y_D, incy, res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct6(handle->get_queue(), result_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(handle->get_queue(), N, x_D, incx, y_D, incy, res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasDdot(handle, N, x_D, incx, y_D, incy, result_D);
 
-  // CHECK:sycl::float2* res_temp_ptr_ct{{[0-9]+}} = result_C;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dotc(handle->get_queue(), N, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_C = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), result_C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), N, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasCdotc(handle, N, x_C, incx, y_C, incy, result_C);
-  // CHECK:sycl::double2* res_temp_ptr_ct{{[0-9]+}} = result_Z;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::dotc(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_Z = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), result_Z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasZdotc(handle, N, x_Z, incx, y_Z, incy, result_Z);
 
-  // CHECK:sycl::float2* res_temp_ptr_ct{{[0-9]+}} = result_C;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dotu(handle->get_queue(), N, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)res_temp_ptr_ct{{[0-9]+}}));
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_C = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct6(handle->get_queue(), result_C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), N, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasCdotu(handle, N, x_C, incx, y_C, incy, result_C);
-  // CHECK:sycl::double2* res_temp_ptr_ct{{[0-9]+}} = result_Z;
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, q_ct1);
-  // CHECK-NEXT:}
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::dotu(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  handle->get_queue().wait();
-  // CHECK-NEXT:  *result_Z = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:}
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), result_Z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(handle->get_queue(), N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_wrapper_ct6.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasZdotu(handle, N, x_Z, incx, y_Z, incy, result_Z);
 
   //level 2

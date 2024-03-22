@@ -1661,3 +1661,155 @@ WARNING_FACTORY_ENTRY(
              ARG("oneapi::mkl::index_base::one")),
         LITERAL("return 0")),
     Diagnostics::NOERROR_RETURN_LAMBDA)
+
+#define NRM2(FUNC, TYPE1, TYPE2, TYPE3)                                        \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(4)),                                                        \
+          CALL("oneapi::mkl::blas::column_major::nrm2",                        \
+               MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
+               BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),   \
+                   #TYPE3)),                                                   \
+          LITERAL("return 0")),                                                \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+NRM2(cublasSnrm2_v2, wrapper_float_out, float, float)
+NRM2(cublasDnrm2_v2, wrapper_double_out, double, double)
+NRM2(cublasScnrm2_v2, wrapper_float_out, std::complex<float>, float)
+NRM2(cublasDznrm2_v2, wrapper_double_out, std::complex<double>, double)
+NRM2(cublasSnrm2_v2_64, wrapper_float_out, float, float)
+NRM2(cublasDnrm2_v2_64, wrapper_double_out, double, double)
+NRM2(cublasScnrm2_v2_64, wrapper_float_out, std::complex<float>, float)
+NRM2(cublasDznrm2_v2_64, wrapper_double_out, std::complex<double>, double)
+#undef NRM2
+
+#define DOT(FUNC, NEW_FUNC, TYPE1, TYPE2, TYPE3)                               \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct6", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(6)),                                                        \
+          CALL("oneapi::mkl::blas::column_major::" #NEW_FUNC,                  \
+               MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
+               BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
+               BUFFER_OR_USM_PTR(ARG(4), #TYPE2), ARG(5),                      \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct6"), false, "get_ptr"),   \
+                   #TYPE3)),                                                   \
+          LITERAL("return 0")),                                                \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+DOT(cublasSdot_v2, dot, wrapper_float_out, float, float)
+DOT(cublasDdot_v2, dot, wrapper_double_out, double, double)
+DOT(cublasCdotu_v2, dotu, wrapper_float2_out, std::complex<float>, std::complex<float>)
+DOT(cublasCdotc_v2, dotc, wrapper_float2_out, std::complex<float>, std::complex<float>)
+DOT(cublasZdotu_v2, dotu, wrapper_double2_out, std::complex<double>, std::complex<double>)
+DOT(cublasZdotc_v2, dotc, wrapper_double2_out, std::complex<double>, std::complex<double>)
+DOT(cublasSdot_v2_64, dot, wrapper_float_out, float, float)
+DOT(cublasDdot_v2_64, dot, wrapper_double_out, double, double)
+DOT(cublasCdotu_v2_64, dotu, wrapper_float2_out, std::complex<float>, std::complex<float>)
+DOT(cublasCdotc_v2_64, dotc, wrapper_float2_out, std::complex<float>, std::complex<float>)
+DOT(cublasZdotu_v2_64, dotu, wrapper_double2_out, std::complex<double>, std::complex<double>)
+DOT(cublasZdotc_v2_64, dotc, wrapper_double2_out, std::complex<double>, std::complex<double>)
+#undef DOT
+
+#define SCAL(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC, CALL("oneapi::mkl::blas::column_major::scal",                     \
+                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),              \
+                  SCALAR_INPUT(ARG(2), #TYPE1),                                \
+                  BUFFER_OR_USM_PTR(ARG(3), #TYPE1), ARG(4))))
+SCAL(cublasSscal_v2, float)
+SCAL(cublasDscal_v2, double)
+SCAL(cublasCscal_v2, std::complex<float>)
+SCAL(cublasCsscal_v2, std::complex<float>)
+SCAL(cublasZscal_v2, std::complex<double>)
+SCAL(cublasZdscal_v2, std::complex<double>)
+SCAL(cublasSscal_v2_64, float)
+SCAL(cublasDscal_v2_64, double)
+SCAL(cublasCscal_v2_64, std::complex<float>)
+SCAL(cublasCsscal_v2_64, std::complex<float>)
+SCAL(cublasZscal_v2_64, std::complex<double>)
+SCAL(cublasZdscal_v2_64, std::complex<double>)
+#undef SCAL
+
+#define AXPY(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::axpy",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                     \
+           SCALAR_INPUT(ARG(2), #TYPE1), BUFFER_OR_USM_PTR(ARG(3), #TYPE1),    \
+           ARG(4), BUFFER_OR_USM_PTR(ARG(5), #TYPE1), ARG(6))))
+AXPY(cublasSaxpy_v2, float)
+AXPY(cublasDaxpy_v2, double)
+AXPY(cublasCaxpy_v2, std::complex<float>)
+AXPY(cublasZaxpy_v2, std::complex<double>)
+AXPY(cublasSaxpy_v2_64, float)
+AXPY(cublasDaxpy_v2_64, double)
+AXPY(cublasCaxpy_v2_64, std::complex<float>)
+AXPY(cublasZaxpy_v2_64, std::complex<double>)
+#undef AXPY
+
+#define COPY(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC, CALL("oneapi::mkl::blas::column_major::copy",                     \
+                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),              \
+                  BUFFER_OR_USM_PTR(ARG(2), #TYPE1), ARG(3),                   \
+                  BUFFER_OR_USM_PTR(ARG(4), #TYPE1), ARG(5))))
+COPY(cublasScopy_v2, float)
+COPY(cublasDcopy_v2, double)
+COPY(cublasCcopy_v2, std::complex<float>)
+COPY(cublasZcopy_v2, std::complex<double>)
+COPY(cublasScopy_v2_64, float)
+COPY(cublasDcopy_v2_64, double)
+COPY(cublasCcopy_v2_64, std::complex<float>)
+COPY(cublasZcopy_v2_64, std::complex<double>)
+#undef COPY
+
+#define SWAP(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC, CALL("oneapi::mkl::blas::column_major::swap",                     \
+                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),              \
+                  BUFFER_OR_USM_PTR(ARG(2), #TYPE1), ARG(3),                   \
+                  BUFFER_OR_USM_PTR(ARG(4), #TYPE1), ARG(5))))
+SWAP(cublasSswap_v2, float)
+SWAP(cublasDswap_v2, double)
+SWAP(cublasCswap_v2, std::complex<float>)
+SWAP(cublasZswap_v2, std::complex<double>)
+SWAP(cublasSswap_v2_64, float)
+SWAP(cublasDswap_v2_64, double)
+SWAP(cublasCswap_v2_64, std::complex<float>)
+SWAP(cublasZswap_v2_64, std::complex<double>)
+#undef SWAP
+
+#define ASUM(FUNC, TYPE1, TYPE2, TYPE3)                                        \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(4)),                                                        \
+          CALL("oneapi::mkl::blas::column_major::asum",                        \
+               MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
+               BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),   \
+                   #TYPE3)),                                                   \
+          LITERAL("return 0")),                                                \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+ASUM(cublasSasum_v2, wrapper_float_out, float, float)
+ASUM(cublasDasum_v2, wrapper_double_out, double, double)
+ASUM(cublasScasum_v2, wrapper_float_out, std::complex<float>, float)
+ASUM(cublasDzasum_v2, wrapper_double_out, std::complex<double>, double)
+ASUM(cublasSasum_v2_64, wrapper_float_out, float, float)
+ASUM(cublasDasum_v2_64, wrapper_double_out, double, double)
+ASUM(cublasScasum_v2_64, wrapper_float_out, std::complex<float>, float)
+ASUM(cublasDzasum_v2_64, wrapper_double_out, std::complex<double>, double)
+#undef ASUM
