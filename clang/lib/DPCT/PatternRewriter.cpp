@@ -273,7 +273,6 @@ static int parseCodeElement(const MatchPattern &Suffix,
     }
 
     const auto Character = Input[Index];
-    printf("\t Loop: Index:%d, Value:%c\n", Index, Character);
     if(Suffix.size() == 0 && Character =='"') {
       return Index;
     }
@@ -340,8 +339,6 @@ static int parseCodeElement(const MatchPattern &Suffix,
         Index++;
       }
       if (Index >= Size) {
-        printf("Index:%d Value:[%c]\n", Index, Input[Index]);
-        printf("000000\n");
         return -1;
       }
       Index++;
@@ -375,11 +372,6 @@ static int parseCodeElement(const MatchPattern &Suffix,
 
     Index++;
   }
-  
-  if(Suffix.size() == 0) {
-    printf("Hit index [%d]\n", Index);
-  }
-
   return Suffix.size() == 0 ? Index : -1;
 }
 
@@ -591,36 +583,10 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
                           Pattern.begin() + PatternIndex + 1 +
                               Code.SuffixLength);
 
-
-#if 0 // use for debug print
-      int Count = 0;
-      printf("Suffix start:\n");
-      for (auto Element : Suffix) {
-        if (std::holds_alternative<CodeElement>(Element)) {
-          auto &Code = std::get<CodeElement>(Element);
-          printf("\t[%d]->[%s]:[%d]\n", Count, Code.Name.c_str(),
-                 Code.SuffixLength);
-        }
-        if (std::holds_alternative<LiteralElement>(Element)) {
-          const auto &Literal = std::get<LiteralElement>(Element);
-          printf("\t[%d]->[%c]\n", Count, Literal.Value);
-        }
-        if (std::holds_alternative<SpacingElement>(Element)) {
-          printf("\t[%d]->[%s]\n", Count, "space");
-        }
-        Count++;
-      }
-      printf("Suffix end.\n\n");
-#endif
-      printf("### before Index [%d] value:[%c]\n", Index, Input[Index]);
-      printf("### before Input [%s]\n", Input.c_str());
-
       int Next = parseCodeElement(Suffix, Input, Index);
-      printf("Next: [%d]\n", Next);
       if (Next == -1) {
         return {};
       }
-      printf("### after Next [%d] value:[%c]\n", Index, Input[Next]);
       std::string ElementContents = Input.substr(Index, Next - Index);
       if (Result.Bindings.count(Code.Name)) {
         if (Result.Bindings[Code.Name] != ElementContents) {
@@ -755,31 +721,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   }
 
   const auto Pattern = parseMatchPattern(PP.In);
-
-
-printf("Input: [%s]\n", Input.c_str());
-#if 0 // use for debug print
-  int Count = 0;
-  printf("Pattern start:\n");
-  for (auto Element : Pattern) {
-    if (std::holds_alternative<CodeElement>(Element)) {
-      auto &Code = std::get<CodeElement>(Element);
-      printf("\t[%d]->[%s]:[%d]\n", Count, Code.Name.c_str(),
-             Code.SuffixLength);
-    }
-    if (std::holds_alternative<LiteralElement>(Element)) {
-      const auto &Literal = std::get<LiteralElement>(Element);
-      printf("\t[%d]->[%c]\n", Count, Literal.Value);
-    }
-    if (std::holds_alternative<SpacingElement>(Element)) {
-      printf("\t[%d]->[%s]\n", Count, "space");
-    }
-    Count++;
-  }
-  printf("Pattern end.\n\n");
-#endif
-
-
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
@@ -800,7 +741,6 @@ printf("Input: [%s]\n", Input.c_str());
     if (Result.has_value()) {
       auto &Match = Result.value();
       for (const auto &[Name, Value] : Match.Bindings) {
-        printf("### Name [%s] --> Value[%s]\n", Name.c_str(), Value.c_str());
         const auto &SubruleIterator = PP.Subrules.find(Name);
         if (SubruleIterator != PP.Subrules.end()) {
           Match.Bindings[Name] =

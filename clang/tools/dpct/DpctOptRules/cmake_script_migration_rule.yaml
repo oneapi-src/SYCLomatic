@@ -881,7 +881,6 @@
       In:  -std=c++${version}
       Out: -std=c++17
 
-
 - Rule: rule_add_link_options_add_arch
   Kind: CMakeRule
   Priority: Fallback
