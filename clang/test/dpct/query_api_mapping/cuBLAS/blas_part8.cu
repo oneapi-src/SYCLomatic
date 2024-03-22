@@ -33,16 +33,11 @@
 // cublasScasum-NEXT:   cublasScasum(handle /*cublasHandle_t*/, n /*int*/, x /*const cuComplex **/,
 // cublasScasum-NEXT:                incx /*int*/, res /*float **/);
 // cublasScasum-NEXT: Is migrated to:
-// cublasScasum-NEXT:   float* res_temp_ptr_ct{{[0-9]+}} = res;
-// cublasScasum-NEXT:   if(sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-// cublasScasum-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_in_order_queue());
-// cublasScasum-NEXT:   }
-// cublasScasum-NEXT:   oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, (std::complex<float>*)x, incx, res_temp_ptr_ct{{[0-9]+}});
-// cublasScasum-NEXT:   if(sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-// cublasScasum-NEXT:     handle->get_queue().wait();
-// cublasScasum-NEXT:     *res = *res_temp_ptr_ct{{[0-9]+}};
-// cublasScasum-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
-// cublasScasum-NEXT:   }
+// cublasScasum-NEXT:   [&]() {
+// cublasScasum-NEXT:   dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), res);
+// cublasScasum-NEXT:   oneapi::mkl::blas::column_major::asum(handle->get_queue(), n, (std::complex<float>*)x, incx, res_wrapper_ct4.get_ptr());
+// cublasScasum-NEXT:   return 0;
+// cublasScasum-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSsyr2k | FileCheck %s -check-prefix=cublasSsyr2k
 // cublasSsyr2k: CUDA API:
@@ -87,16 +82,11 @@
 // cublasZdotu-NEXT:               y /*const cuDoubleComplex **/, incy /*int*/,
 // cublasZdotu-NEXT:               res /*cuDoubleComplex **/);
 // cublasZdotu-NEXT: Is migrated to:
-// cublasZdotu-NEXT:   sycl::double2* res_temp_ptr_ct{{[0-9]+}} = res;
-// cublasZdotu-NEXT:   if(sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-// cublasZdotu-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_in_order_queue());
-// cublasZdotu-NEXT:   }
-// cublasZdotu-NEXT:   oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
-// cublasZdotu-NEXT:   if(sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-// cublasZdotu-NEXT:     handle->get_queue().wait();
-// cublasZdotu-NEXT:     *res = *res_temp_ptr_ct{{[0-9]+}};
-// cublasZdotu-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
-// cublasZdotu-NEXT:   }
+// cublasZdotu-NEXT:   [&]() {
+// cublasZdotu-NEXT:   dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), res);
+// cublasZdotu-NEXT:   oneapi::mkl::blas::column_major::dotu(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_wrapper_ct6.get_ptr());
+// cublasZdotu-NEXT:   return 0;
+// cublasZdotu-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZdotc | FileCheck %s -check-prefix=cublasZdotc
 // cublasZdotc: CUDA API:
@@ -105,16 +95,11 @@
 // cublasZdotc-NEXT:               y /*const cuDoubleComplex **/, incy /*int*/,
 // cublasZdotc-NEXT:               res /*cuDoubleComplex **/);
 // cublasZdotc-NEXT: Is migrated to:
-// cublasZdotc-NEXT:   sycl::double2* res_temp_ptr_ct{{[0-9]+}} = res;
-// cublasZdotc-NEXT:   if(sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-// cublasZdotc-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_in_order_queue());
-// cublasZdotc-NEXT:   }
-// cublasZdotc-NEXT:   oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
-// cublasZdotc-NEXT:   if(sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-// cublasZdotc-NEXT:     handle->get_queue().wait();
-// cublasZdotc-NEXT:     *res = *res_temp_ptr_ct{{[0-9]+}};
-// cublasZdotc-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
-// cublasZdotc-NEXT:   }
+// cublasZdotc-NEXT:   [&]() {
+// cublasZdotc-NEXT:   dpct::blas::wrapper_double2_out res_wrapper_ct6(handle->get_queue(), res);
+// cublasZdotc-NEXT:   oneapi::mkl::blas::column_major::dotc(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_wrapper_ct6.get_ptr());
+// cublasZdotc-NEXT:   return 0;
+// cublasZdotc-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSsymm | FileCheck %s -check-prefix=cublasSsymm
 // cublasSsymm: CUDA API:

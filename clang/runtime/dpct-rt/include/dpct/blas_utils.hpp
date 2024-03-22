@@ -207,6 +207,12 @@ using wrapper_int64_out =
     parameter_wrapper_t<std::int64_t, std::int64_t, parameter_inout_prop::out>;
 using wrapper_float_out =
     parameter_wrapper_t<float, float, parameter_inout_prop::out>;
+using wrapper_double_out =
+    parameter_wrapper_t<double, double, parameter_inout_prop::out>;
+using wrapper_float2_out =
+    parameter_wrapper_t<sycl::float2, sycl::float2, parameter_inout_prop::out>;
+using wrapper_double2_out = parameter_wrapper_t<sycl::double2, sycl::double2,
+                                                parameter_inout_prop::out>;
 using wrapper_float_inout =
     parameter_wrapper_t<float, float, parameter_inout_prop::in_out>;
 using wrapper_float_in =
