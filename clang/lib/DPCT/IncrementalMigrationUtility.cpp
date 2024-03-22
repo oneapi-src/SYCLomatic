@@ -197,6 +197,12 @@ bool printOptions(
         if (!(UValue & (1 << static_cast<unsigned>(
                             DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess))))
           Str += "peer_access,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_Assert))))
+          Str += "assert,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty))))
+          Str += "queue_empty,";
       }
       if (!Str.empty()) {
         Str = "--no-dpcpp-extensions=" + Str;

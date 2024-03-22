@@ -246,11 +246,11 @@
 // cublasIzamin-NEXT:   cublasIzamin(handle /*cublasHandle_t*/, n /*int*/,
 // cublasIzamin-NEXT:                x /*const cuDoubleComplex **/, incx /*int*/, res /*int **/);
 // cublasIzamin-NEXT: Is migrated to (with the option --no-dry-pattern):
-// cublasIzamin-NEXT:   int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_in_order_queue());
-// cublasIzamin-NEXT:   oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<double>*)x, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
-// cublasIzamin-NEXT:   int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-// cublasIzamin-NEXT:   dpct::dpct_memcpy(res, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-// cublasIzamin-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
+// cublasIzamin-NEXT:   [&]() {
+// cublasIzamin-NEXT:   dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), res);
+// cublasIzamin-NEXT:   oneapi::mkl::blas::column_major::iamin(handle->get_queue(), n, (std::complex<double>*)x, incx, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
+// cublasIzamin-NEXT:   return 0;
+// cublasIzamin-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasNrm2Ex | FileCheck %s -check-prefix=cublasNrm2Ex
 // cublasNrm2Ex: CUDA API:

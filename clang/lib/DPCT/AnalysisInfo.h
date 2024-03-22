@@ -696,7 +696,6 @@ public:
   }
   // TODO: implement one of this for each source language.
   static const clang::tooling::UnifiedPath &getCudaPath() { return CudaPath; }
-  static const std::string getVarSchema(const clang::DeclRefExpr *);
   static const std::string getCudaVersion() {
     return clang::CudaVersionToString(SDKVersion);
   }
@@ -1236,6 +1235,9 @@ public:
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
+  static bool useQueueEmpty() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty);
+  }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(
         DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
@@ -1246,6 +1248,9 @@ public:
   }
   static bool usePeerAccess() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess);
+  }
+  static bool useAssert() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_Assert);
   }
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
@@ -1355,9 +1360,6 @@ public:
   }
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
-
-  static std::string SchemaFileContentCUDA;
-  static std::string SchemaFileContentSYCL;
 
 private:
   DpctGlobalInfo();
@@ -1501,7 +1503,6 @@ private:
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
   static std::set<clang::tooling::UnifiedPath> IncludingFileSet;
-  static int VarSchemaIndex;
   static std::set<std::string> FileSetInCompilationDB;
   static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;
@@ -2284,7 +2285,7 @@ protected:
   unsigned getBegin() { return BeginLoc; }
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
-  void buildCalleeInfo(const Expr *Callee);
+  void buildCalleeInfo(const Expr *Callee, std::optional<unsigned int> NumArgs);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
 
 private:
@@ -2331,7 +2332,8 @@ public:
                      const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
                      const FunctionDecl *Specialization);
   static std::shared_ptr<DeviceFunctionInfo>
-  LinkUnresolved(const UnresolvedLookupExpr *ULE);
+  LinkUnresolved(const UnresolvedLookupExpr *ULE,
+                 std::optional<unsigned int> NumArgs);
   static std::shared_ptr<DeviceFunctionInfo>
   LinkRedecls(const FunctionDecl *FD);
   static std::shared_ptr<DeviceFunctionInfo>

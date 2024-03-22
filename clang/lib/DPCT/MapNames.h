@@ -339,7 +339,6 @@ public:
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
 
-  static const std::set<std::string> MustSyncBLASFunc;
   static const std::map<std::string, std::pair<std::string, int>>
       MaySyncBLASFunc;
   // This map is only used for non-usm.
@@ -369,10 +368,6 @@ public:
 
   static const std::unordered_set<std::string> CooperativeGroupsAPISet;
 
-  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
-      PropToGetFeatureMap;
-  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
-      PropToSetFeatureMap;
   static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
       SamplingInfoToSetFeatureMap;
   static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
