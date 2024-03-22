@@ -7,17 +7,18 @@
 #include <iostream>
 
 // CHECK: #define COMPLEX_D_MAKE(r,i) sycl::double2(r, i)
-// CHECK: #define COMPLEX_D_REAL(a) (a).x()
-// CHECK: #define COMPLEX_D_IMAG(a) (a).y()
-// CHECK: #define COMPLEX_D_FREAL(a) a.x()
-// CHECK: #define COMPLEX_D_FIMAG(a) a.y()
-// CHECK: #define COMPLEX_D_ADD(a, b) a + b
-// CHECK: #define COMPLEX_D_SUB(a, b) a - b
-// CHECK: #define COMPLEX_D_MUL(a, b) dpct::cmul<double>(a, b)
-// CHECK: #define COMPLEX_D_DIV(a, b) dpct::cdiv<double>(a, b)
-// CHECK: #define COMPLEX_D_ABS(a) dpct::cabs<double>(a)
-// CHECK: #define COMPLEX_D_ABS1(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
-// CHECK: #define COMPLEX_D_CONJ(a) dpct::conj<double>(a)
+// CHECK-NEXT: #define COMPLEX_D_REAL(a) (a).x()
+// CHECK-NEXT: #define COMPLEX_D_IMAG(a) (a).y()
+// CHECK-NEXT: #define COMPLEX_D_FREAL(a) a.x()
+// CHECK-NEXT: #define COMPLEX_D_FIMAG(a) a.y()
+// CHECK-NEXT: #define COMPLEX_D_ADD(a, b) a + b
+// CHECK-NEXT: #define COMPLEX_D_SUB(a, b) a - b
+// CHECK-NEXT: #define COMPLEX_D_MUL(a, b) dpct::cmul<double>(a, b)
+// CHECK-NEXT: #define COMPLEX_D_DIV(a, b) dpct::cdiv<double>(a, b)
+// CHECK-NEXT: #define COMPLEX_D_FMA(a, b, c) dpct::cmul<double>(a, b) + c
+// CHECK-NEXT: #define COMPLEX_D_ABS(a) dpct::cabs<double>(a)
+// CHECK-NEXT: #define COMPLEX_D_ABS1(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
+// CHECK-NEXT: #define COMPLEX_D_CONJ(a) dpct::conj<double>(a)
 #define COMPLEX_D_MAKE(r,i) make_cuDoubleComplex(r, i)
 #define COMPLEX_D_REAL(a) (a).x
 #define COMPLEX_D_IMAG(a) (a).y
@@ -33,17 +34,18 @@
 #define COMPLEX_D_CONJ(a) cuConj(a)
 
 // CHECK: #define COMPLEX_F_MAKE(r,i) sycl::float2(r, i)
-// CHECK: #define COMPLEX_F_REAL(a) (a).x()
-// CHECK: #define COMPLEX_F_IMAG(a) (a).y()
-// CHECK: #define COMPLEX_F_FREAL(a) a.x()
-// CHECK: #define COMPLEX_F_FIMAG(a) a.y()
-// CHECK: #define COMPLEX_F_ADD(a, b) a + b
-// CHECK: #define COMPLEX_F_SUB(a, b) a - b
-// CHECK: #define COMPLEX_F_MUL(a, b) dpct::cmul<float>(a, b)
-// CHECK: #define COMPLEX_F_DIV(a, b) dpct::cdiv<float>(a, b)
-// CHECK: #define COMPLEX_F_ABS(a) dpct::cabs<float>(a)
-// CHECK: #define COMPLEX_F_ABS1(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
-// CHECK: #define COMPLEX_F_CONJ(a) dpct::conj<float>(a)
+// CHECK-NEXT: #define COMPLEX_F_REAL(a) (a).x()
+// CHECK-NEXT: #define COMPLEX_F_IMAG(a) (a).y()
+// CHECK-NEXT: #define COMPLEX_F_FREAL(a) a.x()
+// CHECK-NEXT: #define COMPLEX_F_FIMAG(a) a.y()
+// CHECK-NEXT: #define COMPLEX_F_ADD(a, b) a + b
+// CHECK-NEXT: #define COMPLEX_F_SUB(a, b) a - b
+// CHECK-NEXT: #define COMPLEX_F_MUL(a, b) dpct::cmul<float>(a, b)
+// CHECK-NEXT: #define COMPLEX_F_DIV(a, b) dpct::cdiv<float>(a, b)
+// CHECK-NEXT: #define COMPLEX_F_FMA(a, b, c) dpct::cmul<float>(a, b) + c
+// CHECK-NEXT: #define COMPLEX_F_ABS(a) dpct::cabs<float>(a)
+// CHECK-NEXT: #define COMPLEX_F_ABS1(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
+// CHECK-NEXT: #define COMPLEX_F_CONJ(a) dpct::conj<float>(a)
 #define COMPLEX_F_MAKE(r,i) make_cuFloatComplex(r, i)
 #define COMPLEX_F_REAL(a) (a).x
 #define COMPLEX_F_IMAG(a) (a).y
