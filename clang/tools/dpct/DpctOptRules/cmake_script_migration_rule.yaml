@@ -865,34 +865,6 @@
       MatchMode: Full
       RuleId: "replace_cudnn_with_libdnn"
 
-# SYCL does not have mapping for nvrtc currently, so removing here
-- Rule: rule_target_link_libraries_nvrtc
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: nvrtc_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::nvrtc"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_nvrtc"
-
-# SYCL does not have mapping for nvToolsExt currently, so removing here
-- Rule: rule_target_link_libraries_nvToolsExt
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: nvToolsExt_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::nvToolsExt"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_nvToolsExt"
-
 # SYCL does not have mapping for libnvinfer currently, so removing here
 - Rule: rule_target_link_libraries_libnvinfer
   Kind: CMakeRule
@@ -1956,6 +1928,21 @@
       Out: ""
       RuleId: "remove_nvptxcompiler_static"
 
+# No SYCL equivalent exists for nvrtc currently and hence is removed in migrate CMake
+- Rule: nvrtc_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvrtc
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvrtc
+      Out: ""
+      RuleId: "remove_nvrtc"
+
 # No SYCL equivalent exists for nvrtc_builtins currently and hence is removed in migrate CMake
 - Rule: nvrtc_builtins_removed
   Kind: CMakeRule
@@ -2045,6 +2032,21 @@
       In: CUDA::nvml
       Out: ""
       RuleId: "remove_nvml"
+
+# No SYCL equivalent exists for nvToolsExt currently and hence is removed in migrate CMake
+- Rule: nvtx3_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvToolsExt
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvToolsExt
+      Out: ""
+      RuleId: "remove_nvToolsExt"
 
 # No SYCL equivalent exists for nvtx3 currently and hence is removed in migrate CMake
 - Rule: nvtx3_removed
