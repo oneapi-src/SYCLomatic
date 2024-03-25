@@ -625,14 +625,6 @@
   In: cuda_add_cublas_to_target(${target})
   Out: dpct_helper_add_mkl_to_target(${target})
 
-- Rule: rule_include_directories
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: include_directories
-  MatchMode: Partial
-  In: include_directories(${value})
-  Out: include_directories(${value})
-
 - Rule: rule_cuda_add_library
   Kind: CMakeRule
   Priority: Fallback
