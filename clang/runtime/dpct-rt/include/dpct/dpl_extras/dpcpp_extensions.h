@@ -566,6 +566,97 @@ private:
   uint8_t *_local_memory;
 };
 
+/// Store blocked/warped or striped work items into linear segment of items.
+/// Helper for Block Store
+enum store_algorithm {
+
+  BLOCK_STORE_DIRECT,
+  BLOCK_STORE_STRIPED,
+  // To-do: BLOCK_STORE_WARP_TRANSPOSE
+  // To-do: BLOCK_STORE_VECTORIZE
+
+};
+
+/// Stores a blocked arrangement of work items linear segment of items.
+template <size_t ITEMS_PER_WORK_ITEM, store_algorithm ALGORITHM, typename InputT,
+          typename OutputIteratorT, typename Item>
+__dpct_inline__ void store_blocked(const Item &item, OutputIteratorT block_itr,
+                                  InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+  // This implementation does not take in account range storage across
+  // workgroup items To-do: Decide whether range storage is required for group
+  // storage
+  size_t linear_tid = item.get_local_linear_id();
+  OutputIteratorT workitem_itr = block_itr + (linear_tid * ITEMS_PER_THREAD);
+#pragma unroll
+  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+    workitem_itr[idx] = items[idx];
+  }
+}
+
+/// Stores a striped arrangement of work items linear segment of items.
+template <size_t ITEMS_PER_WORK_ITEM, store_algorithm ALGORITHM, typename InputT,
+          typename OutputIteratorT, typename Item>
+__dpct_inline__ void store_striped(const Item &item, OutputIteratorT block_itr,
+                                  InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+  // This implementation does not take in account range storage across
+  // workgroup items To-do: Decide whether range storage is required for group
+  // storage
+  size_t linear_tid = item.get_local_linear_id();
+  OutputIteratorT workitem_itr = block_itr + linear_tid; 
+  size_t GROUP_WORK_ITEMS = item.get_global_range();
+#pragma unroll
+  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+    workitem_itr[(idx * GROUP_WORK_ITEMS)] = items[idx];
+  }
+}
+
+/// Stores a warp-striped arrangement of work items linear segment of items.
+// Created as free function until exchange mechanism is
+// implemented.
+// To-do: inline this function with BLOCK_STORE_WARP_TRANSPOSE mechanism
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
+          typename Item>
+__dpct_inline__ void
+store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
+                                    InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+  // This implementation does not take in account range loading across
+  // workgroup items To-do: Decide whether range loading is required for group
+  // loading
+  // This implementation uses unintialized memory for loading linear segments
+  // into warp striped arrangement.
+  uint32_t subgroup_offset = item.get_sub_group().get_local_linear_id();
+  uint32_t subgroup_size = item.get_sub_group().get_local_linear_range();
+  uint32_t subgroup_idx = item.get_sub_group().get_group_linear_id();
+  uint32_t initial_offset =
+      (subgroup_idx * ITEMS_PER_WORK_ITEM * subgroup_size) + subgroup_offset;
+  OutputIteratorT workitem_itr = block_itr + initial_offset;
+#pragma unroll
+  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+    workitem_itr[(idx * subgroup_size)] = items[idx];
+  }
+}
+
+template <size_t ITEMS_PER_WORK_ITEM, store_algorithm ALGORITHM, typename InputT,
+          typename OutputIteratorT, typename Item, typename T>
+class workgroup_store {
+  static size_t get_local_memory_size(size_t group_threads) {
+    return (group_threads * ITEMS_PER_WORK_ITEM) * sizeof(T);
+  }
+  
+  __dpct_inline__ void store(const Item &item, OutputIteratorT block_itr,
+                            InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+    if constexpr (ALGORITHM == BLOCK_STORE_DIRECT) {
+      store_blocked(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+    } else if constexpr (ALGORITHM == BLOCK_STORE_STRIPED) {
+      store_striped(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+    }
+  }
+};
+
 /// Perform a reduction of the data elements assigned to all threads in the
 /// group.
 ///
