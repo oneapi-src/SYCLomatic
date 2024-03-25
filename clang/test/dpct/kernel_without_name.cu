@@ -277,3 +277,15 @@ void run_foo7(T *a, const T *b, const T *c, const T *d, const T *e, const int f,
     foo_kernel6<<<grid, block, 0, stream>>>(a, b, c, d, e, f, g, h);
   }
 }
+
+template <typename T> struct kernel_type_t {
+  using Type = T;
+};
+
+template <typename T> __global__ void foo_kernel7() {
+  /*
+  DPCT1124:{{[0-9]+}}: This type is used in other places. You may need adjust the type definition location.
+  */
+  using Tk = typename kernel_type_t<T>::Type;
+  __shared__ Tk mem[256];
+}
