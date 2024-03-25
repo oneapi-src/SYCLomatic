@@ -6252,8 +6252,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
-        "cudaStreamSetAttribute", "cudaStreamGetAttribute",
-        "cudaFuncSetAttribute", "__trap");
+        "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaProfilerStart",
+        "cudaProfilerStop", "cudaFuncSetAttribute", "__trap");
   };
 
   MF.addMatcher(
