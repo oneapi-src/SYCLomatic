@@ -2099,45 +2099,55 @@ const std::string MipmapNeedBindlessImage =
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),
 #define IFELSE_FACTORY_ENTRY(FuncName, Pred, IfBlock, ElseBlock)               \
-  {FuncName, createIfElseRewriterFactory(FuncName, Pred IfBlock ElseBlock 0)},
+  std::make_pair(FuncName, createIfElseRewriterFactory(                        \
+                               FuncName, Pred IfBlock ElseBlock 0)),
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
-  {FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName, createTemplatedCallExprRewriterFactory(             \
+                               FuncName, __VA_ARGS__)),
 #define DELETE_FACTORY_ENTRY(FuncName, E)                                      \
-  {FuncName, createNewDeleteRewriterFactory(false, FuncName, "", E)},
+  std::make_pair(FuncName,                                                     \
+                 createNewDeleteRewriterFactory(false, FuncName, "", E)),
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
-  {FuncName, createBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(      \
-                 FuncName, L, R)},
+  std::make_pair(FuncName,                                                     \
+                 createBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>( \
+                     FuncName, L, R)),
 #define BINARY_OP_FACTORY_ENTRY(FuncName, OP, L, R)                            \
-  {FuncName, createBinaryOpRewriterFactory<OP>(FuncName, L, R)},
-#define UNARY_OP_FACTORY_ENTRY(FuncName, OP, Arg)                            \
-  {FuncName, createUnaryOpRewriterFactory<OP>(FuncName, Arg)},
+  std::make_pair(FuncName, createBinaryOpRewriterFactory<OP>(FuncName, L, R)),
+#define UNARY_OP_FACTORY_ENTRY(FuncName, OP, Arg)                              \
+  std::make_pair(FuncName, createUnaryOpRewriterFactory<OP>(FuncName, Arg)),
 #define MEM_EXPR_ENTRY(FuncName, B, IsArrow, M)                                \
-  {FuncName, createMemberExprRewriterFactory(FuncName, B, IsArrow, M)},
+  std::make_pair(FuncName,                                                     \
+                 createMemberExprRewriterFactory(FuncName, B, IsArrow, M)),
 #define CALL_FACTORY_ENTRY(FuncName, C)                                        \
-  {FuncName, createCallExprRewriterFactory(FuncName, C)},
+  std::make_pair(FuncName, createCallExprRewriterFactory(FuncName, C)),
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
-  {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName,                                                     \
+                 createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)),
 #define ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(FuncName, ...)                       \
-  {FuncName, createArraySubscriptExprRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName, createArraySubscriptExprRewriterFactory(            \
+                               FuncName, __VA_ARGS__)),
 #define DELETER_FACTORY_ENTRY(FuncName, Arg)                                   \
-  {FuncName, createDeleterCallExprRewriterFactory(FuncName, Arg)},
+  std::make_pair(FuncName, createDeleterCallExprRewriterFactory(FuncName, Arg)),
 #define UNSUPPORT_FACTORY_ENTRY(FuncName, MsgID, ...)                          \
-  {FuncName, createUnsupportRewriterFactory(FuncName, MsgID, __VA_ARGS__)},
+  std::make_pair(                                                              \
+      FuncName, createUnsupportRewriterFactory(FuncName, MsgID, __VA_ARGS__)),
 #define MULTI_STMTS_FACTORY_ENTRY(FuncName, ...)                               \
-  {FuncName, createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName,                                                     \
+                 createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)),
 #define LAMBDA_FACTORY_ENTRY(FuncName, ...)                                    \
-  {FuncName, createLambdaRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName, createLambdaRewriterFactory(FuncName, __VA_ARGS__)),
 #define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
-  {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName, createReportWarningRewriterFactory(                 \
+                               Factory FuncName, __VA_ARGS__)),
 #define TOSTRING_FACTORY_ENTRY(FuncName, ...)                                  \
-  {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName,                                                     \
+                 createToStringExprRewriterFactory(FuncName, __VA_ARGS__)),
 #define REMOVE_API_FACTORY_ENTRY(FuncName)                                     \
-  {FuncName, createRemoveAPIRewriterFactory(FuncName)},
+  std::make_pair(FuncName, createRemoveAPIRewriterFactory(FuncName)),
 #define REMOVE_API_FACTORY_ENTRY_WITH_MSG(FuncName, Msg)                       \
-  {FuncName, createRemoveAPIRewriterFactory(FuncName, Msg)},
-#define CASE_FACTORY_ENTRY(...) \
-  createCaseRewriterFactory(__VA_ARGS__),
+  std::make_pair(FuncName, createRemoveAPIRewriterFactory(FuncName, Msg)),
+#define CASE_FACTORY_ENTRY(...) createCaseRewriterFactory(__VA_ARGS__),
 #define DEREF_FACTORY_ENTRY(FuncName, E)                                       \
-  {FuncName, createDerefExprRewriterFactory(FuncName, E)},
+  std::make_pair(FuncName, createDerefExprRewriterFactory(FuncName, E)),
 
 #endif // DPCT_CALL_EXPR_REWRITER_COMMON_H

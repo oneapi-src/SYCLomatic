@@ -868,3 +868,28 @@
   CmakeSyntax: CUDA_VERSION
   In: ${command_name}(CUDA_VERSION ${rest_args})
   Out: ${command_name}(COMPATIBILITY_VERSION ${rest_args})
+
+- Rule: rule_user_defined_variable
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: user_defined_variable
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      In:  -std=c++${version}
+      Out: -std=c++17
+
+- Rule: rule_add_link_options_add_arch
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_arch_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --add-arch=${arch}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_add_arch"

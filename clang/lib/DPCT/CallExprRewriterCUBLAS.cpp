@@ -49,7 +49,62 @@ makeBufferOrUSMPtrCallArgCreator(std::function<ArgT(const CallExpr *)> Arg,
       Arg, [=](const CallExpr *) { return DataType; });
 }
 
+class ScalarInputValuePrinter {
+  const Expr *Arg;
+  const Expr *Handle;
+  std::string DataType;
+
+public:
+  ScalarInputValuePrinter(const Expr *&&Arg, const Expr *&&Handle,
+                          std::string DataType)
+      : Arg(std::forward<const Expr *>(Arg)),
+        Handle(std::forward<const Expr *>(Handle)), DataType(DataType) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    const auto *UO = dyn_cast_or_null<UnaryOperator>(Arg->IgnoreImpCasts());
+    const auto *COCE = dyn_cast<CXXOperatorCallExpr>(Arg->IgnoreImpCasts());
+    if ((UO && UO->getOpcode() == UO_AddrOf && UO->getSubExpr()) ||
+        (COCE && COCE->getOperator() == OO_Amp && COCE->getArg(0))) {
+      const Expr *Sub = UO ? UO->getSubExpr() : COCE->getArg(0);
+      if (DataType == "std::complex<float>" ||
+          DataType == "std::complex<double>") {
+        Stream << DataType << "(";
+        clang::dpct::print(Stream, Sub);
+        Stream << ".x(), ";
+        clang::dpct::print(Stream, Sub);
+        Stream << ".y())";
+      } else {
+        clang::dpct::print(Stream, Sub);
+      }
+    } else {
+      Stream << MapNames::getDpctNamespace() << "get_value(";
+      clang::dpct::print(Stream, Arg);
+      Stream << ", ";
+      if (needExtraParensInMemberExpr(Handle)) {
+        Stream << "(";
+        clang::dpct::print(Stream, Handle);
+        Stream << ")->get_queue())";
+      } else {
+        clang::dpct::print(Stream, Handle);
+        Stream << "->get_queue())";
+      }
+    }
+  }
+};
+
+std::function<ScalarInputValuePrinter(const CallExpr *)>
+makeScalarInputValueCreator(
+    std::function<const Expr *(const CallExpr *)> Arg,
+    std::function<const Expr *(const CallExpr *)> Handle,
+    std::string DataType) {
+  return PrinterCreator<ScalarInputValuePrinter,
+                        std::function<const Expr *(const CallExpr *)>,
+                        std::function<const Expr *(const CallExpr *)>,
+                        std::function<std::string(const CallExpr *)>>(
+      Arg, Handle, [=](const CallExpr *) { return DataType; });
+}
+
 #define BUFFER_OR_USM_PTR(Arg, T) makeBufferOrUSMPtrCallArgCreator(Arg, T)
+#define SCALAR_INPUT(Arg, T) makeScalarInputValueCreator(Arg, ARG(0), T)
 
 void CallExprRewriterFactoryBase::initRewriterMapCUBLAS() {
   RewriterMap->merge(
