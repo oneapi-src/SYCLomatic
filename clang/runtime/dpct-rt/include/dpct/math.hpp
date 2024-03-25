@@ -1322,6 +1322,7 @@ inline constexpr RetT extend_max_sat(AT a, BT b, CT c,
 }
 
 /// Extend \p a and \p b to 33 bit and compare input values using specified comparison \p cmp .
+///
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the compare operation
@@ -1335,6 +1336,7 @@ inline constexpr unsigned extend_compare(AT a, BT b, BinaryOperation cmp) {
 
 /// Extend Inputs to 33 bit, and compare input values using specified comparison \p cmp ,
 /// then do \p second_op with \p c .
+///
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the compare operation
@@ -1753,6 +1755,7 @@ inline constexpr RetT extend_vmax2_sat(AT a, BT b, RetT c) {
 }
 
 /// Extend \p a and \p b to 33 bit and vectorized compare input values using
+///
 /// specified comparison \p cmp .
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
@@ -1767,6 +1770,7 @@ inline constexpr unsigned extend_vcompare2(AT a, BT b, BinaryOperation cmp) {
 
 /// Extend Inputs to 33 bit, and vectorized compare input values using specified
 /// comparison \p cmp , then do \p second_op with \p c .
+///
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the compare operation
@@ -2050,6 +2054,7 @@ inline constexpr RetT extend_vmax4_sat(AT a, BT b, RetT c) {
 }
 
 /// Extend \p a and \p b to 33 bit and vectorized compare input values using
+///
 /// specified comparison \p cmp .
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
@@ -2064,6 +2069,7 @@ inline constexpr unsigned extend_vcompare4(AT a, BT b, BinaryOperation cmp) {
 
 /// Extend Inputs to 33 bit, and vectorized compare input values using specified
 /// comparison \p cmp , then do \p second_op with \p c .
+///
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the compare operation
