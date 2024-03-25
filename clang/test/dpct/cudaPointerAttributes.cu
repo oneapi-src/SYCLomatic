@@ -73,10 +73,10 @@ int main() {
   } else if (attributes3->isManaged) {
     return 2;
   }
-  // CHECK: if (attributes3->get_memory_type() == sycl::alloc::unknown) {
-  // CHECK: } else if (attributes3->get_memory_type() == sycl::alloc::host) {
-  // CHECK: } else if (attributes3->get_memory_type() == sycl::alloc::device) {
-  // CHECK: } else if (attributes3->get_memory_type() == sycl::alloc::shared) {
+  // CHECK: if (attributes3->get_memory_type() == sycl::usm::alloc::unknown) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::host) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::device) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::shared) {
   if (attributes3->memoryType == 0) {
     return 0;
   } else if (attributes3->memoryType == 1) {

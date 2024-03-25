@@ -149,16 +149,16 @@ public:
       std::string Repl;
       switch (Value) {
       case 0:
-        Repl = MapNames::getClNamespace() + "alloc::unknown";
+        Repl = MapNames::getClNamespace() + "usm::alloc::unknown";
         break;
       case 1:
-        Repl = MapNames::getClNamespace() + "alloc::host";
+        Repl = MapNames::getClNamespace() + "usm::alloc::host";
         break;
       case 2:
-        Repl = MapNames::getClNamespace() + "alloc::device";
+        Repl = MapNames::getClNamespace() + "usm::alloc::device";
         break;
       case 3:
-        Repl = MapNames::getClNamespace() + "alloc::shared";
+        Repl = MapNames::getClNamespace() + "usm::alloc::shared";
         break;
       }
       DpctGlobalInfo::getInstance().addReplacement(
