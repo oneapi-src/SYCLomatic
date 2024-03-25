@@ -226,14 +226,12 @@ public:
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
-#ifdef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
   void set_max_nd_range_size(sycl::id<3> max_nd_range_size) {
     for (int i = 0; i < 3; i++) {
       _max_nd_range_size[i] = max_nd_range_size[i];
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
-#endif
   void set_memory_clock_rate(unsigned int memory_clock_rate) {
     _memory_clock_rate = memory_clock_rate;
   }
@@ -377,6 +375,7 @@ Use 64 bits as memory_bus_width default value."
       dev.get_info<
           sycl::ext::oneapi::experimental::info::device::max_work_groups<3>>());
 #else
+#warning "Querying the maximum number of work groups is not supported"
   int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
   prop.set_max_nd_range_size(max_nd_range_size);
 #endif

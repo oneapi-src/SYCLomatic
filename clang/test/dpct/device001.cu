@@ -114,20 +114,16 @@ int main(int argc, char **argv) {
   // CHECK: int L2CacheSize = deviceProp.get_global_mem_cache_size();
   int L2CacheSize = deviceProp.l2CacheSize;
 
-#ifndef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  int maxGridSizeX = deviceProp.get_max_nd_range_size<int *>()[0];
-#endif
   int maxGridSizeX = deviceProp.maxGridSize[0];
 
-#ifndef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  int *maxGridSize_ptr = deviceProp.get_max_nd_range_size<int *>();
-#endif
   int *maxGridSize_ptr = deviceProp.maxGridSize;
 
   // CHECK:/*
@@ -331,12 +327,10 @@ __device__ void test5() {
     a = std::min(pDeviceProp->maxThreadsPerBlock, 1000);
     //CHECK:a = std::min(pDeviceProp->get_max_work_items_per_compute_unit(), 1000);
     a = std::min(pDeviceProp->maxThreadsPerMultiProcessor, 1000);
-#ifndef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
     // CHECK:/*
     // CHECK-NEXT:DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
     // CHECK-NEXT:*/
     // CHECK-NEXT: a = std::min(pDeviceProp->get_max_nd_range_size<int *>()[0], 1000);
-#endif
     a = std::min(pDeviceProp->maxGridSize[0], 1000);
     //CHECK:a = std::min(pDeviceProp->get_max_work_item_sizes<int *>()[0], 1000);
     a = std::min(pDeviceProp->maxThreadsDim[0], 1000);

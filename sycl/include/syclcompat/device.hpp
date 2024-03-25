@@ -181,14 +181,6 @@ public:
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
-#ifdef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
-  void set_max_nd_range_size(sycl::id<3> max_nd_range_size) {
-    for (int i = 0; i < 3; i++) {
-      _max_nd_range_size[i] = max_nd_range_size[i];
-      _max_nd_range_size_i[i] = max_nd_range_size[i];
-    }
-  }
-#endif
 
 private:
   constexpr static size_t NAME_BUFFER_SIZE = 256;
@@ -291,14 +283,8 @@ public:
 
     prop.set_max_work_items_per_compute_unit(
         get_info<sycl::info::device::max_work_group_size>());
-#ifdef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
-    prop.set_max_nd_range_size(
-        dev.get_info<sycl::ext::oneapi::experimental::info::device::
-                         max_work_groups<3>>());
-#else
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
-#endif
 
     out = prop;
   }

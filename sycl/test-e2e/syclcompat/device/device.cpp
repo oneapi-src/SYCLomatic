@@ -179,12 +179,8 @@ int main() {
     Info.set_max_work_group_size(32);
     Info.set_max_sub_group_size(16);
     Info.set_max_work_items_per_compute_unit(16);
-#ifdef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
-    sycl::id<3> max_nd_range_size;
-#else
-    int max_nd_range_size[3] = {1, 2, 3};
-#endif
-    Info.set_max_nd_range_size(max_nd_range_size);
+    int SizeArray[3] = {1, 2, 3};
+    Info.set_max_nd_range_size(SizeArray);
 
     assert(!strcmp(Info.get_name(), Name));
     assert(Info.get_max_work_item_sizes() == max_work_item_sizes);
@@ -195,9 +191,9 @@ int main() {
     assert(Info.get_max_work_group_size() == 32);
     assert(Info.get_max_sub_group_size() == 16);
     assert(Info.get_max_work_items_per_compute_unit() == 16);
-    assert(Info.get_max_nd_range_size()[0] == max_nd_range_size[0]);
-    assert(Info.get_max_nd_range_size()[1] == max_nd_range_size[1]);
-    assert(Info.get_max_nd_range_size()[2] == max_nd_range_size[2]);
+    assert(Info.get_max_nd_range_size()[0] == SizeArray[0]);
+    assert(Info.get_max_nd_range_size()[1] == SizeArray[1]);
+    assert(Info.get_max_nd_range_size()[2] == SizeArray[2]);
     assert(Info.get_global_mem_size() == 1000);
     assert(Info.get_local_mem_size() == 1000);
   }
