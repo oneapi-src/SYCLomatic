@@ -903,31 +903,3 @@
       Out: ""
       MatchMode: Partial
       RuleId: "remove_add_arch"
-
-- Rule: rule_string
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: string
-  In: string(${option} ${args})
-  Out: string(${option} ${args})
-
-- Rule: rule_unset
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: unset
-  In: unset(${args})
-  Out: unset(${args})
-
-- Rule: rule_build_command
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: build_command
-  In: build_command(${args})
-  Out: build_command(${args})
-
-- Rule: rule_define_property
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: define_property
-  In: define_property(${args})
-  Out: define_property(${args})
