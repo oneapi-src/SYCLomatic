@@ -2,6 +2,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/asm/vset2/vset2.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl  %T/asm/vset2/vset2.dp.cpp -o %T/asm/vset2/vset2.dp.o %}
 
+// clang-format off
 __global__ void vset2(unsigned *d) {
   unsigned a, b;
   int e, f;
