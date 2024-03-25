@@ -15,94 +15,91 @@ RewriterMap dpct::createHalfArithmeticFunctionsRewriterMap() {
       // __habs
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half"),
-          MATH_API_REWRITER_DEVICE(
+          MATH_API_REWRITERS_V2(
               "__habs",
-              MATH_API_DEVICE_NODES(
-                  EMPTY_FACTORY_ENTRY("__habs"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__habs",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::habs",
-                                              ARG(0)))),
-                  EMPTY_FACTORY_ENTRY("__habs"),
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::math_libdevice,
+                  CALL_FACTORY_ENTRY("__habs",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::habs",
+                                          ARG(0)))),
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
                   CALL_FACTORY_ENTRY(
                       "__habs",
                       CALL(MapNames::getClNamespace(false, true) + "fabs",
                            ARG(0))))),
-          MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
+          MATH_API_REWRITERS_V2(
               "__habs",
-              CALL_FACTORY_ENTRY("__habs",
-                                 CALL(MapNames::getClNamespace(false, true) +
-                                          "ext::oneapi::experimental::fabs",
-                                      ARG(0))),
-              CALL_FACTORY_ENTRY(
-                  "__habs", CALL(MapNames::getClNamespace(false, true) + "fabs",
-                                 CALL("float", ARG(0))))))
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::ext_experimental,
+                  CALL_FACTORY_ENTRY(
+                      "__habs", CALL(MapNames::getClNamespace(false, true) +
+                                         "ext::oneapi::experimental::fabs",
+                                     ARG(0)))),
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
+                  CALL_FACTORY_ENTRY(
+                      "__habs",
+                      CALL(MapNames::getClNamespace(false, true) + "fabs",
+                           CALL("float", ARG(0)))))))
       // __hadd_rn
-      MATH_API_REWRITER_DEVICE(
+      MATH_API_REWRITERS_V2(
           "__hadd_rn",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hadd_rn"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hadd_rn",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hadd",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hadd_rn"),
+          MATH_API_REWRITER_PAIR_WITH_COND(
+              math::Tag::math_libdevice, CheckArgType(0, "__half"),
+              CALL_FACTORY_ENTRY("__hadd_rn", CALL(MapNames::getClNamespace() +
+                                                       "ext::intel::math::hadd",
+                                                   ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
               BINARY_OP_FACTORY_ENTRY("__hadd_rn", BinaryOperatorKind::BO_Add,
                                       ARG(0), ARG(1))))
       // __hadd_sat
-      MATH_API_REWRITER_DEVICE(
-          "__hadd_sat",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hadd_sat"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hadd_sat",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hadd_sat",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hadd_sat"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  CheckArgType(0, "__half"),
+      MATH_API_REWRITER_DEVICE_OVERLOAD(
+          CheckArgType(0, "__half"),
+          MATH_API_REWRITERS_V2(
+              "__hadd_sat",
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::math_libdevice,
+                  CALL_FACTORY_ENTRY("__hadd_sat",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::hadd_sat",
+                                          ARG(0), ARG(1)))),
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
                   CALL_FACTORY_ENTRY(
                       "__hadd_sat",
                       CALL(MapNames::getDpctNamespace() + "clamp<" +
                                MapNames::getClNamespace() + "half>",
                            BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
-                           LITERAL("0.f"), LITERAL("1.0f"))),
-                  CONDITIONAL_FACTORY_ENTRY(
-                      math::UseBFloat16,
-                      CALL_FACTORY_ENTRY(
-                          "__hadd_sat",
-                          CALL(MapNames::getDpctNamespace() + "clamp<" +
-                                   MapNames::getClNamespace() +
-                                   "ext::oneapi::bfloat16>",
-                               BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
-                               LITERAL("0.f"), LITERAL("1.0f"))),
-                      UNSUPPORT_FACTORY_ENTRY("__hadd_sat",
-                                              Diagnostics::API_NOT_MIGRATED,
-                                              ARG("__hadd_sat"))))))
+                           LITERAL("0.f"), LITERAL("1.0f"))))),
+          MATH_API_REWRITERS_V2(
+              "__hadd_sat",
+              MATH_API_REWRITER_PAIR_WITH_COND(
+                  math::Tag::emulation, math::UseBFloat16,
+                  CALL_FACTORY_ENTRY(
+                      "__hadd_sat",
+                      CALL(MapNames::getDpctNamespace() + "clamp<" +
+                               MapNames::getClNamespace() +
+                               "ext::oneapi::bfloat16>",
+                           BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                           LITERAL("0.f"), LITERAL("1.0f")))),
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::unsupported_warning,
+                  UNSUPPORT_FACTORY_ENTRY("__hadd_sat",
+                                          Diagnostics::API_NOT_MIGRATED,
+                                          ARG("__hadd_sat")))))
       // __hdiv
-      MATH_API_REWRITER_DEVICE(
+      MATH_API_REWRITERS_V2(
           "__hdiv",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hdiv"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__hdiv",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hdiv",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hdiv"),
+          MATH_API_REWRITER_PAIR_WITH_COND(
+              math::Tag::math_libdevice, CheckArgType(0, "__half"),
+              CALL_FACTORY_ENTRY("__hdiv", CALL(MapNames::getClNamespace() +
+                                                    "ext::intel::math::hdiv",
+                                                ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
               BINARY_OP_FACTORY_ENTRY("__hdiv", BinaryOperatorKind::BO_Div,
                                       makeCallArgCreatorWithCall(0),
                                       makeCallArgCreatorWithCall(1))))
