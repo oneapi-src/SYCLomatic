@@ -1321,7 +1321,8 @@ inline constexpr RetT extend_max_sat(AT a, BT b, CT c,
   return detail::extend_binary<RetT, true>(a, b, c, maximum(), second_op);
 }
 
-/// Extend \p a and \p b to 33 bit and compare input values using specified comparison \p cmp .
+/// Extend \p a and \p b to 33 bit and compare input values using specified
+/// comparison \p cmp .
 ///
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
@@ -1334,8 +1335,8 @@ inline constexpr unsigned extend_compare(AT a, BT b, BinaryOperation cmp) {
   return detail::extend_binary<unsigned, false>(a, b, cmp);
 }
 
-/// Extend Inputs to 33 bit, and compare input values using specified comparison \p cmp ,
-/// then do \p second_op with \p c .
+/// Extend Inputs to 33 bit, and compare input values using specified comparison
+/// \p cmp , then do \p second_op with \p c .
 ///
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
@@ -1345,7 +1346,8 @@ inline constexpr unsigned extend_compare(AT a, BT b, BinaryOperation cmp) {
 /// \param [in] b The second value
 /// \param [in] c The third value
 /// \param [in] second_op The operation to do with the third value
-/// \returns The comparison result of the two extended values. and \p second_op with \p c .
+/// \returns The comparison result of the two extended values. and \p second_op
+/// with \p c .
 template <typename AT, typename BT, typename BinaryOperation,
           typename SecondBinaryOperation>
 inline constexpr unsigned extend_compare(AT a, BT b, unsigned c,
@@ -1784,8 +1786,8 @@ inline constexpr unsigned extend_vcompare2(AT a, BT b, BinaryOperation cmp) {
 template <typename AT, typename BT, typename BinaryOperation,
           typename SecondBinaryOperation>
 inline constexpr unsigned extend_vcompare2(AT a, BT b, unsigned c,
-                                         BinaryOperation cmp,
-                                         SecondBinaryOperation second_op) {
+                                           BinaryOperation cmp,
+                                           SecondBinaryOperation second_op) {
   return detail::extend_vbinary2<unsigned, false>(a, b, c, cmp, second_op);
 }
 
@@ -2083,8 +2085,8 @@ inline constexpr unsigned extend_vcompare4(AT a, BT b, BinaryOperation cmp) {
 template <typename AT, typename BT, typename BinaryOperation,
           typename SecondBinaryOperation>
 inline constexpr unsigned extend_vcompare4(AT a, BT b, unsigned c,
-                                         BinaryOperation cmp,
-                                         SecondBinaryOperation second_op) {
+                                           BinaryOperation cmp,
+                                           SecondBinaryOperation second_op) {
   return detail::extend_vbinary4<unsigned, false>(a, b, c, cmp, second_op);
 }
 
