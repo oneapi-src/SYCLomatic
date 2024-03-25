@@ -629,7 +629,7 @@ template <int dimensions = 3>
 inline void
 nd_range_barrier(const sycl::nd_item<dimensions> &item,
                  sycl::atomic_ref<
-                     unsigned int, sycl::memory_order::seq_cst,
+                     unsigned int, sycl::memory_order::acq_rel,
                      sycl::memory_scope::device,
                      sycl::access::address_space::global_space> &counter) {
 
@@ -669,7 +669,7 @@ template <>
 inline void
 nd_range_barrier(const sycl::nd_item<1> &item,
                  sycl::atomic_ref<
-                     unsigned int, sycl::memory_order::seq_cst,
+                     unsigned int, sycl::memory_order::acq_rel,
                      sycl::memory_scope::device,
                      sycl::access::address_space::global_space> &counter) {
   unsigned int num_groups = item.get_group_range(0);
