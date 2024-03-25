@@ -85,14 +85,14 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package-mpi
-  In: find_package(${prefix}MPI${args})
+  In: find_package(${empty}MPI${args})
   Out: "#find_package(MPI${args})"
 
 - Rule: rule_find_package-omp
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package-omp
-  In: find_package(${prefix}OpenMP${args})
+  In: find_package(${empty}OpenMP${args})
   Out: "#find_package(OpenMP${args})"
 
 - Rule: rule_find_package-nvjpeg_no_args
