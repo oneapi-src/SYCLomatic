@@ -587,7 +587,7 @@ __dpct_inline__ void store_blocked(const Item &item, OutputIteratorT block_itr,
   // workgroup items To-do: Decide whether range storage is required for group
   // storage
   size_t linear_tid = item.get_local_linear_id();
-  OutputIteratorT workitem_itr = block_itr + (linear_tid * ITEMS_PER_THREAD);
+  OutputIteratorT workitem_itr = block_itr + (linear_tid * ITEMS_PER_WORK_ITEM);
 #pragma unroll
   for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
     workitem_itr[idx] = items[idx];
