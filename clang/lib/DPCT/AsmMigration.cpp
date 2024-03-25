@@ -1563,17 +1563,23 @@ protected:
     if (!Inst)
       return SYCLGenError();
     if (Inst->hasAttr(InstAttr::eq))
-      OS() << ", " << "std::equal_to<>()";
+      OS() << ", "
+           << "std::equal_to<>()";
     else if (Inst->hasAttr(InstAttr::ne))
-      OS() << ", " << "std::not_equal_to<>()";
+      OS() << ", "
+           << "std::not_equal_to<>()";
     else if (Inst->hasAttr(InstAttr::lt))
-      OS() << ", " << "std::less<>()";
+      OS() << ", "
+           << "std::less<>()";
     else if (Inst->hasAttr(InstAttr::le))
-      OS() << ", " << "std::less_equal<>()";
+      OS() << ", "
+           << "std::less_equal<>()";
     else if (Inst->hasAttr(InstAttr::gt))
-      OS() << ", " << "std::greater<>()";
+      OS() << ", "
+           << "std::greater<>()";
     else if (Inst->hasAttr(InstAttr::ge))
-      OS() << ", " << "std::greater_equal<>()";
+      OS() << ", "
+           << "std::greater_equal<>()";
     else
       return SYCLGenError();
     return SYCLGenSuccess();
