@@ -16,3 +16,8 @@ FIND_PACKAGE(OpenMP REQUIRED)
 #Current YAML rule comments find_package(NVJPEG) as no SYCL equivalent lib exists
 find_package(NVJPEG)
 find_package(NVJPEG 9.0 REQUIRED)
+find_package( OpenMP REQUIRED)
+find_package( MPI  )
+find_package(  MPI REQUIRED )
+FIND_PACKAGE( OpenMP)
+FIND_PACKAGE(  OpenMP REQUIRED)
