@@ -642,7 +642,6 @@ class workgroup_load {
   static size_t get_local_memory_size(size_t group_threads) {
     return (group_threads * ITEMS_PER_WORK_ITEM) * sizeof(T);
   }
-  
   __dpct_inline__ void load(const Item &item, InputIteratorT block_itr,
                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
