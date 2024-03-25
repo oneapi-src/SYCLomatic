@@ -416,15 +416,26 @@ makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                                               Member);
 }
 
-
 template <class... StmtT>
-inline std::function<
-    LambdaPrinter<StmtT...>(const CallExpr *)>
-makeLambdaCreator(bool IsCaptureRef,
-                      std::function<StmtT(const CallExpr *)>... Stmts) {
-  return PrinterCreator<LambdaPrinter<StmtT...>, bool,
+inline std::function<LambdaPrinter<StmtT...>(const CallExpr *)>
+makeLambdaCreator(bool IsCaptureRef, bool IsExecuteInplace,
+                  std::function<StmtT(const CallExpr *)>... Stmts) {
+  return PrinterCreator<LambdaPrinter<StmtT...>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
                         std::function<StmtT(const CallExpr *)>...>(
-                        IsCaptureRef, Stmts...);
+      [](const CallExpr *) { return std::string(" "); },
+      [](const CallExpr *) { return std::string(""); },
+      [=](const CallExpr *) { return IsCaptureRef; },
+      [=](const CallExpr *) { return IsExecuteInplace; },
+      [](const CallExpr *C) {
+        return isInMacroDefinition(C->getBeginLoc(), C->getBeginLoc()) &&
+               isInMacroDefinition(C->getEndLoc(), C->getEndLoc());
+      },
+      Stmts...);
 }
 
 inline std::vector<TemplateArgumentInfo>
@@ -712,6 +723,15 @@ makeNewDeleteExprCreator(bool IsNew, std::string TypeName,
                         std::function<ArgsT(const CallExpr *)>...>(
       [=](const CallExpr *) { return TypeName; },
       [=](const CallExpr *) { return IsNew; }, Args...);
+}
+
+template <class... ArgsT>
+inline std::function<DeclPrinter<ArgsT...>(const CallExpr *)>
+makeDeclCreator(std::string Type, std::string Var,
+                std::function<ArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<DeclPrinter<ArgsT...>, std::string, std::string,
+                        std::function<ArgsT(const CallExpr *)>...>(Type, Var,
+                                                                   Args...);
 }
 
 template <class SubExprT>
@@ -1063,6 +1083,35 @@ createMultiStmtsRewriterFactory(
           PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
           std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
                                                              Creators...));
+}
+
+template <class... StmtPrinters>
+inline std::shared_ptr<CallExprRewriterFactoryBase> createLambdaRewriterFactory(
+    const std::string &SourceName,
+    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
+  return std::make_shared<CallExprRewriterFactory<
+      PrinterRewriter<LambdaPrinter<StmtPrinters...>>,
+      std::function<std::string(const CallExpr *)>,
+      std::function<std::string(const CallExpr *)>,
+      std::function<bool(const CallExpr *)>,
+      std::function<bool(const CallExpr *)>,
+      std::function<bool(const CallExpr *)>,
+      std::function<StmtPrinters(const CallExpr *)>...>>(
+      SourceName,
+      [](const CallExpr *C) {
+        const auto &SM = DpctGlobalInfo::getSourceManager();
+        std::string Indent =
+            getIndent(SM.getExpansionLoc(C->getBeginLoc()), SM).str();
+        return Indent;
+      },
+      [](const CallExpr *) { return std::string(getNL()); },
+      [](const CallExpr *) { return true; },
+      [](const CallExpr *) { return true; },
+      [](const CallExpr *C) {
+        return isInMacroDefinition(C->getBeginLoc(), C->getBeginLoc()) &&
+               isInMacroDefinition(C->getEndLoc(), C->getEndLoc());
+      },
+      Creators...);
 }
 
 /// Create UnaryOpRewriterFactory with given arguments.
@@ -2027,6 +2076,7 @@ const std::string MipmapNeedBindlessImage =
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
 #define NEW(...) makeNewDeleteExprCreator(true, __VA_ARGS__)
 #define DELETE(...) makeNewDeleteExprCreator(false, __VA_ARGS__)
+#define DECL(TYPE, VAR, ...) makeDeclCreator(TYPE, VAR, __VA_ARGS__)
 #define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
 #define ZERO_INITIALIZER(SUBEXPR) makeZeroInitializerCreator(SUBEXPR)
 #define SUBGROUP                                                               \
@@ -2075,6 +2125,8 @@ const std::string MipmapNeedBindlessImage =
   {FuncName, createUnsupportRewriterFactory(FuncName, MsgID, __VA_ARGS__)},
 #define MULTI_STMTS_FACTORY_ENTRY(FuncName, ...)                               \
   {FuncName, createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)},
+#define LAMBDA_FACTORY_ENTRY(FuncName, ...)                                    \
+  {FuncName, createLambdaRewriterFactory(FuncName, __VA_ARGS__)},
 #define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
   {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
 #define TOSTRING_FACTORY_ENTRY(FuncName, ...)                                  \
