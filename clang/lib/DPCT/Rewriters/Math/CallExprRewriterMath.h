@@ -239,13 +239,13 @@ inline auto UsingDpctMinMax = [](const CallExpr *C) -> bool {
 };
 
 enum class Tag : size_t {
-  device_perf = 0,  // device API for performace
+  device_perf = 0,  // device API for performance
   device_normal,    // device API
   math_libdevice,   // device API using libdevice
   device_std,       // device API using std namespace
   emulation,        // emulation
   ext_experimental, // device API using experimental feature
-  host_perf,        // host API for performace
+  host_perf,        // host API for performance
   host_normal,      // host API
   unsupported_warning,
   no_rewrite,
