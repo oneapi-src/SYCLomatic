@@ -81,33 +81,19 @@
   In: find_package(CUB ${args})
   Out: find_package(oneDPL REQUIRED)
 
-- Rule: rule_find_package-mpi_no_args
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: find_package-mpi_no_args
-  In: find_package(MPI)
-  Out: "#find_package(MPI)"
-
 - Rule: rule_find_package-mpi
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package-mpi
-  In: find_package(MPI ${args})
-  Out: "#find_package(MPI ${args})"
-
-- Rule: rule_find_package-omp_no_args
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: find_package-omp_no_args
-  In: find_package(OpenMP)
-  Out: "#find_package(OpenMP)"
+  In: find_package(${empty}MPI${args})
+  Out: "#find_package(MPI${args})"
 
 - Rule: rule_find_package-omp
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package-omp
-  In: find_package(OpenMP ${args})
-  Out: "#find_package(OpenMP ${args})"
+  In: find_package(${empty}OpenMP${args})
+  Out: "#find_package(OpenMP${args})"
 
 - Rule: rule_find_package-nvjpeg_no_args
   Kind: CMakeRule
@@ -868,3 +854,28 @@
   CmakeSyntax: CUDA_VERSION
   In: ${command_name}(CUDA_VERSION ${rest_args})
   Out: ${command_name}(COMPATIBILITY_VERSION ${rest_args})
+
+- Rule: rule_user_defined_variable
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: user_defined_variable
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      In:  -std=c++${version}
+      Out: -std=c++17
+
+- Rule: rule_add_link_options_add_arch
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_arch_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --add-arch=${arch}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_add_arch"
