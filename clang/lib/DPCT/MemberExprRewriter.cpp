@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "MapNames.h"
 #include "MemberExprRewriter.h"
+#include "MapNames.h"
 
 namespace clang {
 namespace dpct {
