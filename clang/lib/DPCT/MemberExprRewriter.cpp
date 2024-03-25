@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "MapNames.h"
 #include "MemberExprRewriter.h"
 
 namespace clang {
@@ -108,6 +109,66 @@ public:
       : Inner(InnerFactory), Feature(Feature) {}
   std::shared_ptr<MERewriter> create(const MemberExpr *ME) const override {
     requestFeature(Feature);
+    return Inner->create(ME);
+  }
+};
+
+class MELiteralNumberMigration : public MemberExprRewriterFactoryBase {
+  std::shared_ptr<MemberExprRewriterFactoryBase> Inner;
+
+  const IntegerLiteral *
+  isComparingWithIntegerLiteral(const MemberExpr *ME) const {
+    const Expr *Cur = ME;
+    const Expr *Pre = nullptr;
+    while (const Expr *E = DpctGlobalInfo::findParent<Expr>(Cur)) {
+      Pre = Cur;
+      Cur = E;
+      if (!isa<ImplicitCastExpr>(Cur))
+        break;
+    }
+    const BinaryOperator *BO = dyn_cast<BinaryOperator>(Cur);
+    if (!BO)
+      return nullptr;
+    const Expr *Another = BO->getRHS();
+    if (Pre == BO->getRHS())
+      Another = BO->getLHS();
+    if (const IntegerLiteral *IL = dyn_cast<IntegerLiteral>(Another))
+      return IL;
+    return nullptr;
+  }
+
+public:
+  MELiteralNumberMigration(
+      std::shared_ptr<MemberExprRewriterFactoryBase> InnerFactory)
+      : Inner(InnerFactory) {}
+  std::shared_ptr<MERewriter> create(const MemberExpr *ME) const override {
+    if (const IntegerLiteral *IL = isComparingWithIntegerLiteral(ME)) {
+      Expr::EvalResult Result{};
+      IL->EvaluateAsInt(Result, DpctGlobalInfo::getContext());
+      int64_t Value = Result.Val.getInt().getExtValue();
+      std::string Repl;
+      switch (Value) {
+      case 0:
+        Repl = MapNames::getClNamespace() + "alloc::unknown";
+        break;
+      case 1:
+        Repl = MapNames::getClNamespace() + "alloc::host";
+        break;
+      case 2:
+        Repl = MapNames::getClNamespace() + "alloc::device";
+        break;
+      case 3:
+        Repl = MapNames::getClNamespace() + "alloc::shared";
+        break;
+      }
+      DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(
+              DpctGlobalInfo::getSourceManager(), IL->getBeginLoc(),
+              Lexer::MeasureTokenLength(
+                  IL->getBeginLoc(), DpctGlobalInfo::getSourceManager(),
+                  DpctGlobalInfo::getContext().getLangOpts()),
+              Repl, nullptr));
+    }
     return Inner->create(ME);
   }
 };
@@ -223,6 +284,24 @@ createFeatureRequestFactory(
   return createFeatureRequestFactory(Feature, std::move(Input));
 }
 
+inline std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+createLiteralNumberMigrationFactory(
+    std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<MELiteralNumberMigration>(Input.second));
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+createLiteralNumberMigrationFactory(
+    std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createLiteralNumberMigrationFactory(std::move(Input));
+}
+
 template <class... ArgsT>
 inline std::shared_ptr<MemberExprRewriterFactoryBase>
 createReportWarningRewriterFactory(
@@ -264,6 +343,8 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
   {FuncName, createMemberExprRewriterFactory(FuncName, B, M)},
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createFeatureRequestFactory(FEATURE, x 0),
+#define LITERAL_NUMBER_MIGRATION_FACTORY(x)                                    \
+  createLiteralNumberMigrationFactory(x 0),
 #define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
   {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
 #include "APINamesMemberExpr.inc"

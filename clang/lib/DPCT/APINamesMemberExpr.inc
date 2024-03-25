@@ -15,8 +15,8 @@ MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.hostPointer", MEM_BASE,
 MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.devicePointer", MEM_BASE,
                           "get_device_pointer")
 
-MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.type", MEM_BASE,
-                          "get_memory_type")
+LITERAL_NUMBER_MIGRATION_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+    "cudaPointerAttributes.type", MEM_BASE, "get_memory_type"))
 
 MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.memoryType", MEM_BASE,
                           "get_memory_type")
