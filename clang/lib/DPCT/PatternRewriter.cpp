@@ -273,7 +273,9 @@ static int parseCodeElement(const MatchPattern &Suffix,
     }
 
     const auto Character = Input[Index];
-
+    if(Suffix.size() == 0 && Character =='"') {
+      return Index;
+    }
     if (Suffix.size() > 0) {
       std::optional<MatchResult> SuffixMatch;
 

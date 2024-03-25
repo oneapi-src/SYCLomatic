@@ -11,6 +11,7 @@
 
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
+#include <cstddef>
 
 namespace clang {
 namespace dpct {
@@ -236,7 +237,199 @@ inline auto UsingDpctMinMax = [](const CallExpr *C) -> bool {
   Arg1T.removeLocalFastQualifiers(Qualifiers::CVRMask);
   return Arg0T != Arg1T;
 };
+
+enum class Tag : size_t {
+  device_perf = 0,  // device API for performance
+  device_normal,    // device API
+  math_libdevice,   // device API using libdevice
+  device_std,       // device API using std namespace
+  emulation,        // emulation
+  ext_experimental, // device API using experimental feature
+  host_perf,        // host API for performance
+  host_normal,      // host API
+  unsupported_warning,
+  no_rewrite,
+  tag_size
+};
 } // namespace math
+
+inline std::function<bool(const CallExpr *)> TrueFunctor =
+    [](const CallExpr *) { return true; };
+
+class MathRewriterFactory final : public CallExprRewriterFactoryBase {
+public:
+  using element_t = std::optional<std::pair<
+      std::function<bool(const CallExpr *)>,
+      std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>>;
+  using array_t =
+      std::array<element_t, static_cast<size_t>(math::Tag::tag_size)>;
+
+private:
+  std::string Name;
+  array_t MathAPIRewriters;
+
+  element_t &DevicePerfRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::device_perf)];
+  element_t &DeviceNormalRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::device_normal)];
+  element_t &MathLibdeviceRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::math_libdevice)];
+  element_t &DeviceStdRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::device_std)];
+  element_t &EmulationRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::emulation)];
+  element_t &ExtExperimentalRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::ext_experimental)];
+  element_t &HostPerfRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::host_perf)];
+  element_t &HostNormalRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::host_normal)];
+  element_t &UnsupportedWarningRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::unsupported_warning)];
+  element_t &NoRewriteRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::no_rewrite)];
+
+  std::optional<std::shared_ptr<CallExprRewriter>>
+  getDeviceRewriter(const CallExpr *C) const {
+    if (DevicePerfRewriter && math::IsPerf(C) &&
+        DevicePerfRewriter.value().first(C))
+      return DevicePerfRewriter.value().second.second->create(C);
+
+    if (DeviceNormalRewriter && DeviceNormalRewriter.value().first(C))
+      return DeviceNormalRewriter.value().second.second->create(C);
+
+    if (ExtExperimentalRewriter && math::useExtBFloat16Math() &&
+        ExtExperimentalRewriter.value().first(C))
+      return ExtExperimentalRewriter.value().second.second->create(C);
+
+    if (MathLibdeviceRewriter && math::useMathLibdevice() &&
+        MathLibdeviceRewriter.value().first(C)) {
+      DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
+                                                 HeaderType::HT_SYCL_Math);
+      return MathLibdeviceRewriter.value().second.second->create(C);
+    }
+
+    if (DeviceStdRewriter && math::useStdLibdevice() &&
+        DeviceStdRewriter.value().first(C))
+      return DeviceStdRewriter.value().second.second->create(C);
+
+    return std::nullopt;
+  }
+
+public:
+  MathRewriterFactory(const std::string &Name,
+                      const array_t &MathAPIRewritersInput)
+      : Name(Name), MathAPIRewriters(MathAPIRewritersInput) {
+    NoRewriteRewriter = std::make_pair(
+        TrueFunctor,
+        std::make_pair(Name,
+                       std::dynamic_pointer_cast<CallExprRewriterFactoryBase>(
+                           std::make_shared<NoRewriteFuncNameRewriterFactory>(
+                               Name, Name))));
+  }
+  // a. Host API priority:
+  //   1. host_perf
+  //   2. host_normal
+  // b. Device API priority:
+  //   1. device_perf
+  //   2. device_normal
+  //   3. ext_experimental
+  //   4. math_libdevice
+  //   5. device_std
+  // c. Host and device
+  //   1. emulation
+  //   2. unsupported_warning
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    if (math::IsPureHost(C)) {
+      // HOST
+      if (math::IsDefinedInCUDA()(C)) {
+        if (HostPerfRewriter && math::IsPerf(C) &&
+            HostPerfRewriter.value().first(C))
+          return HostPerfRewriter.value().second.second->create(C);
+        if (HostNormalRewriter && HostNormalRewriter.value().first(C))
+          return HostNormalRewriter.value().second.second->create(C);
+      }
+    } else {
+      // DEVICE
+      std::optional<std::shared_ptr<CallExprRewriter>> Rewriter = std::nullopt;
+      if (math::IsPureDevice(C)) {
+        if (math::IsDefinedInCUDA()(C)) {
+          if (Rewriter = getDeviceRewriter(C))
+            return Rewriter.value();
+        }
+      }
+      if (math::IsUnresolvedLookupExpr(C)) {
+        if (math::IsDirectCallerPureDevice(C)) {
+          if (Rewriter = getDeviceRewriter(C))
+            return Rewriter.value();
+        }
+      }
+      if (math::IsDefinedInCUDA()(C)) {
+        if (Rewriter = getDeviceRewriter(C))
+          return Rewriter.value();
+      }
+    }
+
+    // Host and device
+    if (EmulationRewriter && EmulationRewriter.value().first(C))
+      return EmulationRewriter.value().second.second->create(C);
+
+    if (UnsupportedWarningRewriter &&
+        UnsupportedWarningRewriter.value().first(C))
+      return UnsupportedWarningRewriter.value().second.second->create(C);
+
+    return NoRewriteRewriter.value().second.second->create(C);
+  }
+};
+
+template <typename... Ts>
+inline void createMathRewriterFactoryImpl(
+    const std::string &Name, MathRewriterFactory::array_t &Rewriters,
+    math::Tag Tag, std::function<bool(const CallExpr *)> Cond,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Rewriter,
+    int, Ts... Args) {
+  createMathRewriterFactoryImpl(Name, Rewriters, Args...);
+#ifdef DPCT_DEBUG_BUILD
+  if (Rewriters[static_cast<size_t>(Tag)]) {
+    llvm::errs() << "Duplicated rewriter for \"" << Name
+                 << "\" on tag: " << (size_t)Tag << "\n";
+    assert(0);
+  }
+#endif
+  Rewriters[static_cast<size_t>(Tag)] = std::make_pair(Cond, Rewriter);
+}
+
+inline void createMathRewriterFactoryImpl(
+    const std::string &Name, MathRewriterFactory::array_t &Rewriters,
+    math::Tag Tag, std::function<bool(const CallExpr *)> Cond,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Rewriter,
+    int) {
+#ifdef DPCT_DEBUG_BUILD
+  if (Rewriters[static_cast<size_t>(Tag)]) {
+    llvm::errs() << "Duplicated rewriter for \"" << Name
+                 << "\" on tag: " << (size_t)Tag << "\n";
+    assert(0);
+  }
+#endif
+  Rewriters[static_cast<size_t>(Tag)] = std::make_pair(Cond, Rewriter);
+}
+
+template <typename... Ts>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathRewriterFactory(const std::string &Name, Ts... Args) {
+  MathRewriterFactory::array_t Rewriters;
+  createMathRewriterFactoryImpl(Name, Rewriters, Args...);
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      Name, std::make_shared<MathRewriterFactory>(Name, Rewriters));
+}
+
+#define MATH_API_REWRITERS_V2(...) createMathRewriterFactory(__VA_ARGS__),
+
+#define MATH_API_REWRITER_PAIR(TAG, REWRITER) TAG, TrueFunctor, REWRITER 0
+#define MATH_API_REWRITER_PAIR_WITH_COND(TAG, COND, REWRITER)                  \
+  TAG, COND, REWRITER 0
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createMathAPIRewriterDeviceImpl(
