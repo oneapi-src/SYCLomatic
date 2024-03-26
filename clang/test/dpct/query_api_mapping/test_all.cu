@@ -905,6 +905,7 @@
 // CHECK-NEXT: cudaDeviceCanAccessPeer
 // CHECK-NEXT: cudaDeviceDisablePeerAccess
 // CHECK-NEXT: cudaDeviceEnablePeerAccess
+// CHECK-NEXT: cudaDeviceGetAttribute
 // CHECK-NEXT: cudaDeviceGetCacheConfig
 // CHECK-NEXT: cudaDeviceGetLimit
 // CHECK-NEXT: cudaDeviceReset
