@@ -2082,7 +2082,7 @@ inline constexpr unsigned extend_vcompare4(AT a, BT b, BinaryOperation cmp) {
 /// with \p c .
 template <typename AT, typename BT, typename BinaryOperation>
 inline constexpr unsigned extend_vcompare4_add(AT a, BT b, unsigned c,
-                                           BinaryOperation cmp) {
+                                               BinaryOperation cmp) {
   return detail::extend_vbinary4<unsigned, false, true>(a, b, c, cmp);
 }
 
