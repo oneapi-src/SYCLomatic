@@ -113,7 +113,8 @@ public:
   }
 };
 
-class MELiteralNumberMigration : public MemberExprRewriterFactoryBase {
+class CudaMemoryTypeLiteralNumberMigration
+    : public MemberExprRewriterFactoryBase {
   std::shared_ptr<MemberExprRewriterFactoryBase> Inner;
 
   const IntegerLiteral *
@@ -138,7 +139,7 @@ class MELiteralNumberMigration : public MemberExprRewriterFactoryBase {
   }
 
 public:
-  MELiteralNumberMigration(
+  CudaMemoryTypeLiteralNumberMigration(
       std::shared_ptr<MemberExprRewriterFactoryBase> InnerFactory)
       : Inner(InnerFactory) {}
   std::shared_ptr<MERewriter> create(const MemberExpr *ME) const override {
@@ -286,21 +287,21 @@ createFeatureRequestFactory(
 }
 
 inline std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
-createLiteralNumberMigrationFactory(
+createCudaMemoryTypeLiteralNumberMigrationFactory(
     std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
         &&Input) {
   return std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>(
       std::move(Input.first),
-      std::make_shared<MELiteralNumberMigration>(Input.second));
+      std::make_shared<CudaMemoryTypeLiteralNumberMigration>(Input.second));
 }
 
 template <class T>
 inline std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
-createLiteralNumberMigrationFactory(
+createCudaMemoryTypeLiteralNumberMigrationFactory(
     std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
         &&Input,
     T) {
-  return createLiteralNumberMigrationFactory(std::move(Input));
+  return createCudaMemoryTypeLiteralNumberMigrationFactory(std::move(Input));
 }
 
 template <class... ArgsT>
@@ -344,8 +345,8 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
   {FuncName, createMemberExprRewriterFactory(FuncName, B, M)},
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createFeatureRequestFactory(FEATURE, x 0),
-#define LITERAL_NUMBER_MIGRATION_FACTORY(x)                                    \
-  createLiteralNumberMigrationFactory(x 0),
+#define CUDA_MEMORY_TYPE_LITERAL_NUMBER_MIGRATION_FACTORY(x)                   \
+  createCudaMemoryTypeLiteralNumberMigrationFactory(x 0),
 #define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
   {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
 #include "APINamesMemberExpr.inc"
