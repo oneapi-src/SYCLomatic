@@ -20,3 +20,8 @@ find_package(oneDPL REQUIRED)
 #Current YAML rule comments find_package(NVJPEG) as no SYCL equivalent lib exists
 #find_package(NVJPEG)
 #find_package(NVJPEG 9.0 REQUIRED)
+#find_package(OpenMP REQUIRED)
+#find_package(MPI  )
+#find_package(MPI REQUIRED )
+#find_package(OpenMP)
+#find_package(OpenMP REQUIRED)
