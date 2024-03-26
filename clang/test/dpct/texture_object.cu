@@ -365,27 +365,27 @@ __global__ void mipmap_kernel(cudaTextureObject_t tex) {
   int i;
   float j, k, l, m;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex1DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex1DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   tex1DLod<short2>(tex, j, l);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex1DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex1DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   tex1DLod(&i, tex, j, l);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex2DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex2DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   tex2DLod<short2>(tex, j, k, l);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex2DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex2DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   tex2DLod(&i, tex, j, k, l);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex3DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex3DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   tex3DLod<short2>(tex, j, k, m, l);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to tex3DLod was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex3DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   tex3DLod(&i, tex, j, k, m, l);
 }

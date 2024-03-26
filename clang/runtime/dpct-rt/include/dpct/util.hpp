@@ -626,10 +626,14 @@ namespace experimental {
 /// Note: Please make sure that all the work items of all work groups within
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
-inline void
-nd_range_barrier(const sycl::nd_item<dimensions> &item,
-                 sycl::atomic_ref<
-                     unsigned int, sycl::memory_order::seq_cst,
+inline void nd_range_barrier(
+    const sycl::nd_item<dimensions> &item,
+    sycl::atomic_ref<unsigned int,
+#ifdef __AMDGPU__
+                     sycl::memory_order::acq_rel,
+#else
+                     sycl::memory_order::seq_cst,
+#endif
                      sycl::memory_scope::device,
                      sycl::access::address_space::global_space> &counter) {
 
@@ -666,10 +670,14 @@ nd_range_barrier(const sycl::nd_item<dimensions> &item,
 /// Note: Please make sure that all the work items of all work groups within
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <>
-inline void
-nd_range_barrier(const sycl::nd_item<1> &item,
-                 sycl::atomic_ref<
-                     unsigned int, sycl::memory_order::seq_cst,
+inline void nd_range_barrier(
+    const sycl::nd_item<1> &item,
+    sycl::atomic_ref<unsigned int,
+#ifdef __AMDGPU__
+                     sycl::memory_order::acq_rel,
+#else
+                     sycl::memory_order::seq_cst,
+#endif
                      sycl::memory_scope::device,
                      sycl::access::address_space::global_space> &counter) {
   unsigned int num_groups = item.get_group_range(0);
