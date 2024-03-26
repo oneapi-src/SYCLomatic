@@ -161,13 +161,14 @@ public:
         Repl = MapNames::getClNamespace() + "usm::alloc::shared";
         break;
       }
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(
-              DpctGlobalInfo::getSourceManager(), IL->getBeginLoc(),
-              Lexer::MeasureTokenLength(
-                  IL->getBeginLoc(), DpctGlobalInfo::getSourceManager(),
-                  DpctGlobalInfo::getContext().getLangOpts()),
-              Repl, nullptr));
+      if (!Repl.empty())
+        DpctGlobalInfo::getInstance().addReplacement(
+            std::make_shared<ExtReplacement>(
+                DpctGlobalInfo::getSourceManager(), IL->getBeginLoc(),
+                Lexer::MeasureTokenLength(
+                    IL->getBeginLoc(), DpctGlobalInfo::getSourceManager(),
+                    DpctGlobalInfo::getContext().getLangOpts()),
+                Repl, nullptr));
     }
     return Inner->create(ME);
   }
