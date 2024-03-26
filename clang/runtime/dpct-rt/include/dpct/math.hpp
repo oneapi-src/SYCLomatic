@@ -1767,7 +1767,7 @@ inline constexpr RetT extend_vmax2_sat(AT a, BT b, RetT c) {
 /// \returns The comparison result of the two extended values.
 template <typename AT, typename BT, typename BinaryOperation>
 inline constexpr unsigned extend_vcompare2(AT a, BT b, BinaryOperation cmp) {
-  return detail::extend_vbinary2<unsigned, false>(a, b, cmp);
+  return detail::extend_vbinary2<unsigned, false, false>(a, b, 0, cmp);
 }
 
 /// Extend Inputs to 33 bit, and vectorized compare input values using specified
@@ -1783,12 +1783,10 @@ inline constexpr unsigned extend_vcompare2(AT a, BT b, BinaryOperation cmp) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns The comparison result of the two extended values. and \p second_op
 /// with \p c .
-template <typename AT, typename BT, typename BinaryOperation,
-          typename SecondBinaryOperation>
-inline constexpr unsigned extend_vcompare2(AT a, BT b, unsigned c,
-                                           BinaryOperation cmp,
-                                           SecondBinaryOperation second_op) {
-  return detail::extend_vbinary2<unsigned, false>(a, b, c, cmp, second_op);
+template <typename AT, typename BT, typename BinaryOperation>
+inline constexpr unsigned extend_vcompare2_add(AT a, BT b, unsigned c,
+                                               BinaryOperation cmp) {
+  return detail::extend_vbinary2<unsigned, false, true>(a, b, c, cmp);
 }
 
 /// Compute vectorized average of \p a and \p b, with each value treated as a 2
@@ -2066,7 +2064,7 @@ inline constexpr RetT extend_vmax4_sat(AT a, BT b, RetT c) {
 /// \returns The comparison result of the two extended values.
 template <typename AT, typename BT, typename BinaryOperation>
 inline constexpr unsigned extend_vcompare4(AT a, BT b, BinaryOperation cmp) {
-  return detail::extend_vbinary4<unsigned, false>(a, b, cmp);
+  return detail::extend_vbinary4<unsigned, false, false>(a, b, 0, cmp);
 }
 
 /// Extend Inputs to 33 bit, and vectorized compare input values using specified
@@ -2082,12 +2080,10 @@ inline constexpr unsigned extend_vcompare4(AT a, BT b, BinaryOperation cmp) {
 /// \param [in] second_op The operation to do with the third value
 /// \returns The comparison result of the two extended values. and \p second_op
 /// with \p c .
-template <typename AT, typename BT, typename BinaryOperation,
-          typename SecondBinaryOperation>
-inline constexpr unsigned extend_vcompare4(AT a, BT b, unsigned c,
-                                           BinaryOperation cmp,
-                                           SecondBinaryOperation second_op) {
-  return detail::extend_vbinary4<unsigned, false>(a, b, c, cmp, second_op);
+template <typename AT, typename BT, typename BinaryOperation>
+inline constexpr unsigned extend_vcompare4_add(AT a, BT b, unsigned c,
+                                           BinaryOperation cmp) {
+  return detail::extend_vbinary4<unsigned, false, true>(a, b, c, cmp);
 }
 
 /// Compute vectorized average of \p a and \p b, with each value treated as a 4

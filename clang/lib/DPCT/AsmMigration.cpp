@@ -1585,15 +1585,6 @@ protected:
     return SYCLGenSuccess();
   }
 
-  void HandleSecondOp(const InlineAsmInstruction *Inst) {
-    if (Inst->hasAttr(InstAttr::add))
-      OS() << ", " << MapNames::getClNamespace() << "plus<>()";
-    else if (Inst->hasAttr(InstAttr::min))
-      OS() << ", " << MapNames::getClNamespace() << "minimum<>()";
-    else if (Inst->hasAttr(InstAttr::max))
-      OS() << ", " << MapNames::getClNamespace() << "maximum<>()";
-  }
-
   // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
   bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst,
                                     StringRef Fn) {
@@ -1627,7 +1618,12 @@ protected:
 
     OS() << llvm::join(ArrayRef(Op, Inst->getNumInputOperands()), ", ");
     // The secondary arithmetic operation.
-    HandleSecondOp(Inst);
+    if (Inst->hasAttr(InstAttr::add))
+      OS() << ", " << MapNames::getClNamespace() << "plus<>()";
+    else if (Inst->hasAttr(InstAttr::min))
+      OS() << ", " << MapNames::getClNamespace() << "minimum<>()";
+    else if (Inst->hasAttr(InstAttr::max))
+      OS() << ", " << MapNames::getClNamespace() << "maximum<>()";
 
     OS() << ")";
     endstmt();
@@ -1679,7 +1675,10 @@ protected:
       return SYCLGenError();
     if (emitStmt(I->getOutputOperand()))
       return SYCLGenError();
-    OS() << " = " << MapNames::getDpctNamespace() << Fn << '(';
+    OS() << " = " << MapNames::getDpctNamespace() << Fn;
+    if (I->is(asmtok::op_vset2, asmtok::op_vset4) && I->hasAttr(InstAttr::add))
+      OS() << "_add";
+    OS() << '(';
     for (unsigned i = 0, e = I->getNumInputOperands(); i != e; ++i) {
       if (emitStmt(I->getInputOperand(i)))
         return SYCLGenError();
@@ -1688,7 +1687,14 @@ protected:
     }
     if (HandleComparsionOp(I))
       return SYCLGenError();
-    HandleSecondOp(I);
+    if (I->is(asmtok::op_vset)) {
+      if (I->hasAttr(InstAttr::add))
+        OS() << ", " << MapNames::getClNamespace() << "plus<>()";
+      else if (I->hasAttr(InstAttr::min))
+        OS() << ", " << MapNames::getClNamespace() << "minimum<>()";
+      else if (I->hasAttr(InstAttr::max))
+        OS() << ", " << MapNames::getClNamespace() << "maximum<>()";
+    }
     OS() << ')';
     endstmt();
     return SYCLGenSuccess();

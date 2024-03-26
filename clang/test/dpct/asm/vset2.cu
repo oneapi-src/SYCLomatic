@@ -59,12 +59,12 @@ __global__ void vset2(unsigned *d) {
   asm("vset2.u32.u32.gt %0, %1, %2;" : "=r"(*d) : "r"(a), "r"(b));
   asm("vset2.u32.u32.ge %0, %1, %2;" : "=r"(*d) : "r"(a), "r"(b));
 
-  // CHECK: *d = dpct::extend_vcompare2(e, f, a, std::equal_to<>(), sycl::plus<>());
-  // CHECK: *d = dpct::extend_vcompare2(e, f, a, std::not_equal_to<>(), sycl::plus<>());
-  // CHECK: *d = dpct::extend_vcompare2(e, f, a, std::less<>(), sycl::plus<>());
-  // CHECK: *d = dpct::extend_vcompare2(e, f, a, std::less_equal<>(), sycl::plus<>());
-  // CHECK: *d = dpct::extend_vcompare2(e, f, a, std::greater<>(), sycl::plus<>());
-  // CHECK: *d = dpct::extend_vcompare2(e, f, a, std::greater_equal<>(), sycl::plus<>());
+  // CHECK: *d = dpct::extend_vcompare2_add(e, f, a, std::equal_to<>());
+  // CHECK: *d = dpct::extend_vcompare2_add(e, f, a, std::not_equal_to<>());
+  // CHECK: *d = dpct::extend_vcompare2_add(e, f, a, std::less<>());
+  // CHECK: *d = dpct::extend_vcompare2_add(e, f, a, std::less_equal<>());
+  // CHECK: *d = dpct::extend_vcompare2_add(e, f, a, std::greater<>());
+  // CHECK: *d = dpct::extend_vcompare2_add(e, f, a, std::greater_equal<>());
   asm("vset2.s32.s32.eq.add %0, %1, %2, %3;" : "=r"(*d) : "r"(e), "r"(f), "r"(a));
   asm("vset2.s32.s32.ne.add %0, %1, %2, %3;" : "=r"(*d) : "r"(e), "r"(f), "r"(a));
   asm("vset2.s32.s32.lt.add %0, %1, %2, %3;" : "=r"(*d) : "r"(e), "r"(f), "r"(a));
