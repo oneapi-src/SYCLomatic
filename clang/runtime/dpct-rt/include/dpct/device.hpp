@@ -375,7 +375,13 @@ Use 64 bits as memory_bus_width default value."
       dev.get_info<
           sycl::ext::oneapi::experimental::info::device::max_work_groups<3>>());
 #else
-#warning "Querying the maximum number of work groups is not supported"
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma message("get_device_info: querying the maximum number \
+of work groups is not supported.")
+#else
+#warning "get_device_info: querying the maximum number of \
+work groups is not supported."
+#endif
   int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
   prop.set_max_nd_range_size(max_nd_range_size);
 #endif
