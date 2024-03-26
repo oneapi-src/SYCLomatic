@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "MemberExprRewriter.h"
+#include "AnalysisInfo.h"
 #include "MapNames.h"
 
 namespace clang {
@@ -119,19 +120,20 @@ class CudaMemoryTypeLiteralNumberMigration
 
   const IntegerLiteral *
   isComparingWithIntegerLiteral(const MemberExpr *ME) const {
-    const Expr *Cur = ME;
-    const Expr *Pre = nullptr;
-    while (const Expr *E = DpctGlobalInfo::findParent<Expr>(Cur)) {
-      Pre = Cur;
-      Cur = E;
-      if (!isa<ImplicitCastExpr>(Cur))
-        break;
-    }
-    const BinaryOperator *BO = dyn_cast<BinaryOperator>(Cur);
+    DynTypedNode Pre;
+    const Stmt *Target = DpctGlobalInfo::findAncestor<Stmt>(
+        ME, [&](const DynTypedNode &Cur) -> bool {
+          if (Cur.get<ImplicitCastExpr>()) {
+            Pre = Cur;
+            return false;
+          }
+          return true;
+        });
+    const BinaryOperator *BO = dyn_cast<BinaryOperator>(Target);
     if (!BO)
       return nullptr;
     const Expr *Another = BO->getRHS();
-    if (Pre == BO->getRHS())
+    if (Pre.get<Stmt>() && (Pre.get<Stmt>() == BO->getRHS()))
       Another = BO->getLHS();
     if (const IntegerLiteral *IL = dyn_cast<IntegerLiteral>(Another))
       return IL;
