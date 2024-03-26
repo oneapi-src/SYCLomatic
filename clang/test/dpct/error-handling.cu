@@ -182,6 +182,7 @@ void test_1(cudaError_t err, int arg) {
 void test_12(cudaError_t err, int arg) {
   if (err) {
   } else {
+    
   }
 }
 
@@ -245,6 +246,7 @@ void test_16(cudaError_t err, int arg) {
     printf("error!\n");
     exit(1);
   } else {
+    
   }
 }
 
@@ -513,12 +515,12 @@ void foo2() {
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo3() {
-  do {
+  do{
     printf("efef");
   } while (cudaMalloc(0, 0));
 }
 
-// CHECK: void foo4(){
+// CHECK: void foo4() {
 // CHECK-NEXT:   int a;
 // CHECK-NEXT:   a = DPCT_CHECK_ERROR(* 0 = dpct::dpct_malloc(0));
 // CHECK-NEXT: }
@@ -527,18 +529,17 @@ void foo4() {
   a = cudaMalloc(0, 0);
 }
 
-// CHECK: void foo5(){
+// CHECK: void foo5() {
 // CHECK-NEXT:   *0 = dpct::dpct_malloc(0);
 // CHECK-NEXT:   int a = printf("a");
-// CHECK-NEXT:   if(printf("a")){}
+// CHECK-NEXT:   if(printf("a")) {}
 // CHECK-NEXT:   dpct::event_ptr start;
 // CHECK:   int b = DPCT_CHECK_ERROR(start = new sycl::event());
 // CHECK-NEXT: }
 void foo5() {
   cudaMalloc(0, 0);
   int a = printf("a");
-  if (printf("a")) {
-  }
+  if(printf("a")) {}
   cudaEvent_t start;
   int b = cudaEventCreate(&start);
 }
@@ -554,8 +555,7 @@ void foo5() {
 // CHECK-NEXT: }
 void foo6() {
   int a = cudaMalloc(0, 0);
-  if (a)
-    printf("a");
+  if(a) printf("a");
 }
 
 // CHECK: void foo7() try {
@@ -571,8 +571,7 @@ void foo6() {
 void foo7() {
   int a;
   a = cudaMalloc(0, 0);
-  if (a)
-    printf("a");
+  if(a) printf("a");
 }
 
 // CHECK: int foo8() try {
@@ -587,13 +586,13 @@ int foo8() {
   return cudaMalloc(0, 0);
 }
 
-// CHECK: int foo9(){
-// CHECK-NEXT: while(true){
+// CHECK: int foo9() {
+// CHECK-NEXT: while (true) {
 // CHECK-NEXT:   *0 = dpct::dpct_malloc(0);
 // CHECK-NEXT: }
 // CHECK-NEXT: }
 int foo9() {
-  while (true){
+  while (true) {
     cudaMalloc(0, 0);
   }
 }
@@ -619,18 +618,18 @@ void foo10() {
     break;
   case 1:
     break;
-  default:;
+  default:
+  ;
   }
 }
 
-// CHECK: class ClassA
-// CHECK-NEXT: {
+// CHECK: class ClassA {
 // CHECK-NEXT:   public:
 // CHECK-NEXT:   std::vector<int> V;
 // CHECK-NEXT:   ClassA() : V() {}
 // CHECK-NEXT:   ClassA(int b) try {
 // CHECK-NEXT:     int a = DPCT_CHECK_ERROR(* 0 = dpct::dpct_malloc(0));
-// CHECK-NEXT:     if(a){printf("a");}
+// CHECK-NEXT:     if(a) { printf("a"); }
 // CHECK-NEXT:   }
 // CHECK-NEXT:   catch (sycl::exception const &exc) {
 // CHECK-NEXT:     std::cerr << exc.what() << "Exception caught at file:" << __FILE__
@@ -644,16 +643,14 @@ public:
   ClassA() : V() {}
   ClassA(int b) {
     int a = cudaMalloc(0, 0);
-    if (a) {
-      printf("a");
-    }
+    if(a) { printf("a"); }
   }
 };
 #endif
 
-// CHECK: int foo11(){
+// CHECK: int foo11() {
 // CHECK-NEXT:   int *a;
-// CHECK-NEXT:   return [&](){
+// CHECK-NEXT:   return [&]() {
 /// FIXME: cudaMalloc is matched here, should be fixed.
 // NOT-CHECK-NEXT:     try {
 // CHECK-NEXT:       return DPCT_CHECK_ERROR(a = (int *)dpct::dpct_malloc(0));
@@ -695,7 +692,7 @@ void foo12() {
   }
 }
 
-// CHECK: void foo13(){
+// CHECK: void foo13() {
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
 // CHECK-NEXT:   auto ct_0_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(0);
@@ -732,7 +729,7 @@ __host__ __device__ __forceinline__ cudaError_t *foo15(cudaError_t error,
   return &error;
 }
 
-// CHECK: int foo16(){
+// CHECK: int foo16() {
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
 // CHECK-NEXT:   codes. The call was replaced with 0. You need to rewrite this code.
