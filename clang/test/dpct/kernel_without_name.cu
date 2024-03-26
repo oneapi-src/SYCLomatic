@@ -283,9 +283,10 @@ template <typename T> struct kernel_type_t {
 };
 
 template <typename T> __global__ void foo_kernel7() {
-  /*
-  DPCT1124:{{[0-9]+}}: This type is used in other places. You may need adjust the type definition location.
-  */
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1124:{{[0-9]+}}: This type is used in other places. You may need adjust the type definition location.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:using Tk = typename kernel_type_t<T>::Type;
   using Tk = typename kernel_type_t<T>::Type;
   __shared__ Tk mem[256];
 }
