@@ -283,12 +283,28 @@ template <typename T> struct kernel_type_t {
   using Type = T;
 };
 
+//CHECK:template <typename T> void foo_kernel7(Tk *mem) {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1124:{{[0-9]+}}: This type is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need adjust the type definition location.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  using Tk = typename kernel_type_t<T>::Type;
 template <typename T> __global__ void foo_kernel7() {
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1124:{{[0-9]+}}: This type is used in other places. You may need adjust the type definition location.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:using Tk = typename kernel_type_t<T>::Type;
   using Tk = typename kernel_type_t<T>::Type;
   __shared__ Tk mem[256];
+}
+
+template <typename T> 
+void run_foo8() {
+//CHECK:  dpct::get_out_of_order_queue().submit(
+//CHECK-NEXT:    [&](sycl::handler &cgh) {
+//CHECK-NEXT:      sycl::local_accessor<Tk, 1> mem_acc_ct1(sycl::range<1>(256), cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:      cgh.parallel_for(
+//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          foo_kernel7<T>(mem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
+  foo_kernel7<T><<<1, 1>>>();
 }
 #endif
