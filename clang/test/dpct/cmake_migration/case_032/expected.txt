@@ -29,3 +29,108 @@ else ()
     set(LLAMA_EXTRA_LIBS ${LLAMA_EXTRA_LIBS}  ${MKL_LIB} ${DNN_LIB})
 endif()
 set(LLAMA_EXTRA_LIBS ${LLAMA_EXTRA_LIBS}  ${MKL_LIB} ${DNN_LIB})
+
+set(LIBS ${LIBS}
+    
+    
+    ${MKL_LIB}
+    
+    
+    
+    
+    
+)
+
+target_link_libraries(${target}
+    
+    ${MKL_LIB}
+    ${MKL_LIB}
+    
+    
+    
+    
+    
+    
+)
+
+link_libraries(PUBLIC
+    ${MKL_LIB}
+    ${MKL_LIB}
+    
+    
+    
+    
+    
+    
+    
+    
+)
+
+set(LIBS ${LIBS}
+    
+    
+    
+    
+    
+    ${MKL_LIB}
+    
+    
+    
+    
+    
+    
+    
+    ${MKL_LIB}
+    
+    
+    
+    ${MKL_LIB}
+    
+    
+)
+
+target_link_libraries(${target}
+    
+    
+    
+    ${MKL_LIB}
+    
+    
+    ${MKL_LIB}
+    
+    
+    
+    
+    
+    ${MKL_LIB}
+    
+    
+    
+    
+    
+    ${MKL_LIB}
+    
+    
+)
+
+link_libraries(PUBLIC
+    ${MKL_LIB}
+    
+    
+    
+    
+    
+    
+    
+    
+    ${MKL_LIB}
+    
+    
+    
+    
+    ${MKL_LIB}
+    
+    
+    
+    ${MKL_LIB}
+)

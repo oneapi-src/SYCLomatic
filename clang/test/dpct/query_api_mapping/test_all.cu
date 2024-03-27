@@ -1042,6 +1042,8 @@
 // CHECK-NEXT: cudnnDropoutForward
 // CHECK-NEXT: cudnnDropoutGetReserveSpaceSize
 // CHECK-NEXT: cudnnDropoutGetStatesSize
+// CHECK-NEXT: cudnnFindConvolutionBackwardDataAlgorithm
+// CHECK-NEXT: cudnnFindConvolutionBackwardFilterAlgorithm
 // CHECK-NEXT: cudnnFindConvolutionForwardAlgorithm
 // CHECK-NEXT: cudnnGetActivationDescriptor
 // CHECK-NEXT: cudnnGetActivationDescriptorSwishBeta
@@ -1051,10 +1053,13 @@
 // CHECK-NEXT: cudnnGetConvolution2dDescriptor
 // CHECK-NEXT: cudnnGetConvolution2dForwardOutputDim
 // CHECK-NEXT: cudnnGetConvolutionBackwardDataAlgorithm
+// CHECK-NEXT: cudnnGetConvolutionBackwardDataAlgorithm_v7
 // CHECK-NEXT: cudnnGetConvolutionBackwardDataWorkspaceSize
 // CHECK-NEXT: cudnnGetConvolutionBackwardFilterAlgorithm
+// CHECK-NEXT: cudnnGetConvolutionBackwardFilterAlgorithm_v7
 // CHECK-NEXT: cudnnGetConvolutionBackwardFilterWorkspaceSize
 // CHECK-NEXT: cudnnGetConvolutionForwardAlgorithm
+// CHECK-NEXT: cudnnGetConvolutionForwardAlgorithm_v7
 // CHECK-NEXT: cudnnGetConvolutionForwardWorkspaceSize
 // CHECK-NEXT: cudnnGetConvolutionGroupCount
 // CHECK-NEXT: cudnnGetConvolutionNdDescriptor
