@@ -1670,16 +1670,24 @@ protected:
     if (I->getNumInputOperands() < 2 || I->getNumTypes() != 2 ||
         CheckSIMDInstructionType(I))
       return SYCLGenError();
-    if (I->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) &&
-        I->getNumInputOperands() < 3)
+    bool hasSecOp = I->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max);
+    if (hasSecOp && I->getNumInputOperands() < 3)
       return SYCLGenError();
     if (emitStmt(I->getOutputOperand()))
       return SYCLGenError();
     OS() << " = " << MapNames::getDpctNamespace() << Fn;
     if (I->is(asmtok::op_vset2, asmtok::op_vset4) && I->hasAttr(InstAttr::add))
       OS() << "_add";
-    OS() << '(';
-    for (unsigned i = 0, e = I->getNumInputOperands(); i != e; ++i) {
+    OS() << '<';
+    for (int i = 0, e = I->getNumTypes(); i != e; ++i) {
+      if (emitType(I->getType(i)))
+        return SYCLGenError();
+      if (i < e - 1)
+        OS() << ", ";
+    }
+    OS() << '>' << '(';
+    // If no second op, ignore third operand until we support operand mask.
+    for (unsigned i = 0, e = I->getNumInputOperands() - !hasSecOp; i != e; ++i) {
       if (emitStmt(I->getInputOperand(i)))
         return SYCLGenError();
       if (i < e - 1)
