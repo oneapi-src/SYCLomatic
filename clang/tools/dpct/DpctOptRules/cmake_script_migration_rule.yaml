@@ -189,7 +189,7 @@
       Out: ${arg}.${rewrite_extention_name}
 
 # ${CUDA_LIBRARIES} is cmake reserved variable for the CUDA runtime library.
-# In SYCL side, SYCL runtime is default auto-loaded when option "-fsycl" is specified, so we remove it in SYCL side.
+# SYCL runtime is auto-loaded when "-fsycl" flag is specified, so this variable is removed in the migrated CMake.
 - Rule: CUDA_LIBRARIES_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -325,7 +325,6 @@
       Out: ""
       RuleId: "remove_CUDA_cupti_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_CUT_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_CUT_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -340,7 +339,6 @@
       Out: ""
       RuleId: "remove_CUDA_CUT_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_npp_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_npp_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -355,7 +353,6 @@
       Out: ""
       RuleId: "remove_CUDA_npp_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppc_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppc_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -370,7 +367,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppc_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppi_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppi_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -385,7 +381,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppi_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppial_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppial_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -400,7 +395,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppial_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppicc_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppicc_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -415,7 +409,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppicc_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppicom_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppicom_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -430,7 +423,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppicom_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppidei_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppidei_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -445,7 +437,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppidei_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppif_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppif_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -460,7 +451,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppif_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppig_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppig_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -475,7 +465,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppig_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppim_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppim_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -490,7 +479,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppim_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppist_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppist_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -505,7 +493,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppist_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppsu_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppisu_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -520,7 +507,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppisu_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppitc_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppitc_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -535,7 +521,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppitc_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_npps_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_npps_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -550,7 +535,6 @@
       Out: ""
       RuleId: "remove_CUDA_npps_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nvcuvenc_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nvcuvenc_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -565,7 +549,6 @@
       Out: ""
       RuleId: "remove_CUDA_nvcuvenc_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nvcuvid_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nvcuvid_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -580,7 +563,6 @@
       Out: ""
       RuleId: "remove_CUDA_nvcuvid_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nvToolsExt_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nvToolsExt_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -673,7 +655,6 @@
       Out: SYCL_HAS_FP16
 
 # Current Yaml based rule hard-code to map "cxx_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
 - Rule: rule_cxx_target_compile_features
   Kind: CMakeRule
   Priority: Fallback
@@ -688,7 +669,6 @@
       RuleId: "adjust_cxx_ver"
 
 # Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
 - Rule: rule_cuda_target_compile_features
   Kind: CMakeRule
   Priority: Fallback
@@ -882,7 +862,6 @@
       MatchMode: Full
       RuleId: "replace_cudnn_with_libdnn"
 
-# SYCL does not have mapping for nvrtc currently, so removing here
 - Rule: rule_target_link_libraries_nvrtc
   Kind: CMakeRule
   Priority: Fallback
@@ -896,7 +875,6 @@
       MatchMode: Full
       RuleId: "remove_nvrtc"
 
-# SYCL does not have mapping for nvToolsExt currently, so removing here
 - Rule: rule_target_link_libraries_nvToolsExt
   Kind: CMakeRule
   Priority: Fallback
@@ -910,7 +888,6 @@
       MatchMode: Full
       RuleId: "remove_nvToolsExt"
 
-# SYCL does not have mapping for libnvinfer currently, so removing here
 - Rule: rule_target_link_libraries_libnvinfer
   Kind: CMakeRule
   Priority: Fallback
@@ -924,7 +901,6 @@
       MatchMode: Full
       RuleId: "remove_libnvinfer"
 
-# SYCL does not have mapping for libnvonnxparser currently, so removing here
 - Rule: rule_target_link_libraries_libnvonnxparser
   Kind: CMakeRule
   Priority: Fallback
