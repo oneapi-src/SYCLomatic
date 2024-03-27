@@ -75,4 +75,17 @@ int main() {
   } else if (attributes3->type == cudaMemoryTypeUnregistered) {
     return 3;
   }
+  // CHECK: if (attributes3->get_memory_type() == sycl::usm::alloc::unknown) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::host) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::device) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::shared) {
+  if (attributes3->type == 0) {
+    return 0;
+  } else if (attributes3->type == 1) {
+    return 1;
+  } else if (attributes3->type == 2) {
+    return 2;
+  } else if (attributes3->type == 3) {
+    return 3;
+  }
 }
