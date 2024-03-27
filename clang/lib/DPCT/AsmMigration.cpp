@@ -1667,7 +1667,7 @@ protected:
   }
 
   bool HandleVset(const InlineAsmInstruction *I, StringRef Fn) {
-    if (I->getNumInputOperands() < 2 || I->getNumTypes() != 2 ||
+    if (I->getNumInputOperands() < 3 || I->getNumTypes() != 2 ||
         CheckSIMDInstructionType(I))
       return SYCLGenError();
     bool hasSecOp = I->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max);
