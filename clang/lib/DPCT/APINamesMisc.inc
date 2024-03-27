@@ -122,32 +122,7 @@ CONDITIONAL_FACTORY_ENTRY(
                           "dev_mgr::instance().get_device",
                       ARG(1)))))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    checkIsCallExprOnly(),
-    WARNING_FACTORY_ENTRY("cudaProfilerStart",
-                          TOSTRING_FACTORY_ENTRY("cudaProfilerStart",
-                                                 LITERAL("")),
-                          Diagnostics::FUNC_CALL_REMOVED,
-                          std::string("cudaProfilerStart"),
-                          getRemovedAPIWarningMessage("cudaProfilerStart")),
-    WARNING_FACTORY_ENTRY("cudaProfilerStart",
-                          TOSTRING_FACTORY_ENTRY("cudaProfilerStart",
-                                                 LITERAL("0")),
-                          Diagnostics::FUNC_CALL_REMOVED_0,
-                          std::string("cudaProfilerStart"),
-                          getRemovedAPIWarningMessage("cudaProfilerStart")))
-
-CONDITIONAL_FACTORY_ENTRY(
-    checkIsCallExprOnly(),
-    WARNING_FACTORY_ENTRY("cudaProfilerStop",
-                          TOSTRING_FACTORY_ENTRY("cudaProfilerStop",
-                                                 LITERAL("")),
-                          Diagnostics::FUNC_CALL_REMOVED,
-                          std::string("cudaProfilerStop"),
-                          getRemovedAPIWarningMessage("cudaProfilerStop")),
-    WARNING_FACTORY_ENTRY("cudaProfilerStop",
-                          TOSTRING_FACTORY_ENTRY("cudaProfilerStop",
-                                                 LITERAL("0")),
-                          Diagnostics::FUNC_CALL_REMOVED_0,
-                          std::string("cudaProfilerStop"),
-                          getRemovedAPIWarningMessage("cudaProfilerStop")))
+REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaProfilerStart",
+                         getRemovedAPIWarningMessage("cudaProfilerStart"))
+REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaProfilerStop",
+                         getRemovedAPIWarningMessage("cudaProfilerStop"))
