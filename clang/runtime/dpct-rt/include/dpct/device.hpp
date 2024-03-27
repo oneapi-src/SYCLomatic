@@ -226,6 +226,12 @@ public:
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
+  void set_max_nd_range_size(sycl::id<3> max_nd_range_size) {
+    for (int i = 0; i < 3; i++) {
+      _max_nd_range_size[i] = max_nd_range_size[i];
+      _max_nd_range_size_i[i] = max_nd_range_size[i];
+    }
+  }
   void set_memory_clock_rate(unsigned int memory_clock_rate) {
     _memory_clock_rate = memory_clock_rate;
   }
@@ -364,8 +370,21 @@ Use 64 bits as memory_bus_width default value."
 
   prop.set_max_work_items_per_compute_unit(
       dev.get_info<sycl::info::device::max_work_group_size>());
+#ifdef SYCL_EXT_ONEAPI_MAX_WORK_GROUP_QUERY
+  prop.set_max_nd_range_size(
+      dev.get_info<
+          sycl::ext::oneapi::experimental::info::device::max_work_groups<3>>());
+#else
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma message("get_device_info: querying the maximum number \
+of work groups is not supported.")
+#else
+#warning "get_device_info: querying the maximum number of \
+work groups is not supported."
+#endif
   int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
   prop.set_max_nd_range_size(max_nd_range_size);
+#endif
 
   // Estimates max register size per work group, feel free to update the value
   // according to device properties.

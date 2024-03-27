@@ -695,10 +695,14 @@ template <typename T> struct IsValidAtomicType {
 
 template <typename T,
           sycl::memory_scope DefaultScope = sycl::memory_scope::system,
+#ifdef __AMDGPU__
+          sycl::memory_order DefaultOrder = sycl::memory_order::acq_rel,
+#else
           sycl::memory_order DefaultOrder = sycl::memory_order::seq_cst,
+#endif
           sycl::access::address_space Space =
               sycl::access::address_space::generic_space>
-class atomic{
+class atomic {
   static_assert(
     detail::IsValidAtomicType<T>::value,
     "Invalid atomic type.  Valid types are int, unsigned int, long, "
