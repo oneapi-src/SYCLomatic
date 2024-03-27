@@ -487,6 +487,11 @@ void foo1(){
 // CHECK-NEXT:   size_t size = 1234567 * sizeof(float);
 // CHECK-NEXT:   float *h_A = (float *)malloc(size);
 // CHECK-NEXT:   float *d_A = NULL;
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1124:{{[0-9]+}}: cudaMemcpyAsync is migrated to asynchronous memcpy API. While
+// CHECK-NEXT:  origin API might be synchronous with respect with host, you may need to call
+// CHECK-NEXT:  wait() on event return by memcpy API to ensure synchronization behavior.
+// CHECK-NEXT:  */
 // CHECK-NEXT:   while (DPCT_CHECK_ERROR(
 // CHECK-NEXT:       dpct::async_dpct_memcpy(d_A, h_A, size, dpct::host_to_device))) {
 // CHECK-NEXT:     printf("efef");
