@@ -325,7 +325,6 @@
       Out: ""
       RuleId: "remove_CUDA_cupti_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_CUT_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_CUT_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -340,7 +339,6 @@
       Out: ""
       RuleId: "remove_CUDA_CUT_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_npp_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_npp_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -355,7 +353,6 @@
       Out: ""
       RuleId: "remove_CUDA_npp_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppc_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppc_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -370,7 +367,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppc_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppi_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppi_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -385,7 +381,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppi_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppial_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppial_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -400,7 +395,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppial_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppicc_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppicc_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -415,7 +409,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppicc_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppicom_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppicom_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -430,7 +423,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppicom_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppidei_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppidei_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -445,7 +437,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppidei_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppif_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppif_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -460,7 +451,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppif_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppig_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppig_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -475,7 +465,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppig_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppim_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppim_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -490,7 +479,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppim_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppist_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppist_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -505,7 +493,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppist_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppsu_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppisu_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -520,7 +507,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppisu_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nppitc_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nppitc_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -535,7 +521,6 @@
       Out: ""
       RuleId: "remove_CUDA_nppitc_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_npps_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_npps_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -550,7 +535,6 @@
       Out: ""
       RuleId: "remove_CUDA_npps_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nvcuvenc_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nvcuvenc_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -565,7 +549,6 @@
       Out: ""
       RuleId: "remove_CUDA_nvcuvenc_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nvcuvid_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nvcuvid_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -580,7 +563,6 @@
       Out: ""
       RuleId: "remove_CUDA_nvcuvid_LIBRARY"
 
-# No SYCL equivalent currently exists for CUDA_nvToolsExt_LIBRARY and hence is removed in the migrated CMake.
 - Rule: CUDA_nvToolsExt_LIBRARY_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1270,7 +1252,6 @@
         \${MKL_LIB}
       RuleId: "replace_cusparse_static_with_MKL"
 
-# No SYCL equivalent exists for cudla currently and hence is removed in migrate CMake
 - Rule: cudla_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1285,7 +1266,6 @@
       Out: ""
       RuleId: "remove_cudla"
 
-# No SYCL equivalent exists for cuFile currently and hence is removed in migrate CMake
 - Rule: cuFile_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1300,7 +1280,6 @@
       Out: ""
       RuleId: "remove_cuFile"
 
-# No SYCL equivalent exists for cuFile_static currently and hence is removed in migrate CMake
 - Rule: cuFile_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1315,7 +1294,6 @@
       Out: ""
       RuleId: "remove_cuFile_static"
 
-# No SYCL equivalent exists for cuFile_rdma currently and hence is removed in migrate CMake
 - Rule: cuFile_rdma_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1330,7 +1308,6 @@
       Out: ""
       RuleId: "remove_cuFile_rdma"
 
-# No SYCL equivalent exists for cuFile_rdma_static currently and hence is removed in migrate CMake
 - Rule: cuFile_rdma_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1345,7 +1322,6 @@
       Out: ""
       RuleId: "remove_cuFile_rdma_static"
 
-# No SYCL equivalent exists for cupti currently and hence is removed in migrate CMake
 - Rule: cupti_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1360,7 +1336,6 @@
       Out: ""
       RuleId: "remove_cupti"
 
-# No SYCL equivalent exists for cupti_static currently and hence is removed in migrate CMake
 - Rule: cupti_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1375,7 +1350,6 @@
       Out: ""
       RuleId: "remove_cupti_static"
 
-# No SYCL equivalent exists for nvperf_host currently and hence is removed in migrate CMake
 - Rule: nvperf_host_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1390,7 +1364,6 @@
       Out: ""
       RuleId: "remove_nvperf_host"
 
-# No SYCL equivalent exists for nvperf_host_static currently and hence is removed in migrate CMake
 - Rule: nvperf_host_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1405,7 +1378,6 @@
       Out: ""
       RuleId: "remove_nvperf_host_static"
 
-# No SYCL equivalent exists for nvperf_target currently and hence is removed in migrate CMake
 - Rule: nvperf_target_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1420,7 +1392,6 @@
       Out: ""
       RuleId: "remove_nvperf_target"
 
-# No SYCL equivalent exists for pcsamplingutil currently and hence is removed in migrate CMake
 - Rule: pcsamplingutil_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1435,7 +1406,6 @@
       Out: ""
       RuleId: "remove_pcsamplingutil"
 
-# No SYCL equivalent exists for nppc currently and hence is removed in migrate CMake
 - Rule: nppc_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1450,7 +1420,6 @@
       Out: ""
       RuleId: "remove_nppc"
 
-# No SYCL equivalent exists for nppc_static currently and hence is removed in migrate CMake
 - Rule: nppc_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1465,7 +1434,6 @@
       Out: ""
       RuleId: "remove_nppc_static"
 
-# No SYCL equivalent exists for nppial currently and hence is removed in migrate CMake
 - Rule: nppial_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1480,7 +1448,6 @@
       Out: ""
       RuleId: "remove_nppial"
 
-# No SYCL equivalent exists for nppial_static currently and hence is removed in migrate CMake
 - Rule: nppial_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1495,7 +1462,6 @@
       Out: ""
       RuleId: "remove_nppial_static"
 
-# No SYCL equivalent exists for nppicc currently and hence is removed in migrate CMake
 - Rule: nppicc_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1510,7 +1476,6 @@
       Out: ""
       RuleId: "remove_nppicc"
 
-# No SYCL equivalent exists for nppicc_static currently and hence is removed in migrate CMake
 - Rule: nppicc_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1525,7 +1490,6 @@
       Out: ""
       RuleId: "remove_nppicc_static"
 
-# No SYCL equivalent exists for nppicom currently and hence is removed in migrate CMake
 - Rule: nppicom_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1540,7 +1504,6 @@
       Out: ""
       RuleId: "remove_nppicom"
 
-# No SYCL equivalent exists for nppicom_static currently and hence is removed in migrate CMake
 - Rule: nppicom_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1555,7 +1518,6 @@
       Out: ""
       RuleId: "remove_nppicom_static"
 
-# No SYCL equivalent exists for nppidei currently and hence is removed in migrate CMake
 - Rule: nppidei_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1570,7 +1532,6 @@
       Out: ""
       RuleId: "remove_nppidei"
 
-# No SYCL equivalent exists for nppidei_static currently and hence is removed in migrate CMake
 - Rule: nppidei_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1585,7 +1546,6 @@
       Out: ""
       RuleId: "remove_nppidei_static"
 
-# No SYCL equivalent exists for nppif currently and hence is removed in migrate CMake
 - Rule: nppif_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1600,7 +1560,6 @@
       Out: ""
       RuleId: "remove_nppif"
 
-# No SYCL equivalent exists for nppif_static currently and hence is removed in migrate CMake
 - Rule: nppif_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1615,7 +1574,6 @@
       Out: ""
       RuleId: "remove_nppif_static"
 
-# No SYCL equivalent exists for nppig currently and hence is removed in migrate CMake
 - Rule: nppig_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1630,7 +1588,6 @@
       Out: ""
       RuleId: "remove_nppig"
 
-# No SYCL equivalent exists for nppig_static currently and hence is removed in migrate CMake
 - Rule: nppig_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1645,7 +1602,6 @@
       Out: ""
       RuleId: "remove_nppig_static"
 
-# No SYCL equivalent exists for nppim currently and hence is removed in migrate CMake
 - Rule: nppim_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1660,7 +1616,6 @@
       Out: ""
       RuleId: "remove_nppim"
 
-# No SYCL equivalent exists for nppim_static currently and hence is removed in migrate CMake
 - Rule: nppim_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1675,7 +1630,6 @@
       Out: ""
       RuleId: "remove_nppim_static"
 
-# No SYCL equivalent exists for nppist currently and hence is removed in migrate CMake
 - Rule: nppist_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1690,7 +1644,6 @@
       Out: ""
       RuleId: "remove_nppist"
 
-# No SYCL equivalent exists for nppist_static currently and hence is removed in migrate CMake
 - Rule: nppist_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1705,7 +1658,6 @@
       Out: ""
       RuleId: "remove_nppist_static"
 
-# No SYCL equivalent exists for nppisu currently and hence is removed in migrate CMake
 - Rule: nppisu_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1720,7 +1672,6 @@
       Out: ""
       RuleId: "remove_nppisu"
 
-# No SYCL equivalent exists for nppisu_static currently and hence is removed in migrate CMake
 - Rule: nppisu_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1735,7 +1686,6 @@
       Out: ""
       RuleId: "remove_nppisu_static"
 
-# No SYCL equivalent exists for nppitc currently and hence is removed in migrate CMake
 - Rule: nppitc_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1750,7 +1700,6 @@
       Out: ""
       RuleId: "remove_nppitc"
 
-# No SYCL equivalent exists for nppitc_static currently and hence is removed in migrate CMake
 - Rule: nppitc_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1765,7 +1714,6 @@
       Out: ""
       RuleId: "remove_nppitc_static"
 
-# No SYCL equivalent exists for npps currently and hence is removed in migrate CMake
 - Rule: npps_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1780,7 +1728,6 @@
       Out: ""
       RuleId: "remove_npps"
 
-# No SYCL equivalent exists for npps_static currently and hence is removed in migrate CMake
 - Rule: npps_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1795,7 +1742,6 @@
       Out: ""
       RuleId: "remove_npps_static"
 
-# No SYCL equivalent exists for nvblas currently and hence is removed in migrate CMake
 - Rule: nvblas_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1810,7 +1756,6 @@
       Out: ""
       RuleId: "remove_nvblas"
 
-# No SYCL equivalent exists for nvgraph currently and hence is removed in migrate CMake
 - Rule: nvgraph_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1825,7 +1770,6 @@
       Out: ""
       RuleId: "remove_nvgraph"
 
-# No SYCL equivalent exists for nvgraph_static currently and hence is removed in migrate CMake
 - Rule: nvgraph_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1840,7 +1784,6 @@
       Out: ""
       RuleId: "remove_nvgraph_static"
 
-# No SYCL equivalent exists for nvjpeg currently and hence is removed in migrate CMake
 - Rule: nvjpeg_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1855,7 +1798,6 @@
       Out: ""
       RuleId: "remove_nvjpeg"
 
-# No SYCL equivalent exists for nvjpeg_static currently and hence is removed in migrate CMake
 - Rule: nvjpeg_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1870,7 +1812,6 @@
       Out: ""
       RuleId: "remove_nvjpeg_static"
 
-# No SYCL equivalent exists for nvptxcompiler_static currently and hence is removed in migrate CMake
 - Rule: nvptxcompiler_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1885,7 +1826,6 @@
       Out: ""
       RuleId: "remove_nvptxcompiler_static"
 
-# No SYCL equivalent exists for nvrtc currently and hence is removed in migrate CMake
 - Rule: nvrtc_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1900,7 +1840,6 @@
       Out: ""
       RuleId: "remove_nvrtc"
 
-# No SYCL equivalent exists for nvrtc_builtins currently and hence is removed in migrate CMake
 - Rule: nvrtc_builtins_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1915,7 +1854,6 @@
       Out: ""
       RuleId: "remove_nvrtc_builtins"
 
-# No SYCL equivalent exists for nvrtc_static currently and hence is removed in migrate CMake
 - Rule: nvrtc_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1930,7 +1868,6 @@
       Out: ""
       RuleId: "remove_nvrtc_static"
 
-# No SYCL equivalent exists for nvrtc_builtins_static currently and hence is removed in migrate CMake
 - Rule: nvrtc_builtins_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1945,7 +1882,6 @@
       Out: ""
       RuleId: "remove_nvrtc_builtins_static"
 
-# No SYCL equivalent exists for nvJitLink currently and hence is removed in migrate CMake
 - Rule: nvJitLink_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1960,7 +1896,6 @@
       Out: ""
       RuleId: "remove_nvJitLink"
 
-# No SYCL equivalent exists for nvJitLink_static currently and hence is removed in migrate CMake
 - Rule: nvJitLink_static_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1975,7 +1910,6 @@
       Out: ""
       RuleId: "remove_nvJitLink_static"
 
-# No SYCL equivalent exists for nvml currently and hence is removed in migrate CMake
 - Rule: nvml_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -1990,7 +1924,6 @@
       Out: ""
       RuleId: "remove_nvml"
 
-# No SYCL equivalent exists for nvToolsExt currently and hence is removed in migrate CMake
 - Rule: nvtx3_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -2005,7 +1938,6 @@
       Out: ""
       RuleId: "remove_nvToolsExt"
 
-# No SYCL equivalent exists for nvtx3 currently and hence is removed in migrate CMake
 - Rule: nvtx3_removed
   Kind: CMakeRule
   Priority: Fallback
@@ -2020,7 +1952,6 @@
       Out: ""
       RuleId: "remove_nvtx3"
 
-# No SYCL equivalent exists for OpenCL currently and hence is removed in migrate CMake
 - Rule: OpenCL_removed
   Kind: CMakeRule
   Priority: Fallback
