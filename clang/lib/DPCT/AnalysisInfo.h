@@ -1225,6 +1225,9 @@ public:
   static bool useExpNonUniformGroups() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NonUniformGroups>();
   }
+  static bool useExpDeviceGlobal() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_DeviceGlobal>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
@@ -1348,6 +1351,9 @@ public:
   static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
+  }
+  static std::unordered_set<std::string> &getUseDeviceGlobalVarSet() {
+    return UseDeviceGlobalVarSet;
   }
   static bool isNeedParenAPI(const std::string &Name) {
     return NeedParenAPISet.count(Name);
@@ -1557,6 +1563,7 @@ private:
       ConstantReplProcessedFlagMap;
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
   static IncludeMapSetTy IncludeMapSet;
+  static std::unordered_set<std::string> UseDeviceGlobalVarSet;
   static std::unordered_set<std::string> NeedParenAPISet;
 };
 
@@ -1777,6 +1784,9 @@ public:
                                   bool NeedCheckExtraConstQualifier = false);
   void setUseHelperFuncFlag(bool Flag) { UseHelperFuncFlag = Flag; }
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
+  void setUseDeviceGlobalFlag(bool Flag) { UseDeviceGlobalFlag = Flag; }
+  bool isUseDeviceGlobal() { return UseDeviceGlobalFlag; }
+  void setInitForDeviceGlobal(std::string Init) { InitForDeviceGlobal = Init; }
 
 private:
   bool isTreatPointerAsArray() {
@@ -1842,6 +1852,8 @@ private:
 
   static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
   bool UseHelperFuncFlag = true;
+  bool UseDeviceGlobalFlag = false;
+  std::string InitForDeviceGlobal;
 };
 
 class TextureTypeInfo {
