@@ -1687,7 +1687,8 @@ protected:
     }
     OS() << '>' << '(';
     // If no second op, ignore third operand until we support operand mask.
-    for (unsigned i = 0, e = I->getNumInputOperands() - !hasSecOp; i != e; ++i) {
+    for (unsigned i = 0, e = I->getNumInputOperands() - !hasSecOp; i != e;
+         ++i) {
       if (emitStmt(I->getInputOperand(i)))
         return SYCLGenError();
       if (i < e - 1)
