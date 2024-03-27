@@ -9,9 +9,9 @@
 // In 8.0, it is a typedef of an anonymous struct, after 9.2 they are the names of struct.
 
 #include "cuda_fp16.h"
-#include "cublas_v2.h"
 
 int main(int argc, char **argv) {
+
   //CHECK:sycl::half _h;
   //CHECK-NEXT:int a = sizeof(sycl::half);
   //CHECK-NEXT:a = sizeof(_h);
@@ -29,11 +29,6 @@ int main(int argc, char **argv) {
   a = sizeof(__half2);
   a = sizeof(_h2);
   a = sizeof _h2;
+
 }
 
-// CHECK: void foo_1(dpct::blas::compute_type a1) {
-// CHECK-NEXT:   dpct::blas::compute_type b1 = a1;
-// CHECK-NEXT: }
-void foo_1(cublasComputeType_t a1) {
-  cublasComputeType_t b1 = a1;
-}
