@@ -48,7 +48,7 @@ private:
   const char *end = nullptr;
   unsigned indent = 0;
 
-  bool generate_formatted_json();
+  bool format();
   bool parse_str(std::string &ret);
   bool parse_num(char first, std::string &out);
   bool is_number(char c);
@@ -67,12 +67,12 @@ public:
         cur_p(original_json.c_str()),
         end(original_json.c_str() + original_json.size()) {}
   std::string get_formatted_json() { return formatted_json; }
-  bool is_valid() { return generate_formatted_json(); }
+  bool is_valid() { return format(); }
 };
 
 inline bool json::parse_str(std::string &str) {
   char prev = peek();
-  while (peek() != '"' && prev != '\\') { // Need refine.
+  while (peek() != '"' || (peek() == '"' && prev == '\\')) {
     prev = peek();
     if (cur_p == end) {
       return false;
@@ -82,15 +82,14 @@ inline bool json::parse_str(std::string &str) {
   next();
   return true;
 }
-
 inline bool json::is_number(char c) {
   return (c == '0') || (c == '1') || (c == '2') || (c == '3') || (c == '4') ||
          (c == '5') || (c == '6') || (c == '7') || (c == '8') || (c == '9') ||
          (c == '-') || (c == '+') || (c == '.') || (c == 'e') || (c == 'E');
 }
 
-inline bool json::parse_num(char first, std::string &out) {
-  out += first;
+inline bool json::parse_num(char c, std::string &out) {
+  out += c;
   while (is_number(peek())) {
     out += next();
   }
@@ -106,8 +105,7 @@ inline bool json::parse_num(char first, std::string &out) {
                    out);
   }
 }
-inline bool json::generate_formatted_json() {
-  std::cout <<cur_parsed_key << std::endl;
+inline bool json::format() {
   ignore_space();
   char c = next();
   switch (c) {
@@ -117,7 +115,7 @@ inline bool json::generate_formatted_json() {
     for (;;) {
       ignore_space();
       formatted_json += inserted_indent();
-      if (!generate_formatted_json())
+      if (!format())
         return false;
       ignore_space();
       switch (next()) {
@@ -139,27 +137,26 @@ inline bool json::generate_formatted_json() {
   case '{': {
     indent++;
     formatted_json += "{\n";
-    std::cout << formatted_json << std::endl;
     for (;;) {
       ignore_space();
-      std::string key = "";
       if (peek() == '"') {
+        std::string key = "";
+        next();
         formatted_json += inserted_indent();
-        // if (!generate_formatted_json(key)) {
         if (!parse_str(key)) {
           emit_error_msg(
               "[JSON format]: key value of a JSON need to be wrapped in "
               "\". Please check the JSON file format.");
           return false;
         } else {
-          cur_parsed_key = key;
-          formatted_json += key;
+          cur_parsed_key = "\"" + key + "\"";
+          formatted_json += cur_parsed_key;
         }
       }
       ignore_space();
       if (next() == ':') {
         formatted_json += " : ";
-        if (!generate_formatted_json()) {
+        if (!format()) {
           emit_error_msg(
               "[JSON format]: Can not parse value, the JSON key is " +
               cur_parsed_key + ".\n");
@@ -178,10 +175,9 @@ inline bool json::generate_formatted_json() {
         return true;
       }
       default:
-        emit_error_msg(
-            "[JSON format]: The " + cur_parsed_key +
-            " value pair should be end with '}' or ','.\n");
-             return false;
+        emit_error_msg("[JSON format]: The " + cur_parsed_key +
+                       " value pair should be end with '}' or ','.\n");
+        return false;
       }
     }
   } break;
