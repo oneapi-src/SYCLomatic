@@ -12,10 +12,8 @@
 #include "memory.hpp"
 #include "util.hpp"
 #include "lib_common_utils.hpp"
-#include <optional>
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
-#include <type_traits>
 #include <utility>
 #include <vector>
 #include <thread>
@@ -218,7 +216,7 @@ using wrapper_float_in =
 
 class descriptor {
 public:
-  enum class math_mode : int { default, tf32 };
+  enum class math_mode : int { tf32, other };
 
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
   sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
@@ -233,7 +231,7 @@ public:
 
 private:
   queue_ptr _queue_ptr = &dpct::get_default_queue();
-  math_mode _mm = math_mode::default;
+  math_mode _mm = math_mode::other;
   static inline queue_ptr _saved_queue_ptr = &dpct::get_default_queue();
 };
 
@@ -479,8 +477,7 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
 }
 
 template <class Ta, class Tb, class Tc, class Ts>
-inline void gemm_impl(dpct::blas::descriptor_ptr desc_ptr,
-                      oneapi::mkl::transpose a_trans,
+inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                       oneapi::mkl::transpose b_trans, int m, int n, int k,
                       const void *alpha, const void *a, int lda, const void *b,
                       int ldb, const void *beta, void *c, int ldc,
@@ -1460,6 +1457,14 @@ deduce_compute_mode(compute_type ct, descriptor::math_mode mm) {
   return oneapi::mkl::blas::compute_mode::unset;
 }
 
+inline oneapi::mkl::blas::compute_mode
+deduce_compute_mode(compute_type ct, descriptor::math_mode mm,
+                    bool is_complex) {
+  if (is_complex)
+    return deduce_compute_mode<std::complex<float>>(ct, mm);
+  return deduce_compute_mode<float>(ct, mm);
+}
+
 /// Computes matrix-matrix product with general matrices.
 /// \param [in] desc_ptr Descriptor.
 /// \param [in] a_trans Specifies the operation applied to A.
@@ -1478,22 +1483,24 @@ deduce_compute_mode(compute_type ct, descriptor::math_mode mm) {
 /// \param [in, out] c Input/Output matrix C.
 /// \param [in] c_type Data type of the matrix C.
 /// \param [in] ldc Leading dimension of C.
-/// \param [in] scaling_type Data type of the scaling factors.
 /// \param [in] ct Compute type.
 inline void gemm(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
                  oneapi::mkl::transpose b_trans, int m, int n, int k,
                  const void *alpha, const void *a, library_data_t a_type,
                  int lda, const void *b, library_data_t b_type, int ldb,
                  const void *beta, void *c, library_data_t c_type, int ldc,
-                 library_data_t scaling_type,
                  std::variant<compute_type, library_data_t> ct) {
-  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::unset;
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
   library_data_t scaling_type;
   if (auto ct_p = std::get_if<compute_type>(&ct)) {
-    cm = deduce_compute_mode<Ty>(*ct_p, desc_ptr->get_math_mode());
+    cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
     scaling_type = detail::compute_type_to_library_data_t(*ct_p);
   } else {
-    cm = deduce_compute_mode<Ty>(std::nullopt, desc_ptr->get_math_mode());
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
     scaling_type = std::get<library_data_t>(ct);
   }
 
@@ -1637,13 +1644,17 @@ gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
-  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::unset;
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
   library_data_t scaling_type;
   if (auto ct_p = std::get_if<compute_type>(&ct)) {
-    cm = deduce_compute_mode<Ty>(*ct_p, desc_ptr->get_math_mode());
+    cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
     scaling_type = detail::compute_type_to_library_data_t(*ct_p);
   } else {
-    cm = deduce_compute_mode<Ty>(std::nullopt, desc_ptr->get_math_mode());
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
     scaling_type = std::get<library_data_t>(ct);
   }
 
@@ -1798,13 +1809,17 @@ gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
            int ldb, long long int stride_b, const void *beta, void *c,
            library_data_t c_type, int ldc, long long int stride_c,
            int batch_size, std::variant<compute_type, library_data_t> ct) {
-  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::unset;
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
   library_data_t scaling_type;
   if (auto ct_p = std::get_if<compute_type>(&ct)) {
-    cm = deduce_compute_mode<Ty>(*ct_p, desc_ptr->get_math_mode());
+    cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
     scaling_type = detail::compute_type_to_library_data_t(*ct_p);
   } else {
-    cm = deduce_compute_mode<Ty>(std::nullopt, desc_ptr->get_math_mode());
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
     scaling_type = std::get<library_data_t>(ct);
   }
 
@@ -2007,7 +2022,7 @@ inline void trsm_batch(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
   sycl::queue q = desc_ptr->get_queue();
-  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::unset;
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
   if (auto ct_p = std::get_if<compute_type>(&ct))
     cm = deduce_compute_mode<Ty>(*ct_p, desc_ptr->get_math_mode());
   else
