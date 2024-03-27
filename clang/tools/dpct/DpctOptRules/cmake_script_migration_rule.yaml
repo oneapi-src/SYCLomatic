@@ -655,7 +655,6 @@
       Out: SYCL_HAS_FP16
 
 # Current Yaml based rule hard-code to map "cxx_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
 - Rule: rule_cxx_target_compile_features
   Kind: CMakeRule
   Priority: Fallback
@@ -670,7 +669,6 @@
       RuleId: "adjust_cxx_ver"
 
 # Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
 - Rule: rule_cuda_target_compile_features
   Kind: CMakeRule
   Priority: Fallback
@@ -804,7 +802,6 @@
       MatchMode: Full
       RuleId: "replace_cudnn_with_libdnn"
 
-# SYCL does not have mapping for libnvinfer currently, so removing here
 - Rule: rule_target_link_libraries_libnvinfer
   Kind: CMakeRule
   Priority: Fallback
@@ -818,7 +815,6 @@
       MatchMode: Full
       RuleId: "remove_libnvinfer"
 
-# SYCL does not have mapping for libnvonnxparser currently, so removing here
 - Rule: rule_target_link_libraries_libnvonnxparser
   Kind: CMakeRule
   Priority: Fallback
