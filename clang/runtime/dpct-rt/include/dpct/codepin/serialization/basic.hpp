@@ -32,6 +32,199 @@ typedef dpct::queue_ptr StreamType;
 
 namespace detail {
 
+#define emit_error_msg(msg)                                                    \
+  {                                                                            \
+    std::cerr << "Failed at:" << __FILE__ << "\nLine number is : " << __LINE__ \
+              << "\n" msg << std::endl;                                        \
+  }
+
+class json {
+private:
+  std::string original_json;
+  std::string formatted_json = "";
+  std::string cur_parsed_key = "";
+  const char *begin = nullptr;
+  const char *cur_p = nullptr;
+  const char *end = nullptr;
+  unsigned indent = 0;
+
+  bool format();
+  bool parse_str(std::string &ret);
+  bool parse_num(char first, std::string &out);
+  bool is_number(char c);
+  std::string inserted_indent() { return std::string(indent * 2, ' '); }
+  void ignore_space() {
+    while (cur_p != end && (*cur_p == ' ' || *cur_p == '\t' || *cur_p == '\r' ||
+                            *cur_p == '\n'))
+      cur_p++;
+  }
+  char next() { return cur_p != end ? *cur_p++ : 0; }
+  char peek() { return cur_p != end ? *cur_p : 0; }
+
+public:
+  json(const std::string &json)
+      : original_json(json), begin(original_json.c_str()),
+        cur_p(original_json.c_str()),
+        end(original_json.c_str() + original_json.size()) {}
+  std::string get_formatted_json() { return formatted_json; }
+  bool is_valid() { return format(); }
+};
+
+inline bool json::parse_str(std::string &str) {
+  char prev = peek();
+  while (peek() != '"' || (peek() == '"' && prev == '\\')) {
+    prev = peek();
+    if (cur_p == end) {
+      return false;
+    }
+    str += next();
+  }
+  next();
+  return true;
+}
+inline bool json::is_number(char c) {
+  return (c == '0') || (c == '1') || (c == '2') || (c == '3') || (c == '4') ||
+         (c == '5') || (c == '6') || (c == '7') || (c == '8') || (c == '9') ||
+         (c == '-') || (c == '+') || (c == '.') || (c == 'e') || (c == 'E');
+}
+
+inline bool json::parse_num(char c, std::string &out) {
+  out += c;
+  while (is_number(peek())) {
+    out += next();
+  }
+  try {
+    size_t pos;
+    std::stod(out, &pos);
+    return pos == out.length();
+  } catch (const std::invalid_argument &ia) {
+    emit_error_msg("[JSON format]: Parsing number value failed. Value is " +
+                   out);
+  } catch (const std::out_of_range &oor) {
+    emit_error_msg("[JSON format]: Parsing number value failed. Value is " +
+                   out);
+  }
+}
+inline bool json::format() {
+  ignore_space();
+  char c = next();
+  switch (c) {
+  case '[': {
+    indent++;
+    formatted_json += "[\n";
+    for (;;) {
+      ignore_space();
+      formatted_json += inserted_indent();
+      if (!format())
+        return false;
+      ignore_space();
+      switch (next()) {
+      case ',':
+        formatted_json += ",\n";
+        continue;
+      case ']':
+        indent--;
+        formatted_json += std::string("\n") + inserted_indent() + ']';
+        return true;
+      default:
+        emit_error_msg("[JSON format]: Parsing JSON value error. The key is " +
+                       cur_parsed_key);
+        return false;
+      }
+    }
+  } break;
+
+  case '{': {
+    indent++;
+    formatted_json += "{\n";
+    for (;;) {
+      ignore_space();
+      if (peek() == '"') {
+        std::string key = "";
+        next();
+        formatted_json += inserted_indent();
+        if (!parse_str(key)) {
+          emit_error_msg(
+              "[JSON format]: key value of a JSON need to be wrapped in "
+              "\". Please check the JSON file format.");
+          return false;
+        } else {
+          cur_parsed_key = "\"" + key + "\"";
+          formatted_json += cur_parsed_key;
+        }
+      }
+      ignore_space();
+      if (next() == ':') {
+        formatted_json += " : ";
+        if (!format()) {
+          emit_error_msg(
+              "[JSON format]: Can not parse value, the JSON key is " +
+              cur_parsed_key + ".\n");
+          return false;
+        }
+      }
+      ignore_space();
+      switch (next()) {
+      case ',': {
+        formatted_json += ",\n";
+        continue;
+      }
+      case '}': {
+        indent--;
+        formatted_json += std::string("\n") + inserted_indent() + '}';
+        return true;
+      }
+      default:
+        emit_error_msg("[JSON format]: The " + cur_parsed_key +
+                       " value pair should be end with '}' or ','.\n");
+        return false;
+      }
+    }
+  } break;
+  case '"': {
+    std::string str = "";
+    if (!parse_str(str)) {
+      emit_error_msg("[JSON format]: The Json is invalid after " +
+                     formatted_json + "\n");
+      return false;
+    }
+    formatted_json += "\"" + str + "\"";
+    return true;
+  }
+  case 't':
+    if (next() == 'r' && next() == 'u' && next() == 'e') {
+      formatted_json += "true";
+      return true;
+    }
+    emit_error_msg("[JSON format]: The bool value of " + cur_parsed_key +
+                   " should be \"true\", please check "
+                   "the spelling.");
+    return false;
+  case 'f':
+    if (next() == 'a' && next() == 'l' && next() == 's' && next() == 'e') {
+      formatted_json += "false";
+      return true;
+    }
+    emit_error_msg("[JSON format]: The bool value of " + cur_parsed_key +
+                   " should be \"false\", please "
+                   "check the spelling.");
+    return false;
+  default:
+    if (is_number(c)) {
+      std::string value = "";
+      parse_num(c, value);
+      formatted_json += value;
+      return true;
+    }
+    emit_error_msg("[JSON format]: Unkown JSON type, the last key is " +
+                   cur_parsed_key +
+                   ". Please check the format JSON "
+                   "format.\n");
+    return false;
+  }
+  return true;
+}
+
 template <typename T> void demangle_name(std::ostream &ss) {
 #if defined(__linux__)
   int s;
