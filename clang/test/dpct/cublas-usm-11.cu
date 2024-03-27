@@ -19,9 +19,9 @@ void foo1() {
   //CHECK-NEXT:dpct::scal(handle->get_queue(), 4, alpha, dpct::library_data_t::real_float, x, dpct::library_data_t::real_float, 1);
   //CHECK-NEXT:dpct::axpy(handle->get_queue(), 4, alpha, dpct::library_data_t::real_float, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1);
   //CHECK-NEXT:dpct::rot(handle->get_queue(), 4, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1, cos, sin, dpct::library_data_t::real_float);
-  //CHECK-NEXT:dpct::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, a, dpct::library_data_t::real_half, 4, b, dpct::library_data_t::real_half, 4, beta, c, dpct::library_data_t::real_half, 4, dpct::library_data_t::real_half);
-  //CHECK-NEXT:dpct::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, a_array, dpct::library_data_t::real_half, 4, b_array, dpct::library_data_t::real_half, 4, beta, c_array, dpct::library_data_t::real_half, 4, 2, dpct::library_data_t::real_half);
-  //CHECK-NEXT:dpct::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, a, dpct::library_data_t::real_half, 4, 16, b, dpct::library_data_t::real_half, 4, 16, beta, c, dpct::library_data_t::real_half, 4, 16, 2, dpct::library_data_t::real_half);
+  //CHECK-NEXT:dpct::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, a, dpct::library_data_t::real_half, 4, b, dpct::library_data_t::real_half, 4, beta, c, dpct::library_data_t::real_half, 4, dpct::blas::compute_type::ct_16f);
+  //CHECK-NEXT:dpct::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, a_array, dpct::library_data_t::real_half, 4, b_array, dpct::library_data_t::real_half, 4, beta, c_array, dpct::library_data_t::real_half, 4, 2, dpct::blas::compute_type::ct_16f);
+  //CHECK-NEXT:dpct::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, a, dpct::library_data_t::real_half, 4, 16, b, dpct::library_data_t::real_half, 4, 16, beta, c, dpct::library_data_t::real_half, 4, 16, 2, dpct::blas::compute_type::ct_16f);
   cublasNrm2Ex(handle, 4, x, CUDA_R_32F, 1, res, CUDA_R_32F, CUDA_R_32F);
   cublasDotEx(handle, 4, x, CUDA_R_32F, 1, y, CUDA_R_32F, 1, res, CUDA_R_32F, CUDA_R_32F);
   cublasDotcEx(handle, 4, x, CUDA_R_32F, 1, y, CUDA_R_32F, 1, res, CUDA_R_32F, CUDA_R_32F);
@@ -40,19 +40,15 @@ void foo2() {
   void **b_array;
   void **c_array;
 
-  //CHECK:dpct::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, const_cast<void const **>(a_array), dpct::library_data_t::real_half, 4, const_cast<void const **>(b_array), dpct::library_data_t::real_half, 4, beta, c_array, dpct::library_data_t::real_half, 4, 2, dpct::library_data_t::real_half);
+  //CHECK:dpct::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, const_cast<void const **>(a_array), dpct::library_data_t::real_half, 4, const_cast<void const **>(b_array), dpct::library_data_t::real_half, 4, beta, c_array, dpct::library_data_t::real_half, 4, 2, dpct::blas::compute_type::ct_16f);
   cublasGemmBatchedEx(handle, CUBLAS_OP_N, CUBLAS_OP_N, 4, 4, 4, alpha, a_array, CUDA_R_16F, 4, b_array, CUDA_R_16F, 4, beta, c_array, CUDA_R_16F, 4, 2, CUBLAS_COMPUTE_16F, CUBLAS_GEMM_DEFAULT);
 }
 
 void foo3() {
   cublasHandle_t handle;
-  //CHECK: int Mathmode;
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetMathMode was removed because this functionality is redundant in SYCL.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetMathMode was removed because this functionality is redundant in SYCL.
-  //CHECK-NEXT: */
+  //CHECK: dpct::blas::math_mode Mathmode;
+  //CHECK-NEXT: Mathmode = handle->get_math_mode();
+  //CHECK-NEXT: handle->set_math_mode(Mathmode);
   cublasMath_t Mathmode;
   cublasGetMathMode(handle, &Mathmode);
   cublasSetMathMode(handle, Mathmode);
