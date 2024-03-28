@@ -589,10 +589,10 @@ public:
     *out_n = dims[0];
     *out_c = weight_dims[0];
     *out_h = 1 + (dims[2] + 2 * _paddings[0] -
-                  (1 + (_dilates[0] * (weight_dims[2] - 1)))) /
+                  (1 + ((_dilates[0] + 1) * (weight_dims[2] - 1)))) /
                      _strides[0];
     *out_w = 1 + (dims[3] + 2 * _paddings[1] -
-                  (1 + (_dilates[1] * (weight_dims[3] - 1)))) /
+                  (1 + ((_dilates[1] + 1) * (weight_dims[3] - 1)))) /
                      _strides[1];
   }
   /// Getting the output dimensions of a memory after ND convolution has been
@@ -612,7 +612,7 @@ public:
     out_dims[1] = weight_dims[1];
     for (int i = 2; i < ndims; i++) {
       out_dims[i] = 1 + (dims[i] + 2 * _paddings[i - 2] -
-                         (1 + (_dilates[i - 2] * (weight_dims[i] - 1)))) /
+                         (1 + ((_dilates[i - 2] + 1) * (weight_dims[i] - 1)))) /
                             _strides[i - 2];
     }
   }
