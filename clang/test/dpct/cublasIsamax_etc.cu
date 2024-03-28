@@ -234,218 +234,134 @@ int main() {
   double *x_d = 0;
   double *y_d = 0;
   //cublas<t>rot
-  // CHECK: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy, dpct::get_value(x_S, handle->get_queue()), dpct::get_value(y_S, handle->get_queue())));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy, dpct::get_value(x_S, handle->get_queue()), dpct::get_value(y_S, handle->get_queue()));
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), x_S);
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct7(handle->get_queue(), y_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_f)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_f)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), x_S);
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct7(handle->get_queue(), y_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_f)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_f)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasSrot(handle, n, x_f, incx, y_f, incy, x_S, y_S);
   cublasSrot(handle, n, x_f, incx, y_f, incy, x_S, y_S);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy, dpct::get_value(x_D, handle->get_queue()), dpct::get_value(y_D, handle->get_queue())));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy, dpct::get_value(x_D, handle->get_queue()), dpct::get_value(y_D, handle->get_queue()));
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), x_D);
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct7(handle->get_queue(), y_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_d)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_d)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), x_D);
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct7(handle->get_queue(), y_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_d)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_d)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasDrot(handle, n, x_d, incx, y_d, incy, x_D, y_D);
   cublasDrot(handle, n, x_d, incx, y_d, incy, x_D, y_D);
 
   //cublas<t>rotg
-  // CHECK: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_f)) {
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotg(handle->get_queue(), x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_f)) {
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct1(handle->get_queue(), x_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct2(handle->get_queue(), y_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct3(handle->get_queue(), x_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), y_f);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct3.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct1(handle->get_queue(), x_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct2(handle->get_queue(), y_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct3(handle->get_queue(), x_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), y_f);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct3.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasSrotg(handle, x_f, y_f, x_f, y_f);
   cublasSrotg(handle, x_f, y_f, x_f, y_f);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_d)) {
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotg(handle->get_queue(), x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_d)) {
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct1(handle->get_queue(), x_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct2(handle->get_queue(), y_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct3(handle->get_queue(), x_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), y_d);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct3.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct1(handle->get_queue(), x_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct2(handle->get_queue(), y_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct3(handle->get_queue(), x_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), y_d);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct3.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasDrotg(handle, x_d, y_d, x_d, y_d);
   cublasDrotg(handle, x_d, y_d, x_d, y_d);
 
   //cublas<t>rotm
-  // CHECK: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy, x_S_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy, x_S_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), x_S, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_f)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_f)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), return 0);
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), x_S, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_f)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_f)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), return 0);
+  // CHECK-NEXT: }();
   status = cublasSrotm(handle, n, x_f, incx, y_f, incy, x_S);
   cublasSrotm(handle, n, x_f, incx, y_f, incy, x_S);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy, x_D_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy, x_D_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), x_D, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_d)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_d)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), return 0);
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), x_D, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_d)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_d)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), return 0);
+  // CHECK-NEXT: }();
   status = cublasDrotm(handle, n, x_d, incx, y_d, incy, x_D);
   cublasDrotm(handle, n, x_d, incx, y_d, incy, x_D);
 
   //cublas<t>rotmg
-  // CHECK: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_f)) {
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(5));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, dpct::get_value(x_S, handle->get_queue()), y_f_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_f)) {
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
-  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(5));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, dpct::get_value(x_S, handle->get_queue()), y_f_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct1(handle->get_queue(), x_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct2(handle->get_queue(), y_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct3(handle->get_queue(), y_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct5(handle->get_queue(), y_f, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct3.get_ptr())), dpct::get_value(x_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct5.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct1(handle->get_queue(), x_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct2(handle->get_queue(), y_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct3(handle->get_queue(), y_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct5(handle->get_queue(), y_f, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct3.get_ptr())), dpct::get_value(x_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct5.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasSrotmg(handle, x_f, y_f, y_f, x_S, y_f);
   cublasSrotmg(handle, x_f, y_f, y_f, x_S, y_f);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_d)) {
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(5));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, dpct::get_value(x_D, handle->get_queue()), y_d_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_d)) {
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
-  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(5));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, dpct::get_value(x_D, handle->get_queue()), y_d_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct1(handle->get_queue(), x_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct2(handle->get_queue(), y_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct3(handle->get_queue(), y_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct5(handle->get_queue(), y_d, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct3.get_ptr())), dpct::get_value(x_D, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct5.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct1(handle->get_queue(), x_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct2(handle->get_queue(), y_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct3(handle->get_queue(), y_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct5(handle->get_queue(), y_d, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct3.get_ptr())), dpct::get_value(x_D, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct5.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasDrotmg(handle, x_d, y_d, y_d, x_D, y_d);
   cublasDrotmg(handle, x_d, y_d, y_d, x_D, y_d);
 

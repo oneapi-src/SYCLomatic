@@ -266,117 +266,101 @@ int main(){
   cuDoubleComplex* c_z = 0;
   cuDoubleComplex* s_z = 0;
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_f, handle->get_queue())));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x_c_buf_ct{{[0-9]+}}, incx, y_c_buf_ct{{[0-9]+}}, incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_f, handle->get_queue()));
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), c_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct7(handle->get_queue(), s_f);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), c_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct7(handle->get_queue(), s_f);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasCsrot(handle, n, x_c, incx, y_c, incy, c_f, s_f);
   cublasCsrot(handle, n, x_c, incx, y_c, incy, c_f, s_f);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_d, handle->get_queue())));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x_z_buf_ct{{[0-9]+}}, incx, y_z_buf_ct{{[0-9]+}}, incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_d, handle->get_queue()));
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), c_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double2_in res_wrapper_ct7(handle->get_queue(), s_d);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), c_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double2_in res_wrapper_ct7(handle->get_queue(), s_d);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasZdrot(handle, n, x_z, incx, y_z, incy, c_d, s_d);
   cublasZdrot(handle, n, x_z, incx, y_z, incy, c_d, s_d);
 
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::rot(handle->get_queue(), n, x_c, dpct::library_data_t::complex_float, incx, y_c, dpct::library_data_t::complex_float, incy, c_f, s_c, dpct::library_data_t::complex_float));
-  // CHECK-NEXT: dpct::rot(handle->get_queue(), n, x_c, dpct::library_data_t::complex_float, incx, y_c, dpct::library_data_t::complex_float, incy, c_f, s_c, dpct::library_data_t::complex_float);
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), c_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float2_in res_wrapper_ct7(handle->get_queue(), s_c);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), c_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float2_in res_wrapper_ct7(handle->get_queue(), s_c);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasCrot(handle, n, x_c, incx, y_c, incy, c_f, s_c);
   cublasCrot(handle, n, x_c, incx, y_c, incy, c_f, s_c);
 
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::rot(handle->get_queue(), n, x_z, dpct::library_data_t::complex_double, incx, y_z, dpct::library_data_t::complex_double, incy, c_d, s_z, dpct::library_data_t::complex_double));
-  // CHECK-NEXT: dpct::rot(handle->get_queue(), n, x_z, dpct::library_data_t::complex_double, incx, y_z, dpct::library_data_t::complex_double, incy, c_d, s_z, dpct::library_data_t::complex_double);
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), c_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct7(handle->get_queue(), s_z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), c_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct7(handle->get_queue(), s_z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct7.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasZrot(handle, n, x_z, incx, y_z, incy, c_d, s_z);
   cublasZrot(handle, n, x_z, incx, y_z, incy, c_d, s_z);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: auto c_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto s_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_c)) {
-  // CHECK-NEXT:   x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT:   y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT:   c_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(c_f);
-  // CHECK-NEXT:   s_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(s_c);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)x_c, sycl::range<1>(1));
-  // CHECK-NEXT:   y_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)y_c, sycl::range<1>(1));
-  // CHECK-NEXT:   c_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(c_f, sycl::range<1>(1));
-  // CHECK-NEXT:   s_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)s_c, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotg(handle->get_queue(), x_c_buf_ct{{[0-9]+}}, y_c_buf_ct{{[0-9]+}}, c_f_buf_ct{{[0-9]+}}, s_c_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: auto c_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: auto s_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_c)) {
-  // CHECK-NEXT:   x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT:   y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT:   c_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(c_f);
-  // CHECK-NEXT:   s_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(s_c);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)x_c, sycl::range<1>(1));
-  // CHECK-NEXT:   y_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)y_c, sycl::range<1>(1));
-  // CHECK-NEXT:   c_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(c_f, sycl::range<1>(1));
-  // CHECK-NEXT:   s_c_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<float>>((std::complex<float>*)s_c, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), x_c_buf_ct{{[0-9]+}}, y_c_buf_ct{{[0-9]+}}, c_f_buf_ct{{[0-9]+}}, s_c_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_inout res_wrapper_ct1(handle->get_queue(), x_c);
+  // CHECK-NEXT: dpct::blas::wrapper_float2_inout res_wrapper_ct2(handle->get_queue(), y_c);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct3(handle->get_queue(), c_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct4(handle->get_queue(), s_c);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct3.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_inout res_wrapper_ct1(handle->get_queue(), x_c);
+  // CHECK-NEXT: dpct::blas::wrapper_float2_inout res_wrapper_ct2(handle->get_queue(), y_c);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct3(handle->get_queue(), c_f);
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct4(handle->get_queue(), s_c);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct3.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasCrotg(handle, x_c, y_c, c_f, s_c);
   cublasCrotg(handle, x_c, y_c, c_f, s_c);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: auto c_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto s_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_z)) {
-  // CHECK-NEXT:   x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT:   y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT:   c_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(c_d);
-  // CHECK-NEXT:   s_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(s_z);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)x_z, sycl::range<1>(1));
-  // CHECK-NEXT:   y_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)y_z, sycl::range<1>(1));
-  // CHECK-NEXT:   c_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(c_d, sycl::range<1>(1));
-  // CHECK-NEXT:   s_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)s_z, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotg(handle->get_queue(), x_z_buf_ct{{[0-9]+}}, y_z_buf_ct{{[0-9]+}}, c_d_buf_ct{{[0-9]+}}, s_z_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: auto c_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: auto s_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::is_device_ptr(x_z)) {
-  // CHECK-NEXT:   x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT:   y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT:   c_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(c_d);
-  // CHECK-NEXT:   s_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(s_z);
-  // CHECK-NEXT: } else {
-  // CHECK-NEXT:   x_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)x_z, sycl::range<1>(1));
-  // CHECK-NEXT:   y_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)y_z, sycl::range<1>(1));
-  // CHECK-NEXT:   c_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(c_d, sycl::range<1>(1));
-  // CHECK-NEXT:   s_z_buf_ct{{[0-9]+}} = sycl::buffer<std::complex<double>>((std::complex<double>*)s_z, sycl::range<1>(1));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), x_z_buf_ct{{[0-9]+}}, y_z_buf_ct{{[0-9]+}}, c_d_buf_ct{{[0-9]+}}, s_z_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_inout res_wrapper_ct1(handle->get_queue(), x_z);
+  // CHECK-NEXT: dpct::blas::wrapper_double2_inout res_wrapper_ct2(handle->get_queue(), y_z);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct3(handle->get_queue(), c_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct4(handle->get_queue(), s_z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct3.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_inout res_wrapper_ct1(handle->get_queue(), x_z);
+  // CHECK-NEXT: dpct::blas::wrapper_double2_inout res_wrapper_ct2(handle->get_queue(), y_z);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct3(handle->get_queue(), c_d);
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct4(handle->get_queue(), s_z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct1.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct2.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct3.get_ptr())), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(res_wrapper_ct4.get_ptr())));
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   status = cublasZrotg(handle, x_z, y_z, c_d, s_z);
   cublasZrotg(handle, x_z, y_z, c_d, s_z);
 

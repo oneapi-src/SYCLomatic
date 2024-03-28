@@ -583,22 +583,6 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              ARG(1), ARG(2), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
              DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
 
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasCrot_v2",
-                       CALL(MapNames::getDpctNamespace() + "rot", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(3), ARG(4),
-                            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
-                            ARG(5), ARG(6), ARG(7), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float")))))
-
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasZrot_v2",
-                       CALL(MapNames::getDpctNamespace() + "rot", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(3), ARG(4),
-                            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
-                            ARG(5), ARG(6), ARG(7), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double")))))
-
 WARNING_FACTORY_ENTRY(
     "cublasGetStatusString",
     TOSTRING_FACTORY_ENTRY("cublasGetStatusString",
@@ -1813,3 +1797,147 @@ ASUM(cublasDasum_v2_64, wrapper_double_out, double, double)
 ASUM(cublasScasum_v2_64, wrapper_float_out, std::complex<float>, float)
 ASUM(cublasDzasum_v2_64, wrapper_double_out, std::complex<double>, double)
 #undef ASUM
+
+#define ROT(FUNC, TYPE1, TYPE2, TYPE3, TYPE4, TYPE5)                           \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct6", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(6)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE2,                 \
+               "res_wrapper_ct7", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(7)),                                                        \
+          CALL("oneapi::mkl::blas::column_major::rot",                         \
+               MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
+               BUFFER_OR_USM_PTR(ARG(2), #TYPE3), ARG(3),                      \
+               BUFFER_OR_USM_PTR(ARG(4), #TYPE3), ARG(5),                      \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct6"), false, "get_ptr"),      \
+                   #TYPE4),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct7"), false, "get_ptr"),      \
+                   #TYPE5)),                                                   \
+          LITERAL("return 0")),                                                \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+ROT(cublasSrot_v2, wrapper_float_in, wrapper_float_in, float, float, float)
+ROT(cublasDrot_v2, wrapper_double_in, wrapper_double_in, double, double, double)
+ROT(cublasCrot_v2, wrapper_float_in, wrapper_float2_in, std::complex<float>, float, std::complex<float>)
+ROT(cublasCsrot_v2, wrapper_float_in, wrapper_float_in, std::complex<float>, float, float)
+ROT(cublasZrot_v2, wrapper_double_in, wrapper_double_in, std::complex<double>, double, std::complex<double>)
+ROT(cublasZdrot_v2, wrapper_double_in, wrapper_double2_in, std::complex<double>, double, double)
+ROT(cublasSrot_v2_64, wrapper_float_in, wrapper_float_in, float, float, float)
+ROT(cublasDrot_v2_64, wrapper_double_in, wrapper_double_in, double, double, double)
+ROT(cublasCrot_v2_64, wrapper_float_in, wrapper_float2_in, std::complex<float>, float, std::complex<float>)
+ROT(cublasCsrot_v2_64, wrapper_float_in, wrapper_float_in, std::complex<float>, float, float)
+ROT(cublasZrot_v2_64, wrapper_double_in, wrapper_double_in, std::complex<double>, double, std::complex<double>)
+ROT(cublasZdrot_v2_64, wrapper_double_in, wrapper_double2_in, std::complex<double>, double, double)
+#undef ROT
+
+#define ROTG(FUNC, TYPE1, TYPE2, TYPE3, TYPE4, TYPE5)                          \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct1", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(1)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct2", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(2)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE2,                 \
+               "res_wrapper_ct3", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(3)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE3,                 \
+               "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(4)),                                                        \
+          CALL("oneapi::mkl::blas::column_major::rotg",                        \
+               MEMBER_CALL(ARG(0), true, "get_queue"),                         \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct1"), false, "get_ptr"),      \
+                   #TYPE4),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct2"), false, "get_ptr"),      \
+                   #TYPE4),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct3"), false, "get_ptr"),      \
+                   #TYPE5),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),      \
+                   #TYPE4)),                                                   \
+          LITERAL("return 0")),                                                \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+ROTG(cublasSrotg_v2, wrapper_float_inout, wrapper_float_out, wrapper_float_out, float, float)
+ROTG(cublasDrotg_v2, wrapper_double_inout, wrapper_double_out, wrapper_double_out, double, double)
+ROTG(cublasCrotg_v2, wrapper_float2_inout, wrapper_float_out, wrapper_float2_out, std::complex<float>, float)
+ROTG(cublasZrotg_v2, wrapper_double2_inout, wrapper_double_out, wrapper_double2_out, std::complex<double>, double)
+ROTG(cublasSrotg_v2_64, wrapper_float_inout, wrapper_float_out, wrapper_float_out, float, float)
+ROTG(cublasDrotg_v2_64, wrapper_double_inout, wrapper_double_out, wrapper_double_out, double, double)
+ROTG(cublasCrotg_v2_64, wrapper_float2_inout, wrapper_float_out, wrapper_float2_out, std::complex<float>, float)
+ROTG(cublasZrotg_v2_64, wrapper_double2_inout, wrapper_double_out, wrapper_double2_out, std::complex<double>, double)
+#undef ROTG
+
+#define ROTM(FUNC, TYPE1, TYPE2)                                               \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct6", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(6), ARG("5")),                                              \
+          CALL("oneapi::mkl::blas::column_major::rotm",                        \
+               MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
+               BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
+               BUFFER_OR_USM_PTR(ARG(4), #TYPE2), ARG(5),                      \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct6"), false, "get_ptr"),      \
+                   #TYPE2),                                                    \
+               LITERAL("return 0"))),                                          \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+ROTM(cublasSrotm_v2, wrapper_float_in, float)
+ROTM(cublasDrotm_v2, wrapper_double_in, double)
+ROTM(cublasSrotm_v2_64, wrapper_float_in, float)
+ROTM(cublasDrotm_v2_64, wrapper_double_in, double)
+#undef ROTM
+
+#define ROTMG(FUNC, TYPE1, TYPE2, TYPE3)                                       \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct1", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(1)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct2", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(2)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct3", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(3)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE2,                 \
+               "res_wrapper_ct5", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(5), ARG("5")),                                              \
+          CALL("oneapi::mkl::blas::column_major::rotmg",                       \
+               MEMBER_CALL(ARG(0), true, "get_queue"),                         \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct1"), false, "get_ptr"),      \
+                   #TYPE3),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct2"), false, "get_ptr"),      \
+                   #TYPE3),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct3"), false, "get_ptr"),      \
+                   #TYPE3),                                                    \
+               CALL(MapNames::getDpctNamespace() + "get_value", ARG(4),        \
+                    MEMBER_CALL(ARG(0), true, "get_queue")),                   \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct5"), false, "get_ptr"),      \
+                   #TYPE3)),                                                   \
+          LITERAL("return 0")),                                                \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+ROTMG(cublasSrotmg_v2, wrapper_float_inout, wrapper_float_out, float)
+ROTMG(cublasDrotmg_v2, wrapper_double_inout, wrapper_double_out, double)
+ROTMG(cublasSrotmg_v2_64, wrapper_float_inout, wrapper_float_out, float)
+ROTMG(cublasDrotmg_v2_64, wrapper_double_inout, wrapper_double_out, double)
+#undef ROTMG

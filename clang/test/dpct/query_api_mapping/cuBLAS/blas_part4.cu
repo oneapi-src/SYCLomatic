@@ -151,7 +151,12 @@
 // cublasDrot-NEXT:              y /*double **/, incy /*int*/, c /*const double **/,
 // cublasDrot-NEXT:              s /*const double **/);
 // cublasDrot-NEXT: Is migrated to:
-// cublasDrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x, incx, y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
+// cublasDrot-NEXT:   [&]() {
+// cublasDrot-NEXT:   dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), c);
+// cublasDrot-NEXT:   dpct::blas::wrapper_double_in res_wrapper_ct7(handle->get_queue(), s);
+// cublasDrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_ptr(), res_wrapper_ct7.get_ptr());
+// cublasDrot-NEXT:   return 0;
+// cublasDrot-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDznrm2 | FileCheck %s -check-prefix=cublasDznrm2
 // cublasDznrm2: CUDA API:
