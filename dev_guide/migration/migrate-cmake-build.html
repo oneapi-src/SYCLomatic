@@ -1,0 +1,734 @@
+
+
+<!DOCTYPE html>
+
+
+<html >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Migrate a CMake Build Script &#8212; SYCLomatic Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'dev_guide/migration/migrate-cmake-build';</script>
+    <link rel="shortcut icon" href="../../_static/favicons.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Debug Migrated Code: Runtime Behavior" href="debug-with-codepin.html" />
+    <link rel="prev" title="Migration Rules" href="migration-rules.html" />
+
+<script type="text/javascript">
+  // Configure TMS settings
+  var wapLocalCode = 'us-en';
+  var wapSection = 'SYCL-docs';
+  // Load TMS
+  (function () {
+    var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/oneAPI-rgb-rev-100.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/oneAPI-rgb-rev-100.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../get_started/index.html">Get Started with SYCLomatic</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Guide and Reference</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tool-setup.html">Tool Setup and Basic Use</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../migration.html">Migration</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="migration-workflow.html">Migration Workflow Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generate-compilation-db.html">Generate a Compilation Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="incremental-migration.html">Incremental Migration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="migration-rules.html">Migration Rules</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Migrate a CMake Build Script</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debug-with-codepin.html">Debug Migrated Code: Runtime Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API-Mapping-query-guide.html">Query CUDA* to SYCL* API Mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-mode.html">Analysis Mode</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reference.html">Reference</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/command-line-options-reference.html">Command Line Options Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/migration-basic.html">Basic Migration Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/migration-advance.html">Advanced Migration Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/code-gen.html">Code Generation Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/report-gen.html">Report Generation Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/build-script-opt.html">Build Script Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/help-info.html">Query API Mapping, Tool Warning, and Help Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/intercept-build-options.html">intercept-build Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/deprecated-options.html">Deprecated Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/alpha-list.html">Alphabetical Option List</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/diagnostics-reference.html">Diagnostics Reference</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1000.html">DPCT1000</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1001.html">DPCT1001</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1002.html">DPCT1002</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1003.html">DPCT1003</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1004.html">DPCT1004</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1005.html">DPCT1005</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1006.html">DPCT1006</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1007.html">DPCT1007</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1008.html">DPCT1008</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1009.html">DPCT1009</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1010.html">DPCT1010</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1011.html">DPCT1011</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1012.html">DPCT1012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1013.html">DPCT1013</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1014.html">DPCT1014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1015.html">DPCT1015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1016.html">DPCT1016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1017.html">DPCT1017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1018.html">DPCT1018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1019.html">DPCT1019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1020.html">DPCT1020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1021.html">DPCT1021</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1022.html">DPCT1022</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1023.html">DPCT1023</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1024.html">DPCT1024</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1025.html">DPCT1025</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1026.html">DPCT1026</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1027.html">DPCT1027</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1028.html">DPCT1028</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1029.html">DPCT1029</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1030.html">DPCT1030</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1031.html">DPCT1031</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1032.html">DPCT1032</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1033.html">DPCT1033</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1034.html">DPCT1034</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1035.html">DPCT1035</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1036.html">DPCT1036</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1037.html">DPCT1037</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1038.html">DPCT1038</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1039.html">DPCT1039</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1040.html">DPCT1040</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1041.html">DPCT1041</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1042.html">DPCT1042</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1043.html">DPCT1043</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1044.html">DPCT1044</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1045.html">DPCT1045</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1046.html">DPCT1046</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1047.html">DPCT1047</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1048.html">DPCT1048</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1049.html">DPCT1049</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1050.html">DPCT1050</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1051.html">DPCT1051</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1052.html">DPCT1052</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1053.html">DPCT1053</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1054.html">DPCT1054</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1055.html">DPCT1055</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1056.html">DPCT1056</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1057.html">DPCT1057</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1058.html">DPCT1058</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1059.html">DPCT1059</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1060.html">DPCT1060</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1061.html">DPCT1061</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1062.html">DPCT1062</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1063.html">DPCT1063</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1064.html">DPCT1064</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1065.html">DPCT1065</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1066.html">DPCT1066</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1067.html">DPCT1067</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1068.html">DPCT1068</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1069.html">DPCT1069</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1070.html">DPCT1070</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1071.html">DPCT1071</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1072.html">DPCT1072</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1073.html">DPCT1073</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1074.html">DPCT1074</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1075.html">DPCT1075</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1076.html">DPCT1076</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1077.html">DPCT1077</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1078.html">DPCT1078</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1079.html">DPCT1079</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1080.html">DPCT1080</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1081.html">DPCT1081</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1082.html">DPCT1082</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1083.html">DPCT1083</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1084.html">DPCT1084</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1085.html">DPCT1085</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1086.html">DPCT1086</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1087.html">DPCT1087</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1088.html">DPCT1088</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1089.html">DPCT1089</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1090.html">DPCT1090</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1091.html">DPCT1091</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1092.html">DPCT1092</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1093.html">DPCT1093</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1094.html">DPCT1094</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1095.html">DPCT1095</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1096.html">DPCT1096</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1097.html">DPCT1097</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1098.html">DPCT1098</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1099.html">DPCT1099</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1100.html">DPCT1100</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1101.html">DPCT1101</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1102.html">DPCT1102</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1103.html">DPCT1103</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1104.html">DPCT1104</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1105.html">DPCT1105</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1106.html">DPCT1106</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1107.html">DPCT1107</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1108.html">DPCT1108</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1109.html">DPCT1109</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1110.html">DPCT1110</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1111.html">DPCT1111</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1112.html">DPCT1112</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1113.html">DPCT1113</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1114.html">DPCT1114</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1115.html">DPCT1115</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1118.html">DPCT1118</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1119.html">DPCT1119</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1120.html">DPCT1120</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1121.html">DPCT1121</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../reference/dpct-namespace-reference.html">DPCT Namespace Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference/compare-prog-models.html">CUDA* and SYCL* Programming Model Comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference/term-mapping-quick-ref.html">CUDA* to SYCL* Term Mapping Quick Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api-mapping-status.html">CUDA API Migration Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../frequently-asked-questions-faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/oneapi-src/SYCLomatic/edit/SYCLomatic/docs/dev_guide/migration/migrate-cmake-build.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/oneapi-src/SYCLomatic/issues/new?title=Issue%20on%20page%20%2Fdev_guide/migration/migrate-cmake-build.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/dev_guide/migration/migrate-cmake-build.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Migrate a CMake Build Script</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customize-migration-of-cmake-build-script">Customize Migration of CMake Build Script</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#use-predefined-migration-rules-for-cmake-build-script">Use Predefined Migration Rules for CMake Build Script</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#write-a-custom-user-defined-migration-rule">Write a Custom User-defined Migration Rule</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="migrate-a-cmake-build-script">
+<span id="mig-cmake"></span><h1>Migrate a CMake Build Script<a class="headerlink" href="#migrate-a-cmake-build-script" title="Permalink to this headline">#</a></h1>
+<p>SYCLomatic supports migration of CMake build scripts by migrating a CUDA*
+specific CMake syntax to the SYCL* version. The migration capability can be
+extended and customized with a user-defined migration rule, which can be
+loaded with option <code class="docutils literal notranslate"><span class="pre">--rule-file</span></code>. The tool provides two command line options
+to trigger the migration of the CMake build script:</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--migrate-build-script=CMake</span></code></p></td>
+<td><p>EXPERIMENTAL.
+Migrate the CMake file(s).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--migrate-build-script-only</span></code></p></td>
+<td><p>EXPERIMENTAL.
+Only migrate the build script(s). Default: off.</p></td>
+</tr>
+</tbody>
+</table>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">#</a></h2>
+<p><strong>Example 1:</strong> Migrate the CMake build script of a CUDA project:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">-</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=./</span> <span class="o">-</span><span class="n">out</span><span class="o">-</span><span class="n">root</span><span class="o">=</span><span class="n">out</span>  <span class="o">-</span><span class="n">migrate</span><span class="o">-</span><span class="n">build</span><span class="o">-</span><span class="n">script</span><span class="o">-</span><span class="n">only</span>
+</pre></div>
+</div>
+<p><strong>Example 2:</strong> Migrate the CMake build script of a CUDA project using a user-defined
+migration rule defined in <code class="docutils literal notranslate"><span class="pre">rule_file.yaml</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">-</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=./</span> <span class="o">-</span><span class="n">out</span><span class="o">-</span><span class="n">root</span><span class="o">=</span><span class="n">out</span>  <span class="o">-</span><span class="n">migrate</span><span class="o">-</span><span class="n">build</span><span class="o">-</span><span class="n">script</span><span class="o">-</span><span class="n">only</span>  <span class="o">--</span><span class="n">rule</span><span class="o">-</span><span class="n">file</span><span class="o">=</span><span class="n">rule_file</span><span class="o">.</span><span class="n">yaml</span>
+</pre></div>
+</div>
+<p><strong>Example 3:</strong> Migrate the CMake build script of a CUDA project together with source code migration:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">-</span><span class="n">p</span><span class="o">=./</span> <span class="o">-</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=./</span> <span class="o">-</span><span class="n">out</span><span class="o">-</span><span class="n">root</span><span class="o">=</span><span class="n">out</span>  <span class="o">--</span><span class="n">migrate</span><span class="o">-</span><span class="n">build</span><span class="o">-</span><span class="n">script</span><span class="o">=</span><span class="n">CMake</span>
+</pre></div>
+</div>
+</section>
+<section id="customize-migration-of-cmake-build-script">
+<h2>Customize Migration of CMake Build Script<a class="headerlink" href="#customize-migration-of-cmake-build-script" title="Permalink to this headline">#</a></h2>
+<p>To customize migration of a CMake build script, you can use the predefined built-in
+migration rules, or write a custom user-defined migration rule.</p>
+<section id="use-predefined-migration-rules-for-cmake-build-script">
+<h3>Use Predefined Migration Rules for CMake Build Script<a class="headerlink" href="#use-predefined-migration-rules-for-cmake-build-script" title="Permalink to this headline">#</a></h3>
+<p>The tool provides a set of predefined migration rules in the <code class="docutils literal notranslate"><span class="pre">extensions/cmake_rules</span></code></p>
+<p>folder on the install path. These predefined rules may be helpful in migrating your
+CMake build script.</p>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">–rule-file</span></code> option to specify the use of a predefined migration rule.</p>
+</section>
+<section id="write-a-custom-user-defined-migration-rule">
+<h3>Write a Custom User-defined Migration Rule<a class="headerlink" href="#write-a-custom-user-defined-migration-rule" title="Permalink to this headline">#</a></h3>
+<p>You can customize the migration of your CMake file by defining a user-defined
+migration rule. Detailed information about writing your own user-defined migration
+rule, is provided in the <a class="reference internal" href="migration-rules.html#user-def-rules"><span class="std std-ref">Write User-defined Migration Rules</span></a> section.</p>
+<p>The following example demonstrates a user-defined CMake build script migration
+rule. The functionality of each field of the rule is detailed in the comment
+column. The example rule targets the CMake macro <code class="docutils literal notranslate"><span class="pre">cuda_compile_ptx</span></code> for migration,
+migrating <code class="docutils literal notranslate"><span class="pre">cuda_compile_ptx(obj_file</span> <span class="pre">kernel.cu)</span></code> to
+<code class="docutils literal notranslate"><span class="pre">dpct_helper_compile_sycl_code</span> <span class="pre">(obj_file</span> <span class="pre">kernel.dp.cpp)</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">dpct_helper_compile_sycl_code()</span></code> is provided by the tool. It is located in
+<code class="docutils literal notranslate"><span class="pre">dpct.cmake</span></code> in the cmake folder on the install path.</p>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>- Rule: rule_cuda_compile_ptx              # Specify the unique name of the
+                                           rule
+  Kind: CMakeRule                          # The kind of the rule
+  Priority: Fallback                       # The priority of the rule
+                                           (Takeover, Default, Fallback)
+  CmakeSyntax: cuda_compile_ptx            # The CMake syntax target to
+                                           migrate
+  In: cuda_compile_ptx(${device} ${value}) # Specify target pattern of
+                                           cuda_compile_ptx will be
+                                           migrated
+  Out: dpct_helper_compile_sycl_code(${device} ${value}) # Specify the
+                                                         content of to migrate the content specified in “In” file
+     Subrules:                             # Subrules to further process
+                                           the field(s) of pattern
+                                           specified in “In” field
+       value:                              # Process the value file of
+                                           pattern specified in “In” file
+         MatchMode: Full                   # Specify the match mode of the
+                                           sub rule Full or Partial, default is Partial
+         In: ${arg}.cu                     # Replace the file name in *.cu
+                                           pattern to *.cp.cpp
+         Out: ${arg}.dp.cpp
+</pre></div>
+</div>
+<p>For additional information on defining user-defined migration rules, refer to <a class="reference internal" href="migration-rules.html#migration-rules"><span class="std std-ref">Migration Rules</span></a>.</p>
+<p>To write a user defined migration rule for CMake syntax:</p>
+<ol class="arabic">
+<li><p>Identify the CMake CUDA specific syntax that needs to be migrated. It is
+important to understand the usage case(s) of the CMake CUDA specific syntax.</p></li>
+<li><p>Figure out the functionally equivalent SYCL-side mapping for CUDA CMake syntax,
+and test the mapping. If SYCL side functionally equivalent mapping is not available,
+consider adding a helper function, such as the helper function available in the
+<code class="docutils literal notranslate"><span class="pre">dpct.cmake</span></code> file on the tool install path.</p></li>
+<li><p>Abstract the CMake syntax mapping between CUDA and SYCL into a pattern-based
+description in a yaml-based rule.</p></li>
+<li><p>Test the functionality of the rule with lit cases by running the following command to
+make sure the migration rule is working as expected. If not, you may need to refine
+the migration rule defined in step 2.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">-</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=./</span>  <span class="o">-</span><span class="n">out</span><span class="o">-</span><span class="n">root</span> <span class="n">out</span> <span class="o">-</span><span class="n">rule</span><span class="o">-</span><span class="n">file</span><span class="o">=</span><span class="n">new_rule</span><span class="o">.</span><span class="n">yaml</span> <span class="n">test</span><span class="o">.</span><span class="n">cmake</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use the new rule(s) to migrate your project.</p></li>
+</ol>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="migration-rules.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Migration Rules</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="debug-with-codepin.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Debug Migrated Code: Runtime Behavior</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customize-migration-of-cmake-build-script">Customize Migration of CMake Build Script</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#use-predefined-migration-rules-for-cmake-build-script">Use Predefined Migration Rules for CMake Build Script</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#write-a-custom-user-defined-migration-rule">Write a Custom User-defined Migration Rule</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+<div class="extra_footer">
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 28 March, 2024</div>
+</div>
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

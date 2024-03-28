@@ -1,0 +1,83 @@
+.. _DPCT1039:
+
+DPCT1039
+========
+
+Message
+-------
+
+.. _msg-1039-start:
+
+The generated code assumes that *<parameter name>* points to the global memory
+address space. If it points to a local memory address space, replace
+*<function name>* with *<function name>*.
+
+.. _msg-1039-end:
+
+Detailed Help
+-------------
+
+|tool_name| deduces whether the first parameter of an atomic function
+points to a global memory address space or a local memory space, using the last
+assignment's RHS value of the first parameter of the atomic function. If the last
+assignment is in an ``if/while/do/for`` statement or the first argument of the atomic
+function depends on a function or template argument, the deduction result
+may be incorrect. You need to verify the generated code to determine if the first
+parameter of the atomic function actually points to the local memory address space.
+If it does, then replace the atomic function name with an atomic function name that
+includes the template parameters, as pointed to in the warning message.
+
+Suggestions to Fix
+------------------
+
+If the first parameter of an atomic function points to a local memory address
+space, replace the atomic function name with an atomic function name that
+includes the template parameters.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    __device__ void d(int* s) {
+      atomicAdd(s, 1);
+    }
+
+    __global__ void k() {
+      __shared__ int shared;
+      d(&shared);
+    }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void d(int* s) {
+      /*
+      DPCT1039:0: The generated code assumes that "s" points to the global memory
+      address space. If it points to a local memory address space, replace
+      "atomic_fetch_add" with
+      "atomic_fetch_add<sycl::access::address_space::local_space>".
+      */
+      dpct::atomic_fetch_add(s, 1);
+    }
+
+    void k(int &shared) {
+      d(&shared);
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    template<sycl::access::address_space as>
+    void d(int* s) {
+      dpct::atomic_fetch_add<as>(s, 1);
+    }
+
+    void k(int &shared) {
+      d<sycl::access::address_space::local_space>(&shared);
+    }
+
