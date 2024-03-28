@@ -544,13 +544,58 @@ DPCT_ENUM_OPTION(
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), AnalysisMode, "analysis-mode",
     llvm::cl::desc("Only generate a report for porting effort. Default: off."),
-    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+    llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisModeOutputFile,
     "analysis-mode-output-file",
     llvm::cl::desc("Specifies the file where the analysis mode report is saved. Default: "
                    "Output to stdout."),
-    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat))
+    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat))
+
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), ExamplesOpt, "examples",
+            llvm::cl::desc(
+                "Prepare for Migration\n"
+                "=====================\n\n"
+                "Generate a compilation database of the project files used to guide migration\n"
+#ifndef _WIN32
+                "       $ dpct --intercept-build make\n"
+#endif
+                "       $ dpct  --intercept-build --parse-build-log <logfile>\n\n"
+                "Estimate the migration effect to complete a migration\n"
+                "       $ dpct --analysis-mode source.cu  --analysis-mode-output-file\n\n"
+                "Migrate your code\n"
+                "=================\n\n"
+                "Migrate a single source file\n"
+                "       $ dpct source.cu\n"
+                "       $ dpct --keep-original-code source.cu                           # Keep original code\n"
+                "       $ dpct --cuda-include-path=/path/to/cuda/include source.cu      # Specify path to CUDA headers\n"
+                "       $ dpct --extra-arg=\"-std=c++11\" source.cu                     # With extra options\n"
+                "       $ dpct --extra-arg=\"-I /path/to/extra/include\" source.cu      # With additional app args\n"
+                "       $ dpct -p=/path/to/compilation-database source.cu               # With compilation database\n"
+                "       $ dpct --gen-build-script source.cu                             # Migrate src code and generate Makefile script\n\n"
+                "Migrate an entire project\n"
+                "       $ dpct -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project     # With compilation database\n"
+                "       $ dpct --process-all --in-root=/path/to/project --out-root=/path/to/migrated-project                        # Without compilation database\n"
+#ifdef _WIN32
+                "       $ dpct -vcxprojfile=/path/to/vcproject/file --in-root=/path/to/project --out-root=/path/to/migrated-project # With VS project file\n"
+#endif
+                "       $ dpct -in-root=/path/to/project --in-root-exclude=/path/to/project/dir1                                    # Exclude migration of a dir or file\n\n"
+                "Migrate/generate build scripts for migrated SYCL code\n"
+                "       $ dpct --migrate-build-script=cmake -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project        # Migrate src code and CMake scripts\n"
+                "       $ dpct --migrate-build-script-only -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project         # Migrate build script only\n"
+                "       $ dpct --gen-build-script -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project                  # Migrate src code and generate Makefile script\n\n"
+                "Utils to assist migration\n"
+                "=========================\n\n"
+                "Query functionally compatible SYCL API for a CUDA API\n"
+                "     $ dpct --query-api-mapping=cudaMalloc\n\n"
+                "Generate instrumented CUDA and SYCL code for debugging\n"
+                "     $ dpct --enable-codepin source.cu\n\n"
+                "Generate helper function files in the out-root directory\n"
+                "     $ dpct --gen-helper-function\n\n"
+                "Show the folder of helper function files\n"
+                "     $ dpct --helper-function-dir\n\n"
+                ),
+            llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTExamplesCat), llvm::cl::init(false))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT
