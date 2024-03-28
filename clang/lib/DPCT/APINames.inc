@@ -494,8 +494,8 @@ ENTRY(cudaGetKernel, cudaGetKernel, false, NO_FLAG, P0, "comment")
 
 // profiler control functions of runtime API
 ENTRY(cudaProfilerInitialize, cudaProfilerInitialize, false, NO_FLAG, P4, "comment")
-ENTRY(cudaProfilerStart, cudaProfilerStart, false, NO_FLAG, P0, "comment")
-ENTRY(cudaProfilerStop, cudaProfilerStop, false, NO_FLAG, P0, "comment")
+ENTRY(cudaProfilerStart, cudaProfilerStart, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
+ENTRY(cudaProfilerStop, cudaProfilerStop, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
 
 // Atomic API
 ENTRY(atomicAdd, atomicAdd, true, NO_FLAG, P0, "Successful: DPCT1039")
