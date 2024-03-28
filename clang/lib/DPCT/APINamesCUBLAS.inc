@@ -36,6 +36,12 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     CALL(MapNames::getDpctNamespace() + "blas::descriptor::set_saved_queue",
          ARG(0))))
 
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasSetMathMode", ARG(0), true,
+                                             "set_math_mode", ARG(1)))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasGetMathMode", DEREF(1),
+                                        MEMBER_CALL(ARG(0), true,
+                                                    "get_math_mode")))
+
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSgemm_v2",
     CALL("oneapi::mkl::blas::column_major::gemm",

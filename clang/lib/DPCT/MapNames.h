@@ -326,8 +326,8 @@ public:
   static const MapTy MacrosMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
   static std::unordered_map<std::string, MetaRuleObject &> HeaderRuleMap;
+  static MapTy BLASEnumsMap;
   static MapTy SPBLASEnumsMap;
-  static const MapTy BLASEnumsMap;
   static std::map<std::string, MapNames::BLASFuncReplInfo> BLASFuncReplInfoMap;
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       BLASFuncComplexReplInfoMap;

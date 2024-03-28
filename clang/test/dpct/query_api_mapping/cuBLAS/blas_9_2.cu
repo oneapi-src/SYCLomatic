@@ -119,7 +119,8 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGetMathMode | FileCheck %s -check-prefix=cublasGetMathMode
 // cublasGetMathMode: CUDA API:
 // cublasGetMathMode-NEXT:   cublasGetMathMode(handle /*cublasHandle_t*/, precision /*cublasMath_t **/);
-// cublasGetMathMode-NEXT: The API is Removed.
+// cublasGetMathMode-NEXT: Is migrated to:
+// cublasGetMathMode-NEXT:   *precision = handle->get_math_mode();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasHgemmBatched | FileCheck %s -check-prefix=cublasHgemmBatched
 // cublasHgemmBatched: CUDA API:
@@ -135,7 +136,8 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetMathMode | FileCheck %s -check-prefix=cublasSetMathMode
 // cublasSetMathMode: CUDA API:
 // cublasSetMathMode-NEXT:   cublasSetMathMode(handle /*cublasHandle_t*/, precision /*cublasMath_t*/);
-// cublasSetMathMode-NEXT: The API is Removed.
+// cublasSetMathMode-NEXT: Is migrated to:
+// cublasSetMathMode-NEXT:   handle->set_math_mode(precision);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgemmBatched | FileCheck %s -check-prefix=cublasSgemmBatched
 // cublasSgemmBatched: CUDA API:

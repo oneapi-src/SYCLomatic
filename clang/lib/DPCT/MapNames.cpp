@@ -54,6 +54,7 @@ std::unordered_map<std::string, std::pair<std::string, std::string>>
 MapNames::MapTy MapNames::BLASAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SPARSEAPIWithRewriter;
+MapNames::MapTy MapNames::BLASEnumsMap;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
 
 void MapNames::setExplicitNamespaceMap() {
@@ -199,9 +200,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDataType_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t",
                                       HelperFeatureEnum::device_ext)},
-      {"cublasComputeType_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t",
-                                      HelperFeatureEnum::device_ext)},
+      {"cublasComputeType_t", std::make_shared<TypeNameRule>(
+                                  getDpctNamespace() + "blas::compute_type")},
       {"cuComplex",
        std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
       {"cuFloatComplex",
@@ -215,7 +215,8 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
       {"cublasPointerMode_t", std::make_shared<TypeNameRule>("int")},
       {"cublasAtomicsMode_t", std::make_shared<TypeNameRule>("int")},
-      {"cublasMath_t", std::make_shared<TypeNameRule>("int")},
+      {"cublasMath_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "blas::math_mode")},
       {"cusparsePointerMode_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseFillMode_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::uplo")},
@@ -1195,37 +1196,37 @@ void MapNames::setExplicitNamespaceMap() {
       // cublasComputeType_t
       {"CUBLAS_COMPUTE_16F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_half")},
+                                      "blas::compute_type::ct_16f")},
       {"CUBLAS_COMPUTE_16F_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_half")},
+                                      "blas::compute_type::ct_16f_pedantic")},
       {"CUBLAS_COMPUTE_32F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_float")},
+                                      "blas::compute_type::ct_32f")},
       {"CUBLAS_COMPUTE_32F_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_float")},
+                                      "blas::compute_type::ct_32f_pedantic")},
       {"CUBLAS_COMPUTE_32F_FAST_16F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_float")},
+                                      "blas::compute_type::ct_32f_fast_16f")},
       {"CUBLAS_COMPUTE_32F_FAST_16BF",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_float")},
+                                      "blas::compute_type::ct_32f_fast_16bf")},
       {"CUBLAS_COMPUTE_32F_FAST_TF32",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_float")},
+                                      "blas::compute_type::ct_32f_fast_tf32")},
       {"CUBLAS_COMPUTE_64F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_double")},
+                                      "blas::compute_type::ct_64f")},
       {"CUBLAS_COMPUTE_64F_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_double")},
+                                      "blas::compute_type::ct_64f_pedantic")},
       {"CUBLAS_COMPUTE_32I",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_int32")},
+                                      "blas::compute_type::ct_32i")},
       {"CUBLAS_COMPUTE_32I_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_int32")},
+                                      "blas::compute_type::ct_32i_pedantic")},
       {"cuda::thread_scope_system",
        std::make_shared<EnumNameRule>(getClNamespace() +
                                       "memory_scope::system")},
@@ -1356,6 +1357,26 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "sparse::conversion_scope::index"},
       {"CUSPARSE_ACTION_NUMERIC",
        getDpctNamespace() + "sparse::conversion_scope::index_and_value"},
+  };
+
+  // BLAS enums mapping
+  BLASEnumsMap = {
+      {"CUBLAS_OP_N", "oneapi::mkl::transpose::nontrans"},
+      {"CUBLAS_OP_T", "oneapi::mkl::transpose::trans"},
+      {"CUBLAS_OP_C", "oneapi::mkl::transpose::conjtrans"},
+      {"CUBLAS_SIDE_LEFT", "oneapi::mkl::side::left"},
+      {"CUBLAS_SIDE_RIGHT", "oneapi::mkl::side::right"},
+      {"CUBLAS_FILL_MODE_LOWER", "oneapi::mkl::uplo::lower"},
+      {"CUBLAS_FILL_MODE_UPPER", "oneapi::mkl::uplo::upper"},
+      {"CUBLAS_DIAG_NON_UNIT", "oneapi::mkl::diag::nonunit"},
+      {"CUBLAS_DIAG_UNIT", "oneapi::mkl::diag::unit"},
+      {"CUBLAS_DEFAULT_MATH", getDpctNamespace() + "blas::math_mode::other"},
+      {"CUBLAS_PEDANTIC_MATH", getDpctNamespace() + "blas::math_mode::other"},
+      {"CUBLAS_TF32_TENSOR_OP_MATH",
+       getDpctNamespace() + "blas::math_mode::tf32"},
+      {"CUBLAS_MATH_DISALLOW_REDUCED_PRECISION_REDUCTION",
+       getDpctNamespace() + "blas::math_mode::other"},
+      {"CUBLAS_TENSOR_OP_MATH", getDpctNamespace() + "blas::math_mode::other"},
   };
 
   ClassFieldMap = {};
@@ -1659,6 +1680,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasGetStream_v2", "s = handle"},
       {"cublasSetKernelStream",
        getDpctNamespace() + "blas::descriptor::set_saved_queue"},
+      {"cublasSetMathMode",
+       getDpctNamespace() + "blas::descriptor::set_math_mode"},
+      {"cublasGetMathMode",
+       getDpctNamespace() + "blas::descriptor::get_math_mode"},
       {"cublasSgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasDgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasCgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
@@ -2144,19 +2169,6 @@ const MapNames::MapTy MapNames::RemovedAPIWarningMessage{
 #define ENTRY(APINAME, MSG) {#APINAME, MSG},
 #include "APINames_removed.inc"
 #undef ENTRY
-};
-
-// BLAS enums mapping
-const MapNames::MapTy MapNames::BLASEnumsMap{
-    {"CUBLAS_OP_N", "oneapi::mkl::transpose::nontrans"},
-    {"CUBLAS_OP_T", "oneapi::mkl::transpose::trans"},
-    {"CUBLAS_OP_C", "oneapi::mkl::transpose::conjtrans"},
-    {"CUBLAS_SIDE_LEFT", "oneapi::mkl::side::left"},
-    {"CUBLAS_SIDE_RIGHT", "oneapi::mkl::side::right"},
-    {"CUBLAS_FILL_MODE_LOWER", "oneapi::mkl::uplo::lower"},
-    {"CUBLAS_FILL_MODE_UPPER", "oneapi::mkl::uplo::upper"},
-    {"CUBLAS_DIAG_NON_UNIT", "oneapi::mkl::diag::nonunit"},
-    {"CUBLAS_DIAG_UNIT", "oneapi::mkl::diag::unit"},
 };
 
 // SOLVER enums mapping
