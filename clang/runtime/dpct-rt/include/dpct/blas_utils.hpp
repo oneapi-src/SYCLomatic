@@ -2137,14 +2137,9 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
   }
   auto data_a = dpct::detail::get_memory<const Ty>(a);
   auto data_c = dpct::detail::get_memory<Ty>(c);
-  if (cm)
-    oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
-                                          unit_diag, m, n, alpha_val, data_a,
-                                          lda, data_c, ldc, cm.value());
-  else
-    oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
-                                          unit_diag, m, n, alpha_val, data_a,
-                                          lda, data_c, ldc);
+  oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
+                                        unit_diag, m, n, alpha_val, data_a, lda,
+                                        data_c, ldc, cm);
 }
 } // namespace blas
 
