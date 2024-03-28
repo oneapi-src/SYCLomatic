@@ -48,12 +48,7 @@
 // cublasZrot-NEXT:              incx /*int*/, y /*cuDoubleComplex **/, incy /*int*/,
 // cublasZrot-NEXT:              c /*const double **/, s /*const cuDoubleComplex **/);
 // cublasZrot-NEXT: Is migrated to:
-// cublasZrot-NEXT:   [&]() {
-// cublasZrot-NEXT:   dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), c);
-// cublasZrot-NEXT:   dpct::blas::wrapper_double_in res_wrapper_ct7(handle->get_queue(), s);
-// cublasZrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, res_wrapper_ct6.get_ptr(), (std::complex<double>*)res_wrapper_ct7.get_ptr());
-// cublasZrot-NEXT:   return 0;
-// cublasZrot-NEXT:   }();
+// cublasZrot-NEXT:   oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetVector | FileCheck %s -check-prefix=cublasSetVector
 // cublasSetVector: CUDA API:
@@ -83,12 +78,7 @@
 // cublasZdrot-NEXT:               incx /*int*/, y /*cuDoubleComplex **/, incy /*int*/,
 // cublasZdrot-NEXT:               c /*const double **/, s /*const double **/);
 // cublasZdrot-NEXT: Is migrated to:
-// cublasZdrot-NEXT:   [&]() {
-// cublasZdrot-NEXT:   dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), c);
-// cublasZdrot-NEXT:   dpct::blas::wrapper_double2_in res_wrapper_ct7(handle->get_queue(), s);
-// cublasZdrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, res_wrapper_ct6.get_ptr(), res_wrapper_ct7.get_ptr());
-// cublasZdrot-NEXT:   return 0;
-// cublasZdrot-NEXT:   }();
+// cublasZdrot-NEXT:   oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZhpr | FileCheck %s -check-prefix=cublasZhpr
 // cublasZhpr: CUDA API:

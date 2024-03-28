@@ -4328,6 +4328,17 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasZdrot_v2_64", "cublasSrotg_v2_64", "cublasDrotg_v2_64",
         "cublasCrotg_v2_64", "cublasZrotg_v2_64", "cublasSrotm_v2_64",
         "cublasDrotm_v2_64", "cublasSrotmg_v2_64", "cublasDrotmg_v2_64",
+        /*level 2*/
+        "cublasSgemv_v2_64", "cublasDgemv_v2_64", "cublasCgemv_v2_64",
+        "cublasZgemv_v2_64", "cublasSgbmv_v2_64", "cublasDgbmv_v2_64",
+        "cublasCgbmv_v2_64", "cublasZgbmv_v2_64", "cublasStrmv_v2_64",
+        "cublasDtrmv_v2_64", "cublasCtrmv_v2_64", "cublasZtrmv_v2_64",
+        "cublasStbmv_v2_64", "cublasDtbmv_v2_64", "cublasCtbmv_v2_64",
+        "cublasZtbmv_v2_64", "cublasStpmv_v2_64", "cublasDtpmv_v2_64",
+        "cublasCtpmv_v2_64", "cublasZtpmv_v2_64", "cublasStrsv_v2_64",
+        "cublasDtrsv_v2_64", "cublasCtrsv_v2_64", "cublasZtrsv_v2_64",
+        "cublasStpsv_v2_64", "cublasDtpsv_v2_64", "cublasCtpsv_v2_64",
+        "cublasZtpsv_v2_64",
         /*level 3*/
         "cublasSgemm_v2_64", "cublasDgemm_v2_64", "cublasCgemm_v2_64",
         "cublasZgemm_v2_64", "cublasSsyrk_v2_64", "cublasDsyrk_v2_64",

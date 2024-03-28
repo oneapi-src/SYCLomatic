@@ -105,12 +105,7 @@
 // cublasCsrot-NEXT:               incx /*int*/, y /*cuComplex **/, incy /*int*/,
 // cublasCsrot-NEXT:               c /*const float **/, s /*const float **/);
 // cublasCsrot-NEXT: Is migrated to:
-// cublasCsrot-NEXT:   [&]() {
-// cublasCsrot-NEXT:   dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), c);
-// cublasCsrot-NEXT:   dpct::blas::wrapper_float_in res_wrapper_ct7(handle->get_queue(), s);
-// cublasCsrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, (std::complex<float>*)x, incx, (std::complex<float>*)y, incy, res_wrapper_ct6.get_ptr(), res_wrapper_ct7.get_ptr());
-// cublasCsrot-NEXT:   return 0;
-// cublasCsrot-NEXT:   }();
+// cublasCsrot-NEXT:   oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, (std::complex<float>*)x, incx, (std::complex<float>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGetVersion | FileCheck %s -check-prefix=cublasGetVersion
 // cublasGetVersion: CUDA API:
@@ -163,12 +158,7 @@
 // cublasCrot-NEXT:              incx /*int*/, y /*cuComplex **/, incy /*int*/, c /*const float **/,
 // cublasCrot-NEXT:              s /*const cuComplex **/);
 // cublasCrot-NEXT: Is migrated to:
-// cublasCrot-NEXT:   [&]() {
-// cublasCrot-NEXT:   dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), c);
-// cublasCrot-NEXT:   dpct::blas::wrapper_float2_in res_wrapper_ct7(handle->get_queue(), s);
-// cublasCrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, (std::complex<float>*)x, incx, (std::complex<float>*)y, incy, res_wrapper_ct6.get_ptr(), (std::complex<float>*)res_wrapper_ct7.get_ptr());
-// cublasCrot-NEXT:   return 0;
-// cublasCrot-NEXT:   }();
+// cublasCrot-NEXT:   oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, (std::complex<float>*)x, incx, (std::complex<float>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCreate | FileCheck %s -check-prefix=cublasCreate
 // cublasCreate: CUDA API:
