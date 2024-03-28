@@ -1,0 +1,3 @@
+target_link_directories(CUDA::toolkit INTERFACE "${ONEAPI_LIB_DIR}")
+
+target_link_options(quda PUBLIC )
