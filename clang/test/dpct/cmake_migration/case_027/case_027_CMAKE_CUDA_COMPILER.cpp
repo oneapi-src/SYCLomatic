@@ -6,5 +6,12 @@
 // RUN: diff --strip-trailing-cr %S/expected.txt %T/out/input.cmake >> %T/diff.txt
 // RUN: echo "end" >> %T/diff.txt
 
+// RUN: dpct  ./input.cmake --migrate-build-script-only
+// RUN: rm dpct_output/input.cmake
+// RUN: dpct  ./input.cmake --migrate-build-script-only
+// RUN: echo "begin" > %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/expected.txt %T/dpct_output/input.cmake >> %T/diff.txt
+// RUN: echo "end" >> %T/diff.txt
+
 // CHECK: begin
 // CHECK-NEXT: end
