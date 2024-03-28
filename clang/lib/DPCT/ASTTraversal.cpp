@@ -9592,6 +9592,33 @@ void MemVarAnalysisRule::processTypeDeclaredLocal(
   }
 }
 
+#define TYPE_CAST(Target) dyn_cast<Target>(T)
+SourceLocation getTypedefOrUsingLoc(QualType QT) {
+  const Type *T = QT.getTypePtr();
+  switch (T->getTypeClass()) {
+  case Type::TypeClass::IncompleteArray:
+    return getTypedefOrUsingLoc(
+        TYPE_CAST(IncompleteArrayType)->getElementType());
+  case Type::TypeClass::ConstantArray:
+    return getTypedefOrUsingLoc(TYPE_CAST(ConstantArrayType)->getElementType());
+  case Type::TypeClass::Pointer:
+    return getTypedefOrUsingLoc(TYPE_CAST(PointerType)->getPointeeType());
+  case Type::TypeClass::Elaborated:
+    return getTypedefOrUsingLoc(TYPE_CAST(ElaboratedType)->desugar());
+  case Type::TypeClass::Typedef:
+    return TYPE_CAST(TypedefType)
+        ->getDecl()
+        ->getTypeSourceInfo()
+        ->getTypeLoc()
+        .getBeginLoc();
+  case Type::TypeClass::Using:
+    return TYPE_CAST(clang::UsingType)->getFoundDecl()->getBeginLoc();
+  default:
+    return SourceLocation();
+  }
+}
+#undef TYPE_CAST
+
 void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
@@ -9621,6 +9648,12 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
           MemVar, Info->getDeclarationReplacement(MemVar)));
     }
+    if (MemVar->hasAttr<CUDASharedAttr>()) {
+      SourceLocation SL = getTypedefOrUsingLoc(MemVar->getType());
+      if (SL.isValid()) {
+        report(SL, Diagnostics::MOVE_TYPE_DEFINITION, true);
+      }
+    }
     return;
   }
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
@@ -9647,6 +9680,12 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
           if (auto DFI = DeviceFunctionDecl::LinkRedecls(Func))
             DFI->addVar(Var);
         }
+      }
+    }
+    if (VD->hasAttr<CUDASharedAttr>()) {
+      SourceLocation SL = getTypedefOrUsingLoc(VD->getType());
+      if (SL.isValid()) {
+        report(SL, Diagnostics::MOVE_TYPE_DEFINITION, true);
       }
     }
   }
