@@ -67,6 +67,16 @@ int main() {
   tex2.normalized = 0;
   // CHECK: i = tex2.is_coordinate_normalized();
   i = tex2.normalized;
+  {
+    // CHECK: tex3.set(sycl::coordinate_normalization_mode::normalized);
+    tex3.normalized = true;
+    // CHECK: tex3.set(sycl::addressing_mode::clamp_to_edge);
+    tex3.addressMode[0] = cudaAddressModeClamp;
+    // CHECK: tex3.set(sycl::addressing_mode::clamp_to_edge);
+    tex3.addressMode[1] = cudaAddressModeClamp;
+    // CHECK: tex3.set(sycl::filtering_mode::linear);
+    tex3.filterMode = cudaFilterModeLinear;
+  }
 
   void *dataPtr;
   const size_t w = 4;
