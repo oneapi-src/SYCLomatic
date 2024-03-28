@@ -281,7 +281,10 @@ bool hasOptConflictWithQuery(int argc, const char **argv) {
   return false;
 }
 
-static bool isCUDAHeaderRequired() { return !MigrateBuildScriptOnly; }
+static bool isCUDAHeaderRequired() {
+  return !MigrateBuildScriptOnly &&
+         (QueryAPIMapping.empty() || !CudaIncludePathOpt.empty());
+}
 
 UnifiedPath getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPathStr(invokeCommand);
@@ -930,7 +933,11 @@ int runDPCT(int argc, const char **argv) {
       APIMapping::printAll();
       dpctExit(MigrationSucceeded);
     }
-    auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
+    auto SourceCode = APIMapping::getAPIStr(QueryAPIMapping);
+    if (SourceCode.contains("CUDA API:")) {
+      llvm::outs() << SourceCode;
+      dpctExit(MigrationSucceeded);
+    }
     if (SourceCode.empty()) {
       ShowStatus(MigrationErrorNoAPIMapping);
       dpctExit(MigrationErrorNoAPIMapping);

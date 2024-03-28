@@ -949,6 +949,7 @@ configure_file(
   ${CLANG_BINARY_DIR}/include/clang/Config/config.h)
 
 # SYCLomatic_CUSTOMIZATION begin
+option(SYCLomatic_OPT_FOR_QUERY "Enable the performance Optimization of --query-api-mapping." OFF)
 if (NOT CLANG_BUILT_STANDALONE)
   if(WIN32)
     list(APPEND DPCT_RUN

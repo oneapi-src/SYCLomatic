@@ -10,5 +10,5 @@ foreach(FILE ${SRC_FILES})
   endif()
   list(APPEND API_NAME_SET ${API_NAME})
   file(APPEND ${TARGET}
-  "registerEntry(\"" "${API_NAME}" "\",\nR\"(" "${FILE_STR}" ")\");\n")
+    "REGIST(\"" "${API_NAME}" "\",\nR\"(" "${FILE_STR}" ")\")\n")
 endforeach()
