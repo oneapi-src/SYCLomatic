@@ -328,6 +328,15 @@ TYPE_REWRITE_ENTRY("nvcuda::wmma::fragment",
                                  STR("sycl::sub_group"),TEMPLATE_ARG(4),TEMPLATE_ARG(0),
                                  TEMPLATE_ARG(2),TEMPLATE_ARG(3),TEMPLATE_ARG(5)))),
         WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
+
+TYPE_REWRITE_ENTRY(
+    "nvcuda::wmma::layout_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableJointMatrixForType(),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() +
+                         "ext::oneapi::experimental::matrix::layout")),
+        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
+
 // clang-format on
 
 TYPE_REWRITE_ENTRY("csrsv2Info_t",
