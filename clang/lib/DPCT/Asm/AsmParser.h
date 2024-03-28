@@ -79,9 +79,6 @@ public:
     llvm_unreachable("InlineAsmType cannot be released with regular 'delete'.");
   }
 
-  bool isSignedInt() const;
-  bool isUnsignedInt() const;
-
 protected:
   InlineAsmType(TypeClass TC) : tClass(TC) {}
 
@@ -108,6 +105,7 @@ public:
   TypeKind getKind() const { return Kind; }
   bool isSignedInt() const;
   bool isUnsignedInt() const;
+  bool isInt() const { return isSignedInt() || isUnsignedInt(); }
   bool isFloating() const;
   bool isBitSize() const;
   unsigned getWidth() const;
