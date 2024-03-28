@@ -142,6 +142,10 @@ FEATURE_REQUEST_FACTORY(
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToArray",
                                                       0 /*start arg idx*/)))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToMipmappedArray",
+                                  0 /*start arg idx*/)))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
