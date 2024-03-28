@@ -1546,19 +1546,8 @@ protected:
     return SYCLGenSuccess();
   }
 
-  // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
-  bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst,
-                                    StringRef Fn) {
-    if (Inst->getNumInputOperands() < 2 || Inst->getNumTypes() != 3)
-      return SYCLGenError();
-
-    // Arguments mismatch for instruction, which has a secondary arithmetic
-    // operation.
-    if (Inst->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) &&
-        Inst->getNumInputOperands() < 3)
-      return SYCLGenError();
-
-    // The type of operands must be one of s32/u32.
+  // The type of operands must be one of s32/u32.
+  bool CheckSIMDInstructionType(const InlineAsmInstruction *Inst) {
     for (const auto *T : Inst->types()) {
       if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(T)) {
         if (BI->getKind() == InlineAsmBuiltinType::TK_s32 ||
@@ -1567,6 +1556,47 @@ protected:
       }
       return SYCLGenError();
     }
+    return SYCLGenSuccess();
+  }
+
+  bool HandleComparsionOp(const InlineAsmInstruction *Inst) {
+    if (!Inst)
+      return SYCLGenError();
+    if (Inst->hasAttr(InstAttr::eq))
+      OS() << ", "
+           << "std::equal_to<>()";
+    else if (Inst->hasAttr(InstAttr::ne))
+      OS() << ", "
+           << "std::not_equal_to<>()";
+    else if (Inst->hasAttr(InstAttr::lt))
+      OS() << ", "
+           << "std::less<>()";
+    else if (Inst->hasAttr(InstAttr::le))
+      OS() << ", "
+           << "std::less_equal<>()";
+    else if (Inst->hasAttr(InstAttr::gt))
+      OS() << ", "
+           << "std::greater<>()";
+    else if (Inst->hasAttr(InstAttr::ge))
+      OS() << ", "
+           << "std::greater_equal<>()";
+    else
+      return SYCLGenError();
+    return SYCLGenSuccess();
+  }
+
+  // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
+  bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst,
+                                    StringRef Fn) {
+    if (Inst->getNumInputOperands() < 2 || Inst->getNumTypes() != 3 ||
+        CheckSIMDInstructionType(Inst))
+      return SYCLGenError();
+
+    // Arguments mismatch for instruction, which has a secondary arithmetic
+    // operation.
+    if (Inst->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) &&
+        Inst->getNumInputOperands() < 3)
+      return SYCLGenError();
 
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
@@ -1636,22 +1666,59 @@ protected:
                                                "extend_shr");
   }
 
+  bool HandleVset(const InlineAsmInstruction *I, StringRef Fn) {
+    if (I->getNumInputOperands() < 3 || I->getNumTypes() != 2 ||
+        CheckSIMDInstructionType(I))
+      return SYCLGenError();
+    bool hasSecOp = I->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max);
+    if (hasSecOp && I->getNumInputOperands() < 3)
+      return SYCLGenError();
+    if (emitStmt(I->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = " << MapNames::getDpctNamespace() << Fn;
+    if (I->is(asmtok::op_vset2, asmtok::op_vset4) && I->hasAttr(InstAttr::add))
+      OS() << "_add";
+    OS() << '<';
+    for (int i = 0, e = I->getNumTypes(); i != e; ++i) {
+      if (emitType(I->getType(i)))
+        return SYCLGenError();
+      if (i < e - 1)
+        OS() << ", ";
+    }
+    OS() << '>' << '(';
+    // If no second op, ignore third operand until we support operand mask.
+    for (unsigned i = 0, e = I->getNumInputOperands() - !hasSecOp; i != e;
+         ++i) {
+      if (emitStmt(I->getInputOperand(i)))
+        return SYCLGenError();
+      if (i < e - 1)
+        OS() << ", ";
+    }
+    if (HandleComparsionOp(I))
+      return SYCLGenError();
+    if (I->is(asmtok::op_vset)) {
+      if (I->hasAttr(InstAttr::add))
+        OS() << ", " << MapNames::getClNamespace() << "plus<>()";
+      else if (I->hasAttr(InstAttr::min))
+        OS() << ", " << MapNames::getClNamespace() << "minimum<>()";
+      else if (I->hasAttr(InstAttr::max))
+        OS() << ", " << MapNames::getClNamespace() << "maximum<>()";
+    }
+    OS() << ')';
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_vset(const InlineAsmInstruction *I) override {
+    return HandleVset(I, "extend_compare");
+  }
+
   // Handle the 2/4 element video instructions.
   bool handleMultiElementAddSubMinMax(const InlineAsmInstruction *Inst,
                                       StringRef Fn) {
-    if (Inst->getNumInputOperands() < 3 || Inst->getNumTypes() != 3)
+    if (Inst->getNumInputOperands() < 3 || Inst->getNumTypes() != 3 ||
+        CheckSIMDInstructionType(Inst))
       return SYCLGenError();
-
-    // The type of operands must be one of s32/u32.
-    for (const auto *T : Inst->types()) {
-      if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(T)) {
-        if (BI->getKind() == InlineAsmBuiltinType::TK_s32 ||
-            BI->getKind() == InlineAsmBuiltinType::TK_u32)
-          continue;
-      }
-      return SYCLGenError();
-    }
-
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
 
@@ -1708,6 +1775,9 @@ protected:
     return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
                                                  "extend_vavrg2");
   }
+  bool handle_vset2(const InlineAsmInstruction *I) override {
+    return HandleVset(I, "extend_vcompare2");
+  }
   bool handle_vadd4(const InlineAsmInstruction *I) override {
     return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
                                                  "extend_vadd4");
@@ -1731,6 +1801,9 @@ protected:
   bool handle_vavrg4(const InlineAsmInstruction *I) override {
     return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
                                                  "extend_vavrg4");
+  }
+  bool handle_vset4(const InlineAsmInstruction *I) override {
+    return HandleVset(I, "extend_vcompare4");
   }
 
   bool handle_bfe(const InlineAsmInstruction *Inst) override {
