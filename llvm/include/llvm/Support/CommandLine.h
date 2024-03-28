@@ -208,6 +208,7 @@ OptionCategory &getDPCTQueryAPICategory();
 OptionCategory &getDPCTWarningsCategory();
 OptionCategory &getDPCTHelpInfoCategory();
 OptionCategory &getDPCTInterceptBuildCategory();
+OptionCategory &getDPCTExamplesCategory();
 #endif // SYCLomatic_CUSTOMIZATION
 
 //===----------------------------------------------------------------------===//

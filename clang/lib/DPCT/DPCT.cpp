@@ -95,6 +95,7 @@ llvm::cl::OptionCategory &DPCTQueryAPICat = llvm::cl::getDPCTQueryAPICategory();
 llvm::cl::OptionCategory &DPCTWarningsCat = llvm::cl::getDPCTWarningsCategory();
 llvm::cl::OptionCategory &DPCTHelpInfoCat = llvm::cl::getDPCTHelpInfoCategory();
 llvm::cl::OptionCategory &DPCTInterceptBuildCat = llvm::cl::getDPCTInterceptBuildCategory();
+llvm::cl::OptionCategory &DPCTExamplesCat = llvm::cl::getDPCTExamplesCategory();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang
@@ -104,19 +105,6 @@ const char *const CtHelpMessage =
     "\n"
     "<source0> ... Paths of input source files. These paths are looked up in "
     "the compilation database.\n\n"
-    "EXAMPLES:\n\n"
-    "Migrate single source file:\n\n"
-    "  dpct source.cpp\n\n"
-    "Migrate single source file with C++11 features:\n\n"
-    "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
-    "Migrate all files available in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>\n\n"
-    "Migrate one file in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>  source.cpp\n\n"
-#if defined(_WIN32)
-    "Migrate all files available in vcxprojfile:\n\n"
-    "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
-#endif
     DiagRef
     ;
 

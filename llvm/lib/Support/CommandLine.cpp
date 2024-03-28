@@ -2356,7 +2356,8 @@ enum class HelpCategory {
   HC_QueryAPI,
   HC_Warnings,
   HC_HelpInfo,
-  HC_InterceptBuild
+  HC_InterceptBuild,
+  HC_Examples
 };
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -2517,6 +2518,9 @@ public:
       break;
     case HelpCategory::HC_InterceptBuild:
       return cl::getDPCTInterceptBuildCategory();
+      break;
+    case HelpCategory::HC_Examples:
+      return cl::getDPCTExamplesCategory();
       break;
     default:
       return cl::getDPCTCategory();
@@ -2753,6 +2757,10 @@ struct CommandLineCommonOptions {
               cl::OptionEnumValue{"intercept-build",
                                    int(HelpCategory::HC_InterceptBuild),
                                    "List options of intercept-build tool",
+                                   false},
+              cl::OptionEnumValue{"examples",
+                                   int(HelpCategory::HC_Examples),
+                                   "List examples of common DPCT options usage",
                                    false}
           ),
           cl::desc("Provides a list of all the available options or "
@@ -2883,6 +2891,10 @@ OptionCategory &cl::getDPCTHelpInfoCategory() {
 OptionCategory &cl::getDPCTInterceptBuildCategory() {
   static OptionCategory DPCTInterceptBuildCat{"intercept-build"};
   return DPCTInterceptBuildCat;
+}
+OptionCategory &cl::getDPCTExamplesCategory() {
+  static OptionCategory DPCTExamplesCat{"examples"};
+  return DPCTExamplesCat;
 }
 #endif // SYCLomatic_CUSTOMIZATION
 
