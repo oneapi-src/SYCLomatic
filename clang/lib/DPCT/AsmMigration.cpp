@@ -484,11 +484,11 @@ bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   case InlineAsmBuiltinType::TK_pred:   OS() << "bool"; break;
   case InlineAsmBuiltinType::TK_s16x2:  OS() << MapNames::getClNamespace() + "short2"; break;
   case InlineAsmBuiltinType::TK_u16x2:  OS() << MapNames::getClNamespace() + "ushort2"; break;
-  case InlineAsmBuiltinType::TK_bf16:
+  case InlineAsmBuiltinType::TK_bf16:   OS() << MapNames::getClNamespace() + "ext::oneapi::bfloat16"; break;
+  case InlineAsmBuiltinType::TK_f16x2:  OS() << MapNames::getClNamespace() + "half2"; break;
   case InlineAsmBuiltinType::TK_e4m3:
   case InlineAsmBuiltinType::TK_e5m2:
   case InlineAsmBuiltinType::TK_tf32:
-  case InlineAsmBuiltinType::TK_f16x2:
   case InlineAsmBuiltinType::TK_bf16x2:
   case InlineAsmBuiltinType::TK_e4m3x2:
   case InlineAsmBuiltinType::TK_e5m2x2:
@@ -1900,6 +1900,185 @@ protected:
         FuncInfo->addSubGroupSizeRequest(32, GAS->getBeginLoc(),
                                          DpctGlobalInfo::getSubGroup(GAS));
     }
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_ret(const InlineAsmInstruction *) override {
+    OS() << "return";
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_rcp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = 1 / ";
+    if (emitStmt(Inst->getInputOperand(0)))
+      return SYCLGenError();
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_cvt(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1 && Inst->getNumTypes() != 2 &&
+        isa<InlineAsmBuiltinType>(Inst->getType(0)) &&
+        isa<InlineAsmBuiltinType>(Inst->getType(1)))
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+    OS() << " = ";
+    const auto *DesType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    const auto *SrcType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(1));
+    std::string DesTypeStr, SrcTypeStr;
+    if (tryEmitType(DesTypeStr, DesType))
+      return SYCLGenError();
+    if (tryEmitType(SrcTypeStr, SrcType))
+      return SYCLGenError();
+
+    // Append rounding modifier for bfloat16 and half types.
+    auto AppendRoundingModeAndOp = [&]() {
+      if (Inst->hasAttr(InstAttr::rn))
+        OS() << "rn";
+      else if (Inst->hasAttr(InstAttr::rz))
+        OS() << "rz";
+      else if (Inst->hasAttr(InstAttr::rm))
+        OS() << "rd";
+      else if (Inst->hasAttr(InstAttr::rp))
+        OS() << "ru";
+      OS() << '(' << Op << ')';
+    };
+    // Destination type and source type is integer or float/double
+    // point.
+    if (((DesType->isInt() || DesType->isFloating()) &&
+         DesType->getKind() != InlineAsmBuiltinType::TK_f16) ||
+        ((SrcType->isInt() && SrcType->isFloating()) &&
+         DesType->getKind() != InlineAsmBuiltinType::TK_f16)) {
+      if (Inst->hasAttr(InstAttr::rni, InstAttr::rn))
+        OS() << MapNames::getClNamespace() << "vec<" << SrcTypeStr << ", 1>("
+              << Op << ").template convert<" << DesType << ", "
+              << MapNames::getClNamespace() << "rounding_mode::rte>()";
+      else if (Inst->hasAttr(InstAttr::rzi, InstAttr::rz))
+        OS() << MapNames::getClNamespace() << "vec<" << SrcTypeStr << ", 1>("
+              << Op << ").template convert<" << DesType << ", "
+              << MapNames::getClNamespace() << "rounding_mode::rtz>()";
+      else if (Inst->hasAttr(InstAttr::rmi, InstAttr::rm))
+        OS() << MapNames::getClNamespace() << "vec<" << SrcTypeStr << ", 1>("
+              << Op << ").template convert<" << DesType << ", "
+              << MapNames::getClNamespace() << "rounding_mode::rtn>()";
+      else if (Inst->hasAttr(InstAttr::rpi, InstAttr::rp))
+        OS() << MapNames::getClNamespace() << "vec<" << SrcTypeStr << ", 1>("
+              << Op << ").template convert<" << DesType << ", "
+              << MapNames::getClNamespace() << "rounding_mode::rtp>()";
+      else
+        OS() << "static_cast<" << DesTypeStr << ">(" << Op << ")";
+    } else if (SrcType->getKind() == InlineAsmBuiltinType::TK_f16) {
+      OS() << MapNames::getClNamespace() << "ext::intel::math::";
+      switch (DesType->getKind()) {
+      case InlineAsmBuiltinType::TK_s8: return "half2short";
+      case InlineAsmBuiltinType::TK_u8: return "half2ushort";
+      case InlineAsmBuiltinType::TK_s16: return "half2short";
+      case InlineAsmBuiltinType::TK_u16: return "half2ushort";
+      case InlineAsmBuiltinType::TK_s32: return "half2int";
+      case InlineAsmBuiltinType::TK_u32: return "half2uint";
+      case InlineAsmBuiltinType::TK_s64: return "half2ll";
+      case InlineAsmBuiltinType::TK_u64: return "half2ull";
+      case InlineAsmBuiltinType::TK_f32: return "half2float";
+      case InlineAsmBuiltinType::TK_f64: return "half2double";
+      default:
+        return SYCLGenError();
+      }
+      AppendRoundingModeAndOp();
+    } else if (DesType->getKind() == InlineAsmBuiltinType::TK_f16) {
+      OS() << MapNames::getClNamespace() << "ext::intel::math::";
+      switch (DesType->getKind()) {
+      case InlineAsmBuiltinType::TK_s8: return "short2half";
+      case InlineAsmBuiltinType::TK_u8: return "ushort2half";
+      case InlineAsmBuiltinType::TK_s16: return "short2half";
+      case InlineAsmBuiltinType::TK_u16: return "ushort2half";
+      case InlineAsmBuiltinType::TK_s32: return "int2half";
+      case InlineAsmBuiltinType::TK_u32: return "uint2half";
+      case InlineAsmBuiltinType::TK_s64: return "ll2half";
+      case InlineAsmBuiltinType::TK_u64: return "ull2half";
+      case InlineAsmBuiltinType::TK_f32: return "float2half";
+      case InlineAsmBuiltinType::TK_f64: return "double2half";
+      default:
+        return SYCLGenError();
+      }
+      AppendRoundingModeAndOp();
+    } else if (SrcType->getKind() == InlineAsmBuiltinType::TK_bf16) {
+      OS() << MapNames::getClNamespace() << "ext::intel::math::";
+      switch (DesType->getKind()) {
+      case InlineAsmBuiltinType::TK_s8: return "bfloat162short";
+      case InlineAsmBuiltinType::TK_u8: return "bfloat162ushort";
+      case InlineAsmBuiltinType::TK_s16: return "bfloat162short";
+      case InlineAsmBuiltinType::TK_u16: return "bfloat162ushort";
+      case InlineAsmBuiltinType::TK_s32: return "bfloat162int";
+      case InlineAsmBuiltinType::TK_u32: return "bfloat162uint";
+      case InlineAsmBuiltinType::TK_s64: return "bfloat162ll";
+      case InlineAsmBuiltinType::TK_u64: return "bfloat162ull";
+      case InlineAsmBuiltinType::TK_f32: return "bfloat162float";
+      case InlineAsmBuiltinType::TK_f64: return "bfloat162double";
+      default:
+        return SYCLGenError();
+      }
+      AppendRoundingModeAndOp();
+    } else if (DesType->getKind() == InlineAsmBuiltinType::TK_bf16) {
+      OS() << MapNames::getClNamespace() << "ext::intel::math::";
+      switch (DesType->getKind()) {
+      case InlineAsmBuiltinType::TK_s8: return "short2bfloat16";
+      case InlineAsmBuiltinType::TK_u8: return "ushort2bfloat16";
+      case InlineAsmBuiltinType::TK_s16: return "short2bfloat16";
+      case InlineAsmBuiltinType::TK_u16: return "ushort2bfloat16";
+      case InlineAsmBuiltinType::TK_s32: return "int2bfloat16";
+      case InlineAsmBuiltinType::TK_u32: return "uint2bfloat16";
+      case InlineAsmBuiltinType::TK_s64: return "ll2bfloat16";
+      case InlineAsmBuiltinType::TK_u64: return "ull2bfloat16";
+      case InlineAsmBuiltinType::TK_f32: return "float2bfloat16";
+      case InlineAsmBuiltinType::TK_f64: return "double2bfloat16";
+      default:
+        return SYCLGenError();
+      }
+      AppendRoundingModeAndOp();
+    }
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_fma(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 && Inst->getNumTypes() != 1)
+      return SYCLGenError();
+    if (!isa<InlineAsmBuiltinType>(Inst->getType(0)))
+      return SYCLGenError();
+    const auto *T = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op[3];
+    for (unsigned i = 0, e = Inst->getNumInputOperands(); i != e; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+    
+    OS() << MapNames::getClNamespace() << "fma(";
+    if (T->isFloating())
+      OS() << llvm::join(Op, Op + 3, ", ");
+    else if (T->getKind() == InlineAsmBuiltinType::TK_f16x2) {
+      auto ConvertToVec = [&](StringRef Op, bool AppendComma = true) {
+        OS() << MapNames::getClNamespace() << "vec<uint32_t, 1>(" << Op << ").template as<"
+             << MapNames::getClNamespace() << "half2>()";
+        if (AppendComma)
+          OS() << ", ";
+      };
+      ConvertToVec(Op[0]);
+      ConvertToVec(Op[1]);
+      ConvertToVec(Op[2], false);
+    }
+    OS() << ')';
     endstmt();
     return SYCLGenSuccess();
   }
