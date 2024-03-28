@@ -2040,3 +2040,10 @@
       Out: ""
       MatchMode: Partial
       RuleId: "remove_add_arch"
+
+- Rule: rule_enable_language
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: enable_language
+  In: enable_language(${empty}CUDA${empty})
+  Out: enable_language(CXX)
