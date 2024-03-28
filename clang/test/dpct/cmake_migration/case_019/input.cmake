@@ -1,3 +1,9 @@
 if (CUDA_VERSION VERSION_LESS 10.2)
 	message(FATAL_ERROR "low version!.")
 endif()
+
+string(REGEX REPLACE "([0-9]+)\\.([0-9]+).*" "\\1" VERSION_MAJOR "${CUDA_VERSION}")
+
+list(APPEND LIBS ${CUDA_HOME}/${CUDA_VERSION}/lib64)
+
+set(CMAKE_CUDA_VERSION ${CUDA_VERSION})
