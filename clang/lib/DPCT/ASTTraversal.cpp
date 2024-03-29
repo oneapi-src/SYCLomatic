@@ -13624,6 +13624,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaCreateChannelDescHalf4",
       "cudaUnbindTexture",
       "cudaBindTextureToArray",
+      "cudaBindTextureToMipmappedArray",
       "cudaBindTexture",
       "cudaBindTexture2D",
       "tex1D",
