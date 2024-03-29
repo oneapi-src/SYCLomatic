@@ -286,22 +286,26 @@ int main() {
   //cublas<t>rotm
   // CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), x_S, 5);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_f)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_f)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), return 0);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_f)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_f)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK: [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), x_S, 5);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_f)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_f)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())), return 0);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_f)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_f)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasSrotm(handle, n, x_f, incx, y_f, incy, x_S);
   cublasSrotm(handle, n, x_f, incx, y_f, incy, x_S);
 
   // CHECK: status = [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), x_D, 5);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_d)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_d)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), return 0);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_d)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_d)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   // CHECK: [&]() {
   // CHECK-NEXT: dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), x_D, 5);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_d)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_d)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())), return 0);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_d)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_d)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(res_wrapper_ct6.get_ptr())));
+  // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();
   status = cublasDrotm(handle, n, x_d, incx, y_d, incy, x_D);
   cublasDrotm(handle, n, x_d, incx, y_d, incy, x_D);

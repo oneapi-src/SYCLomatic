@@ -183,6 +183,17 @@ public:
       }
     }
   }
+
+  /// Constructor. Only vaild for parameter_inout_prop::in.
+  /// \param q The queue used for internal malloc and memcpy
+  /// \param source The original parameter
+  /// \param ele_num Element number in \p source
+  template <parameter_inout_prop prop = inout_prop>
+  parameter_wrapper_t(
+      sycl::queue q, const target_t *source, size_t ele_num = 1,
+      typename std::enable_if<prop == parameter_inout_prop::in>::type * = 0)
+      : parameter_wrapper_t(q, const_cast<target_t *>(source), ele_num) {}
+
   /// Destructor. Copy back content from wrapper memory to original memory
   ~parameter_wrapper_t() {
     if constexpr (inout_prop != parameter_inout_prop::in) {
@@ -211,8 +222,16 @@ using wrapper_double2_out = parameter_wrapper_t<sycl::double2, sycl::double2,
                                                 parameter_inout_prop::out>;
 using wrapper_float_inout =
     parameter_wrapper_t<float, float, parameter_inout_prop::in_out>;
+using wrapper_double_inout =
+    parameter_wrapper_t<double, double, parameter_inout_prop::in_out>;
+using wrapper_float2_inout = parameter_wrapper_t<sycl::float2, sycl::float2,
+                                                 parameter_inout_prop::in_out>;
+using wrapper_double2_inout = parameter_wrapper_t<sycl::double2, sycl::double2,
+                                                  parameter_inout_prop::in_out>;
 using wrapper_float_in =
     parameter_wrapper_t<float, float, parameter_inout_prop::in>;
+using wrapper_double_in =
+    parameter_wrapper_t<double, double, parameter_inout_prop::in>;
 
 class descriptor {
 public:

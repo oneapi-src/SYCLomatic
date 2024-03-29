@@ -208,7 +208,8 @@
 // cublasDrotm-NEXT: Is migrated to:
 // cublasDrotm-NEXT:   [&]() {
 // cublasDrotm-NEXT:   dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), param, 5);
-// cublasDrotm-NEXT:   oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_ptr(), return 0);
+// cublasDrotm-NEXT:   oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_ptr());
+// cublasDrotm-NEXT:   return 0;
 // cublasDrotm-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCdotu | FileCheck %s -check-prefix=cublasCdotu

@@ -134,12 +134,14 @@ int main() {
 
   //CHECK:a = [&]() {
   //CHECK-NEXT:dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), x_S, 5);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::rotm(handle->get_queue(), N, d_C_S, N, d_C_S, N, res_wrapper_ct6.get_ptr(), return 0);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::rotm(handle->get_queue(), N, d_C_S, N, d_C_S, N, res_wrapper_ct6.get_ptr());
+  //CHECK-NEXT:return 0;
   //CHECK-NEXT:}();
   a = cublasSrotm(handle, N, d_C_S, N, d_C_S, N, x_S);
   //CHECK:[&]() {
   //CHECK-NEXT:dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), x_D, 5);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::rotm(handle->get_queue(), N, d_C_D, N, d_C_D, N, res_wrapper_ct6.get_ptr(), return 0);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::rotm(handle->get_queue(), N, d_C_D, N, d_C_D, N, res_wrapper_ct6.get_ptr());
+  //CHECK-NEXT:return 0;
   //CHECK-NEXT:}();
   cublasDrotm(handle, N, d_C_D, N, d_C_D, N, x_D);
 

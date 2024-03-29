@@ -1877,8 +1877,8 @@ ROTG(cublasZrotg_v2_64, wrapper_double2_inout, wrapper_double_out, wrapper_doubl
                BUFFER_OR_USM_PTR(ARG(4), #TYPE2), ARG(5),                      \
                BUFFER_OR_USM_PTR(                                              \
                    MEMBER_CALL(ARG("res_wrapper_ct6"), false, "get_ptr"),      \
-                   #TYPE2),                                                    \
-               LITERAL("return 0"))),                                          \
+                   #TYPE2)),                                                   \
+          LITERAL("return 0")),                                                \
       Diagnostics::NOERROR_RETURN_LAMBDA)
 ROTM(cublasSrotm_v2, wrapper_float_in, float)
 ROTM(cublasDrotm_v2, wrapper_double_in, double)
