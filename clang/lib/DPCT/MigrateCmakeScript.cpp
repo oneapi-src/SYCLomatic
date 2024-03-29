@@ -102,16 +102,16 @@ const std::unordered_map<std::string /*command*/, bool /*need lower*/>
         {"cuda_add_cublas_to_target", 1},
         {"cuda_add_executable", 1},
         {"cuda_add_library", 1},
-        {"cuda_build_clean_target", 1},
+        {"cuda_build_clean_target", 0},
         {"cuda_compile", 1},
         {"cuda_compile_ptx", 1},
         {"cuda_compile_fatbin", 1},
         {"cuda_compile_cubin", 1},
-        {"cuda_compute_separable_compilation_object_file_name", 1},
+        {"cuda_compute_separable_compilation_object_file_name", 0},
         {"cuda_include_directories", 1},
-        {"cuda_link_separable_compilation_objects", 1},
-        {"cuda_select_nvcc_arch_flags", 1},
-        {"cuda_wrap_srcs", 1},
+        {"cuda_link_separable_compilation_objects", 0},
+        {"cuda_select_nvcc_arch_flags", 0},
+        {"cuda_wrap_srcs", 0},
 
 };
 
@@ -128,6 +128,10 @@ static std::map<std::string /*variable name*/, std::string /*value*/>
 static std::map<std::string /*cmake syntax*/,
                 MetaRuleObject::PatternRewriter /*cmake migraiton rule*/>
     CmakeBuildInRules;
+
+static std::map<std::string /*file path*/,
+                std::vector<std::string> /*warning msg*/>
+    FileWarningsMap;
 
 void cmakeSyntaxProcessed(std::string &Input);
 
@@ -592,11 +596,13 @@ void applyImplicitMigrationRule(std::string &Input,
   }
 }
 
-static std::string convertCmakeCommandsToLower(const std::string &InputString) {
+static std::string convertCmakeCommandsToLower(const std::string &InputString, const std::string FileName) {
   std::stringstream OutputStream;
 
   const auto Lines = split(InputString, '\n');
+
   std::vector<std::string> Output;
+  unsigned int Count = 1;
   for (auto Line : Lines) {
 
     int Size = Line.size();
@@ -614,14 +620,27 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString) {
       std::string Str = Line.substr(Begin, End - Begin);
       std::transform(Str.begin(), Str.end(), Str.begin(),
                      [](unsigned char Char) { return std::tolower(Char); });
-      if (cmake_commands.find(Str) != cmake_commands.end()) {
+      auto Iter = cmake_commands.find(Str);
+      if (Iter != cmake_commands.end()) {
         for (int Idx = Begin; Idx < End; Idx++) {
           Line[Idx] = Str[Idx - Begin];
+        }
+        if (!Iter->second) {
+          std::string Prefix =
+              FileName + ":" + std::to_string(Count) + ":warning:";
+          std::string WaringContent =
+              "DPCT2000: migration of syntax \"" + Str +
+              "\" is not supported, you need to rewrite the code.";
+
+          FileWarningsMap[FileName].push_back(Prefix + WaringContent);
+
+          OutputStream << "# " << WaringContent << "\n";
         }
       }
     }
 
     OutputStream << Line << "\n";
+    Count++;
   }
 
   return OutputStream.str();
@@ -640,17 +659,20 @@ static void doCmakeScriptAnalysis() {
 static void unifyInputFileFormat() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &Buffer = Entry.second;
+    const std::string FileName = Entry.first.getPath().str();
 
     // Convert input file to be LF
     bool IsCRLF = fixLineEndings(Buffer, Buffer);
     ScriptFileCRLFMap[Entry.first] = IsCRLF;
 
     // Convert cmake command to lower case in cmake script files
-    Buffer = convertCmakeCommandsToLower(Buffer);
+    Buffer = convertCmakeCommandsToLower(Buffer, FileName);
   }
 }
 
-static void applyCmakeMigrationRules() {
+static void
+applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
+                         const clang::tooling::UnifiedPath OutRoot) {
 
   static const std::map<std::string,
                         void (*)(std::string &, size_t &, size_t &)>
@@ -662,8 +684,20 @@ static void applyCmakeMigrationRules() {
   setFileTypeProcessed(SourceFileType::SFT_CMakeScript);
 
   for (auto &Entry : CmakeScriptFileBufferMap) {
-    llvm::outs() << "Processing: " + Entry.first.getPath() + "\n";
+    clang::tooling::UnifiedPath FileName = Entry.first.getPath();
+
+    auto Iter = FileWarningsMap.find(FileName.getPath().str());
+    rewriteDir(FileName, OutRoot, InRoot);
+
+    llvm::outs() << "Processing: " + FileName.getPath() + "\n";
     auto &Buffer = Entry.second;
+
+    if (Iter != FileWarningsMap.end()) {
+      std::vector WarningsVec = Iter->second;
+      for (auto Warning : WarningsVec) {
+        llvm::outs() << Warning;
+      }
+    }
 
     // Apply user define migration rules
     for (const auto &CmakeSyntaxEntry : CmakeBuildInRules) {
@@ -732,7 +766,7 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
   unifyInputFileFormat();
   reserveImplicitMigrationRules();
   doCmakeScriptAnalysis();
-  applyCmakeMigrationRules();
+  applyCmakeMigrationRules(InRoot, OutRoot);
   storeBufferToFile();
 }
 
