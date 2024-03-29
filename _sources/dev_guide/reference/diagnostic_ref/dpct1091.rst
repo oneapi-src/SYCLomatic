@@ -1,0 +1,124 @@
+.. _DPCT1091:
+
+DPCT1091
+========
+
+Message
+-------
+
+.. _msg-1091-start:
+
+The function ``dpct::segmented_reduce`` only supports DPC++ native binary operation. Replace "dpct_placeholder" with a DPC++ native binary operation.
+
+.. _msg-1091-end:
+
+Detailed Help
+-------------
+
+``dpct::segmented_reduce`` supports the following native binary operations:
+
+* ``sycl::plus``
+* ``sycl::bit_or``
+* ``sycl::bit_xor``
+* ``sycl::bit_and``
+* ``sycl::maximum``
+* ``sycl::minimum``
+* ``sycl::multiplies``
+
+Suggestions to Fix
+------------------
+
+Review and rewrite the code manually.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct UserMin {
+     template <typename T>
+     __device__ __host__ __forceinline__ T operator()(const T &a,
+                                                      const T &b) const {
+       return (b < a) ? b : a;
+     }
+   };
+
+   void foo(int num_segments, int *device_offsets, int *device_in, int *device_out,
+            UserMin min_op, int initial_value) {
+     size_t temp_storage_size;
+     void *temp_storage = nullptr;
+
+     cub::DeviceSegmentedReduce::Reduce(temp_storage, temp_storage_size, device_in,
+                                        device_out, num_segments, device_offsets,
+                                        device_offsets + 1, min_op, initial_value);
+
+     cudaMalloc(&temp_storage, temp_storage_size);
+
+     cub::DeviceSegmentedReduce::Reduce(temp_storage, temp_storage_size, device_in,
+                                        device_out, num_segments, device_offsets,
+                                        device_offsets + 1, min_op, initial_value);
+
+     cudaDeviceSynchronize();
+     cudaFree(temp_storage);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct UserMin {
+     template <typename T>
+     __dpct_inline__ T operator()(const T &a, const T &b) const {
+       return (b < a) ? b : a;
+     }
+   };
+
+   void foo(int num_segments, int *device_offsets, int *device_in, int *device_out,
+            UserMin min_op, int initial_value) {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+
+     /*
+     DPCT1026:0: The call to cub::DeviceSegmentedReduce::Reduce was removed because
+     this call is redundant in SYCL.
+     */
+
+     /*
+     DPCT1092:1: Consider replacing work-group size 128 with different value for
+     specific hardware for better performance.
+     */
+     /*
+     DPCT1091:2: The function dpct::segmented_reduce only supports DPC++ native
+     binary operation. Replace "dpct_placeholder" with a DPC++ native binary
+     operation.
+     */
+     dpct::device::segmented_reduce<128>(
+         q_ct1, device_in, device_out, num_segments, device_offsets,
+         device_offsets + 1, dpct_placeholder, initial_value);
+
+     dev_ct1.queues_wait_and_throw();
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(int num_segments, int *device_offsets, int *device_in, int *device_out,
+            UserMin min_op, int initial_value) {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+
+     int max_work_group_size = dev_ct1.get_max_work_group_size();
+     if (max_work_group_size >= 256)
+       dpct::device::segmented_reduce<256>(
+           q_ct1, device_in, device_out, num_segments, device_offsets,
+           device_offsets + 1, sycl::minimum(), initial_value);
+     else
+       dpct::device::segmented_reduce<128>(
+           q_ct1, device_in, device_out, num_segments, device_offsets,
+           device_offsets + 1, sycl::minimum(), initial_value);
+
+     dev_ct1.queues_wait_and_throw();
+   }

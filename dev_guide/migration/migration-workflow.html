@@ -1,0 +1,1096 @@
+
+
+<!DOCTYPE html>
+
+
+<html >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Migration Workflow Guidelines &#8212; SYCLomatic Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'dev_guide/migration/migration-workflow';</script>
+    <link rel="shortcut icon" href="../../_static/favicons.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Generate a Compilation Database" href="generate-compilation-db.html" />
+    <link rel="prev" title="Migration" href="../migration.html" />
+
+<script type="text/javascript">
+  // Configure TMS settings
+  var wapLocalCode = 'us-en';
+  var wapSection = 'SYCL-docs';
+  // Load TMS
+  (function () {
+    var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/oneAPI-rgb-rev-100.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/oneAPI-rgb-rev-100.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../get_started/index.html">Get Started with SYCLomatic</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Guide and Reference</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tool-setup.html">Tool Setup and Basic Use</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../migration.html">Migration</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Migration Workflow Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generate-compilation-db.html">Generate a Compilation Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="incremental-migration.html">Incremental Migration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="migration-rules.html">Migration Rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="migrate-cmake-build.html">Migrate a CMake Build Script</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debug-with-codepin.html">Debug Migrated Code: Runtime Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="API-Mapping-query-guide.html">Query CUDA* to SYCL* API Mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-mode.html">Analysis Mode</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reference.html">Reference</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/command-line-options-reference.html">Command Line Options Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/migration-basic.html">Basic Migration Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/migration-advance.html">Advanced Migration Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/code-gen.html">Code Generation Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/report-gen.html">Report Generation Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/build-script-opt.html">Build Script Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/help-info.html">Query API Mapping, Tool Warning, and Help Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/intercept-build-options.html">intercept-build Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/deprecated-options.html">Deprecated Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/command-line-options-ref/alpha-list.html">Alphabetical Option List</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/diagnostics-reference.html">Diagnostics Reference</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1000.html">DPCT1000</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1001.html">DPCT1001</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1002.html">DPCT1002</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1003.html">DPCT1003</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1004.html">DPCT1004</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1005.html">DPCT1005</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1006.html">DPCT1006</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1007.html">DPCT1007</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1008.html">DPCT1008</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1009.html">DPCT1009</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1010.html">DPCT1010</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1011.html">DPCT1011</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1012.html">DPCT1012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1013.html">DPCT1013</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1014.html">DPCT1014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1015.html">DPCT1015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1016.html">DPCT1016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1017.html">DPCT1017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1018.html">DPCT1018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1019.html">DPCT1019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1020.html">DPCT1020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1021.html">DPCT1021</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1022.html">DPCT1022</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1023.html">DPCT1023</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1024.html">DPCT1024</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1025.html">DPCT1025</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1026.html">DPCT1026</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1027.html">DPCT1027</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1028.html">DPCT1028</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1029.html">DPCT1029</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1030.html">DPCT1030</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1031.html">DPCT1031</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1032.html">DPCT1032</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1033.html">DPCT1033</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1034.html">DPCT1034</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1035.html">DPCT1035</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1036.html">DPCT1036</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1037.html">DPCT1037</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1038.html">DPCT1038</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1039.html">DPCT1039</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1040.html">DPCT1040</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1041.html">DPCT1041</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1042.html">DPCT1042</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1043.html">DPCT1043</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1044.html">DPCT1044</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1045.html">DPCT1045</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1046.html">DPCT1046</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1047.html">DPCT1047</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1048.html">DPCT1048</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1049.html">DPCT1049</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1050.html">DPCT1050</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1051.html">DPCT1051</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1052.html">DPCT1052</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1053.html">DPCT1053</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1054.html">DPCT1054</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1055.html">DPCT1055</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1056.html">DPCT1056</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1057.html">DPCT1057</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1058.html">DPCT1058</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1059.html">DPCT1059</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1060.html">DPCT1060</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1061.html">DPCT1061</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1062.html">DPCT1062</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1063.html">DPCT1063</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1064.html">DPCT1064</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1065.html">DPCT1065</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1066.html">DPCT1066</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1067.html">DPCT1067</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1068.html">DPCT1068</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1069.html">DPCT1069</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1070.html">DPCT1070</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1071.html">DPCT1071</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1072.html">DPCT1072</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1073.html">DPCT1073</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1074.html">DPCT1074</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1075.html">DPCT1075</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1076.html">DPCT1076</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1077.html">DPCT1077</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1078.html">DPCT1078</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1079.html">DPCT1079</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1080.html">DPCT1080</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1081.html">DPCT1081</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1082.html">DPCT1082</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1083.html">DPCT1083</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1084.html">DPCT1084</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1085.html">DPCT1085</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1086.html">DPCT1086</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1087.html">DPCT1087</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1088.html">DPCT1088</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1089.html">DPCT1089</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1090.html">DPCT1090</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1091.html">DPCT1091</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1092.html">DPCT1092</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1093.html">DPCT1093</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1094.html">DPCT1094</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1095.html">DPCT1095</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1096.html">DPCT1096</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1097.html">DPCT1097</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1098.html">DPCT1098</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1099.html">DPCT1099</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1100.html">DPCT1100</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1101.html">DPCT1101</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1102.html">DPCT1102</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1103.html">DPCT1103</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1104.html">DPCT1104</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1105.html">DPCT1105</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1106.html">DPCT1106</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1107.html">DPCT1107</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1108.html">DPCT1108</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1109.html">DPCT1109</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1110.html">DPCT1110</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1111.html">DPCT1111</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1112.html">DPCT1112</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1113.html">DPCT1113</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1114.html">DPCT1114</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1115.html">DPCT1115</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1118.html">DPCT1118</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1119.html">DPCT1119</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1120.html">DPCT1120</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1121.html">DPCT1121</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../reference/dpct-namespace-reference.html">DPCT Namespace Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference/compare-prog-models.html">CUDA* and SYCL* Programming Model Comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference/term-mapping-quick-ref.html">CUDA* to SYCL* Term Mapping Quick Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api-mapping-status.html">CUDA API Migration Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../frequently-asked-questions-faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/oneapi-src/SYCLomatic/edit/SYCLomatic/docs/dev_guide/migration/migration-workflow.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/oneapi-src/SYCLomatic/issues/new?title=Issue%20on%20page%20%2Fdev_guide/migration/migration-workflow.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/dev_guide/migration/migration-workflow.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Migration Workflow Guidelines</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-1-prepare-for-migration">Stage 1: Prepare for Migration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prepare-your-cuda-project">Prepare Your CUDA Project</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#fix-syntax-errors">Fix Syntax Errors</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#clang-compatibility">Clang Compatibility</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configure-the-tool">Configure the Tool</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#record-compilation-commands">Record Compilation Commands</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#set-up-revision-control">Set Up Revision Control</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-analysis-mode">Run Analysis Mode</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-2-migrate-your-code">Stage 2: Migrate Your Code</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#plan-your-migration">Plan Your Migration</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#migration-rules">Migration Rules</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#incremental-migration">Incremental Migration</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#command-line-options">Command-Line Options</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-to-expect-in-migrated-code">What to Expect in Migrated Code</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-migration">Run Migration</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-3-review-the-migrated-code">Stage 3: Review the Migrated Code</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-4-build-and-validate-the-new-sycl-code-base">Stage 4: Build and Validate the New SYCL Code Base</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#install-new-sycl-code-base-dependencies">Install New SYCL Code Base Dependencies</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compile-for-intel-cpu-and-gpu">Compile for Intel CPU and GPU</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compile-for-amd-or-nvidia-gpu">Compile for AMD* or NVIDIA* GPU</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optimize-your-code">Optimize Your Code</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#find-more">Find More</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="migration-workflow-guidelines">
+<span id="mig-workflow"></span><h1>Migration Workflow Guidelines<a class="headerlink" href="#migration-workflow-guidelines" title="Permalink to this headline">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">#</a></h2>
+<p>The CUDA* to SYCL* code migration workflow consists of the following high-level
+stages:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#stage-1-prepare-for-migration">Stage 1: Prepare for Migration</a>. Prepare your project and configure the tool for
+a successful migration.</p></li>
+<li><p><a class="reference internal" href="#stage-2-migrate-your-code">Stage 2: Migrate Your Code</a>. Review tool options and migrate your code with the
+tool.</p></li>
+<li><p><a class="reference internal" href="#stage-3-review-the-migrated-code">Stage 3: Review the Migrated Code</a>. Review and manually convert any unmigrated code.</p></li>
+<li><p><a class="reference internal" href="#stage-4-build-and-validate-the-new-sycl-code-base">Stage 4: Build and Validate the New  SYCL Code Base</a>. Build your project with the
+migrated code.</p></li>
+</ul>
+<p>This document describes the steps in each stage with general recommendations and
+optional steps.</p>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">#</a></h2>
+<ul>
+<li><p>Install SYCLomatic. The latest prebuild of SYCLomatic is available from
+<a class="github reference external" href="https://github.com/oneapi-src/SYCLomatic/releases">oneapi-src/SYCLomatic</a>.</p>
+<p>You can also review the repo README for build and installation instructions.</p>
+</li>
+<li><p>Set up the tool environment. Refer to <a class="reference internal" href="../../get_started/index.html#get-started"><span class="std std-ref">Get Started with SYCLomatic</span></a> for setup
+instructions.</p></li>
+</ul>
+</section>
+<section id="stage-1-prepare-for-migration">
+<h2>Stage 1: Prepare for Migration<a class="headerlink" href="#stage-1-prepare-for-migration" title="Permalink to this headline">#</a></h2>
+<p>Before migrating your CUDA code to SYCL, prepare your CUDA source code for the
+migration process.</p>
+<section id="prepare-your-cuda-project">
+<h3>Prepare Your CUDA Project<a class="headerlink" href="#prepare-your-cuda-project" title="Permalink to this headline">#</a></h3>
+<p>Before migration, it is recommended to prepare your CUDA project to minimize errors
+during migration:</p>
+<ol class="arabic simple">
+<li><p>Make sure your CUDA source code has no syntax errors.</p></li>
+<li><p>Make sure your CUDA source code is Clang compatible.</p></li>
+</ol>
+<section id="fix-syntax-errors">
+<h4>Fix Syntax Errors<a class="headerlink" href="#fix-syntax-errors" title="Permalink to this headline">#</a></h4>
+<p>If your original CUDA source code has syntax errors, it may result in unsuccessful
+migration.</p>
+<p>Before you start migration, make sure that your original CUDA source code builds
+and runs correctly:</p>
+<ol class="arabic simple">
+<li><p>Compile your original source code using the compiler defined for your original
+CUDA project.</p></li>
+<li><p>Run your compiled application and verify that it functions as expected.</p></li>
+</ol>
+<p>When your code compiles with no build errors and you have verified that your
+application works as expected, your CUDA project is ready for migration.</p>
+</section>
+<section id="clang-compatibility">
+<h4>Clang Compatibility<a class="headerlink" href="#clang-compatibility" title="Permalink to this headline">#</a></h4>
+<p>SYCLomatic uses the latest version of the Clang* parser to analyze your CUDA source
+code during migration. The Clang parser isn’t always compatible with the NVIDIA*
+CUDA compiler driver (nvcc). The tool will provide errors about incompatibilities
+between nvcc and Clang during migration.</p>
+<p>In some cases, additional manual edits to the CUDA source may be needed before
+migration. For example:</p>
+<ul>
+<li><p>The Clang parser may need namespace qualification in certain usage scenarios
+where nvcc does not require them.</p></li>
+<li><p>The Clang parser may need additional forward class declarations where nvcc
+does not require them.</p>
+<p>Space within the triple brackets of kernel invocation is tolerated by nvcc but
+not Clang. For example, <code class="docutils literal notranslate"><span class="pre">cuda_kernel&lt;&lt;</span> <span class="pre">&lt;num_blocks,</span> <span class="pre">threads_per_block&gt;&gt;</span> <span class="pre">&gt;(args…)</span></code>
+is ok for nvcc, but the Clang parser requires the spaces to be removed.</p>
+</li>
+</ul>
+<p>If you run the migration tool on CUDA source code that has unresolved
+incompatibilities between nvcc and Clang parsers, you will get a mixture of errors
+in the migration results:</p>
+<ul class="simple">
+<li><p>Clang errors, which must be resolved in the CUDA source code</p></li>
+<li><p>DPCT warnings, which must be resolved in the migrated SYCL code</p></li>
+</ul>
+<p>For detailed information about dialect differences between Clang and nvcc, refer to llvm.org’s
+<a class="reference external" href="https://www.llvm.org/docs/CompileCudaWithLLVM.html">Compiling CUDA with clang</a> page.</p>
+</section>
+</section>
+<section id="configure-the-tool">
+<h3>Configure the Tool<a class="headerlink" href="#configure-the-tool" title="Permalink to this headline">#</a></h3>
+<p>CUDA header files used by your project must be accessible to the tool. If you have
+not already done so, configure the tool and ensure header files are available.</p>
+<p>Refer to <a class="reference internal" href="../../get_started/index.html#get-started"><span class="std std-ref">Get Started with SYCLomatic</span></a> for installation and setup information.</p>
+</section>
+<section id="record-compilation-commands">
+<h3>Record Compilation Commands<a class="headerlink" href="#record-compilation-commands" title="Permalink to this headline">#</a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">intercept-build</span></code> to <a class="reference internal" href="generate-compilation-db.html#gen-comp-db"><span class="std std-ref">Generate a Compilation Database</span></a> to capture the detailed
+build options for your project. The migration tool uses build information from
+the database (such as header file paths, include paths, macro definitions, compiler
+options, and the original compiler) to guide the migration of your CUDA code.</p>
+<p>If your development environment prevents you from using intercept-build, use the
+alternate method described in <a class="reference internal" href="generate-compilation-db.html#gen-db-other-sys"><span class="std std-ref">Generate a Compilation Database with Other Build Systems</span></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you need to re-run your migration after the original migration and the CUDA
+build script has changed, you need to either</p>
+<ol class="arabic simple">
+<li><p>re-run intercept-build to get an updated compilation database to use in your
+migration or</p></li>
+<li><p>manually update the compilation database to capture the changes from the
+updated CUDA build script.</p></li>
+</ol>
+</div>
+</section>
+<section id="set-up-revision-control">
+<h3>Set Up Revision Control<a class="headerlink" href="#set-up-revision-control" title="Permalink to this headline">#</a></h3>
+<p>After migration, the recommendation is to maintain and develop your migrated
+application in SYCL to avoid vendor lock-in, though you may choose to continue
+your application development in CUDA. Continuing to develop in CUDA will result
+in the need to migrate from CUDA to SYCL again.</p>
+<p>Revision control allows comparison between versions of migrated code, which can
+help you decide what previous manual changes to the SYCL code you want to merge
+into the newly migrated code.</p>
+<p>Make sure to have revision control for your original CUDA source before the first
+migration. After the first migration, be sure to place the migrated SYCL code,
+with all subsequent manual SYCL changes, under revision control as well.</p>
+</section>
+<section id="run-analysis-mode">
+<h3>Run Analysis Mode<a class="headerlink" href="#run-analysis-mode" title="Permalink to this headline">#</a></h3>
+<p>You can use <a class="reference internal" href="analysis-mode.html#analysis-mode"><span class="std std-ref">Analysis Mode</span></a> to generate a report before migration that will
+indicate how much of your code will be migrated, how much will be partially migrated,
+and an estimate of the manual effort needed to complete migration after you have
+run the tool. This can be helpful to estimate the work required for your migration.</p>
+</section>
+</section>
+<section id="stage-2-migrate-your-code">
+<h2>Stage 2: Migrate Your Code<a class="headerlink" href="#stage-2-migrate-your-code" title="Permalink to this headline">#</a></h2>
+<section id="plan-your-migration">
+<h3>Plan Your Migration<a class="headerlink" href="#plan-your-migration" title="Permalink to this headline">#</a></h3>
+<p>Before executing your migration, review the available tool features and options
+that can be used to plan your specific migration.</p>
+<section id="migration-rules">
+<h4>Migration Rules<a class="headerlink" href="#migration-rules" title="Permalink to this headline">#</a></h4>
+<p>The tool uses a default set of migration rules for all migrations. If default
+rules do not give the migration results you need, you can define custom rules for
+your migration. This is helpful in multiple scenarios, for example:</p>
+<ul class="simple">
+<li><p>After migration, you discover multiple instances of similar or identical CUDA
+source code that were not migrated, and you know how the CUDA source code should
+be migrated to SYCL. In this case, you can define a custom rule and re-run the
+migration for better results. This is useful for <a class="reference internal" href="incremental-migration.html#inc-mig"><span class="std std-ref">Incremental Migration</span></a> or scenarios
+where you may run multiple migrations over time.</p></li>
+<li><p>You know before migration that some code patterns in your original CUDA source
+will not be accurately migrated to SYCL using the built-in rules. In this case,
+you can define a custom migration rule to handle specific patterns in our CUDA
+source during migration.</p></li>
+</ul>
+<p>For detailed information about defining custom rules, refer to <a class="reference internal" href="migration-rules.html#migration-rules"><span class="std std-ref">Migration Rules</span></a>.</p>
+<p>For working examples of custom rules, refer to the optional predefined rules
+located in the <code class="docutils literal notranslate"><span class="pre">extensions/opt_rules</span></code> folder on the installation path of the tool.</p>
+</section>
+<section id="incremental-migration">
+<h4>Incremental Migration<a class="headerlink" href="#incremental-migration" title="Permalink to this headline">#</a></h4>
+<p>SYCLomatic provides incremental migration, which automatically
+merges the results from multiple migrations into a single migrated project.</p>
+<p>Incremental migration can be used to</p>
+<ul class="simple">
+<li><p>migrate a CUDA* project incrementally, for example 10 files at a time</p></li>
+<li><p>migrate new CUDA files into an already migrated project</p></li>
+<li><p>migrate multiple code paths</p></li>
+</ul>
+<p>Incremental migration is enabled by default. Disable incremental migration using
+the <code class="docutils literal notranslate"><span class="pre">--no-incremental-migration</span></code> option.</p>
+<p>For detailed information and examples of incremental migration, refer to <a class="reference internal" href="incremental-migration.html#inc-mig"><span class="std std-ref">Incremental Migration</span></a>.</p>
+</section>
+<section id="command-line-options">
+<h4>Command-Line Options<a class="headerlink" href="#command-line-options" title="Permalink to this headline">#</a></h4>
+<p>SYCLomatic provides many command-line options to direct your migration.
+Command-line options provide control to</p>
+<ul class="simple">
+<li><p>Configure your migration with <a class="reference internal" href="../reference/command-line-options-ref/migration-basic.html#mig-basic-opt"><span class="std std-ref">basic</span></a> and <a class="reference internal" href="../reference/command-line-options-ref/migration-advance.html#adv-mig-opt"><span class="std std-ref">advanced</span></a> options</p></li>
+<li><p><a class="reference internal" href="../reference/command-line-options-ref/code-gen.html#code-gen-opt"><span class="std std-ref">Control code generation</span></a></p></li>
+<li><p><a class="reference internal" href="../reference/command-line-options-ref/report-gen.html#report-gen-opt"><span class="std std-ref">Generate migration reports</span></a></p></li>
+<li><p><a class="reference internal" href="../reference/command-line-options-ref/build-script-opt.html#build-script-opt"><span class="std std-ref">Migrate build scripts</span></a></p></li>
+<li><p><a class="reference internal" href="../reference/command-line-options-ref/help-info.html#warn-opt"><span class="std std-ref">Control warnings</span></a></p></li>
+<li><p><a class="reference internal" href="../reference/command-line-options-ref/help-info.html#query-api-opt"><span class="std std-ref">Query API mapping</span></a></p></li>
+</ul>
+<p>Refer to the <a class="reference internal" href="../reference/command-line-options-ref/alpha-list.html#alpha-opt"><span class="std std-ref">Alphabetical Option List</span></a> for a full list of all available command-line
+options.</p>
+</section>
+</section>
+<section id="what-to-expect-in-migrated-code">
+<h3>What to Expect in Migrated Code<a class="headerlink" href="#what-to-expect-in-migrated-code" title="Permalink to this headline">#</a></h3>
+<p>When the tool migrates CUDA code to SYCL code, it inserts diagnostic messages as
+comments in the migrated code. The DPCT diagnostic messages are logged as comments
+in the migrated source files and output as warnings to the console during migration.
+These messages identify areas in the migrated code that may require your attention
+to make the code SYCL compliant or correct. This step is detailed in
+<a class="reference internal" href="#stage-3-review-the-migrated-code">Stage 3: Review the Migrated Code</a>.</p>
+<p>The migrated code also uses DPCT helper functions to provide utility support for
+the generated SYCL code. The helper functions use the <code class="docutils literal notranslate"><span class="pre">dpct::</span> <span class="pre">namespace</span></code>. Helper
+function source files are located at <code class="docutils literal notranslate"><span class="pre">&lt;tool-installation-directory&gt;/latest/include/dpct</span></code>.
+DPCT helper functions can be left in migrated code but should not be used in new
+SYCL code. Use standard SYCL and C++ when writing new code. For information about
+the DPCT namespace, refer to the <a class="reference internal" href="../reference/dpct-namespace-reference.html#dpct-name-ref"><span class="std std-ref">DPCT Namespace Reference</span></a>.</p>
+</section>
+<section id="run-migration">
+<h3>Run Migration<a class="headerlink" href="#run-migration" title="Permalink to this headline">#</a></h3>
+<p>After reviewing the available migration tool functionality and options, run your
+migration.</p>
+<p>You can run the tool from the command line.</p>
+<p>If your project uses a Makefile or CMake file, use the corresponding option to
+automatically migrate the file to work with the migrated code:</p>
+<ul class="simple">
+<li><p>To migrate a Makefile, use the <code class="docutils literal notranslate"><span class="pre">--gen-build-scripts</span></code> option.</p></li>
+<li><p>To migrate a CMake file, use the <code class="docutils literal notranslate"><span class="pre">--migrate-build-script</span></code> or
+<code class="docutils literal notranslate"><span class="pre">--migrate-build-script-only</span></code> option. (Note that these options are experimental.)</p></li>
+</ul>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c2s</span> <span class="o">-</span><span class="n">p</span> <span class="n">compile_commands</span><span class="o">.</span><span class="n">json</span> <span class="o">--</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span> <span class="o">../../..</span> <span class="o">--</span><span class="n">gen</span><span class="o">-</span><span class="n">helper</span><span class="o">-</span><span class="n">function</span> <span class="o">--</span><span class="n">gen</span><span class="o">-</span><span class="n">build</span><span class="o">-</span><span class="n">scripts</span>
+</pre></div>
+</div>
+<p>This example migrate command:</p>
+<ul class="simple">
+<li><p>uses the tool alias <code class="docutils literal notranslate"><span class="pre">c2s</span></code>. <code class="docutils literal notranslate"><span class="pre">dpct</span></code> can also be used.</p></li>
+<li><p>uses a compilation database, specified with the <code class="docutils literal notranslate"><span class="pre">-p</span></code> option</p></li>
+<li><p>specifies the source to be migrated with the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option</p></li>
+<li><p>instructs the tool to generate helper function files with the <code class="docutils literal notranslate"><span class="pre">--gen-helper-function</span></code> option</p></li>
+<li><p>instructs the tool to migrate the Makefile using the <code class="docutils literal notranslate"><span class="pre">--gen-build-scripts</span></code> option</p></li>
+</ul>
+<p>The following samples show migrations of CUDA code using the tool and targets Intel and NVIDIA* hardware:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/DirectProgramming/C%2B%2BSYCL/guided_convolutionSeparable_SYCLmigration">convolutionSeparable Sample</a></p></li>
+<li><p><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/DirectProgramming/C%2B%2BSYCL/guided_concurrentKernels_SYCLMigration">Concurrent Kernels Sample</a></p></li>
+</ul>
+</section>
+</section>
+<section id="stage-3-review-the-migrated-code">
+<h2>Stage 3: Review the Migrated Code<a class="headerlink" href="#stage-3-review-the-migrated-code" title="Permalink to this headline">#</a></h2>
+<p>After running SYCLomatic, manual editing is usually required before the migrated
+SYCL code can be compiled. DPCT warnings are logged as comments in the migrated
+source files and output to the console during migration. These warnings identify
+the portions of code that require manual intervention. Review these comments and
+make the recommended changes to ensure the migrated code is consistent with the
+original logic.</p>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">cudaError_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cudaMalloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">cudaGetErrorString</span><span class="p">(</span><span class="n">err</span><span class="p">));</span><span class="w"></span>
+<span class="linenos">5</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">sycl</span><span class="o">::</span><span class="n">malloc_device</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_default_queue</span><span class="p">()),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos"> 5</span><span class="cm">  DPCT1009:1: SYCL uses exceptions to report errors and does not use the error</span>
+<span class="linenos"> 6</span><span class="cm">  codes. The original code was commented out and a warning string was inserted.</span>
+<span class="linenos"> 7</span><span class="cm">  You need to rewrite this code.</span>
+<span class="linenos"> 8</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">         </span><span class="s">&quot;cudaGetErrorString is not supported&quot;</span><span class="w"> </span><span class="cm">/*cudaGetErrorString(err)*/</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">11</span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note the <a class="reference internal" href="../reference/diagnostic_ref/dpct1009.html#dpct1009"><span class="std std-ref">DPCT1009</span></a> warning inserted where additional review is needed.</p>
+<p>For a detailed explanation of the comments, including suggestions to fix the issues,
+refer to the <a class="reference internal" href="../reference/diagnostics-reference.html#diag-ref"><span class="std std-ref">Diagnostics Reference</span></a>.</p>
+<p>At this stage, you may observe that the same DPCT warnings were generated repeatedly
+in your code or that the same manual edits were needed in multiple locations to fix
+a specific pattern in your original source code. Consider defining the manual edits
+needed to fix repeated DPCT warnings as a
+<a class="reference internal" href="migration-rules.html#migration-rules"><span class="std std-ref">user-defined migration rule</span></a>. This allows
+you to save your corrections and automatically apply them to a future migration of
+your CUDA source.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>CUDA* API migration support is broad but not complete. If you encounter CUDA
+APIs that were not migrated due to a lack of tool support, please report it
+to the <a class="reference external" href="https://community.intel.com/t5/Migrating-to-SYCL/bd-p/migrating-sycl">Migrating to SYCL forum</a> or
+<a class="reference external" href="https://www.intel.com/content/www/us/en/developer/get-help/priority-support.html">priority support</a>.
+Alternatively, <a class="reference external" href="https://github.com/oneapi-src/SYCLomatic/issues">submit an issue</a> or
+<a class="reference external" href="https://github.com/oneapi-src/SYCLomatic/blob/SYCLomatic/CONTRIBUTING.md">contribute to the SYCLomatic project</a>.
+This helps prioritize which CUDA APIs will be supported in future releases.</p>
+</div>
+</section>
+<section id="stage-4-build-and-validate-the-new-sycl-code-base">
+<h2>Stage 4: Build and Validate the New SYCL Code Base<a class="headerlink" href="#stage-4-build-and-validate-the-new-sycl-code-base" title="Permalink to this headline">#</a></h2>
+<p>After you have completed any manual migration steps, build your converted code
+and validate your new code base.</p>
+<section id="install-new-sycl-code-base-dependencies">
+<h3>Install New SYCL Code Base Dependencies<a class="headerlink" href="#install-new-sycl-code-base-dependencies" title="Permalink to this headline">#</a></h3>
+<p>Converted code makes use of oneAPI library APIs and Intel SYCL extensions. Before
+compiling, install the appropriate oneAPI libraries and a compiler that supports
+the Intel SYCL extensions.</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>If your CUDA source uses …</p></th>
+<th class="head"><p>… install this oneAPI library</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cuBLAS, cuFFT, cuRAND, cuSolver, cuSparse</p></td>
+<td><p>Intel® oneAPI Math Kernel Library (oneMKL)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Thrust, CUB</p></td>
+<td><p>Intel® oneAPI DPC++ Library (oneDPL)</p></td>
+</tr>
+<tr class="row-even"><td><p>cuDNN</p></td>
+<td><p>Intel® oneAPI Deep Neural Network Library (oneDNN)</p></td>
+</tr>
+<tr class="row-odd"><td><p>NCCL</p></td>
+<td><p>Intel® oneAPI Collective Communications Library (oneCCL)</p></td>
+</tr>
+</tbody>
+</table>
+<p>The following compilers support Intel SYCL extensions:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html">Intel® oneAPI DPC++/C++ Compiler</a></p></li>
+<li><p><a class="reference external" href="https://github.com/intel/llvm">oneAPI DPC++ Compiler</a></p></li>
+</ul>
+<p>Most libraries and the Intel® oneAPI DPC++/C++ Compiler are included in the <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html">Intel® oneAPI Base Toolkit (Base Kit)</a>. Libraries
+and the compiler are also available as stand-alone downloads.</p>
+</section>
+<section id="compile-for-intel-cpu-and-gpu">
+<h3>Compile for Intel CPU and GPU<a class="headerlink" href="#compile-for-intel-cpu-and-gpu" title="Permalink to this headline">#</a></h3>
+<p>If your program targets Intel GPUs, install the latest Intel GPU drivers before
+compiling.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://dgpu-docs.intel.com/driver/installation.html">Linux GPU Drivers</a></p></li>
+<li><p><a class="reference external" href="https://www.intel.com/content/www/us/en/support/products/80939/graphics.html">Windows GPU Drivers</a></p></li>
+</ul>
+<p>Use your updated Makefile or CMake file to build your program, or compile it
+manually at the command line using a compiler that supports the Intel SYCL extensions.
+Make sure that all linker and compilation commands use the <code class="docutils literal notranslate"><span class="pre">-fsycl</span></code> compiler
+option with the C++ driver. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">icpx</span> <span class="o">-</span><span class="n">fsycl</span> <span class="n">migrated</span><span class="o">-</span><span class="n">file</span><span class="o">.</span><span class="n">cpp</span>
+</pre></div>
+</div>
+<p>For detailed information about compiling with the Intel® oneAPI DPC++/C++ Compiler, refer to the
+<a class="reference external" href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/current/overview.html">Intel® oneAPI DPC++/C++ Compiler Developer Guide and Reference</a>.</p>
+</section>
+<section id="compile-for-amd-or-nvidia-gpu">
+<h3>Compile for AMD* or NVIDIA* GPU<a class="headerlink" href="#compile-for-amd-or-nvidia-gpu" title="Permalink to this headline">#</a></h3>
+<p>If your program targets AMD* or NVIDIA GPUs, install the appropriate Codeplay*
+plugin for the target GPU before compiling. Instructions for installing the AMD
+and NVIDIA GPU plugins, as well as how to compile for those targets, can be found
+in the Codeplay plugin documentation:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://developer.codeplay.com/products/oneapi/amd/guides/">Install the oneAPI for AMD GPUs plugin</a> from Codeplay.</p></li>
+<li><p><a class="reference external" href="https://developer.codeplay.com/products/oneapi/nvidia/guides/">Install the oneAPI for NVIDIA GPUs plugin</a> from Codeplay.</p></li>
+</ul>
+</section>
+</section>
+<section id="optimize-your-code">
+<h2>Optimize Your Code<a class="headerlink" href="#optimize-your-code" title="Permalink to this headline">#</a></h2>
+<p>Optimize your migrated code for Intel GPUs using Intel® tools such as
+<a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler.html">Intel® VTune™ Profiler</a> and <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/advisor.html">Intel® Advisor</a>. These tools help identify areas of
+code to improve for optimizing your application performance.</p>
+<p>Additional hardware- or library-specific optimization information is available:</p>
+<ul class="simple">
+<li><p>For detailed information about optimizing your code for Intel GPUs, refer to
+the <a class="reference external" href="https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/current/overview.html">oneAPI GPU Optimization Guide</a>.</p></li>
+<li><p>For detailed information about optimizing your code for AMD GPUs, refer to the
+<a class="reference external" href="https://developer.codeplay.com/products/oneapi/amd/2024.0.2/guides/performance/introduction">Codeplay AMD GPU Performance Guide</a>.</p></li>
+<li><p>For detailed information about optimizing your code for NVIDIA GPUS, refer to
+the <a class="reference external" href="https://developer.codeplay.com/products/oneapi/nvidia/2024.0.2/guides/performance/introduction">Codeplay NVIDIA GPU Performance Guide</a>.</p></li>
+</ul>
+</section>
+<section id="find-more">
+<h2>Find More<a class="headerlink" href="#find-more" title="Permalink to this headline">#</a></h2>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Content</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/current/overview.html">Intel® oneAPI DPC++/C++ Compiler Developer Guide and Reference</a></p></td>
+<td><p>Developer guide and reference for the Intel® oneAPI DPC++/C++ Compiler.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.khronos.org/registry/SYCL/specs/sycl-2020/pdf/sycl-2020.pdf">SYCL 2020 Specification</a></p></td>
+<td><p>The SYCL 2020 Specification PDF.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html">Intel® oneAPI DPC++/C++ Compiler</a></p></td>
+<td><p>Intel branded C++ compiler built from the open-source oneAPI DPC++ Compiler, with additional Intel hardware optimization.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/intel/llvm">oneAPI DPC++ Compiler</a></p></td>
+<td><p>Open-source Intel LLVM-based compiler project that implements compiler and runtime support for the SYCL* language.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">Basic migration samples</a></p></td>
+<td><p>Sample CUDA projects with instructions on migrating to SYCL using the tool.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Guided migration samples</p></td>
+<td><p>Guided migration of two sample NVIDIA CUDA projects:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/DirectProgramming/C%2B%2BSYCL/guided_convolutionSeparable_SYCLmigration">convolutionSeparable Sample</a></p></li>
+<li><p><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/DirectProgramming/C%2B%2BSYCL/guided_concurrentKernels_SYCLMigration">Concurrent Kernels Sample</a></p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/development/DirectProgramming/C%2B%2BSYCL/Jupyter/cuda-to-sycl-migration-training">Jupyter notebook samples</a></p></td>
+<td><p>A Jupyter* Notebook that guides you through the migration of a simple example and four step-by-step sample migrations from CUDA to SYCL.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/migrate-cuda-to-sycl-library.html">CUDA* to SYCL* Catalog</a></p></td>
+<td><p>Catalog of CUDA projects that have been migrated to SYCL.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://community.intel.com/t5/Migrating-to-SYCL/bd-p/migrating-sycl">Migrating to SYCL forum</a></p></td>
+<td><p>Forum to get assistance when migrating your CUDA code to SYCL.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html">Intel® oneAPI Math Kernel Library Link Line Advisor</a></p></td>
+<td><p>Intel® oneAPI Math Kernel Library tool to help determine how to include oneMKL libraries for your specific use case.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../migration.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Migration</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="generate-compilation-db.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Generate a Compilation Database</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-1-prepare-for-migration">Stage 1: Prepare for Migration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prepare-your-cuda-project">Prepare Your CUDA Project</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#fix-syntax-errors">Fix Syntax Errors</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#clang-compatibility">Clang Compatibility</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configure-the-tool">Configure the Tool</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#record-compilation-commands">Record Compilation Commands</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#set-up-revision-control">Set Up Revision Control</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-analysis-mode">Run Analysis Mode</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-2-migrate-your-code">Stage 2: Migrate Your Code</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#plan-your-migration">Plan Your Migration</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#migration-rules">Migration Rules</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#incremental-migration">Incremental Migration</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#command-line-options">Command-Line Options</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-to-expect-in-migrated-code">What to Expect in Migrated Code</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-migration">Run Migration</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-3-review-the-migrated-code">Stage 3: Review the Migrated Code</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-4-build-and-validate-the-new-sycl-code-base">Stage 4: Build and Validate the New SYCL Code Base</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#install-new-sycl-code-base-dependencies">Install New SYCL Code Base Dependencies</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compile-for-intel-cpu-and-gpu">Compile for Intel CPU and GPU</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compile-for-amd-or-nvidia-gpu">Compile for AMD* or NVIDIA* GPU</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optimize-your-code">Optimize Your Code</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#find-more">Find More</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+<div class="extra_footer">
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 28 March, 2024</div>
+</div>
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
