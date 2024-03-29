@@ -50,7 +50,14 @@ private:
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only)
         return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
-      // If data type is same and it is device pointer, it can be used directly.
+#ifdef DPCT_USM_LEVEL_NONE
+      auto alloc = dpct::detail::mem_mgr::instance().translate_ptr(_source);
+      size_t offset = (byte_t *)_source - alloc.alloc_ptr;
+      if (offset)
+        return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
+#endif
+      // If (data type is same && it is device pointer && (USM || buffer offset
+      // is 0)), it can be used directly.
       _need_free = false;
       return _source;
     } else {
@@ -176,8 +183,7 @@ public:
   parameter_wrapper_t(sycl::queue q, target_t *source, size_t ele_num = 1)
       : base_t(q, source, ele_num) {
     if constexpr (inout_prop != parameter_inout_prop::out) {
-      if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::host_only) {
+      if (_target != _source) {
         dpct::detail::dpct_memcpy(_q, _target, _source,
                                   sizeof(target_t) * _ele_num, automatic);
       }
@@ -186,8 +192,7 @@ public:
   /// Destructor. Copy back content from wrapper memory to original memory
   ~parameter_wrapper_t() {
     if constexpr (inout_prop != parameter_inout_prop::in) {
-      if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::host_only) {
+      if (_target != _source) {
         dpct::dpct_memcpy(_source, _target, sizeof(target_t) * _ele_num,
                           automatic, _q);
       }
