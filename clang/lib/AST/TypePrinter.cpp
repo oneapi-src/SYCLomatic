@@ -1688,7 +1688,7 @@ void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
   if (getReplacedNamePtr) {
     if (auto TT = T->getNamedType()->getAs<TypedefType>()) {
       auto Name = TT->getDecl()->getQualifiedNameAsString(false);
-      if (StringRef(Name).startswith("thrust")) {
+      if (StringRef(Name).starts_with("thrust")) {
         return printBefore(TT->getDecl()->getUnderlyingType(), OS);
       }
     }
@@ -1696,7 +1696,7 @@ void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
       std::string QualifiedName;
       llvm::raw_string_ostream InternalOS(QualifiedName);
       T->getQualifier()->print(InternalOS, Policy);
-      if (StringRef(InternalOS.str()).startswith("thrust")) {
+      if (StringRef(InternalOS.str()).starts_with("thrust")) {
         printBefore(T->getNamedType(), OS);
         return;
       }

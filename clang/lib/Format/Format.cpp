@@ -23,7 +23,6 @@
 #include "UsingDeclarationsSorter.h"
 #include "clang/Tooling/Inclusions/HeaderIncludes.h"
 #include "llvm/ADT/Sequence.h"
-<<<<<<< HEAD
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Allocator.h"
 #include "llvm/Support/Debug.h"
@@ -40,8 +39,6 @@
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <functional>
 #endif // SYCLomatic_CUSTOMIZATION
-=======
->>>>>>> origin/sycl
 
 #define DEBUG_TYPE "format-formatter"
 
