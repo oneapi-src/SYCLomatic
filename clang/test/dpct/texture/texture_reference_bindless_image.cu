@@ -86,6 +86,10 @@ int main() {
   cudaArray_t pArr;
   // CHECK: tex2.attach(pArr);
   cudaBindTextureToArray(tex2, pArr);
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr pMipMapArr;
+  cudaMipmappedArray_t pMipMapArr;
+  // CHECK: tex3.attach(pMipMapArr);
+  cudaBindTextureToMipmappedArray(tex3, pMipMapArr);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT: [&](sycl::handler &cgh) {
   // CHECK-NEXT:   auto tex1_handle = tex1.get_handle();

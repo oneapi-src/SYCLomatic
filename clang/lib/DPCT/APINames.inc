@@ -351,7 +351,7 @@ ENTRY(cudaGraphicsUnregisterResource, cudaGraphicsUnregisterResource, false, NO_
 ENTRY(cudaBindTexture, cudaBindTexture, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaBindTexture2D, cudaBindTexture2D, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaBindTextureToArray, cudaBindTextureToArray, true, NO_FLAG, P0, "Successful")
-ENTRY(cudaBindTextureToMipmappedArray, cudaBindTextureToMipmappedArray, false, NO_FLAG, P4, "comment")
+ENTRY(cudaBindTextureToMipmappedArray, cudaBindTextureToMipmappedArray, true, NO_FLAG, P4, "Successful")
 ENTRY(cudaGetTextureAlignmentOffset, cudaGetTextureAlignmentOffset, false, NO_FLAG, P0, "comment")
 ENTRY(cudaGetTextureReference, cudaGetTextureReference, false, NO_FLAG, P0, "comment")
 ENTRY(cudaUnbindTexture, cudaUnbindTexture, true, NO_FLAG, P0, "Successful")
