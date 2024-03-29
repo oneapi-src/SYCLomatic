@@ -38,21 +38,26 @@ namespace detail {
               << "\n" msg << std::endl;                                        \
   }
 
+// The class json has 2 public member functions to format json by
+// get_formmat_json function and validate input json by is_valid function.
 class json {
 private:
   std::string original_json;
   std::string formatted_json = "";
-  std::string cur_parsed_key = "";
+  std::string cur_key = "";
   const char *begin = nullptr;
   const char *cur_p = nullptr;
   const char *end = nullptr;
   unsigned indent = 0;
+  static const unsigned tab_length = 2;
 
   bool format();
   bool parse_str(std::string &ret);
-  bool parse_num(char first, std::string &out);
+  bool parse_number(char first, std::string &out);
   bool is_number(char c);
-  std::string inserted_indent() { return std::string(indent * 2, ' '); }
+  std::string inserted_indent() {
+    return std::string(indent * tab_length, ' ');
+  }
   void ignore_space() {
     while (cur_p != end && (*cur_p == ' ' || *cur_p == '\t' || *cur_p == '\r' ||
                             *cur_p == '\n'))
@@ -66,7 +71,12 @@ public:
       : original_json(json), begin(original_json.c_str()),
         cur_p(original_json.c_str()),
         end(original_json.c_str() + original_json.size()) {}
-  std::string get_formatted_json() { return formatted_json; }
+  std::string get_formatted_json() {
+    if (formatted_json.empty()) {
+      format();
+    }
+    return formatted_json;
+  }
   bool is_valid() { return format(); }
 };
 
@@ -88,21 +98,24 @@ inline bool json::is_number(char c) {
          (c == '-') || (c == '+') || (c == '.') || (c == 'e') || (c == 'E');
 }
 
-inline bool json::parse_num(char c, std::string &out) {
-  out += c;
+// Parse the char value one by one to generate the number string.
+inline bool json::parse_number(char c, std::string &number) {
+  number += c;
   while (is_number(peek())) {
-    out += next();
+    number += next();
   }
   try {
     size_t pos;
-    std::stod(out, &pos);
-    return pos == out.length();
+    std::stod(number, &pos);
+    return pos == number.length();
   } catch (const std::invalid_argument &ia) {
-    emit_error_msg("[JSON format]: Parsing number value failed. Value is " +
-                   out);
+    emit_error_msg("[JSON formatter]: Parsing number value failed. Value is " +
+                   number);
+    return false;
   } catch (const std::out_of_range &oor) {
-    emit_error_msg("[JSON format]: Parsing number value failed. Value is " +
-                   out);
+    emit_error_msg("[JSON formatter]: Parsing number value failed. Value is " +
+                   number);
+    return false;
   }
 }
 inline bool json::format() {
@@ -127,8 +140,9 @@ inline bool json::format() {
         formatted_json += std::string("\n") + inserted_indent() + ']';
         return true;
       default:
-        emit_error_msg("[JSON format]: Parsing JSON value error. The key is " +
-                       cur_parsed_key);
+        emit_error_msg(
+            "[JSON formatter]: Parsing JSON value error. The key is " +
+            cur_key);
         return false;
       }
     }
@@ -145,12 +159,12 @@ inline bool json::format() {
         formatted_json += inserted_indent();
         if (!parse_str(key)) {
           emit_error_msg(
-              "[JSON format]: key value of a JSON need to be wrapped in "
+              "[JSON formatter]: key value of a JSON need to be wrapped in "
               "\". Please check the JSON file format.");
           return false;
         } else {
-          cur_parsed_key = "\"" + key + "\"";
-          formatted_json += cur_parsed_key;
+          cur_key = "\"" + key + "\"";
+          formatted_json += cur_key;
         }
       }
       ignore_space();
@@ -158,8 +172,8 @@ inline bool json::format() {
         formatted_json += " : ";
         if (!format()) {
           emit_error_msg(
-              "[JSON format]: Can not parse value, the JSON key is " +
-              cur_parsed_key + ".\n");
+              "[JSON formatter]: Can not parse value, the JSON key is " +
+              cur_key + ".\n");
           return false;
         }
       }
@@ -175,7 +189,7 @@ inline bool json::format() {
         return true;
       }
       default:
-        emit_error_msg("[JSON format]: The " + cur_parsed_key +
+        emit_error_msg("[JSON formatter]: The " + cur_key +
                        " value pair should be end with '}' or ','.\n");
         return false;
       }
@@ -184,7 +198,7 @@ inline bool json::format() {
   case '"': {
     std::string str = "";
     if (!parse_str(str)) {
-      emit_error_msg("[JSON format]: The Json is invalid after " +
+      emit_error_msg("[JSON formatter]: The Json is invalid after " +
                      formatted_json + "\n");
       return false;
     }
@@ -196,7 +210,7 @@ inline bool json::format() {
       formatted_json += "true";
       return true;
     }
-    emit_error_msg("[JSON format]: The bool value of " + cur_parsed_key +
+    emit_error_msg("[JSON formatter]: The bool value of " + cur_key +
                    " should be \"true\", please check "
                    "the spelling.");
     return false;
@@ -205,19 +219,20 @@ inline bool json::format() {
       formatted_json += "false";
       return true;
     }
-    emit_error_msg("[JSON format]: The bool value of " + cur_parsed_key +
+    emit_error_msg("[JSON formatter]: The bool value of " + cur_key +
                    " should be \"false\", please "
                    "check the spelling.");
     return false;
   default:
-    if (is_number(c)) {
-      std::string value = "";
-      parse_num(c, value);
-      formatted_json += value;
+    if (is_number(c)) { // When the value is not string, bool value, dict and
+                        // array. Then it should be literal number
+      std::string num = "";
+      parse_number(c, num);
+      formatted_json += num;
       return true;
     }
-    emit_error_msg("[JSON format]: Unkown JSON type, the last key is " +
-                   cur_parsed_key +
+    emit_error_msg("[JSON formatter]: Unkown JSON type, the last key is " +
+                   cur_key +
                    ". Please check the format JSON "
                    "format.\n");
     return false;
