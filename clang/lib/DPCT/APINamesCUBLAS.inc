@@ -1801,7 +1801,7 @@ ASUM(cublasDzasum_v2_64, wrapper_double_out, std::complex<double>, double)
 #define ROT(FUNC, TYPE1)                                                       \
   ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
       #FUNC,                                                                   \
-      CALL("oneapi::mkl::blas::column_major::gemv",                            \
+      CALL("oneapi::mkl::blas::column_major::rot",                             \
            MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                     \
            BUFFER_OR_USM_PTR(ARG(2), #TYPE1), ARG(3),                          \
            BUFFER_OR_USM_PTR(ARG(4), #TYPE1), ARG(5),                          \
@@ -1857,10 +1857,6 @@ ROTG(cublasSrotg_v2, wrapper_float_inout, wrapper_float_out, wrapper_float_out, 
 ROTG(cublasDrotg_v2, wrapper_double_inout, wrapper_double_out, wrapper_double_out, double, double)
 ROTG(cublasCrotg_v2, wrapper_float2_inout, wrapper_float_out, wrapper_float2_out, std::complex<float>, float)
 ROTG(cublasZrotg_v2, wrapper_double2_inout, wrapper_double_out, wrapper_double2_out, std::complex<double>, double)
-ROTG(cublasSrotg_v2_64, wrapper_float_inout, wrapper_float_out, wrapper_float_out, float, float)
-ROTG(cublasDrotg_v2_64, wrapper_double_inout, wrapper_double_out, wrapper_double_out, double, double)
-ROTG(cublasCrotg_v2_64, wrapper_float2_inout, wrapper_float_out, wrapper_float2_out, std::complex<float>, float)
-ROTG(cublasZrotg_v2_64, wrapper_double2_inout, wrapper_double_out, wrapper_double2_out, std::complex<double>, double)
 #undef ROTG
 
 #define ROTM(FUNC, TYPE1, TYPE2)                                               \
@@ -1922,8 +1918,6 @@ ROTM(cublasDrotm_v2_64, wrapper_double_in, double)
       Diagnostics::NOERROR_RETURN_LAMBDA)
 ROTMG(cublasSrotmg_v2, wrapper_float_inout, wrapper_float_out, float)
 ROTMG(cublasDrotmg_v2, wrapper_double_inout, wrapper_double_out, double)
-ROTMG(cublasSrotmg_v2_64, wrapper_float_inout, wrapper_float_out, float)
-ROTMG(cublasDrotmg_v2_64, wrapper_double_inout, wrapper_double_out, double)
 #undef ROTMG
 
 #define GEMV(FUNC, TYPE1)                                                      \

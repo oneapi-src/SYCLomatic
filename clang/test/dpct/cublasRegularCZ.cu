@@ -266,23 +266,23 @@ int main(){
   cuDoubleComplex* c_z = 0;
   cuDoubleComplex* s_z = 0;
 
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_f, handle->get_queue())));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_f, handle->get_queue()));
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_f, handle->get_queue())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_f, handle->get_queue()));
   status = cublasCsrot(handle, n, x_c, incx, y_c, incy, c_f, s_f);
   cublasCsrot(handle, n, x_c, incx, y_c, incy, c_f, s_f);
 
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_d, handle->get_queue())));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_d, handle->get_queue()));
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_d, handle->get_queue())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_d, handle->get_queue()));
   status = cublasZdrot(handle, n, x_z, incx, y_z, incy, c_d, s_d);
   cublasZdrot(handle, n, x_z, incx, y_z, incy, c_d, s_d);
 
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_c, handle->get_queue())));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_c, handle->get_queue()));
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_c, handle->get_queue())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), incy, dpct::get_value(c_f, handle->get_queue()), dpct::get_value(s_c, handle->get_queue()));
   status = cublasCrot(handle, n, x_c, incx, y_c, incy, c_f, s_c);
   cublasCrot(handle, n, x_c, incx, y_c, incy, c_f, s_c);
 
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_z, handle->get_queue())));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_z, handle->get_queue()));
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_z, handle->get_queue())));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), incy, dpct::get_value(c_d, handle->get_queue()), dpct::get_value(s_z, handle->get_queue()));
   status = cublasZrot(handle, n, x_z, incx, y_z, incy, c_d, s_z);
   cublasZrot(handle, n, x_z, incx, y_z, incy, c_d, s_z);
 

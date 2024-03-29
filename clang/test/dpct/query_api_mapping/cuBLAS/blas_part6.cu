@@ -48,7 +48,7 @@
 // cublasZrot-NEXT:              incx /*int*/, y /*cuDoubleComplex **/, incy /*int*/,
 // cublasZrot-NEXT:              c /*const double **/, s /*const cuDoubleComplex **/);
 // cublasZrot-NEXT: Is migrated to:
-// cublasZrot-NEXT:   oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
+// cublasZrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetVector | FileCheck %s -check-prefix=cublasSetVector
 // cublasSetVector: CUDA API:
@@ -78,7 +78,7 @@
 // cublasZdrot-NEXT:               incx /*int*/, y /*cuDoubleComplex **/, incy /*int*/,
 // cublasZdrot-NEXT:               c /*const double **/, s /*const double **/);
 // cublasZdrot-NEXT: Is migrated to:
-// cublasZdrot-NEXT:   oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
+// cublasZdrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZhpr | FileCheck %s -check-prefix=cublasZhpr
 // cublasZhpr: CUDA API:

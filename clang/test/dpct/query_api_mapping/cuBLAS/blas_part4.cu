@@ -151,7 +151,7 @@
 // cublasDrot-NEXT:              y /*double **/, incy /*int*/, c /*const double **/,
 // cublasDrot-NEXT:              s /*const double **/);
 // cublasDrot-NEXT: Is migrated to:
-// cublasDrot-NEXT:   oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, x, incx, y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
+// cublasDrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x, incx, y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDznrm2 | FileCheck %s -check-prefix=cublasDznrm2
 // cublasDznrm2: CUDA API:

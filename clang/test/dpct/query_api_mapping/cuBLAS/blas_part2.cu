@@ -220,7 +220,7 @@
 // cublasSrot-NEXT:              y /*float **/, incy /*int*/, c /*const float **/,
 // cublasSrot-NEXT:              s /*const float **/);
 // cublasSrot-NEXT: Is migrated to:
-// cublasSrot-NEXT:   oneapi::mkl::blas::column_major::gemv(handle->get_queue(), n, x, incx, y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
+// cublasSrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, x, incx, y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZtpsv | FileCheck %s -check-prefix=cublasZtpsv
 // cublasZtpsv: CUDA API:
