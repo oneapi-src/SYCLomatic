@@ -4309,6 +4309,11 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCtrsm", "cublasZtrsm", "cublasStrmm", "cublasDtrmm",
         "cublasCtrmm", "cublasZtrmm",
         /*64-bit API*/
+        /*helper*/
+        "cublasSetVector_64", "cublasGetVector_64", "cublasSetMatrix_64",
+        "cublasGetMatrix_64", "cublasSetVectorAsync_64",
+        "cublasGetVectorAsync_64", "cublasSetMatrixAsync_64",
+        "cublasGetMatrixAsync_64",
         /*level 1*/
         "cublasIsamax_v2_64", "cublasIdamax_v2_64", "cublasIcamax_v2_64",
         "cublasIzamax_v2_64", "cublasIsamin_v2_64", "cublasIdamin_v2_64",
@@ -5212,158 +5217,111 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   } else if (FuncName == "cublasSetVector" || FuncName == "cublasGetVector" ||
              FuncName == "cublasSetVectorAsync" ||
-             FuncName == "cublasGetVectorAsync") {
+             FuncName == "cublasGetVectorAsync" ||
+             FuncName == "cublasSetVector_64" ||
+             FuncName == "cublasGetVector_64" ||
+             FuncName == "cublasSetVectorAsync_64" ||
+             FuncName == "cublasGetVectorAsync_64") {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName),
-             MapNames::getDpctNamespace() + "matrix_mem_copy");
+             MapNames::getDpctNamespace() + "blas::matrix_mem_copy");
       return;
     }
-
-    std::vector<std::string> ParamsStrsVec =
-        getParamsAsStrs(CE, *(Result.Context));
     const Expr *IncxExpr = CE->getArg(3);
     const Expr *IncyExpr = CE->getArg(5);
+    const std::string MigratedIncx = ExprAnalysis::ref(IncxExpr);
+    const std::string MigratedIncy = ExprAnalysis::ref(IncyExpr);
     Expr::EvalResult IncxExprResult, IncyExprResult;
-
     if (IncxExpr->EvaluateAsInt(IncxExprResult, *Result.Context) &&
         IncyExpr->EvaluateAsInt(IncyExprResult, *Result.Context)) {
-      std::string IncxStr =
-          IncxExprResult.Val.getAsString(*Result.Context, IncxExpr->getType());
-      std::string IncyStr =
-          IncyExprResult.Val.getAsString(*Result.Context, IncyExpr->getType());
-      if (IncxStr != IncyStr) {
+      int64_t IncxValue = IncxExprResult.Val.getInt().getExtValue();
+      int64_t IncyValue = IncyExprResult.Val.getInt().getExtValue();
+      if (IncxValue != IncyValue) {
         report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE,
                false, MapNames::ITFName.at(FuncName),
-               "parameter " + ParamsStrsVec[3] +
-                   " does not equal to parameter " + ParamsStrsVec[5]);
-      } else if ((IncxStr == IncyStr) && (IncxStr != "1")) {
+               "parameter " + MigratedIncx + " does not equal to parameter " +
+                   MigratedIncy);
+      } else if ((IncxValue == IncyValue) && (IncxValue != 1)) {
         // incx equals to incy, but does not equal to 1. Performance issue may
         // occur.
         report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE,
                false, MapNames::ITFName.at(FuncName),
-               "parameter " + ParamsStrsVec[3] + " equals to parameter " +
-                   ParamsStrsVec[5] + " but greater than 1");
+               "parameter " + MigratedIncx + " equals to parameter " +
+                   MigratedIncy + " but greater than 1");
       }
     } else {
       report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE, false,
              MapNames::ITFName.at(FuncName),
-             "parameter(s) " + ParamsStrsVec[3] + " and/or " +
-                 ParamsStrsVec[5] + " could not be evaluated");
+             "parameter(s) " + MigratedIncx + " and/or " + MigratedIncy +
+                 " could not be evaluated");
     }
 
-    std::string XStr = "(void*)" + getExprString(CE->getArg(2), true);
-    std::string YStr = "(void*)" + getExprString(CE->getArg(4), true);
-    std::string IncX = getExprString(CE->getArg(3), false);
-    std::string IncY = getExprString(CE->getArg(5), false);
-    std::string ElemSize = getExprString(CE->getArg(1), false);
-    std::string ElemNum = getExprString(CE->getArg(0), false);
-
-    std::string Replacement = "(" + YStr + ", " + XStr + ", " + IncY + ", " +
-                              IncX + ", 1, " + ElemNum + ", " + ElemSize;
-
-    requestFeature(HelperFeatureEnum::device_ext);
-    if (FuncName == "cublasGetVector" || FuncName == "cublasSetVector") {
-      Replacement =
-          MapNames::getDpctNamespace() + "matrix_mem_copy" + Replacement + ")";
-    } else {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(6));
-      Replacement = MapNames::getDpctNamespace() + "matrix_mem_copy" +
-                    Replacement + ", " + MapNames::getDpctNamespace() +
-                    "automatic, *" + EA.getReplacedString() + ", true)";
-    }
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-
-    if (IsAssigned) {
-      requestFeature(HelperFeatureEnum::device_ext);
-      insertAroundStmt(CE, "DPCT_CHECK_ERROR(", ")");
-    }
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
   } else if (FuncName == "cublasSetMatrix" || FuncName == "cublasGetMatrix" ||
              FuncName == "cublasSetMatrixAsync" ||
-             FuncName == "cublasGetMatrixAsync") {
+             FuncName == "cublasGetMatrixAsync" ||
+             FuncName == "cublasSetMatrix_64" ||
+             FuncName == "cublasGetMatrix_64" ||
+             FuncName == "cublasSetMatrixAsync_64" ||
+             FuncName == "cublasGetMatrixAsync_64") {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName),
-             MapNames::getDpctNamespace() + "matrix_mem_copy");
+             MapNames::getDpctNamespace() + "blas::matrix_mem_copy");
       return;
     }
-
-    std::vector<std::string> ParamsStrsVec =
-        getParamsAsStrs(CE, *(Result.Context));
-
+    const Expr *RowsExpr = CE->getArg(0);
     const Expr *LdaExpr = CE->getArg(4);
     const Expr *LdbExpr = CE->getArg(6);
+    const std::string MigratedRows = ExprAnalysis::ref(RowsExpr);
+    const std::string MigratedLda = ExprAnalysis::ref(LdaExpr);
+    const std::string MigratedLdb = ExprAnalysis::ref(LdbExpr);
     Expr::EvalResult LdaExprResult, LdbExprResult;
     if (LdaExpr->EvaluateAsInt(LdaExprResult, *Result.Context) &&
         LdbExpr->EvaluateAsInt(LdbExprResult, *Result.Context)) {
-      std::string LdaStr =
-          LdaExprResult.Val.getAsString(*Result.Context, LdaExpr->getType());
-      std::string LdbStr =
-          LdbExprResult.Val.getAsString(*Result.Context, LdbExpr->getType());
-      if (LdaStr != LdbStr) {
+      int64_t LdaValue = LdaExprResult.Val.getInt().getExtValue();
+      int64_t LdbValue = LdbExprResult.Val.getInt().getExtValue();
+      if (LdaValue != LdbValue) {
         report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE,
                false, MapNames::ITFName.at(FuncName),
-               "parameter " + ParamsStrsVec[4] +
-                   " does not equal to parameter " + ParamsStrsVec[6]);
+               "parameter " + MigratedLda + " does not equal to parameter " +
+                   MigratedLdb);
       } else {
-        const Expr *RowsExpr = CE->getArg(0);
         Expr::EvalResult RowsExprResult;
         if (RowsExpr->EvaluateAsInt(RowsExprResult, *Result.Context)) {
-          std::string RowsStr = RowsExprResult.Val.getAsString(
-              *Result.Context, RowsExpr->getType());
-          if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
+          int64_t RowsValue = RowsExprResult.Val.getInt().getExtValue();
+          if (LdaValue > RowsValue) {
             // lda > rows. Performance issue may occur.
             report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE,
                    false, MapNames::ITFName.at(FuncName),
-                   "parameter " + ParamsStrsVec[0] +
-                       " is smaller than parameter " + ParamsStrsVec[4]);
+                   "parameter " + MigratedRows + " is smaller than parameter " +
+                       MigratedLda);
           }
         } else {
           // rows cannot be evaluated. Performance issue may occur.
           report(
-              CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE, false,
-              MapNames::ITFName.at(FuncName),
-              "parameter " + ParamsStrsVec[0] +
+              CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE,
+              false, MapNames::ITFName.at(FuncName),
+              "parameter " + MigratedRows +
                   " could not be evaluated and may be smaller than parameter " +
-                  ParamsStrsVec[4]);
+                  MigratedLda);
         }
       }
     } else {
       report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE, false,
              MapNames::ITFName.at(FuncName),
-             "parameter(s) " + ParamsStrsVec[4] + " and/or " +
-                 ParamsStrsVec[6] + " could not be evaluated");
+             "parameter(s) " + MigratedLda + " and/or " + MigratedLdb +
+                 " could not be evaluated");
     }
 
-    std::string AStr = "(void*)" + getExprString(CE->getArg(3), true);
-    std::string BStr = "(void*)" + getExprString(CE->getArg(5), true);
-    std::string LdA = getExprString(CE->getArg(4), false);
-    std::string LdB = getExprString(CE->getArg(6), false);
-    std::string Rows = getExprString(CE->getArg(0), false);
-    std::string Cols = getExprString(CE->getArg(1), false);
-    std::string ElemSize = getExprString(CE->getArg(2), false);
-
-    std::string Replacement = "(" + BStr + ", " + AStr + ", " + LdB + ", " +
-                              LdA + ", " + Rows + ", " + Cols + ", " + ElemSize;
-
-    requestFeature(HelperFeatureEnum::device_ext);
-    if (FuncName == "cublasGetMatrix" || FuncName == "cublasSetMatrix") {
-      Replacement =
-          MapNames::getDpctNamespace() + "matrix_mem_copy" + Replacement + ")";
-    } else {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(7));
-      Replacement = MapNames::getDpctNamespace() + "matrix_mem_copy" +
-                    Replacement + ", " + MapNames::getDpctNamespace() +
-                    "automatic, *" + EA.getReplacedString() + ", true)";
-    }
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-
-    if (IsAssigned) {
-      requestFeature(HelperFeatureEnum::device_ext);
-      insertAroundStmt(CE, "DPCT_CHECK_ERROR(", ")");
-    }
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
   } else if (FuncName == "cublasGetVersion" ||
              FuncName == "cublasGetVersion_v2") {
     if (FuncName == "cublasGetVersion" || FuncName == "cublasGetVersion_v2") {

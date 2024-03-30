@@ -23,7 +23,7 @@
 // cublasSetMatrix-NEXT:   cublasSetMatrix(rows /*int*/, cols /*int*/, elementsize /*int*/,
 // cublasSetMatrix-NEXT:                   a /*const void **/, lda /*int*/, b /*void **/, ldb /*int*/);
 // cublasSetMatrix-NEXT: Is migrated to:
-// cublasSetMatrix-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize);
+// cublasSetMatrix-NEXT:   dpct::blas::matrix_mem_copy(b, a, ldb, lda, rows, cols, elementsize);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZscal | FileCheck %s -check-prefix=cublasZscal
 // cublasZscal: CUDA API:
@@ -55,7 +55,7 @@
 // cublasSetVector-NEXT:   cublasSetVector(n /*int*/, elementsize /*int*/, x /*const void **/,
 // cublasSetVector-NEXT:                   incx /*int*/, y /*void **/, incy /*int*/);
 // cublasSetVector-NEXT: Is migrated to:
-// cublasSetVector-NEXT:   dpct::matrix_mem_copy((void*)y, (void*)x, incy, incx, 1, n, elementsize);
+// cublasSetVector-NEXT:   dpct::blas::matrix_mem_copy(y, x, incy, incx, 1, n, elementsize);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetStream | FileCheck %s -check-prefix=cublasSetStream
 // cublasSetStream: CUDA API:

@@ -214,6 +214,50 @@ using wrapper_float_inout =
 using wrapper_float_in =
     parameter_wrapper_t<float, float, parameter_inout_prop::in>;
 
+/// Copy matrix data. The default leading dimension is column.
+/// \param [out] to_ptr A pointer points to the destination location.
+/// \param [in] from_ptr A pointer points to the source location.
+/// \param [in] to_ld The leading dimension the destination matrix.
+/// \param [in] from_ld The leading dimension the source matrix.
+/// \param [in] rows The number of rows of the source matrix.
+/// \param [in] cols The number of columns of the source matrix.
+/// \param [in] elem_size The element size in bytes.
+/// \param [in] direction The direction of the data copy.
+/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] async If this argument is true, the return of the function
+/// does NOT guarantee the copy is completed.
+inline void matrix_mem_copy(void *to_ptr, const void *from_ptr,
+                            std::int64_t to_ld, std::int64_t from_ld,
+                            std::int64_t rows, std::int64_t cols,
+                            std::int64_t elem_size,
+                            memcpy_direction direction = automatic,
+                            sycl::queue &queue = dpct::get_default_queue(),
+                            bool async = false) {
+  if (to_ptr == from_ptr && to_ld == from_ld) {
+    return;
+  }
+
+  if (to_ld == from_ld) {
+    size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
+    if (async)
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction);
+    else
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction)
+          .wait();
+  } else {
+    if (async)
+      detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
+                          elem_size * from_ld, elem_size * rows, cols,
+                          direction);
+    else
+      sycl::event::wait(detail::dpct_memcpy(
+          queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
+          elem_size * rows, cols, direction));
+  }
+}
+
 class descriptor {
 public:
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
@@ -992,8 +1036,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
     // Need to create a copy of input matrices "a" to keep them unchanged.
     // Matrices "b" (copy of matrices "a") will be used as input and output
     // parameter in oneapi::mkl::lapack::getri_batch call.
-    matrix_mem_copy(b_buffer_ptr + i * stride_b, host_a[i], ldb, lda, n, n,
-                    dpct::device_to_device, exec_queue);
+    blas::matrix_mem_copy(b_buffer_ptr + i * stride_b, host_a[i], ldb, lda, n,
+                          n, sizeof(T), dpct::device_to_device, exec_queue);
   }
 
   {
@@ -1062,8 +1106,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
     // Need to create a copy of input matrices "a" to keep them unchanged.
     // Matrices "b" (copy of matrices "a") will be used as input and output
     // parameter in oneapi::mkl::lapack::getri_batch call.
-    matrix_mem_copy(b_shared[i], a_shared[i], ldb, lda, n, n, dpct::device_to_device,
-                    exec_queue);
+    blas::matrix_mem_copy(b_shared[i], a_shared[i], ldb, lda, n, n, sizeof(T),
+                          dpct::device_to_device, exec_queue);
   }
 
   sycl::event e = oneapi::mkl::lapack::getri_batch(
@@ -1992,7 +2036,8 @@ inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
   using Ty = typename DataType<T>::T2;
   auto alpha_val = dpct::get_value(alpha, q);
   if (b != c) {
-    dpct::matrix_mem_copy(c, b, ldc, ldb, m, n, dpct::device_to_device, q);
+    blas::matrix_mem_copy(c, b, ldc, ldb, m, n, sizeof(T),
+                          dpct::device_to_device, q);
   }
   auto data_a = detail::get_memory<const Ty>(a);
   auto data_c = detail::get_memory<Ty>(c);
