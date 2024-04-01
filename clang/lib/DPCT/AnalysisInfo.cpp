@@ -3870,6 +3870,14 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
       VI.second->setUseHelperFuncFlag(false);
       continue;
     }
+    if (DpctGlobalInfo::useExpDeviceGlobal() &&
+        (VI.second->isConstant() || VI.second->isDevice()) &&
+        !VI.second->isManaged() &&
+        !DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(VI.second)) {
+      VI.second->setUseHelperFuncFlag(false);
+      VI.second->setUseDeviceGlobalFlag(true);
+      continue;
+    }
     if (PS.FormatInformation.EnableFormat) {
       ParameterStream TPS;
       GetArgOrParam<T, COD>()(TPS, VI.second);

@@ -563,7 +563,6 @@ bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
 std::string getNameSpace(const NamespaceDecl *NSD);
-bool IsVarUsedByRuntimeSymbolAPI(const VarDecl *VD);
 std::string getInitForDeviceGlobal(const VarDecl *VD);
 bool isFromCUDA(const Decl *D);
 namespace clang {

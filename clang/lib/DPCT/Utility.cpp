@@ -4727,19 +4727,6 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
   return NameSpace;
 }
 
-bool IsVarUsedByRuntimeSymbolAPI(const VarDecl *VD) {
-  auto &VarUsedByRuntimeSymbolAPISet =
-      dpct::DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
-  auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(VD->getBeginLoc());
-  std::string Key = LocInfo.first.getCanonicalPath().str() +
-                    std::to_string(LocInfo.second) + VD->getNameAsString();
-  if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
-      VarUsedByRuntimeSymbolAPISet.end()) {
-    return false;
-  }
-  return true;
-}
-
 std::string getInitForDeviceGlobal(const VarDecl *VD) {
   auto Init = VD->getInit()->IgnoreImplicitAsWritten();
   if (auto IL = dyn_cast<InitListExpr>(Init)) {

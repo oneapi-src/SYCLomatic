@@ -1753,6 +1753,8 @@ public:
   bool isLocal() { return Scope == Local; }
   bool isShared() { return Attr == Shared; }
   bool isConstant() { return Attr == Constant; }
+  bool isDevice() { return Attr == Device; }
+  bool isManaged() { return Attr == Managed; }
   bool isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
   bool isAnonymousType() { return IsAnonymousType; }
   const CXXRecordDecl *getDeclOfVarType() { return DeclOfVarType; }

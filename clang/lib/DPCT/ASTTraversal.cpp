@@ -9028,17 +9028,16 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     };
     const auto *Parent = getParentStmt(MemVarRef);
     bool HasTypeCasted = false;
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    std::string Key =
-        getHashStrFromLoc(SM.getExpansionLoc(Decl->getBeginLoc()));
     auto Set = DpctGlobalInfo::getUseDeviceGlobalVarSet();
+    auto Info = Global.findMemVarInfo(Decl);
+    std::string Key = Info->getFilePath().getCanonicalPath().str() +
+                      std::to_string(Info->getOffset()) + Info->getName();
     if (Set.find(Key) == Set.end()) {
       if ((Decl->hasAttr<CUDADeviceAttr>() ||
            Decl->hasAttr<CUDAConstantAttr>()) &&
           !Decl->hasAttr<HIPManagedAttr>() &&
           DpctGlobalInfo::useExpDeviceGlobal() &&
-          !IsVarUsedByRuntimeSymbolAPI(Decl)) {
-        auto Info = Global.findMemVarInfo(Decl);
+          !DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(Info)) {
         if (Decl->hasInit()) {
           auto InitStr = getInitForDeviceGlobal(Decl);
           if (!InitStr.empty()) {
@@ -9188,6 +9187,30 @@ void ConstantMemVarMigrationRule::runRule(
     if (DpctGlobalInfo::isOptimizeMigration()) {
       if (!DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(Info)) {
         Info->setUseHelperFuncFlag(false);
+      }
+    }
+
+    if (Info->isUseHelperFunc()) {
+      std::string Key = Info->getFilePath().getCanonicalPath().str() +
+                        std::to_string(Info->getOffset()) + Info->getName();
+      auto Set = DpctGlobalInfo::getUseDeviceGlobalVarSet();
+      if (Set.find(Key) == Set.end()) {
+        if (!MemVar->hasAttr<HIPManagedAttr>() &&
+            !MemVar->hasAttr<CUDASharedAttr>() &&
+            DpctGlobalInfo::useExpDeviceGlobal() &&
+            !DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(Info)) {
+          if (MemVar->hasInit()) {
+            auto InitStr = getInitForDeviceGlobal(MemVar);
+            if (!InitStr.empty()) {
+              report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
+                     false);
+              Info->setInitForDeviceGlobal(InitStr);
+            }
+          }
+          Info->setUseHelperFuncFlag(false);
+          Info->setUseDeviceGlobalFlag(true);
+        }
+        Set.insert(Key);
       }
     }
 
@@ -9628,6 +9651,29 @@ void MemVarMigrationRule::runRule(
     if (!Info)
       return;
 
+    std::string Key = Info->getFilePath().getCanonicalPath().str() +
+                      std::to_string(Info->getOffset()) + Info->getName();
+    auto Set = DpctGlobalInfo::getUseDeviceGlobalVarSet();
+    if (Set.find(Key) == Set.end()) {
+      if (MemVar->hasAttr<CUDADeviceAttr>() &&
+          !MemVar->hasAttr<HIPManagedAttr>() &&
+          !MemVar->hasAttr<CUDASharedAttr>() &&
+          DpctGlobalInfo::useExpDeviceGlobal() &&
+          !DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(Info)) {
+        if (MemVar->hasInit()) {
+          auto InitStr = getInitForDeviceGlobal(MemVar);
+          if (!InitStr.empty()) {
+            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
+                   false);
+            Info->setInitForDeviceGlobal(InitStr);
+          }
+        }
+        Info->setUseHelperFuncFlag(false);
+        Info->setUseDeviceGlobalFlag(true);
+      }
+      Set.insert(Key);
+    }
+
     if (auto VTD = DpctGlobalInfo::findParent<VarTemplateDecl>(MemVar)) {
       report(VTD->getBeginLoc(), Diagnostics::TEMPLATE_VAR, false,
              MemVar->getName());
@@ -9687,33 +9733,9 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
     if (Info->isTypeDeclaredLocal() && !Info->isAnonymousType()) {
-      if (auto DS = Info->getDeclStmtOfVarType()) {
+      if (Info->getDeclStmtOfVarType()) {
         Info->setLocalTypeName(Info->getType()->getBaseName());
       }
-    }
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    std::string Key =
-        getHashStrFromLoc(SM.getExpansionLoc(MemVar->getBeginLoc()));
-    auto Set = DpctGlobalInfo::getUseDeviceGlobalVarSet();
-    if (Set.find(Key) == Set.end()) {
-      if ((MemVar->hasAttr<CUDADeviceAttr>() ||
-           MemVar->hasAttr<CUDAConstantAttr>()) &&
-          !MemVar->hasAttr<HIPManagedAttr>() &&
-          !MemVar->hasAttr<CUDASharedAttr>() &&
-          DpctGlobalInfo::useExpDeviceGlobal() &&
-          !IsVarUsedByRuntimeSymbolAPI(MemVar)) {
-        if (MemVar->hasInit()) {
-          auto InitStr = getInitForDeviceGlobal(MemVar);
-          if (!InitStr.empty()) {
-            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
-                   false);
-            Info->setInitForDeviceGlobal(InitStr);
-          }
-        }
-        Info->setUseHelperFuncFlag(false);
-        Info->setUseDeviceGlobalFlag(true);
-      }
-      Set.insert(Key);
     }
     return;
   }
