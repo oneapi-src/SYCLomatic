@@ -304,7 +304,7 @@ void foo_test_3()
 // CHECK-NEXT:                    kernel(d_a, value);
 // CHECK-NEXT:                });
 // CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1124:{{[0-9]+}}: cudaMemcpyAsync is migrated to asynchronous memcpy API. While origin API might be synchronous with respect with host, you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+// CHECK-NEXT:    DPCT1124:{{[0-9]+}}: cudaMemcpyAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(dpct::get_in_order_queue().memcpy(h_a, d_a, nbytes)));
 // CHECK-NEXT:    /*
