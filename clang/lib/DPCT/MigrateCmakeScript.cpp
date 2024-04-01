@@ -630,7 +630,7 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString, c
               FileName + ":" + std::to_string(Count) + ":warning:";
           std::string WaringContent =
               "DPCT2000: migration of syntax \"" + Str +
-              "\" is not supported, you need to rewrite the code.";
+              "\" is not supported, you may need to adjust the code.";
 
           FileWarningsMap[FileName].push_back(Prefix + WaringContent);
 
@@ -684,14 +684,11 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
   setFileTypeProcessed(SourceFileType::SFT_CMakeScript);
 
   for (auto &Entry : CmakeScriptFileBufferMap) {
-    clang::tooling::UnifiedPath FileName = Entry.first.getPath();
+    llvm::outs() << "Processing: " + Entry.first.getPath() + "\n";
 
-    auto Iter = FileWarningsMap.find(FileName.getPath().str());
-    rewriteDir(FileName, OutRoot, InRoot);
-
-    llvm::outs() << "Processing: " + FileName.getPath() + "\n";
     auto &Buffer = Entry.second;
-
+    clang::tooling::UnifiedPath FileName = Entry.first.getPath();
+    auto Iter = FileWarningsMap.find(FileName.getPath().str());
     if (Iter != FileWarningsMap.end()) {
       std::vector WarningsVec = Iter->second;
       for (auto Warning : WarningsVec) {
