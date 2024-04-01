@@ -1358,6 +1358,18 @@ int DpctGlobalInfo::getSuffixIndexInitValue(std::string FileNameAndOffset) {
     return Res->second;
   }
 }
+
+bool DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(
+    std::shared_ptr<MemVarInfo> Info) {
+  std::string Key = Info->getFilePath().getCanonicalPath().str() +
+                    std::to_string(Info->getOffset()) + Info->getName();
+  if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
+      VarUsedByRuntimeSymbolAPISet.end()) {
+    return false;
+  }
+  return true;
+}
+
 int DpctGlobalInfo::getSuffixIndexInRuleThenInc() {
   int Res = CurrentIndexInRule;
   if (CurrentMaxIndex < Res)
@@ -3152,7 +3164,7 @@ std::string MemVarInfo::getMemoryType(const std::string &MemoryType,
       return buildString(MemoryType, "<", VarType->getBaseName(), ">");
     }
   } else {
-    return buildString(MemoryType, VarType->getBaseName());
+    return buildString(MemoryType, VarType->getBaseNameWithoutQualifiers());
   }
 }
 std::string MemVarInfo::getInitArguments(const std::string &MemSize,
@@ -3666,7 +3678,7 @@ MemVarMap::getArgumentsOrParameters(int PreParams, int PostParams,
     GetArgOrParam<MemVarInfo, COD>()(PS, ExternVarMap.begin()->second) << ", ";
   getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap);
   getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap);
-  getArgumentsOrParametersFromMap<TextureInfo, COD>(PS, TextureMap);
+  getArgumentsOrParametersFromoTextureInfoMap<COD>(PS, TextureMap);
   std::string Result = PS.Str;
   return (Result.empty() || PostParams != 0) && PreParams == 0
              ? Result
@@ -3853,6 +3865,11 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
     if (!VI.second->isUseHelperFunc()) {
       continue;
     }
+    if (DpctGlobalInfo::isOptimizeMigration() && VI.second->isConstant() &&
+        !DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(VI.second)) {
+      VI.second->setUseHelperFuncFlag(false);
+      continue;
+    }
     if (PS.FormatInformation.EnableFormat) {
       ParameterStream TPS;
       GetArgOrParam<T, COD>()(TPS, VI.second);
@@ -3862,6 +3879,21 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
     }
   }
 }
+
+template <MemVarMap::CallOrDecl COD>
+void MemVarMap::getArgumentsOrParametersFromoTextureInfoMap(
+    ParameterStream &PS, const GlobalMap<TextureInfo> &VarMap) {
+  for (const auto &VI : VarMap) {
+    if (PS.FormatInformation.EnableFormat) {
+      ParameterStream TPS;
+      GetArgOrParam<TextureInfo, COD>()(TPS, VI.second);
+      PS << TPS.Str;
+    } else {
+      GetArgOrParam<TextureInfo, COD>()(PS, VI.second) << ", ";
+    }
+  }
+}
+
 void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
                                                 int PreParams,
                                                 int PostParams) const {
@@ -3888,7 +3920,7 @@ void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
       PS, GlobalVarMap);
   getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
       PS, LocalVarMap);
-  getArgumentsOrParametersFromMap<TextureInfo, MemVarMap::DeclParameter>(
+  getArgumentsOrParametersFromoTextureInfoMap<MemVarMap::DeclParameter>(
       PS, TextureMap);
 }
 ///// class CallFunctionExpr /////

@@ -2,6 +2,62 @@
 
 /// Device Management
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetAttribute | FileCheck %s -check-prefix=CUDADEVICEGETATTRIBUTE
+// CUDADEVICEGETATTRIBUTE: CUDA API:
+// CUDADEVICEGETATTRIBUTE-NEXT:   // Only support migration of some cudaDeviceAttr type.
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 1 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrMaxThreadsPerBlock
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 2 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrClockRate
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 3 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrTextureAlignment
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 4 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrMultiProcessorCount
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 5 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrIntegrated
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 6 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrComputeMode
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 7 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrComputeCapabilityMajor
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 8 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrComputeCapabilityMinor
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 9 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrHostNativeAtomicSupported
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 10 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                   cudaDevAttrConcurrentManagedAccess
+// CUDADEVICEGETATTRIBUTE-NEXT:                                   /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                   i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT: Is migrated to:
+// CUDADEVICEGETATTRIBUTE-NEXT:   // Only support migration of some cudaDeviceAttr type.
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 1 */ *pi = dpct::dev_mgr::instance().get_device(i).get_max_work_group_size();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 2 */ *pi = dpct::dev_mgr::instance().get_device(i).get_max_clock_frequency();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 3 */ *pi = dpct::dev_mgr::instance().get_device(i).get_mem_base_addr_align_in_bytes();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 4 */ *pi = dpct::dev_mgr::instance().get_device(i).get_max_compute_units();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 5 */ *pi = dpct::dev_mgr::instance().get_device(i).get_integrated();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 6 */ *pi = 1;
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 7 */ *pi = dpct::dev_mgr::instance().get_device(i).get_major_version();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 8 */ *pi = dpct::dev_mgr::instance().get_device(i).get_minor_version();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 9 */ *pi = dpct::dev_mgr::instance().get_device(i).is_native_atomic_supported();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 10 */ *pi = dpct::dev_mgr::instance().get_device(i).get_info<sycl::info::device::usm_shared_allocations>();
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetCacheConfig | FileCheck %s -check-prefix=CUDADEVICEGETCACHECONFIG
 // CUDADEVICEGETCACHECONFIG: CUDA API:
 // CUDADEVICEGETCACHECONFIG-NEXT:   cudaDeviceGetCacheConfig(pf /*enum cudaFuncCache **/);

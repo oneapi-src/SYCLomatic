@@ -1721,17 +1721,18 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
               "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
               "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
-              "cusparseIndexBase_t", "cusparseMatrixType_t", "cusparseAlgMode_t",
-              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
-              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
-              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
-              "cublasDataType_t", "curandState_t", "curandState",
-              "curandStateXORWOW_t", "curandStateXORWOW",
-              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
-              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
-              "thrust::negate", "thrust::logical_or", "thrust::equal_to",
-              "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
-              "curandRngType_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
+              "cusparseIndexBase_t", "cusparseMatrixType_t",
+              "cusparseAlgMode_t", "cusparseOperation_t", "cusparseMatDescr_t",
+              "cusparseHandle_t", "CUcontext", "cublasPointerMode_t",
+              "cusparsePointerMode_t", "cublasGemmAlgo_t",
+              "cusparseSolveAnalysisInfo_t", "cudaDataType", "cublasDataType_t",
+              "curandState_t", "curandState", "curandStateXORWOW_t",
+              "curandStateXORWOW", "curandStatePhilox4_32_10_t",
+              "curandStatePhilox4_32_10", "curandStateMRG32k3a_t",
+              "curandStateMRG32k3a", "thrust::minus", "thrust::negate",
+              "thrust::logical_or", "thrust::equal_to", "thrust::less",
+              "cudaSharedMemConfig", "curandGenerator_t", "curandRngType_t",
+              "curandOrdering_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
               "cufftComplex", "cufftDoubleComplex", "cufftResult_t",
               "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
               "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
@@ -1749,7 +1750,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
               "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t", "CUuuid",
-              "cusparseSpSVAlg_t", "cudaFuncAttributes", "cudaLaunchAttributeValue"))))))
+              "cusparseSpSVAlg_t", "cudaFuncAttributes",
+              "cudaLaunchAttributeValue"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3673,6 +3675,10 @@ void RandomEnumsRule::registerMatcher(MatchFinder &MF) {
       declRefExpr(to(enumConstantDecl(matchesName("CURAND_STATUS.*"))))
           .bind("RANDOMStatusConstants"),
       this);
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName("CURAND_ORDERING.*"))))
+          .bind("RANDOMOrderingConstants"),
+      this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CURAND_RNG.*"))))
                     .bind("RandomTypeEnum"),
                 this);
@@ -3683,6 +3689,16 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "RANDOMStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
+  }
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "RANDOMOrderingConstants")) {
+    std::string EnumStr = DE->getNameInfo().getName().getAsString();
+    auto Search = MapNames::RandomOrderingTypeMap.find(EnumStr);
+    if (Search == MapNames::RandomOrderingTypeMap.end()) {
+      report(DE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumStr);
+      return;
+    }
+    emplaceTransformation(new ReplaceStmt(DE, Search->second));
   }
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "RandomTypeEnum")) {
@@ -3905,7 +3921,7 @@ void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "curandGenerateNormal", "curandGenerateNormalDouble",
         "curandGeneratePoisson", "curandGenerateUniform",
         "curandGenerateUniformDouble", "curandSetStream",
-        "curandCreateGeneratorHost");
+        "curandCreateGeneratorHost", "curandSetGeneratorOrdering");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -4030,6 +4046,9 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         buildString(ExprAnalysis::ref(CE->getArg(0)), "->set_queue(",
                     ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,
@@ -6252,8 +6271,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
-        "cudaStreamSetAttribute", "cudaStreamGetAttribute",
-        "cudaFuncSetAttribute", "__trap");
+        "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaProfilerStart",
+        "cudaProfilerStop", "cudaFuncSetAttribute", "__trap");
   };
 
   MF.addMatcher(
@@ -9167,7 +9186,7 @@ void ConstantMemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (DpctGlobalInfo::isOptimizeMigration()) {
-      if (!IsVarUsedByRuntimeSymbolAPI(MemVar)) {
+      if (!DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(Info)) {
         Info->setUseHelperFuncFlag(false);
       }
     }
@@ -9596,7 +9615,7 @@ void MemVarMigrationRule::processTypeDeclaredLocal(
 void MemVarMigrationRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
-    if (isCubVar(MemVar)) {
+    if (isCubVar(MemVar) || MemVar->hasAttr<CUDAConstantAttr>()) {
       return;
     }
     std::string CanonicalType =
@@ -13328,6 +13347,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaCreateChannelDescHalf4",
       "cudaUnbindTexture",
       "cudaBindTextureToArray",
+      "cudaBindTextureToMipmappedArray",
       "cudaBindTexture",
       "cudaBindTexture2D",
       "tex1D",
@@ -13370,11 +13390,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(callExpr(callee(functionDecl(hasAnyFuncName()))).bind("call"),
                 this);
 
-  MF.addMatcher(unresolvedLookupExpr(
-                    hasAnyDeclaration(namedDecl(hasAnyFuncName())),
-                    hasParent(callExpr(unless(parentStmt())).bind("callExpr")))
-                    .bind("unresolvedLookupExpr"),
-                this);
+  MF.addMatcher(
+      unresolvedLookupExpr(hasAnyDeclaration(namedDecl(hasAnyFuncName())),
+                           hasParent(callExpr().bind("callExpr")))
+          .bind("unresolvedLookupExpr"),
+      this);
 }
 
 bool TextureRule::removeExtraMemberAccess(const MemberExpr *ME) {
@@ -14996,7 +15016,7 @@ void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cuCabs", "cuConj", "make_cuFloatComplex", "cuCaddf",
                       "cuCsubf", "cuCmulf", "cuCdivf", "cuCabsf", "cuConjf",
                       "make_cuComplex", "__saturatef", "cuComplexDoubleToFloat",
-                      "cuComplexFloatToDouble");
+                      "cuComplexFloatToDouble", "cuCfma", "cuCfmaf");
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(ComplexAPI()))).bind("call"),
