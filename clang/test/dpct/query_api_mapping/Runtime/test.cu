@@ -223,7 +223,7 @@
 // CUDAEVENTQUERY-NEXT:   cudaEventQuery(e /*cudaEvent_t*/);
 // CUDAEVENTQUERY-NEXT: Is migrated to:
 // CUDAEVENTQUERY-NEXT:   dpct::event_ptr e;
-// CUDAEVENTQUERY-NEXT:   (int)e->get_info<sycl::info::event::command_execution_status>();
+// CUDAEVENTQUERY-NEXT:   e->get_info<sycl::info::event::command_execution_status>();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventRecord | FileCheck %s -check-prefix=CUDAEVENTRECORD
 // CUDAEVENTRECORD: CUDA API:

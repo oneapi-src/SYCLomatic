@@ -7079,7 +7079,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     ExprAnalysis EA(CE->getArg(0));
-    std::string ReplStr = "(int)" + EA.getReplacedString() + "->get_info<" +
+    std::string ReplStr = EA.getReplacedString() + "->get_info<" +
                           MapNames::getClNamespace() +
                           "info::event::command_execution_status>()";
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
