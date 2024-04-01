@@ -353,6 +353,7 @@ public:
 
   static MapTy ITFName;
   static MapTy RandomEngineTypeMap;
+  static MapTy RandomOrderingTypeMap;
   static const std::map<std::string, std::string> RandomGenerateFuncMap;
 
   static MapTy DeviceRandomGeneratorTypeMap;

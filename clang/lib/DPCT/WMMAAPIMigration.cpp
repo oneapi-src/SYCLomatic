@@ -13,12 +13,13 @@ using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
 void clang::dpct::WMMARule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(allOf(
-                            hasAnyName("fragment", "matrix_a", "matrix_b",
-                                       "row_major", "col_major", "accumulator"),
-                            hasDeclContext(namespaceDecl(hasName("wmma")))))))))
-                    .bind("type"),
-                this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(allOf(
+                  hasAnyName("fragment", "matrix_a", "matrix_b", "row_major",
+                             "col_major", "accumulator", "layout_t"),
+                  hasDeclContext(namespaceDecl(hasName("wmma")))))))))
+          .bind("type"),
+      this);
   MF.addMatcher(callExpr(callee(functionDecl(allOf(
                              hasAnyName("fill_fragment", "load_matrix_sync",
                                         "mma_sync", "store_matrix_sync"),
