@@ -67,11 +67,29 @@ matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld, int from_ld,
                 memcpy_direction direction = automatic,
                 sycl::queue &queue = dpct::get_default_queue(),
                 bool async = false) {
-  blas::matrix_mem_copy(
-      to_ptr, from_ptr, static_cast<std::int64_t>(to_ld),
-      static_cast<std::int64_t>(from_ld), static_cast<std::int64_t>(rows),
-      static_cast<std::int64_t>(cols), static_cast<std::int64_t>(elem_size),
-      direction, queue, async);
+  if (to_ptr == from_ptr && to_ld == from_ld) {
+    return;
+  }
+
+  if (to_ld == from_ld) {
+    size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
+    if (async)
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction);
+    else
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction)
+          .wait();
+  } else {
+    if (async)
+      detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
+                          elem_size * from_ld, elem_size * rows, cols,
+                          direction);
+    else
+      sycl::event::wait(detail::dpct_memcpy(
+          queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
+          elem_size * rows, cols, direction));
+  }
 }
 
 /// Copy matrix data. The default leading dimension is column.
@@ -92,11 +110,8 @@ matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld, int from_ld, int rows,
                 sycl::queue &queue = dpct::get_default_queue(),
                 bool async = false) {
   using Ty = typename DataType<T>::T2;
-  blas::matrix_mem_copy(
-      (void *)to_ptr, (void *)from_ptr, static_cast<std::int64_t>(to_ld),
-      static_cast<std::int64_t>(from_ld), static_cast<std::int64_t>(rows),
-      static_cast<std::int64_t>(cols), static_cast<std::int64_t>(sizeof(Ty)),
-      direction, queue, async);
+  matrix_mem_copy((void *)to_ptr, (void *)from_ptr, to_ld, from_ld, rows, cols,
+                  sizeof(Ty), direction, queue, async);
 }
 
 /// Cast the high or low 32 bits of a double to an integer.
