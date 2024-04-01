@@ -870,7 +870,7 @@ private:
 
 namespace detail {
 template <typename T> struct spmv_impl {
-  void operator()(sycl::queue queue, oneapi::mkl::transpose trans,
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans,
                   const void *alpha, sparse_matrix_desc_t a,
                   std::shared_ptr<dense_vector_desc> x, const void *beta,
                   std::shared_ptr<dense_vector_desc> y) {
@@ -900,7 +900,7 @@ template <typename T> struct spmv_impl {
 };
 
 template <typename T> struct spmm_impl {
-  void operator()(sycl::queue queue, oneapi::mkl::transpose trans_a,
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans_a,
                   oneapi::mkl::transpose trans_b, const void *alpha,
                   sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
                   const void *beta, std::shared_ptr<dense_matrix_desc> c) {
@@ -916,6 +916,42 @@ template <typename T> struct spmm_impl {
                                   b->get_col_num(), b->get_leading_dim(),
                                   beta_value, data_c, c->get_leading_dim()),
         a);
+  }
+};
+
+template <typename T> struct spsv_impl {
+  void operator()(sycl::queue &queue, oneapi::mkl::uplo uplo,
+                  oneapi::mkl::diag diag, oneapi::mkl::transpose trans_a,
+                  const void *alpha, sparse_matrix_desc_t a,
+                  std::shared_ptr<dense_vector_desc> x,
+                  std::shared_ptr<dense_vector_desc> y) {
+    auto alpha_value =
+        dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
+    auto data_x = dpct::detail::get_memory<T>(x->get_value());
+    auto data_y = dpct::detail::get_memory<T>(y->get_value());
+    SPARSE_CALL(oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
+                                          alpha_value, a->get_matrix_handle(),
+                                          data_x, data_y),
+                a);
+  }
+};
+
+template <typename T> struct spsm_impl {
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans_a,
+                  oneapi::mkl::transpose trans_b, oneapi::mkl::uplo uplo,
+                  oneapi::mkl::diag diag, const void *alpha,
+                  sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
+                  std::shared_ptr<dense_matrix_desc> c) {
+    auto alpha_value =
+        dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
+    auto data_b = dpct::detail::get_memory<T>(b->get_value());
+    auto data_c = dpct::detail::get_memory<T>(c->get_value());
+    SPARSE_CALL(oneapi::mkl::sparse::trsm(
+                    queue, b->get_layout(), trans_a, trans_b, uplo, diag,
+                    alpha_value, a->get_matrix_handle(), data_b,
+                    c->get_col_num(), b->get_leading_dim(), data_c,
+                    c->get_leading_dim()),
+                a);
   }
 };
 #undef SPARSE_CALL
@@ -1185,39 +1221,6 @@ inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
     }
   }
 }
-
-namespace detail {
-template <typename T> struct spsv_impl {
-  void operator()(sycl::queue queue, oneapi::mkl::uplo uplo,
-                  oneapi::mkl::diag diag, oneapi::mkl::transpose trans_a,
-                  const void *alpha, sparse_matrix_desc_t a,
-                  std::shared_ptr<dense_vector_desc> x,
-                  std::shared_ptr<dense_vector_desc> y) {
-    auto alpha_value =
-        dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
-    auto data_x = dpct::detail::get_memory<T>(x->get_value());
-    auto data_y = dpct::detail::get_memory<T>(y->get_value());
-    oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag, alpha_value,
-                              a->get_matrix_handle(), data_x, data_y);
-  }
-};
-template <typename T> struct spsm_impl {
-  void operator()(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                  oneapi::mkl::transpose trans_b, oneapi::mkl::uplo uplo,
-                  oneapi::mkl::diag diag, const void *alpha,
-                  sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
-                  std::shared_ptr<dense_matrix_desc> c) {
-    auto alpha_value =
-        dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
-    auto data_b = dpct::detail::get_memory<T>(b->get_value());
-    auto data_c = dpct::detail::get_memory<T>(c->get_value());
-    oneapi::mkl::sparse::trsm(queue, b->get_layout(), trans_a, trans_b, uplo,
-                              diag, alpha_value, a->get_matrix_handle(), data_b,
-                              c->get_col_num(), b->get_leading_dim(), data_c,
-                              c->get_leading_dim());
-  }
-};
-} // namespace detail
 
 /// Performs internal optimizations for spsv by analyzing the provided matrix
 /// structure and operation parameters.
