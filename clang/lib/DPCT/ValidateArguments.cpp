@@ -25,7 +25,7 @@ namespace fs = llvm::sys::fs;
 
 // Set OutRoot to the current working directory.
 bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
-                       bool NeedCheckDirEmpty) {
+                       bool NeedCheckOutRootEmpty) {
   SmallString<256> OutRoot;
   if (fs::current_path(OutRoot) != std::error_code()) {
     llvm::errs() << "Could not get current path.\n";
@@ -40,7 +40,7 @@ bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
       return false;
     }
     fs::directory_iterator End;
-    if (NeedCheckDirEmpty && Iter != End) {
+    if (NeedCheckOutRootEmpty && Iter != End) {
       llvm::errs() << "dpct_output directory is not empty. Please use option"
                       " \"--out-root\" to set output directory.\n";
       return false;

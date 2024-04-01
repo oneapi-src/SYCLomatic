@@ -97,7 +97,7 @@ bool makeInRootCanonicalOrSetDefaults(
 bool makeAnalysisScopeCanonicalOrSetDefaults(clang::tooling::UnifiedPath &AnalysisScope,
                                              const clang::tooling::UnifiedPath &InRoot);
 bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
-                       bool NeedCheckDirEmpty = true);
+                       bool NeedCheckOutRootEmpty = true);
 /// Make sure files passed to tool are under the
 /// input root directory and have an extension.
 /// return value:
