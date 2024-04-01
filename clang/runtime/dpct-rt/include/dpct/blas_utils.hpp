@@ -170,11 +170,11 @@ class parameter_wrapper_t<target_t, target_t, inout_prop>
     : public detail::parameter_wrapper_base_t<target_t, target_t> {
   using base_t = detail::parameter_wrapper_base_t<target_t, target_t>;
   using base_t::_ele_num;
+  using base_t::_need_free;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
   using base_t::_target;
-  using base_t::_need_free;
 
 public:
   /// Constructor. Malloc the wrapper memory.
