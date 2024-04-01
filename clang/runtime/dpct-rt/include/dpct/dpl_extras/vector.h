@@ -785,7 +785,8 @@ public:
   const_iterator end() const { return device_iterator<T>(get_buffer(), _size); }
   const_iterator cend() const { return end(); }
   T *real_begin() {
-    //This code returns a pointer to a data within sycl buffer accessor which is leaving scope. This relies on undefined
+    // This code returns a pointer to a data within sycl buffer accessor which
+    // is leaving scope. This relies on undefined
     // behavior and may not provide a valid pointer to data inside that buffer.
     return (detail::mem_mgr::instance()
                 .translate_ptr(_storage)
@@ -793,7 +794,8 @@ public:
         .get_pointer();
   }
   const T *real_begin() const {
-    //This code returns a pointer to a data within sycl buffer accessor which is leaving scope. This relies on undefined
+    // This code returns a pointer to a data within sycl buffer accessor which
+    // is leaving scope. This relies on undefined
     // behavior and may not provide a valid pointer to data inside that buffer.
     return const_cast<device_vector *>(this)
         ->detail::mem_mgr::instance()

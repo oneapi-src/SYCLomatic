@@ -221,22 +221,25 @@ public:
   device_pointer_base(const device_pointer_base &in)
       : buffer(in.buffer), idx(in.idx) {}
   pointer get() const {
-    //This code returns a pointer data within to a sycl buffer accessor which is leaving scope. This relies on undefined
-    // behavior and may not provide a valid pointer to data inside that buffer.
+    // This code returns a pointer data within to a sycl buffer accessor which
+    // is leaving scope. This relies on undefined behavior and may not provide
+    // a valid pointer to data inside that buffer.
     auto res =
         (const_cast<device_pointer_base *>(this)->buffer.get_host_access())
             .get_pointer();
     return res + idx;
   }
   operator ValueType *() {
-    //This code returns a pointer to data within a sycl buffer accessor which is leaving scope. This relies on undefined
-    // behavior and may not provide a valid pointer to data inside that buffer.
+    // This code returns a pointer to data within a sycl buffer accessor which
+    // is leaving scope. This relies on undefined behavior and may not provide
+    // a valid pointer to data inside that buffer.
     auto res = (buffer.get_host_access()).get_pointer();
     return res + idx;
   }
   operator ValueType *() const {
-    //This code returns a pointer to data within a sycl buffer accessor which is leaving scope. This relies on undefined
-    // behavior and may not provide a valid pointer to data inside that buffer.
+    // This code returns a pointer to data within a sycl buffer accessor which
+    // is leaving scope. This relies on undefined behavior and may not provide
+    // a valid pointer to data inside that buffer.
     auto res =
         (const_cast<device_pointer_base *>(this)->buffer.get_host_access())
             .get_pointer();
@@ -1000,8 +1003,9 @@ device_pointer<T> get_device_pointer(const device_pointer<T> &ptr) {
 }
 
 template <typename T> T *get_raw_pointer(const device_pointer<T> &ptr) {
-  //This code returns a pointer to data within a sycl buffer accessor which has left scope. This relies on undefined
-  // behavior and may not provide a valid pointer to data inside that buffer.
+  // This code returns a pointer to data within a sycl buffer accessor which has
+  // left scope. This relies on undefined behavior and may not provide a valid
+  // pointer to data inside that buffer.
   return ptr.get();
 }
 
@@ -1010,14 +1014,10 @@ template <typename Pointer> Pointer get_raw_pointer(const Pointer &ptr) {
 }
 
 template <typename T> const T &get_raw_reference(const device_reference<T> &ref) {
-  //This code returns a reference to data insde a sycl buffer accessor which has left scope. This relies on undefined
-  // behavior and may not provide a valid pointer to data inside that buffer.
   return ref.value;
 }
 
 template <typename T> T &get_raw_reference(device_reference<T> &ref) {
-  //This code returns a reference to data insde a sycl buffer accessor which has left scope. This relies on undefined
-  // behavior and may not provide a valid pointer to data inside that buffer.
   return ref.value;
 }
 
