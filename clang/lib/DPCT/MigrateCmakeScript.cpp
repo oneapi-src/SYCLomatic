@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 #include "MigrateCmakeScript.h"
+#include "Diagnostics.h"
 #include "Error.h"
 #include "PatternRewriter.h"
 #include "SaveNewFiles.h"
@@ -626,15 +627,18 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString, c
           Line[Idx] = Str[Idx - Begin];
         }
         if (!Iter->second) {
-          std::string Prefix =
+          std::string WarningMsg =
               FileName + ":" + std::to_string(Count) + ":warning:";
-          std::string WaringContent =
-              "DPCT2000: migration of syntax \"" + Str +
-              "\" is not supported, you may need to adjust the code.";
+          WarningMsg += DiagnosticsUtils::getMsgText(
+              CMakeScriptMigrationMsgs::CMAKE_NOT_SUPPORT_WARNING, Str);
+          WarningMsg += "\n";
+          FileWarningsMap[FileName].push_back(WarningMsg);
 
-          FileWarningsMap[FileName].push_back(Prefix + WaringContent);
-
-          OutputStream << "# " << WaringContent << "\n";
+          OutputStream
+              << "# "
+              << DiagnosticsUtils::getMsgText(
+                     CMakeScriptMigrationMsgs::CMAKE_NOT_SUPPORT_WARNING, Str)
+              << "\n";
         }
       }
     }
