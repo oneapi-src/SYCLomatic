@@ -53,7 +53,7 @@ ENTRY(curandGetScrambleConstants32, curandGetScrambleConstants32, false, NO_FLAG
 ENTRY(curandGetScrambleConstants64, curandGetScrambleConstants64, false, NO_FLAG, P4, "comment")
 ENTRY(curandGetVersion, curandGetVersion, false, NO_FLAG, P4, "comment")
 ENTRY(curandSetGeneratorOffset, curandSetGeneratorOffset, true, NO_FLAG, P4, "Successful")
-ENTRY(curandSetGeneratorOrdering, curandSetGeneratorOrdering, false, NO_FLAG, P4, "comment")
+ENTRY(curandSetGeneratorOrdering, curandSetGeneratorOrdering, true, NO_FLAG, P4, "Successful")
 ENTRY(curandSetPseudoRandomGeneratorSeed, curandSetPseudoRandomGeneratorSeed, true, NO_FLAG, P4, "Successful")
 ENTRY(curandSetQuasiRandomGeneratorDimensions, curandSetQuasiRandomGeneratorDimensions, true, NO_FLAG, P4, "Successful")
 ENTRY(curandSetStream, curandSetStream, true, NO_FLAG, P4, "Successful")
