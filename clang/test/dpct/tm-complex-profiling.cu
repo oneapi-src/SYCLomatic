@@ -314,7 +314,7 @@ void foo_test_3()
     CHECK(cudaEventRecord(stop));
 
     unsigned long int counter = 0;
-// CHECK:    while (stop->get_info<sycl::info::event::command_execution_status>() != 0) {
+// CHECK:    while ((int)stop->get_info<sycl::info::event::command_execution_status>() != 0) {
 // CHECK-NEXT:        counter++;
 // CHECK-NEXT:    }
     while (cudaEventQuery(stop) == cudaErrorNotReady) {

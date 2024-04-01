@@ -3502,6 +3502,8 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
                       .getName()
                       .getAsString() == "cuEventQuery"))) {
           MatchFunction = true;
+          auto *Call = LHSCall ? LHSCall : RHSCall;
+          emplaceTransformation(new InsertBeforeStmt(Call, "(int)"));
           break;
         }
       }
