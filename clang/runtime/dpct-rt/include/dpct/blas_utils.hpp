@@ -174,6 +174,7 @@ class parameter_wrapper_t<target_t, target_t, inout_prop>
   using base_t::_source;
   using base_t::_source_attribute;
   using base_t::_target;
+  using base_t::_need_free;
 
 public:
   /// Constructor. Malloc the wrapper memory.
@@ -183,7 +184,7 @@ public:
   parameter_wrapper_t(sycl::queue q, target_t *source, size_t ele_num = 1)
       : base_t(q, source, ele_num) {
     if constexpr (inout_prop != parameter_inout_prop::out) {
-      if (_target != _source) {
+      if (_need_free) {
         dpct::detail::dpct_memcpy(_q, _target, _source,
                                   sizeof(target_t) * _ele_num, automatic);
       }
@@ -192,9 +193,12 @@ public:
   /// Destructor. Copy back content from wrapper memory to original memory
   ~parameter_wrapper_t() {
     if constexpr (inout_prop != parameter_inout_prop::in) {
-      if (_target != _source) {
-        dpct::dpct_memcpy(_source, _target, sizeof(target_t) * _ele_num,
-                          automatic, _q);
+      if (_need_free) {
+        sycl::event e = dpct::detail::dpct_memcpy(
+            _q, _source, _target, sizeof(target_t) * _ele_num, automatic);
+        if (_source_attribute ==
+            dpct::detail::pointer_access_attribute::host_only)
+          e.wait();
       }
     }
   }
