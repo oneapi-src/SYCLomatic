@@ -2047,3 +2047,25 @@
   CmakeSyntax: enable_language
   In: enable_language(${empty}CUDA${empty})
   Out: enable_language(CXX)
+
+- Rule: rule_target_link_directories
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_link_directories
+  In: target_link_directories(${directories})
+  Out: target_link_directories(${directories})
+  Subrules:
+    directories:
+      In: CUDAToolkit_LIBRARY_DIR
+      Out: ONEAPI_LIB_DIR
+
+- Rule: rule_target_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_link_options
+  In: target_link_options(${target} ${scope} ${options})
+  Out: target_link_options(${target} ${scope} ${options})
+  Subrules:
+    options:
+      In: \$<\$<CUDA_COMPILER_ID
+      Out: ""
