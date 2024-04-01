@@ -37,6 +37,24 @@ __global__ void kernel2(int *ptr){
     ptr[i] = dev_d[i];
 }
 
+// CHCECK: static const sycl::uint2 keccak_round_constants[1] = {{0x00000001, 0x00000000}};
+__device__ __constant__ uint2 const keccak_round_constants[1] = {
+  {0x00000001, 0x00000000}};
+
+// CHCECK:   inline void de() {
+// CHCECK:     sycl::uint2 a = keccak_round_constants[0];
+// CHCECK:   }
+__device__ void de(){
+uint2 a = keccak_round_constants[0];
+}
+
+// CHCECK: __dpct_inline__ void kernel() {
+// CHCECK:   de();
+// CHCECK: }
+__global__ void kernel3(){
+de();
+}
+
 
 int main(){
   int *dp;
@@ -79,6 +97,9 @@ int main(){
     std::cout << dp2[i] << std::endl;
   }
   size_t size;
+
+  kernel3<<<1, 1>>>();
+
 // CHECK:   size = dev_c.get_size();
 // CHECK:   size = dev_d.get_size();
   cudaGetSymbolSize(&size, dev_c);

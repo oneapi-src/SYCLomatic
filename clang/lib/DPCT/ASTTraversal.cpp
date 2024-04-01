@@ -9140,18 +9140,6 @@ void ConstantMemVarMigrationRule::registerMatcher(MatchFinder &MF) {
 void ConstantMemVarMigrationRule::runRule(
     const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
-  auto IsVarUsedByRuntimeSymbolAPI = [&](const VarDecl *VarD) {
-    auto &VarUsedByRuntimeSymbolAPISet =
-        DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
-    auto LocInfo = DpctGlobalInfo::getLocInfo(VarD->getBeginLoc());
-    std::string Key = LocInfo.first.getCanonicalPath().str() +
-                      std::to_string(LocInfo.second) + VarD->getNameAsString();
-    if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
-        VarUsedByRuntimeSymbolAPISet.end()) {
-      return false;
-    }
-    return true;
-  };
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
       return;
@@ -9170,7 +9158,7 @@ void ConstantMemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (DpctGlobalInfo::isOptimizeMigration()) {
-      if (!IsVarUsedByRuntimeSymbolAPI(MemVar)) {
+      if (!DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(Info)) {
         Info->setUseHelperFuncFlag(false);
       }
     }
@@ -9614,7 +9602,7 @@ void MemVarAnalysisRule::processTypeDeclaredLocal(
 void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
-    if (isCubVar(MemVar)) {
+    if (isCubVar(MemVar) || MemVar->hasAttr<CUDAConstantAttr>()) {
       return;
     }
     CanonicalType = MemVar->getType().getCanonicalType().getAsString();
