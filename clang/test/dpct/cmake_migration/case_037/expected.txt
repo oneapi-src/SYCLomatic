@@ -1,0 +1,1 @@
+foreach(CUDA_SOURCE a.dp.cpp b.dp.cpp)
