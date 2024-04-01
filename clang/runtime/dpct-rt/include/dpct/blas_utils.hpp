@@ -240,19 +240,19 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr,
   if (to_ld == from_ld) {
     size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
     if (async)
-      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
-                          direction);
+      dpct::detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                                copy_size, direction);
     else
-      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
-                          direction)
+      dpct::detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                                copy_size, direction)
           .wait();
   } else {
     if (async)
-      detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
-                          elem_size * from_ld, elem_size * rows, cols,
-                          direction);
+      dpct::detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
+                                elem_size * from_ld, elem_size * rows, cols,
+                                direction);
     else
-      sycl::event::wait(detail::dpct_memcpy(
+      sycl::event::wait(dpct::detail::dpct_memcpy(
           queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
           elem_size * rows, cols, direction));
   }
