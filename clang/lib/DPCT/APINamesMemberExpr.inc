@@ -1,4 +1,4 @@
-//===--------------- APINamesMemberExpr.inc -----------------------------------===//
+//===--------------- APINamesMemberExpr.inc -------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,55 +6,35 @@
 //
 //===----------------------------------------------------------------------===//
 
+MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.device", MEM_BASE,
+                          "get_device_id")
 
-MEMBER_REWRITE_ENTRY(
-    "cudaPointerAttributes.device",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_CALL("get_device_id"))
-)
+MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.hostPointer", MEM_BASE,
+                          "get_host_pointer")
 
-MEMBER_REWRITE_ENTRY(
-    "cudaPointerAttributes.hostPointer",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_CALL("get_host_pointer"))
-)
+MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.devicePointer", MEM_BASE,
+                          "get_device_pointer")
 
-MEMBER_REWRITE_ENTRY(
-    "cudaPointerAttributes.devicePointer",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_CALL("get_device_pointer"))
-)
+CUDA_MEMORY_TYPE_LITERAL_NUMBER_MIGRATION_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+    "cudaPointerAttributes.type", MEM_BASE, "get_memory_type"))
 
-MEMBER_REWRITE_ENTRY(
-    "cudaPointerAttributes.type",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_CALL("get_memory_type"))
-)
+CUDA_MEMORY_TYPE_LITERAL_NUMBER_MIGRATION_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+    "cudaPointerAttributes.memoryType", MEM_BASE, "get_memory_type"))
 
-MEMBER_REWRITE_ENTRY(
-    "cudaPointerAttributes.memoryType",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_CALL("get_memory_type"))
-)
-
-MEMBER_REWRITE_ENTRY(
-    "cudaPointerAttributes.isManaged",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_CALL("is_memory_shared"))
-)
+MEMBER_CALL_FACTORY_ENTRY("cudaPointerAttributes.isManaged", MEM_BASE,
+                          "is_memory_shared")
 
 WARNING_FACTORY_ENTRY(
     "cudaDeviceProp.totalConstMem",
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
-        MEMBER_REWRITE_ENTRY("cudaDeviceProp.totalConstMem",
-                             MEMBER_FACTORY(MEM_BASE, IS_ARROW,
-                                            MEM_CALL("get_global_mem_size")))),
+        MEMBER_CALL_FACTORY_ENTRY("cudaDeviceProp.totalConstMem", MEM_BASE,
+                                  "get_global_mem_size")),
     Diagnostics::UNCOMPATIBLE_DEVICE_PROP, std::string("totalConstMem"),
     std::string("get_global_mem_size"))
 
-MEMBER_REWRITE_ENTRY(
-    "cub::DoubleBuffer.d_buffers",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, LITERAL("iter")))
+MEM_EXPR_ENTRY("cub::DoubleBuffer.d_buffers", MEM_BASE, LITERAL("iter"))
 
-MEMBER_REWRITE_ENTRY(
-    "cub::DoubleBuffer.Current",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, LITERAL("first")))
+MEM_EXPR_ENTRY("cub::DoubleBuffer.Current", MEM_BASE, LITERAL("first"))
 
-MEMBER_REWRITE_ENTRY(
-    "cub::DoubleBuffer.Alternate",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, LITERAL("second")))
+MEM_EXPR_ENTRY("cub::DoubleBuffer.Alternate", MEM_BASE, LITERAL("second"))
