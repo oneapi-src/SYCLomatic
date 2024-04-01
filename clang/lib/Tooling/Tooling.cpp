@@ -1102,6 +1102,8 @@ int ClangTool::run(ToolAction *Action) {
       }
     }
 #else
+    ++ProcessedFileCounter;
+    (void)NumOfTotalFiles;
     if(isExcludePath(File.str())) {
       continue;
     }
