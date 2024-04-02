@@ -95,7 +95,6 @@ llvm::cl::OptionCategory &DPCTQueryAPICat = llvm::cl::getDPCTQueryAPICategory();
 llvm::cl::OptionCategory &DPCTWarningsCat = llvm::cl::getDPCTWarningsCategory();
 llvm::cl::OptionCategory &DPCTHelpInfoCat = llvm::cl::getDPCTHelpInfoCategory();
 llvm::cl::OptionCategory &DPCTInterceptBuildCat = llvm::cl::getDPCTInterceptBuildCategory();
-llvm::cl::OptionCategory &DPCTExamplesCat = llvm::cl::getDPCTExamplesCategory();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang
