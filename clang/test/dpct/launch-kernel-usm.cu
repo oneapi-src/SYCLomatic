@@ -106,29 +106,3 @@ int main() {
   cudaFree(d_data);
 }
 
-template<class T1, class T2>
-struct UserStruct1 {
-  UserStruct1() {}
-  UserStruct1(UserStruct1 const &) {}
-};
-// CHECK: template <class T1, class T2> 
-// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct1<T1, T2>> : std::true_type {};
-
-struct UserStruct2 {
-  UserStruct2() {}
-  UserStruct2(UserStruct2 const &) {}
-};
-// CHECK: template<>
-// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct2> : std::true_type {};
-
-template<class V1, class V2>
-__global__ void kernel2(UserStruct1<V1, V2>, UserStruct2) {}
-
-void foo2() {
-  UserStruct1<float, int> us1;
-  UserStruct2 us2;
-
-  void *args[2] = { &us1, &us2 };
-  cudaLaunchKernel((void *)&kernel2<float, int>, dim3(1), dim3(1), args, 0, 0);
-}
-

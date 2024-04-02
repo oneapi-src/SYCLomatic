@@ -8578,6 +8578,10 @@ void KernelCallRule::insertDeviceCopyableSpecialization(QualType Type) {
           .getAsTemplateDecl();
     case Type::TypeClass::Record:
       return QT.getTypePtr()->getAs<RecordType>()->getDecl();
+    case Type::TypeClass::SubstTemplateTypeParm:
+      return getTypeDecl(QT.getTypePtr()
+                             ->castAs<SubstTemplateTypeParmType>()
+                             ->getReplacementType());
     default:
       return nullptr;
     }
@@ -8595,24 +8599,27 @@ void KernelCallRule::insertDeviceCopyableSpecialization(QualType Type) {
 
   // Prepare replacemet
   std::string Repl;
-  if (const auto *TD = dyn_cast<TemplateDecl>(D)) {
+  if (const auto *CTSD = dyn_cast<ClassTemplateSpecializationDecl>(D)) {
+    D = CTSD->getSpecializedTemplate();
+  }
+  if (const auto *CTD = dyn_cast<ClassTemplateDecl>(D)) {
     llvm::raw_string_ostream OS(Repl);
-    TD->getTemplateParameters()->print(OS, DpctGlobalInfo::getContext());
+    CTD->getTemplateParameters()->print(OS, DpctGlobalInfo::getContext());
     OS << getNL();
     OS << "struct sycl::is_device_copyable<";
     std::string TArgs;
-    for (const auto *ND : TD->getTemplateParameters()->asArray()) {
+    for (const auto *ND : CTD->getTemplateParameters()->asArray()) {
       TArgs += ND->getNameAsString();
       TArgs += ", ";
     }
     if (!TArgs.empty()) {
       TArgs = TArgs.substr(0, TArgs.size() - 2);
     }
-    OS << TD->getNameAsString() << "<" << TArgs << ">";
+    OS << CTD->getNameAsString() << "<" << TArgs << ">";
     OS << "> : std::true_type {};";
     OS << getNL();
   } else if (const auto *RD = dyn_cast<RecordDecl>(D)) {
-    Repl += "template<>";
+    Repl += "template <>";
     Repl += getNL();
     Repl += "struct sycl::is_device_copyable<";
     Repl += RD->getNameAsString();
