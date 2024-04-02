@@ -41,6 +41,8 @@
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/Cuda.h"
 #include "clang/Basic/SourceLocation.h"
+#include "clang/Basic/SourceManager.h"
+#include "clang/Basic/TokenKinds.h"
 #include "clang/Lex/MacroArgs.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SCCIterator.h"
@@ -8563,6 +8565,92 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       KCall->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_ForCUDADebug);
 }
 
+void KernelCallRule::insertDeviceCopyableSpecialization(const Expr *Arg) {
+  std::function<const Decl *(QualType)> getTypeDecl;
+  getTypeDecl = [&getTypeDecl](QualType QT) -> const Decl * {
+    switch (QT->getTypeClass()) {
+    case Type::TypeClass::Elaborated:
+      return getTypeDecl(QT.getTypePtr()->castAs<ElaboratedType>()->desugar());
+    case Type::TypeClass::TemplateSpecialization:
+      return QT.getTypePtr()
+          ->getAs<TemplateSpecializationType>()
+          ->getTemplateName()
+          .getAsTemplateDecl();
+    case Type::TypeClass::Record:
+      return QT.getTypePtr()->getAs<RecordType>()->getDecl();
+    default:
+      return nullptr;
+    }
+  };
+
+  QualType ArgT = Arg->getType();
+  if (ArgT->isPointerType())
+    return;
+  const Decl *D = getTypeDecl(ArgT);
+  if (!D)
+    return;
+  if (!isUserDefinedDecl(D))
+    return;
+  if (ArgT.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
+    return;
+
+  // Prepare replacemet
+  std::string Repl;
+  if (const auto *TD = dyn_cast<TemplateDecl>(D)) {
+    llvm::raw_string_ostream OS(Repl);
+    TD->getTemplateParameters()->print(OS, DpctGlobalInfo::getContext());
+    OS << getNL();
+    OS << "struct sycl::is_device_copyable<";
+    std::string TArgs;
+    for (const auto *ND : TD->getTemplateParameters()->asArray()) {
+      TArgs += ND->getNameAsString();
+      TArgs += ", ";
+    }
+    if (!TArgs.empty()) {
+      TArgs = TArgs.substr(0, TArgs.size() - 2);
+    }
+    OS << TD->getNameAsString() << "<" << TArgs << ">";
+    OS << "> : std::true_type {};";
+    OS << getNL();
+  } else if (const auto *RD = dyn_cast<RecordDecl>(D)) {
+    Repl += "template<>";
+    Repl += getNL();
+    Repl += "struct sycl::is_device_copyable<";
+    Repl += RD->getNameAsString();
+    Repl += "> : std::true_type {};";
+    Repl += getNL();
+  } else {
+    return;
+  }
+
+  // Find insert location (next line after semicolon)
+  SourceLocation EndLoc = D->getEndLoc();
+  bool MeetSemicolon = false;
+  const char *CharPtr =
+      DpctGlobalInfo::getSourceManager().getCharacterData(EndLoc);
+  while (CharPtr) {
+    if (*CharPtr == ';') {
+      MeetSemicolon = true;
+      CharPtr++;
+      continue;
+    }
+    if (*CharPtr == '\n') {
+      CharPtr++;
+      if (CharPtr && *CharPtr == '\r') {
+        CharPtr++;
+      }
+      if (MeetSemicolon)
+        break;
+      continue;
+    }
+    CharPtr++;
+  }
+  unsigned int Offset =
+      CharPtr - DpctGlobalInfo::getSourceManager().getCharacterData(EndLoc);
+  SourceLocation InsertLoc = EndLoc.getLocWithOffset(Offset);
+  emplaceTransformation(new ReplaceText(InsertLoc, 0, std::move(Repl)));
+}
+
 void KernelCallRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto KCall =
@@ -8595,6 +8683,9 @@ void KernelCallRule::runRule(
         KCall, SM.getExpansionLoc(KCall->getBeginLoc()), Flag);
     if (Flag)
       DpctGlobalInfo::insertKCIndentWidth(IndentLen);
+
+    for (const Expr *Arg : KCall->arguments())
+      insertDeviceCopyableSpecialization(Arg);
 
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
