@@ -196,6 +196,7 @@ public:
       if (_need_free) {
         sycl::event e = dpct::detail::dpct_memcpy(
             _q, _source, _target, sizeof(target_t) * _ele_num, automatic);
+        (void)e;
         if (_source_attribute ==
             dpct::detail::pointer_access_attribute::host_only)
           e.wait();
