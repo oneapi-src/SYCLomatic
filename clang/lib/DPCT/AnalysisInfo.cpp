@@ -249,23 +249,6 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
   }
   EA.applyAllSubExprRepl();
 }
-const DeclRefExpr *getAddressedRef(const Expr *E) {
-  E = E->IgnoreImplicitAsWritten();
-  if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
-    if (DRE->getDecl()->getKind() == Decl::Function) {
-      return DRE;
-    }
-  } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
-    return getAddressedRef(Paren->getSubExpr());
-  } else if (auto Cast = dyn_cast<CastExpr>(E)) {
-    return getAddressedRef(Cast->getSubExprAsWritten());
-  } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
-    if (UO->getOpcode() == UO_AddrOf) {
-      return getAddressedRef(UO->getSubExpr());
-    }
-  }
-  return nullptr;
-}
 
 ///// class FreeQueriesInfo /////
 class FreeQueriesInfo {
@@ -5484,6 +5467,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       }
       Kernel->resizeTextureObjectList(FD->getNumParams());
       for (auto &Parm : FD->parameters()) {
+
         Kernel->ArgsInfo.emplace_back(Parm, ArgsArray, Kernel.get());
       }
     }

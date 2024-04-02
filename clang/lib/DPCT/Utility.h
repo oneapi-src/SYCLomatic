@@ -630,6 +630,7 @@ matchTargetDREInScope(const clang::VarDecl *TargetDecl,
 int isArgumentInitialized(
     const clang::Expr *Arg,
     std::vector<const clang::VarDecl *> &DeclsRequireInit);
+const DeclRefExpr *getAddressedRef(const Expr *E);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

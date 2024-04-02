@@ -8565,7 +8565,7 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       KCall->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_ForCUDADebug);
 }
 
-void KernelCallRule::insertDeviceCopyableSpecialization(const Expr *Arg) {
+void KernelCallRule::insertDeviceCopyableSpecialization(QualType Type) {
   std::function<const Decl *(QualType)> getTypeDecl;
   getTypeDecl = [&getTypeDecl](QualType QT) -> const Decl * {
     switch (QT->getTypeClass()) {
@@ -8583,15 +8583,14 @@ void KernelCallRule::insertDeviceCopyableSpecialization(const Expr *Arg) {
     }
   };
 
-  QualType ArgT = Arg->getType();
-  if (ArgT->isPointerType())
+  if (Type->isPointerType())
     return;
-  const Decl *D = getTypeDecl(ArgT);
+  const Decl *D = getTypeDecl(Type);
   if (!D)
     return;
   if (!isUserDefinedDecl(D))
     return;
-  if (ArgT.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
+  if (Type.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
     return;
 
   // Prepare replacemet
@@ -8685,7 +8684,7 @@ void KernelCallRule::runRule(
       DpctGlobalInfo::insertKCIndentWidth(IndentLen);
 
     for (const Expr *Arg : KCall->arguments())
-      insertDeviceCopyableSpecialization(Arg);
+      insertDeviceCopyableSpecialization(Arg->getType());
 
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
@@ -8730,6 +8729,15 @@ void KernelCallRule::runRule(
     if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall)) {
       emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
       removeTrailingSemicolon(LaunchKernelCall, Result);
+      if (const DeclRefExpr *DRE =
+              getAddressedRef(LaunchKernelCall->getArg(0))) {
+        if (const Decl *D = DRE->getReferencedDeclOfCallee()) {
+          if (const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(D)) {
+            for (const ParmVarDecl *Parm : FD->parameters())
+              insertDeviceCopyableSpecialization(Parm->getType());
+          }
+        }
+      }
     } else {
       auto FuncName = LaunchKernelCall->getDirectCallee()
                           ->getNameInfo()
