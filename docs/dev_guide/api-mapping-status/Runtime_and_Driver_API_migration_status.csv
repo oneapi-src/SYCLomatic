@@ -1305,7 +1305,7 @@ __reduce_xor_sync,YES,
 __activemask,YES,:ref:`DPCT1086`
 __match_any_sync,YES,
 __match_all_sync,YES,
-cuCtxCreate,NO,
+cuCtxCreate,YES,
 cuCtxDestroy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuCtxGetApiVersion,YES,
 cuCtxGetCacheConfig,NO,
