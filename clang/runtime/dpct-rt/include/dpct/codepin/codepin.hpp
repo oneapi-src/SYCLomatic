@@ -35,11 +35,7 @@ public:
   ~Logger() {
     this->remove_lastchar_stream();
     ss << "]";
-    json j(ss.str());
-    if (j.is_valid())
-      opf << j.get_formatted_json();
-    else
-      opf << ss.str();
+    opf << ss.str();
     opf.close();
   }
 
