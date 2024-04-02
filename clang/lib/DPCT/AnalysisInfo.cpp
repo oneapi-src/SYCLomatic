@@ -5467,7 +5467,6 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       }
       Kernel->resizeTextureObjectList(FD->getNumParams());
       for (auto &Parm : FD->parameters()) {
-
         Kernel->ArgsInfo.emplace_back(Parm, ArgsArray, Kernel.get());
       }
     }
