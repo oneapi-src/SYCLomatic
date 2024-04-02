@@ -628,9 +628,8 @@ static inline unsigned int get_tid() {
 class dev_mgr {
 public:
   device_ext &current_device() {
-    unsigned int dev_id=current_device_id();
-    check_id(dev_id);
-    return *_devs[dev_id];
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    return get_device(current_device_id());
   }
   device_ext &cpu_device() const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
@@ -659,19 +658,43 @@ public:
   void select_device(unsigned int id) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     check_id(id);
-    _thread2dev_map[get_tid()]=id;
+    _thread2dev_map[get_tid()] = id;
   }
   unsigned int device_count() { return _devs.size(); }
 
   unsigned int get_device_id(const sycl::device &dev) {
     unsigned int id = 0;
-    for(auto dev_item : _devs) {
+    for (auto dev_item : _devs) {
       if (*dev_item == dev) {
-        break;
+        return id;
       }
       id++;
     }
-    return id;
+    throw std::runtime_error("Cannot find the device[" +
+                             dev.get_info<sycl::info::device::name>() +
+                             "] in current device list!")
+  }
+
+/// Filter out device that doesn't contain one of the subnames.
+/// May break device id mapping and change current device.
+  void filter(const std::vector<std::string> &subnames) {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    auto iter = _devs.begin();
+    while (iter != _devs.end()) {
+      std::string dev_name = (*iter)->get_info<sycl::info::device::name>();
+      bool matched = false;
+      for (const auto &name : dev_name) {
+        if (dev_name.find(name)) {
+          matched = true;
+          break;
+        }
+      }
+      if (matched)
+        ++iter;
+      else
+        iter = _devs.erase(iter);
+    }
+    _thread2dev_map.clear();
   }
 
   template <class DeviceSelector>
@@ -786,6 +809,12 @@ static inline std::enable_if_t<
     std::is_invocable_r_v<int, DeviceSelector, const sycl::device &>>
 select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
   dev_mgr::instance().select_device(selector);
+}
+
+/// Filter out device that doesn't contain one of the subnames.
+/// May break device id mapping and change current device.
+static inline void filter_device(const std::vector<std::string> &subnames) {
+  dev_mgr::instance().filter(subnames);
 }
 
 static inline unsigned int get_device_id(const sycl::device &dev){
