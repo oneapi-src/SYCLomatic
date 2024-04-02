@@ -10,4 +10,4 @@
 // CHECK: begin
 // CHECK-NEXT: end
 
-// grep "input.cmake:1:warning:DPCT3000:0: migration of syntax \"cuda_select_nvcc_arch_flags\" is not supported, you may need to adjust the code." ./migration.log
+// grep "input.cmake:1:warning:DPCT3000:0: Migration of syntax \"cuda_select_nvcc_arch_flags\" is not supported. You may need to adjust the code." ./migration.log

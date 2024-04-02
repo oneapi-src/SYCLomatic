@@ -7,4 +7,4 @@
 //===----------------------------------------------------------------------===//
 
 // FORMAT: {NAME, ID, MESSAGE}
-DEF_COMMENT(CMAKE_NOT_SUPPORT_WARNING, 3000, "migration of syntax \"{0}\" is not supported, you may need to adjust the code.")
+DEF_COMMENT(CMAKE_NOT_SUPPORT_WARNING, 3000, "Migration of syntax \"{0}\" is not supported. You may need to adjust the code.")
