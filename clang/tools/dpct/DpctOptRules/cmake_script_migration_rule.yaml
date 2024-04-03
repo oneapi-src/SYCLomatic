@@ -39,7 +39,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_cuda_no_args
-  In: find_package(${empty}CUDA${empty})
+  In: find_package(${empty}CUDA)
   Out: find_package(IntelSYCL REQUIRED)
 
 - Rule: rule_find_package_cuda_with_options
@@ -53,7 +53,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_cudatoolkit_no_args
-  In: find_package(${empty}CUDAToolkit${empty})
+  In: find_package(${empty}CUDAToolkit)
   Out: |
     find_package(IntelSYCL)
     find_package(MKL)
@@ -71,7 +71,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_cub_no_args
-  In: find_package(${empty}CUB${empty})
+  In: find_package(${empty}CUB)
   Out: find_package(oneDPL)
 
 - Rule: rule_find_package_cub_with_options
@@ -99,7 +99,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_nvjpeg_no_options
-  In: find_package(${empty}NVJPEG${empty})
+  In: find_package(${empty}NVJPEG)
   Out: "#find_package(NVJPEG)"
 
 - Rule: rule_find_package_nvjpeg
