@@ -673,7 +673,7 @@ public:
     throw std::runtime_error(
         "The device[" + dev.get_info<sycl::info::device::name>() +
         "] is filtered out by dev_mgr::filter/filter_device in current device "
-        "list!")
+        "list!");
   }
 
   /// Filter out devices; only keep the device with the name specified.
