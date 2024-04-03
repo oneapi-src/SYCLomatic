@@ -159,8 +159,8 @@ public:
   using reference = device_reference<T>;
   using const_reference = const reference;
   using value_type = T;
-  using pointer = T *;
-  using const_pointer = const T *;
+  using pointer = device_pointer<T>;
+  using const_pointer = const device_pointer<T>;
   using difference_type =
       typename ::std::iterator_traits<iterator>::difference_type;
   using size_type = ::std::size_t;
@@ -171,7 +171,7 @@ private:
   Allocator _alloc;
   size_type _size;
   size_type _capacity;
-  pointer _storage;
+  T* _storage;
 
   size_type _min_capacity() const { return size_type(1); }
 
@@ -462,8 +462,8 @@ public:
   reference front() { return *begin(); }
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
-  pointer data(void) { return _storage; }
-  const_pointer data(void) const { return _storage; }
+  pointer data(void) { return pointer(_storage); }
+  const_pointer data(void) const { return pointer(_storage); }
   void shrink_to_fit(void) {
     if (_size != capacity() && capacity() > _min_capacity()) {
       size_type tmp_capacity = ::std::max(_size, _min_capacity());
@@ -622,8 +622,8 @@ public:
   using reference = device_reference<T>;
   using const_reference = const reference;
   using value_type = T;
-  using pointer = T *;
-  using const_pointer = const T *;
+  using pointer = device_pointer<T>;
+  using const_pointer = const device_pointer<T>;
   using difference_type =
       typename std::iterator_traits<iterator>::difference_type;
   using size_type = std::size_t;
@@ -850,9 +850,9 @@ public:
   reference front() { return *begin(); }
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
-  pointer data(void) { return reinterpret_cast<pointer>(_storage); }
+  pointer data(void) { return pointer(reinterpret_cast<T*>(_storage)); }
   const_pointer data(void) const {
-    return reinterpret_cast<const_pointer>(_storage);
+    return const_pointer(reinterpret_cast<const_pointer>(_storage));
   }
   void shrink_to_fit(void) {
     if (_size != capacity()) {
