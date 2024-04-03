@@ -51,6 +51,23 @@ template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
 #endif
 }
 
+void driver() {
+  // CHECK: sycl::ext::oneapi::experimental::sampled_image_handle o;
+  CUtexObject o;
+  // CHECK: dpct::image_data R;
+  CUDA_RESOURCE_DESC R;
+  // CHECK: dpct::sampling_info T;
+  CUDA_TEXTURE_DESC T;
+  // CHECK: o = dpct::experimental::create_bindless_image(R, T);
+  cuTexObjectCreate(&o, &R, &T, NULL);
+  // CHECK: dpct::experimental::destroy_bindless_image(o, dpct::get_in_order_queue());
+  cuTexObjectDestroy(o);
+  // CHECK: R = dpct::experimental::get_data(o);
+  cuTexObjectGetResourceDesc(&R, o);
+  // CHECK: T = dpct::experimental::get_sampling_info(o);
+  cuTexObjectGetTextureDesc(&T, o);
+}
+
 int main() {
   void *input;
   size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_dest;
