@@ -1,10 +1,6 @@
 // RUN: dpct --format-range=none --out-root %T/is_dev_copyable_spec %s --cuda-include-path="%cuda-path/include"
-// RUN: echo "================================================================================"
-// RUN: cat %T/is_dev_copyable_spec/is_dev_copyable_spec.dp.cpp
-// RUN: echo "================================================================================"
 // RUN: FileCheck --input-file %T/is_dev_copyable_spec/is_dev_copyable_spec.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/is_dev_copyable_spec/is_dev_copyable_spec.dp.cpp -o %T/is_dev_copyable_spec/is_dev_copyable_spec.dp.o %}
-
 
 //      CHECK: template<class T1, class T2>
 // CHECK-NEXT: struct UserStruct1 {
