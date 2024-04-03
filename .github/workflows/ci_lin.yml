@@ -20,7 +20,7 @@ jobs:
     steps:
     - name: 'PR commits + 1'
       run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         persist-credentials: false
@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           rm -rf ${{ github.workspace }}/*
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: c2s.src
 
@@ -171,12 +171,12 @@ jobs:
         shell: bash
         run: |
           rm -rf ${{ github.workspace }}/*
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: c2s.src
 
       - name: Checkout Test Repo
-        #uses: actions/checkout@v2
+        #uses: actions/checkout@v4
         #with:
         #  repository: XXXXX
         #  path: test_repo
