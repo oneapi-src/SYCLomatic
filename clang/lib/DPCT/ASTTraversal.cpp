@@ -8640,9 +8640,6 @@ void KernelCallRule::insertDeviceCopyableSpecialization(QualType Type) {
     }
     if (*CharPtr == '\n') {
       CharPtr++;
-      if (CharPtr && *CharPtr == '\r') {
-        CharPtr++;
-      }
       if (MeetSemicolon)
         break;
       continue;
