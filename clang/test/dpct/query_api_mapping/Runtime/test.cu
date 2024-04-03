@@ -73,6 +73,15 @@
 // CUDADEVICEGETLIMIT-NEXT:   */
 // CUDADEVICEGETLIMIT-NEXT:   *ps = 0;
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetStreamPriorityRange | FileCheck %s -check-prefix=CUDADEVICEGETSTREAMPRIORITYRANGE
+// CUDADEVICEGETSTREAMPRIORITYRANGE: CUDA API:
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   cudaDeviceGetStreamPriorityRange(pi1 /*int **/, pi2 /*int **/);
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT: Is migrated to:
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   /*
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   DPCT1014:0: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   */
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   *(pi1) = 0, *(pi2) = 0;
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceReset | FileCheck %s -check-prefix=CUDADEVICERESET
 // CUDADEVICERESET: CUDA API:
 // CUDADEVICERESET-NEXT:   cudaDeviceReset();
@@ -157,6 +166,24 @@
 
 /// Error Handling
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetErrorName | FileCheck %s -check-prefix=CUDAGETERRORNAME
+// CUDAGETERRORNAME: CUDA API:
+// CUDAGETERRORNAME-NEXT:   cudaGetErrorName(e /*cudaError_t*/);
+// CUDAGETERRORNAME-NEXT: Is migrated to:
+// CUDAGETERRORNAME-NEXT:   /*
+// CUDAGETERRORNAME-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// CUDAGETERRORNAME-NEXT:   */
+// CUDAGETERRORNAME-NEXT:   "<Placeholder string>";
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetErrorString | FileCheck %s -check-prefix=CUDAGETERRORSTRING
+// CUDAGETERRORSTRING: CUDA API:
+// CUDAGETERRORSTRING-NEXT:   cudaGetErrorString(e /*cudaError_t*/);
+// CUDAGETERRORSTRING-NEXT: Is migrated to:
+// CUDAGETERRORSTRING-NEXT:   /*
+// CUDAGETERRORSTRING-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// CUDAGETERRORSTRING-NEXT:   */
+// CUDAGETERRORSTRING-NEXT:   "<Placeholder string>";
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetLastError | FileCheck %s -check-prefix=CUDAGETLASTERROR
 // CUDAGETLASTERROR: CUDA API:
 // CUDAGETLASTERROR-NEXT:   cudaGetLastError();
@@ -216,12 +243,18 @@
 // CUDASTREAMGETFLAGS: CUDA API:
 // CUDASTREAMGETFLAGS-NEXT:   cudaStreamGetFlags(s /*cudaStream_t*/, f /*unsigned int **/);
 // CUDASTREAMGETFLAGS-NEXT: Is migrated to:
+// CUDASTREAMGETFLAGS-NEXT:   /*
+// CUDASTREAMGETFLAGS-NEXT:   DPCT1014:0: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
+// CUDASTREAMGETFLAGS-NEXT:   */
 // CUDASTREAMGETFLAGS-NEXT:   *(f) = 0;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamGetPriority | FileCheck %s -check-prefix=CUDASTREAMGETPRIORITY
 // CUDASTREAMGETPRIORITY: CUDA API:
 // CUDASTREAMGETPRIORITY-NEXT:   cudaStreamGetPriority(s /*cudaStream_t*/, pi /*int **/);
 // CUDASTREAMGETPRIORITY-NEXT: Is migrated to:
+// CUDASTREAMGETPRIORITY-NEXT:   /*
+// CUDASTREAMGETPRIORITY-NEXT:   DPCT1014:0: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
+// CUDASTREAMGETPRIORITY-NEXT:   */
 // CUDASTREAMGETPRIORITY-NEXT:   *(pi) = 0;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamQuery | FileCheck %s -check-prefix=CUDASTREAMQUERY
@@ -279,7 +312,7 @@
 // CUDAEVENTQUERY-NEXT:   cudaEventQuery(e /*cudaEvent_t*/);
 // CUDAEVENTQUERY-NEXT: Is migrated to:
 // CUDAEVENTQUERY-NEXT:   dpct::event_ptr e;
-// CUDAEVENTQUERY-NEXT:   (int)e->get_info<sycl::info::event::command_execution_status>();
+// CUDAEVENTQUERY-NEXT:   e->get_info<sycl::info::event::command_execution_status>();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventRecord | FileCheck %s -check-prefix=CUDAEVENTRECORD
 // CUDAEVENTRECORD: CUDA API:
@@ -318,6 +351,17 @@
 // CUDAFUNCSETSHAREDMEMCONFIG-NEXT:   cudaFuncSetSharedMemConfig(pFunc /*const void **/, s /*cudaSharedMemConfig*/);
 // CUDAFUNCSETSHAREDMEMCONFIG-NEXT: The API is Removed.
 // CUDAFUNCSETSHAREDMEMCONFIG-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaLaunchKernel | FileCheck %s -check-prefix=CUDALAUNCHKERNEL
+// CUDALAUNCHKERNEL: CUDA API:
+// CUDALAUNCHKERNEL-NEXT:   cudaLaunchKernel(f /*cudaError_t*/, gridDim /*dim3*/, blockDim /*dim3*/,
+// CUDALAUNCHKERNEL-NEXT:                    args /*void ***/, sharedMem /*size_t*/, s /*cudaStream_t*/);
+// CUDALAUNCHKERNEL-NEXT: Is migrated to:
+// CUDALAUNCHKERNEL-NEXT:   s->parallel_for(
+// CUDALAUNCHKERNEL-NEXT:     sycl::nd_range<3>(gridDim * blockDim, blockDim),
+// CUDALAUNCHKERNEL-NEXT:     [=](sycl::nd_item<3> item_ct1) {
+// CUDALAUNCHKERNEL-NEXT:       f();
+// CUDALAUNCHKERNEL-NEXT:     });
 
 /// Occupancy
 
