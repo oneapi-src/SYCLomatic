@@ -8,7 +8,7 @@
 // CHECK-NEXT:   UserStruct1() {}
 // CHECK-NEXT:   UserStruct1(UserStruct1 const &) {}
 // CHECK-NEXT: };
-// CHECK-NEXT: template <class T1, class T2> 
+// CHECK-NEXT: template <class T1, class T2>
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct1<T1, T2>> : std::true_type {};
 // CHECK-NEXT: struct UserStruct2 {
 // CHECK-NEXT:   UserStruct2() {}
@@ -40,7 +40,7 @@ void foo1() {
 // CHECK-NEXT:   UserStruct3() {}
 // CHECK-NEXT:   UserStruct3(UserStruct3 const &) {}
 // CHECK-NEXT: };
-// CHECK-NEXT: template <class T1, class T2> 
+// CHECK-NEXT: template <class T1, class T2>
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct3<T1, T2>> : std::true_type {};
 // CHECK-NEXT: struct UserStruct4 {
 // CHECK-NEXT:   UserStruct4() {}
@@ -78,7 +78,7 @@ void foo2() {
 // CHECK-NEXT:   UserStruct6() {}
 // CHECK-NEXT:   UserStruct6(UserStruct6 const &) {}
 // CHECK-NEXT: };
-// CHECK-NEXT: template <class T> 
+// CHECK-NEXT: template <class T>
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct6<T>> : std::true_type {};
 struct UserStruct5 {
   UserStruct5() {}
