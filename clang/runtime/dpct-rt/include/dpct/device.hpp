@@ -670,20 +670,21 @@ public:
       }
       id++;
     }
-    throw std::runtime_error("Cannot find the device[" +
-                             dev.get_info<sycl::info::device::name>() +
-                             "] in current device list!")
+    throw std::runtime_error(
+        "The device[" + dev.get_info<sycl::info::device::name>() +
+        "] is filtered out by dev_mgr::filter/filter_device in current device "
+        "list!")
   }
 
-/// Filter out device that doesn't contain one of the subnames.
-/// May break device id mapping and change current device.
-  void filter(const std::vector<std::string> &subnames) {
+  /// Filter out devices; only keep the device with the name specified.
+  /// May break device id mapping and change current device.
+  void filter(const std::vector<std::string> &dev_subnames) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     auto iter = _devs.begin();
     while (iter != _devs.end()) {
       std::string dev_name = (*iter)->get_info<sycl::info::device::name>();
       bool matched = false;
-      for (const auto &name : dev_name) {
+      for (const auto &name : dev_subnames) {
         if (dev_name.find(name)) {
           matched = true;
           break;
@@ -693,6 +694,13 @@ public:
         ++iter;
       else
         iter = _devs.erase(iter);
+    }
+    _cpu_device = -1;
+    for (unsigned i = 0; i < _devs.size(); ++i) {
+      if (_devs[i]->is_cpu()) {
+        _cpu_device = i;
+        break;
+      }
     }
     _thread2dev_map.clear();
   }
@@ -811,10 +819,10 @@ select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
   dev_mgr::instance().select_device(selector);
 }
 
-/// Filter out device that doesn't contain one of the subnames.
+/// Filter out devices; only keep the device with the name specified.
 /// May break device id mapping and change current device.
-static inline void filter_device(const std::vector<std::string> &subnames) {
-  dev_mgr::instance().filter(subnames);
+static inline void filter_device(const std::vector<std::string> &dev_subnames) {
+  dev_mgr::instance().filter(dev_subnames);
 }
 
 static inline unsigned int get_device_id(const sycl::device &dev){
