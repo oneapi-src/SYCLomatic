@@ -261,7 +261,7 @@ public:
 
 private:
   queue_ptr _queue_ptr = &dpct::get_default_queue();
-  math_mode _mm = math_mode::other;
+  math_mode _mm = math_mode::_default;
   static inline queue_ptr _saved_queue_ptr = &dpct::get_default_queue();
 };
 
@@ -1502,9 +1502,9 @@ inline oneapi::mkl::blas::compute_mode deduce_compute_mode(compute_type ct,
   default:
     [[fallthrough]];
   }
-  if (mm == math_mode::tf32)
+  if (mm == math_mode::_tf32_tensor_op)
     return oneapi::mkl::blas::compute_mode::float_to_tf32;
-  return oneapi::mkl::blas::compute_mode::_default;
+  return oneapi::mkl::blas::compute_mode::unset;
 }
 
 inline oneapi::mkl::blas::compute_mode
@@ -1545,8 +1545,7 @@ inline void gemm(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
                            "Project does not support this API.");
 #else
   sycl::queue q = desc_ptr->get_queue();
-  oneapi::mkl::blas::compute_mode cm =
-      oneapi::mkl::blas::compute_mode::_default;
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
   library_data_t scaling_type;
   if (auto ct_p = std::get_if<compute_type>(&ct)) {
     cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
@@ -1704,8 +1703,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
 #else
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
-  oneapi::mkl::blas::compute_mode cm =
-      oneapi::mkl::blas::compute_mode::_default;
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
 #endif
   library_data_t scaling_type;
   if (auto ct_p = std::get_if<compute_type>(&ct)) {
@@ -1881,8 +1879,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
                        std::variant<compute_type, library_data_t> ct) {
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
-  oneapi::mkl::blas::compute_mode cm =
-      oneapi::mkl::blas::compute_mode::_default;
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
 #endif
   library_data_t scaling_type;
   if (auto ct_p = std::get_if<compute_type>(&ct)) {
@@ -2109,8 +2106,7 @@ inline void trsm_batch(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
 #else
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
-  oneapi::mkl::blas::compute_mode cm =
-      oneapi::mkl::blas::compute_mode::_default;
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
   if (auto ct_p = std::get_if<compute_type>(&ct))
     cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
                              a_type == library_data_t::complex_float ||
