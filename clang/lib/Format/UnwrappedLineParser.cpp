@@ -135,6 +135,12 @@ private:
 
 } // end anonymous namespace
 
+std::ostream &operator<<(std::ostream &Stream, const UnwrappedLine &Line) {
+  llvm::raw_os_ostream OS(Stream);
+  printLine(OS, Line);
+  return Stream;
+}
+
 class ScopedLineState {
 public:
   ScopedLineState(UnwrappedLineParser &Parser,
@@ -202,9 +208,9 @@ UnwrappedLineParser::UnwrappedLineParser(
     llvm::SpecificBumpPtrAllocator<FormatToken> &Allocator,
     IdentifierTable &IdentTable)
     : Line(new UnwrappedLine), MustBreakBeforeNextToken(false),
-      CurrentLines(&Lines), Style(Style), Keywords(Keywords),
-      CommentPragmasRegex(Style.CommentPragmas), Tokens(nullptr),
-      Callback(Callback), AllTokens(Tokens), PPBranchLevel(-1),
+      CurrentLines(&Lines), Style(Style), IsCpp(Style.isCpp()),
+      Keywords(Keywords), CommentPragmasRegex(Style.CommentPragmas),
+      Tokens(nullptr), Callback(Callback), AllTokens(Tokens), PPBranchLevel(-1),
       IncludeGuard(Style.IndentPPDirectives == FormatStyle::PPDIS_None
                        ? IG_Rejected
                        : IG_Inited),
@@ -618,8 +624,8 @@ void UnwrappedLineParser::calculateBraceTypes(bool ExpectClassBody) {
                                (Style.isJavaScript() &&
                                 NextTok->isOneOf(Keywords.kw_of, Keywords.kw_in,
                                                  Keywords.kw_as));
-          ProbablyBracedList = ProbablyBracedList ||
-                               (Style.isCpp() && NextTok->is(tok::l_paren));
+          ProbablyBracedList =
+              ProbablyBracedList || (IsCpp && NextTok->is(tok::l_paren));
 
           // If there is a comma, semicolon or right paren after the closing
           // brace, we assume this is a braced initializer list.
@@ -1276,7 +1282,6 @@ void UnwrappedLineParser::parsePPUnknown() {
 static bool tokenCanStartNewLine(const FormatToken &Tok) {
   // Semicolon can be a null-statement, l_square can be a start of a macro or
   // a C++11 attribute, but this doesn't seem to be common.
-  assert(Tok.isNot(TT_AttributeSquare));
   return !Tok.isOneOf(tok::semi, tok::l_brace,
                       // Tokens that can only be used as binary operators and a
                       // part of overloaded operator names.
@@ -1501,7 +1506,7 @@ void UnwrappedLineParser::parseStructuralElement(
     return;
   }
 
-  if (Style.isCpp()) {
+  if (IsCpp) {
     while (FormatTok->is(tok::l_square) && handleCppAttributes()) {
     }
   } else if (Style.isVerilog()) {
@@ -1679,7 +1684,7 @@ void UnwrappedLineParser::parseStructuralElement(
       parseJavaScriptEs6ImportExport();
       return;
     }
-    if (Style.isCpp()) {
+    if (IsCpp) {
       nextToken();
       if (FormatTok->is(tok::kw_namespace)) {
         parseNamespace();
@@ -1723,12 +1728,11 @@ void UnwrappedLineParser::parseStructuralElement(
         addUnwrappedLine();
         return;
       }
-      if (Style.isCpp() && parseModuleImport())
+      if (IsCpp && parseModuleImport())
         return;
     }
-    if (Style.isCpp() &&
-        FormatTok->isOneOf(Keywords.kw_signals, Keywords.kw_qsignals,
-                           Keywords.kw_slots, Keywords.kw_qslots)) {
+    if (IsCpp && FormatTok->isOneOf(Keywords.kw_signals, Keywords.kw_qsignals,
+                                    Keywords.kw_slots, Keywords.kw_qslots)) {
       nextToken();
       if (FormatTok->is(tok::colon)) {
         nextToken();
@@ -1736,11 +1740,11 @@ void UnwrappedLineParser::parseStructuralElement(
         return;
       }
     }
-    if (Style.isCpp() && FormatTok->is(TT_StatementMacro)) {
+    if (IsCpp && FormatTok->is(TT_StatementMacro)) {
       parseStatementMacro();
       return;
     }
-    if (Style.isCpp() && FormatTok->is(TT_NamespaceMacro)) {
+    if (IsCpp && FormatTok->is(TT_NamespaceMacro)) {
       parseNamespace();
       return;
     }
@@ -1836,7 +1840,7 @@ void UnwrappedLineParser::parseStructuralElement(
       }
       break;
     case tok::kw_requires: {
-      if (Style.isCpp()) {
+      if (IsCpp) {
         bool ParsedClause = parseRequires();
         if (ParsedClause)
           return;
@@ -1857,7 +1861,7 @@ void UnwrappedLineParser::parseStructuralElement(
       if (!parseEnum())
         break;
       // This only applies to C++ and Verilog.
-      if (!Style.isCpp() && !Style.isVerilog()) {
+      if (!IsCpp && !Style.isVerilog()) {
         addUnwrappedLine();
         return;
       }
@@ -1925,7 +1929,7 @@ void UnwrappedLineParser::parseStructuralElement(
       parseParens();
       // Break the unwrapped line if a K&R C function definition has a parameter
       // declaration.
-      if (OpeningBrace || !Style.isCpp() || !Previous || eof())
+      if (OpeningBrace || !IsCpp || !Previous || eof())
         break;
       if (isC78ParameterDecl(FormatTok,
                              Tokens->peekNextToken(/*SkipComment=*/true),
@@ -1943,8 +1947,7 @@ void UnwrappedLineParser::parseStructuralElement(
     case tok::caret:
       nextToken();
       // Block return type.
-      if (FormatTok->Tok.isAnyIdentifier() ||
-          FormatTok->isSimpleTypeSpecifier()) {
+      if (FormatTok->Tok.isAnyIdentifier() || FormatTok->isTypeName(IsCpp)) {
         nextToken();
         // Return types: pointers are ok too.
         while (FormatTok->is(tok::star))
@@ -2059,13 +2062,13 @@ void UnwrappedLineParser::parseStructuralElement(
         }
       }
 
-      if (!Style.isCpp() && FormatTok->is(Keywords.kw_interface)) {
+      if (!IsCpp && FormatTok->is(Keywords.kw_interface)) {
         if (parseStructLike())
           return;
         break;
       }
 
-      if (Style.isCpp() && FormatTok->is(TT_StatementMacro)) {
+      if (IsCpp && FormatTok->is(TT_StatementMacro)) {
         parseStatementMacro();
         return;
       }
@@ -2293,7 +2296,7 @@ bool UnwrappedLineParser::tryToParsePropertyAccessor() {
 
 bool UnwrappedLineParser::tryToParseLambda() {
   assert(FormatTok->is(tok::l_square));
-  if (!Style.isCpp()) {
+  if (!IsCpp) {
     nextToken();
     return false;
   }
@@ -2305,7 +2308,7 @@ bool UnwrappedLineParser::tryToParseLambda() {
   bool InTemplateParameterList = false;
 
   while (FormatTok->isNot(tok::l_brace)) {
-    if (FormatTok->isSimpleTypeSpecifier()) {
+    if (FormatTok->isTypeName(IsCpp)) {
       nextToken();
       continue;
     }
@@ -2422,7 +2425,7 @@ bool UnwrappedLineParser::tryToParseLambdaIntroducer() {
                      !Previous->isOneOf(tok::kw_return, tok::kw_co_await,
                                         tok::kw_co_yield, tok::kw_co_return)) ||
                     Previous->closesScope())) ||
-      LeftSquare->isCppStructuredBinding(Style)) {
+      LeftSquare->isCppStructuredBinding(IsCpp)) {
     return false;
   }
   if (FormatTok->is(tok::l_square) || tok::isLiteral(FormatTok->Tok.getKind()))
@@ -3261,7 +3264,7 @@ void UnwrappedLineParser::parseForOrWhileLoop(bool HasParens) {
   // JS' for await ( ...
   if (Style.isJavaScript() && FormatTok->is(Keywords.kw_await))
     nextToken();
-  if (Style.isCpp() && FormatTok->is(tok::kw_co_await))
+  if (IsCpp && FormatTok->is(tok::kw_co_await))
     nextToken();
   if (HasParens && FormatTok->is(tok::l_paren)) {
     // The type is only set for Verilog basically because we were afraid to
@@ -3530,7 +3533,7 @@ bool clang::format::UnwrappedLineParser::parseRequires() {
     break;
   }
   default:
-    if (PreviousNonComment->isTypeOrIdentifier()) {
+    if (PreviousNonComment->isTypeOrIdentifier(IsCpp)) {
       // This is a requires clause.
       parseRequiresClause(RequiresToken);
       return true;
@@ -3593,7 +3596,7 @@ bool clang::format::UnwrappedLineParser::parseRequires() {
       --OpenAngles;
       break;
     default:
-      if (NextToken->isSimpleTypeSpecifier()) {
+      if (NextToken->isTypeName(IsCpp)) {
         FormatTok = Tokens->setPosition(StoredPosition);
         parseRequiresExpression(RequiresToken);
         return false;
@@ -3826,14 +3829,19 @@ bool UnwrappedLineParser::parseEnum() {
   if (Style.Language == FormatStyle::LK_Proto && FormatTok->is(tok::equal))
     return false;
 
-  // Eat up enum class ...
-  if (FormatTok->isOneOf(tok::kw_class, tok::kw_struct))
-    nextToken();
+  if (IsCpp) {
+    // Eat up enum class ...
+    if (FormatTok->isOneOf(tok::kw_class, tok::kw_struct))
+      nextToken();
+    while (FormatTok->is(tok::l_square))
+      if (!handleCppAttributes())
+        return false;
+  }
 
   while (FormatTok->Tok.getIdentifierInfo() ||
          FormatTok->isOneOf(tok::colon, tok::coloncolon, tok::less,
                             tok::greater, tok::comma, tok::question,
-                            tok::l_square, tok::r_square)) {
+                            tok::l_square)) {
     if (Style.isVerilog()) {
       FormatTok->setFinalizedType(TT_VerilogDimensionedTypeName);
       nextToken();
@@ -3846,12 +3854,11 @@ bool UnwrappedLineParser::parseEnum() {
     // We can have macros or attributes in between 'enum' and the enum name.
     if (FormatTok->is(tok::l_paren))
       parseParens();
-    assert(FormatTok->isNot(TT_AttributeSquare));
     if (FormatTok->is(tok::identifier)) {
       nextToken();
       // If there are two identifiers in a row, this is likely an elaborate
       // return type. In Java, this can be "implements", etc.
-      if (Style.isCpp() && FormatTok->is(tok::identifier))
+      if (IsCpp && FormatTok->is(tok::identifier))
         return false;
     }
   }
@@ -4077,8 +4084,8 @@ void UnwrappedLineParser::parseRecord(bool ParseAsExpr) {
       }
       if (FormatTok->is(tok::l_square)) {
         FormatToken *Previous = FormatTok->Previous;
-        if (!Previous ||
-            !(Previous->is(tok::r_paren) || Previous->isTypeOrIdentifier())) {
+        if (!Previous || (Previous->isNot(tok::r_paren) &&
+                          !Previous->isTypeOrIdentifier(IsCpp))) {
           // Don't try parsing a lambda if we had a closing parenthesis before,
           // it was probably a pointer to an array: int (*)[].
           if (!tryToParseLambda())

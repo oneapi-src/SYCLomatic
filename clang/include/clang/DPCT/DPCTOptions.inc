@@ -354,7 +354,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
                                      false),
              DPCT_OPT_ENUM("assert",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_Assert),
-                                     "Use the assert extension.",
+                                     "Use the assert extension.", false),
+             DPCT_OPT_ENUM("queue_empty",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty),
+                                     "Use the queue empty extension.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"

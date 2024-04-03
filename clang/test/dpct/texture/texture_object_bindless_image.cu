@@ -2,18 +2,18 @@
 // RUN: FileCheck --input-file %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp -o %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.o %}
 
-// CHECK: void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex) {
-__global__ void kernel(cudaTextureObject_t tex) {
+// CHECK: template <typename T> void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex) {
+template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   int i;
   float j, k, l, m;
-  // CHECK: sycl::ext::oneapi::experimental::sample_image<sycl::short2>(tex, (float)i);
-  tex1Dfetch<short2>(tex, i);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image<T>(tex, float(i));
+  tex1Dfetch<T>(tex, i);
   // CHECK: sycl::ext::oneapi::experimental::sample_image<sycl::short2>(tex, float(i));
   tex1D<short2>(tex, i);
   // CHECK: i = sycl::ext::oneapi::experimental::sample_image<int>(tex, float(i));
   tex1D(&i, tex, i);
-  // CHECK: sycl::ext::oneapi::experimental::sample_image<sycl::short2>(tex, sycl::float2(j, k));
-  tex2D<short2>(tex, j, k);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image<T>(tex, sycl::float2(j, k));
+  tex2D<T>(tex, j, k);
   // CHECK: i = sycl::ext::oneapi::experimental::sample_image<int>(tex, sycl::float2(j, k));
   tex2D(&i, tex, j, k);
   // CHECK: sycl::ext::oneapi::experimental::sample_image<sycl::short2>(tex, sycl::float3(j, k, l));
@@ -28,10 +28,27 @@ __global__ void kernel(cudaTextureObject_t tex) {
   tex2DLod<short2>(tex, j, k, l);
   // CHECK: i = sycl::ext::oneapi::experimental::sample_mipmap<int>(tex, sycl::float2(j, k), l);
   tex2DLod(&i, tex, j, k, l);
-  // CHECK: sycl::ext::oneapi::experimental::sample_mipmap<sycl::short2>(tex, sycl::float3(j, k, m), l);
-  tex3DLod<short2>(tex, j, k, m, l);
+  // CHECK: sycl::ext::oneapi::experimental::sample_mipmap<T>(tex, sycl::float3(j, k, m), l);
+  tex3DLod<T>(tex, j, k, m, l);
   // CHECK: i = sycl::ext::oneapi::experimental::sample_mipmap<int>(tex, sycl::float3(j, k, m), l);
   tex3DLod(&i, tex, j, k, m, l);
+#ifndef BUILD_TEST
+  T t;
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, float(i));
+  tex1Dfetch(&t, tex, i);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, float(i));
+  tex1D(&t, tex, i);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, sycl::float2(i, j));
+  tex2D(&t, tex, i, j);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, sycl::float3(i, j, k));
+  tex3D(&t, tex, i, j, k);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_mipmap<dpct_placeholder/*Fix the type mannually*/>(tex, float(i), l);
+  tex1DLod(&t, tex, i, l);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_mipmap<dpct_placeholder/*Fix the type mannually*/>(tex, sycl::float2(i, j), l);
+  tex2DLod(&t, tex, i, j, l);
+  // CHECK: t = sycl::ext::oneapi::experimental::sample_mipmap<dpct_placeholder/*Fix the type mannually*/>(tex, sycl::float3(i, j, k), l);
+  tex3DLod(&t, tex, i, j, k, l);
+#endif
 }
 
 int main() {
@@ -198,9 +215,9 @@ int main() {
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT: sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT: [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:   kernel(tex);
+  // CHECK-NEXT:   kernel<sycl::float4>(tex);
   // CHECK-NEXT: });
-  kernel<<<1, 1>>>(tex);
+  kernel<float4><<<1, 1>>>(tex);
   // CHECK: dpct::experimental::destroy_bindless_image(tex, q_ct1);
   cudaDestroyTextureObject(tex);
   // CHECK: delete pArr;

@@ -1358,6 +1358,18 @@ int DpctGlobalInfo::getSuffixIndexInitValue(std::string FileNameAndOffset) {
     return Res->second;
   }
 }
+
+bool DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(
+    std::shared_ptr<MemVarInfo> Info) {
+  std::string Key = Info->getFilePath().getCanonicalPath().str() +
+                    std::to_string(Info->getOffset()) + Info->getName();
+  if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
+      VarUsedByRuntimeSymbolAPISet.end()) {
+    return false;
+  }
+  return true;
+}
+
 int DpctGlobalInfo::getSuffixIndexInRuleThenInc() {
   int Res = CurrentIndexInRule;
   if (CurrentMaxIndex < Res)
@@ -3132,7 +3144,7 @@ std::string MemVarInfo::getMemoryType(const std::string &MemoryType,
     return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
                        VarType->getDimension(), ">");
   } else {
-    return buildString(MemoryType, VarType->getBaseName());
+    return buildString(MemoryType, VarType->getBaseNameWithoutQualifiers());
   }
 }
 std::string MemVarInfo::getInitArguments(const std::string &MemSize,
@@ -3644,7 +3656,7 @@ MemVarMap::getArgumentsOrParameters(int PreParams, int PostParams,
     GetArgOrParam<MemVarInfo, COD>()(PS, ExternVarMap.begin()->second) << ", ";
   getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap);
   getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap);
-  getArgumentsOrParametersFromMap<TextureInfo, COD>(PS, TextureMap);
+  getArgumentsOrParametersFromoTextureInfoMap<COD>(PS, TextureMap);
   std::string Result = PS.Str;
   return (Result.empty() || PostParams != 0) && PreParams == 0
              ? Result
@@ -3831,6 +3843,11 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
     if (!VI.second->isUseHelperFunc()) {
       continue;
     }
+    if (DpctGlobalInfo::isOptimizeMigration() && VI.second->isConstant() &&
+        !DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(VI.second)) {
+      VI.second->setUseHelperFuncFlag(false);
+      continue;
+    }
     if (PS.FormatInformation.EnableFormat) {
       ParameterStream TPS;
       GetArgOrParam<T, COD>()(TPS, VI.second);
@@ -3840,6 +3857,21 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
     }
   }
 }
+
+template <MemVarMap::CallOrDecl COD>
+void MemVarMap::getArgumentsOrParametersFromoTextureInfoMap(
+    ParameterStream &PS, const GlobalMap<TextureInfo> &VarMap) {
+  for (const auto &VI : VarMap) {
+    if (PS.FormatInformation.EnableFormat) {
+      ParameterStream TPS;
+      GetArgOrParam<TextureInfo, COD>()(TPS, VI.second);
+      PS << TPS.Str;
+    } else {
+      GetArgOrParam<TextureInfo, COD>()(PS, VI.second) << ", ";
+    }
+  }
+}
+
 void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
                                                 int PreParams,
                                                 int PostParams) const {
@@ -3866,7 +3898,7 @@ void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
       PS, GlobalVarMap);
   getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
       PS, LocalVarMap);
-  getArgumentsOrParametersFromMap<TextureInfo, MemVarMap::DeclParameter>(
+  getArgumentsOrParametersFromoTextureInfoMap<MemVarMap::DeclParameter>(
       PS, TextureMap);
 }
 ///// class CallFunctionExpr /////
@@ -3908,7 +3940,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (!CE)
     return;
-  buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts());
+  buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
   buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
   if (auto FD = CE->getDirectCallee()) {
@@ -4113,7 +4145,8 @@ void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   }
   FuncInfo = Info;
 }
-void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
+void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
+                                       std::optional<unsigned int> NumArgs) {
   if (auto CallDecl =
           dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
     Name = getNameWithNamespace(CallDecl, Callee);
@@ -4131,7 +4164,7 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
     if (Unresolved->getQualifier())
       Name = getNestedNameSpecifierString(Unresolved->getQualifier());
     Name += Unresolved->getName().getAsString();
-    setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved));
+    setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved, NumArgs));
     buildTemplateArguments(Unresolved->template_arguments(),
                            Callee->getSourceRange());
   } else if (auto DependentScope =
@@ -4324,8 +4357,29 @@ DeviceFunctionDecl::DeviceFunctionDecl(
   buildTextureObjectParamsInfo(FTL.getParams());
 }
 std::shared_ptr<DeviceFunctionInfo>
-DeviceFunctionDecl::LinkUnresolved(const UnresolvedLookupExpr *ULE) {
-  return LinkDeclRange(ULE->decls(), getFunctionName(ULE));
+DeviceFunctionDecl::LinkUnresolved(const UnresolvedLookupExpr *ULE,
+                                   std::optional<unsigned int> NumArgs) {
+  std::vector<NamedDecl *> List;
+  for (auto *D : ULE->decls()) {
+    if (NumArgs) {
+      const FunctionDecl *FD = dyn_cast<FunctionDecl>(D);
+      if (!FD) {
+        if (const FunctionTemplateDecl *FTD =
+                dyn_cast<FunctionTemplateDecl>(D)) {
+          FD = FTD->getTemplatedDecl();
+        }
+      }
+      if (FD) {
+        if (NumArgs.value() >= FD->getMinRequiredArguments() &&
+            NumArgs.value() <= FD->getNumParams()) {
+          List.push_back(D);
+        }
+      }
+    } else {
+      List.push_back(D);
+    }
+  }
+  return LinkDeclRange(List, getFunctionName(ULE));
 }
 std::shared_ptr<DeviceFunctionInfo>
 DeviceFunctionDecl::LinkRedecls(const FunctionDecl *FD) {
@@ -5419,7 +5473,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       CE);
   Kernel->buildNeedBracesInfo(CE);
   if (auto Callee = getAddressedRef(CE->getArg(0))) {
-    Kernel->buildCalleeInfo(Callee);
+    Kernel->buildCalleeInfo(Callee, std::nullopt);
     auto FD =
         dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());
     auto FuncInfo = Kernel->getFuncInfo();
@@ -5434,7 +5488,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       }
     }
   } else {
-    Kernel->buildCalleeInfo(CE->getArg(0));
+    Kernel->buildCalleeInfo(CE->getArg(0), std::nullopt);
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                              Diagnostics::UNDEDUCED_KERNEL_FUNCTION_POINTER,
                              true, false, Kernel->getName());

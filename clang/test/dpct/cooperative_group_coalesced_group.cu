@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --use-experimental-features=logical-group,non-uniform-groups --usm-level=none -out-root %T/cooperative_group_coalesced_group %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cooperative_group_coalesced_group/cooperative_group_coalesced_group.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/cooperative_group_coalesced_group/cooperative_group_coalesced_group.dp.cpp -o %T/cooperative_group_coalesced_group/cooperative_group_coalesced_group.dp.o %}
