@@ -461,21 +461,61 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      if (!CodeElementExist && Index - PatternSize >= 0 && Index < Size - 1 &&
+      printf("Input: [%s]\n", Input.c_str());
+#if 0 // use for debug print
+  int Count = 0;
+  printf("Pattern start:\n");
+  for (auto Element : Pattern) {
+    if (std::holds_alternative<CodeElement>(Element)) {
+      auto &Code = std::get<CodeElement>(Element);
+      printf("\t[%d]->[%s]:[%d]\n", Count, Code.Name.c_str(),
+             Code.SuffixLength);
+    }
+    if (std::holds_alternative<LiteralElement>(Element)) {
+      const auto &Literal = std::get<LiteralElement>(Element);
+      printf("\t[%d]->[%c]\n", Count, Literal.Value);
+    }
+    if (std::holds_alternative<SpacingElement>(Element)) {
+      printf("\t[%d]->[%s]\n", Count, "space");
+    }
+    Count++;
+  }
+  printf("Pattern end.\n\n");
+#endif
+      // if(Index == 37)
+      // {
+      //   printf("Index:%d Value:%c PatternSize:%d\n", Index, Input[Index],
+      //   PatternSize); printf("Index - PatternSize:%d Value:%c\n", Index -
+      //   PatternSize, Input[Index - PatternSize]); printf("CodeElementExist:%d
+      //   Size:%d\n", CodeElementExist, Size); printf("PatternIndex:%d
+      //   PatternSize:%d\n", PatternIndex, PatternSize);
+      // }
+
+      if (!CodeElementExist && Index - PatternSize >= 0 && Index <= Size - 1 &&
           PatternIndex == PatternSize - 1) {
+        // printf("Index - PatternSize:%d Value:%c\n", Index - PatternSize,
+        // Input[Index - PatternSize]); printf("Index:%d Value:%c\n", Index,
+        // Input[Index]);
+
         if (!isIdentifiedChar(Input[Index - PatternSize]) &&
             !isIdentifiedChar(Input[Index + 1])) {
-
-          if (Input[Index - PatternSize] != '{' && Input[Index + 1] != '}' &&
+          if (Index < Size - 1 && Input[Index - PatternSize] != '{' &&
+              Input[Index + 1] != '}' &&
               !isWhitespace(Input[Index - PatternSize]) &&
               !isWhitespace(Input[Index + 1]) &&
               Input[Index - PatternSize] != '*') {
+            // printf("00 return %d  [%c]\n", Index - PatternSize, Input[Index -
+            // PatternSize]); printf("00 return %d  [%c]\n", Index + 1,
+            // Input[Index + 1]);
             return {};
           }
         }
 
         if (isIdentifiedChar(Input[Index - PatternSize]) &&
             Input[Index - PatternSize + 1] != '.') {
+          // printf("return %d  %c\n", Index - PatternSize, Input[Index -
+          // PatternSize]); printf("return %d  %c\n", Index - PatternSize + 1,
+          // Input[Index - PatternSize + 1]);
           return {};
         }
       }
