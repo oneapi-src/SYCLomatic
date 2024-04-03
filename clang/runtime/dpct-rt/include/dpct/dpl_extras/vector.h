@@ -463,7 +463,7 @@ public:
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
   pointer data(void) { return pointer(_storage); }
-  const_pointer data(void) const { return pointer(_storage); }
+  const_pointer data(void) const { return const_pointer(_storage); }
   void shrink_to_fit(void) {
     if (_size != capacity() && capacity() > _min_capacity()) {
       size_type tmp_capacity = ::std::max(_size, _min_capacity());
