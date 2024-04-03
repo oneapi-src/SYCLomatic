@@ -171,7 +171,7 @@ private:
   Allocator _alloc;
   size_type _size;
   size_type _capacity;
-  T* _storage;
+  T *_storage;
 
   size_type _min_capacity() const { return size_type(1); }
 
@@ -850,7 +850,7 @@ public:
   reference front() { return *begin(); }
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
-  pointer data(void) { return pointer(reinterpret_cast<T*>(_storage)); }
+  pointer data(void) { return pointer(reinterpret_cast<T *>(_storage)); }
   const_pointer data(void) const {
     return const_pointer(reinterpret_cast<const_pointer>(_storage));
   }
