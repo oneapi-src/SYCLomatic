@@ -112,6 +112,9 @@ const std::unordered_map<std::string /*command*/, bool /*need lower*/>
         {"cuda_include_directories", 1},
         {"cuda_link_separable_compilation_objects", 0},
         {"cuda_select_nvcc_arch_flags", 0},
+        {"cuda_unset_include_and_libraries", 0},
+        {"cuda_include_nvcc_dependencies", 0},
+        {"cuda_language_flag", 0},
         {"cuda_wrap_srcs", 0},
 
 };
@@ -597,7 +600,8 @@ void applyImplicitMigrationRule(std::string &Input,
   }
 }
 
-static std::string convertCmakeCommandsToLower(const std::string &InputString, const std::string FileName) {
+static std::string convertCmakeCommandsToLower(const std::string &InputString,
+                                               const std::string FileName) {
   std::stringstream OutputStream;
 
   const auto Lines = split(InputString, '\n');
