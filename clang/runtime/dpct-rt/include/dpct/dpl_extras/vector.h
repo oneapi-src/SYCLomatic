@@ -852,7 +852,7 @@ public:
   reference back(void) { return *(end() - 1); }
   pointer data(void) { return pointer(reinterpret_cast<T *>(_storage)); }
   const_pointer data(void) const {
-    return const_pointer(reinterpret_cast<const_pointer>(_storage));
+    return const_pointer(reinterpret_cast<T *>(_storage));
   }
   void shrink_to_fit(void) {
     if (_size != capacity()) {
