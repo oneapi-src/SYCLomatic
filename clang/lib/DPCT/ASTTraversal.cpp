@@ -1721,17 +1721,18 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
               "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
               "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
-              "cusparseIndexBase_t", "cusparseMatrixType_t", "cusparseAlgMode_t",
-              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
-              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
-              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
-              "cublasDataType_t", "curandState_t", "curandState",
-              "curandStateXORWOW_t", "curandStateXORWOW",
-              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
-              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
-              "thrust::negate", "thrust::logical_or", "thrust::equal_to",
-              "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
-              "curandRngType_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
+              "cusparseIndexBase_t", "cusparseMatrixType_t",
+              "cusparseAlgMode_t", "cusparseOperation_t", "cusparseMatDescr_t",
+              "cusparseHandle_t", "CUcontext", "cublasPointerMode_t",
+              "cusparsePointerMode_t", "cublasGemmAlgo_t",
+              "cusparseSolveAnalysisInfo_t", "cudaDataType", "cublasDataType_t",
+              "curandState_t", "curandState", "curandStateXORWOW_t",
+              "curandStateXORWOW", "curandStatePhilox4_32_10_t",
+              "curandStatePhilox4_32_10", "curandStateMRG32k3a_t",
+              "curandStateMRG32k3a", "thrust::minus", "thrust::negate",
+              "thrust::logical_or", "thrust::equal_to", "thrust::less",
+              "cudaSharedMemConfig", "curandGenerator_t", "curandRngType_t",
+              "curandOrdering_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
               "cufftComplex", "cufftDoubleComplex", "cufftResult_t",
               "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
               "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
@@ -1749,7 +1750,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
               "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t", "CUuuid",
-              "cusparseSpSVAlg_t", "cudaFuncAttributes", "cudaLaunchAttributeValue"))))))
+              "cusparseSpSVAlg_t", "cudaFuncAttributes",
+              "cudaLaunchAttributeValue"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3502,6 +3504,8 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
                       .getName()
                       .getAsString() == "cuEventQuery"))) {
           MatchFunction = true;
+          auto *Call = LHSCall ? LHSCall : RHSCall;
+          emplaceTransformation(new InsertBeforeStmt(Call, "(int)"));
           break;
         }
       }
@@ -3673,6 +3677,10 @@ void RandomEnumsRule::registerMatcher(MatchFinder &MF) {
       declRefExpr(to(enumConstantDecl(matchesName("CURAND_STATUS.*"))))
           .bind("RANDOMStatusConstants"),
       this);
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName("CURAND_ORDERING.*"))))
+          .bind("RANDOMOrderingConstants"),
+      this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CURAND_RNG.*"))))
                     .bind("RandomTypeEnum"),
                 this);
@@ -3683,6 +3691,16 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "RANDOMStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
+  }
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "RANDOMOrderingConstants")) {
+    std::string EnumStr = DE->getNameInfo().getName().getAsString();
+    auto Search = MapNames::RandomOrderingTypeMap.find(EnumStr);
+    if (Search == MapNames::RandomOrderingTypeMap.end()) {
+      report(DE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumStr);
+      return;
+    }
+    emplaceTransformation(new ReplaceStmt(DE, Search->second));
   }
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "RandomTypeEnum")) {
@@ -3905,7 +3923,7 @@ void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "curandGenerateNormal", "curandGenerateNormalDouble",
         "curandGeneratePoisson", "curandGenerateUniform",
         "curandGenerateUniformDouble", "curandSetStream",
-        "curandCreateGeneratorHost");
+        "curandCreateGeneratorHost", "curandSetGeneratorOrdering");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -4030,6 +4048,9 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         buildString(ExprAnalysis::ref(CE->getArg(0)), "->set_queue(",
                     ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,
@@ -4307,8 +4328,25 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasSsymm", "cublasDsymm", "cublasCsymm", "cublasZsymm",
         "cublasChemm", "cublasZhemm", "cublasStrsm", "cublasDtrsm",
         "cublasCtrsm", "cublasZtrsm", "cublasStrmm", "cublasDtrmm",
-        "cublasCtrmm", "cublasZtrmm", "cublasSgemm_v2_64", "cublasDgemm_v2_64",
-        "cublasCgemm_v2_64", "cublasZgemm_v2_64", "cublasCgemm_v2_64",
+        "cublasCtrmm", "cublasZtrmm",
+        /*64-bit API*/
+        /*level 1*/
+        "cublasIsamax_v2_64", "cublasIdamax_v2_64", "cublasIcamax_v2_64",
+        "cublasIzamax_v2_64", "cublasIsamin_v2_64", "cublasIdamin_v2_64",
+        "cublasIcamin_v2_64", "cublasIzamin_v2_64", "cublasSnrm2_v2_64",
+        "cublasDnrm2_v2_64", "cublasScnrm2_v2_64", "cublasDznrm2_v2_64",
+        "cublasSdot_v2_64", "cublasDdot_v2_64", "cublasCdotu_v2_64",
+        "cublasCdotc_v2_64", "cublasZdotu_v2_64", "cublasZdotc_v2_64",
+        "cublasSscal_v2_64", "cublasDscal_v2_64", "cublasCscal_v2_64",
+        "cublasCsscal_v2_64", "cublasZscal_v2_64", "cublasZdscal_v2_64",
+        "cublasSaxpy_v2_64", "cublasDaxpy_v2_64", "cublasCaxpy_v2_64",
+        "cublasZaxpy_v2_64", "cublasScopy_v2_64", "cublasDcopy_v2_64",
+        "cublasCcopy_v2_64", "cublasZcopy_v2_64", "cublasSswap_v2_64",
+        "cublasDswap_v2_64", "cublasCswap_v2_64", "cublasZswap_v2_64",
+        "cublasSasum_v2_64", "cublasDasum_v2_64", "cublasScasum_v2_64",
+        "cublasDzasum_v2_64",
+        /*level 3*/
+        "cublasSgemm_v2_64", "cublasDgemm_v2_64", "cublasCgemm_v2_64",
         "cublasZgemm_v2_64", "cublasSsyrk_v2_64", "cublasDsyrk_v2_64",
         "cublasCsyrk_v2_64", "cublasZsyrk_v2_64", "cublasSsymm_v2_64",
         "cublasDsymm_v2_64", "cublasCsymm_v2_64", "cublasZsymm_v2_64",
@@ -4556,18 +4594,12 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         } else {
           std::string BufferDecl = "";
           std::string BufferName = "";
-          auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
           auto MaySyncAPIIWithMultiArgsIter =
               MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
-          if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
-              i == MaySyncAPIIter->second.second) {
-            BufferName = processSyncAPIBufferArg(
-                FuncName, CE, PrefixInsertStr, IndentStr,
-                MaySyncAPIIter->second.first, i);
-          } else if (MaySyncAPIIWithMultiArgsIter !=
-                         MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
-                     MaySyncAPIIWithMultiArgsIter->second.find(i) !=
-                         MaySyncAPIIWithMultiArgsIter->second.end()) {
+          if (MaySyncAPIIWithMultiArgsIter !=
+                  MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
+              MaySyncAPIIWithMultiArgsIter->second.find(i) !=
+                  MaySyncAPIIWithMultiArgsIter->second.end()) {
             auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
             BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
                                                  IndentStr, ArgIter->second, i);
@@ -4617,11 +4649,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
     }
 
-    if (FuncName == "cublasIsamax_v2" || FuncName == "cublasIdamax_v2" ||
-        FuncName == "cublasIsamin_v2" || FuncName == "cublasIdamin_v2") {
-      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
-    }
-
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       if (FuncName == "cublasSrotm_v2") {
         CallExprArguReplVec[6] =
@@ -4631,9 +4658,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             "const_cast<double*>(" + CallExprArguReplVec[6] + ")";
       }
       addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
-      if (MapNames::MustSyncBLASFunc.find(FuncName) !=
-          MapNames::MustSyncBLASFunc.end())
-        NeedWaitAPICall = true;
     } else {
       printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
     }
@@ -4713,18 +4737,12 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         } else {
           std::string BufferDecl = "";
           std::string BufferName = "";
-          auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
           auto MaySyncAPIIWithMultiArgsIter =
               MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
-          if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
-              i == MaySyncAPIIter->second.second) {
-            BufferName = processSyncAPIBufferArg(
-                FuncName, CE, PrefixInsertStr, IndentStr,
-                MaySyncAPIIter->second.first, i);
-          } else if (MaySyncAPIIWithMultiArgsIter !=
-                         MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
-                     MaySyncAPIIWithMultiArgsIter->second.find(i) !=
-                         MaySyncAPIIWithMultiArgsIter->second.end()) {
+          if (MaySyncAPIIWithMultiArgsIter !=
+                  MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
+              MaySyncAPIIWithMultiArgsIter->second.find(i) !=
+                  MaySyncAPIIWithMultiArgsIter->second.end()) {
             auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
             BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
                                                  IndentStr, ArgIter->second, i);
@@ -4776,16 +4794,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
     }
 
-    if (FuncName == "cublasIcamax_v2" || FuncName == "cublasIzamax_v2" ||
-        FuncName == "cublasIcamin_v2" || FuncName == "cublasIzamin_v2") {
-      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
-    }
-
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
-      if (MapNames::MustSyncBLASFunc.find(FuncName) !=
-          MapNames::MustSyncBLASFunc.end())
-        NeedWaitAPICall = true;
     } else {
       printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
     }
@@ -6263,8 +6273,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
-        "cudaStreamSetAttribute", "cudaStreamGetAttribute",
-        "cudaFuncSetAttribute", "__trap");
+        "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaProfilerStart",
+        "cudaProfilerStop", "cudaFuncSetAttribute", "__trap");
   };
 
   MF.addMatcher(
@@ -7090,7 +7100,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     ExprAnalysis EA(CE->getArg(0));
-    std::string ReplStr = "(int)" + EA.getReplacedString() + "->get_info<" +
+    std::string ReplStr = EA.getReplacedString() + "->get_info<" +
                           MapNames::getClNamespace() +
                           "info::event::command_execution_status>()";
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
@@ -8366,6 +8376,36 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
              FuncName == "cudaStreamQuery") {
+
+    // if extension feature sycl_ext_oneapi_queue_empty is used, member
+    // functions "ext_oneapi_empty" in SYCL queue is used to map
+    // cudaStreamQuery.
+    if (FuncName == "cudaStreamQuery" && DpctGlobalInfo::useQueueEmpty()) {
+      auto StreamArg = CE->getArg(0);
+      bool IsDefaultStream = isDefaultStream(StreamArg);
+      std::string StreamName;
+      std::string ReplStr;
+      if (IsDefaultStream) {
+        if (isPlaceholderIdxDuplicated(CE))
+          return;
+        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+        buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+        StreamName = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
+        ReplStr = StreamName + "ext_oneapi_empty()";
+      } else {
+        StreamName = getStmtSpelling(StreamArg);
+        if (needExtraParensInMemberExpr(StreamArg)) {
+          StreamName = "(" + StreamName + ")";
+        }
+        ReplStr = StreamName + "->" + "ext_oneapi_empty()";
+      }
+      if (IsAssigned) {
+        ReplStr = "DPCT_CHECK_ERROR((" + ReplStr + "))";
+      }
+      emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+      return;
+    }
+
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -9102,18 +9142,6 @@ void ConstantMemVarMigrationRule::registerMatcher(MatchFinder &MF) {
 void ConstantMemVarMigrationRule::runRule(
     const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
-  auto IsVarUsedByRuntimeSymbolAPI = [&](const VarDecl *VarD) {
-    auto &VarUsedByRuntimeSymbolAPISet =
-        DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
-    auto LocInfo = DpctGlobalInfo::getLocInfo(VarD->getBeginLoc());
-    std::string Key = LocInfo.first.getCanonicalPath().str() +
-                      std::to_string(LocInfo.second) + VarD->getNameAsString();
-    if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
-        VarUsedByRuntimeSymbolAPISet.end()) {
-      return false;
-    }
-    return true;
-  };
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
       return;
@@ -9132,7 +9160,7 @@ void ConstantMemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (DpctGlobalInfo::isOptimizeMigration()) {
-      if (!IsVarUsedByRuntimeSymbolAPI(MemVar)) {
+      if (!DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(Info)) {
         Info->setUseHelperFuncFlag(false);
       }
     }
@@ -9576,7 +9604,7 @@ void MemVarAnalysisRule::processTypeDeclaredLocal(
 void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
-    if (isCubVar(MemVar)) {
+    if (isCubVar(MemVar) || MemVar->hasAttr<CUDAConstantAttr>()) {
       return;
     }
     CanonicalType = MemVar->getType().getCanonicalType().getAsString();
@@ -13234,6 +13262,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaCreateChannelDescHalf4",
       "cudaUnbindTexture",
       "cudaBindTextureToArray",
+      "cudaBindTextureToMipmappedArray",
       "cudaBindTexture",
       "cudaBindTexture2D",
       "tex1D",
@@ -13276,11 +13305,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(callExpr(callee(functionDecl(hasAnyFuncName()))).bind("call"),
                 this);
 
-  MF.addMatcher(unresolvedLookupExpr(
-                    hasAnyDeclaration(namedDecl(hasAnyFuncName())),
-                    hasParent(callExpr(unless(parentStmt())).bind("callExpr")))
-                    .bind("unresolvedLookupExpr"),
-                this);
+  MF.addMatcher(
+      unresolvedLookupExpr(hasAnyDeclaration(namedDecl(hasAnyFuncName())),
+                           hasParent(callExpr().bind("callExpr")))
+          .bind("unresolvedLookupExpr"),
+      this);
 }
 
 bool TextureRule::removeExtraMemberAccess(const MemberExpr *ME) {
@@ -14902,7 +14931,7 @@ void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cuCabs", "cuConj", "make_cuFloatComplex", "cuCaddf",
                       "cuCsubf", "cuCmulf", "cuCdivf", "cuCabsf", "cuConjf",
                       "make_cuComplex", "__saturatef", "cuComplexDoubleToFloat",
-                      "cuComplexFloatToDouble");
+                      "cuComplexFloatToDouble", "cuCfma", "cuCfmaf");
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(ComplexAPI()))).bind("call"),

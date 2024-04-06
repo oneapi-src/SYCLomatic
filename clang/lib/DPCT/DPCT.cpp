@@ -964,6 +964,8 @@ int runDPCT(int argc, const char **argv) {
           else if (Option.ends_with("masked-sub-group-operation"))
             Experimentals.addValue(
                 ExperimentalFeatures::Exp_MaskedSubGroupFunction);
+          else if (Option.ends_with("bindless_images"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_BindlessImages);
         } else if (Option == "--no-dry-pattern") {
           NoDRYPatternFlag = true;
         }
@@ -1001,8 +1003,10 @@ int runDPCT(int argc, const char **argv) {
     Tool.setPrintErrorMessage(false);
   } else {
     IsUsingDefaultOutRoot = OutRoot.getPath().empty();
+    bool NeedCheckOutRootEmpty =
+        !(BuildScript == BuildScript::BS_Cmake) && !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
-        !getDefaultOutRoot(OutRoot)) {
+        !getDefaultOutRoot(OutRoot, NeedCheckOutRootEmpty)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }

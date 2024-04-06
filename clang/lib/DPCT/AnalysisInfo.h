@@ -865,6 +865,7 @@ public:
   static clang::format::FormatStyle getCodeFormatStyle() {
     return CodeFormatStyle;
   }
+  static bool IsVarUsedByRuntimeSymbolAPI(std::shared_ptr<MemVarInfo> Info);
 
 private:
   template <class T, class T1, class... Ts>
@@ -1231,6 +1232,9 @@ public:
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
+  }
+  static bool useQueueEmpty() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty);
   }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(
@@ -1603,6 +1607,9 @@ public:
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
   CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false);
   const std::string &getBaseName() { return BaseName; }
+  const std::string &getBaseNameWithoutQualifiers() {
+    return BaseNameWithoutQualifiers;
+  }
   size_t getDimension() { return Range.size(); }
   std::vector<SizeInfo> &getRange() { return Range; }
   // when there is no arguments, parameter MustArguments determine whether
@@ -1738,6 +1745,7 @@ public:
   bool isExtern() { return Scope == Extern; }
   bool isLocal() { return Scope == Local; }
   bool isShared() { return Attr == Shared; }
+  bool isConstant() { return Attr == Constant; }
   bool isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
   bool isAnonymousType() { return IsAnonymousType; }
   const CXXRecordDecl *getDeclOfVarType() { return DeclOfVarType; }
@@ -2144,7 +2152,9 @@ private:
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap);
-
+  template <CallOrDecl COD>
+  static void getArgumentsOrParametersFromoTextureInfoMap(
+      ParameterStream &PS, const GlobalMap<TextureInfo> &VarMap);
   template <class T, CallOrDecl COD> struct GetArgOrParam;
   template <class T> struct GetArgOrParam<T, DeclParameter> {
     ParameterStream &operator()(ParameterStream &PS, std::shared_ptr<T> V) {
@@ -2270,7 +2280,7 @@ protected:
   unsigned getBegin() { return BeginLoc; }
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
-  void buildCalleeInfo(const Expr *Callee);
+  void buildCalleeInfo(const Expr *Callee, std::optional<unsigned int> NumArgs);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
 
 private:
@@ -2317,7 +2327,8 @@ public:
                      const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
                      const FunctionDecl *Specialization);
   static std::shared_ptr<DeviceFunctionInfo>
-  LinkUnresolved(const UnresolvedLookupExpr *ULE);
+  LinkUnresolved(const UnresolvedLookupExpr *ULE,
+                 std::optional<unsigned int> NumArgs);
   static std::shared_ptr<DeviceFunctionInfo>
   LinkRedecls(const FunctionDecl *FD);
   static std::shared_ptr<DeviceFunctionInfo>
