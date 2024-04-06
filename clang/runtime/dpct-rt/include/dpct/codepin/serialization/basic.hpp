@@ -32,6 +32,75 @@ typedef dpct::queue_ptr StreamType;
 
 namespace detail {
 
+class json_stringstream {
+private:
+  int indent = 0;
+  const size_t tab_length = 2;
+  size_t get_indent_size() { return indent * tab_length; }
+  std::string get_indent_str() { return std::string(get_indent_size(), ' '); };
+  std::stringstream ss;
+
+public:
+  /// This function is used to remove the last character from the stringstream
+  /// within the Logger class. When outputting JSON, commas are typically used
+  /// to separate key-value pairs. However, the last key-value pair does not
+  /// require a trailing comma. Therefore, after completing the output of the
+  /// last key-value pair, this function is called to remove the last comma.
+  void remove_last_comma_in_stream() {
+    std::string str = ss.str();
+    std::size_t last_comma = str.find_last_of(',');
+
+    if (last_comma != std::string::npos) {
+      str.erase(last_comma,
+                2 + get_indent_size()); // Remove the ",\n" and indent space.
+    }
+    ss.str("");
+    ss << str;
+  }
+
+#ifdef CODE_PIN_FORMART_JSON
+  json_stringstream &operator<<(const std::string &s) {
+    std::string ret = "";
+    for (auto cur = s.begin(); cur < s.end(); cur++) {
+      char c = *cur;
+      if (c == '[' || c == '{') {
+        ret += c;
+        ret += '\n';
+        indent++;
+        ret += get_indent_str();
+      } else if (c == '}' || c == ']') {
+        ret += '\n';
+        indent--;
+        ret += get_indent_str();
+        ret += c;
+      } else if (c == ',') {
+        ret += c;
+        ret += '\n';
+        ret += get_indent_str();
+      } else if (c == ':') {
+        ret += c;
+        ret += ' ';
+      } else {
+        ret += c;
+      }
+    }
+    ss << ret;
+    return *this;
+  }
+#endif
+#ifdef CODE_PIN_FORMART_JSON
+  template <typename T, typename = std::enable_if_t<
+                            !std::is_same_v<const char *, std::decay_t<T>>>>
+#else
+  template <typename T>
+#endif
+  json_stringstream &operator<<(T &&value) {
+    ss << std::forward<T>(value);
+    return *this;
+  }
+  auto str() { return ss.str(); }
+};
+
 #define emit_error_msg(msg)                                                    \
   {                                                                            \
     std::cerr << "Failed at:" << __FILE__ << "\nLine number is : " << __LINE__ \
@@ -240,7 +309,8 @@ inline bool json::format() {
   return true;
 }
 
-template <typename T> void demangle_name(std::ostream &ss) {
+template <typename T>
+void demangle_name(dpct::experimental::detail::json_stringstream &ss) {
 #if defined(__linux__)
   int s;
   auto mangle_name = typeid(T).name();
@@ -255,10 +325,16 @@ template <typename T> void demangle_name(std::ostream &ss) {
   ss << typeid(T).name();
 #endif
 }
-
+template <class T>
+void print_dict(dpct::experimental::detail::json_stringstream &ss,
+                const std::string &key, T value) {}
+template <class T>
+void print_array(dpct::experimental::detail::json_stringstream &ss, T value) {}
+template <class T>
+void print_value(dpct::experimental::detail::json_stringstream &ss, T value) {}
 template <class T, class T2 = void> class DataSer {
 public:
-  static void dump(std::ostream &ss, T value,
+  static void dump(dpct::experimental::detail::json_stringstream &ss, T value,
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"";
     demangle_name<T>(ss);
@@ -272,8 +348,8 @@ public:
 template <class T>
 class DataSer<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 public:
-  static void dump(std::ostream &ss, const T &value,
-                   dpct::experimental::StreamType stream) {
+  static void dump(dpct::experimental::detail::json_stringstream &ss,
+                   const T &value, dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"";
     demangle_name<T>(ss);
     ss << "\",\"Data\":[" << value << "]}";
@@ -283,8 +359,8 @@ public:
 #ifdef __NVCC__
 template <> class DataSer<int3> {
 public:
-  static void dump(std::ostream &ss, const int3 &value,
-                   dpct::experimental::StreamType stream) {
+  static void dump(dpct::experimental::detail::json_stringstream &ss,
+                   const int3 &value, dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"int3\",\"Data\":[";
     ss << "{\"x\":";
     dpct::experimental::detail::DataSer<int>::dump(ss, value.x, stream);
@@ -301,8 +377,8 @@ public:
 
 template <> class DataSer<float3> {
 public:
-  static void dump(std::ostream &ss, const float3 &value,
-                   dpct::experimental::StreamType stream) {
+  static void dump(dpct::experimental::detail::json_stringstream &ss,
+                   const float3 &value, dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"float3\",\"Data\":[";
     ss << "{\"x\":";
     dpct::experimental::detail::DataSer<float>::dump(ss, value.x, stream);
@@ -320,7 +396,8 @@ public:
 #else
 template <> class DataSer<sycl::int3> {
 public:
-  static void dump(std::ostream &ss, const sycl::int3 &value,
+  static void dump(dpct::experimental::detail::json_stringstream &ss,
+                   const sycl::int3 &value,
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"sycl::int3\",\"Data\":[";
     ss << "{\"x\":";
@@ -338,7 +415,8 @@ public:
 
 template <> class DataSer<sycl::float3> {
 public:
-  static void dump(std::ostream &ss, const sycl::float3 &value,
+  static void dump(dpct::experimental::detail::json_stringstream &ss,
+                   const sycl::float3 &value,
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"sycl::float3\",\"Data\":[";
     ss << "{\"x\":";
@@ -357,8 +435,8 @@ public:
 
 template <> class DataSer<char *> {
 public:
-  static void dump(std::ostream &ss, const char *value,
-                   dpct::experimental::StreamType stream) {
+  static void dump(dpct::experimental::detail::json_stringstream &ss,
+                   const char *value, dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"char *\",\"Data\":[";
     ss << std::string(value);
     ss << "]}";
@@ -367,7 +445,8 @@ public:
 
 template <> class DataSer<std::string> {
 public:
-  static void dump(std::ostream &ss, const std::string &value,
+  static void dump(dpct::experimental::detail::json_stringstream &ss,
+                   const std::string &value,
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"char *\",\"Data\":[";
     ss << value;
