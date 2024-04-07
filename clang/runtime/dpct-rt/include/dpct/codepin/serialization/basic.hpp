@@ -41,14 +41,14 @@ private:
   std::stringstream ss;
 
 public:
-  /// This function is used to remove the last character from the stringstream
-  /// within the Logger class. When outputting JSON, commas are typically used
-  /// to separate key-value pairs. However, the last key-value pair does not
-  /// require a trailing comma. Therefore, after completing the output of the
-  /// last key-value pair, this function is called to remove the last comma.
+  /// This function is used to remove the last character from the stringstream.
+  /// When outputting JSON, commas are typically used to separate key-value
+  /// pairs. However, the last key-value pair does not require a trailing comma.
+  /// Therefore, after completing the output of the last key-value pair, this
+  /// function is called to remove the last comma.
   void remove_last_comma_in_stream() {
     std::string str = ss.str();
-    std::size_t last_comma = str.find_last_of(',');
+    std::size_t last_comma = str.rfind(',');
 
     if (last_comma != std::string::npos) {
       str.erase(last_comma,
@@ -61,27 +61,34 @@ public:
 #ifdef CODE_PIN_FORMART_JSON
   json_stringstream &operator<<(const std::string &s) {
     std::string ret = "";
-    for (auto cur = s.begin(); cur < s.end(); cur++) {
-      char c = *cur;
-      if (c == '[' || c == '{') {
+    for (char c : s) {
+      switch (c) {
+      case '[':
+      case '{':
         ret += c;
         ret += '\n';
         indent++;
         ret += get_indent_str();
-      } else if (c == '}' || c == ']') {
+        break;
+      case '}':
+      case ']':
         ret += '\n';
         indent--;
         ret += get_indent_str();
         ret += c;
-      } else if (c == ',') {
+        break;
+      case ',':
         ret += c;
         ret += '\n';
         ret += get_indent_str();
-      } else if (c == ':') {
+        break;
+      case ':':
         ret += c;
         ret += ' ';
-      } else {
+        break;
+      default:
         ret += c;
+        break;
       }
     }
     ss << ret;
@@ -107,8 +114,7 @@ public:
               << "\n" msg << std::endl;                                        \
   }
 
-// The class json has 2 public member functions to format json by
-// get_formmat_json function and validate input json by is_valid function.
+// The class json has 1 public member functions to validate input json by is_valid function.
 class json {
 private:
   std::string original_json;
