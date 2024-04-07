@@ -124,6 +124,38 @@ int main() {
   cudaMemcpyToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w * h,
                          cudaMemcpyHostToDevice);
 
+  // CHECK: dpct::experimental::image_mem_pitched_data p3d_from_data_ct1, p3d_to_data_ct1;
+  // CHECK-NEXT: sycl::id<3> p3d_from_pos_ct1(0, 0, 0), p3d_to_pos_ct1(0, 0, 0);
+  // CHECK-NEXT: sycl::range<3> p3d_size_ct1(1, 1, 1);
+  // CHECK-NEXT: dpct::memcpy_direction p3d_direction_ct1;
+  cudaMemcpy3DParms p3d;
+  // CHECK: sycl::id<3> pos{0, 0, 0};
+  cudaPos pos;
+  // CHECK: dpct::pitched_data pp;
+  cudaPitchedPtr pp;
+  // CHECK: dpct::memcpy_direction k;
+  cudaMemcpyKind k;
+  // CHECK: p3d_from_data_ct1 = pArr_src->to_pitched_data();
+  p3d.srcArray = pArr_src;
+  // CHECK: p3d_from_pos_ct1 = pos;
+  p3d.srcPos = pos;
+  // CHECK: p3d_from_data_ct1 = pp;
+  p3d.srcPtr = pp;
+  // CHECK: p3d_to_data_ct1 = pArr->to_pitched_data();
+  p3d.dstArray = pArr;
+  // CHECK: p3d_to_pos_ct1 = pos;
+  p3d.dstPos = pos;
+  // CHECK: p3d_to_data_ct1 = pp;
+  p3d.dstPtr = pp;
+  // CHECK: p3d_size_ct1 = e;
+  p3d.extent = e;
+  // CHECK: p3d_direction_ct1 = k;
+  p3d.kind = k;
+  // CHECK: dpct::dpct_memcpy(p3d_to_data_ct1, p3d_to_pos_ct1, p3d_from_data_ct1, p3d_from_pos_ct1, p3d_size_ct1, p3d_direction_ct1);
+  cudaMemcpy3D(&p3d);
+  // CHECK: dpct::async_dpct_memcpy(p3d_to_data_ct1, p3d_to_pos_ct1, p3d_from_data_ct1, p3d_from_pos_ct1, p3d_size_ct1, p3d_direction_ct1);
+  cudaMemcpy3DAsync(&p3d);
+
   // CHECK: dpct::image_data resDesc0, resDesc1, resDesc2, resDesc3, resDesc4;
   cudaResourceDesc resDesc0, resDesc1, resDesc2, resDesc3, resDesc4;
   // CHECK: resDesc0.set_data_type(dpct::image_data_type::matrix);

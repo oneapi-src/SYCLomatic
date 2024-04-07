@@ -11613,8 +11613,12 @@ void MemoryDataTypeRule::emplaceMemcpy3DDeclarations(const VarDecl *VD,
     emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
         VD, "// These variables are defined for 3d matrix memory copy."));
   }
-  emplaceParamDecl(VD, MapNames::getDpctNamespace() + "pitched_data", false,
-                   "0", "from_data", "to_data");
+  emplaceParamDecl(VD,
+                   DpctGlobalInfo::useExtBindlessImages()
+                       ? MapNames::getDpctNamespace() +
+                             "experimental::image_mem_pitched_data"
+                       : MapNames::getDpctNamespace() + "pitched_data",
+                   false, "0", "from_data", "to_data");
   requestFeature(HelperFeatureEnum::device_ext);
   emplaceParamDecl(VD, getCtadType("id"), true, "0", "from_pos", "to_pos");
   emplaceParamDecl(VD, getCtadType("range"), true, "1", "size");

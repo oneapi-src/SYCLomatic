@@ -14,6 +14,27 @@ namespace experimental {
 
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
 
+class image_mem_pitched_data : public pitched_data {
+public:
+  using pitched_data::pitched_data;
+  image_mem_pitched_data(
+      sycl::ext::oneapi::experimental::image_mem_handle handle, size_t pitch,
+      size_t x, size_t y)
+      : pitched_data(nullptr, pitch, x, y), _handle(handle) {}
+  image_mem_pitched_data(pitched_data &p)
+      : pitched_data(p.get_data_ptr(), p.get_pitch(), p.get_x(), p.get_y()) {}
+  image_mem_pitched_data &operator=(pitched_data &p) {
+    this->set_data_ptr(p.get_data_ptr());
+    this->set_pitch(p.get_pitch());
+    this->set_x(p.get_x());
+    this->set_y(p.get_y());
+    return *this;
+  }
+
+private:
+  sycl::ext::oneapi::experimental::image_mem_handle _handle;
+};
+
 /// The wrapper class of bindless image memory handle.
 class image_mem_wrapper {
 public:
@@ -87,6 +108,12 @@ public:
     assert(_desc.type == sycl::ext::oneapi::experimental::image_type::mipmap);
     return _sub_wrappers + level;
   }
+  /// Convert to image mem pitched data.
+  image_mem_pitched_data to_pitched_data() {
+    return image_mem_pitched_data(_handle,
+                                  _desc.width * _channel.get_total_size(),
+                                  _desc.width, _desc.height);
+  }
 
 private:
   image_mem_wrapper(
@@ -95,7 +122,7 @@ private:
       const sycl::ext::oneapi::experimental::image_mem_handle &handle)
       : _channel(channel), _desc(desc), _handle(handle) {}
 
-  const image_channel _channel;
+  image_channel _channel;
   const sycl::ext::oneapi::experimental::image_descriptor _desc;
   sycl::ext::oneapi::experimental::image_mem_handle _handle;
   image_mem_wrapper *_sub_wrappers{nullptr};
