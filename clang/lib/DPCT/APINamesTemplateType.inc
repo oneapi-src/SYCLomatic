@@ -353,10 +353,9 @@ TYPE_REWRITE_ENTRY(
     TYPE_CONDITIONAL_FACTORY(
         isUseNonUniformGroupsForType(),
         TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                         "experimental::opportunistic_group")),
-        WARNING_FACTORY(
-            Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
-            STR("--use-experimental-features=non-uniform-groups"))))
+                         "ext::oneapi::experimental")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=non-uniform-groups"))))
 
 TYPE_REWRITE_ENTRY(
     "cooperative_groups::__v1::thread_block_tile",
@@ -367,6 +366,5 @@ TYPE_REWRITE_ENTRY(
             isUseLogicalGroupsForType(),
             TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                              "experimental::logical_group")),
-            WARNING_FACTORY(
-                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
-                STR("--use-experimental-features=logical-group")))))
+            WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                            STR("--use-experimental-features=logical-group")))))

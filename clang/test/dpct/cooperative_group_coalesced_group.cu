@@ -12,7 +12,7 @@ __global__ void coalescedExampleKernel(int *data) {
   auto block = cg::this_thread_block();
   int res = 0;
   if (block.thread_rank() % 4) {
-    //CHECK: sycl::experimental::opportunistic_group active = sycl::ext::oneapi::experimental::this_kernel::get_opportunistic_group();
+    //CHECK: sycl::ext::oneapi::experimental::opportunistic_group active = sycl::ext::oneapi::experimental::this_kernel::get_opportunistic_group();
     cg::coalesced_group active = cg::coalesced_threads();
 
     // Example operation: let the first thread in the coalesced group increment the data
