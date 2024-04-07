@@ -351,7 +351,7 @@ ENTRY(cudaGraphicsUnregisterResource, cudaGraphicsUnregisterResource, false, NO_
 ENTRY(cudaBindTexture, cudaBindTexture, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaBindTexture2D, cudaBindTexture2D, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaBindTextureToArray, cudaBindTextureToArray, true, NO_FLAG, P0, "Successful")
-ENTRY(cudaBindTextureToMipmappedArray, cudaBindTextureToMipmappedArray, false, NO_FLAG, P4, "comment")
+ENTRY(cudaBindTextureToMipmappedArray, cudaBindTextureToMipmappedArray, true, NO_FLAG, P4, "Successful")
 ENTRY(cudaGetTextureAlignmentOffset, cudaGetTextureAlignmentOffset, false, NO_FLAG, P0, "comment")
 ENTRY(cudaGetTextureReference, cudaGetTextureReference, false, NO_FLAG, P0, "comment")
 ENTRY(cudaUnbindTexture, cudaUnbindTexture, true, NO_FLAG, P0, "Successful")
@@ -494,8 +494,8 @@ ENTRY(cudaGetKernel, cudaGetKernel, false, NO_FLAG, P0, "comment")
 
 // profiler control functions of runtime API
 ENTRY(cudaProfilerInitialize, cudaProfilerInitialize, false, NO_FLAG, P4, "comment")
-ENTRY(cudaProfilerStart, cudaProfilerStart, false, NO_FLAG, P0, "comment")
-ENTRY(cudaProfilerStop, cudaProfilerStop, false, NO_FLAG, P0, "comment")
+ENTRY(cudaProfilerStart, cudaProfilerStart, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
+ENTRY(cudaProfilerStop, cudaProfilerStop, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
 
 // Atomic API
 ENTRY(atomicAdd, atomicAdd, true, NO_FLAG, P0, "Successful: DPCT1039")
@@ -1501,7 +1501,7 @@ ENTRY(__reduce_xor_sync, __reduce_xor_sync, true, NO_FLAG, P4, "Successful")
 ENTRY(__activemask, __activemask, true, NO_FLAG, P0, "Successful: DPCT1086")
 ENTRY(__match_any_sync, __match_any_sync, true, NO_FLAG, P4, "comment")
 ENTRY(__match_all_sync, __match_all_sync, true, NO_FLAG, P4, "comment")
-ENTRY(cuCtxCreate, cuCtxCreate_v3, false, NO_FLAG, P4, "comment")
+ENTRY(cuCtxCreate, cuCtxCreate_v3, true, NO_FLAG, P4, "comment")
 ENTRY(cuCtxDestroy, cuCtxDestroy_v2, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(cuCtxGetApiVersion, cuCtxGetApiVersion, true, NO_FLAG, P4, "comment")
 ENTRY(cuCtxGetCacheConfig, cuCtxGetCacheConfig, false, NO_FLAG, P4, "comment")

@@ -31,7 +31,6 @@ public:
   ~parameter_wrapper_base_t() {
     if (_need_free) {
       _q.submit([&](sycl::handler &cgh) {
-        cgh.depends_on(_copyback);
         cgh.host_task([t = _target, q = _q] { dpct::detail::dpct_free(t, q); });
       });
     }
@@ -44,7 +43,6 @@ protected:
   size_t _ele_num;
   bool _need_free = true;
   target_t *_target;
-  sycl::event _copyback;
 
 private:
   target_t *construct_member_variable_target() {
@@ -52,7 +50,14 @@ private:
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only)
         return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
-      // If data type is same and it is device pointer, it can be used directly.
+#ifdef DPCT_USM_LEVEL_NONE
+      auto alloc = dpct::detail::mem_mgr::instance().translate_ptr(_source);
+      size_t offset = (byte_t *)_source - alloc.alloc_ptr;
+      if (offset)
+        return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
+#endif
+      // If (data type is same && it is device pointer && (USM || buffer offset
+      // is 0)), it can be used directly.
       _need_free = false;
       return _source;
     } else {
@@ -95,7 +100,6 @@ class parameter_wrapper_t
                 "Only parameter_inout_prop::out is supported if "
                 "target_t and source_t are not same.");
   using base_t = detail::parameter_wrapper_base_t<target_t, source_t>;
-  using base_t::_copyback;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
@@ -111,14 +115,14 @@ public:
 #ifdef DPCT_USM_LEVEL_NONE
     if (_source_attribute ==
         dpct::detail::pointer_access_attribute::device_only) {
-      _copyback = _q.submit([&](sycl::handler &cgh) {
+      _q.submit([&](sycl::handler &cgh) {
         auto from_acc = dpct::get_buffer<target_t>(_target)
                             .template get_access<sycl::access_mode::read>(cgh);
         auto to_acc = dpct::get_buffer<source_t>(_source)
                           .template get_access<sycl::access_mode::write>(cgh);
         cgh.single_task<dpct_kernel_name<class parameter_wrapper_copyback,
                                          target_t, source_t>>(
-            [=]() { to_acc[0] = static_cast<target_t>(from_acc[0]); });
+            [=]() { to_acc[0] = static_cast<source_t>(from_acc[0]); });
       });
     } else {
       source_t temp =
@@ -166,6 +170,7 @@ class parameter_wrapper_t<target_t, target_t, inout_prop>
     : public detail::parameter_wrapper_base_t<target_t, target_t> {
   using base_t = detail::parameter_wrapper_base_t<target_t, target_t>;
   using base_t::_ele_num;
+  using base_t::_need_free;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
@@ -179,8 +184,7 @@ public:
   parameter_wrapper_t(sycl::queue q, target_t *source, size_t ele_num = 1)
       : base_t(q, source, ele_num) {
     if constexpr (inout_prop != parameter_inout_prop::out) {
-      if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::host_only) {
+      if (_need_free) {
         dpct::detail::dpct_memcpy(_q, _target, _source,
                                   sizeof(target_t) * _ele_num, automatic);
       }
@@ -189,11 +193,13 @@ public:
   /// Destructor. Copy back content from wrapper memory to original memory
   ~parameter_wrapper_t() {
     if constexpr (inout_prop != parameter_inout_prop::in) {
-      if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::host_only) {
-        _q.wait();
-        dpct::dpct_memcpy(_source, _target, sizeof(target_t) * _ele_num,
-                          automatic, _q);
+      if (_need_free) {
+        sycl::event e = dpct::detail::dpct_memcpy(
+            _q, _source, _target, sizeof(target_t) * _ele_num, automatic);
+        (void)e;
+        if (_source_attribute ==
+            dpct::detail::pointer_access_attribute::host_only)
+          e.wait();
       }
     }
   }
