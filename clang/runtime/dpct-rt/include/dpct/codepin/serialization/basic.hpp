@@ -112,21 +112,15 @@ public:
 class json {
 private:
   std::string original_json;
-  std::string formatted_json = "";
   std::string cur_key = "";
   const char *begin = nullptr;
   const char *cur_p = nullptr;
   const char *end = nullptr;
-  unsigned indent = 0;
-  static const unsigned tab_length = 2;
 
-  bool format();
+  bool validate();
   bool parse_str(std::string &ret);
   bool parse_number(char first, std::string &out);
   bool is_number(char c);
-  std::string inserted_indent() {
-    return std::string(indent * tab_length, ' ');
-  }
   void ignore_space() {
     while (cur_p != end && (*cur_p == ' ' || *cur_p == '\t' || *cur_p == '\r' ||
                             *cur_p == '\n'))
@@ -140,13 +134,8 @@ public:
       : original_json(json), begin(original_json.c_str()),
         cur_p(original_json.c_str()),
         end(original_json.c_str() + original_json.size()) {}
-  std::string get_formatted_json() {
-    if (formatted_json.empty()) {
-      format();
-    }
-    return formatted_json;
-  }
-  bool is_valid() { return format(); }
+
+  bool is_valid() { return validate(); }
 };
 
 inline bool json::parse_str(std::string &str) {
@@ -178,39 +167,33 @@ inline bool json::parse_number(char c, std::string &number) {
     std::stod(number, &pos);
     return pos == number.length();
   } catch (const std::invalid_argument &ia) {
-    emit_error_msg("[JSON formatter]: Parsing number value failed. Value is " +
-                   number);
+    emit_error_msg(
+        "[CODEPIN VALIDATOR]: Parsing number value failed. Value is " + number);
     return false;
   } catch (const std::out_of_range &oor) {
-    emit_error_msg("[JSON formatter]: Parsing number value failed. Value is " +
-                   number);
+    emit_error_msg(
+        "[CODEPIN VALIDATOR]: Parsing number value failed. Value is " + number);
     return false;
   }
 }
-inline bool json::format() {
+inline bool json::validate() {
   ignore_space();
   char c = next();
   switch (c) {
   case '[': {
-    indent++;
-    formatted_json += "[\n";
     for (;;) {
       ignore_space();
-      formatted_json += inserted_indent();
-      if (!format())
+      if (!validate())
         return false;
       ignore_space();
       switch (next()) {
       case ',':
-        formatted_json += ",\n";
         continue;
       case ']':
-        indent--;
-        formatted_json += std::string("\n") + inserted_indent() + ']';
         return true;
       default:
         emit_error_msg(
-            "[JSON formatter]: Parsing JSON value error. The key is " +
+            "[CODEPIN VALIDATOR]: Parsing JSON value error. The key is " +
             cur_key);
         return false;
       }
@@ -218,30 +201,25 @@ inline bool json::format() {
   } break;
 
   case '{': {
-    indent++;
-    formatted_json += "{\n";
     for (;;) {
       ignore_space();
       if (peek() == '"') {
         std::string key = "";
         next();
-        formatted_json += inserted_indent();
         if (!parse_str(key)) {
           emit_error_msg(
-              "[JSON formatter]: key value of a JSON need to be wrapped in "
+              "[CODEPIN VALIDATOR]: key value of a JSON need to be wrapped in "
               "\". Please check the JSON file format.");
           return false;
         } else {
           cur_key = "\"" + key + "\"";
-          formatted_json += cur_key;
         }
       }
       ignore_space();
       if (next() == ':') {
-        formatted_json += " : ";
-        if (!format()) {
+        if (!validate()) {
           emit_error_msg(
-              "[JSON formatter]: Can not parse value, the JSON key is " +
+              "[CODEPIN VALIDATOR]: Can not parse value, the JSON key is " +
               cur_key + ".\n");
           return false;
         }
@@ -249,16 +227,13 @@ inline bool json::format() {
       ignore_space();
       switch (next()) {
       case ',': {
-        formatted_json += ",\n";
         continue;
       }
       case '}': {
-        indent--;
-        formatted_json += std::string("\n") + inserted_indent() + '}';
         return true;
       }
       default:
-        emit_error_msg("[JSON formatter]: The " + cur_key +
+        emit_error_msg("[CODEPIN VALIDATOR]: The " + cur_key +
                        " value pair should be end with '}' or ','.\n");
         return false;
       }
@@ -267,28 +242,25 @@ inline bool json::format() {
   case '"': {
     std::string str = "";
     if (!parse_str(str)) {
-      emit_error_msg("[JSON formatter]: The Json is invalid after " +
-                     formatted_json + "\n");
+      emit_error_msg("[CODEPIN VALIDATOR]: The Json is invalid after " +
+                     cur_key + "\n");
       return false;
     }
-    formatted_json += "\"" + str + "\"";
     return true;
   }
   case 't':
     if (next() == 'r' && next() == 'u' && next() == 'e') {
-      formatted_json += "true";
       return true;
     }
-    emit_error_msg("[JSON formatter]: The bool value of " + cur_key +
+    emit_error_msg("[CODEPIN VALIDATOR]: The bool value of " + cur_key +
                    " should be \"true\", please check "
                    "the spelling.");
     return false;
   case 'f':
     if (next() == 'a' && next() == 'l' && next() == 's' && next() == 'e') {
-      formatted_json += "false";
       return true;
     }
-    emit_error_msg("[JSON formatter]: The bool value of " + cur_key +
+    emit_error_msg("[CODEPIN VALIDATOR]: The bool value of " + cur_key +
                    " should be \"false\", please "
                    "check the spelling.");
     return false;
@@ -297,10 +269,9 @@ inline bool json::format() {
                         // array. Then it should be literal number
       std::string num = "";
       parse_number(c, num);
-      formatted_json += num;
       return true;
     }
-    emit_error_msg("[JSON formatter]: Unkown JSON type, the last key is " +
+    emit_error_msg("[CODEPIN VALIDATOR]: Unkown JSON type, the last key is " +
                    cur_key +
                    ". Please check the format JSON "
                    "format.\n");
@@ -309,8 +280,7 @@ inline bool json::format() {
   return true;
 }
 
-template <typename T>
-void demangle_name(dpct::experimental::detail::json_stringstream &ss) {
+template <typename T> void demangle_name(json_stringstream &ss) {
 #if defined(__linux__)
   int s;
   auto mangle_name = typeid(T).name();
@@ -325,16 +295,9 @@ void demangle_name(dpct::experimental::detail::json_stringstream &ss) {
   ss << typeid(T).name();
 #endif
 }
-template <class T>
-void print_dict(dpct::experimental::detail::json_stringstream &ss,
-                const std::string &key, T value) {}
-template <class T>
-void print_array(dpct::experimental::detail::json_stringstream &ss, T value) {}
-template <class T>
-void print_value(dpct::experimental::detail::json_stringstream &ss, T value) {}
 template <class T, class T2 = void> class DataSer {
 public:
-  static void dump(dpct::experimental::detail::json_stringstream &ss, T value,
+  static void dump(json_stringstream &ss, T value,
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"";
     demangle_name<T>(ss);
@@ -348,8 +311,8 @@ public:
 template <class T>
 class DataSer<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 public:
-  static void dump(dpct::experimental::detail::json_stringstream &ss,
-                   const T &value, dpct::experimental::StreamType stream) {
+  static void dump(json_stringstream &ss, const T &value,
+                   dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"";
     demangle_name<T>(ss);
     ss << "\",\"Data\":[" << value << "]}";
@@ -359,8 +322,8 @@ public:
 #ifdef __NVCC__
 template <> class DataSer<int3> {
 public:
-  static void dump(dpct::experimental::detail::json_stringstream &ss,
-                   const int3 &value, dpct::experimental::StreamType stream) {
+  static void dump(json_stringstream &ss, const int3 &value,
+                   dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"int3\",\"Data\":[";
     ss << "{\"x\":";
     dpct::experimental::detail::DataSer<int>::dump(ss, value.x, stream);
@@ -377,8 +340,8 @@ public:
 
 template <> class DataSer<float3> {
 public:
-  static void dump(dpct::experimental::detail::json_stringstream &ss,
-                   const float3 &value, dpct::experimental::StreamType stream) {
+  static void dump(json_stringstream &ss, const float3 &value,
+                   dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"float3\",\"Data\":[";
     ss << "{\"x\":";
     dpct::experimental::detail::DataSer<float>::dump(ss, value.x, stream);
@@ -396,8 +359,7 @@ public:
 #else
 template <> class DataSer<sycl::int3> {
 public:
-  static void dump(dpct::experimental::detail::json_stringstream &ss,
-                   const sycl::int3 &value,
+  static void dump(json_stringstream &ss, const sycl::int3 &value,
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"sycl::int3\",\"Data\":[";
     ss << "{\"x\":";
@@ -415,8 +377,7 @@ public:
 
 template <> class DataSer<sycl::float3> {
 public:
-  static void dump(dpct::experimental::detail::json_stringstream &ss,
-                   const sycl::float3 &value,
+  static void dump(json_stringstream &ss, const sycl::float3 &value,
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"sycl::float3\",\"Data\":[";
     ss << "{\"x\":";
@@ -435,8 +396,8 @@ public:
 
 template <> class DataSer<char *> {
 public:
-  static void dump(dpct::experimental::detail::json_stringstream &ss,
-                   const char *value, dpct::experimental::StreamType stream) {
+  static void dump(json_stringstream &ss, const char *value,
+                   dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"char *\",\"Data\":[";
     ss << std::string(value);
     ss << "]}";
@@ -445,8 +406,7 @@ public:
 
 template <> class DataSer<std::string> {
 public:
-  static void dump(dpct::experimental::detail::json_stringstream &ss,
-                   const std::string &value,
+  static void dump(json_stringstream &ss, const std::string &value,
                    dpct::experimental::StreamType stream) {
     ss << "{\"Type\":\"char *\",\"Data\":[";
     ss << value;
