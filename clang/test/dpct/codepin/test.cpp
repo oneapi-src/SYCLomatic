@@ -1,2 +1,2 @@
 // UNSUPPORTED: system-windows
-// RUN: auto-compare --cuda-log %S/cuda.json --sycl %S/sycl.json
+// RUN: codepin-report --cuda-log %S/cuda.json --sycl-log %S/sycl.json
