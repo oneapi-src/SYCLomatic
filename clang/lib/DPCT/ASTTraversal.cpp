@@ -2338,7 +2338,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           return;
         }
       } else if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
-        if (TypeStr == "__nv_bfloat16" && !DpctGlobalInfo::useBFloat16()) {
+        if (TypeStr.find("nv_bfloat16") != std::string::npos &&
+            !DpctGlobalInfo::useBFloat16()) {
           return;
         }
 
@@ -2587,7 +2588,8 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
     if (Tok.isAnyIdentifier()) {
       const std::string TypeStr = Tok.getRawIdentifier().str();
-      if (TypeStr == "__nv_bfloat162" && !DpctGlobalInfo::useBFloat16()) {
+      if (TypeStr.find("nv_bfloat16") != std::string::npos &&
+          !DpctGlobalInfo::useBFloat16()) {
         return;
       }
       std::string Str =
