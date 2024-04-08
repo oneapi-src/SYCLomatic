@@ -625,9 +625,7 @@ int runDPCT(int argc, const char **argv) {
     SmallString<512> HelperFunctionPathStr(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(HelperFunctionPathStr, "include");
     if (!llvm::sys::fs::exists(HelperFunctionPathStr)) {
-      DpctLog() << "Error: Helper functions not found"
-                << "/n";
-      ShowStatus(MigrationErrorInvalidInstallPath);
+      ShowStatus(MigrationErrorInvalidInstallPath, "Helper functions");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
     std::cout << HelperFunctionPathStr.c_str() << "\n";
@@ -691,32 +689,31 @@ int runDPCT(int argc, const char **argv) {
     clang::tooling::SetDiagnosticOutput(DpctTerm());
   }
   initWarningIDs();
-
-#ifndef _WIN32
-  if (InterceptBuildCommand) {
-    SmallString<512> InterceptBuildBinaryPathStr(
-        DpctInstallPath.getCanonicalPath());
-    llvm::sys::path::append(InterceptBuildBinaryPathStr, "bin",
-                            "intercept-build");
-    if (!llvm::sys::fs::exists(InterceptBuildBinaryPathStr)) {
-      DpctLog() << "Error: intercept-build tool not found"
-                << "\n";
-      ShowStatus(MigrationErrorInvalidInstallPath);
+  auto CallIndependentTool = [&](const std::string IndependentTool) {
+    SmallString<512> ExecutableScriptPath(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(ExecutableScriptPath, "bin", IndependentTool);
+    if (!llvm::sys::fs::exists(ExecutableScriptPath)) {
+      ShowStatus(MigrationErrorInvalidInstallPath, IndependentTool + " tool");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    std::string InterceptBuildSystemCall(InterceptBuildBinaryPathStr.str());
-    for (int argumentIndex = 2; argumentIndex < argc; argumentIndex++) {
-      InterceptBuildSystemCall.append(" ");
-      InterceptBuildSystemCall.append(std::string(argv[argumentIndex]));
+    std::string SystemCallCommand(ExecutableScriptPath.str());
+    for (int Index = 2; Index < argc; Index++) {
+      SystemCallCommand.append(" ");
+      SystemCallCommand.append(std::string(argv[Index]));
     }
-    int processExitCode = system(InterceptBuildSystemCall.c_str());
-    if (processExitCode) {
-      ShowStatus(InterceptBuildError);
-      dpctExit(InterceptBuildError);
+    int ProcessExitCode = system(SystemCallCommand.c_str());
+    if (ProcessExitCode) {
+      ShowStatus(CallIndependentToolError, IndependentTool);
+      dpctExit(CallIndependentToolError);
     }
-    dpctExit(InterceptBuildSuccess);
-  }
+    dpctExit(CallIndependentToolSucceeded);
+  };
+#ifndef _WIN32
+  if (InterceptBuildCommand)
+    CallIndependentTool("intercept-build");
 #endif
+  if (CodePinReport)
+    CallIndependentTool("codepin-report");
 
   if (InRoot.getPath().size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot.getPath() << "' is too long\n";

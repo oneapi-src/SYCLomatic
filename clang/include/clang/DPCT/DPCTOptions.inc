@@ -500,6 +500,13 @@ DPCT_NON_ENUM_OPTION(
 #endif
 
 DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), CodePinReport,
+    "codepin-report",
+    llvm::cl::desc("Generate codepin report by consuming CUDA and SYCL log."),
+    llvm::cl::value_desc("build command"), llvm::cl::cat(DPCTCat),
+    llvm::cl::init(false))
+
+DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryAPIMapping,
     "query-api-mapping",
     llvm::cl::desc(
