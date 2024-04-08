@@ -363,9 +363,10 @@ private:
 };
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
-template <typename IDTy, typename... Ts>
-bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset, IDTy MsgID,
-            bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals) {
+template <bool IsLineBegin, typename IDTy, typename... Ts>
+bool report_impl(const clang::tooling::UnifiedPath &FileAbsPath,
+                 unsigned int Offset, IDTy MsgID, bool IsInsertWarningIntoCode,
+                 bool UseTextBegin, Ts &&...Vals) {
   if (DpctGlobalInfo::isQueryAPIMapping()) {
     if (!APIQueryNeedReportWarningIDSet.count((int)MsgID)) {
       return true;
@@ -413,18 +414,41 @@ bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset,
 
   if (IsInsertWarningIntoCode) {
     auto StartLoc = getStartOfLine(SL, SM, LangOptions(), UseTextBegin);
+    if constexpr (!IsLineBegin) {
+      StartLoc = SL;
+    }
     std::shared_ptr<ExtReplacement> R = std::make_shared<ExtReplacement>(
         FileAbsPath.getCanonicalPath(), SM.getDecomposedLoc(StartLoc).second, 0,
         getCommentToInsert(StartLoc, SM, MsgID, UseTextBegin,
                            std::forward<Ts>(Vals)...),
         nullptr);
-    if (UseTextBegin)
-      R->setInsertPosition(InsertPosition::IP_Right);
+    if constexpr (IsLineBegin) {
+      if (UseTextBegin)
+        R->setInsertPosition(InsertPosition::IP_Right);
+    }
     DpctGlobalInfo::getInstance().addReplacement(R);
     UniqueID++;
   }
 
   return true;
+}
+
+template <typename IDTy, typename... Ts>
+bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset,
+            IDTy MsgID, bool IsInsertWarningIntoCode, bool UseTextBegin,
+            Ts &&...Vals) {
+  return report_impl<true, IDTy, Ts...>(FileAbsPath, Offset, MsgID,
+                                        IsInsertWarningIntoCode, UseTextBegin,
+                                        std::forward<Ts>(Vals)...);
+}
+
+template <typename IDTy, typename... Ts>
+bool reportAtCurrentLocation(const clang::tooling::UnifiedPath &FileAbsPath,
+                             unsigned int Offset, IDTy MsgID,
+                             bool IsInsertWarningIntoCode, Ts &&...Vals) {
+  return report_impl<false, IDTy, Ts...>(FileAbsPath, Offset, MsgID,
+                                         IsInsertWarningIntoCode, true,
+                                         std::forward<Ts>(Vals)...);
 }
 
 } // namespace DiagnosticsUtils

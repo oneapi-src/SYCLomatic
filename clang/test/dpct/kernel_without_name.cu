@@ -283,28 +283,52 @@ template <typename T> struct kernel_type_t {
   using Type = T;
 };
 
-//CHECK:template <typename T> void foo_kernel7(Tk *mem) {
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1124:{{[0-9]+}}: This type is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need adjust the type definition location.
-//CHECK-NEXT:  */
-//CHECK-NEXT:  using Tk = typename kernel_type_t<T>::Type;
-template <typename T> __global__ void foo_kernel7() {
+// CHECK: template <typename T> 
+// CHECK-NEXT: void foo_device7(int a,
+// CHECK-NEXT:                  int b/*
+// CHECK-NEXT:                  DPCT1124:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
+// CHECK-NEXT:                  */
+// CHECK-NEXT:                  ,
+// CHECK-NEXT:                  Tk *mem) {
+// CHECK-NEXT:   using Tk = typename kernel_type_t<T>::Type;
+template <typename T> __global__ 
+void foo_device7(int a,
+                 int b) {
   using Tk = typename kernel_type_t<T>::Type;
   __shared__ Tk mem[256];
 }
 
+// CHECK: template <typename T> 
+// CHECK-NEXT: void foo_kernel7(int a,
+// CHECK-NEXT:                  int b/*
+// CHECK-NEXT:                  DPCT1124:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
+// CHECK-NEXT:                  */
+// CHECK-NEXT:                  ,
+// CHECK-NEXT:                  Tk *mem) {
+// CHECK-NEXT:   foo_device7<T>(a, b, mem);
+template <typename T> __global__
+void foo_kernel7(int a,
+                 int b) {
+  foo_device7<T>(a, b);
+}
+
 template <typename T> 
 void run_foo8() {
-//CHECK:  dpct::get_out_of_order_queue().submit(
-//CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      sycl::local_accessor<Tk, 1> mem_acc_ct1(sycl::range<1>(256), cgh);
-//CHECK-EMPTY:
-//CHECK-NEXT:      cgh.parallel_for(
-//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
-//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          foo_kernel7<T>(mem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
-//CHECK-NEXT:        });
-//CHECK-NEXT:    });
-  foo_kernel7<T><<<1, 1>>>();
+  // CHECK: int i;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1124:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::get_out_of_order_queue().submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<Tk, 1> mem_acc_ct1(sycl::range<1>(256), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         foo_kernel7<T>(i, i, mem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  int i;
+  foo_kernel7<T><<<1, 1>>>(i, i);
 }
 #endif
