@@ -48,7 +48,7 @@
 // cublasZrot-NEXT:              incx /*int*/, y /*cuDoubleComplex **/, incy /*int*/,
 // cublasZrot-NEXT:              c /*const double **/, s /*const cuDoubleComplex **/);
 // cublasZrot-NEXT: Is migrated to:
-// cublasZrot-NEXT:   dpct::rot(handle->get_queue(), n, x, dpct::library_data_t::complex_double, incx, y, dpct::library_data_t::complex_double, incy, c, s, dpct::library_data_t::complex_double);
+// cublasZrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetVector | FileCheck %s -check-prefix=cublasSetVector
 // cublasSetVector: CUDA API:
