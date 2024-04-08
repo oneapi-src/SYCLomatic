@@ -16,7 +16,7 @@ UUID = "ID"
 CHECK_POINT = "CheckPoint"
 DATA = "Data"
 TYPE = "Type"
-NO_DUMP_FUNC_LOG = "Unable to find the corresponding serialization function"
+ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), 'CodePin_Report.csv')
 failed_key = ""
 passed_check_point_num = 0
@@ -28,7 +28,7 @@ class comparison_error(Exception):
 
 
 def compare_data_value(literal_data1, literal_data2):
-    if literal_data1 == NO_DUMP_FUNC_LOG or literal_data2 == NO_DUMP_FUNC_LOG:
+    if literal_data1 == ERROR_MATCH_PATTERN or literal_data2 == ERROR_MATCH_PATTERN:
         raise comparison_error(
             f": [NO SERIALIZATION FUNCTION]the CUDA or SYCL value cannot be dummped, lack of dump function. Please report it to the tool developer.") # Failed detail.
     if literal_data1 != literal_data2:
