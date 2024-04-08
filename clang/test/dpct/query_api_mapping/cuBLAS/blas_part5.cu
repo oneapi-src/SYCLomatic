@@ -52,7 +52,11 @@
 // cublasSrotm-NEXT:   cublasSrotm(handle /*cublasHandle_t*/, n /*int*/, x /*float **/, incx /*int*/,
 // cublasSrotm-NEXT:               y /*float **/, incy /*int*/, param /*const float **/);
 // cublasSrotm-NEXT: Is migrated to:
-// cublasSrotm-NEXT:   oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x, incx, y, incy, const_cast<float*>(param));
+// cublasSrotm-NEXT:   [&]() {
+// cublasSrotm-NEXT:   dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), param, 5);
+// cublasSrotm-NEXT:   oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_ptr());
+// cublasSrotm-NEXT:   return 0;
+// cublasSrotm-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCher | FileCheck %s -check-prefix=cublasCher
 // cublasCher: CUDA API:
