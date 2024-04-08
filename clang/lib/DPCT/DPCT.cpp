@@ -1003,8 +1003,10 @@ int runDPCT(int argc, const char **argv) {
     Tool.setPrintErrorMessage(false);
   } else {
     IsUsingDefaultOutRoot = OutRoot.getPath().empty();
+    bool NeedCheckOutRootEmpty =
+        !(BuildScript == BuildScript::BS_Cmake) && !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
-        !getDefaultOutRoot(OutRoot)) {
+        !getDefaultOutRoot(OutRoot, NeedCheckOutRootEmpty)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }

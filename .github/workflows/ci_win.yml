@@ -25,11 +25,11 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: c2s.src
       - name: Checkout Test Repo
-        #uses: actions/checkout@v2
+        #uses: actions/checkout@v4
         #with:
         #  repository: 
         #  path: test_repo
@@ -181,7 +181,7 @@ jobs:
           - test_suite: api_coverage
           - test_suite: behavior_tests
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: c2s.src
 

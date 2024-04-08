@@ -1194,6 +1194,7 @@
 // CHECK-NEXT: curandGenerateUniform
 // CHECK-NEXT: curandGenerateUniformDouble
 // CHECK-NEXT: curandSetGeneratorOffset
+// CHECK-NEXT: curandSetGeneratorOrdering
 // CHECK-NEXT: curandSetPseudoRandomGeneratorSeed
 // CHECK-NEXT: curandSetQuasiRandomGeneratorDimensions
 // CHECK-NEXT: curandSetStream
