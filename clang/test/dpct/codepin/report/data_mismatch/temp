@@ -1,0 +1,2 @@
+"var_2"-"Data"-"member_2"-"Data": [VALUE MISMATCH] the CUDA value "bb123" differs from the SYCL value "ccc".
+Comparison succeeded, found differences. Please check the status in the "CodePin Report.csv".

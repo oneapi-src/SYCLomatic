@@ -1,0 +1,14 @@
+[WARNING] The size of CUDA and SYCL checkpoint lists is mismatched.
+ Original codepin size: 2. 
+ migrated codepin size: 1.
+
+Traceback (most recent call last):
+  File "/home/chenshe1/sandbox/dpct_Release_bin/bin/codepin-report", line 182, in <module>
+    main()
+  File "/home/chenshe1/sandbox/dpct_Release_bin/bin/codepin-report", line 167, in main
+    failed_log = compare_data_lists(cuda_list, sycl_list)
+  File "/home/chenshe1/sandbox/dpct_Release_bin/bin/codepin-report", line 144, in compare_data_lists
+    compare_check_point(cuda_checkpoint, sycl_list.get(id))
+  File "/home/chenshe1/sandbox/dpct_Release_bin/bin/codepin-report", line 95, in compare_check_point
+    sycl_var = sycl_check_point.get(name)
+AttributeError: 'NoneType' object has no attribute 'get'

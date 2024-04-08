@@ -1,0 +1,4 @@
+// CHECK: CodePin Summary
+// CHECK: Consistently APIs count, 1
+// CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
+// CHECK: serial123-"var_2"-"Data"-"member_2"-"Data",serial123-"var_2"-"Data"-"member_2"-"Data",Data value, [VALUE MISMATCH] the CUDA value "bb123" differs from the SYCL value "ccc".
