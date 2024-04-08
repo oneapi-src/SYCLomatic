@@ -2071,3 +2071,144 @@
   CmakeSyntax: enable_language
   In: enable_language(${empty}CUDA${empty})
   Out: enable_language(CXX)
+
+- Rule: rule_add_library
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_library
+  In: add_library(${name} ${sources})
+  Out: add_library(${name} ${sources})
+  Subrules:
+    sources:
+      In: ${src}.cu
+      Out: ${src}.dp.cpp
+      MatchMode: Full
+
+- Rule: rule_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    sources:
+      In: ${src}.cu
+      Out: ${src}.dp.cpp
+      MatchMode: Full
+
+- Rule: rule_add_link_options_add_arch
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_arch_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --add-arch=${arch}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_add_arch"
+
+- Rule: rule_add_link_options_device_c
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: device_c_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --device-c
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_device_c"
+
+- Rule: rule_add_link_options_disable_target
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: disable_target_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --disable-target=${target}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_disable_target"
+
+- Rule: rule_add_link_options_gen_codes
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: gen_codes_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --gen-codes=${arch}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_gen_codes"
+
+- Rule: rule_add_link_options_no_ptxas_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: no_ptxas_options_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --no-ptxas-options
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_no_ptxas_options"
+
+- Rule: rule_add_link_options_emit_ptx
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: emit_ptx_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --emit-ptx=${file}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_emit_ptx"
+
+- Rule: rule_add_link_options_nvvmir_library
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: nvvmir_library_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --nvvmir-library=${library}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_nvvmir_library"
+
+- Rule: rule_add_link_options_path
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: library_path_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --library-path=${path}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_library_path"
+
+- Rule: rule_add_link_options_library_empty
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: library_empty_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --library=
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_empty_library_arg"
