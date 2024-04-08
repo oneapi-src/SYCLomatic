@@ -3900,8 +3900,6 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
     }
     if (!VI.second->getType()->SharedVarInfo.TypeName.empty() &&
         !LI.first.getCanonicalPath().empty() && LI.second) {
-      std::cout << "LI.first.getCanonicalPath().str():" << LI.first.getCanonicalPath().str() << std::endl;
-      std::cout << "LI.second:" << LI.second << std::endl;
       DiagnosticsUtils::reportAtCurrentLocation(
           LI.first.getCanonicalPath().str(), LI.second,
           Warnings::MOVE_TYPE_DEFINITION, true,
