@@ -688,6 +688,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudnnDropoutDescriptor_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::dropout_desc",
                                       HelperFeatureEnum::device_ext)},
+      {"cudnnConvolutionMode_t", std::make_shared<TypeNameRule>("int")},
+      {"cudnnNanPropagation_t", std::make_shared<TypeNameRule>("int")},
   };
 
   // CuDNN Enum constants name mapping.
