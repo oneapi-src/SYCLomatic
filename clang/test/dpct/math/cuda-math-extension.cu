@@ -81,6 +81,14 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = __dsub_ru(d0, d1);
   // CHECK: d2 = sycl::ext::intel::math::dsub_rz(d0, d1);
   d2 = __dsub_rz(d0, d1);
+  // CHECK: d2 = sycl::ext::intel::math::fma_rd(d0, d1, d2);
+  d2 = __fma_rd(d0, d1, d2);
+  // CHECK: d2 = sycl::ext::intel::math::fma_rn(d0, d1, d2);
+  d2 = __fma_rn(d0, d1, d2);
+  // CHECK: d2 = sycl::ext::intel::math::fma_ru(d0, d1, d2);
+  d2 = __fma_ru(d0, d1, d2);
+  // CHECK: d2 = sycl::ext::intel::math::fma_rz(d0, d1, d2);
+  d2 = __fma_rz(d0, d1, d2);
 }
 
 __global__ void kernelFuncFloat(float *deviceArrayFloat) {
@@ -149,6 +157,14 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = __fadd_ru(f0, f1);
   // CHECK: f2 = sycl::ext::intel::math::fadd_rz(f0, f1);
   f2 = __fadd_rz(f0, f1);
+  // CHECK: f2 = sycl::ext::intel::math::fmaf_rd(f0, f1, f2);
+  f2 = __fmaf_rd(f0, f1, f2);
+  // CHECK: f2 = sycl::ext::intel::math::fmaf_rn(f0, f1, f2);
+  f2 = __fmaf_rn(f0, f1, f2);
+  // CHECK: f2 = sycl::ext::intel::math::fmaf_ru(f0, f1, f2);
+  f2 = __fmaf_ru(f0, f1, f2);
+  // CHECK: f2 = sycl::ext::intel::math::fmaf_rz(f0, f1, f2);
+  f2 = __fmaf_rz(f0, f1, f2);
   // CHECK: f2 = sycl::ext::intel::math::fmul_rd(f0, f1);
   f2 = __fmul_rd(f0, f1);
   // CHECK: f2 = sycl::ext::intel::math::fmul_rn(f0, f1);
