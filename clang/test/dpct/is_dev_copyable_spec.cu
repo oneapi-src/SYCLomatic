@@ -2,6 +2,7 @@
 // RUN: FileCheck --input-file %T/is_dev_copyable_spec/is_dev_copyable_spec.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/is_dev_copyable_spec/is_dev_copyable_spec.dp.cpp -o %T/is_dev_copyable_spec/is_dev_copyable_spec.dp.o %}
 
+// Case1: template struct with <<<>>>
 //      CHECK: template<class T1, class T2>
 // CHECK-NEXT: struct UserStruct1 {
 // CHECK-NEXT:   UserStruct1() {}
@@ -28,12 +29,16 @@ struct UserStruct2 {
 template<class V1, class V2>
 __global__ void k1(UserStruct1<V1, V2>, UserStruct2) {}
 
+template<class V1, class V2>
 void foo1() {
-  UserStruct1<float, int> us1;
+  UserStruct1<V1, V2> us1;
   UserStruct2 us2;
   k1<<<1, 1>>>(us1, us2);
 }
 
+template void foo1<float, int>();
+
+// Case2: template struct with cudaLaunchKernel
 //      CHECK: template<class T1, class T2>
 // CHECK-NEXT: struct UserStruct3 {
 // CHECK-NEXT:   UserStruct3() {}
@@ -68,6 +73,7 @@ void foo2() {
   cudaLaunchKernel((void *)&k2<float, int>, dim3(1), dim3(1), args, 0, 0);
 }
 
+// Case3: template struct as a template argument
 //      CHECK: struct UserStruct5 {
 // CHECK-NEXT:   UserStruct5() {}
 // CHECK-NEXT:   UserStruct5(UserStruct5 const &) {}
@@ -95,4 +101,65 @@ __global__ void k3(V) {}
 void foo3() {
   UserStruct6<UserStruct5> us6;
   k3<<<1, 1>>>(us6);
+}
+
+// Case4: Forward declaraion of template struct
+template<class V>
+struct UserStruct7;
+
+template<class V>
+__global__ void k4(V) {}
+
+template<class V>
+void foo4() {
+  UserStruct7<V> us7;
+  k4<<<1, 1>>>(us7);
+}
+
+template<class T>
+struct UserStruct7 {
+  UserStruct7() {}
+  UserStruct7(UserStruct7 const &) {}
+};
+
+template void foo4<float>();
+
+// Case5: Full specialization of template struct
+template<class T1, class T2>
+struct UserStruct8 {
+  UserStruct8() {}
+  UserStruct8(UserStruct8 const &) {}
+};
+template<>
+struct UserStruct8<double, float> {
+  UserStruct8() {}
+  UserStruct8(UserStruct8 const &) {}
+};
+
+template<class V>
+__global__ void k5(V) {}
+
+void foo5() {
+  UserStruct8<double, float> us8;
+  k5<<<1, 1>>>(us8);
+}
+
+// Case6: Partial specialization of template struct
+template<class T1, class T2>
+struct UserStruct9 {
+  UserStruct9() {}
+  UserStruct9(UserStruct9 const &) {}
+};
+template<class TT>
+struct UserStruct9<TT, int> {
+  UserStruct9() {}
+  UserStruct9(UserStruct9 const &) {}
+};
+
+template<class V>
+__global__ void k6(V) {}
+
+void foo6() {
+  UserStruct9<float, int> us9;
+  k6<<<1, 1>>>(us9);
 }

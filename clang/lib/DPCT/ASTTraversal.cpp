@@ -8578,95 +8578,6 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       KCall->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_ForCUDADebug);
 }
 
-void KernelCallRule::insertDeviceCopyableSpecialization(QualType Type) {
-  std::function<const Decl *(QualType)> getTypeDecl;
-  getTypeDecl = [&getTypeDecl](QualType QT) -> const Decl * {
-    switch (QT->getTypeClass()) {
-    case Type::TypeClass::Elaborated:
-      return getTypeDecl(QT.getTypePtr()->castAs<ElaboratedType>()->desugar());
-    case Type::TypeClass::TemplateSpecialization:
-      return QT.getTypePtr()
-          ->getAs<TemplateSpecializationType>()
-          ->getTemplateName()
-          .getAsTemplateDecl();
-    case Type::TypeClass::Record:
-      return QT.getTypePtr()->getAs<RecordType>()->getDecl();
-    case Type::TypeClass::SubstTemplateTypeParm:
-      return getTypeDecl(QT.getTypePtr()
-                             ->castAs<SubstTemplateTypeParmType>()
-                             ->getReplacementType());
-    default:
-      return nullptr;
-    }
-  };
-
-  if (Type->isPointerType())
-    return;
-  const Decl *D = getTypeDecl(Type);
-  if (!D)
-    return;
-  if (!isUserDefinedDecl(D))
-    return;
-  if (Type.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
-    return;
-
-  // Prepare replacemet
-  std::string Repl;
-  if (const auto *CTSD = dyn_cast<ClassTemplateSpecializationDecl>(D)) {
-    D = CTSD->getSpecializedTemplate();
-  }
-  if (const auto *CTD = dyn_cast<ClassTemplateDecl>(D)) {
-    llvm::raw_string_ostream OS(Repl);
-    CTD->getTemplateParameters()->print(OS, DpctGlobalInfo::getContext());
-    OS << getNL();
-    OS << "struct sycl::is_device_copyable<";
-    std::string TArgs;
-    for (const auto *ND : CTD->getTemplateParameters()->asArray()) {
-      TArgs += ND->getNameAsString();
-      TArgs += ", ";
-    }
-    if (!TArgs.empty()) {
-      TArgs = TArgs.substr(0, TArgs.size() - 2);
-    }
-    OS << CTD->getNameAsString() << "<" << TArgs << ">";
-    OS << "> : std::true_type {};";
-    OS << getNL();
-  } else if (const auto *RD = dyn_cast<RecordDecl>(D)) {
-    Repl += "template <>";
-    Repl += getNL();
-    Repl += "struct sycl::is_device_copyable<";
-    Repl += RD->getNameAsString();
-    Repl += "> : std::true_type {};";
-    Repl += getNL();
-  } else {
-    return;
-  }
-
-  // Find insert location (next line after semicolon)
-  SourceLocation EndLoc = D->getEndLoc();
-  bool MeetSemicolon = false;
-  const char *CharPtr =
-      DpctGlobalInfo::getSourceManager().getCharacterData(EndLoc);
-  while (CharPtr) {
-    if (*CharPtr == ';') {
-      MeetSemicolon = true;
-      CharPtr++;
-      continue;
-    }
-    if (*CharPtr == '\n') {
-      CharPtr++;
-      if (MeetSemicolon)
-        break;
-      continue;
-    }
-    CharPtr++;
-  }
-  unsigned int Offset =
-      CharPtr - DpctGlobalInfo::getSourceManager().getCharacterData(EndLoc);
-  SourceLocation InsertLoc = EndLoc.getLocWithOffset(Offset);
-  emplaceTransformation(new ReplaceText(InsertLoc, 0, std::move(Repl)));
-}
-
 void KernelCallRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto KCall =
@@ -8700,8 +8611,12 @@ void KernelCallRule::runRule(
     if (Flag)
       DpctGlobalInfo::insertKCIndentWidth(IndentLen);
 
-    for (const Expr *Arg : KCall->arguments())
-      insertDeviceCopyableSpecialization(Arg->getType());
+    for (const Expr *Arg : KCall->arguments()) {
+      if (auto R = getDeviceCopyableSpecialization(Arg->getType())) {
+        emplaceTransformation(
+            new ReplaceText(R->first, 0, std::move(R->second)));
+      }
+    }
 
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
@@ -8746,15 +8661,6 @@ void KernelCallRule::runRule(
     if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall)) {
       emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
       removeTrailingSemicolon(LaunchKernelCall, Result);
-      if (const DeclRefExpr *DRE =
-              getAddressedRef(LaunchKernelCall->getArg(0))) {
-        if (const Decl *D = DRE->getReferencedDeclOfCallee()) {
-          if (const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(D)) {
-            for (const ParmVarDecl *Parm : FD->parameters())
-              insertDeviceCopyableSpecialization(Parm->getType());
-          }
-        }
-      }
     } else {
       auto FuncName = LaunchKernelCall->getDirectCallee()
                           ->getNameInfo()

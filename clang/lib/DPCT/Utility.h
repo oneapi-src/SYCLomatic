@@ -631,6 +631,8 @@ int isArgumentInitialized(
     const clang::Expr *Arg,
     std::vector<const clang::VarDecl *> &DeclsRequireInit);
 const DeclRefExpr *getAddressedRef(const Expr *E);
+std::optional<std::pair<SourceLocation, std::string>>
+getDeviceCopyableSpecialization(QualType Type);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

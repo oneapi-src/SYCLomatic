@@ -5468,6 +5468,13 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       Kernel->resizeTextureObjectList(FD->getNumParams());
       for (auto &Parm : FD->parameters()) {
         Kernel->ArgsInfo.emplace_back(Parm, ArgsArray, Kernel.get());
+        if (auto R = getDeviceCopyableSpecialization(Parm->getType())) {
+          auto FileNameAndOffset = DpctGlobalInfo::getLocInfo(R->first);
+          DpctGlobalInfo::getInstance().addReplacement(
+              std::make_shared<ExtReplacement>(FileNameAndOffset.first,
+                                               FileNameAndOffset.second, 0,
+                                               R->second, nullptr));
+        }
       }
     }
   } else {
