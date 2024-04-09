@@ -1546,23 +1546,25 @@ template <typename T>
 inline oneapi::mkl::blas::compute_mode
 deduce_compute_mode(std::optional<compute_type> ct, math_mode mm) {
   using Ty = typename DataType<T>::T2;
-  switch (ct) {
-  case compute_type::_16f_pedantic:
-  case compute_type::_32f_pedantic:
-  case compute_type::_64f_pedantic:
-  case compute_type::_32i_pedantic:
-    return oneapi::mkl::blas::compute_mode::standard;
-  case compute_type::_32f:
-    if constexpr (std::is_same_v<Ty, std::complex<float>> ||
-                  std::is_same_v<Ty, std::complex<double>>)
-      return oneapi::mkl::blas::compute_mode::complex_3m;
-    break;
-  case compute_type::_32f_fast_16bf:
-    return oneapi::mkl::blas::compute_mode::float_to_bf16;
-  case compute_type::_32f_fast_tf32:
-    return oneapi::mkl::blas::compute_mode::float_to_tf32;
-  default:
-    [[fallthrough]];
+  if (ct) {
+    switch (ct.value()) {
+    case compute_type::_16f_pedantic:
+    case compute_type::_32f_pedantic:
+    case compute_type::_64f_pedantic:
+    case compute_type::_32i_pedantic:
+      return oneapi::mkl::blas::compute_mode::standard;
+    case compute_type::_32f:
+      if constexpr (std::is_same_v<Ty, std::complex<float>> ||
+                    std::is_same_v<Ty, std::complex<double>>)
+        return oneapi::mkl::blas::compute_mode::complex_3m;
+      break;
+    case compute_type::_32f_fast_16bf:
+      return oneapi::mkl::blas::compute_mode::float_to_bf16;
+    case compute_type::_32f_fast_tf32:
+      return oneapi::mkl::blas::compute_mode::float_to_tf32;
+    default:
+      [[fallthrough]];
+    }
   }
   if (mm == math_mode::_tf32_tensor_op)
     return oneapi::mkl::blas::compute_mode::float_to_tf32;
