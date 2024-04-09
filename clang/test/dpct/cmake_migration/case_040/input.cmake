@@ -1,0 +1,3 @@
+# simplest case
+set_source_files_properties(${src_files} PROPERTIES LANGUAGE CUDA)
+
