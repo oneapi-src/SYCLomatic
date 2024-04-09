@@ -1,5 +1,0 @@
-CodePin Summary
-Consistently APIs count, 1
-CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
-serial123-"var_2"-"Data"-"member_2"-"Data",serial123-"var_2"-"Data"-"member_2"-"Data",Data value, [VALUE MISMATCH] the CUDA value "bb123" differs from the SYCL value "ccc".
-serial1234-"var_2"-"Data"-"member_2"-"Data",serial1234-"var_2"-"Data"-"member_2"-"Data",Data value, [VALUE MISMATCH] the CUDA value "bb123" differs from the SYCL value "cc".

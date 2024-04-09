@@ -713,7 +713,7 @@ int runDPCT(int argc, const char **argv) {
     CallIndependentTool("intercept-build");
 #endif
   if (CodePinReport)
-    CallIndependentTool("codepin-report");
+    CallIndependentTool("codepin-report.py");
 
   if (InRoot.getPath().size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot.getPath() << "' is too long\n";

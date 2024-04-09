@@ -1,4 +1,5 @@
 // CHECK: CodePin Summary
+// CHECK: Totally APIs count, 2
 // CHECK: Consistently APIs count, 1
 // CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
 // CHECK: serial1243,N/A,Execution path,Cannot find the checkpoint which 'ID' is "serial1243" in the migrated sycl codepin dataset.
