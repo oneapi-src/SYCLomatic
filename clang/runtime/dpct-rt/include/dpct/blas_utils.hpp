@@ -295,7 +295,6 @@ enum class math_mode : int {
   _disallow_reduced_precision_reduction
 };
 enum class compute_type : int {
-  _default,
   _16f,
   _16f_pedantic,
   _32f,
@@ -1544,8 +1543,8 @@ inline library_data_t compute_type_to_library_data_t(compute_type ct) {
 } // namespace detail
 #ifdef __INTEL_MKL__
 template <typename T>
-inline oneapi::mkl::blas::compute_mode deduce_compute_mode(compute_type ct,
-                                                           math_mode mm) {
+inline oneapi::mkl::blas::compute_mode
+deduce_compute_mode(std::optional<compute_type> ct, math_mode mm) {
   using Ty = typename DataType<T>::T2;
   switch (ct) {
   case compute_type::_16f_pedantic:
@@ -1571,7 +1570,8 @@ inline oneapi::mkl::blas::compute_mode deduce_compute_mode(compute_type ct,
 }
 
 inline oneapi::mkl::blas::compute_mode
-deduce_compute_mode(compute_type ct, math_mode mm, bool is_complex) {
+deduce_compute_mode(std::optional<compute_type> ct, math_mode mm,
+                    bool is_complex) {
   if (is_complex)
     return deduce_compute_mode<std::complex<float>>(ct, mm);
   return deduce_compute_mode<float>(ct, mm);
@@ -1616,7 +1616,7 @@ inline void gemm(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
                                  a_type == library_data_t::complex_double);
     scaling_type = detail::compute_type_to_library_data_t(*ct_p);
   } else {
-    cm = deduce_compute_mode(compute_type::_default, desc_ptr->get_math_mode(),
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
                              a_type == library_data_t::complex_float ||
                                  a_type == library_data_t::complex_double);
     scaling_type = std::get<library_data_t>(ct);
@@ -1778,7 +1778,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     scaling_type = detail::compute_type_to_library_data_t(*ct_p);
   } else {
 #ifdef __INTEL_MKL__
-    cm = deduce_compute_mode(compute_type::_default, desc_ptr->get_math_mode(),
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
                              a_type == library_data_t::complex_float ||
                                  a_type == library_data_t::complex_double);
 #endif
@@ -1954,7 +1954,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     scaling_type = detail::compute_type_to_library_data_t(*ct_p);
   } else {
 #ifdef __INTEL_MKL__
-    cm = deduce_compute_mode(compute_type::_default, desc_ptr->get_math_mode(),
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
                              a_type == library_data_t::complex_float ||
                                  a_type == library_data_t::complex_double);
 #endif
@@ -2102,8 +2102,7 @@ inline void syrk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
                  int ldc) {
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
-  auto cm =
-      deduce_compute_mode<T>(compute_type::_default, desc_ptr->get_math_mode());
+  auto cm = deduce_compute_mode<T>(std::nullopt, desc_ptr->get_math_mode());
 #endif
   dpct::detail::rk_impl<false, T, T>(q, uplo, trans, n, k, alpha, a, lda, b,
                                      ldb, beta, c, ldc COMPUTE_MODE_ARG);
@@ -2131,8 +2130,7 @@ inline void herk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
                  T *c, int ldc) {
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
-  auto cm =
-      deduce_compute_mode<T>(compute_type::_default, desc_ptr->get_math_mode());
+  auto cm = deduce_compute_mode<T>(std::nullopt, desc_ptr->get_math_mode());
 #endif
   dpct::detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b,
                                         ldb, beta, c, ldc COMPUTE_MODE_ARG);
@@ -2175,7 +2173,7 @@ inline void trsm_batch(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
                              a_type == library_data_t::complex_float ||
                                  a_type == library_data_t::complex_double);
   else
-    cm = deduce_compute_mode(compute_type::_default, desc_ptr->get_math_mode(),
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
                              a_type == library_data_t::complex_float ||
                                  a_type == library_data_t::complex_double);
 #endif
@@ -2241,8 +2239,7 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
   using Ty = typename DataType<T>::T2;
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
-  auto cm = deduce_compute_mode<Ty>(compute_type::_default,
-                                    desc_ptr->get_math_mode());
+  auto cm = deduce_compute_mode<Ty>(std::nullopt, desc_ptr->get_math_mode());
 #endif
   auto alpha_val = dpct::get_value(alpha, q);
   if (b != c) {
