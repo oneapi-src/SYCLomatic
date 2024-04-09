@@ -61,11 +61,12 @@ template <typename T> struct DataType<sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
 
-inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
-                            int from_ld, int rows, int cols, int elem_size,
-                            memcpy_direction direction = automatic,
-                            sycl::queue &queue = dpct::get_default_queue(),
-                            bool async = false) {
+[[deprecated("Please use dpct::blas::matrix_mem_copy() instead.")]] inline void
+matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld, int from_ld,
+                int rows, int cols, int elem_size,
+                memcpy_direction direction = automatic,
+                sycl::queue &queue = dpct::get_default_queue(),
+                bool async = false) {
   if (to_ptr == from_ptr && to_ld == from_ld) {
     return;
   }
@@ -73,11 +74,12 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
   if (to_ld == from_ld) {
     size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
     if (async)
-      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                          copy_size, direction);
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction);
     else
-      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                          copy_size, direction).wait();
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction)
+          .wait();
   } else {
     if (async)
       detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
@@ -102,11 +104,11 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
 /// \param [in] async If this argument is true, the return of the function
 /// does NOT guarantee the copy is completed.
 template <typename T>
-inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
-                            int from_ld, int rows, int cols,
-                            memcpy_direction direction = automatic,
-                            sycl::queue &queue = dpct::get_default_queue(),
-                            bool async = false) {
+[[deprecated("Please use dpct::blas::matrix_mem_copy() instead.")]] inline void
+matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld, int from_ld, int rows,
+                int cols, memcpy_direction direction = automatic,
+                sycl::queue &queue = dpct::get_default_queue(),
+                bool async = false) {
   using Ty = typename DataType<T>::T2;
   matrix_mem_copy((void *)to_ptr, (void *)from_ptr, to_ld, from_ld, rows, cols,
                   sizeof(Ty), direction, queue, async);
