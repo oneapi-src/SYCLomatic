@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CallExprRewriterCommon.h"
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasGetVersion_v2",
@@ -35,6 +36,60 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSetKernelStream",
     CALL(MapNames::getDpctNamespace() + "blas::descriptor::set_saved_queue",
          ARG(0))))
+
+#define SETGET_VECTOR(NAME)                                                    \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME,                                                               \
+          CALL(MapNames::getDpctNamespace() + "blas::matrix_mem_copy", ARG(4), \
+               ARG(2), ARG(5), ARG(3), ARG("1"), ARG(0), ARG(1)))))
+SETGET_VECTOR(cublasSetVector)
+SETGET_VECTOR(cublasGetVector)
+SETGET_VECTOR(cublasSetVector_64)
+SETGET_VECTOR(cublasGetVector_64)
+#undef SETGET_VECTOR
+
+#define SETGET_VECTOR_ASYNC(NAME)                                              \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME, CALL(MapNames::getDpctNamespace() + "blas::matrix_mem_copy",  \
+                      ARG(4), ARG(2), ARG(5), ARG(3), ARG("1"), ARG(0),        \
+                      ARG(1), ARG(MapNames::getDpctNamespace() + "automatic"), \
+                      DEREF(6), ARG("true")))))
+SETGET_VECTOR_ASYNC(cublasSetVectorAsync)
+SETGET_VECTOR_ASYNC(cublasGetVectorAsync)
+SETGET_VECTOR_ASYNC(cublasSetVectorAsync_64)
+SETGET_VECTOR_ASYNC(cublasGetVectorAsync_64)
+#undef SETGET_VECTOR_ASYNC
+
+#define SETGET_MATRIX(NAME)                                                    \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME,                                                               \
+          CALL(MapNames::getDpctNamespace() + "blas::matrix_mem_copy", ARG(5), \
+               ARG(3), ARG(6), ARG(4), ARG(0), ARG(1), ARG(2)))))
+SETGET_MATRIX(cublasSetMatrix)
+SETGET_MATRIX(cublasGetMatrix)
+SETGET_MATRIX(cublasSetMatrix_64)
+SETGET_MATRIX(cublasGetMatrix_64)
+#undef SETGET_MATRIX
+
+#define SETGET_MATRIX_ASYNC(NAME)                                              \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME, CALL(MapNames::getDpctNamespace() + "blas::matrix_mem_copy",  \
+                      ARG(5), ARG(3), ARG(6), ARG(4), ARG(0), ARG(1), ARG(2),  \
+                      ARG(MapNames::getDpctNamespace() + "automatic"),         \
+                      DEREF(7), ARG("true")))))
+SETGET_MATRIX_ASYNC(cublasSetMatrixAsync)
+SETGET_MATRIX_ASYNC(cublasGetMatrixAsync)
+SETGET_MATRIX_ASYNC(cublasSetMatrixAsync_64)
+SETGET_MATRIX_ASYNC(cublasGetMatrixAsync_64)
+#undef SETGET_MATRIX_ASYNC
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSgemm_v2",

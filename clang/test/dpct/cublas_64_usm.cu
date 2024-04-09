@@ -52,6 +52,26 @@ void foo() {
   int64_t incx;
   int64_t incy;
 
+  int64_t elemSize;
+  cudaStream_t stream;
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize, dpct::automatic, *stream, true));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize, dpct::automatic, *stream, true));
+  status = cublasSetVector_64(n, elemSize, A_s, incx, C_s, incy);
+  status = cublasGetVector_64(n, elemSize, A_s, incx, C_s, incy);
+  status = cublasSetVectorAsync_64(n, elemSize, A_s, incx, C_s, incy, stream);
+  status = cublasGetVectorAsync_64(n, elemSize, A_s, incx, C_s, incy, stream);
+
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize, dpct::automatic, *stream, true));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize, dpct::automatic, *stream, true));
+  status = cublasSetMatrix_64(m, n, elemSize, A_s, lda, C_s, ldb);
+  status = cublasGetMatrix_64(m, n, elemSize, A_s, lda, C_s, ldb);
+  status = cublasSetMatrixAsync_64(m, n, elemSize, A_s, lda, C_s, ldb, stream);
+  status = cublasGetMatrixAsync_64(m, n, elemSize, A_s, lda, C_s, ldb, stream);
+
   //      CHECK: /*
   // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
