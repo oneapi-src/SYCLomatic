@@ -864,6 +864,21 @@
   In: cuda_include_directories(${value})
   Out: include_directories(${value})
 
+- Rule: rule_CUDA_INCLUDE_DIRS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_INCLUDE_DIRS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_INCLUDE_DIRS}
+      Out: |
+        \${SYCL_INCLUDE_DIR}
+      RuleId: "replace_CUDA_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
+
 - Rule: rule_cuda_add_cufft_to_target
   Kind: CMakeRule
   Priority: Fallback
@@ -877,19 +892,6 @@
   CmakeSyntax: cuda_add_cublas_to_target
   In: cuda_add_cublas_to_target(${target})
   Out: dpct_helper_add_mkl_to_target(${target})
-
-- Rule: rule_include_directories
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: include_directories
-  MatchMode: Partial
-  In: include_directories(${value})
-  Out: include_directories(${value})
-  Subrules:
-    value:
-      In: CUDA_INCLUDE_DIRS
-      Out: SYCL_INCLUDE_DIR
-      MatchMode: Full
 
 - Rule: rule_cuda_add_library
   Kind: CMakeRule
@@ -2012,9 +2014,16 @@
 - Rule: rule_CUDA_VERSION
   Kind: CMakeRule
   Priority: Fallback
+  MatchMode: Partial
   CmakeSyntax: CUDA_VERSION
-  In: ${command_name}(CUDA_VERSION ${rest_args})
-  Out: ${command_name}(COMPATIBILITY_VERSION ${rest_args})
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION
+      Out: COMPATIBILITY_VERSION
+      RuleId: "replace_CUDA_VERSION_with_COMPATIBILITY_VERSION"
 
 - Rule: rule_user_defined_variable
   Kind: CMakeRule
