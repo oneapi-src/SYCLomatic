@@ -102,7 +102,7 @@
 // cublasSetMatrixAsync-NEXT:                        a /*const void **/, lda /*int*/, b /*void **/,
 // cublasSetMatrixAsync-NEXT:                        ldb /*int*/, stream /*cudaStream_t*/);
 // cublasSetMatrixAsync-NEXT: Is migrated to:
-// cublasSetMatrixAsync-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
+// cublasSetMatrixAsync-NEXT:   dpct::blas::matrix_mem_copy(b, a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSaxpy | FileCheck %s -check-prefix=cublasSaxpy
 // cublasSaxpy: CUDA API:
@@ -191,7 +191,7 @@
 // cublasGetMatrix-NEXT:   cublasGetMatrix(rows /*int*/, cols /*int*/, elementsize /*int*/,
 // cublasGetMatrix-NEXT:                   a /*const void **/, lda /*int*/, b /*void **/, ldb /*int*/);
 // cublasGetMatrix-NEXT: Is migrated to:
-// cublasGetMatrix-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize);
+// cublasGetMatrix-NEXT:   dpct::blas::matrix_mem_copy(b, a, ldb, lda, rows, cols, elementsize);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZgeam | FileCheck %s -check-prefix=cublasZgeam
 // cublasZgeam: CUDA API:
