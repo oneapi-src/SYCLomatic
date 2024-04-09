@@ -573,11 +573,11 @@ inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 #endif
 
 #ifdef __INTEL_MKL__
-#define COMPUTE_MODE_PARAM , oneapi::mkl::blas::compute_mode cm
-#define COMPUTE_MODE_ARG , cm
+#define DPCT_COMPUTE_MODE_PARAM , oneapi::mkl::blas::compute_mode cm
+#define DPCT_COMPUTE_MODE_ARG , cm
 #else
-#define COMPUTE_MODE_PARAM
-#define COMPUTE_MODE_ARG
+#define DPCT_COMPUTE_MODE_PARAM
+#define DPCT_COMPUTE_MODE_ARG
 #endif
 
 template <class Ta, class Tb, class Tc, class Ts>
@@ -585,7 +585,7 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                             oneapi::mkl::transpose b_trans, int m, int n, int k,
                             const void *alpha, const void **a, int lda,
                             const void **b, int ldb, const void *beta, void **c,
-                            int ldc, int batch_size COMPUTE_MODE_PARAM) {
+                            int ldc, int batch_size DPCT_COMPUTE_MODE_PARAM) {
   struct matrix_info_t {
     oneapi::mkl::transpose transpose_info[2];
     Ts value_info[2];
@@ -619,7 +619,7 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
       reinterpret_cast<const Tb **>(b), matrix_info->ld_info + 1,
       matrix_info->value_info + 1, reinterpret_cast<Tc **>(c),
       matrix_info->ld_info + 2, 1, &(matrix_info->groupsize_info)
-      COMPUTE_MODE_ARG);
+      DPCT_COMPUTE_MODE_ARG);
 
   q.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
@@ -634,7 +634,7 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                             long long int stride_a, const void *b, int ldb,
                             long long int stride_b, const void *beta, void *c,
                             int ldc, long long int stride_c,
-                            int batch_size COMPUTE_MODE_PARAM) {
+                            int batch_size DPCT_COMPUTE_MODE_PARAM) {
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory<const Ta>(a);
@@ -643,14 +643,14 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
   oneapi::mkl::blas::column_major::gemm_batch(
       q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda, stride_a, data_b,
       ldb, stride_b, beta_value, data_c, ldc, stride_c,
-      batch_size COMPUTE_MODE_ARG);
+      batch_size DPCT_COMPUTE_MODE_ARG);
 }
 
 template <bool is_hermitian, class T, class Tbeta>
 inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
                     oneapi::mkl::transpose trans, int n, int k, const T *alpha,
                     const T *a, int lda, const T *b, int ldb, const Tbeta *beta,
-                    T *c, int ldc COMPUTE_MODE_PARAM) {
+                    T *c, int ldc DPCT_COMPUTE_MODE_PARAM) {
   // For symmetric matrix, this function performs: C = alpha*OP(A)*(OP(B))^T + beta*C
   // For Hermitian matrix, this function performs: C = alpha*OP(A)*(OP(B))^H + beta*C
   // The gemmt() function performs: C = alpha*OPA(A)*OPB(B) + beta*C
@@ -680,7 +680,7 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
         origin_b_cols, origin_b_rows * origin_b_cols, 1);
     oneapi::mkl::blas::column_major::gemmt(
         q, uplo, trans_A, trans_B, n, k, alpha_value, data_a, lda, new_B_buffer,
-        origin_b_cols, beta_value, data_c, ldc COMPUTE_MODE_ARG);
+        origin_b_cols, beta_value, data_c, ldc DPCT_COMPUTE_MODE_ARG);
 #else
     working_memory<T> new_B(origin_b_rows * origin_b_cols * sizeof(T), q);
     oneapi::mkl::blas::column_major::omatcopy_batch(
@@ -691,7 +691,7 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
     sycl::event e = oneapi::mkl::blas::column_major::gemmt(
         q, uplo, trans_A, trans_B, n, k, alpha_value, data_a, lda,
         reinterpret_cast<Ty *>(new_B.get_ptr()), origin_b_cols, beta_value,
-        data_c, ldc COMPUTE_MODE_ARG);
+        data_c, ldc DPCT_COMPUTE_MODE_ARG);
     new_B.set_event(e);
 #endif
   } else {
@@ -709,7 +709,7 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
     auto data_c = get_memory<Ty>(c);
     oneapi::mkl::blas::column_major::gemmt(
         q, uplo, trans_A, trans_B, n, k, alpha_value, data_a, lda, data_b, ldb,
-        beta_value, data_c, ldc COMPUTE_MODE_ARG);
+        beta_value, data_c, ldc DPCT_COMPUTE_MODE_ARG);
   }
 }
 
@@ -719,7 +719,7 @@ trsm_batch_impl(sycl::queue &q, oneapi::mkl::side left_right,
                 oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
                 oneapi::mkl::diag unit_diag, int m, int n, const void *alpha,
                 const void **a, int lda, void **b, int ldb,
-                int batch_size COMPUTE_MODE_PARAM) {
+                int batch_size DPCT_COMPUTE_MODE_PARAM) {
   struct matrix_info_t {
     matrix_info_t(oneapi::mkl::side side_info, oneapi::mkl::uplo uplo_info,
                   oneapi::mkl::transpose transpose_info,
@@ -757,7 +757,7 @@ trsm_batch_impl(sycl::queue &q, oneapi::mkl::side left_right,
       &(matrix_info->value_info), reinterpret_cast<const Ta **>(a),
       matrix_info->ld_info, reinterpret_cast<Tb **>(b),
       matrix_info->ld_info + 1, 1, &(matrix_info->groupsize_info)
-      COMPUTE_MODE_ARG);
+      DPCT_COMPUTE_MODE_ARG);
 
   q.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
@@ -1801,7 +1801,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
       library_data_t::real_float, library_data_t::real_float): {
     dpct::detail::gemm_batch_impl<float, float, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size COMPUTE_MODE_ARG);
+        batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -1809,7 +1809,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
       library_data_t::real_double, library_data_t::real_double): {
     dpct::detail::gemm_batch_impl<double, double, double, double>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size COMPUTE_MODE_ARG);
+        batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -1818,7 +1818,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     dpct::detail::gemm_batch_impl<std::complex<float>, std::complex<float>,
                                   std::complex<float>, std::complex<float>>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size COMPUTE_MODE_ARG);
+        batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -1827,7 +1827,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     dpct::detail::gemm_batch_impl<std::complex<double>, std::complex<double>,
                                   std::complex<double>, std::complex<double>>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size COMPUTE_MODE_ARG);
+        batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -1836,7 +1836,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     dpct::detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
                                   sycl::half>(q, a_trans, b_trans, m, n, k,
                                               alpha, a, lda, b, ldb, beta, c,
-                                              ldc, batch_size COMPUTE_MODE_ARG);
+                                              ldc, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
 #ifdef __INTEL_MKL__
@@ -1900,7 +1900,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     dpct::detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
                                   sycl::half>(
         q, a_trans, b_trans, m, n, k, &alpha_half, a, lda, b, ldb, &beta_half,
-        c, ldc, batch_size COMPUTE_MODE_ARG);
+        c, ldc, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   default:
@@ -1977,7 +1977,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
       library_data_t::real_float, library_data_t::real_float): {
     dpct::detail::gemm_batch_impl<float, float, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size COMPUTE_MODE_ARG);
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -1985,7 +1985,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
       library_data_t::real_double, library_data_t::real_double): {
     dpct::detail::gemm_batch_impl<double, double, double, double>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size COMPUTE_MODE_ARG);
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -1994,7 +1994,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     dpct::detail::gemm_batch_impl<std::complex<float>, std::complex<float>,
                                   std::complex<float>, std::complex<float>>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size COMPUTE_MODE_ARG);
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -2003,7 +2003,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     dpct::detail::gemm_batch_impl<std::complex<double>, std::complex<double>,
                                   std::complex<double>, std::complex<double>>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size COMPUTE_MODE_ARG);
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -2012,7 +2012,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     dpct::detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
                                   sycl::half>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size COMPUTE_MODE_ARG);
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
 #ifdef __INTEL_MKL__
@@ -2072,7 +2072,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     dpct::detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
                                   sycl::half>(
         q, a_trans, b_trans, m, n, k, &alpha_half, a, lda, stride_a, b, ldb,
-        stride_b, &beta_half, c, ldc, stride_c, batch_size COMPUTE_MODE_ARG);
+        stride_b, &beta_half, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   default:
@@ -2105,7 +2105,7 @@ inline void syrk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
   auto cm = deduce_compute_mode<T>(std::nullopt, desc_ptr->get_math_mode());
 #endif
   dpct::detail::rk_impl<false, T, T>(q, uplo, trans, n, k, alpha, a, lda, b,
-                                     ldb, beta, c, ldc COMPUTE_MODE_ARG);
+                                     ldb, beta, c, ldc DPCT_COMPUTE_MODE_ARG);
 }
 
 /// This routines perform a special rank-k update of a Hermitian matrix C by
@@ -2133,7 +2133,7 @@ inline void herk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
   auto cm = deduce_compute_mode<T>(std::nullopt, desc_ptr->get_math_mode());
 #endif
   dpct::detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b,
-                                        ldb, beta, c, ldc COMPUTE_MODE_ARG);
+                                        ldb, beta, c, ldc DPCT_COMPUTE_MODE_ARG);
 }
 
 /// This routine performs a group of trsm operations. Each trsm solves an
@@ -2183,14 +2183,14 @@ inline void trsm_batch(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
                                              library_data_t::real_float): {
     dpct::detail::trsm_batch_impl<float, float, float>(
         q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
-        ldb, batch_size COMPUTE_MODE_ARG);
+        ldb, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_double,
                                              library_data_t::real_double): {
     dpct::detail::trsm_batch_impl<double, double, double>(
         q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
-        ldb, batch_size COMPUTE_MODE_ARG);
+        ldb, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::complex_float,
@@ -2198,7 +2198,7 @@ inline void trsm_batch(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
     dpct::detail::trsm_batch_impl<std::complex<float>, std::complex<float>,
                                   std::complex<float>>(
         q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
-        ldb, batch_size COMPUTE_MODE_ARG);
+        ldb, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::complex_double,
@@ -2206,7 +2206,7 @@ inline void trsm_batch(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
     dpct::detail::trsm_batch_impl<std::complex<double>, std::complex<double>,
                                   std::complex<double>>(
         q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
-        ldb, batch_size COMPUTE_MODE_ARG);
+        ldb, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   default:
@@ -2249,7 +2249,7 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
   auto data_c = dpct::detail::get_memory<Ty>(c);
   oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
                                         unit_diag, m, n, alpha_val, data_a, lda,
-                                        data_c, ldc COMPUTE_MODE_ARG);
+                                        data_c, ldc DPCT_COMPUTE_MODE_ARG);
 }
 } // namespace blas
 
@@ -2466,6 +2466,6 @@ trmm(sycl::queue &q, oneapi::mkl::side left_right,
 }
 
 } // namespace dpct
-#undef COMPUTE_MODE_ARG
-#undef COMPUTE_MODE_PARAM
+#undef DPCT_COMPUTE_MODE_ARG
+#undef DPCT_COMPUTE_MODE_PARAM
 #endif // __DPCT_BLAS_UTILS_HPP__
