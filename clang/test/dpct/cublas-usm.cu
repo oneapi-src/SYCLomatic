@@ -59,10 +59,10 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter 11111 equals to parameter 11111 but greater than 1, the generated code performance may be sub-optimal.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int a = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_C_S, (void*)h_a, 11111, 11111, 1, 10, sizeof(float)));
-  //CHECK-NEXT:dpct::matrix_mem_copy((void*)d_C_S, (void*)h_b, 1, 1, 1, 10, sizeof(float));
-  //CHECK-NEXT:dpct::matrix_mem_copy((void*)d_C_S, (void*)h_c, 1, 1, 1, 10, sizeof(float));
-  //CHECK-NEXT:a = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_C_S, (void*)h_a, 100, 100, 100, 100, 10000));
+  //CHECK-NEXT:int a = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(d_C_S, h_a, 11111, 11111, 1, 10, sizeof(float)));
+  //CHECK-NEXT:dpct::blas::matrix_mem_copy(d_C_S, h_b, 1, 1, 1, 10, sizeof(float));
+  //CHECK-NEXT:dpct::blas::matrix_mem_copy(d_C_S, h_c, 1, 1, 1, 10, sizeof(float));
+  //CHECK-NEXT:a = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(d_C_S, h_a, 100, 100, 100, 100, 10000));
   int a = cublasSetVector(10, sizeof(float), h_a, 11111, d_C_S, 11111);
   cublasSetVector(10, sizeof(float), h_b, 1, d_C_S, 1);
   cublasSetVector(10, sizeof(float), h_c, 1, d_C_S, 1);

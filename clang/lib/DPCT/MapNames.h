@@ -363,7 +363,6 @@ public:
 
   static MapTy BLASAPIWithRewriter;
   static std::unordered_set<std::string> SOLVERAPIWithRewriter;
-  static std::unordered_set<std::string> SPARSEAPIWithRewriter;
 
   static const std::unordered_set<std::string> CooperativeGroupsAPISet;
 
