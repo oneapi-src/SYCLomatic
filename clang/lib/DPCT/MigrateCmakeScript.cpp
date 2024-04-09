@@ -28,11 +28,14 @@ using namespace llvm::cl;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
-std::map<std::string, bool> cmake_commands{
-#define ENTRY_TYPE(TYPENAME, VALUE, COMMENT) {#TYPENAME, VALUE},
+std::map<std::string /*CMake command*/,
+         std::tuple<bool /*ProcessedOrNot*/, bool /*CUDASpecificOrNot*/>>
+    cmake_commands{
+#define ENTRY_TYPE(TYPENAME, VALUE1, COMMENT, VALUE2)                          \
+  {#TYPENAME, {VALUE1, VALUE2}},
 #include "CMakeCommands.inc"
 #undef ENTRY_TYPE
-};
+    };
 
 static std::vector<clang::tooling::UnifiedPath /*file path*/>
     CmakeScriptFilesSet;
@@ -545,7 +548,7 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString,
         for (int Idx = Begin; Idx < End; Idx++) {
           Line[Idx] = Str[Idx - Begin];
         }
-        if (!Iter->second) {
+        if (!std::get<0>(Iter->second) && std::get<1>(Iter->second)) {
           std::string WarningMsg =
               FileName + ":" + std::to_string(Count) + ":warning:";
           WarningMsg += DiagnosticsUtils::getMsgText(
