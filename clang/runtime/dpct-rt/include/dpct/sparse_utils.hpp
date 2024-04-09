@@ -870,7 +870,7 @@ private:
 
 namespace detail {
 template <typename T> struct spmv_impl {
-  void operator()(sycl::queue queue, oneapi::mkl::transpose trans,
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans,
                   const void *alpha, sparse_matrix_desc_t a,
                   std::shared_ptr<dense_vector_desc> x, const void *beta,
                   std::shared_ptr<dense_vector_desc> y) {
@@ -900,7 +900,7 @@ template <typename T> struct spmv_impl {
 };
 
 template <typename T> struct spmm_impl {
-  void operator()(sycl::queue queue, oneapi::mkl::transpose trans_a,
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans_a,
                   oneapi::mkl::transpose trans_b, const void *alpha,
                   sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
                   const void *beta, std::shared_ptr<dense_matrix_desc> c) {
@@ -916,6 +916,42 @@ template <typename T> struct spmm_impl {
                                   b->get_col_num(), b->get_leading_dim(),
                                   beta_value, data_c, c->get_leading_dim()),
         a);
+  }
+};
+
+template <typename T> struct spsv_impl {
+  void operator()(sycl::queue &queue, oneapi::mkl::uplo uplo,
+                  oneapi::mkl::diag diag, oneapi::mkl::transpose trans_a,
+                  const void *alpha, sparse_matrix_desc_t a,
+                  std::shared_ptr<dense_vector_desc> x,
+                  std::shared_ptr<dense_vector_desc> y) {
+    auto alpha_value =
+        dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
+    auto data_x = dpct::detail::get_memory<T>(x->get_value());
+    auto data_y = dpct::detail::get_memory<T>(y->get_value());
+    SPARSE_CALL(oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
+                                          alpha_value, a->get_matrix_handle(),
+                                          data_x, data_y),
+                a);
+  }
+};
+
+template <typename T> struct spsm_impl {
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans_a,
+                  oneapi::mkl::transpose trans_b, oneapi::mkl::uplo uplo,
+                  oneapi::mkl::diag diag, const void *alpha,
+                  sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
+                  std::shared_ptr<dense_matrix_desc> c) {
+    auto alpha_value =
+        dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
+    auto data_b = dpct::detail::get_memory<T>(b->get_value());
+    auto data_c = dpct::detail::get_memory<T>(c->get_value());
+    SPARSE_CALL(oneapi::mkl::sparse::trsm(
+                    queue, b->get_layout(), trans_a, trans_b, uplo, diag,
+                    alpha_value, a->get_matrix_handle(), data_b,
+                    c->get_col_num(), b->get_leading_dim(), data_c,
+                    c->get_leading_dim()),
+                a);
   }
 };
 #undef SPARSE_CALL
@@ -1186,23 +1222,6 @@ inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
   }
 }
 
-namespace detail {
-template <typename T> struct spsv_impl {
-  void operator()(sycl::queue queue, oneapi::mkl::uplo uplo,
-                  oneapi::mkl::diag diag, oneapi::mkl::transpose trans_a,
-                  const void *alpha, sparse_matrix_desc_t a,
-                  std::shared_ptr<dense_vector_desc> x,
-                  std::shared_ptr<dense_vector_desc> y) {
-    auto alpha_value =
-        dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
-    auto data_x = dpct::detail::get_memory<T>(x->get_value());
-    auto data_y = dpct::detail::get_memory<T>(y->get_value());
-    oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag, alpha_value,
-                              a->get_matrix_handle(), data_x, data_y);
-  }
-};
-} // namespace detail
-
 /// Performs internal optimizations for spsv by analyzing the provided matrix
 /// structure and operation parameters.
 /// \param [in] queue The queue where the routine should be executed. It must
@@ -1245,6 +1264,56 @@ inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
   oneapi::mkl::diag diag = a->get_diag().value();
   detail::spblas_shim<detail::spsv_impl>(a->get_value_type(), queue, uplo, diag,
                                          trans_a, alpha, a, x, y);
+}
+
+/// Performs internal optimizations for spsm by analyzing the provided matrix
+/// structure and operation parameters.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] a Specifies the dense matrix b.
+/// \param [in] a Specifies the dense matrix c.
+inline void spsm_optimize(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                          sparse_matrix_desc_t a,
+                          std::shared_ptr<dense_matrix_desc> b,
+                          std::shared_ptr<dense_matrix_desc> c) {
+  if (!a->get_uplo() || !a->get_diag()) {
+    throw std::runtime_error(
+        "dpct::sparse::spsm_optimize(): oneapi::mkl::sparse::optimize_trsm "
+        "needs uplo and diag attributes to be specified.");
+  }
+  oneapi::mkl::sparse::optimize_trsm(
+      queue, b->get_layout(), a->get_uplo().value(), trans_a,
+      a->get_diag().value(), a->get_matrix_handle(), c->get_col_num());
+}
+
+/// Solves a system of linear equations with multiple right-hand sides (RHS)
+/// for a triangular sparse matrix.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] trans_b Specifies operation on input matrix b.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] b Specifies the dense matrix b.
+/// \param [in, out] c Specifies the dense matrix c.
+/// \param [in] data_type Specifies the data type of \param a, \param b and
+/// \param c .
+inline void spsm(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                 oneapi::mkl::transpose trans_b, const void *alpha,
+                 sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
+                 std::shared_ptr<dense_matrix_desc> c,
+                 library_data_t data_type) {
+  if (!a->get_uplo() || !a->get_diag()) {
+    throw std::runtime_error(
+        "dpct::sparse::spsm(): oneapi::mkl::sparse::trsm needs uplo and diag "
+        "attributes to be specified.");
+  }
+  oneapi::mkl::uplo uplo = a->get_uplo().value();
+  oneapi::mkl::diag diag = a->get_diag().value();
+  detail::spblas_shim<detail::spsm_impl>(data_type, queue, trans_a, trans_b,
+                                         uplo, diag, alpha, a, b, c);
 }
 
 namespace detail {

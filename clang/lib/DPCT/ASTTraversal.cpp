@@ -1751,7 +1751,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
               "cusparseSpSVDescr_t", "cusparseSpGEMMAlg_t", "CUuuid",
               "cusparseSpSVAlg_t", "cudaFuncAttributes",
-              "cudaLaunchAttributeValue"))))))
+              "cudaLaunchAttributeValue", "cusparseSpSMDescr_t",
+              "cusparseConstSpMatDescr_t", "cusparseSpSMAlg_t",
+              "cusparseConstDnMatDescr_t"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3729,7 +3731,8 @@ REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUSPARSE_STATUS.*)|(CUSPARSE_POINTER_MODE.*)|"
-                                "(CUSPARSE_ALG.*)|(CUSPARSE_SOLVE_POLICY.*)"))))
+                                "(CUSPARSE_ALG.*)|(CUSPARSE_SOLVE_POLICY.*)|("
+                                "CUSPARSE_SPSM_ALG_.*)"))))
                     .bind("SPBLASStatusConstants"),
                 this);
   MF.addMatcher(
@@ -3842,7 +3845,8 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseCsrsv_solveEx",
         /*level 3*/
         "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
-        "cusparseScsrmm2", "cusparseDcsrmm2", "cusparseCcsrmm2", "cusparseZcsrmm2",
+        "cusparseScsrmm2", "cusparseDcsrmm2", "cusparseCcsrmm2",
+        "cusparseZcsrmm2",
         /*Generic*/
         "cusparseCreateCsr", "cusparseDestroySpMat", "cusparseCsrGet",
         "cusparseSpMatGetFormat", "cusparseSpMatGetIndexBase",
@@ -3863,7 +3867,10 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseZcsr2csc", "cusparseCsr2cscEx2_bufferSize",
         "cusparseCsr2cscEx2", "cusparseSpSV_createDescr",
         "cusparseSpSV_destroyDescr", "cusparseSpSV_solve",
-        "cusparseSpSV_bufferSize", "cusparseSpSV_analysis");
+        "cusparseSpSV_bufferSize", "cusparseSpSV_analysis",
+        "cusparseSpSM_analysis", "cusparseSpSM_bufferSize",
+        "cusparseSpSM_createDescr", "cusparseSpSM_destroyDescr",
+        "cusparseSpSM_solve");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -3900,8 +3907,8 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         Diagnostics::UNSUPPORT_MATRIX_TYPE, true, "general");
   }
 
-  if (MapNames::SPARSEAPIWithRewriter.find(FuncName) !=
-      MapNames::SPARSEAPIWithRewriter.end()) {
+  if (CallExprRewriterFactoryBase::RewriterMap->find(FuncName) !=
+      CallExprRewriterFactoryBase::RewriterMap->end()) {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
