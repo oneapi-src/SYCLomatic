@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CallExprRewriterCommon.h"
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasGetVersion_v2",
@@ -35,6 +36,60 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSetKernelStream",
     CALL(MapNames::getDpctNamespace() + "blas::descriptor::set_saved_queue",
          ARG(0))))
+
+#define SETGET_VECTOR(NAME)                                                    \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME,                                                               \
+          CALL(MapNames::getDpctNamespace() + "blas::matrix_mem_copy", ARG(4), \
+               ARG(2), ARG(5), ARG(3), ARG("1"), ARG(0), ARG(1)))))
+SETGET_VECTOR(cublasSetVector)
+SETGET_VECTOR(cublasGetVector)
+SETGET_VECTOR(cublasSetVector_64)
+SETGET_VECTOR(cublasGetVector_64)
+#undef SETGET_VECTOR
+
+#define SETGET_VECTOR_ASYNC(NAME)                                              \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME, CALL(MapNames::getDpctNamespace() + "blas::matrix_mem_copy",  \
+                      ARG(4), ARG(2), ARG(5), ARG(3), ARG("1"), ARG(0),        \
+                      ARG(1), ARG(MapNames::getDpctNamespace() + "automatic"), \
+                      DEREF(6), ARG("true")))))
+SETGET_VECTOR_ASYNC(cublasSetVectorAsync)
+SETGET_VECTOR_ASYNC(cublasGetVectorAsync)
+SETGET_VECTOR_ASYNC(cublasSetVectorAsync_64)
+SETGET_VECTOR_ASYNC(cublasGetVectorAsync_64)
+#undef SETGET_VECTOR_ASYNC
+
+#define SETGET_MATRIX(NAME)                                                    \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME,                                                               \
+          CALL(MapNames::getDpctNamespace() + "blas::matrix_mem_copy", ARG(5), \
+               ARG(3), ARG(6), ARG(4), ARG(0), ARG(1), ARG(2)))))
+SETGET_MATRIX(cublasSetMatrix)
+SETGET_MATRIX(cublasGetMatrix)
+SETGET_MATRIX(cublasSetMatrix_64)
+SETGET_MATRIX(cublasGetMatrix_64)
+#undef SETGET_MATRIX
+
+#define SETGET_MATRIX_ASYNC(NAME)                                              \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME, CALL(MapNames::getDpctNamespace() + "blas::matrix_mem_copy",  \
+                      ARG(5), ARG(3), ARG(6), ARG(4), ARG(0), ARG(1), ARG(2),  \
+                      ARG(MapNames::getDpctNamespace() + "automatic"),         \
+                      DEREF(7), ARG("true")))))
+SETGET_MATRIX_ASYNC(cublasSetMatrixAsync)
+SETGET_MATRIX_ASYNC(cublasGetMatrixAsync)
+SETGET_MATRIX_ASYNC(cublasSetMatrixAsync_64)
+SETGET_MATRIX_ASYNC(cublasGetMatrixAsync_64)
+#undef SETGET_MATRIX_ASYNC
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSgemm_v2",
@@ -582,22 +637,6 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), ARG(2), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
              DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
-
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasCrot_v2",
-                       CALL(MapNames::getDpctNamespace() + "rot", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(3), ARG(4),
-                            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
-                            ARG(5), ARG(6), ARG(7), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float")))))
-
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasZrot_v2",
-                       CALL(MapNames::getDpctNamespace() + "rot", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(3), ARG(4),
-                            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
-                            ARG(5), ARG(6), ARG(7), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double")))))
 
 WARNING_FACTORY_ENTRY(
     "cublasGetStatusString",
@@ -1813,3 +1852,267 @@ ASUM(cublasDasum_v2_64, wrapper_double_out, double, double)
 ASUM(cublasScasum_v2_64, wrapper_float_out, std::complex<float>, float)
 ASUM(cublasDzasum_v2_64, wrapper_double_out, std::complex<double>, double)
 #undef ASUM
+
+#define ROT(FUNC, TYPE1)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::rot",                             \
+           MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                     \
+           BUFFER_OR_USM_PTR(ARG(2), #TYPE1), ARG(3),                          \
+           BUFFER_OR_USM_PTR(ARG(4), #TYPE1), ARG(5),                          \
+           SCALAR_INPUT(ARG(6), #TYPE1), SCALAR_INPUT(ARG(7), #TYPE1))))
+ROT(cublasSrot_v2, float)
+ROT(cublasDrot_v2, double)
+ROT(cublasCrot_v2, std::complex<float>)
+ROT(cublasCsrot_v2, std::complex<float>)
+ROT(cublasZrot_v2, std::complex<double>)
+ROT(cublasZdrot_v2, std::complex<double>)
+ROT(cublasSrot_v2_64, float)
+ROT(cublasDrot_v2_64, double)
+ROT(cublasCrot_v2_64, std::complex<float>)
+ROT(cublasCsrot_v2_64, std::complex<float>)
+ROT(cublasZrot_v2_64, std::complex<double>)
+ROT(cublasZdrot_v2_64, std::complex<double>)
+#undef ROT
+
+#define ROTG(FUNC, TYPE1, TYPE2, TYPE3, TYPE4, TYPE5)                          \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct1", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(1)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct2", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(2)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE2,                 \
+               "res_wrapper_ct3", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(3)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE3,                 \
+               "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(4)),                                                        \
+          CALL("oneapi::mkl::blas::column_major::rotg",                        \
+               MEMBER_CALL(ARG(0), true, "get_queue"),                         \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct1"), false, "get_ptr"),      \
+                   #TYPE4),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct2"), false, "get_ptr"),      \
+                   #TYPE4),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct3"), false, "get_ptr"),      \
+                   #TYPE5),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),      \
+                   #TYPE4)),                                                   \
+          LITERAL("return 0")),                                                \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+ROTG(cublasSrotg_v2, wrapper_float_inout, wrapper_float_out, wrapper_float_out, float, float)
+ROTG(cublasDrotg_v2, wrapper_double_inout, wrapper_double_out, wrapper_double_out, double, double)
+ROTG(cublasCrotg_v2, wrapper_float2_inout, wrapper_float_out, wrapper_float2_out, std::complex<float>, float)
+ROTG(cublasZrotg_v2, wrapper_double2_inout, wrapper_double_out, wrapper_double2_out, std::complex<double>, double)
+#undef ROTG
+
+#define ROTM(FUNC, TYPE1, TYPE2)                                               \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct6", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(6), ARG("5")),                                              \
+          CALL("oneapi::mkl::blas::column_major::rotm",                        \
+               MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
+               BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
+               BUFFER_OR_USM_PTR(ARG(4), #TYPE2), ARG(5),                      \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct6"), false, "get_ptr"),      \
+                   #TYPE2)),                                                   \
+          LITERAL("return 0")),                                                \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+ROTM(cublasSrotm_v2, wrapper_float_in, float)
+ROTM(cublasDrotm_v2, wrapper_double_in, double)
+ROTM(cublasSrotm_v2_64, wrapper_float_in, float)
+ROTM(cublasDrotm_v2_64, wrapper_double_in, double)
+#undef ROTM
+
+#define ROTMG(FUNC, TYPE1, TYPE2, TYPE3)                                       \
+  WARNING_FACTORY_ENTRY(                                                       \
+      #FUNC,                                                                   \
+      LAMBDA_FACTORY_ENTRY(                                                    \
+          #FUNC,                                                               \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct1", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(1)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct2", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(2)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE1,                 \
+               "res_wrapper_ct3", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(3)),                                                        \
+          DECL(MapNames::getDpctNamespace() + "blas::" #TYPE2,                 \
+               "res_wrapper_ct5", MEMBER_CALL(ARG(0), true, "get_queue"),      \
+               ARG(5), ARG("5")),                                              \
+          CALL("oneapi::mkl::blas::column_major::rotmg",                       \
+               MEMBER_CALL(ARG(0), true, "get_queue"),                         \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct1"), false, "get_ptr"),      \
+                   #TYPE3),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct2"), false, "get_ptr"),      \
+                   #TYPE3),                                                    \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct3"), false, "get_ptr"),      \
+                   #TYPE3),                                                    \
+               SCALAR_INPUT(ARG(4), #TYPE3),                                   \
+               BUFFER_OR_USM_PTR(                                              \
+                   MEMBER_CALL(ARG("res_wrapper_ct5"), false, "get_ptr"),      \
+                   #TYPE3)),                                                   \
+          LITERAL("return 0")),                                                \
+      Diagnostics::NOERROR_RETURN_LAMBDA)
+ROTMG(cublasSrotmg_v2, wrapper_float_inout, wrapper_float_out, float)
+ROTMG(cublasDrotmg_v2, wrapper_double_inout, wrapper_double_out, double)
+#undef ROTMG
+
+#define GEMV(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::gemv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           ARG(2), ARG(3), SCALAR_INPUT(ARG(4), #TYPE1),                       \
+           BUFFER_OR_USM_PTR(ARG(5), #TYPE1), ARG(6),                          \
+           BUFFER_OR_USM_PTR(ARG(7), #TYPE1), ARG(8),                          \
+           SCALAR_INPUT(ARG(9), #TYPE1), BUFFER_OR_USM_PTR(ARG(10), #TYPE1),   \
+           ARG(11))))
+GEMV(cublasSgemv_v2, float)
+GEMV(cublasDgemv_v2, double)
+GEMV(cublasCgemv_v2, std::complex<float>)
+GEMV(cublasZgemv_v2, std::complex<double>)
+GEMV(cublasSgemv_v2_64, float)
+GEMV(cublasDgemv_v2_64, double)
+GEMV(cublasCgemv_v2_64, std::complex<float>)
+GEMV(cublasZgemv_v2_64, std::complex<double>)
+#undef GEMV
+
+#define GBMV(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::gbmv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           ARG(2), ARG(3), ARG(4), ARG(5), SCALAR_INPUT(ARG(6), #TYPE1),       \
+           BUFFER_OR_USM_PTR(ARG(7), #TYPE1), ARG(8),                          \
+           BUFFER_OR_USM_PTR(ARG(9), #TYPE1), ARG(10),                         \
+           SCALAR_INPUT(ARG(11), #TYPE1), BUFFER_OR_USM_PTR(ARG(12), #TYPE1),  \
+           ARG(13))))
+GBMV(cublasSgbmv_v2, float)
+GBMV(cublasDgbmv_v2, double)
+GBMV(cublasCgbmv_v2, std::complex<float>)
+GBMV(cublasZgbmv_v2, std::complex<double>)
+GBMV(cublasSgbmv_v2_64, float)
+GBMV(cublasDgbmv_v2_64, double)
+GBMV(cublasCgbmv_v2_64, std::complex<float>)
+GBMV(cublasZgbmv_v2_64, std::complex<double>)
+#undef GBMV
+
+#define TRMV(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::trmv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),    \
+           ARG(4), BUFFER_OR_USM_PTR(ARG(5), #TYPE1), ARG(6),                  \
+           BUFFER_OR_USM_PTR(ARG(7), #TYPE1), ARG(8))))
+TRMV(cublasStrmv_v2, float)
+TRMV(cublasDtrmv_v2, double)
+TRMV(cublasCtrmv_v2, std::complex<float>)
+TRMV(cublasZtrmv_v2, std::complex<double>)
+TRMV(cublasStrmv_v2_64, float)
+TRMV(cublasDtrmv_v2_64, double)
+TRMV(cublasCtrmv_v2_64, std::complex<float>)
+TRMV(cublasZtrmv_v2_64, std::complex<double>)
+#undef TRMV
+
+#define TBMV(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::tbmv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),    \
+           ARG(4), ARG(5), BUFFER_OR_USM_PTR(ARG(6), #TYPE1), ARG(7),          \
+           BUFFER_OR_USM_PTR(ARG(8), #TYPE1), ARG(9))))
+TBMV(cublasStbmv_v2, float)
+TBMV(cublasDtbmv_v2, double)
+TBMV(cublasCtbmv_v2, std::complex<float>)
+TBMV(cublasZtbmv_v2, std::complex<double>)
+TBMV(cublasStbmv_v2_64, float)
+TBMV(cublasDtbmv_v2_64, double)
+TBMV(cublasCtbmv_v2_64, std::complex<float>)
+TBMV(cublasZtbmv_v2_64, std::complex<double>)
+#undef TBMV
+
+#define TPMV(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::tpmv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),    \
+           ARG(4), BUFFER_OR_USM_PTR(ARG(5), #TYPE1),                          \
+           BUFFER_OR_USM_PTR(ARG(6), #TYPE1), ARG(7))))
+TPMV(cublasStpmv_v2, float)
+TPMV(cublasDtpmv_v2, double)
+TPMV(cublasCtpmv_v2, std::complex<float>)
+TPMV(cublasZtpmv_v2, std::complex<double>)
+TPMV(cublasStpmv_v2_64, float)
+TPMV(cublasDtpmv_v2_64, double)
+TPMV(cublasCtpmv_v2_64, std::complex<float>)
+TPMV(cublasZtpmv_v2_64, std::complex<double>)
+#undef TPMV
+
+#define TRSV(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::trsv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),    \
+           ARG(4), BUFFER_OR_USM_PTR(ARG(5), #TYPE1), ARG(6),                  \
+           BUFFER_OR_USM_PTR(ARG(7), #TYPE1), ARG(8))))
+TRSV(cublasStrsv_v2, float)
+TRSV(cublasDtrsv_v2, double)
+TRSV(cublasCtrsv_v2, std::complex<float>)
+TRSV(cublasZtrsv_v2, std::complex<double>)
+TRSV(cublasStrsv_v2_64, float)
+TRSV(cublasDtrsv_v2_64, double)
+TRSV(cublasCtrsv_v2_64, std::complex<float>)
+TRSV(cublasZtrsv_v2_64, std::complex<double>)
+#undef TRSV
+
+#define TPSV(FUNC, TYPE1)                                                      \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::tpsv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),    \
+           ARG(4), BUFFER_OR_USM_PTR(ARG(5), #TYPE1),                          \
+           BUFFER_OR_USM_PTR(ARG(6), #TYPE1), ARG(7))))
+TPSV(cublasStpsv_v2, float)
+TPSV(cublasDtpsv_v2, double)
+TPSV(cublasCtpsv_v2, std::complex<float>)
+TPSV(cublasZtpsv_v2, std::complex<double>)
+TPSV(cublasStpsv_v2_64, float)
+TPSV(cublasDtpsv_v2_64, double)
+TPSV(cublasCtpsv_v2_64, std::complex<float>)
+TPSV(cublasZtpsv_v2_64, std::complex<double>)
+#undef TPSV
