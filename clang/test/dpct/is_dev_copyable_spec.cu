@@ -163,3 +163,77 @@ void foo6() {
   UserStruct9<float, int> us9;
   k6<<<1, 1>>>(us9);
 }
+
+// Case7: template struct with nested template struct
+//template<class U>
+//struct Test {
+//template<class T>
+//struct UserStruct10 {
+//  UserStruct10() {}
+//  UserStruct10(UserStruct10 const &) {}
+//};
+//};
+//
+//template<class V>
+//__global__ void k7(V) {}
+//
+//void foo7() {
+//  Test<int>::UserStruct10<float> us10;
+//  k7<<<1, 1>>>(us10);
+//}
+//
+// Case8: locally-defined template struct
+//template<class V>
+//__global__ void k8(V) {}
+//
+//void test8() {
+//  struct UserStruct11 {
+//    UserStruct11() {}
+//    UserStruct11(UserStruct11 const &) {}
+//  };
+//
+//  UserStruct11 us11;
+//  k8<<<1, 1>>>(us11);
+//}
+
+// Case9: template struct with using and template alias
+struct UserStruct12 {
+  UserStruct12() {}
+  UserStruct12(UserStruct12 const &) {}
+};
+
+template<class T>
+struct UserStruct13 {
+  UserStruct13() {}
+  UserStruct13(UserStruct13 const &) {}
+};
+
+struct UserStruct14 {
+  using A = UserStruct12;
+  template<class U> using B = UserStruct13<U>;
+};
+
+template<class V1, class V2>
+__global__ void k9(V1, V2) {}
+
+void test9() {
+  UserStruct14::A us13;
+  UserStruct14::B<float> us14;
+  k9<<<1, 1>>>(us13, us14);
+}
+
+// Case10: user-define struct in namespace
+//namespace ns {
+//struct UserStruct15 {
+//  UserStruct15() {}
+//  UserStruct15(UserStruct15 const &) {}
+//};
+//}
+//
+//template<class V>
+//__global__ void k10(V) {}
+//
+//void test9() {
+//  ns::UserStruct15 us15;
+//  k10<<<1, 1>>>(us15);
+//}
