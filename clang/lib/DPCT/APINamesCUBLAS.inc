@@ -96,65 +96,32 @@ SETGET_MATRIX_ASYNC(cublasSetMatrixAsync_64)
 SETGET_MATRIX_ASYNC(cublasGetMatrixAsync_64)
 #undef SETGET_MATRIX_ASYNC
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasSgemm_v2",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(7), "float"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "float"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(12), "float"), ARG(13))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDgemm_v2",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(7), "double"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "double"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(12), "double"), ARG(13))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCgemm_v2",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(7), "std::complex<float>"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<float>"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(12), "std::complex<float>"), ARG(13))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZgemm_v2",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(7), "std::complex<double>"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<double>"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(12), "std::complex<double>"), ARG(13))))
+#define GEMM(NAME, TYPE, IS_COMPLEX)                                           \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::gemm",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           ARG(3), ARG(4), ARG(5), SCALAR_INPUT(ARG(6), TYPE),                 \
+           BUFFER_OR_USM_PTR(ARG(7), TYPE), ARG(8),                            \
+           BUFFER_OR_USM_PTR(ARG(9), TYPE), ARG(10),                           \
+           SCALAR_INPUT(ARG(11), TYPE), BUFFER_OR_USM_PTR(ARG(12), TYPE),      \
+           ARG(13),                                                            \
+           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
+                ARG("std::nullopt"),                                           \
+                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
+                ARG(#IS_COMPLEX)))))
+GEMM(cublasHgemm, MapNames::getClNamespace() + "half", false)
+GEMM(cublasSgemm_v2, "float", false)
+GEMM(cublasDgemm_v2, "double", false)
+GEMM(cublasCgemm_v2, "std::complex<float>", true)
+GEMM(cublasZgemm_v2, "std::complex<double>", true)
+GEMM(cublasSgemm_v2_64, "float", false)
+GEMM(cublasDgemm_v2_64, "double", false)
+GEMM(cublasCgemm_v2_64, "std::complex<float>", true)
+GEMM(cublasZgemm_v2_64, "std::complex<double>", true)
+#undef GEMM
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -676,705 +643,170 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              ARG(MapNames::getDpctNamespace() +
                  "library_data_t::complex_float")))))
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasSgemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(7), "float"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "float"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(12), "float"), ARG(13))))
+#define SYRK(NAME, TYPE, IS_COMPLEX)                                           \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::syrk",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           ARG(3), ARG(4), SCALAR_INPUT(ARG(5), #TYPE),                        \
+           BUFFER_OR_USM_PTR(ARG(6), #TYPE), ARG(7),                           \
+           SCALAR_INPUT(ARG(8), #TYPE), BUFFER_OR_USM_PTR(ARG(9), #TYPE),      \
+           ARG(10),                                                            \
+           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
+                ARG("std::nullopt"),                                           \
+                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
+                ARG(#IS_COMPLEX)))))
+SYRK(cublasSsyrk_v2, float, false)
+SYRK(cublasDsyrk_v2, double, false)
+SYRK(cublasCsyrk_v2, std::complex<float>, true)
+SYRK(cublasZsyrk_v2, std::complex<double>, true)
+SYRK(cublasSsyrk_v2_64, float, false)
+SYRK(cublasDsyrk_v2_64, double, false)
+SYRK(cublasCsyrk_v2_64, std::complex<float>, true)
+SYRK(cublasZsyrk_v2_64, std::complex<double>, true)
+#undef SYRK
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDgemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(7), "double"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "double"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(12), "double"), ARG(13))))
+#define SYMM(NAME, TYPE, IS_COMPLEX)                                           \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::symm",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(3), ARG(4), SCALAR_INPUT(ARG(5), #TYPE),                        \
+           BUFFER_OR_USM_PTR(ARG(6), #TYPE), ARG(7),                           \
+           BUFFER_OR_USM_PTR(ARG(8), #TYPE), ARG(9),                           \
+           SCALAR_INPUT(ARG(10), #TYPE), BUFFER_OR_USM_PTR(ARG(11), #TYPE),    \
+           ARG(12),                                                            \
+           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
+                ARG("std::nullopt"),                                           \
+                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
+                ARG(#IS_COMPLEX)))))
+SYMM(cublasSsymm_v2, float, false)
+SYMM(cublasDsymm_v2, double, false)
+SYMM(cublasCsymm_v2, std::complex<float>, true)
+SYMM(cublasZsymm_v2, std::complex<double>, true)
+SYMM(cublasSsymm_v2_64, float, false)
+SYMM(cublasDsymm_v2_64, double, false)
+SYMM(cublasCsymm_v2_64, std::complex<float>, true)
+SYMM(cublasZsymm_v2_64, std::complex<double>, true)
+#undef SYMM
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCgemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(7), "std::complex<float>"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<float>"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(12), "std::complex<float>"), ARG(13))))
+#define TRSM(NAME, TYPE, IS_COMPLEX)                                           \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::trsm",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),    \
+           ARG(5), ARG(6), SCALAR_INPUT(ARG(7), #TYPE),                        \
+           BUFFER_OR_USM_PTR(ARG(8), #TYPE), ARG(9),                           \
+           BUFFER_OR_USM_PTR(ARG(10), #TYPE), ARG(11),                         \
+           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
+                ARG("std::nullopt"),                                           \
+                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
+                ARG(#IS_COMPLEX)))))
+TRSM(cublasStrsm_v2, float, false)
+TRSM(cublasDtrsm_v2, double, false)
+TRSM(cublasCtrsm_v2, std::complex<float>, true)
+TRSM(cublasZtrsm_v2, std::complex<double>, true)
+TRSM(cublasStrsm_v2_64, float, false)
+TRSM(cublasDtrsm_v2_64, double, false)
+TRSM(cublasCtrsm_v2_64, std::complex<float>, true)
+TRSM(cublasZtrsm_v2_64, std::complex<double>, true)
+#undef TRSM
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZgemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(7), "std::complex<double>"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<double>"), ARG(10),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(12), "std::complex<double>"), ARG(13))))
+#define HEMM(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::hemm",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(3), ARG(4), SCALAR_INPUT(ARG(5), #TYPE),                        \
+           BUFFER_OR_USM_PTR(ARG(6), #TYPE), ARG(7),                           \
+           BUFFER_OR_USM_PTR(ARG(8), #TYPE), ARG(9),                           \
+           SCALAR_INPUT(ARG(10), #TYPE), BUFFER_OR_USM_PTR(ARG(11), #TYPE),    \
+           ARG(12),                                                            \
+           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
+                ARG("std::nullopt"),                                           \
+                MEMBER_CALL(ARG(0), true, "get_math_mode"), ARG("true")))))
+HEMM(cublasChemm_v2, std::complex<float>)
+HEMM(cublasZhemm_v2, std::complex<double>)
+HEMM(cublasChemm_v2_64, std::complex<float>)
+HEMM(cublasZhemm_v2_64, std::complex<double>)
+#undef HEMM
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasSsyrk_v2",
-    CALL("oneapi::mkl::blas::column_major::syrk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "float"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "float"), ARG(10))))
+#define HERK(NAME, TYPE1, TYPE2)                                               \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::herk",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           ARG(3), ARG(4), SCALAR_INPUT(ARG(5), #TYPE2),                       \
+           BUFFER_OR_USM_PTR(ARG(6), #TYPE1), ARG(7),                          \
+           SCALAR_INPUT(ARG(8), #TYPE2), BUFFER_OR_USM_PTR(ARG(9), #TYPE1),    \
+           ARG(10),                                                            \
+           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
+                ARG("std::nullopt"),                                           \
+                MEMBER_CALL(ARG(0), true, "get_math_mode"), ARG("true")))))
+HERK(cublasCherk_v2, std::complex<float>, float)
+HERK(cublasZherk_v2, std::complex<double>, double)
+HERK(cublasCherk_v2_64, std::complex<float>, float)
+HERK(cublasZherk_v2_64, std::complex<double>, double)
+#undef HERK
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDsyrk_v2",
-    CALL("oneapi::mkl::blas::column_major::syrk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "double"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "double"), ARG(10))))
+#define SYR2K(NAME, TYPE, IS_COMPLEX)                                          \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::syr2k",                           \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           ARG(3), ARG(4), SCALAR_INPUT(ARG(5), #TYPE),                        \
+           BUFFER_OR_USM_PTR(ARG(6), #TYPE), ARG(7),                           \
+           BUFFER_OR_USM_PTR(ARG(8), #TYPE), ARG(9),                           \
+           SCALAR_INPUT(ARG(10), #TYPE), BUFFER_OR_USM_PTR(ARG(11), #TYPE),    \
+           ARG(12),                                                            \
+           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
+                ARG("std::nullopt"),                                           \
+                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
+                ARG(#IS_COMPLEX)))))
+SYR2K(cublasSsyr2k_v2, float, false)
+SYR2K(cublasDsyr2k_v2, double, false)
+SYR2K(cublasCsyr2k_v2, std::complex<float>, true)
+SYR2K(cublasZsyr2k_v2, std::complex<double>, true)
+SYR2K(cublasSsyr2k_v2_64, float, false)
+SYR2K(cublasDsyr2k_v2_64, double, false)
+SYR2K(cublasCsyr2k_v2_64, std::complex<float>, true)
+SYR2K(cublasZsyr2k_v2_64, std::complex<double>, true)
+#undef SYR2K
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCsyrk_v2",
-    CALL("oneapi::mkl::blas::column_major::syrk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<float>"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZsyrk_v2",
-    CALL("oneapi::mkl::blas::column_major::syrk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<double>"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasSsyrk_v2_64",
-    CALL("oneapi::mkl::blas::column_major::syrk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "float"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "float"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDsyrk_v2_64",
-    CALL("oneapi::mkl::blas::column_major::syrk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "double"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "double"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCsyrk_v2_64",
-    CALL("oneapi::mkl::blas::column_major::syrk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<float>"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZsyrk_v2_64",
-    CALL("oneapi::mkl::blas::column_major::syrk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<double>"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasSsymm_v2",
-    CALL("oneapi::mkl::blas::column_major::symm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "float"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "float"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "float"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDsymm_v2",
-    CALL("oneapi::mkl::blas::column_major::symm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "double"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "double"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "double"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCsymm_v2",
-    CALL("oneapi::mkl::blas::column_major::symm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<float>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZsymm_v2",
-    CALL("oneapi::mkl::blas::column_major::symm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<double>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasSsymm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::symm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "float"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "float"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "float"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDsymm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::symm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "double"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "double"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "double"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCsymm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::symm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<float>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZsymm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::symm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<double>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasStrsm_v2",
-    CALL("oneapi::mkl::blas::column_major::trsm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-         ARG(5), ARG(6),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(8), "float"), ARG(9),
-         BUFFER_OR_USM_PTR(ARG(10), "float"), ARG(11))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDtrsm_v2",
-    CALL("oneapi::mkl::blas::column_major::trsm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-         ARG(5), ARG(6),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(8), "double"), ARG(9),
-         BUFFER_OR_USM_PTR(ARG(10), "double"), ARG(11))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCtrsm_v2",
-    CALL("oneapi::mkl::blas::column_major::trsm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-         ARG(5), ARG(6),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         BUFFER_OR_USM_PTR(ARG(10), "std::complex<float>"), ARG(11))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZtrsm_v2",
-    CALL("oneapi::mkl::blas::column_major::trsm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-         ARG(5), ARG(6),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         BUFFER_OR_USM_PTR(ARG(10), "std::complex<double>"), ARG(11))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasStrsm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::trsm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-         ARG(5), ARG(6),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(8), "float"), ARG(9),
-         BUFFER_OR_USM_PTR(ARG(10), "float"), ARG(11))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDtrsm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::trsm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-         ARG(5), ARG(6),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(8), "double"), ARG(9),
-         BUFFER_OR_USM_PTR(ARG(10), "double"), ARG(11))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCtrsm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::trsm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-         ARG(5), ARG(6),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         BUFFER_OR_USM_PTR(ARG(10), "std::complex<float>"), ARG(11))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZtrsm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::trsm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-         ARG(5), ARG(6),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(7),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         BUFFER_OR_USM_PTR(ARG(10), "std::complex<double>"), ARG(11))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasChemm_v2",
-    CALL("oneapi::mkl::blas::column_major::hemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<float>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZhemm_v2",
-    CALL("oneapi::mkl::blas::column_major::hemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<double>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasChemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::hemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<float>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZhemm_v2_64",
-    CALL("oneapi::mkl::blas::column_major::hemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<double>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCherk_v2",
-    CALL("oneapi::mkl::blas::column_major::herk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<float>"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZherk_v2",
-    CALL("oneapi::mkl::blas::column_major::herk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<double>"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCherk_v2_64",
-    CALL("oneapi::mkl::blas::column_major::herk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<float>"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZherk_v2_64",
-    CALL("oneapi::mkl::blas::column_major::herk",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(8),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<double>"), ARG(10))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasSsyr2k_v2",
-    CALL("oneapi::mkl::blas::column_major::syr2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "float"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "float"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "float"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDsyr2k_v2",
-    CALL("oneapi::mkl::blas::column_major::syr2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "double"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "double"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "double"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCsyr2k_v2",
-    CALL("oneapi::mkl::blas::column_major::syr2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<float>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZsyr2k_v2",
-    CALL("oneapi::mkl::blas::column_major::syr2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<double>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasSsyr2k_v2_64",
-    CALL("oneapi::mkl::blas::column_major::syr2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "float"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "float"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "float"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasDsyr2k_v2_64",
-    CALL("oneapi::mkl::blas::column_major::syr2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "double"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "double"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "double"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCsyr2k_v2_64",
-    CALL("oneapi::mkl::blas::column_major::syr2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<float>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZsyr2k_v2_64",
-    CALL("oneapi::mkl::blas::column_major::syr2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<double>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCher2k_v2",
-    CALL("oneapi::mkl::blas::column_major::her2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<float>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZher2k_v2",
-    CALL("oneapi::mkl::blas::column_major::her2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<double>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCher2k_v2_64",
-    CALL("oneapi::mkl::blas::column_major::her2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<float>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<float>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<float>"), ARG(12))))
-
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZher2k_v2_64",
-    CALL("oneapi::mkl::blas::column_major::her2k",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(5),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(6), "std::complex<double>"), ARG(7),
-         BUFFER_OR_USM_PTR(ARG(8), "std::complex<double>"), ARG(9),
-         CALL(MapNames::getDpctNamespace() + "get_value", ARG(10),
-              MEMBER_CALL(ARG(0), true, "get_queue")),
-         BUFFER_OR_USM_PTR(ARG(11), "std::complex<double>"), ARG(12))))
+#define HER2K(NAME, TYPE1, TYPE2)                                              \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::her2k",                           \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           ARG(3), ARG(4), SCALAR_INPUT(ARG(5), #TYPE1),                       \
+           BUFFER_OR_USM_PTR(ARG(6), #TYPE1), ARG(7),                          \
+           BUFFER_OR_USM_PTR(ARG(8), #TYPE1), ARG(9),                          \
+           SCALAR_INPUT(ARG(10), #TYPE2), BUFFER_OR_USM_PTR(ARG(11), #TYPE1),  \
+           ARG(12),                                                            \
+           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
+                ARG("std::nullopt"),                                           \
+                MEMBER_CALL(ARG(0), true, "get_math_mode"), ARG("true")))))
+HER2K(cublasCher2k_v2, std::complex<float>, float)
+HER2K(cublasZher2k_v2, std::complex<double>, double)
+HER2K(cublasCher2k_v2_64, std::complex<float>, float)
+HER2K(cublasZher2k_v2_64, std::complex<double>, double)
+#undef HER2K
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSgeam_64",
@@ -2121,3 +1553,51 @@ TPSV(cublasDtpsv_v2_64, double)
 TPSV(cublasCtpsv_v2_64, std::complex<float>)
 TPSV(cublasZtpsv_v2_64, std::complex<double>)
 #undef TPSV
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasCgemm3m",
+    CALL("oneapi::mkl::blas::column_major::gemm",
+         MEMBER_CALL(ARG(0), true, "get_queue"),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         ARG(3), ARG(4), ARG(5), SCALAR_INPUT(ARG(6), "std::complex<double>"),
+         BUFFER_OR_USM_PTR(ARG(7), "std::complex<float>"), ARG(8),
+         BUFFER_OR_USM_PTR(ARG(9), "std::complex<float>"), ARG(10),
+         SCALAR_INPUT(ARG(11), "std::complex<double>"),
+         BUFFER_OR_USM_PTR(ARG(12), "std::complex<float>"), ARG(13),
+         ARG("oneapi::mkl::compute_mode::complex_3m"))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasZgemm3m",
+    CALL("oneapi::mkl::blas::column_major::gemm",
+         MEMBER_CALL(ARG(0), true, "get_queue"),
+         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         ARG(3), ARG(4), ARG(5), SCALAR_INPUT(ARG(6), "std::complex<double>"),
+         BUFFER_OR_USM_PTR(ARG(7), "std::complex<double>"), ARG(8),
+         BUFFER_OR_USM_PTR(ARG(9), "std::complex<double>"), ARG(10),
+         SCALAR_INPUT(ARG(11), "std::complex<double>"),
+         BUFFER_OR_USM_PTR(ARG(12), "std::complex<double>"), ARG(13),
+         ARG("oneapi::mkl::compute_mode::complex_3m"))))
+
+#define GEMM_BATCH(NAME, TYPE, IS_COMPLEX)                                     \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::gemm_batch",                      \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           ARG(3), ARG(4), ARG(5), SCALAR_INPUT(ARG(6), TYPE),                 \
+           BUFFER_OR_USM_PTR(ARG(7), TYPE), ARG(8), ARG(9),                    \
+           BUFFER_OR_USM_PTR(ARG(10), TYPE), ARG(11), ARG(12),                 \
+           SCALAR_INPUT(ARG(13), TYPE), BUFFER_OR_USM_PTR(ARG(14), TYPE),      \
+           ARG(15), ARG(16), ARG(17),                                          \
+           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
+                ARG("std::nullopt"),                                           \
+                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
+                ARG(#IS_COMPLEX)))))
+GEMM_BATCH(cublasHgemmStridedBatched, MapNames::getClNamespace() + "half", false)
+GEMM_BATCH(cublasSgemmStridedBatched, "float", false)
+GEMM_BATCH(cublasDgemmStridedBatched, "double", false)
+GEMM_BATCH(cublasCgemmStridedBatched, "std::complex<float>", true)
+GEMM_BATCH(cublasZgemmStridedBatched, "std::complex<double>", true)
+#undef GEMM_BATCH

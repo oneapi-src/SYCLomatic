@@ -23,7 +23,7 @@
 // cublasZsyrk-NEXT:               lda /*int*/, beta /*const cuDoubleComplex **/,
 // cublasZsyrk-NEXT:               c /*cuDoubleComplex **/, ldc /*int*/);
 // cublasZsyrk-NEXT: Is migrated to:
-// cublasZsyrk-NEXT:   oneapi::mkl::blas::column_major::syrk(handle->get_queue(), upper_lower, trans, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<double>*)a, lda, dpct::get_value(beta, handle->get_queue()), (std::complex<double>*)c, ldc);
+// cublasZsyrk-NEXT:   oneapi::mkl::blas::column_major::syrk(handle->get_queue(), upper_lower, trans, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<double>*)a, lda, dpct::get_value(beta, handle->get_queue()), (std::complex<double>*)c, ldc, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDtrsm | FileCheck %s -check-prefix=cublasDtrsm
 // cublasDtrsm: CUDA API:
@@ -33,7 +33,7 @@
 // cublasDtrsm-NEXT:               alpha /*const double **/, a /*const double **/, lda /*int*/,
 // cublasDtrsm-NEXT:               b /*double **/, ldb /*int*/);
 // cublasDtrsm-NEXT: Is migrated to:
-// cublasDtrsm-NEXT:   oneapi::mkl::blas::column_major::trsm(handle->get_queue(), left_right, upper_lower, transa, unit_diag, m, n, dpct::get_value(alpha, handle->get_queue()), a, lda, b, ldb);
+// cublasDtrsm-NEXT:   oneapi::mkl::blas::column_major::trsm(handle->get_queue(), left_right, upper_lower, transa, unit_diag, m, n, dpct::get_value(alpha, handle->get_queue()), a, lda, b, ldb, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgemmStridedBatched | FileCheck %s -check-prefix=cublasCgemmStridedBatched
 // cublasCgemmStridedBatched: CUDA API:
@@ -45,7 +45,7 @@
 // cublasCgemmStridedBatched-NEXT:       strideb /*long long int*/, beta /*const cuComplex **/, c /*cuComplex **/,
 // cublasCgemmStridedBatched-NEXT:       ldc /*int*/, stridec /*long long int*/, group_count /*int*/);
 // cublasCgemmStridedBatched-NEXT: Is migrated to:
-// cublasCgemmStridedBatched-NEXT:   oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, stridea, (std::complex<float>*)b, ldb, strideb, dpct::get_value(beta, handle->get_queue()), (std::complex<float>*)c, ldc, stridec, group_count);
+// cublasCgemmStridedBatched-NEXT:   oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, stridea, (std::complex<float>*)b, ldb, strideb, dpct::get_value(beta, handle->get_queue()), (std::complex<float>*)c, ldc, stridec, group_count, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasChemm | FileCheck %s -check-prefix=cublasChemm
 // cublasChemm: CUDA API:
@@ -55,7 +55,7 @@
 // cublasChemm-NEXT:               b /*const cuComplex **/, ldb /*int*/, beta /*const cuComplex **/,
 // cublasChemm-NEXT:               c /*cuComplex **/, ldc /*int*/);
 // cublasChemm-NEXT: Is migrated to:
-// cublasChemm-NEXT:   oneapi::mkl::blas::column_major::hemm(handle->get_queue(), left_right, upper_lower, m, n, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, (std::complex<float>*)b, ldb, dpct::get_value(beta, handle->get_queue()), (std::complex<float>*)c, ldc);
+// cublasChemm-NEXT:   oneapi::mkl::blas::column_major::hemm(handle->get_queue(), left_right, upper_lower, m, n, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, (std::complex<float>*)b, ldb, dpct::get_value(beta, handle->get_queue()), (std::complex<float>*)c, ldc, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDrotg | FileCheck %s -check-prefix=cublasDrotg
 // cublasDrotg: CUDA API:
@@ -198,7 +198,7 @@
 // cublasZsyr2k-NEXT:                beta /*const cuDoubleComplex **/, c /*cuDoubleComplex **/,
 // cublasZsyr2k-NEXT:                ldc /*int*/);
 // cublasZsyr2k-NEXT: Is migrated to:
-// cublasZsyr2k-NEXT:   oneapi::mkl::blas::column_major::syr2k(handle->get_queue(), upper_lower, trans, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<double>*)a, lda, (std::complex<double>*)b, ldb, dpct::get_value(beta, handle->get_queue()), (std::complex<double>*)c, ldc);
+// cublasZsyr2k-NEXT:   oneapi::mkl::blas::column_major::syr2k(handle->get_queue(), upper_lower, trans, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<double>*)a, lda, (std::complex<double>*)b, ldb, dpct::get_value(beta, handle->get_queue()), (std::complex<double>*)c, ldc, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDrotm | FileCheck %s -check-prefix=cublasDrotm
 // cublasDrotm: CUDA API:

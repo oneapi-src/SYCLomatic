@@ -47,7 +47,7 @@ int main() {
     cublasErrCheck(cublasSetStream(handle, stream1));
     cublasErrCheck(cublasGetStream(handle, &stream1));
 
-    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N)));
+    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false))));
     cublasErrCheck(cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
     // CHECK: cublasErrCheck([&]() {
@@ -78,7 +78,7 @@ int main() {
     int batchSize = 10;
 
 
-    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_C, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_A_C)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_B_C)), N, dpct::get_value(&beta_C, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_C_C)), N)));
+    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_A_C)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_B_C)), N, std::complex<float>(beta_C.x(), beta_C.y()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_C_C)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true))));
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
 
     // CHECK: cublasErrCheck([&]() {

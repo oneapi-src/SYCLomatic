@@ -84,8 +84,8 @@ int foo2(cudaDataType DT) {
   int trans0 = 0;
   int trans1 = 1;
   int trans2 = 2;
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N));
-  // CHECK: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N);
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)));
+  // CHECK: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   double *d_A_D = 0;
@@ -93,8 +93,8 @@ int foo2(cudaDataType DT) {
   double *d_C_D = 0;
   double alpha_D = 1.0;
   double beta_D = 0.0;
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_D, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_A_D)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_B_D)), N, dpct::get_value(&beta_D, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_C_D)), N));
-  // CHECK: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans2), oneapi::mkl::transpose::conjtrans, N, N, N, dpct::get_value(&alpha_D, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_A_D)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_B_D)), N, dpct::get_value(&beta_D, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_C_D)), N);
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_A_D)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_B_D)), N, beta_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_C_D)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)));
+  // CHECK: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans2), oneapi::mkl::transpose::conjtrans, N, N, N, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_A_D)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_B_D)), N, beta_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(d_C_D)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
   status = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
   cublasDgemm(handle, (cublasOperation_t)trans2, (cublasOperation_t)2, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
 
@@ -103,8 +103,8 @@ int foo2(cudaDataType DT) {
   __half *d_C_H = 0;
   __half alpha_H;
   __half beta_H;
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N));
-  // CHECK: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), trans2==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans2, oneapi::mkl::transpose::conjtrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<sycl::half>(d_A_H)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<sycl::half>(d_B_H)), N, beta_H, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<sycl::half>(d_C_H)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)));
+  // CHECK: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans2), oneapi::mkl::transpose::conjtrans, N, N, N, alpha_H, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<sycl::half>(d_A_H)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<sycl::half>(d_B_H)), N, beta_H, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<sycl::half>(d_C_H)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
   status = cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
   cublasHgemm(handle, (cublasOperation_t)trans2, (cublasOperation_t)2, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 
@@ -141,7 +141,7 @@ int foo2(cudaDataType DT) {
   cublasCgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_C, A, CUDA_C_32F, N, B, CUDA_C_32F, N, &beta_C, C, CUDA_C_32F, N);
 
   // CHECK: for (;;) {
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::trans, oneapi::mkl::transpose::trans, N, N, N, dpct::get_value(&alpha_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::trans, oneapi::mkl::transpose::trans, N, N, N, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)));
   // CHECK-NEXT: beta_S = beta_S + 1;
   // CHECK-NEXT: }
   // CHECK-NEXT: alpha_S = alpha_S + 1;
@@ -152,7 +152,7 @@ int foo2(cudaDataType DT) {
   alpha_S = alpha_S + 1;
 
   // CHECK: for (;;) {
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::trans, oneapi::mkl::transpose::trans, N, N, N, dpct::get_value(&alpha_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::trans, oneapi::mkl::transpose::trans, N, N, N, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
   // CHECK-NEXT: beta_S = beta_S + 1;
   // CHECK-NEXT: }
   // CHECK-NEXT: alpha_S = alpha_S + 1;
@@ -163,11 +163,11 @@ int foo2(cudaDataType DT) {
   alpha_S = alpha_S + 1;
 
 
-  // CHECK: foo(bar(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N))));
+  // CHECK: foo(bar(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)))));
   foo(bar(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
 
 #define dA(i, j) *(d_A_S + (i) + (j) * N)
-  // CHECK: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(&dA(10, 20))), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N);
+  // CHECK: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(&dA(10, 20))), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
   cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, &dA(10, 20), N, d_B_S, N, &beta_S, d_C_S, N);
 #undef dA(i, j)
 
