@@ -283,12 +283,12 @@ template <typename T> struct kernel_type_t {
   using Type = T;
 };
 
-// CHECK: template <typename T> 
+// CHECK: /*
+// CHECK-NEXT: DPCT1124:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
+// CHECK-NEXT: */
+// CHECK-NEXT: template <typename T> 
 // CHECK-NEXT: void foo_device7(int a,
-// CHECK-NEXT:                  int b/*
-// CHECK-NEXT:                  DPCT1124:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
-// CHECK-NEXT:                  */
-// CHECK-NEXT:                  ,
+// CHECK-NEXT:                  int b,
 // CHECK-NEXT:                  Tk *mem) {
 // CHECK-NEXT:   using Tk = typename kernel_type_t<T>::Type;
 template <typename T> __global__ 
@@ -298,12 +298,12 @@ void foo_device7(int a,
   __shared__ Tk mem[256];
 }
 
-// CHECK: template <typename T> 
+// CHECK: /*
+// CHECK-NEXT: DPCT1124:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
+// CHECK-NEXT: */
+// CHECK-NEXT: template <typename T> 
 // CHECK-NEXT: void foo_kernel7(int a,
-// CHECK-NEXT:                  int b/*
-// CHECK-NEXT:                  DPCT1124:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
-// CHECK-NEXT:                  */
-// CHECK-NEXT:                  ,
+// CHECK-NEXT:                  int b,
 // CHECK-NEXT:                  Tk *mem) {
 // CHECK-NEXT:   foo_device7<T>(a, b, mem);
 template <typename T> __global__

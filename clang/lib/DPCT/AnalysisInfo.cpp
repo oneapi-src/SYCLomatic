@@ -3900,9 +3900,9 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
     }
     if (!VI.second->getType()->SharedVarInfo.TypeName.empty() &&
         !LI.first.getCanonicalPath().empty() && LI.second) {
-      DiagnosticsUtils::reportAtCurrentLocation(
+      DiagnosticsUtils::report(
           LI.first.getCanonicalPath().str(), LI.second,
-          Warnings::MOVE_TYPE_DEFINITION, true,
+          Warnings::MOVE_TYPE_DEFINITION, true, false,
           VI.second->getType()->SharedVarInfo.TypeName,
           VI.second->getType()->SharedVarInfo.DefinitionFuncName);
     }
@@ -4470,7 +4470,7 @@ DeviceFunctionDecl::LinkExplicitInstantiation(
 void DeviceFunctionDecl::emplaceReplacement() {
   auto Repl = std::make_shared<ExtReplacement>(
       FilePath, ReplaceOffset, ReplaceLength,
-      getExtraParameters(std::make_pair(FilePath, ReplaceOffset)), nullptr);
+      getExtraParameters(std::make_pair(FilePath, Offset)), nullptr);
   Repl->setNotFormatFlag();
   DpctGlobalInfo::getInstance().addReplacement(Repl);
 
