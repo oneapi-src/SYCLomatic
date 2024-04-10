@@ -11,14 +11,12 @@ import os
 import sys
 from collections.abc import Container
 
-
 UUID = "ID"
 CHECKPOINT = "CheckPoint"
 DATA = "Data"
 TYPE = "Type"
 ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), 'CodePin_Report.csv')
-failed_key = ""
 passed_checkpoint_num = 0
 checkpoint_size = 0
 
@@ -26,20 +24,30 @@ ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
 #Raise the warning message when the data is not matched.
 def data_value_dismatch_error(value1, value2):
     return comparison_error(
-            f" and [DATA VALUE MISMATCH] the CUDA value \"{value1}\" differs from the SYCL value \"{value2}\".")
+            f" and [ERROR: DATA VALUE MISMATCH] the CUDA value \"{value1}\" differs from the SYCL value \"{value2}\".")
 def no_serialization_function_error():
     return comparison_error(
-            f" and [NO SERIALIZATION FUNCTION]the CUDA or SYCL value cannot be dummped, lack of dump function. Please report it to the tool developer.")
+            f" and [ERROR: NO SERIALIZATION FUNCTION]the CUDA or SYCL value cannot be dummped, lack of dump function. Please report it to the tool developer.")
 def data_missed_error(name):
     return comparison_error(
-            f" and [DATA MISSED] Cannot find the {name} in SYCL Json.\n")
+            f" and [ERROR: DATA MISSED] Cannot find the {name} in SYCL Json.\n")
 def data_length_dismatch_error():
     return comparison_error(
-            f" and [DATA LENGTH MISMATCH] The size of CUDA and SYCL data are mismatch.")
+            f" and [ERROR: DATA LENGTH MISMATCH] The size of CUDA and SYCL data are mismatch.")
 
 def print_checkpoint_length_dismatch_warning(cuda_list, sycl_list):
      print(
-            f"[WARNING] The length of CUDA and SYCL checkpoint lists is mismatched.\n CUDA CodePin length is: {len(cuda_list)}. \n SYCL CodePin length is: {len(sycl_list)}.\n")
+            f"[ERROR: CHECKPOINT LENGTH MISMATCH] \n CUDA CodePin list length is: {len(cuda_list)}. \n SYCL CodePin list length is: {len(sycl_list)}.\n")
+
+def prepare_failed_log(cuda_id, sycl_id, log_type, detail):
+    return ",".join([cuda_id, sycl_id, log_type, detail]) + "\n"
+
+def get_missing_key_log(id):
+    detail = f"[ERROR: METADATA MISSING] Cannot find the checkpoint: \"{id}\" in the execution log dataset of instrumented SYCL code.\n"
+    return prepare_failed_log(id, "Missing", "Execution path", detail)
+
+def get_data_value_mismatch_log(id, message):
+    return prepare_failed_log(id, id, "Data value", "The location of failed ID " + message)
 
 def is_container(obj):
     return isinstance(obj, Container) and not isinstance(obj, str)
@@ -113,42 +121,7 @@ def compare_checkpoint(cuda_checkpoint, sycl_checkpoint):
             except comparison_error as e:
                 raise comparison_error(f"\"{id}\"{e.message}")
 
-def parse_json(json_str):
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON: {e.msg}")
-        print(f"At line {e.lineno}, column {e.colno}")
-        return None
-
-
-def read_data_from_json_file(file_path):
-    if not os.path.exists(file_path):
-        print(f"File not found: {file_path}")
-        exit(2)
-    with open(file_path) as f:
-        return parse_json(f.read())
-
-
-def get_checkpoint_list_from_json_file(file_path):
-    checkpoint_list = {}
-    json_data_list = read_data_from_json_file(file_path)
-    for item in json_data_list:
-        id = item[UUID]
-        checkpoint_list[id] = item.get(CHECKPOINT, {})
-    return checkpoint_list
-
-def prepare_failed_log(cuda_id, sycl_id, log_type, detail):
-    return ",".join([cuda_id, sycl_id, log_type, detail]) + "\n"
-
-def get_missing_key_log(id):
-    detail = f"Cannot find the checkpoint which 'ID' is \"{id}\" in the migrated sycl CodePin dataset.\n"
-    return prepare_failed_log(id, "N/A", "Execution path", detail)
-
-def get_data_value_mismatch_log(id, message):
-    return prepare_failed_log(id, id, "Data value", "The location of failed ID " + message)
-
-def compare_data_lists(cuda_list, sycl_list):
+def compare_checkpoint_list(cuda_list, sycl_list):
     global passed_checkpoint_num
     global checkpoint_size
     failed_log  = ""
@@ -168,6 +141,29 @@ def compare_data_lists(cuda_list, sycl_list):
             continue
     return failed_log
 
+def parse_json(json_str):
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON: {e.msg}")
+        print(f"At line {e.lineno}, column {e.colno}")
+        return None
+
+def read_data_from_json_file(file_path):
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path}")
+        exit(2)
+    with open(file_path) as f:
+        return parse_json(f.read())
+
+def get_checkpoint_list_from_json_file(file_path):
+    checkpoint_list = {}
+    json_data_list = read_data_from_json_file(file_path)
+    for item in json_data_list:
+        id = item[UUID]
+        checkpoint_list[id] = item.get(CHECKPOINT, {})
+    return checkpoint_list
+
 def main():
     global passed_checkpoint_num
     global checkpoint_size
@@ -179,10 +175,10 @@ def main():
                         help='Specifies the execution log file generated by instrumented SYCL code.')
     args = parser.parse_args()
 
-    cuda_list = get_checkpoint_list_from_json_file(args.instrumented_cuda_log)
-    sycl_list = get_checkpoint_list_from_json_file(args.instrumented_sycl_log)
+    cuda_checkpoint = get_checkpoint_list_from_json_file(args.instrumented_cuda_log)
+    sycl_checkpoint = get_checkpoint_list_from_json_file(args.instrumented_sycl_log)
     
-    failed_log = compare_data_lists(cuda_list, sycl_list)
+    failed_log = compare_checkpoint_list(cuda_checkpoint, sycl_checkpoint)
     with(open(CODEPIN_REPORT_FILE, 'w')) as f:
         f.write("CodePin Summary\n")
         f.write("Totally APIs count, " + str(checkpoint_size) + "\n")

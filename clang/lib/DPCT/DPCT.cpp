@@ -696,7 +696,7 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInstallPath, IndependentTool + " tool");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    std::string SystemCallCommand(ExecutableScriptPath.str());
+    std::string SystemCallCommand = "python3 " + std::string(ExecutableScriptPath.str());
     for (int Index = 2; Index < argc; Index++) {
       SystemCallCommand.append(" ");
       SystemCallCommand.append(std::string(argv[Index]));
