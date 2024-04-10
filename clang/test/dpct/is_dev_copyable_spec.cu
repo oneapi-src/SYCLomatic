@@ -223,17 +223,17 @@ void test9() {
 }
 
 // Case10: user-define struct in namespace
-//namespace ns {
-//struct UserStruct15 {
-//  UserStruct15() {}
-//  UserStruct15(UserStruct15 const &) {}
-//};
-//}
-//
-//template<class V>
-//__global__ void k10(V) {}
-//
-//void test9() {
-//  ns::UserStruct15 us15;
-//  k10<<<1, 1>>>(us15);
-//}
+namespace ns {
+struct UserStruct15 {
+  UserStruct15() {}
+  UserStruct15(UserStruct15 const &) {}
+};
+} // namespace ns
+
+template<class V>
+__global__ void k10(V) {}
+
+void test10() {
+  ns::UserStruct15 us15;
+  k10<<<1, 1>>>(us15);
+}
