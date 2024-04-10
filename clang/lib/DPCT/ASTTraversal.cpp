@@ -8496,11 +8496,17 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("kernelCall"),
       this);
 
+  auto launchAPIName = [&]() {
+    return hasAnyName("cudaLaunchKernel", "cudaLaunchCooperativeKernel");
+  };
   MF.addMatcher(
-      callExpr(callee(functionDecl(hasAnyName("cudaLaunchKernel",
-                                              "cudaLaunchCooperativeKernel"))))
+      callExpr(allOf(callee(functionDecl(launchAPIName())), parentStmt()))
           .bind("launch"),
       this);
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(launchAPIName())),
+                               unless(parentStmt())))
+                    .bind("launchUsed"),
+                this);
 }
 
 void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KCall,
@@ -8649,10 +8655,22 @@ void KernelCallRule::runRule(
       return;
 
     Insertions.insert(BodySLoc);
-  } else if (auto LaunchKernelCall =
-                 getNodeAsType<CallExpr>(Result, "launch")) {
+  } else {
+    bool IsAssigned = false;
+    const auto *LaunchKernelCall = getNodeAsType<CallExpr>(Result, "launch");
+    if (!LaunchKernelCall) {
+      LaunchKernelCall = getNodeAsType<CallExpr>(Result, "launchUsed");
+      IsAssigned = true;
+    }
+    if (!LaunchKernelCall)
+      return;
+
     if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall)) {
-      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
+      std::string Repl = "";
+      if (IsAssigned)
+        Repl = "0";
+      emplaceTransformation(
+          new ReplaceStmt(LaunchKernelCall, true, false, std::move(Repl)));
       removeTrailingSemicolon(LaunchKernelCall, Result);
     } else {
       auto FuncName = LaunchKernelCall->getDirectCallee()
