@@ -61,7 +61,7 @@
 - Rule: rule_find_package_cudatoolkit_with_options
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-cudatoolkit
+  CmakeSyntax: find_package_cudatoolkit
   In: find_package(${empty}CUDAToolkit ${opts})
   Out: |
     find_package(IntelSYCL REQUIRED)
@@ -162,11 +162,11 @@
   In: cuda_compile_ptx${empty}(${device} ${value})
   Out: dpct_helper_compile_sycl_code(${device} ${value})
 
-- Rule: rule_user_defined_function_cpp
+- Rule: rule_user_defined_function_cpp_file_process
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
-  CmakeSyntax: cuda_files_in_user_defined_function_cpp
+  CmakeSyntax: user_defined_function_cpp_file_process
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
@@ -175,11 +175,11 @@
       In: ${arg}.cpp
       Out: ${arg}.${rewrite_extention_name}
 
-- Rule: rule_user_defined_function_cu
+- Rule: rule_user_defined_function_cu_file_process
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
-  CmakeSyntax: cuda_files_in_user_defined_function_cu
+  CmakeSyntax: user_defined_function_cu_file_process
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
@@ -682,10 +682,10 @@
       Out: cxx_std_17
       RuleId: "adjust_cuda_ver"
 
-- Rule: rule_header_file
+- Rule: rule_file_include_cuh_header_file
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: cuh_file
+  CmakeSyntax: file_include_cuh_header_file
   MatchMode: Partial
   In: file(${value})
   Out: file(${value})
@@ -695,21 +695,6 @@
       Out: ${arg}.dp.hpp
       MatchMode: Full
       RuleId: "adjust_CUDA_header_file_extension"
-
-- Rule: rule_src_file
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cu_file
-  MatchMode: Partial
-  In: file(${value})
-  Out: file(${value})
-
-- Rule: rule_set_property
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: set_property
-  In: set_property(${value})
-  Out: set_property(${value})
 
 - Rule: rule_cuda_add_executable
   Kind: CMakeRule
@@ -725,7 +710,7 @@
   In: add_executable(${value} OPTIONS {options})
   Out: add_executable(${value})
 
-- Rule: rule_add_executable_remove_opts
+- Rule: rule_add_executable_opts
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: add_executable_opts
@@ -752,10 +737,10 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuda_target_link_libraries
-  In: ${prefix}link_libraries(${CULibraries})
-  Out: ${prefix}link_libraries(${CULibraries})
+  In: ${prefix}link_libraries(${libs})
+  Out: ${prefix}link_libraries(${libs})
   Subrules:
-    CULibraries:
+    libs:
       In: cuda
       Out: ""
       MatchMode: Full
@@ -764,10 +749,10 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cublas_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${libs})
+  Out: ${prefix}link_libraries(${libs})
   Subrules:
-    CUDALibraries:
+    libs:
       In: cublas
       Out: |
         \${MKL_LIB}
@@ -778,10 +763,10 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libcublas_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${libs})
+  Out: ${prefix}link_libraries(${libs})
   Subrules:
-    CUDALibraries:
+    libs:
       In: -lcublas
       Out: |
         \${MKL_LIB}
@@ -792,10 +777,10 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cudnn_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${libs})
+  Out: ${prefix}link_libraries(${libs})
   Subrules:
-    CUDALibraries:
+    libs:
       In: "cudnn"
       Out: |
         \${DNN_LIB}
@@ -806,10 +791,10 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvinfer_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${libs})
+  Out: ${prefix}link_libraries(${libs})
   Subrules:
-    CUDALibraries:
+    libs:
       In: libnvinfer.so
       Out: ""
       MatchMode: Full
@@ -819,10 +804,10 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvonnxparser_target_link_libraries
-  In: ${prefix}link_libraries(${CUDALibraries})
-  Out: ${prefix}link_libraries(${CUDALibraries})
+  In: ${prefix}link_libraries(${libs})
+  Out: ${prefix}link_libraries(${libs})
   Subrules:
-    CUDALibraries:
+    libs:
       In: libnvonnxparser.so
       Out: ""
       MatchMode: Full
@@ -833,10 +818,10 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libstdc++_target_link_libraries
-  In: ${prefix}link_libraries(${StaticLibraries})
-  Out: ${prefix}link_libraries(${StaticLibraries})
+  In: ${prefix}link_libraries(${libs})
+  Out: ${prefix}link_libraries(${libs})
   Subrules:
-    StaticLibraries:
+    libs:
       In: -static-libstdc++
       Out: ""
       MatchMode: Full
@@ -849,7 +834,7 @@
   In: cuda_compile_fatbin(${value})
   Out: dpct_helper_compile_sycl_code(${value})
 
-- Rule: rule_cuda_compile_fatbin_remove_opts
+- Rule: rule_cuda_compile_fatbin_opts
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuda_compile_fatbin_opts
@@ -900,7 +885,7 @@
   In: cuda_add_library(${arg})
   Out: add_library(${arg})
 
-- Rule: rule_cuda_64_bit_device_code_on
+- Rule: rule_set_cuda_64_bit_device_code_on
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_cuda_64_bit_device_code_on
@@ -908,7 +893,7 @@
   Out: |
     set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m64")
 
-- Rule: rule_cuda_64_bit_device_code_off
+- Rule: rule_set_cuda_64_bit_device_code_off
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_cuda_64_bit_device_code_off
@@ -974,19 +959,6 @@
       MatchMode: Full
       In: CMAKE_CUDA_FLAGS
       Out: CMAKE_SYCL_FLAGS
-
-- Rule: rule_enable_language
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: enable_language
-  MatchMode: Partial
-  In: enable_language(${value})
-  Out: enable_language(${value})
-  Subrules:
-    value:
-      In: CUDA
-      Out: CXX
-      MatchMode: Full
 
 - Rule: rule_cudart_static_removed
   Kind: CMakeRule
@@ -1922,7 +1894,7 @@
       Out: ""
       RuleId: "remove_nvml"
 
-- Rule: rule_nvtx3_removed
+- Rule: rule_nvToolsExt
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
@@ -1978,7 +1950,7 @@
   In: set_property(${target} PROPERTY CXX_STANDARD ${version})
   Out: set_property(${target} PROPERTY CXX_STANDARD 17)
 
-- Rule: rule_set_target_properties_cxx_standard
+- Rule: rule_set_cxx_target_properties
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_cxx_target_properties
@@ -2037,18 +2009,6 @@
       In:  -std=c++${version}
       Out: -std=c++17
 
-- Rule: rule_add_library
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_library
-  In: add_library(${name} ${sources})
-  Out: add_library(${name} ${sources})
-  Subrules:
-    sources:
-      In: ${src}.cu
-      Out: ${src}.dp.cpp
-      MatchMode: Full
-
 - Rule: rule_add_link_options
   Kind: CMakeRule
   Priority: Fallback
@@ -2060,19 +2020,6 @@
       In: ${src}.cu
       Out: ${src}.dp.cpp
       MatchMode: Full
-
-- Rule: rule_add_link_options_add_arch
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_arch_add_link_options
-  In: add_link_options(${options})
-  Out: add_link_options(${options})
-  Subrules:
-    options:
-      In: --add-arch=${arch}
-      Out: ""
-      MatchMode: Partial
-      RuleId: "remove_add_arch"
 
 - Rule: rule_enable_language
   Kind: CMakeRule
@@ -2081,31 +2028,7 @@
   In: enable_language(${empty}CUDA${empty})
   Out: enable_language(CXX)
 
-- Rule: rule_add_library
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_library
-  In: add_library(${name} ${sources})
-  Out: add_library(${name} ${sources})
-  Subrules:
-    sources:
-      In: ${src}.cu
-      Out: ${src}.dp.cpp
-      MatchMode: Full
-
-- Rule: rule_add_link_options
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_link_options
-  In: add_link_options(${options})
-  Out: add_link_options(${options})
-  Subrules:
-    sources:
-      In: ${src}.cu
-      Out: ${src}.dp.cpp
-      MatchMode: Full
-
-- Rule: rule_add_link_options_add_arch
+- Rule: rule_add_arch_add_link_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: add_arch_add_link_options
@@ -2118,7 +2041,7 @@
       MatchMode: Partial
       RuleId: "remove_add_arch"
 
-- Rule: rule_add_link_options_device_c
+- Rule: rule_device_c_add_link_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: device_c_add_link_options
@@ -2131,7 +2054,7 @@
       MatchMode: Full
       RuleId: "remove_device_c"
 
-- Rule: rule_add_link_options_disable_target
+- Rule: rule_disable_target_add_link_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: disable_target_add_link_options
@@ -2144,7 +2067,7 @@
       MatchMode: Partial
       RuleId: "remove_disable_target"
 
-- Rule: rule_add_link_options_gen_codes
+- Rule: rule_gen_codes_add_link_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: gen_codes_add_link_options
@@ -2157,7 +2080,7 @@
       MatchMode: Partial
       RuleId: "remove_gen_codes"
 
-- Rule: rule_add_link_options_no_ptxas_options
+- Rule: rule_no_ptxas_options_add_link_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: no_ptxas_options_add_link_options
@@ -2170,7 +2093,7 @@
       MatchMode: Full
       RuleId: "remove_no_ptxas_options"
 
-- Rule: rule_add_link_options_emit_ptx
+- Rule: rule_emit_ptx_add_link_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: emit_ptx_add_link_options
@@ -2183,7 +2106,7 @@
       MatchMode: Partial
       RuleId: "remove_emit_ptx"
 
-- Rule: rule_add_link_options_nvvmir_library
+- Rule: rule_nvvmir_library_add_link_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: nvvmir_library_add_link_options
@@ -2196,7 +2119,7 @@
       MatchMode: Partial
       RuleId: "remove_nvvmir_library"
 
-- Rule: rule_add_link_options_path
+- Rule: rule_library_path_add_link_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: library_path_add_link_options
@@ -2209,7 +2132,7 @@
       MatchMode: Partial
       RuleId: "remove_library_path"
 
-- Rule: rule_add_link_options_library_empty
+- Rule: rule_add_library_empty_add_link_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: library_empty_add_link_options

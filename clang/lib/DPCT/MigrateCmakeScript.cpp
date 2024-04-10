@@ -737,18 +737,37 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void registerCmakeMigrationRule(MetaRuleObject &R) {
-  auto PR =
-      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
-                                      R.RuleId, R.CmakeSyntax, R.Priority);
 
-  auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
-  if (Iter != CmakeBuildInRules.end()) {
-    if (PR.Priority == RulePriority::Takeover) {
-      assert(Iter->second.Priority < PR.Priority &&
-             "Two same cmake syntaxes have \'Takeover\' priority.\n ");
+#ifdef __DEBUG_CMAKE_SCRIPR_MIGRATION
+  std::cout << "\n#####Migration Rule start ######" << std::endl;
+  std::cout << "\tRuleId:" << R.RuleId << std::endl;
+  std::cout << "\tCmakeSyntax:" << R.CmakeSyntax << std::endl;
+  std::cout << "\tIn:" << R.In << std::endl;
+  std::cout << "\tOut:" << R.Out << std::endl;
+  std::cout << "#####Migration Rule end ######" << std::endl;
+#endif
+
+  auto Key = R.CmakeSyntax;
+  static std::unordered_set<std::string> DuplicateFilter;
+  if (DuplicateFilter.find(Key) == end(DuplicateFilter)) {
+    DuplicateFilter.insert(Key);
+
+    auto PR =
+        MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
+                                        R.RuleId, R.CmakeSyntax, R.Priority);
+
+    auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
+    if (Iter != CmakeBuildInRules.end()) {
+      if (PR.Priority == RulePriority::Takeover) {
+        assert(Iter->second.Priority < PR.Priority &&
+               "Two same cmake syntaxes have \'Takeover\' priority.\n ");
+        CmakeBuildInRules[PR.CmakeSyntax] = PR;
+      }
+    } else {
       CmakeBuildInRules[PR.CmakeSyntax] = PR;
     }
   } else {
-    CmakeBuildInRules[PR.CmakeSyntax] = PR;
+    llvm::errs() << "[NOTE] Find new CMake syntax \"" << R.CmakeSyntax
+                 << "\" exists in predefined CMake script Yaml rule set\n";
   }
 }
