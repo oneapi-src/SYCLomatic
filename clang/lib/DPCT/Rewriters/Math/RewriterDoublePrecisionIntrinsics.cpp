@@ -215,5 +215,85 @@ RewriterMap dpct::createDoublePrecisionIntrinsicsRewriterMap() {
                   "__dsub_rz",
                   BINARY_OP_FACTORY_ENTRY(
                       "__dsub_rz", BinaryOperatorKind::BO_Sub, ARG(0), ARG(1)),
+                  Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+      // __fma_rd
+      MATH_API_REWRITERS_V2(
+          "__fma_rd",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__fma_rd",
+                  CALL(MapNames::getClNamespace() + "ext::intel::math::fma_rd",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              WARNING_FACTORY_ENTRY(
+                  "__fma_rd",
+                  CALL_FACTORY_ENTRY(
+                      "__fma_rd",
+                      CALL(MapNames::getClNamespace(false, true) + "fma",
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(1)),
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(2)))),
+                  Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+      // __fma_rn
+      MATH_API_REWRITERS_V2(
+          "__fma_rn",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__fma_rn",
+                  CALL(MapNames::getClNamespace() + "ext::intel::math::fma_rn",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              WARNING_FACTORY_ENTRY(
+                  "__fma_rn",
+                  CALL_FACTORY_ENTRY(
+                      "__fma_rn",
+                      CALL(MapNames::getClNamespace(false, true) + "fma",
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(1)),
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(2)))),
+                  Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+      // __fma_ru
+      MATH_API_REWRITERS_V2(
+          "__fma_ru",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__fma_ru",
+                  CALL(MapNames::getClNamespace() + "ext::intel::math::fma_ru",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              WARNING_FACTORY_ENTRY(
+                  "__fma_ru",
+                  CALL_FACTORY_ENTRY(
+                      "__fma_ru",
+                      CALL(MapNames::getClNamespace(false, true) + "fma",
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(1)),
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(2)))),
+                  Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+      // __fma_rz
+      MATH_API_REWRITERS_V2(
+          "__fma_rz",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__fma_rz",
+                  CALL(MapNames::getClNamespace() + "ext::intel::math::fma_rz",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              WARNING_FACTORY_ENTRY(
+                  "__fma_rz",
+                  CALL_FACTORY_ENTRY(
+                      "__fma_rz",
+                      CALL(MapNames::getClNamespace(false, true) + "fma",
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(1)),
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(2)))),
                   Diagnostics::ROUNDING_MODE_UNSUPPORTED)))};
 }
