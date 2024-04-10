@@ -461,12 +461,12 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      if (!CodeElementExist && Index - PatternSize >= 0 && Index < Size - 1 &&
+      if (!CodeElementExist && Index - PatternSize >= 0 && Index <= Size - 1 &&
           PatternIndex == PatternSize - 1) {
         if (!isIdentifiedChar(Input[Index - PatternSize]) &&
             !isIdentifiedChar(Input[Index + 1])) {
-
-          if (Input[Index - PatternSize] != '{' && Input[Index + 1] != '}' &&
+          if (Index < Size - 1 && Input[Index - PatternSize] != '{' &&
+              Input[Index + 1] != '}' &&
               !isWhitespace(Input[Index - PatternSize]) &&
               !isWhitespace(Input[Index + 1]) &&
               Input[Index - PatternSize] != '*') {
@@ -515,13 +515,7 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         updateExtentionName(Input, Next, Result.Bindings);
       }
 
-      if (Result.Bindings.count(Code.Name)) {
-        if (Result.Bindings[Code.Name] != ElementContents) {
-          return {};
-        }
-      } else {
-        Result.Bindings[Code.Name] = std::move(ElementContents);
-      }
+      Result.Bindings[Code.Name] = std::move(ElementContents);
       Index = Next;
       PatternIndex++;
       continue;
@@ -588,13 +582,7 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
         return {};
       }
       std::string ElementContents = Input.substr(Index, Next - Index);
-      if (Result.Bindings.count(Code.Name)) {
-        if (Result.Bindings[Code.Name] != ElementContents) {
-          return {};
-        }
-      } else {
-        Result.Bindings[Code.Name] = std::move(ElementContents);
-      }
+      Result.Bindings[Code.Name] = std::move(ElementContents);
       Index = Next;
       PatternIndex++;
       continue;
@@ -749,7 +737,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       }
 
       const int Indentation = detectIndentation(Input, Index);
-
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
       while (Input[Index] == '\n') {

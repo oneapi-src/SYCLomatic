@@ -31,6 +31,19 @@
 // CUDAFREEHOST-NEXT: Is migrated to:
 // CUDAFREEHOST-NEXT:   sycl::free(pHost, dpct::get_in_order_queue());
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFreeMipmappedArray | FileCheck %s -check-prefix=CUDAFREEMIPMAPPEDARRAY
+// CUDAFREEMIPMAPPEDARRAY: CUDA API:
+// CUDAFREEMIPMAPPEDARRAY-NEXT:   cudaFreeMipmappedArray(m /*cudaMipmappedArray_t*/);
+// CUDAFREEMIPMAPPEDARRAY-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUDAFREEMIPMAPPEDARRAY-NEXT:   delete m;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetMipmappedArrayLevel | FileCheck %s -check-prefix=CUDAGETMIPMAPPEDARRAYLEVEL
+// CUDAGETMIPMAPPEDARRAYLEVEL: CUDA API:
+// CUDAGETMIPMAPPEDARRAYLEVEL-NEXT:   cudaGetMipmappedArrayLevel(a /*cudaArray_t **/,
+// CUDAGETMIPMAPPEDARRAYLEVEL-NEXT:                              m /*const cudaMipmappedArray_t*/, u /*unsigned*/);
+// CUDAGETMIPMAPPEDARRAYLEVEL-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUDAGETMIPMAPPEDARRAYLEVEL-NEXT:   *a = m->get_mip_level(u);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetSymbolAddress | FileCheck %s -check-prefix=CUDAGETSYMBOLADDRESS
 // CUDAGETSYMBOLADDRESS: CUDA API:
 // CUDAGETSYMBOLADDRESS-NEXT:   cudaGetSymbolAddress(pDev /*void ***/, symbol /*const void **/);
@@ -115,6 +128,14 @@
 // CUDAMALLOCMANAGED-NEXT:   cudaMallocManaged(pDev /*void ***/, s /*size_t*/, u /*unsigned int*/);
 // CUDAMALLOCMANAGED-NEXT: Is migrated to:
 // CUDAMALLOCMANAGED-NEXT:   *pDev = (void *)sycl::malloc_shared(s, dpct::get_in_order_queue());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMallocMipmappedArray | FileCheck %s -check-prefix=CUDAMALLOCMIPMAPPEDARRAY
+// CUDAMALLOCMIPMAPPEDARRAY: CUDA API:
+// CUDAMALLOCMIPMAPPEDARRAY-NEXT:   cudaMallocMipmappedArray(m /*cudaMipmappedArray_t **/,
+// CUDAMALLOCMIPMAPPEDARRAY-NEXT:                            d /*const cudaChannelFormatDesc **/,
+// CUDAMALLOCMIPMAPPEDARRAY-NEXT:                            e /*cudaExtent*/, u1 /*unsigned*/, u2 /*unsigned*/);
+// CUDAMALLOCMIPMAPPEDARRAY-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUDAMALLOCMIPMAPPEDARRAY-NEXT:   *m = new dpct::experimental::image_mem_wrapper(*d, e, sycl::ext::oneapi::experimental::image_type::mipmap, u1);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMallocPitch | FileCheck %s -check-prefix=CUDAMALLOCPITCH
 // CUDAMALLOCPITCH: CUDA API:

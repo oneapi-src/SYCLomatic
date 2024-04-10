@@ -5,4 +5,7 @@
 // cublasGetStatusString: CUDA API:
 // cublasGetStatusString-NEXT:   res /*const char **/ = cublasGetStatusString(status /*cublasStatus_t*/);
 // cublasGetStatusString-NEXT: Is migrated to:
+// cublasGetStatusString-NEXT:   /*
+// cublasGetStatusString-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// cublasGetStatusString-NEXT:   */
 // cublasGetStatusString-NEXT:   res /*const char **/ = "<Placeholder string>";
