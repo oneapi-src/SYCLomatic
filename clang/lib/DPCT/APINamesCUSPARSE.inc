@@ -486,3 +486,16 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreateCsrsv2Info", DEREF(0),
                                              "sparse::optimize_info>")))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroyCsrsv2Info",
                                              ARG(0), false, "reset"))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSpSM_bufferSize", DEREF(10),
+                                        LITERAL("0")))
+REMOVE_API_FACTORY_ENTRY("cusparseSpSM_createDescr")
+REMOVE_API_FACTORY_ENTRY("cusparseSpSM_destroyDescr")
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpSM_analysis",
+    CALL(MapNames::getDpctNamespace() + "sparse::spsm_optimize", DEREF(0),
+         ARG(1), ARG(4), ARG(5), ARG(6))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpSM_solve",
+    CALL(MapNames::getDpctNamespace() + "sparse::spsm", DEREF(0), ARG(1),
+         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
