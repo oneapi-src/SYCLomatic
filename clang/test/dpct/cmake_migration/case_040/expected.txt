@@ -1,3 +1,8 @@
 # simplest case
 set_source_files_properties(${src_files} PROPERTIES LANGUAGE CXX)
 
+# with more properties after LANGUAGE
+set_source_files_properties(${src_files} PROPERTIES LANGUAGE CXX COMPILE_DEFINITIONS SOME_DEFINE)
+
+set_source_files_properties(${src_files} PROPERTIES COMPILE_FLAGS "--some-flag" LANGUAGE CXX COMPILE_DEFINITIONS)
+
