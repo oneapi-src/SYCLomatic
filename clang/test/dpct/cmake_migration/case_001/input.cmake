@@ -23,3 +23,7 @@ project(foo CUDA)
 project(foo2 CUDA CXX)
 
 set(SOURCES a.cu b.cuh)
+
+project  (foo2 CUDA CXX)
+
+project  (  foo2 CUDA CXX)

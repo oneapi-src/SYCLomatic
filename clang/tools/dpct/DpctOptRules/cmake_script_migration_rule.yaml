@@ -12,7 +12,7 @@
   MatchMode: Partial
   Priority: Fallback
   CmakeSyntax: project
-  In: project(${arg0})
+  In: project${empty}(${arg0})
   Out: |
    project(${arg0})
    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fsycl")
@@ -25,7 +25,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: project_remove_cuda
-  In: project(${arg0} ${argN})
+  In: project${empty}(${arg0} ${argN})
   Out: |
    project(${arg0} ${argN})
   Subrules:
@@ -39,21 +39,21 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_cuda_no_args
-  In: find_package(${empty}CUDA)
+  In: find_package${empty}(${empty}CUDA)
   Out: find_package(IntelSYCL REQUIRED)
 
 - Rule: rule_find_package_cuda_with_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_cuda_with_options
-  In: find_package(${empty}CUDA ${opts})
+  In: find_package${empty}(${empty}CUDA ${opts})
   Out: find_package(IntelSYCL REQUIRED)
 
 - Rule: rule_find_package_cudatoolkit_no_args
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_cudatoolkit_no_args
-  In: find_package(${empty}CUDAToolkit)
+  In: find_package${empty}(${empty}CUDAToolkit)
   Out: |
     find_package(IntelSYCL)
     find_package(MKL)
@@ -62,7 +62,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_cudatoolkit
-  In: find_package(${empty}CUDAToolkit ${opts})
+  In: find_package${empty}(${empty}CUDAToolkit ${opts})
   Out: |
     find_package(IntelSYCL REQUIRED)
     find_package(MKL REQUIRED)
@@ -71,57 +71,57 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_cub_no_args
-  In: find_package(${empty}CUB)
+  In: find_package${empty}(${empty}CUB)
   Out: find_package(oneDPL)
 
 - Rule: rule_find_package_cub_with_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_cub_with_options
-  In: find_package(${empty}CUB ${opts})
+  In: find_package${empty}(${empty}CUB ${opts})
   Out: find_package(oneDPL REQUIRED)
 
 - Rule: rule_find_package_mpi
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_mpi
-  In: find_package(${empty}MPI${opts})
-  Out: "#find_package(MPI${opts})"
+  In: find_package${empty}(${empty}MPI${opts})
+  Out: "#find_package${empty}(${empty}MPI${opts})"
 
 - Rule: rule_find_package_omp
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_omp
-  In: find_package(${empty}OpenMP${opts})
-  Out: "#find_package(OpenMP${opts})"
+  In: find_package${empty}(${empty}OpenMP${opts})
+  Out: "#find_package${empty}(${empty}OpenMP${opts})"
 
 - Rule: rule_find_package_nvjpeg_no_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_nvjpeg_no_options
-  In: find_package(${empty}NVJPEG)
-  Out: "#find_package(NVJPEG)"
+  In: find_package${empty}(${empty}NVJPEG)
+  Out: "#find_package${empty}(${empty}NVJPEG)"
 
 - Rule: rule_find_package_nvjpeg
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: find_package_nvjpeg
-  In: find_package(${empty}NVJPEG ${args})
+  In: find_package${empty}(${empty}NVJPEG ${args})
   Out: "#find_package(NVJPEG ${args})"
 
 - Rule: rule_cmake_cxx_standard
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cmake_cxx_standard
-  In: set (${empty}CMAKE_CXX_STANDARD ${version})
-  Out: set (CMAKE_CXX_STANDARD 17)
+  In: set${empty}(${empty}CMAKE_CXX_STANDARD ${version})
+  Out: set(CMAKE_CXX_STANDARD 17)
 
 - Rule: rule_cmake_cxx_compiler
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cmake_cxx_compiler
-  In: set (${empty}CMAKE_CXX_COMPILER ${version})
-  Out: set (CMAKE_CXX_COMPILER icpx)
+  In: set${empty}(${empty}CMAKE_CXX_COMPILER ${version})
+  Out: set(CMAKE_CXX_COMPILER icpx)
 
 - Rule: rule_set_property_cuda_seprarable_only
   Kind: CMakeRule
@@ -162,11 +162,11 @@
   In: cuda_compile_ptx${empty}(${device} ${value})
   Out: dpct_helper_compile_sycl_code(${device} ${value})
 
-- Rule: rule_user_defined_function_cpp_file_process
+- Rule: rule_user_defined_function_cpp_file
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
-  CmakeSyntax: user_defined_function_cpp_file_process
+  CmakeSyntax: user_defined_function_cpp_file
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
@@ -175,11 +175,11 @@
       In: ${arg}.cpp
       Out: ${arg}.${rewrite_extention_name}
 
-- Rule: rule_user_defined_function_cu_file_process
+- Rule: rule_user_defined_function_cu_file
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
-  CmakeSyntax: user_defined_function_cu_file_process
+  CmakeSyntax: user_defined_function_cu_file
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
@@ -621,7 +621,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: add_compile_options
-  In: add_compile_options(${arg})
+  In: add_compile_options${empty}(${arg})
   Out: add_compile_options(${arg})
   Subrules:
     arg:
@@ -633,7 +633,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: target_compile_options
-  In: target_compile_options(${arg})
+  In: target_compile_options${empty}(${arg})
   Out: target_compile_options(${arg})
   Subrules:
     arg:
@@ -660,7 +660,7 @@
   Priority: Fallback
   CmakeSyntax: cxx_target_compile_features
   MatchMode: Partial
-  In: target_compile_features(${value})
+  In: target_compile_features${empty}(${value})
   Out: target_compile_features(${value})
   Subrules:
     value:
@@ -1980,7 +1980,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_cmake_cuda_required
-  In: set(CMAKE_CUDA_STANDARD_REQUIRED ${value})
+  In: set${empty}(${empty}CMAKE_CUDA_STANDARD_REQUIRED ${value})
   Out: set(CMAKE_CXX_STANDARD_REQUIRED ${value})
 
 - Rule: rule_CUDA_VERSION
@@ -2025,7 +2025,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: enable_language
-  In: enable_language(${empty}CUDA${empty})
+  In: enable_language${empty}(${empty}CUDA${empty})
   Out: enable_language(CXX)
 
 - Rule: rule_add_arch_add_link_options

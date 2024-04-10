@@ -610,7 +610,7 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString) {
     Index = gotoEndOfCmakeWord(Line, Begin + 1, '(');
     int End = Index;
 
-    if (Index < Size && Line[Index] == '(') {
+    if (Index < Size && (Line[Index] == '(' || isWhitespace(Line[Index]))) {
       std::string Str = Line.substr(Begin, End - Begin);
       std::transform(Str.begin(), Str.end(), Str.begin(),
                      [](unsigned char Char) { return std::tolower(Char); });
@@ -746,11 +746,9 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
   std::cout << "\tOut:" << R.Out << std::endl;
   std::cout << "#####Migration Rule end ######" << std::endl;
 #endif
-
-  auto Key = R.CmakeSyntax;
   static std::unordered_set<std::string> DuplicateFilter;
-  if (DuplicateFilter.find(Key) == end(DuplicateFilter)) {
-    DuplicateFilter.insert(Key);
+  if (DuplicateFilter.find(R.CmakeSyntax) == end(DuplicateFilter)) {
+    DuplicateFilter.insert(R.CmakeSyntax);
 
     auto PR =
         MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
