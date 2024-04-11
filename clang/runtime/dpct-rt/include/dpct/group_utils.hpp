@@ -1,4 +1,4 @@
-//==---- dpcpp_extensions.h ------------------*- C++ -*---------------==//
+//==---- group_utils.h ------------------*- C++ -*---------------==//
 //
 // Copyright (C) Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
