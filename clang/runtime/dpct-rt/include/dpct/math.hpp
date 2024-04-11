@@ -1779,7 +1779,6 @@ inline constexpr unsigned extend_vcompare2(AT a, BT b, BinaryOperation cmp) {
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the compare operation
-/// \tparam [in] SecondBinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
@@ -2077,7 +2076,6 @@ inline constexpr unsigned extend_vcompare4(AT a, BT b, BinaryOperation cmp) {
 /// \tparam [in] AT The type of the first value, can only be 32 bit integer
 /// \tparam [in] BT The type of the second value, can only be 32 bit integer
 /// \tparam [in] BinaryOperation The type of the compare operation
-/// \tparam [in] SecondBinaryOperation The type of the second operation
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] c The third value
