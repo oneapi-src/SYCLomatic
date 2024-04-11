@@ -59,7 +59,7 @@
 // cublasSgemmEx-NEXT:                 btype /*cudaDataType*/, ldb /*int*/, beta /*const float **/,
 // cublasSgemmEx-NEXT:                 c /*void **/, ctype /*cudaDataType*/, ldc /*int*/);
 // cublasSgemmEx-NEXT: Is migrated to:
-// cublasSgemmEx-NEXT:   dpct::blas::gemm(handle->get_queue(), transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, dpct::library_data_t::real_float);
+// cublasSgemmEx-NEXT:   dpct::blas::gemm(handle, transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, dpct::library_data_t::real_float);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDrotmg | FileCheck %s -check-prefix=cublasDrotmg
 // cublasDrotmg: CUDA API:
@@ -117,7 +117,7 @@
 // cublasCherkx-NEXT:                lda /*int*/, b /*const cuComplex **/, ldb /*int*/,
 // cublasCherkx-NEXT:                beta /*const float **/, c /*cuComplex **/, ldc /*int*/);
 // cublasCherkx-NEXT: Is migrated to:
-// cublasCherkx-NEXT:   dpct::blas::herk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasCherkx-NEXT:   dpct::blas::herk(handle, upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgeam | FileCheck %s -check-prefix=cublasCgeam
 // cublasCgeam: CUDA API:
@@ -234,7 +234,7 @@
 // cublasCtrmm-NEXT:               b /*const cuComplex **/, ldb /*int*/, c /*cuComplex **/,
 // cublasCtrmm-NEXT:               ldc /*int*/);
 // cublasCtrmm-NEXT: Is migrated to:
-// cublasCtrmm-NEXT:   dpct::blas::trmm(handle->get_queue(), left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
+// cublasCtrmm-NEXT:   dpct::blas::trmm(handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgbmv | FileCheck %s -check-prefix=cublasCgbmv
 // cublasCgbmv: CUDA API:

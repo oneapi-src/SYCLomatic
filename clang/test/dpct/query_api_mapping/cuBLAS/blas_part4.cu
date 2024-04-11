@@ -122,7 +122,7 @@
 // cublasZtrmm-NEXT:               lda /*int*/, b /*const cuDoubleComplex **/, ldb /*int*/,
 // cublasZtrmm-NEXT:               c /*cuDoubleComplex **/, ldc /*int*/);
 // cublasZtrmm-NEXT: Is migrated to:
-// cublasZtrmm-NEXT:   dpct::blas::trmm(handle->get_queue(), left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
+// cublasZtrmm-NEXT:   dpct::blas::trmm(handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasStrmm | FileCheck %s -check-prefix=cublasStrmm
 // cublasStrmm: CUDA API:
@@ -132,7 +132,7 @@
 // cublasStrmm-NEXT:               alpha /*const float **/, a /*const float **/, lda /*int*/,
 // cublasStrmm-NEXT:               b /*const float **/, ldb /*int*/, c /*float **/, ldc /*int*/);
 // cublasStrmm-NEXT: Is migrated to:
-// cublasStrmm-NEXT:   dpct::blas::trmm(handle->get_queue(), left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
+// cublasStrmm-NEXT:   dpct::blas::trmm(handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDnrm2 | FileCheck %s -check-prefix=cublasDnrm2
 // cublasDnrm2: CUDA API:

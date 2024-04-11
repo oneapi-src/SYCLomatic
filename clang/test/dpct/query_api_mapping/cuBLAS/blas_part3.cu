@@ -45,7 +45,7 @@
 // cublasDsyrkx-NEXT:                b /*const double **/, ldb /*int*/, beta /*const double **/,
 // cublasDsyrkx-NEXT:                c /*double **/, ldc /*int*/);
 // cublasDsyrkx-NEXT: Is migrated to:
-// cublasDsyrkx-NEXT:   dpct::blas::syrk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasDsyrkx-NEXT:   dpct::blas::syrk(handle, upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZtbmv | FileCheck %s -check-prefix=cublasZtbmv
 // cublasZtbmv: CUDA API:
