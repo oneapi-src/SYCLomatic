@@ -34,6 +34,10 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = j1(f0);
   // CHECK: d2 = sycl::ext::intel::math::j1(d0);
   d2 = j1(d0);
+  // CHECK: d2 = sycl::ext::intel::math::jn(i, f0);
+  d2 = jn(i, f0);
+  // CHECK: d2 = sycl::ext::intel::math::jn(i, d0);
+  d2 = jn(i, d0);
   // CHECK: d2 = sycl::ext::intel::math::cdfnorm(d0);
   d2 = normcdf(d0);
   // CHECK: d2 = sycl::ext::intel::math::cdfnorminv(d0);
@@ -54,6 +58,10 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = y1(f0);
   // CHECK: d2 = sycl::ext::intel::math::y1(d0);
   d2 = y1(d0);
+  // CHECK: d2 = sycl::ext::intel::math::yn(i, f0);
+  d2 = yn(i, f0);
+  // CHECK: d2 = sycl::ext::intel::math::yn(i, d0);
+  d2 = yn(i, d0);
 
   // Double Precision Intrinsics
 
@@ -120,6 +128,10 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = j0f(d0);
   // CHECK: f2 = sycl::ext::intel::math::j1(f0);
   f2 = j1f(f0);
+  // CHECK: f2 = sycl::ext::intel::math::jn(i, d0);
+  f2 = jnf(i, d0);
+  // CHECK: f2 = sycl::ext::intel::math::jn(i, f0);
+  f2 = jnf(i, f0);
   // CHECK: f2 = sycl::ext::intel::math::j1((float)d0);
   f2 = j1f(d0);
   // CHECK: f2 = sycl::ext::intel::math::cdfnorm(f0);
@@ -146,6 +158,10 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = y1f(f0);
   // CHECK: f2 = sycl::ext::intel::math::y1((float)d0);
   f2 = y1f(d0);
+  // CHECK: f2 = sycl::ext::intel::math::yn(i, d0);
+  f2 = ynf(i, d0);
+  // CHECK: f2 = sycl::ext::intel::math::yn(i, f0);
+  f2 = ynf(i, f0);
 
   // Single Precision Intrinsics
 
