@@ -746,10 +746,6 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
   std::cout << "\tOut:" << R.Out << std::endl;
   std::cout << "#####Migration Rule end ######" << std::endl;
 #endif
-  static std::unordered_set<std::string> DuplicateFilter;
-  if (DuplicateFilter.find(R.CmakeSyntax) == end(DuplicateFilter)) {
-    DuplicateFilter.insert(R.CmakeSyntax);
-
     auto PR =
         MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
                                         R.RuleId, R.CmakeSyntax, R.Priority);
@@ -760,12 +756,14 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
         assert(Iter->second.Priority < PR.Priority &&
                "Two same cmake syntaxes have \'Takeover\' priority.\n ");
         CmakeBuildInRules[PR.CmakeSyntax] = PR;
+      } else if (PR.Priority == Iter->second.Priority) {
+        llvm::errs() << " [NOTE] CMake syntax: \"" << R.CmakeSyntax
+                     << "\" exists in predefined CMake "
+                        "script Yaml rule set:\n"
+                     << "\tMew rule id:\"" << R.RuleId << "\"\n"
+                     << "\tExiting rule id:\"" << Iter->second.RuleId << "\"\n";
       }
     } else {
       CmakeBuildInRules[PR.CmakeSyntax] = PR;
     }
-  } else {
-    llvm::errs() << "[NOTE] Find new CMake syntax \"" << R.CmakeSyntax
-                 << "\" exists in predefined CMake script Yaml rule set\n";
-  }
 }
