@@ -1631,7 +1631,7 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
          BUFFER_OR_USM_PTR(ARG(9), "std::complex<float>"), ARG(10),
          SCALAR_INPUT(ARG(11), "std::complex<double>"),
          BUFFER_OR_USM_PTR(ARG(12), "std::complex<float>"), ARG(13),
-         ARG("oneapi::mkl::compute_mode::complex_3m"))))
+         ARG("oneapi::mkl::blas::compute_mode::complex_3m"))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasZgemm3m",
     CALL("oneapi::mkl::blas::column_major::gemm",
@@ -1643,7 +1643,7 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
          BUFFER_OR_USM_PTR(ARG(9), "std::complex<double>"), ARG(10),
          SCALAR_INPUT(ARG(11), "std::complex<double>"),
          BUFFER_OR_USM_PTR(ARG(12), "std::complex<double>"), ARG(13),
-         ARG("oneapi::mkl::compute_mode::complex_3m"))))
+         ARG("oneapi::mkl::blas::compute_mode::complex_3m"))))
 
 #define GEMM_BATCH(NAME, TYPE, IS_COMPLEX)                                     \
   ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \

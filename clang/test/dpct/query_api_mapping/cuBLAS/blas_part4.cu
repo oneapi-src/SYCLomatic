@@ -77,7 +77,7 @@
 // cublasCgemm3m-NEXT:                 lda /*int*/, b /*const cuComplex **/, ldb /*int*/,
 // cublasCgemm3m-NEXT:                 beta /*const cuComplex **/, c /*cuComplex **/, ldc /*int*/);
 // cublasCgemm3m-NEXT: Is migrated to:
-// cublasCgemm3m-NEXT:   oneapi::mkl::blas::column_major::gemm(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, (std::complex<float>*)b, ldb, dpct::get_value(beta, handle->get_queue()), (std::complex<float>*)c, ldc, oneapi::mkl::compute_mode::complex_3m);
+// cublasCgemm3m-NEXT:   oneapi::mkl::blas::column_major::gemm(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, (std::complex<float>*)b, ldb, dpct::get_value(beta, handle->get_queue()), (std::complex<float>*)c, ldc, oneapi::mkl::blas::compute_mode::complex_3m);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDtbsv | FileCheck %s -check-prefix=cublasDtbsv
 // cublasDtbsv: CUDA API:
