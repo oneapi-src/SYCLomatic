@@ -33,8 +33,9 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
       "long4", "ulong4", "float1", "float2", "float3", "float4", "longlong1",  \
       "ulonglong1", "longlong2", "ulonglong2", "longlong3", "ulonglong3",      \
       "longlong4", "ulonglong4", "double1", "double2", "double3", "double4",   \
-      "__half", "__half2", "__nv_bfloat162", "__half_raw"
-#define VECTORTYPE2MARRAYNAMES "__nv_bfloat162"
+      "__half", "__half2", "half", "half2", "__nv_bfloat16", "nv_bfloat16",    \
+      "__nv_bfloat162", "nv_bfloat162", "__half_raw"
+#define VECTORTYPE2MARRAYNAMES "__nv_bfloat162", "nv_bfloat162"
 
 /// Record mapping between names
 class MapNames {
@@ -363,7 +364,6 @@ public:
 
   static MapTy BLASAPIWithRewriter;
   static std::unordered_set<std::string> SOLVERAPIWithRewriter;
-  static std::unordered_set<std::string> SPARSEAPIWithRewriter;
 
   static const std::unordered_set<std::string> CooperativeGroupsAPISet;
 

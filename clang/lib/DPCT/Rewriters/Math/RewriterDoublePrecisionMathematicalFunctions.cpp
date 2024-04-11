@@ -100,6 +100,18 @@ RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
                       CALL(MapNames::getClNamespace() + "ext::intel::math::j1",
                            CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
               EMPTY_FACTORY_ENTRY("j1"), EMPTY_FACTORY_ENTRY("j1")))
+      // jn
+      MATH_API_REWRITERS_V2(
+          "jn",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("jn", CALL(MapNames::getClNamespace() +
+                                                "ext::intel::math::jn",
+                                            ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::unsupported_warning,
+              UNSUPPORT_FACTORY_ENTRY("jn", Diagnostics::API_NOT_MIGRATED,
+                                      ARG("jn"))))
       // ldexp
       MATH_API_REWRITER_DEVICE(
           "ldexp",
@@ -319,5 +331,17 @@ RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
                       "y1",
                       CALL(MapNames::getClNamespace() + "ext::intel::math::y1",
                            CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
-              EMPTY_FACTORY_ENTRY("y1"), EMPTY_FACTORY_ENTRY("y1")))};
+              EMPTY_FACTORY_ENTRY("y1"), EMPTY_FACTORY_ENTRY("y1")))
+      // yn
+      MATH_API_REWRITERS_V2(
+          "yn",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("yn", CALL(MapNames::getClNamespace() +
+                                                "ext::intel::math::yn",
+                                            ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::unsupported_warning,
+              UNSUPPORT_FACTORY_ENTRY("yn", Diagnostics::API_NOT_MIGRATED,
+                                      ARG("yn"))))};
 }
