@@ -644,10 +644,12 @@ public:
     this->IsForCUDADebug = IsForCUDADebug;
   }
   ReplaceText(const SourceLocation &Begin, const SourceLocation &End,
-              std::string &&S)
+              std::string &&S,
+              ReplacementType IsForCUDADebug = RT_ForSYCLMigration)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin),
         Len(End.getRawEncoding() - Begin.getRawEncoding()), T(std::move(S)) {
     this->NotFormatFlag = false;
+    this->IsForCUDADebug = IsForCUDADebug;
   }
 
   std::shared_ptr<ExtReplacement>

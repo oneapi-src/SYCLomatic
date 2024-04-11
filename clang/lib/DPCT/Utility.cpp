@@ -1755,6 +1755,16 @@ bool isContainMacro(const Expr *E) {
   return false;
 }
 
+std::string getTemplateArgumentAsString(const clang::TemplateArgument &Arg,
+                                        const clang::ASTContext &Ctx) {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  clang::PrintingPolicy Policy(Ctx.getLangOpts());
+  Arg.print(Policy, OS, true);
+  OS.flush();
+  return Str;
+}
+
 /// Get the dereference name of the expression \p E.
 std::string getDrefName(const Expr *E) {
   std::ostringstream OS;

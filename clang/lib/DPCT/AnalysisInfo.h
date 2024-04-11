@@ -178,6 +178,12 @@ struct CudaArchPPInfo {
   bool isInHDFunc = false;
 };
 
+struct VarInfoForCodePin {
+  std::string TypeNameInCuda;
+  std::string TypeNameInSycl;
+  std::string MemberName;
+};
+
 struct MemcpyOrderAnalysisInfo {
   MemcpyOrderAnalysisInfo(
       std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
@@ -1347,6 +1353,7 @@ public:
     return VarUsedByRuntimeSymbolAPISet;
   }
   static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
+  static auto &getCodePinTypeInfoVec() { return CodePinTypeInfoMap; }
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
   }
@@ -1558,6 +1565,8 @@ private:
       ConstantReplProcessedFlagMap;
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
   static IncludeMapSetTy IncludeMapSet;
+  static std::vector<std::pair<std::string, std::vector<VarInfoForCodePin>>>
+      CodePinTypeInfoMap;
   static std::unordered_set<std::string> NeedParenAPISet;
 };
 

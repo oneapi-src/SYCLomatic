@@ -813,10 +813,52 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         OutRoot.getCanonicalPath().str() + "/generated_schema.hpp";
     std::error_code EC;
     createDirectories(path::parent_path(SchemaPathCUDA));
+    auto GenerateDumpFunc = [&](dpct::RawFDOStream &RS, bool IsForCUDADebug) {
+      auto &Vec = dpct::DpctGlobalInfo::getCodePinTypeInfoVec();
+      RS << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
+         << "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
+         << "namespace dpct {" << getNL() << "namespace experimental {"
+         << getNL() << "namespace detail {" << getNL();
+      for (int i = Vec.size() - 1; i >= 0; --i) {
+        auto &T = Vec[i];
+        RS << "template <> class DataSer<" << T.first << "> {" << getNL()
+           << "public:" << getNL()
+           << "  static void dump(std::ostream &ss, const " << T.first
+           << "&value," << getNL()
+           << "                   dpct::experimental::StreamType stream) {"
+           << getNL() << "    ss << \"{\\\"Type\\\":\\\"" << T.first
+           << "\\\",\\\"Data\\\":[\";" << getNL();
+        if (int MemberNum = T.second.size()) {
+          for (int i = 0; i < MemberNum; i++) {
+            RS << "    ss << \"{\\\"" << T.second[i].MemberName << "\\\":\";"
+               << getNL() << "    dpct::experimental::detail::DataSer<";
+            if (IsForCUDADebug) {
+              RS << T.second[i].TypeNameInCuda;
+            } else {
+              RS << T.second[i].TypeNameInSycl;
+            }
+            RS << ">::dump(ss, value." << T.second[i].MemberName << ", stream);"
+               << getNL();
+            if (i == (MemberNum - 1)) {
+              RS << "    ss << \"}\";" << getNL();
+            } else {
+              RS << "    ss << \"},\";" << getNL();
+            }
+          }
+        } else {
+          RS << "    ss << (int)value;" << getNL();
+        }
+        RS << "    ss << \"]}\";" << getNL() << "  }" << getNL() << "};"
+           << getNL();
+      }
+      RS << "#endif" << getNL() << "}" << getNL() << "}" << getNL() << "}"
+         << getNL();
+    };
     dpct::RawFDOStream SchemaStreamCUDA(SchemaPathCUDA);
-
+    GenerateDumpFunc(SchemaStreamCUDA, true);
     createDirectories(path::parent_path(SchemaPathSYCL));
     clang::dpct::RawFDOStream SchemaStreamSYCL(SchemaPathSYCL);
+    GenerateDumpFunc(SchemaStreamSYCL, false);
   }
   processallOptionAction(InRoot, OutRoot);
 

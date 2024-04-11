@@ -563,6 +563,8 @@ bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
 std::string getNameSpace(const NamespaceDecl *NSD);
+std::string getTemplateArgumentAsString(const clang::TemplateArgument &Arg,
+                                        const clang::ASTContext &Ctx);
 bool isFromCUDA(const Decl *D);
 namespace clang {
 namespace dpct {

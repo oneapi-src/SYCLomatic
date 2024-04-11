@@ -1283,6 +1283,7 @@ public:
                           const ast_matchers::MatchFinder::MatchResult &Result);
   void instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KCall,
                                       SourceLocation &EpilogLocation);
+  void collectInfoForCodePinDumpFunction(QualType T);
 };
 
 /// Migration rule for device function calls

@@ -8468,6 +8468,72 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
+void KernelCallRule::collectInfoForCodePinDumpFunction(QualType T) {
+  auto &Vec = DpctGlobalInfo::getCodePinTypeInfoVec();
+  T = T.getCanonicalType();
+  T = T.getUnqualifiedType();
+  if (T->isPointerType()) {
+    collectInfoForCodePinDumpFunction(T->getPointeeType());
+    return;
+  }
+
+  auto &Ctx = DpctGlobalInfo::getContext();
+  clang::PrintingPolicy PrintPolicy(Ctx.getLangOpts());
+  PrintPolicy.SuppressTagKeyword = 1;
+  PrintPolicy.SuppressInlineNamespace = 1;
+  std::string TypeName = T.getAsString(PrintPolicy);
+
+  auto iter =
+      std::find_if(Vec.begin(), Vec.end(), [&TypeName](const auto &pair) {
+        return pair.first == TypeName;
+      });
+  if(iter != Vec.end()) {
+    return;
+  }
+  if (T->getAs<clang::EnumType>()) {
+    Vec.push_back({TypeName, {}});
+  } else if (const RecordType *RT = T->getAs<RecordType>()) {
+    if (const RecordDecl *RD = RT->getDecl()) {
+      RD = RD->getDefinition();
+      if (!RD) {
+        return;
+      }
+      if (RD->isUnion() || RD->isClass()) {
+        emplaceTransformation(new ReplaceText(RD->getBeginLoc(), 5, "struct"));
+        emplaceTransformation(new ReplaceText(RD->getBeginLoc(), 5, "struct",
+                                              false, RT_ForCUDADebug));
+      }
+      for (auto E : RD->decls()) {
+        if (dyn_cast<AccessSpecDecl>(E)) {
+          emplaceTransformation(
+              new ReplaceText(E->getBeginLoc(), E->getEndLoc(), "public"));
+          emplaceTransformation(new ReplaceText(
+              E->getBeginLoc(), E->getEndLoc(), "public", RT_ForCUDADebug));
+        }
+      }
+      Vec.push_back({TypeName, {}});
+      for (auto F : RD->fields()) {
+        auto MemberType = F->getType();
+        MemberType = MemberType.getCanonicalType();
+        MemberType = MemberType.getUnqualifiedType();
+        std::string MemberTypeName = MemberType.getAsString(PrintPolicy);
+        VarInfoForCodePin TypeInfo;
+        TypeInfo.TypeNameInCuda = MemberTypeName;
+        TypeInfo.TypeNameInSycl =
+            DpctGlobalInfo::getReplacedTypeName(MemberType, Ctx);
+        TypeInfo.MemberName = F->getName();
+        Vec.back().second.push_back(TypeInfo);
+      }
+      for (auto F : RD->fields()) {
+        auto MemberType = F->getType();
+        if (isTypeInAnalysisScope(MemberType.getTypePtrOrNull())) {
+          collectInfoForCodePinDumpFunction(MemberType);
+        }
+      }
+    }
+  }
+}
+
 void KernelCallRule::instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KCall,
                                     SourceLocation &EpilogLocation) {
   const auto &SM = DpctGlobalInfo::getSourceManager();
@@ -8569,6 +8635,15 @@ void KernelCallRule::runRule(
     auto EpilogLocation = removeTrailingSemicolon(KCall, Result);
     if (DpctGlobalInfo::isCodePinEnabled()) {
       instrumentKernelLogsForCodePin(KCall, EpilogLocation);
+      if (auto DC = KCall->getDirectCallee()) {
+        int ParamNum = DC->getNumParams();
+        for (int i = 0; i < ParamNum; i++) {
+          auto Decl = DC->getParamDecl(i);
+          if (isUserDefinedDecl(Decl)) {
+            collectInfoForCodePinDumpFunction(Decl->getType());
+          }
+        }
+      }
     }
     bool Flag = true;
     unsigned int IndentLen = calculateIndentWidth(

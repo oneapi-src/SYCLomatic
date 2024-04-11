@@ -2463,6 +2463,8 @@ std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
 std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
 IncludeMapSetTy DpctGlobalInfo::IncludeMapSet;
+std::vector<std::pair<std::string, std::vector<VarInfoForCodePin>>>
+    DpctGlobalInfo::CodePinTypeInfoMap;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
