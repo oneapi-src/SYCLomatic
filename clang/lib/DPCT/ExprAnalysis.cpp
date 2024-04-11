@@ -288,9 +288,6 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
                                  const Expr *Parent) {
   const std::shared_ptr<DynTypedNode> P =
       std::make_shared<DynTypedNode>(DynTypedNode::create(*Parent));
-  std::cout << "BeginLoc_0:" << BeginLoc.printToString(SM) << std::endl;
-  std::cout << "EndLoc_0:" << EndLoc.printToString(SM) << std::endl;
-  Parent->dump();
   while (BeginLoc.isMacroID() &&
          isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
     BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
