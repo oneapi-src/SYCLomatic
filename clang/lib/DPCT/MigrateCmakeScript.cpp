@@ -737,41 +737,22 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void registerCmakeMigrationRule(MetaRuleObject &R) {
+  auto PR =
+      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
+                                      R.RuleId, R.CmakeSyntax, R.Priority);
 
-#ifdef __DEBUG_CMAKE_SCRIPR_MIGRATION
-  std::cout << "\n#####Migration Rule start ######" << std::endl;
-  std::cout << "\tRuleId:" << R.RuleId << std::endl;
-  std::cout << "\tCmakeSyntax:" << R.CmakeSyntax << std::endl;
-  std::cout << "\tIn:" << R.In << std::endl;
-  std::cout << "\tOut:" << R.Out << std::endl;
-  std::cout << "#####Migration Rule end ######" << std::endl;
-#endif
-    auto PR =
-        MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
-                                        R.RuleId, R.CmakeSyntax, R.Priority);
-
-    auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
-    if (Iter != CmakeBuildInRules.end()) {
-      if (PR.Priority == RulePriority::Takeover) {
-        if (Iter->second.Priority < PR.Priority) {
-          CmakeBuildInRules[PR.CmakeSyntax] = PR;
-        } else {
-          llvm::outs() << " [NOTE] Two Yaml rules with same CMake syntax have "
-                          "\'Takeover\' priority:\n"
-                       << "\tNew rule id:\"" << R.RuleId << "\"\n"
-                       << "\tExiting rule id:\"" << Iter->second.RuleId
-                       << "\"\n"
-                       << " The new rule has been skipped.\n";
-        }
-      } else {
-        llvm::outs() << " [NOTE] CMake syntax: \"" << R.CmakeSyntax
-                     << "\" exists in predefined CMake "
-                        "script Yaml rule set:\n"
-                     << "\tNew rule id:\"" << R.RuleId << "\"\n"
-                     << "\tExiting rule id:\"" << Iter->second.RuleId << "\"\n"
-                     << " The new rule has been skipped.\n";
-      }
-    } else {
+  auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
+  if (Iter != CmakeBuildInRules.end()) {
+    if (PR.Priority == RulePriority::Takeover &&
+        Iter->second.Priority < PR.Priority) {
       CmakeBuildInRules[PR.CmakeSyntax] = PR;
+    } else {
+      llvm::outs() << "[Warnning]: Two migration rules (Rule_id_1:" << R.RuleId
+                   << ", Rule_id_2:" << Iter->second.RuleId
+                   << ") are duplicated, the migrtion rule (Rule_id:"
+                   << R.RuleId << ") is ingored.\n";
     }
+  } else {
+    CmakeBuildInRules[PR.CmakeSyntax] = PR;
+  }
 }

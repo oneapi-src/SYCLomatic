@@ -1,0 +1,2 @@
+// CHECK: [Warnning]: Two migration rules (Rule_id_1:rule_gen_codes_add_link_options_test_dup, Rule_id_2:rule_gen_codes_add_link_options) are duplicated, the migrtion rule (Rule_id:rule_gen_codes_add_link_options_test_dup) is ingored.
+// CHECK: [Warnning]: Two migration rules (Rule_id_1:rule_a_new, Rule_id_2:rule_a_old) are duplicated, the migrtion rule (Rule_id:rule_a_new) is ingored.
