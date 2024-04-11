@@ -35,7 +35,7 @@
 // cublasZherkx-NEXT:                lda /*int*/, b /*const cuDoubleComplex **/, ldb /*int*/,
 // cublasZherkx-NEXT:                beta /*const double **/, c /*cuDoubleComplex **/, ldc /*int*/);
 // cublasZherkx-NEXT: Is migrated to:
-// cublasZherkx-NEXT:   dpct::herk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasZherkx-NEXT:   dpct::blas::herk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasChbmv | FileCheck %s -check-prefix=cublasChbmv
 // cublasChbmv: CUDA API:
@@ -173,7 +173,7 @@
 // cublasCgemmEx-NEXT:                 btype /*cudaDataType*/, ldb /*int*/, beta /*const cuComplex **/,
 // cublasCgemmEx-NEXT:                 c /*void **/, ctype /*cudaDataType*/, ldc /*int*/);
 // cublasCgemmEx-NEXT: Is migrated to:
-// cublasCgemmEx-NEXT:   dpct::gemm(handle->get_queue(), transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, dpct::library_data_t::complex_float);
+// cublasCgemmEx-NEXT:   dpct::blas::gemm(handle->get_queue(), transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, dpct::library_data_t::complex_float);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasIsamax | FileCheck %s -check-prefix=cublasIsamax
 // cublasIsamax: CUDA API:
@@ -222,7 +222,7 @@
 // cublasZsyrkx-NEXT:                beta /*const cuDoubleComplex **/, c /*cuDoubleComplex **/,
 // cublasZsyrkx-NEXT:                ldc /*int*/);
 // cublasZsyrkx-NEXT: Is migrated to:
-// cublasZsyrkx-NEXT:   dpct::syrk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasZsyrkx-NEXT:   dpct::blas::syrk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZsyr2 | FileCheck %s -check-prefix=cublasZsyr2
 // cublasZsyr2: CUDA API:

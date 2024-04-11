@@ -175,7 +175,7 @@
 // cublasSsyrkx-NEXT:                b /*const float **/, ldb /*int*/, beta /*const float **/,
 // cublasSsyrkx-NEXT:                c /*float **/, ldc /*int*/);
 // cublasSsyrkx-NEXT: Is migrated to:
-// cublasSsyrkx-NEXT:   dpct::syrk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasSsyrkx-NEXT:   dpct::blas::syrk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDestroy | FileCheck %s -check-prefix=cublasDestroy
 // cublasDestroy: CUDA API:
