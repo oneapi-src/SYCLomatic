@@ -753,15 +753,23 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
     auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
     if (Iter != CmakeBuildInRules.end()) {
       if (PR.Priority == RulePriority::Takeover) {
-        assert(Iter->second.Priority < PR.Priority &&
-               "Two same cmake syntaxes have \'Takeover\' priority.\n ");
-        CmakeBuildInRules[PR.CmakeSyntax] = PR;
-      } else if (PR.Priority == Iter->second.Priority) {
-        llvm::errs() << " [NOTE] CMake syntax: \"" << R.CmakeSyntax
+        if (Iter->second.Priority < PR.Priority) {
+          CmakeBuildInRules[PR.CmakeSyntax] = PR;
+        } else {
+          llvm::outs() << " [NOTE] Two Yaml rules with same CMake syntax have "
+                          "\'Takeover\' priority:\n"
+                       << "\tNew rule id:\"" << R.RuleId << "\"\n"
+                       << "\tExiting rule id:\"" << Iter->second.RuleId
+                       << "\"\n"
+                       << " The new rule has been skipped.\n";
+        }
+      } else {
+        llvm::outs() << " [NOTE] CMake syntax: \"" << R.CmakeSyntax
                      << "\" exists in predefined CMake "
                         "script Yaml rule set:\n"
-                     << "\tMew rule id:\"" << R.RuleId << "\"\n"
-                     << "\tExiting rule id:\"" << Iter->second.RuleId << "\"\n";
+                     << "\tNew rule id:\"" << R.RuleId << "\"\n"
+                     << "\tExiting rule id:\"" << Iter->second.RuleId << "\"\n"
+                     << " The new rule has been skipped.\n";
       }
     } else {
       CmakeBuildInRules[PR.CmakeSyntax] = PR;
