@@ -3234,8 +3234,8 @@ std::string MemVarInfo::getSyclAccessorType(LocInfo LI) {
     if (!getType()->SharedVarInfo.TypeName.empty() &&
         !LI.first.getCanonicalPath().empty() && LI.second) {
       DiagnosticsUtils::report(LI.first.getCanonicalPath().str(), LI.second,
-                               Warnings::MOVE_TYPE_DEFINITION, true, false,
-                               getType()->SharedVarInfo.TypeName,
+                               Warnings::MOVE_TYPE_DEFINITION_KERNEL_FUNC, true,
+                               false, getType()->SharedVarInfo.TypeName,
                                getType()->SharedVarInfo.DefinitionFuncName);
     }
     OS << MapNames::getClNamespace() << "local_accessor<";
@@ -3902,7 +3902,7 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
         !LI.first.getCanonicalPath().empty() && LI.second) {
       DiagnosticsUtils::report(
           LI.first.getCanonicalPath().str(), LI.second,
-          Warnings::MOVE_TYPE_DEFINITION, true, false,
+          Warnings::MOVE_TYPE_DEFINITION_DEVICE_FUNC, true, false,
           VI.second->getType()->SharedVarInfo.TypeName,
           VI.second->getType()->SharedVarInfo.DefinitionFuncName);
     }
