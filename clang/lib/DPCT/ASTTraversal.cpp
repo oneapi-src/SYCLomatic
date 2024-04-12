@@ -10243,6 +10243,8 @@ void MemoryMigrationRule::memcpyMigration(
   size_t AsyncLoc = NameRef.find("Async");
   if (AsyncLoc != std::string::npos) {
     IsAsync = true;
+    report(DpctGlobalInfo::getSourceManager().getExpansionLoc(C->getBeginLoc()),
+           Diagnostics::ASYNC_MEMCPY_WARNING, true, Name);
     NameRef = NameRef.substr(0, AsyncLoc);
   }
   if (!NameRef.compare("cudaMemcpy2D")) {
