@@ -747,10 +747,10 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
         Iter->second.Priority < PR.Priority) {
       CmakeBuildInRules[PR.CmakeSyntax] = PR;
     } else {
-      llvm::outs() << "[Warnning]: Two migration rules (Rule_id_1:" << R.RuleId
-                   << ", Rule_id_2:" << Iter->second.RuleId
-                   << ") are duplicated, the migrtion rule (Rule_id:"
-                   << R.RuleId << ") is ingored.\n";
+      llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId
+                   << ", Rule:" << Iter->second.RuleId
+                   << ") are duplicated, the migrtion rule (Rule:" << R.RuleId
+                   << ") is ingored.\n";
     }
   } else {
     CmakeBuildInRules[PR.CmakeSyntax] = PR;
