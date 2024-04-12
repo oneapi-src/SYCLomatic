@@ -9,8 +9,8 @@
 #ifndef __DPCT_DPCPP_EXTENSIONS_H__
 #define __DPCT_DPCPP_EXTENSIONS_H__
 
-#include <sycl/sycl.hpp>
 #include <stdexcept>
+#include <sycl/sycl.hpp>
 
 #ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
 #include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
@@ -231,7 +231,7 @@ private:
   uint8_t *_local_memory;
 };
 
-}  //namespace group
+} // namespace group
 } // namespace dpct
 
 #endif
