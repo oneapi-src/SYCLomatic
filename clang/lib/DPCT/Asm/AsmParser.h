@@ -79,9 +79,6 @@ public:
     llvm_unreachable("InlineAsmType cannot be released with regular 'delete'.");
   }
 
-  bool isSignedInt() const;
-  bool isUnsignedInt() const;
-
 protected:
   InlineAsmType(TypeClass TC) : tClass(TC) {}
 
@@ -108,6 +105,10 @@ public:
   TypeKind getKind() const { return Kind; }
   bool isSignedInt() const;
   bool isUnsignedInt() const;
+  bool isInt() const { return isSignedInt() || isUnsignedInt(); }
+  bool isScalaType() const {
+    return isBitSize() || isInt() || getKind() == TK_f32 || getKind() == TK_f64;
+  }
   bool isFloating() const;
   bool isBitSize() const;
   unsigned getWidth() const;
@@ -826,12 +827,23 @@ class InlineAsmContext : public InlineAsmIdentifierInfoLookup {
   /// This used to cache the discard type.
   InlineAsmDiscardType *DiscardType = nullptr;
 
+  // This used to mapping ASM operands to clang's Expr.
+  llvm::DenseMap<InlineAsmVariableDecl *, const Expr *> OperandExprMap;
+
 public:
   void *allocate(unsigned Size, unsigned Align = 8) {
     return Allocator.Allocate(Size, Align);
   }
 
   void deallocate(void *Ptr) {}
+
+  void addInlineAsmOperandMapping(InlineAsmVariableDecl *Decl, const Expr *E) {
+    OperandExprMap[Decl] = E;
+  }
+
+  const Expr *getExprForInlineAsmOperand(InlineAsmVariableDecl *Decl) {
+    return OperandExprMap.lookup(Decl);
+  }
 
   /// Add predefined inline asm operand, e.g. %0
   unsigned addInlineAsmOperand(StringRef Name) {
@@ -879,6 +891,7 @@ public:
   }
 
   InlineAsmBuiltinType *getTypeFromConstraint(StringRef Constraint);
+  InlineAsmBuiltinType *getTypeFromExpr(const Expr *E);
   InlineAsmBuiltinType *getBuiltinType(StringRef TypeName);
   InlineAsmBuiltinType *getBuiltinType(InlineAsmBuiltinType::TypeKind Kind);
   InlineAsmBuiltinType *getBuiltinTypeFromTokenKind(asmtok::TokenKind Kind);
@@ -1051,7 +1064,7 @@ public:
     return true;
   }
 
-  InlineAsmDeclResult addInlineAsmOperands(StringRef Operand,
+  InlineAsmDeclResult addInlineAsmOperands(const Expr *E, StringRef Operand,
                                            StringRef Constraint);
   void addBuiltinIdentifier();
   InlineAsmScope *getCurScope() const { return CurScope; }
