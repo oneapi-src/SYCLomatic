@@ -332,3 +332,29 @@ void run_foo8() {
   foo_kernel7<T><<<1, 1>>>(i, i);
 }
 #endif
+
+// CHECK: typedef float TK1;
+// CHECK-NEXT: void foo_kernel8(int a, int b, TK1 *mem) {
+// CHECK-NEXT:   //local mem
+// CHECK-NEXT: }
+// CHECK-NEXT: void run_foo9() {
+// CHECK-NEXT:   int i;
+// CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       sycl::local_accessor<TK1, 1> mem_acc_ct1(sycl::range<1>(256), cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           foo_kernel8(i, i, mem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+// CHECK-NEXT: }
+typedef float TK1;
+__global__ void foo_kernel8(int a, int b) {
+  __shared__ TK1 mem[256];//local mem
+}
+void run_foo9() {
+  int i;
+  foo_kernel8<<<1, 1>>>(i, i);
+}

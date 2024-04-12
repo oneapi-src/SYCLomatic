@@ -2513,14 +2513,20 @@ std::string getTypedefOrUsingTypeName(QualType QT) {
     return getTypedefOrUsingTypeName(TYPE_CAST(ElaboratedType)->desugar());
   case Type::TypeClass::Typedef: {
     const TypedefNameDecl *TND = TYPE_CAST(TypedefType)->getDecl();
-    if (isUserDefinedDecl(TND))
-      return TND->getNameAsString();
+    if (isUserDefinedDecl(TND)) {
+      Decl::Kind K = TND->getDeclContext()->getDeclKind();
+      if (K != Decl::Kind::TranslationUnit && K != Decl::Kind::Namespace)
+        return TND->getNameAsString();
+    }
     return "";
   }
   case Type::TypeClass::Using: {
     const UsingShadowDecl *USD = TYPE_CAST(clang::UsingType)->getFoundDecl();
-    if (isUserDefinedDecl(USD))
-      return USD->getNameAsString();
+    if (isUserDefinedDecl(USD)) {
+      Decl::Kind K = USD->getDeclContext()->getDeclKind();
+      if (K != Decl::Kind::TranslationUnit && K != Decl::Kind::Namespace)
+        return USD->getNameAsString();
+    }
     return "";
   }
   default:
