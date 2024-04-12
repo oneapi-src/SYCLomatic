@@ -11,7 +11,7 @@ const double* csrValA;
 const int* csrRowPtrA;
 const int* csrColIndA;
 const double* x;
-double beta;
+double beta_value;
 double* y;
 //CHECK: dpct::queue_ptr handle;
 //CHECK-NEXT: oneapi::mkl::transpose transA = oneapi::mkl::transpose::nontrans;
