@@ -158,7 +158,7 @@
 // cublasCrot-NEXT:              incx /*int*/, y /*cuComplex **/, incy /*int*/, c /*const float **/,
 // cublasCrot-NEXT:              s /*const cuComplex **/);
 // cublasCrot-NEXT: Is migrated to:
-// cublasCrot-NEXT:   dpct::rot(handle->get_queue(), n, x, dpct::library_data_t::complex_float, incx, y, dpct::library_data_t::complex_float, incy, c, s, dpct::library_data_t::complex_float);
+// cublasCrot-NEXT:   oneapi::mkl::blas::column_major::rot(handle->get_queue(), n, (std::complex<float>*)x, incx, (std::complex<float>*)y, incy, dpct::get_value(c, handle->get_queue()), dpct::get_value(s, handle->get_queue()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCreate | FileCheck %s -check-prefix=cublasCreate
 // cublasCreate: CUDA API:

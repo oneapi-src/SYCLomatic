@@ -59,10 +59,10 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter 11111 equals to parameter 11111 but greater than 1, the generated code performance may be sub-optimal.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int a = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_C_S, (void*)h_a, 11111, 11111, 1, 10, sizeof(float)));
-  //CHECK-NEXT:dpct::matrix_mem_copy((void*)d_C_S, (void*)h_b, 1, 1, 1, 10, sizeof(float));
-  //CHECK-NEXT:dpct::matrix_mem_copy((void*)d_C_S, (void*)h_c, 1, 1, 1, 10, sizeof(float));
-  //CHECK-NEXT:a = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_C_S, (void*)h_a, 100, 100, 100, 100, 10000));
+  //CHECK-NEXT:int a = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(d_C_S, h_a, 11111, 11111, 1, 10, sizeof(float)));
+  //CHECK-NEXT:dpct::blas::matrix_mem_copy(d_C_S, h_b, 1, 1, 1, 10, sizeof(float));
+  //CHECK-NEXT:dpct::blas::matrix_mem_copy(d_C_S, h_c, 1, 1, 1, 10, sizeof(float));
+  //CHECK-NEXT:a = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(d_C_S, h_a, 100, 100, 100, 100, 10000));
   int a = cublasSetVector(10, sizeof(float), h_a, 11111, d_C_S, 11111);
   cublasSetVector(10, sizeof(float), h_b, 1, d_C_S, 1);
   cublasSetVector(10, sizeof(float), h_c, 1, d_C_S, 1);
@@ -132,9 +132,17 @@ int main() {
   //CHECK-NEXT:}();
   cublasIzamin(handle, N, x_Z, N, result);
 
-  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotm(handle->get_queue(), N, d_C_S, N, d_C_S, N, const_cast<float*>(x_S)));
+  //CHECK:a = [&]() {
+  //CHECK-NEXT:dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), x_S, 5);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::rotm(handle->get_queue(), N, d_C_S, N, d_C_S, N, res_wrapper_ct6.get_ptr());
+  //CHECK-NEXT:return 0;
+  //CHECK-NEXT:}();
   a = cublasSrotm(handle, N, d_C_S, N, d_C_S, N, x_S);
-  //CHECK:oneapi::mkl::blas::column_major::rotm(handle->get_queue(), N, d_C_D, N, d_C_D, N, const_cast<double*>(x_D));
+  //CHECK:[&]() {
+  //CHECK-NEXT:dpct::blas::wrapper_double_in res_wrapper_ct6(handle->get_queue(), x_D, 5);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::rotm(handle->get_queue(), N, d_C_D, N, d_C_D, N, res_wrapper_ct6.get_ptr());
+  //CHECK-NEXT:return 0;
+  //CHECK-NEXT:}();
   cublasDrotm(handle, N, d_C_D, N, d_C_D, N, x_D);
 
   // CHECK: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::copy(handle->get_queue(), N, x_S, incx, d_C_S, incy));
@@ -244,152 +252,62 @@ int main() {
   float2 *a_C, *b_C, *s_C;
   double2 *a_Z, *b_Z, *s_Z;
 
-  // CHECK: float* a_ct{{[0-9]+}} = a_S;
-  // CHECK-NEXT: float* b_ct{{[0-9]+}} = b_S;
-  // CHECK-NEXT: float* c_ct{{[0-9]+}} = c_S;
-  // CHECK-NEXT: float* s_ct{{[0-9]+}} = s_S;
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<float>(4, q_ct1);
-  // CHECK-NEXT:   b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
-  // CHECK-NEXT:   c_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
-  // CHECK-NEXT:   s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 3;
-  // CHECK-NEXT:   *a_ct{{[0-9]+}} = *a_S;
-  // CHECK-NEXT:   *b_ct{{[0-9]+}} = *b_S;
-  // CHECK-NEXT:   *c_ct{{[0-9]+}} = *c_S;
-  // CHECK-NEXT:   *s_ct{{[0-9]+}} = *s_S;
-  // CHECK-NEXT: }
-  // CHECK-NEXT: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotg(handle->get_queue(), a_ct{{[0-9]+}}, b_ct{{[0-9]+}}, c_ct{{[0-9]+}}, s_ct{{[0-9]+}}));
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *a_S = *a_ct{{[0-9]+}};
-  // CHECK-NEXT:   *b_S = *b_ct{{[0-9]+}};
-  // CHECK-NEXT:   *c_S = *c_ct{{[0-9]+}};
-  // CHECK-NEXT:   *s_S = *s_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct1(handle->get_queue(), a_S);
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct2(handle->get_queue(), b_S);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct3(handle->get_queue(), c_S);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct4(handle->get_queue(), s_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), res_wrapper_ct1.get_ptr(), res_wrapper_ct2.get_ptr(), res_wrapper_ct3.get_ptr(), res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasSrotg(handle, a_S, b_S, c_S, s_S);
-  // CHECK: double* a_ct{{[0-9]+}} = a_D;
-  // CHECK-NEXT: double* b_ct{{[0-9]+}} = b_D;
-  // CHECK-NEXT: double* c_ct{{[0-9]+}} = c_D;
-  // CHECK-NEXT: double* s_ct{{[0-9]+}} = s_D;
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<double>(4, q_ct1);
-  // CHECK-NEXT:   b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
-  // CHECK-NEXT:   c_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
-  // CHECK-NEXT:   s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 3;
-  // CHECK-NEXT:   *a_ct{{[0-9]+}} = *a_D;
-  // CHECK-NEXT:   *b_ct{{[0-9]+}} = *b_D;
-  // CHECK-NEXT:   *c_ct{{[0-9]+}} = *c_D;
-  // CHECK-NEXT:   *s_ct{{[0-9]+}} = *s_D;
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), a_ct{{[0-9]+}}, b_ct{{[0-9]+}}, c_ct{{[0-9]+}}, s_ct{{[0-9]+}});
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *a_D = *a_ct{{[0-9]+}};
-  // CHECK-NEXT:   *b_D = *b_ct{{[0-9]+}};
-  // CHECK-NEXT:   *c_D = *c_ct{{[0-9]+}};
-  // CHECK-NEXT:   *s_D = *s_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct1(handle->get_queue(), a_D);
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct2(handle->get_queue(), b_D);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct3(handle->get_queue(), c_D);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct4(handle->get_queue(), s_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), res_wrapper_ct1.get_ptr(), res_wrapper_ct2.get_ptr(), res_wrapper_ct3.get_ptr(), res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasDrotg(handle, a_D, b_D, c_D, s_D);
-  // CHECK: sycl::float2* a_ct{{[0-9]+}} = a_C;
-  // CHECK-NEXT: sycl::float2* b_ct{{[0-9]+}} = b_C;
-  // CHECK-NEXT: float* c_ct{{[0-9]+}} = c_S;
-  // CHECK-NEXT: sycl::float2* s_ct{{[0-9]+}} = s_C;
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(3, q_ct1);
-  // CHECK-NEXT:   c_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, q_ct1);
-  // CHECK-NEXT:   b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
-  // CHECK-NEXT:   s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
-  // CHECK-NEXT:   *a_ct{{[0-9]+}} = *a_C;
-  // CHECK-NEXT:   *b_ct{{[0-9]+}} = *b_C;
-  // CHECK-NEXT:   *c_ct{{[0-9]+}} = *c_S;
-  // CHECK-NEXT:   *s_ct{{[0-9]+}} = *s_C;
-  // CHECK-NEXT: }
-  // CHECK-NEXT: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotg(handle->get_queue(), (std::complex<float>*)a_ct{{[0-9]+}}, (std::complex<float>*)b_ct{{[0-9]+}}, c_ct{{[0-9]+}}, (std::complex<float>*)s_ct{{[0-9]+}}));
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_C, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_C, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *a_C = *a_ct{{[0-9]+}};
-  // CHECK-NEXT:   *b_C = *b_ct{{[0-9]+}};
-  // CHECK-NEXT:   *c_S = *c_ct{{[0-9]+}};
-  // CHECK-NEXT:   *s_C = *s_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:   sycl::free(c_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float2_inout res_wrapper_ct1(handle->get_queue(), a_C);
+  // CHECK-NEXT: dpct::blas::wrapper_float2_inout res_wrapper_ct2(handle->get_queue(), b_C);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct3(handle->get_queue(), c_S);
+  // CHECK-NEXT: dpct::blas::wrapper_float2_out res_wrapper_ct4(handle->get_queue(), s_C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), (std::complex<float>*)res_wrapper_ct1.get_ptr(), (std::complex<float>*)res_wrapper_ct2.get_ptr(), res_wrapper_ct3.get_ptr(), (std::complex<float>*)res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasCrotg(handle, a_C, b_C, c_S, s_C);
-  // CHECK: sycl::double2* a_ct{{[0-9]+}} = a_Z;
-  // CHECK-NEXT: sycl::double2* b_ct{{[0-9]+}} = b_Z;
-  // CHECK-NEXT: double* c_ct{{[0-9]+}} = c_D;
-  // CHECK-NEXT: sycl::double2* s_ct{{[0-9]+}} = s_Z;
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(3, q_ct1);
-  // CHECK-NEXT:   c_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, q_ct1);
-  // CHECK-NEXT:   b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
-  // CHECK-NEXT:   s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
-  // CHECK-NEXT:   *a_ct{{[0-9]+}} = *a_Z;
-  // CHECK-NEXT:   *b_ct{{[0-9]+}} = *b_Z;
-  // CHECK-NEXT:   *c_ct{{[0-9]+}} = *c_D;
-  // CHECK-NEXT:   *s_ct{{[0-9]+}} = *s_Z;
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), (std::complex<double>*)a_ct{{[0-9]+}}, (std::complex<double>*)b_ct{{[0-9]+}}, c_ct{{[0-9]+}}, (std::complex<double>*)s_ct{{[0-9]+}});
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_Z, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_Z, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *a_Z = *a_ct{{[0-9]+}};
-  // CHECK-NEXT:   *b_Z = *b_ct{{[0-9]+}};
-  // CHECK-NEXT:   *c_D = *c_ct{{[0-9]+}};
-  // CHECK-NEXT:   *s_Z = *s_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT:   sycl::free(c_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double2_inout res_wrapper_ct1(handle->get_queue(), a_Z);
+  // CHECK-NEXT: dpct::blas::wrapper_double2_inout res_wrapper_ct2(handle->get_queue(), b_Z);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct3(handle->get_queue(), c_D);
+  // CHECK-NEXT: dpct::blas::wrapper_double2_out res_wrapper_ct4(handle->get_queue(), s_Z);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotg(handle->get_queue(), (std::complex<double>*)res_wrapper_ct1.get_ptr(), (std::complex<double>*)res_wrapper_ct2.get_ptr(), res_wrapper_ct3.get_ptr(), (std::complex<double>*)res_wrapper_ct4.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasZrotg(handle, a_Z, b_Z, c_D, s_Z);
 
   const float *y1_S;
   const double *y1_D;
-  // CHECK: float* d1_ct{{[0-9]+}} = a_S;
-  // CHECK-NEXT: float* d2_ct{{[0-9]+}} = b_S;
-  // CHECK-NEXT: float* x1_ct{{[0-9]+}} = c_S;
-  // CHECK-NEXT: float* param_ct{{[0-9]+}} = s_S;
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   d1_ct{{[0-9]+}} = sycl::malloc_shared<float>(8, q_ct1);
-  // CHECK-NEXT:   d2_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 1;
-  // CHECK-NEXT:   x1_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 2;
-  // CHECK-NEXT:   param_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 3;
-  // CHECK-NEXT:   *d1_ct{{[0-9]+}} = *a_S;
-  // CHECK-NEXT:   *d2_ct{{[0-9]+}} = *b_S;
-  // CHECK-NEXT:   *x1_ct{{[0-9]+}} = *c_S;
-  // CHECK-NEXT: }
-  // CHECK-NEXT: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), d1_ct{{[0-9]+}}, d2_ct{{[0-9]+}}, x1_ct{{[0-9]+}}, dpct::get_value(y1_S, handle->get_queue()), param_ct{{[0-9]+}}));
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_S, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_S, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *a_S = *d1_ct{{[0-9]+}};
-  // CHECK-NEXT:   *b_S = *d2_ct{{[0-9]+}};
-  // CHECK-NEXT:   *c_S = *x1_ct{{[0-9]+}};
-  // CHECK-NEXT:   q_ct1.memcpy(s_S, param_ct{{[0-9]+}}, sizeof(float)*5).wait();
-  // CHECK-NEXT:   sycl::free(d1_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: a = [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct1(handle->get_queue(), a_S);
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct2(handle->get_queue(), b_S);
+  // CHECK-NEXT: dpct::blas::wrapper_float_inout res_wrapper_ct3(handle->get_queue(), c_S);
+  // CHECK-NEXT: dpct::blas::wrapper_float_out res_wrapper_ct5(handle->get_queue(), s_S, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), res_wrapper_ct1.get_ptr(), res_wrapper_ct2.get_ptr(), res_wrapper_ct3.get_ptr(), dpct::get_value(y1_S, handle->get_queue()), res_wrapper_ct5.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   a = cublasSrotmg(handle, a_S, b_S, c_S, y1_S, s_S);
-  // CHECK: double* d1_ct{{[0-9]+}} = a_D;
-  // CHECK-NEXT: double* d2_ct{{[0-9]+}} = b_D;
-  // CHECK-NEXT: double* x1_ct{{[0-9]+}} = c_D;
-  // CHECK-NEXT: double* param_ct{{[0-9]+}} = s_D;
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   d1_ct{{[0-9]+}} = sycl::malloc_shared<double>(8, q_ct1);
-  // CHECK-NEXT:   d2_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 1;
-  // CHECK-NEXT:   x1_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 2;
-  // CHECK-NEXT:   param_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 3;
-  // CHECK-NEXT:   *d1_ct{{[0-9]+}} = *a_D;
-  // CHECK-NEXT:   *d2_ct{{[0-9]+}} = *b_D;
-  // CHECK-NEXT:   *x1_ct{{[0-9]+}} = *c_D;
-  // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), d1_ct{{[0-9]+}}, d2_ct{{[0-9]+}}, x1_ct{{[0-9]+}}, dpct::get_value(y1_D, handle->get_queue()), param_ct{{[0-9]+}});
-  // CHECK-NEXT: if(sycl::get_pointer_type(a_D, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_D, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   handle->get_queue().wait();
-  // CHECK-NEXT:   *a_D = *d1_ct{{[0-9]+}};
-  // CHECK-NEXT:   *b_D = *d2_ct{{[0-9]+}};
-  // CHECK-NEXT:   *c_D = *x1_ct{{[0-9]+}};
-  // CHECK-NEXT:   q_ct1.memcpy(s_D, param_ct{{[0-9]+}}, sizeof(double)*5).wait();
-  // CHECK-NEXT:   sycl::free(d1_ct{{[0-9]+}}, q_ct1);
-  // CHECK-NEXT: }
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct1(handle->get_queue(), a_D);
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct2(handle->get_queue(), b_D);
+  // CHECK-NEXT: dpct::blas::wrapper_double_inout res_wrapper_ct3(handle->get_queue(), c_D);
+  // CHECK-NEXT: dpct::blas::wrapper_double_out res_wrapper_ct5(handle->get_queue(), s_D, 5);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(handle->get_queue(), res_wrapper_ct1.get_ptr(), res_wrapper_ct2.get_ptr(), res_wrapper_ct3.get_ptr(), dpct::get_value(y1_D, handle->get_queue()), res_wrapper_ct5.get_ptr());
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasDrotmg(handle, a_D, b_D, c_D, y1_D, s_D);
 
   // CHECK: /*
@@ -508,13 +426,13 @@ int main() {
 
   //level 2
 
-  // CHECK: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(handle->get_queue(), trans2==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans2, N, N, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy));
+  // CHECK: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(handle->get_queue(), dpct::get_transpose(trans2), N, N, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy));
   a = cublasSgemv(handle, (cublasOperation_t)trans2, N, N, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
-  // CHECK:oneapi::mkl::blas::column_major::gemv(handle->get_queue(), oneapi::mkl::transpose::nontrans, N, N, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy);
+  // CHECK: oneapi::mkl::blas::column_major::gemv(handle->get_queue(), oneapi::mkl::transpose::nontrans, N, N, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy);
   cublasDgemv(handle, CUBLAS_OP_N, N, N, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
-  // CHECK: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(handle->get_queue(), trans2==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans2, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), (std::complex<float>*)x_C, lda, (std::complex<float>*)y_C, incx, std::complex<float>(beta_C.x(), beta_C.y()), (std::complex<float>*)result_C, incy));
+  // CHECK: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(handle->get_queue(), dpct::get_transpose(trans2), N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), (std::complex<float>*)x_C, lda, (std::complex<float>*)y_C, incx, std::complex<float>(beta_C.x(), beta_C.y()), (std::complex<float>*)result_C, incy));
   a = cublasCgemv(handle, (cublasOperation_t)trans2, N, N, &alpha_C, x_C, lda, y_C, incx, &beta_C, result_C, incy);
-  // CHECK:oneapi::mkl::blas::column_major::gemv(handle->get_queue(), oneapi::mkl::transpose::nontrans, N, N, std::complex<double>(alpha_Z.x(), alpha_Z.y()), (std::complex<double>*)x_Z, lda, (std::complex<double>*)y_Z, incx, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)result_Z, incy);
+  // CHECK: oneapi::mkl::blas::column_major::gemv(handle->get_queue(), oneapi::mkl::transpose::nontrans, N, N, std::complex<double>(alpha_Z.x(), alpha_Z.y()), (std::complex<double>*)x_Z, lda, (std::complex<double>*)y_Z, incx, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)result_Z, incy);
   cublasZgemv(handle, CUBLAS_OP_N, N, N, &alpha_Z, x_Z, lda, y_Z, incx, &beta_Z, result_Z, incy);
 
   // CHECK: a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::ger(handle->get_queue(), N, N, alpha_S, x_S, incx, y_S, incy, result_S, lda));
