@@ -289,23 +289,19 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr,
 
 enum class math_mode : int {
   _default,
-  _tensor_op,
-  _pedantic,
-  _tf32_tensor_op,
-  _disallow_reduced_precision_reduction
+  _tf32,
 };
 enum class compute_type : int {
   _16f,
-  _16f_pedantic,
+  _16f_standard,
   _32f,
-  _32f_pedantic,
-  _32f_fast_16f,
+  _32f_standard,
   _32f_fast_16bf,
   _32f_fast_tf32,
   _64f,
-  _64f_pedantic,
+  _64f_standard,
   _32i,
-  _32i_pedantic,
+  _32i_standard,
 };
 
 class descriptor {
@@ -1522,19 +1518,18 @@ namespace detail {
 inline library_data_t compute_type_to_library_data_t(compute_type ct) {
   switch (ct) {
   case compute_type::_16f:
-  case compute_type::_16f_pedantic:
+  case compute_type::_16f_standard:
     return library_data_t::real_half;
   case compute_type::_32f:
-  case compute_type::_32f_pedantic:
-  case compute_type::_32f_fast_16f:
+  case compute_type::_32f_standard:
   case compute_type::_32f_fast_16bf:
   case compute_type::_32f_fast_tf32:
     return library_data_t::real_float;
   case compute_type::_64f:
-  case compute_type::_64f_pedantic:
+  case compute_type::_64f_standard:
     return library_data_t::real_double;
   case compute_type::_32i:
-  case compute_type::_32i_pedantic:
+  case compute_type::_32i_standard:
     return library_data_t::real_int32;
   default:
     throw std::runtime_error("conversion is not supported.");
@@ -1548,10 +1543,10 @@ deduce_compute_mode(std::optional<compute_type> ct, math_mode mm) {
   using Ty = typename DataType<T>::T2;
   if (ct) {
     switch (ct.value()) {
-    case compute_type::_16f_pedantic:
-    case compute_type::_32f_pedantic:
-    case compute_type::_64f_pedantic:
-    case compute_type::_32i_pedantic:
+    case compute_type::_16f_standard:
+    case compute_type::_32f_standard:
+    case compute_type::_64f_standard:
+    case compute_type::_32i_standard:
       return oneapi::mkl::blas::compute_mode::standard;
     case compute_type::_32f:
       if constexpr (std::is_same_v<Ty, std::complex<float>> ||
@@ -1566,7 +1561,7 @@ deduce_compute_mode(std::optional<compute_type> ct, math_mode mm) {
       [[fallthrough]];
     }
   }
-  if (mm == math_mode::_tf32_tensor_op)
+  if (mm == math_mode::_tf32)
     return oneapi::mkl::blas::compute_mode::float_to_tf32;
   return oneapi::mkl::blas::compute_mode::unset;
 }
