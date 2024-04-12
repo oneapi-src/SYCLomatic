@@ -1527,8 +1527,7 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 #ifdef SYCLomatic_CUSTOMIZATION
   auto HandleLongOptionCommand = [&](const std::string &option) {
     const std::string arg = argv[FirstArg];
-    if ((argc >= FirstArg + 1) &&
-        (arg == "--" + option || arg == "-" + option || arg == option)) {
+    if (arg == "--" + option || arg == "-" + option || arg == option) {
       StringRef ArgName(option);
       StringRef Value;
       Option *Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
@@ -1541,12 +1540,15 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
     return false;
   };
 #ifndef _WIN32
-  if (std::string(argv[FirstArg]).find("intercept-build") !=
-      std::string::npos) {
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]).find("intercept-build") !=
+       std::string::npos)) {
     return HandleLongOptionCommand("intercept-build");
   }
 #endif
-  if (std::string(argv[FirstArg]).find("codepin-report") != std::string::npos) {
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]).find("codepin-report") !=
+       std::string::npos)) {
     return HandleLongOptionCommand("codepin-report");
   }
 #endif // SYCLomatic_CUSTOMIZATION
