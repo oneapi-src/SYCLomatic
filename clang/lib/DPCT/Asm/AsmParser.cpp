@@ -11,25 +11,18 @@
 #include "Asm/AsmLexer.h"
 #include "Asm/AsmToken.h"
 #include "Asm/AsmTokenKinds.h"
+#include "clang/AST/PrettyPrinter.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/CharInfo.h"
-#include "clang/Basic/IdentifierTable.h"
-#include "clang/Lex/LiteralSupport.h"
 #include "clang/Sema/Ownership.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
-#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
-#include "llvm/Support/SaveAndRestore.h"
-#include "llvm/Support/raw_ostream.h"
 #include <cassert>
 #include <cstdint>
-#include <limits>
-#include <type_traits>
 
 using namespace llvm;
 using namespace clang::dpct;
@@ -179,15 +172,86 @@ InlineAsmContext::getTypeFromConstraint(StringRef Constraint) {
   return nullptr;
 }
 
+InlineAsmBuiltinType *InlineAsmContext::getTypeFromExpr(const clang::Expr *E) {
+  if (E->getType()->isBuiltinType()) {
+    auto *T = E->getType()->getAs<clang::BuiltinType>();
+    switch (T->getKind()) {
+    case BuiltinType::SChar:
+      return getBuiltinType(InlineAsmBuiltinType::TK_s8);
+    case BuiltinType::UChar:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u8);
+    case BuiltinType::Char_S:
+      return getBuiltinType(InlineAsmBuiltinType::TK_s8);
+    case BuiltinType::Char_U:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u8);
+    case BuiltinType::Char8:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u8);
+    case BuiltinType::Char16:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u16);
+    case BuiltinType::Char32:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u32);
+    case BuiltinType::WChar_S:
+      return getBuiltinType(InlineAsmBuiltinType::TK_s32);
+    case BuiltinType::WChar_U:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u32);
+    case BuiltinType::Short:
+      return getBuiltinType(InlineAsmBuiltinType::TK_s16);
+    case BuiltinType::UShort:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u16);
+    case BuiltinType::UInt:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u32);
+    case BuiltinType::ULong:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u64);
+    case BuiltinType::ULongLong:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u64);
+    case BuiltinType::Int:
+      return getBuiltinType(InlineAsmBuiltinType::TK_s32);
+    case BuiltinType::Long:
+      return getBuiltinType(InlineAsmBuiltinType::TK_s64);
+    case BuiltinType::LongLong:
+      return getBuiltinType(InlineAsmBuiltinType::TK_s64);
+    case BuiltinType::Float:
+      return getBuiltinType(InlineAsmBuiltinType::TK_f32);
+    case BuiltinType::Double:
+      return getBuiltinType(InlineAsmBuiltinType::TK_f64);
+    case BuiltinType::NullPtr:
+      return getBuiltinType(InlineAsmBuiltinType::TK_u64);
+    case BuiltinType::Float16:
+      return getBuiltinType(InlineAsmBuiltinType::TK_f16);
+    default:
+      break;
+    }
+  }
+
+  // print raw typename without 'struct' prefix
+  PrintingPolicy Policy(LangOptions{});
+  Policy.adjustForCPlusPlus();
+  std::string TypeName = E->getType().getCanonicalType().getAsString(Policy);
+  return llvm::StringSwitch<InlineAsmBuiltinType *>(TypeName)
+      .Case("__half", getBuiltinType(InlineAsmBuiltinType::TK_f16))
+      .Case("__half2", getBuiltinType(InlineAsmBuiltinType::TK_f16x2))
+      .Case("__half_raw", getBuiltinType(InlineAsmBuiltinType::TK_f16))
+      .Case("__half_raw2", getBuiltinType(InlineAsmBuiltinType::TK_f16x2))
+      .Case("__nv_bfloat16", getBuiltinType(InlineAsmBuiltinType::TK_bf16))
+      .Case("__nv_bfloat162", getBuiltinType(InlineAsmBuiltinType::TK_bf16x2))
+      .Case("__nv_bfloat16_raw", getBuiltinType(InlineAsmBuiltinType::TK_bf16))
+      .Case("__nv_bfloat162_raw",
+            getBuiltinType(InlineAsmBuiltinType::TK_bf16x2))
+      .Default(nullptr);
+}
+
 InlineAsmType::~InlineAsmType() = default;
 InlineAsmDecl::~InlineAsmDecl() = default;
 InlineAsmStmt::~InlineAsmStmt() = default;
 
 InlineAsmDeclResult
-InlineAsmParser::addInlineAsmOperands(StringRef Operand, StringRef Constraint) {
+InlineAsmParser::addInlineAsmOperands(const Expr *E, StringRef Operand,
+                                      StringRef Constraint) {
   unsigned Index = Context.addInlineAsmOperand(Operand);
   InlineAsmIdentifierInfo *II = Context.get(Index);
-  InlineAsmType *Type = Context.getTypeFromConstraint(Constraint);
+  InlineAsmType *Type = Context.getTypeFromExpr(E);
+  if (!Type)
+    Type = Context.getTypeFromConstraint(Constraint);
   if (!Type)
     return AsmDeclError();
 
@@ -405,6 +469,8 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
   InlineAsmExprResult Res;
   auto SavedKind = Tok.getKind();
   switch (SavedKind) {
+  case asmtok::semi:
+    break;
   case asmtok::l_paren:
     ConsumeToken();
     if (Tok.isOneOf(asmtok::kw_s64, asmtok::kw_u64)) {
