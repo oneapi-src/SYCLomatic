@@ -87,6 +87,12 @@ enum class MakefileMsgs {
 #undef DEF_COMMENT
 };
 
+#define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
+enum class CMakeScriptMigrationMsgs {
+#include "DiagnosticsCMakeScriptMigration.inc"
+#undef DEF_COMMENT
+};
+
 namespace DiagnosticsUtils {
 
 extern unsigned int UniqueID;
