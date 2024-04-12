@@ -185,8 +185,8 @@ void ShowStatus(int Status, std::string Message) {
                    ". Please specify the header file for '" + Message +
                    "' with option \"--extra-arg\".";
     break;
-  case InterceptBuildError:
-    StatusString = "Error: Call to intercept-build failed";
+  case CallIndependentToolError:
+    StatusString = "Error: Call to " + Message + " failed";
     break;
   case MigrationErrorCMakeScriptPathInvalid:
     StatusString = "Error: Path of CMake Script is invalid.";
@@ -208,6 +208,9 @@ void ShowStatus(int Status, std::string Message) {
     StatusString =
         "Error: The option -migrate-build-script-only requires that either "
         "the option '--in-root' or the CMake file(s) be specified explicitly.";
+    break;
+  case MigrationErrorInvalidInstallPath:
+    StatusString = "Error: " + Message + " not found.";
     break;
   default:
     DpctLog() << "Unknown error\n";

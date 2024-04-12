@@ -961,6 +961,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-opt-rules
       install-dpct-cmake-rules
       install-dpct-cmake-file
+      install-dpct-codepin-report
       )
   else()
     list(APPEND DPCT_RUN
@@ -976,6 +977,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-opt-rules
       install-dpct-cmake-rules
       install-dpct-cmake-file
+      install-dpct-codepin-report
       )
   endif()
 endif()

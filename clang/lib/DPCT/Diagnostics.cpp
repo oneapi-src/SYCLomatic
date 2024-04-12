@@ -65,6 +65,12 @@ std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 #include "DiagnosticsBuildScript.inc"
 #undef DEF_COMMENT
 
+#define DEF_COMMENT(NAME, ID, MSG)                                             \
+  DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note,     \
+                               EffortLevel::EL_Low, MSG);
+#include "DiagnosticsCMakeScriptMigration.inc"
+#undef DEF_COMMENT
+
 void reportInvalidWarningID(const std::string &Str) {
   DpctLog() << "Invalid warning ID or range: " << Str << "\n";
   ShowStatus(MigrationErrorInvalidWarningID);
