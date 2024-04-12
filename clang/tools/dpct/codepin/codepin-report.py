@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 # See https://llvm.org/LICENSE.txt for license information.
-# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exceptio
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 from multiprocessing import freeze_support
 import argparse
@@ -27,7 +27,7 @@ def data_value_dismatch_error(value1, value2):
             f" and [ERROR: DATA VALUE MISMATCH] the CUDA value \"{value1}\" differs from the SYCL value \"{value2}\".")
 def no_serialization_function_error():
     return comparison_error(
-            f" and [ERROR: NO SERIALIZATION FUNCTION]the CUDA or SYCL value cannot be dummped, lack of dump function. Please report it to the tool developer.")
+            f" and [ERROR: NO SERIALIZATION FUNCTION]the CUDA or SYCL value cannot be dumped, lack of dump function. Please report it to the tool developer.")
 def data_missed_error(name):
     return comparison_error(
             f" and [ERROR: DATA MISSED] Cannot find the {name} in SYCL Json.\n")
@@ -187,9 +187,9 @@ def main():
         with(open(CODEPIN_REPORT_FILE, 'a')) as f:
             f.write(ERROR_CSV_PATTERN)
             f.write(failed_log)
-        print(f"Comparison of the two files succeeded succeeded and found differences. Please check the status in the file 'CodePin Report.csv' located in your project directory.")
+        print(f"Finished comparison of the two files and found differences. Please check 'CodePin Report.csv' file located in your project directory.\n")
         sys.exit(-1)
-    print(f"Comparison of the two files succeeded, no differences were found.")
+    print(f"Finished comparison of the two files and data is identical.\n")
     sys.exit(0)
 
 if __name__ == '__main__':
