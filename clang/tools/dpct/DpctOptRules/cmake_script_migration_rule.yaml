@@ -2222,10 +2222,16 @@
       MatchMode: Full
       RuleId: "remove_empty_library_arg"
 
+- Rule: rule_set_source_files_properties_with_space
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_source_files_properties_lang_with_space
+  In: set_source_files_properties(${empty}${src_files} PROPERTIES${some_other_prop}LANGUAGE CUDA${other_props})
+  Out: set_source_files_properties(${empty}${src_files} PROPERTIES${some_other_prop}LANGUAGE CXX${other_props})
+
 - Rule: rule_set_source_files_properties
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_source_files_properties_lang
   In: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}LANGUAGE CUDA${other_props})
   Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}LANGUAGE CXX${other_props})
-
