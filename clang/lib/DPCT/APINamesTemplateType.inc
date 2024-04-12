@@ -347,3 +347,24 @@ TYPE_REWRITE_ENTRY("cusparseSolvePolicy_t", TYPE_FACTORY(STR("int")))
 TYPE_REWRITE_ENTRY("cusparseAction_t",
                    TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                     "sparse::conversion_scope")))
+
+TYPE_REWRITE_ENTRY(
+    "cooperative_groups::__v1::coalesced_group",
+    TYPE_CONDITIONAL_FACTORY(
+        isUseNonUniformGroupsForType(),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() +
+                         "ext::oneapi::experimental::opportunistic_group")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=non-uniform-groups"))))
+
+TYPE_REWRITE_ENTRY(
+    "cooperative_groups::__v1::thread_block_tile",
+    TYPE_CONDITIONAL_FACTORY(
+        checkTemplateArgSpelling(0, "32"),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() + "sub_group")),
+        TYPE_CONDITIONAL_FACTORY(
+            isUseLogicalGroupsForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::logical_group")),
+            WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                            STR("--use-experimental-features=logical-group")))))

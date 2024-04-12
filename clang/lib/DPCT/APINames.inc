@@ -1784,7 +1784,7 @@ ENTRY(cuLaunchCooperativeKernel, cuLaunchCooperativeKernel, false, NO_FLAG, P4, 
 ENTRY(cuLaunchCooperativeKernelMultiDevice, cuLaunchCooperativeKernelMultiDevice, false, NO_FLAG, P4, "comment")
 
 // Coopeartive_group migration.
-ENTRY(cooperative_groups::coalesced_threads, cooperative_groups::__v1::coalesced_threads, false, NO_FLAG, P4, "comment")
+ENTRY(cooperative_groups::coalesced_threads, cooperative_groups::__v1::coalesced_threads, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cooperative_groups::thread_rank, cooperative_groups::__v1::thread_rank, true, NO_FLAG, P4, "Successful")
 ENTRY(cooperative_groups::this_thread, cooperative_groups::__v1::this_thread, false, NO_FLAG, P4, "comment")
 ENTRY(cooperative_groups::this_grid, cooperative_groups::__v1::this_grid, true, NO_FLAG, P4, "comment")
@@ -1889,12 +1889,12 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups:
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, match_all, match_all, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, size, size, true, NO_FLAG, P4, "Comment")
 
-ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, sync, sync, true, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, sync, sync, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, num_threads, num_threads, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, thread_rank, thread_rank, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, thread_rank, thread_rank, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, meta_group_size, meta_group_size, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, meta_group_rank, meta_group_rank, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, shfl, shfl, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, shfl, shfl, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, shfl_up, shfl_up, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, shfl_down, shfl_down, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, any, any, false, NO_FLAG, P4, "Comment")
@@ -1902,7 +1902,7 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::_
 ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, ballot, ballot, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, match_any, match_any, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, match_all, match_all, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, size, size, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::coalesced_group, cooperative_groups::__v1::coalesced_group, size, size, true, NO_FLAG, P4, "Successful/DPCT1119")
 
 // nvrtc APIs
 ENTRY(nvrtcGetErrorString, nvrtcGetErrorString, false, NO_FLAG, P4, "comment")

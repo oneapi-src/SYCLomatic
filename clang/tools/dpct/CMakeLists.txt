@@ -189,3 +189,5 @@ if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-cmake-file
                            COMPONENT dpct-cmake-file)
 endif()
+
+add_clang_subdirectory(codepin)
