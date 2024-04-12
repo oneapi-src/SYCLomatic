@@ -29,12 +29,12 @@ class Logger {
 public:
   Logger(const std::string &dump_file) : dst_output(dump_file) {
     opf.open(dst_output);
-    ss << "[";
+    ss.print_left_bracket();
   }
 
   ~Logger() {
     this->get_stringstream().remove_last_comma_in_stream();
-    ss << "]";
+    ss.print_right_bracket();
     opf << ss.str();
     opf.close();
   }
@@ -90,7 +90,7 @@ public:
       return;
     }
     ptr_unique.insert(value);
-    ss << "{\"Type\":\"Pointer\",\"Data\":[";
+    ss.print_type_begin("Pointer");
     int size = get_ptr_size_in_bytes(value);
     size = size == 0 ? 1 : size / sizeof(*value);
     using PointedType =
@@ -108,7 +108,7 @@ public:
         dpct::experimental::detail::DataSer<PointedType>::dump(
             ss, *(h_data + i), stream);
         if (i != size - 1)
-          ss << ",";
+          ss.print_comma();
       }
       delete[] h_data;
     } else {
@@ -116,11 +116,11 @@ public:
         dpct::experimental::detail::DataSer<PointedType>::dump(ss, *(value + i),
                                                                stream);
         if (i != size - 1)
-          ss << ",";
+          ss.print_comma();
       }
     }
 
-    ss << "]}";
+    ss.print_type_end();
   }
 };
 
@@ -129,13 +129,13 @@ class DataSer<T, typename std::enable_if<std::is_array<T>::value>::type> {
 public:
   static void dump(dpct::experimental::detail::json_stringstream &ss, T value,
                    dpct::experimental::StreamType stream) {
-    ss << "{\"Type\":\"Array\",\"Data\":[";
+    ss.print_type_begin("Array");
     for (auto tmp : value) {
       dpct::experimental::detail::DataSer<std::remove_extent_t<T>>::dump(
           ss, tmp, stream);
-      ss << ",";
+      ss.print_comma();
     }
-    ss << "]}";
+    ss.print_type_end();
   }
 };
 
@@ -148,10 +148,10 @@ template <class T, class... Args>
 void serialize_var(dpct::experimental::detail::json_stringstream &ss,
                    dpct::experimental::StreamType stream,
                    const std::string &var_name, T var, Args... args) {
-  ss << "\"" << var_name << "\":";
+  ss.print_dict_item_key(var_name);
   ptr_unique.clear();
   dpct::experimental::detail::DataSer<T>::dump(ss, var, stream);
-  ss << ",";
+  ss.print_comma();
   serialize_var(ss, stream, args...);
 }
 
@@ -165,11 +165,10 @@ void gen_log_API_CP(const std::string &api_name,
   }
   std::string new_api_name =
       api_name + ":" + std::to_string(api_index[api_name]);
-  log.get_stringstream() << "{\"ID\":"
-                         << "\"" << new_api_name << "\",\"CheckPoint\":{";
+  log.get_stringstream().print_ID_checkpoint_begin(new_api_name);
   serialize_var(log.get_stringstream(), stream, args...);
   log.get_stringstream().remove_last_comma_in_stream();
-  log.get_stringstream() << "}},";
+  log.get_stringstream().print_ID_checkpoint_end();
 }
 } // namespace detail
 
