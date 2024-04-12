@@ -189,7 +189,7 @@ def main():
             f.write(failed_log)
         print(f"Finished comparison of the two files and found differences. Please check 'CodePin_Report.csv' file located in your project directory.\n")
         sys.exit(-1)
-    print(f"Finished comparison of the two files and data is identical.\n")
+    print(f"Finished comparison of the two files and data is identical. Please check 'CodePin_Report.csv' file located in your project directory.\n")
     sys.exit(0)
 
 if __name__ == '__main__':
