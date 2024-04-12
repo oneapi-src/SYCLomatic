@@ -1400,15 +1400,13 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLAS_DIAG_NON_UNIT", "oneapi::mkl::diag::nonunit"},
       {"CUBLAS_DIAG_UNIT", "oneapi::mkl::diag::unit"},
       {"CUBLAS_DEFAULT_MATH", getDpctNamespace() + "blas::math_mode::_default"},
-      {"CUBLAS_TENSOR_OP_MATH",
-       getDpctNamespace() + "blas::math_mode::_tensor_op"},
+      {"CUBLAS_TENSOR_OP_MATH", getDpctNamespace() + "blas::math_mode::_tf32"},
       {"CUBLAS_PEDANTIC_MATH",
-       getDpctNamespace() + "blas::math_mode::_pedantic"},
+       getDpctNamespace() + "blas::math_mode::_default"},
       {"CUBLAS_TF32_TENSOR_OP_MATH",
-       getDpctNamespace() + "blas::math_mode::_tf32_tensor_op"},
+       getDpctNamespace() + "blas::math_mode::_tf32"},
       {"CUBLAS_MATH_DISALLOW_REDUCED_PRECISION_REDUCTION",
-       getDpctNamespace() +
-           "blas::math_mode::_disallow_reduced_precision_reduction"},
+       getDpctNamespace() + "blas::math_mode::_default"},
   };
 
   ClassFieldMap = {};
