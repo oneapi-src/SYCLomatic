@@ -353,7 +353,7 @@ TYPE_REWRITE_ENTRY(
     TYPE_CONDITIONAL_FACTORY(
         isUseNonUniformGroupsForType(),
         TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                         "ext::oneapi::experimental")),
+                         "ext::oneapi::experimental::opportunistic_group")),
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=non-uniform-groups"))))
 

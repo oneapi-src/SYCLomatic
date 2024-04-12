@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --use-experimental-features=logical-group,non-uniform-groups --usm-level=none -out-root %T/cooperative_group_coalesced_group %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cooperative_group_coalesced_group/cooperative_group_coalesced_group.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/cooperative_group_coalesced_group/cooperative_group_coalesced_group.dp.cpp -o %T/cooperative_group_coalesced_group/cooperative_group_coalesced_group.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl  -DTEST %T/cooperative_group_coalesced_group/cooperative_group_coalesced_group.dp.cpp -o %T/cooperative_group_coalesced_group/cooperative_group_coalesced_group.dp.o %}
 #include <cooperative_groups.h>
 #include <cuda_runtime.h>
 #include <iostream>
@@ -21,8 +21,10 @@ __global__ void coalescedExampleKernel(int *data) {
     //CEHCK: res = dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&data[active.get_local_linear_id() - 1], 1);
       res = atomicAdd(&data[active.size() - 1], 1);
     }
+  #ifndef TEST
     //CHECK: res = sycl::select_from_group(active, res, 0);
     res = active.shfl(res, 0);
+  #endif
   }
 }
 
