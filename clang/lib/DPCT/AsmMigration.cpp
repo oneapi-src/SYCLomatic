@@ -195,6 +195,14 @@ protected:
     return SYCLGenSuccess();
   }
 
+  bool tryEmitAllInputOperands(MutableArrayRef<std::string> Ops,
+                               const InlineAsmInstruction *Inst) {
+    for (unsigned I = 0, E = Inst->getNumInputOperands(); I != E; ++I)
+      if (tryEmitStmt(Ops[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+    return SYCLGenSuccess();
+  }
+
   // Types
   bool emitType(const InlineAsmType *T);
   bool emitBuiltinType(const InlineAsmBuiltinType *T);
@@ -484,11 +492,11 @@ bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   case InlineAsmBuiltinType::TK_pred:   OS() << "bool"; break;
   case InlineAsmBuiltinType::TK_s16x2:  OS() << MapNames::getClNamespace() + "short2"; break;
   case InlineAsmBuiltinType::TK_u16x2:  OS() << MapNames::getClNamespace() + "ushort2"; break;
-  case InlineAsmBuiltinType::TK_bf16:
+  case InlineAsmBuiltinType::TK_bf16:   OS() << MapNames::getClNamespace() + "ext::oneapi::bfloat16"; break;
+  case InlineAsmBuiltinType::TK_f16x2:  OS() << MapNames::getClNamespace() + "half2"; break;
   case InlineAsmBuiltinType::TK_e4m3:
   case InlineAsmBuiltinType::TK_e5m2:
   case InlineAsmBuiltinType::TK_tf32:
-  case InlineAsmBuiltinType::TK_f16x2:
   case InlineAsmBuiltinType::TK_bf16x2:
   case InlineAsmBuiltinType::TK_e4m3x2:
   case InlineAsmBuiltinType::TK_e5m2x2:
@@ -1546,19 +1554,8 @@ protected:
     return SYCLGenSuccess();
   }
 
-  // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
-  bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst,
-                                    StringRef Fn) {
-    if (Inst->getNumInputOperands() < 2 || Inst->getNumTypes() != 3)
-      return SYCLGenError();
-
-    // Arguments mismatch for instruction, which has a secondary arithmetic
-    // operation.
-    if (Inst->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) &&
-        Inst->getNumInputOperands() < 3)
-      return SYCLGenError();
-
-    // The type of operands must be one of s32/u32.
+  // The type of operands must be one of s32/u32.
+  bool CheckSIMDInstructionType(const InlineAsmInstruction *Inst) {
     for (const auto *T : Inst->types()) {
       if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(T)) {
         if (BI->getKind() == InlineAsmBuiltinType::TK_s32 ||
@@ -1567,6 +1564,47 @@ protected:
       }
       return SYCLGenError();
     }
+    return SYCLGenSuccess();
+  }
+
+  bool HandleComparsionOp(const InlineAsmInstruction *Inst) {
+    if (!Inst)
+      return SYCLGenError();
+    if (Inst->hasAttr(InstAttr::eq))
+      OS() << ", "
+           << "std::equal_to<>()";
+    else if (Inst->hasAttr(InstAttr::ne))
+      OS() << ", "
+           << "std::not_equal_to<>()";
+    else if (Inst->hasAttr(InstAttr::lt))
+      OS() << ", "
+           << "std::less<>()";
+    else if (Inst->hasAttr(InstAttr::le))
+      OS() << ", "
+           << "std::less_equal<>()";
+    else if (Inst->hasAttr(InstAttr::gt))
+      OS() << ", "
+           << "std::greater<>()";
+    else if (Inst->hasAttr(InstAttr::ge))
+      OS() << ", "
+           << "std::greater_equal<>()";
+    else
+      return SYCLGenError();
+    return SYCLGenSuccess();
+  }
+
+  // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
+  bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst,
+                                    StringRef Fn) {
+    if (Inst->getNumInputOperands() < 2 || Inst->getNumTypes() != 3 ||
+        CheckSIMDInstructionType(Inst))
+      return SYCLGenError();
+
+    // Arguments mismatch for instruction, which has a secondary arithmetic
+    // operation.
+    if (Inst->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) &&
+        Inst->getNumInputOperands() < 3)
+      return SYCLGenError();
 
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
@@ -1636,22 +1674,59 @@ protected:
                                                "extend_shr");
   }
 
+  bool HandleVset(const InlineAsmInstruction *I, StringRef Fn) {
+    if (I->getNumInputOperands() < 3 || I->getNumTypes() != 2 ||
+        CheckSIMDInstructionType(I))
+      return SYCLGenError();
+    bool hasSecOp = I->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max);
+    if (hasSecOp && I->getNumInputOperands() < 3)
+      return SYCLGenError();
+    if (emitStmt(I->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = " << MapNames::getDpctNamespace() << Fn;
+    if (I->is(asmtok::op_vset2, asmtok::op_vset4) && I->hasAttr(InstAttr::add))
+      OS() << "_add";
+    OS() << '<';
+    for (int i = 0, e = I->getNumTypes(); i != e; ++i) {
+      if (emitType(I->getType(i)))
+        return SYCLGenError();
+      if (i < e - 1)
+        OS() << ", ";
+    }
+    OS() << '>' << '(';
+    // If no second op, ignore third operand until we support operand mask.
+    for (unsigned i = 0, e = I->getNumInputOperands() - !hasSecOp; i != e;
+         ++i) {
+      if (emitStmt(I->getInputOperand(i)))
+        return SYCLGenError();
+      if (i < e - 1)
+        OS() << ", ";
+    }
+    if (HandleComparsionOp(I))
+      return SYCLGenError();
+    if (I->is(asmtok::op_vset)) {
+      if (I->hasAttr(InstAttr::add))
+        OS() << ", " << MapNames::getClNamespace() << "plus<>()";
+      else if (I->hasAttr(InstAttr::min))
+        OS() << ", " << MapNames::getClNamespace() << "minimum<>()";
+      else if (I->hasAttr(InstAttr::max))
+        OS() << ", " << MapNames::getClNamespace() << "maximum<>()";
+    }
+    OS() << ')';
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_vset(const InlineAsmInstruction *I) override {
+    return HandleVset(I, "extend_compare");
+  }
+
   // Handle the 2/4 element video instructions.
   bool handleMultiElementAddSubMinMax(const InlineAsmInstruction *Inst,
                                       StringRef Fn) {
-    if (Inst->getNumInputOperands() < 3 || Inst->getNumTypes() != 3)
+    if (Inst->getNumInputOperands() < 3 || Inst->getNumTypes() != 3 ||
+        CheckSIMDInstructionType(Inst))
       return SYCLGenError();
-
-    // The type of operands must be one of s32/u32.
-    for (const auto *T : Inst->types()) {
-      if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(T)) {
-        if (BI->getKind() == InlineAsmBuiltinType::TK_s32 ||
-            BI->getKind() == InlineAsmBuiltinType::TK_u32)
-          continue;
-      }
-      return SYCLGenError();
-    }
-
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
 
@@ -1708,6 +1783,9 @@ protected:
     return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
                                                  "extend_vavrg2");
   }
+  bool handle_vset2(const InlineAsmInstruction *I) override {
+    return HandleVset(I, "extend_vcompare2");
+  }
   bool handle_vadd4(const InlineAsmInstruction *I) override {
     return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
                                                  "extend_vadd4");
@@ -1731,6 +1809,9 @@ protected:
   bool handle_vavrg4(const InlineAsmInstruction *I) override {
     return handleMultiElementAddSubMinMax(I, MapNames::getDpctNamespace() +
                                                  "extend_vavrg4");
+  }
+  bool handle_vset4(const InlineAsmInstruction *I) override {
+    return HandleVset(I, "extend_vcompare4");
   }
 
   bool handle_bfe(const InlineAsmInstruction *Inst) override {
@@ -1903,6 +1984,316 @@ protected:
     endstmt();
     return SYCLGenSuccess();
   }
+
+  bool handle_ret(const InlineAsmInstruction *) override {
+    OS() << "return";
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  StringRef
+  GetIntelDevcieMathRoundingModifier(const InlineAsmInstruction *Inst) {
+    if (Inst->hasAttr(InstAttr::rn, InstAttr::rni))
+      return "rn";
+    if (Inst->hasAttr(InstAttr::rz, InstAttr::rzi))
+      return "rz";
+    if (Inst->hasAttr(InstAttr::rm, InstAttr::rmi))
+      return "rd";
+    if (Inst->hasAttr(InstAttr::rp, InstAttr::rpi))
+      return "ru";
+    return "";
+  }
+
+  StringRef GetSyclVectorRoundingModifier(const InlineAsmInstruction *Inst) {
+    if (Inst->hasAttr(InstAttr::rn, InstAttr::rni))
+      return "rounding_mode::rte";
+    if (Inst->hasAttr(InstAttr::rz, InstAttr::rzi))
+      return "rounding_mode::rtz";
+    if (Inst->hasAttr(InstAttr::rm, InstAttr::rmi))
+      return "rounding_mode::rtn";
+    if (Inst->hasAttr(InstAttr::rp, InstAttr::rpi))
+      return "rounding_mode::rtp";
+    return "";
+  }
+
+  bool handle_rcp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1 ||
+        !isa<InlineAsmBuiltinType>(Inst->getType(0)))
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    std::string Op[1];
+    const auto *T = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (tryEmitAllInputOperands(Op, Inst))
+      return SYCLGenError();
+    OS() << " = ";
+
+    StringRef RD = GetIntelDevcieMathRoundingModifier(Inst);
+    // If intel-device-math extension enabled, we migrate to rcp
+    // instruction to sycl::ext::intel::math::{f|d}rcp_{rd|rn|ru|rz} apis
+    // for better performance.
+    if (DpctGlobalInfo::useIntelDeviceMath() && !RD.empty()) {
+      insertHeader(HeaderType::HT_SYCL_Math);
+      OS() << MapNames::getClNamespace() << "ext::intel::math::"
+           << (T->getKind() == InlineAsmBuiltinType::TK_f32 ? 'f' : 'd')
+           << "rcp_" << RD << '(' << Op[0] << ')';
+    } else {
+      OS() << "1 / " << Op[0];
+    }
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  StringRef
+  ConvertTypeToIntelDeviceMathFuncNameSuffix(const InlineAsmBuiltinType *T) {
+    switch (T->getKind()) {
+    case InlineAsmBuiltinType::TK_s8:
+      return "short";
+    case InlineAsmBuiltinType::TK_u8:
+      return "ushort";
+    case InlineAsmBuiltinType::TK_s16:
+      return "short";
+    case InlineAsmBuiltinType::TK_u16:
+      return "ushort";
+    case InlineAsmBuiltinType::TK_s32:
+      return "int";
+    case InlineAsmBuiltinType::TK_u32:
+      return "uint";
+    case InlineAsmBuiltinType::TK_s64:
+      return "ll";
+    case InlineAsmBuiltinType::TK_u64:
+      return "ull";
+    case InlineAsmBuiltinType::TK_f32:
+      return "float";
+    case InlineAsmBuiltinType::TK_f64:
+      return "double";
+    default:
+      return "";
+    }
+  }
+
+  bool handle_cvt(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1 || Inst->getNumTypes() != 2 ||
+        !isa<InlineAsmBuiltinType>(Inst->getType(0)) ||
+        !isa<InlineAsmBuiltinType>(Inst->getType(1)))
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+    OS() << " = ";
+    const auto *DesType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    const auto *SrcType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(1));
+    const auto *RealDesType =
+        dyn_cast<InlineAsmBuiltinType>(Inst->getOutputOperand()->getType());
+    const auto *RealSrcType =
+        dyn_cast<InlineAsmBuiltinType>(Inst->getInputOperand(0)->getType());
+    std::string DesTypeStr, SrcTypeStr, RealDesTypeStr, RealSrcTypeStr;
+    if (tryEmitType(DesTypeStr, DesType))
+      return SYCLGenError();
+    if (tryEmitType(SrcTypeStr, SrcType))
+      return SYCLGenError();
+    if (tryEmitType(RealDesTypeStr, RealDesType))
+      return SYCLGenError();
+    if (tryEmitType(RealSrcTypeStr, RealSrcType))
+      return SYCLGenError();
+
+    bool SrcNeedBitCast =
+        SrcType != RealSrcType &&
+        (!SrcType->isScalaType() || !RealSrcType->isScalaType());
+    bool DesNeedBitCast =
+        DesType != RealDesType &&
+        (!DesType->isScalaType() || !RealDesType->isScalaType());
+
+    if (SrcNeedBitCast) {
+      std::string NewOp;
+      llvm::raw_string_ostream O(NewOp);
+      O << MapNames::getClNamespace() << "vec<" << RealSrcTypeStr << ", 1>("
+        << Op << ").template as<" << MapNames::getClNamespace() << "vec<"
+        << SrcTypeStr << ", 1>>()";
+      Op = std::move(NewOp);
+    }
+
+    bool HasHalfOrBfloat16 =
+        SrcType->getKind() == InlineAsmBuiltinType::TK_f16 ||
+        DesType->getKind() == InlineAsmBuiltinType::TK_f16 ||
+        SrcType->getKind() == InlineAsmBuiltinType::TK_bf16 ||
+        DesType->getKind() == InlineAsmBuiltinType::TK_bf16;
+    if (DpctGlobalInfo::useIntelDeviceMath() && HasHalfOrBfloat16) {
+      insertHeader(HeaderType::HT_SYCL_Math);
+      if (SrcNeedBitCast)
+        Op.append(".x()");
+      if (DesNeedBitCast)
+        OS() << MapNames::getClNamespace() << "vec<" << RealDesTypeStr
+             << ", 1>(";
+      // sycl::ext::intel::math::half2{short|ushort|int|uint|ll|ull|float|double}
+      if (SrcType->getKind() == InlineAsmBuiltinType::TK_f16) {
+        OS() << MapNames::getClNamespace() << "ext::intel::math::half2"
+             << ConvertTypeToIntelDeviceMathFuncNameSuffix(DesType) << '_'
+             << GetIntelDevcieMathRoundingModifier(Inst) << '(' << Op << ')';
+      }
+      // sycl::ext::intel::math::{short|ushort|int|uint|ll|ull|float|double}2half
+      else if (DesType->getKind() == InlineAsmBuiltinType::TK_f16) {
+        OS() << MapNames::getClNamespace() << "ext::intel::math::"
+             << ConvertTypeToIntelDeviceMathFuncNameSuffix(SrcType) << "2half_"
+             << GetIntelDevcieMathRoundingModifier(Inst) << '(' << Op << ')';
+      }
+      // sycl::ext::intel::math::bfloat162{short|ushort|int|uint|ll|ull|float|double}
+      else if (SrcType->getKind() == InlineAsmBuiltinType::TK_bf16) {
+        OS() << MapNames::getClNamespace() << "ext::intel::math::bfloat162"
+             << ConvertTypeToIntelDeviceMathFuncNameSuffix(DesType) << '_'
+             << GetIntelDevcieMathRoundingModifier(Inst) << '(' << Op << ')';
+      }
+      // sycl::ext::intel::math::{short|ushort|int|uint|ll|ull|float|double}2bfloat16
+      else if (DesType->getKind() == InlineAsmBuiltinType::TK_bf16) {
+        OS() << MapNames::getClNamespace() << "ext::intel::math::"
+             << ConvertTypeToIntelDeviceMathFuncNameSuffix(SrcType)
+             << "2bfloat16_" << GetIntelDevcieMathRoundingModifier(Inst) << '('
+             << Op << ')';
+      }
+      if (DesNeedBitCast)
+        OS() << ").template as<" << MapNames::getClNamespace() << "vec<"
+             << RealDesTypeStr << ", 1>>().x()";
+    } else {
+      // Destination type and source type is integer or float/double
+      // point.
+      if (
+          // Dest type is integer type, float or double
+          ((DesType->isInt() || DesType->isFloating()) &&
+           DesType->getKind() != InlineAsmBuiltinType::TK_f16) &&
+
+          // Src type is integer type, float or double
+          ((SrcType->isInt() || SrcType->isFloating()) &&
+           DesType->getKind() != InlineAsmBuiltinType::TK_f16) &&
+
+          // Instruction has no rounding modifier
+          !Inst->hasAttr(InstAttr::rni, InstAttr::rn, InstAttr::rzi,
+                         InstAttr::rz, InstAttr::rmi, InstAttr::rm,
+                         InstAttr::rpi, InstAttr::rp)) {
+        OS() << "static_cast<" << DesTypeStr << ">(" << Op << ")";
+      } else {
+        if (SrcNeedBitCast)
+          OS() << Op;
+        else
+          OS() << MapNames::getClNamespace() << "vec<" << SrcTypeStr << ", 1>("
+               << Op << ")";
+        OS() << ".template convert<" << DesTypeStr << ", "
+             << MapNames::getClNamespace()
+             << GetSyclVectorRoundingModifier(Inst) << ">()";
+        if (DesNeedBitCast)
+          OS() << ".template as<" << MapNames::getClNamespace() << "vec<"
+               << RealDesTypeStr << ", 1>>()";
+        OS() << ".x()";
+      }
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  // Handle fma instruction.
+  // .sat/.ftz/.oob/.relu attributes was ignored.
+  bool handle_fma(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+    if (!isa<InlineAsmBuiltinType>(Inst->getType(0)) ||
+        !isa<InlineAsmBuiltinType>(Inst->getOutputOperand()->getType()) ||
+        !isa<InlineAsmBuiltinType>(Inst->getInputOperand(0)->getType()) ||
+        !isa<InlineAsmBuiltinType>(Inst->getInputOperand(1)->getType()) ||
+        !isa<InlineAsmBuiltinType>(Inst->getInputOperand(2)->getType()))
+      return SYCLGenError();
+    const InlineAsmBuiltinType *T =
+        dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    const InlineAsmBuiltinType *OpTy[4] = {
+        dyn_cast<InlineAsmBuiltinType>(Inst->getInputOperand(0)->getType()),
+        dyn_cast<InlineAsmBuiltinType>(Inst->getInputOperand(1)->getType()),
+        dyn_cast<InlineAsmBuiltinType>(Inst->getInputOperand(2)->getType()),
+        dyn_cast<InlineAsmBuiltinType>(Inst->getOutputOperand()->getType())};
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string Op[3];
+    std::string OpTyStr[4];
+    std::string InstTypeStr;
+    if (tryEmitAllInputOperands(Op, Inst))
+      return SYCLGenError();
+    if (tryEmitType(InstTypeStr, T))
+      return SYCLGenError();
+    for (int i = 0; i < 4; ++i)
+      if (tryEmitType(OpTyStr[i], OpTy[i]))
+        return SYCLGenError();
+
+    if (T->getKind() == InlineAsmBuiltinType::TK_f32 ||
+        T->getKind() == InlineAsmBuiltinType::TK_f64) {
+      StringRef RD = GetIntelDevcieMathRoundingModifier(Inst);
+      // If intel-device-math extension enabled, we migrate to fma
+      // instruction to sycl::ext::intel::math::fma{f}_{rd|rn|ru|rz} apis
+      // for better performance.
+      if (DpctGlobalInfo::useIntelDeviceMath() && !RD.empty()) {
+        insertHeader(HeaderType::HT_SYCL_Math);
+        OS() << MapNames::getClNamespace() << "ext::intel::math::fma"
+             << (T->getKind() == InlineAsmBuiltinType::TK_f32 ? "f" : "") << '_'
+             << RD << '(' << llvm::join(Op, Op + 3, ", ") << ')';
+      } else
+        OS() << MapNames::getClNamespace() << "fma" << '('
+             << llvm::join(Op, Op + 3, ", ") << ')';
+    } else {
+      if (T->getKind() == InlineAsmBuiltinType::TK_f16 ||
+          T->getKind() == InlineAsmBuiltinType::TK_f16x2 ||
+          T->getKind() == InlineAsmBuiltinType::TK_bf16x2) {
+        OS() << MapNames::getClNamespace() << "fma(";
+        if (T->getKind() == InlineAsmBuiltinType::TK_f16)
+          InstTypeStr = MapNames::getClNamespace() + "vec<" +
+                        MapNames::getClNamespace() + "half, 1>";
+        for (int I = 0; I < 3; ++I) {
+          if (T == OpTy[I])
+            OS() << Op[I];
+          else
+            OS() << MapNames::getClNamespace() << "vec<" << OpTyStr[I]
+                 << ", 1>(" << Op[I] << ").template as<" << InstTypeStr
+                 << ">()";
+          if (I < 2)
+            OS() << ", ";
+        }
+        OS() << ')';
+        if (Inst->getOutputOperand()->getType() != T) {
+          OS() << ".template as<" << MapNames::getClNamespace() << "vec<"
+               << OpTyStr[3] << ", 1>"
+               << ">().x()";
+        }
+      } else
+        // fma.bf16 is not supported now.
+        return SYCLGenError();
+    }
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_slct(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 2 ||
+        !isa<InlineAsmBuiltinType>(Inst->getType(0)) ||
+        !isa<InlineAsmBuiltinType>(Inst->getType(1)))
+      return SYCLGenError();
+    const auto *T0 = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    const auto *T1 = dyn_cast<InlineAsmBuiltinType>(Inst->getType(1));
+    if (!T0->isInt() && !T0->isBitSize() && !T0->isFloating())
+      return SYCLGenError();
+    if (T1->getKind() != InlineAsmBuiltinType::TK_s32 &&
+        T1->getKind() != InlineAsmBuiltinType::TK_f32)
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    std::string Op[3];
+    if (tryEmitAllInputOperands(Op, Inst))
+      return SYCLGenError();
+    OS() << " = (" << Op[2] << " >= "
+         << (T1->getKind() == InlineAsmBuiltinType::TK_f32 ? "0.0f" : "0")
+         << ") ? " << Op[0] << " : " << Op[1];
+    endstmt();
+    return SYCLGenSuccess();
+  }
 };
 } // namespace
 
@@ -2058,11 +2449,13 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   };
   Parser.addBuiltinIdentifier();
   for (unsigned I = 0, E = GAS->getNumOutputs(); I != E; ++I)
-    Parser.addInlineAsmOperands(getReplaceString(GAS->getOutputExpr(I)),
+    Parser.addInlineAsmOperands(GAS->getOutputExpr(I),
+                                getReplaceString(GAS->getOutputExpr(I)),
                                 GAS->getOutputConstraint(I));
 
   for (unsigned I = 0, E = GAS->getNumInputs(); I != E; ++I)
-    Parser.addInlineAsmOperands(getReplaceString(GAS->getInputExpr(I)),
+    Parser.addInlineAsmOperands(GAS->getInputExpr(I),
+                                getReplaceString(GAS->getInputExpr(I)),
                                 GAS->getInputConstraint(I));
 
   do {
