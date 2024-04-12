@@ -1738,7 +1738,6 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
               "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
               "__nv_bfloat16", "cooperative_groups::__v1::thread_group",
-              "cooperative_groups::__v1::thread_block_tile",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
               "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
@@ -1756,6 +1755,13 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseConstDnMatDescr_t"))))))
           .bind("cudaTypeDef"),
       this);
+
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                            "cooperative_groups::__v1::coalesced_group",
+                            "cooperative_groups::__v1::thread_block_tile"
+                            ))))))
+                    .bind("cudaTypeDefEA"),
+                this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
                             hasAnyTemplateArgument(refersToType(hasDeclaration(
                                 namedDecl(hasName("use_default"))))))))
@@ -2199,7 +2205,13 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
-
+  if (auto TL =getNodeAsType<TypeLoc>(Result, "cudaTypeDefEA")) {
+    ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
 
     // if TL is the T in
@@ -2252,34 +2264,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       DpctGlobalInfo::getUnqualifiedTypeName(
         TL->getType().getCanonicalType());
     StringRef CanonicalTypeStrRef(CanonicalTypeStr);
-    if (CanonicalTypeStrRef.starts_with(
-            "cooperative_groups::__v1::thread_block_tile<")) {
-      if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
-        SourceLocation Begin = ETL.getBeginLoc();
-        SourceLocation End = ETL.getEndLoc();
-        if (Begin.isMacroID() || End.isMacroID())
-          return;
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        if (End.isMacroID())
-          return;
-        if (CanonicalTypeStrRef.equals(
-                "cooperative_groups::__v1::thread_block_tile<32>")) {
-          emplaceTransformation(new ReplaceText(
-              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              MapNames::getClNamespace() + "sub_group"));
-        } else if (DpctGlobalInfo::useLogicalGroup()) {
-          emplaceTransformation(new ReplaceText(
-              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              MapNames::getDpctNamespace() + "experimental::logical_group"));
-          requestFeature(HelperFeatureEnum::device_ext);
-        } else {
-          report(Begin, Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
-                 CanonicalTypeStr, "--use-experimental-features=logical-group");
-        }
-        return;
-      }
-    }
 
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
         CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
@@ -12246,7 +12230,8 @@ void CooperativeGroupsFunctionRule::runRule(
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
       FuncName == "reduce" || FuncName == "thread_index" ||
       FuncName == "group_index" || FuncName == "num_threads" ||
-      FuncName == "inclusive_scan" || FuncName == "exclusive_scan") {
+      FuncName == "inclusive_scan" || FuncName == "exclusive_scan" ||
+      FuncName == "coalesced_threads") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function

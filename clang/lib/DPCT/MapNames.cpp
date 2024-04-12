@@ -4205,7 +4205,8 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "thread_index",
     "group_index",
     "inclusive_scan",
-    "exclusive_scan"};
+    "exclusive_scan",
+    "coalesced_threads"};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::SamplingInfoToSetFeatureMap = {
