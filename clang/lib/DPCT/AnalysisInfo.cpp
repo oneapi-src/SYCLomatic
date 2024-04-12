@@ -2003,8 +2003,8 @@ std::shared_ptr<KernelCallExpr>
 DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   auto LocInfo = getLocInfo(LaunchKernelCall->getBeginLoc());
   auto FileInfo = insertFile(LocInfo.first);
-  if (FileInfo->findNode<KernelCallExpr>(LocInfo.second))
-    return std::shared_ptr<KernelCallExpr>();
+  if (auto Node = FileInfo->findNode<KernelCallExpr>(LocInfo.second))
+    return Node;
 
   auto KernelInfo =
       KernelCallExpr::buildFromCudaLaunchKernel(LocInfo, LaunchKernelCall);
