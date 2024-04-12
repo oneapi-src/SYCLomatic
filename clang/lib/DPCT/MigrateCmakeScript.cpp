@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 #include "MigrateCmakeScript.h"
+#include "Diagnostics.h"
 #include "Error.h"
 #include "PatternRewriter.h"
 #include "SaveNewFiles.h"
@@ -27,93 +28,14 @@ using namespace llvm::cl;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
-const std::unordered_map<std::string /*command*/, bool /*need lower*/>
-    cmake_commands = {
-        {"cmake_minimum_required", 1},
-        {"cmake_parse_arguments", 1},
-        {"cmake_path", 1},
-        {"cmake_policy", 1},
-        {"file", 1},
-        {"find_file", 1},
-        {"find_library", 1},
-        {"find_package", 1},
-        {"find_path", 1},
-        {"find_program", 1},
-        {"foreach", 1},
-        {"function", 1},
-        {"get_cmake_property", 1},
-        {"get_directory_property", 1},
-        {"get_filename_component", 1},
-        {"get_property", 1},
-        {"list", 1},
-        {"macro", 1},
-        {"mark_as_advanced", 1},
-        {"message", 1},
-        {"separate_arguments", 1},
-        {"set", 1},
-        {"set_directory_properties", 1},
-        {"set_property", 1},
-        {"string", 1},
-        {"unset", 1},
-        {"add_compile_definitions", 1},
-        {"add_compile_options", 1},
-        {"add_custom_command", 1},
-        {"add_custom_target", 1},
-        {"add_definitions", 1},
-        {"add_dependencies", 1},
-        {"add_executable", 1},
-        {"add_library", 1},
-        {"add_link_options", 1},
-        {"add_subdirectory", 1},
-        {"add_test", 1},
-        {"build_command", 1},
-        {"define_property", 1},
-        {"include_directories", 1},
-        {"install", 1},
-        {"link_directories", 1},
-        {"link_libraries", 1},
-        {"project", 1},
-        {"set_source_files_properties", 1},
-        {"set_target_properties", 1},
-        {"set_tests_properties", 1},
-        {"source_group", 1},
-        {"target_compile_definitions", 1},
-        {"target_compile_features", 1},
-        {"target_compile_options", 1},
-        {"target_include_directories", 1},
-        {"target_link_directories", 1},
-        {"target_link_libraries", 1},
-        {"target_link_options", 1},
-        {"target_sources", 1},
-        {"try_compile", 1},
-        {"try_run", 1},
-        {"build_name", 1},
-        {"exec_program", 1},
-        {"export_library_dependencies", 1},
-        {"make_directory", 1},
-        {"remove", 1},
-        {"subdir_depends", 1},
-        {"subdirs", 1},
-        {"use_mangled_mesa", 1},
-        {"utility_source", 1},
-        {"variable_requires", 1},
-        {"write_file", 1},
-        {"cuda_add_cufft_to_target", 1},
-        {"cuda_add_cublas_to_target", 1},
-        {"cuda_add_executable", 1},
-        {"cuda_add_library", 1},
-        {"cuda_build_clean_target", 1},
-        {"cuda_compile", 1},
-        {"cuda_compile_ptx", 1},
-        {"cuda_compile_fatbin", 1},
-        {"cuda_compile_cubin", 1},
-        {"cuda_compute_separable_compilation_object_file_name", 1},
-        {"cuda_include_directories", 1},
-        {"cuda_link_separable_compilation_objects", 1},
-        {"cuda_select_nvcc_arch_flags", 1},
-        {"cuda_wrap_srcs", 1},
-
-};
+std::map<std::string /*CMake command*/,
+         std::tuple<bool /*ProcessedOrNot*/, bool /*CUDASpecificOrNot*/>>
+    cmake_commands{
+#define ENTRY_TYPE(TYPENAME, VALUE1, COMMENT, VALUE2)                          \
+  {#TYPENAME, {VALUE1, VALUE2}},
+#include "CMakeCommands.inc"
+#undef ENTRY_TYPE
+    };
 
 static std::vector<clang::tooling::UnifiedPath /*file path*/>
     CmakeScriptFilesSet;
@@ -128,6 +50,10 @@ static std::map<std::string /*variable name*/, std::string /*value*/>
 static std::map<std::string /*cmake syntax*/,
                 MetaRuleObject::PatternRewriter /*cmake migraiton rule*/>
     CmakeBuildInRules;
+
+static std::map<std::string /*file path*/,
+                std::vector<std::string> /*warning msg*/>
+    FileWarningsMap;
 
 void cmakeSyntaxProcessed(std::string &Input);
 
@@ -592,11 +518,14 @@ void applyImplicitMigrationRule(std::string &Input,
   }
 }
 
-static std::string convertCmakeCommandsToLower(const std::string &InputString) {
+static std::string convertCmakeCommandsToLower(const std::string &InputString,
+                                               const std::string FileName) {
   std::stringstream OutputStream;
 
   const auto Lines = split(InputString, '\n');
+
   std::vector<std::string> Output;
+  unsigned int Count = 1;
   for (auto Line : Lines) {
 
     int Size = Line.size();
@@ -614,14 +543,30 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString) {
       std::string Str = Line.substr(Begin, End - Begin);
       std::transform(Str.begin(), Str.end(), Str.begin(),
                      [](unsigned char Char) { return std::tolower(Char); });
-      if (cmake_commands.find(Str) != cmake_commands.end()) {
+      auto Iter = cmake_commands.find(Str);
+      if (Iter != cmake_commands.end()) {
         for (int Idx = Begin; Idx < End; Idx++) {
           Line[Idx] = Str[Idx - Begin];
+        }
+        if (!std::get<0>(Iter->second) && std::get<1>(Iter->second)) {
+          std::string WarningMsg =
+              FileName + ":" + std::to_string(Count) + ":warning:";
+          WarningMsg += DiagnosticsUtils::getMsgText(
+              CMakeScriptMigrationMsgs::CMAKE_NOT_SUPPORT_WARNING, Str);
+          WarningMsg += "\n";
+          FileWarningsMap[FileName].push_back(WarningMsg);
+
+          OutputStream
+              << "# "
+              << DiagnosticsUtils::getMsgText(
+                     CMakeScriptMigrationMsgs::CMAKE_NOT_SUPPORT_WARNING, Str)
+              << "\n";
         }
       }
     }
 
     OutputStream << Line << "\n";
+    Count++;
   }
 
   return OutputStream.str();
@@ -640,17 +585,20 @@ static void doCmakeScriptAnalysis() {
 static void unifyInputFileFormat() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &Buffer = Entry.second;
+    const std::string FileName = Entry.first.getPath().str();
 
     // Convert input file to be LF
     bool IsCRLF = fixLineEndings(Buffer, Buffer);
     ScriptFileCRLFMap[Entry.first] = IsCRLF;
 
     // Convert cmake command to lower case in cmake script files
-    Buffer = convertCmakeCommandsToLower(Buffer);
+    Buffer = convertCmakeCommandsToLower(Buffer, FileName);
   }
 }
 
-static void applyCmakeMigrationRules() {
+static void
+applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
+                         const clang::tooling::UnifiedPath OutRoot) {
 
   static const std::map<std::string,
                         void (*)(std::string &, size_t &, size_t &)>
@@ -663,7 +611,16 @@ static void applyCmakeMigrationRules() {
 
   for (auto &Entry : CmakeScriptFileBufferMap) {
     llvm::outs() << "Processing: " + Entry.first.getPath() + "\n";
+
     auto &Buffer = Entry.second;
+    clang::tooling::UnifiedPath FileName = Entry.first.getPath();
+    auto Iter = FileWarningsMap.find(FileName.getPath().str());
+    if (Iter != FileWarningsMap.end()) {
+      std::vector WarningsVec = Iter->second;
+      for (auto Warning : WarningsVec) {
+        llvm::outs() << Warning;
+      }
+    }
 
     // Apply user define migration rules
     for (const auto &CmakeSyntaxEntry : CmakeBuildInRules) {
@@ -732,7 +689,7 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
   unifyInputFileFormat();
   reserveImplicitMigrationRules();
   doCmakeScriptAnalysis();
-  applyCmakeMigrationRules();
+  applyCmakeMigrationRules(InRoot, OutRoot);
   storeBufferToFile();
 }
 
