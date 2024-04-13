@@ -161,11 +161,7 @@ template <typename T, int VALUES_PER_THREAD, bool DESCENDING = false>
 class radix_sort {
 public:
   static size_t get_local_memory_size(size_t group_threads) {
-    size_t ranks_size =
-        detail::radix_rank<RADIX_BITS>::get_local_memory_size(group_threads);
-    size_t exchange_size =
-        exchange<T, VALUES_PER_THREAD>::get_local_memory_size(group_threads);
-    return sycl::max(ranks_size, exchange_size);
+    return exchange<T, VALUES_PER_THREAD>::get_local_memory_size(group_threads);
   }
 
   radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
