@@ -90,6 +90,9 @@ public:
     bool ReplaceCalleeNameOnly = false;
     bool HasExplicitTemplateArgs = false;
   };
+  struct APIFilter {
+    int ArgCount = -1;
+  };
 
   struct PatternRewriter {
     std::string In = "";
@@ -126,6 +129,7 @@ public:
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
   std::map<std::string, PatternRewriter> Subrules;
+  APIFilter RuleAPIFilter;
   MetaRuleObject()
       : Priority(RulePriority::Default), MatchMode(RuleMatchMode::Partial), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind, RuleMatchMode MatchMode)
@@ -218,6 +222,14 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("Attributes", Doc->RuleAttributes);
     Io.mapOptional("Subrules", Doc->Subrules);
     Io.mapOptional("MatchMode", Doc->MatchMode);
+    Io.mapOptional("APIFilter", Doc->RuleAPIFilter);
+  }
+};
+
+template<>
+struct llvm::yaml::MappingTraits<MetaRuleObject::APIFilter> {
+  static void mapping(llvm::yaml::IO &Io, MetaRuleObject::APIFilter &Doc) {
+    Io.mapOptional("ArgCount", Doc.ArgCount);
   }
 };
 

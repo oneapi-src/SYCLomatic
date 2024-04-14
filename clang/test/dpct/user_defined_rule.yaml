@@ -129,3 +129,10 @@
     args:
       In: a
       Out: b
+- Rule: FilterFoo
+  Kind: API
+  Priority: Takeover
+  In: filterfoo
+  Out: filtergoo($1)
+  APIFilter:
+    ArgCount: 1
