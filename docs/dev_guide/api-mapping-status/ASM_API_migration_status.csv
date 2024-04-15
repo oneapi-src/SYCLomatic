@@ -24,7 +24,7 @@ copysign,YES,
 cos,YES,
 cp,NO,
 createpolicy,NO,
-cvt,NO,
+cvt,YES, Partial
 cvta,NO,
 discard,NO,
 div,YES, Partial
@@ -34,7 +34,7 @@ elect,NO,
 ex2,YES,
 exit,NO,
 fence,NO,
-fma,NO,
+fma,YES, Partial
 fns,NO,
 getctarank,NO,
 griddepcontrol,NO,
@@ -69,11 +69,11 @@ popc,YES,
 prefetch,NO,
 prefetchu,NO,
 prmt,NO,
-rcp,NO,
+rcp,YES,
 red,NO,
 redux,NO,
 rem,YES,
-ret,NO,
+ret,YES,
 rsqrt,YES,
 sad,YES,
 selp,YES,
@@ -85,7 +85,7 @@ shfl,NO,
 shl,YES,
 shr,YES,
 sin,YES,
-slct,NO,
+slct,YES, Partial
 sqrt,YES,
 st,NO,
 stackrestore,NO,
@@ -120,9 +120,9 @@ vmin,YES, Partial
 vmin2,YES, Partial
 vmin4,YES, Partial
 vote,NO,
-vset,NO,
-vset2,NO,
-vset4,NO,
+vset,YES, Partial
+vset2,YES, Partial
+vset4,YES, Partial
 vshl,YES, Partial
 vshr,YES, Partial
 vsub,YES, Partial
