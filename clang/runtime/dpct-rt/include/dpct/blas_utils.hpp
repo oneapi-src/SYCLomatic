@@ -50,7 +50,14 @@ private:
       if (_source_attribute ==
           dpct::detail::pointer_access_attribute::host_only)
         return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
-      // If data type is same and it is device pointer, it can be used directly.
+#ifdef DPCT_USM_LEVEL_NONE
+      auto alloc = dpct::detail::mem_mgr::instance().translate_ptr(_source);
+      size_t offset = (byte_t *)_source - alloc.alloc_ptr;
+      if (offset)
+        return (target_t *)dpct::dpct_malloc(sizeof(target_t) * _ele_num, _q);
+#endif
+      // If (data type is same && it is device pointer && (USM || buffer offset
+      // is 0)), it can be used directly.
       _need_free = false;
       return _source;
     } else {
@@ -163,6 +170,7 @@ class parameter_wrapper_t<target_t, target_t, inout_prop>
     : public detail::parameter_wrapper_base_t<target_t, target_t> {
   using base_t = detail::parameter_wrapper_base_t<target_t, target_t>;
   using base_t::_ele_num;
+  using base_t::_need_free;
   using base_t::_q;
   using base_t::_source;
   using base_t::_source_attribute;
@@ -176,20 +184,33 @@ public:
   parameter_wrapper_t(sycl::queue q, target_t *source, size_t ele_num = 1)
       : base_t(q, source, ele_num) {
     if constexpr (inout_prop != parameter_inout_prop::out) {
-      if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::host_only) {
+      if (_need_free) {
         dpct::detail::dpct_memcpy(_q, _target, _source,
                                   sizeof(target_t) * _ele_num, automatic);
       }
     }
   }
+
+  /// Constructor. Only vaild for parameter_inout_prop::in.
+  /// \param q The queue used for internal malloc and memcpy
+  /// \param source The original parameter
+  /// \param ele_num Element number in \p source
+  template <parameter_inout_prop prop = inout_prop>
+  parameter_wrapper_t(
+      sycl::queue q, const target_t *source, size_t ele_num = 1,
+      typename std::enable_if<prop == parameter_inout_prop::in>::type * = 0)
+      : parameter_wrapper_t(q, const_cast<target_t *>(source), ele_num) {}
+
   /// Destructor. Copy back content from wrapper memory to original memory
   ~parameter_wrapper_t() {
     if constexpr (inout_prop != parameter_inout_prop::in) {
-      if (_source_attribute ==
-          dpct::detail::pointer_access_attribute::host_only) {
-        dpct::dpct_memcpy(_source, _target, sizeof(target_t) * _ele_num,
-                          automatic, _q);
+      if (_need_free) {
+        sycl::event e = dpct::detail::dpct_memcpy(
+            _q, _source, _target, sizeof(target_t) * _ele_num, automatic);
+        (void)e;
+        if (_source_attribute ==
+            dpct::detail::pointer_access_attribute::host_only)
+          e.wait();
       }
     }
   }
@@ -211,8 +232,60 @@ using wrapper_double2_out = parameter_wrapper_t<sycl::double2, sycl::double2,
                                                 parameter_inout_prop::out>;
 using wrapper_float_inout =
     parameter_wrapper_t<float, float, parameter_inout_prop::in_out>;
+using wrapper_double_inout =
+    parameter_wrapper_t<double, double, parameter_inout_prop::in_out>;
+using wrapper_float2_inout = parameter_wrapper_t<sycl::float2, sycl::float2,
+                                                 parameter_inout_prop::in_out>;
+using wrapper_double2_inout = parameter_wrapper_t<sycl::double2, sycl::double2,
+                                                  parameter_inout_prop::in_out>;
 using wrapper_float_in =
     parameter_wrapper_t<float, float, parameter_inout_prop::in>;
+using wrapper_double_in =
+    parameter_wrapper_t<double, double, parameter_inout_prop::in>;
+
+/// Copy matrix data. The default leading dimension is column.
+/// \param [out] to_ptr A pointer points to the destination location.
+/// \param [in] from_ptr A pointer points to the source location.
+/// \param [in] to_ld The leading dimension the destination matrix.
+/// \param [in] from_ld The leading dimension the source matrix.
+/// \param [in] rows The number of rows of the source matrix.
+/// \param [in] cols The number of columns of the source matrix.
+/// \param [in] elem_size The element size in bytes.
+/// \param [in] direction The direction of the data copy.
+/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] async If this argument is true, the return of the function
+/// does NOT guarantee the copy is completed.
+inline void matrix_mem_copy(void *to_ptr, const void *from_ptr,
+                            std::int64_t to_ld, std::int64_t from_ld,
+                            std::int64_t rows, std::int64_t cols,
+                            std::int64_t elem_size,
+                            memcpy_direction direction = automatic,
+                            sycl::queue &queue = dpct::get_default_queue(),
+                            bool async = false) {
+  if (to_ptr == from_ptr && to_ld == from_ld) {
+    return;
+  }
+
+  if (to_ld == from_ld) {
+    size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
+    if (async)
+      dpct::detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                                copy_size, direction);
+    else
+      dpct::detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                                copy_size, direction)
+          .wait();
+  } else {
+    if (async)
+      dpct::detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
+                                elem_size * from_ld, elem_size * rows, cols,
+                                direction);
+    else
+      sycl::event::wait(dpct::detail::dpct_memcpy(
+          queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
+          elem_size * rows, cols, direction));
+  }
+}
 
 class descriptor {
 public:
@@ -992,8 +1065,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
     // Need to create a copy of input matrices "a" to keep them unchanged.
     // Matrices "b" (copy of matrices "a") will be used as input and output
     // parameter in oneapi::mkl::lapack::getri_batch call.
-    matrix_mem_copy(b_buffer_ptr + i * stride_b, host_a[i], ldb, lda, n, n,
-                    dpct::device_to_device, exec_queue);
+    blas::matrix_mem_copy(b_buffer_ptr + i * stride_b, host_a[i], ldb, lda, n,
+                          n, sizeof(T), dpct::device_to_device, exec_queue);
   }
 
   {
@@ -1062,8 +1135,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
     // Need to create a copy of input matrices "a" to keep them unchanged.
     // Matrices "b" (copy of matrices "a") will be used as input and output
     // parameter in oneapi::mkl::lapack::getri_batch call.
-    matrix_mem_copy(b_shared[i], a_shared[i], ldb, lda, n, n, dpct::device_to_device,
-                    exec_queue);
+    blas::matrix_mem_copy(b_shared[i], a_shared[i], ldb, lda, n, n, sizeof(T),
+                          dpct::device_to_device, exec_queue);
   }
 
   sycl::event e = oneapi::mkl::lapack::getri_batch(
@@ -1992,7 +2065,8 @@ inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
   using Ty = typename DataType<T>::T2;
   auto alpha_val = dpct::get_value(alpha, q);
   if (b != c) {
-    dpct::matrix_mem_copy(c, b, ldc, ldb, m, n, dpct::device_to_device, q);
+    blas::matrix_mem_copy(c, b, ldc, ldb, m, n, sizeof(T),
+                          dpct::device_to_device, q);
   }
   auto data_a = detail::get_memory<const Ty>(a);
   auto data_c = detail::get_memory<Ty>(c);

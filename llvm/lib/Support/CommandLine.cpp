@@ -1525,23 +1525,32 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
   assert(ChosenSubCommand);
 
 #ifdef SYCLomatic_CUSTOMIZATION
-#ifndef _WIN32
-  if ((argc >= FirstArg + 1) &&
-      (std::string(argv[FirstArg]) == "--intercept-build" ||
-       std::string(argv[FirstArg]) == "-intercept-build" ||
-       std::string(argv[FirstArg]) == "intercept-build")) {
-    const static std::string InterceptBuildCommand = "intercept-build";
-    StringRef ArgName(InterceptBuildCommand);
-    StringRef Value;
-    Option *Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
-                                       LongOptionsUseDoubleDash, false);
-    if (Handler) {
-      Handler->addOccurrence(0, ArgName, Value);
-      return true;
+  auto HandleLongOptionCommand = [&](const std::string &option) {
+    const std::string arg = argv[FirstArg];
+    if (arg == "--" + option || arg == "-" + option || arg == option) {
+      StringRef ArgName(option);
+      StringRef Value;
+      Option *Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
+                                         LongOptionsUseDoubleDash, false);
+      if (Handler) {
+        Handler->addOccurrence(0, ArgName, Value);
+        return true;
+      }
     }
     return false;
+  };
+#ifndef _WIN32
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]).find("intercept-build") !=
+       std::string::npos)) {
+    return HandleLongOptionCommand("intercept-build");
   }
 #endif
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]).find("codepin-report") !=
+       std::string::npos)) {
+    return HandleLongOptionCommand("codepin-report");
+  }
 #endif // SYCLomatic_CUSTOMIZATION
 
   auto &ConsumeAfterOpt = ChosenSubCommand->ConsumeAfterOpt;
