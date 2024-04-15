@@ -60,13 +60,7 @@ int main() {
     // CHECK: covdes.get_forward_output_dim(dataTensor, filterTensor, 5, out_dim);
     cudnnGetConvolutionNdForwardOutputDim(covdes, dataTensor, filterTensor, 5, out_dim);
 
-    // CHECK: /*
-    // CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_PROPAGATE_NAN is not supported.
-    // CHECK: */
     // CHECK: int nan_prop = 1;
-    // CHECK: /*
-    // CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_CONVOLUTION is not supported.
-    // CHECK: */
     // CHECK: int mode = 0;
     cudnnNanPropagation_t nan_prop = CUDNN_PROPAGATE_NAN;
     cudnnConvolutionMode_t mode = CUDNN_CONVOLUTION;

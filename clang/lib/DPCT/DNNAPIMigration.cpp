@@ -118,15 +118,10 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
       report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
     } else if (EnumName == "CUDNN_CONVOLUTION" ||
                EnumName == "CUDNN_CROSS_CORRELATION") {
-      if (EnumName == "CUDNN_CONVOLUTION") {
-        report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-               EnumName);
-      }
       ReplaceWithInitVal();
       return;
     } else if (EnumName == "CUDNN_NOT_PROPAGATE_NAN" ||
                EnumName == "CUDNN_PROPAGATE_NAN") {
-      report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
       ReplaceWithInitVal();
       return;
     }
