@@ -18,6 +18,7 @@
 
 #include "dpct.hpp"
 #include "functional.h"
+#include "dpl_extras/dpcpp_extensions.h"
 
 namespace dpct {
 namespace group {
@@ -145,7 +146,7 @@ private:
   static constexpr int LOG_LOCAL_MEMORY_BANKS = 4;
   static constexpr bool INSERT_PADDING =
       (VALUES_PER_THREAD > 4) &&
-      (detail::power_of_two<VALUES_PER_THREAD>::VALUE);
+      (dpct::group::detail::power_of_two<VALUES_PER_THREAD>::VALUE);
 
   uint8_t *_local_memory;
 };
@@ -161,7 +162,11 @@ template <typename T, int VALUES_PER_THREAD, bool DESCENDING = false>
 class radix_sort {
 public:
   static size_t get_local_memory_size(size_t group_threads) {
-    return exchange<T, VALUES_PER_THREAD>::get_local_memory_size(group_threads);
+    size_t ranks_size =
+        dpct::group::detail::radix_rank<RADIX_BITS>::get_local_memory_size(group_threads);
+    size_t exchange_size =
+        exchange<T, VALUES_PER_THREAD>::get_local_memory_size(group_threads);
+    return sycl::max(ranks_size, exchange_size);
   }
 
   radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
@@ -176,14 +181,14 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; ++i) {
-      unsigned_keys[i] = detail::traits<T>::twiddle_in(unsigned_keys[i]);
+      unsigned_keys[i] = dpct::group::detail::traits<T>::twiddle_in(unsigned_keys[i]);
     }
 
     for (int i = begin_bit; i < end_bit; i += RADIX_BITS) {
       int pass_bits = sycl::min(RADIX_BITS, end_bit - begin_bit);
 
       int ranks[VALUES_PER_THREAD];
-      detail::radix_rank<RADIX_BITS, DESCENDING>(_local_memory)
+      dpct::group::detail::radix_rank<RADIX_BITS, DESCENDING>(_local_memory)
           .template rank_keys(item, unsigned_keys, ranks, i, pass_bits);
 
       item.barrier(sycl::access::fence_space::local_space);
@@ -203,7 +208,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; ++i) {
-      unsigned_keys[i] = detail::traits<T>::twiddle_out(unsigned_keys[i]);
+      unsigned_keys[i] = dpct::group::detail::traits<T>::twiddle_out(unsigned_keys[i]);
     }
   }
 
