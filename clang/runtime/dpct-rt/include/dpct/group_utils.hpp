@@ -17,8 +17,8 @@
 #endif
 
 #include "dpct.hpp"
-#include "functional.h"
 #include "dpl_extras/dpcpp_extensions.h"
+#include "functional.h"
 
 namespace dpct {
 namespace group {
@@ -163,7 +163,8 @@ class radix_sort {
 public:
   static size_t get_local_memory_size(size_t group_threads) {
     size_t ranks_size =
-        dpct::group::detail::radix_rank<RADIX_BITS>::get_local_memory_size(group_threads);
+        dpct::group::detail::radix_rank<RADIX_BITS>::get_local_memory_size(
+            group_threads);
     size_t exchange_size =
         exchange<T, VALUES_PER_THREAD>::get_local_memory_size(group_threads);
     return sycl::max(ranks_size, exchange_size);
@@ -181,7 +182,8 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; ++i) {
-      unsigned_keys[i] = dpct::group::detail::traits<T>::twiddle_in(unsigned_keys[i]);
+      unsigned_keys[i] =
+          dpct::group::detail::traits<T>::twiddle_in(unsigned_keys[i]);
     }
 
     for (int i = begin_bit; i < end_bit; i += RADIX_BITS) {
@@ -208,7 +210,8 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; ++i) {
-      unsigned_keys[i] = dpct::group::detail::traits<T>::twiddle_out(unsigned_keys[i]);
+      unsigned_keys[i] =
+          dpct::group::detail::traits<T>::twiddle_out(unsigned_keys[i]);
     }
   }
 
