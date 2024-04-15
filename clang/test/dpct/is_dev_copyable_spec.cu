@@ -104,7 +104,11 @@ void foo3() {
 }
 
 // Case4: Forward declaraion of template struct
-template<class V>
+//      CHECK: template<class V4>
+// CHECK-NEXT: struct UserStruct7;
+// CHECK-NEXT: template <class V4> 
+// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct7<V4>> : std::true_type {};
+template<class V4>
 struct UserStruct7;
 
 template<class V>
@@ -116,6 +120,13 @@ void foo4() {
   k4<<<1, 1>>>(us7);
 }
 
+//      CHECK: template<class T>
+// CHECK-NEXT: struct UserStruct7 {
+// CHECK-NEXT:   UserStruct7() {}
+// CHECK-NEXT:   UserStruct7(UserStruct7 const &) {}
+// CHECK-NEXT: };
+// CHECK-EMPTY:
+// CHECK-NEXT: template void foo4<float>();
 template<class T>
 struct UserStruct7 {
   UserStruct7() {}
@@ -125,6 +136,18 @@ struct UserStruct7 {
 template void foo4<float>();
 
 // Case5: Full specialization of template struct
+//      CHECK: template<class T1, class T2>
+// CHECK-NEXT: struct UserStruct8 {
+// CHECK-NEXT:   UserStruct8() {}
+// CHECK-NEXT:   UserStruct8(UserStruct8 const &) {}
+// CHECK-NEXT: };
+// CHECK-NEXT: template<>
+// CHECK-NEXT: struct UserStruct8<double, float> {
+// CHECK-NEXT:   UserStruct8() {}
+// CHECK-NEXT:   UserStruct8(UserStruct8 const &) {}
+// CHECK-NEXT: };
+// CHECK-NEXT: template <class T1, class T2> 
+// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct8<T1, T2>> : std::true_type {};
 template<class T1, class T2>
 struct UserStruct8 {
   UserStruct8() {}
@@ -145,6 +168,18 @@ void foo5() {
 }
 
 // Case6: Partial specialization of template struct
+//      CHECK: template<class T1, class T2>
+// CHECK-NEXT: struct UserStruct9 {
+// CHECK-NEXT:   UserStruct9() {}
+// CHECK-NEXT:   UserStruct9(UserStruct9 const &) {}
+// CHECK-NEXT: };
+// CHECK-NEXT: template<class TT>
+// CHECK-NEXT: struct UserStruct9<TT, int> {
+// CHECK-NEXT:   UserStruct9() {}
+// CHECK-NEXT:   UserStruct9(UserStruct9 const &) {}
+// CHECK-NEXT: };
+// CHECK-NEXT: template <class T1, class T2> 
+// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct9<T1, T2>> : std::true_type {};
 template<class T1, class T2>
 struct UserStruct9 {
   UserStruct9() {}
@@ -197,11 +232,23 @@ void foo6() {
 //}
 
 // Case9: template struct with using and template alias
+//      CHECK: struct UserStruct12 {
+// CHECK-NEXT:   UserStruct12() {}
+// CHECK-NEXT:   UserStruct12(UserStruct12 const &) {}
+// CHECK-NEXT: };
+// CHECK-NEXT: template <>
+// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct12> : std::true_type {};
+// CHECK-NEXT: template<class T>
+// CHECK-NEXT: struct UserStruct13 {
+// CHECK-NEXT:   UserStruct13() {}
+// CHECK-NEXT:   UserStruct13(UserStruct13 const &) {}
+// CHECK-NEXT: };
+// CHECK-NEXT: template <class T> 
+// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct13<T>> : std::true_type {};
 struct UserStruct12 {
   UserStruct12() {}
   UserStruct12(UserStruct12 const &) {}
 };
-
 template<class T>
 struct UserStruct13 {
   UserStruct13() {}
@@ -223,6 +270,14 @@ void test9() {
 }
 
 // Case10: user-define struct in namespace
+//      CHECK: namespace ns {
+// CHECK-NEXT: struct UserStruct15 {
+// CHECK-NEXT:   UserStruct15() {}
+// CHECK-NEXT:   UserStruct15(UserStruct15 const &) {}
+// CHECK-NEXT: };
+// CHECK-NEXT: }
+// CHECK-NEXT: template <>
+// CHECK-NEXT: struct sycl::is_device_copyable<ns::UserStruct15> : std::true_type {}; // namespace ns
 namespace ns {
 struct UserStruct15 {
   UserStruct15() {}

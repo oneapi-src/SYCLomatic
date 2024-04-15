@@ -5003,8 +5003,67 @@ getDeviceCopyableSpecialization(QualType Type) {
   if (Type.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
     return std::nullopt;
 
+  std::function<const NamespaceDecl *(const DeclContext *, std::string &)>
+      getOutermostNamespaceDecl;
+  const NamespaceDecl *NS = nullptr;
+  getOutermostNamespaceDecl = [&getOutermostNamespaceDecl,
+                               &NS](const DeclContext *DC,
+                                    std::string &Str) -> const NamespaceDecl * {
+    switch (DC->getDeclKind()) {
+    case Decl::Kind::Namespace: {
+      const NamespaceDecl *ND = dyn_cast<NamespaceDecl>(DC);
+      Str = ND->getNameAsString() + "::" + Str;
+      NS = ND;
+      return getOutermostNamespaceDecl(ND->getDeclContext(), Str);
+    }
+    case Decl::Kind::TranslationUnit:
+      return NS;
+    default:
+      return nullptr;
+    }
+  };
+
+  // Find insert location
+  auto getInsertLocation = [](SourceLocation InsertLoc, tok::TokenKind TK) {
+    Token Tok;
+    std::optional<Token> OptTok = std::nullopt;
+    Lexer::getRawToken(InsertLoc, Tok, DpctGlobalInfo::getSourceManager(),
+                       DpctGlobalInfo::getContext().getLangOpts());
+    if (Tok.is(TK)) {
+      InsertLoc = Tok.getEndLoc();
+    } else {
+      while (OptTok = Lexer::findNextToken(
+                 InsertLoc, DpctGlobalInfo::getSourceManager(),
+                 DpctGlobalInfo::getContext().getLangOpts())) {
+        InsertLoc = OptTok.value().getEndLoc();
+        if (OptTok.value().is(TK)) {
+          break;
+        }
+      }
+    }
+    InsertLoc = InsertLoc.getLocWithOffset(
+        Lexer::MeasureTokenLength(InsertLoc, DpctGlobalInfo::getSourceManager(),
+                                  DpctGlobalInfo::getContext().getLangOpts()));
+    return InsertLoc;
+  };
+
+  std::string NamespaceStr;
+  SourceLocation InsertLoc;
+  if (D->getDeclContext()->getDeclKind() == Decl::Kind::TranslationUnit) {
+    if (D->getEndLoc().isMacroID())
+      return std::nullopt;
+    InsertLoc = getInsertLocation(D->getEndLoc(), tok::TokenKind::semi);
+  } else if (const auto *ND =
+                 getOutermostNamespaceDecl(D->getDeclContext(), NamespaceStr)) {
+    if (ND->getEndLoc().isMacroID())
+      return std::nullopt;
+    InsertLoc = getInsertLocation(ND->getEndLoc(), tok::TokenKind::r_brace);
+  } else {
+    return std::nullopt;
+  }
+
   // Prepare replacemet
-  std::string Repl;
+  std::string Repl = getNL();
   if (const auto *CTSD = dyn_cast<ClassTemplateSpecializationDecl>(D)) {
     D = CTSD->getSpecializedTemplate();
   }
@@ -5021,38 +5080,19 @@ getDeviceCopyableSpecialization(QualType Type) {
     if (!TArgs.empty()) {
       TArgs = TArgs.substr(0, TArgs.size() - 2);
     }
-    OS << CTD->getNameAsString() << "<" << TArgs << ">";
+    OS << NamespaceStr << CTD->getNameAsString() << "<" << TArgs << ">";
     OS << "> : std::true_type {};";
-    OS << getNL();
   } else if (const auto *RD = dyn_cast<RecordDecl>(D)) {
     Repl += "template <>";
     Repl += getNL();
     Repl += "struct sycl::is_device_copyable<";
+    Repl += NamespaceStr;
     Repl += RD->getNameAsString();
     Repl += "> : std::true_type {};";
-    Repl += getNL();
   } else {
     return std::nullopt;
   }
 
-  // Find insert location (next line after semicolon)
-  SourceLocation EndLoc = D->getEndLoc();
-  bool MeetSemicolon = false;
-  const char *CharPtr =
-      DpctGlobalInfo::getSourceManager().getCharacterData(EndLoc);
-  unsigned int Offset = 0;
-  while (CharPtr + Offset) {
-    if (CharPtr[Offset] == ';') {
-      MeetSemicolon = true;
-    } else if (CharPtr[Offset] == '\n') {
-      if (MeetSemicolon) {
-        Offset++;
-        break;
-      }
-    }
-    Offset++;
-  }
-  SourceLocation InsertLoc = EndLoc.getLocWithOffset(Offset);
   return std::make_pair(InsertLoc, Repl);
 }
 } // namespace dpct
