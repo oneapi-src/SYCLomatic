@@ -2497,6 +2497,44 @@ void SizeInfo::setTemplateList(
     TDSI = TDSI->applyTemplateArguments(TemplateList);
 }
 ///// class CtTypeInfo /////
+#define TYPE_CAST(Target) dyn_cast<Target>(T)
+std::string getTypedefOrUsingTypeName(QualType QT) {
+  const Type *T = QT.getTypePtr();
+  switch (T->getTypeClass()) {
+  case Type::TypeClass::IncompleteArray:
+    return getTypedefOrUsingTypeName(
+        TYPE_CAST(IncompleteArrayType)->getElementType());
+  case Type::TypeClass::ConstantArray:
+    return getTypedefOrUsingTypeName(
+        TYPE_CAST(ConstantArrayType)->getElementType());
+  case Type::TypeClass::Pointer:
+    return getTypedefOrUsingTypeName(TYPE_CAST(PointerType)->getPointeeType());
+  case Type::TypeClass::Elaborated:
+    return getTypedefOrUsingTypeName(TYPE_CAST(ElaboratedType)->desugar());
+  case Type::TypeClass::Typedef: {
+    const TypedefNameDecl *TND = TYPE_CAST(TypedefType)->getDecl();
+    if (isUserDefinedDecl(TND)) {
+      Decl::Kind K = TND->getDeclContext()->getDeclKind();
+      if (K != Decl::Kind::TranslationUnit && K != Decl::Kind::Namespace)
+        return TND->getNameAsString();
+    }
+    return "";
+  }
+  case Type::TypeClass::Using: {
+    const UsingShadowDecl *USD = TYPE_CAST(clang::UsingType)->getFoundDecl();
+    if (isUserDefinedDecl(USD)) {
+      Decl::Kind K = USD->getDeclContext()->getDeclKind();
+      if (K != Decl::Kind::TranslationUnit && K != Decl::Kind::Namespace)
+        return USD->getNameAsString();
+    }
+    return "";
+  }
+  default:
+    return "";
+  }
+}
+#undef TYPE_CAST
+
 CtTypeInfo::CtTypeInfo() {
   PointerLevel = 0;
   IsReference = 0;
@@ -2517,6 +2555,14 @@ CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold) : CtTypeInfo() {
     if (TL.getTypeLocClass() == TypeLoc::IncompleteArray) {
       if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
         Range[0] = std::to_string(CAT->getSize().getZExtValue());
+      }
+    }
+    if (D->hasAttr<CUDASharedAttr>()) {
+      std::string TN = getTypedefOrUsingTypeName(D->getType());
+      const FunctionDecl *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(D);
+      if (!TN.empty() && FD) {
+        SharedVarInfo.TypeName = TN;
+        SharedVarInfo.DefinitionFuncName = FD->getNameAsString();
       }
     }
   }
@@ -2943,11 +2989,11 @@ std::string MemVarInfo::getExternGlobalVarDecl() {
 void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
                                              bool ExternEmitWarning,
                                              StmtList &AccList,
-                                             StmtList &PtrList) {
+                                             StmtList &PtrList, LocInfo LI) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   if (isShared()) {
-    OS << getSyclAccessorType();
+    OS << getSyclAccessorType(LI);
     OS << " " << getAccessorName() << "(";
     if (getType()->getDimension())
       OS << getRangeClass() << getType()->getRangeArgument(ExternMemSize, false)
@@ -3187,10 +3233,17 @@ const std::string &MemVarInfo::getMemoryAttr() {
     return NullString;
   }
 }
-std::string MemVarInfo::getSyclAccessorType() {
+std::string MemVarInfo::getSyclAccessorType(LocInfo LI) {
   std::string Ret;
   llvm::raw_string_ostream OS(Ret);
   if (getAttr() == MemVarInfo::VarAttrKind::Shared) {
+    if (!getType()->SharedVarInfo.TypeName.empty() &&
+        !LI.first.getCanonicalPath().empty() && LI.second) {
+      DiagnosticsUtils::report(LI.first.getCanonicalPath().str(), LI.second,
+                               Warnings::MOVE_TYPE_DEFINITION_KERNEL_FUNC, true,
+                               false, getType()->SharedVarInfo.TypeName,
+                               getType()->SharedVarInfo.DefinitionFuncName);
+    }
     OS << MapNames::getClNamespace() << "local_accessor<";
     OS << getAccessorDataType() << ", ";
     OS << getType()->getDimension() << ">";
@@ -3641,7 +3694,7 @@ int MemVarMap::calculateExtraArgsSize() const {
 }
 template <MemVarMap::CallOrDecl COD>
 inline std::string
-MemVarMap::getArgumentsOrParameters(int PreParams, int PostParams,
+MemVarMap::getArgumentsOrParameters(int PreParams, int PostParams, LocInfo LI,
                                     FormatInfo FormatInformation) const {
   ParameterStream PS;
   if (PreParams != 0)
@@ -3654,8 +3707,8 @@ MemVarMap::getArgumentsOrParameters(int PreParams, int PostParams,
     getSync<COD>(PS) << ", ";
   if (!ExternVarMap.empty())
     GetArgOrParam<MemVarInfo, COD>()(PS, ExternVarMap.begin()->second) << ", ";
-  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap);
-  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap);
+  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap, LI);
+  getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap, LI);
   getArgumentsOrParametersFromoTextureInfoMap<COD>(PS, TextureMap);
   std::string Result = PS.Str;
   return (Result.empty() || PostParams != 0) && PreParams == 0
@@ -3664,7 +3717,8 @@ MemVarMap::getArgumentsOrParameters(int PreParams, int PostParams,
 }
 template <>
 std::string MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
-    int PreParams, int PostParams, FormatInfo FormatInformation) const {
+    int PreParams, int PostParams, LocInfo LI,
+    FormatInfo FormatInformation) const {
   ParameterStream PS;
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     PS = ParameterStream(FormatInformation,
@@ -3672,7 +3726,7 @@ std::string MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
   } else {
     PS = ParameterStream(FormatInformation, 80);
   }
-  getArgumentsOrParametersForDecl(PS, PreParams, PostParams);
+  getArgumentsOrParametersForDecl(PS, PreParams, PostParams, LI);
   std::string Result = PS.Str;
 
   if (Result.empty())
@@ -3722,8 +3776,9 @@ void MemVarMap::requestFeatureForAllVarMaps(
   }
 }
 std::string MemVarMap::getExtraDeclParam(bool HasPreParam, bool HasPostParam,
+                                         LocInfo LI,
                                          FormatInfo FormatInformation) const {
-  return getArgumentsOrParameters<DeclParameter>(HasPreParam, HasPostParam,
+  return getArgumentsOrParameters<DeclParameter>(HasPreParam, HasPostParam, LI,
                                                  FormatInformation);
 }
 std::string
@@ -3838,7 +3893,8 @@ int MemVarMap::calculateExtraArgsSize(const MemVarInfoMap &Map) const {
 }
 template <class T, MemVarMap::CallOrDecl COD>
 void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
-                                                const GlobalMap<T> &VarMap) {
+                                                const GlobalMap<T> &VarMap,
+                                                LocInfo LI) {
   for (const auto &VI : VarMap) {
     if (!VI.second->isUseHelperFunc()) {
       continue;
@@ -3847,6 +3903,14 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
         !DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(VI.second)) {
       VI.second->setUseHelperFuncFlag(false);
       continue;
+    }
+    if (!VI.second->getType()->SharedVarInfo.TypeName.empty() &&
+        !LI.first.getCanonicalPath().empty() && LI.second) {
+      DiagnosticsUtils::report(
+          LI.first.getCanonicalPath().str(), LI.second,
+          Warnings::MOVE_TYPE_DEFINITION_DEVICE_FUNC, true, false,
+          VI.second->getType()->SharedVarInfo.TypeName,
+          VI.second->getType()->SharedVarInfo.DefinitionFuncName);
     }
     if (PS.FormatInformation.EnableFormat) {
       ParameterStream TPS;
@@ -3873,8 +3937,8 @@ void MemVarMap::getArgumentsOrParametersFromoTextureInfoMap(
 }
 
 void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
-                                                int PreParams,
-                                                int PostParams) const {
+                                                int PreParams, int PostParams,
+                                                LocInfo LI) const {
   if (hasItem()) {
     getItem<MemVarMap::DeclParameter>(PS);
   }
@@ -3895,9 +3959,9 @@ void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
   }
 
   getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
-      PS, GlobalVarMap);
+      PS, GlobalVarMap, LI);
   getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
-      PS, LocalVarMap);
+      PS, LocalVarMap, LI);
   getArgumentsOrParametersFromoTextureInfoMap<MemVarMap::DeclParameter>(
       PS, TextureMap);
 }
@@ -4138,7 +4202,7 @@ std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   if (FuncInfo && Info && (FuncInfo != Info)) {
     if (!FuncInfo->getVarMap().isSameAs(Info->getVarMap())) {
-      DiagnosticsUtils::report(getFilePath(), getBegin(),
+      DiagnosticsUtils::report(getFilePath(), getOffset(),
                                Warnings::DEVICE_CALL_DIFFERENT, true, false,
                                FuncInfo->getFunctionName());
     }
@@ -4411,7 +4475,8 @@ DeviceFunctionDecl::LinkExplicitInstantiation(
 }
 void DeviceFunctionDecl::emplaceReplacement() {
   auto Repl = std::make_shared<ExtReplacement>(
-      FilePath, ReplaceOffset, ReplaceLength, getExtraParameters(), nullptr);
+      FilePath, ReplaceOffset, ReplaceLength,
+      getExtraParameters(std::make_pair(FilePath, Offset)), nullptr);
   Repl->setNotFormatFlag();
   DpctGlobalInfo::getInstance().addReplacement(Repl);
 
@@ -4555,9 +4620,9 @@ void DeviceFunctionDecl::buildTextureObjectParamsInfo(
       TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
   }
 }
-std::string DeviceFunctionDecl::getExtraParameters() {
+std::string DeviceFunctionDecl::getExtraParameters(LocInfo LI) {
   std::string Result =
-      FuncInfo->getExtraParameters(FilePath, FormatInformation);
+      FuncInfo->getExtraParameters(FilePath, LI, FormatInformation);
   if (!Result.empty() && IsReplaceFollowedByPP) {
     Result += getNL();
   }
@@ -4623,8 +4688,8 @@ void ExplicitInstantiationDecl::initTemplateArgumentList(
     InstantiationArgs.emplace_back(std::move(TA));
   }
 }
-std::string ExplicitInstantiationDecl::getExtraParameters() {
-  return getFuncInfo()->getExtraParameters(FilePath, InstantiationArgs,
+std::string ExplicitInstantiationDecl::getExtraParameters(LocInfo LI) {
+  return getFuncInfo()->getExtraParameters(FilePath, InstantiationArgs, LI,
                                            getFormatInfo());
 }
 ///// class KernelPrinter /////
@@ -4842,22 +4907,25 @@ void DeviceFunctionInfo::buildInfo() {
 }
 std::string
 DeviceFunctionInfo::getExtraParameters(const clang::tooling::UnifiedPath &Path,
+                                       LocInfo LI,
                                        FormatInfo FormatInformation) {
   buildInfo();
   VarMap.requestFeatureForAllVarMaps(Path);
-  return VarMap.getExtraDeclParam(
-      NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
+  return VarMap.getExtraDeclParam(NonDefaultParamNum,
+                                  ParamsNum - NonDefaultParamNum, LI,
+                                  FormatInformation);
 }
 std::string DeviceFunctionInfo::getExtraParameters(
     const clang::tooling::UnifiedPath &Path,
-    const std::vector<TemplateArgumentInfo> &TAList,
+    const std::vector<TemplateArgumentInfo> &TAList, LocInfo LI,
     FormatInfo FormatInformation) {
   MemVarMap TmpVarMap;
   buildInfo();
   TmpVarMap.merge(VarMap, TAList);
   TmpVarMap.requestFeatureForAllVarMaps(Path);
-  return TmpVarMap.getExtraDeclParam(
-      NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
+  return TmpVarMap.getExtraDeclParam(NonDefaultParamNum,
+                                     ParamsNum - NonDefaultParamNum, LI,
+                                     FormatInformation);
 }
 void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
   if (this == Other.get())
@@ -5371,7 +5439,7 @@ void KernelCallExpr::addAccessorDecl() {
       if (!Tex->getType()) {
         // Type dpct_placeholder
         Tex->setType("dpct_placeholder/*Fix the type manually*/", 1);
-        DiagnosticsUtils::report(getFilePath(), getBegin(),
+        DiagnosticsUtils::report(getFilePath(), getOffset(),
                                  Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
@@ -5412,10 +5480,10 @@ void KernelCallExpr::buildUnionFindSet() {
 void KernelCallExpr::addReplacements() {
   if (TotalArgsSize >
       MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_MaxParameterSize))
-    DiagnosticsUtils::report(getFilePath(), getBegin(),
+    DiagnosticsUtils::report(getFilePath(), getOffset(),
                              Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true,
                              false);
-  auto R = std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
+  auto R = std::make_shared<ExtReplacement>(getFilePath(), getOffset(), 0,
                                             getReplacement(), nullptr);
   R->setBlockLevelFormatFlag();
   DpctGlobalInfo::getInstance().addReplacement(R);
@@ -5647,7 +5715,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
       KFA.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
       KFA.analyze(Arg, 1, true);
       if (KFA.isNeedEmitWGSizeWarning())
-        DiagnosticsUtils::report(getFilePath(), getBegin(),
+        DiagnosticsUtils::report(getFilePath(), getOffset(),
                                  Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true,
                                  false);
       SizeOfHighestDimension = KFA.getSizeOfHighestDimension();
@@ -5700,7 +5768,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
 }
 void KernelCallExpr::removeExtraIndent() {
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      getFilePath(), getBegin() - LocInfo.Indent.length(),
+      getFilePath(), getOffset() - LocInfo.Indent.length(),
       LocInfo.Indent.length(), "", nullptr));
 }
 void KernelCallExpr::addDevCapCheckStmt() {
@@ -5750,9 +5818,10 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   }
   VI->appendAccessorOrPointerDecl(ExecutionConfig.ExternMemSize,
                                   EmitSizeofWarning, SubmitStmts.AccessorList,
-                                  SubmitStmts.PtrList);
+                                  SubmitStmts.PtrList,
+                                  std::make_pair(getFilePath(), getOffset()));
   if (VI->isTypeDeclaredLocal()) {
-    if (DiagnosticsUtils::report(getFilePath(), getBegin(),
+    if (DiagnosticsUtils::report(getFilePath(), getOffset(),
                                  Diagnostics::TYPE_IN_FUNCTION, false, false,
                                  VI->getName(), VI->getLocalTypeName())) {
       if (!SubmitStmts.AccessorList.empty()) {
@@ -5822,7 +5891,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
       KernelArgs += ", ";
     if (Arg.IsDoublePointer &&
         DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      DiagnosticsUtils::report(getFilePath(), getBegin(),
+      DiagnosticsUtils::report(getFilePath(), getOffset(),
                                Diagnostics::VIRTUAL_POINTER, true, false,
                                Arg.getArgString());
     }

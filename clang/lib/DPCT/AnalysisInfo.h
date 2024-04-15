@@ -43,6 +43,7 @@ void setGetReplacedNamePtr(llvm::StringRef (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
+using LocInfo = std::pair<tooling::UnifiedPath, unsigned int>;
 template <class F, class... Ts>
 std::string buildStringFromPrinter(F Func, Ts &&...Args) {
   std::string Ret;
@@ -1600,6 +1601,10 @@ public:
 // get from type.
 class CtTypeInfo {
 public:
+  struct {
+    std::string TypeName;
+    std::string DefinitionFuncName;
+  } SharedVarInfo;
   // If NeedSizeFold is true, array size will be folded, but original expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
@@ -1772,7 +1777,7 @@ public:
   std::string getExternGlobalVarDecl();
   void appendAccessorOrPointerDecl(const std::string &ExternMemSize,
                                    bool ExternEmitWarning, StmtList &AccList,
-                                   StmtList &PtrList);
+                                   StmtList &PtrList, LocInfo LI);
   std::string getRangeClass();
   std::string getRangeDecl(const std::string &MemSize);
   ParameterStream &getFuncDecl(ParameterStream &PS);
@@ -1797,7 +1802,7 @@ private:
   std::string getInitArguments(const std::string &MemSize,
                                bool MustArguments = false);
   const std::string &getMemoryAttr();
-  std::string getSyclAccessorType();
+  std::string getSyclAccessorType(LocInfo LI = LocInfo());
   std::string getDpctAccessorType();
   std::string getNameWithSuffix(StringRef Suffix) {
     return buildString(getArgName(), "_", Suffix, getCTFixedSuffix());
@@ -2102,6 +2107,7 @@ private:
   template <CallOrDecl COD>
   std::string
   getArgumentsOrParameters(int PreParams, int PostParams,
+                           LocInfo LI = LocInfo(),
                            FormatInfo FormatInformation = FormatInfo()) const;
 
 public:
@@ -2113,7 +2119,7 @@ public:
   // true, and the third argument is the string of indent, which will occur
   // before each ExtraParam.
   std::string
-  getExtraDeclParam(bool HasPreParam, bool HasPostParam,
+  getExtraDeclParam(bool HasPreParam, bool HasPostParam, LocInfo LI,
                     FormatInfo FormatInformation = FormatInfo()) const;
   std::string getKernelArguments(bool HasPreParam, bool HasPostParam,
                                  const clang::tooling::UnifiedPath &Path) const;
@@ -2151,7 +2157,8 @@ private:
 
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
-                                              const GlobalMap<T> &VarMap);
+                                              const GlobalMap<T> &VarMap,
+                                              LocInfo LI = LocInfo());
   template <CallOrDecl COD>
   static void getArgumentsOrParametersFromoTextureInfoMap(
       ParameterStream &PS, const GlobalMap<TextureInfo> &VarMap);
@@ -2172,7 +2179,7 @@ private:
     }
   };
   void getArgumentsOrParametersForDecl(ParameterStream &PS, int PreParams,
-                                       int PostParams) const;
+                                       int PostParams, LocInfo LI) const;
 
   bool HasItem, HasStream, HasSync, HasBF64, HasBF16, HasGlobalMemAcc;
   MemVarInfoMap LocalVarMap;
@@ -2225,7 +2232,7 @@ public:
   template <class T>
   CallFunctionExpr(unsigned Offset,
                    const clang::tooling::UnifiedPath &FilePathIn, const T &C)
-      : FilePath(FilePathIn), BeginLoc(Offset) {}
+      : FilePath(FilePathIn), Offset(Offset) {}
 
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
   void buildCallExprInfo(const CallExpr *CE);
@@ -2277,7 +2284,7 @@ public:
 protected:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;
-  unsigned getBegin() { return BeginLoc; }
+  unsigned getOffset() { return Offset; }
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
   void buildCalleeInfo(const Expr *Callee, std::optional<unsigned int> NumArgs);
@@ -2301,7 +2308,7 @@ private:
   void mergeTextureObjectInfo();
 
   const clang::tooling::UnifiedPath FilePath;
-  unsigned BeginLoc = 0;
+  unsigned Offset = 0;
   unsigned ExtraArgLoc = 0;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
@@ -2385,7 +2392,7 @@ protected:
   template <class AttrsT>
   void buildReplaceLocInfo(const FunctionTypeLoc &FTL, const AttrsT &Attrs);
 
-  virtual std::string getExtraParameters();
+  virtual std::string getExtraParameters(LocInfo LI);
 
   unsigned Offset;
   const clang::tooling::UnifiedPath FilePath;
@@ -2425,7 +2432,7 @@ public:
 private:
   void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,
                                 const FunctionDecl *Specialization);
-  std::string getExtraParameters() override;
+  std::string getExtraParameters(LocInfo LI) override;
 };
 
 class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
@@ -2516,11 +2523,12 @@ public:
   bool isKernelInvoked() { return IsKernelInvoked; }
   void setKernelInvoked() { IsKernelInvoked = true; }
   std::string getExtraParameters(const clang::tooling::UnifiedPath &Path,
+                                 LocInfo LI,
                                  FormatInfo FormatInformation = FormatInfo());
   std::string
   getExtraParameters(const clang::tooling::UnifiedPath &Path,
                      const std::vector<TemplateArgumentInfo> &TAList,
-                     FormatInfo FormatInformation = FormatInfo());
+                     LocInfo LI, FormatInfo FormatInformation = FormatInfo());
   void setDefinitionFilePath(const clang::tooling::UnifiedPath &Path) {
     DefinitionFilePath = Path;
   }
