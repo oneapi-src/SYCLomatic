@@ -1228,16 +1228,16 @@ void MapNames::setExplicitNamespaceMap() {
                                       "blas::compute_type::_16f")},
       {"CUBLAS_COMPUTE_16F_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_16f_pedantic")},
+                                      "blas::compute_type::_16f_standard")},
       {"CUBLAS_COMPUTE_32F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "blas::compute_type::_32f")},
       {"CUBLAS_COMPUTE_32F_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32f_pedantic")},
+                                      "blas::compute_type::_32f_standard")},
       {"CUBLAS_COMPUTE_32F_FAST_16F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32f_fast_16f")},
+                                      "blas::compute_type::_32f")},
       {"CUBLAS_COMPUTE_32F_FAST_16BF",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "blas::compute_type::_32f_fast_16bf")},
@@ -1249,13 +1249,13 @@ void MapNames::setExplicitNamespaceMap() {
                                       "blas::compute_type::_64f")},
       {"CUBLAS_COMPUTE_64F_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_64f_pedantic")},
+                                      "blas::compute_type::_64f_standard")},
       {"CUBLAS_COMPUTE_32I",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "blas::compute_type::_32i")},
       {"CUBLAS_COMPUTE_32I_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32i_pedantic")},
+                                      "blas::compute_type::_32i_standard")},
       {"cuda::thread_scope_system",
        std::make_shared<EnumNameRule>(getClNamespace() +
                                       "memory_scope::system")},
