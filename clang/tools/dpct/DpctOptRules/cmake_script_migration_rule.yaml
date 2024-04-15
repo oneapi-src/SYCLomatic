@@ -2144,3 +2144,29 @@
       Out: ""
       MatchMode: Full
       RuleId: "remove_empty_library_arg"
+
+- Rule: rule_target_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_link_options
+  In: target_link_options(${arg})
+  Out: target_link_options(${arg})
+  Subrules:
+    arg:
+      In: $<$<CUDA_COMPILER_ID:${any}>:${flags}>
+      Out: ""
+      RuleId: "remove_target_link_options_cuda_arg"
+
+- Rule: rule_target_link_directories
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_link_directories
+  MatchMode: Partial
+  In: target_link_directories(${value})
+  Out: target_link_directories(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_LIBRARY_DIR
+      Out: ONEAPI_LIB_DIR
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
