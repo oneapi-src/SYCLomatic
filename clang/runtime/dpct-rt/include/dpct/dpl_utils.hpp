@@ -22,5 +22,6 @@
 #include "dpl_extras/iterators.h"
 #include "dpl_extras/vector.h"
 #include "dpl_extras/dpcpp_extensions.h"
+#include "group_utils.h"
 
 #endif // __DPCT_DPL_UTILS_HPP__
