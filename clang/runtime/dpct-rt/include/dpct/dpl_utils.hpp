@@ -22,6 +22,6 @@
 #include "dpl_extras/memory.h"
 #include "dpl_extras/numeric.h"
 #include "dpl_extras/vector.h"
-#include "group_utils.h"
+#include "group_utils.hpp"
 
 #endif // __DPCT_DPL_UTILS_HPP__
