@@ -440,6 +440,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"__nv_bfloat162", std::make_shared<TypeNameRule>(
                              getClNamespace() + "marray<" + getClNamespace() +
                              "ext::oneapi::bfloat16, 2>")},
+      {"nv_bfloat16", std::make_shared<TypeNameRule>(getClNamespace() +
+                                                     "ext::oneapi::bfloat16")},
+      {"nv_bfloat162", std::make_shared<TypeNameRule>(
+                           getClNamespace() + "marray<" + getClNamespace() +
+                           "ext::oneapi::bfloat16, 2>")},
       {"libraryPropertyType_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "version_field",
                                       HelperFeatureEnum::device_ext)},
@@ -4202,7 +4207,8 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "thread_index",
     "group_index",
     "inclusive_scan",
-    "exclusive_scan"};
+    "exclusive_scan",
+    "coalesced_threads"};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::SamplingInfoToSetFeatureMap = {
