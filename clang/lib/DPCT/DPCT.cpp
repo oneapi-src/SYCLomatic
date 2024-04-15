@@ -89,12 +89,15 @@ llvm::cl::OptionCategory &DPCTCat = llvm::cl::getDPCTCategory();
 llvm::cl::OptionCategory &DPCTBasicCat = llvm::cl::getDPCTBasicCategory();
 llvm::cl::OptionCategory &DPCTAdvancedCat = llvm::cl::getDPCTAdvancedCategory();
 llvm::cl::OptionCategory &DPCTCodeGenCat = llvm::cl::getDPCTCodeGenCategory();
-llvm::cl::OptionCategory &DPCTReportGenCat = llvm::cl::getDPCTReportGenCategory();
-llvm::cl::OptionCategory &DPCTBuildScriptCat = llvm::cl::getDPCTBuildScriptCategory();
+llvm::cl::OptionCategory &DPCTReportGenCat =
+    llvm::cl::getDPCTReportGenCategory();
+llvm::cl::OptionCategory &DPCTBuildScriptCat =
+    llvm::cl::getDPCTBuildScriptCategory();
 llvm::cl::OptionCategory &DPCTQueryAPICat = llvm::cl::getDPCTQueryAPICategory();
 llvm::cl::OptionCategory &DPCTWarningsCat = llvm::cl::getDPCTWarningsCategory();
 llvm::cl::OptionCategory &DPCTHelpInfoCat = llvm::cl::getDPCTHelpInfoCategory();
-llvm::cl::OptionCategory &DPCTInterceptBuildCat = llvm::cl::getDPCTInterceptBuildCategory();
+llvm::cl::OptionCategory &DPCTInterceptBuildCat =
+    llvm::cl::getDPCTInterceptBuildCategory();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang
