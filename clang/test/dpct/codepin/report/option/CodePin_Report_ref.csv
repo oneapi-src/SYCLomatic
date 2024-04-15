@@ -1,0 +1,3 @@
+// CHECK: CodePin Summary
+// CHECK: Totally APIs count, 2
+// CHECK: Consistently APIs count, 2
