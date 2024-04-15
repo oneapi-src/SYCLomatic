@@ -15,8 +15,8 @@ env:
   TEST_TIMEOUT: 3600
 
 jobs:
-  windows-build-lit:
-    name: windows-build-lit
+  windows-build:
+    name: windows-build
     if: github.event.pull_request.draft == false
     runs-on: win_build_sc
     outputs:
@@ -95,6 +95,69 @@ jobs:
           name: SYCLomatic_Win_${{ github.sha }}
           path: c2s_obj.7z 
 
+  windows-lit:
+    name: windows-lit
+    if: github.event.pull_request.draft == false
+    runs-on: win_build_sc
+    needs: [windows-build]
+    if: |
+      needs.windows-build.outputs.build_success == 'true' && github.event.pull_request.draft == false
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: c2s.src
+
+      - name: Cleanup Workspace
+        run: |
+          if exist c2s.obj rd /s /q c2s.obj
+          if exist c2s.src/build rd /s /q c2s.src/build
+          if exist c2s_obj.7z del /s /q c2s_obj.7z 
+        shell: cmd
+
+      - name: Download Build
+        uses: actions/download-artifact@v4
+        with:
+          name: SYCLomatic_Win_${{ github.sha }}
+
+      - name: Extract Build
+        shell: cmd
+        run: |
+          C:\7-Zip\7z.exe x -y c2s_obj.7z
+
+      - name: Process ENV
+        id: process_env
+        run: |
+          for mask_value in $(C:/jq-win64.exe -r ".[]" $GITHUB_WORKSPACE/../../../mask_env_values.json); do 
+              echo "add mask for $mask_value"; 
+              echo "::add-mask::$mask_value"; 
+          done
+        shell: bash
+
+      - name: Prepare Env
+        uses: ./c2s.src/devops/actions/prepare_env_win
+
+      - name: Configure
+        timeout-minutes: 120
+        run: |
+          cd c2s.src
+          mkdir build
+          cd build
+          cmake \
+            -G Ninja \
+            -DLLVM_ENABLE_PROJECTS="clang"  \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
+            -DLLVM_ENABLE_TERMINFO=OFF  \
+            -DLLVM_ENABLE_ASSERTIONS=ON \
+            -DCMAKE_C_COMPILER="$DPCPP_INSTALL_PREFIX/bin/icx.exe"  \
+            -DCMAKE_CXX_COMPILER="$DPCPP_INSTALL_PREFIX/bin/icx.exe"  \
+            -DCMAKE_INSTALL_PREFIX=$PWD/../../c2s.obj  \
+            ../llvm
+        shell: bash
+
       - name: Lit
         if: |
           steps.Echo-Build-Success.outputs.build_success == 'true'
@@ -167,9 +230,9 @@ jobs:
   windows-test:
     name: windows-test-${{ matrix.test_suite }}-cpu
     runs-on: win_build_sc
-    needs: [windows-build-lit]
+    needs: [windows-build]
     if: |
-      needs.windows-build-lit.outputs.build_success == 'true' && github.event.pull_request.draft == false
+      needs.windows-build.outputs.build_success == 'true' && github.event.pull_request.draft == false
 
     strategy:
       fail-fast: false

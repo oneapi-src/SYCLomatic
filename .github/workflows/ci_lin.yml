@@ -28,8 +28,8 @@ jobs:
     - name: Run clang-format
       uses: ./devops/actions/clang-format-SYCLomatic
 
-  linux-build-lit:
-    name: linux-build-lit
+  linux-build:
+    name: linux-build
     if: github.event.pull_request.draft == false
     runs-on: build
     outputs:
@@ -93,6 +93,63 @@ jobs:
           name: SYCLomatic_linux_${{ github.sha }}
           path: c2s_obj.tar.xz
 
+  linux-lit:
+    name: linux-lit
+    if: |
+      needs.linux-build.outputs.build_success == 'true' &&  github.event.pull_request.draft == false
+    needs: [linux-build]
+    runs-on: build
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Process ENV
+        id: process_env
+        run: |
+          for mask_value in $(jq -r '.[]' $GITHUB_WORKSPACE/../../../../mask_env_values.json); do 
+              echo "add mask for $mask_value"; 
+              echo "::add-mask::$mask_value"; 
+          done
+
+      - name: Cleanup Workspace
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/*
+      - uses: actions/checkout@v4
+        with:
+          path: c2s.src
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: SYCLomatic_linux_${{ github.sha }}
+
+      - name: Unpack artifact
+        shell: bash
+        run: |
+          mkdir $GITHUB_WORKSPACE/c2s.obj
+          tar -xvf c2s_obj.tar.xz -C $GITHUB_WORKSPACE/c2s.obj
+
+      - name: Prepare Env
+        uses: ./c2s.src/devops/actions/prepare_env_lin
+                
+      - name: Configure
+        timeout-minutes: 60
+        run: |
+          cd c2s.src
+          mkdir build
+          cd build
+          cmake \
+            -G Ninja \
+            -DLLVM_ENABLE_PROJECTS="clang"  \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
+            -DLLVM_ENABLE_TERMINFO=OFF  \
+            -DLLVM_ENABLE_ASSERTIONS=ON \
+            -DCMAKE_C_COMPILER=$DPCPP_INSTALL_PREFIX/bin/icx  \
+            -DCMAKE_CXX_COMPILER=$DPCPP_INSTALL_PREFIX/bin/icpx  \
+            -DCMAKE_INSTALL_PREFIX=$PWD/../../c2s.obj  \
+            ../llvm
+
       - name: Lit
         if: |
           steps.Echo-Build-Success.outputs.build_success == 'true'
@@ -143,9 +200,9 @@ jobs:
   linux-test:
     name: linux-test-${{ matrix.test_suite }}-cpu
     runs-on: test
-    needs: [linux-build-lit]
+    needs: [linux-build]
     if: |
-      needs.linux-build-lit.outputs.build_success == 'true' &&  github.event.pull_request.draft == false
+      needs.linux-build.outputs.build_success == 'true' &&  github.event.pull_request.draft == false
     strategy:
       fail-fast: false
       matrix:
