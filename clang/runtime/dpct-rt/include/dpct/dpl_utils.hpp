@@ -12,16 +12,16 @@
 #define ONEDPL_USE_DPCPP_BACKEND 1
 #define __USE_DPCT 1
 
-#include <oneapi/dpl/execution>
 #include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
 
-#include "dpl_extras/memory.h"
 #include "dpl_extras/algorithm.h"
-#include "dpl_extras/numeric.h"
-#include "dpl_extras/iterators.h"
-#include "dpl_extras/vector.h"
 #include "dpl_extras/dpcpp_extensions.h"
+#include "dpl_extras/iterators.h"
+#include "dpl_extras/memory.h"
+#include "dpl_extras/numeric.h"
+#include "dpl_extras/vector.h"
 #include "group_utils.h"
 
 #endif // __DPCT_DPL_UTILS_HPP__
