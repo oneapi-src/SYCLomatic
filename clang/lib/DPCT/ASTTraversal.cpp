@@ -8623,13 +8623,6 @@ void KernelCallRule::runRule(
       emplaceTransformation(
           new ReplaceStmt(LaunchKernelCall, true, false, std::move(Repl)));
       removeTrailingSemicolon(LaunchKernelCall, Result);
-    } else {
-      auto FuncName = LaunchKernelCall->getDirectCallee()
-                          ->getNameInfo()
-                          .getName()
-                          .getAsString();
-      report(LaunchKernelCall->getBeginLoc(), Diagnostics::API_NOT_MIGRATED,
-             false, FuncName);
     }
   }
 }

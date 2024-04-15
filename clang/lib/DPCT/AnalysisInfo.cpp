@@ -2003,13 +2003,22 @@ std::shared_ptr<KernelCallExpr>
 DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   auto LocInfo = getLocInfo(LaunchKernelCall->getBeginLoc());
   auto FileInfo = insertFile(LocInfo.first);
-  if (auto Node = FileInfo->findNode<KernelCallExpr>(LocInfo.second))
-    return Node;
+  if (FileInfo->findNode<KernelCallExpr>(LocInfo.second))
+    return std::shared_ptr<KernelCallExpr>();
 
   auto KernelInfo =
       KernelCallExpr::buildFromCudaLaunchKernel(LocInfo, LaunchKernelCall);
   if (KernelInfo) {
     FileInfo->insertNode(LocInfo.second, KernelInfo);
+  } else {
+    auto FuncName = LaunchKernelCall->getDirectCallee()
+                        ->getNameInfo()
+                        .getName()
+                        .getAsString();
+    auto LocInfo = getLocInfo(LaunchKernelCall->getBeginLoc());
+    DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                             Diagnostics::API_NOT_MIGRATED, true, false,
+                             FuncName);
   }
 
   return KernelInfo;
