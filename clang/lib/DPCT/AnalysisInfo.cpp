@@ -2015,7 +2015,6 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
                         ->getNameInfo()
                         .getName()
                         .getAsString();
-    auto LocInfo = getLocInfo(LaunchKernelCall->getBeginLoc());
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                              Diagnostics::API_NOT_MIGRATED, true, false,
                              FuncName);
