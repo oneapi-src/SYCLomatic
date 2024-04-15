@@ -185,6 +185,7 @@ void foo9(){
 
 void filterfoo(){}
 void filterfoo(int i){}
+void filterfoo2(int i){}
 
 void filtergoo(){}
 void filtergoo(int i){}
@@ -194,6 +195,8 @@ void foo10(){
   filterfoo();
   //CHECK: filtergoo(3);
   filterfoo(3);
+  //CHECK: filtergoo2(3);
+  filterfoo2(3);
 }
 
 

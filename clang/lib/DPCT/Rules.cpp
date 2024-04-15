@@ -66,9 +66,9 @@ void registerAPIRule(MetaRuleObject &R) {
   });
 
   auto FilterChecker = [=](const CallExpr *C) {
-    if (R.RuleAPIFilter.ArgCount < 0)
+    if (R.RuleAPIRestrictCondition.ArgCount < 0)
       return true;
-    if ((size_t)R.RuleAPIFilter.ArgCount == C->getNumArgs())
+    if ((size_t)R.RuleAPIRestrictCondition.ArgCount == C->getNumArgs())
       return true;
     return false;
   };

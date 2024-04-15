@@ -134,5 +134,12 @@
   Priority: Takeover
   In: filterfoo
   Out: filtergoo($1)
-  APIFilter:
+  APIRestrictCondition:
     ArgCount: 1
+- Rule: FilterFoo2
+  Kind: API
+  Priority: Takeover
+  In: filterfoo2
+  Out: filtergoo2($1)
+  APIRestrictCondition:
+    ArgCount: -4
