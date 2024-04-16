@@ -469,7 +469,8 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
               Input[Index + 1] != '}' &&
               !isWhitespace(Input[Index - PatternSize]) &&
               !isWhitespace(Input[Index + 1]) &&
-              Input[Index - PatternSize] != '*') {
+              Input[Index - PatternSize] != '*' &&
+              Input[Index - PatternSize] != '"') {
             return {};
           }
         }

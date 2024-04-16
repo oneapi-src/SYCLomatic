@@ -4362,6 +4362,8 @@ bool isUserDefinedDecl(const clang::Decl *D) {
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
   if (InInstallPath || InCudaPath)
     return false;
+  if (!dpct::DpctGlobalInfo::isInAnalysisScope(InFile))
+    return false;
   return true;
 }
 

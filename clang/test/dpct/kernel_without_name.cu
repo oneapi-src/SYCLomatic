@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_without_name %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_without_name/kernel_without_name.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/kernel_without_name/kernel_without_name.dp.cpp -o %T/kernel_without_name/kernel_without_name.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/kernel_without_name/kernel_without_name.dp.cpp -o %T/kernel_without_name/kernel_without_name.dp.o %}
 
 __global__ void testKernel(int L, int M, int N);
 
@@ -276,4 +276,85 @@ void run_foo7(T *a, const T *b, const T *c, const T *d, const T *e, const int f,
     //CHECK-NEXT:  });
     foo_kernel6<<<grid, block, 0, stream>>>(a, b, c, d, e, f, g, h);
   }
+}
+
+#ifndef BUILD_TEST
+template <typename T> struct kernel_type_t {
+  using Type = T;
+};
+
+// CHECK: /*
+// CHECK-NEXT: DPCT1125:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
+// CHECK-NEXT: */
+// CHECK-NEXT: template <typename T> 
+// CHECK-NEXT: void foo_device7(int a,
+// CHECK-NEXT:                  int b,
+// CHECK-NEXT:                  Tk *mem) {
+// CHECK-NEXT:   using Tk = typename kernel_type_t<T>::Type;
+template <typename T> __global__ 
+void foo_device7(int a,
+                 int b) {
+  using Tk = typename kernel_type_t<T>::Type;
+  __shared__ Tk mem[256];
+}
+
+// CHECK: /*
+// CHECK-NEXT: DPCT1125:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
+// CHECK-NEXT: */
+// CHECK-NEXT: template <typename T> 
+// CHECK-NEXT: void foo_kernel7(int a,
+// CHECK-NEXT:                  int b,
+// CHECK-NEXT:                  Tk *mem) {
+// CHECK-NEXT:   foo_device7<T>(a, b, mem);
+template <typename T> __global__
+void foo_kernel7(int a,
+                 int b) {
+  foo_device7<T>(a, b);
+}
+
+template <typename T> 
+void run_foo8() {
+  // CHECK: int i;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1126:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function "foo_device7". You may need to adjust the type definition location.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::get_out_of_order_queue().submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<Tk, 1> mem_acc_ct1(sycl::range<1>(256), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         foo_kernel7<T>(i, i, mem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  int i;
+  foo_kernel7<T><<<1, 1>>>(i, i);
+}
+#endif
+
+// CHECK: typedef float TK1;
+// CHECK-NEXT: void foo_kernel8(int a, int b, TK1 *mem) {
+// CHECK-NEXT:   //local mem
+// CHECK-NEXT: }
+// CHECK-NEXT: void run_foo9() {
+// CHECK-NEXT:   int i;
+// CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       sycl::local_accessor<TK1, 1> mem_acc_ct1(sycl::range<1>(256), cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           foo_kernel8(i, i, mem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+// CHECK-NEXT: }
+typedef float TK1;
+__global__ void foo_kernel8(int a, int b) {
+  __shared__ TK1 mem[256];//local mem
+}
+void run_foo9() {
+  int i;
+  foo_kernel8<<<1, 1>>>(i, i);
 }
