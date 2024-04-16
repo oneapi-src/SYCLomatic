@@ -223,17 +223,17 @@ public:
     ss.print_type_begin("sycl::int3");
 
     ss.print_data_mem_begin("x");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.x, stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.x(), stream);
     ss.print_data_mem_end();
     ss.print_comma();
 
     ss.print_data_mem_begin("y");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.y, stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.y(), stream);
     ss.print_data_mem_end();
     ss.print_comma();
 
     ss.print_data_mem_begin("z");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.z, stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.z(), stream);
     ss.print_data_mem_end();
 
     ss.print_type_end();
@@ -248,17 +248,17 @@ public:
     ss.print_type_begin("sycl::float3");
 
     ss.print_data_mem_begin("x");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.x, stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.x(), stream);
     ss.print_data_mem_end();
     ss.print_comma();
 
     ss.print_data_mem_begin("y");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.y, stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.y(), stream);
     ss.print_data_mem_end();
     ss.print_comma();
 
     ss.print_data_mem_begin("z");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.z, stream);
+    dpct::experimental::detail::DataSer<int>::dump(ss, value.z(), stream);
     ss.print_data_mem_end();
 
     ss.print_type_end();
