@@ -4972,8 +4972,10 @@ const DeclRefExpr *getAddressedRef(const Expr *E) {
   }
   return nullptr;
 }
+
 std::optional<std::pair<SourceLocation, std::string>>
-getDeviceCopyableSpecialization(QualType Type) {
+analyzeDeviceCopyable(QualType Type,
+                      std::set<SourceLocation> &ReportLocations) {
   std::function<const Decl *(QualType)> getTypeDecl;
   getTypeDecl = [&getTypeDecl](QualType QT) -> const Decl * {
     switch (QT->getTypeClass()) {
@@ -4995,6 +4997,31 @@ getDeviceCopyableSpecialization(QualType Type) {
     }
   };
 
+  std::function<void(QualType)> findNonTrivalCopyableType;
+  findNonTrivalCopyableType = [&findNonTrivalCopyableType,
+                               &ReportLocations](QualType QT) -> void {
+    if (QT.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
+      return;
+    QualType CanonicalType = QT.getCanonicalType();
+    if (CanonicalType->isArrayType()) {
+      return findNonTrivalCopyableType(
+          DpctGlobalInfo::getContext().getBaseElementType(CanonicalType));
+    }
+    if (const auto *RT = CanonicalType->getAs<RecordType>()) {
+      if (const auto *ClassDecl = dyn_cast<CXXRecordDecl>(RT->getDecl())) {
+        if (!isUserDefinedDecl(ClassDecl))
+          return;
+        ReportLocations.insert(ClassDecl->getBeginLoc());
+        // Check each field
+        for (const auto *F : ClassDecl->fields()) {
+          QualType FQT = F->getType();
+          if (!FQT.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
+            findNonTrivalCopyableType(FQT);
+        }
+      }
+    }
+  };
+
   if (Type->isPointerType())
     return std::nullopt;
   const Decl *D = getTypeDecl(Type);
@@ -5004,6 +5031,8 @@ getDeviceCopyableSpecialization(QualType Type) {
     return std::nullopt;
   if (Type.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
     return std::nullopt;
+
+  findNonTrivalCopyableType(Type);
 
   std::function<const NamespaceDecl *(const DeclContext *, std::string &)>
       getOutermostNamespaceDecl;

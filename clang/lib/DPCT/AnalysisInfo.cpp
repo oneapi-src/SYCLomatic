@@ -5544,12 +5544,19 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       Kernel->resizeTextureObjectList(FD->getNumParams());
       for (auto &Parm : FD->parameters()) {
         Kernel->ArgsInfo.emplace_back(Parm, ArgsArray, Kernel.get());
-        if (auto R = getDeviceCopyableSpecialization(Parm->getType())) {
+        std::set<SourceLocation> ReportLocations;
+        if (auto R = analyzeDeviceCopyable(Parm->getType(), ReportLocations)) {
           auto FileNameAndOffset = DpctGlobalInfo::getLocInfo(R->first);
           DpctGlobalInfo::getInstance().addReplacement(
               std::make_shared<ExtReplacement>(FileNameAndOffset.first,
                                                FileNameAndOffset.second, 0,
                                                R->second, nullptr));
+        }
+        for (const auto &L : ReportLocations) {
+          auto LocInfo = DpctGlobalInfo::getLocInfo(L);
+          DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                                   Diagnostics::NOT_DEVICE_COPYABLE, true,
+                                   true);
         }
       }
     }
