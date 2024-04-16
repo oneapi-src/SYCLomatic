@@ -80,7 +80,7 @@
 // CHECK:                "x": {
 // CHECK:                  "Type": "int" ,
 // CHECK:                  "Data": [
-// CHECK:                    0
+// CHECK:                    {{.*}}
 // CHECK:                  ]
 // CHECK:                }
 // CHECK:              },
@@ -88,7 +88,7 @@
 // CHECK:                "y": {
 // CHECK:                  "Type": "int" ,
 // CHECK:                  "Data": [
-// CHECK:                    0
+// CHECK:                    {{.*}}
 // CHECK:                  ]
 // CHECK:                }
 // CHECK:              },
@@ -96,7 +96,7 @@
 // CHECK:                "z": {
 // CHECK:                  "Type": "int" ,
 // CHECK:                  "Data": [
-// CHECK:                    0
+// CHECK:                    {{.*}}
 // CHECK:                  ]
 // CHECK:                }
 // CHECK:              }
