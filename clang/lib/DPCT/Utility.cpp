@@ -4360,6 +4360,8 @@ bool isUserDefinedDecl(const clang::Decl *D) {
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
   if (InInstallPath || InCudaPath)
     return false;
+  if (!dpct::DpctGlobalInfo::isInAnalysisScope(InFile))
+    return false;
   return true;
 }
 
@@ -4713,35 +4715,6 @@ bool isCapturedByLambda(const clang::TypeLoc *TL) {
       return true;
   }
   return false;
-}
-
-std::string getAddressSpace(const CallExpr *C, int ArgIdx) {
-  bool HasAttr = false;
-  bool NeedReport = false;
-  const Expr *Arg = C->getArg(ArgIdx);
-  if (!Arg) {
-    return "";
-  }
-  getShareAttrRecursive(Arg, HasAttr, NeedReport);
-  if (HasAttr && !NeedReport)
-    return "local_space";
-  LocalVarAddrSpaceEnum LocalVarCheckResult =
-      LocalVarAddrSpaceEnum::AS_CannotDeduce;
-  checkIsPrivateVar(Arg, LocalVarCheckResult);
-  if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
-    return "private_space";
-  } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
-    return "global_space";
-  } else {
-    clang::dpct::ExprAnalysis EA(Arg);
-    auto LocInfo =
-        dpct::DpctGlobalInfo::getInstance().getLocInfo(C->getBeginLoc());
-    clang::dpct::DiagnosticsUtils::report(
-        LocInfo.first, LocInfo.second,
-        clang::dpct::Diagnostics::UNDEDUCED_ADDRESS_SPACE, true, false,
-        EA.getReplacedString());
-    return "global_space";
-  }
 }
 
 std::string getNameSpace(const NamespaceDecl *NSD) {

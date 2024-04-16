@@ -64,6 +64,8 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_DeviceInfo,
   ExtDE_BFloat16,
   ExtDE_PeerAccess,
+  ExtDE_Assert,
+  ExtDE_QueueEmpty,
   ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
@@ -94,7 +96,8 @@ bool makeInRootCanonicalOrSetDefaults(
     clang::tooling::UnifiedPath &InRoot, const std::vector<std::string> SourceFiles);
 bool makeAnalysisScopeCanonicalOrSetDefaults(clang::tooling::UnifiedPath &AnalysisScope,
                                              const clang::tooling::UnifiedPath &InRoot);
-bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar);
+bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
+                       bool NeedCheckOutRootEmpty = true);
 /// Make sure files passed to tool are under the
 /// input root directory and have an extension.
 /// return value:

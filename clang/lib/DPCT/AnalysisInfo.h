@@ -43,6 +43,7 @@ void setGetReplacedNamePtr(llvm::StringRef (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
+using LocInfo = std::pair<tooling::UnifiedPath, unsigned int>;
 template <class F, class... Ts>
 std::string buildStringFromPrinter(F Func, Ts &&...Args) {
   std::string Ret;
@@ -696,7 +697,6 @@ public:
   }
   // TODO: implement one of this for each source language.
   static const clang::tooling::UnifiedPath &getCudaPath() { return CudaPath; }
-  static const std::string getVarSchema(const clang::DeclRefExpr *);
   static const std::string getCudaVersion() {
     return clang::CudaVersionToString(SDKVersion);
   }
@@ -866,6 +866,7 @@ public:
   static clang::format::FormatStyle getCodeFormatStyle() {
     return CodeFormatStyle;
   }
+  static bool IsVarUsedByRuntimeSymbolAPI(std::shared_ptr<MemVarInfo> Info);
 
 private:
   template <class T, class T1, class... Ts>
@@ -1233,6 +1234,9 @@ public:
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
+  static bool useQueueEmpty() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty);
+  }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(
         DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
@@ -1243,6 +1247,9 @@ public:
   }
   static bool usePeerAccess() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess);
+  }
+  static bool useAssert() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_Assert);
   }
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
@@ -1349,9 +1356,6 @@ public:
   }
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
-
-  static std::string SchemaFileContentCUDA;
-  static std::string SchemaFileContentSYCL;
 
 private:
   DpctGlobalInfo();
@@ -1495,7 +1499,6 @@ private:
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
   static std::set<clang::tooling::UnifiedPath> IncludingFileSet;
-  static int VarSchemaIndex;
   static std::set<std::string> FileSetInCompilationDB;
   static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;
@@ -1598,12 +1601,20 @@ public:
 // get from type.
 class CtTypeInfo {
 public:
+  struct {
+    std::string TypeName;
+    std::string DefinitionFuncName;
+  } SharedVarInfo;
   // If NeedSizeFold is true, array size will be folded, but original expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
+  CtTypeInfo();
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
   CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false);
   const std::string &getBaseName() { return BaseName; }
+  const std::string &getBaseNameWithoutQualifiers() {
+    return BaseNameWithoutQualifiers;
+  }
   size_t getDimension() { return Range.size(); }
   std::vector<SizeInfo> &getRange() { return Range; }
   // when there is no arguments, parameter MustArguments determine whether
@@ -1675,20 +1686,19 @@ private:
   void removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
 
 private:
+  unsigned PointerLevel : 16;
+  unsigned IsReference : 1;
+  unsigned IsTemplate : 1;
+  unsigned TemplateDependentMacro : 1;
+  unsigned IsArray : 1;
+  unsigned ContainSizeofType : 1;
+  unsigned IsConstantQualified : 1;
   std::string BaseName;
   std::string BaseNameWithoutQualifiers;
   std::vector<SizeInfo> Range;
-  unsigned PointerLevel;
-  bool IsReference;
-  bool IsTemplate;
-  bool TemplateDependentMacro = false;
-  bool IsArray = false;
-
-  std::shared_ptr<TemplateDependentStringInfo> TDSI;
-  std::set<HelperFeatureEnum> HelperFeatureSet;
-  bool ContainSizeofType = false;
   std::vector<std::string> ArraySizeOriginExprs{};
-  bool IsConstantQualified = false;
+  std::set<HelperFeatureEnum> HelperFeatureSet;
+  std::shared_ptr<TemplateDependentStringInfo> TDSI;
 };
 
 // variable info includes name, type and location.
@@ -1740,6 +1750,7 @@ public:
   bool isExtern() { return Scope == Extern; }
   bool isLocal() { return Scope == Local; }
   bool isShared() { return Attr == Shared; }
+  bool isConstant() { return Attr == Constant; }
   bool isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
   bool isAnonymousType() { return IsAnonymousType; }
   const CXXRecordDecl *getDeclOfVarType() { return DeclOfVarType; }
@@ -1766,7 +1777,7 @@ public:
   std::string getExternGlobalVarDecl();
   void appendAccessorOrPointerDecl(const std::string &ExternMemSize,
                                    bool ExternEmitWarning, StmtList &AccList,
-                                   StmtList &PtrList);
+                                   StmtList &PtrList, LocInfo LI);
   std::string getRangeClass();
   std::string getRangeDecl(const std::string &MemSize);
   ParameterStream &getFuncDecl(ParameterStream &PS);
@@ -1791,7 +1802,7 @@ private:
   std::string getInitArguments(const std::string &MemSize,
                                bool MustArguments = false);
   const std::string &getMemoryAttr();
-  std::string getSyclAccessorType();
+  std::string getSyclAccessorType(LocInfo LI = LocInfo());
   std::string getDpctAccessorType();
   std::string getNameWithSuffix(StringRef Suffix) {
     return buildString(getArgName(), "_", Suffix, getCTFixedSuffix());
@@ -2096,6 +2107,7 @@ private:
   template <CallOrDecl COD>
   std::string
   getArgumentsOrParameters(int PreParams, int PostParams,
+                           LocInfo LI = LocInfo(),
                            FormatInfo FormatInformation = FormatInfo()) const;
 
 public:
@@ -2107,7 +2119,7 @@ public:
   // true, and the third argument is the string of indent, which will occur
   // before each ExtraParam.
   std::string
-  getExtraDeclParam(bool HasPreParam, bool HasPostParam,
+  getExtraDeclParam(bool HasPreParam, bool HasPostParam, LocInfo LI,
                     FormatInfo FormatInformation = FormatInfo()) const;
   std::string getKernelArguments(bool HasPreParam, bool HasPostParam,
                                  const clang::tooling::UnifiedPath &Path) const;
@@ -2145,8 +2157,11 @@ private:
 
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
-                                              const GlobalMap<T> &VarMap);
-
+                                              const GlobalMap<T> &VarMap,
+                                              LocInfo LI = LocInfo());
+  template <CallOrDecl COD>
+  static void getArgumentsOrParametersFromoTextureInfoMap(
+      ParameterStream &PS, const GlobalMap<TextureInfo> &VarMap);
   template <class T, CallOrDecl COD> struct GetArgOrParam;
   template <class T> struct GetArgOrParam<T, DeclParameter> {
     ParameterStream &operator()(ParameterStream &PS, std::shared_ptr<T> V) {
@@ -2164,7 +2179,7 @@ private:
     }
   };
   void getArgumentsOrParametersForDecl(ParameterStream &PS, int PreParams,
-                                       int PostParams) const;
+                                       int PostParams, LocInfo LI) const;
 
   bool HasItem, HasStream, HasSync, HasBF64, HasBF16, HasGlobalMemAcc;
   MemVarInfoMap LocalVarMap;
@@ -2217,7 +2232,7 @@ public:
   template <class T>
   CallFunctionExpr(unsigned Offset,
                    const clang::tooling::UnifiedPath &FilePathIn, const T &C)
-      : FilePath(FilePathIn), BeginLoc(Offset) {}
+      : FilePath(FilePathIn), Offset(Offset) {}
 
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
   void buildCallExprInfo(const CallExpr *CE);
@@ -2269,10 +2284,10 @@ public:
 protected:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;
-  unsigned getBegin() { return BeginLoc; }
+  unsigned getOffset() { return Offset; }
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
-  void buildCalleeInfo(const Expr *Callee);
+  void buildCalleeInfo(const Expr *Callee, std::optional<unsigned int> NumArgs);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
 
 private:
@@ -2293,7 +2308,7 @@ private:
   void mergeTextureObjectInfo();
 
   const clang::tooling::UnifiedPath FilePath;
-  unsigned BeginLoc = 0;
+  unsigned Offset = 0;
   unsigned ExtraArgLoc = 0;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
@@ -2319,7 +2334,8 @@ public:
                      const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
                      const FunctionDecl *Specialization);
   static std::shared_ptr<DeviceFunctionInfo>
-  LinkUnresolved(const UnresolvedLookupExpr *ULE);
+  LinkUnresolved(const UnresolvedLookupExpr *ULE,
+                 std::optional<unsigned int> NumArgs);
   static std::shared_ptr<DeviceFunctionInfo>
   LinkRedecls(const FunctionDecl *FD);
   static std::shared_ptr<DeviceFunctionInfo>
@@ -2376,7 +2392,7 @@ protected:
   template <class AttrsT>
   void buildReplaceLocInfo(const FunctionTypeLoc &FTL, const AttrsT &Attrs);
 
-  virtual std::string getExtraParameters();
+  virtual std::string getExtraParameters(LocInfo LI);
 
   unsigned Offset;
   const clang::tooling::UnifiedPath FilePath;
@@ -2416,7 +2432,7 @@ public:
 private:
   void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,
                                 const FunctionDecl *Specialization);
-  std::string getExtraParameters() override;
+  std::string getExtraParameters(LocInfo LI) override;
 };
 
 class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
@@ -2507,11 +2523,12 @@ public:
   bool isKernelInvoked() { return IsKernelInvoked; }
   void setKernelInvoked() { IsKernelInvoked = true; }
   std::string getExtraParameters(const clang::tooling::UnifiedPath &Path,
+                                 LocInfo LI,
                                  FormatInfo FormatInformation = FormatInfo());
   std::string
   getExtraParameters(const clang::tooling::UnifiedPath &Path,
                      const std::vector<TemplateArgumentInfo> &TAList,
-                     FormatInfo FormatInformation = FormatInfo());
+                     LocInfo LI, FormatInfo FormatInformation = FormatInfo());
   void setDefinitionFilePath(const clang::tooling::UnifiedPath &Path) {
     DefinitionFilePath = Path;
   }

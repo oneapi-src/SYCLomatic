@@ -100,6 +100,18 @@ RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
                       CALL(MapNames::getClNamespace() + "ext::intel::math::j1",
                            CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
               EMPTY_FACTORY_ENTRY("j1"), EMPTY_FACTORY_ENTRY("j1")))
+      // jn
+      MATH_API_REWRITERS_V2(
+          "jn",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("jn", CALL(MapNames::getClNamespace() +
+                                                "ext::intel::math::jn",
+                                            ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::unsupported_warning,
+              UNSUPPORT_FACTORY_ENTRY("jn", Diagnostics::API_NOT_MIGRATED,
+                                      ARG("jn"))))
       // ldexp
       MATH_API_REWRITER_DEVICE(
           "ldexp",
@@ -250,18 +262,32 @@ RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
                        CALL(MapNames::getClNamespace() + "double4", ARG(0),
                             ARG(1), ARG(2), ARG(3))))))
       // sincospi
-      WARNING_FACTORY_ENTRY(
-          "sincospi",
-          MULTI_STMTS_FACTORY_ENTRY(
-              "sincospi", false, true, false, false,
-              BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),
-                 CALL(MapNames::getClNamespace() + "sincos",
-                      BO(BinaryOperatorKind::BO_Mul,
-                         CAST_IF_NOT_SAME(getDerefedType(1), ARG(0)),
-                         makeLiteral("DPCT_PI")),
-                      makeArgWithAddressSpaceCast(2)))),
-          Diagnostics::MATH_EMULATION, std::string("sincospi"),
-          MapNames::getClNamespace() + std::string("sincos"))
+      CONDITIONAL_FACTORY_ENTRY(
+          CheckParamType(1, "double *"),
+          WARNING_FACTORY_ENTRY(
+              "sincospi",
+              MULTI_STMTS_FACTORY_ENTRY(
+                  "sincospi", false, true, false, false,
+                  BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),
+                     CALL(MapNames::getClNamespace() + "sincos",
+                          BO(BinaryOperatorKind::BO_Mul,
+                             CAST_IF_NOT_SAME(getDerefedType(1), ARG(0)),
+                             makeLiteral("DPCT_PI")),
+                          makeArgWithAddressSpaceCast(2)))),
+              Diagnostics::MATH_EMULATION, std::string("sincospi"),
+              MapNames::getClNamespace() + std::string("sincos")),
+          WARNING_FACTORY_ENTRY(
+              "sincospi",
+              MULTI_STMTS_FACTORY_ENTRY(
+                  "sincospi", false, true, false, false,
+                  BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),
+                     CALL(MapNames::getClNamespace() + "sincos",
+                          BO(BinaryOperatorKind::BO_Mul,
+                             CAST_IF_NOT_SAME(getDerefedType(1), ARG(0)),
+                             makeLiteral("DPCT_PI_F")),
+                          makeArgWithAddressSpaceCast(2)))),
+              Diagnostics::MATH_EMULATION, std::string("sincospi"),
+              MapNames::getClNamespace() + std::string("sincos")))
       // sinpi
       CALL_FACTORY_ENTRY(
           "sinpi",
@@ -305,5 +331,17 @@ RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
                       "y1",
                       CALL(MapNames::getClNamespace() + "ext::intel::math::y1",
                            CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
-              EMPTY_FACTORY_ENTRY("y1"), EMPTY_FACTORY_ENTRY("y1")))};
+              EMPTY_FACTORY_ENTRY("y1"), EMPTY_FACTORY_ENTRY("y1")))
+      // yn
+      MATH_API_REWRITERS_V2(
+          "yn",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("yn", CALL(MapNames::getClNamespace() +
+                                                "ext::intel::math::yn",
+                                            ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::unsupported_warning,
+              UNSUPPORT_FACTORY_ENTRY("yn", Diagnostics::API_NOT_MIGRATED,
+                                      ARG("yn"))))};
 }

@@ -2,7 +2,6 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/datatypes_test_part2/datatypes_test_part2.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/datatypes_test_part2/datatypes_test_part2.dp.cpp -o %T/datatypes_test_part2/datatypes_test_part2.dp.o %}
 
-#ifndef BUILD_TEST
 #include <iostream>
 #include <cuda.h>
 #include <cublas.h>
@@ -554,14 +553,7 @@ template <> struct S<cudaError *> {};
 template <> struct S<cudaError &> {};
 template <> struct S<cudaError &&> {};
 
-// CHECK: template <> struct S<int> {};
-// CHECK-NEXT: template <> struct S<int *> {};
-// CHECK-NEXT: template <> struct S<int &> {};
-// CHECK-NEXT: template <> struct S<int &&> {};
-template <> struct S<CUresult> {};
-template <> struct S<CUresult *> {};
-template <> struct S<CUresult &> {};
-template <> struct S<CUresult &&> {};
+
 
 // CHECK: template <> struct S<dpct::event_ptr> {};
 // CHECK-NEXT: template <> struct S<dpct::event_ptr *> {};
@@ -636,6 +628,16 @@ template <> struct S<cublasOperation_t *> {};
 template <> struct S<cublasOperation_t &> {};
 template <> struct S<cublasOperation_t &&> {};
 
+#ifndef BUILD_TEST
+// CHECK: template <> struct S<int> {};
+// CHECK-NEXT: template <> struct S<int *> {};
+// CHECK-NEXT: template <> struct S<int &> {};
+// CHECK-NEXT: template <> struct S<int &&> {};
+template <> struct S<CUresult> {};
+template <> struct S<CUresult *> {};
+template <> struct S<CUresult &> {};
+template <> struct S<CUresult &&> {};
+
 // CHECK: template <> struct S<int> {};
 // CHECK-NEXT: template <> struct S<int *> {};
 // CHECK-NEXT: template <> struct S<int &> {};
@@ -653,6 +655,26 @@ template <> struct S<cusolverStatus_t> {};
 template <> struct S<cusolverStatus_t *> {};
 template <> struct S<cusolverStatus_t &> {};
 template <> struct S<cusolverStatus_t &&> {};
+
+// CHECK: template <> struct S<int> {};
+// CHECK-NEXT: template <> struct S<int *> {};
+// CHECK-NEXT: template <> struct S<int &> {};
+// CHECK-NEXT: template <> struct S<int &&> {};
+template <> struct S<curandStatus_t> {};
+template <> struct S<curandStatus_t *> {};
+template <> struct S<curandStatus_t &> {};
+template <> struct S<curandStatus_t &&> {};
+
+#endif
+
+// CHECK: template <> struct S<int> {};
+// CHECK-NEXT: template <> struct S<int *> {};
+// CHECK-NEXT: template <> struct S<int &> {};
+// CHECK-NEXT: template <> struct S<int &&> {};
+template <> struct S<cufftResult_t> {};
+template <> struct S<cufftResult_t *> {};
+template <> struct S<cufftResult_t &> {};
+template <> struct S<cufftResult_t &&> {};
 
 // CHECK: template <> struct S<int64_t> {};
 // CHECK-NEXT: template <> struct S<int64_t *> {};
@@ -672,23 +694,7 @@ template <> struct S<cusolverEigMode_t *> {};
 template <> struct S<cusolverEigMode_t &> {};
 template <> struct S<cusolverEigMode_t &&> {};
 
-// CHECK: template <> struct S<int> {};
-// CHECK-NEXT: template <> struct S<int *> {};
-// CHECK-NEXT: template <> struct S<int &> {};
-// CHECK-NEXT: template <> struct S<int &&> {};
-template <> struct S<curandStatus_t> {};
-template <> struct S<curandStatus_t *> {};
-template <> struct S<curandStatus_t &> {};
-template <> struct S<curandStatus_t &&> {};
 
-// CHECK: template <> struct S<int> {};
-// CHECK-NEXT: template <> struct S<int *> {};
-// CHECK-NEXT: template <> struct S<int &> {};
-// CHECK-NEXT: template <> struct S<int &&> {};
-template <> struct S<cufftResult_t> {};
-template <> struct S<cufftResult_t *> {};
-template <> struct S<cufftResult_t &> {};
-template <> struct S<cufftResult_t &&> {};
 
 // CHECK: template <> struct S<dpct::queue_ptr> {};
 // CHECK-NEXT: template <> struct S<dpct::queue_ptr *> {};
@@ -1381,7 +1387,7 @@ __device__ void foo_t(){
     T8_18 a3=a1;
     T8_19 a4=std::move(a1);
 }
-
+#ifndef BUILD_TEST
 {
 // CHECK: /*
 // CHECK-NEXT: DPCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
@@ -1413,7 +1419,7 @@ __device__ void foo_t(){
     T8_22 a3=a1;
     T8_23 a4=std::move(a1);
 }
-
+#endif
 {
 // CHECK: #define T8_24 int
 // CHECK-NEXT: #define T8_25 int *
@@ -1728,14 +1734,6 @@ template <> void foo2(cudaError){}
 template <> void foo3(cudaError){}
 template <> void foo4(cudaError){}
 
-// CHECK: template <> void foo1(int){}
-// CHECK-NEXT: template <> void foo2(int){}
-// CHECK-NEXT: template <> void foo3(int){}
-// CHECK-NEXT: template <> void foo4(int){}
-template <> void foo1(CUresult){}
-template <> void foo2(CUresult){}
-template <> void foo3(CUresult){}
-template <> void foo4(CUresult){}
 
 // CHECK: template <> void foo1(dpct::event_ptr){}
 // CHECK-NEXT: template <> void foo2(dpct::event_ptr){}
@@ -1809,6 +1807,7 @@ template <> void foo2(cublasOperation_t){}
 template <> void foo3(cublasOperation_t){}
 template <> void foo4(cublasOperation_t){}
 
+#ifndef BUILD_TEST
 // CHECK: template <> void foo1(int){}
 // CHECK-NEXT: template <> void foo2(int){}
 // CHECK-NEXT: template <> void foo3(int){}
@@ -1827,6 +1826,34 @@ template <> void foo2(cusolverStatus_t){}
 template <> void foo3(cusolverStatus_t){}
 template <> void foo4(cusolverStatus_t){}
 
+// CHECK: template <> void foo1(int){}
+// CHECK-NEXT: template <> void foo2(int){}
+// CHECK-NEXT: template <> void foo3(int){}
+// CHECK-NEXT: template <> void foo4(int){}
+template <> void foo1(curandStatus_t){}
+template <> void foo2(curandStatus_t){}
+template <> void foo3(curandStatus_t){}
+template <> void foo4(curandStatus_t){}
+
+
+// CHECK: template <> void foo1(int){}
+// CHECK-NEXT: template <> void foo2(int){}
+// CHECK-NEXT: template <> void foo3(int){}
+// CHECK-NEXT: template <> void foo4(int){}
+template <> void foo1(CUresult){}
+template <> void foo2(CUresult){}
+template <> void foo3(CUresult){}
+template <> void foo4(CUresult){}
+#endif
+
+// CHECK: template <> void foo1(int){}
+// CHECK-NEXT: template <> void foo2(int){}
+// CHECK-NEXT: template <> void foo3(int){}
+// CHECK-NEXT: template <> void foo4(int){}
+template <> void foo1(cufftResult_t){}
+template <> void foo2(cufftResult_t){}
+template <> void foo3(cufftResult_t){}
+template <> void foo4(cufftResult_t){}
 // CHECK: template <> void foo1(int64_t){}
 // CHECK-NEXT: template <> void foo2(int64_t){}
 // CHECK-NEXT: template <> void foo3(int64_t){}
@@ -1845,23 +1872,7 @@ template <> void foo2(cusolverEigMode_t){}
 template <> void foo3(cusolverEigMode_t){}
 template <> void foo4(cusolverEigMode_t){}
 
-// CHECK: template <> void foo1(int){}
-// CHECK-NEXT: template <> void foo2(int){}
-// CHECK-NEXT: template <> void foo3(int){}
-// CHECK-NEXT: template <> void foo4(int){}
-template <> void foo1(curandStatus_t){}
-template <> void foo2(curandStatus_t){}
-template <> void foo3(curandStatus_t){}
-template <> void foo4(curandStatus_t){}
 
-// CHECK: template <> void foo1(int){}
-// CHECK-NEXT: template <> void foo2(int){}
-// CHECK-NEXT: template <> void foo3(int){}
-// CHECK-NEXT: template <> void foo4(int){}
-template <> void foo1(cufftResult_t){}
-template <> void foo2(cufftResult_t){}
-template <> void foo3(cufftResult_t){}
-template <> void foo4(cufftResult_t){}
 
 // CHECK: template <> void foo1(dpct::queue_ptr){}
 // CHECK-NEXT: template <> void foo2(dpct::queue_ptr){}
@@ -1885,4 +1896,3 @@ void foo(cudaStream_t& stream) {
   cudaStream_t s0;
   cudaStream_t &s1 = s0;
 }
-#endif

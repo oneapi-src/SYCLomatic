@@ -160,6 +160,35 @@ int main(int argc, char **argv) {
   if(deviceProp.deviceOverlap){
   //dosomething.
   }
+
+  // CHECK: int Max1d = deviceProp.get_image1d_max();
+  int Max1d = deviceProp.maxTexture1D;
+  // CHECK: deviceProp.set_image1d_max ( Max1d);
+  deviceProp.maxTexture1D = Max1d;
+  // CHECK: int *Max2d = deviceProp.get_image2d_max();
+  int *Max2d = deviceProp.maxTexture2D;
+  // CHECK: int Max2d0 = deviceProp.get_image2d_max()[0];
+  int Max2d0 = deviceProp.maxTexture2D[0];
+  // CHECK: deviceProp.get_image2d_max()[0] = Max2d0;
+  deviceProp.maxTexture2D[0] = Max2d0;
+  // CHECK: int Max2d1 = deviceProp.get_image2d_max()[1];
+  int Max2d1 = deviceProp.maxTexture2D[1];
+  // CHECK: deviceProp.get_image2d_max()[1] = Max2d1;
+  deviceProp.maxTexture2D[1] = Max2d1;
+  // CHECK: int *Max3d = deviceProp.get_image3d_max();
+  int *Max3d = deviceProp.maxTexture3D;
+  // CHECK: int Max3d0 = deviceProp.get_image3d_max()[0];
+  int Max3d0 = deviceProp.maxTexture3D[0];
+  // CHECK: deviceProp.get_image3d_max()[0] = Max3d0;
+  deviceProp.maxTexture3D[0] = Max3d0;
+  // CHECK: int Max3d1 = deviceProp.get_image3d_max()[1];
+  int Max3d1 = deviceProp.maxTexture3D[1];
+  // CHECK: deviceProp.get_image3d_max()[1] = Max3d1;
+  deviceProp.maxTexture3D[1] = Max3d1;
+  // CHECK: int Max3d2 = deviceProp.get_image3d_max()[2];
+  int Max3d2 = deviceProp.maxTexture3D[2];
+  // CHECK: deviceProp.get_image3d_max()[2] = Max3d2;
+  deviceProp.maxTexture3D[2] = Max3d2;
   return 0;
 }
 

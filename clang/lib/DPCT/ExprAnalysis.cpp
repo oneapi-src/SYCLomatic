@@ -288,14 +288,14 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
                                  const Expr *Parent) {
   const std::shared_ptr<DynTypedNode> P =
       std::make_shared<DynTypedNode>(DynTypedNode::create(*Parent));
-  if (BeginLoc.isMacroID() && isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
-    BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
-    EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
-  } else {
-    if (EndLoc.isValid()) {
-      BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
-      EndLoc = SM.getExpansionRange(EndLoc).getEnd();
-    }
+  while (BeginLoc.isMacroID() &&
+         isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
+    BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
+    EndLoc = SM.getImmediateSpellingLoc(EndLoc);
+  }
+  if (EndLoc.isValid()) {
+    BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
+    EndLoc = SM.getExpansionRange(EndLoc).getEnd();
   }
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
@@ -564,6 +564,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::FunctionAttrMap);
       REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
       REPLACE_ENUM(MapNames::RandomEngineTypeMap);
+      REPLACE_ENUM(MapNames::RandomOrderingTypeMap);
       REPLACE_ENUM(MapNames::SOLVEREnumsMap);
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
 #undef REPLACE_ENUM
@@ -820,8 +821,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       }
       addReplacement(ME->getMemberLoc(),
                      "get_" + ReplacementStr + TmplArg + "()");
-      requestFeature(MapNames::PropToGetFeatureMap.at(
-          ME->getMemberNameInfo().getAsString()));
     }
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
@@ -1161,6 +1160,17 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   if (NNSL) {
     SR.setBegin(NNSL->getBeginLoc());
   }
+
+  auto RewriteType = [&](std::string &TypeStr, const TypeLoc &TLoc) {
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TypeStr);
+    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(TLoc);
+      auto Result = Rewriter->rewrite();
+      if (Result.has_value())
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
+    }
+  };
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
@@ -1176,14 +1186,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   case TypeLoc::Elaborated:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
-    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
-    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
-      auto Rewriter = Itr->second->create(TL);
-      auto Result = Rewriter->rewrite();
-      if (Result.has_value())
-        addReplacement(SM.getExpansionLoc(SR.getBegin()),
-                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
-    }
+    RewriteType(TyName, TL);
     break;
   }
   case TypeLoc::TemplateTypeParm:
@@ -1245,6 +1248,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     break;
   case TypeLoc::Enum: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    RewriteType(TyName, TL);
     break;
   }
   case TypeLoc::FunctionProto: {

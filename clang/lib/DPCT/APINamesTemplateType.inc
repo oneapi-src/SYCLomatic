@@ -328,6 +328,15 @@ TYPE_REWRITE_ENTRY("nvcuda::wmma::fragment",
                                  STR("sycl::sub_group"),TEMPLATE_ARG(4),TEMPLATE_ARG(0),
                                  TEMPLATE_ARG(2),TEMPLATE_ARG(3),TEMPLATE_ARG(5)))),
         WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
+
+TYPE_REWRITE_ENTRY(
+    "nvcuda::wmma::layout_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableJointMatrixForType(),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() +
+                         "ext::oneapi::experimental::matrix::layout")),
+        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
+
 // clang-format on
 
 TYPE_REWRITE_ENTRY("csrsv2Info_t",
@@ -338,3 +347,24 @@ TYPE_REWRITE_ENTRY("cusparseSolvePolicy_t", TYPE_FACTORY(STR("int")))
 TYPE_REWRITE_ENTRY("cusparseAction_t",
                    TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                     "sparse::conversion_scope")))
+
+TYPE_REWRITE_ENTRY(
+    "cooperative_groups::__v1::coalesced_group",
+    TYPE_CONDITIONAL_FACTORY(
+        isUseNonUniformGroupsForType(),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() +
+                         "ext::oneapi::experimental::opportunistic_group")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=non-uniform-groups"))))
+
+TYPE_REWRITE_ENTRY(
+    "cooperative_groups::__v1::thread_block_tile",
+    TYPE_CONDITIONAL_FACTORY(
+        checkTemplateArgSpelling(0, "32"),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() + "sub_group")),
+        TYPE_CONDITIONAL_FACTORY(
+            isUseLogicalGroupsForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::logical_group")),
+            WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                            STR("--use-experimental-features=logical-group")))))

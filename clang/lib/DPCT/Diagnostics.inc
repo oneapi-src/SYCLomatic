@@ -192,8 +192,8 @@ DEF_WARNING(MODULE_FILENAME_MANUAL_FIX, 1079, LOW_LEVEL, "deprecated")
 DEF_COMMENT(MODULE_FILENAME_MANUAL_FIX, 1079, LOW_LEVEL, "deprecated")
 DEF_WARNING(DEVICE_VARIADIC_FUNCTION, 1080, MEDIUM_LEVEL, "Variadic functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")
 DEF_COMMENT(DEVICE_VARIADIC_FUNCTION, 1080, MEDIUM_LEVEL, "Variadic functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")
-DEF_WARNING(UNDEDUCED_ADDRESS_SPACE, 1081, MEDIUM_LEVEL, "The generated code assumes that \"%0\" points to the global memory address space. If it points to a local or private memory address space, replace \"address_space::global\" with \"address_space::local\" or \"address_space::private\".")
-DEF_COMMENT(UNDEDUCED_ADDRESS_SPACE, 1081, MEDIUM_LEVEL, "The generated code assumes that \"{0}\" points to the global memory address space. If it points to a local or private memory address space, replace \"address_space::global\" with \"address_space::local\" or \"address_space::private\".")
+DEF_WARNING(UNDEDUCED_ADDRESS_SPACE, 1081, MEDIUM_LEVEL, "deprecated")
+DEF_COMMENT(UNDEDUCED_ADDRESS_SPACE, 1081, MEDIUM_LEVEL, "deprecated")
 DEF_WARNING(KNOWN_UNSUPPORTED_TYPE, 1082, HIGH_LEVEL, "Migration of %0 type is not supported.")
 DEF_COMMENT(KNOWN_UNSUPPORTED_TYPE, 1082, HIGH_LEVEL, "Migration of {0} type is not supported.")
 DEF_WARNING(SIZEOF_WARNING, 1083, LOW_LEVEL, "The size of %0 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.")
@@ -274,6 +274,12 @@ DEF_WARNING(VEC_IN_TEMPLATE_ARG, 1122, LOW_LEVEL, "'{0}' is migrated to '{1}' in
 DEF_COMMENT(VEC_IN_TEMPLATE_ARG, 1122, LOW_LEVEL, "'{0}' is migrated to '{1}' in template declare, it may cause template function or class redefinition, please adjust the code.")
 DEF_WARNING(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1123, MEDIUM_LEVEL, "The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.")
 DEF_COMMENT(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1123, MEDIUM_LEVEL, "The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.")
+DEF_WARNING(ASYNC_MEMCPY_WARNING, 1124, MEDIUM_LEVEL, "%0 is migrated to asynchronous memcpy API. While the origin API might be synchronous, depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.")
+DEF_COMMENT(ASYNC_MEMCPY_WARNING, 1124, MEDIUM_LEVEL, "{0} is migrated to asynchronous memcpy API. While the origin API might be synchronous, depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.")
+DEF_WARNING(MOVE_TYPE_DEFINITION_DEVICE_FUNC, 1125, MEDIUM_LEVEL, "The type \"%0\" defined in function \"%1\" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.")
+DEF_COMMENT(MOVE_TYPE_DEFINITION_DEVICE_FUNC, 1125, MEDIUM_LEVEL, "The type \"{0}\" defined in function \"{1}\" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.")
+DEF_WARNING(MOVE_TYPE_DEFINITION_KERNEL_FUNC, 1126, MEDIUM_LEVEL, "The type \"%0\" defined in function \"%1\" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function \"%1\". You may need to adjust the type definition location.")
+DEF_COMMENT(MOVE_TYPE_DEFINITION_KERNEL_FUNC, 1126, MEDIUM_LEVEL, "The type \"{0}\" defined in function \"{1}\" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function \"{1}\". You may need to adjust the type definition location.")
 // clang-format on
 
 #undef DEF_COMMENT

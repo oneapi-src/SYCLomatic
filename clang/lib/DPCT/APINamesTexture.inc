@@ -84,207 +84,58 @@ CONDITIONAL_FACTORY_ENTRY(
                                 "cudaGetTextureObjectTextureDesc", DEREF(0),
                                 MEMBER_CALL(ARG(1), true,
                                             "get_sampling_info")))))
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuTexObjectGetResourceDesc", DEREF(0),
+        CALL(MapNames::getDpctNamespace() + "experimental::get_data", ARG(1)))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                "cuTexObjectGetResourceDesc", DEREF(0),
+                                MEMBER_CALL(ARG(1), true, "get_data")))))
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuTexObjectGetTextureDesc", DEREF(0),
+        CALL(MapNames::getDpctNamespace() + "experimental::get_sampling_info",
+             ARG(1)))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                "cuTexObjectGetTextureDesc", DEREF(0),
+                                MEMBER_CALL(ARG(1), true,
+                                            "get_sampling_info")))))
+
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                            "cuTexObjectGetResourceDesc", DEREF(0),
-                            MEMBER_CALL(ARG(1), true, "get_data"))))
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(
-        ASSIGN_FACTORY_ENTRY("cuTexObjectGetTextureDesc", DEREF(0),
-                             MEMBER_CALL(ARG(1), true, "get_sampling_info"))))
+                        ENTRY_TEXTURE("tex1D", 0x01, 1))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
-    CONDITIONAL_FACTORY_ENTRY(
-        [](const CallExpr *C) -> bool {
-          return getTemplateArgsList(C).empty();
-        },
-        CONDITIONAL_FACTORY_ENTRY(
-            [](const CallExpr *C) -> bool { return C->getNumArgs() == 3; },
-            ASSIGN_FACTORY_ENTRY(
-                "tex1D", DEREF(0),
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::read_image",
-                         getDerefedType(0)),
-                     ARG(1), CAST_IF_NOT_SAME(LITERAL("float"), ARG(2)))),
-            CALL_FACTORY_ENTRY(
-                "tex1D",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::read_image",
-                         getArgTemplate(0, 0)),
-                     ARG(0), CAST_IF_NOT_SAME(LITERAL("float"), ARG(1))))),
-        CALL_FACTORY_ENTRY(
-            "tex1D",
-            CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
-                                      "ext::oneapi::experimental::read_image",
-                                  0),
-                 ARG(0), CAST_IF_NOT_SAME(LITERAL("float"), ARG(1))))),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            ENTRY_TEXTURE("tex1D", 0x01, 1)))
+    UseExtBindlessImages, ENTRY_TEXTURE("tex1DLod", 0x11, 1),
+    UNSUPPORT_FACTORY_ENTRY("tex1DLod", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("tex1DLod"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ENTRY_TEXTURE("tex2D", 0x02, 1, 2))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
-    CONDITIONAL_FACTORY_ENTRY(
-        [](const CallExpr *C) -> bool {
-          return getTemplateArgsList(C).empty();
-        },
-        CONDITIONAL_FACTORY_ENTRY(
-            [](const CallExpr *C) -> bool { return C->getNumArgs() == 4; },
-            ASSIGN_FACTORY_ENTRY(
-                "tex1DLod", DEREF(0),
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::read_mipmap",
-                         getDerefedType(0)),
-                     ARG(1), CAST_IF_NOT_SAME(LITERAL("float"), ARG(2)),
-                     ARG(3))),
-            CALL_FACTORY_ENTRY(
-                "tex1DLod",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::read_mipmap",
-                         getArgTemplate(0, 0)),
-                     ARG(0), CAST_IF_NOT_SAME(LITERAL("float"), ARG(1)),
-                     ARG(2)))),
-        CALL_FACTORY_ENTRY(
-            "tex1DLod",
-            CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
-                                      "ext::oneapi::experimental::read_mipmap",
-                                  0),
-                 ARG(0), CAST_IF_NOT_SAME(LITERAL("float"), ARG(1)), ARG(2)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("tex1DLod", MipmapNeedBindlessImage))
-
-CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
-    CONDITIONAL_FACTORY_ENTRY(
-        [](const CallExpr *C) -> bool {
-          return getTemplateArgsList(C).empty();
-        },
-        CONDITIONAL_FACTORY_ENTRY(
-            [](const CallExpr *C) -> bool { return C->getNumArgs() == 4; },
-            ASSIGN_FACTORY_ENTRY(
-                "tex2D", DEREF(0),
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::read_image",
-                         getDerefedType(0)),
-                     ARG(1),
-                     CALL(MapNames::getClNamespace() + "float2", ARG(2),
-                          ARG(3)))),
-            CALL_FACTORY_ENTRY(
-                "tex2D", CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                  MapNames::getClNamespace() +
-                                      "ext::oneapi::experimental::read_image",
-                                  getArgTemplate(0, 0)),
-                              ARG(0),
-                              CALL(MapNames::getClNamespace() + "float2",
-                                   ARG(1), ARG(2))))),
-        CALL_FACTORY_ENTRY(
-            "tex2D",
-            CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
-                                      "ext::oneapi::experimental::read_image",
-                                  0),
-                 ARG(0),
-                 CALL(MapNames::getClNamespace() + "float2", ARG(1), ARG(2))))),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            ENTRY_TEXTURE("tex2D", 0x02, 1, 2)))
-
-CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
-    CONDITIONAL_FACTORY_ENTRY(
-        [](const CallExpr *C) -> bool {
-          return getTemplateArgsList(C).empty();
-        },
-        CONDITIONAL_FACTORY_ENTRY(
-            [](const CallExpr *C) -> bool { return C->getNumArgs() == 5; },
-            ASSIGN_FACTORY_ENTRY(
-                "tex2DLod", DEREF(0),
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::read_mipmap",
-                         getDerefedType(0)),
-                     ARG(1),
-                     CALL(MapNames::getClNamespace() + "float2", ARG(2),
-                          ARG(3)),
-                     ARG(4))),
-            CALL_FACTORY_ENTRY(
-                "tex2DLod",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::read_mipmap",
-                         getArgTemplate(0, 0)),
-                     ARG(0),
-                     CALL(MapNames::getClNamespace() + "float2", ARG(1),
-                          ARG(2)),
-                     ARG(3)))),
-        CALL_FACTORY_ENTRY(
-            "tex2DLod",
-            CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
-                                      "ext::oneapi::experimental::read_mipmap",
-                                  0),
-                 ARG(0),
-                 CALL(MapNames::getClNamespace() + "float2", ARG(1), ARG(2)),
-                 ARG(3)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("tex2DLod", MipmapNeedBindlessImage))
+    UseExtBindlessImages, ENTRY_TEXTURE("tex2DLod", 0x12, 1, 2),
+    UNSUPPORT_FACTORY_ENTRY("tex2DLod", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("tex2DLod"),
+                            ARG("--use-experimental-features=bindless_images")))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex3D", 0x03, 1, 2, 3))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
-    CONDITIONAL_FACTORY_ENTRY(
-        [](const CallExpr *C) -> bool {
-          return getTemplateArgsList(C).empty();
-        },
-        CONDITIONAL_FACTORY_ENTRY(
-            [](const CallExpr *C) -> bool { return C->getNumArgs() == 6; },
-            ASSIGN_FACTORY_ENTRY(
-                "tex3DLod", DEREF(0),
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::read_mipmap",
-                         getDerefedType(0)),
-                     ARG(1),
-                     CALL(MapNames::getClNamespace() + "float4", ARG(2), ARG(3),
-                          ARG(4), LITERAL("0")),
-                     ARG(5))),
-            CALL_FACTORY_ENTRY(
-                "tex3DLod",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::read_mipmap",
-                         getArgTemplate(0, 0)),
-                     ARG(0),
-                     CALL(MapNames::getClNamespace() + "float4", ARG(1), ARG(2),
-                          ARG(3), LITERAL("0")),
-                     ARG(4)))),
-        CALL_FACTORY_ENTRY(
-            "tex3DLod",
-            CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
-                                      "ext::oneapi::experimental::read_mipmap",
-                                  0),
-                 ARG(0),
-                 CALL(MapNames::getClNamespace() + "float4", ARG(1), ARG(2),
-                      ARG(3), LITERAL("0")),
-                 ARG(4)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("tex3DLod", MipmapNeedBindlessImage))
+    UseExtBindlessImages, ENTRY_TEXTURE("tex3DLod", 0x13, 1, 2, 3),
+    UNSUPPORT_FACTORY_ENTRY("tex3DLod", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("tex3DLod"),
+                            ARG("--use-experimental-features=bindless_images")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
-    CALL_FACTORY_ENTRY(
-        "tex1Dfetch",
-        CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
-                                  "ext::oneapi::experimental::read_image",
-                              0),
-             ARG(0), CAST_IF_NOT_SAME(LITERAL("float"), ARG(1)))),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            WARNING_FACTORY_ENTRY("tex1Dfetch",
-                                                  ENTRY_TEXTURE("tex1Dfetch",
-                                                                0x01, 1),
-                                                  Diagnostics::TEX_FETCH)))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    WARNING_FACTORY_ENTRY("tex1Dfetch", ENTRY_TEXTURE("tex1Dfetch", 0x01, 1),
+                          Diagnostics::TEX_FETCH))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex1DLayered", 0xF1, 2, 1))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -302,6 +153,10 @@ FEATURE_REQUEST_FACTORY(
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToArray",
                                                       0 /*start arg idx*/)))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToMipmappedArray",
+                                  0 /*start arg idx*/)))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -313,12 +168,15 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                                            "create_image_wrapper",
                                  DEREF(1), DEREF(2)))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuTexObjectCreate", DEREF(0),
-                                            CALL(MapNames::getDpctNamespace() +
-                                                     "create_image_wrapper",
-                                                 DEREF(1), DEREF(2)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cuTexObjectCreate", DEREF(0),
+                            CALL(DpctGlobalInfo::useExtBindlessImages()
+                                     ? MapNames::getDpctNamespace() +
+                                           "experimental::create_bindless_image"
+                                     : MapNames::getDpctNamespace() +
+                                           "create_image_wrapper",
+                                 DEREF(1), DEREF(2)))))
 
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
                   Diagnostics::API_NOT_MIGRATED)

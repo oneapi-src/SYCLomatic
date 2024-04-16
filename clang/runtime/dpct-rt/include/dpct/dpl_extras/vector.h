@@ -438,7 +438,7 @@ public:
       // copy content (old buffer to new buffer)
       if (capacity() > 0) {
         device_allocator_traits<Allocator>::uninitialized_device_copy_n(
-            _alloc, begin(), n, tmp);
+            _alloc, begin(), _size, tmp);
         alloc_traits::deallocate(_alloc, _storage, _capacity);
       }
       _storage = tmp;

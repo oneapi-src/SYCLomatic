@@ -52,7 +52,11 @@
 // cublasSrotm-NEXT:   cublasSrotm(handle /*cublasHandle_t*/, n /*int*/, x /*float **/, incx /*int*/,
 // cublasSrotm-NEXT:               y /*float **/, incy /*int*/, param /*const float **/);
 // cublasSrotm-NEXT: Is migrated to:
-// cublasSrotm-NEXT:   oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x, incx, y, incy, const_cast<float*>(param));
+// cublasSrotm-NEXT:   [&]() {
+// cublasSrotm-NEXT:   dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), param, 5);
+// cublasSrotm-NEXT:   oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_ptr());
+// cublasSrotm-NEXT:   return 0;
+// cublasSrotm-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCher | FileCheck %s -check-prefix=cublasCher
 // cublasCher: CUDA API:
@@ -98,7 +102,7 @@
 // cublasSetMatrixAsync-NEXT:                        a /*const void **/, lda /*int*/, b /*void **/,
 // cublasSetMatrixAsync-NEXT:                        ldb /*int*/, stream /*cudaStream_t*/);
 // cublasSetMatrixAsync-NEXT: Is migrated to:
-// cublasSetMatrixAsync-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
+// cublasSetMatrixAsync-NEXT:   dpct::blas::matrix_mem_copy(b, a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSaxpy | FileCheck %s -check-prefix=cublasSaxpy
 // cublasSaxpy: CUDA API:
@@ -176,18 +180,18 @@
 // cublasIsamax-NEXT:   cublasIsamax(handle /*cublasHandle_t*/, n /*int*/, x /*const float **/,
 // cublasIsamax-NEXT:                incx /*int*/, res /*int **/);
 // cublasIsamax-NEXT: Is migrated to (with the option --no-dry-pattern):
-// cublasIsamax-NEXT:   int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_in_order_queue());
-// cublasIsamax-NEXT:   oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, x, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
-// cublasIsamax-NEXT:   int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-// cublasIsamax-NEXT:   dpct::dpct_memcpy(res, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-// cublasIsamax-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
+// cublasIsamax-NEXT:   [&]() {
+// cublasIsamax-NEXT:   dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), res);
+// cublasIsamax-NEXT:   oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, x, incx, res_wrapper_ct4.get_ptr(), oneapi::mkl::index_base::one);
+// cublasIsamax-NEXT:   return 0;
+// cublasIsamax-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGetMatrix | FileCheck %s -check-prefix=cublasGetMatrix
 // cublasGetMatrix: CUDA API:
 // cublasGetMatrix-NEXT:   cublasGetMatrix(rows /*int*/, cols /*int*/, elementsize /*int*/,
 // cublasGetMatrix-NEXT:                   a /*const void **/, lda /*int*/, b /*void **/, ldb /*int*/);
 // cublasGetMatrix-NEXT: Is migrated to:
-// cublasGetMatrix-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize);
+// cublasGetMatrix-NEXT:   dpct::blas::matrix_mem_copy(b, a, ldb, lda, rows, cols, elementsize);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZgeam | FileCheck %s -check-prefix=cublasZgeam
 // cublasZgeam: CUDA API:

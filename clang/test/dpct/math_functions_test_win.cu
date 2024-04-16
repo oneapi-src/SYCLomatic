@@ -243,14 +243,14 @@ float test_sinpi(float a) { return sinpi(a); }
 float test_cospi(float a) { return cospi(a); }
 
 // CHECK: void test_sincospi(float a, float *sptr, float *cptr) {
-// CHECK:   return [&](){ *sptr = sycl::sincos(a * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(cptr)); }();
+// CHECK:   return [&](){ *sptr = sycl::sincos(a * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(cptr)); }();
 // CHECK: }
 void test_sincospi(float a, float *sptr, float *cptr) {
   return sincospi(a, sptr, cptr);
 }
 
 // CHECK: void test_sincos(float a, float *sptr, float *cptr) {
-// CHECK:   return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(cptr)); }();
+// CHECK:   return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(cptr)); }();
 // CHECK: }
 void test_sincos(float a, float *sptr, float *cptr) {
   return sincos(a, sptr, cptr);
