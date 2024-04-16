@@ -18,7 +18,7 @@
 
 #include "dpct.hpp"
 #include "dpl_extras/dpcpp_extensions.h"
-#include "functional.h"
+#include "dpl_extras/functional.h"
 
 namespace dpct {
 namespace group {
