@@ -13,30 +13,15 @@ int main(int argc, char **argv) {
     // CHECK-NEXT: */
     // CHECK-NEXT: CUDA_ARRAY_DESCRIPTOR *pcad;
     CUDA_ARRAY_DESCRIPTOR *pcad;
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaMemcpy3DParms * type is not supported.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: cudaMemcpy3DParms *p1c3d;
+    // CHECK: dpct::mem_cpy_param_wrapper *p1c3d;
     cudaMemcpy3DParms *p1c3d;
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaMemcpy3DParms * type is not supported.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: const cudaMemcpy3DParms *p2c3d;
+    // CHECK: const dpct::mem_cpy_param_wrapper *p2c3d;
     const cudaMemcpy3DParms *p2c3d;
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaMemcpy3DParms * type is not supported.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: static cudaMemcpy3DParms *p3c3d;
+    // CHECK: static dpct::mem_cpy_param_wrapper *p3c3d;
     static cudaMemcpy3DParms *p3c3d;
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaMemcpy3DParms * type is not supported.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: static volatile cudaMemcpy3DParms *p4c3d;
+    // CHECK: static volatile dpct::mem_cpy_param_wrapper *p4c3d;
     static volatile cudaMemcpy3DParms *p4c3d;
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaMemcpy3DParms * type is not supported.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: std::vector<cudaMemcpy3DParms *> vc3dp;
+    // CHECK: std::vector<dpct::mem_cpy_param_wrapper *> vc3dp;
     std::vector<cudaMemcpy3DParms *> vc3dp;
     // CHECK: /*
     // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of CUexternalMemory type is not supported.

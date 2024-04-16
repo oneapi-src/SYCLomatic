@@ -385,18 +385,17 @@
 // MAKE_CUDAEXTENT: CUDA API:
 // MAKE_CUDAEXTENT-NEXT:   make_cudaExtent(s1 /*size_t*/, s2 /*size_t*/, s3 /*size_t*/);
 // MAKE_CUDAEXTENT-NEXT: Is migrated to:
-// MAKE_CUDAEXTENT-NEXT:   sycl::range<3>(s1 /*size_t*/, s2 /*size_t*/, s3 /*size_t*/);
+// MAKE_CUDAEXTENT-NEXT:   sycl::range<3>(s1, s2, s3);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_cudaPitchedPtr | FileCheck %s -check-prefix=MAKE_CUDAPITCHEDPTR
 // MAKE_CUDAPITCHEDPTR: CUDA API:
 // MAKE_CUDAPITCHEDPTR-NEXT:   make_cudaPitchedPtr(ptr /*void **/, s1 /*size_t*/, s2 /*size_t*/,
 // MAKE_CUDAPITCHEDPTR-NEXT:                       s3 /*size_t*/);
 // MAKE_CUDAPITCHEDPTR-NEXT: Is migrated to:
-// MAKE_CUDAPITCHEDPTR-NEXT:     dpct::pitched_data(ptr /*void **/, s1 /*size_t*/, s2 /*size_t*/,
-// MAKE_CUDAPITCHEDPTR-NEXT:                       s3 /*size_t*/);
+// MAKE_CUDAPITCHEDPTR-NEXT:     dpct::pitched_data(ptr, s1, s2, s3);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_cudaPos | FileCheck %s -check-prefix=MAKE_CUDAPOS
 // MAKE_CUDAPOS: CUDA API:
 // MAKE_CUDAPOS-NEXT:   make_cudaPos(s1 /*size_t*/, s2 /*size_t*/, s3 /*size_t*/);
 // MAKE_CUDAPOS-NEXT: Is migrated to:
-// MAKE_CUDAPOS-NEXT:   sycl::id<3>(s1 /*size_t*/, s2 /*size_t*/, s3 /*size_t*/);
+// MAKE_CUDAPOS-NEXT:   sycl::id<3>(s1, s2, s3);

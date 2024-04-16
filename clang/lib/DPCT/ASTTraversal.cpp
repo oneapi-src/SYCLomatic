@@ -1753,7 +1753,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseSpSVAlg_t", "cudaFuncAttributes",
               "cudaLaunchAttributeValue", "cusparseSpSMDescr_t",
               "cusparseConstSpMatDescr_t", "cusparseSpSMAlg_t",
-              "cusparseConstDnMatDescr_t"))))))
+              "cusparseConstDnMatDescr_t", "cudaMemcpy3DParms", "CUDA_MEMCPY3D",
+              "CUDA_MEMCPY2D"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -10287,21 +10288,6 @@ void MemoryMigrationRule::memcpyMigration(
              NameRef.rfind("cuMemcpy3D", 0) == 0 ||
              NameRef.rfind("cuMemcpy2D", 0) == 0) {
     handleAsync(C, 1, Result);
-    if (auto UO =
-            dyn_cast<UnaryOperator>(C->getArg(0)->IgnoreImplicitAsWritten())) {
-      if (auto DRE = dyn_cast<DeclRefExpr>(
-              UO->getSubExpr()->IgnoreImplicitAsWritten())) {
-        std::string DirectionStr =
-            IsAsync && NameRef.compare("cudaMemcpy3D")
-                ? (", " + MapNames::getDpctNamespace() + "automatic")
-                : "";
-        emplaceTransformation(new ReplaceStmt(
-            C->getArg(0),
-            MemoryDataTypeRule::getMemcpy3DArguments(
-                DRE->getDecl()->getName(), !NameRef.compare("cudaMemcpy3D")) +
-                DirectionStr));
-      }
-    }
   } else if (!NameRef.compare("cudaMemcpy") ||
              NameRef.rfind("cuMemcpyDtoH", 0) == 0) {
     if (!NameRef.compare("cudaMemcpy")) {
@@ -11607,55 +11593,17 @@ void MemoryDataTypeRule::emplaceCuArrayDescDeclarations(const VarDecl *VD) {
                    "0", "channel_type");
 }
 
-void MemoryDataTypeRule::emplaceMemcpy3DDeclarations(const VarDecl *VD,
-                                                     bool hasDirection) {
-  if (DpctGlobalInfo::isCommentsEnabled()) {
-    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-        VD, "// These variables are defined for 3d matrix memory copy."));
-  }
-  emplaceParamDecl(VD,
-                   DpctGlobalInfo::useExtBindlessImages()
-                       ? MapNames::getDpctNamespace() +
-                             "experimental::image_mem_pitched_data"
-                       : MapNames::getDpctNamespace() + "pitched_data",
-                   false, "0", "from_data", "to_data");
-  requestFeature(HelperFeatureEnum::device_ext);
-  emplaceParamDecl(VD, getCtadType("id"), true, "0", "from_pos", "to_pos");
-  emplaceParamDecl(VD, getCtadType("range"), true, "1", "size");
-  if (hasDirection) {
-    emplaceParamDecl(VD, MapNames::getDpctNamespace() + "memcpy_direction",
-                     false, "0", "direction");
-    requestFeature(HelperFeatureEnum::device_ext);
-  }
-}
-
-std::string MemoryDataTypeRule::getMemcpy3DArguments(StringRef BaseName,
-                                                     bool hasDirection) {
-  std::string Result;
-  llvm::raw_string_ostream OS(Result);
-  printParamName(OS, BaseName, "to_data") << ", ";
-  printParamName(OS, BaseName, "to_pos") << ", ";
-  printParamName(OS, BaseName, "from_data") << ", ";
-  printParamName(OS, BaseName, "from_pos") << ", ";
-  if (hasDirection) {
-    printParamName(OS, BaseName, "size") << ", ";
-    printParamName(OS, BaseName, "direction");
-  } else {
-    printParamName(OS, BaseName, "size");
-  }
-  return OS.str();
-}
-
 void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(varDecl(hasType(namedDecl(hasAnyName(
-                            "cudaMemcpy3DParms", "CUDA_ARRAY_DESCRIPTOR",
-                            "CUDA_MEMCPY3D", "CUDA_MEMCPY2D"))))
+  MF.addMatcher(varDecl(hasType(namedDecl(hasAnyName("CUDA_ARRAY_DESCRIPTOR"))))
                     .bind("decl"),
                 this);
+  MF.addMatcher(memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(
+                               hasAnyName("CUDA_ARRAY_DESCRIPTOR"))))))
+                    .bind("arrayMember"),
+                this);
   MF.addMatcher(
-      memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(
-                     hasAnyName("cudaMemcpy3DParms", "CUDA_ARRAY_DESCRIPTOR",
-                                "CUDA_MEMCPY3D", "CUDA_MEMCPY2D"))))))
+      memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(hasAnyName(
+                     "cudaMemcpy3DParms", "CUDA_MEMCPY3D", "CUDA_MEMCPY2D"))))))
           .bind("parmsMember"),
       this);
   MF.addMatcher(memberExpr(hasObjectExpression(hasType(recordDecl(hasAnyName(
@@ -11669,109 +11617,14 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-std::string MemoryDataTypeRule::getPitchMemberSetter(StringRef BaseName,
-                                                     const std::string &Member,
-                                                     const Expr *E) {
-  std::string BaseStr;
-  llvm::raw_string_ostream OS(BaseStr);
-  auto Itr = MemberNames.find(Member);
-  auto Itr2 = PitchMemberToSetter.find(Member);
-  if (Itr != MemberNames.end() && Itr2 != PitchMemberToSetter.end()) {
-    requestFeature(PitchMemberToFeature.at(Member));
-    printParamName(OS, BaseName, Itr->second);
-    OS.flush();
-    MemberCallPrinter<std::string, std::string, const Expr *> MCP(
-        BaseStr, false, Itr2->second, std::move(E));
-    std::string ResultStr;
-    llvm::raw_string_ostream OS2(ResultStr);
-    MCP.print(OS2);
-    OS2.flush();
-    return OS2.str();
-  }
-  return "";
-}
-
-std::string MemoryDataTypeRule::getSizeOrPosMember(StringRef BaseName,
-                                                   const std::string &Member) {
-  std::string ResultStr;
-  llvm::raw_string_ostream OS(ResultStr);
-  auto Itr = SizeOrPosToMember.find(Member);
-  if (Itr != SizeOrPosToMember.end()) {
-    if (Member.rfind("src", 0) == 0)
-      printParamName(OS, BaseName, "from_pos");
-    else if (Member.rfind("dst", 0) == 0)
-      printParamName(OS, BaseName, "to_pos");
-    else
-      printParamName(OS, BaseName, "size");
-    OS << Itr->second;
-    OS.flush();
-    return ResultStr;
-  }
-  return "";
-}
-
 void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto VD = getNodeAsType<VarDecl>(Result, "decl")) {
     if (isa<ParmVarDecl>(VD))
       return;
     auto TypeName = DpctGlobalInfo::getUnqualifiedTypeName(VD->getType());
-    if (TypeName == "cudaMemcpy3DParms")
-      emplaceMemcpy3DDeclarations(VD, true);
-    else if (TypeName == "CUDA_ARRAY_DESCRIPTOR")
+    if (TypeName == "CUDA_ARRAY_DESCRIPTOR")
       emplaceCuArrayDescDeclarations(VD);
-    else
-      emplaceMemcpy3DDeclarations(VD, false);
-  } else if (auto ME = getNodeAsType<MemberExpr>(Result, "parmsMember")) {
-    if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(ME)) {
-      if (BO->getOpcode() == BinaryOperatorKind::BO_Assign &&
-          ME == BO->getLHS()) {
-        std::string QualName =
-            DpctGlobalInfo::getUnqualifiedTypeName(ME->getType());
-        if (QualName == "cudaArray_t" || QualName == "CUarray") {
-          requestFeature(HelperFeatureEnum::device_ext);
-          if (needExtraParensInMemberExpr(BO->getRHS()))
-            insertAroundStmt(BO->getRHS(), "(", ")");
-          emplaceTransformation(
-              new InsertAfterStmt(BO->getRHS(), "->to_pitched_data()"));
-        } else if (QualName == "CUarray_st") {
-          requestFeature(HelperFeatureEnum::device_ext);
-          if (needExtraParensInMemberExpr(BO->getRHS()))
-            insertAroundStmt(BO->getRHS(), "(", ")");
-          emplaceTransformation(
-              new InsertAfterStmt(BO->getRHS(), ".to_pitched_data()"));
-        } else if (auto DRE = dyn_cast<DeclRefExpr>(
-                       ME->getBase()->IgnoreImplicitAsWritten())) {
-          // if the member expr need to be removed
-          if (isRemove(ME->getMemberDecl()->getName().str())) {
-            emplaceTransformation(new ReplaceStmt(BO, ""));
-            return;
-          }
-          // if the member expr need to be migrated to setter of
-          // dpct::pitched_data
-          std::string SetterStr = getPitchMemberSetter(
-              DRE->getDecl()->getName(), ME->getMemberDecl()->getName().str(),
-              BO->getRHS());
-          if (!SetterStr.empty()) {
-            emplaceTransformation(new ReplaceStmt(BO, SetterStr));
-            return;
-          }
-          // if the member expr need to be migrated to pos or size assignment
-
-          auto BaseName =
-              DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType());
-          if (BaseName == "CUDA_MEMCPY2D" || BaseName == "CUDA_MEMCPY3D") {
-            std::string SizeOrPosStr =
-                getSizeOrPosMember(DRE->getDecl()->getName(),
-                                   ME->getMemberDecl()->getName().str());
-            if (!SizeOrPosStr.empty()) {
-              emplaceTransformation(
-                  new ReplaceStmt(BO->getLHS(), SizeOrPosStr));
-              return;
-            }
-          }
-        }
-      }
-    }
+  } else if (auto ME = getNodeAsType<MemberExpr>(Result, "arrayMember")) {
     if (auto DRE =
             dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImplicitAsWritten())) {
       emplaceTransformation(new ReplaceStmt(
@@ -11782,21 +11635,15 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     if (auto FD = CE->getDirectCallee()) {
       auto Name = FD->getName();
       std::string ReplaceName;
-      if (Name == "make_cudaExtent") {
-        ReplaceName = DpctGlobalInfo::getCtadClass(
-            MapNames::getClNamespace() + "range", 3);
-      } else if (Name == "make_cudaPos") {
-        ReplaceName =
-            DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "id", 3);
-      } else if (Name == "make_cudaPitchedPtr") {
-        ReplaceName = MapNames::getDpctNamespace() + "pitched_data";
-        requestFeature(HelperFeatureEnum::device_ext);
+      if (Name == "make_cudaExtent" || Name == "make_cudaPos" ||
+          Name == "make_cudaPitchedPtr") {
+        ExprAnalysis EA(CE);
+        emplaceTransformation(EA.getReplacement());
+        EA.applyAllSubExprRepl();
       } else {
         DpctDiags() << "Unexpected function name [" << Name
                     << "] in MemoryDataTypeRule";
-        return;
       }
-      emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceName)));
     }
   } else if (auto M = getNodeAsType<MemberExpr>(Result, "otherMember")) {
     auto BaseName =
@@ -11842,6 +11689,35 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
           M->getMemberLoc(), buildString("get_", Replace, "()")));
       requestFeature(PitchMemberNameToGetFeatureMap.at(MemberName.str()));
     }
+  } else if (auto M = getNodeAsType<MemberExpr>(Result, "parmsMember")) {
+    auto MemberName = M->getMemberDecl()->getName();
+    auto NeedRemove = isRemove(MemberName.str());
+    auto Replace = MapNames::findReplacedName(MemberNames, MemberName.str());
+    if (Replace.empty() && !NeedRemove)
+      return;
+    if (DpctGlobalInfo::useExtBindlessImages() &&
+        Replace.find("_image_data") != std::string::npos)
+      Replace.replace(Replace.length() - 4, 4, "mem");
+    if (auto COCE = DpctGlobalInfo::findParent<CXXOperatorCallExpr>(M)) {
+      if (COCE->getOperator() == OO_Equal) { // For .srcPos.
+        if (NeedRemove)
+          return emplaceTransformation(new ReplaceStmt(COCE, ""));
+        return emplaceTransformation(
+            ReplaceMemberAssignAsSetMethod(COCE, M, Replace));
+      }
+    }
+    if (auto BO = DpctGlobalInfo::findParent<BinaryOperator>(M)) {
+      if (BO->getOpcode() == BO_Assign) { // For .srcArray
+        if (NeedRemove)
+          return emplaceTransformation(new ReplaceStmt(BO, ""));
+        return emplaceTransformation(
+            ReplaceMemberAssignAsSetMethod(BO, M, Replace));
+      }
+    }
+    if (NeedRemove)
+      return emplaceTransformation(new ReplaceStmt(M, ""));
+    emplaceTransformation(new ReplaceToken(M->getMemberLoc(),
+                                           buildString("get_", Replace, "()")));
   }
 }
 
@@ -15160,6 +15036,9 @@ void CudaExtentRule::runRule(
   // cudaExtent({1, 1, 1});   -> sycl::range<3>({1, 1, 1});
   if (const InitListExpr *Init =
           getNodeAsType<InitListExpr>(Result, "initListExpr")) {
+    if (Init->getLBraceLoc() == Init->getRBraceLoc()) {
+      return; // implicit init list in init list.
+    }
     auto &SM = DpctGlobalInfo::getSourceManager();
     std::string Replacement;
     llvm::raw_string_ostream OS(Replacement);
