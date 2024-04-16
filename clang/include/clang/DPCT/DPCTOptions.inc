@@ -338,27 +338,30 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("bfloat16",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16),
-                                     "Use the SYCL extensions for bfloat16.",
+                                     "Disable the SYCL extensions for bfloat16.",
                                      false),
              DPCT_OPT_ENUM("device_info",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo),
-                                     "Use the Intel extensions for device information, if supported by the compiler and the backend.",
+                                     "Disable the Intel extensions for device information, if supported by the compiler and the backend.",
                                      false),
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
-                                     "Use the enqueued barriers extension.",
+                                     "Disable the enqueued barriers extension.",
                                      false),
              DPCT_OPT_ENUM("peer_access",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess),
-                                     "Use the peer access extension.",
+                                     "Disable the peer access extension.",
                                      false),
              DPCT_OPT_ENUM("assert",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_Assert),
-                                     "Use the assert extension.", false),
+                                     "Disable the assert extension.", false),
              DPCT_OPT_ENUM("queue_empty",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty),
-                                     "Use the queue empty extension.",
-                                     false)
+                                     "Disable the queue empty extension.",
+                                     false),
+             DPCT_OPT_ENUM("all",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_All),
+                                     "Disable all extensions.", false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
            "By default, these extensions are used in migrated code.\n"
@@ -378,6 +381,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisab
                                      int(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath),
                                      "Use sycl::ext::intel::math functions from the libdevice library (provided by Intel(R) oneAPI\n"
                                      "DPC++/C++ Compiler) to migrate functions which have no mapping in the SYCL standard.",
+                                     false),
+             DPCT_OPT_ENUM("all",
+                                     int(DPCPPExtensionsDefaultDisabled::ExtDD_All),
+                                     "Enable all DPC++ extensions.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions to be used in migrated code.\n"
@@ -423,6 +430,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("non-uniform-groups", int(ExperimentalFeatures::Exp_NonUniformGroups),
         "Experimental extension that allows use of non-uniform groups.\n",
+        false),
+            DPCT_OPT_ENUM("all", int(ExperimentalFeatures::Exp_All),
+        "Enable all experimental extensions.\n",
         false)
            ),
            llvm::cl::desc("Comma-separated list of experimental features to be used in migrated "
