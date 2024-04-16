@@ -2010,6 +2010,14 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
       KernelCallExpr::buildFromCudaLaunchKernel(LocInfo, LaunchKernelCall);
   if (KernelInfo) {
     FileInfo->insertNode(LocInfo.second, KernelInfo);
+  } else {
+    auto FuncName = LaunchKernelCall->getDirectCallee()
+                        ->getNameInfo()
+                        .getName()
+                        .getAsString();
+    DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                             Diagnostics::API_NOT_MIGRATED, true, false,
+                             FuncName);
   }
 
   return KernelInfo;
