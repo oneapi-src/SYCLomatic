@@ -39,7 +39,7 @@ int main() {
     }
  
     // Device vectors
-    int3 *d_a, *d_b, *d_result;0
+    int3 *d_a, *d_b, *d_result;
  
     // Allocate memory for device vectors
     //CHECK: dpct::experimental::get_ptr_size_map()[*((void**)&d_a)] = vectorSize * sizeof(sycl::int3);
