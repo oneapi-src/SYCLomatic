@@ -2131,9 +2131,9 @@ inline void syrk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
 /// \param [in] ldc Leading dimension of C.
 template <class T, class Tbeta>
 inline void herk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
-                 oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k, const T *alpha,
-                 const T *a, std::int64_t lda, const T *b, std::int64_t ldb, const Tbeta *beta,
-                 T *c, std::int64_t ldc) {
+                 oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k,
+                 const T *alpha, const T *a, std::int64_t lda, const T *b,
+                 std::int64_t ldb, const Tbeta *beta, T *c, std::int64_t ldc) {
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
   auto cm = deduce_compute_mode<T>(std::nullopt, desc_ptr->get_math_mode());
