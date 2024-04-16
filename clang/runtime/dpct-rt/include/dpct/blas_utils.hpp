@@ -553,10 +553,11 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
 #ifdef __INTEL_MKL__
 template <class Ta, class Tb, class Tc, class Ts>
 inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                      oneapi::mkl::transpose b_trans, int m, int n, int k,
-                      const void *alpha, const void *a, int lda, const void *b,
-                      int ldb, const void *beta, void *c, int ldc,
-                      oneapi::mkl::blas::compute_mode cm) {
+                      oneapi::mkl::transpose b_trans, std::int64_t m,
+                      std::int64_t n, std::int64_t k, const void *alpha,
+                      const void *a, std::int64_t lda, const void *b,
+                      std::int64_t ldb, const void *beta, void *c,
+                      std::int64_t ldc, oneapi::mkl::blas::compute_mode cm) {
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory<const Ta>(a);
@@ -578,10 +579,12 @@ inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 
 template <class Ta, class Tb, class Tc, class Ts>
 inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                            oneapi::mkl::transpose b_trans, int m, int n, int k,
-                            const void *alpha, const void **a, int lda,
-                            const void **b, int ldb, const void *beta, void **c,
-                            int ldc, int batch_size DPCT_COMPUTE_MODE_PARAM) {
+                            oneapi::mkl::transpose b_trans, std::int64_t m,
+                            std::int64_t n, std::int64_t k, const void *alpha,
+                            const void **a, std::int64_t lda, const void **b,
+                            std::int64_t ldb, const void *beta, void **c,
+                            std::int64_t ldc,
+                            std::int64_t batch_size DPCT_COMPUTE_MODE_PARAM) {
   struct matrix_info_t {
     oneapi::mkl::transpose transpose_info[2];
     Ts value_info[2];
@@ -624,13 +627,14 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 }
 
 template <class Ta, class Tb, class Tc, class Ts>
-inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                            oneapi::mkl::transpose b_trans, int m, int n, int k,
-                            const void *alpha, const void *a, int lda,
-                            long long int stride_a, const void *b, int ldb,
-                            long long int stride_b, const void *beta, void *c,
-                            int ldc, long long int stride_c,
-                            int batch_size DPCT_COMPUTE_MODE_PARAM) {
+inline void
+gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
+                oneapi::mkl::transpose b_trans, std::int64_t m, std::int64_t n,
+                std::int64_t k, const void *alpha, const void *a,
+                std::int64_t lda, long long int stride_a, const void *b,
+                std::int64_t ldb, long long int stride_b, const void *beta,
+                void *c, std::int64_t ldc, long long int stride_c,
+                std::int64_t batch_size DPCT_COMPUTE_MODE_PARAM) {
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory<const Ta>(a);
@@ -643,10 +647,11 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 }
 
 template <bool is_hermitian, class T, class Tbeta>
-inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
-                    oneapi::mkl::transpose trans, int n, int k, const T *alpha,
-                    const T *a, int lda, const T *b, int ldb, const Tbeta *beta,
-                    T *c, int ldc DPCT_COMPUTE_MODE_PARAM) {
+inline void
+rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::transpose trans,
+        std::int64_t n, std::int64_t k, const T *alpha, const T *a,
+        std::int64_t lda, const T *b, std::int64_t ldb, const Tbeta *beta, T *c,
+        std::int64_t ldc DPCT_COMPUTE_MODE_PARAM) {
   // For symmetric matrix, this function performs: C = alpha*OP(A)*(OP(B))^T + beta*C
   // For Hermitian matrix, this function performs: C = alpha*OP(A)*(OP(B))^H + beta*C
   // The gemmt() function performs: C = alpha*OPA(A)*OPB(B) + beta*C
@@ -710,12 +715,13 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
 }
 
 template <class Ta, class Tb, class Ts>
-inline void
-trsm_batch_impl(sycl::queue &q, oneapi::mkl::side left_right,
-                oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
-                oneapi::mkl::diag unit_diag, int m, int n, const void *alpha,
-                const void **a, int lda, void **b, int ldb,
-                int batch_size DPCT_COMPUTE_MODE_PARAM) {
+inline void trsm_batch_impl(sycl::queue &q, oneapi::mkl::side left_right,
+                            oneapi::mkl::uplo upper_lower,
+                            oneapi::mkl::transpose trans,
+                            oneapi::mkl::diag unit_diag, std::int64_t m,
+                            std::int64_t n, const void *alpha, const void **a,
+                            std::int64_t lda, void **b, std::int64_t ldb,
+                            std::int64_t batch_size DPCT_COMPUTE_MODE_PARAM) {
   struct matrix_info_t {
     matrix_info_t(oneapi::mkl::side side_info, oneapi::mkl::uplo uplo_info,
                   oneapi::mkl::transpose transpose_info,
@@ -1595,10 +1601,11 @@ deduce_compute_mode(std::optional<compute_type> ct, math_mode mm,
 /// \param [in] ldc Leading dimension of C.
 /// \param [in] ct Compute type.
 inline void gemm(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
-                 oneapi::mkl::transpose b_trans, int m, int n, int k,
-                 const void *alpha, const void *a, library_data_t a_type,
-                 int lda, const void *b, library_data_t b_type, int ldb,
-                 const void *beta, void *c, library_data_t c_type, int ldc,
+                 oneapi::mkl::transpose b_trans, std::int64_t m, std::int64_t n,
+                 std::int64_t k, const void *alpha, const void *a,
+                 library_data_t a_type, std::int64_t lda, const void *b,
+                 library_data_t b_type, std::int64_t ldb, const void *beta,
+                 void *c, library_data_t c_type, std::int64_t ldc,
                  std::variant<compute_type, library_data_t> ct) {
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
@@ -1751,12 +1758,12 @@ inline void gemm(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
 /// \param [in] scaling_type Data type of the scaling factors.
 /// \param [in] ct Compute type.
 inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
-                       oneapi::mkl::transpose b_trans, int m, int n, int k,
-                       const void *alpha, const void *a[],
-                       library_data_t a_type, int lda, const void *b[],
-                       library_data_t b_type, int ldb, const void *beta,
-                       void *c[], library_data_t c_type, int ldc,
-                       int batch_size,
+                       oneapi::mkl::transpose b_trans, std::int64_t m,
+                       std::int64_t n, std::int64_t k, const void *alpha,
+                       const void *a[], library_data_t a_type, std::int64_t lda,
+                       const void *b[], library_data_t b_type, std::int64_t ldb,
+                       const void *beta, void *c[], library_data_t c_type,
+                       std::int64_t ldc, std::int64_t batch_size,
                        std::variant<compute_type, library_data_t> ct) {
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
@@ -1930,12 +1937,14 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
 /// \param [in] batch_size Specifies the number of matrix multiply operations to perform.
 /// \param [in] ct Compute type.
 inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
-                       oneapi::mkl::transpose b_trans, int m, int n, int k,
-                       const void *alpha, const void *a, library_data_t a_type,
-                       int lda, long long int stride_a, const void *b,
-                       library_data_t b_type, int ldb, long long int stride_b,
-                       const void *beta, void *c, library_data_t c_type,
-                       int ldc, long long int stride_c, int batch_size,
+                       oneapi::mkl::transpose b_trans, std::int64_t m,
+                       std::int64_t n, std::int64_t k, const void *alpha,
+                       const void *a, library_data_t a_type, std::int64_t lda,
+                       long long int stride_a, const void *b,
+                       library_data_t b_type, std::int64_t ldb,
+                       long long int stride_b, const void *beta, void *c,
+                       library_data_t c_type, std::int64_t ldc,
+                       long long int stride_c, std::int64_t batch_size,
                        std::variant<compute_type, library_data_t> ct) {
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
@@ -2094,9 +2103,9 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
 /// \param [in] ldc Leading dimension of C.
 template <class T>
 inline void syrk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
-                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
-                 const T *a, int lda, const T *b, int ldb, const T *beta, T *c,
-                 int ldc) {
+                 oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k,
+                 const T *alpha, const T *a, std::int64_t lda, const T *b,
+                 std::int64_t ldb, const T *beta, T *c, std::int64_t ldc) {
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
   auto cm = deduce_compute_mode<T>(std::nullopt, desc_ptr->get_math_mode());
@@ -2122,9 +2131,9 @@ inline void syrk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
 /// \param [in] ldc Leading dimension of C.
 template <class T, class Tbeta>
 inline void herk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
-                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
-                 const T *a, int lda, const T *b, int ldb, const Tbeta *beta,
-                 T *c, int ldc) {
+                 oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k, const T *alpha,
+                 const T *a, std::int64_t lda, const T *b, std::int64_t ldb, const Tbeta *beta,
+                 T *c, std::int64_t ldc) {
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
   auto cm = deduce_compute_mode<T>(std::nullopt, desc_ptr->get_math_mode());
@@ -2154,10 +2163,11 @@ inline void herk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
 inline void trsm_batch(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
                        oneapi::mkl::uplo upper_lower,
                        oneapi::mkl::transpose trans,
-                       oneapi::mkl::diag unit_diag, int m, int n,
-                       const void *alpha, const void **a, library_data_t a_type,
-                       int lda, void **b, library_data_t b_type, int ldb,
-                       int batch_size,
+                       oneapi::mkl::diag unit_diag, std::int64_t m,
+                       std::int64_t n, const void *alpha, const void **a,
+                       library_data_t a_type, std::int64_t lda, void **b,
+                       library_data_t b_type, std::int64_t ldb,
+                       std::int64_t batch_size,
                        std::variant<compute_type, library_data_t> ct) {
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
@@ -2231,8 +2241,9 @@ inline void trsm_batch(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
 template <class T>
 inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
                  oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
-                 oneapi::mkl::diag unit_diag, int m, int n, const T *alpha,
-                 const T *a, int lda, const T *b, int ldb, T *c, int ldc) {
+                 oneapi::mkl::diag unit_diag, std::int64_t m, std::int64_t n,
+                 const T *alpha, const T *a, std::int64_t lda, const T *b,
+                 std::int64_t ldb, T *c, std::int64_t ldc) {
   using Ty = typename DataType<T>::T2;
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
