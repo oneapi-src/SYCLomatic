@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------===//
 
-#ifndef __DPCT_DPCPP_EXTENSIONS_H__
-#define __DPCT_DPCPP_EXTENSIONS_H__
+#ifndef __GROUP_UTILS_HPP__
+#define __GROUP_UTILS_HPP__
 
 #include <stdexcept>
 #include <sycl/sycl.hpp>
