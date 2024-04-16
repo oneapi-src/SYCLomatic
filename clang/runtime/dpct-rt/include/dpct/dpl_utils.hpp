@@ -12,8 +12,8 @@
 #define ONEDPL_USE_DPCPP_BACKEND 1
 #define __USE_DPCT 1
 
-#include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
+#include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/numeric>
 
 #include "dpl_extras/memory.h"
