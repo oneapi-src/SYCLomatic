@@ -152,9 +152,8 @@ jobs:
       - name: Configure
         timeout-minutes: 120
         run: |
-          cd c2s.src
-          cd build
-          find . -name CMakeCache.txt |xargs rm
+          cd c2s.src/build
+          find . -name CMakeCache.txt -delete
           cmake \
             -G Ninja \
             -DLLVM_ENABLE_PROJECTS="clang"  \
