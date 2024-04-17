@@ -96,6 +96,8 @@ enum class library_data_t : unsigned char {
   real_int8_4,
   real_int8_32,
   real_uint8_4,
+  real_f8_e4m3,
+  real_f8_e5m2,
   library_data_t_size
 };
 

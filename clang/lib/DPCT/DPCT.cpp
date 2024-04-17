@@ -268,13 +268,14 @@ bool hasOption(int argc, const char **argv, StringRef Opt) {
 bool hasOptConflictWithQuery(int argc, const char **argv) {
   for (auto I = 1; I < argc; I++) {
     auto Opt = StringRef(argv[I]);
-    if (!Opt.starts_with("--query-api-mapping") &&
-        !Opt.starts_with("--cuda-include-path") &&
-        !Opt.starts_with("--extra-arg")) {
+    Opt = Opt.drop_while([](char input) { return input == '-'; });
+    if (!Opt.starts_with("query-api-mapping") &&
+        !Opt.starts_with("cuda-include-path") &&
+        !Opt.starts_with("extra-arg")) {
       return true;
     }
-    if (Opt == "--query-api-mapping" || Opt == "--cuda-include-path" ||
-        Opt == "--extra-arg") {
+    if (Opt == "query-api-mapping" || Opt == "cuda-include-path" ||
+        Opt == "extra-arg") {
       ++I; // Skip option value when using option without '='.
     }
   }
