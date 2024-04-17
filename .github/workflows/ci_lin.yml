@@ -151,6 +151,7 @@ jobs:
           mkdir build
           cd build
           cp -rf $GITHUB_WORKSPACE/download_build/* ./
+          rm CMakeCache.txt
           cmake \
             -G Ninja \
             -DLLVM_ENABLE_PROJECTS="clang"  \
