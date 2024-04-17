@@ -66,12 +66,14 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_PeerAccess,
   ExtDE_Assert,
   ExtDE_QueueEmpty,
-  ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
+  ExtDE_DPCPPExtensionsDefaultEnabledEnumSize,
+  ExtDE_All
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
   ExtDD_CCXXStandardLibrary = 0,
   ExtDD_IntelDeviceMath,
-  ExtDD_DPCPPExtensionsDefaultDisabledEnumSize
+  ExtDD_DPCPPExtensionsDefaultDisabledEnumSize,
+  ExtDD_All
 };
 enum class ExperimentalFeatures : unsigned int {
   Exp_NdRangeBarrier = 0, // Using nd_range_barrier.
@@ -87,7 +89,8 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_BFloat16Math,
   Exp_BindlessImages,
   Exp_NonUniformGroups,
-  Exp_ExperimentalFeaturesEnumSize
+  Exp_ExperimentalFeaturesEnumSize,
+  Exp_All
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
 enum class SYCLFileExtensionEnum { DP_CPP, SYCL_CPP, CPP };
