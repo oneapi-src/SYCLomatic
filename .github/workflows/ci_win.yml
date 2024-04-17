@@ -154,7 +154,7 @@ jobs:
         run: |
           cd c2s.src
           cd build
-          rm CMakeCache.txt
+          find . -name CMakeCache.txt |xargs rm
           cmake \
             -G Ninja \
             -DLLVM_ENABLE_PROJECTS="clang"  \
