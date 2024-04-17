@@ -89,11 +89,17 @@ jobs:
         shell: cmd
         run: |
           C:\7-Zip\7z.exe a c2s_obj.7z c2s.obj
-      - name: Upload Build
+          C:\7-Zip\7z.exe a c2s_build.7z c2s.src/build
+      - name: Upload Results 
         uses: actions/upload-artifact@v4
         with:
           name: SYCLomatic_Win_${{ github.sha }}
           path: c2s_obj.7z 
+      - name: Upload Results Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: SYCLomatic_Win_build_${{ github.sha }}
+          path: c2s_build.7z
 
   windows-lit:
     name: windows-lit
@@ -116,15 +122,20 @@ jobs:
           if exist c2s_obj.7z del /s /q c2s_obj.7z 
         shell: cmd
 
-      - name: Download Build
+      - name: Download Results
         uses: actions/download-artifact@v4
         with:
           name: SYCLomatic_Win_${{ github.sha }}
+      - name: Download Results Build
+        uses: actions/download-artifact@v4
+        with:
+          name: SYCLomatic_Win_build_${{ github.sha }}
 
       - name: Extract Build
         shell: cmd
         run: |
           C:\7-Zip\7z.exe x -y c2s_obj.7z
+          C:\7-Zip\7z.exe x -y c2s_build.7z
 
       - name: Process ENV
         id: process_env
@@ -142,7 +153,6 @@ jobs:
         timeout-minutes: 120
         run: |
           cd c2s.src
-          mkdir build
           cd build
           cmake \
             -G Ninja \

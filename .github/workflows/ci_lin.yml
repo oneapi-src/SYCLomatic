@@ -86,12 +86,19 @@ jobs:
         run: echo "::set-output name=build_success::true"
 
       - name: Pack Results
-        run: tar -cJf c2s_obj.tar.xz -C $GITHUB_WORKSPACE/c2s.obj ./
+        run: |
+          tar -cJf c2s_obj.tar.xz -C $GITHUB_WORKSPACE/c2s.obj ./
+          tar -cJf c2s_build.tar.xz -C $GITHUB_WORKSPACE/c2s.src/build ./
       - name: Upload Results 
         uses: actions/upload-artifact@v4
         with:
           name: SYCLomatic_linux_${{ github.sha }}
           path: c2s_obj.tar.xz
+      - name: Upload Results Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: SYCLomatic_linux_build_${{ github.sha }}
+          path: c2s_build.tar.xz
 
   linux-lit:
     name: linux-lit
@@ -122,12 +129,17 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: SYCLomatic_linux_${{ github.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: SYCLomatic_linux_build_${{ github.sha }}
 
       - name: Unpack artifact
         shell: bash
         run: |
           mkdir $GITHUB_WORKSPACE/c2s.obj
+          mkdir $GITHUB_WORKSPACE/download_build
           tar -xvf c2s_obj.tar.xz -C $GITHUB_WORKSPACE/c2s.obj
+          tar -xvf c2s_build.tar.xz -C $GITHUB_WORKSPACE/download_build
 
       - name: Prepare Env
         uses: ./c2s.src/devops/actions/prepare_env_lin
@@ -138,6 +150,7 @@ jobs:
           cd c2s.src
           mkdir build
           cd build
+          cp -rf $GITHUB_WORKSPACE/download_build/* ./
           cmake \
             -G Ninja \
             -DLLVM_ENABLE_PROJECTS="clang"  \
