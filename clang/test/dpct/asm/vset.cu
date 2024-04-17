@@ -98,3 +98,28 @@ __global__ void vset(unsigned *d) {
   asm("vset.u32.s32.gt.max %0, %1, %2, %3;" : "=r"(*d) : "r"(a), "r"(f), "r"(a));
   asm("vset.u32.s32.ge.max %0, %1, %2, %3;" : "=r"(*d) : "r"(a), "r"(f), "r"(a));
 }
+
+__device__ int vset2() {
+  int i;
+  // clang-format off
+  // CHECK: { i = dpct::extend_compare<int32_t, int32_t>(32, 40, std::equal_to<>()); if (!(i == 0)) { return 1; } };
+  // CHECK: { i = dpct::extend_compare<int32_t, int32_t>(32, 32, std::not_equal_to<>()); if (!(i == 0)) { return 2; } };
+  // CHECK: { i = dpct::extend_compare<int32_t, int32_t>(32, 32, std::less<>()); if (!(i == 0)) { return 3; } };
+  // CHECK: { i = dpct::extend_compare<int32_t, int32_t>(30, 32, std::less_equal<>()); if (!(i == 1)) { return 4; } };
+  // CHECK: { i = dpct::extend_compare<int32_t, int32_t>(32, 31, std::greater<>()); if (!(i == 1)) { return 5; } };
+  // CHECK: { i = dpct::extend_compare<int32_t, int32_t>(32, 32, std::greater_equal<>()); if (!(i == 1)) { return 6; } };
+  // CHECK: { i = dpct::extend_compare<int32_t, int32_t>(32, 40, 1, std::equal_to<>(), sycl::plus<>()); if (!(i == 1)) { return 7; } };
+  // CHECK: { i = dpct::extend_compare<int32_t, int32_t>(32, 32, 3, std::not_equal_to<>(), sycl::minimum<>()); if (!(i == 0)) { return 8; } };
+  // CHECK: { i = dpct::extend_compare<int32_t, int32_t>(32, 32, 4, std::less<>(), sycl::maximum<>()); if (!(i == 4)) { return 9; } };
+  { asm("vset.s32.s32.eq %0, %1, %2;" : "=r"(i) : "r"(32), "r"(40)); if (!(i == 0)) { return 1; } };
+  { asm("vset.s32.s32.ne %0, %1, %2;" : "=r"(i) : "r"(32), "r"(32)); if (!(i == 0)) { return 2; } };
+  { asm("vset.s32.s32.lt %0, %1, %2;" : "=r"(i) : "r"(32), "r"(32)); if (!(i == 0)) { return 3; } };
+  { asm("vset.s32.s32.le %0, %1, %2;" : "=r"(i) : "r"(30), "r"(32)); if (!(i == 1)) { return 4; } };
+  { asm("vset.s32.s32.gt %0, %1, %2;" : "=r"(i) : "r"(32), "r"(31)); if (!(i == 1)) { return 5; } };
+  { asm("vset.s32.s32.ge %0, %1, %2;" : "=r"(i) : "r"(32), "r"(32)); if (!(i == 1)) { return 6; } };
+  { asm("vset.s32.s32.eq.add %0, %1, %2, %3;" : "=r"(i) : "r"(32), "r"(40), "r"(1)); if (!(i == 1)) { return 7; } };
+  { asm("vset.s32.s32.ne.min %0, %1, %2, %3;" : "=r"(i) : "r"(32), "r"(32), "r"(3)); if (!(i == 0)) { return 8; } };
+  { asm("vset.s32.s32.lt.max %0, %1, %2, %3;" : "=r"(i) : "r"(32), "r"(32), "r"(4)); if (!(i == 4)) { return 9; } };
+  // clang-format on
+  return 0;
+}
