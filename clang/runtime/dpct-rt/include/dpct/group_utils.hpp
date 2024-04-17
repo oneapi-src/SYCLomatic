@@ -16,7 +16,7 @@
 #include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
 #endif
 
-#include "dpct.hpp"
+#include "dpct/dpct.hpp"
 #include "dpl_extras/dpcpp_extensions.h"
 #include "dpl_extras/functional.h"
 
