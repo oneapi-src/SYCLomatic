@@ -2807,9 +2807,9 @@ struct CommandLineCommonOptions {
   cl::opt<HelpPrinterWrapper, true, cl::parser<HelpCategory>> HOp{
       "help",
       cl::values(
-          cl::OptionEnumValue{"", int(HelpCategory::HC_All),
-                              "List all options in alphabetical order. (default)",
-                              true},
+          cl::OptionEnumValue{
+              "", int(HelpCategory::HC_All),
+              "List all options in alphabetical order. (default)", true},
           cl::OptionEnumValue{"basic", int(HelpCategory::HC_Basic),
                               "List options for basic migration.", false},
           cl::OptionEnumValue{"advanced", int(HelpCategory::HC_Advanced),
@@ -2823,7 +2823,8 @@ struct CommandLineCommonOptions {
                               "during migration.",
                               false},
           cl::OptionEnumValue{"build-script", int(HelpCategory::HC_BuildScript),
-                              "List options to migrate build script(s).", false},
+                              "List options to migrate build script(s).",
+                              false},
           cl::OptionEnumValue{"query-api", int(HelpCategory::HC_QueryAPI),
                               "List options to query API mapping support.",
                               false},
