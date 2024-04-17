@@ -1,4 +1,4 @@
-//==---- group_utils.h ------------------*- C++ -*---------------==//
+//==---- group_utils.h ------------------*- C++ -*--------------------==//
 //
 // Copyright (C) Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------===//
 
-#ifndef __GROUP_UTILS_HPP__
-#define __GROUP_UTILS_HPP__
+#ifndef __DPCT_GROUP_UTILS_HPP__
+#define __DPCT_GROUP_UTILS_HPP__
 
 #include <stdexcept>
 #include <sycl/sycl.hpp>
