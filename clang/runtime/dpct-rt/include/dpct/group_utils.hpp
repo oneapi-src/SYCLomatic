@@ -238,4 +238,5 @@ private:
 } // namespace group
 } // namespace dpct
 
-#endif
+#endif // __DPCT_GROUP_UTILS_HPP__
+
