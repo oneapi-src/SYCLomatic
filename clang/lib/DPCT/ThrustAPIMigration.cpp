@@ -22,12 +22,21 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       callExpr(
           anyOf(callee(functionDecl(anyOf(
+                    hasDeclContext(namespaceDecl(
+                        hasName("THRUST_200302___CUDA_ARCH_LIST___NS"))),
+                    hasDeclContext(namespaceDecl(hasName(
+                        "THRUST_200302___CUDA_ARCH_LIST___NS::detail"))),
+                    hasDeclContext(namespaceDecl(hasName(
+                        "THRUST_200302___CUDA_ARCH_LIST___NS::system"))),
                     hasDeclContext(namespaceDecl(hasName("thrust"))),
                     hasDeclContext(namespaceDecl(hasName("thrust::detail"))),
                     hasDeclContext(namespaceDecl(hasName("thrust::system"))),
+                    hasDeclContext(namespaceDecl(hasName("__4"))),
                     functionName()))),
-                callee(unresolvedLookupExpr(hasAnyDeclaration(namedDecl(
-                    hasDeclContext(namespaceDecl(hasName("thrust")))))))))
+                callee(unresolvedLookupExpr(hasAnyDeclaration(
+                    namedDecl(hasDeclContext(namespaceDecl(anyOf(
+                        hasName("thrust"),
+                        hasName("THRUST_200302___CUDA_ARCH_LIST___NS"))))))))))
           .bind("thrustFuncCall"),
       this);
   // THRUST_STATIC_ASSERT macro register

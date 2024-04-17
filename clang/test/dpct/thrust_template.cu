@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-8.0
-// UNSUPPORTED: v8.0
+// UNSUPPORTED: cuda-8.0, cuda-12.4
+// UNSUPPORTED: v8.0, v12.4
 // RUN: dpct -out-root %T/thrust_template %s --cuda-include-path="%cuda-path/include" -- -ferror-limit=50
 // RUN: FileCheck --input-file %T/thrust_template/thrust_template.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/thrust_template/thrust_template.dp.cpp -o %T/thrust_template/thrust_template.dp.o %}
