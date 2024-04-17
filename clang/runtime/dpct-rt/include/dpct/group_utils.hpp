@@ -17,8 +17,8 @@
 #endif
 
 #include "dpct/dpct.hpp"
-#include "dpl_extras/dpcpp_extensions.h"
-#include "dpl_extras/functional.h"
+#include "dpct/dpl_extras/dpcpp_extensions.h"
+#include "dpct/dpl_extras/functional.h"
 
 namespace dpct {
 namespace group {
