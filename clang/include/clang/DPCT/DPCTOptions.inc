@@ -361,7 +361,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
                                      false),
              DPCT_OPT_ENUM("all",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_All),
-                                     "Disable all extensions.", false)
+                                     "Disable all extensions listed in this option.", false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
            "By default, these extensions are used in migrated code.\n"
@@ -384,7 +384,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisab
                                      false),
              DPCT_OPT_ENUM("all",
                                      int(DPCPPExtensionsDefaultDisabled::ExtDD_All),
-                                     "Enable all DPC++ extensions.",
+                                     "Enable all DPC++ extensions listed in this option.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions to be used in migrated code.\n"
@@ -432,7 +432,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         "Experimental extension that allows use of non-uniform groups.\n",
         false),
             DPCT_OPT_ENUM("all", int(ExperimentalFeatures::Exp_All),
-        "Enable all experimental extensions.\n",
+        "Enable all experimental extensions listed in this option.\n",
         false)
            ),
            llvm::cl::desc("Comma-separated list of experimental features to be used in migrated "
