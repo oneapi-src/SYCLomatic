@@ -23,6 +23,6 @@
 #include "dpl_extras/vector.h"
 #include "dpl_extras/dpcpp_extensions.h"
 
-#include "group_utils.hpp"
+#include "dpct/group_utils.hpp"
 
 #endif // __DPCT_DPL_UTILS_HPP__
