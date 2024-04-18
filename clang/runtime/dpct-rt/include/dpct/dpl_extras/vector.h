@@ -417,15 +417,19 @@ public:
       if (size() > v.size()) {
         v.reserve(capacity());
         device_allocator_traits<Allocator>::uninitialized_device_copy_n(
-            _alloc, begin() + min_size, begin() + size(), size() - min_size,
-            v.begin() + min_size);
+            _alloc, begin() + min_size, size() - min_size,
+            v._storage + min_size);
         v._size = size();
+        _destroy(size() - min_size, min_size);
+        _size = min_size;
       } else if (size() < v.size()) {
         reserve(v.capacity());
         device_allocator_traits<Allocator>::uninitialized_device_copy_n(
-            _alloc, v.begin() + min_size, v.begin() + v.size(),
-            v.size() - min_size, begin() + min_size);
+            _alloc, v.begin() + min_size, v.size() - min_size,
+            _storage + min_size);
         _size = v.size();
+        v._destroy(v.size() - min_size, min_size);
+        v._size = min_size;
       }
     }
   }
