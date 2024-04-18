@@ -19,6 +19,8 @@ using namespace clang::ast_matchers;
 void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // API register
   auto functionName = [&]() { return hasAnyName("on"); };
+  // Both THRUST_200302___CUDA_ARCH_LIST___NS and __4 are newly imported inline
+  // namespace by thrust library in CUDA header file 12.4.
   MF.addMatcher(
       callExpr(
           anyOf(callee(functionDecl(anyOf(
