@@ -10,6 +10,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "ExprAnalysis.h"
 #include "MigrationRuleManager.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
@@ -29,6 +30,7 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/raw_ostream.h"
 #include <iterator>
 
 using namespace clang;
@@ -1156,16 +1158,34 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     }
     const Expr *InData = FuncArgs[0];
     ExprAnalysis InEA(InData);
+    bool IsPartialReduce = false;
+    unsigned ValidItemParamIdx = 0;
     if (FuncName == "Reduce" && NumArgs == 2) {
       OpRepl = getOpRepl(FuncArgs[1]);
-    } else if (FuncName == "Sum" && NumArgs == 1) {
+    } else if (FuncName == "Sum") {
       OpRepl = getOpRepl(nullptr);
+      IsPartialReduce = NumArgs == 2;
+      ValidItemParamIdx = 1;
     } else {
       report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              "cub::" + FuncName);
       return;
     }
-    CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
+    std::string In;
+    if (IsPartialReduce) {
+      std::string tmp;
+      llvm::raw_string_ostream OS(tmp);
+      ExprAnalysis ValidItemsEA(BlockMC->getArg(ValidItemParamIdx));
+      ValidItemsEA.analyze();
+      OS << '(' << GroupOrWorkitem << ".get_local_linear_id() < "
+         << ValidItemsEA.getReplacedString() << ") ? "
+         << InEA.getReplacedString() << " : " << MapNames::getClNamespace()
+         << "known_identity_v<" << StringRef(OpRepl).drop_back(2) << ", "
+         << DpctGlobalInfo::getTypeName(InData->getType()) << ">";
+      In = std::move(tmp);
+    } else
+      In = InEA.getReplacedString();
+    CubParamAs << GroupOrWorkitem << In << OpRepl;
     Repl = NewFuncName + "(" + ParamList + ")";
     emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
   }
