@@ -8569,13 +8569,16 @@ void KernelCallRule::runRule(
       DpctGlobalInfo::insertKCIndentWidth(IndentLen);
 
     for (const Expr *Arg : KCall->arguments()) {
-      std::set<SourceLocation> ReportLocations;
+      std::map<SourceLocation, std::string> ReportLocations;
       if (auto R = analyzeDeviceCopyable(Arg->getType(), ReportLocations)) {
         emplaceTransformation(
             new ReplaceText(R->first, 0, std::move(R->second)));
+        report(KCall->getBeginLoc(),
+               Diagnostics::NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, true,
+               DpctGlobalInfo::getOriginalTypeName(Arg->getType()));
       }
-      for (const auto &L : ReportLocations) {
-        report(L, Diagnostics::NOT_DEVICE_COPYABLE, true);
+      for (const auto &P : ReportLocations) {
+        report(P.first, Diagnostics::NOT_DEVICE_COPYABLE, true, P.second);
       }
     }
 

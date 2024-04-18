@@ -29,6 +29,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <optional>
 #include <string>
@@ -4975,7 +4976,7 @@ const DeclRefExpr *getAddressedRef(const Expr *E) {
 
 std::optional<std::pair<SourceLocation, std::string>>
 analyzeDeviceCopyable(QualType Type,
-                      std::set<SourceLocation> &ReportLocations) {
+                      std::map<SourceLocation, std::string> &ReportLocations) {
   std::function<const Decl *(QualType)> getTypeDecl;
   getTypeDecl = [&getTypeDecl](QualType QT) -> const Decl * {
     switch (QT->getTypeClass()) {
@@ -5011,13 +5012,79 @@ analyzeDeviceCopyable(QualType Type,
       if (const auto *ClassDecl = dyn_cast<CXXRecordDecl>(RT->getDecl())) {
         if (!isUserDefinedDecl(ClassDecl))
           return;
-        ReportLocations.insert(ClassDecl->getBeginLoc());
+        std::vector<std::string> Messages;
+        if (!ClassDecl->hasSimpleCopyConstructor()) {
+          Messages.push_back("copy constructor");
+        }
+        if (!ClassDecl->hasSimpleCopyAssignment()) {
+          Messages.push_back("copy assignment");
+        }
+        if (!ClassDecl->hasSimpleMoveConstructor() &&
+            !ClassDecl->hasUserDeclaredCopyConstructor() &&
+            !ClassDecl->hasUserDeclaredCopyAssignment() &&
+            !ClassDecl->hasUserDeclaredMoveAssignment() &&
+            !ClassDecl->hasUserDeclaredDestructor()) {
+          Messages.push_back("move constructor");
+        }
+        if (!ClassDecl->hasSimpleMoveAssignment() &&
+            !ClassDecl->hasUserDeclaredCopyConstructor() &&
+            !ClassDecl->hasUserDeclaredCopyAssignment() &&
+            !ClassDecl->hasUserDeclaredMoveConstructor() &&
+            !ClassDecl->hasUserDeclaredDestructor()) {
+          Messages.push_back("move assignment");
+        }
+        if (!ClassDecl->hasSimpleDestructor()) {
+          Messages.push_back("destructor");
+        }
+        for (const auto &M : ClassDecl->methods()) {
+          if (M->isVirtual()) {
+            Messages.push_back("virtual method \"" + M->getNameAsString() +
+                               "\"");
+          }
+        }
+        for (const auto &B : ClassDecl->bases()) {
+          bool FurtherAnalyze = false;
+          if (B.isVirtual()) {
+            Messages.push_back(
+                "virtual base class \"" +
+                DpctGlobalInfo::getOriginalTypeName(B.getType()) + "\"");
+                FurtherAnalyze = true;
+          }
+          if (!B.getType().isTriviallyCopyableType(
+                  DpctGlobalInfo::getContext())) {
+            Messages.push_back(
+                "non trivially copyable base class \"" +
+                DpctGlobalInfo::getOriginalTypeName(B.getType()) + "\"");
+                FurtherAnalyze = true;
+          }
+          if (FurtherAnalyze)
+            findNonTrivalCopyableType(B.getType());
+        }
         // Check each field
         for (const auto *F : ClassDecl->fields()) {
           QualType FQT = F->getType();
-          if (!FQT.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
+          if (!FQT.isTriviallyCopyableType(DpctGlobalInfo::getContext())) {
             findNonTrivalCopyableType(FQT);
+            Messages.push_back("non trivially copyable field \"" +
+                               F->getNameAsString() + "\"");
+          }
         }
+        std::string MsgStr;
+        if (Messages.empty()) {
+          assert(0 && "Messages is empty.");
+        } else if (Messages.size() == 1) {
+          MsgStr = Messages[0];
+        } else if (Messages.size() == 2) {
+          MsgStr = Messages[0] + " and " + Messages[1];
+        } else {
+          for (size_t i = 0; i < Messages.size() - 2; i++) {
+            MsgStr += (Messages[i] + ", ");
+          }
+          MsgStr += (Messages[Messages.size() - 2] + " and " +
+                     Messages[Messages.size() - 1]);
+        }
+        ReportLocations.insert(
+            std::make_pair(ClassDecl->getBeginLoc(), MsgStr));
       }
     }
   };
