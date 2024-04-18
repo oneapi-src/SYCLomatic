@@ -33,7 +33,6 @@ protected:
   //       is kept for potential future extension by specialization based on
   //       this part of the type definition.
 
-
 public:
   // It is the user's responsibility to ensure extra data is available on the
   // device if they want to use this iterator with device execution policies
