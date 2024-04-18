@@ -780,17 +780,40 @@ public:
   static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
     return ExtensionDEFlag & (1 << static_cast<unsigned>(Ext));
   }
-  static void setExtensionDEFlag(unsigned Flag) { ExtensionDEFlag = Flag; }
+  static void setExtensionDEFlag(unsigned Flag) {
+    // The bits in Flag was reversed, so we need to check whether the ExtDE_All
+    // bit of Flag is 0. That means disable all default enabled extensions,
+    // otherwise disable the extensions represented by the 0 bit
+    if (Flag &
+        (1 << static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::ExtDE_All)))
+      ExtensionDEFlag = Flag;
+    else
+      ExtensionDEFlag = 0;
+  }
   static unsigned getExtensionDEFlag() { return ExtensionDEFlag; }
   static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
     return ExtensionDDFlag & (1 << static_cast<unsigned>(Ext));
   }
-  static void setExtensionDDFlag(unsigned Flag) { ExtensionDDFlag = Flag; }
+  static void setExtensionDDFlag(unsigned Flag) {
+    // If the ExtDD_All bit is 1, enable all default disabled extensions.
+    if (Flag &
+        (1 << static_cast<unsigned>(DPCPPExtensionsDefaultDisabled::ExtDD_All)))
+      ExtensionDDFlag = static_cast<unsigned>(-1);
+    else
+      ExtensionDDFlag = Flag;
+  }
   static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
   template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
     return ExperimentalFlag & (1 << static_cast<unsigned>(Exp));
   }
-  static void setExperimentalFlag(unsigned Flag) { ExperimentalFlag = Flag; }
+  static void setExperimentalFlag(unsigned Flag) {
+    // If the ExtDD_All bit is 1, enable all default disabled experimental
+    // features.
+    if (Flag & (1 << static_cast<unsigned>(ExperimentalFeatures::Exp_All)))
+      ExperimentalFlag = static_cast<unsigned>(-1);
+    else
+      ExperimentalFlag = Flag;
+  }
   static unsigned getExperimentalFlag() { return ExperimentalFlag; }
   static bool getHelperFuncPreference(HelperFuncPreference HFP) {
     return HelperFuncPreferenceFlag & (1 << static_cast<unsigned>(HFP));

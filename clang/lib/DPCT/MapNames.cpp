@@ -700,6 +700,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudnnDropoutDescriptor_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::dropout_desc",
                                       HelperFeatureEnum::device_ext)},
+      {"cudnnConvolutionMode_t", std::make_shared<TypeNameRule>("int")},
+      {"cudnnNanPropagation_t", std::make_shared<TypeNameRule>("int")},
   };
 
   // CuDNN Enum constants name mapping.
@@ -1221,6 +1223,12 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDA_C_64U",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "library_data_t::complex_uint64")},
+      {"CUDA_R_8F_E4M3",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_f8_e4m3")},
+      {"CUDA_R_8F_E5M2",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_f8_e5m2")},
       // cublasComputeType_t
       {"CUBLAS_COMPUTE_16F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
