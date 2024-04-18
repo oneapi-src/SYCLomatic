@@ -17,13 +17,9 @@ typedef boost::use_default use_default;
 
 typedef boost::iterator_core_access iterator_core_access;
 
-template <class Derived,
-          class Base, 
-          class Value = use_default,
-          class Traversal = use_default,
-          class System = use_default,
-          class Reference = use_default,
-          class Difference = use_default>
+template <class Derived, class Base, class Value = use_default,
+          class Traversal = use_default, class System = use_default,
+          class Reference = use_default, class Difference = use_default>
 class iterator_adaptor
     : public boost::iterator_adaptor<Derived, Base, Value, Traversal, Reference,
                                      Difference> {
@@ -32,15 +28,15 @@ protected:
                                   Difference>
       base_t;
 
-  //Note: System tag is not used to dispatch to any specific backend, this is
-  //      controlled explicitly by the user with execution policies. System tag
-  //      is kept for potential future extension by specialization based on this
-  //      part of the type definition.
+  // Note: System tag is not used to dispatch to any specific backend, this is
+  //       controlled explicitly by the user with execution policies. System tag
+  //       is kept for potential future extension by specialization based on
+  //       this part of the type definition.
 
 
 public:
-  //It is the user's responsibility to ensure extra data may be passed directly,
-  // if they want to use the use this iterator with device execution policies
+  // It is the user's responsibility to ensure extra data is available on the
+  // device if they want to use this iterator with device execution policies
   using is_passed_directly = ::std::true_type;
   using iterator_category = ::std::random_access_iterator_tag;
 

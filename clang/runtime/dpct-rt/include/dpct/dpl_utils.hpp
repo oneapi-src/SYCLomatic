@@ -26,6 +26,6 @@
 // Only include iterator adaptor (and therefore boost) if necessary
 #ifdef ITERATOR_ADAPTOR_REQUIRED
 #include "dpl_extras/iterator_adaptor.h"
-#endif //ITERATOR_ADAPTOR_REQUIRED
+#endif // ITERATOR_ADAPTOR_REQUIRED
 
 #endif // __DPCT_DPL_UTILS_HPP__
