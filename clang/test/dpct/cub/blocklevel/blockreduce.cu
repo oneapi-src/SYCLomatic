@@ -71,7 +71,7 @@ __global__ void ReduceKernel(int* data) {
   data[threadid] = output;
 }
 
-// CHECK: void ReduceSumValid(int* data, int valid_items,
+// CHECK: void ReduceSumValid(int *data, int valid_items,
 // CHECK-NEXT:  const sycl::nd_item<3> &item_ct1) {
 // CHECK-EMPTY:
 // CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
