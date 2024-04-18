@@ -79,64 +79,7 @@ template <typename T> struct device_reference {
     return *this;
   };
   pointer operator&() const { return pointer(&value); };
-  device_reference &operator++() {
-    ++value;
-    return *this;
-  };
-  device_reference &operator--() {
-    --value;
-    return *this;
-  };
-  device_reference operator++(int) {
-    device_reference ref(*this);
-    ++(*this);
-    return ref;
-  };
-  device_reference operator--(int) {
-    device_reference ref(*this);
-    --(*this);
-    return ref;
-  };
-  device_reference &operator+=(const T &input) {
-    value += input;
-    return *this;
-  };
-  device_reference &operator-=(const T &input) {
-    value -= input;
-    return *this;
-  };
-  device_reference &operator*=(const T &input) {
-    value *= input;
-    return *this;
-  };
-  device_reference &operator/=(const T &input) {
-    value /= input;
-    return *this;
-  };
-  device_reference &operator%=(const T &input) {
-    value %= input;
-    return *this;
-  };
-  device_reference &operator&=(const T &input) {
-    value &= input;
-    return *this;
-  };
-  device_reference &operator|=(const T &input) {
-    value |= input;
-    return *this;
-  };
-  device_reference &operator^=(const T &input) {
-    value ^= input;
-    return *this;
-  };
-  device_reference &operator<<=(const T &input) {
-    value <<= input;
-    return *this;
-  };
-  device_reference &operator>>=(const T &input) {
-    value >>= input;
-    return *this;
-  };
+
   operator T &() { return value; }
   operator const T &() const { return value; }
   void swap(device_reference &input) {
