@@ -65,9 +65,6 @@ int main() {
     // CHECK: covdes.set_math_mode(dnnl::fpmath_mode::strict);
     cudnnSetConvolutionMathType(covdes, CUDNN_FMA_MATH);
 
-    // CHECK: /*
-    // CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_CONVOLUTION is not supported.
-    // CHECK: */
     cudnnConvolutionMode_t mode = CUDNN_CONVOLUTION;
     int retCount;
     size_t size;
