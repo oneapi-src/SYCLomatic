@@ -739,6 +739,7 @@ void DpctFileInfo::setKernelDim() {
     auto Info = DeviceFunc.second->getFuncInfo();
     if (Info->isKernel() && !Info->isKernelInvoked()) {
       Info->getVarMap().Dim = 3;
+      Info->KernelCallBlockDim = 3;
     }
   }
 }

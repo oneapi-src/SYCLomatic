@@ -306,6 +306,13 @@ __global__ void test11(float *a_ptr, float *b_ptr,
   }
 }
 
+void foo2(float *a_ptr, float *b_ptr, float *c_ptr, float *d_ptr,
+          int const e_scalar, float *f_ptr, float *g_ptr, float const h_scalar,
+          int *i_ptr, size_t const j_scalar) {
+  test11<<<1, 1>>>(a_ptr, b_ptr, c_ptr, d_ptr, e_scalar, f_ptr, g_ptr, h_scalar,
+                   i_ptr, j_scalar);
+}
+
 typedef unsigned char uint8_t;
 
 __device__ int bar12(int num) {
@@ -461,4 +468,8 @@ __global__ void test21(float *ptr1, float *ptr2, int step1, int step2) {
     ptr1[idx2] = 456;
     idx2 += step2;
   }
+}
+
+void foo3(float *ptr1, float *ptr2, int step1, int step2) {
+  test21<<<1, 1>>>(ptr1, ptr2, step1, step2);
 }
