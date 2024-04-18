@@ -160,7 +160,7 @@ public:
   using const_reference = const reference;
   using value_type = T;
   using pointer = device_pointer<T>;
-  using const_pointer = const device_pointer<T>;
+  using const_pointer = device_pointer<const T>;
   using difference_type =
       typename ::std::iterator_traits<iterator>::difference_type;
   using size_type = ::std::size_t;
@@ -623,7 +623,7 @@ public:
   using const_reference = const reference;
   using value_type = T;
   using pointer = device_pointer<T>;
-  using const_pointer = const device_pointer<T>;
+  using const_pointer = device_pointer<const T>;
   using difference_type =
       typename std::iterator_traits<iterator>::difference_type;
   using size_type = std::size_t;
@@ -852,7 +852,7 @@ public:
   reference back(void) { return *(end() - 1); }
   pointer data(void) { return pointer(reinterpret_cast<T *>(_storage)); }
   const_pointer data(void) const {
-    return const_pointer(reinterpret_cast<T *>(_storage));
+    return const_pointer(reinterpret_cast<const T *>(_storage));
   }
   void shrink_to_fit(void) {
     if (_size != capacity()) {
