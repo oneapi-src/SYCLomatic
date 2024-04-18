@@ -652,9 +652,9 @@ public:
     return DEFAULT_DEVICE_ID;
   }
 
-/// Select device with a device ID.
-/// \param [in] id The id of the device which can
-/// be obtained through get_device_id(const sycl::device).
+  /// Select device with a device ID.
+  /// \param [in] id The id of the device which can
+  /// be obtained through get_device_id(const sycl::device).
   void select_device(unsigned int id) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     check_id(id);
@@ -672,11 +672,21 @@ public:
     }
     throw std::runtime_error(
         "The device[" + dev.get_info<sycl::info::device::name>() +
-        "] is filtered out by dev_mgr::filter/filter_device in current device "
+        "] is filtered out by dpct::dev_mgr::filter/dpct::filter_device in "
+        "current device "
         "list!");
   }
 
-  /// Filter out devices; only keep the device with the name specified.
+  /// List all the devices with its id in dev_mgr.
+  void list_devices() const {
+    for (size_t i = 0; i < _devs.size(); ++i) {
+      std::cout << "" << i << ": "
+                << _devs[i]->get_info<sycl::info::device::name>() << std::endl;
+    }
+  }
+
+  /// Filter out devices; only keep the device whose name contains one of the
+  /// subname in \p dev_subnames.
   /// May break device id mapping and change current device.
   void filter(const std::vector<std::string> &dev_subnames) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
@@ -703,6 +713,9 @@ public:
       }
     }
     _thread2dev_map.clear();
+#ifdef DPCT_VERBOSE
+    list_devices();
+#endif
   }
 
   template <class DeviceSelector>
@@ -745,6 +758,9 @@ private:
         _cpu_device = _devs.size() - 1;
       }
     }
+#ifdef DPCT_VERBOSE
+    list_devices();
+#endif
   }
   void check_id(unsigned int id) const {
     if (id >= _devs.size()) {
@@ -819,10 +835,16 @@ select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
   dev_mgr::instance().select_device(selector);
 }
 
-/// Filter out devices; only keep the device with the name specified.
+/// Filter out devices; only keep the device whose name contains one of the
+/// subname in \p dev_subnames.
 /// May break device id mapping and change current device.
 static inline void filter_device(const std::vector<std::string> &dev_subnames) {
   dev_mgr::instance().filter(dev_subnames);
+}
+
+/// List all the devices with its id in dev_mgr.
+static inline void list_devices() {
+  dev_mgr::instance().list_devices();
 }
 
 static inline unsigned int get_device_id(const sycl::device &dev){
