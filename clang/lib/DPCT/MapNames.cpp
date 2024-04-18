@@ -1231,37 +1231,37 @@ void MapNames::setExplicitNamespaceMap() {
       // cublasComputeType_t
       {"CUBLAS_COMPUTE_16F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_16f")},
+                                      "blas::compute_type::f16")},
       {"CUBLAS_COMPUTE_16F_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_16f_standard")},
+                                      "blas::compute_type::f16_standard")},
       {"CUBLAS_COMPUTE_32F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32f")},
+                                      "blas::compute_type::f32")},
       {"CUBLAS_COMPUTE_32F_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32f_standard")},
+                                      "blas::compute_type::f32_standard")},
       {"CUBLAS_COMPUTE_32F_FAST_16F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32f")},
+                                      "blas::compute_type::f32")},
       {"CUBLAS_COMPUTE_32F_FAST_16BF",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32f_fast_16bf")},
+                                      "blas::compute_type::f32_fast_bf16")},
       {"CUBLAS_COMPUTE_32F_FAST_TF32",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32f_fast_tf32")},
+                                      "blas::compute_type::f32_fast_tf32")},
       {"CUBLAS_COMPUTE_64F",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_64f")},
+                                      "blas::compute_type::f64")},
       {"CUBLAS_COMPUTE_64F_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_64f_standard")},
+                                      "blas::compute_type::f64_standard")},
       {"CUBLAS_COMPUTE_32I",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32i")},
+                                      "blas::compute_type::i32")},
       {"CUBLAS_COMPUTE_32I_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "blas::compute_type::_32i_standard")},
+                                      "blas::compute_type::i32_standard")},
       {"cuda::thread_scope_system",
        std::make_shared<EnumNameRule>(getClNamespace() +
                                       "memory_scope::system")},
@@ -1405,14 +1405,16 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLAS_FILL_MODE_UPPER", "oneapi::mkl::uplo::upper"},
       {"CUBLAS_DIAG_NON_UNIT", "oneapi::mkl::diag::nonunit"},
       {"CUBLAS_DIAG_UNIT", "oneapi::mkl::diag::unit"},
-      {"CUBLAS_DEFAULT_MATH", getDpctNamespace() + "blas::math_mode::_default"},
-      {"CUBLAS_TENSOR_OP_MATH", getDpctNamespace() + "blas::math_mode::_tf32"},
+      {"CUBLAS_DEFAULT_MATH",
+       getDpctNamespace() + "blas::math_mode::mm_default"},
+      {"CUBLAS_TENSOR_OP_MATH",
+       getDpctNamespace() + "blas::math_mode::mm_tf32"},
       {"CUBLAS_PEDANTIC_MATH",
-       getDpctNamespace() + "blas::math_mode::_default"},
+       getDpctNamespace() + "blas::math_mode::mm_default"},
       {"CUBLAS_TF32_TENSOR_OP_MATH",
-       getDpctNamespace() + "blas::math_mode::_tf32"},
+       getDpctNamespace() + "blas::math_mode::mm_tf32"},
       {"CUBLAS_MATH_DISALLOW_REDUCED_PRECISION_REDUCTION",
-       getDpctNamespace() + "blas::math_mode::_default"},
+       getDpctNamespace() + "blas::math_mode::mm_default"},
   };
 
   ClassFieldMap = {};

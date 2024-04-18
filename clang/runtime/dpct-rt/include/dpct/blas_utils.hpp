@@ -288,20 +288,20 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr,
 }
 
 enum class math_mode : int {
-  _default,
-  _tf32,
+  mm_default,
+  mm_tf32,
 };
 enum class compute_type : int {
-  _16f,
-  _16f_standard,
-  _32f,
-  _32f_standard,
-  _32f_fast_16bf,
-  _32f_fast_tf32,
-  _64f,
-  _64f_standard,
-  _32i,
-  _32i_standard,
+  f16,
+  f16_standard,
+  f32,
+  f32_standard,
+  f32_fast_bf16,
+  f32_fast_tf32,
+  f64,
+  f64_standard,
+  i32,
+  i32_standard,
 };
 
 class descriptor {
@@ -319,7 +319,7 @@ public:
 
 private:
   queue_ptr _queue_ptr = &dpct::get_default_queue();
-  math_mode _mm = math_mode::_default;
+  math_mode _mm = math_mode::mm_default;
   static inline queue_ptr _saved_queue_ptr = &dpct::get_default_queue();
 };
 
@@ -1517,19 +1517,19 @@ namespace blas {
 namespace detail {
 inline library_data_t compute_type_to_library_data_t(compute_type ct) {
   switch (ct) {
-  case compute_type::_16f:
-  case compute_type::_16f_standard:
+  case compute_type::f16:
+  case compute_type::f16_standard:
     return library_data_t::real_half;
-  case compute_type::_32f:
-  case compute_type::_32f_standard:
-  case compute_type::_32f_fast_16bf:
-  case compute_type::_32f_fast_tf32:
+  case compute_type::f32:
+  case compute_type::f32_standard:
+  case compute_type::f32_fast_bf16:
+  case compute_type::f32_fast_tf32:
     return library_data_t::real_float;
-  case compute_type::_64f:
-  case compute_type::_64f_standard:
+  case compute_type::f64:
+  case compute_type::f64_standard:
     return library_data_t::real_double;
-  case compute_type::_32i:
-  case compute_type::_32i_standard:
+  case compute_type::i32:
+  case compute_type::i32_standard:
     return library_data_t::real_int32;
   default:
     throw std::runtime_error("conversion is not supported.");
@@ -1543,25 +1543,25 @@ deduce_compute_mode(std::optional<compute_type> ct, math_mode mm) {
   using Ty = typename DataType<T>::T2;
   if (ct) {
     switch (ct.value()) {
-    case compute_type::_16f_standard:
-    case compute_type::_32f_standard:
-    case compute_type::_64f_standard:
-    case compute_type::_32i_standard:
+    case compute_type::f16_standard:
+    case compute_type::f32_standard:
+    case compute_type::f64_standard:
+    case compute_type::i32_standard:
       return oneapi::mkl::blas::compute_mode::standard;
-    case compute_type::_32f:
+    case compute_type::f32:
       if constexpr (std::is_same_v<Ty, std::complex<float>> ||
                     std::is_same_v<Ty, std::complex<double>>)
         return oneapi::mkl::blas::compute_mode::complex_3m;
       break;
-    case compute_type::_32f_fast_16bf:
+    case compute_type::f32_fast_bf16:
       return oneapi::mkl::blas::compute_mode::float_to_bf16;
-    case compute_type::_32f_fast_tf32:
+    case compute_type::f32_fast_tf32:
       return oneapi::mkl::blas::compute_mode::float_to_tf32;
     default:
       [[fallthrough]];
     }
   }
-  if (mm == math_mode::_tf32)
+  if (mm == math_mode::mm_tf32)
     return oneapi::mkl::blas::compute_mode::float_to_tf32;
   return oneapi::mkl::blas::compute_mode::unset;
 }
