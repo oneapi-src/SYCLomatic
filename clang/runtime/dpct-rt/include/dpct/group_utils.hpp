@@ -350,7 +350,7 @@ private:
   static constexpr int LOG_LOCAL_MEMORY_BANKS = 4;
   static constexpr bool INSERT_PADDING =
       (VALUES_PER_THREAD > 4) &&
-      (dpct::group::detail::power_of_two<VALUES_PER_THREAD>::VALUE);
+      (detail::power_of_two<VALUES_PER_THREAD>::VALUE);
 
   uint8_t *_local_memory;
 };
