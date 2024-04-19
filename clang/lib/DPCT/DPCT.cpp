@@ -473,9 +473,9 @@ std::string printCTVersion() {
       OS << Revision;
     }
     OS << ").";
-  } 
-  
-  OS << " Clang parser: (" << CLANG_VERSION_MAJOR << "." << CLANG_VERSION_MINOR 
+  }
+
+  OS << " Clang parser: (" << CLANG_VERSION_MAJOR << "." << CLANG_VERSION_MINOR
      << "." << CLANG_VERSION_PATCHLEVEL << ")\n";
 
   return OS.str();
