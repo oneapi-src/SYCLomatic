@@ -1,0 +1,6 @@
+add_library(target
+            foo.cpp.dp.cpp
+            foo.h
+            )
+            
+add_library(bar bar.cpp bar.h)
