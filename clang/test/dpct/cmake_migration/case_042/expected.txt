@@ -2,7 +2,7 @@
 set_source_files_properties(${src_files} PROPERTIES LANGUAGE CXX)
 
 # add space test
-set_source_files_properties (${src_files} PROPERTIES LANGUAGE CXX)
+set_source_files_properties(${src_files} PROPERTIES LANGUAGE CXX)
 
 # with more properties after LANGUAGE
 set_source_files_properties(${src_files} PROPERTIES LANGUAGE CXX COMPILE_DEFINITIONS SOME_DEFINE)
