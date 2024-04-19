@@ -464,8 +464,7 @@ std::string printCTVersion() {
   llvm::raw_string_ostream OS(buf);
 
   OS << "\n"
-     << TOOL_NAME << " version " << DPCT_VERSION_MAJOR << "."
-     << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
+     << TOOL_NAME << " version " << getDpctVersionStr() << "."
      << " Codebase:";
   std::string Revision = getClangRevision();
   if (!Revision.empty()) {
@@ -473,8 +472,9 @@ std::string printCTVersion() {
     if (!Revision.empty()) {
       OS << Revision;
     }
-    OS << ')';
-  }
+    OS << ').';
+  } 
+  OS << " Clang parser: (" << ")"; 
   OS << "\n";
   return OS.str();
 }
