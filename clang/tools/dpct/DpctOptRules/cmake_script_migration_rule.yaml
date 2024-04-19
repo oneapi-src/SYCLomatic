@@ -1997,6 +1997,49 @@
       Out: COMPATIBILITY_VERSION
       RuleId: "replace_CUDA_VERSION_with_COMPATIBILITY_VERSION"
 
+- Rule: rule_CUDA_VERSION_MAJOR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION_MAJOR
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION_MAJOR
+      Out: COMPATIBILITY_VERSION_MAJOR
+      RuleId: "replace_CUDA_VERSION_MAJOR_with_COMPATIBILITY_VERSION_MAJOR"
+
+- Rule: rule_CUDA_VERSION_MINOR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION_MINOR
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION_MINOR
+      Out: COMPATIBILITY_VERSION_MINOR
+      RuleId: "replace_CUDA_VERSION_MAJOR_with_COMPATIBILITY_VERSION_MINOR"
+
+- Rule: rule_CUDA_VERSION_STRING
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION_STRING
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION_STRING
+      Out: COMPATIBILITY_VERSION_STRING
+      RuleId: "replace_CUDA_VERSION_STRING_with_COMPATIBILITY_VERSION_STRING"
+
+
 - Rule: rule_user_defined_variable
   Kind: CMakeRule
   Priority: Fallback
