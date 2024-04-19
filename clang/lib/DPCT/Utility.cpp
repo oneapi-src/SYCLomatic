@@ -1973,6 +1973,12 @@ std::string getHashStrFromLoc(SourceLocation Loc) {
   return Ret;
 }
 
+std::string getStrFromLoc(SourceLocation Loc) {
+  auto R = dpct::DpctGlobalInfo::getLocInfo(Loc);
+  std::string Ret = dpct::buildString(R.first, "*", R.second);
+  return Ret;
+}
+
 bool IsTypeChangedToPointer(const DeclRefExpr *DRE) {
   auto D = DRE->getDecl();
   auto T = D->getType();
@@ -2510,6 +2516,17 @@ const DeclaratorDecl *getHandleVar(const Expr *Arg) {
       return dyn_cast<DeclaratorDecl>(Member->getMemberDecl());
   }
   return nullptr;
+}
+
+std::string getRecordTypeStr(const CXXRecordDecl *RD) {
+  if (RD->isClass()) {
+    return "class";
+  } else if (RD->isStruct()) {
+    return "struct";
+  } else if (RD->isUnion()) {
+    return "union";
+  }
+  return "";
 }
 
 clang::RecordDecl *getRecordDecl(clang::QualType QT) {
@@ -3238,6 +3255,10 @@ const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
     }
   } else if (TypePtr->getTypeClass() == clang::Type::Pointer) {
     ND = getNamedDecl(TypePtr->castAs<clang::PointerType>()->getPointeeType().getTypePtr());
+  } else if (auto ET = dyn_cast<clang::ElaboratedType>(TypePtr)) {
+    ND = getNamedDecl(ET->getNamedType().getTypePtr());
+  } else if (auto TST = dyn_cast<clang::TemplateSpecializationType>(TypePtr)) {
+    ND = TST->getTemplateName().getAsTemplateDecl();
   }
   return ND;
 }
@@ -4735,6 +4756,14 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
   else if (NameSpace.empty() && !NSD->isInlineNamespace())
     return NSD->getName().str();
   return NameSpace;
+}
+
+void getNameSpace(const NamespaceDecl *NSD,
+                  std::vector<std::string> &Namespaces) {
+  if (!NSD)
+    return;
+  Namespaces.push_back(NSD->getName().str());
+  getNameSpace(dyn_cast<NamespaceDecl>(NSD->getDeclContext()), Namespaces);
 }
 
 bool isFromCUDA(const Decl *D) {
