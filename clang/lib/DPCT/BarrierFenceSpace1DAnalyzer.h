@@ -1,4 +1,4 @@
-//===--------------- BarrierFenceSpaceAnalyzer.h --------------------------===//
+//===--------------- BarrierFenceSpace1DAnalyzer.h ------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DPCT_BARRIER_FENCE_SPACE_ANALYZER_H
-#define DPCT_BARRIER_FENCE_SPACE_ANALYZER_H
+#ifndef DPCT_BARRIER_FENCE_SPACE_1D_ANALYZER_H
+#define DPCT_BARRIER_FENCE_SPACE_1D_ANALYZER_H
 
 #include "AnalysisInfo.h"
 #include "Utility.h"
@@ -22,27 +22,25 @@
 namespace clang {
 namespace dpct {
 
-struct BarrierFenceSpaceAnalyzerResult {
-  BarrierFenceSpaceAnalyzerResult() {}
-  BarrierFenceSpaceAnalyzerResult(bool CanUseLocalBarrier,
-                                  bool CanUseLocalBarrierWithCondition,
-                                  bool MayDependOn1DKernel,
-                                  std::string GlobalFunctionName,
-                                  std::string Condition = "")
+// Depends on 1D kernel
+struct BarrierFenceSpace1DAnalyzerResult {
+  BarrierFenceSpace1DAnalyzerResult() {}
+  BarrierFenceSpace1DAnalyzerResult(bool CanUseLocalBarrier,
+                                    std::string GlobalFunctionName,
+                                    bool CanUseLocalBarrierWithCondition,
+                                    std::string Condition = "")
       : CanUseLocalBarrier(CanUseLocalBarrier),
-        CanUseLocalBarrierWithCondition(CanUseLocalBarrierWithCondition),
-        MayDependOn1DKernel(MayDependOn1DKernel),
         GlobalFunctionName(GlobalFunctionName),
+        CanUseLocalBarrierWithCondition(CanUseLocalBarrierWithCondition),
         Condition(Condition) {}
   bool CanUseLocalBarrier = false;
-  bool CanUseLocalBarrierWithCondition = false;
-  bool MayDependOn1DKernel = false;
   std::string GlobalFunctionName;
+  bool CanUseLocalBarrierWithCondition = false;
   std::string Condition;
 };
 
-class BarrierFenceSpaceAnalyzer
-    : public RecursiveASTVisitor<BarrierFenceSpaceAnalyzer> {
+class BarrierFenceSpace1DAnalyzer
+    : public RecursiveASTVisitor<BarrierFenceSpace1DAnalyzer> {
 public:
   bool shouldVisitImplicitCode() const { return true; }
   bool shouldTraversePostOrder() const { return false; }
@@ -53,16 +51,13 @@ public:
   bool Traverse##CLASS(CLASS *Node) {                                          \
     if (!Visit(Node))                                                          \
       return false;                                                            \
-    if (!RecursiveASTVisitor<BarrierFenceSpaceAnalyzer>::Traverse##CLASS(      \
+    if (!RecursiveASTVisitor<BarrierFenceSpace1DAnalyzer>::Traverse##CLASS(    \
             Node))                                                             \
       return false;                                                            \
     PostVisit(Node);                                                           \
     return true;                                                               \
   }
 
-  VISIT_NODE(ForStmt)
-  VISIT_NODE(DoStmt)
-  VISIT_NODE(WhileStmt)
   VISIT_NODE(SwitchStmt)
   VISIT_NODE(IfStmt)
   VISIT_NODE(CallExpr)
@@ -71,34 +66,20 @@ public:
   VISIT_NODE(LabelStmt)
   VISIT_NODE(MemberExpr)
   VISIT_NODE(CXXDependentScopeMemberExpr)
-  VISIT_NODE(CXXConstructExpr)
 #undef VISIT_NODE
 
 public:
-  BarrierFenceSpaceAnalyzerResult analyze(const CallExpr *CE,
-                                          bool SkipCacheInAnalyzer = false);
+  BarrierFenceSpace1DAnalyzerResult analyzeFor1DKernel(const CallExpr *CE);
 
 private:
-  enum class AccessMode : int { Read = 0, Write, ReadWrite };
   std::pair<std::set<const DeclRefExpr *>, std::set<const VarDecl *>>
   isAssignedToAnotherDREOrVD(const DeclRefExpr *);
   bool isAccessingMemory(const DeclRefExpr *);
-  AccessMode getAccessKind(const DeclRefExpr *);
-  using Ranges = std::vector<SourceRange>;
-  struct SyncCallInfo {
-    SyncCallInfo() {}
-    SyncCallInfo(Ranges Predecessors, Ranges Successors)
-        : Predecessors(Predecessors), Successors(Successors){};
-    Ranges Predecessors;
-    Ranges Successors;
-  };
 
   struct DREInfo {
-    DREInfo(const DeclRefExpr *DRE, SourceLocation SL, AccessMode AM)
-        : DRE(DRE), SL(SL), AM(AM) {}
+    DREInfo(const DeclRefExpr *DRE, SourceLocation SL) : DRE(DRE), SL(SL) {}
     const DeclRefExpr *DRE;
     SourceLocation SL;
-    AccessMode AM;
     bool operator<(const DREInfo &Other) const { return DRE < Other.DRE; }
   };
 
@@ -106,33 +87,21 @@ private:
              bool /*CanUseLocalBarrierWithCondition*/,
              std::string /*Condition*/>
   isSafeToUseLocalBarrier(
-      const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
-      const SyncCallInfo &SCI);
-  bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
+      const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap);
+  bool containsMacro(const SourceLocation &SL);
   bool hasOverlappingAccessAmongWorkItems(int KernelDim,
                                           const DeclRefExpr *DRE);
-  std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
-  std::deque<SourceRange> LoopRange;
-  int KernelDim = 3; // 3 or 1
+  std::vector<const CallExpr *> SyncCallsVec;
+  int KernelDim = 3;          // 3 or 1
   int KernelCallBlockDim = 3; // 3 or 1
   const FunctionDecl *FD = nullptr;
   std::string GlobalFunctionName;
 
   std::unordered_map<const ParmVarDecl *, std::set<const DeclRefExpr *>>
       DefUseMap;
-  std::string CELoc;
-  std::string FDLoc;
   void constructDefUseMap();
   void
   simplifyMap(std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap);
-
-  /// (FD location, (Call location, result))
-  static std::unordered_map<
-      std::string,
-      std::unordered_map<std::string, BarrierFenceSpaceAnalyzerResult>>
-      CachedResults;
-  bool SkipCacheInAnalyzer = false;
-  bool MayDependOn1DKernel = false;
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *findAncestorInFunctionScope(
@@ -154,13 +123,8 @@ private:
     }
     return nullptr;
   }
-  bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
   std::string isAnalyzableWriteInLoop(
       const std::set<const DeclRefExpr *> &WriteInLoopDRESet);
-
-  std::set<const Expr *> DeviceFunctionCallArgs;
-
-  bool IsDifferenceBetweenThreadIdxXAndIndexConstant = false;
 
   // This map contains pairs meet below pattern:
   // loop {
@@ -170,7 +134,7 @@ private:
   //   idx += step;
   //   ...
   // }
-  std::map<const DeclRefExpr*, std::string> DREIncStepMap;
+  std::map<const DeclRefExpr *, std::string> DREIncStepMap;
 
   class TypeAnalyzer {
   public:
@@ -243,4 +207,4 @@ private:
 } // namespace dpct
 } // namespace clang
 
-#endif // DPCT_BARRIER_FENCE_SPACE_ANALYZER_H
+#endif // DPCT_BARRIER_FENCE_SPACE_1D_ANALYZER_H
