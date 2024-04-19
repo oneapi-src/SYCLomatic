@@ -472,7 +472,7 @@ std::string printCTVersion() {
     if (!Revision.empty()) {
       OS << Revision;
     }
-    OS << ').';
+    OS << ").";
   } 
   
   OS << " Clang parser: (" << CLANG_VERSION_MAJOR 
