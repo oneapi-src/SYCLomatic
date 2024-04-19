@@ -287,10 +287,29 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr,
   }
 }
 
+enum class math_mode : int {
+  _default,
+  _tf32,
+};
+enum class compute_type : int {
+  _16f,
+  _16f_standard,
+  _32f,
+  _32f_standard,
+  _32f_fast_16bf,
+  _32f_fast_tf32,
+  _64f,
+  _64f_standard,
+  _32i,
+  _32i_standard,
+};
+
 class descriptor {
 public:
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
   sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
+  void set_math_mode(math_mode mm) noexcept { _mm = mm; }
+  math_mode get_math_mode() const noexcept { return _mm; }
   static inline void set_saved_queue(queue_ptr q_ptr) noexcept {
     _saved_queue_ptr = q_ptr;
   }
@@ -300,6 +319,7 @@ public:
 
 private:
   queue_ptr _queue_ptr = &dpct::get_default_queue();
+  math_mode _mm = math_mode::_default;
   static inline queue_ptr _saved_queue_ptr = &dpct::get_default_queue();
 };
 
@@ -530,32 +550,38 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
 #endif
 }
 
+#ifdef __INTEL_MKL__
 template <class Ta, class Tb, class Tc, class Ts>
 inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                         oneapi::mkl::transpose b_trans, int m, int n, int k,
-                         const void *alpha, const void *a, int lda, const void *b,
-                         int ldb, const void *beta, void *c, int ldc) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
+                      oneapi::mkl::transpose b_trans, int m, int n, int k,
+                      const void *alpha, const void *a, int lda, const void *b,
+                      int ldb, const void *beta, void *c, int ldc,
+                      oneapi::mkl::blas::compute_mode cm) {
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory<const Ta>(a);
   auto data_b = get_memory<const Tb>(b);
   auto data_c = get_memory<Tc>(c);
-  oneapi::mkl::blas::column_major::gemm(
-      q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda,
-      data_b, ldb, beta_value, data_c, ldc);
-#endif
+  oneapi::mkl::blas::column_major::gemm(q, a_trans, b_trans, m, n, k,
+                                        alpha_value, data_a, lda, data_b, ldb,
+                                        beta_value, data_c, ldc, cm);
 }
+#endif
+
+#ifdef __INTEL_MKL__
+#define DPCT_COMPUTE_MODE_PARAM , oneapi::mkl::blas::compute_mode cm
+#define DPCT_COMPUTE_MODE_ARG , cm
+#else
+#define DPCT_COMPUTE_MODE_PARAM
+#define DPCT_COMPUTE_MODE_ARG
+#endif
 
 template <class Ta, class Tb, class Tc, class Ts>
 inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                             oneapi::mkl::transpose b_trans, int m, int n, int k,
                             const void *alpha, const void **a, int lda,
                             const void **b, int ldb, const void *beta, void **c,
-                            int ldc, int batch_size) {
+                            int ldc, int batch_size DPCT_COMPUTE_MODE_PARAM) {
   struct matrix_info_t {
     oneapi::mkl::transpose transpose_info[2];
     Ts value_info[2];
@@ -588,7 +614,8 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
       reinterpret_cast<const Ta **>(a), matrix_info->ld_info,
       reinterpret_cast<const Tb **>(b), matrix_info->ld_info + 1,
       matrix_info->value_info + 1, reinterpret_cast<Tc **>(c),
-      matrix_info->ld_info + 2, 1, &(matrix_info->groupsize_info));
+      matrix_info->ld_info + 2, 1, &(matrix_info->groupsize_info)
+      DPCT_COMPUTE_MODE_ARG);
 
   q.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
@@ -597,29 +624,29 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 }
 
 template <class Ta, class Tb, class Tc, class Ts>
-inline void
-gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                    oneapi::mkl::transpose b_trans, int m, int n,
-                    int k, const void *alpha, const void *a, int lda,
-                    long long int stride_a, const void *b, int ldb,
-                    long long int stride_b, const void *beta, void *c,
-                    int ldc, long long int stride_c, int batch_size) {
+inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
+                            oneapi::mkl::transpose b_trans, int m, int n, int k,
+                            const void *alpha, const void *a, int lda,
+                            long long int stride_a, const void *b, int ldb,
+                            long long int stride_b, const void *beta, void *c,
+                            int ldc, long long int stride_c,
+                            int batch_size DPCT_COMPUTE_MODE_PARAM) {
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory<const Ta>(a);
   auto data_b = get_memory<const Tb>(b);
   auto data_c = get_memory<Tc>(c);
   oneapi::mkl::blas::column_major::gemm_batch(
-      q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda,
-      stride_a, data_b, ldb, stride_b, beta_value,
-      data_c, ldc, stride_c, batch_size);
+      q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda, stride_a, data_b,
+      ldb, stride_b, beta_value, data_c, ldc, stride_c,
+      batch_size DPCT_COMPUTE_MODE_ARG);
 }
 
 template <bool is_hermitian, class T, class Tbeta>
 inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
-                          oneapi::mkl::transpose trans, int n, int k,
-                          const T *alpha, const T *a, int lda, const T *b,
-                          int ldb, const Tbeta *beta, T *c, int ldc) {
+                    oneapi::mkl::transpose trans, int n, int k, const T *alpha,
+                    const T *a, int lda, const T *b, int ldb, const Tbeta *beta,
+                    T *c, int ldc DPCT_COMPUTE_MODE_PARAM) {
   // For symmetric matrix, this function performs: C = alpha*OP(A)*(OP(B))^T + beta*C
   // For Hermitian matrix, this function performs: C = alpha*OP(A)*(OP(B))^H + beta*C
   // The gemmt() function performs: C = alpha*OPA(A)*OPB(B) + beta*C
@@ -644,12 +671,12 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
     auto new_B_buffer = sycl::buffer<Ty, 1>(sycl::range<1>(origin_b_rows * origin_b_cols));
     auto from_buffer = dpct::get_buffer<Ty>(b);
     oneapi::mkl::blas::column_major::omatcopy_batch(
-          q, oneapi::mkl::transpose::conjtrans, origin_b_rows, origin_b_cols,
-          Ts(1.0), from_buffer, ldb, origin_b_rows * ldb, new_B_buffer,
-          origin_b_cols, origin_b_rows * origin_b_cols, 1);
+        q, oneapi::mkl::transpose::conjtrans, origin_b_rows, origin_b_cols,
+        Ts(1.0), from_buffer, ldb, origin_b_rows * ldb, new_B_buffer,
+        origin_b_cols, origin_b_rows * origin_b_cols, 1);
     oneapi::mkl::blas::column_major::gemmt(
-        q, uplo, trans_A, trans_B, n, k, alpha_value,
-        data_a, lda, new_B_buffer, origin_b_cols, beta_value, data_c, ldc);
+        q, uplo, trans_A, trans_B, n, k, alpha_value, data_a, lda, new_B_buffer,
+        origin_b_cols, beta_value, data_c, ldc DPCT_COMPUTE_MODE_ARG);
 #else
     working_memory<T> new_B(origin_b_rows * origin_b_cols * sizeof(T), q);
     oneapi::mkl::blas::column_major::omatcopy_batch(
@@ -658,9 +685,9 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
         reinterpret_cast<Ty *>(new_B.get_ptr()), origin_b_cols,
         origin_b_rows * origin_b_cols, 1);
     sycl::event e = oneapi::mkl::blas::column_major::gemmt(
-        q, uplo, trans_A, trans_B, n, k, alpha_value,
-        data_a, lda, reinterpret_cast<Ty *>(new_B.get_ptr()), origin_b_cols,
-        beta_value, data_c, ldc);
+        q, uplo, trans_A, trans_B, n, k, alpha_value, data_a, lda,
+        reinterpret_cast<Ty *>(new_B.get_ptr()), origin_b_cols, beta_value,
+        data_c, ldc DPCT_COMPUTE_MODE_ARG);
     new_B.set_event(e);
 #endif
   } else {
@@ -677,8 +704,8 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
     auto data_b = get_memory<const Ty>(b);
     auto data_c = get_memory<Ty>(c);
     oneapi::mkl::blas::column_major::gemmt(
-        q, uplo, trans_A, trans_B, n, k, alpha_value,
-        data_a, lda, data_b, ldb, beta_value, data_c, ldc);
+        q, uplo, trans_A, trans_B, n, k, alpha_value, data_a, lda, data_b, ldb,
+        beta_value, data_c, ldc DPCT_COMPUTE_MODE_ARG);
   }
 }
 
@@ -687,7 +714,8 @@ inline void
 trsm_batch_impl(sycl::queue &q, oneapi::mkl::side left_right,
                 oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
                 oneapi::mkl::diag unit_diag, int m, int n, const void *alpha,
-                const void **a, int lda, void **b, int ldb, int batch_size) {
+                const void **a, int lda, void **b, int ldb,
+                int batch_size DPCT_COMPUTE_MODE_PARAM) {
   struct matrix_info_t {
     matrix_info_t(oneapi::mkl::side side_info, oneapi::mkl::uplo uplo_info,
                   oneapi::mkl::transpose transpose_info,
@@ -724,7 +752,8 @@ trsm_batch_impl(sycl::queue &q, oneapi::mkl::side left_right,
       matrix_info->size_info, matrix_info->size_info + 1,
       &(matrix_info->value_info), reinterpret_cast<const Ta **>(a),
       matrix_info->ld_info, reinterpret_cast<Tb **>(b),
-      matrix_info->ld_info + 1, 1, &(matrix_info->groupsize_info));
+      matrix_info->ld_info + 1, 1, &(matrix_info->groupsize_info)
+      DPCT_COMPUTE_MODE_ARG);
 
   q.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
@@ -1484,6 +1513,743 @@ inline void rot(sycl::queue &q, int n, void *x, library_data_t x_type,
   }
 }
 
+namespace blas {
+namespace detail {
+inline library_data_t compute_type_to_library_data_t(compute_type ct) {
+  switch (ct) {
+  case compute_type::_16f:
+  case compute_type::_16f_standard:
+    return library_data_t::real_half;
+  case compute_type::_32f:
+  case compute_type::_32f_standard:
+  case compute_type::_32f_fast_16bf:
+  case compute_type::_32f_fast_tf32:
+    return library_data_t::real_float;
+  case compute_type::_64f:
+  case compute_type::_64f_standard:
+    return library_data_t::real_double;
+  case compute_type::_32i:
+  case compute_type::_32i_standard:
+    return library_data_t::real_int32;
+  default:
+    throw std::runtime_error("conversion is not supported.");
+  }
+}
+} // namespace detail
+#ifdef __INTEL_MKL__
+template <typename T>
+inline oneapi::mkl::blas::compute_mode
+deduce_compute_mode(std::optional<compute_type> ct, math_mode mm) {
+  using Ty = typename DataType<T>::T2;
+  if (ct) {
+    switch (ct.value()) {
+    case compute_type::_16f_standard:
+    case compute_type::_32f_standard:
+    case compute_type::_64f_standard:
+    case compute_type::_32i_standard:
+      return oneapi::mkl::blas::compute_mode::standard;
+    case compute_type::_32f:
+      if constexpr (std::is_same_v<Ty, std::complex<float>> ||
+                    std::is_same_v<Ty, std::complex<double>>)
+        return oneapi::mkl::blas::compute_mode::complex_3m;
+      break;
+    case compute_type::_32f_fast_16bf:
+      return oneapi::mkl::blas::compute_mode::float_to_bf16;
+    case compute_type::_32f_fast_tf32:
+      return oneapi::mkl::blas::compute_mode::float_to_tf32;
+    default:
+      [[fallthrough]];
+    }
+  }
+  if (mm == math_mode::_tf32)
+    return oneapi::mkl::blas::compute_mode::float_to_tf32;
+  return oneapi::mkl::blas::compute_mode::unset;
+}
+
+inline oneapi::mkl::blas::compute_mode
+deduce_compute_mode(std::optional<compute_type> ct, math_mode mm,
+                    bool is_complex) {
+  if (is_complex)
+    return deduce_compute_mode<std::complex<float>>(ct, mm);
+  return deduce_compute_mode<float>(ct, mm);
+}
+#endif
+
+/// Computes matrix-matrix product with general matrices.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] a_trans Specifies the operation applied to A.
+/// \param [in] b_trans Specifies the operation applied to B.
+/// \param [in] m Specifies the number of rows of the matrix op(A) and of the matrix C.
+/// \param [in] n Specifies the number of columns of the matrix op(B) and of the matrix C.
+/// \param [in] k Specifies the number of columns of the matrix op(A) and the number of rows of the matrix op(B).
+/// \param [in] alpha Scaling factor for the matrix-matrix product.
+/// \param [in] a Input matrix A.
+/// \param [in] a_type Data type of the matrix A.
+/// \param [in] lda Leading dimension of A.
+/// \param [in] b Input matrix B.
+/// \param [in] b_type Data type of the matrix B.
+/// \param [in] ldb Leading dimension of B.
+/// \param [in] beta Scaling factor for matrix C.
+/// \param [in, out] c Input/Output matrix C.
+/// \param [in] c_type Data type of the matrix C.
+/// \param [in] ldc Leading dimension of C.
+/// \param [in] ct Compute type.
+inline void gemm(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
+                 oneapi::mkl::transpose b_trans, int m, int n, int k,
+                 const void *alpha, const void *a, library_data_t a_type,
+                 int lda, const void *b, library_data_t b_type, int ldb,
+                 const void *beta, void *c, library_data_t c_type, int ldc,
+                 std::variant<compute_type, library_data_t> ct) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
+  sycl::queue q = desc_ptr->get_queue();
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
+  library_data_t scaling_type;
+  if (auto ct_p = std::get_if<compute_type>(&ct)) {
+    cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+    scaling_type = detail::compute_type_to_library_data_t(*ct_p);
+  } else {
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+    scaling_type = std::get<library_data_t>(ct);
+  }
+
+  if (scaling_type == library_data_t::real_float &&
+      c_type == library_data_t::complex_float) {
+    scaling_type = library_data_t::complex_float;
+  } else if (scaling_type == library_data_t::real_double &&
+             c_type == library_data_t::complex_double) {
+    scaling_type = library_data_t::complex_double;
+  }
+
+  std::uint64_t key = dpct::detail::get_type_combination_id(
+      a_type, b_type, c_type, scaling_type);
+  switch (key) {
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_impl<float, float, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double, library_data_t::real_double): {
+    dpct::detail::gemm_impl<double, double, double, double>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_float, library_data_t::complex_float,
+      library_data_t::complex_float, library_data_t::complex_float): {
+    dpct::detail::gemm_impl<std::complex<float>, std::complex<float>,
+                            std::complex<float>, std::complex<float>>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_double, library_data_t::complex_double,
+      library_data_t::complex_double, library_data_t::complex_double): {
+    dpct::detail::gemm_impl<std::complex<double>, std::complex<double>,
+                            std::complex<double>, std::complex<double>>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_half): {
+    dpct::detail::gemm_impl<sycl::half, sycl::half, sycl::half, sycl::half>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16, float,
+                            float>(q, a_trans, b_trans, m, n, k, alpha, a, lda,
+                                   b, ldb, beta, c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_impl<sycl::half, sycl::half, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_float): {
+    float alpha_value =
+        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
+    float beta_value =
+        dpct::get_value(reinterpret_cast<const float *>(beta), q);
+    sycl::half alpha_half(alpha_value);
+    sycl::half beta_half(beta_value);
+    dpct::detail::gemm_impl<sycl::half, sycl::half, sycl::half, sycl::half>(
+        q, a_trans, b_trans, m, n, k, &alpha_half, a, lda, b, ldb, &beta_half,
+        c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_impl<std::int8_t, std::int8_t, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_bfloat16, library_data_t::real_float): {
+    dpct::detail::gemm_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                            oneapi::mkl::bfloat16, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_int32, library_data_t::real_int32): {
+    float alpha_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(alpha), q);
+    float beta_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(beta), q);
+    dpct::detail::gemm_impl<std::int8_t, std::int8_t, std::int32_t, float>(
+        q, a_trans, b_trans, m, n, k, &alpha_float, a, lda, b, ldb, &beta_float,
+        c, ldc, cm);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+#endif
+}
+
+/// Computes a batch of matrix-matrix product with general matrices.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] a_trans Specifies the operation applied to A.
+/// \param [in] b_trans Specifies the operation applied to B.
+/// \param [in] m Specifies the number of rows of the matrix op(A) and of the matrix C.
+/// \param [in] n Specifies the number of columns of the matrix op(B) and of the matrix C.
+/// \param [in] k Specifies the number of columns of the matrix op(A) and the number of rows of the matrix op(B).
+/// \param [in] alpha Scaling factor for the matrix-matrix product.
+/// \param [in] a Input matrix A.
+/// \param [in] a_type Data type of the matrix A.
+/// \param [in] lda Leading dimension of A.
+/// \param [in] b Input matrix B.
+/// \param [in] b_type Data type of the matrix B.
+/// \param [in] ldb Leading dimension of B.
+/// \param [in] beta Scaling factor for matrix C.
+/// \param [in, out] c Input/Output matrix C.
+/// \param [in] c_type Data type of the matrix C.
+/// \param [in] ldc Leading dimension of C.
+/// \param [in] batch_size Specifies the number of matrix multiply operations to perform.
+/// \param [in] scaling_type Data type of the scaling factors.
+/// \param [in] ct Compute type.
+inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
+                       oneapi::mkl::transpose b_trans, int m, int n, int k,
+                       const void *alpha, const void *a[],
+                       library_data_t a_type, int lda, const void *b[],
+                       library_data_t b_type, int ldb, const void *beta,
+                       void *c[], library_data_t c_type, int ldc,
+                       int batch_size,
+                       std::variant<compute_type, library_data_t> ct) {
+#ifdef DPCT_USM_LEVEL_NONE
+  throw std::runtime_error("this API is unsupported when USM level is none");
+#else
+  sycl::queue q = desc_ptr->get_queue();
+#ifdef __INTEL_MKL__
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
+#endif
+  library_data_t scaling_type;
+  if (auto ct_p = std::get_if<compute_type>(&ct)) {
+#ifdef __INTEL_MKL__
+    cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+#endif
+    scaling_type = detail::compute_type_to_library_data_t(*ct_p);
+  } else {
+#ifdef __INTEL_MKL__
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+#endif
+    scaling_type = std::get<library_data_t>(ct);
+  }
+
+  if (scaling_type == library_data_t::real_float &&
+      c_type == library_data_t::complex_float) {
+    scaling_type = library_data_t::complex_float;
+  } else if (scaling_type == library_data_t::real_double &&
+             c_type == library_data_t::complex_double) {
+    scaling_type = library_data_t::complex_double;
+  }
+
+  std::uint64_t key = dpct::detail::get_type_combination_id(
+      a_type, b_type, c_type, scaling_type);
+  switch (key) {
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<float, float, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double, library_data_t::real_double): {
+    dpct::detail::gemm_batch_impl<double, double, double, double>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_float, library_data_t::complex_float,
+      library_data_t::complex_float, library_data_t::complex_float): {
+    dpct::detail::gemm_batch_impl<std::complex<float>, std::complex<float>,
+                                  std::complex<float>, std::complex<float>>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_double, library_data_t::complex_double,
+      library_data_t::complex_double, library_data_t::complex_double): {
+    dpct::detail::gemm_batch_impl<std::complex<double>, std::complex<double>,
+                                  std::complex<double>, std::complex<double>>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_half): {
+    dpct::detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
+                                  sycl::half>(q, a_trans, b_trans, m, n, k,
+                                              alpha, a, lda, b, ldb, beta, c,
+                                              ldc, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+#ifdef __INTEL_MKL__
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_bfloat16, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                                  oneapi::mkl::bfloat16, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                                  float, float>(q, a_trans, b_trans, m, n, k,
+                                                alpha, a, lda, b, ldb, beta, c,
+                                                ldc, batch_size, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_int32, library_data_t::real_int32): {
+    float alpha_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(alpha), q);
+    float beta_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(beta), q);
+    dpct::detail::gemm_batch_impl<std::int8_t, std::int8_t, std::int32_t,
+                                  float>(q, a_trans, b_trans, m, n, k,
+                                         &alpha_float, a, lda, b, ldb,
+                                         &beta_float, c, ldc, batch_size, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<std::int8_t, std::int8_t, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<sycl::half, sycl::half, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size, cm);
+    break;
+  }
+#endif
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_float): {
+    float alpha_value =
+        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
+    float beta_value =
+        dpct::get_value(reinterpret_cast<const float *>(beta), q);
+    sycl::half alpha_half(alpha_value);
+    sycl::half beta_half(beta_value);
+    dpct::detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
+                                  sycl::half>(
+        q, a_trans, b_trans, m, n, k, &alpha_half, a, lda, b, ldb, &beta_half,
+        c, ldc, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+#endif
+}
+
+/// Computes a batch of matrix-matrix product with general matrices.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] a_trans Specifies the operation applied to A.
+/// \param [in] b_trans Specifies the operation applied to B.
+/// \param [in] m Specifies the number of rows of the matrix op(A) and of the matrix C.
+/// \param [in] n Specifies the number of columns of the matrix op(B) and of the matrix C.
+/// \param [in] k Specifies the number of columns of the matrix op(A) and the number of rows of the matrix op(B).
+/// \param [in] alpha Scaling factor for the matrix-matrix product.
+/// \param [in] a Input matrix A.
+/// \param [in] a_type Data type of the matrix A.
+/// \param [in] lda Leading dimension of A.
+/// \param [in] stride_a Stride between the different A matrices.
+/// \param [in] b Input matrix B.
+/// \param [in] b_type Data type of the matrix B.
+/// \param [in] ldb Leading dimension of B.
+/// \param [in] stride_b Stride between the different B matrices.
+/// \param [in] beta Scaling factor for matrix C.
+/// \param [in, out] c Input/Output matrix C.
+/// \param [in] c_type Data type of the matrix C.
+/// \param [in] ldc Leading dimension of C.
+/// \param [in] stride_c Stride between the different C matrices.
+/// \param [in] batch_size Specifies the number of matrix multiply operations to perform.
+/// \param [in] ct Compute type.
+inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
+                       oneapi::mkl::transpose b_trans, int m, int n, int k,
+                       const void *alpha, const void *a, library_data_t a_type,
+                       int lda, long long int stride_a, const void *b,
+                       library_data_t b_type, int ldb, long long int stride_b,
+                       const void *beta, void *c, library_data_t c_type,
+                       int ldc, long long int stride_c, int batch_size,
+                       std::variant<compute_type, library_data_t> ct) {
+  sycl::queue q = desc_ptr->get_queue();
+#ifdef __INTEL_MKL__
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
+#endif
+  library_data_t scaling_type;
+  if (auto ct_p = std::get_if<compute_type>(&ct)) {
+#ifdef __INTEL_MKL__
+    cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+#endif
+    scaling_type = detail::compute_type_to_library_data_t(*ct_p);
+  } else {
+#ifdef __INTEL_MKL__
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+#endif
+    scaling_type = std::get<library_data_t>(ct);
+  }
+
+  if (scaling_type == library_data_t::real_float &&
+      c_type == library_data_t::complex_float) {
+    scaling_type = library_data_t::complex_float;
+  } else if (scaling_type == library_data_t::real_double &&
+             c_type == library_data_t::complex_double) {
+    scaling_type = library_data_t::complex_double;
+  }
+
+  std::uint64_t key = dpct::detail::get_type_combination_id(
+      a_type, b_type, c_type, scaling_type);
+  switch (key) {
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<float, float, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double, library_data_t::real_double): {
+    dpct::detail::gemm_batch_impl<double, double, double, double>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_float, library_data_t::complex_float,
+      library_data_t::complex_float, library_data_t::complex_float): {
+    dpct::detail::gemm_batch_impl<std::complex<float>, std::complex<float>,
+                                  std::complex<float>, std::complex<float>>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::complex_double, library_data_t::complex_double,
+      library_data_t::complex_double, library_data_t::complex_double): {
+    dpct::detail::gemm_batch_impl<std::complex<double>, std::complex<double>,
+                                  std::complex<double>, std::complex<double>>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_half): {
+    dpct::detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
+                                  sycl::half>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+#ifdef __INTEL_MKL__
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_bfloat16, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                                  oneapi::mkl::bfloat16, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                                  float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_int32, library_data_t::real_int32): {
+    dpct::detail::gemm_batch_impl<std::int8_t, std::int8_t, std::int32_t,
+                                  std::int32_t>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<std::int8_t, std::int8_t, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size, cm);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_float, library_data_t::real_float): {
+    dpct::detail::gemm_batch_impl<sycl::half, sycl::half, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size, cm);
+    break;
+  }
+#endif
+  case dpct::detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_float): {
+    float alpha_value =
+        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
+    float beta_value =
+        dpct::get_value(reinterpret_cast<const float *>(beta), q);
+    sycl::half alpha_half(alpha_value);
+    sycl::half beta_half(beta_value);
+    dpct::detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
+                                  sycl::half>(
+        q, a_trans, b_trans, m, n, k, &alpha_half, a, lda, stride_a, b, ldb,
+        stride_b, &beta_half, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
+
+/// This routines perform a special rank-k update of a symmetric matrix C by
+/// general matrices A and B.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] uplo Specifies whether C's data is stored in its upper or lower triangle.
+/// \param [in] trans Specifies the operation to apply.
+/// \param [in] n The number of rows and columns in C.
+/// \param [in] k The inner dimension of matrix multiplications.
+/// \param [in] alpha Scaling factor for the rank-k update.
+/// \param [in] a Input matrix A.
+/// \param [in] lda Leading dimension of A.
+/// \param [in] b Input matrix B.
+/// \param [in] ldb Leading dimension of B.
+/// \param [in] beta Scaling factor for the rank-k update.
+/// \param [in, out] c Input/Output matrix C.
+/// \param [in] ldc Leading dimension of C.
+template <class T>
+inline void syrk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
+                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
+                 const T *a, int lda, const T *b, int ldb, const T *beta, T *c,
+                 int ldc) {
+  sycl::queue q = desc_ptr->get_queue();
+#ifdef __INTEL_MKL__
+  auto cm = deduce_compute_mode<T>(std::nullopt, desc_ptr->get_math_mode());
+#endif
+  dpct::detail::rk_impl<false, T, T>(q, uplo, trans, n, k, alpha, a, lda, b,
+                                     ldb, beta, c, ldc DPCT_COMPUTE_MODE_ARG);
+}
+
+/// This routines perform a special rank-k update of a Hermitian matrix C by
+/// general matrices A and B.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] uplo Specifies whether C's data is stored in its upper or lower triangle.
+/// \param [in] trans Specifies the operation to apply.
+/// \param [in] n The number of rows and columns in C.
+/// \param [in] k The inner dimension of matrix multiplications.
+/// \param [in] alpha Scaling factor for the rank-k update.
+/// \param [in] a Input matrix A.
+/// \param [in] lda Leading dimension of A.
+/// \param [in] b Input matrix B.
+/// \param [in] ldb Leading dimension of B.
+/// \param [in] beta Scaling factor for the rank-k update.
+/// \param [in, out] c Input/Output matrix C.
+/// \param [in] ldc Leading dimension of C.
+template <class T, class Tbeta>
+inline void herk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
+                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
+                 const T *a, int lda, const T *b, int ldb, const Tbeta *beta,
+                 T *c, int ldc) {
+  sycl::queue q = desc_ptr->get_queue();
+#ifdef __INTEL_MKL__
+  auto cm = deduce_compute_mode<T>(std::nullopt, desc_ptr->get_math_mode());
+#endif
+  dpct::detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b,
+                                        ldb, beta, c, ldc DPCT_COMPUTE_MODE_ARG);
+}
+
+/// This routine performs a group of trsm operations. Each trsm solves an
+/// equation of the form op(A) * X = alpha * B or X * op(A) = alpha * B.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] left_right Specifies A multiplies X on the left or on the right.
+/// \param [in] upper_lower Specifies A is upper or lower triangular.
+/// \param [in] trans Specifies the operation applied to A.
+/// \param [in] unit_diag Specifies whether A is unit triangular.
+/// \param [in] m Number of rows of the B matrices.
+/// \param [in] n Number of columns of the B matrices.
+/// \param [in] alpha Scaling factor for the solutions.
+/// \param [in] a Input matrices A.
+/// \param [in] a_type Data type of the matrices A.
+/// \param [in] lda Leading dimension of the matrices A.
+/// \param [in, out] b Input and output matrices B.
+/// \param [in] b_type Data type of the matrices B.
+/// \param [in] ldb Leading dimension of the matrices B.
+/// \param [in] batch_size Specifies the number of trsm operations to perform.
+/// \param [in] ct Compute type.
+inline void trsm_batch(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
+                       oneapi::mkl::uplo upper_lower,
+                       oneapi::mkl::transpose trans,
+                       oneapi::mkl::diag unit_diag, int m, int n,
+                       const void *alpha, const void **a, library_data_t a_type,
+                       int lda, void **b, library_data_t b_type, int ldb,
+                       int batch_size,
+                       std::variant<compute_type, library_data_t> ct) {
+#ifdef DPCT_USM_LEVEL_NONE
+  throw std::runtime_error("this API is unsupported when USM level is none");
+#else
+  sycl::queue q = desc_ptr->get_queue();
+#ifdef __INTEL_MKL__
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
+  if (auto ct_p = std::get_if<compute_type>(&ct))
+    cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+  else
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+#endif
+  std::uint64_t key = dpct::detail::get_type_combination_id(a_type, b_type);
+  switch (key) {
+  case dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                             library_data_t::real_float): {
+    dpct::detail::trsm_batch_impl<float, float, float>(
+        q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
+        ldb, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                             library_data_t::real_double): {
+    dpct::detail::trsm_batch_impl<double, double, double>(
+        q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
+        ldb, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                             library_data_t::complex_float): {
+    dpct::detail::trsm_batch_impl<std::complex<float>, std::complex<float>,
+                                  std::complex<float>>(
+        q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
+        ldb, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::complex_double,
+                                             library_data_t::complex_double): {
+    dpct::detail::trsm_batch_impl<std::complex<double>, std::complex<double>,
+                                  std::complex<double>>(
+        q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
+        ldb, batch_size DPCT_COMPUTE_MODE_ARG);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+#endif
+}
+
+/// Computes a triangular matrix-general matrix product.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] left_right Specifies A is on the left or right side of the
+/// multiplication.
+/// \param [in] upper_lower Specifies A is upper or lower triangular.
+/// \param [in] trans Specifies the operation applied to A.
+/// \param [in] unit_diag Specifies whether A is unit triangular.
+/// \param [in] m Number of rows of B.
+/// \param [in] n Number of columns of B.
+/// \param [in] alpha Scaling factor for the matrix-matrix product.
+/// \param [in] a Input matrices A.
+/// \param [in] lda Leading dimension of the matrices A.
+/// \param [in] b Input matrices B.
+/// \param [in] ldb Leading dimension of the matrices B.
+/// \param [out] c Output matrices C.
+/// \param [in] ldc Leading dimension of the matrices C.
+template <class T>
+inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
+                 oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
+                 oneapi::mkl::diag unit_diag, int m, int n, const T *alpha,
+                 const T *a, int lda, const T *b, int ldb, T *c, int ldc) {
+  using Ty = typename DataType<T>::T2;
+  sycl::queue q = desc_ptr->get_queue();
+#ifdef __INTEL_MKL__
+  auto cm = deduce_compute_mode<Ty>(std::nullopt, desc_ptr->get_math_mode());
+#endif
+  auto alpha_val = dpct::get_value(alpha, q);
+  if (b != c) {
+    dpct::matrix_mem_copy(c, b, ldc, ldb, m, n, dpct::device_to_device, q);
+  }
+  auto data_a = dpct::detail::get_memory<const Ty>(a);
+  auto data_c = dpct::detail::get_memory<Ty>(c);
+  oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
+                                        unit_diag, m, n, alpha_val, data_a, lda,
+                                        data_c, ldc DPCT_COMPUTE_MODE_ARG);
+}
+} // namespace blas
+
 /// Computes matrix-matrix product with general matrices.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] a_trans Specifies the operation applied to A.
@@ -1503,120 +2269,16 @@ inline void rot(sycl::queue &q, int n, void *x, library_data_t x_type,
 /// \param [in] c_type Data type of the matrix C.
 /// \param [in] ldc Leading dimension of C.
 /// \param [in] scaling_type Data type of the scaling factors.
-inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                 oneapi::mkl::transpose b_trans, int m, int n, int k,
-                 const void *alpha, const void *a, library_data_t a_type,
-                 int lda, const void *b, library_data_t b_type, int ldb,
-                 const void *beta, void *c, library_data_t c_type, int ldc,
-                 library_data_t scaling_type) {
-  bool matched = false;
-  if (scaling_type == library_data_t::real_float &&
-      c_type == library_data_t::complex_float) {
-    scaling_type = library_data_t::complex_float;
-  } else if (scaling_type == library_data_t::real_double &&
-             c_type == library_data_t::complex_double) {
-    scaling_type = library_data_t::complex_double;
-  }
-
-  std::uint64_t key =
-      detail::get_type_combination_id(a_type, b_type, c_type, scaling_type);
-  switch (key) {
-  case detail::get_type_combination_id(
-      library_data_t::real_float, library_data_t::real_float,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_impl<float, float, float, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_double, library_data_t::real_double,
-      library_data_t::real_double, library_data_t::real_double): {
-    detail::gemm_impl<double, double, double, double>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::complex_float, library_data_t::complex_float,
-      library_data_t::complex_float, library_data_t::complex_float): {
-    detail::gemm_impl<std::complex<float>, std::complex<float>,
-                      std::complex<float>, std::complex<float>>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::complex_double, library_data_t::complex_double,
-      library_data_t::complex_double, library_data_t::complex_double): {
-    detail::gemm_impl<std::complex<double>, std::complex<double>,
-                      std::complex<double>, std::complex<double>>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_half, library_data_t::real_half,
-      library_data_t::real_half, library_data_t::real_half): {
-    detail::gemm_impl<sycl::half, sycl::half, sycl::half,
-                      sycl::half>(q, a_trans, b_trans, m, n, k, alpha, a,
-                                      lda, b, ldb, beta, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16, float,
-                      float>(q, a_trans, b_trans, m, n, k, alpha, a, lda, b,
-                             ldb, beta, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_half, library_data_t::real_half,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_impl<sycl::half, sycl::half, float, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_half, library_data_t::real_half,
-      library_data_t::real_half, library_data_t::real_float): {
-    float alpha_value =
-        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
-    float beta_value =
-        dpct::get_value(reinterpret_cast<const float *>(beta), q);
-    sycl::half alpha_half(alpha_value);
-    sycl::half beta_half(beta_value);
-    detail::gemm_impl<sycl::half, sycl::half, sycl::half,
-                      sycl::half>(q, a_trans, b_trans, m, n, k, &alpha_half,
-                                      a, lda, b, ldb, &beta_half, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_int8, library_data_t::real_int8,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_impl<std::int8_t, std::int8_t, float, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
-      library_data_t::real_bfloat16, library_data_t::real_float): {
-    detail::gemm_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
-                      oneapi::mkl::bfloat16, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_int8, library_data_t::real_int8,
-      library_data_t::real_int32, library_data_t::real_int32): {
-    float alpha_float =
-        dpct::get_value(reinterpret_cast<const std::int32_t *>(alpha), q);
-    float beta_float =
-        dpct::get_value(reinterpret_cast<const std::int32_t *>(beta), q);
-    detail::gemm_impl<std::int8_t, std::int8_t, std::int32_t, float>(
-        q, a_trans, b_trans, m, n, k, &alpha_float, a, lda, b, ldb, &beta_float, c, ldc);
-    break;
-  }
-  default:
-    throw std::runtime_error("the combination of data type is unsupported");
-  }
+[[deprecated("Please use dpct::blas::gemm(...) instead.")]] inline void
+gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
+     oneapi::mkl::transpose b_trans, int m, int n, int k, const void *alpha,
+     const void *a, library_data_t a_type, int lda, const void *b,
+     library_data_t b_type, int ldb, const void *beta, void *c,
+     library_data_t c_type, int ldc, library_data_t scaling_type) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::gemm(&desc, a_trans, b_trans, m, n, k, alpha, a, a_type, lda, b, b_type,
+             ldb, beta, c, c_type, ldc, scaling_type);
 }
 
 /// Computes a batch of matrix-matrix product with general matrices.
@@ -1639,137 +2301,17 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
 /// \param [in] ldc Leading dimension of C.
 /// \param [in] batch_size Specifies the number of matrix multiply operations to perform.
 /// \param [in] scaling_type Data type of the scaling factors.
-inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                       oneapi::mkl::transpose b_trans, int m, int n, int k,
-                       const void *alpha, const void *a[],
-                       library_data_t a_type, int lda, const void *b[],
-                       library_data_t b_type, int ldb, const void *beta,
-                       void *c[], library_data_t c_type, int ldc,
-                       int batch_size, library_data_t scaling_type) {
-#ifdef DPCT_USM_LEVEL_NONE
-  throw std::runtime_error("this API is unsupported when USM level is none");
-#else
-  bool matched = false;
-  if (scaling_type == library_data_t::real_float &&
-      c_type == library_data_t::complex_float) {
-    scaling_type = library_data_t::complex_float;
-  } else if (scaling_type == library_data_t::real_double &&
-             c_type == library_data_t::complex_double) {
-    scaling_type = library_data_t::complex_double;
-  }
-
-  std::uint64_t key =
-      detail::get_type_combination_id(a_type, b_type, c_type, scaling_type);
-  switch (key) {
-  case detail::get_type_combination_id(
-      library_data_t::real_float, library_data_t::real_float,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_batch_impl<float, float, float, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_double, library_data_t::real_double,
-      library_data_t::real_double, library_data_t::real_double): {
-    detail::gemm_batch_impl<double, double, double, double>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::complex_float, library_data_t::complex_float,
-      library_data_t::complex_float, library_data_t::complex_float): {
-    detail::gemm_batch_impl<std::complex<float>, std::complex<float>,
-                            std::complex<float>, std::complex<float>>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::complex_double, library_data_t::complex_double,
-      library_data_t::complex_double, library_data_t::complex_double): {
-    detail::gemm_batch_impl<std::complex<double>, std::complex<double>,
-                            std::complex<double>, std::complex<double>>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_half, library_data_t::real_half,
-      library_data_t::real_half, library_data_t::real_half): {
-    detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
-                            sycl::half>(q, a_trans, b_trans, m, n, k, alpha,
-                                            a, lda, b, ldb, beta, c, ldc,
-                                            batch_size);
-    break;
-  }
-#ifdef __INTEL_MKL__
-  case detail::get_type_combination_id(
-      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
-      library_data_t::real_bfloat16, library_data_t::real_float): {
-    detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
-                            oneapi::mkl::bfloat16, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16, float,
-                            float>(q, a_trans, b_trans, m, n, k, alpha, a, lda,
-                                   b, ldb, beta, c, ldc, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_int8, library_data_t::real_int8,
-      library_data_t::real_int32, library_data_t::real_int32): {
-    float alpha_float =
-        dpct::get_value(reinterpret_cast<const std::int32_t *>(alpha), q);
-    float beta_float =
-        dpct::get_value(reinterpret_cast<const std::int32_t *>(beta), q);
-    detail::gemm_batch_impl<std::int8_t, std::int8_t, std::int32_t,
-                            float>(q, a_trans, b_trans, m, n, k, &alpha_float,
-                                          a, lda, b, ldb, &beta_float, c, ldc,
-                                          batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_int8, library_data_t::real_int8,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_batch_impl<std::int8_t, std::int8_t, float, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_half, library_data_t::real_half,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_batch_impl<sycl::half, sycl::half, float, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size);
-    break;
-  }
-#endif
-  case detail::get_type_combination_id(
-      library_data_t::real_half, library_data_t::real_half,
-      library_data_t::real_half, library_data_t::real_float): {
-    float alpha_value =
-        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
-    float beta_value =
-        dpct::get_value(reinterpret_cast<const float *>(beta), q);
-    sycl::half alpha_half(alpha_value);
-    sycl::half beta_half(beta_value);
-    detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half, sycl::half>(
-        q, a_trans, b_trans, m, n, k, &alpha_half, a, lda, b, ldb, &beta_half, c, ldc,
-        batch_size);
-    break;
-  }
-  default:
-    throw std::runtime_error("the combination of data type is unsupported");
-  }
-#endif
+[[deprecated("Please use dpct::blas::gemm_batch(...) instead.")]] inline void
+gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
+           oneapi::mkl::transpose b_trans, int m, int n, int k,
+           const void *alpha, const void *a[], library_data_t a_type, int lda,
+           const void *b[], library_data_t b_type, int ldb, const void *beta,
+           void *c[], library_data_t c_type, int ldc, int batch_size,
+           library_data_t scaling_type) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::gemm_batch(&desc, a_trans, b_trans, m, n, k, alpha, a, a_type, lda, b,
+                   b_type, ldb, beta, c, c_type, ldc, batch_size, scaling_type);
 }
 
 /// Computes a batch of matrix-matrix product with general matrices.
@@ -1795,131 +2337,19 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
 /// \param [in] stride_c Stride between the different C matrices.
 /// \param [in] batch_size Specifies the number of matrix multiply operations to perform.
 /// \param [in] scaling_type Data type of the scaling factors.
-inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                       oneapi::mkl::transpose b_trans, int m, int n, int k,
-                       const void *alpha, const void *a, library_data_t a_type,
-                       int lda, long long int stride_a, const void *b,
-                       library_data_t b_type, int ldb, long long int stride_b,
-                       const void *beta, void *c, library_data_t c_type,
-                       int ldc, long long int stride_c, int batch_size,
-                       library_data_t scaling_type) {
-  bool matched = false;
-  if (scaling_type == library_data_t::real_float &&
-      c_type == library_data_t::complex_float) {
-    scaling_type = library_data_t::complex_float;
-  } else if (scaling_type == library_data_t::real_double &&
-             c_type == library_data_t::complex_double) {
-    scaling_type = library_data_t::complex_double;
-  }
-
-  std::uint64_t key =
-      detail::get_type_combination_id(a_type, b_type, c_type, scaling_type);
-  switch (key) {
-  case detail::get_type_combination_id(
-      library_data_t::real_float, library_data_t::real_float,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_batch_impl<float, float, float, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_double, library_data_t::real_double,
-      library_data_t::real_double, library_data_t::real_double): {
-    detail::gemm_batch_impl<double, double, double, double>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::complex_float, library_data_t::complex_float,
-      library_data_t::complex_float, library_data_t::complex_float): {
-    detail::gemm_batch_impl<std::complex<float>, std::complex<float>,
-                            std::complex<float>, std::complex<float>>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::complex_double, library_data_t::complex_double,
-      library_data_t::complex_double, library_data_t::complex_double): {
-    detail::gemm_batch_impl<std::complex<double>, std::complex<double>,
-                            std::complex<double>, std::complex<double>>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_half, library_data_t::real_half,
-      library_data_t::real_half, library_data_t::real_half): {
-    detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
-                            sycl::half>(q, a_trans, b_trans, m, n, k, alpha,
-                                            a, lda, stride_a, b, ldb, stride_b,
-                                            beta, c, ldc, stride_c, batch_size);
-    break;
-  }
-#ifdef __INTEL_MKL__
-  case detail::get_type_combination_id(
-      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
-      library_data_t::real_bfloat16, library_data_t::real_float): {
-    detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
-                            oneapi::mkl::bfloat16, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16, float,
-                            float>(q, a_trans, b_trans, m, n, k, alpha, a, lda,
-                                   stride_a, b, ldb, stride_b, beta, c, ldc,
-                                   stride_c, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_int8, library_data_t::real_int8,
-      library_data_t::real_int32, library_data_t::real_int32): {
-    detail::gemm_batch_impl<std::int8_t, std::int8_t, std::int32_t,
-                            std::int32_t>(q, a_trans, b_trans, m, n, k, alpha,
-                                          a, lda, stride_a, b, ldb, stride_b,
-                                          beta, c, ldc, stride_c, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_int8, library_data_t::real_int8,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_batch_impl<std::int8_t, std::int8_t, float, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(
-      library_data_t::real_half, library_data_t::real_half,
-      library_data_t::real_float, library_data_t::real_float): {
-    detail::gemm_batch_impl<sycl::half, sycl::half, float, float>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size);
-    break;
-  }
-#endif
-  case detail::get_type_combination_id(
-      library_data_t::real_half, library_data_t::real_half,
-      library_data_t::real_half, library_data_t::real_float): {
-    float alpha_value =
-        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
-    float beta_value =
-        dpct::get_value(reinterpret_cast<const float *>(beta), q);
-    sycl::half alpha_half(alpha_value);
-    sycl::half beta_half(beta_value);
-    detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half, sycl::half>(
-        q, a_trans, b_trans, m, n, k, &alpha_half, a, lda, stride_a, b, ldb, stride_b,
-        &beta_half, c, ldc, stride_c, batch_size);
-    break;
-  }
-  default:
-    throw std::runtime_error("the combination of data type is unsupported");
-  }
+[[deprecated("Please use dpct::blas::gemm_batch(...) instead.")]] inline void
+gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
+           oneapi::mkl::transpose b_trans, int m, int n, int k,
+           const void *alpha, const void *a, library_data_t a_type, int lda,
+           long long int stride_a, const void *b, library_data_t b_type,
+           int ldb, long long int stride_b, const void *beta, void *c,
+           library_data_t c_type, int ldc, long long int stride_c,
+           int batch_size, library_data_t scaling_type) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::gemm_batch(&desc, a_trans, b_trans, m, n, k, alpha, a, a_type, lda,
+                   stride_a, b, b_type, ldb, stride_b, beta, c, c_type, ldc,
+                   stride_c, batch_size, scaling_type);
 }
 
 /// This routines perform a special rank-k update of a symmetric matrix C by
@@ -1938,12 +2368,13 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
 /// \param [in, out] c Input/Output matrix C.
 /// \param [in] ldc Leading dimension of C.
 template <class T>
-inline void syrk(sycl::queue &q, oneapi::mkl::uplo uplo,
-                  oneapi::mkl::transpose trans, int n, int k, const T *alpha,
-                  const T *a, int lda, const T *b, int ldb, const T *beta, T *c,
-                  int ldc) {
-  detail::rk_impl<false, T, T>(q, uplo, trans, n, k, alpha, a, lda, b,
-                                     ldb, beta, c, ldc);
+[[deprecated("Please use dpct::blas::syrk(...) instead.")]] inline void
+syrk(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::transpose trans,
+     int n, int k, const T *alpha, const T *a, int lda, const T *b, int ldb,
+     const T *beta, T *c, int ldc) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::syrk<T>(&desc, uplo, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /// This routines perform a special rank-k update of a Hermitian matrix C by
@@ -1962,12 +2393,13 @@ inline void syrk(sycl::queue &q, oneapi::mkl::uplo uplo,
 /// \param [in, out] c Input/Output matrix C.
 /// \param [in] ldc Leading dimension of C.
 template <class T, class Tbeta>
-inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
-                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
-                 const T *a, int lda, const T *b, int ldb, const Tbeta *beta,
-                 T *c, int ldc) {
-  detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b,
-                                        ldb, beta, c, ldc);
+[[deprecated("Please use dpct::blas::herk(...) instead.")]] inline void
+herk(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::transpose trans,
+     int n, int k, const T *alpha, const T *a, int lda, const T *b, int ldb,
+     const Tbeta *beta, T *c, int ldc) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::herk(&desc, uplo, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /// This routine performs a group of trsm operations. Each trsm solves an
@@ -1988,57 +2420,18 @@ inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
 /// \param [in] ldb Leading dimension of the matrices B.
 /// \param [in] batch_size Specifies the number of trsm operations to perform.
 /// \param [in] scaling_type Data type of the scaling factors.
-inline void trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
-                       oneapi::mkl::uplo upper_lower,
-                       oneapi::mkl::transpose trans,
-                       oneapi::mkl::diag unit_diag, int m, int n,
-                       const void *alpha, const void **a, library_data_t a_type,
-                       int lda, void **b, library_data_t b_type, int ldb,
-                       int batch_size, library_data_t scaling_type) {
-#ifdef DPCT_USM_LEVEL_NONE
-  throw std::runtime_error("this API is unsupported when USM level is none");
-#else
-  std::uint64_t key =
-      detail::get_type_combination_id(a_type, b_type, scaling_type);
-  switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                                       library_data_t::real_float,
-                                       library_data_t::real_float): {
-    detail::trsm_batch_impl<float, float, float>(q, left_right, upper_lower,
-                                                 trans, unit_diag, m, n, alpha,
-                                                 a, lda, b, ldb, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                                       library_data_t::real_double,
-                                       library_data_t::real_double): {
-    detail::trsm_batch_impl<double, double, double>(
-        q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
-        ldb, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                                       library_data_t::complex_float,
-                                       library_data_t::complex_float): {
-    detail::trsm_batch_impl<std::complex<float>, std::complex<float>,
-                            std::complex<float>>(q, left_right, upper_lower,
-                                                 trans, unit_diag, m, n, alpha,
-                                                 a, lda, b, ldb, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                                       library_data_t::complex_double,
-                                       library_data_t::complex_double): {
-    detail::trsm_batch_impl<std::complex<double>, std::complex<double>,
-                            std::complex<double>>(q, left_right, upper_lower,
-                                                  trans, unit_diag, m, n, alpha,
-                                                  a, lda, b, ldb, batch_size);
-    break;
-  }
-  default:
-    throw std::runtime_error("the combination of data type is unsupported");
-  }
-#endif
+[[deprecated("Please use dpct::blas::trsm_batch(...) instead.")]] inline void
+trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
+           oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
+           oneapi::mkl::diag unit_diag, int m, int n, const void *alpha,
+           const void **a, library_data_t a_type, int lda, void **b,
+           library_data_t b_type, int ldb, int batch_size,
+           library_data_t scaling_type) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::trsm_batch(&desc, left_right, upper_lower, trans, unit_diag, m, n,
+                   alpha, a, a_type, lda, b, b_type, ldb, batch_size,
+                   scaling_type);
 }
 
 /// Computes a triangular matrix-general matrix product.
@@ -2058,22 +2451,18 @@ inline void trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
 /// \param [out] c Output matrices C.
 /// \param [in] ldc Leading dimension of the matrices C.
 template <class T>
-inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
-                 oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
-                 oneapi::mkl::diag unit_diag, int m, int n, const T *alpha,
-                 const T *a, int lda, const T *b, int ldb, T *c, int ldc) {
-  using Ty = typename DataType<T>::T2;
-  auto alpha_val = dpct::get_value(alpha, q);
-  if (b != c) {
-    blas::matrix_mem_copy(c, b, ldc, ldb, m, n, sizeof(T),
-                          dpct::device_to_device, q);
-  }
-  auto data_a = detail::get_memory<const Ty>(a);
-  auto data_c = detail::get_memory<Ty>(c);
-  oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
-                                        unit_diag, m, n, alpha_val, data_a, lda,
-                                        data_c, ldc);
+[[deprecated("Please use dpct::blas::trmm(...) instead.")]] inline void
+trmm(sycl::queue &q, oneapi::mkl::side left_right,
+     oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
+     oneapi::mkl::diag unit_diag, int m, int n, const T *alpha, const T *a,
+     int lda, const T *b, int ldb, T *c, int ldc) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::trmm<T>(&desc, left_right, upper_lower, trans, unit_diag, m, n, alpha,
+                a, lda, b, ldb, c, ldc);
 }
 
 } // namespace dpct
+#undef DPCT_COMPUTE_MODE_ARG
+#undef DPCT_COMPUTE_MODE_PARAM
 #endif // __DPCT_BLAS_UTILS_HPP__

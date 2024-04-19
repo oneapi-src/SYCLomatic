@@ -10,6 +10,7 @@
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Path.h"
 #include <PatternRewriter.h>
 
 #include <optional>
@@ -396,13 +397,10 @@ updateExtentionName(const std::string &Input, size_t Next,
     for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
     }
     Pos = Pos == 0 ? 0 : Pos + 1;
-    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - 1 - Pos);
-
-    std::string SyclFileName;
-    rewriteFileName(SyclFileName, FileName);
+    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - Pos);
     bool HasCudaSyntax = false;
     for (const auto &File : MainSrcFilesHasCudaSyntex) {
-      if (File.find(FileName) != std::string::npos) {
+      if (llvm::sys::path::filename(File) == FileName) {
         HasCudaSyntax = true;
       }
     }
@@ -469,7 +467,8 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
               Input[Index + 1] != '}' &&
               !isWhitespace(Input[Index - PatternSize]) &&
               !isWhitespace(Input[Index + 1]) &&
-              Input[Index - PatternSize] != '*') {
+              Input[Index - PatternSize] != '*' &&
+              Input[Index - PatternSize] != '"') {
             return {};
           }
         }
@@ -510,7 +509,6 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       }
 
       std::string ElementContents = Input.substr(Index, Next - Index);
-
       if (SrcFileType == SourceFileType::SFT_CMakeScript) {
         updateExtentionName(Input, Next, Result.Bindings);
       }

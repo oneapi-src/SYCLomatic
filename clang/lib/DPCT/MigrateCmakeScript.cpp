@@ -539,7 +539,7 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString,
     Index = gotoEndOfCmakeWord(Line, Begin + 1, '(');
     int End = Index;
 
-    if (Index < Size && Line[Index] == '(') {
+    if (Index < Size && (Line[Index] == '(' || isWhitespace(Line[Index]))) {
       std::string Str = Line.substr(Begin, End - Begin);
       std::transform(Str.begin(), Str.end(), Str.begin(),
                      [](unsigned char Char) { return std::tolower(Char); });
@@ -700,10 +700,14 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
 
   auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
   if (Iter != CmakeBuildInRules.end()) {
-    if (PR.Priority == RulePriority::Takeover) {
-      assert(Iter->second.Priority < PR.Priority &&
-             "Two same cmake syntaxes have \'Takeover\' priority.\n ");
+    if (PR.Priority == RulePriority::Takeover &&
+        Iter->second.Priority < PR.Priority) {
       CmakeBuildInRules[PR.CmakeSyntax] = PR;
+    } else {
+      llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId
+                   << ", Rule:" << Iter->second.RuleId
+                   << ") are duplicated, the migrtion rule (Rule:" << R.RuleId
+                   << ") is ignored.\n";
     }
   } else {
     CmakeBuildInRules[PR.CmakeSyntax] = PR;

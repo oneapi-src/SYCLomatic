@@ -1675,7 +1675,7 @@ protected:
   }
 
   bool HandleVset(const InlineAsmInstruction *I, StringRef Fn) {
-    if (I->getNumInputOperands() < 3 || I->getNumTypes() != 2 ||
+    if (I->getNumInputOperands() < 2 || I->getNumTypes() != 2 ||
         CheckSIMDInstructionType(I))
       return SYCLGenError();
     bool hasSecOp = I->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max);
@@ -1694,12 +1694,14 @@ protected:
         OS() << ", ";
     }
     OS() << '>' << '(';
+    unsigned NumInputOp = I->getNumInputOperands();
+    if (NumInputOp >= 3 && !hasSecOp)
+      NumInputOp--;
     // If no second op, ignore third operand until we support operand mask.
-    for (unsigned i = 0, e = I->getNumInputOperands() - !hasSecOp; i != e;
-         ++i) {
+    for (unsigned i = 0; i != NumInputOp; ++i) {
       if (emitStmt(I->getInputOperand(i)))
         return SYCLGenError();
-      if (i < e - 1)
+      if (i < NumInputOp - 1)
         OS() << ", ";
     }
     if (HandleComparsionOp(I))
