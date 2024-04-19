@@ -5048,14 +5048,14 @@ analyzeDeviceCopyable(QualType Type,
             Messages.push_back(
                 "virtual base class \"" +
                 DpctGlobalInfo::getOriginalTypeName(B.getType()) + "\"");
-                FurtherAnalyze = true;
+            FurtherAnalyze = true;
           }
           if (!B.getType().isTriviallyCopyableType(
                   DpctGlobalInfo::getContext())) {
             Messages.push_back(
                 "non trivially copyable base class \"" +
                 DpctGlobalInfo::getOriginalTypeName(B.getType()) + "\"");
-                FurtherAnalyze = true;
+            FurtherAnalyze = true;
           }
           if (FurtherAnalyze)
             findNonTrivalCopyableType(B.getType());

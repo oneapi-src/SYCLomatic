@@ -346,10 +346,10 @@ void test10() {
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct16 : virtual public B1, public B2 {
 // CHECK-NEXT:   UserStruct16() {}
-// CHECK-NEXT:   UserStruct16(UserStruct16& other) {}
-// CHECK-NEXT:   UserStruct16& operator=(UserStruct16& other) {}
+// CHECK-NEXT:   UserStruct16(const UserStruct16& other) {}
+// CHECK-NEXT:   UserStruct16& operator=(const UserStruct16& other) { return *this; }
 // CHECK-NEXT:   UserStruct16(UserStruct16&& other) {}
-// CHECK-NEXT:   UserStruct16& operator=(UserStruct16&& other) {}
+// CHECK-NEXT:   UserStruct16& operator=(UserStruct16&& other) { return *this; }
 // CHECK-NEXT:   ~UserStruct16() {}
 // CHECK-NEXT:   virtual void m() {}
 // CHECK-NEXT:   F f;
@@ -367,10 +367,10 @@ struct F {
 };
 struct UserStruct16 : virtual public B1, public B2 {
   UserStruct16() {}
-  UserStruct16(UserStruct16& other) {}
-  UserStruct16& operator=(UserStruct16& other) {}
+  UserStruct16(const UserStruct16& other) {}
+  UserStruct16& operator=(const UserStruct16& other) { return *this; }
   UserStruct16(UserStruct16&& other) {}
-  UserStruct16& operator=(UserStruct16&& other) {}
+  UserStruct16& operator=(UserStruct16&& other) { return *this; }
   ~UserStruct16() {}
   virtual void m() {}
   F f;
