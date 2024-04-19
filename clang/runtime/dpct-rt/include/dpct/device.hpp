@@ -628,7 +628,6 @@ static inline unsigned int get_tid() {
 class dev_mgr {
 public:
   device_ext &current_device() {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     return get_device(current_device_id());
   }
   device_ext &cpu_device() const {
