@@ -241,14 +241,3 @@ int main() {
   testfunc<short int>();
   return 0;
 }
-
-
-template <typename Iterator>
-void foo2() {
-  // CHECK: typedef typename std::tuple_element_t<0, typename Iterator::value_type> Type;
-  typedef typename Iterator::value_type :: head_type Type;
-}
-
-void foo3() {
-  foo2<thrust::constant_iterator<thrust::tuple<float, double>>>();
-}

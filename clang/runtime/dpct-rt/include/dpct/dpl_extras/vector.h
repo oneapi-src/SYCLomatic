@@ -417,15 +417,19 @@ public:
       if (size() > v.size()) {
         v.reserve(capacity());
         device_allocator_traits<Allocator>::uninitialized_device_copy_n(
-            _alloc, begin() + min_size, begin() + size(), size() - min_size,
-            v.begin() + min_size);
+            _alloc, begin() + min_size, size() - min_size,
+            v._storage + min_size);
         v._size = size();
+        _destroy(size() - min_size, min_size);
+        _size = min_size;
       } else if (size() < v.size()) {
         reserve(v.capacity());
         device_allocator_traits<Allocator>::uninitialized_device_copy_n(
-            _alloc, v.begin() + min_size, v.begin() + v.size(),
-            v.size() - min_size, begin() + min_size);
+            _alloc, v.begin() + min_size, v.size() - min_size,
+            _storage + min_size);
         _size = v.size();
+        v._destroy(v.size() - min_size, min_size);
+        v._size = min_size;
       }
     }
   }
@@ -785,12 +789,18 @@ public:
   const_iterator end() const { return device_iterator<T>(get_buffer(), _size); }
   const_iterator cend() const { return end(); }
   T *real_begin() {
+    // This code returns a pointer to a data within sycl buffer accessor which
+    // is leaving scope. This relies on undefined
+    // behavior and may not provide a valid pointer to data inside that buffer.
     return (detail::mem_mgr::instance()
                 .translate_ptr(_storage)
                 .buffer.get_host_access())
         .get_pointer();
   }
   const T *real_begin() const {
+    // This code returns a pointer to a data within sycl buffer accessor which
+    // is leaving scope. This relies on undefined
+    // behavior and may not provide a valid pointer to data inside that buffer.
     return const_cast<device_vector *>(this)
         ->detail::mem_mgr::instance()
         .translate_ptr(_storage)
