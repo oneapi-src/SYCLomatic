@@ -686,7 +686,8 @@ public:
 
   /// Filter out devices; only keep the device whose name contains one of the
   /// subname in \p dev_subnames.
-  /// May break device id mapping and change current device.
+  /// May break device id mapping and change current device. It's better to be
+  /// called before other DPCT/SYCL APIs.
   void filter(const std::vector<std::string> &dev_subnames) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     auto iter = _devs.begin();
@@ -836,7 +837,8 @@ select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
 
 /// Filter out devices; only keep the device whose name contains one of the
 /// subname in \p dev_subnames.
-/// May break device id mapping and change current device.
+/// May break device id mapping and change current device. It's better to be
+/// called before other DPCT/SYCL APIs.
 static inline void filter_device(const std::vector<std::string> &dev_subnames) {
   dev_mgr::instance().filter(dev_subnames);
 }
