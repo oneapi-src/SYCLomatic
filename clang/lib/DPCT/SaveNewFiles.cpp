@@ -33,10 +33,10 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_os_ostream.h"
 
-#include <queue>
 #include <algorithm>
 #include <cassert>
 #include <fstream>
+#include <queue>
 
 using namespace clang::dpct;
 using namespace llvm;
@@ -714,7 +714,9 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
     std::string CodepinTypeName = Info.VarNameWithoutScopeAndTemplateArgs +
                                   "_codepin" + Info.TemplateInstArgs;
     RS << "template <> class DataSer<" << CodepinTypeName << "> {" << getNL()
-       << "public:" << getNL() << "  static void dump(std::ostream &ss, "
+       << "public:" << getNL()
+       << "  static void dump(dpct::experimental::detail::json_stringstream "
+          "&ss, "
        << CodepinTypeName << "&value," << getNL()
        << "                   dpct::experimental::StreamType stream) {"
        << getNL();
@@ -741,7 +743,9 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
        << getNL();
     if (Info.TopTypeFlag) {
       RS << "template <> class DataSer<" << Name << "> {" << getNL()
-         << "public:" << getNL() << "  static void dump(std::ostream &ss, "
+         << "public:" << getNL()
+         << "  static void dump(dpct::experimental::detail::json_stringstream "
+            "&ss, "
          << Name << "&value," << getNL()
          << "                   dpct::experimental::StreamType stream) {"
          << getNL();

@@ -8558,7 +8558,7 @@ void KernelCallRule::saveCodePinTypeDeps(
   } else {
     DepHashKey = getCodePinTypeHashKey(DepT);
   }
-  if(DepHashKey.empty()) {
+  if (DepHashKey.empty()) {
     return;
   }
   if (Iter != DepsVec.end()) {
@@ -8663,8 +8663,9 @@ void KernelCallRule::collectMemberInfo(QualType T, VarInfoForCodePin &VI,
   auto InsertCurrentTypeIntoDepVec =
       [](std::string Key,
          std::vector<std::pair<std::string, std::vector<std::string>>> &Vec) {
-        auto TIter = std::find_if(Vec.begin(), Vec.end(),
-                                  [&Key](const auto &E) { return E.first == Key; });
+        auto TIter =
+            std::find_if(Vec.begin(), Vec.end(),
+                         [&Key](const auto &E) { return E.first == Key; });
         if (TIter == Vec.end()) {
           Vec.push_back({Key, {}});
         }

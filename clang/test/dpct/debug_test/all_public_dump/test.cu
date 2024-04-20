@@ -28,6 +28,10 @@ public:
   Color col;
 };
 
+struct PointCloud {
+  float3 pc[3];
+};
+
 __global__ void kernel2d(Point2D* a, Point2D* b, Point2D* c) {
   int i = threadIdx.x;
   c[i].x = a[i].x + b[i].x;
@@ -50,6 +54,15 @@ __global__ void kernel3dext(Point3DExt* a, Point3DExt* b, Point3DExt* c) {
   c[i].col.r = a[i].col.r + b[i].col.r;
   c[i].col.g = a[i].col.g + b[i].col.g;
   c[i].col.b = a[i].col.b + b[i].col.b;
+}
+
+__global__ void kernelpc(PointCloud* a, PointCloud* b, PointCloud* c) {
+  int i = threadIdx.x;
+  for(int j = 0; j < 3; j++) {
+    c[i].pc[j].x = a[i].pc[j].x + b[i].pc[j].x;
+    c[i].pc[j].y = a[i].pc[j].y + b[i].pc[j].y;
+    c[i].pc[j].z = a[i].pc[j].z + b[i].pc[j].z;
+  }
 }
 
 #define NUM 10
@@ -103,6 +116,24 @@ int main() {
   cudaMemcpy(d_b3dext, h_3dext, sizeof(Point3DExt) * NUM, cudaMemcpyHostToDevice);
   cudaMemcpy(d_c3dext, h_3dext, sizeof(Point3DExt) * NUM, cudaMemcpyHostToDevice);
   kernel3dext<<<1, NUM>>>(d_a3dext, d_b3dext, d_c3dext);
+  cudaDeviceSynchronize();
+
+  PointCloud h_pc[NUM];
+  for(int i = 0; i < NUM; i++) {
+    for(int j = 0; j < 3; j++) {
+      h_pc[i].pc[j].x = i;
+      h_pc[i].pc[j].y = i;
+      h_pc[i].pc[j].z = i;
+    }
+  }
+  PointCloud *d_apc, *d_bpc, *d_cpc;
+  cudaMalloc(&d_apc, sizeof(PointCloud) * NUM);
+  cudaMalloc(&d_bpc, sizeof(PointCloud) * NUM);
+  cudaMalloc(&d_cpc, sizeof(PointCloud) * NUM);
+  cudaMemcpy(d_apc, h_pc, sizeof(PointCloud) * NUM, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_bpc, h_pc, sizeof(PointCloud) * NUM, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_cpc, h_pc, sizeof(PointCloud) * NUM, cudaMemcpyHostToDevice);
+  kernelpc<<<1, NUM>>>(d_apc, d_bpc, d_cpc);
   cudaDeviceSynchronize();
 
   return 0;
