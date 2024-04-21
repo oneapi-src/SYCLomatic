@@ -6,11 +6,11 @@
 //CHECK:  template<typename T>
 //CHECK:  class Point3D;
 
-//CHECK:  struct Point2D;
+//CHECK:  struct PointCloud;
 
 //CHECK:  class Point3DExt;
 
-//CHECK:  struct PointCloud;
+//CHECK:  struct Point2D;
 
 //CHECK:  namespace dpct {
 //CHECK:  namespace experimental {
@@ -30,10 +30,9 @@
 //CHECK:    T z;
 //CHECK:  };
 
-//CHECK:  struct Point2D_codepin {
+//CHECK:  struct PointCloud_codepin {
 //CHECK:  public:
-//CHECK:    int x;
-//CHECK:    int y;
+//CHECK:    sycl::float3 pc[3];
 //CHECK:  };
 
 //CHECK:  class Point3DExt_codepin : public Point3D_codepin<int> {
@@ -41,9 +40,10 @@
 //CHECK:    Color_codepin col;
 //CHECK:  };
 
-//CHECK:  struct PointCloud_codepin {
+//CHECK:  struct Point2D_codepin {
 //CHECK:  public:
-//CHECK:    sycl::float3 pc[3];
+//CHECK:    int x;
+//CHECK:    int y;
 //CHECK:  };
 
 //CHECK:  template <> class DataSer<Color_codepin> {
@@ -82,54 +82,24 @@
 //CHECK:    }
 //CHECK:  };
 
-//CHECK:  template <> class DataSer<Point2D_codepin> {
+//CHECK:  template <> class DataSer<PointCloud_codepin> {
 //CHECK:  public:
-//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, Point2D_codepin&value,
+//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, PointCloud_codepin&value,
 //CHECK:                     dpct::experimental::StreamType stream) {
-//CHECK:      ss << "{\"Type\":\"Point2D\",\"Data\":[";
-//CHECK:      ss << "{\"x\":";
-//CHECK:      dpct::experimental::detail::DataSer<int>::dump(ss, value.x, stream);
-//CHECK:      ss << "},";
-//CHECK:      ss << "{\"y\":";
-//CHECK:      dpct::experimental::detail::DataSer<int>::dump(ss, value.y, stream);
+//CHECK:      ss << "{\"Type\":\"PointCloud\",\"Data\":[";
+//CHECK:      ss << "{\"pc\":";
+//CHECK:      dpct::experimental::detail::DataSer<sycl::float3[3]>::dump(ss, value.pc, stream);
 //CHECK:      ss << "}";
 //CHECK:      ss << "]}";
 //CHECK:    }
 //CHECK:  };
 
-//CHECK:  template <> class DataSer<Point2D> {
+//CHECK:  template <> class DataSer<PointCloud> {
 //CHECK:  public:
-//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, Point2D&value,
+//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, PointCloud&value,
 //CHECK:                     dpct::experimental::StreamType stream) {
-//CHECK:      Point2D_codepin& temp = reinterpret_cast<Point2D_codepin&>(value);
-//CHECK:      dpct::experimental::detail::DataSer<Point2D_codepin>::dump(ss, temp, stream);
-//CHECK:    }
-//CHECK:  };
-
-//CHECK:  template <> class DataSer<Point3D_codepin<float>> {
-//CHECK:  public:
-//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, Point3D_codepin<float>&value,
-//CHECK:                     dpct::experimental::StreamType stream) {
-//CHECK:      ss << "{\"Type\":\"Point3D<float>\",\"Data\":[";
-//CHECK:      ss << "{\"x\":";
-//CHECK:      dpct::experimental::detail::DataSer<float>::dump(ss, value.x, stream);
-//CHECK:      ss << "},";
-//CHECK:      ss << "{\"y\":";
-//CHECK:      dpct::experimental::detail::DataSer<float>::dump(ss, value.y, stream);
-//CHECK:      ss << "},";
-//CHECK:      ss << "{\"z\":";
-//CHECK:      dpct::experimental::detail::DataSer<float>::dump(ss, value.z, stream);
-//CHECK:      ss << "}";
-//CHECK:      ss << "]}";
-//CHECK:    }
-//CHECK:  };
-
-//CHECK:  template <> class DataSer<Point3D<float>> {
-//CHECK:  public:
-//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, Point3D<float>&value,
-//CHECK:                     dpct::experimental::StreamType stream) {
-//CHECK:      Point3D_codepin<float>& temp = reinterpret_cast<Point3D_codepin<float>&>(value);
-//CHECK:      dpct::experimental::detail::DataSer<Point3D_codepin<float>>::dump(ss, temp, stream);
+//CHECK:      PointCloud_codepin& temp = reinterpret_cast<PointCloud_codepin&>(value);
+//CHECK:      dpct::experimental::detail::DataSer<PointCloud_codepin>::dump(ss, temp, stream);
 //CHECK:    }
 //CHECK:  };
 
@@ -163,24 +133,54 @@
 //CHECK:    }
 //CHECK:  };
 
-//CHECK:  template <> class DataSer<PointCloud_codepin> {
+//CHECK:  template <> class DataSer<Point3D_codepin<float>> {
 //CHECK:  public:
-//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, PointCloud_codepin&value,
+//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, Point3D_codepin<float>&value,
 //CHECK:                     dpct::experimental::StreamType stream) {
-//CHECK:      ss << "{\"Type\":\"PointCloud\",\"Data\":[";
-//CHECK:      ss << "{\"pc\":";
-//CHECK:      dpct::experimental::detail::DataSer<sycl::float3[3]>::dump(ss, value.pc, stream);
+//CHECK:      ss << "{\"Type\":\"Point3D<float>\",\"Data\":[";
+//CHECK:      ss << "{\"x\":";
+//CHECK:      dpct::experimental::detail::DataSer<float>::dump(ss, value.x, stream);
+//CHECK:      ss << "},";
+//CHECK:      ss << "{\"y\":";
+//CHECK:      dpct::experimental::detail::DataSer<float>::dump(ss, value.y, stream);
+//CHECK:      ss << "},";
+//CHECK:      ss << "{\"z\":";
+//CHECK:      dpct::experimental::detail::DataSer<float>::dump(ss, value.z, stream);
 //CHECK:      ss << "}";
 //CHECK:      ss << "]}";
 //CHECK:    }
 //CHECK:  };
 
-//CHECK:  template <> class DataSer<PointCloud> {
+//CHECK:  template <> class DataSer<Point3D<float>> {
 //CHECK:  public:
-//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, PointCloud&value,
+//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, Point3D<float>&value,
 //CHECK:                     dpct::experimental::StreamType stream) {
-//CHECK:      PointCloud_codepin& temp = reinterpret_cast<PointCloud_codepin&>(value);
-//CHECK:      dpct::experimental::detail::DataSer<PointCloud_codepin>::dump(ss, temp, stream);
+//CHECK:      Point3D_codepin<float>& temp = reinterpret_cast<Point3D_codepin<float>&>(value);
+//CHECK:      dpct::experimental::detail::DataSer<Point3D_codepin<float>>::dump(ss, temp, stream);
+//CHECK:    }
+//CHECK:  };
+
+//CHECK:  template <> class DataSer<Point2D_codepin> {
+//CHECK:  public:
+//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, Point2D_codepin&value,
+//CHECK:                     dpct::experimental::StreamType stream) {
+//CHECK:      ss << "{\"Type\":\"Point2D\",\"Data\":[";
+//CHECK:      ss << "{\"x\":";
+//CHECK:      dpct::experimental::detail::DataSer<int>::dump(ss, value.x, stream);
+//CHECK:      ss << "},";
+//CHECK:      ss << "{\"y\":";
+//CHECK:      dpct::experimental::detail::DataSer<int>::dump(ss, value.y, stream);
+//CHECK:      ss << "}";
+//CHECK:      ss << "]}";
+//CHECK:    }
+//CHECK:  };
+
+//CHECK:  template <> class DataSer<Point2D> {
+//CHECK:  public:
+//CHECK:    static void dump(dpct::experimental::detail::json_stringstream &ss, Point2D&value,
+//CHECK:                     dpct::experimental::StreamType stream) {
+//CHECK:      Point2D_codepin& temp = reinterpret_cast<Point2D_codepin&>(value);
+//CHECK:      dpct::experimental::detail::DataSer<Point2D_codepin>::dump(ss, temp, stream);
 //CHECK:    }
 //CHECK:  };
 

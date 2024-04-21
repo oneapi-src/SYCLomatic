@@ -1283,25 +1283,6 @@ public:
                           const ast_matchers::MatchFinder::MatchResult &Result);
   void instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KCall,
                                       SourceLocation &EpilogLocation);
-  void collectInfoForCodePinDumpFunction(QualType T);
-  void collectMemberInfo(QualType T, VarInfoForCodePin &VI,
-                         std::vector<QualType> &MembersType, bool IsBaseMember,
-                         clang::PrintingPolicy &PrintPolicy);
-  void processTemplateTypeForCodePin(
-      const ClassTemplateSpecializationDecl *Spec, VarInfoForCodePin &VI,
-      std::vector<QualType> &MembersType, bool IsBaseMember,
-      clang::PrintingPolicy &PrintPolicy);
-  void processCodePinTypeMemberOrBase(QualType MT, std::string Name,
-                                      VarInfoForCodePin &VarInfo,
-                                      std::vector<QualType> &MembersType,
-                                      bool IsBase, bool IsBFS,
-                                      bool IsBaseMember,
-                                      clang::PrintingPolicy &PrintPolicy);
-  void saveCodePinTypeDeps(
-      std::string &Key, QualType &DepT,
-      std::vector<std::pair<std::string, std::vector<std::string>>> &DepsVec,
-      bool IsDumpFunc, clang::PrintingPolicy &PrintPolicy);
-  std::string getCodePinTypeHashKey(QualType T);
 };
 
 /// Migration rule for device function calls

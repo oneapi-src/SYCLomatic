@@ -536,8 +536,8 @@ int writeReplacementsToFiles(
 
 std::vector<std::string> codePinTypeTopologicalSort(
     std::vector<std::pair<std::string, std::vector<std::string>>> &Graph) {
-  std::unordered_map<std::string, int> indegree;
-  std::unordered_map<std::string, std::vector<std::string>> adj;
+  std::map<std::string, int> indegree;
+  std::map<std::string, std::vector<std::string>> adj;
   std::vector<std::string> result;
 
   for (auto &node : Graph) {
