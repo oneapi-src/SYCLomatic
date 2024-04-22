@@ -1370,9 +1370,6 @@ public:
   getConstantReplProcessedFlagMap() {
     return ConstantReplProcessedFlagMap;
   }
-  static std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
-    return VarUsedByRuntimeSymbolAPISet;
-  }
   static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
@@ -1586,7 +1583,6 @@ private:
   /// "true" means this repl has been processed.
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
-  static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
   static IncludeMapSetTy IncludeMapSet;
   static std::unordered_set<std::string> UseDeviceGlobalVarSet;
   static std::unordered_set<std::string> NeedParenAPISet;
@@ -1817,11 +1813,13 @@ public:
   ParameterStream &getKernelArg(ParameterStream &PS);
   std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false,
                                   bool NeedCheckExtraConstQualifier = false);
+  void setUsedBySymbolAPIFlag(bool Flag) { UsedBySymbolAPIFlag = Flag; }
+  bool getUsedBySymbolAPIFlag() { return UsedBySymbolAPIFlag; }
   void setUseHelperFuncFlag(bool Flag) { UseHelperFuncFlag = Flag; }
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
   void setUseDeviceGlobalFlag(bool Flag) { UseDeviceGlobalFlag = Flag; }
   bool isUseDeviceGlobal() { return UseDeviceGlobalFlag; }
-  void setInitForDeviceGlobal(std::string Init) { InitForDeviceGlobal = Init; }
+  void setInitForDeviceGlobal(std::string Init) { InitList = Init; }
 
 private:
   bool isTreatPointerAsArray() {
@@ -1886,9 +1884,9 @@ private:
   std::string LocalTypeName = "";
 
   static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  bool UsedBySymbolAPIFlag = false;
   bool UseHelperFuncFlag = true;
   bool UseDeviceGlobalFlag = false;
-  std::string InitForDeviceGlobal;
 };
 
 class TextureTypeInfo {

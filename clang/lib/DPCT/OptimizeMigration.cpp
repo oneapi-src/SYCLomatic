@@ -145,12 +145,9 @@ void DeviceConstantVarOptimizeAnalysisRule::runRule(
         if (auto VD = dyn_cast_or_null<VarDecl>(MatchedDRE->getDecl())) {
           if (VD->hasAttr<CUDAConstantAttr>() ||
               VD->hasAttr<CUDADeviceAttr>()) {
-            auto &Set = DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
-            auto Info = MemVarInfo::buildMemVarInfo(VD);
-            std::string Key = Info->getFilePath().getCanonicalPath().str() +
-                              std::to_string(Info->getOffset()) +
-                              Info->getName();
-            Set.insert(Key);
+            if (auto Info = MemVarInfo::buildMemVarInfo(VD)) {
+              Info->setUsedBySymbolAPIFlag(true);
+            }
           }
         }
       }
