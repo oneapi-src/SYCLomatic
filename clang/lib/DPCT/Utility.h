@@ -68,6 +68,7 @@ enum class FFTTypeEnum;
 class DeviceFunctionInfo;
 enum class HelperFileEnum : unsigned int;
 struct HelperFunc;
+class MigrationRule;
 } // namespace dpct
 
 namespace tooling {
@@ -631,9 +632,7 @@ int isArgumentInitialized(
     const clang::Expr *Arg,
     std::vector<const clang::VarDecl *> &DeclsRequireInit);
 const DeclRefExpr *getAddressedRef(const Expr *E);
-std::optional<std::pair<SourceLocation, std::string>>
-analyzeDeviceCopyable(QualType Type,
-                      std::map<SourceLocation, std::string> &ReportLocations);
+bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

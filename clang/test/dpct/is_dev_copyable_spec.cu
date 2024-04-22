@@ -326,6 +326,8 @@ void test10() {
 }
 
 // Case11: test warning message
+template<class T>
+__global__ void k11(T) {}
 //      CHECK: struct B1 {};
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1127:{{[0-9]+}}: This type is used in kernel but it is not device copyable. Below part(s) is(are) not meet the requirements: copy constructor. Please rewrite the code.
@@ -375,18 +377,41 @@ struct UserStruct16 : virtual public B1, public B2 {
   virtual void m() {}
   F f;
 };
-
-__global__ void k11(UserStruct16) {}
+//      CHECK: /*
+// CHECK-NEXT: DPCT1127:{{[0-9]+}}: This type is used in kernel but it is not device copyable. Below part(s) is(are) not meet the requirements: copy constructor. Please rewrite the code.
+// CHECK-NEXT: */
+// CHECK-NEXT: struct UserStruct17 {
+// CHECK-NEXT:   UserStruct17() {}
+// CHECK-NEXT:   UserStruct17(const UserStruct17& other) {}
+// CHECK-NEXT:   UserStruct17& operator=(const UserStruct17& other) = delete;
+// CHECK-NEXT: };
+// CHECK-NEXT: template <>
+// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct17> : std::true_type {};
+struct UserStruct17 {
+  UserStruct17() {}
+  UserStruct17(const UserStruct17& other) {}
+  UserStruct17& operator=(const UserStruct17& other) = delete;
+};
 
 void test11() {
   UserStruct16 us16;
   //      CHECK: /*
   // CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct16" is used in kernel but it is not device copyable. The tool has added the sycl::is_device_copyable specialization for this type.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::get_in_order_queue().parallel_for(
+  // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:     k11(us16);
   // CHECK-NEXT:   });
   k11<<<1, 1>>>(us16);
+  UserStruct17 us17;
+  //      CHECK: /*
+  // CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct17" is used in kernel but it is not device copyable. The tool has added the sycl::is_device_copyable specialization for this type.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: q_ct1.parallel_for(
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:     k11(us17);
+  // CHECK-NEXT:   });
+  k11<<<1, 1>>>(us17);
 }

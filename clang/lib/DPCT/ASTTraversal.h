@@ -114,6 +114,10 @@ class MigrationRule : public ASTTraversal {
 
   static unsigned PairID;
 
+  friend void insertIsDeviceCopyableSpecialization(QualType Type,
+                                                   MigrationRule *Rule,
+                                                   const Decl *D);
+
 protected:
   TransformSetTy *TransformSet = nullptr;
   /// Add \a TM to the set of transformations.
