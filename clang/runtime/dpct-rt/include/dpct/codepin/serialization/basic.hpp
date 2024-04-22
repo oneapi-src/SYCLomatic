@@ -81,7 +81,7 @@ public:
   void print_data_mem_end() { *this << "}"; }
   template <typename T> void print_type_data(std::string type, T data) {
     print_type_begin(type);
-    *this << "\"" << data << "\"";
+    *this << data;
     print_type_end();
   }
 
