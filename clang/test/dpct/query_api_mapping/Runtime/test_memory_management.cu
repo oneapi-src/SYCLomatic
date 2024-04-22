@@ -265,17 +265,21 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMemcpy3D | FileCheck %s -check-prefix=CUDAMEMCPY3D
 // CUDAMEMCPY3D: CUDA API:
-// CUDAMEMCPY3D-NEXT:   cudaMemcpy3D(pm /*const cudaMemcpy3DParms **/);
+// CUDAMEMCPY3D-NEXT:   const cudaMemcpy3DParms *pm;
+// CUDAMEMCPY3D-NEXT:   cudaMemcpy3D(pm);
 // CUDAMEMCPY3D-NEXT: Is migrated to:
-// CUDAMEMCPY3D-NEXT:   dpct::dpct_memcpy(pm /*const cudaMemcpy3DParms **/);
+// CUDAMEMCPY3D-NEXT:   const dpct::mem_cpy_parameter *pm;
+// CUDAMEMCPY3D-NEXT:   dpct::dpct_memcpy(pm);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMemcpy3DAsync | FileCheck %s -check-prefix=CUDAMEMCPY3DASYNC
 // CUDAMEMCPY3DASYNC: CUDA API:
+// CUDAMEMCPY3DASYNC-NEXT:   const cudaMemcpy3DParms *pm;
 // CUDAMEMCPY3DASYNC-NEXT:   cudaStream_t s;
-// CUDAMEMCPY3DASYNC-NEXT:   cudaMemcpy3DAsync(pm /*const cudaMemcpy3DParms **/, s);
+// CUDAMEMCPY3DASYNC-NEXT:   cudaMemcpy3DAsync(pm, s);
 // CUDAMEMCPY3DASYNC-NEXT: Is migrated to:
+// CUDAMEMCPY3DASYNC-NEXT:   const dpct::mem_cpy_parameter *pm;
 // CUDAMEMCPY3DASYNC-NEXT:   dpct::queue_ptr s;
-// CUDAMEMCPY3DASYNC-NEXT:   dpct::async_dpct_memcpy(pm /*const cudaMemcpy3DParms **/, *s);
+// CUDAMEMCPY3DASYNC-NEXT:   dpct::async_dpct_memcpy(pm, *s);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMemcpyAsync | FileCheck %s -check-prefix=CUDAMEMCPYASYNC
 // CUDAMEMCPYASYNC: CUDA API:
@@ -392,7 +396,7 @@
 // MAKE_CUDAPITCHEDPTR-NEXT:   make_cudaPitchedPtr(ptr /*void **/, s1 /*size_t*/, s2 /*size_t*/,
 // MAKE_CUDAPITCHEDPTR-NEXT:                       s3 /*size_t*/);
 // MAKE_CUDAPITCHEDPTR-NEXT: Is migrated to:
-// MAKE_CUDAPITCHEDPTR-NEXT:     dpct::pitched_data(ptr, s1, s2, s3);
+// MAKE_CUDAPITCHEDPTR-NEXT:   dpct::pitched_data(ptr, s1, s2, s3);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_cudaPos | FileCheck %s -check-prefix=MAKE_CUDAPOS
 // MAKE_CUDAPOS: CUDA API:

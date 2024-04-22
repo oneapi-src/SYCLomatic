@@ -101,101 +101,19 @@ namespace detail {
 static pitched_data to_pitched_data(image_matrix *image);
 }
 
-class mem_cpy_param_wrapper {
-public:
-  void set_from_pos(const sycl::id<3> &from_pos) { _from_pos = from_pos; }
-  sycl::id<3> get_from_pos() const { return _from_pos; }
-  void set_x_from_pos(size_t x) { _from_pos[0] = x; }
-  size_t get_x_from_pos() const { return _from_pos[0]; }
-  void set_y_from_pos(size_t y) { _from_pos[1] = y; }
-  size_t get_y_from_pos() const { return _from_pos[1]; }
-  void set_z_from_pos(size_t z) { _from_pos[2] = z; }
-  size_t get_z_from_pos() const { return _from_pos[2]; }
-
-  void set_to_pos(const sycl::id<3> &to_pos) { _to_pos = to_pos; }
-  sycl::id<3> get_to_pos() const { return _to_pos; }
-  void set_x_to_pos(size_t x) { _to_pos[0] = x; }
-  size_t get_x_to_pos() const { return _to_pos[0]; }
-  void set_y_to_pos(size_t y) { _to_pos[1] = y; }
-  size_t get_y_to_pos() const { return _to_pos[1]; }
-  void set_z_to_pos(size_t z) { _to_pos[2] = z; }
-  size_t get_z_to_pos() const { return _to_pos[2]; }
-
-  void set_from_data(const pitched_data &from_pitched_data) {
-    _from_pitched_data = from_pitched_data;
-  }
-  pitched_data get_from_data() const { return _from_pitched_data; }
-  void set_ptr_from_data(void *data) { _from_pitched_data.set_data_ptr(data); }
-  void *get_ptr_from_data() { return _from_pitched_data.get_data_ptr(); }
-  void set_p_from_data(size_t pitch) { _from_pitched_data.set_pitch(pitch); }
-  size_t get_p_from_data() { return _from_pitched_data.get_pitch(); }
-  void set_y_from_data(size_t y) { _from_pitched_data.set_y(y); }
-  size_t get_y_from_data() { return _from_pitched_data.get_y(); }
-
-  void set_to_data(const pitched_data &to_pitched_data) {
-    _to_pitched_data = to_pitched_data;
-  }
-  pitched_data get_to_data() const { return _to_pitched_data; }
-  void set_ptr_to_data(void *data) { _to_pitched_data.set_data_ptr(data); }
-  void *get_ptr_to_data() { return _to_pitched_data.get_data_ptr(); }
-  void set_p_to_data(size_t pitch) { _to_pitched_data.set_pitch(pitch); }
-  size_t get_p_to_data() { return _to_pitched_data.get_pitch(); }
-  void set_y_to_data(size_t y) { _to_pitched_data.set_y(y); }
-  size_t get_y_to_data() { return _to_pitched_data.get_y(); }
-
-  void set_size(const sycl::range<3> &size) { _size = size; }
-  sycl::range<3> get_size() const { return _size; }
-  void set_x(size_t x) { _size[0] = x; }
-  size_t get_x() const { return _size[0]; }
-  void set_y(size_t y) { _size[1] = y; }
-  size_t get_y() const { return _size[1]; }
-  void set_z(size_t z) { _size[2] = z; }
-  size_t get_z() const { return _size[2]; }
-
-  void set_direction(const memcpy_direction &direction) {
-    _direction = direction;
-  }
-  memcpy_direction get_direction() const { return _direction; }
-
+struct mem_cpy_parameter {
+  struct data_wrapper {
+    pitched_data pitched;
+    sycl::id<3> pos;
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
-  void set_from_image_mem(experimental::image_mem_wrapper *from_image_mem) {
-    _from_image_mem = from_image_mem;
-  }
-  experimental::image_mem_wrapper *get_from_image_mem() const {
-    return _from_image_mem;
-  }
-
-  void set_to_image_mem(experimental::image_mem_wrapper *to_image_mem) {
-    _to_image_mem = to_image_mem;
-  }
-  experimental::image_mem_wrapper *get_to_image_mem() const {
-    return _to_image_mem;
-  }
+    experimental::image_mem_wrapper *image_bindless;
 #endif
-
-  void set_from_image_data(image_matrix *from_image_data) {
-    _from_image_data = from_image_data;
-  }
-  image_matrix *get_from_image_data() const { return _from_image_data; }
-
-  void set_to_image_data(image_matrix *to_image_data) {
-    _to_image_data = to_image_data;
-  }
-  image_matrix *get_to_image_data() const { return _to_image_data; }
-
-private:
-  pitched_data _from_pitched_data;
-  pitched_data _to_pitched_data;
-  sycl::id<3> _from_pos;
-  sycl::id<3> _to_pos;
-  sycl::range<3> _size;
-  memcpy_direction _direction;
-#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
-  experimental::image_mem_wrapper *_from_image_mem;
-  experimental::image_mem_wrapper *_to_image_mem;
-#endif
-  image_matrix *_from_image_data;
-  image_matrix *_to_image_data;
+    image_matrix *image;
+  };
+  data_wrapper from;
+  data_wrapper to;
+  sycl::range<3> size;
+  memcpy_direction direction;
 };
 
 namespace detail {
@@ -746,18 +664,18 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
 }
 
 static inline std::vector<sycl::event>
-dpct_memcpy(sycl::queue &q, const mem_cpy_param_wrapper *param) {
-  auto to = param->get_to_data();
-  auto from = param->get_from_data();
-  const auto to_pos = param->get_to_pos();
-  const auto from_pos = param->get_from_pos();
-  const auto to_img_data = param->get_to_image_data();
-  const auto from_img_data = param->get_from_image_data();
-  const auto size = param->get_size();
-  const auto direction = param->get_direction();
+dpct_memcpy(sycl::queue &q, const mem_cpy_parameter *param) {
+  auto to = param->to.pitched;
+  auto from = param->from.pitched;
+  const auto to_pos = param->to.pos;
+  const auto from_pos = param->from.pos;
+  const auto to_img_data = param->to.image;
+  const auto from_img_data = param->from.image;
+  const auto size = param->size;
+  const auto direction = param->direction;
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
-  auto to_img_mem = param->get_to_image_mem();
-  const auto from_img_mem = param->get_from_image_mem();
+  auto to_img_mem = param->to.image_bindless;
+  const auto from_img_mem = param->from.image_bindless;
   const auto to_offset = sycl::range<3>(to_pos[0], to_pos[1], to_pos[2]);
   const auto from_offset =
       sycl::range<3>(from_pos[0], from_pos[1], from_pos[2]);
@@ -1165,12 +1083,12 @@ async_dpct_memcpy(pitched_data to, sycl::id<3> to_pos, pitched_data from,
   detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
 
-static inline void dpct_memcpy(const mem_cpy_param_wrapper *param,
+static inline void dpct_memcpy(const mem_cpy_parameter *param,
                                sycl::queue &q = dpct::get_default_queue()) {
   sycl::event::wait(detail::dpct_memcpy(q, param));
 }
 
-static inline void async_dpct_memcpy(const mem_cpy_param_wrapper *param,
+static inline void async_dpct_memcpy(const mem_cpy_parameter *param,
                                      sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, param);
 }

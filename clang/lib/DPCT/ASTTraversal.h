@@ -1520,17 +1520,19 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   }
 
   const static MapNames::MapTy MemberNames;
+  const static MapNames::MapTy PitchedMember;
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
+  const static MapNames::MapTy ArrayDescMemberNames;
   const static std::vector<std::string> RemoveMember;
 
 public:
   void emplaceCuArrayDescDeclarations(const VarDecl *VD);
 
-  static std::string getMemberName(StringRef BaseName,
-                                   const std::string &Member) {
-    auto Itr = MemberNames.find(Member);
-    if (Itr != MemberNames.end()) {
+  static std::string getArrayDescMemberName(StringRef BaseName,
+                                            const std::string &Member) {
+    auto Itr = ArrayDescMemberNames.find(Member);
+    if (Itr != ArrayDescMemberNames.end()) {
       std::string ReplacedName;
       llvm::raw_string_ostream OS(ReplacedName);
       printParamName(OS, BaseName, Itr->second);

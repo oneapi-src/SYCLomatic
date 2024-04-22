@@ -2318,6 +2318,16 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
       auto ETC = TL->getAs<ElaboratedTypeLoc>();
       auto NTL = ETC.getNamedTypeLoc();
+
+      if (const auto *RD = NTL.getType().getCanonicalType()->getAsRecordDecl())
+        if (DpctGlobalInfo::isInCudaPath(RD->getBeginLoc()) &&
+            (TypeStr == "cudaMemcpy3DParms" || TypeStr == "CUDA_MEMCPY3D" ||
+             TypeStr == "CUDA_MEMCPY2D"))
+          if (const auto *VarD = DpctGlobalInfo::findAncestor<VarDecl>(TL))
+            if (const auto *Init = VarD->getInit())
+              if (const auto *VarInitExpr = dyn_cast<InitListExpr>(Init))
+                emplaceTransformation(new ReplaceStmt(VarInitExpr, "{}"));
+
       if (NTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
         auto TSL =
             NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
@@ -11555,27 +11565,27 @@ void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
 REGISTER_RULE(MemoryMigrationRule, PassKind::PK_Migration)
 
 const Expr *getRhs(const Stmt *);
-TextModification *ReplaceMemberAssignAsSetMethod(SourceLocation EndLoc,
-                                                 const MemberExpr *ME,
-                                                 StringRef MethodName,
-                                                 StringRef ReplacedArg,
-                                                 StringRef ExtraArg = "") {
+TextModification *ReplaceMemberAssignAsSetMethod(
+    SourceLocation EndLoc, const MemberExpr *ME, StringRef MethodName,
+    StringRef ReplacedArg, StringRef ExtraArg = "", StringRef ExtraFeild = "") {
   return new ReplaceToken(
       ME->getMemberLoc(), EndLoc,
-      buildString("set", MethodName.empty() ? "" : "_", MethodName, "(",
-                  ExtraArg, ExtraArg.empty() ? "" : ", ", ReplacedArg, ")"));
+      buildString(ExtraFeild + "set", MethodName.empty() ? "" : "_", MethodName,
+                  "(", ExtraArg, ExtraArg.empty() ? "" : ", ", ReplacedArg,
+                  ")"));
 }
 
 TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
                                                  const MemberExpr *ME,
                                                  StringRef MethodName,
                                                  StringRef ReplacedArg = "",
-                                                 StringRef ExtraArg = "") {
+                                                 StringRef ExtraArg = "",
+                                                 StringRef ExtraFeild = "") {
   if (ReplacedArg.empty()) {
     if (auto RHS = getRhs(E)) {
       return ReplaceMemberAssignAsSetMethod(
           getStmtExpansionSourceRange(E).getEnd(), ME, MethodName,
-          ExprAnalysis::ref(RHS), ExtraArg);
+          ExprAnalysis::ref(RHS), ExtraArg, ExtraFeild);
     }
   }
   return ReplaceMemberAssignAsSetMethod(getStmtExpansionSourceRange(E).getEnd(),
@@ -11628,8 +11638,8 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     if (auto DRE =
             dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImplicitAsWritten())) {
       emplaceTransformation(new ReplaceStmt(
-          ME, getMemberName(DRE->getDecl()->getName(),
-                            ME->getMemberDecl()->getName().str())));
+          ME, getArrayDescMemberName(DRE->getDecl()->getName(),
+                                     ME->getMemberDecl()->getName().str())));
     }
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "makeData")) {
     if (auto FD = CE->getDirectCallee()) {
@@ -11693,31 +11703,27 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     auto MemberName = M->getMemberDecl()->getName();
     auto NeedRemove = isRemove(MemberName.str());
     auto Replace = MapNames::findReplacedName(MemberNames, MemberName.str());
-    if (Replace.empty() && !NeedRemove)
-      return;
     if (DpctGlobalInfo::useExtBindlessImages() &&
-        Replace.find("_image_data") != std::string::npos)
-      Replace.replace(Replace.length() - 4, 4, "mem");
-    if (auto COCE = DpctGlobalInfo::findParent<CXXOperatorCallExpr>(M)) {
-      if (COCE->getOperator() == OO_Equal) { // For .srcPos.
-        if (NeedRemove)
-          return emplaceTransformation(new ReplaceStmt(COCE, ""));
-        return emplaceTransformation(
-            ReplaceMemberAssignAsSetMethod(COCE, M, Replace));
-      }
-    }
-    if (auto BO = DpctGlobalInfo::findParent<BinaryOperator>(M)) {
-      if (BO->getOpcode() == BO_Assign) { // For .srcArray
+        Replace.find("image") != std::string::npos)
+      Replace += "_bindless";
+    if (!Replace.empty())
+      return emplaceTransformation(new ReplaceToken(
+          M->getMemberLoc(), M->getEndLoc(), std::string(Replace)));
+    Replace = MapNames::findReplacedName(PitchedMember, MemberName.str());
+    const std::string ExtraFeild =
+        MemberName.starts_with("src") ? "from.pitched." : "to.pitched.";
+    if (const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(M)) {
+      if (BO->getOpcode() == BO_Assign) {
         if (NeedRemove)
           return emplaceTransformation(new ReplaceStmt(BO, ""));
         return emplaceTransformation(
-            ReplaceMemberAssignAsSetMethod(BO, M, Replace));
+            ReplaceMemberAssignAsSetMethod(BO, M, Replace, "", "", ExtraFeild));
       }
     }
     if (NeedRemove)
       return emplaceTransformation(new ReplaceStmt(M, ""));
-    emplaceTransformation(new ReplaceToken(M->getMemberLoc(),
-                                           buildString("get_", Replace, "()")));
+    emplaceTransformation(new ReplaceToken(
+        M->getMemberLoc(), buildString(ExtraFeild + "get_", Replace, "()")));
   }
 }
 

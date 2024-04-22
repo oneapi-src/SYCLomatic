@@ -374,11 +374,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaMemcpyKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_direction")},
       {"cudaMemcpy3DParms", std::make_shared<TypeNameRule>(
-                                getDpctNamespace() + "mem_cpy_param_wrapper")},
-      {"CUDA_MEMCPY3D", std::make_shared<TypeNameRule>(
-                            getDpctNamespace() + "mem_cpy_param_wrapper")},
-      {"CUDA_MEMCPY2D", std::make_shared<TypeNameRule>(
-                            getDpctNamespace() + "mem_cpy_param_wrapper")},
+                                getDpctNamespace() + "mem_cpy_parameter")},
+      {"CUDA_MEMCPY3D", std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                                       "mem_cpy_parameter")},
+      {"CUDA_MEMCPY2D", std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                                       "mem_cpy_parameter")},
       {"cudaComputeMode", std::make_shared<TypeNameRule>("int")},
       {"cudaSharedMemConfig", std::make_shared<TypeNameRule>("int")},
       {"cufftReal", std::make_shared<TypeNameRule>("float")},
@@ -4122,39 +4122,46 @@ const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
 const MapNames::MapTy MemoryDataTypeRule::ExtentMemberNames{
     {"width", "[0]"}, {"height", "[1]"}, {"depth", "[2]"}};
 
+const MapNames::MapTy MemoryDataTypeRule::ArrayDescMemberNames{
+    {"Width", "x"},
+    {"Height", "y"},
+    {"Format", "channel_type"},
+    {"NumChannels", "channel_num"}};
+
 const MapNames::MapTy MemoryDataTypeRule::MemberNames{
     // cudaMemcpy3DParms fields.
-    {"srcArray", "from_image_data"},
-    {"srcPtr", "from_data"},
-    {"srcPos", "from_pos"},
-    {"dstArray", "to_image_data"},
-    {"dstPtr", "to_data"},
-    {"dstPos", "to_pos"},
+    {"srcArray", "from.image"},
+    {"srcPtr", "from.pitched"},
+    {"srcPos", "from.pos"},
+    {"dstArray", "to.image"},
+    {"dstPtr", "to.pitched"},
+    {"dstPos", "to.pos"},
     {"extent", "size"},
     {"kind", "direction"},
     // CUDA_MEMCPY2D fields.
-    {"Height", "y"},
-    {"WidthInBytes", "x"},
-    {"dstPitch", "p_to_data"},
-    {"srcPitch", "p_from_data"},
-    {"dstDevice", "ptr_to_data"},
-    {"dstHost", "ptr_to_data"},
-    {"dstXInBytes", "x_to_pos"},
-    {"srcXInBytes", "x_from_pos"},
-    {"dstY", "y_to_pos"},
-    {"srcY", "y_from_pos"},
-    {"srcDevice", "ptr_from_data"},
-    {"srcHost", "ptr_from_data"},
+    {"Height", "size[1]"},
+    {"WidthInBytes", "size[0]"},
+    {"dstXInBytes", "to.pos[0]"},
+    {"srcXInBytes", "from.pos[0]"},
+    {"dstY", "to.pos[1]"},
+    {"srcY", "from.pos[1]"},
     // CUDA_MEMCPY3D fields.
-    {"Depth", "z"},
-    {"dstHeight", "y_to_data"},
-    {"srcHeight", "y_from_data"},
-    {"dstZ", "z_to_pos"},
-    {"srcZ", "z_from_pos"},
-    // CUDA_ARRAY_DESCRIPTOR fields.
-    {"Width", "x"},
-    {"Format", "channel_type"},
-    {"NumChannels", "channel_num"}};
+    {"Depth", "size[2]"},
+    {"dstZ", "to.pos[2]"},
+    {"srcZ", "from.pos[2]"}};
+
+const MapNames::MapTy MemoryDataTypeRule::PitchedMember{
+    // CUDA_MEMCPY2D fields.
+    {"dstPitch", "pitch"},
+    {"srcPitch", "pitch"},
+    {"dstDevice", "data_ptr"},
+    {"dstHost", "data_ptr"},
+    {"srcDevice", "data_ptr"},
+    {"srcHost", "data_ptr"},
+    // CUDA_MEMCPY3D fields.
+    {"dstHeight", "y"},
+    {"srcHeight", "y"},
+};
 
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
