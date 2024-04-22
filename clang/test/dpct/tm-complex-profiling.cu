@@ -303,6 +303,9 @@ void foo_test_3()
 // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                    kernel(d_a, value);
 // CHECK-NEXT:                });
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1124:{{[0-9]+}}: cudaMemcpyAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+// CHECK-NEXT:    */
 // CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(dpct::get_in_order_queue().memcpy(h_a, d_a, nbytes)));
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.

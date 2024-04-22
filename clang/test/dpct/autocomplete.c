@@ -15,6 +15,7 @@
 // DASH-NEXT: --build-script-file
 // DASH-NEXT: --change-cuda-files-extension-only
 // DASH-NEXT: --check-unicode-security
+// DASH-NEXT: --codepin-report
 // DASH-NEXT: --comments
 // DASH-NEXT: --compilation-database
 // DASH-NEXT: --cuda-include-path

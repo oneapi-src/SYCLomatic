@@ -1,0 +1,6 @@
+// CHECK: CodePin Summary
+// CHECK: Totally APIs count, 3
+// CHECK: Consistently APIs count, 1
+// CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
+// CHECK: serial123,serial123,Data value,The location of failed ID "var_2"->"Data"->"member_2"->"Data" and [ERROR: DATA VALUE MISMATCH] the CUDA value "bb123" differs from the SYCL value "ccc".
+// CHECK: serial1234,serial1234,Data value,The location of failed ID "var_2"->"Data"->"member_2"->"Data" and [ERROR: DATA VALUE MISMATCH] the CUDA value "bb123" differs from the SYCL value "cc".

@@ -17,7 +17,7 @@ enum ProcessStatus {
   MigrationSucceeded = 0,
   MigrationNoCodeChangeHappen = 1,
   MigrationSkipped = 2,
-  InterceptBuildSuccess = 3,
+  CallIndependentToolSucceeded = 3,
   MigrationCmakeScriptCompleted = 4,
   MigrationError = -1,
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
@@ -59,7 +59,7 @@ enum ProcessStatus {
   MigrationErrorAPIMappingWrongCUDAHeader = -44,
   MigrationErrorAPIMappingNoCUDAHeader = -45,
   MigrationErrorCannotDetectCudaPath = -46,
-  InterceptBuildError = -47,
+  CallIndependentToolError = -47,
   MigrationErrorCMakeScriptPathInvalid = -48,
   MigrateCmakeScriptOnlyNotSpecifed = -49,
   MigarteBuildScriptIncorrectUse = -50,

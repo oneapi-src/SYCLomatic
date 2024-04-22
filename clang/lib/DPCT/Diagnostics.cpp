@@ -51,6 +51,8 @@ std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 std::unordered_set<int> APIQueryNeedReportWarningIDSet = {
     // More IDs may need to be added, like: 1007, 1008, 1028, 1030, 1031, 1037,
     // 1051, 1053, 1067, 1069, 1076, 1082, 1090, 1107.
+    1009, // TRNA_WARNING_ERROR_HANDLING_API_COMMENTED
+    1014, // STREAM_FLAG_PRIORITY_NOT_SUPPORTED
     1023, // MASK_UNSUPPORTED
     1029, // DEVICE_LIMIT_NOT_SUPPORTED
     1086, // ACTIVE_MASK
@@ -61,6 +63,12 @@ std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
   DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note,     \
                                EffortLevel::EL_Low, MSG);
 #include "DiagnosticsBuildScript.inc"
+#undef DEF_COMMENT
+
+#define DEF_COMMENT(NAME, ID, MSG)                                             \
+  DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note,     \
+                               EffortLevel::EL_Low, MSG);
+#include "DiagnosticsCMakeScriptMigration.inc"
 #undef DEF_COMMENT
 
 void reportInvalidWarningID(const std::string &Str) {

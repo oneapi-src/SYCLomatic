@@ -84,15 +84,26 @@ CONDITIONAL_FACTORY_ENTRY(
                                 "cudaGetTextureObjectTextureDesc", DEREF(0),
                                 MEMBER_CALL(ARG(1), true,
                                             "get_sampling_info")))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                            "cuTexObjectGetResourceDesc", DEREF(0),
-                            MEMBER_CALL(ARG(1), true, "get_data"))))
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(
-        ASSIGN_FACTORY_ENTRY("cuTexObjectGetTextureDesc", DEREF(0),
-                             MEMBER_CALL(ARG(1), true, "get_sampling_info"))))
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuTexObjectGetResourceDesc", DEREF(0),
+        CALL(MapNames::getDpctNamespace() + "experimental::get_data", ARG(1)))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                "cuTexObjectGetResourceDesc", DEREF(0),
+                                MEMBER_CALL(ARG(1), true, "get_data")))))
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuTexObjectGetTextureDesc", DEREF(0),
+        CALL(MapNames::getDpctNamespace() + "experimental::get_sampling_info",
+             ARG(1)))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                "cuTexObjectGetTextureDesc", DEREF(0),
+                                MEMBER_CALL(ARG(1), true,
+                                            "get_sampling_info")))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex1D", 0x01, 1))
@@ -157,12 +168,15 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                                            "create_image_wrapper",
                                  DEREF(1), DEREF(2)))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuTexObjectCreate", DEREF(0),
-                                            CALL(MapNames::getDpctNamespace() +
-                                                     "create_image_wrapper",
-                                                 DEREF(1), DEREF(2)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cuTexObjectCreate", DEREF(0),
+                            CALL(DpctGlobalInfo::useExtBindlessImages()
+                                     ? MapNames::getDpctNamespace() +
+                                           "experimental::create_bindless_image"
+                                     : MapNames::getDpctNamespace() +
+                                           "create_image_wrapper",
+                                 DEREF(1), DEREF(2)))))
 
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
                   Diagnostics::API_NOT_MIGRATED)

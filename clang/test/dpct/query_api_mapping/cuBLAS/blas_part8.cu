@@ -160,7 +160,7 @@
 // cublasGetMatrixAsync-NEXT:                        a /*const void **/, lda /*int*/, b /*void **/,
 // cublasGetMatrixAsync-NEXT:                        ldb /*int*/, stream /*cudaStream_t*/);
 // cublasGetMatrixAsync-NEXT: Is migrated to:
-// cublasGetMatrixAsync-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
+// cublasGetMatrixAsync-NEXT:   dpct::blas::matrix_mem_copy(b, a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDtrmm | FileCheck %s -check-prefix=cublasDtrmm
 // cublasDtrmm: CUDA API:

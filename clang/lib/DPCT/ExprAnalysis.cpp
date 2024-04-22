@@ -288,14 +288,14 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
                                  const Expr *Parent) {
   const std::shared_ptr<DynTypedNode> P =
       std::make_shared<DynTypedNode>(DynTypedNode::create(*Parent));
-  if (BeginLoc.isMacroID() && isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
-    BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
-    EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
-  } else {
-    if (EndLoc.isValid()) {
-      BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
-      EndLoc = SM.getExpansionRange(EndLoc).getEnd();
-    }
+  while (BeginLoc.isMacroID() &&
+         isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
+    BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
+    EndLoc = SM.getImmediateSpellingLoc(EndLoc);
+  }
+  if (EndLoc.isValid()) {
+    BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
+    EndLoc = SM.getExpansionRange(EndLoc).getEnd();
   }
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
