@@ -8470,14 +8470,6 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       return ;
   llvm::SmallString<512> RelativePath;
 
-  std::string DebugArgsString = "(\"";
-  std::string DebugArgsStringSYCL = "(\"";
-  DebugArgsString += llvm::sys::path::convert_to_slash(
-                         KCallSpellingRange.first.printToString(SM)) +
-                     "\", ";
-  DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
-                             KCallSpellingRange.first.printToString(SM)) +
-                         "\", ";
   std::string StreamStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
@@ -8495,44 +8487,44 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
     }
   }
 
-  buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
-  DebugArgsString += StreamStr;
-  DebugArgsStringSYCL += QueueStr;
-  for (auto *Arg : KCall->arguments()) {
-    if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-      if (DRE->isLValue()) {
-        DebugArgsString += ", ";
-        DebugArgsStringSYCL += ", ";
-        std::string VarNameStr = "\"" + DRE->getNameInfo().getAsString() + "\"";
-        DebugArgsString += VarNameStr + ", ";
-        DebugArgsStringSYCL += VarNameStr + ", ";
-        DebugArgsString += getStmtSpelling(Arg);
-        DebugArgsStringSYCL += getStmtSpelling(Arg);
+  auto InstrumentKernel = [&](std::string StreamStr, HeaderType HT,
+                              dpct::ReplacementType CodePinType) {
+    std::string DebugArgsString = "(\"";
+    DebugArgsString += llvm::sys::path::convert_to_slash(
+                           KCallSpellingRange.first.printToString(SM)) +
+                       "\", ";
+    DebugArgsString += StreamStr;
+
+    buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
+
+    for (auto *Arg : KCall->arguments()) {
+      if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
+        if (DRE->isLValue()) {
+          DebugArgsString += ", ";
+          std::string VarNameStr =
+              "\"" + DRE->getNameInfo().getAsString() + "\"";
+          DebugArgsString += VarNameStr + ", ";
+          DebugArgsString += getStmtSpelling(Arg);
+        }
       }
     }
-  }
-  DebugArgsString += ");" + std::string(getNL());
-  DebugArgsStringSYCL += ");" + std::string(getNL());
-  emplaceTransformation(
-      new InsertText(KCallSpellingRange.first,
-                     "dpct::experimental::gen_prolog_API_CP" + DebugArgsString,
-                     0, RT_ForCUDADebug));
-  emplaceTransformation(new InsertText(KCallSpellingRange.first,
-                                       "dpct::experimental::gen_prolog_API_CP" +
-                                           DebugArgsStringSYCL,
-                                       0, RT_ForSYCLMigration));
-  emplaceTransformation(new InsertText(
-      EpilogLocation, "dpct::experimental::gen_epilog_API_CP" + DebugArgsString,
-      0, RT_ForCUDADebug));
-  emplaceTransformation(new InsertText(EpilogLocation,
-                                       "dpct::experimental::gen_epilog_API_CP" +
-                                           DebugArgsStringSYCL,
-                                       0, RT_ForSYCLMigration));
-  CodePinInstrumentation.insert(KCallSpellingRange.first);
-  DpctGlobalInfo::getInstance().insertHeader(
-      KCall->getBeginLoc(), HT_DPCT_CodePin_SYCL, RT_ForSYCLMigration);
-  DpctGlobalInfo::getInstance().insertHeader(
-      KCall->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_ForCUDADebug);
+    DebugArgsString += ");" + std::string(getNL());
+    emplaceTransformation(new InsertText(
+        KCallSpellingRange.first,
+        "dpct::experimental::gen_prolog_API_CP" + DebugArgsString, 0,
+        CodePinType));
+
+    emplaceTransformation(new InsertText(
+        EpilogLocation,
+        "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0,
+        CodePinType));
+
+    CodePinInstrumentation.insert(KCallSpellingRange.first);
+    DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(), HT,
+                                               CodePinType);
+  };
+  InstrumentKernel(StreamStr, HT_DPCT_CodePin_CUDA, RT_CUDAWithCodePin);
+  InstrumentKernel(QueueStr, HT_DPCT_CodePin_SYCL, RT_ForSYCLMigration);
 }
 
 void KernelCallRule::runRule(
@@ -9872,7 +9864,7 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
                     C->getArg(AllocMemSizeLoc)->getSourceRange()),
                 DpctGlobalInfo::getSourceManager(), LangOptions())) +
             ";",
-        0, RT_ForCUDADebug));
+        0, RT_CUDAWithCodePin));
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
         std::string(getNL()) + "dpct::experimental::get_ptr_size_map()[" +
@@ -9880,7 +9872,7 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
             "] = " + ExprAnalysis::ref(C->getArg(AllocMemSizeLoc)) + ";",
         0, RT_ForSYCLMigration));
     DpctGlobalInfo::getInstance().insertHeader(
-        C->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_ForCUDADebug);
+        C->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_CUDAWithCodePin);
     DpctGlobalInfo::getInstance().insertHeader(
         C->getBeginLoc(), HT_DPCT_CodePin_SYCL, RT_ForSYCLMigration);
   }

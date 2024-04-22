@@ -567,7 +567,6 @@ int runDPCT(int argc, const char **argv) {
   // To support wildcard "*" in source file name in windows.
   llvm::InitLLVM X(argc, argv);
 #endif
-
   // Set handle for libclangTooling to process message for dpct
   clang::tooling::SetPrintHandle(PrintMsg);
   clang::tooling::SetFileSetInCompilationDB(
@@ -1005,7 +1004,7 @@ int runDPCT(int argc, const char **argv) {
     bool NeedCheckOutRootEmpty =
         !(BuildScript == BuildScript::BS_Cmake) && !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
-        !getDefaultOutRoot(OutRoot, NeedCheckOutRootEmpty)) {
+        !getDefaultOutRoot(OutRoot, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
@@ -1082,7 +1081,9 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setBuildScript(BuildScript);
-  DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
+  // When enable codepin feature, the incremental migration will be disabled.
+  DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration && !EnableCodePin &&
+                                    !MigrateBuildScriptOnly);
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
   DpctGlobalInfo::setFormatRange(FormatRng);
@@ -1204,8 +1205,7 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScopeOpt.getNumOccurrences());
-    if (!MigrateBuildScriptOnly &&
-        clang::dpct::DpctGlobalInfo::isIncMigration()) {
+    if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
       if (!canContinueMigration(Msg)) {
         ShowStatus(MigrationErrorDifferentOptSet, Msg);

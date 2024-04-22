@@ -22,6 +22,19 @@ using namespace llvm;
 using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
+bool isOutRootEmpty(SmallString<256> OutRoot) {
+  std::error_code EC;
+  fs::directory_iterator Iter(OutRoot, EC);
+  if ((bool)EC) {
+    llvm::errs() << "Could not access out-root directory.\n";
+    return false;
+  }
+  fs::directory_iterator End;
+  if (Iter != End) {
+    return false;
+  }
+  return true;
+}
 
 // Set OutRoot to the current working directory.
 bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
@@ -32,28 +45,18 @@ bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
     return false;
   }
   OutRoot.append("/dpct_output");
+  OutRootPar.setPath(OutRoot.str().str());
   if (fs::is_directory(OutRoot)) {
-    std::error_code EC;
-    fs::directory_iterator Iter(OutRoot, EC);
-    if ((bool)EC) {
-      llvm::errs() << "Could not access output directory.\n";
-      return false;
-    }
-    fs::directory_iterator End;
-    if (NeedCheckOutRootEmpty && Iter != End) {
+    if (!isOutRootEmpty(OutRoot) && !NeedCheckOutRootEmpty) {
       llvm::errs() << "dpct_output directory is not empty. Please use option"
                       " \"--out-root\" to set output directory.\n";
       return false;
     }
-    clang::dpct::PrintMsg(
-        "The directory \"dpct_output\" is used as \"out-root\"\n");
-
   } else {
     clang::dpct::createDirectories(OutRoot, false);
-    clang::dpct::PrintMsg(
-        "The directory \"dpct_output\" is used as \"out-root\"\n");
   }
-  OutRootPar.setPath(OutRoot.str().str());
+  clang::dpct::PrintMsg(
+      "The directory \"dpct_output\" is used as \"out-root\"\n");
   return true;
 }
 
