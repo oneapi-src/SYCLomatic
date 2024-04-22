@@ -65,6 +65,12 @@ void registerAPIRule(MetaRuleObject &R) {
         R.In, R.RuleAttributes.HasExplicitTemplateArgs);
   });
 
+  if (R.RuleAPIRestrictCondition.ArgCount < -1) {
+    llvm::outs() << "warning: In Rule " << R.RuleId
+                 << ", the APIRestrictCondition::ArgCount is set to a negative "
+                 << "value, and thus the ArgCount restriction is ignored.";
+  }
+
   auto FilterChecker = [=](const CallExpr *C) {
     if (R.RuleAPIRestrictCondition.ArgCount < 0)
       return true;
