@@ -344,7 +344,7 @@ __global__ void k11(T) {}
 // CHECK-NEXT:   F(F& other) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1127:{{[0-9]+}}: This type is used in kernel but it is not device copyable. Below part(s) is(are) not meet the requirements: copy constructor, copy assignment, destructor, virtual method "m", virtual base class "B1", non trivially copyable base class "B2" and non trivially copyable field "f". Please rewrite the code.
+// CHECK-NEXT: DPCT1127:{{[0-9]+}}: This type is used in kernel but it is not device copyable. Below part(s) is(are) not meet the requirements: copy constructor, copy assignment, move constructor, move assignment, destructor, virtual method "m", virtual base class "B1", non trivially copyable base class "B2" and non trivially copyable field "f". Please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct16 : virtual public B1, public B2 {
 // CHECK-NEXT:   UserStruct16() {}

@@ -4989,30 +4989,23 @@ void checkTrivallyCopyable(
       if (!isUserDefinedDecl(ClassDecl))
         return;
       std::vector<std::string> Messages;
-      if (!ClassDecl->hasSimpleCopyConstructor() &&
-          !ClassDecl->defaultedCopyConstructorIsDeleted()) {
-        Messages.push_back("copy constructor");
-      }
-      if (!ClassDecl->hasSimpleCopyAssignment()) {
-        for (const auto &M : ClassDecl->methods()) {
-          if (M->isCopyAssignmentOperator() && !M->isDeleted()) {
+      for (const auto &C : ClassDecl->ctors()) {
+        if (!C->isImplicit() && !C->isDeleted()) {
+          if (C->isCopyConstructor()) {
+            Messages.push_back("copy constructor");
+          } else if (C->isMoveConstructor()) {
             Messages.push_back("copy assignment");
           }
         }
       }
-      if (!ClassDecl->hasSimpleMoveConstructor() &&
-          !ClassDecl->hasUserDeclaredCopyConstructor() &&
-          !ClassDecl->hasUserDeclaredCopyAssignment() &&
-          !ClassDecl->hasUserDeclaredMoveAssignment() &&
-          !ClassDecl->hasUserDeclaredDestructor()) {
-        Messages.push_back("move constructor");
-      }
-      if (!ClassDecl->hasSimpleMoveAssignment() &&
-          !ClassDecl->hasUserDeclaredCopyConstructor() &&
-          !ClassDecl->hasUserDeclaredCopyAssignment() &&
-          !ClassDecl->hasUserDeclaredMoveConstructor() &&
-          !ClassDecl->hasUserDeclaredDestructor()) {
-        Messages.push_back("move assignment");
+      for (const auto &M : ClassDecl->methods()) {
+        if (!M->isImplicit() && !M->isDeleted()) {
+          if (M->isCopyAssignmentOperator()) {
+            Messages.push_back("move constructor");
+          } else if (M->isMoveAssignmentOperator()) {
+            Messages.push_back("move assignment");
+          }
+        }
       }
       if (!ClassDecl->hasSimpleDestructor()) {
         Messages.push_back("destructor");
