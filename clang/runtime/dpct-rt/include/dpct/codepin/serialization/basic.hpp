@@ -70,7 +70,8 @@ public:
 
   void print_dict_item_key(std::string key) { *this << "\"" << key << "\":"; }
   void print_ID_checkpoint_begin(std::string ID) {
-    *this << "{\"ID\":" << ID;
+    *this << "{\"ID\":"
+          << "\"" << ID << "\"";
     *this << ",\"CheckPoint\":{";
   }
   void print_ID_checkpoint_end() { *this << "}},"; }
@@ -80,7 +81,7 @@ public:
   void print_data_mem_end() { *this << "}"; }
   template <typename T> void print_type_data(std::string type, T data) {
     print_type_begin(type);
-    *this << data;
+    *this << "\"" << data << "\"";
     print_type_end();
   }
 
