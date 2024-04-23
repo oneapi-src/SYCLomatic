@@ -8489,34 +8489,34 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
 
   auto InstrumentKernel = [&](std::string StreamStr, HeaderType HT,
                               dpct::ReplacementType CodePinType) {
-    std::string DebugArgsString = "(\"";
-    DebugArgsString += llvm::sys::path::convert_to_slash(
+    std::string CodePinKernelArgsString = "(\"";
+    CodePinKernelArgsString += llvm::sys::path::convert_to_slash(
                            KCallSpellingRange.first.printToString(SM)) +
                        "\", ";
-    DebugArgsString += StreamStr;
+    CodePinKernelArgsString += StreamStr;
 
     buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
 
     for (auto *Arg : KCall->arguments()) {
       if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
         if (DRE->isLValue()) {
-          DebugArgsString += ", ";
+          CodePinKernelArgsString += ", ";
           std::string VarNameStr =
               "\"" + DRE->getNameInfo().getAsString() + "\"";
-          DebugArgsString += VarNameStr + ", ";
-          DebugArgsString += getStmtSpelling(Arg);
+          CodePinKernelArgsString += VarNameStr + ", ";
+          CodePinKernelArgsString += getStmtSpelling(Arg);
         }
       }
     }
-    DebugArgsString += ");" + std::string(getNL());
+    CodePinKernelArgsString += ");" + std::string(getNL());
     emplaceTransformation(new InsertText(
         KCallSpellingRange.first,
-        "dpct::experimental::gen_prolog_API_CP" + DebugArgsString, 0,
+        "dpct::experimental::gen_prolog_API_CP" + CodePinKernelArgsString, 0,
         CodePinType));
 
     emplaceTransformation(new InsertText(
         EpilogLocation,
-        "dpct::experimental::gen_epilog_API_CP" + DebugArgsString, 0,
+        "dpct::experimental::gen_epilog_API_CP" + CodePinKernelArgsString, 0,
         CodePinType));
 
     CodePinInstrumentation.insert(KCallSpellingRange.first);
