@@ -1063,6 +1063,7 @@ private:
     if (_dim == 1) {
       std::int64_t input_stride[2] = {0, _istride};
       std::int64_t output_stride[2] = {0, _ostride};
+#ifdef __INTEL_MKL__
       if (_direction == fft_direction::forward) {
         desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
                         input_stride);
@@ -1078,9 +1079,16 @@ private:
         std::copy(output_stride, output_stride + 2, _fwd_strides_1d);
         std::copy(input_stride, input_stride + 2, _bwd_strides_1d);
       }
+#else
+      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
+                      input_stride);
+      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
+                      output_stride);
+#endif
     } else if (_dim == 2) {
       std::int64_t input_stride[3] = {0, _inembed[1] * _istride, _istride};
       std::int64_t output_stride[3] = {0, _onembed[1] * _ostride, _ostride};
+#ifdef __INTEL_MKL__
       if (_direction == fft_direction::forward) {
         desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
                         input_stride);
@@ -1096,11 +1104,18 @@ private:
         std::copy(output_stride, output_stride + 3, _fwd_strides_2d);
         std::copy(input_stride, input_stride + 3, _bwd_strides_2d);
       }
+#else
+      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
+                      input_stride);
+      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
+                      output_stride);
+#endif
     } else if (_dim == 3) {
       std::int64_t input_stride[4] = {0, _inembed[2] * _inembed[1] * _istride,
                                       _inembed[2] * _istride, _istride};
       std::int64_t output_stride[4] = {0, _onembed[2] * _onembed[1] * _ostride,
                                        _onembed[2] * _ostride, _ostride};
+#ifdef __INTEL_MKL__
       if (_direction == fft_direction::forward) {
         desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
                         input_stride);
@@ -1116,6 +1131,12 @@ private:
         std::copy(output_stride, output_stride + 4, _fwd_strides_3d);
         std::copy(input_stride, input_stride + 4, _bwd_strides_3d);
       }
+#else
+      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
+                      input_stride);
+      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
+                      output_stride);
+#endif
     }
   }
 
@@ -1125,6 +1146,7 @@ private:
     desc->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);
   }
 
+#ifdef __INTEL_MKL__
   template <class Desc_t> void swap_strides(std::shared_ptr<Desc_t> desc) {
     if (_dim == 1) {
       std::swap_ranges(_fwd_strides_1d, _fwd_strides_1d + 2, _bwd_strides_1d);
@@ -1146,6 +1168,7 @@ private:
                       _bwd_strides_3d);
     }
   }
+#endif
 
   template <bool Is_inplace, class Desc_t>
   void set_stride_and_distance_basic(std::shared_ptr<Desc_t> desc) {
@@ -1153,6 +1176,7 @@ private:
     std::int64_t backward_distance = 0;
 
 #define MAKE_STRIDE_VAR_NAME(DIR, DIM) _##DIR##_strides_##DIM##d
+#ifdef __INTEL_MKL__
 #define SET_STRIDE(DIM)                                                        \
   {                                                                            \
     desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES, real_stride); \
@@ -1163,6 +1187,22 @@ private:
     std::copy(complex_stride, complex_stride + DIM + 1,                        \
               MAKE_STRIDE_VAR_NAME(bwd, DIM));                                 \
   }
+#else
+#define SET_STRIDE(DIM)                                                        \
+  {                                                                            \
+    if (_direction == fft_direction::forward) {                                \
+      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,           \
+                      real_stride);                                            \
+      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,          \
+                      complex_stride);                                         \
+    } else {                                                                   \
+      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,           \
+                      complex_stride);                                         \
+      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,          \
+                      real_stride);                                            \
+    }                                                                          \
+  }
+#endif
     if (_dim == 1) {
       if constexpr (Is_inplace) {
         std::int64_t real_stride[2] = {0, 1};
@@ -1256,8 +1296,10 @@ private:
         if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
           if (direction != _direction) {
             swap_distance(_desc_sc);
+#ifdef __INTEL_MKL__
             if (!_is_basic)
               swap_strides(_desc_sc);
+#endif
             _direction = direction;
           }
           if (is_this_compute_inplace != _is_inplace) {
@@ -1284,8 +1326,10 @@ private:
         } else {
           if (direction != _direction) {
             swap_distance(_desc_dc);
+#ifdef __INTEL_MKL__
             if (!_is_basic)
               swap_strides(_desc_dc);
+#endif
             _direction = direction;
           }
           if (is_this_compute_inplace != _is_inplace) {
@@ -1424,12 +1468,14 @@ private:
   std::shared_ptr<oneapi::mkl::dft::descriptor<
       oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>
       _desc_dc;
+#ifdef __INTEL_MKL__
   std::int64_t _fwd_strides_1d[2] = {0, 0};
   std::int64_t _fwd_strides_2d[3] = {0, 0, 0};
   std::int64_t _fwd_strides_3d[4] = {0, 0, 0, 0};
   std::int64_t _bwd_strides_1d[2] = {0, 0};
   std::int64_t _bwd_strides_2d[3] = {0, 0, 0};
   std::int64_t _bwd_strides_3d[4] = {0, 0, 0, 0};
+#endif
 };
 
 using fft_engine_ptr = fft_engine *;
